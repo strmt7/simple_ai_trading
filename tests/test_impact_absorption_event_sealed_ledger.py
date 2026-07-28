@@ -12,6 +12,7 @@ import torch
 
 from simple_ai_trading import (
     impact_absorption_ai_execution_replay as replay_subject,
+    impact_absorption_event_action_policy as action_policy_subject,
     impact_absorption_event_sealed_evaluation as sealed_subject,
 )
 from simple_ai_trading.impact_absorption_ai_protocol import (
@@ -33,12 +34,14 @@ from simple_ai_trading.impact_absorption_ai_runtime import (
 from simple_ai_trading.impact_absorption_ai_uplift import (
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
+    Round74AIPretestQualificationPanel,
+    build_round74_ai_pretest_qualification,
+    evaluate_round74_ai_overlay_development,
 )
 from simple_ai_trading.impact_absorption_event_action_policy import (
     Round74ActionPolicySelection,
     Round74ActionThresholdEvaluation,
     Round74ActionTrace,
-    Round74ActionTraceMetrics,
     build_round74_action_inference_context,
     derive_round74_action_candidates,
     round74_action_profile,
@@ -172,44 +175,40 @@ def _selection(
     optimization_population: str = "capture_run",
 ) -> Round74ActionPolicySelection:
     rows = len(policy_runs)
-    metrics = Round74ActionTraceMetrics(
-        trades=rows,
-        active_runs=rows,
-        distinct_symbols=3,
-        total_net_bps=rows / 3.0,
-        mean_run_net_bps=1.0 / 3.0,
-        mean_net_bps=1.0 / 3.0,
-        median_net_bps=1.0 / 3.0,
-        win_rate=1.0,
-        profit_factor=None,
-        maximum_drawdown_bps=1.0 / 3.0,
-        realized_maximum_drawdown_bps=0.0,
-        maximum_concurrent_adverse_excursion_bps=1.0 / 3.0,
-        gross_profit_bps=rows / 3.0,
-        gross_loss_bps=0.0,
-        worst_trade_bps=1.0 / 3.0,
-        mean_maximum_adverse_excursion_bps=1.0 / 3.0,
-        mean_run_maximum_adverse_excursion_bps=1.0 / 3.0,
-        adverse_selection_rate=0.0,
-        profitable_run_ratio=1.0,
-        maximum_symbol_trade_share=((rows + 2) // 3 / rows),
+    symbols = tuple(
+        ROUND74_EVENT_SYMBOLS[index % len(ROUND74_EVENT_SYMBOLS)]
+        for index in range(rows)
+    )
+    payoff_pattern = (2.0, -1.0, 2.0, -1.0, 2.0, 2.0)
+    net_payoff_bps = tuple(
+        payoff_pattern[index % len(payoff_pattern)] / 3.0 for index in range(rows)
+    )
+    maximum_adverse_excursion_bps = (1.0 / 3.0,) * rows
+    entry_monotonic_ns = (10,) * rows
+    exit_monotonic_ns = (20,) * rows
+    metrics = action_policy_subject._trace_metrics(
+        run_ids=policy_runs,
+        symbols=symbols,
+        net_payoff_bps=net_payoff_bps,
+        maximum_adverse_excursion_bps=maximum_adverse_excursion_bps,
+        adverse_selection=(0,) * rows,
+        entry_monotonic_ns=entry_monotonic_ns,
+        exit_monotonic_ns=exit_monotonic_ns,
+        expected_run_ids=policy_runs,
     )
     trace = Round74ActionTrace(
         threshold_score=1.0,
         expected_run_ids=policy_runs,
         row_index=tuple(range(rows)),
         run_id=policy_runs,
-        symbol=tuple(
-            ROUND74_EVENT_SYMBOLS[index % len(ROUND74_EVENT_SYMBOLS)]
-            for index in range(rows)
-        ),
+        symbol=symbols,
         feature_row_sha256=tuple(f"{400 + index:064x}" for index in range(rows)),
         horizon_seconds=(30,) * rows,
         side=(1,) * rows,
-        entry_monotonic_ns=(10,) * rows,
-        exit_monotonic_ns=(20,) * rows,
-        net_payoff_bps=(1.0 / 3.0,) * rows,
-        maximum_adverse_excursion_bps=(1.0 / 3.0,) * rows,
+        entry_monotonic_ns=entry_monotonic_ns,
+        exit_monotonic_ns=exit_monotonic_ns,
+        net_payoff_bps=net_payoff_bps,
+        maximum_adverse_excursion_bps=maximum_adverse_excursion_bps,
         adverse_selection=(0,) * rows,
         skipped_target_ineligible=0,
         skipped_same_symbol_overlap=0,
@@ -421,6 +420,123 @@ def _execution_replays(
     return tuple(result)
 
 
+def _ai_pretest_qualification(
+    selection: Round74ActionPolicySelection,
+    *,
+    manifests: tuple[str, str] = ("a" * 64, "b" * 64),
+) -> Round74AIPretestQualificationPanel:
+    selected = [
+        evaluation
+        for evaluation in selection.evaluations
+        if evaluation.accepted
+        and evaluation.quantile == selection.selected_quantile
+        and evaluation.threshold_score == selection.selected_threshold_score
+    ]
+    assert len(selected) == 1
+    trace = selected[0].trace
+    reports = []
+    for model_index, manifest in enumerate(manifests):
+        reviews = []
+        executions = []
+        for index, baseline_net_bps in enumerate(trace.net_payoff_bps):
+            retained = baseline_net_bps >= 0.0
+            multiplier = 10_000 if retained else 0
+            decision = Round74AIReviewDecision(
+                verdict="allow_unchanged" if retained else "veto",
+                size_multiplier_bps=multiplier,
+                confidence_bps=8_000,
+                reason_codes=("none",) if retained else ("forecast_uncertainty",),
+            )
+            review = Round74AIPairedReviewEvidence(
+                row_index=trace.row_index[index],
+                feature_row_sha256=trace.feature_row_sha256[index],
+                run_id=trace.run_id[index],
+                symbol=trace.symbol[index],
+                side=trace.side[index],
+                horizon_seconds=trace.horizon_seconds[index],
+                pretest_policy_sha256=selection.pretest_policy_sha256,
+                probability_calibration_sha256=(
+                    selection.probability_calibration_sha256
+                ),
+                request_sha256=f"{10_000 + model_index * 1_000 + index:064x}",
+                runtime_outcome_sha256=(f"{20_000 + model_index * 1_000 + index:064x}"),
+                model_manifest_sha256=manifest,
+                runtime_status="accepted",
+                runtime_elapsed_ns=1_000,
+                queue_delay_ns=0,
+                effective_review_latency_ns=1_000,
+                same_entry_latency_budget_ns=1_000_000,
+                same_entry_latency_eligible=True,
+                size_multiplier_bps=multiplier,
+                decision=decision,
+            )
+            review.validate()
+            reviews.append(review)
+            position_net_bps = (
+                baseline_net_bps / trace.position_capital_fraction if retained else 0.0
+            )
+            position_mae_bps = (
+                trace.maximum_adverse_excursion_bps[index]
+                / trace.position_capital_fraction
+                if retained
+                else 0.0
+            )
+            execution = Round74AIExecutionReplayEvidence(
+                row_index=review.row_index,
+                feature_row_sha256=review.feature_row_sha256,
+                run_id=review.run_id,
+                symbol=review.symbol,
+                side=review.side,
+                horizon_seconds=review.horizon_seconds,
+                source_review_sha256=review.review_sha256,
+                partition_sha256="e" * 64,
+                source_capture_report_sha256=(
+                    f"{30_000 + model_index * 1_000 + index:064x}"
+                ),
+                target_spec_sha256="f" * 64,
+                status="executed" if retained else "ai_veto",
+                requested_size_multiplier_bps=multiplier,
+                applied_size_multiplier_bps=multiplier,
+                exact_l2_replay_performed=retained,
+                target_outcome_sha256=(
+                    f"{40_000 + model_index * 1_000 + index:064x}" if retained else None
+                ),
+                target_context_sha256=(
+                    f"{50_000 + model_index * 1_000 + index:064x}" if retained else None
+                ),
+                target_ineligible_reason="",
+                requested_entry_monotonic_ns=(
+                    trace.entry_monotonic_ns[index] if retained else None
+                ),
+                actual_entry_monotonic_ns=(
+                    trace.entry_monotonic_ns[index] if retained else None
+                ),
+                actual_exit_monotonic_ns=(
+                    trace.exit_monotonic_ns[index] if retained else None
+                ),
+                reference_quote_notional=1_000.0 if retained else None,
+                actual_entry_quote_notional=1_000.0 if retained else None,
+                actual_deployed_capital_bps=10_000.0 if retained else 0.0,
+                position_net_payoff_bps=position_net_bps,
+                position_maximum_adverse_excursion_bps=position_mae_bps,
+                capital_scaled_net_payoff_bps=position_net_bps,
+                capital_scaled_maximum_adverse_excursion_bps=position_mae_bps,
+                adverse_selection=bool(trace.adverse_selection[index]),
+            )
+            execution.validate()
+            executions.append(execution)
+        report = evaluate_round74_ai_overlay_development(
+            selection,
+            tuple(reviews),
+            tuple(executions),
+        )
+        assert report.development_gate_passed
+        reports.append(report)
+    qualification = build_round74_ai_pretest_qualification(tuple(reports))
+    assert qualification.qualification_passed
+    return qualification
+
+
 def _candidate_inference(
     batch: Round74EventTrainingBatch,
     calibration: Round74ProbabilityCalibration,
@@ -555,10 +671,12 @@ def test_reservation_consumes_test_access_before_evaluation(
     tmp_path: Path,
 ) -> None:
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+    selection = _selection()
+    qualification = _ai_pretest_qualification(selection)
     claim = ledger.reserve(
         test_batches=(_test_batch(),),
-        action_selection=_selection(),
-        ai_manifest_sha256=("a" * 64, "b" * 64),
+        action_selection=selection,
+        ai_pretest_qualification=qualification,
     )
 
     assert claim.status == "reserved"
@@ -572,8 +690,8 @@ def test_reservation_consumes_test_access_before_evaluation(
     with pytest.raises(Round74SealedReuseError, match="already reserved"):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=_selection(),
-            ai_manifest_sha256=("a" * 64, "b" * 64),
+            action_selection=selection,
+            ai_pretest_qualification=qualification,
         )
 
 
@@ -603,7 +721,7 @@ def test_segmented_reservation_and_bootstrap_keep_every_test_segment(
     claim = ledger.reserve_identity(
         test_identity=identity,
         action_selection=selection,
-        ai_manifest_sha256=("a" * 64, "b" * 64),
+        ai_pretest_qualification=_ai_pretest_qualification(selection),
     )
     bootstrap = sealed_subject._run_bootstrap(
         test_runs,
@@ -742,21 +860,28 @@ def test_v1_ledger_migrates_only_to_legacy_capture_population(
 
     assert "optimization_population" in columns
     assert "test_population_sha256" in columns
+    assert "ai_pretest_qualification_sha256" in columns
+    assert "ai_pretest_qualification_required" in columns
     assert schema is not None
-    assert schema[0] == "round-074-sealed-ledger-v2"
+    assert schema[0] == "round-074-sealed-ledger-v3"
     assert migrated_population is not None
     assert migrated_population[0] == "capture_run"
     assert len(migrated_population[1]) == 64
+    migrated_claim = ledger.claim("1" * 64)
+    assert migrated_claim.ai_pretest_qualification_sha256 == ""
+    assert not migrated_claim.ai_pretest_qualification_required
 
 
 def test_completed_or_failed_reservation_cannot_be_reset_or_finalized_twice(
     tmp_path: Path,
 ) -> None:
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+    selection = _selection()
+    qualification = _ai_pretest_qualification(selection)
     claim = ledger.reserve(
         test_batches=(_test_batch(),),
-        action_selection=_selection(),
-        ai_manifest_sha256=("a" * 64,),
+        action_selection=selection,
+        ai_pretest_qualification=qualification,
     )
     completed = ledger.finalize(
         claim.reservation_id,
@@ -775,8 +900,8 @@ def test_completed_or_failed_reservation_cannot_be_reset_or_finalized_twice(
     with pytest.raises(Round74SealedReuseError):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=_selection(),
-            ai_manifest_sha256=("a" * 64,),
+            action_selection=selection,
+            ai_pretest_qualification=qualification,
         )
 
 
@@ -784,10 +909,12 @@ def test_evaluation_error_is_durable_and_still_consumes_test(
     tmp_path: Path,
 ) -> None:
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+    selection = _selection()
+    qualification = _ai_pretest_qualification(selection)
     claim = ledger.reserve(
         test_batches=(_test_batch(),),
-        action_selection=_selection(),
-        ai_manifest_sha256=("a" * 64,),
+        action_selection=selection,
+        ai_pretest_qualification=qualification,
     )
     failed = ledger.finalize(
         claim.reservation_id,
@@ -802,8 +929,8 @@ def test_evaluation_error_is_durable_and_still_consumes_test(
     with pytest.raises(Round74SealedReuseError):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=_selection(),
-            ai_manifest_sha256=("a" * 64,),
+            action_selection=selection,
+            ai_pretest_qualification=qualification,
         )
 
 
@@ -813,6 +940,13 @@ def test_sealed_evaluator_finalizes_failure_after_reservation(
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
     batch = _test_batch()
     identity = build_round74_sealed_dataset_identity((batch,))
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    qualification = _ai_pretest_qualification(selection)
     loader_status: list[str] = []
 
     def load_after_reservation(
@@ -827,10 +961,10 @@ def test_sealed_evaluator_finalizes_failure_after_reservation(
         evaluate_round74_sealed_once(
             identity,
             test_batch_loader=load_after_reservation,
-            action_selection=_selection(),
-            probability_calibration=_calibration(),
+            action_selection=selection,
+            probability_calibration=calibration,
             pretest_policy_path=tmp_path / "missing-policy.json",
-            ai_manifest_sha256=("a" * 64, "b" * 64),
+            ai_pretest_qualification=qualification,
             ai_review_provider=lambda **_kwargs: {
                 "a" * 64: (),
                 "b" * 64: (),
@@ -847,8 +981,8 @@ def test_sealed_evaluator_finalizes_failure_after_reservation(
     with pytest.raises(Round74SealedReuseError, match="status=failed"):
         ledger.reserve(
             test_batches=(batch,),
-            action_selection=_selection(),
-            ai_manifest_sha256=("a" * 64, "b" * 64),
+            action_selection=selection,
+            ai_pretest_qualification=qualification,
         )
 
 
@@ -948,7 +1082,10 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         action_selection=selection,
         probability_calibration=calibration,
         pretest_policy_path=tmp_path / "policy.json",
-        ai_manifest_sha256=manifests,
+        ai_pretest_qualification=_ai_pretest_qualification(
+            selection,
+            manifests=manifests,
+        ),
         ai_review_provider=review_provider,
         ai_execution_replay_provider=replay_provider,
         ledger=ledger,
@@ -1110,15 +1247,21 @@ def test_sealed_evaluator_rejects_incomplete_ai_family_before_reservation(
     path = tmp_path / "sealed.sqlite3"
     ledger = Round74SealedEvaluationLedger(path)
     batch = _test_batch()
+    selection = _selection()
+    qualification = _ai_pretest_qualification(selection)
+    incomplete = replace(
+        qualification,
+        development_reports=(qualification.development_reports[0],),
+    )
 
-    with pytest.raises(ValueError, match="exact two-model AI family"):
+    with pytest.raises(ValueError, match="pretest qualification differs"):
         evaluate_round74_sealed_once(
             build_round74_sealed_dataset_identity((batch,)),
             test_batch_loader=lambda **_kwargs: (batch,),
-            action_selection=_selection(),
+            action_selection=selection,
             probability_calibration=_calibration(),
             pretest_policy_path=tmp_path / "policy.json",
-            ai_manifest_sha256=("a" * 64,),
+            ai_pretest_qualification=incomplete,
             ai_review_provider=lambda **_kwargs: {},
             ai_execution_replay_provider=lambda **_kwargs: {},
             ledger=ledger,
@@ -1331,17 +1474,19 @@ def test_prepared_review_provider_binds_reserved_claim_and_model_panel(
     inference = _candidate_inference(batch, calibration, selection)
     bindings = round74_default_ai_review_model_panel()
     manifests = tuple(value.manifest.manifest_sha256 for value in bindings)
+    qualification = _ai_pretest_qualification(selection, manifests=manifests)
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
     claim = ledger.reserve(
         test_batches=(batch,),
         action_selection=selection,
-        ai_manifest_sha256=manifests,
+        ai_pretest_qualification=qualification,
     )
     progress: list[Mapping[str, object]] = []
     provider = Round74PreparedSealedAIReviewProvider(
         probability_calibration=calibration,
         same_entry_latency_budget_ns=1_000_000,
         model_bindings=bindings,
+        ai_pretest_qualification=qualification,
         review_runner=_blocked_review,
         progress_callback=progress.append,
         wall_time_ns=lambda: 1_900_000_000_000_000_000,
@@ -1379,12 +1524,16 @@ def test_store_replay_provider_reconciles_each_run_and_restores_order(
     batch = replace(_test_batch(), partition_sha256=partition.partition_sha256)
     batch.validate()
     selection = _selection()
-    manifest = "a" * 64
+    manifests = ("a" * 64, "b" * 64)
+    manifest = manifests[0]
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
     claim = ledger.reserve(
         test_batches=(batch,),
         action_selection=selection,
-        ai_manifest_sha256=(manifest,),
+        ai_pretest_qualification=_ai_pretest_qualification(
+            selection,
+            manifests=manifests,
+        ),
     )
     store = ImpactAbsorptionStore(
         tmp_path / "capture.duckdb",
@@ -1396,29 +1545,32 @@ def test_store_replay_provider_reconciles_each_run_and_restores_order(
         partition=partition,
         assembly_by_run_id={run_id: assembly for run_id in claim.test_run_ids},
     )
-    instructions = (
-        _replay_instruction(
-            row_index=0,
-            run_id=claim.test_run_ids[0],
-            manifest=manifest,
-            partition_sha256=claim.partition_sha256,
-            action_selection_sha256=claim.action_selection_sha256,
-        ),
-        _replay_instruction(
-            row_index=1,
-            run_id=claim.test_run_ids[1],
-            manifest=manifest,
-            partition_sha256=claim.partition_sha256,
-            action_selection_sha256=claim.action_selection_sha256,
-        ),
-        _replay_instruction(
-            row_index=2,
-            run_id=claim.test_run_ids[0],
-            manifest=manifest,
-            partition_sha256=claim.partition_sha256,
-            action_selection_sha256=claim.action_selection_sha256,
-        ),
-    )
+    instructions_by_manifest = {
+        selected_manifest: (
+            _replay_instruction(
+                row_index=0,
+                run_id=claim.test_run_ids[0],
+                manifest=selected_manifest,
+                partition_sha256=claim.partition_sha256,
+                action_selection_sha256=claim.action_selection_sha256,
+            ),
+            _replay_instruction(
+                row_index=1,
+                run_id=claim.test_run_ids[1],
+                manifest=selected_manifest,
+                partition_sha256=claim.partition_sha256,
+                action_selection_sha256=claim.action_selection_sha256,
+            ),
+            _replay_instruction(
+                row_index=2,
+                run_id=claim.test_run_ids[0],
+                manifest=selected_manifest,
+                partition_sha256=claim.partition_sha256,
+                action_selection_sha256=claim.action_selection_sha256,
+            ),
+        )
+        for selected_manifest in manifests
+    }
     replayed_runs: list[str] = []
 
     def replay_run(
@@ -1449,16 +1601,20 @@ def test_store_replay_provider_reconciles_each_run_and_restores_order(
     )
     replayed = provider(
         claim=claim,
-        instructions_by_manifest={manifest: instructions},
+        instructions_by_manifest=instructions_by_manifest,
     )
 
-    assert replayed_runs == list(claim.test_run_ids[:2])
+    assert replayed_runs == list(claim.test_run_ids[:2]) * len(manifests)
     assert tuple(value.row_index for value in replayed[manifest]) == (0, 1, 2)
-    assert all(value.status == "runtime_veto" for value in replayed[manifest])
+    assert all(
+        value.status == "runtime_veto"
+        for model_replays in replayed.values()
+        for value in model_replays
+    )
     with pytest.raises(ValueError, match="provider identity differs"):
         provider(
             claim=claim,
-            instructions_by_manifest={"b" * 64: instructions},
+            instructions_by_manifest={manifest: instructions_by_manifest[manifest]},
         )
 
 
@@ -1467,12 +1623,13 @@ def test_development_data_is_rejected_before_ledger_creation(
 ) -> None:
     path = tmp_path / "sealed.sqlite3"
     ledger = Round74SealedEvaluationLedger(path)
+    selection = _selection()
 
     with pytest.raises(ValueError, match="rejects development data"):
         ledger.reserve(
             test_batches=(_test_batch(role="tuning"),),
-            action_selection=_selection(),
-            ai_manifest_sha256=("a" * 64,),
+            action_selection=selection,
+            ai_pretest_qualification=_ai_pretest_qualification(selection),
         )
 
     assert not path.exists()
@@ -1482,22 +1639,46 @@ def test_tampered_claim_or_duplicate_manifest_panel_is_rejected(
     tmp_path: Path,
 ) -> None:
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
-    with pytest.raises(ValueError, match="manifest panel differs"):
+    selection = _selection()
+    qualification = _ai_pretest_qualification(selection)
+    duplicate_report = replace(
+        qualification.development_reports[1],
+        model_manifest_sha256=qualification.model_manifest_sha256[0],
+    )
+    duplicate_report.validate()
+    duplicate = replace(
+        qualification,
+        development_reports=(
+            qualification.development_reports[0],
+            duplicate_report,
+        ),
+    )
+    oversized = replace(
+        qualification,
+        development_reports=(
+            *qualification.development_reports,
+            replace(
+                qualification.development_reports[1],
+                model_manifest_sha256="c" * 64,
+            ),
+        ),
+    )
+    with pytest.raises(ValueError, match="pretest qualification differs"):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=_selection(),
-            ai_manifest_sha256=("a" * 64, "a" * 64),
+            action_selection=selection,
+            ai_pretest_qualification=duplicate,
         )
-    with pytest.raises(ValueError, match="manifest panel differs"):
+    with pytest.raises(ValueError, match="pretest qualification differs"):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=_selection(),
-            ai_manifest_sha256=("a" * 64, "b" * 64, "c" * 64),
+            action_selection=selection,
+            ai_pretest_qualification=oversized,
         )
     claim = ledger.reserve(
         test_batches=(_test_batch(),),
-        action_selection=_selection(),
-        ai_manifest_sha256=("a" * 64,),
+        action_selection=selection,
+        ai_pretest_qualification=qualification,
     )
     tampered = replace(claim, dataset_sha256="f" * 64)
     tampered.validate()

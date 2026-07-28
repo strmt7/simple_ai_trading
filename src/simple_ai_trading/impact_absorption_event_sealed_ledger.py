@@ -12,6 +12,7 @@ import re
 import sqlite3
 import time
 
+from .impact_absorption_ai_uplift import Round74AIPretestQualificationPanel
 from .impact_absorption_event_action_policy import (
     ROUND74_ACTION_PROFILES,
     Round74ActionPolicySelection,
@@ -23,9 +24,10 @@ from .impact_absorption_event_dataset import Round74EventTrainingBatch
 from .types import config_paths
 
 
-ROUND74_SEALED_LEDGER_SCHEMA_VERSION = "round-074-sealed-ledger-v2"
+ROUND74_SEALED_LEDGER_SCHEMA_VERSION = "round-074-sealed-ledger-v3"
+ROUND74_SEALED_LEDGER_PRETEST_SCHEMA_VERSION = "round-074-sealed-ledger-v2"
 ROUND74_SEALED_LEDGER_LEGACY_SCHEMA_VERSION = "round-074-sealed-ledger-v1"
-ROUND74_SEALED_CLAIM_SCHEMA_VERSION = "round-074-sealed-claim-v2"
+ROUND74_SEALED_CLAIM_SCHEMA_VERSION = "round-074-sealed-claim-v3"
 ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION = "round-074-sealed-dataset-identity-v2"
 ROUND74_SEALED_TEST_POPULATION_SCHEMA_VERSION = "round-074-sealed-test-population-v1"
 ROUND74_SEALED_OPTIMIZATION_POPULATIONS = ("capture_run", "eligible_target")
@@ -118,6 +120,8 @@ class Round74SealedEvaluationClaim:
     pretest_policy_sha256: str
     probability_calibration_sha256: str
     action_selection_sha256: str
+    ai_pretest_qualification_sha256: str
+    ai_pretest_qualification_required: bool
     ai_manifest_sha256: tuple[str, ...]
     profile: str
     optimization_population: str
@@ -159,6 +163,15 @@ class Round74SealedEvaluationClaim:
             or not self.ai_manifest_sha256
             or len(self.ai_manifest_sha256) > 2
             or len(set(self.ai_manifest_sha256)) != len(self.ai_manifest_sha256)
+            or not isinstance(self.ai_pretest_qualification_required, bool)
+            or (
+                self.ai_pretest_qualification_required
+                and _SHA256.fullmatch(self.ai_pretest_qualification_sha256) is None
+            )
+            or (
+                not self.ai_pretest_qualification_required
+                and self.ai_pretest_qualification_sha256
+            )
             or self.optimization_population
             not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
             or not _valid_test_run_count(
@@ -227,6 +240,10 @@ class Round74SealedEvaluationClaim:
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "action_selection_sha256": self.action_selection_sha256,
+            "ai_pretest_qualification_sha256": (self.ai_pretest_qualification_sha256),
+            "ai_pretest_qualification_required": (
+                self.ai_pretest_qualification_required
+            ),
             "ai_manifest_sha256": list(self.ai_manifest_sha256),
             "profile": self.profile,
             "optimization_population": self.optimization_population,
@@ -276,6 +293,12 @@ class Round74SealedEvaluationClaim:
                     payload["probability_calibration_sha256"]
                 ),
                 action_selection_sha256=str(payload["action_selection_sha256"]),
+                ai_pretest_qualification_sha256=str(
+                    payload["ai_pretest_qualification_sha256"]
+                ),
+                ai_pretest_qualification_required=payload[
+                    "ai_pretest_qualification_required"
+                ],
                 ai_manifest_sha256=tuple(
                     str(item) for item in payload["ai_manifest_sha256"]
                 ),
@@ -454,10 +477,7 @@ def build_round74_sealed_dataset_identity(
             raise ValueError("Round 74 sealed test population differs")
     else:
         population_sha256 = str(test_population_sha256 or "")
-        if (
-            expected != tuple(run_ids)
-            or _SHA256.fullmatch(population_sha256) is None
-        ):
+        if expected != tuple(run_ids) or _SHA256.fullmatch(population_sha256) is None:
             raise ValueError("Round 74 sealed test population differs")
     batch_hashes = tuple(batch.batch_sha256 for batch in selected)
     identity = Round74SealedDatasetIdentity(
@@ -535,6 +555,8 @@ class Round74SealedEvaluationLedger:
                 pretest_policy_sha256 TEXT NOT NULL,
                 probability_calibration_sha256 TEXT NOT NULL,
                 action_selection_sha256 TEXT NOT NULL,
+                ai_pretest_qualification_sha256 TEXT NOT NULL,
+                ai_pretest_qualification_required INTEGER NOT NULL,
                 ai_manifest_sha256_json TEXT NOT NULL,
                 profile TEXT NOT NULL,
                 optimization_population TEXT NOT NULL,
@@ -578,6 +600,22 @@ class Round74SealedEvaluationLedger:
                 ALTER TABLE round74_sealed_claims
                 ADD COLUMN test_population_sha256 TEXT NOT NULL
                 DEFAULT ''
+                """
+            )
+        if "ai_pretest_qualification_sha256" not in columns:
+            connection.execute(
+                """
+                ALTER TABLE round74_sealed_claims
+                ADD COLUMN ai_pretest_qualification_sha256 TEXT NOT NULL
+                DEFAULT ''
+                """
+            )
+        if "ai_pretest_qualification_required" not in columns:
+            connection.execute(
+                """
+                ALTER TABLE round74_sealed_claims
+                ADD COLUMN ai_pretest_qualification_required INTEGER NOT NULL
+                DEFAULT 0
                 """
             )
         population_rows = connection.execute(
@@ -629,10 +667,11 @@ class Round74SealedEvaluationLedger:
             WHERE key = 'schema_version'
             """
         ).fetchone()
-        if (
-            schema is not None
-            and str(schema[0]) == ROUND74_SEALED_LEDGER_LEGACY_SCHEMA_VERSION
-        ):
+        if schema is not None and str(schema[0]) in {
+            ROUND74_SEALED_LEDGER_LEGACY_SCHEMA_VERSION,
+            ROUND74_SEALED_LEDGER_PRETEST_SCHEMA_VERSION,
+        }:
+            prior_schema = str(schema[0])
             connection.execute(
                 """
                 UPDATE round74_governance_metadata
@@ -641,7 +680,7 @@ class Round74SealedEvaluationLedger:
                 """,
                 [
                     ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
-                    ROUND74_SEALED_LEDGER_LEGACY_SCHEMA_VERSION,
+                    prior_schema,
                 ],
             )
             schema = (ROUND74_SEALED_LEDGER_SCHEMA_VERSION,)
@@ -685,6 +724,11 @@ class Round74SealedEvaluationLedger:
             raise Round74SealedLedgerError(
                 "Round 74 sealed ledger list payload differs"
             )
+        qualification_required = row["ai_pretest_qualification_required"]
+        if qualification_required not in (0, 1):
+            raise Round74SealedLedgerError(
+                "Round 74 sealed AI qualification flag differs"
+            )
         claim = Round74SealedEvaluationClaim(
             reservation_id=str(row["reservation_id"]),
             ledger_id=str(row["ledger_id"]),
@@ -695,6 +739,8 @@ class Round74SealedEvaluationLedger:
             pretest_policy_sha256=str(row["pretest_policy_sha256"]),
             probability_calibration_sha256=str(row["probability_calibration_sha256"]),
             action_selection_sha256=str(row["action_selection_sha256"]),
+            ai_pretest_qualification_sha256=str(row["ai_pretest_qualification_sha256"]),
+            ai_pretest_qualification_required=bool(qualification_required),
             ai_manifest_sha256=tuple(str(value) for value in manifests),
             profile=str(row["profile"]),
             optimization_population=str(row["optimization_population"]),
@@ -723,7 +769,7 @@ class Round74SealedEvaluationLedger:
         *,
         test_batches: Sequence[Round74EventTrainingBatch],
         action_selection: Round74ActionPolicySelection,
-        ai_manifest_sha256: Sequence[str],
+        ai_pretest_qualification: Round74AIPretestQualificationPanel,
     ) -> Round74SealedEvaluationClaim:
         """Reserve an already loaded panel for low-level callers and tests."""
 
@@ -733,7 +779,7 @@ class Round74SealedEvaluationLedger:
                 optimization_population=action_selection.optimization_population,
             ),
             action_selection=action_selection,
-            ai_manifest_sha256=ai_manifest_sha256,
+            ai_pretest_qualification=ai_pretest_qualification,
         )
 
     def reserve_identity(
@@ -741,7 +787,7 @@ class Round74SealedEvaluationLedger:
         *,
         test_identity: Round74SealedDatasetIdentity,
         action_selection: Round74ActionPolicySelection,
-        ai_manifest_sha256: Sequence[str],
+        ai_pretest_qualification: Round74AIPretestQualificationPanel,
     ) -> Round74SealedEvaluationClaim:
         """Atomically consume metadata-only test access before target loading."""
 
@@ -752,11 +798,25 @@ class Round74SealedEvaluationLedger:
         identity = test_identity
         if identity.optimization_population != action_selection.optimization_population:
             raise ValueError("Round 74 sealed optimization population differs")
-        manifests = tuple(
-            _require_sha256(value, "AI manifest") for value in ai_manifest_sha256
-        )
-        if not manifests or len(manifests) > 2 or len(set(manifests)) != len(manifests):
+        ai_pretest_qualification.validate()
+        manifests = ai_pretest_qualification.model_manifest_sha256
+        if not ai_pretest_qualification.qualification_passed:
+            raise ValueError("Round 74 sealed AI pretest qualification did not pass")
+        if (
+            ai_pretest_qualification.action_selection_sha256
+            != action_selection.selection_sha256
+            or ai_pretest_qualification.pretest_policy_sha256
+            != action_selection.pretest_policy_sha256
+            or ai_pretest_qualification.probability_calibration_sha256
+            != action_selection.probability_calibration_sha256
+            or ai_pretest_qualification.profile != action_selection.profile
+        ):
+            raise ValueError(
+                "Round 74 sealed AI pretest qualification identity differs"
+            )
+        if len(manifests) != 2 or len(set(manifests)) != 2:
             raise ValueError("Round 74 sealed AI manifest panel differs")
+        qualification_sha256 = ai_pretest_qualification.qualification_sha256
         now_ns = time.time_ns()
         contract = {
             "test_access_sha256": identity.test_access_sha256,
@@ -768,6 +828,8 @@ class Round74SealedEvaluationLedger:
                 action_selection.probability_calibration_sha256
             ),
             "action_selection_sha256": action_selection.selection_sha256,
+            "ai_pretest_qualification_sha256": qualification_sha256,
+            "ai_pretest_qualification_required": True,
             "ai_manifest_sha256": manifests,
             "profile": action_selection.profile,
             "optimization_population": identity.optimization_population,
@@ -817,12 +879,15 @@ class Round74SealedEvaluationLedger:
                     reservation_id, ledger_id, test_access_sha256,
                     dataset_sha256, partition_sha256, scaler_sha256,
                     pretest_policy_sha256, probability_calibration_sha256,
-                    action_selection_sha256, ai_manifest_sha256_json,
+                    action_selection_sha256,
+                    ai_pretest_qualification_sha256,
+                    ai_pretest_qualification_required,
+                    ai_manifest_sha256_json,
                     profile, optimization_population, test_population_sha256,
                     test_run_ids_json, batch_sha256_json, rows,
                     first_wall_ns, last_wall_ns, status, reserved_at_ns
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                          'reserved', ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                          ?, 'reserved', ?)
                 """,
                 [
                     reservation_id,
@@ -834,6 +899,8 @@ class Round74SealedEvaluationLedger:
                     action_selection.pretest_policy_sha256,
                     action_selection.probability_calibration_sha256,
                     action_selection.selection_sha256,
+                    qualification_sha256,
+                    1,
                     _canonical_json(list(manifests)),
                     action_selection.profile,
                     identity.optimization_population,
