@@ -49,6 +49,9 @@ from simple_ai_trading.impact_absorption_event_sequence import (
 from simple_ai_trading.impact_absorption_event_targets import (
     Round74EventTargetOutcome,
 )
+from simple_ai_trading.round74_segmented_model_operator import (
+    Round74SegmentedTuningSubpartition,
+)
 
 
 POLICY_SHA256 = "1" * 64
@@ -73,12 +76,31 @@ def _subpartition() -> Round74TuningSubpartition:
     return result
 
 
-def _fit() -> Round74TemperatureFit:
+def _segmented_subpartition() -> Round74SegmentedTuningSubpartition:
+    run_ids = tuple(f"{index:032x}" for index in range(100, 191))
+    result = Round74SegmentedTuningSubpartition(
+        parent_partition_sha256=PARTITION_SHA256,
+        cohort_plan_sha256="a" * 64,
+        model_selection_run_ids=run_ids[:45],
+        calibration_run_ids=run_ids[45:68],
+        policy_selection_run_ids=run_ids[68:],
+        model_selection_slot_ordinals=tuple(range(514, 559)),
+        calibration_slot_ordinals=tuple(range(566, 589)),
+        policy_selection_slot_ordinals=tuple(range(592, 615)),
+        model_selection_eligible_anchor_ns=(900_000_000_000,) * 45,
+        calibration_eligible_anchor_ns=(900_000_000_000,) * 23,
+        policy_selection_eligible_anchor_ns=(900_000_000_000,) * 23,
+    )
+    result.validate()
+    return result
+
+
+def _fit(calibration_runs: int = 6) -> Round74TemperatureFit:
     return Round74TemperatureFit(
         temperature=1.0,
         eligible_observations=10,
         positive_observations=5,
-        calibration_runs=6,
+        calibration_runs=calibration_runs,
         minimum_run_observations=1,
         maximum_run_observations=2,
         uncalibrated_run_balanced_nll=0.5,
@@ -92,20 +114,29 @@ def _fit() -> Round74TemperatureFit:
     )
 
 
-def _calibration() -> Round74ProbabilityCalibration:
-    fit = _fit()
+def _calibration(
+    subpartition: Round74TuningSubpartition | Round74SegmentedTuningSubpartition | None = None,
+) -> Round74ProbabilityCalibration:
+    selected = subpartition or _subpartition()
+    calibration_runs = len(selected.calibration_run_ids)
+    fit = _fit(calibration_runs)
     return Round74ProbabilityCalibration(
         pretest_policy_sha256=POLICY_SHA256,
-        tuning_subpartition_sha256=_subpartition().subpartition_sha256,
+        tuning_subpartition_sha256=selected.subpartition_sha256,
         calibration_source_sha256="4" * 64,
         calibration_data_sha256="5" * 64,
-        calibration_run_ids=_subpartition().calibration_run_ids,
+        calibration_run_ids=selected.calibration_run_ids,
         calibration_row_run_ids_sha256="6" * 64,
         positive_payoff=fit,
         adverse_selection=fit,
         regime_unpredictability=fit,
         backend_kind="cpu",
         backend_device="test",
+        optimization_population=(
+            "eligible_target"
+            if isinstance(selected, Round74SegmentedTuningSubpartition)
+            else "capture_run"
+        ),
         schema_version=ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     )
 
@@ -147,8 +178,12 @@ def _batch(
     *,
     payoff_sign: float = 1.0,
     role: str = "tuning",
+    subpartition: (
+        Round74TuningSubpartition | Round74SegmentedTuningSubpartition | None
+    ) = None,
 ) -> Round74EventTrainingBatch:
-    runs = _subpartition().policy_selection_run_ids
+    selected = subpartition or _subpartition()
+    runs = selected.policy_selection_run_ids
     rows_per_run = len(ROUND74_EVENT_SYMBOLS) * 2
     rows = len(runs) * rows_per_run
     action_shape = (
@@ -295,11 +330,12 @@ def _candidates(
     batch: Round74EventTrainingBatch,
     *,
     profile: str = "conservative",
+    calibration: Round74ProbabilityCalibration | None = None,
 ):
     return derive_round74_action_candidates(
         _output(batch.rows),
         build_round74_action_inference_context(batch),
-        _calibration(),
+        calibration or _calibration(),
         pretest_policy_sha256=POLICY_SHA256,
         profile=profile,
     )
@@ -760,6 +796,38 @@ def test_segmented_policy_selection_uses_eligible_target_objective() -> None:
         assert evaluation.objective_semantics == (
             "total_net_bps_minus_worst_drawdown_and_total_mae_penalties"
         )
+
+
+def test_segmented_policy_selection_uses_every_frozen_policy_segment() -> None:
+    subpartition = _segmented_subpartition()
+    calibration = _calibration(subpartition)
+    batch = _batch(payoff_sign=1.0, subpartition=subpartition)
+    batches = _run_batch_panel(batch)
+    candidates = tuple(
+        _candidates(value, calibration=calibration) for value in batches
+    )
+
+    trace = simulate_round74_action_trace_batches(
+        batches,
+        candidates,
+        threshold_score=0.0,
+        expected_run_ids=subpartition.policy_selection_run_ids,
+    )
+    selection = select_round74_action_policy_batches(
+        batches,
+        candidates,
+        subpartition,
+        optimization_population="eligible_target",
+    )
+
+    assert len(batches) == 23
+    assert trace.expected_run_ids == subpartition.policy_selection_run_ids
+    assert trace.metrics.active_runs == 23
+    assert selection.accepted
+    assert all(
+        evaluation.trace.expected_run_ids == subpartition.policy_selection_run_ids
+        for evaluation in selection.evaluations
+    )
 
 
 def test_batch_panel_rejects_non_chronological_or_duplicate_panels() -> None:

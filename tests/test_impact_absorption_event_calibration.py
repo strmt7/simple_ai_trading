@@ -30,6 +30,9 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_SIDES,
     ROUND74_EVENT_SYMBOLS,
 )
+from simple_ai_trading.round74_segmented_model_operator import (
+    Round74SegmentedTuningSubpartition,
+)
 
 
 def _partition(tuning_runs: int = 24) -> Round74EventRunPartition:
@@ -59,6 +62,25 @@ def _partition(tuning_runs: int = 24) -> Round74EventRunPartition:
 
 def _tuning_subpartition() -> Round74TuningSubpartition:
     return build_round74_tuning_subpartition(_partition())
+
+
+def _segmented_tuning_subpartition() -> Round74SegmentedTuningSubpartition:
+    run_ids = tuple(f"{index:032x}" for index in range(100, 191))
+    result = Round74SegmentedTuningSubpartition(
+        parent_partition_sha256="1" * 64,
+        cohort_plan_sha256="2" * 64,
+        model_selection_run_ids=run_ids[:45],
+        calibration_run_ids=run_ids[45:68],
+        policy_selection_run_ids=run_ids[68:],
+        model_selection_slot_ordinals=tuple(range(514, 559)),
+        calibration_slot_ordinals=tuple(range(566, 589)),
+        policy_selection_slot_ordinals=tuple(range(592, 615)),
+        model_selection_eligible_anchor_ns=(900_000_000_000,) * 45,
+        calibration_eligible_anchor_ns=(900_000_000_000,) * 23,
+        policy_selection_eligible_anchor_ns=(900_000_000_000,) * 23,
+    )
+    result.validate()
+    return result
 
 
 def _calibration() -> Round74ProbabilityCalibration:
@@ -319,7 +341,11 @@ def test_temperature_application_uses_frozen_head_specific_values() -> None:
     )
 
 
-def _risk_calibration_panel() -> tuple[
+def _risk_calibration_panel(
+    subpartition: (
+        Round74TuningSubpartition | Round74SegmentedTuningSubpartition | None
+    ) = None,
+) -> tuple[
     torch.Tensor,
     torch.Tensor,
     torch.Tensor,
@@ -328,7 +354,8 @@ def _risk_calibration_panel() -> tuple[
     tuple[str, ...],
     tuple[str, ...],
 ]:
-    runs = _tuning_subpartition().calibration_run_ids
+    selected = subpartition or _tuning_subpartition()
+    runs = selected.calibration_run_ids
     row_runs = tuple(
         run_id for run_id in runs for _symbol in ROUND74_EVENT_SYMBOLS for _ in range(2)
     )
@@ -375,6 +402,67 @@ def _risk_calibration_panel() -> tuple[
         row_runs,
         row_symbols,
     )
+
+
+def test_segmented_calibration_uses_every_frozen_calibration_segment() -> None:
+    subpartition = _segmented_tuning_subpartition()
+    (
+        payoff,
+        targets,
+        mae,
+        mae_targets,
+        eligibility,
+        row_runs,
+        row_symbols,
+    ) = _risk_calibration_panel(subpartition)
+    rows = len(row_runs)
+    action_logits = torch.tensor(
+        (-2.0, 2.0),
+        dtype=torch.float32,
+    ).repeat(rows, len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS), 1)
+    action_labels = torch.tensor(
+        (0.0, 1.0),
+        dtype=torch.float32,
+    ).repeat(rows, len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS), 1)
+    regime_logits = torch.tensor(
+        (-2.0, 2.0, -2.0, 2.0),
+        dtype=torch.float32,
+    ).repeat(rows, 1)
+    regime_labels = torch.tensor(
+        (0.0, 1.0, 0.0, 1.0),
+        dtype=torch.float32,
+    ).repeat(rows, 1)
+
+    calibration = fit_round74_probability_calibration(
+        positive_payoff_logits=action_logits,
+        positive_payoff_labels=action_labels,
+        adverse_selection_logits=-action_logits,
+        adverse_selection_labels=1.0 - action_labels,
+        action_eligibility=eligibility,
+        regime_unpredictability_logits=regime_logits,
+        regime_unpredictability_labels=regime_labels,
+        regime_eligibility=torch.ones_like(regime_logits),
+        payoff_quantiles_bps=payoff,
+        net_payoff_bps=targets,
+        maximum_adverse_excursion_quantiles_bps=mae,
+        maximum_adverse_excursion_bps=mae_targets,
+        row_symbols=row_symbols,
+        row_run_ids=row_runs,
+        tuning_subpartition=subpartition,
+        pretest_policy_sha256="1" * 64,
+        calibration_source_sha256="3" * 64,
+        backend_kind="cpu",
+        backend_device="test",
+        optimization_population="eligible_target",
+    )
+
+    assert calibration.calibration_run_ids == subpartition.calibration_run_ids
+    assert calibration.positive_payoff.calibration_runs == 23
+    assert calibration.adverse_selection.calibration_runs == 23
+    assert calibration.regime_unpredictability.calibration_runs == 23
+    assert calibration.risk_quantiles is not None
+    assert calibration.risk_quantiles.calibration_runs == 23
+    assert Round74ProbabilityCalibration.from_dict(calibration.as_dict()) == calibration
 
 
 def test_risk_quantile_calibration_widens_only_deployed_tails() -> None:

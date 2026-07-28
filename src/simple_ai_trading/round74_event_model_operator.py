@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import heapq
 import hashlib
 import json
-from typing import TYPE_CHECKING
+from typing import Protocol
 
 import numpy as np
 
@@ -33,8 +33,18 @@ from .impact_absorption_event_sequence import iter_round74_v10_event_observation
 from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS, ImpactAbsorptionStore
 from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 
-if TYPE_CHECKING:
-    from .impact_absorption_event_calibration import Round74TuningSubpartition
+class Round74TuningSubpartitionProtocol(Protocol):
+    """Fields shared by legacy and segmented target-blind tuning splits."""
+
+    parent_partition_sha256: str
+    model_selection_run_ids: tuple[str, ...]
+    calibration_run_ids: tuple[str, ...]
+    policy_selection_run_ids: tuple[str, ...]
+
+    def validate(self) -> None: ...
+
+    @property
+    def subpartition_sha256(self) -> str: ...
 
 
 ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v5"
@@ -756,7 +766,7 @@ class Round74PreparedDevelopmentData:
 class Round74PreparedTuningRoles:
     """Disjoint tuning batches with model-selection reuse made impossible."""
 
-    subpartition: Round74TuningSubpartition
+    subpartition: Round74TuningSubpartitionProtocol
     model_selection_batches: tuple[Round74EventTrainingBatch, ...]
     calibration_batches: tuple[Round74EventTrainingBatch, ...]
     policy_selection_batches: tuple[Round74EventTrainingBatch, ...]
@@ -828,34 +838,57 @@ class Round74PreparedTuningRoles:
 def split_round74_prepared_tuning_roles(
     prepared: Round74PreparedDevelopmentData,
     *,
-    subpartition: Round74TuningSubpartition,
+    subpartition: Round74TuningSubpartitionProtocol,
 ) -> Round74PreparedTuningRoles:
-    """Assign all 24 tuning batches before model, calibration, or policy use."""
+    """Assign a validated development panel to its frozen tuning subroles."""
 
     prepared.validate()
     subpartition.validate()
+    if {
+        batch.partition_sha256
+        for batch in (*prepared.training_batches, *prepared.tuning_batches)
+    } != {subpartition.parent_partition_sha256}:
+        raise ValueError("Round 74 prepared tuning parent partition differs")
+    return split_round74_tuning_batch_roles(
+        prepared.tuning_batches,
+        subpartition=subpartition,
+    )
+
+
+def split_round74_tuning_batch_roles(
+    tuning_batches: Iterable[Round74EventTrainingBatch],
+    *,
+    subpartition: Round74TuningSubpartitionProtocol,
+) -> Round74PreparedTuningRoles:
+    """Assign every frozen tuning batch without requiring a legacy preparation."""
+
+    subpartition.validate()
+    selected_batches = tuple(tuning_batches)
+    for batch in selected_batches:
+        batch.validate()
+    if (
+        not selected_batches
+        or any(batch.role != "tuning" for batch in selected_batches)
+        or any(len(set(batch.run_id)) != 1 for batch in selected_batches)
+    ):
+        raise ValueError("Round 74 prepared tuning batch panel differs")
     expected_run_ids = (
         *subpartition.model_selection_run_ids,
         *subpartition.calibration_run_ids,
         *subpartition.policy_selection_run_ids,
     )
     observed_run_ids = tuple(
-        next(iter(set(batch.run_id))) for batch in prepared.tuning_batches
+        next(iter(set(batch.run_id))) for batch in selected_batches
     )
     if observed_run_ids != expected_run_ids:
         raise ValueError("Round 74 prepared tuning chronology differs")
-    if {
-        batch.partition_sha256
-        for batch in (*prepared.training_batches, *prepared.tuning_batches)
-    } != {subpartition.parent_partition_sha256}:
-        raise ValueError("Round 74 prepared tuning parent partition differs")
     model_end = len(subpartition.model_selection_run_ids)
     calibration_end = model_end + len(subpartition.calibration_run_ids)
     selected = Round74PreparedTuningRoles(
         subpartition=subpartition,
-        model_selection_batches=prepared.tuning_batches[:model_end],
-        calibration_batches=prepared.tuning_batches[model_end:calibration_end],
-        policy_selection_batches=prepared.tuning_batches[calibration_end:],
+        model_selection_batches=selected_batches[:model_end],
+        calibration_batches=selected_batches[model_end:calibration_end],
+        policy_selection_batches=selected_batches[calibration_end:],
     )
     selected.validate()
     return selected
@@ -1056,4 +1089,5 @@ __all__ = [
     "select_round74_representative_matched_event_windows",
     "select_round74_representative_event_windows",
     "split_round74_prepared_tuning_roles",
+    "split_round74_tuning_batch_roles",
 ]

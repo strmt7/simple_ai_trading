@@ -40,11 +40,19 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     load_round74_pretest_policy,
     load_round74_pretest_scaler,
     train_and_seal_round74_pretest_policy,
+    train_and_seal_round74_pretest_policy_from_prepared_roles,
 )
 from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
     ROUND74_EVENT_MODEL_CANDIDATES,
     Round74EventModelOutput,
     build_round74_event_model,
+)
+from simple_ai_trading.round74_event_model_operator import (  # noqa: E402
+    split_round74_tuning_batch_roles,
+)
+from simple_ai_trading.round74_segmented_model_operator import (  # noqa: E402
+    Round74SegmentedTuningSubpartition,
+    round74_segmented_window_policy,
 )
 
 
@@ -167,9 +175,8 @@ def _scaler() -> Round74EventFeatureScaler:
     )
 
 
-def test_segmented_training_requires_fixed_architecture_and_no_run_cycling() -> None:
-    with pytest.raises(ValueError, match="configuration differs"):
-        Round74EventTrainingConfig(execution_mode="segmented_cohort").validate()
+def test_segmented_training_supports_complexity_gate_and_no_run_cycling() -> None:
+    Round74EventTrainingConfig(execution_mode="segmented_cohort").validate()
     config = Round74EventTrainingConfig(
         candidate_ids=(ROUND74_EVENT_MODEL_CANDIDATES[0],),
         architecture_selection_mode="fixed",
@@ -195,6 +202,41 @@ def test_segmented_training_requires_fixed_architecture_and_no_run_cycling() -> 
 
     assert sum(row[0] == 0 for row in schedule) == 1
     assert sum(row[0] == 1 for row in schedule) == 3
+
+
+def test_segmented_complexity_gate_requires_the_complete_dynamic_run_panel() -> None:
+    run_count = 45
+    losses = {
+        candidate_id: tuple(4.0 - candidate_index * 0.1 for _ in range(run_count))
+        for candidate_index, candidate_id in enumerate(ROUND74_EVENT_MODEL_CANDIDATES)
+    }
+    parameter_counts = {
+        candidate_id: 100 * (candidate_index + 1)
+        for candidate_index, candidate_id in enumerate(ROUND74_EVENT_MODEL_CANDIDATES)
+    }
+
+    winner, reports = _complexity_gated_candidate_id(
+        ROUND74_EVENT_MODEL_CANDIDATES,
+        losses,
+        parameter_counts,
+        minimum_mean_loss_improvement=1e-5,
+        required_paired_run_count=run_count,
+    )
+    blocked, incomplete = _complexity_gated_candidate_id(
+        ROUND74_EVENT_MODEL_CANDIDATES,
+        losses,
+        parameter_counts,
+        minimum_mean_loss_improvement=1e-5,
+        required_paired_run_count=run_count + 1,
+    )
+
+    assert winner == ROUND74_EVENT_MODEL_CANDIDATES[-1]
+    assert all(report["complete_tuning_panel"] for report in reports)
+    assert all(
+        report["required_paired_capture_run_count"] == run_count for report in reports
+    )
+    assert blocked == ROUND74_EVENT_MODEL_CANDIDATES[0]
+    assert all(not report["complete_tuning_panel"] for report in incomplete)
 
 
 def test_segmented_gradient_is_exactly_eligible_target_weighted() -> None:
@@ -290,6 +332,92 @@ def test_segmented_training_seals_and_reloads_pooled_target_policy(
     assert first["optimization_metrics"]["maximum_run_minibatch_contributions"] == 3.0
     selected_metrics = policy["selection"]["selected_tuning_metrics"]
     assert artifact.tuning_loss == pytest.approx(selected_metrics["loss"])
+
+
+def test_prepared_roles_forward_segmented_model_selection_without_discarding_runs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import simple_ai_trading.impact_absorption_event_training as training_subject
+
+    model_count, calibration_count, policy_count = 45, 23, 23
+    total = model_count + calibration_count + policy_count
+    batches = tuple(
+        _batch(
+            "tuning",
+            start_wall_ns=WALL_NS + index * 2_000_000_000,
+            identity=100 + index,
+        )
+        for index in range(total)
+    )
+    model_end = model_count
+    calibration_end = model_end + calibration_count
+    subpartition = Round74SegmentedTuningSubpartition(
+        parent_partition_sha256="1" * 64,
+        cohort_plan_sha256="a" * 64,
+        model_selection_run_ids=tuple(batch.run_id[0] for batch in batches[:model_end]),
+        calibration_run_ids=tuple(
+            batch.run_id[0] for batch in batches[model_end:calibration_end]
+        ),
+        policy_selection_run_ids=tuple(
+            batch.run_id[0] for batch in batches[calibration_end:]
+        ),
+        model_selection_slot_ordinals=tuple(range(514, 559)),
+        calibration_slot_ordinals=tuple(range(566, 589)),
+        policy_selection_slot_ordinals=tuple(range(592, 615)),
+        model_selection_eligible_anchor_ns=(900_000_000_000,) * model_count,
+        calibration_eligible_anchor_ns=(900_000_000_000,) * calibration_count,
+        policy_selection_eligible_anchor_ns=(900_000_000_000,) * policy_count,
+    )
+    roles = split_round74_tuning_batch_roles(
+        batches,
+        subpartition=subpartition,
+    )
+    roles.validate()
+    config = Round74EventTrainingConfig(
+        seeds=(7411,),
+        maximum_epochs=1,
+        early_stopping_patience=1,
+        minibatch_rows=2,
+        minimum_role_rows=2,
+        execution_mode="segmented_cohort",
+    )
+    sentinel = object()
+    observed: dict[str, object] = {}
+
+    def fake_train(
+        training_batches: object,
+        tuning_batches: object,
+        **kwargs: object,
+    ) -> object:
+        observed["training_batches"] = training_batches
+        observed["tuning_batches"] = tuning_batches
+        observed.update(kwargs)
+        return sentinel
+
+    monkeypatch.setattr(
+        training_subject,
+        "train_and_seal_round74_pretest_policy",
+        fake_train,
+    )
+
+    result = train_and_seal_round74_pretest_policy_from_prepared_roles(
+        (_batch("training", start_wall_ns=WALL_NS - PURGE_NS, identity=1),),
+        roles,
+        output_directory=tmp_path,
+        compute_backend="cpu",
+        config=config,
+        feature_scaler=_scaler(),
+    )
+
+    assert result is sentinel
+    assert observed["tuning_batches"] == roles.model_selection_batches
+    assert (
+        observed["representative_window_policy_sha256"]
+        == (round74_segmented_window_policy()["policy_sha256"])
+    )
+    assert observed["matched_preparation_sha256"] is None
+    assert observed["config"] is config
 
 
 def test_round74_cohort_mode_rejects_partial_or_unbound_population(

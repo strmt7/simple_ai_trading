@@ -19,6 +19,10 @@ from simple_ai_trading.impact_absorption_store import (
 import simple_ai_trading.round74_segmented_model_operator as subject
 from simple_ai_trading.round74_segmented_model_operator import (
     ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS,
+    Round74SegmentedTestPopulation,
+    Round74SegmentedTuningSubpartition,
+    build_round74_segmented_test_population,
+    build_round74_segmented_tuning_subpartition,
     round74_segmented_window_policy,
     round74_segmented_windows_per_symbol,
     iter_round74_segmented_labeled_event_windows,
@@ -88,6 +92,121 @@ def _binding(entry: Round74EventRunPartitionEntry) -> Round74SegmentedCohortRunB
     return selected
 
 
+def _segmented_tuning_partition() -> tuple[
+    Round74EventRunPartition,
+    dict[str, Round74SegmentedCohortRunBinding],
+]:
+    model_ordinals = tuple(range(514, 559))
+    calibration_ordinals = tuple(range(566, 589))
+    policy_ordinals = tuple(range(592, 615))
+    scheduled = (
+        (0, "training"),
+        *((ordinal, "tuning") for ordinal in model_ordinals),
+        *((ordinal, "tuning") for ordinal in calibration_ordinals),
+        *((ordinal, "tuning") for ordinal in policy_ordinals),
+        (617, "test"),
+    )
+    entries: list[Round74EventRunPartitionEntry] = []
+    bindings: dict[str, Round74SegmentedCohortRunBinding] = {}
+    for index, (ordinal, role) in enumerate(scheduled):
+        start = _START + index * 3_000_000_000_000
+        run_id = f"{index + 100:032x}"
+        report_sha256 = f"{index + 100:064x}"
+        entry = Round74EventRunPartitionEntry(
+            run_id=run_id,
+            role=role,
+            capture_report_sha256=report_sha256,
+            capture_start_wall_ns=start,
+            capture_end_wall_ns=start + 1_300_000_000_000,
+            eligible_anchor_start_wall_ns=start,
+            eligible_anchor_end_wall_ns=start + 900_000_000_000,
+        )
+        entries.append(entry)
+        binding = Round74SegmentedCohortRunBinding(
+            plan_sha256="a" * 64,
+            slot_ordinal=ordinal,
+            role=role,
+            run_id=run_id,
+            report_sha256=report_sha256,
+            supervisor_sha256="b" * 64,
+            fresh_frame_audit_sha256="c" * 64,
+            fresh_epoch_audit_sha256="d" * 64,
+            terminal_status="completed",
+            terminal_error="",
+            capture_start_wall_ns=start,
+            capture_end_wall_ns=start + 1_300_000_000_000,
+            feature_ready_wall_ns=start,
+            usable_end_wall_ns=start + 1_300_000_000_000,
+            message_count=1,
+            frame_count=1,
+            compressed_payload_bytes=1,
+        )
+        binding.validate()
+        if role == "tuning":
+            bindings[run_id] = binding
+    partition = Round74EventRunPartition(
+        entries=tuple(entries),
+        cohort_plan_sha256="a" * 64,
+    )
+    partition.validate()
+    return partition, bindings
+
+
+def _segmented_test_partition() -> tuple[
+    Round74EventRunPartition,
+    dict[str, Round74SegmentedCohortRunBinding],
+]:
+    scheduled = (
+        (0, "training"),
+        (514, "tuning"),
+        *((ordinal, "test") for ordinal in range(617, 707)),
+    )
+    entries: list[Round74EventRunPartitionEntry] = []
+    bindings: dict[str, Round74SegmentedCohortRunBinding] = {}
+    for index, (ordinal, role) in enumerate(scheduled):
+        start = _START + index * 3_000_000_000_000
+        run_id = f"{index + 500:032x}"
+        report_sha256 = f"{index + 500:064x}"
+        entry = Round74EventRunPartitionEntry(
+            run_id=run_id,
+            role=role,
+            capture_report_sha256=report_sha256,
+            capture_start_wall_ns=start,
+            capture_end_wall_ns=start + 1_300_000_000_000,
+            eligible_anchor_start_wall_ns=start,
+            eligible_anchor_end_wall_ns=start + 900_000_000_000,
+        )
+        entries.append(entry)
+        if role == "test":
+            binding = Round74SegmentedCohortRunBinding(
+                plan_sha256="a" * 64,
+                slot_ordinal=ordinal,
+                role=role,
+                run_id=run_id,
+                report_sha256=report_sha256,
+                supervisor_sha256="b" * 64,
+                fresh_frame_audit_sha256="c" * 64,
+                fresh_epoch_audit_sha256="d" * 64,
+                terminal_status="completed",
+                terminal_error="",
+                capture_start_wall_ns=start,
+                capture_end_wall_ns=start + 1_300_000_000_000,
+                feature_ready_wall_ns=start,
+                usable_end_wall_ns=start + 1_300_000_000_000,
+                message_count=1,
+                frame_count=1,
+                compressed_payload_bytes=1,
+            )
+            binding.validate()
+            bindings[run_id] = binding
+    partition = Round74EventRunPartition(
+        entries=tuple(entries),
+        cohort_plan_sha256="a" * 64,
+    )
+    partition.validate()
+    return partition, bindings
+
+
 @dataclass(frozen=True)
 class _Sample:
     run_id: str
@@ -109,18 +228,13 @@ def _samples(
     target_value: float,
 ) -> tuple[_Sample, ...]:
     count = round74_segmented_windows_per_symbol(entry)
-    span = (
-        entry.eligible_anchor_end_wall_ns
-        - entry.eligible_anchor_start_wall_ns
-        + 1
-    )
+    span = entry.eligible_anchor_end_wall_ns - entry.eligible_anchor_start_wall_ns + 1
     output: list[_Sample] = []
     anchor = 0
     for symbol in IMPACT_CAPTURE_SYMBOLS:
         for stratum in range(count):
-            midpoint = (
-                entry.eligible_anchor_start_wall_ns
-                + ((2 * stratum + 1) * span // (2 * count))
+            midpoint = entry.eligible_anchor_start_wall_ns + (
+                (2 * stratum + 1) * span // (2 * count)
             )
             for extra in range(extra_per_stratum):
                 decision = midpoint + extra * 1_000
@@ -163,9 +277,7 @@ def test_segmented_quota_is_proportional_to_eligible_wall_time() -> None:
     split = round74_segmented_windows_per_symbol(
         _entry(left_ns)
     ) + round74_segmented_windows_per_symbol(_entry(right_ns))
-    combined = round74_segmented_windows_per_symbol(
-        _entry(left_ns + right_ns)
-    )
+    combined = round74_segmented_windows_per_symbol(_entry(left_ns + right_ns))
     assert combined - split in {0, 1}
 
 
@@ -223,6 +335,78 @@ def test_segmented_policy_records_no_outcome_dependent_selection() -> None:
     assert policy["target_label_or_outcome_used_for_quota_or_rank"] is False
     assert policy["model_output_used_for_quota_or_rank"] is False
     assert policy["cross_epoch_state_feature_or_target_permitted"] is False
+
+
+def test_segmented_tuning_subroles_include_every_admitted_scheduled_segment() -> None:
+    partition, bindings = _segmented_tuning_partition()
+
+    selected = build_round74_segmented_tuning_subpartition(
+        partition,
+        bindings_by_run_id=bindings,
+    )
+    payload = selected.as_dict()
+
+    assert isinstance(selected, Round74SegmentedTuningSubpartition)
+    assert len(selected.model_selection_run_ids) == 45
+    assert len(selected.calibration_run_ids) == 23
+    assert len(selected.policy_selection_run_ids) == 23
+    assert payload["scheduled_subrole_counts"] == [52, 26, 25]
+    assert payload["observed_eligible_anchor_ns"] == [
+        40_500_000_000_000,
+        20_700_000_000_000,
+        20_700_000_000_000,
+    ]
+    assert payload["all_admitted_tuning_segments_included"]
+    assert not payload["cross_subrole_run_reuse_permitted"]
+    assert not payload["sealed_test_run_accessed"]
+    assert len(selected.subpartition_sha256) == 64
+    assert set(
+        (
+            *selected.model_selection_run_ids,
+            *selected.calibration_run_ids,
+            *selected.policy_selection_run_ids,
+        )
+    ) == set(bindings)
+    assert Round74SegmentedTuningSubpartition.from_dict(payload) == selected
+
+    tampered = dict(payload)
+    tampered["sealed_test_run_accessed"] = True
+    with pytest.raises(ValueError, match="digest differs"):
+        Round74SegmentedTuningSubpartition.from_dict(tampered)
+
+    incomplete = dict(bindings)
+    incomplete.pop(next(iter(incomplete)))
+    with pytest.raises(ValueError, match="binding panel differs"):
+        build_round74_segmented_tuning_subpartition(
+            partition,
+            bindings_by_run_id=incomplete,
+        )
+
+
+def test_segmented_test_population_rejects_any_admitted_segment_omission() -> None:
+    partition, bindings = _segmented_test_partition()
+
+    population = build_round74_segmented_test_population(
+        partition,
+        bindings_by_run_id=bindings,
+    )
+    payload = population.as_dict()
+
+    assert isinstance(population, Round74SegmentedTestPopulation)
+    assert len(population.test_run_ids) == 90
+    assert payload["scheduled_test_slot_count"] == 103
+    assert payload["observed_eligible_anchor_ns"] == 81_000_000_000_000
+    assert payload["all_admitted_test_segments_included"]
+    assert not payload["test_segment_selection_permitted"]
+    assert Round74SegmentedTestPopulation.from_dict(payload) == population
+
+    incomplete = dict(bindings)
+    incomplete.pop(next(iter(incomplete)))
+    with pytest.raises(ValueError, match="binding panel differs"):
+        build_round74_segmented_test_population(
+            partition,
+            bindings_by_run_id=incomplete,
+        )
 
 
 def test_segmented_replay_uses_only_the_audited_epoch_iterator(

@@ -23,9 +23,12 @@ from .impact_absorption_event_dataset import Round74EventTrainingBatch
 from .types import config_paths
 
 
-ROUND74_SEALED_LEDGER_SCHEMA_VERSION = "round-074-sealed-ledger-v1"
-ROUND74_SEALED_CLAIM_SCHEMA_VERSION = "round-074-sealed-claim-v1"
-ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION = "round-074-sealed-dataset-identity-v1"
+ROUND74_SEALED_LEDGER_SCHEMA_VERSION = "round-074-sealed-ledger-v2"
+ROUND74_SEALED_LEDGER_LEGACY_SCHEMA_VERSION = "round-074-sealed-ledger-v1"
+ROUND74_SEALED_CLAIM_SCHEMA_VERSION = "round-074-sealed-claim-v2"
+ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION = "round-074-sealed-dataset-identity-v2"
+ROUND74_SEALED_TEST_POPULATION_SCHEMA_VERSION = "round-074-sealed-test-population-v1"
+ROUND74_SEALED_OPTIMIZATION_POPULATIONS = ("capture_run", "eligible_target")
 ROUND74_SEALED_RESULT_OUTCOMES = (
     "candidate_passed_predeclared_gates",
     "candidate_failed_predeclared_gates",
@@ -81,6 +84,27 @@ def _strict_int(value: object, label: str) -> int:
     return int(value)
 
 
+def _valid_test_run_count(count: object, optimization_population: str) -> bool:
+    expected = ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS["test"]
+    if isinstance(count, bool) or not isinstance(count, int):
+        return False
+    if optimization_population == "capture_run":
+        return count == expected
+    return optimization_population == "eligible_target" and count >= expected
+
+
+def _capture_run_test_population_sha256(run_ids: Sequence[str]) -> str:
+    return _canonical_sha256(
+        {
+            "schema_version": ROUND74_SEALED_TEST_POPULATION_SCHEMA_VERSION,
+            "optimization_population": "capture_run",
+            "assignment_basis": "fixed_legacy_test_role",
+            "test_run_ids": list(run_ids),
+            "all_admitted_test_runs_required": True,
+        }
+    )
+
+
 @dataclass(frozen=True)
 class Round74SealedEvaluationClaim:
     """One immutable reservation that consumes a test-access identity."""
@@ -96,6 +120,8 @@ class Round74SealedEvaluationClaim:
     action_selection_sha256: str
     ai_manifest_sha256: tuple[str, ...]
     profile: str
+    optimization_population: str
+    test_population_sha256: str
     test_run_ids: tuple[str, ...]
     batch_sha256: tuple[str, ...]
     rows: int
@@ -110,7 +136,7 @@ class Round74SealedEvaluationClaim:
     schema_version: str = ROUND74_SEALED_CLAIM_SCHEMA_VERSION
 
     def validate(self) -> None:
-        expected_runs = ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS["test"]
+        observed_runs = len(self.test_run_ids)
         if (
             self.schema_version != ROUND74_SEALED_CLAIM_SCHEMA_VERSION
             or any(
@@ -125,6 +151,7 @@ class Round74SealedEvaluationClaim:
                     self.pretest_policy_sha256,
                     self.probability_calibration_sha256,
                     self.action_selection_sha256,
+                    self.test_population_sha256,
                     *self.ai_manifest_sha256,
                     *self.batch_sha256,
                 )
@@ -132,14 +159,19 @@ class Round74SealedEvaluationClaim:
             or not self.ai_manifest_sha256
             or len(self.ai_manifest_sha256) > 2
             or len(set(self.ai_manifest_sha256)) != len(self.ai_manifest_sha256)
-            or len(self.test_run_ids) != expected_runs
-            or len(set(self.test_run_ids)) != expected_runs
+            or self.optimization_population
+            not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
+            or not _valid_test_run_count(
+                observed_runs,
+                self.optimization_population,
+            )
+            or len(set(self.test_run_ids)) != observed_runs
             or any(_RUN_ID.fullmatch(value) is None for value in self.test_run_ids)
             or not self.batch_sha256
             or len(set(self.batch_sha256)) != len(self.batch_sha256)
             or self.profile not in ROUND74_ACTION_PROFILES
             or isinstance(self.rows, bool)
-            or self.rows < expected_runs
+            or self.rows < observed_runs
             or isinstance(self.first_wall_ns, bool)
             or isinstance(self.last_wall_ns, bool)
             or not 0 < self.first_wall_ns <= self.last_wall_ns
@@ -197,6 +229,8 @@ class Round74SealedEvaluationClaim:
             "action_selection_sha256": self.action_selection_sha256,
             "ai_manifest_sha256": list(self.ai_manifest_sha256),
             "profile": self.profile,
+            "optimization_population": self.optimization_population,
+            "test_population_sha256": self.test_population_sha256,
             "test_run_ids": list(self.test_run_ids),
             "batch_sha256": list(self.batch_sha256),
             "rows": self.rows,
@@ -246,6 +280,8 @@ class Round74SealedEvaluationClaim:
                     str(item) for item in payload["ai_manifest_sha256"]
                 ),
                 profile=str(payload["profile"]),
+                optimization_population=str(payload["optimization_population"]),
+                test_population_sha256=str(payload["test_population_sha256"]),
                 test_run_ids=tuple(str(item) for item in payload["test_run_ids"]),
                 batch_sha256=tuple(str(item) for item in payload["batch_sha256"]),
                 rows=_strict_int(payload["rows"], "rows"),
@@ -287,6 +323,8 @@ class Round74SealedDatasetIdentity:
     test_access_sha256: str
     partition_sha256: str
     scaler_sha256: str
+    optimization_population: str
+    test_population_sha256: str
     test_run_ids: tuple[str, ...]
     batch_sha256: tuple[str, ...]
     rows: int
@@ -295,14 +333,20 @@ class Round74SealedDatasetIdentity:
     schema_version: str = ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
 
     def validate(self) -> None:
-        expected_runs = ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS["test"]
+        observed_runs = len(self.test_run_ids)
         if (
             self.schema_version != ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
             or _SHA256.fullmatch(self.test_access_sha256) is None
             or _SHA256.fullmatch(self.partition_sha256) is None
             or _SHA256.fullmatch(self.scaler_sha256) is None
-            or len(self.test_run_ids) != expected_runs
-            or len(set(self.test_run_ids)) != expected_runs
+            or _SHA256.fullmatch(self.test_population_sha256) is None
+            or self.optimization_population
+            not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
+            or not _valid_test_run_count(
+                observed_runs,
+                self.optimization_population,
+            )
+            or len(set(self.test_run_ids)) != observed_runs
             or any(_RUN_ID.fullmatch(value) is None for value in self.test_run_ids)
             or not self.batch_sha256
             or len(set(self.batch_sha256)) != len(self.batch_sha256)
@@ -326,6 +370,8 @@ class Round74SealedDatasetIdentity:
             "test_access_sha256": self.test_access_sha256,
             "partition_sha256": self.partition_sha256,
             "scaler_sha256": self.scaler_sha256,
+            "optimization_population": self.optimization_population,
+            "test_population_sha256": self.test_population_sha256,
             "test_run_ids": list(self.test_run_ids),
             "batch_sha256": list(self.batch_sha256),
             "rows": self.rows,
@@ -340,6 +386,10 @@ class Round74SealedDatasetIdentity:
 
 def build_round74_sealed_dataset_identity(
     batches: Sequence[Round74EventTrainingBatch],
+    *,
+    optimization_population: str = "capture_run",
+    expected_test_run_ids: Sequence[str] | None = None,
+    test_population_sha256: str | None = None,
 ) -> Round74SealedDatasetIdentity:
     selected = tuple(batches)
     if not selected:
@@ -379,20 +429,43 @@ def build_round74_sealed_dataset_identity(
                 raise ValueError("Round 74 sealed sample is duplicated")
             samples.add(sample)
         rows += batch.rows
-    expected_runs = ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS["test"]
+    selected_population = str(optimization_population)
+    expected = (
+        None
+        if expected_test_run_ids is None
+        else tuple(str(value) for value in expected_test_run_ids)
+    )
     if (
         len(partitions) != 1
         or len(scalers) != 1
         or len(access) != 1
-        or len(run_ids) != expected_runs
-        or len(set(run_ids)) != expected_runs
+        or not _valid_test_run_count(len(run_ids), selected_population)
+        or len(set(run_ids)) != len(run_ids)
     ):
         raise ValueError("Round 74 sealed dataset identity differs")
+    if selected_population == "capture_run":
+        population_sha256 = _capture_run_test_population_sha256(run_ids)
+        if (
+            expected is not None
+            and expected != tuple(run_ids)
+            or test_population_sha256 is not None
+            and str(test_population_sha256) != population_sha256
+        ):
+            raise ValueError("Round 74 sealed test population differs")
+    else:
+        population_sha256 = str(test_population_sha256 or "")
+        if (
+            expected != tuple(run_ids)
+            or _SHA256.fullmatch(population_sha256) is None
+        ):
+            raise ValueError("Round 74 sealed test population differs")
     batch_hashes = tuple(batch.batch_sha256 for batch in selected)
     identity = Round74SealedDatasetIdentity(
         test_access_sha256=next(iter(access)),
         partition_sha256=next(iter(partitions)),
         scaler_sha256=next(iter(scalers)),
+        optimization_population=selected_population,
+        test_population_sha256=population_sha256,
         test_run_ids=tuple(run_ids),
         batch_sha256=batch_hashes,
         rows=rows,
@@ -464,6 +537,8 @@ class Round74SealedEvaluationLedger:
                 action_selection_sha256 TEXT NOT NULL,
                 ai_manifest_sha256_json TEXT NOT NULL,
                 profile TEXT NOT NULL,
+                optimization_population TEXT NOT NULL,
+                test_population_sha256 TEXT NOT NULL,
                 test_run_ids_json TEXT NOT NULL,
                 batch_sha256_json TEXT NOT NULL,
                 rows INTEGER NOT NULL,
@@ -476,12 +551,71 @@ class Round74SealedEvaluationLedger:
                 reserved_at_ns INTEGER NOT NULL,
                 completed_at_ns INTEGER,
                 CHECK (profile IN ('conservative', 'regular', 'aggressive')),
+                CHECK (optimization_population IN ('capture_run', 'eligible_target')),
                 CHECK (rows > 0),
                 CHECK (first_wall_ns > 0 AND last_wall_ns >= first_wall_ns),
                 CHECK (status IN ('reserved', 'complete', 'failed'))
             );
             """
         )
+        columns = {
+            str(row[1])
+            for row in connection.execute(
+                "PRAGMA table_info(round74_sealed_claims)"
+            ).fetchall()
+        }
+        if "optimization_population" not in columns:
+            connection.execute(
+                """
+                ALTER TABLE round74_sealed_claims
+                ADD COLUMN optimization_population TEXT NOT NULL
+                DEFAULT 'capture_run'
+                """
+            )
+        if "test_population_sha256" not in columns:
+            connection.execute(
+                """
+                ALTER TABLE round74_sealed_claims
+                ADD COLUMN test_population_sha256 TEXT NOT NULL
+                DEFAULT ''
+                """
+            )
+        population_rows = connection.execute(
+            """
+            SELECT reservation_id, optimization_population,
+                   test_run_ids_json, test_population_sha256
+            FROM round74_sealed_claims
+            """
+        ).fetchall()
+        for row in population_rows:
+            if str(row["test_population_sha256"]):
+                continue
+            try:
+                run_ids = json.loads(str(row["test_run_ids_json"]))
+            except json.JSONDecodeError as exc:
+                raise Round74SealedLedgerError(
+                    "Round 74 sealed legacy population JSON differs"
+                ) from exc
+            if (
+                str(row["optimization_population"]) != "capture_run"
+                or not isinstance(run_ids, list)
+                or any(not isinstance(value, str) for value in run_ids)
+                or not _valid_test_run_count(len(run_ids), "capture_run")
+            ):
+                raise Round74SealedLedgerError(
+                    "Round 74 sealed legacy population differs"
+                )
+            connection.execute(
+                """
+                UPDATE round74_sealed_claims
+                SET test_population_sha256 = ?
+                WHERE reservation_id = ?
+                """,
+                [
+                    _capture_run_test_population_sha256(run_ids),
+                    str(row["reservation_id"]),
+                ],
+            )
         connection.execute(
             """
             INSERT OR IGNORE INTO round74_governance_metadata (key, value)
@@ -495,6 +629,22 @@ class Round74SealedEvaluationLedger:
             WHERE key = 'schema_version'
             """
         ).fetchone()
+        if (
+            schema is not None
+            and str(schema[0]) == ROUND74_SEALED_LEDGER_LEGACY_SCHEMA_VERSION
+        ):
+            connection.execute(
+                """
+                UPDATE round74_governance_metadata
+                SET value = ?
+                WHERE key = 'schema_version' AND value = ?
+                """,
+                [
+                    ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
+                    ROUND74_SEALED_LEDGER_LEGACY_SCHEMA_VERSION,
+                ],
+            )
+            schema = (ROUND74_SEALED_LEDGER_SCHEMA_VERSION,)
         if schema is None or str(schema[0]) != ROUND74_SEALED_LEDGER_SCHEMA_VERSION:
             raise Round74SealedLedgerError("Round 74 sealed ledger schema differs")
         ledger = connection.execute(
@@ -547,6 +697,8 @@ class Round74SealedEvaluationLedger:
             action_selection_sha256=str(row["action_selection_sha256"]),
             ai_manifest_sha256=tuple(str(value) for value in manifests),
             profile=str(row["profile"]),
+            optimization_population=str(row["optimization_population"]),
+            test_population_sha256=str(row["test_population_sha256"]),
             test_run_ids=tuple(str(value) for value in run_ids),
             batch_sha256=tuple(str(value) for value in batches),
             rows=int(row["rows"]),
@@ -576,7 +728,10 @@ class Round74SealedEvaluationLedger:
         """Reserve an already loaded panel for low-level callers and tests."""
 
         return self.reserve_identity(
-            test_identity=build_round74_sealed_dataset_identity(test_batches),
+            test_identity=build_round74_sealed_dataset_identity(
+                test_batches,
+                optimization_population=action_selection.optimization_population,
+            ),
             action_selection=action_selection,
             ai_manifest_sha256=ai_manifest_sha256,
         )
@@ -595,6 +750,8 @@ class Round74SealedEvaluationLedger:
             raise ValueError("Round 74 sealed action policy is not accepted")
         test_identity.validate()
         identity = test_identity
+        if identity.optimization_population != action_selection.optimization_population:
+            raise ValueError("Round 74 sealed optimization population differs")
         manifests = tuple(
             _require_sha256(value, "AI manifest") for value in ai_manifest_sha256
         )
@@ -613,6 +770,8 @@ class Round74SealedEvaluationLedger:
             "action_selection_sha256": action_selection.selection_sha256,
             "ai_manifest_sha256": manifests,
             "profile": action_selection.profile,
+            "optimization_population": identity.optimization_population,
+            "test_population_sha256": identity.test_population_sha256,
             "test_run_ids": identity.test_run_ids,
             "batch_sha256": identity.batch_sha256,
             "rows": identity.rows,
@@ -659,9 +818,10 @@ class Round74SealedEvaluationLedger:
                     dataset_sha256, partition_sha256, scaler_sha256,
                     pretest_policy_sha256, probability_calibration_sha256,
                     action_selection_sha256, ai_manifest_sha256_json,
-                    profile, test_run_ids_json, batch_sha256_json, rows,
+                    profile, optimization_population, test_population_sha256,
+                    test_run_ids_json, batch_sha256_json, rows,
                     first_wall_ns, last_wall_ns, status, reserved_at_ns
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                           'reserved', ?)
                 """,
                 [
@@ -676,6 +836,8 @@ class Round74SealedEvaluationLedger:
                     action_selection.selection_sha256,
                     _canonical_json(list(manifests)),
                     action_selection.profile,
+                    identity.optimization_population,
+                    identity.test_population_sha256,
                     _canonical_json(list(identity.test_run_ids)),
                     _canonical_json(list(identity.batch_sha256)),
                     identity.rows,
