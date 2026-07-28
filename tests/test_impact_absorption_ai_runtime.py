@@ -794,6 +794,9 @@ def test_declared_model_batch_preload_is_provenance_bound_and_gpu_verified() -> 
             {
                 "model": "fino1:8b",
                 "keep_alive": "30m",
+                "options": {
+                    "num_ctx": 4096,
+                },
                 "stream": False,
             },
             120.0,

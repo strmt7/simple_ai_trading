@@ -262,6 +262,7 @@ def test_worker_accepts_only_pinned_fully_gpu_resident_result() -> None:
     request = posted[0][1]
     assert request["stream"] is False
     assert request["think"] is False
+    assert request["options"]["num_ctx"] == 4096
     assert request["format"]["additionalProperties"] is False
     assert request["messages"][0]["role"] == "system"
     assert request["messages"][1]["role"] == "user"

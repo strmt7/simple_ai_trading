@@ -30,6 +30,7 @@ from .impact_absorption_ai_protocol import (
     apply_round74_ai_risk_modifier,
 )
 from .impact_absorption_ai_worker import (
+    ROUND74_AI_WORKER_CONTEXT_TOKENS,
     ROUND74_AI_WORKER_ENDPOINT,
     ROUND74_AI_WORKER_MAXIMUM_INPUT_BYTES,
     ROUND74_AI_WORKER_MAXIMUM_RESPONSE_BYTES,
@@ -759,6 +760,9 @@ def preload_round74_ai_model(
         {
             "model": config.model_name,
             "keep_alive": "30m",
+            "options": {
+                "num_ctx": ROUND74_AI_WORKER_CONTEXT_TOKENS,
+            },
             "stream": False,
         },
         timeout,

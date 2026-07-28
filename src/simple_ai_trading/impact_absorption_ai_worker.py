@@ -35,6 +35,7 @@ ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION = (
     "round-074-ai-worker-session-response-v1"
 )
 ROUND74_AI_WORKER_ENDPOINT = "http://127.0.0.1:11434"
+ROUND74_AI_WORKER_CONTEXT_TOKENS = 4096
 ROUND74_AI_WORKER_MAXIMUM_INPUT_BYTES = 1_000_000
 ROUND74_AI_WORKER_MAXIMUM_RESPONSE_BYTES = 1_000_000
 ROUND74_AI_WORKER_MAXIMUM_TIMEOUT_SECONDS = 25.0
@@ -521,7 +522,7 @@ def _ollama_payload(
             "seed": 74,
             "temperature": 0.0,
             "top_p": 1.0,
-            "num_ctx": 4096,
+            "num_ctx": ROUND74_AI_WORKER_CONTEXT_TOKENS,
             "num_predict": ROUND74_AI_WORKER_MAXIMUM_OUTPUT_TOKENS,
         },
     }
@@ -724,6 +725,7 @@ if __name__ == "__main__":
 
 
 __all__ = [
+    "ROUND74_AI_WORKER_CONTEXT_TOKENS",
     "ROUND74_AI_WORKER_ENDPOINT",
     "ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION",
     "ROUND74_AI_WORKER_MAXIMUM_INPUT_BYTES",
