@@ -208,6 +208,32 @@ def test_segmented_recovery_is_terminal_only_and_hashes_every_surviving_file(
     assert restored.recovery_sha256 == recovery.recovery_sha256
     assert restored.outcome.status == "missed"
     assert restored.outcome.binding is None
+    output = tmp_path / "recovery" / "017.json"
+    subject.write_round74_segmented_recovery_outcome(
+        recovery,
+        plan=plan,
+        path=output,
+    )
+    subject.write_round74_segmented_recovery_outcome(
+        recovery,
+        plan=plan,
+        path=output,
+    )
+    different = subject.build_round74_segmented_recovery_outcome(
+        plan,
+        slot_ordinal=17,
+        observed_wall_ns=terminal + 1,
+        slot_directory=directory,
+    )
+    with pytest.raises(
+        FileExistsError,
+        match="immutable segmented recovery differs",
+    ):
+        subject.write_round74_segmented_recovery_outcome(
+            different,
+            plan=plan,
+            path=output,
+        )
     (directory / "state.json").write_bytes(b"changed")
     with pytest.raises(ValueError, match="slot evidence differs"):
         restored.verify_slot_directory(directory)

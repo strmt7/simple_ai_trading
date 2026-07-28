@@ -28,6 +28,7 @@ from .round74_segmented_cohort_operator import (
 from .round74_target_assembly_manifest import (
     load_and_audit_round74_target_assembly_manifest,
 )
+from .storage import write_json_atomic
 
 
 ROUND74_SEGMENTED_DEVELOPMENT_INPUTS_SCHEMA_VERSION = (
@@ -484,6 +485,38 @@ def build_round74_segmented_recovery_outcome(
     return selected
 
 
+def write_round74_segmented_recovery_outcome(
+    recovery: Round74SegmentedRecoveryOutcome,
+    *,
+    plan: Round74SegmentedCohortPlan,
+    path: str | Path,
+) -> Path:
+    """Publish one recovery immutably and verify a strict reload."""
+
+    recovery.validate(plan)
+    selected = Path(path)
+    if selected.is_symlink() or selected.parent.is_symlink():
+        raise ValueError("Round 74 segmented recovery path differs")
+    if selected.exists():
+        restored = Round74SegmentedRecoveryOutcome.from_dict(
+            plan,
+            _read_json_mapping(selected, "recovery outcome"),
+        )
+        if restored.recovery_sha256 != recovery.recovery_sha256:
+            raise FileExistsError(
+                "Round 74 immutable segmented recovery differs"
+            )
+        return selected
+    write_json_atomic(selected, recovery.as_dict(), indent=2, sort_keys=True)
+    restored = Round74SegmentedRecoveryOutcome.from_dict(
+        plan,
+        _read_json_mapping(selected, "recovery outcome"),
+    )
+    if restored.recovery_sha256 != recovery.recovery_sha256:
+        raise RuntimeError("Round 74 segmented recovery reload differs")
+    return selected
+
+
 @dataclass(frozen=True)
 class Round74SegmentedDevelopmentInputs:
     """Complete transport ledger and development-only target assemblies."""
@@ -800,4 +833,5 @@ __all__ = [
     "Round74SegmentedRecoveryOutcome",
     "build_round74_segmented_recovery_outcome",
     "load_round74_segmented_development_inputs",
+    "write_round74_segmented_recovery_outcome",
 ]
