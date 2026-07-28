@@ -53,6 +53,11 @@ from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
     Round74EventModelOutput,
     build_round74_event_model,
 )
+from simple_ai_trading.impact_absorption_event_pretraining import (  # noqa: E402
+    Round74EventPretrainingConfig,
+    build_round74_event_pretraining_split,
+    pretrain_round74_event_encoder,
+)
 from simple_ai_trading.round74_event_model_operator import (  # noqa: E402
     split_round74_tuning_batch_roles,
 )
@@ -179,6 +184,81 @@ def _scaler() -> Round74EventFeatureScaler:
         fit_sample_rows=10,
         fit_sample_index_sha256="5" * 64,
     )
+
+
+def test_causal_next_event_pretraining_is_training_only_and_purged() -> None:
+    training = _batch(
+        "training",
+        start_wall_ns=WALL_NS,
+        identity=91,
+        rows=450,
+    )
+    feature_values = training.feature_values.copy()
+    feature_values[:, :, 8:ROUND74_EVENT_BINARY_FEATURE_COUNT] = 0.0
+    training = replace(training, feature_values=_readonly(feature_values))
+    config = Round74EventPretrainingConfig(
+        maximum_epochs=1,
+        early_stopping_patience=1,
+        minibatch_rows=128,
+        minimum_partition_rows_per_symbol=2,
+    )
+    split = build_round74_event_pretraining_split((training,), config=config)
+    changed_targets = training.net_payoff_bps.copy()
+    changed_targets[training.action_eligibility == 1.0] += 1000.0
+    target_changed_training = replace(
+        training,
+        net_payoff_bps=_readonly(changed_targets),
+    )
+    target_changed_training.validate()
+    target_changed_split = build_round74_event_pretraining_split(
+        (target_changed_training,),
+        config=config,
+    )
+
+    assert split.training_rows > 0
+    assert split.validation_rows > 0
+    assert target_changed_training.batch_sha256 != training.batch_sha256
+    assert target_changed_split.split_sha256 == split.split_sha256
+    assert set(split.training_indices[0]).isdisjoint(split.validation_indices[0])
+    assert (
+        int(training.decision_wall_ns[split.training_indices[0][-1]])
+        < int(training.decision_wall_ns[split.validation_indices[0][0]])
+    )
+    for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
+        symbol_mask = np.asarray(training.symbol) == symbol
+        train_rows = split.training_indices[0][
+            symbol_mask[split.training_indices[0]]
+        ]
+        validation_rows = split.validation_indices[0][
+            symbol_mask[split.validation_indices[0]]
+        ]
+        assert (
+            int(training.anchor_index[validation_rows[0]])
+            - int(training.anchor_index[train_rows[-1]])
+            > ROUND74_EVENT_SEQUENCE_LENGTH
+        )
+
+    torch.manual_seed(7411)
+    model = build_round74_event_model("causal_event_tcn")
+    report = pretrain_round74_event_encoder(
+        model,
+        (training,),
+        device=torch.device("cpu"),
+        config=config,
+    )
+
+    assert len(report["training_feature_batch_sha256"]) == 1
+    assert len(report["training_feature_batch_sha256"][0]) == 64
+    assert report["training_capture_run_count"] == 1
+    assert report["supervised_targets_used"] is False
+    assert report["tuning_features_used"] is False
+    assert report["tuning_targets_used"] is False
+    assert report["calibration_data_used"] is False
+    assert report["test_data_used"] is False
+    assert report["initial_encoder_sha256"] != report["final_encoder_sha256"]
+    assert report["encoder_state_restored"] is True
+    assert report["temporary_prediction_head_persisted"] is False
+    assert report["financial_edge_claim"] is False
 
 
 def test_target_loss_scale_is_training_only_complete_and_reloadable() -> None:
@@ -1281,6 +1361,35 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert (
         policy["feature_view_selection"]["neutral_default_on_gate_failure"] is True
     )
+    assert set(policy["initialization_panel"]) == {"random"}
+    assert (
+        policy["initialization_panel"]["random"]
+        == policy["feature_view_panel"]["clock_neutral"]
+    )
+    assert (
+        policy["initialization_selection"]["reason"]
+        == "preflight_never_evaluates_pretraining"
+    )
+    assert policy["initialization_selection"]["pretraining_evaluated"] is False
+    assert (
+        policy["initialization_selection"]["selected_initialization_id"] == "random"
+    )
+    assert policy["initialization_selection"]["promotion_report"] is None
+    assert (
+        policy["initialization_selection"]["supervised_targets_used_by_pretraining"]
+        is False
+    )
+    assert (
+        policy["initialization_selection"]["tuning_features_used_by_pretraining"]
+        is False
+    )
+    assert (
+        policy["initialization_selection"]["tuning_targets_used_by_pretraining"]
+        is False
+    )
+    assert (
+        policy["initialization_selection"]["test_data_used_by_pretraining"] is False
+    )
     assert policy["selection"]["backtest_metric_used_for_selection"] is False
     assert policy["selection"]["criterion"].startswith(
         "sequential parameter-count complexity promotion"
@@ -1377,6 +1486,19 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     )
     with pytest.raises(ValueError, match="feature-view selection differs"):
         load_round74_pretest_policy(changed_feature_view_path)
+
+    changed_initialization = json.loads(
+        artifact.policy_path.read_text(encoding="ascii")
+    )
+    changed_initialization["initialization_selection"][
+        "selected_initialization_id"
+    ] = "causal_next_event_pretrained"
+    changed_initialization_path = _write_rehashed_policy(
+        tmp_path,
+        changed_initialization,
+    )
+    with pytest.raises(ValueError, match="initialization selection differs"):
+        load_round74_pretest_policy(changed_initialization_path)
 
     artifact.model_path.write_bytes(artifact.model_path.read_bytes() + b"x")
     with pytest.raises(ValueError, match="model artifact differs"):

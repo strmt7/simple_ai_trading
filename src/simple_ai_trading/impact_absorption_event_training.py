@@ -38,6 +38,12 @@ from .impact_absorption_event_model import (
     build_round74_event_model,
     round74_event_model_loss,
 )
+from .impact_absorption_event_pretraining import (
+    ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS,
+    ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION,
+    Round74EventPretrainingConfig,
+    pretrain_round74_event_encoder,
+)
 from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
@@ -48,8 +54,8 @@ from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v22"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v21"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v23"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v22"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION = "round-074-target-loss-scale-v1"
 ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION = "round-074-feature-view-v1"
@@ -248,8 +254,12 @@ class Round74EventTrainingConfig:
     device_run_group_size: int = 8
     execution_mode: str = "cohort"
     architecture_selection_mode: str = "complexity_gate"
+    pretraining: Round74EventPretrainingConfig = Round74EventPretrainingConfig()
 
     def validate(self) -> None:
+        if not isinstance(self.pretraining, Round74EventPretrainingConfig):
+            raise ValueError("Round 74 event pretraining policy differs")
+        self.pretraining.validate()
         candidate_panel_is_valid = (
             self.architecture_selection_mode == "complexity_gate"
             and self.candidate_ids == ROUND74_EVENT_MODEL_CANDIDATES
@@ -310,6 +320,10 @@ class Round74EventTrainingConfig:
             "feature_view_selection_mode": (
                 "mandatory_clock_neutral_incumbent_ablation_gate"
             ),
+            "initialization_selection_mode": (
+                "mandatory_random_incumbent_causal_pretraining_ablation_gate"
+            ),
+            "causal_pretraining": self.pretraining.as_dict(),
             "training_order": "chronological_no_shuffle",
             "tuning_order": "chronological_no_shuffle",
             "checkpoint_policy": "best_state_in_memory_only",
@@ -1658,6 +1672,7 @@ def _parameters_are_finite(model: nn.Module) -> bool:
 def _train_peer(
     candidate_id: str,
     feature_view: str,
+    initialization_id: str,
     seed: int,
     training_batches: Sequence[Round74EventTrainingBatch],
     tuning_batches: Sequence[Round74EventTrainingBatch],
@@ -1667,6 +1682,8 @@ def _train_peer(
     target_loss_scale: Round74EventTargetLossScale,
 ) -> tuple[dict[str, torch.Tensor], dict[str, object]]:
     target_loss_scale.validate()
+    if initialization_id not in ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS:
+        raise ValueError("Round 74 model initialization differs")
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -1674,6 +1691,38 @@ def _train_peer(
         build_round74_event_model(candidate_id),
         feature_view,
     ).to(device)
+    supervised_python_random = random.getstate()
+    supervised_numpy_random = np.random.get_state()
+    supervised_torch_random = torch.get_rng_state()
+    if initialization_id == "causal_next_event_pretrained":
+        pretraining_report = pretrain_round74_event_encoder(
+            model,
+            training_batches,
+            device=device,
+            masked_feature_indices=(
+                ROUND74_EVENT_CLOCK_FEATURE_INDICES
+                if feature_view == "clock_neutral"
+                else ()
+            ),
+            config=config.pretraining,
+        )
+    else:
+        pretraining_report = {
+            "schema_version": ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION,
+            "initialization_id": "random",
+            "applied": False,
+            "reason": "paired_random_initialization_incumbent",
+            "config": config.pretraining.as_dict(),
+            "supervised_targets_used": False,
+            "tuning_features_used": False,
+            "tuning_targets_used": False,
+            "calibration_data_used": False,
+            "test_data_used": False,
+            "financial_edge_claim": False,
+        }
+    random.setstate(supervised_python_random)
+    np.random.set_state(supervised_numpy_random)
+    torch.set_rng_state(supervised_torch_random)
     optimizer = ExplicitAdamW(
         tuple(model.parameters()),
         learning_rate=config.learning_rate,
@@ -1887,6 +1936,8 @@ def _train_peer(
         raise RuntimeError("Round 74 best-state selection reload metric differs")
     return best_state, {
         "seed": seed,
+        "initialization_id": initialization_id,
+        "causal_pretraining": pretraining_report,
         "best_epoch": best_epoch,
         "epochs_completed": len(history),
         "best_tuning_metrics": restored_metrics,
@@ -1951,6 +2002,7 @@ def _fit_candidate(
     config: Round74EventTrainingConfig,
     device: object,
     target_loss_scale: Round74EventTargetLossScale,
+    initialization_id: str = "random",
 ) -> _CandidateFit:
     states: list[dict[str, torch.Tensor]] = []
     reports: list[dict[str, object]] = []
@@ -1958,6 +2010,7 @@ def _fit_candidate(
         state, report = _train_peer(
             candidate_id,
             feature_view,
+            initialization_id,
             seed,
             training_batches,
             tuning_batches,
@@ -2471,6 +2524,7 @@ def _runtime_source_binding() -> dict[str, str]:
         "targets": "impact_absorption_event_targets.py",
         "dataset": "impact_absorption_event_dataset.py",
         "model": "impact_absorption_event_model.py",
+        "pretraining": "impact_absorption_event_pretraining.py",
         "training": "impact_absorption_event_training.py",
         "model_operator": "round74_event_model_operator.py",
         "storage": "storage.py",
@@ -2665,16 +2719,6 @@ def train_and_seal_round74_pretest_policy(
         random.setstate(prior_python_random)
         np.random.set_state(prior_numpy_random)
         torch.set_rng_state(prior_torch_random)
-    fallback_messages = [
-        message
-        for message in warning_messages
-        if "not currently supported on the DML backend" in message
-        or "fall back to run on the CPU" in message
-    ]
-    if fallback_messages:
-        raise RuntimeError(
-            f"Round 74 event training used CPU fallback: {fallback_messages}"
-        )
     feature_view_required_runs = (
         len(tuning_batches)
         if selected_config.execution_mode == "segmented_cohort"
@@ -2690,6 +2734,81 @@ def train_and_seal_round74_pretest_policy(
             required_paired_run_count=feature_view_required_runs,
         )
     )
+    random_initialization_fit = winner
+    pretraining_supported = winner.candidate_id in {
+        "causal_event_tcn",
+        "causal_event_attention",
+    }
+    pretraining_evaluated = (
+        pretraining_supported and selected_config.execution_mode != "preflight"
+    )
+    if pretraining_evaluated:
+        try:
+            torch.use_deterministic_algorithms(True)
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                pretrained_initialization_fit = _fit_candidate(
+                    winner.candidate_id,
+                    winner.feature_view,
+                    training_batches,
+                    tuning_batches,
+                    config=selected_config,
+                    device=device,
+                    target_loss_scale=target_loss_scale,
+                    initialization_id="causal_next_event_pretrained",
+                )
+                warning_messages.extend(str(item.message) for item in caught)
+        finally:
+            torch.use_deterministic_algorithms(prior_deterministic)
+            random.setstate(prior_python_random)
+            np.random.set_state(prior_numpy_random)
+            torch.set_rng_state(prior_torch_random)
+        initialization_required_runs = feature_view_required_runs
+        initialization_promotion_report = _paired_promotion_report(
+            "random",
+            "causal_next_event_pretrained",
+            random_initialization_fit.ensemble_run_losses,
+            pretrained_initialization_fit.ensemble_run_losses,
+            minimum_improvement=selected_config.minimum_tuning_improvement,
+            required_paired_run_count=initialization_required_runs,
+            incumbent_group_losses=random_initialization_fit.ensemble_group_losses,
+            challenger_group_losses=(
+                pretrained_initialization_fit.ensemble_group_losses
+            ),
+        )
+        winner = (
+            pretrained_initialization_fit
+            if initialization_promotion_report["promoted"] is True
+            else random_initialization_fit
+        )
+        initialization_panel = {
+            "random": _candidate_fit_report(random_initialization_fit),
+            "causal_next_event_pretrained": _candidate_fit_report(
+                pretrained_initialization_fit
+            ),
+        }
+        initialization_reason = "paired_proper_loss_gate_completed"
+    else:
+        initialization_required_runs = 0
+        initialization_promotion_report = None
+        initialization_panel = {
+            "random": _candidate_fit_report(random_initialization_fit),
+        }
+        initialization_reason = (
+            "preflight_never_evaluates_pretraining"
+            if selected_config.execution_mode == "preflight"
+            else "selected_pooled_control_has_no_causal_event_encoder"
+        )
+    fallback_messages = [
+        message
+        for message in warning_messages
+        if "not currently supported on the DML backend" in message
+        or "fall back to run on the CPU" in message
+    ]
+    if fallback_messages:
+        raise RuntimeError(
+            f"Round 74 event training used CPU fallback: {fallback_messages}"
+        )
     model_state = _flatten_ensemble_state(winner)
     # safetensors 0.8 metadata uses map ordering that is not byte-stable.
     # Identity belongs in the hash-bound policy; sorted tensors stay stable.
@@ -2844,6 +2963,53 @@ def train_and_seal_round74_pretest_policy(
             "statistical_independence_or_significance_claim": False,
             "backtest_metric_used_for_selection": False,
             "test_targets_used": False,
+        },
+        "initialization_panel": initialization_panel,
+        "initialization_selection": {
+            "schema_version": ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION,
+            "criterion": (
+                "causal next-event pretraining challenges the same random "
+                "initialization on the fixed architecture, feature view, seeds, "
+                "and supervised objective; promotion requires strict mean "
+                "proper-loss improvement and no paired run or "
+                "run-symbol-horizon subgroup degradation beyond the numerical "
+                "floor"
+            ),
+            "reason": initialization_reason,
+            "pretraining_supported": pretraining_supported,
+            "pretraining_evaluated": pretraining_evaluated,
+            "ordered_initialization_ids": list(
+                ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS
+            ),
+            "selected_initialization_id": (
+                "causal_next_event_pretrained"
+                if winner is not random_initialization_fit
+                else "random"
+            ),
+            "selected_candidate_id": winner.candidate_id,
+            "selected_feature_view": winner.feature_view,
+            "selected_tuning_metrics": winner.ensemble_metrics,
+            "required_paired_capture_run_count": initialization_required_runs,
+            "minimum_mean_proper_loss_improvement": (
+                selected_config.minimum_tuning_improvement
+                if pretraining_evaluated
+                else 0.0
+            ),
+            "maximum_permitted_paired_run_loss_degradation": (
+                selected_config.minimum_tuning_improvement
+                if pretraining_evaluated
+                else 0.0
+            ),
+            "promotion_report": initialization_promotion_report,
+            "training_features_only": True,
+            "supervised_targets_used_by_pretraining": False,
+            "tuning_features_used_by_pretraining": False,
+            "tuning_targets_used_by_pretraining": False,
+            "calibration_data_used_by_pretraining": False,
+            "test_data_used_by_pretraining": False,
+            "random_default_on_gate_failure": True,
+            "statistical_independence_or_significance_claim": False,
+            "backtest_metric_used_for_selection": False,
         },
         "model_artifact": {
             "filename": model_filename,
@@ -3004,6 +3170,8 @@ def load_round74_pretest_policy(
         "selection",
         "feature_view_panel",
         "feature_view_selection",
+        "initialization_panel",
+        "initialization_selection",
         "model_artifact",
         "scaler_artifact",
         "authority",
@@ -3023,6 +3191,8 @@ def load_round74_pretest_policy(
     candidate_panel = policy.get("candidate_panel")
     feature_view_panel = policy.get("feature_view_panel")
     feature_view_selection = policy.get("feature_view_selection")
+    initialization_panel = policy.get("initialization_panel")
+    initialization_selection = policy.get("initialization_selection")
     backend = policy.get("backend")
     if not all(
         isinstance(value, Mapping)
@@ -3040,6 +3210,8 @@ def load_round74_pretest_policy(
             candidate_panel,
             feature_view_panel,
             feature_view_selection,
+            initialization_panel,
+            initialization_selection,
             backend,
         )
     ):
@@ -3057,6 +3229,8 @@ def load_round74_pretest_policy(
     assert isinstance(candidate_panel, Mapping)
     assert isinstance(feature_view_panel, Mapping)
     assert isinstance(feature_view_selection, Mapping)
+    assert isinstance(initialization_panel, Mapping)
+    assert isinstance(initialization_selection, Mapping)
     assert isinstance(backend, Mapping)
     candidate_id = str(selection.get("selected_candidate_id", ""))
     selected_feature_view = str(
@@ -3096,6 +3270,9 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest policy static contract differs")
     if dict(source_binding) != _runtime_source_binding():
         raise ValueError("Round 74 pretest policy source binding differs")
+    pretraining_policy = training_policy.get("causal_pretraining")
+    if not isinstance(pretraining_policy, Mapping):
+        raise ValueError("Round 74 pretest training policy differs")
     try:
         reconstructed_config = Round74EventTrainingConfig(
             candidate_ids=tuple(str(value) for value in candidate_ids),
@@ -3114,6 +3291,9 @@ def load_round74_pretest_policy(
             execution_mode=str(training_policy["execution_mode"]),
             architecture_selection_mode=str(
                 training_policy["architecture_selection_mode"]
+            ),
+            pretraining=Round74EventPretrainingConfig.from_dict(
+                pretraining_policy
             ),
         )
     except (KeyError, TypeError, ValueError) as exc:
@@ -3572,6 +3752,239 @@ def load_round74_pretest_policy(
         or feature_view_selection.get("test_targets_used") is not False
     ):
         raise ValueError("Round 74 pretest feature-view selection differs")
+    pretraining_supported = expected_winner in {
+        "causal_event_tcn",
+        "causal_event_attention",
+    }
+    pretraining_evaluated = (
+        pretraining_supported and reconstructed_config.execution_mode != "preflight"
+    )
+    expected_initialization_keys = (
+        set(ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS)
+        if pretraining_evaluated
+        else {"random"}
+    )
+    if (
+        set(initialization_panel) != expected_initialization_keys
+        or initialization_panel.get("random") != selected_feature_report
+    ):
+        raise ValueError("Round 74 pretest initialization panel differs")
+    initialization_metrics: dict[str, Mapping[str, object]] = {}
+    initialization_run_losses: dict[str, tuple[float, ...]] = {}
+    initialization_group_losses: dict[str, dict[str, float]] = {}
+    initialization_parameter_counts: dict[str, int] = {}
+    for initialization_id, raw_report in initialization_panel.items():
+        if (
+            initialization_id not in ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS
+            or not isinstance(raw_report, Mapping)
+        ):
+            raise ValueError("Round 74 pretest initialization report differs")
+        metrics, run_losses, group_losses, parameter_count = (
+            _validated_candidate_fit_report(
+                raw_report,
+                panel_key=expected_winner,
+                expected_candidate_id=expected_winner,
+                expected_feature_view=expected_feature_view,
+                seeds=seeds,
+                tuning_run_count=len(tuning_batch_hashes),
+                execution_mode=reconstructed_config.execution_mode,
+            )
+        )
+        peers = raw_report.get("peer_reports")
+        assert isinstance(peers, list)
+        for peer in peers:
+            if not isinstance(peer, Mapping):
+                raise ValueError("Round 74 pretest initialization peer differs")
+            pretraining_report = peer.get("causal_pretraining")
+            if (
+                peer.get("initialization_id") != initialization_id
+                or not isinstance(pretraining_report, Mapping)
+                or pretraining_report.get("schema_version")
+                != ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION
+                or pretraining_report.get("initialization_id") != initialization_id
+                or pretraining_report.get("config")
+                != reconstructed_config.pretraining.as_dict()
+                or pretraining_report.get("supervised_targets_used") is not False
+                or pretraining_report.get("tuning_features_used") is not False
+                or pretraining_report.get("tuning_targets_used") is not False
+                or pretraining_report.get("calibration_data_used") is not False
+                or pretraining_report.get("test_data_used") is not False
+                or pretraining_report.get("financial_edge_claim") is not False
+            ):
+                raise ValueError("Round 74 pretest initialization peer differs")
+            if initialization_id == "random":
+                if (
+                    pretraining_report.get("applied") is not False
+                    or pretraining_report.get("reason")
+                    != "paired_random_initialization_incumbent"
+                ):
+                    raise ValueError("Round 74 random initialization report differs")
+            else:
+                pretraining_feature_batches = pretraining_report.get(
+                    "training_feature_batch_sha256"
+                )
+                if (
+                    not isinstance(pretraining_feature_batches, list)
+                    or len(pretraining_feature_batches) != len(training_batch_hashes)
+                    or len(pretraining_feature_batches)
+                    != len(set(pretraining_feature_batches))
+                    or any(
+                        _SHA256.fullmatch(str(value)) is None
+                        for value in pretraining_feature_batches
+                    )
+                    or pretraining_report.get("training_capture_run_count")
+                    != len(training_batch_hashes)
+                    or pretraining_report.get("encoder_state_restored") is not True
+                    or pretraining_report.get(
+                        "temporary_prediction_head_persisted"
+                    )
+                    is not False
+                    or _SHA256.fullmatch(
+                        str(pretraining_report.get("split_sha256", ""))
+                    )
+                    is None
+                    or _SHA256.fullmatch(
+                        str(pretraining_report.get("initial_encoder_sha256", ""))
+                    )
+                    is None
+                    or _SHA256.fullmatch(
+                        str(pretraining_report.get("final_encoder_sha256", ""))
+                    )
+                    is None
+                    or pretraining_report.get("initial_encoder_sha256")
+                    == pretraining_report.get("final_encoder_sha256")
+                ):
+                    raise ValueError(
+                        "Round 74 causal pretraining report differs"
+                    )
+        initialization_metrics[str(initialization_id)] = metrics
+        initialization_run_losses[str(initialization_id)] = run_losses
+        initialization_group_losses[str(initialization_id)] = group_losses
+        initialization_parameter_counts[str(initialization_id)] = parameter_count
+    if len(set(initialization_parameter_counts.values())) != 1:
+        raise ValueError("Round 74 pretest initialization parameter count differs")
+    if pretraining_evaluated:
+        initialization_required_runs = feature_view_required_runs
+        expected_initialization_promotion_report = _paired_promotion_report(
+            "random",
+            "causal_next_event_pretrained",
+            initialization_run_losses["random"],
+            initialization_run_losses["causal_next_event_pretrained"],
+            minimum_improvement=reconstructed_config.minimum_tuning_improvement,
+            required_paired_run_count=initialization_required_runs,
+            incumbent_group_losses=initialization_group_losses["random"],
+            challenger_group_losses=initialization_group_losses[
+                "causal_next_event_pretrained"
+            ],
+        )
+        expected_initialization_id = (
+            "causal_next_event_pretrained"
+            if expected_initialization_promotion_report["promoted"] is True
+            else "random"
+        )
+        expected_initialization_reason = "paired_proper_loss_gate_completed"
+        expected_initialization_improvement = (
+            reconstructed_config.minimum_tuning_improvement
+        )
+    else:
+        initialization_required_runs = 0
+        expected_initialization_promotion_report = None
+        expected_initialization_id = "random"
+        expected_initialization_reason = (
+            "preflight_never_evaluates_pretraining"
+            if reconstructed_config.execution_mode == "preflight"
+            else "selected_pooled_control_has_no_causal_event_encoder"
+        )
+        expected_initialization_improvement = 0.0
+    expected_initialization_criterion = (
+        "causal next-event pretraining challenges the same random "
+        "initialization on the fixed architecture, feature view, seeds, "
+        "and supervised objective; promotion requires strict mean "
+        "proper-loss improvement and no paired run or "
+        "run-symbol-horizon subgroup degradation beyond the numerical floor"
+    )
+    selected_initialization_report = initialization_panel[
+        expected_initialization_id
+    ]
+    assert isinstance(selected_initialization_report, Mapping)
+    if (
+        set(initialization_selection)
+        != {
+            "schema_version",
+            "criterion",
+            "reason",
+            "pretraining_supported",
+            "pretraining_evaluated",
+            "ordered_initialization_ids",
+            "selected_initialization_id",
+            "selected_candidate_id",
+            "selected_feature_view",
+            "selected_tuning_metrics",
+            "required_paired_capture_run_count",
+            "minimum_mean_proper_loss_improvement",
+            "maximum_permitted_paired_run_loss_degradation",
+            "promotion_report",
+            "training_features_only",
+            "supervised_targets_used_by_pretraining",
+            "tuning_features_used_by_pretraining",
+            "tuning_targets_used_by_pretraining",
+            "calibration_data_used_by_pretraining",
+            "test_data_used_by_pretraining",
+            "random_default_on_gate_failure",
+            "statistical_independence_or_significance_claim",
+            "backtest_metric_used_for_selection",
+        }
+        or initialization_selection.get("schema_version")
+        != ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION
+        or initialization_selection.get("criterion")
+        != expected_initialization_criterion
+        or initialization_selection.get("reason")
+        != expected_initialization_reason
+        or initialization_selection.get("pretraining_supported")
+        is not pretraining_supported
+        or initialization_selection.get("pretraining_evaluated")
+        is not pretraining_evaluated
+        or initialization_selection.get("ordered_initialization_ids")
+        != list(ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS)
+        or initialization_selection.get("selected_initialization_id")
+        != expected_initialization_id
+        or initialization_selection.get("selected_candidate_id") != expected_winner
+        or initialization_selection.get("selected_feature_view")
+        != expected_feature_view
+        or initialization_selection.get("selected_tuning_metrics")
+        != initialization_metrics[expected_initialization_id]
+        or initialization_selection.get("required_paired_capture_run_count")
+        != initialization_required_runs
+        or initialization_selection.get("minimum_mean_proper_loss_improvement")
+        != expected_initialization_improvement
+        or initialization_selection.get(
+            "maximum_permitted_paired_run_loss_degradation"
+        )
+        != expected_initialization_improvement
+        or initialization_selection.get("promotion_report")
+        != expected_initialization_promotion_report
+        or initialization_selection.get("training_features_only") is not True
+        or initialization_selection.get(
+            "supervised_targets_used_by_pretraining"
+        )
+        is not False
+        or initialization_selection.get("tuning_features_used_by_pretraining")
+        is not False
+        or initialization_selection.get("tuning_targets_used_by_pretraining")
+        is not False
+        or initialization_selection.get("calibration_data_used_by_pretraining")
+        is not False
+        or initialization_selection.get("test_data_used_by_pretraining") is not False
+        or initialization_selection.get("random_default_on_gate_failure")
+        is not True
+        or initialization_selection.get(
+            "statistical_independence_or_significance_claim"
+        )
+        is not False
+        or initialization_selection.get("backtest_metric_used_for_selection")
+        is not False
+    ):
+        raise ValueError("Round 74 pretest initialization selection differs")
     if (
         set(selection)
         != {
@@ -3608,7 +4021,7 @@ def load_round74_pretest_policy(
         or selection.get("selected_tuning_metrics")
         != architecture_selected_report.get("ensemble_tuning_metrics")
         or artifact.get("prediction_sha256")
-        != selected_feature_report.get("ensemble_prediction_sha256")
+        != selected_initialization_report.get("ensemble_prediction_sha256")
         or _SHA256.fullmatch(str(artifact.get("prediction_sha256", ""))) is None
         or artifact.get("header_metadata_omitted_for_byte_stability") is not True
         or artifact.get("media_type") != "application/x-safetensors"
