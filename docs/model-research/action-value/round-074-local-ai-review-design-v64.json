@@ -1,0 +1,177 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v64",
+  "artifact_kind": "disjoint_ai_qualification_tuning_population",
+  "created_utc": "2026-07-28T21:17:51.4432370Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v63.json",
+    "file_sha256": "4cafbde811cf7dfd6d1a68aed9ecc9b2647c17274ac3e61d5bb54f63cc1f1b86",
+    "design_sha256": "ccd6213af1847b46ea11c0dbb04dcb2007c1919d64c856a20478b0807ba7696b",
+    "unchanged_except_declared_delta": true
+  },
+  "implementation_git_commit": "acb28d96ece7629b78ebd19488d0f79fd06cdb24",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "ai_uplift_path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+    "ai_uplift_sha256": "b5ee469757f12cf88d7597012d0500b4599025494f3d2b3f0f47854f5ce2b321",
+    "sealed_ledger_path": "src/simple_ai_trading/impact_absorption_event_sealed_ledger.py",
+    "sealed_ledger_sha256": "0f9c79504ab23013de8195dd96da3f0c3aca636f10e447619996e15f32236a3a",
+    "segmented_model_operator_path": "src/simple_ai_trading/round74_segmented_model_operator.py",
+    "segmented_model_operator_sha256": "7c050db6f7d904c4a48b1cfe295f61b72dcbc917163c7aaf45175f9ee7670613",
+    "ai_uplift_test_path": "tests/test_impact_absorption_ai_uplift.py",
+    "ai_uplift_test_sha256": "cb188a2cc81664ea8547058edffb36a67205347394b135bb319401f6c0466d27",
+    "sealed_ledger_test_path": "tests/test_impact_absorption_event_sealed_ledger.py",
+    "sealed_ledger_test_sha256": "3ee67e65112c6d89be6d3efec3e9128a50dbcd902f16317c7acff4fc61033cfd",
+    "segmented_model_operator_test_path": "tests/test_round74_segmented_model_operator.py",
+    "segmented_model_operator_test_sha256": "6a078f0f2267cdb1f697075a2a1ac9e2fe5bd2108676f358e70ca98482b60d0c"
+  },
+  "declared_delta": {
+    "ai_uplift_schema_version": "round-074-ai-uplift-development-v10",
+    "ai_qualification_population_schema_version": "round-074-ai-qualification-population-v1",
+    "segmented_tuning_subpartition_schema_version": "round-074-segmented-tuning-subpartition-v2",
+    "segmented_model_selection_stage_schema_version": "round-074-segmented-model-selection-stages-v2",
+    "ai_qualification_uses_policy_selection_runs": false,
+    "ai_qualification_uses_calibration_runs": false,
+    "ai_qualification_uses_model_selection_runs": false,
+    "ai_qualification_uses_sealed_test_runs": false,
+    "qualification_threshold_reselected": false,
+    "qualification_candidate_hashes_are_population_specific": true,
+    "qualification_population_hash_embedded_in_each_model_report": true,
+    "both_model_reports_must_bind_the_same_population": true,
+    "model_prompt_or_runtime_changed": false,
+    "sealed_test_consumed": false
+  },
+  "tuning_assignment": {
+    "assignment_basis": "immutable_scheduled_slot_ordinal_ranges",
+    "target_feature_model_output_or_pnl_used_for_assignment": false,
+    "tuning_slot_bounds": [
+      514,
+      557,
+      579,
+      600,
+      617
+    ],
+    "scheduled_subroles": [
+      {
+        "name": "model_selection",
+        "scheduled_slots": 43,
+        "weight": 10
+      },
+      {
+        "name": "probability_and_risk_calibration",
+        "scheduled_slots": 22,
+        "weight": 5
+      },
+      {
+        "name": "ml_action_policy_selection",
+        "scheduled_slots": 21,
+        "weight": 5
+      },
+      {
+        "name": "ai_overlay_qualification",
+        "scheduled_slots": 17,
+        "weight": 4
+      }
+    ],
+    "transport_exclusion_reassigns_subrole": false,
+    "cross_subrole_run_reuse_permitted": false,
+    "all_admitted_tuning_segments_must_be_accounted_for": true,
+    "eligible_anchor_duration_floor_scaled_by_same_weights": true
+  },
+  "ai_qualification_contract": {
+    "parent_tuning_subpartition_sha256_required": true,
+    "all_prior_tuning_run_ids_and_slot_ordinals_bound": true,
+    "ai_run_ids_slot_ordinals_and_eligible_durations_bound": true,
+    "prior_and_ai_run_ids_must_be_unique": true,
+    "prior_and_ai_slot_ordinals_must_be_strictly_chronological": true,
+    "frozen_action_threshold_applied_to_ai_population": true,
+    "baseline_trace_expected_runs_equal_ai_population_runs": true,
+    "ml_policy_runs_must_be_in_prior_population": true,
+    "ml_policy_and_ai_population_overlap_rejected": true,
+    "ai_population_and_sealed_test_overlap_rejected_before_ledger_creation": true,
+    "execution_basis": "exact_latency_adjusted_level_2_replay",
+    "ai_action_authority": "retain_reduce_or_veto_only",
+    "existing_development_financial_and_subgroup_gates_preserved": true,
+    "development_model_ranking_or_selection_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "A Reality Check for Data Snooping",
+      "url": "https://doi.org/10.1111/1468-0262.00152",
+      "use": "repeated adaptive evaluation on the same outcomes inflates apparent strategy performance"
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "use": "investment-strategy selection requires explicit control of selection reuse and degradation"
+    },
+    {
+      "title": "Spurious Predictability in Financial Machine Learning",
+      "url": "https://arxiv.org/abs/2604.15531",
+      "use": "motivates falsification of complete adaptive workflows and disjoint evaluation after specification search"
+    },
+    {
+      "title": "Financial Language Model Evaluation",
+      "url": "https://aclanthology.org/2025.findings-acl.1164/",
+      "use": "generic finance-language benchmarks are not substitutes for task-specific market evaluation"
+    }
+  ],
+  "live_ai_benchmark_attempt": {
+    "attempted_at_utc": "2026-07-28T21:15:04Z",
+    "benchmark_contract_version": "v10",
+    "predeclared_models": [
+      "qwen3:8b",
+      "fino1:8b"
+    ],
+    "status": "blocked_before_model_call",
+    "failure": "free system RAM 14.9 GiB was below the enforced 16.0 GiB minimum",
+    "safeguard_bypassed": false,
+    "model_calls_performed": 0,
+    "result_artifact_created": false,
+    "behavioral_score_available": false,
+    "market_uplift_evidence_created": false
+  },
+  "verification": {
+    "connected_contract_tests_passed": 108,
+    "four_way_tuning_assignment_tests_passed": true,
+    "qualification_population_round_trip_test_passed": true,
+    "policy_run_reuse_rejection_test_passed": true,
+    "sealed_test_overlap_rejection_test_passed": true,
+    "parent_tuning_identity_rejection_test_passed": true,
+    "existing_calibration_policy_sealed_and_ai_tests_passed": true,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_ai_market_evaluation_performed": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 25,
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_limits": {
+    "tests_use_synthetic_contract_fixtures": true,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "drawdown_claim": false
+  },
+  "status": {
+    "implementation_complete_for_declared_delta": true,
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "design_sha256": "6d3ecc96ce0ab25383ef717d3254c53bd0a4bfecce8bb1d0ea7d8db24e608545"
+}
