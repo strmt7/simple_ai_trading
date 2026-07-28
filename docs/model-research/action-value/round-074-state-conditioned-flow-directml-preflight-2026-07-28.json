@@ -1,0 +1,81 @@
+{
+  "schema_version": "round-074-state-conditioned-flow-directml-preflight-v1",
+  "implementation_git_commit": "88dabbd03197379eaf8d220a3329bb53d378fba2",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "feature_partition_path": "src/simple_ai_trading/impact_absorption_event_features.py",
+    "feature_partition_sha256": "7359b3d89c5cfd9e2f1a1f8f733116d28ad946725a0e133b9732832cee71f366",
+    "event_model_path": "src/simple_ai_trading/impact_absorption_event_model.py",
+    "event_model_sha256": "cdba697875d9394c42b60aa68812ac01cac6047c2a8f5411f46b4b551c55e73f",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_sha256": "d4c455615d1ebd11a32a4702567aa23d4a1d31d9b0933cad98aa37d17edf9b64",
+    "model_test_path": "tests/test_impact_absorption_event_model.py",
+    "model_test_sha256": "2c4cd8a205d06c3dec5ab33ac54b7235df62383e7ee721c48a557888c263f000",
+    "training_test_path": "tests/test_impact_absorption_event_training.py",
+    "training_test_sha256": "9b102dc297c38754d29b1591de770f9090ec6620c1a1edb8d69f354695cc7d8a",
+    "contract_test_path": "tests/test_round74_event_model_contract.py",
+    "contract_test_sha256": "2d1f07189dbbbdfe7b274bad97b188c521def88c613a6ad93c5f9ecf8dad584d"
+  },
+  "runtime": {
+    "verified_at_utc": "2026-07-28T18:32:36.9141822Z",
+    "backend_kind": "directml",
+    "backend_vendor": "AMD Radeon RX 9070 XT",
+    "device": "privateuseone:0",
+    "python_version": "3.12.10",
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914"
+  },
+  "probe": {
+    "candidate_id": "causal_event_tcn",
+    "state_conditioned_flow": true,
+    "rows": 2,
+    "sequence_length": 8,
+    "feature_count": 75,
+    "market_state_feature_count": 33,
+    "order_flow_feature_count": 31,
+    "clock_feature_count": 11,
+    "additional_parameter_count": 1054,
+    "gate_parameter_tensor_count": 2,
+    "causal_encoder_parameter_tensor_count": 32,
+    "forward_outputs_finite": true,
+    "backward_gradients_finite": true,
+    "gate_gradients_nonzero": true,
+    "cpu_fallback_warning_count": 0
+  },
+  "operator_harness_history": {
+    "attempt_count": 2,
+    "first_attempt_status": "failed_cpu_fallback_gate",
+    "first_attempt_reason": "index-select backward invoked unsupported DirectML index-add and fell back to CPU",
+    "first_attempt_forward_or_gradient_correctness_failure": false,
+    "implementation_changed_before_second_attempt": true,
+    "replacement": "fixed one-hot state selector and flow-to-original matrix multiplications",
+    "second_attempt_status": "passed",
+    "final_source_bound_pytest_started_at_utc": "2026-07-28T18:32:31.8342549Z",
+    "final_source_bound_pytest_status": "passed"
+  },
+  "verification": {
+    "neutral_initialization_exact_output_equivalence_tested_for_all_base_candidates": true,
+    "only_order_flow_columns_modulated": true,
+    "directml_forward_passed": true,
+    "directml_backward_passed": true,
+    "directml_cpu_fallback_observed_in_final_implementation": false,
+    "ruff_lint_passed": true,
+    "model_training_and_contract_test_count": 69,
+    "connected_operator_and_publisher_test_count": 45,
+    "full_cohort_training_performed": false,
+    "predictive_accuracy_evaluated": false,
+    "calibration_evaluated": false,
+    "financial_backtest_performed": false
+  },
+  "authority": {
+    "directml_operator_compatibility": true,
+    "interaction_promotion_authority": false,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
