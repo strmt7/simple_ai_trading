@@ -1,0 +1,219 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v84",
+  "created_at_utc": "2026-07-28T11:37:22Z",
+  "implementation_git_commit": "f9de76aabe47f7cf36c9ca21d1462562c0b05a97",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v83.json",
+    "file_sha256": "87a1b97e85eaa2993fb4a3f314a061948c3beba9d46207e0bb4ace168cc71f88",
+    "design_sha256": "9dffc66a9c82f7267124b0029cc689141c1e3fa24680ec6b8004a6169a5259f4",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "action_policy": {
+      "path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+      "sha256": "f424c2741a0b5d3adcef6a93b6f1bc1a4684b10a531d9b941f6107cbd843aebb",
+      "schema_version": "round-074-action-policy-v13"
+    },
+    "calibration": {
+      "path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+      "sha256": "7e4410a08449013dab5b02c666cd9fb1a2d019927e84c23905eb84ed6706898f",
+      "tuning_subpartition_schema_version": "round-074-tuning-subpartition-v1",
+      "temperature_calibration_schema_version": "round-074-temperature-calibration-v4",
+      "risk_quantile_calibration_schema_version": "round-074-risk-quantile-calibration-v2"
+    },
+    "sealed_evaluation": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "420167c2010a1bf7bca56959f89ac63d9e4603d1c048af0f9988873443dc113b",
+      "schema_version": "round-074-sealed-evaluation-v14",
+      "target_free_inference_schema_version": "round-074-target-free-candidate-inference-v2"
+    },
+    "sealed_ledger": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_ledger.py",
+      "sha256": "02d734b30ce1c072903c79eba6a38328da3cf5e2d663dc1e904d4771ff7da883",
+      "schema_version": "round-074-sealed-ledger-v2",
+      "claim_schema_version": "round-074-sealed-claim-v2",
+      "identity_schema_version": "round-074-sealed-dataset-identity-v2"
+    },
+    "training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "854b8adba30fdf2beaa53d4817902ee80a0a185090ebfb3853cf97718f5301fd",
+      "schema_version": "round-074-event-training-v20",
+      "pretest_policy_schema_version": "round-074-event-pretest-policy-v19"
+    },
+    "event_model_operator": {
+      "path": "src/simple_ai_trading/round74_event_model_operator.py",
+      "sha256": "c65535aefa9d3a21c32bb160a5f206d0beae68f0348e89197471979a1de795a4"
+    },
+    "segmented_model_operator": {
+      "path": "src/simple_ai_trading/round74_segmented_model_operator.py",
+      "sha256": "eb2947ed8811a51cf00a5dc801f333ca7f7abbe16473624e8df01f3da785305a",
+      "tuning_subpartition_schema_version": "round-074-segmented-tuning-subpartition-v1",
+      "test_population_schema_version": "round-074-segmented-test-population-v1"
+    },
+    "tests": [
+      {
+        "path": "tests/test_impact_absorption_event_action_policy.py",
+        "sha256": "735d75a9b13a64dc12e4d5543843b251696609c8dd80a4058c59062f49c4ffdb"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_calibration.py",
+        "sha256": "0784829978fc5aee3eb45edbf0af78b61012272b0fa0610186cf610790f1a9ab"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+        "sha256": "489b21016f6b31828e90aa1294093130eebc07edc0cd4f8d95d8c77933e580d5"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_training.py",
+        "sha256": "e61e1b682b9fe7e27e388a9a0addf96c1ae7677ff5ef81e9868d9d783516e242"
+      },
+      {
+        "path": "tests/test_round74_segmented_model_operator.py",
+        "sha256": "f5e09d154f4072c07b40554aa63da943634a23acef54ee38a55053c35fd2a0ec"
+      }
+    ]
+  },
+  "research_basis": [
+    {
+      "title": "Representation Learning for Time Series Forecasting: An Empirical Evaluation",
+      "url": "https://doi.org/10.48550/arXiv.2505.02139",
+      "bounded_use": "Reported representation and autocorrelation behavior motivates causal multiscale features; it does not validate this implementation or establish a market edge."
+    },
+    {
+      "title": "A Benchmark Study For Limit Order Book Models and Time Series Forecasting Models on LOB Data",
+      "url": "https://openreview.net/forum?id=MhD9rLeU31",
+      "bounded_use": "Reported transfer gaps across assets motivate symbol-conditional evaluation and complete BTC, ETH, and SOL panels."
+    },
+    {
+      "title": "LOB-Bench: A Benchmark for Generative AI Models in Finance",
+      "url": "https://proceedings.mlr.press/v267/nagy25a.html",
+      "bounded_use": "Order-book realism and downstream evaluation motivate preserving prospective event sequences and execution-aware financial gates."
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "bounded_use": "Predetermined tuning subroles and a sealed test population prevent model, calibration, and policy choices from using test outcomes."
+    }
+  ],
+  "segmented_population_contract": {
+    "campaign_plan_path": "docs/model-research/action-value/round-074-segmented-event-cohort-plan-v3.json",
+    "scheduled_slot_count": 720,
+    "training_scheduled_slot_bounds": [
+      0,
+      514
+    ],
+    "tuning_scheduled_slot_bounds": [
+      514,
+      617
+    ],
+    "test_scheduled_slot_bounds": [
+      617,
+      720
+    ],
+    "scheduled_training_slot_count": 514,
+    "scheduled_tuning_slot_count": 103,
+    "scheduled_test_slot_count": 103,
+    "all_admitted_segments_in_each_role_required": true,
+    "transport_exclusions_are_permanent": true,
+    "excluded_slots_are_not_shifted_or_replaced": true,
+    "post_hoc_target_dependent_slot_selection_permitted": false,
+    "post_hoc_model_dependent_slot_selection_permitted": false,
+    "post_hoc_pnl_dependent_slot_selection_permitted": false,
+    "population_identity_hash_bound": true,
+    "missing_expected_admitted_segment_fails_closed": true
+  },
+  "target_blind_tuning_subpartition": {
+    "assignment_key": "scheduled_slot_ordinal",
+    "model_selection_scheduled_slot_bounds": [
+      514,
+      566
+    ],
+    "calibration_scheduled_slot_bounds": [
+      566,
+      592
+    ],
+    "policy_selection_scheduled_slot_bounds": [
+      592,
+      617
+    ],
+    "scheduled_model_selection_slot_count": 52,
+    "scheduled_calibration_slot_count": 26,
+    "scheduled_policy_selection_slot_count": 25,
+    "minimum_model_selection_eligible_anchor_ns": 39474000000000,
+    "minimum_calibration_eligible_anchor_ns": 19737000000000,
+    "minimum_policy_selection_eligible_anchor_ns": 19737000000000,
+    "all_admitted_tuning_segment_bindings_required": true,
+    "subpartition_is_reloadable_and_hash_bound": true,
+    "target_columns_used_for_assignment": false,
+    "model_outputs_used_for_assignment": false,
+    "financial_outcomes_used_for_assignment": false
+  },
+  "dynamic_downstream_contract": {
+    "legacy_capture_run_contract_preserved": true,
+    "segmented_training_complexity_gate_uses_complete_model_selection_population": true,
+    "segmented_calibration_uses_complete_calibration_population": true,
+    "segmented_action_policy_uses_complete_policy_selection_population": true,
+    "segmented_sealed_evaluation_uses_complete_test_population": true,
+    "calibration_fit_counts_must_reconcile_to_outer_population": true,
+    "risk_calibration_counts_must_reconcile_to_outer_population": true,
+    "action_minimum_trade_and_active_counts_scale_from_policy_population": true,
+    "sealed_financial_thresholds_scale_from_test_to_policy_population_ratio": true,
+    "sealed_bootstrap_unit": "whole_prospective_test_segment",
+    "sealed_ai_pair_count_equals_test_segment_count": true,
+    "sealed_ai_noninferiority_and_bonferroni_controls_changed": false,
+    "float32_declared_temperature_endpoint_is_clamped_to_exact_bound": true,
+    "sealed_test_rows_accessed_during_development": false
+  },
+  "sealed_ledger_contract": {
+    "optimization_population_sha256_persisted": true,
+    "test_population_sha256_persisted": true,
+    "expected_test_segment_ids_required": true,
+    "dataset_access_population_cross_checks_required": true,
+    "final_claim_population_cross_checks_required": true,
+    "legacy_v1_migration_supported": true,
+    "legacy_population_identity_derived_only_for_valid_exact_24_run_rows": true,
+    "unknown_or_inconsistent_legacy_population_fails_closed": true
+  },
+  "verification": {
+    "connected_synthetic_tests_passed": 87,
+    "segmented_dynamic_tuning_test_population": {
+      "model_selection_segments": 45,
+      "calibration_segments": 23,
+      "policy_selection_segments": 23
+    },
+    "segmented_dynamic_test_segments": 90,
+    "missing_segment_rejection_test_passed": true,
+    "legacy_contract_regression_tests_passed": true,
+    "sealed_ledger_v1_database_migration_test_passed": true,
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false
+  },
+  "evidence_boundary": {
+    "synthetic_data_only": true,
+    "real_prospective_cohort_capture_active_but_not_used_for_model_evaluation": true,
+    "real_cohort_training_performed": false,
+    "financial_backtest_performed": false,
+    "profitability_or_edge_inference_permitted": false,
+    "drawdown_inference_permitted": false,
+    "ai_model_evaluated": false,
+    "ai_uplift_inference_permitted": false
+  },
+  "authority": {
+    "segmented_population_integration_implementation": true,
+    "target_blind_tuning_subpartition_implementation": true,
+    "sealed_test_population_identity_implementation": true,
+    "legacy_ledger_migration_implementation": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "f7d256120bfaef6d518ee6a12f256a9559ffbd0e11b0adfaba62ba46857a7f04"
+}
