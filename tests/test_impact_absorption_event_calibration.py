@@ -65,19 +65,31 @@ def _tuning_subpartition() -> Round74TuningSubpartition:
 
 
 def _segmented_tuning_subpartition() -> Round74SegmentedTuningSubpartition:
-    run_ids = tuple(f"{index:032x}" for index in range(100, 191))
+    run_ids = tuple(f"{index:032x}" for index in range(100, 193))
+    model_ordinals = tuple(
+        ordinal for ordinal in range(514, 557) if ordinal not in {520, 530, 545}
+    )
+    calibration_ordinals = tuple(
+        ordinal for ordinal in range(557, 579) if ordinal not in {565, 566, 567}
+    )
+    policy_ordinals = tuple(
+        ordinal for ordinal in range(579, 600) if ordinal not in {589, 590}
+    )
     result = Round74SegmentedTuningSubpartition(
         parent_partition_sha256="1" * 64,
         cohort_plan_sha256="2" * 64,
-        model_selection_run_ids=run_ids[:45],
-        calibration_run_ids=run_ids[45:68],
-        policy_selection_run_ids=run_ids[68:],
-        model_selection_slot_ordinals=tuple(range(514, 559)),
-        calibration_slot_ordinals=tuple(range(566, 589)),
-        policy_selection_slot_ordinals=tuple(range(592, 615)),
-        model_selection_eligible_anchor_ns=(900_000_000_000,) * 45,
-        calibration_eligible_anchor_ns=(900_000_000_000,) * 23,
-        policy_selection_eligible_anchor_ns=(900_000_000_000,) * 23,
+        model_selection_run_ids=run_ids[:40],
+        calibration_run_ids=run_ids[40:59],
+        policy_selection_run_ids=run_ids[59:78],
+        ai_qualification_run_ids=run_ids[78:],
+        model_selection_slot_ordinals=model_ordinals,
+        calibration_slot_ordinals=calibration_ordinals,
+        policy_selection_slot_ordinals=policy_ordinals,
+        ai_qualification_slot_ordinals=tuple(range(600, 615)),
+        model_selection_eligible_anchor_ns=(900_000_000_000,) * 40,
+        calibration_eligible_anchor_ns=(900_000_000_000,) * 19,
+        policy_selection_eligible_anchor_ns=(900_000_000_000,) * 19,
+        ai_qualification_eligible_anchor_ns=(900_000_000_000,) * 15,
     )
     result.validate()
     return result
@@ -457,11 +469,11 @@ def test_segmented_calibration_uses_every_frozen_calibration_segment() -> None:
     )
 
     assert calibration.calibration_run_ids == subpartition.calibration_run_ids
-    assert calibration.positive_payoff.calibration_runs == 23
-    assert calibration.adverse_selection.calibration_runs == 23
-    assert calibration.regime_unpredictability.calibration_runs == 23
+    assert calibration.positive_payoff.calibration_runs == 19
+    assert calibration.adverse_selection.calibration_runs == 19
+    assert calibration.regime_unpredictability.calibration_runs == 19
     assert calibration.risk_quantiles is not None
-    assert calibration.risk_quantiles.calibration_runs == 23
+    assert calibration.risk_quantiles.calibration_runs == 19
     assert Round74ProbabilityCalibration.from_dict(calibration.as_dict()) == calibration
 
 

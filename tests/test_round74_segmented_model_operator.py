@@ -6,6 +6,9 @@ import hashlib
 import numpy as np
 import pytest
 
+from simple_ai_trading.impact_absorption_ai_uplift import (
+    Round74AIQualificationPopulation,
+)
 from simple_ai_trading.impact_absorption_event_dataset import (
     Round74EventRunPartition,
     Round74EventRunPartitionEntry,
@@ -28,6 +31,7 @@ from simple_ai_trading.round74_segmented_model_operator import (
     Round74SegmentedTestPopulation,
     Round74SegmentedTrainingSplit,
     Round74SegmentedTuningSubpartition,
+    build_round74_segmented_ai_qualification_population,
     build_round74_segmented_model_selection_stages,
     build_round74_segmented_test_population,
     build_round74_segmented_training_split,
@@ -106,20 +110,22 @@ def _segmented_tuning_partition() -> tuple[
     Round74EventRunPartition,
     dict[str, Round74SegmentedCohortRunBinding],
 ]:
-    model_ordinals = (
-        *range(514, 523),
-        *range(525, 534),
-        *range(535, 544),
-        *range(546, 555),
-        *range(556, 565),
+    model_ordinals = tuple(
+        ordinal for ordinal in range(514, 557) if ordinal not in {520, 530, 545}
     )
-    calibration_ordinals = tuple(range(566, 589))
-    policy_ordinals = tuple(range(592, 615))
+    calibration_ordinals = tuple(
+        ordinal for ordinal in range(557, 579) if ordinal not in {565, 566, 567}
+    )
+    policy_ordinals = tuple(
+        ordinal for ordinal in range(579, 600) if ordinal not in {589, 590}
+    )
+    ai_qualification_ordinals = tuple(range(600, 615))
     scheduled = (
         (0, "training"),
         *((ordinal, "tuning") for ordinal in model_ordinals),
         *((ordinal, "tuning") for ordinal in calibration_ordinals),
         *((ordinal, "tuning") for ordinal in policy_ordinals),
+        *((ordinal, "tuning") for ordinal in ai_qualification_ordinals),
         (617, "test"),
     )
     entries: list[Round74EventRunPartitionEntry] = []
@@ -513,14 +519,16 @@ def test_segmented_tuning_subroles_include_every_admitted_scheduled_segment() ->
     payload = selected.as_dict()
 
     assert isinstance(selected, Round74SegmentedTuningSubpartition)
-    assert len(selected.model_selection_run_ids) == 45
-    assert len(selected.calibration_run_ids) == 23
-    assert len(selected.policy_selection_run_ids) == 23
-    assert payload["scheduled_subrole_counts"] == [52, 26, 25]
+    assert len(selected.model_selection_run_ids) == 40
+    assert len(selected.calibration_run_ids) == 19
+    assert len(selected.policy_selection_run_ids) == 19
+    assert len(selected.ai_qualification_run_ids) == 15
+    assert payload["scheduled_subrole_counts"] == [43, 22, 21, 17]
     assert payload["observed_eligible_anchor_ns"] == [
-        40_500_000_000_000,
-        20_700_000_000_000,
-        20_700_000_000_000,
+        36_000_000_000_000,
+        17_100_000_000_000,
+        17_100_000_000_000,
+        13_500_000_000_000,
     ]
     assert payload["all_admitted_tuning_segments_included"]
     assert not payload["cross_subrole_run_reuse_permitted"]
@@ -531,9 +539,22 @@ def test_segmented_tuning_subroles_include_every_admitted_scheduled_segment() ->
             *selected.model_selection_run_ids,
             *selected.calibration_run_ids,
             *selected.policy_selection_run_ids,
+            *selected.ai_qualification_run_ids,
         )
     ) == set(bindings)
     assert Round74SegmentedTuningSubpartition.from_dict(payload) == selected
+    ai_population = build_round74_segmented_ai_qualification_population(selected)
+    assert ai_population.run_ids == selected.ai_qualification_run_ids
+    assert ai_population.slot_ordinals == selected.ai_qualification_slot_ordinals
+    assert ai_population.prior_run_ids == (
+        *selected.model_selection_run_ids,
+        *selected.calibration_run_ids,
+        *selected.policy_selection_run_ids,
+    )
+    assert (
+        Round74AIQualificationPopulation.from_dict(ai_population.as_dict())
+        == ai_population
+    )
 
     tampered = dict(payload)
     tampered["sealed_test_run_accessed"] = True
@@ -561,11 +582,11 @@ def test_segmented_model_selection_stages_are_disjoint_and_target_blind() -> Non
 
     assert isinstance(selected, Round74SegmentedModelSelectionStages)
     assert payload["stage_order"] == list(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
-    assert payload["scheduled_slot_bounds"] == [514, 525, 535, 546, 556, 566]
-    assert payload["required_eligible_anchor_ns_per_stage"] == 7_894_800_000_000
-    assert [len(run_ids) for run_ids in selected.stage_run_ids] == [9, 9, 9, 9, 9]
+    assert payload["scheduled_slot_bounds"] == [514, 523, 532, 540, 549, 557]
+    assert payload["required_eligible_anchor_ns_per_stage"] == 6_579_000_000_000
+    assert [len(run_ids) for run_ids in selected.stage_run_ids] == [8, 8, 8, 8, 8]
     assert [sum(durations) for durations in selected.stage_eligible_anchor_ns] == [
-        8_100_000_000_000
+        7_200_000_000_000
     ] * 5
     assert (
         tuple(run_id for run_ids in selected.stage_run_ids for run_id in run_ids)

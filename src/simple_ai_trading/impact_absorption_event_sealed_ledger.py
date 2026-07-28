@@ -800,6 +800,9 @@ class Round74SealedEvaluationLedger:
             raise ValueError("Round 74 sealed optimization population differs")
         ai_pretest_qualification.validate()
         manifests = ai_pretest_qualification.model_manifest_sha256
+        qualification_population = ai_pretest_qualification.development_reports[
+            0
+        ].qualification_population
         if not ai_pretest_qualification.qualification_passed:
             raise ValueError("Round 74 sealed AI pretest qualification did not pass")
         if (
@@ -810,10 +813,14 @@ class Round74SealedEvaluationLedger:
             or ai_pretest_qualification.probability_calibration_sha256
             != action_selection.probability_calibration_sha256
             or ai_pretest_qualification.profile != action_selection.profile
+            or qualification_population.parent_tuning_subpartition_sha256
+            != action_selection.tuning_subpartition_sha256
         ):
             raise ValueError(
                 "Round 74 sealed AI pretest qualification identity differs"
             )
+        if set(qualification_population.run_ids).intersection(identity.test_run_ids):
+            raise ValueError("Round 74 sealed AI qualification reused test runs")
         if len(manifests) != 2 or len(set(manifests)) != 2:
             raise ValueError("Round 74 sealed AI manifest panel differs")
         qualification_sha256 = ai_pretest_qualification.qualification_sha256
