@@ -1,0 +1,54 @@
+{
+  "schema_version": "round-074-segmented-scheduler-correction-evidence-v1",
+  "recorded_at_utc": "2026-07-28T15:32:31.5738203Z",
+  "campaign": {
+    "plan_schema_version": "round-074-segmented-event-cohort-plan-v3",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "scheduled_task": "SimpleAITrading-Round74-Segmented-v3",
+    "slot_period_seconds": 1500,
+    "capture_duration_seconds": 1200,
+    "source_files_changed": false,
+    "plan_file_changed": false
+  },
+  "trigger": {
+    "slot_ordinal": 17,
+    "capture_run_id": "7807974d2aaa45599f51a5838ffb275a",
+    "capture_terminal_status": "completed",
+    "capture_message_count": 2484909,
+    "capture_database_growth_bytes": 117702656,
+    "capture_stdout_present": true,
+    "normal_result_present": false,
+    "task_scheduler_last_result": 267014,
+    "classification": "task_scheduler_hard_limit_during_post_capture_adjudication",
+    "slot_admission_claim": false,
+    "slot_exclusion_claim": false,
+    "exact_recovery_required": true
+  },
+  "scheduler_change": {
+    "execution_time_limit_before": "PT24M",
+    "execution_time_limit_after": "PT24M50S",
+    "multiple_instances_before": "IgnoreNew",
+    "multiple_instances_after": "IgnoreNew",
+    "after_limit_is_below_slot_period": true,
+    "task_state_after_update": "Running",
+    "current_running_instance_behavior_claim": false,
+    "future_definition_update_confirmed": true
+  },
+  "safety_rationale": [
+    "The prior 24-minute hard limit could terminate an exact audit after a completed 20-minute capture and before a terminal outcome was persisted.",
+    "The corrected hard limit remains ten seconds below the 25-minute slot period.",
+    "IgnoreNew remains active, so the scheduler cannot intentionally launch a second campaign wrapper while one is still running.",
+    "This scheduler correction does not retry, shift, admit, exclude, or otherwise relabel any slot."
+  ],
+  "authority": {
+    "slot_017_eligible_for_training": false,
+    "slot_017_eligible_for_calibration": false,
+    "slot_017_eligible_for_policy_selection": false,
+    "slot_017_eligible_for_test": false,
+    "model_training_performed": false,
+    "profitability_or_edge_claim": false,
+    "orders_submitted": false,
+    "credentials_used": false,
+    "trading_authority": false
+  }
+}
