@@ -264,7 +264,7 @@ def _run(repository: Path) -> dict[str, object]:
                 },
                 "peer_best_run_balanced_tuning_proper_loss": {
                     candidate_id: [
-                        peer["best_tuning_metrics"]["run_balanced_loss"]
+                        peer["best_early_stopping_metrics"]["run_balanced_loss"]
                         for peer in panel[candidate_id]["peer_reports"]
                     ]
                     for candidate_id in config.candidate_ids
