@@ -5,21 +5,6 @@ import json
 from pathlib import Path
 import subprocess  # nosec B404
 
-from simple_ai_trading.impact_absorption_event_model import (
-    ROUND74_EVENT_MODEL_CANDIDATES,
-    build_round74_event_model,
-)
-from simple_ai_trading.impact_absorption_event_sequence import (
-    ROUND74_EVENT_CLOCK_PERIODS_SECONDS,
-    ROUND74_EVENT_FEATURE_NAMES,
-    ROUND74_EVENT_FEATURE_NAMES_SHA256,
-    ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_scaling import (
-    ROUND74_EVENT_BINARY_FEATURE_COUNT,
-    ROUND74_EVENT_SCALER_SCHEMA_VERSION,
-)
-
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 DESIGN_PATH = (
@@ -29,6 +14,20 @@ DESIGN_PATH = (
     / "action-value"
     / "round-074-event-sequence-model-design-v86.json"
 )
+V86_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v5"
+V86_EVENT_FEATURE_COUNT = 75
+V86_EVENT_FEATURE_NAMES_SHA256 = (
+    "1487503fff95883204aa0a34a8141a126d72300f85cc0d72d005144a5f2d225e"
+)
+V86_EVENT_SCALER_SCHEMA_VERSION = "round-074-event-feature-scaler-v5"
+V86_BINARY_FEATURE_COUNT = 11
+V86_CLOCK_PERIODS_SECONDS = (60, 300, 900)
+V86_MODEL_PARAMETER_COUNTS = {
+    "event_pooling_linear": 22600,
+    "event_pooling_mlp": 43684,
+    "causal_event_tcn": 131108,
+    "causal_event_attention": 154180,
+}
 
 
 def _canonical_sha256(value: object) -> str:
@@ -70,19 +69,16 @@ def test_round74_v86_binds_causal_exchange_clock_features() -> None:
     for test in source["tests"]:
         assert test["sha256"] == _git_file_sha256(commit, test["path"])
 
-    assert sequence["schema_version"] == ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
-    assert sequence["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 75
-    assert sequence["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
-    assert scaler["schema_version"] == ROUND74_EVENT_SCALER_SCHEMA_VERSION
+    assert sequence["schema_version"] == V86_EVENT_SEQUENCE_SCHEMA_VERSION
+    assert sequence["feature_count"] == V86_EVENT_FEATURE_COUNT
+    assert sequence["feature_names_sha256"] == V86_EVENT_FEATURE_NAMES_SHA256
+    assert scaler["schema_version"] == V86_EVENT_SCALER_SCHEMA_VERSION
     assert (
         scaler["binary_feature_count"]
         == feature_contract["binary_feature_count_after"]
-        == ROUND74_EVENT_BINARY_FEATURE_COUNT
-        == 11
+        == V86_BINARY_FEATURE_COUNT
     )
-    assert tuple(feature_contract["periods_seconds"]) == (
-        ROUND74_EVENT_CLOCK_PERIODS_SECONDS
-    )
+    assert tuple(feature_contract["periods_seconds"]) == V86_CLOCK_PERIODS_SECONDS
     assert feature_contract["phase_resolution"] == "exchange event milliseconds"
     assert feature_contract["host_received_wall_time_used_for_clock_phase"] is False
     assert feature_contract["feature_available_only_after_event_receipt"] is True
@@ -93,14 +89,7 @@ def test_round74_v86_binds_causal_exchange_clock_features() -> None:
         feature_contract["robust_scaler_may_standardize_opening_indicators"] is False
     )
 
-    parameter_counts = {
-        candidate_id: sum(
-            parameter.numel()
-            for parameter in build_round74_event_model(candidate_id).parameters()
-        )
-        for candidate_id in ROUND74_EVENT_MODEL_CANDIDATES
-    }
-    assert delta["model_parameter_counts_after"] == parameter_counts
+    assert delta["model_parameter_counts_after"] == V86_MODEL_PARAMETER_COUNTS
     assert delta["feature_ablation_required_before_selection"] is True
     assert delta["automatic_candidate_promotion_permitted"] is False
     assert design["evidence_boundary"]["financial_backtest_performed"] is False
