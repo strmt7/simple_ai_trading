@@ -75,6 +75,7 @@ from simple_ai_trading.round74_event_model_operator import (  # noqa: E402
     split_round74_tuning_batch_roles,
 )
 from simple_ai_trading.round74_segmented_model_operator import (  # noqa: E402
+    Round74SegmentedTrainingSplit,
     Round74SegmentedTuningSubpartition,
     round74_segmented_window_policy,
 )
@@ -824,7 +825,24 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
         )
         for index in range(160)
     )
-    with pytest.raises(ValueError, match="scaler provenance differs"):
+    split = Round74SegmentedTrainingSplit(
+        parent_partition_sha256="1" * 64,
+        cohort_plan_sha256="a" * 64,
+        optimization_run_ids=tuple(batch.run_id[0] for batch in training[:128]),
+        purged_run_ids=(),
+        early_stopping_run_ids=tuple(batch.run_id[0] for batch in training[128:]),
+        optimization_slot_ordinals=tuple(range(128)),
+        purged_slot_ordinals=(),
+        early_stopping_slot_ordinals=tuple(range(128, 160)),
+        optimization_last_eligible_anchor_wall_ns=int(
+            training[127].decision_wall_ns[-1]
+        ),
+        early_stopping_first_eligible_anchor_wall_ns=int(
+            training[128].decision_wall_ns[0]
+        ),
+    )
+    split.validate()
+    with pytest.raises(TypeError, match="training split is required"):
         train_and_seal_round74_pretest_policy_from_prepared_roles(
             training,
             roles,
@@ -833,12 +851,22 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
             config=config,
             feature_scaler=_scaler(),
         )
+    with pytest.raises(ValueError, match="scaler provenance differs"):
+        train_and_seal_round74_pretest_policy_from_prepared_roles(
+            training,
+            roles,
+            output_directory=tmp_path,
+            compute_backend="cpu",
+            config=config,
+            feature_scaler=_scaler(),
+            segmented_training_split=split,
+        )
     segmented_scaler = replace(
         _scaler(),
         fit_source_scope="segmented_optimization_training_runs",
         fit_source_run_ids=tuple(batch.run_id[0] for batch in training[:128]),
         fit_source_partition_sha256="1" * 64,
-        fit_source_selection_sha256="6" * 64,
+        fit_source_selection_sha256=split.split_sha256,
     )
     result = train_and_seal_round74_pretest_policy_from_prepared_roles(
         training,
@@ -847,6 +875,7 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
         compute_backend="cpu",
         config=config,
         feature_scaler=segmented_scaler,
+        segmented_training_split=split,
     )
 
     assert result is sentinel
@@ -879,7 +908,12 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
     assert protocol_payload["feature_scaler_fit_scope"] == (
         "segmented_optimization_training_runs_only"
     )
-    assert protocol_payload["feature_scaler_fit_selection_sha256"] == "6" * 64
+    assert (
+        protocol_payload["feature_scaler_fit_selection_sha256"]
+        == split.split_sha256
+    )
+    assert protocol_payload["training_split_sha256"] == split.split_sha256
+    assert protocol_payload["training_split"] == split.as_dict()
     assert protocol_payload["early_stopping_targets_used_for_gradient_updates"] is False
     assert protocol_payload["promotion_targets_used_for_checkpoint_selection"] is False
     assert protocol_payload["cross_stage_promotion_run_reuse_permitted"] is False
