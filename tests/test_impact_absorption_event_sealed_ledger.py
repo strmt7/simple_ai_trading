@@ -42,6 +42,7 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     round74_action_profile,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
+    ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     Round74ProbabilityCalibration,
     Round74TemperatureFit,
 )
@@ -254,6 +255,7 @@ def _calibration() -> Round74ProbabilityCalibration:
         regime_unpredictability=fit,
         backend_kind="cpu",
         backend_device="test",
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     )
     result.validate()
     return result

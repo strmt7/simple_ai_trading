@@ -65,9 +65,9 @@ from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 from .storage import write_bytes_atomic
 
 
-ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v3"
+ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v4"
 ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION = (
-    "round-074-development-policy-bundle-v4"
+    "round-074-development-policy-bundle-v5"
 )
 
 _SHA256 = "0123456789abcdef"
@@ -277,10 +277,8 @@ class Round74DevelopmentPolicyBundle:
             or len(self.model_selection_batch_sha256) != 12
             or len(self.calibration_batch_sha256) != 6
             or len(self.policy_selection_batch_sha256) != 6
-            or len(self.execution_outcome_panel_sha256)
-            != len(ROUND74_ACTION_PROFILES)
-            or len(self.execution_outcome_panel_rows)
-            != len(ROUND74_ACTION_PROFILES)
+            or len(self.execution_outcome_panel_sha256) != len(ROUND74_ACTION_PROFILES)
+            or len(self.execution_outcome_panel_rows) != len(ROUND74_ACTION_PROFILES)
             or len(set(self.execution_outcome_panel_sha256))
             != len(ROUND74_ACTION_PROFILES)
             or len(set(self.execution_outcome_panel_rows)) != 1
@@ -309,12 +307,8 @@ class Round74DevelopmentPolicyBundle:
             "event_model_module_sha256": self.event_model_module_sha256,
             "calibration_module_sha256": self.calibration_module_sha256,
             "action_policy_module_sha256": self.action_policy_module_sha256,
-            "decision_latency_module_sha256": (
-                self.decision_latency_module_sha256
-            ),
-            "delayed_execution_module_sha256": (
-                self.delayed_execution_module_sha256
-            ),
+            "decision_latency_module_sha256": (self.decision_latency_module_sha256),
+            "delayed_execution_module_sha256": (self.delayed_execution_module_sha256),
             "development_operator_module_sha256": (
                 self.development_operator_module_sha256
             ),
@@ -323,7 +317,8 @@ class Round74DevelopmentPolicyBundle:
         self.probability_calibration.validate()
         self.online_decision_latency.validate()
         if (
-            self.probability_calibration.pretest_policy_sha256
+            self.probability_calibration.risk_quantiles is None
+            or self.probability_calibration.pretest_policy_sha256
             != self.pretest_policy_sha256
             or self.probability_calibration.tuning_subpartition_sha256
             != self.tuning_subpartition_sha256
@@ -333,8 +328,7 @@ class Round74DevelopmentPolicyBundle:
             != self.pretest_policy_sha256
             or self.online_decision_latency.pretest_model_sha256
             != self.pretest_model_sha256
-            or self.online_decision_latency.scaler_sha256
-            != self.feature_scaler_sha256
+            or self.online_decision_latency.scaler_sha256 != self.feature_scaler_sha256
             or self.online_decision_latency.probability_calibration_sha256
             != self.probability_calibration.calibration_sha256
             or self.online_decision_latency.tuning_subpartition_sha256
@@ -413,9 +407,7 @@ class Round74DevelopmentPolicyBundle:
                 "event_model_module_sha256": self.event_model_module_sha256,
                 "calibration_module_sha256": self.calibration_module_sha256,
                 "action_policy_module_sha256": self.action_policy_module_sha256,
-                "decision_latency_module_sha256": (
-                    self.decision_latency_module_sha256
-                ),
+                "decision_latency_module_sha256": (self.decision_latency_module_sha256),
                 "delayed_execution_module_sha256": (
                     self.delayed_execution_module_sha256
                 ),
@@ -615,6 +607,7 @@ def _fit_calibration(
         )
 
     payoff = concatenate("net_payoff_bps")
+    maximum_adverse_excursion = concatenate("maximum_adverse_excursion_bps")
     return fit_round74_probability_calibration(
         positive_payoff_logits=combined.positive_payoff_logits,
         positive_payoff_labels=(payoff > 0.0).to(dtype=torch.float32),
@@ -624,6 +617,12 @@ def _fit_calibration(
         regime_unpredictability_logits=(combined.regime_unpredictability_logits),
         regime_unpredictability_labels=concatenate("regime_unpredictability"),
         regime_eligibility=concatenate("regime_unpredictability_eligibility"),
+        payoff_quantiles_bps=combined.payoff_quantiles_bps,
+        net_payoff_bps=payoff,
+        maximum_adverse_excursion_quantiles_bps=(
+            combined.maximum_adverse_excursion_quantiles_bps
+        ),
+        maximum_adverse_excursion_bps=maximum_adverse_excursion,
         row_run_ids=tuple(
             run_id for batch in selected_batches for run_id in batch.run_id
         ),
@@ -922,9 +921,7 @@ def train_calibrate_and_select_round74_development_policy(
         feature_scaler=prepared.scaler,
         execution_store=execution_store,
         execution_partition=execution_partition,
-        execution_target_assembly_by_run_id=(
-            execution_target_assembly_by_run_id
-        ),
+        execution_target_assembly_by_run_id=(execution_target_assembly_by_run_id),
         compute_backend=compute_backend,
         minibatch_rows=inference_minibatch_rows,
         optimization_population=optimization_population,

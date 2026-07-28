@@ -148,6 +148,7 @@ class _Calibration:
     tuning_subpartition_sha256 = _Subpartition.subpartition_sha256
     calibration_sha256 = _digest(702)
     optimization_population = "capture_run"
+    risk_quantiles = object()
 
     def validate(self) -> None:
         return None
@@ -181,9 +182,7 @@ class _Policy:
         return {
             "profile": self.profile,
             "target_batch_sha256": list(self.target_batch_sha256),
-            "execution_outcome_panel_sha256": (
-                self.execution_outcome_panel_sha256
-            ),
+            "execution_outcome_panel_sha256": (self.execution_outcome_panel_sha256),
         }
 
 
@@ -223,9 +222,7 @@ class _Latency:
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "pretest_model_sha256": self.pretest_model_sha256,
             "scaler_sha256": self.scaler_sha256,
-            "probability_calibration_sha256": (
-                self.probability_calibration_sha256
-            ),
+            "probability_calibration_sha256": (self.probability_calibration_sha256),
             "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
             "backend_kind": self.backend_kind,
             "backend_device": self.backend_device,
@@ -256,6 +253,7 @@ def _mock_execution_boundary(
     monkeypatch.setattr(subject, "Round74EventFeatureScaler", _Scaler)
     monkeypatch.setattr(subject, "Round74SourceTargetAssembly", _Assembly)
     monkeypatch.setattr(subject, "Round74OnlineDecisionLatencyEvidence", _Latency)
+
     def benchmark(
         _model: object,
         *,
@@ -271,12 +269,8 @@ def _mock_execution_boundary(
             pretest_policy_sha256=pretest_policy_sha256,
             pretest_model_sha256=pretest_model_sha256,
             scaler_sha256=str(scaler.scaler_sha256),
-            probability_calibration_sha256=str(
-                calibration.calibration_sha256
-            ),
-            tuning_subpartition_sha256=(
-                roles.subpartition.subpartition_sha256
-            ),
+            probability_calibration_sha256=str(calibration.calibration_sha256),
+            tuning_subpartition_sha256=(roles.subpartition.subpartition_sha256),
             backend_kind=str(backend.kind),
             backend_device=str(device),
             backend_vendor=str(backend.vendor),
@@ -298,8 +292,7 @@ def _mock_execution_boundary(
     )
     partition = _Partition(parent_partition_sha256)
     assemblies = {
-        run_id: _Assembly()
-        for run_id in roles.subpartition.policy_selection_run_ids
+        run_id: _Assembly() for run_id in roles.subpartition.policy_selection_run_ids
     }
     return _Scaler(), partition, assemblies
 
@@ -637,11 +630,11 @@ def test_round74_development_input_pipeline_prepares_roles_before_training(
         (
             "prepare",
             "read-only-store",
-                {
-                    "partition": inputs.partition,
-                    "target_assembly_by_run_id": {"run": "assembly"},
-                    "window_representation": "per_symbol",
-                },
+            {
+                "partition": inputs.partition,
+                "target_assembly_by_run_id": {"run": "assembly"},
+                "window_representation": "per_symbol",
+            },
         ),
         ("subpartition", inputs.partition),
         ("roles", prepared, {"subpartition": subpartition}),

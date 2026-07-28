@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
-from typing import Mapping
+from typing import Mapping, Sequence
 
 import numpy as np
 import torch
@@ -15,12 +15,23 @@ from torch.nn import functional as F
 from .impact_absorption_event_dataset import (
     Round74EventRunPartition,
 )
+from .impact_absorption_event_sequence import (
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+    ROUND74_EVENT_PAYOFF_QUANTILES,
+    ROUND74_EVENT_PAYOFF_SIDES,
+)
 
 
 ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION = "round-074-tuning-subpartition-v1"
-ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION = "round-074-temperature-calibration-v3"
+ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION = "round-074-temperature-calibration-v4"
 ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION = (
     "round-074-temperature-calibration-v2"
+)
+ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION = (
+    "round-074-temperature-calibration-v3"
+)
+ROUND74_RISK_QUANTILE_CALIBRATION_SCHEMA_VERSION = (
+    "round-074-risk-quantile-calibration-v1"
 )
 ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS = ("capture_run", "eligible_target")
 ROUND74_TUNING_EXPECTED_RUNS = 24
@@ -31,6 +42,8 @@ ROUND74_TEMPERATURE_MINIMUM = 0.05
 ROUND74_TEMPERATURE_MAXIMUM = 20.0
 ROUND74_TEMPERATURE_CANDIDATE_COUNT = 257
 ROUND74_TEMPERATURE_ECE_BINS = 20
+ROUND74_PAYOFF_LOWER_CALIBRATION_QUANTILES = (0.10, 0.25)
+ROUND74_MAE_UPPER_CALIBRATION_QUANTILE = 0.90
 
 
 def _canonical_json(value: object) -> str:
@@ -314,9 +327,328 @@ class Round74TemperatureFit:
         return selected
 
 
+def _risk_panel_shape() -> tuple[int, int]:
+    return (
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
+
+
+def _validate_risk_matrix(
+    value: Sequence[Sequence[float | int]],
+    *,
+    label: str,
+    integer: bool = False,
+) -> None:
+    horizons, sides = _risk_panel_shape()
+    if len(value) != horizons or any(len(row) != sides for row in value):
+        raise ValueError(f"Round 74 risk calibration {label} shape differs")
+    flattened = tuple(item for row in value for item in row)
+    if integer:
+        if any(
+            isinstance(item, bool) or not isinstance(item, int) or item < 1
+            for item in flattened
+        ):
+            raise ValueError(f"Round 74 risk calibration {label} differs")
+    elif any(
+        isinstance(item, bool)
+        or not isinstance(item, (int, float))
+        or not math.isfinite(float(item))
+        for item in flattened
+    ):
+        raise ValueError(f"Round 74 risk calibration {label} differs")
+
+
+@dataclass(frozen=True)
+class Round74RiskQuantileCalibration:
+    """One-sided calibration-run widening for deployed payoff and MAE tails."""
+
+    payoff_lower_offsets_bps: tuple[
+        tuple[tuple[float, float], ...],
+        ...,
+    ]
+    mae_upper_offsets_bps: tuple[tuple[float, ...], ...]
+    eligible_observations: tuple[tuple[int, ...], ...]
+    payoff_lower_empirical_coverage_before: tuple[
+        tuple[tuple[float, float], ...],
+        ...,
+    ]
+    payoff_lower_empirical_coverage_after: tuple[
+        tuple[tuple[float, float], ...],
+        ...,
+    ]
+    mae_upper_empirical_coverage_before: tuple[tuple[float, ...], ...]
+    mae_upper_empirical_coverage_after: tuple[tuple[float, ...], ...]
+    calibration_runs: int
+    optimization_population: str
+    schema_version: str = ROUND74_RISK_QUANTILE_CALIBRATION_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        horizons, sides = _risk_panel_shape()
+        lower_panels = (
+            self.payoff_lower_offsets_bps,
+            self.payoff_lower_empirical_coverage_before,
+            self.payoff_lower_empirical_coverage_after,
+        )
+        if (
+            self.schema_version != ROUND74_RISK_QUANTILE_CALIBRATION_SCHEMA_VERSION
+            or self.optimization_population
+            not in ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS
+            or isinstance(self.calibration_runs, bool)
+            or self.calibration_runs != ROUND74_TUNING_CALIBRATION_RUNS
+            or any(len(panel) != horizons for panel in lower_panels)
+            or any(len(row) != sides for panel in lower_panels for row in panel)
+            or any(
+                len(pair) != len(ROUND74_PAYOFF_LOWER_CALIBRATION_QUANTILES)
+                for panel in lower_panels
+                for row in panel
+                for pair in row
+            )
+        ):
+            raise ValueError("Round 74 risk quantile calibration differs")
+        _validate_risk_matrix(
+            self.mae_upper_offsets_bps,
+            label="MAE offsets",
+        )
+        _validate_risk_matrix(
+            self.eligible_observations,
+            label="observation counts",
+            integer=True,
+        )
+        _validate_risk_matrix(
+            self.mae_upper_empirical_coverage_before,
+            label="MAE coverage before",
+        )
+        _validate_risk_matrix(
+            self.mae_upper_empirical_coverage_after,
+            label="MAE coverage after",
+        )
+        offsets = (
+            *(
+                float(value)
+                for row in self.payoff_lower_offsets_bps
+                for pair in row
+                for value in pair
+            ),
+            *(float(value) for row in self.mae_upper_offsets_bps for value in row),
+        )
+        coverage = (
+            *(
+                float(value)
+                for panel in (
+                    self.payoff_lower_empirical_coverage_before,
+                    self.payoff_lower_empirical_coverage_after,
+                )
+                for row in panel
+                for pair in row
+                for value in pair
+            ),
+            *(
+                float(value)
+                for panel in (
+                    self.mae_upper_empirical_coverage_before,
+                    self.mae_upper_empirical_coverage_after,
+                )
+                for row in panel
+                for value in row
+            ),
+        )
+        if (
+            any(value < 0.0 for value in offsets)
+            or any(not 0.0 <= value <= 1.0 for value in coverage)
+            or any(
+                after + 1e-12 < before
+                for before_panel, after_panel in zip(
+                    self.payoff_lower_empirical_coverage_before,
+                    self.payoff_lower_empirical_coverage_after,
+                    strict=True,
+                )
+                for before_row, after_row in zip(
+                    before_panel,
+                    after_panel,
+                    strict=True,
+                )
+                for before, after in zip(before_row, after_row, strict=True)
+            )
+            or any(
+                after + 1e-12 < before
+                for before_row, after_row in zip(
+                    self.mae_upper_empirical_coverage_before,
+                    self.mae_upper_empirical_coverage_after,
+                    strict=True,
+                )
+                for before, after in zip(before_row, after_row, strict=True)
+            )
+            or any(
+                after + 1e-12 < 1.0 - nominal
+                for row in self.payoff_lower_empirical_coverage_after
+                for pair in row
+                for nominal, after in zip(
+                    ROUND74_PAYOFF_LOWER_CALIBRATION_QUANTILES,
+                    pair,
+                    strict=True,
+                )
+            )
+            or any(
+                after + 1e-12 < ROUND74_MAE_UPPER_CALIBRATION_QUANTILE
+                for row in self.mae_upper_empirical_coverage_after
+                for after in row
+            )
+        ):
+            raise ValueError("Round 74 risk quantile calibration bounds differ")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "schema_version": self.schema_version,
+            "method": "one_sided_split_conformal_nonnegative_widening",
+            "payoff_lower_nominal_quantiles": list(
+                ROUND74_PAYOFF_LOWER_CALIBRATION_QUANTILES
+            ),
+            "mae_upper_nominal_quantile": (ROUND74_MAE_UPPER_CALIBRATION_QUANTILE),
+            "payoff_lower_offsets_bps": [
+                [list(pair) for pair in row] for row in self.payoff_lower_offsets_bps
+            ],
+            "mae_upper_offsets_bps": [list(row) for row in self.mae_upper_offsets_bps],
+            "eligible_observations": [list(row) for row in self.eligible_observations],
+            "payoff_lower_empirical_coverage_before": [
+                [list(pair) for pair in row]
+                for row in self.payoff_lower_empirical_coverage_before
+            ],
+            "payoff_lower_empirical_coverage_after": [
+                [list(pair) for pair in row]
+                for row in self.payoff_lower_empirical_coverage_after
+            ],
+            "mae_upper_empirical_coverage_before": [
+                list(row) for row in self.mae_upper_empirical_coverage_before
+            ],
+            "mae_upper_empirical_coverage_after": [
+                list(row) for row in self.mae_upper_empirical_coverage_after
+            ],
+            "calibration_runs": self.calibration_runs,
+            "optimization_population": self.optimization_population,
+            "nonnegative_widening_only": True,
+            "exchangeability_or_future_coverage_claim": False,
+            "sealed_test_accessed": False,
+            "calibration_implies_financial_edge": False,
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74RiskQuantileCalibration:
+        payload = dict(value)
+        expected = {
+            "schema_version",
+            "method",
+            "payoff_lower_nominal_quantiles",
+            "mae_upper_nominal_quantile",
+            "payoff_lower_offsets_bps",
+            "mae_upper_offsets_bps",
+            "eligible_observations",
+            "payoff_lower_empirical_coverage_before",
+            "payoff_lower_empirical_coverage_after",
+            "mae_upper_empirical_coverage_before",
+            "mae_upper_empirical_coverage_after",
+            "calibration_runs",
+            "optimization_population",
+            "nonnegative_widening_only",
+            "exchangeability_or_future_coverage_claim",
+            "sealed_test_accessed",
+            "calibration_implies_financial_edge",
+        }
+        if set(payload) != expected:
+            raise ValueError("Round 74 risk quantile payload differs")
+
+        def matrix(name: str, *, integer: bool = False):
+            raw = payload[name]
+            if not isinstance(raw, list) or any(
+                not isinstance(row, list) for row in raw
+            ):
+                raise ValueError("Round 74 risk quantile matrix differs")
+            items = tuple(item for row in raw for item in row)
+            if integer:
+                invalid = any(
+                    isinstance(item, bool) or not isinstance(item, int)
+                    for item in items
+                )
+            else:
+                invalid = any(
+                    isinstance(item, bool)
+                    or not isinstance(item, (int, float))
+                    or not math.isfinite(float(item))
+                    for item in items
+                )
+            if invalid:
+                raise ValueError("Round 74 risk quantile matrix values differ")
+            conversion = int if integer else float
+            return tuple(tuple(conversion(item) for item in row) for row in raw)
+
+        def lower(name: str):
+            raw = payload[name]
+            if (
+                not isinstance(raw, list)
+                or any(not isinstance(row, list) for row in raw)
+                or any(not isinstance(pair, list) for row in raw for pair in row)
+                or any(
+                    isinstance(item, bool)
+                    or not isinstance(item, (int, float))
+                    or not math.isfinite(float(item))
+                    for row in raw
+                    for pair in row
+                    for item in pair
+                )
+            ):
+                raise ValueError("Round 74 risk quantile lower panel differs")
+            return tuple(
+                tuple(tuple(float(item) for item in pair) for pair in row)
+                for row in raw
+            )
+
+        selected = cls(
+            payoff_lower_offsets_bps=lower("payoff_lower_offsets_bps"),
+            mae_upper_offsets_bps=matrix("mae_upper_offsets_bps"),
+            eligible_observations=matrix(
+                "eligible_observations",
+                integer=True,
+            ),
+            payoff_lower_empirical_coverage_before=lower(
+                "payoff_lower_empirical_coverage_before"
+            ),
+            payoff_lower_empirical_coverage_after=lower(
+                "payoff_lower_empirical_coverage_after"
+            ),
+            mae_upper_empirical_coverage_before=matrix(
+                "mae_upper_empirical_coverage_before"
+            ),
+            mae_upper_empirical_coverage_after=matrix(
+                "mae_upper_empirical_coverage_after"
+            ),
+            calibration_runs=int(payload["calibration_runs"]),
+            optimization_population=str(payload["optimization_population"]),
+            schema_version=str(payload["schema_version"]),
+        )
+        selected.validate()
+        if (
+            payload["method"] != "one_sided_split_conformal_nonnegative_widening"
+            or payload["payoff_lower_nominal_quantiles"]
+            != list(ROUND74_PAYOFF_LOWER_CALIBRATION_QUANTILES)
+            or payload["mae_upper_nominal_quantile"]
+            != ROUND74_MAE_UPPER_CALIBRATION_QUANTILE
+            or payload["nonnegative_widening_only"] is not True
+            or payload["exchangeability_or_future_coverage_claim"] is not False
+            or payload["sealed_test_accessed"] is not False
+            or payload["calibration_implies_financial_edge"] is not False
+            or selected.as_dict() != payload
+        ):
+            raise ValueError("Round 74 risk quantile policy differs")
+        return selected
+
+
 @dataclass(frozen=True)
 class Round74ProbabilityCalibration:
-    """Hash-bound temperatures for the three probability head families."""
+    """Hash-bound probability temperatures and optional risk-tail widening."""
 
     pretest_policy_sha256: str
     tuning_subpartition_sha256: str
@@ -329,6 +661,7 @@ class Round74ProbabilityCalibration:
     regime_unpredictability: Round74TemperatureFit
     backend_kind: str
     backend_device: str
+    risk_quantiles: Round74RiskQuantileCalibration | None = None
     optimization_population: str = "capture_run"
     schema_version: str = ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
 
@@ -337,6 +670,7 @@ class Round74ProbabilityCalibration:
             self.schema_version
             not in {
                 ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+                ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
                 ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION,
             }
             or self.optimization_population
@@ -345,6 +679,14 @@ class Round74ProbabilityCalibration:
                 self.schema_version
                 == ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION
                 and self.optimization_population != "capture_run"
+            )
+            or (
+                self.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+                and self.risk_quantiles is None
+            )
+            or (
+                self.schema_version != ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+                and self.risk_quantiles is not None
             )
             or not self.backend_kind.strip()
             or not self.backend_device.strip()
@@ -377,6 +719,15 @@ class Round74ProbabilityCalibration:
         self.positive_payoff.validate()
         self.adverse_selection.validate()
         self.regime_unpredictability.validate()
+        if self.risk_quantiles is not None:
+            self.risk_quantiles.validate()
+            if (
+                self.risk_quantiles.optimization_population
+                != self.optimization_population
+            ):
+                raise ValueError(
+                    "Round 74 probability and risk calibration populations differ"
+                )
         fits = (
             self.positive_payoff,
             self.adverse_selection,
@@ -429,11 +780,11 @@ class Round74ProbabilityCalibration:
             "sealed_test_accessed": False,
             "calibration_implies_financial_edge": False,
         }
-        if (
-            self.schema_version
-            != ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION
-        ):
+        if self.schema_version != ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION:
             payload["optimization_population"] = self.optimization_population
+        if self.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION:
+            assert self.risk_quantiles is not None
+            payload["risk_quantiles"] = self.risk_quantiles.as_dict()
         if include_sha256:
             payload["calibration_sha256"] = _canonical_sha256(payload)
         return payload
@@ -447,10 +798,9 @@ class Round74ProbabilityCalibration:
         claimed = payload.pop("calibration_sha256", None)
         if not _is_sha256(claimed) or claimed != _canonical_sha256(payload):
             raise ValueError("Round 74 probability calibration digest differs")
-        legacy = (
-            payload.get("schema_version")
-            == ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION
-        )
+        schema_version = payload.get("schema_version")
+        legacy = schema_version == ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION
+        current = schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
         expected_keys = {
             "schema_version",
             "pretest_policy_sha256",
@@ -474,6 +824,8 @@ class Round74ProbabilityCalibration:
         }
         if not legacy:
             expected_keys.add("optimization_population")
+        if current:
+            expected_keys.add("risk_quantiles")
         if set(payload) != expected_keys:
             raise ValueError("Round 74 probability calibration payload differs")
         run_ids = payload["calibration_run_ids"]
@@ -482,10 +834,13 @@ class Round74ProbabilityCalibration:
             payload["adverse_selection"],
             payload["regime_unpredictability"],
         )
+        risk_quantiles = payload.get("risk_quantiles")
         if (
             not isinstance(run_ids, list)
             or any(not isinstance(item, str) for item in run_ids)
             or any(not isinstance(item, Mapping) for item in nested)
+            or current
+            and not isinstance(risk_quantiles, Mapping)
         ):
             raise ValueError("Round 74 probability calibration types differ")
         try:
@@ -503,10 +858,13 @@ class Round74ProbabilityCalibration:
                 regime_unpredictability=Round74TemperatureFit.from_dict(nested[2]),
                 backend_kind=str(payload["backend_kind"]),
                 backend_device=str(payload["backend_device"]),
+                risk_quantiles=(
+                    Round74RiskQuantileCalibration.from_dict(risk_quantiles)
+                    if current and isinstance(risk_quantiles, Mapping)
+                    else None
+                ),
                 optimization_population=(
-                    "capture_run"
-                    if legacy
-                    else str(payload["optimization_population"])
+                    "capture_run" if legacy else str(payload["optimization_population"])
                 ),
                 schema_version=str(payload["schema_version"]),
             )
@@ -610,6 +968,369 @@ def _expected_calibration_error(
     return float(ece.item())
 
 
+def _finite_sample_higher_quantile(
+    values: np.ndarray,
+    *,
+    level: float,
+) -> float:
+    selected = np.asarray(values, dtype=np.float64)
+    if (
+        selected.ndim != 1
+        or selected.size < 1
+        or not np.isfinite(selected).all()
+        or not 0.0 < float(level) < 1.0
+    ):
+        raise ValueError("Round 74 risk quantile sample differs")
+    ordered = np.sort(selected)
+    rank = min(
+        selected.size,
+        int(math.ceil((selected.size + 1) * float(level))),
+    )
+    return float(ordered[rank - 1])
+
+
+def _risk_quantile_offset(
+    residuals: np.ndarray,
+    row_run_ids: tuple[str, ...],
+    *,
+    expected_run_ids: tuple[str, ...],
+    eligibility: np.ndarray,
+    level: float,
+    optimization_population: str,
+) -> float:
+    selected = np.asarray(residuals, dtype=np.float64)
+    mask = np.asarray(eligibility, dtype=np.bool_)
+    if (
+        selected.shape != mask.shape
+        or selected.shape != (len(row_run_ids),)
+        or not np.isfinite(selected).all()
+    ):
+        raise ValueError("Round 74 risk quantile residual panel differs")
+    run_panels = tuple(
+        selected[
+            np.asarray(
+                [
+                    run_id == expected_run_id and bool(eligible)
+                    for run_id, eligible in zip(
+                        row_run_ids,
+                        mask,
+                        strict=True,
+                    )
+                ],
+                dtype=np.bool_,
+            )
+        ]
+        for expected_run_id in expected_run_ids
+    )
+    if any(panel.size < 1 for panel in run_panels):
+        raise ValueError("Round 74 risk quantile run support differs")
+    if optimization_population == "capture_run":
+        correction = max(
+            _finite_sample_higher_quantile(panel, level=level) for panel in run_panels
+        )
+    elif optimization_population == "eligible_target":
+        correction = _finite_sample_higher_quantile(
+            selected[mask],
+            level=level,
+        )
+    else:
+        raise ValueError("Round 74 risk quantile population differs")
+    return max(0.0, float(correction))
+
+
+def _risk_empirical_coverage(
+    covered: np.ndarray,
+    row_run_ids: tuple[str, ...],
+    *,
+    expected_run_ids: tuple[str, ...],
+    eligibility: np.ndarray,
+    optimization_population: str,
+) -> float:
+    selected = np.asarray(covered, dtype=np.bool_)
+    mask = np.asarray(eligibility, dtype=np.bool_)
+    if selected.shape != mask.shape or selected.shape != (len(row_run_ids),):
+        raise ValueError("Round 74 risk coverage panel differs")
+    if optimization_population == "eligible_target":
+        if not bool(mask.any()):
+            raise ValueError("Round 74 risk coverage has no eligible target")
+        return float(selected[mask].mean())
+    if optimization_population != "capture_run":
+        raise ValueError("Round 74 risk coverage population differs")
+    run_coverage: list[float] = []
+    for expected_run_id in expected_run_ids:
+        run_mask = np.asarray(
+            [
+                run_id == expected_run_id and bool(eligible)
+                for run_id, eligible in zip(
+                    row_run_ids,
+                    mask,
+                    strict=True,
+                )
+            ],
+            dtype=np.bool_,
+        )
+        if not bool(run_mask.any()):
+            raise ValueError("Round 74 risk coverage run support differs")
+        run_coverage.append(float(selected[run_mask].mean()))
+    return float(np.mean(np.asarray(run_coverage, dtype=np.float64)))
+
+
+def fit_round74_risk_quantile_calibration(
+    *,
+    payoff_quantiles_bps: torch.Tensor,
+    net_payoff_bps: torch.Tensor,
+    maximum_adverse_excursion_quantiles_bps: torch.Tensor,
+    maximum_adverse_excursion_bps: torch.Tensor,
+    action_eligibility: torch.Tensor,
+    row_run_ids: tuple[str, ...],
+    expected_run_ids: tuple[str, ...],
+    optimization_population: str,
+) -> Round74RiskQuantileCalibration:
+    """Fit nonnegative one-sided tail widening on calibration runs only."""
+
+    selected_population = str(optimization_population)
+    expected = tuple(str(value) for value in expected_run_ids)
+    selected_runs = tuple(str(value) for value in row_run_ids)
+    horizons, sides = _risk_panel_shape()
+    quantile_shape = (
+        len(selected_runs),
+        horizons,
+        sides,
+        len(ROUND74_EVENT_PAYOFF_QUANTILES),
+    )
+    target_shape = (len(selected_runs), horizons, sides)
+    tensors = (
+        payoff_quantiles_bps,
+        net_payoff_bps,
+        maximum_adverse_excursion_quantiles_bps,
+        maximum_adverse_excursion_bps,
+        action_eligibility,
+    )
+    if (
+        selected_population not in ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS
+        or expected != tuple(dict.fromkeys(expected))
+        or len(expected) != ROUND74_TUNING_CALIBRATION_RUNS
+        or set(selected_runs) != set(expected)
+        or tuple(ROUND74_EVENT_PAYOFF_QUANTILES[:2])
+        != ROUND74_PAYOFF_LOWER_CALIBRATION_QUANTILES
+        or float(ROUND74_EVENT_PAYOFF_QUANTILES[-1])
+        != ROUND74_MAE_UPPER_CALIBRATION_QUANTILE
+        or payoff_quantiles_bps.shape != quantile_shape
+        or maximum_adverse_excursion_quantiles_bps.shape != quantile_shape
+        or net_payoff_bps.shape != target_shape
+        or maximum_adverse_excursion_bps.shape != target_shape
+        or action_eligibility.shape != target_shape
+        or any(not value.is_floating_point() for value in tensors)
+        or len({value.device for value in tensors}) != 1
+        or any(not bool(torch.isfinite(value).all()) for value in tensors)
+        or bool(
+            (payoff_quantiles_bps[..., 1:] - payoff_quantiles_bps[..., :-1] < 0.0).any()
+        )
+        or bool(
+            (
+                maximum_adverse_excursion_quantiles_bps[..., 1:]
+                - maximum_adverse_excursion_quantiles_bps[..., :-1]
+                < 0.0
+            ).any()
+        )
+        or bool((maximum_adverse_excursion_quantiles_bps < 0.0).any())
+        or bool(((action_eligibility != 0.0) & (action_eligibility != 1.0)).any())
+        or bool((maximum_adverse_excursion_bps < 0.0).any())
+    ):
+        raise ValueError("Round 74 risk quantile calibration panel differs")
+    payoff_forecast = (
+        payoff_quantiles_bps.detach().to(device="cpu", dtype=torch.float64).numpy()
+    )
+    payoff_target = (
+        net_payoff_bps.detach().to(device="cpu", dtype=torch.float64).numpy()
+    )
+    mae_forecast = (
+        maximum_adverse_excursion_quantiles_bps.detach()
+        .to(device="cpu", dtype=torch.float64)
+        .numpy()
+    )
+    mae_target = (
+        maximum_adverse_excursion_bps.detach()
+        .to(device="cpu", dtype=torch.float64)
+        .numpy()
+    )
+    eligible = (
+        action_eligibility.detach().to(device="cpu", dtype=torch.float64).numpy() == 1.0
+    )
+    lower_offsets = np.zeros((horizons, sides, 2), dtype=np.float64)
+    lower_before = np.zeros_like(lower_offsets)
+    lower_after = np.zeros_like(lower_offsets)
+    mae_offsets = np.zeros((horizons, sides), dtype=np.float64)
+    mae_before = np.zeros_like(mae_offsets)
+    mae_after = np.zeros_like(mae_offsets)
+    observations = np.zeros((horizons, sides), dtype=np.int64)
+    for horizon_index in range(horizons):
+        for side_index in range(sides):
+            mask = eligible[:, horizon_index, side_index]
+            observations[horizon_index, side_index] = int(mask.sum())
+            truth = payoff_target[:, horizon_index, side_index]
+            for lower_index, nominal in enumerate(
+                ROUND74_PAYOFF_LOWER_CALIBRATION_QUANTILES
+            ):
+                prediction = payoff_forecast[
+                    :,
+                    horizon_index,
+                    side_index,
+                    lower_index,
+                ]
+                offset = _risk_quantile_offset(
+                    prediction - truth,
+                    selected_runs,
+                    expected_run_ids=expected,
+                    eligibility=mask,
+                    level=1.0 - nominal,
+                    optimization_population=selected_population,
+                )
+                lower_offsets[horizon_index, side_index, lower_index] = offset
+                lower_before[horizon_index, side_index, lower_index] = (
+                    _risk_empirical_coverage(
+                        truth >= prediction,
+                        selected_runs,
+                        expected_run_ids=expected,
+                        eligibility=mask,
+                        optimization_population=selected_population,
+                    )
+                )
+                lower_after[horizon_index, side_index, lower_index] = (
+                    _risk_empirical_coverage(
+                        truth >= prediction - offset,
+                        selected_runs,
+                        expected_run_ids=expected,
+                        eligibility=mask,
+                        optimization_population=selected_population,
+                    )
+                )
+            mae_prediction = mae_forecast[:, horizon_index, side_index, -1]
+            mae_truth = mae_target[:, horizon_index, side_index]
+            mae_offset = _risk_quantile_offset(
+                mae_truth - mae_prediction,
+                selected_runs,
+                expected_run_ids=expected,
+                eligibility=mask,
+                level=ROUND74_MAE_UPPER_CALIBRATION_QUANTILE,
+                optimization_population=selected_population,
+            )
+            mae_offsets[horizon_index, side_index] = mae_offset
+            mae_before[horizon_index, side_index] = _risk_empirical_coverage(
+                mae_truth <= mae_prediction,
+                selected_runs,
+                expected_run_ids=expected,
+                eligibility=mask,
+                optimization_population=selected_population,
+            )
+            mae_after[horizon_index, side_index] = _risk_empirical_coverage(
+                mae_truth <= mae_prediction + mae_offset,
+                selected_runs,
+                expected_run_ids=expected,
+                eligibility=mask,
+                optimization_population=selected_population,
+            )
+    result = Round74RiskQuantileCalibration(
+        payoff_lower_offsets_bps=tuple(
+            tuple(
+                tuple(float(value) for value in lower_offsets[horizon, side])
+                for side in range(sides)
+            )
+            for horizon in range(horizons)
+        ),
+        mae_upper_offsets_bps=tuple(
+            tuple(float(value) for value in mae_offsets[horizon])
+            for horizon in range(horizons)
+        ),
+        eligible_observations=tuple(
+            tuple(int(value) for value in observations[horizon])
+            for horizon in range(horizons)
+        ),
+        payoff_lower_empirical_coverage_before=tuple(
+            tuple(
+                tuple(float(value) for value in lower_before[horizon, side])
+                for side in range(sides)
+            )
+            for horizon in range(horizons)
+        ),
+        payoff_lower_empirical_coverage_after=tuple(
+            tuple(
+                tuple(float(value) for value in lower_after[horizon, side])
+                for side in range(sides)
+            )
+            for horizon in range(horizons)
+        ),
+        mae_upper_empirical_coverage_before=tuple(
+            tuple(float(value) for value in mae_before[horizon])
+            for horizon in range(horizons)
+        ),
+        mae_upper_empirical_coverage_after=tuple(
+            tuple(float(value) for value in mae_after[horizon])
+            for horizon in range(horizons)
+        ),
+        calibration_runs=len(expected),
+        optimization_population=selected_population,
+    )
+    result.validate()
+    return result
+
+
+def apply_round74_risk_quantile_calibration(
+    calibration: Round74RiskQuantileCalibration,
+    *,
+    payoff_quantiles_bps: torch.Tensor,
+    maximum_adverse_excursion_quantiles_bps: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Apply frozen nonnegative tail widening without target access."""
+
+    calibration.validate()
+    payoff = payoff_quantiles_bps.clone()
+    mae = maximum_adverse_excursion_quantiles_bps.clone()
+    horizons, sides = _risk_panel_shape()
+    expected = (
+        payoff.shape[0],
+        horizons,
+        sides,
+        len(ROUND74_EVENT_PAYOFF_QUANTILES),
+    )
+    if (
+        payoff.shape != expected
+        or mae.shape != expected
+        or not payoff.is_floating_point()
+        or not mae.is_floating_point()
+        or payoff.device != mae.device
+        or not bool(torch.isfinite(payoff).all())
+        or not bool(torch.isfinite(mae).all())
+    ):
+        raise ValueError("Round 74 risk quantile inference input differs")
+    lower_offsets = torch.as_tensor(
+        calibration.payoff_lower_offsets_bps,
+        dtype=payoff.dtype,
+        device=payoff.device,
+    )
+    mae_offsets = torch.as_tensor(
+        calibration.mae_upper_offsets_bps,
+        dtype=mae.dtype,
+        device=mae.device,
+    )
+    adjusted_q25 = payoff[..., 1] - lower_offsets[..., 1]
+    payoff[..., 1] = adjusted_q25
+    payoff[..., 0] = torch.minimum(
+        payoff[..., 0] - lower_offsets[..., 0],
+        adjusted_q25,
+    )
+    mae[..., -1] = mae[..., -1] + mae_offsets
+    if (
+        not bool(torch.isfinite(payoff).all())
+        or not bool(torch.isfinite(mae).all())
+        or bool((payoff[..., 1:] - payoff[..., :-1] < 0.0).any())
+        or bool((mae[..., 1:] - mae[..., :-1] < 0.0).any())
+        or bool((mae < 0.0).any())
+    ):
+        raise RuntimeError("Round 74 calibrated risk quantiles differ")
+    return payoff, mae
+
+
 def _fit_temperature(
     logits: torch.Tensor,
     labels: torch.Tensor,
@@ -634,9 +1355,7 @@ def _fit_temperature(
             for run_logits, run_labels in run_panels:
                 scaled = run_logits.unsqueeze(0) / chunk.unsqueeze(1)
                 target = run_labels.unsqueeze(0).expand_as(scaled)
-                run_losses.append(
-                    (F.softplus(scaled) - target * scaled).mean(dim=1)
-                )
+                run_losses.append((F.softplus(scaled) - target * scaled).mean(dim=1))
             losses.append(torch.stack(run_losses, dim=1).mean(dim=1))
         else:
             scaled = logits.unsqueeze(0) / chunk.unsqueeze(1)
@@ -730,6 +1449,10 @@ def fit_round74_probability_calibration(
     regime_unpredictability_logits: torch.Tensor,
     regime_unpredictability_labels: torch.Tensor,
     regime_eligibility: torch.Tensor,
+    payoff_quantiles_bps: torch.Tensor | None = None,
+    net_payoff_bps: torch.Tensor | None = None,
+    maximum_adverse_excursion_quantiles_bps: torch.Tensor | None = None,
+    maximum_adverse_excursion_bps: torch.Tensor | None = None,
     row_run_ids: tuple[str, ...],
     tuning_subpartition: Round74TuningSubpartition,
     pretest_policy_sha256: str,
@@ -738,7 +1461,7 @@ def fit_round74_probability_calibration(
     backend_device: str,
     optimization_population: str = "capture_run",
 ) -> Round74ProbabilityCalibration:
-    """Fit three scalar temperatures using only calibration-run labels."""
+    """Fit probability temperatures and optional risk tails on calibration runs."""
 
     _require_sha256(pretest_policy_sha256, "pretest policy")
     tuning_subpartition.validate()
@@ -748,8 +1471,17 @@ def fit_round74_probability_calibration(
         raise ValueError("Round 74 calibration optimization population differs")
     selected_row_run_ids = tuple(str(value) for value in row_run_ids)
     expected_runs = tuning_subpartition.calibration_run_ids
+    risk_values = (
+        payoff_quantiles_bps,
+        net_payoff_bps,
+        maximum_adverse_excursion_quantiles_bps,
+        maximum_adverse_excursion_bps,
+    )
+    risk_present = any(value is not None for value in risk_values)
+    risk_requested = all(value is not None for value in risk_values)
     if (
-        positive_payoff_logits.ndim < 1
+        risk_present != risk_requested
+        or positive_payoff_logits.ndim < 1
         or adverse_selection_logits.ndim < 1
         or regime_unpredictability_logits.ndim < 1
     ):
@@ -800,8 +1532,13 @@ def fit_round74_probability_calibration(
     }
     if len(devices) != 1:
         raise ValueError("Round 74 calibration devices differ")
+    schema_version = (
+        ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+        if risk_requested
+        else ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION
+    )
     identity = {
-        "schema_version": ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+        "schema_version": schema_version,
         "pretest_policy_sha256": pretest_policy_sha256,
         "tuning_subpartition_sha256": tuning_subpartition.subpartition_sha256,
         "calibration_source_sha256": calibration_source_sha256,
@@ -821,8 +1558,27 @@ def fit_round74_probability_calibration(
         regime_unpredictability_logits,
         regime_unpredictability_labels,
         regime_eligibility,
+        *(value for value in risk_values if value is not None),
     ):
         _update_tensor_digest(digest, value)
+    risk_quantiles = None
+    if risk_requested:
+        assert payoff_quantiles_bps is not None
+        assert net_payoff_bps is not None
+        assert maximum_adverse_excursion_quantiles_bps is not None
+        assert maximum_adverse_excursion_bps is not None
+        risk_quantiles = fit_round74_risk_quantile_calibration(
+            payoff_quantiles_bps=payoff_quantiles_bps,
+            net_payoff_bps=net_payoff_bps,
+            maximum_adverse_excursion_quantiles_bps=(
+                maximum_adverse_excursion_quantiles_bps
+            ),
+            maximum_adverse_excursion_bps=maximum_adverse_excursion_bps,
+            action_eligibility=action_eligibility,
+            row_run_ids=selected_row_run_ids,
+            expected_run_ids=expected_runs,
+            optimization_population=selected_population,
+        )
     result = Round74ProbabilityCalibration(
         pretest_policy_sha256=pretest_policy_sha256,
         tuning_subpartition_sha256=tuning_subpartition.subpartition_sha256,
@@ -850,7 +1606,9 @@ def fit_round74_probability_calibration(
         ),
         backend_kind=str(backend_kind),
         backend_device=str(backend_device),
+        risk_quantiles=risk_quantiles,
         optimization_population=selected_population,
+        schema_version=schema_version,
     )
     result.validate()
     return result
@@ -891,7 +1649,11 @@ def apply_round74_probability_calibration(
 
 __all__ = [
     "ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS",
+    "ROUND74_MAE_UPPER_CALIBRATION_QUANTILE",
+    "ROUND74_PAYOFF_LOWER_CALIBRATION_QUANTILES",
+    "ROUND74_RISK_QUANTILE_CALIBRATION_SCHEMA_VERSION",
     "ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION",
+    "ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION",
     "ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION",
     "ROUND74_TEMPERATURE_CANDIDATE_COUNT",
     "ROUND74_TEMPERATURE_MAXIMUM",
@@ -902,9 +1664,12 @@ __all__ = [
     "ROUND74_TUNING_POLICY_SELECTION_RUNS",
     "ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION",
     "Round74ProbabilityCalibration",
+    "Round74RiskQuantileCalibration",
     "Round74TemperatureFit",
     "Round74TuningSubpartition",
     "apply_round74_probability_calibration",
+    "apply_round74_risk_quantile_calibration",
     "build_round74_tuning_subpartition",
     "fit_round74_probability_calibration",
+    "fit_round74_risk_quantile_calibration",
 ]

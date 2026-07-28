@@ -45,6 +45,7 @@ from .impact_absorption_event_action_policy import (
 from .impact_absorption_event_calibration import (
     Round74ProbabilityCalibration,
     apply_round74_probability_calibration,
+    apply_round74_risk_quantile_calibration,
 )
 from .impact_absorption_event_cohort import (
     ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS,
@@ -74,7 +75,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v11"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v12"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v1"
 )
@@ -585,8 +586,16 @@ class _PredictiveAccumulator:
             adverse_selection_logits=output.adverse_selection_logits,
             regime_unpredictability_logits=output.regime_unpredictability_logits,
         )
-        payoff_forecast = _tensor_array(output.payoff_quantiles_bps)
-        mae_forecast = _tensor_array(output.maximum_adverse_excursion_quantiles_bps)
+        calibrated_payoff = output.payoff_quantiles_bps
+        calibrated_mae = output.maximum_adverse_excursion_quantiles_bps
+        if calibration.risk_quantiles is not None:
+            calibrated_payoff, calibrated_mae = apply_round74_risk_quantile_calibration(
+                calibration.risk_quantiles,
+                payoff_quantiles_bps=calibrated_payoff,
+                maximum_adverse_excursion_quantiles_bps=calibrated_mae,
+            )
+        payoff_forecast = _tensor_array(calibrated_payoff)
+        mae_forecast = _tensor_array(calibrated_mae)
         positive_probability = _tensor_array(positive)
         adverse_probability = _tensor_array(adverse)
         unpredictable_probability = _tensor_array(unpredictable)

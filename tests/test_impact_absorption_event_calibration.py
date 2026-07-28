@@ -6,18 +6,27 @@ import pytest
 import torch
 
 from simple_ai_trading.impact_absorption_event_calibration import (
+    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     ROUND74_TUNING_CALIBRATION_RUNS,
     ROUND74_TUNING_MODEL_SELECTION_RUNS,
     ROUND74_TUNING_POLICY_SELECTION_RUNS,
     Round74ProbabilityCalibration,
+    Round74RiskQuantileCalibration,
     Round74TuningSubpartition,
     apply_round74_probability_calibration,
+    apply_round74_risk_quantile_calibration,
     build_round74_tuning_subpartition,
     fit_round74_probability_calibration,
+    fit_round74_risk_quantile_calibration,
 )
 from simple_ai_trading.impact_absorption_event_dataset import (
     Round74EventRunPartition,
     Round74EventRunPartitionEntry,
+)
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+    ROUND74_EVENT_PAYOFF_QUANTILES,
+    ROUND74_EVENT_PAYOFF_SIDES,
 )
 
 
@@ -306,6 +315,164 @@ def test_temperature_application_uses_frozen_head_specific_values() -> None:
         regime,
         torch.sigmoid(logits / calibration.regime_unpredictability.temperature),
     )
+
+
+def _risk_calibration_panel() -> tuple[
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    tuple[str, ...],
+]:
+    runs = _tuning_subpartition().calibration_run_ids
+    row_runs = tuple(run_id for run_id in runs for _ in range(2))
+    horizons = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    sides = len(ROUND74_EVENT_PAYOFF_SIDES)
+    quantiles = len(ROUND74_EVENT_PAYOFF_QUANTILES)
+    rows = len(row_runs)
+    payoff = torch.tensor(
+        (-2.0, -1.0, 1.0, 2.0, 3.0),
+        dtype=torch.float32,
+    ).reshape(1, 1, 1, quantiles)
+    payoff = payoff.repeat(rows, horizons, sides, 1)
+    mae = torch.tensor(
+        (0.1, 0.2, 0.3, 0.4, 0.5),
+        dtype=torch.float32,
+    ).reshape(1, 1, 1, quantiles)
+    mae = mae.repeat(rows, horizons, sides, 1)
+    payoff_targets = (
+        torch.tensor(
+            (-3.0, 1.0),
+            dtype=torch.float32,
+        )
+        .reshape(2, 1, 1)
+        .repeat(len(runs), horizons, sides)
+    )
+    mae_targets = (
+        torch.tensor(
+            (1.5, 0.2),
+            dtype=torch.float32,
+        )
+        .reshape(2, 1, 1)
+        .repeat(len(runs), horizons, sides)
+    )
+    eligibility = torch.ones((rows, horizons, sides), dtype=torch.float32)
+    return payoff, payoff_targets, mae, mae_targets, eligibility, row_runs
+
+
+def test_risk_quantile_calibration_widens_only_deployed_tails() -> None:
+    payoff, targets, mae, mae_targets, eligibility, row_runs = _risk_calibration_panel()
+    calibration = fit_round74_risk_quantile_calibration(
+        payoff_quantiles_bps=payoff,
+        net_payoff_bps=targets,
+        maximum_adverse_excursion_quantiles_bps=mae,
+        maximum_adverse_excursion_bps=mae_targets,
+        action_eligibility=eligibility,
+        row_run_ids=row_runs,
+        expected_run_ids=_tuning_subpartition().calibration_run_ids,
+        optimization_population="capture_run",
+    )
+    adjusted_payoff, adjusted_mae = apply_round74_risk_quantile_calibration(
+        calibration,
+        payoff_quantiles_bps=payoff,
+        maximum_adverse_excursion_quantiles_bps=mae,
+    )
+
+    assert calibration.payoff_lower_offsets_bps[0][0] == pytest.approx((1.0, 2.0))
+    assert calibration.mae_upper_offsets_bps[0][0] == pytest.approx(1.0)
+    assert calibration.payoff_lower_empirical_coverage_before[0][0] == (
+        pytest.approx((0.5, 0.5))
+    )
+    assert calibration.payoff_lower_empirical_coverage_after[0][0] == (
+        pytest.approx((1.0, 1.0))
+    )
+    assert calibration.mae_upper_empirical_coverage_before[0][0] == (pytest.approx(0.5))
+    assert calibration.mae_upper_empirical_coverage_after[0][0] == (pytest.approx(1.0))
+    assert torch.equal(adjusted_payoff[..., 2:], payoff[..., 2:])
+    assert torch.all(adjusted_payoff[..., 0] == -3.0)
+    assert torch.all(adjusted_payoff[..., 1] == -3.0)
+    assert torch.equal(adjusted_mae[..., :-1], mae[..., :-1])
+    assert torch.allclose(adjusted_mae[..., -1], torch.full_like(mae[..., -1], 1.5))
+    assert (
+        Round74RiskQuantileCalibration.from_dict(calibration.as_dict()) == calibration
+    )
+
+
+def test_risk_quantile_calibration_rejects_undercovered_fitted_tail() -> None:
+    payoff, targets, mae, mae_targets, eligibility, row_runs = _risk_calibration_panel()
+    calibration = fit_round74_risk_quantile_calibration(
+        payoff_quantiles_bps=payoff,
+        net_payoff_bps=targets,
+        maximum_adverse_excursion_quantiles_bps=mae,
+        maximum_adverse_excursion_bps=mae_targets,
+        action_eligibility=eligibility,
+        row_run_ids=row_runs,
+        expected_run_ids=_tuning_subpartition().calibration_run_ids,
+        optimization_population="capture_run",
+    )
+    undercovered = replace(
+        calibration,
+        payoff_lower_empirical_coverage_after=tuple(
+            tuple(
+                (0.89, pair[1]) if horizon == 0 and side == 0 else pair
+                for side, pair in enumerate(row)
+            )
+            for horizon, row in enumerate(
+                calibration.payoff_lower_empirical_coverage_after
+            )
+        ),
+    )
+
+    with pytest.raises(ValueError, match="bounds differ"):
+        undercovered.validate()
+
+
+def test_composite_calibration_hash_binds_risk_targets_and_offsets() -> None:
+    payoff, targets, mae, mae_targets, eligibility, row_runs = _risk_calibration_panel()
+    action_logits = torch.tensor(
+        (-2.0, 2.0),
+        dtype=torch.float32,
+    ).repeat(len(row_runs), len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS), 1)
+    action_labels = torch.tensor(
+        (0.0, 1.0),
+        dtype=torch.float32,
+    ).repeat(len(row_runs), len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS), 1)
+    action_labels[-4:] = 1.0 - action_labels[-4:]
+    regime_logits = torch.full(
+        (len(row_runs), len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)),
+        -2.0,
+        dtype=torch.float32,
+    )
+    regime_labels = torch.zeros_like(regime_logits)
+    regime_labels[-4:] = 1.0
+    subpartition = _tuning_subpartition()
+    calibration = fit_round74_probability_calibration(
+        positive_payoff_logits=action_logits,
+        positive_payoff_labels=action_labels,
+        adverse_selection_logits=-action_logits,
+        adverse_selection_labels=1.0 - action_labels,
+        action_eligibility=eligibility,
+        regime_unpredictability_logits=regime_logits,
+        regime_unpredictability_labels=regime_labels,
+        regime_eligibility=torch.ones_like(regime_logits),
+        payoff_quantiles_bps=payoff,
+        net_payoff_bps=targets,
+        maximum_adverse_excursion_quantiles_bps=mae,
+        maximum_adverse_excursion_bps=mae_targets,
+        row_run_ids=row_runs,
+        tuning_subpartition=subpartition,
+        pretest_policy_sha256="1" * 64,
+        calibration_source_sha256="3" * 64,
+        backend_kind="cpu",
+        backend_device="test",
+        optimization_population="eligible_target",
+    )
+
+    assert calibration.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+    assert calibration.risk_quantiles is not None
+    assert calibration.risk_quantiles.optimization_population == "eligible_target"
+    assert Round74ProbabilityCalibration.from_dict(calibration.as_dict()) == calibration
 
 
 def test_temperature_calibration_rejects_missing_class_support() -> None:
