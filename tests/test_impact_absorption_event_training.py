@@ -908,10 +908,7 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
     assert protocol_payload["feature_scaler_fit_scope"] == (
         "segmented_optimization_training_runs_only"
     )
-    assert (
-        protocol_payload["feature_scaler_fit_selection_sha256"]
-        == split.split_sha256
-    )
+    assert protocol_payload["feature_scaler_fit_selection_sha256"] == split.split_sha256
     assert protocol_payload["training_split_sha256"] == split.split_sha256
     assert protocol_payload["training_split"] == split.as_dict()
     assert protocol_payload["early_stopping_targets_used_for_gradient_updates"] is False
@@ -1320,6 +1317,57 @@ def test_round74_state_conditioned_flow_requires_admitted_flow_and_full_gate() -
             minimum_mean_loss_improvement=1e-5,
             required_paired_run_count=2,
         )
+
+
+def test_round74_feature_view_gate_rejects_non_broad_or_one_run_driven_gain() -> None:
+    incumbent = (1.0,) * 12
+    groups = {"run-a:BTCUSDT:5": 1.0, "run-b:ETHUSDT:30": 1.0}
+    minority_material_wins = _feature_view_promotion_report(
+        "clock_neutral",
+        "full",
+        incumbent,
+        (0.9,) * 5 + (0.999999,) * 7,
+        incumbent_group_losses=groups,
+        challenger_group_losses={key: 0.9 for key in groups},
+        minimum_mean_loss_improvement=1e-5,
+        required_paired_run_count=12,
+    )
+    one_run_driven = _feature_view_promotion_report(
+        "clock_neutral",
+        "full",
+        incumbent,
+        (0.0,) + (0.999989,) * 7 + (1.0,) * 4,
+        incumbent_group_losses=groups,
+        challenger_group_losses={key: 0.9 for key in groups},
+        minimum_mean_loss_improvement=1e-5,
+        required_paired_run_count=12,
+    )
+
+    assert minority_material_wins["mean_proper_loss_improvement"] > 1e-5
+    assert minority_material_wins["all_paired_runs_noninferior"] is True
+    assert minority_material_wins["material_challenger_win_count"] == 5
+    assert minority_material_wins["minimum_required_material_win_count"] == 7
+    assert minority_material_wins["material_win_majority"] is False
+    assert (
+        minority_material_wins[
+            "all_leave_one_capture_run_out_panels_exceed_minimum_mean_improvement"
+        ]
+        is True
+    )
+    assert minority_material_wins["promoted"] is False
+    assert one_run_driven["material_win_majority"] is True
+    assert (
+        one_run_driven["minimum_leave_one_capture_run_out_mean_proper_loss_improvement"]
+        < 1e-5
+    )
+    assert (
+        one_run_driven[
+            "all_leave_one_capture_run_out_panels_exceed_minimum_mean_improvement"
+        ]
+        is False
+    )
+    assert one_run_driven["promoted"] is False
+    assert one_run_driven["statistical_independence_or_significance_claim"] is False
 
 
 def test_round74_state_conditioned_flow_rejects_hidden_subgroup_degradation() -> None:

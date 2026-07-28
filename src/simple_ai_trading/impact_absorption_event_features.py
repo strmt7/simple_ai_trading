@@ -8,7 +8,7 @@ import json
 from .impact_absorption_event_sequence import ROUND74_EVENT_FEATURE_NAMES
 
 
-ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION = "round-074-feature-view-v2"
+ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION = "round-074-feature-view-v3"
 ROUND74_EVENT_FEATURE_VIEWS = (
     "market_state_clock_neutral",
     "clock_neutral",
@@ -28,7 +28,8 @@ ROUND74_EVENT_CLOCK_FEATURE_NAMES = tuple(
     or name in _ROUND74_EVENT_INTRADAY_CLOCK_FEATURE_NAMES
 )
 ROUND74_EVENT_CLOCK_FEATURE_INDICES = tuple(
-    ROUND74_EVENT_FEATURE_NAMES.index(name) for name in ROUND74_EVENT_CLOCK_FEATURE_NAMES
+    ROUND74_EVENT_FEATURE_NAMES.index(name)
+    for name in ROUND74_EVENT_CLOCK_FEATURE_NAMES
 )
 ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256 = hashlib.sha256(
     json.dumps(

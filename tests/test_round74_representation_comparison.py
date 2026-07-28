@@ -73,14 +73,10 @@ def _policies(
             mean_run_maximum_adverse_excursion_bps=1.0,
             identity=identity + index,
             run_payoffs=(
-                conservative_run_payoffs
-                if profile == "conservative"
-                else (5.0,) * 6
+                conservative_run_payoffs if profile == "conservative" else (5.0,) * 6
             ),
         )
-        for index, profile in enumerate(
-            ("conservative", "regular", "aggressive")
-        )
+        for index, profile in enumerate(("conservative", "regular", "aggressive"))
     )
 
 
@@ -102,6 +98,20 @@ def test_representation_proper_loss_gate_requires_every_run_noninferior() -> Non
     assert one_bad_run["mean_proper_loss_improvement"] > 0.01
     assert one_bad_run["all_paired_runs_noninferior"] is False
     assert one_bad_run["promoted"] is False
+
+    one_run_driven = subject.round74_representation_proper_loss_gate(
+        (1.0,) * 12,
+        (0.0,) + (0.999989,) * 7 + (1.0,) * 4,
+        minimum_mean_improvement=1e-5,
+    )
+    assert one_run_driven["material_win_majority"] is True
+    assert (
+        one_run_driven[
+            "all_leave_one_capture_run_out_panels_exceed_minimum_mean_improvement"
+        ]
+        is False
+    )
+    assert one_run_driven["promoted"] is False
 
     with pytest.raises(ValueError, match="proper-loss panel differs"):
         subject.round74_representation_proper_loss_gate(
@@ -150,16 +160,15 @@ def test_representation_economic_gate_rejects_hidden_conservative_run_loss() -> 
     )
 
     conservative = reports[0]
-    assert conservative["challenger_selected_metrics"]["total_net_bps"] > (
-        conservative["baseline_selected_metrics"]["total_net_bps"]
+    assert (
+        conservative["challenger_selected_metrics"]["total_net_bps"]
+        > (conservative["baseline_selected_metrics"]["total_net_bps"])
     )
     assert conservative["minimum_paired_run_net_delta_bps"] == -1.0
     assert conservative["challenger_worse_run_count"] == 1
     assert conservative["all_paired_runs_net_noninferior"] is False
     assert conservative["noninferior"] is False
-    assert (
-        "conservative_paired_run_net_payoff_degraded" in conservative["reasons"]
-    )
+    assert "conservative_paired_run_net_payoff_degraded" in conservative["reasons"]
 
 
 def test_representation_comparison_cannot_overstate_authority() -> None:
@@ -193,8 +202,7 @@ def test_representation_comparison_cannot_overstate_authority() -> None:
     assert payload["profitability_claim"] is False
     assert payload["live_trading_authority"] is False
     assert (
-        subject.Round74RepresentationComparison.from_dict(payload).as_dict()
-        == payload
+        subject.Round74RepresentationComparison.from_dict(payload).as_dict() == payload
     )
 
     overstated = dict(payload)
@@ -216,9 +224,7 @@ def test_representation_comparison_cannot_overstate_authority() -> None:
         "minimum_paired_run_net_delta_bps"
     ] = -1.0
     forged_economics.pop("comparison_sha256")
-    forged_economics["comparison_sha256"] = subject._canonical_sha256(
-        forged_economics
-    )
+    forged_economics["comparison_sha256"] = subject._canonical_sha256(forged_economics)
     with pytest.raises(ValueError, match="paired economics differ"):
         subject.Round74RepresentationComparison.from_dict(forged_economics)
 
@@ -341,8 +347,7 @@ def test_build_comparison_binds_matched_batches_and_selection_modes() -> None:
 
     def batches(start: int):
         return tuple(
-            SimpleNamespace(batch_sha256=f"{start + index:064x}")
-            for index in range(24)
+            SimpleNamespace(batch_sha256=f"{start + index:064x}") for index in range(24)
         )
 
     per_symbol_batches = batches(100)
