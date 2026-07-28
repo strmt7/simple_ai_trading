@@ -40,6 +40,7 @@ from .impact_absorption_store import (
 from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 
 if TYPE_CHECKING:
+    from .impact_absorption_ai_uplift import Round74AIQualificationPopulation
     from .impact_absorption_event_sealed_ledger import Round74SealedDatasetIdentity
 
 
@@ -49,10 +50,10 @@ ROUND74_SEGMENTED_WINDOW_SELECTION_SCHEMA_VERSION = (
 ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS = 3_289_500_000_000
 ROUND74_SEGMENTED_REFERENCE_WINDOWS_PER_SYMBOL = 256
 ROUND74_SEGMENTED_TUNING_SUBPARTITION_SCHEMA_VERSION = (
-    "round-074-segmented-tuning-subpartition-v1"
+    "round-074-segmented-tuning-subpartition-v2"
 )
 ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_SCHEMA_VERSION = (
-    "round-074-segmented-model-selection-stages-v1"
+    "round-074-segmented-model-selection-stages-v2"
 )
 ROUND74_SEGMENTED_TRAINING_SPLIT_SCHEMA_VERSION = (
     "round-074-segmented-training-selection-split-v1"
@@ -60,7 +61,7 @@ ROUND74_SEGMENTED_TRAINING_SPLIT_SCHEMA_VERSION = (
 ROUND74_SEGMENTED_TEST_POPULATION_SCHEMA_VERSION = (
     "round-074-segmented-test-population-v1"
 )
-ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS = (12, 6, 6)
+ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS = (10, 5, 5, 4)
 ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHT_TOTAL = sum(
     ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS
 )
@@ -96,10 +97,10 @@ def _is_sha256(value: object) -> bool:
     )
 
 
-def _segmented_tuning_subrole_bounds() -> tuple[int, int, int, int]:
+def _segmented_tuning_subrole_bounds() -> tuple[int, int, int, int, int]:
     training_slots = ROUND74_SEGMENTED_COHORT_ROLE_COUNTS["training"]
     tuning_slots = ROUND74_SEGMENTED_COHORT_ROLE_COUNTS["tuning"]
-    model_weight, calibration_weight, _policy_weight = (
+    model_weight, calibration_weight, policy_weight, _ai_weight = (
         ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS
     )
     denominator = ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHT_TOTAL
@@ -111,15 +112,19 @@ def _segmented_tuning_subrole_bounds() -> tuple[int, int, int, int]:
     calibration_end = training_slots + ceiling_fraction(
         model_weight + calibration_weight
     )
+    policy_end = training_slots + ceiling_fraction(
+        model_weight + calibration_weight + policy_weight
+    )
     return (
         training_slots,
         model_end,
         calibration_end,
+        policy_end,
         training_slots + tuning_slots,
     )
 
 
-def _segmented_tuning_required_anchor_ns() -> tuple[int, int, int]:
+def _segmented_tuning_required_anchor_ns() -> tuple[int, int, int, int]:
     required = ROUND74_SEGMENTED_COHORT_REQUIRED_ELIGIBLE_ANCHOR_NS["tuning"]
     denominator = ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHT_TOTAL
     return tuple(
@@ -129,7 +134,7 @@ def _segmented_tuning_required_anchor_ns() -> tuple[int, int, int]:
 
 
 def _segmented_model_selection_stage_bounds() -> tuple[int, ...]:
-    model_start, model_end, _calibration_end, _tuning_end = (
+    model_start, model_end, _calibration_end, _policy_end, _tuning_end = (
         _segmented_tuning_subrole_bounds()
     )
     scheduled_model_slots = model_end - model_start
@@ -345,12 +350,15 @@ class Round74SegmentedTuningSubpartition:
     model_selection_run_ids: tuple[str, ...]
     calibration_run_ids: tuple[str, ...]
     policy_selection_run_ids: tuple[str, ...]
+    ai_qualification_run_ids: tuple[str, ...]
     model_selection_slot_ordinals: tuple[int, ...]
     calibration_slot_ordinals: tuple[int, ...]
     policy_selection_slot_ordinals: tuple[int, ...]
+    ai_qualification_slot_ordinals: tuple[int, ...]
     model_selection_eligible_anchor_ns: tuple[int, ...]
     calibration_eligible_anchor_ns: tuple[int, ...]
     policy_selection_eligible_anchor_ns: tuple[int, ...]
+    ai_qualification_eligible_anchor_ns: tuple[int, ...]
     schema_version: str = ROUND74_SEGMENTED_TUNING_SUBPARTITION_SCHEMA_VERSION
     optimization_population: str = "eligible_target"
 
@@ -359,22 +367,26 @@ class Round74SegmentedTuningSubpartition:
             self.model_selection_run_ids,
             self.calibration_run_ids,
             self.policy_selection_run_ids,
+            self.ai_qualification_run_ids,
         )
         ordinal_groups = (
             self.model_selection_slot_ordinals,
             self.calibration_slot_ordinals,
             self.policy_selection_slot_ordinals,
+            self.ai_qualification_slot_ordinals,
         )
         duration_groups = (
             self.model_selection_eligible_anchor_ns,
             self.calibration_eligible_anchor_ns,
             self.policy_selection_eligible_anchor_ns,
+            self.ai_qualification_eligible_anchor_ns,
         )
         bounds = _segmented_tuning_subrole_bounds()
         expected_ranges = (
             range(bounds[0], bounds[1]),
             range(bounds[1], bounds[2]),
             range(bounds[2], bounds[3]),
+            range(bounds[3], bounds[4]),
         )
         all_runs = tuple(value for group in run_groups for value in group)
         all_ordinals = tuple(value for group in ordinal_groups for value in group)
@@ -454,14 +466,17 @@ class Round74SegmentedTuningSubpartition:
                 bounds[1] - bounds[0],
                 bounds[2] - bounds[1],
                 bounds[3] - bounds[2],
+                bounds[4] - bounds[3],
             ],
             "required_eligible_anchor_ns": list(required),
             "model_selection_run_ids": list(self.model_selection_run_ids),
             "calibration_run_ids": list(self.calibration_run_ids),
             "policy_selection_run_ids": list(self.policy_selection_run_ids),
+            "ai_qualification_run_ids": list(self.ai_qualification_run_ids),
             "model_selection_slot_ordinals": list(self.model_selection_slot_ordinals),
             "calibration_slot_ordinals": list(self.calibration_slot_ordinals),
             "policy_selection_slot_ordinals": list(self.policy_selection_slot_ordinals),
+            "ai_qualification_slot_ordinals": list(self.ai_qualification_slot_ordinals),
             "model_selection_eligible_anchor_ns": list(
                 self.model_selection_eligible_anchor_ns
             ),
@@ -469,10 +484,14 @@ class Round74SegmentedTuningSubpartition:
             "policy_selection_eligible_anchor_ns": list(
                 self.policy_selection_eligible_anchor_ns
             ),
+            "ai_qualification_eligible_anchor_ns": list(
+                self.ai_qualification_eligible_anchor_ns
+            ),
             "observed_eligible_anchor_ns": [
                 sum(self.model_selection_eligible_anchor_ns),
                 sum(self.calibration_eligible_anchor_ns),
                 sum(self.policy_selection_eligible_anchor_ns),
+                sum(self.ai_qualification_eligible_anchor_ns),
             ],
             "chronological": True,
             "random_row_split_permitted": False,
@@ -497,14 +516,17 @@ class Round74SegmentedTuningSubpartition:
             "model_selection_run_ids",
             "calibration_run_ids",
             "policy_selection_run_ids",
+            "ai_qualification_run_ids",
         )
         integer_keys = (
             "model_selection_slot_ordinals",
             "calibration_slot_ordinals",
             "policy_selection_slot_ordinals",
+            "ai_qualification_slot_ordinals",
             "model_selection_eligible_anchor_ns",
             "calibration_eligible_anchor_ns",
             "policy_selection_eligible_anchor_ns",
+            "ai_qualification_eligible_anchor_ns",
         )
         if any(
             not isinstance(payload.get(key), list)
@@ -526,12 +548,16 @@ class Round74SegmentedTuningSubpartition:
                 model_selection_run_ids=tuple(payload["model_selection_run_ids"]),
                 calibration_run_ids=tuple(payload["calibration_run_ids"]),
                 policy_selection_run_ids=tuple(payload["policy_selection_run_ids"]),
+                ai_qualification_run_ids=tuple(payload["ai_qualification_run_ids"]),
                 model_selection_slot_ordinals=tuple(
                     payload["model_selection_slot_ordinals"]
                 ),
                 calibration_slot_ordinals=tuple(payload["calibration_slot_ordinals"]),
                 policy_selection_slot_ordinals=tuple(
                     payload["policy_selection_slot_ordinals"]
+                ),
+                ai_qualification_slot_ordinals=tuple(
+                    payload["ai_qualification_slot_ordinals"]
                 ),
                 model_selection_eligible_anchor_ns=tuple(
                     payload["model_selection_eligible_anchor_ns"]
@@ -541,6 +567,9 @@ class Round74SegmentedTuningSubpartition:
                 ),
                 policy_selection_eligible_anchor_ns=tuple(
                     payload["policy_selection_eligible_anchor_ns"]
+                ),
+                ai_qualification_eligible_anchor_ns=tuple(
+                    payload["ai_qualification_eligible_anchor_ns"]
                 ),
                 schema_version=str(payload["schema_version"]),
                 optimization_population=str(payload["optimization_population"]),
@@ -710,6 +739,7 @@ class Round74SegmentedModelSelectionStages:
             "cross_stage_run_reuse_permitted": False,
             "all_parent_model_selection_segments_included": True,
             "calibration_or_policy_selection_segment_included": False,
+            "ai_qualification_segment_included": False,
             "sealed_test_segment_included": False,
         }
         if include_sha256:
@@ -1067,9 +1097,9 @@ def build_round74_segmented_tuning_subpartition(
     if set(bindings) != expected_run_ids:
         raise ValueError("Round 74 segmented tuning binding panel differs")
     bounds = _segmented_tuning_subrole_bounds()
-    run_groups: list[list[str]] = [[], [], []]
-    ordinal_groups: list[list[int]] = [[], [], []]
-    duration_groups: list[list[int]] = [[], [], []]
+    run_groups: list[list[str]] = [[], [], [], []]
+    ordinal_groups: list[list[int]] = [[], [], [], []]
+    duration_groups: list[list[int]] = [[], [], [], []]
     for entry in entries:
         binding = bindings[entry.run_id]
         binding.validate()
@@ -1087,6 +1117,8 @@ def build_round74_segmented_tuning_subpartition(
             group_index = 1
         elif bounds[2] <= ordinal < bounds[3]:
             group_index = 2
+        elif bounds[3] <= ordinal < bounds[4]:
+            group_index = 3
         else:
             raise ValueError("Round 74 segmented tuning slot differs")
         run_groups[group_index].append(entry.run_id)
@@ -1100,12 +1132,45 @@ def build_round74_segmented_tuning_subpartition(
         model_selection_run_ids=tuple(run_groups[0]),
         calibration_run_ids=tuple(run_groups[1]),
         policy_selection_run_ids=tuple(run_groups[2]),
+        ai_qualification_run_ids=tuple(run_groups[3]),
         model_selection_slot_ordinals=tuple(ordinal_groups[0]),
         calibration_slot_ordinals=tuple(ordinal_groups[1]),
         policy_selection_slot_ordinals=tuple(ordinal_groups[2]),
+        ai_qualification_slot_ordinals=tuple(ordinal_groups[3]),
         model_selection_eligible_anchor_ns=tuple(duration_groups[0]),
         calibration_eligible_anchor_ns=tuple(duration_groups[1]),
         policy_selection_eligible_anchor_ns=tuple(duration_groups[2]),
+        ai_qualification_eligible_anchor_ns=tuple(duration_groups[3]),
+    )
+    selected.validate()
+    return selected
+
+
+def build_round74_segmented_ai_qualification_population(
+    subpartition: Round74SegmentedTuningSubpartition,
+) -> Round74AIQualificationPopulation:
+    """Bind the fourth tuning subrole without reading features or targets."""
+
+    from .impact_absorption_ai_uplift import Round74AIQualificationPopulation
+
+    if not isinstance(subpartition, Round74SegmentedTuningSubpartition):
+        raise TypeError("Round 74 segmented tuning subpartition is required")
+    subpartition.validate()
+    selected = Round74AIQualificationPopulation(
+        parent_tuning_subpartition_sha256=subpartition.subpartition_sha256,
+        prior_run_ids=(
+            *subpartition.model_selection_run_ids,
+            *subpartition.calibration_run_ids,
+            *subpartition.policy_selection_run_ids,
+        ),
+        prior_slot_ordinals=(
+            *subpartition.model_selection_slot_ordinals,
+            *subpartition.calibration_slot_ordinals,
+            *subpartition.policy_selection_slot_ordinals,
+        ),
+        run_ids=subpartition.ai_qualification_run_ids,
+        slot_ordinals=subpartition.ai_qualification_slot_ordinals,
+        eligible_anchor_ns=subpartition.ai_qualification_eligible_anchor_ns,
     )
     selected.validate()
     return selected
@@ -1664,6 +1729,7 @@ __all__ = [
     "Round74SegmentedTuningSubpartition",
     "assemble_round74_segmented_role_batches",
     "build_round74_segmented_model_selection_stages",
+    "build_round74_segmented_ai_qualification_population",
     "build_round74_segmented_sealed_dataset_identity",
     "build_round74_segmented_test_population",
     "build_round74_segmented_training_split",

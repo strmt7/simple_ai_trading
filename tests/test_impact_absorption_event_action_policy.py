@@ -77,19 +77,31 @@ def _subpartition() -> Round74TuningSubpartition:
 
 
 def _segmented_subpartition() -> Round74SegmentedTuningSubpartition:
-    run_ids = tuple(f"{index:032x}" for index in range(100, 191))
+    run_ids = tuple(f"{index:032x}" for index in range(100, 193))
+    model_ordinals = tuple(
+        ordinal for ordinal in range(514, 557) if ordinal not in {520, 530, 545}
+    )
+    calibration_ordinals = tuple(
+        ordinal for ordinal in range(557, 579) if ordinal not in {565, 566, 567}
+    )
+    policy_ordinals = tuple(
+        ordinal for ordinal in range(579, 600) if ordinal not in {589, 590}
+    )
     result = Round74SegmentedTuningSubpartition(
         parent_partition_sha256=PARTITION_SHA256,
         cohort_plan_sha256="a" * 64,
-        model_selection_run_ids=run_ids[:45],
-        calibration_run_ids=run_ids[45:68],
-        policy_selection_run_ids=run_ids[68:],
-        model_selection_slot_ordinals=tuple(range(514, 559)),
-        calibration_slot_ordinals=tuple(range(566, 589)),
-        policy_selection_slot_ordinals=tuple(range(592, 615)),
-        model_selection_eligible_anchor_ns=(900_000_000_000,) * 45,
-        calibration_eligible_anchor_ns=(900_000_000_000,) * 23,
-        policy_selection_eligible_anchor_ns=(900_000_000_000,) * 23,
+        model_selection_run_ids=run_ids[:40],
+        calibration_run_ids=run_ids[40:59],
+        policy_selection_run_ids=run_ids[59:78],
+        ai_qualification_run_ids=run_ids[78:],
+        model_selection_slot_ordinals=model_ordinals,
+        calibration_slot_ordinals=calibration_ordinals,
+        policy_selection_slot_ordinals=policy_ordinals,
+        ai_qualification_slot_ordinals=tuple(range(600, 615)),
+        model_selection_eligible_anchor_ns=(900_000_000_000,) * 40,
+        calibration_eligible_anchor_ns=(900_000_000_000,) * 19,
+        policy_selection_eligible_anchor_ns=(900_000_000_000,) * 19,
+        ai_qualification_eligible_anchor_ns=(900_000_000_000,) * 15,
     )
     result.validate()
     return result
@@ -115,7 +127,9 @@ def _fit(calibration_runs: int = 6) -> Round74TemperatureFit:
 
 
 def _calibration(
-    subpartition: Round74TuningSubpartition | Round74SegmentedTuningSubpartition | None = None,
+    subpartition: Round74TuningSubpartition
+    | Round74SegmentedTuningSubpartition
+    | None = None,
 ) -> Round74ProbabilityCalibration:
     selected = subpartition or _subpartition()
     calibration_runs = len(selected.calibration_run_ids)
@@ -803,9 +817,7 @@ def test_segmented_policy_selection_uses_every_frozen_policy_segment() -> None:
     calibration = _calibration(subpartition)
     batch = _batch(payoff_sign=1.0, subpartition=subpartition)
     batches = _run_batch_panel(batch)
-    candidates = tuple(
-        _candidates(value, calibration=calibration) for value in batches
-    )
+    candidates = tuple(_candidates(value, calibration=calibration) for value in batches)
 
     trace = simulate_round74_action_trace_batches(
         batches,
@@ -820,9 +832,9 @@ def test_segmented_policy_selection_uses_every_frozen_policy_segment() -> None:
         optimization_population="eligible_target",
     )
 
-    assert len(batches) == 23
+    assert len(batches) == 19
     assert trace.expected_run_ids == subpartition.policy_selection_run_ids
-    assert trace.metrics.active_runs == 23
+    assert trace.metrics.active_runs == 19
     assert selection.accepted
     assert all(
         evaluation.trace.expected_run_ids == subpartition.policy_selection_run_ids

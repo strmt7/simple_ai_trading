@@ -35,6 +35,7 @@ from simple_ai_trading.impact_absorption_ai_uplift import (
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
     Round74AIPretestQualificationPanel,
+    Round74AIQualificationPopulation,
     build_round74_ai_pretest_qualification,
     evaluate_round74_ai_overlay_development,
 )
@@ -433,7 +434,28 @@ def _ai_pretest_qualification(
         and evaluation.threshold_score == selection.selected_threshold_score
     ]
     assert len(selected) == 1
-    trace = selected[0].trace
+    policy_trace = selected[0].trace
+    qualification_run_ids = tuple(
+        f"{90_000 + index:032x}" for index in range(len(policy_trace.expected_run_ids))
+    )
+    trace = replace(
+        policy_trace,
+        expected_run_ids=qualification_run_ids,
+        run_id=qualification_run_ids,
+        feature_row_sha256=tuple(
+            f"{91_000 + index:064x}" for index in range(len(qualification_run_ids))
+        ),
+    )
+    trace.validate()
+    qualification_population = Round74AIQualificationPopulation(
+        parent_tuning_subpartition_sha256=selection.tuning_subpartition_sha256,
+        prior_run_ids=policy_trace.expected_run_ids,
+        prior_slot_ordinals=tuple(range(100, 100 + len(policy_trace.expected_run_ids))),
+        run_ids=qualification_run_ids,
+        slot_ordinals=tuple(range(200, 200 + len(qualification_run_ids))),
+        eligible_anchor_ns=(900_000_000_000,) * len(qualification_run_ids),
+    )
+    qualification_population.validate()
     reports = []
     for model_index, manifest in enumerate(manifests):
         reviews = []
@@ -529,6 +551,9 @@ def _ai_pretest_qualification(
             selection,
             tuple(reviews),
             tuple(executions),
+            qualification_population=qualification_population,
+            qualification_trace=trace,
+            qualification_candidate_sha256=("d" * 64,),
         )
         assert report.development_gate_passed
         reports.append(report)
@@ -1633,6 +1658,44 @@ def test_development_data_is_rejected_before_ledger_creation(
         )
 
     assert not path.exists()
+
+
+def test_ai_qualification_cannot_reuse_sealed_or_other_tuning_population(
+    tmp_path: Path,
+) -> None:
+    policy_runs = tuple(f"{30_000 + index:032x}" for index in range(24))
+    selection = _selection(policy_runs=policy_runs)
+    qualification = _ai_pretest_qualification(selection)
+    population = qualification.development_reports[0].qualification_population
+    ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+
+    with pytest.raises(ValueError, match="reused test runs"):
+        ledger.reserve(
+            test_batches=(_test_batch(runs=population.run_ids),),
+            action_selection=selection,
+            ai_pretest_qualification=qualification,
+        )
+
+    wrong_population = replace(
+        population,
+        parent_tuning_subpartition_sha256="f" * 64,
+    )
+    wrong_population.validate()
+    wrong_reports = tuple(
+        replace(report, qualification_population=wrong_population)
+        for report in qualification.development_reports
+    )
+    for report in wrong_reports:
+        report.validate()
+    wrong_qualification = build_round74_ai_pretest_qualification(wrong_reports)
+    with pytest.raises(ValueError, match="qualification identity differs"):
+        ledger.reserve(
+            test_batches=(_test_batch(),),
+            action_selection=selection,
+            ai_pretest_qualification=wrong_qualification,
+        )
+
+    assert not ledger.path.exists()
 
 
 def test_tampered_claim_or_duplicate_manifest_panel_is_rejected(

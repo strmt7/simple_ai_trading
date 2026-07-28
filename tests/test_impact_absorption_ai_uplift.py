@@ -19,6 +19,8 @@ from simple_ai_trading.impact_absorption_ai_runtime import (
 from simple_ai_trading.impact_absorption_ai_uplift import (
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
+    Round74AIQualificationPopulation,
+    Round74AIUpliftDevelopmentReport,
     build_round74_ai_pretest_qualification,
     evaluate_round74_ai_overlay_development,
     load_round74_ai_pretest_qualification,
@@ -41,6 +43,8 @@ from simple_ai_trading.impact_absorption_event_sequence import (
 
 RUNS = tuple(f"{index:032x}" for index in range(1, 7))
 FEATURES = tuple(f"{index + 100:064x}" for index in range(6))
+POLICY_RUNS = tuple(f"{index:032x}" for index in range(11, 17))
+POLICY_FEATURES = tuple(f"{index + 700:064x}" for index in range(6))
 SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT") * 2
 PAYOFFS = (2.0, -1.0, 2.0, -1.0, 2.0, 2.0)
 WALL_NS = 1_800_000_000_000_000_000
@@ -94,7 +98,13 @@ def _trace() -> Round74ActionTrace:
 
 
 def _selection() -> Round74ActionPolicySelection:
-    trace = _trace()
+    trace = replace(
+        _trace(),
+        expected_run_ids=POLICY_RUNS,
+        run_id=POLICY_RUNS,
+        feature_row_sha256=POLICY_FEATURES,
+    )
+    trace.validate()
     quantiles = round74_action_profile("aggressive").threshold_quantiles
     evaluations = tuple(
         Round74ActionThresholdEvaluation(
@@ -122,6 +132,34 @@ def _selection() -> Round74ActionPolicySelection:
     )
     result.validate()
     return result
+
+
+def _qualification_population() -> Round74AIQualificationPopulation:
+    result = Round74AIQualificationPopulation(
+        parent_tuning_subpartition_sha256="3" * 64,
+        prior_run_ids=POLICY_RUNS,
+        prior_slot_ordinals=tuple(range(594, 600)),
+        run_ids=RUNS,
+        slot_ordinals=tuple(range(600, 606)),
+        eligible_anchor_ns=(900_000_000_000,) * len(RUNS),
+    )
+    result.validate()
+    return result
+
+
+def _evaluate(
+    action_selection: Round74ActionPolicySelection,
+    reviews: tuple[Round74AIPairedReviewEvidence, ...],
+    executions: tuple[Round74AIExecutionReplayEvidence, ...],
+) -> Round74AIUpliftDevelopmentReport:
+    return evaluate_round74_ai_overlay_development(
+        action_selection,
+        reviews,
+        executions,
+        qualification_population=_qualification_population(),
+        qualification_trace=_trace(),
+        qualification_candidate_sha256=("a" * 64,),
+    )
 
 
 def _review(
@@ -352,7 +390,7 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
         for index, payoff in enumerate(PAYOFFS)
     )
 
-    report = evaluate_round74_ai_overlay_development(
+    report = _evaluate(
         _selection(),
         reviews,
         _executions(reviews),
@@ -383,7 +421,7 @@ def test_ai_pretest_qualification_binds_two_passing_development_reports(
         _review(index, 0 if payoff < 0.0 else 10_000)
         for index, payoff in enumerate(PAYOFFS)
     )
-    first = evaluate_round74_ai_overlay_development(
+    first = _evaluate(
         _selection(),
         reviews,
         _executions(reviews),
@@ -429,14 +467,14 @@ def test_ai_pretest_qualification_rejects_a_failed_model() -> None:
         _review(index, 0 if payoff < 0.0 else 10_000)
         for index, payoff in enumerate(PAYOFFS)
     )
-    passing = evaluate_round74_ai_overlay_development(
+    passing = _evaluate(
         _selection(),
         passing_reviews,
         _executions(passing_reviews),
     )
     failed_reviews = tuple(_review(index, 0) for index in range(6))
     failed = replace(
-        evaluate_round74_ai_overlay_development(
+        _evaluate(
             _selection(),
             failed_reviews,
             _executions(failed_reviews),
@@ -454,6 +492,36 @@ def test_ai_pretest_qualification_rejects_a_failed_model() -> None:
     )
 
 
+def test_ai_development_rejects_policy_selection_run_reuse() -> None:
+    reviews = tuple(_review(index, 10_000) for index in range(6))
+    overlapping_population = Round74AIQualificationPopulation(
+        parent_tuning_subpartition_sha256="3" * 64,
+        prior_run_ids=RUNS,
+        prior_slot_ordinals=tuple(range(594, 600)),
+        run_ids=POLICY_RUNS,
+        slot_ordinals=tuple(range(600, 606)),
+        eligible_anchor_ns=(900_000_000_000,) * len(POLICY_RUNS),
+    )
+    overlapping_population.validate()
+    overlapping_trace = replace(
+        _trace(),
+        expected_run_ids=POLICY_RUNS,
+        run_id=POLICY_RUNS,
+        feature_row_sha256=POLICY_FEATURES,
+    )
+    overlapping_trace.validate()
+
+    with pytest.raises(ValueError, match="qualification population identity differs"):
+        evaluate_round74_ai_overlay_development(
+            _selection(),
+            reviews,
+            _executions(reviews),
+            qualification_population=overlapping_population,
+            qualification_trace=overlapping_trace,
+            qualification_candidate_sha256=("a" * 64,),
+        )
+
+
 def test_aggregate_ai_uplift_cannot_hide_run_or_asset_harm() -> None:
     reviews = tuple(
         _review(
@@ -463,7 +531,7 @@ def test_aggregate_ai_uplift_cannot_hide_run_or_asset_harm() -> None:
         for index, payoff in enumerate(PAYOFFS)
     )
 
-    report = evaluate_round74_ai_overlay_development(
+    report = _evaluate(
         _selection(),
         reviews,
         _executions(reviews),
@@ -489,7 +557,7 @@ def test_aggregate_ai_uplift_cannot_hide_run_or_asset_harm() -> None:
 
 def test_all_veto_overlay_fails_closed_without_dropping_pairs() -> None:
     reviews = tuple(_review(index, 0) for index in range(6))
-    report = evaluate_round74_ai_overlay_development(
+    report = _evaluate(
         _selection(),
         reviews,
         _executions(reviews),
@@ -515,7 +583,7 @@ def test_blocked_runtime_review_is_a_paired_zero_exposure_veto() -> None:
     )
     reviews[0].validate()
 
-    report = evaluate_round74_ai_overlay_development(
+    report = _evaluate(
         _selection(),
         tuple(reviews),
         _executions(tuple(reviews)),
@@ -532,7 +600,7 @@ def test_review_coverage_and_action_identity_must_match_exactly() -> None:
     reviews = tuple(_review(index, 10_000) for index in range(6))
 
     try:
-        evaluate_round74_ai_overlay_development(
+        _evaluate(
             _selection(),
             reviews[:-1],
             _executions(reviews),
@@ -546,7 +614,7 @@ def test_review_coverage_and_action_identity_must_match_exactly() -> None:
     changed[2] = replace(changed[2], side=-1)
     changed[2].validate()
     try:
-        evaluate_round74_ai_overlay_development(
+        _evaluate(
             _selection(),
             tuple(changed),
             _executions(tuple(changed)),
@@ -670,7 +738,7 @@ def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
         10_000,
         runtime_elapsed_ns=SAME_ENTRY_LATENCY_BUDGET_NS + 1,
     )
-    report = evaluate_round74_ai_overlay_development(
+    report = _evaluate(
         _selection(),
         tuple(reviews),
         _executions(tuple(reviews)),

@@ -44,7 +44,10 @@ from .impact_absorption_event_targets import (
 from .storage import write_json_atomic
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v9"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v10"
+ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION = (
+    "round-074-ai-qualification-population-v1"
+)
 ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION = (
     "round-074-ai-pretest-qualification-v1"
 )
@@ -827,6 +830,149 @@ def _scaled_metrics(
 
 
 @dataclass(frozen=True)
+class Round74AIQualificationPopulation:
+    """Target-blind, chronologically later tuning runs reserved for AI."""
+
+    parent_tuning_subpartition_sha256: str
+    prior_run_ids: tuple[str, ...]
+    prior_slot_ordinals: tuple[int, ...]
+    run_ids: tuple[str, ...]
+    slot_ordinals: tuple[int, ...]
+    eligible_anchor_ns: tuple[int, ...]
+    schema_version: str = ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION
+    optimization_population: str = "eligible_target"
+
+    def validate(self) -> None:
+        if (
+            self.schema_version != ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION
+            or self.optimization_population != "eligible_target"
+            or _SHA256.fullmatch(self.parent_tuning_subpartition_sha256) is None
+            or not self.prior_run_ids
+            or len(self.prior_run_ids) != len(self.prior_slot_ordinals)
+            or not self.run_ids
+            or len(self.run_ids) != len(self.slot_ordinals)
+            or len(self.run_ids) != len(self.eligible_anchor_ns)
+            or any(
+                len(value) != 32
+                or any(character not in "0123456789abcdef" for character in value)
+                for value in (*self.prior_run_ids, *self.run_ids)
+            )
+            or len(set((*self.prior_run_ids, *self.run_ids)))
+            != len(self.prior_run_ids) + len(self.run_ids)
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+                for value in (*self.prior_slot_ordinals, *self.slot_ordinals)
+            )
+            or len(set((*self.prior_slot_ordinals, *self.slot_ordinals)))
+            != len(self.prior_slot_ordinals) + len(self.slot_ordinals)
+            or any(
+                current <= prior
+                for prior, current in zip(
+                    (*self.prior_slot_ordinals, *self.slot_ordinals),
+                    (*self.prior_slot_ordinals, *self.slot_ordinals)[1:],
+                    strict=False,
+                )
+            )
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
+                for value in self.eligible_anchor_ns
+            )
+        ):
+            raise ValueError("Round 74 AI qualification population differs")
+
+    @property
+    def population_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        payload: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "parent_tuning_subpartition_sha256": (
+                self.parent_tuning_subpartition_sha256
+            ),
+            "optimization_population": self.optimization_population,
+            "prior_run_ids": list(self.prior_run_ids),
+            "prior_slot_ordinals": list(self.prior_slot_ordinals),
+            "run_ids": list(self.run_ids),
+            "slot_ordinals": list(self.slot_ordinals),
+            "eligible_anchor_ns": list(self.eligible_anchor_ns),
+            "data_scope": "ai_qualification_tuning_runs_only",
+            "assignment_basis": "immutable_scheduled_slot_ordinal_range",
+            "target_or_model_output_used_for_assignment": False,
+            "calibration_or_policy_selection_run_reuse_permitted": False,
+            "sealed_test_accessed": False,
+        }
+        if include_sha256:
+            payload["population_sha256"] = _canonical_sha256(payload)
+        return payload
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74AIQualificationPopulation:
+        original = dict(value)
+        payload = dict(original)
+        claimed = str(payload.pop("population_sha256", ""))
+        fixed_policy = {
+            "data_scope": "ai_qualification_tuning_runs_only",
+            "assignment_basis": "immutable_scheduled_slot_ordinal_range",
+            "target_or_model_output_used_for_assignment": False,
+            "calibration_or_policy_selection_run_reuse_permitted": False,
+            "sealed_test_accessed": False,
+        }
+        if any(
+            type(observed := payload.pop(key, None)) is not type(expected)
+            or observed != expected
+            for key, expected in fixed_policy.items()
+        ):
+            raise ValueError("Round 74 AI qualification population policy differs")
+        if (
+            _SHA256.fullmatch(claimed) is None
+            or not isinstance(payload.get("prior_run_ids"), list)
+            or not isinstance(payload.get("run_ids"), list)
+            or any(not isinstance(item, str) for item in payload["prior_run_ids"])
+            or any(not isinstance(item, str) for item in payload["run_ids"])
+            or not isinstance(payload.get("prior_slot_ordinals"), list)
+            or not isinstance(payload.get("slot_ordinals"), list)
+            or not isinstance(payload.get("eligible_anchor_ns"), list)
+            or any(
+                isinstance(item, bool) or not isinstance(item, int)
+                for key in (
+                    "prior_slot_ordinals",
+                    "slot_ordinals",
+                    "eligible_anchor_ns",
+                )
+                for item in payload[key]
+            )
+        ):
+            raise ValueError("Round 74 AI qualification population payload differs")
+        try:
+            selected = cls(
+                parent_tuning_subpartition_sha256=str(
+                    payload["parent_tuning_subpartition_sha256"]
+                ),
+                prior_run_ids=tuple(payload["prior_run_ids"]),
+                prior_slot_ordinals=tuple(payload["prior_slot_ordinals"]),
+                run_ids=tuple(payload["run_ids"]),
+                slot_ordinals=tuple(payload["slot_ordinals"]),
+                eligible_anchor_ns=tuple(payload["eligible_anchor_ns"]),
+                schema_version=str(payload["schema_version"]),
+                optimization_population=str(payload["optimization_population"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 74 AI qualification population payload differs"
+            ) from exc
+        selected.validate()
+        if selected.population_sha256 != claimed or selected.as_dict() != original:
+            raise ValueError("Round 74 AI qualification population identity differs")
+        return selected
+
+
+@dataclass(frozen=True)
 class Round74AIUpliftDevelopmentReport:
     """Paired tuning diagnostic with no model-selection or trading authority."""
 
@@ -837,6 +983,7 @@ class Round74AIUpliftDevelopmentReport:
     probability_calibration_sha256: str
     model_manifest_sha256: str
     same_entry_latency_budget_ns: int
+    qualification_population: Round74AIQualificationPopulation
     baseline_trace: Round74ActionTrace
     review_sha256: tuple[str, ...]
     execution_replay_sha256: tuple[str, ...]
@@ -855,6 +1002,7 @@ class Round74AIUpliftDevelopmentReport:
     profitability_claim: bool = False
 
     def validate(self) -> None:
+        self.qualification_population.validate()
         self.baseline_trace.validate()
         self.ai_metrics.validate()
         scaled = np.asarray(self.ai_scaled_net_payoff_bps, dtype=np.float64)
@@ -966,6 +1114,9 @@ class Round74AIUpliftDevelopmentReport:
                 )
             )
             or not self.candidate_sha256
+            or self.baseline_trace.expected_run_ids
+            != self.qualification_population.run_ids
+            or self.baseline_trace.run_id != self.qualification_population.run_ids
             or isinstance(self.same_entry_latency_budget_ns, bool)
             or not isinstance(self.same_entry_latency_budget_ns, int)
             or self.same_entry_latency_budget_ns <= 0
@@ -1062,6 +1213,10 @@ class Round74AIUpliftDevelopmentReport:
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "model_manifest_sha256": self.model_manifest_sha256,
             "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
+            "qualification_population": self.qualification_population.as_dict(),
+            "qualification_population_sha256": (
+                self.qualification_population.population_sha256
+            ),
             "baseline_trace": self.baseline_trace.as_dict(),
             "review_sha256": list(self.review_sha256),
             "execution_replay_sha256": list(self.execution_replay_sha256),
@@ -1129,6 +1284,8 @@ class Round74AIUpliftDevelopmentReport:
             raise ValueError("Round 74 AI uplift report policy differs")
         baseline_trace = payload.get("baseline_trace")
         ai_metrics = payload.get("ai_metrics")
+        qualification_population = payload.get("qualification_population")
+        claimed_population = payload.pop("qualification_population_sha256", None)
         sequence_keys = (
             "candidate_sha256",
             "review_sha256",
@@ -1143,11 +1300,17 @@ class Round74AIUpliftDevelopmentReport:
             _SHA256.fullmatch(claimed) is None
             or not isinstance(baseline_trace, Mapping)
             or not isinstance(ai_metrics, Mapping)
+            or not isinstance(qualification_population, Mapping)
             or not isinstance(payload.get("development_gate_passed"), bool)
             or any(not isinstance(payload.get(key), list) for key in sequence_keys)
         ):
             raise ValueError("Round 74 AI uplift report payload differs")
         try:
+            population = Round74AIQualificationPopulation.from_dict(
+                qualification_population
+            )
+            if claimed_population != population.population_sha256:
+                raise ValueError("qualification population digest differs")
             selected = cls(
                 profile=str(payload["profile"]),
                 action_selection_sha256=str(payload["action_selection_sha256"]),
@@ -1160,6 +1323,7 @@ class Round74AIUpliftDevelopmentReport:
                 ),
                 model_manifest_sha256=str(payload["model_manifest_sha256"]),
                 same_entry_latency_budget_ns=payload["same_entry_latency_budget_ns"],
+                qualification_population=population,
                 baseline_trace=Round74ActionTrace.from_dict(baseline_trace),
                 review_sha256=tuple(str(item) for item in payload["review_sha256"]),
                 execution_replay_sha256=tuple(
@@ -1215,6 +1379,7 @@ class Round74AIPretestQualificationPanel:
                 report.pretest_policy_sha256,
                 report.probability_calibration_sha256,
                 report.same_entry_latency_budget_ns,
+                report.qualification_population.population_sha256,
                 _canonical_sha256(report.baseline_trace.as_dict()),
             )
             for report in reports
@@ -1308,7 +1473,7 @@ class Round74AIPretestQualificationPanel:
             "development_report_sha256": [
                 report.report_sha256 for report in self.development_reports
             ],
-            "development_data_scope": "policy_selection_tuning_runs_only",
+            "development_data_scope": "ai_qualification_tuning_runs_only",
             "sealed_test_accessed": False,
             "model_selection_performed": False,
             "promotion_authority": False,
@@ -1345,7 +1510,7 @@ class Round74AIPretestQualificationPanel:
                 report.model_manifest_sha256 for report in reports
             ],
             "development_report_sha256": [report.report_sha256 for report in reports],
-            "development_data_scope": "policy_selection_tuning_runs_only",
+            "development_data_scope": "ai_qualification_tuning_runs_only",
             "sealed_test_accessed": False,
             "model_selection_performed": False,
             "promotion_authority": False,
@@ -1445,10 +1610,16 @@ def evaluate_round74_ai_overlay_development(
     action_selection: Round74ActionPolicySelection,
     reviews: Sequence[Round74AIPairedReviewEvidence],
     executions: Sequence[Round74AIExecutionReplayEvidence],
+    *,
+    qualification_population: Round74AIQualificationPopulation,
+    qualification_trace: Round74ActionTrace,
+    qualification_candidate_sha256: Sequence[str],
 ) -> Round74AIUpliftDevelopmentReport:
-    """Compare one AI overlay on the already-consumed tuning trace only."""
+    """Compare one AI overlay on a disjoint, preassigned tuning population."""
 
     action_selection.validate()
+    qualification_population.validate()
+    qualification_trace.validate()
     selected = [
         value
         for value in action_selection.evaluations
@@ -1458,7 +1629,28 @@ def evaluate_round74_ai_overlay_development(
     ]
     if not action_selection.accepted or len(selected) != 1:
         raise ValueError("Round 74 AI uplift lacks an accepted action policy")
-    trace = selected[0].trace
+    selected_candidate_sha256 = tuple(
+        _require_sha256(value, "qualification candidate")
+        for value in qualification_candidate_sha256
+    )
+    policy_run_ids = {
+        run_id
+        for evaluation in action_selection.evaluations
+        for run_id in evaluation.trace.expected_run_ids
+    }
+    trace = qualification_trace
+    if (
+        not selected_candidate_sha256
+        or len(set(selected_candidate_sha256)) != len(selected_candidate_sha256)
+        or qualification_population.parent_tuning_subpartition_sha256
+        != action_selection.tuning_subpartition_sha256
+        or trace.expected_run_ids != qualification_population.run_ids
+        or trace.run_id != qualification_population.run_ids
+        or not policy_run_ids.issubset(set(qualification_population.prior_run_ids))
+        or policy_run_ids.intersection(qualification_population.run_ids)
+        or trace.threshold_score != action_selection.selected_threshold_score
+    ):
+        raise ValueError("Round 74 AI qualification population identity differs")
     review_rows = tuple(reviews)
     execution_rows = tuple(executions)
     for review in review_rows:
@@ -1568,13 +1760,14 @@ def evaluate_round74_ai_overlay_development(
     result = Round74AIUpliftDevelopmentReport(
         profile=profile.profile,
         action_selection_sha256=action_selection.selection_sha256,
-        candidate_sha256=action_selection.candidate_sha256,
+        candidate_sha256=selected_candidate_sha256,
         pretest_policy_sha256=action_selection.pretest_policy_sha256,
         probability_calibration_sha256=(
             action_selection.probability_calibration_sha256
         ),
         model_manifest_sha256=next(iter(manifest_values)),
         same_entry_latency_budget_ns=next(iter(latency_budgets)),
+        qualification_population=qualification_population,
         baseline_trace=trace,
         review_sha256=tuple(review.review_sha256 for review in review_rows),
         execution_replay_sha256=tuple(value.replay_sha256 for value in execution_rows),
@@ -1594,6 +1787,7 @@ __all__ = [
     "ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION",
     "ROUND74_AI_EXECUTION_REPLAY_STATUSES",
     "ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION",
+    "ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION",
     "ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO",
     "ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE",
     "ROUND74_AI_UPLIFT_SCHEMA_VERSION",
@@ -1601,6 +1795,7 @@ __all__ = [
     "Round74AIOverlayMetrics",
     "Round74AIPairedReviewEvidence",
     "Round74AIPretestQualificationPanel",
+    "Round74AIQualificationPopulation",
     "Round74AIUpliftDevelopmentReport",
     "build_round74_ai_pretest_qualification",
     "evaluate_round74_ai_overlay_development",
