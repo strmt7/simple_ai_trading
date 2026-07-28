@@ -1,0 +1,108 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v68",
+  "artifact_kind": "terminal_segmented_development_runtime_and_fail_closed_ai_profiles",
+  "created_utc": "2026-07-28T22:25:06.5588605Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v67.json",
+    "file_sha256": "6d254491b22cd22e6b8562b989ee71fb4e22dbca45a061d3cd69cd3e488f27af",
+    "design_sha256": "38fa5a874a59e45062808af7a79d91c34b04f4e1af602f59569f88fd9ec471ed",
+    "unchanged_except_declared_delta": true
+  },
+  "implementation_git_commit": "e07c9263ef069b67e79f7df1556592d2856bac74",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "segmented_inputs_path": "src/simple_ai_trading/round74_segmented_development_inputs.py",
+    "segmented_inputs_sha256": "e02d6ded0fd58c6b47290d3cc4b625443a37b6e2d1ae7fd74bbd54b8a292032e",
+    "segmented_operator_path": "src/simple_ai_trading/round74_segmented_development_operator.py",
+    "segmented_operator_sha256": "272304872ff8dc372e733a7cb9131e28ca6eec845504aa62bb18728089f5ac94",
+    "segmented_runtime_path": "src/simple_ai_trading/round74_segmented_development_runtime.py",
+    "segmented_runtime_sha256": "daa0d7b16055ba135ab4432fcf43b46c832399dfbd731ca0c66ac3e131370df0",
+    "segmented_tool_path": "tools/run_round74_segmented_development.py",
+    "segmented_tool_sha256": "96b5f87d79a1dd403def3226f7d5ea7498a07b81ac56fd75aad7dc42b0ae9bee",
+    "segmented_inputs_test_path": "tests/test_round74_segmented_development_inputs.py",
+    "segmented_inputs_test_sha256": "2b946dd134d6663db9e14b04e35e13f3702c9d5d697a728ab68919004ce5c9ce",
+    "segmented_runtime_test_path": "tests/test_round74_segmented_development_runtime.py",
+    "segmented_runtime_test_sha256": "3d78ed16a5ad7ca27015e952b237945bbac8168817f945b0d401cd825db5b33a",
+    "segmented_tool_test_path": "tests/test_round74_segmented_development_tool.py",
+    "segmented_tool_test_sha256": "0ec05b3fd780581f7cf06df6d5605129b75571cb21b1a4e562b09020cfc4958d",
+    "segmented_operator_test_path": "tests/test_round74_segmented_model_operator.py",
+    "segmented_operator_test_sha256": "9c07ab20150791004dfb82954eb85d6bef41fa85043c13a7e070d34d2f75f02a"
+  },
+  "declared_delta": {
+    "complete_720_slot_terminal_ledger_required": true,
+    "development_can_start_before_schedule_terminal": false,
+    "each_result_binds_reservation_state_stdout_stderr_and_adjudication": true,
+    "resultless_slot_requires_explicit_missed_recovery": true,
+    "recovery_permitted_before_entire_schedule_terminal": false,
+    "recovery_can_admit_model_data": false,
+    "recovery_surviving_files_are_hash_bound": true,
+    "all_test_target_manifests_read_before_pretest_seal": false,
+    "development_target_manifests_are_source_audited": true,
+    "database_open_mode": "read_only",
+    "active_capture_or_wal_blocks_development": true,
+    "ai_enabled_by_default_in_tool": true,
+    "ai_latency_budget_is_explicit_and_mandatory_when_enabled": true,
+    "ml_rejected_profile_enters_ai_qualification": false,
+    "zero_ml_accepted_profiles_is_a_valid_non_trading_result": true,
+    "training_and_non_ai_tuning_batches_released_before_ai": true,
+    "qualification_profiles": [
+      "conservative",
+      "regular",
+      "aggressive"
+    ],
+    "sealed_test_consumed": false
+  },
+  "verification": {
+    "connected_model_ai_campaign_runtime_tests_passed": 160,
+    "synthetic_terminal_result_tamper_test_passed": true,
+    "terminal_only_recovery_tamper_test_passed": true,
+    "rejected_profile_ai_skip_test_passed": true,
+    "training_batch_release_order_test_passed": true,
+    "structured_tool_failure_test_passed": true,
+    "live_result_files_validated": 29,
+    "live_result_statuses_included": [
+      "admitted",
+      "transport_excluded"
+    ],
+    "live_slot_033_result_sha256_validated": "f22e2248b388064629436c13276ef67873ed4508fb54a9a82792dd128df40228",
+    "live_active_capture_guard_refusal_passed": true,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "representative_ai_market_evaluation_performed": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 27,
+    "latest_confirmed_admitted_slot_ordinal": 33,
+    "slot_033_result_sha256": "f22e2248b388064629436c13276ef67873ed4508fb54a9a82792dd128df40228",
+    "slot_034_state_at_document_time": "running",
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_limits": {
+    "tests_use_synthetic_contract_fixtures": true,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "probability_calibration_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "drawdown_claim": false
+  },
+  "status": {
+    "implementation_complete_for_declared_delta": true,
+    "prospective_cohort_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "design_sha256": "7b6d09158b26ffcd2bed5a35cc10a8f8b68e4f8b5a0b43672ab707ee5a243cad"
+}

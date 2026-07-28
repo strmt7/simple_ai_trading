@@ -1,0 +1,88 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v101",
+  "created_at_utc": "2026-07-28T22:25:06.5588605Z",
+  "implementation_git_commit": "e07c9263ef069b67e79f7df1556592d2856bac74",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v100.json",
+    "file_sha256": "551534610723631653b980beea74d37bffcc528694a067e90085ae48cb305cfa",
+    "design_sha256": "3bc319f4fa872ea7701c86d41e271aab2cea60ac0e72f886be6093da95f234e5",
+    "unchanged_except_declared_delta": true
+  },
+  "local_ai_design": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v68.json",
+    "file_sha256": "edf097040719679377dabb9595f9991d2c7911ed9700c2e38d1ea8284530219d",
+    "design_sha256": "7b6d09158b26ffcd2bed5a35cc10a8f8b68e4f8b5a0b43672ab707ee5a243cad"
+  },
+  "declared_delta": {
+    "segmented_terminal_input_schema": "round-074-segmented-development-inputs-v1",
+    "segmented_development_run_schema": "round-074-segmented-development-run-v1",
+    "all_720_slots_require_result_or_recovery_evidence": true,
+    "transport_missingness_can_be_silently_dropped": false,
+    "resultless_capture_can_be_recovered_as_admitted_data": false,
+    "eligible_anchor_time_quota_revalidated_after_missingness": true,
+    "all_admitted_development_bindings_included": true,
+    "test_target_assemblies_loaded": false,
+    "model_training_uses_segmented_operator": true,
+    "model_policy_sealed_before_ai_qualification": true,
+    "training_batches_retained_during_ai_model_calls": false,
+    "ai_qualification_uses_only_fourth_tuning_subrole": true,
+    "ml_rejected_profile_is_fail_closed": true,
+    "ai_disabled_mode_supported": true,
+    "ai_default_in_tool": "enabled",
+    "database_write_permitted": false,
+    "sealed_test_consumed": false,
+    "model_architecture_changed": false,
+    "feature_names_or_values_changed": false,
+    "supervised_targets_changed": false,
+    "proper_loss_changed": false
+  },
+  "verification": {
+    "connected_model_ai_campaign_runtime_tests_passed": 160,
+    "live_terminal_slot_results_validated_without_database_reopen": 29,
+    "live_campaign_overlap_guard_passed": true,
+    "runtime_memory_release_test_passed": true,
+    "profile_rejection_gate_test_passed": true,
+    "terminal_missingness_recovery_test_passed": true,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "directml_training_path_changed": false,
+    "full_representative_training_performed": false,
+    "sealed_test_evaluated": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 27,
+    "latest_confirmed_admitted_slot_ordinal": 33,
+    "slot_033_result_sha256": "f22e2248b388064629436c13276ef67873ed4508fb54a9a82792dd128df40228",
+    "slot_034_state_at_document_time": "running",
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "development_branch_only": true,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "417a2e70cc575db981c9518926ec6cd2a7fe7b7ce0ea68503fec630664a48a08"
+}
