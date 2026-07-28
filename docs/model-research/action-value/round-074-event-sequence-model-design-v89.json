@@ -1,0 +1,123 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v89",
+  "created_at_utc": "2026-07-28T16:46:34.9412617Z",
+  "implementation_git_commit": "4d18a035f746c5d4638f7bfb87469f48d889a986",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v88.json",
+    "file_sha256": "64cdf3106621b453bf91fb4e3b98503001b6d775309ed13a2bb1a15adcd7ad49",
+    "design_sha256": "ef4baaf2d0bdc76cff375fab95179c4e8cfed90124a1a779ff56eafdca17b364",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "78936c89c5bbfb5dc139868556b0cc1312dcae157b8bd45117b893d14e323263",
+      "model_schema_version": "round-074-event-payoff-model-v7"
+    },
+    "pretraining": {
+      "path": "src/simple_ai_trading/impact_absorption_event_pretraining.py",
+      "sha256": "a6e44d26a479be9a3cf9890ec15a42996da9315cd3ee6295d90d1e9a7475757e",
+      "schema_version": "round-074-causal-next-event-pretraining-v2"
+    },
+    "training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "93974a248ac91cff225a84559ad886f4a46134a44f74230fd4a09da9c2581b4b",
+      "training_schema_version": "round-074-event-training-v24",
+      "pretest_policy_schema_version": "round-074-event-pretest-policy-v23"
+    },
+    "tests": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "80bf0e3d82c2a309c8e34134bf217ff82ac5c46d4b9e243528a24963aa9ea599"
+    }
+  },
+  "declared_delta": {
+    "pretraining_split_built_once_per_candidate_fit": true,
+    "pretraining_split_reused_across_ensemble_seeds": true,
+    "bounded_multi_run_device_forward_added": true,
+    "equal_capture_run_weighting_changed": false,
+    "causal_pretraining_objective_changed": false,
+    "candidate_architecture_family_changed": false,
+    "feature_contract_changed": false,
+    "supervised_target_contract_changed": false,
+    "selection_gate_changed": false,
+    "risk_or_execution_policy_changed": false,
+    "active_v3_campaign_main_branch_contract_changed": false
+  },
+  "split_reuse_contract": {
+    "split_construction_count_per_pretrained_candidate_fit": 1,
+    "split_hash_and_feature_hash_construction_repeated_per_seed": false,
+    "purged_indices_are_read_only": true,
+    "feature_bearing_training_arrays_are_read_only": true,
+    "runtime_split_reuse_bound_to_same_feature_object_graph": true,
+    "target_only_batch_replacement_permitted": true,
+    "copied_or_substituted_feature_tensor_rejected": true,
+    "batch_reordering_rejected": true,
+    "config_sha256_revalidated_per_seed": true,
+    "training_and_validation_row_totals_revalidated_per_seed": true,
+    "chronology_and_disjointness_revalidated_per_seed": true,
+    "policy_reload_requires_one_shared_split_across_pretrained_peers": true,
+    "policy_reload_requires_one_ordered_feature_hash_panel_across_peers": true,
+    "policy_reload_requires_identical_partition_row_counts_across_peers": true
+  },
+  "device_batching_contract": {
+    "default_capture_runs_per_device_group": 8,
+    "maximum_capture_runs_per_device_group": 32,
+    "one_concatenated_forward_per_device_group": true,
+    "one_separate_loss_mean_per_capture_run": true,
+    "device_group_loss": "sum of separate capture-run means divided by total capture-run count",
+    "shorter_run_policy": "deterministic epoch-rotated cycling",
+    "one_backward_call_per_device_group": true,
+    "optimizer_step_count_changed": false,
+    "gradient_clip_boundary_changed": false,
+    "validation_weighting_changed": false,
+    "temporary_prediction_head_persisted": false,
+    "downstream_readout_or_distribution_head_updated_by_pretraining": false
+  },
+  "verification": {
+    "connected_event_pipeline_tests_passed": 184,
+    "model_and_training_tests_passed": 42,
+    "focused_pretraining_tests_passed": 3,
+    "historical_design_tests_passed": 24,
+    "equal_run_separate_vs_grouped_gradient_test_passed": true,
+    "downstream_head_nonmutation_test_passed": true,
+    "two_seed_segmented_artifact_reload_test_passed": true,
+    "cross_peer_split_tamper_rejection_test_passed": true,
+    "ruff_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false,
+    "directml_grouped_row_loss_backward_passed": true,
+    "directml_evidence": {
+      "path": "docs/model-research/action-value/round-074-causal-pretraining-grouped-directml-preflight-2026-07-28.json",
+      "file_sha256": "0454431a71ced82cb4f21802041b06947364ee7acd9706608c146f8e98a1e13a"
+    },
+    "real_cohort_pretraining_performed": false,
+    "paired_initialization_gate_run_on_real_cohort": false,
+    "financial_backtest_performed": false
+  },
+  "evidence_boundary": {
+    "implementation_and_contract_tests_only": true,
+    "directml_operator_compatibility_only": true,
+    "real_prospective_capture_continues_under_frozen_main_branch_contract": true,
+    "pretraining_speedup_measured_on_full_cohort": false,
+    "pretraining_improves_predictive_accuracy_claim": false,
+    "pretraining_improves_calibration_claim": false,
+    "pretraining_improves_profitability_claim": false,
+    "drawdown_inference_permitted": false,
+    "ai_model_evaluated": false,
+    "ai_uplift_inference_permitted": false
+  },
+  "authority": {
+    "causal_pretraining_challenger_implemented": true,
+    "paired_promotion_gate_implemented": true,
+    "pretest_policy_reload_enforcement": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "d62939c06f956489491d820cfdf330ca76c53f6998e44bbd67bf4b36c2b880e8"
+}

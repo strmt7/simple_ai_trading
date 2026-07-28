@@ -1,0 +1,58 @@
+{
+  "schema_version": "round-074-causal-pretraining-grouped-directml-preflight-v1",
+  "recorded_at_utc": "2026-07-28T16:45:56.6612412Z",
+  "completed_before_utc": "2026-07-28T16:45:00Z",
+  "implementation_git_commit": "4d18a035f746c5d4638f7bfb87469f48d889a986",
+  "base_directml_evidence": {
+    "path": "docs/model-research/action-value/round-074-causal-pretraining-directml-preflight-2026-07-28.json",
+    "file_sha256": "01ae4359f6542d9e1c14bdd70be006b01ec59fd55647f3b03b5d8f1614429992"
+  },
+  "source_binding": {
+    "path": "src/simple_ai_trading/impact_absorption_event_pretraining.py",
+    "git_blob_sha256": "a6e44d26a479be9a3cf9890ec15a42996da9315cd3ee6295d90d1e9a7475757e",
+    "schema_version": "round-074-causal-next-event-pretraining-v2"
+  },
+  "host": {
+    "gpu_name": "AMD Radeon RX 9070 XT",
+    "gpu_driver_version": "32.0.31021.5001",
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914",
+    "numpy_version": "2.2.6",
+    "torch_device": "privateuseone:0"
+  },
+  "preflight": {
+    "architecture": "causal_event_tcn",
+    "input_source": "unpersisted random synthetic operator-compatibility tensor",
+    "input_rows": 3,
+    "logical_capture_run_row_counts": [
+      1,
+      2
+    ],
+    "sequence_length": 128,
+    "feature_count": 75,
+    "event_one_hot_contract_satisfied": true,
+    "row_loss_shape": [
+      3
+    ],
+    "separate_per_run_means_used": true,
+    "equal_run_aggregate_loss_used": true,
+    "finite_loss_verified_after_device_to_host_barrier": true,
+    "backward_completed_without_exception": true,
+    "observed_cpu_fallback_warning": false
+  },
+  "evidence_boundary": {
+    "directml_operator_compatibility_only": true,
+    "real_market_data_used": false,
+    "training_or_tuning_targets_used": false,
+    "optimizer_step_performed": false,
+    "real_cohort_pretraining_performed": false,
+    "predictive_accuracy_measured": false,
+    "calibration_measured": false,
+    "financial_backtest_performed": false,
+    "profitability_or_edge_claim": false,
+    "drawdown_inference_permitted": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
