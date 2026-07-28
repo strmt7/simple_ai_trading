@@ -35,7 +35,7 @@ from .impact_absorption_store import (
 
 
 ROUND74_SEGMENTED_COHORT_PLAN_SCHEMA_VERSION = (
-    "round-074-segmented-event-cohort-plan-v2"
+    "round-074-segmented-event-cohort-plan-v3"
 )
 ROUND74_SEGMENTED_COHORT_BINDING_SCHEMA_VERSION = (
     "round-074-segmented-event-cohort-binding-v2"
@@ -347,6 +347,9 @@ class Round74SegmentedCohortPlan:
                 "cross_unit_feature_or_target_permitted": False,
                 "minimum_purge_ns": ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS,
                 "minimum_embargo_ns": ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS,
+                "embargo_axis": (
+                    "elapsed_wall_time_after_prior_audited_usable_end"
+                ),
                 "maximum_target_span_ns": (
                     ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
                 ),
