@@ -18,6 +18,7 @@ from .impact_absorption_ai_runtime import (
     Round74AIRuntimeConfig,
     Round74AIRuntimeOutcome,
     Round74AIWorkerSession,
+    preload_round74_ai_model,
     review_round74_ai_candidate,
     unload_round74_ai_model,
 )
@@ -42,6 +43,7 @@ ROUND74_AI_REVIEW_UNIT_RISK_BPS = 10_000
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
 ReviewRunner = Callable[..., Round74AIRuntimeOutcome]
+ModelBatchPreparer = Callable[["Round74AIReviewModelBinding"], object]
 ModelBatchFinalizer = Callable[["Round74AIReviewModelBinding"], object]
 ProgressCallback = Callable[[Mapping[str, object]], None]
 
@@ -64,6 +66,12 @@ def _finalize_round74_ai_model_batch(
     binding: "Round74AIReviewModelBinding",
 ) -> object:
     return unload_round74_ai_model(binding.runtime, binding.manifest)
+
+
+def _prepare_round74_ai_model_batch(
+    binding: "Round74AIReviewModelBinding",
+) -> object:
+    return preload_round74_ai_model(binding.runtime, binding.manifest)
 
 
 @dataclass(frozen=True)
@@ -436,6 +444,7 @@ def prepare_round74_target_free_ai_reviews(
     same_entry_latency_budget_ns: int,
     model_bindings: Sequence[Round74AIReviewModelBinding] | None = None,
     review_runner: ReviewRunner = review_round74_ai_candidate,
+    model_batch_preparer: ModelBatchPreparer | None = None,
     model_batch_finalizer: ModelBatchFinalizer | None = None,
     progress_callback: ProgressCallback | None = None,
     wall_time_ns: Callable[[], int] = time.time_ns,
@@ -475,6 +484,12 @@ def prepare_round74_target_free_ai_reviews(
     rows = _review_rows(inference, threshold_score=threshold)
     all_reviews: list[tuple[Round74AIPairedReviewEvidence, ...]] = []
     selected_batch_finalizer = model_batch_finalizer
+    selected_batch_preparer = model_batch_preparer
+    if (
+        selected_batch_preparer is None
+        and review_runner is review_round74_ai_candidate
+    ):
+        selected_batch_preparer = _prepare_round74_ai_model_batch
     if (
         selected_batch_finalizer is None
         and review_runner is review_round74_ai_candidate
@@ -486,12 +501,16 @@ def prepare_round74_target_free_ai_reviews(
         reviews: list[Round74AIPairedReviewEvidence] = []
         model_available_wall_ns = 0
         batch_attempted = False
+        batch_cleanup_required = False
         worker_session = (
             Round74AIWorkerSession()
             if review_runner is review_round74_ai_candidate
             else None
         )
         try:
+            if rows and selected_batch_preparer is not None:
+                batch_cleanup_required = True
+                selected_batch_preparer(binding)
             for row in rows:
                 context = inference.contexts[row.panel_index]
                 output = inference.model_outputs[row.panel_index]
@@ -591,7 +610,10 @@ def prepare_round74_target_free_ai_reviews(
         finally:
             if worker_session is not None:
                 worker_session.close()
-            if batch_attempted and selected_batch_finalizer is not None:
+            if (
+                (batch_attempted or batch_cleanup_required)
+                and selected_batch_finalizer is not None
+            ):
                 selected_batch_finalizer(binding)
         all_reviews.append(tuple(reviews))
     result = Round74AIReviewPanel(
@@ -620,6 +642,7 @@ class Round74PreparedSealedAIReviewProvider:
         default_factory=round74_default_ai_review_model_panel
     )
     review_runner: ReviewRunner = review_round74_ai_candidate
+    model_batch_preparer: ModelBatchPreparer | None = None
     model_batch_finalizer: ModelBatchFinalizer | None = None
     progress_callback: ProgressCallback | None = None
     wall_time_ns: Callable[[], int] = time.time_ns
@@ -636,6 +659,10 @@ class Round74PreparedSealedAIReviewProvider:
             or tuple(value.role for value in bindings)
             != ("finance_primary", "general_control")
             or not callable(self.review_runner)
+            or (
+                self.model_batch_preparer is not None
+                and not callable(self.model_batch_preparer)
+            )
             or (
                 self.model_batch_finalizer is not None
                 and not callable(self.model_batch_finalizer)
@@ -700,6 +727,7 @@ class Round74PreparedSealedAIReviewProvider:
             same_entry_latency_budget_ns=self.same_entry_latency_budget_ns,
             model_bindings=self.model_bindings,
             review_runner=self.review_runner,
+            model_batch_preparer=self.model_batch_preparer,
             model_batch_finalizer=self.model_batch_finalizer,
             progress_callback=self.progress_callback,
             wall_time_ns=self.wall_time_ns,

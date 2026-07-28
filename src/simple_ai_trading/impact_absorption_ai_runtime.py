@@ -45,6 +45,7 @@ ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION = "round-074-ai-runtime-outcome-v4"
 ROUND74_AI_RUNTIME_MINIMUM_FREE_RAM_GB = 16.0
 ROUND74_AI_RUNTIME_MINIMUM_FREE_VRAM_GB = 8.0
 ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB = 8.0
+ROUND74_AI_RUNTIME_PRELOAD_TIMEOUT_SECONDS = 120.0
 ROUND74_AI_RUNTIME_STATUSES = (
     "accepted",
     "blocked_deterministic_gate",
@@ -696,6 +697,96 @@ def unload_round74_ai_model(
         sleeper(0.25)
 
 
+def preload_round74_ai_model(
+    config: Round74AIRuntimeConfig,
+    manifest: Round74AIModelManifest,
+    *,
+    capability_detector: CapabilityDetector = detect_ai_capabilities,
+    provenance_resolver: ProvenanceResolver = resolve_ollama_model_provenance,
+    residency_inspector: ResidencyInspector = inspect_ollama_model_residency,
+    provider_poster: ProviderPoster = _post_provider_json,
+    timeout_seconds: float = ROUND74_AI_RUNTIME_PRELOAD_TIMEOUT_SECONDS,
+) -> OllamaResidencyReport:
+    """Cold-load one pinned model before reviews and prove full GPU residency."""
+
+    config.validate()
+    manifest.validate()
+    timeout = float(timeout_seconds)
+    if (
+        not math.isfinite(timeout)
+        or timeout <= 0.0
+        or timeout > ROUND74_AI_RUNTIME_PRELOAD_TIMEOUT_SECONDS
+    ):
+        raise ValueError("Round 74 AI preload timeout differs")
+    digest, metadata_sha256 = provenance_resolver(
+        config.endpoint,
+        config.model_name,
+        min(timeout, 3.0),
+    )
+    if (
+        digest != manifest.model_artifact_sha256
+        or not _is_sha256(metadata_sha256)
+    ):
+        raise ValueError("Round 74 AI preload provenance differs")
+    inspection_timeout = min(timeout, 2.0)
+    current = residency_inspector(
+        config.endpoint,
+        config.model_name,
+        inspection_timeout,
+        expected_digest=digest,
+    ).validated()
+    if current.status != "unloaded":
+        if (
+            not current.fully_gpu_resident
+            or current.digest != digest
+            or _normalized_model_reference(current.loaded_model)
+            != _normalized_model_reference(config.model_name)
+        ):
+            raise ValueError("Round 74 AI preload residency differs")
+        return current
+    capability_config = _capability_config(config, manifest)
+    capability = capability_detector(capability_config)
+    required_vram_gb = capability_config.min_free_vram_gb
+    capability_messages = _provider_capability_messages(
+        capability,
+        minimum_free_vram_gb=required_vram_gb,
+        exact_model_already_fully_gpu_resident=False,
+    )
+    if not capability.ok or capability_messages:
+        raise ValueError("Round 74 AI preload capability gate failed")
+    response = provider_poster(
+        f"{config.endpoint}/api/generate",
+        {
+            "model": config.model_name,
+            "keep_alive": "30m",
+            "stream": False,
+        },
+        timeout,
+    )
+    if (
+        not isinstance(response, Mapping)
+        or response.get("done") is not True
+        or _normalized_model_reference(response.get("model"))
+        != _normalized_model_reference(config.model_name)
+        or response.get("response") not in (None, "")
+    ):
+        raise ValueError("Round 74 AI preload response differs")
+    loaded = residency_inspector(
+        config.endpoint,
+        config.model_name,
+        inspection_timeout,
+        expected_digest=digest,
+    ).validated()
+    if (
+        not loaded.fully_gpu_resident
+        or loaded.digest != digest
+        or _normalized_model_reference(loaded.loaded_model)
+        != _normalized_model_reference(config.model_name)
+    ):
+        raise ValueError("Round 74 AI preload full GPU residency differs")
+    return loaded
+
+
 def review_round74_ai_candidate(
     config: Round74AIRuntimeConfig,
     manifest: Round74AIModelManifest,
@@ -1081,10 +1172,12 @@ __all__ = [
     "ROUND74_AI_RUNTIME_MINIMUM_FREE_VRAM_GB",
     "ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB",
     "ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION",
+    "ROUND74_AI_RUNTIME_PRELOAD_TIMEOUT_SECONDS",
     "ROUND74_AI_RUNTIME_STATUSES",
     "Round74AIRuntimeConfig",
     "Round74AIRuntimeOutcome",
     "Round74AIWorkerSession",
+    "preload_round74_ai_model",
     "review_round74_ai_candidate",
     "unload_round74_ai_model",
 ]
