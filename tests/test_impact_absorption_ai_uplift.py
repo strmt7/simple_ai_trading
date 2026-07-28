@@ -359,11 +359,48 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
     assert report.ai_metrics.maximum_drawdown_bps == 1.0 / 3.0
     assert report.ai_metrics.retained_trades == 4
     assert report.ai_metrics.distinct_retained_symbols == 3
+    assert len(report.paired_symbol_horizons) == 3
+    assert all(
+        float(value["delta_net_bps"]) >= 0.0 for value in report.paired_symbol_horizons
+    )
     assert report.sealed_test_accessed is False
     assert report.ai_model_selection_permitted is False
     assert report.promotion_authority is False
     assert report.profitability_claim is False
     assert len(report.report_sha256) == 64
+
+
+def test_aggregate_ai_uplift_cannot_hide_run_or_asset_harm() -> None:
+    reviews = tuple(
+        _review(
+            index,
+            (5_000 if index == 2 else 0 if payoff < 0.0 else 10_000),
+        )
+        for index, payoff in enumerate(PAYOFFS)
+    )
+
+    report = evaluate_round74_ai_overlay_development(
+        _selection(),
+        reviews,
+        _executions(reviews),
+    )
+
+    assert report.ai_metrics.total_net_bps > report.baseline_trace.metrics.total_net_bps
+    assert not report.development_gate_passed
+    assert "paired_run_noninferiority_not_met" in report.gate_reasons
+    assert "paired_symbol_horizon_noninferiority_not_met" in report.gate_reasons
+    sol = next(
+        value for value in report.paired_symbol_horizons if value["symbol"] == "SOLUSDT"
+    )
+    assert float(sol["delta_net_bps"]) < 0.0
+    corrupted = tuple(dict(value) for value in report.paired_symbol_horizons)
+    corrupted[0]["delta_net_bps"] = float(corrupted[0]["delta_net_bps"]) + 1.0
+    try:
+        replace(report, paired_symbol_horizons=corrupted).validate()
+    except ValueError as exc:
+        assert "report differs" in str(exc)
+    else:
+        raise AssertionError("corrupted AI subgroup evidence was accepted")
 
 
 def test_all_veto_overlay_fails_closed_without_dropping_pairs() -> None:
