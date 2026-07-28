@@ -59,9 +59,10 @@ After parser or taxonomy changes, regenerate the header through the native build
   would select higher-activity hours. Never resume v9, pool its 18 hours, or
   use them for a model or profitability claim. Read
   `round-073-v9-corpus-invalidation-2026-07-25.json`. Round 74/v10 is the only
-  open capture path: it uses separate tables and hashes, provider-driven
-  heartbeat handling, independent data/resource verdicts, and absolute
-  activity-independent host ceilings. Read
+  admissible capture-schema lineage, but no Round 74 campaign is currently
+  open. It uses separate tables and hashes, provider-driven heartbeat handling,
+  independent data/resource verdicts, and absolute activity-independent host
+  ceilings. Read
   `round-074-capture-recovery-design-v1.json` and
   `round-074-capture-contract-v10.json` before touching capture code.
 - Round 72 rejected aggregate spot/perpetual price discovery: all 9 components
@@ -335,21 +336,23 @@ After parser or taxonomy changes, regenerate the header through the native build
   Baseline labels and AI replay both normalize exact walked entry notional to
   the same reference capital; requested size is never substituted for realized
   deployed notional after quantity quantization or delayed price movement.
-  The first 65-minute cohort halted on slot 000 before admission because terminal
-  analysis exceeded its operator budget; that run remains excluded. The later
-  75-minute v5-r1 campaign also halted on slot 000 before admission: Binance
-  closed the public WebSocket before any run existed, its attempts were empty,
-  and database/WAL bytes did not change. V5-r1 is permanently excluded and its
-  host task is disabled. Fresh plan v5-r2,
-  `213a564026654905d62d2e74fd1c1944ff9ffd6d44af32557ccc20628ce59a04`,
-  starts at 2026-07-28 00:45 UTC and preserves the 75-minute cadence and
-  120/24/24 roles. It permits at most one separately persisted pre-admission
-  startup relaunch only when no run, database/WAL change, active capture, or
-  resource breach exists and the second launch still fits the original
-  30-second start window. Every admitted hour still requires zero reconnects and
-  one uncombined supervisor attempt. Read the v5-r1 startup-failure artifact,
-  the startup-prerequisite artifact, operator v12, and plan v5-r2 before
-  operating the cohort. Then read
+  The first 65-minute cohort halted on slot 000 before admission because
+  terminal analysis exceeded its operator budget. The later v5-r1 campaign
+  halted before run creation on a transient public-WebSocket close with no
+  database/WAL change. V5-r2 then created run
+  `4318bfbf344a44f9987ab783b0e5489a` and captured 3,434,423 messages over
+  32 minutes 40 seconds before the public source exceeded its 15-second receive
+  deadline. A fresh process audited all 461 exact-wire frames, but the run and
+  campaign failed closed. Queue use peaked at 15.50%, so local saturation is
+  not supported; no host-wide or provider-side cause is claimed. All three
+  campaigns, their slots, and their host tasks are permanently closed. Never
+  retry, replace, reactivate, pool, salvage, or use any failed prefix for
+  targets, models, or financial claims. Read the v5-r2 slot-000 stream-stall
+  artifact for the immutable hashes and bounded diagnosis. There is no open
+  Round 74 cohort capture plan. A new plan must first freeze independently
+  audited transport units, explicit gap rejection, whole-unit role assignment,
+  purge/embargo, and sealed-test controls without modifying historical
+  evidence. Then read
   `round-074-event-sequence-model-design-v64.json`, which composes the complete
   unchanged v63 model contract with the corrected plan, operator,
   execution-evidence, and research bindings, then
