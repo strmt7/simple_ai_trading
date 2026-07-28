@@ -1,0 +1,112 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v65",
+  "artifact_kind": "disjoint_ai_qualification_execution_operator",
+  "created_utc": "2026-07-28T21:37:59.4649176Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v64.json",
+    "file_sha256": "db2c16f86e28c4c3a555b9f78ddb6428f936c874fc82b760fc7cdcf9da6a7f6c",
+    "design_sha256": "6d3ecc96ce0ab25383ef717d3254c53bd0a4bfecce8bb1d0ea7d8db24e608545",
+    "unchanged_except_declared_delta": true
+  },
+  "implementation_git_commit": "22b87b9d620511fba93687bf0caede05bd0b400f",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "qualification_operator_path": "src/simple_ai_trading/round74_ai_qualification_operator.py",
+    "qualification_operator_sha256": "8c61f29ccb9d987499b6fcb4eddc10bb4e288c03a34c0aa231f9d981f957ae5a",
+    "ai_execution_replay_path": "src/simple_ai_trading/impact_absorption_ai_execution_replay.py",
+    "ai_execution_replay_sha256": "bd92b0ffa2a632c68f49f0598c618b9cc7e8bd4dae803197302651b1daa7311d",
+    "ai_uplift_path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+    "ai_uplift_sha256": "7d714b205e5425197c2521324378ee05090e1eaf91bdca222922fc86f8d3df14",
+    "sealed_evaluation_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+    "sealed_evaluation_sha256": "96a2218281eaca2075610f4ba12d5bc362f00c05c82df6692160b49616ced81e",
+    "connected_test_path": "tests/test_impact_absorption_event_sealed_ledger.py",
+    "connected_test_sha256": "f766e1a8f65334da607fdcf8d1b8c0c672514e15c951fa18667f490769d3b877"
+  },
+  "declared_delta": {
+    "target_free_inference_schema_version": "round-074-target-free-candidate-inference-v3",
+    "ai_execution_replay_plan_schema_version": "round-074-ai-execution-replay-plan-v2",
+    "ai_uplift_schema_version": "round-074-ai-uplift-development-v11",
+    "sealed_evaluation_schema_version": "round-074-sealed-evaluation-v16",
+    "qualification_operator_schema_version": "round-074-ai-qualification-operator-v1",
+    "sealed_inference_scope_preserved": "sealed_test",
+    "new_inference_scope": "ai_qualification_tuning",
+    "sealed_test_consumed": false,
+    "model_prompt_or_runtime_changed": false
+  },
+  "operator_sequence": [
+    "validate the immutable fourth tuning population and reject ML policy-run reuse",
+    "derive target-free causal contexts and run the frozen ML policy",
+    "freeze the selected ML threshold and baseline qualification trace",
+    "review every target-free above-threshold candidate with both pinned local models",
+    "retain only baseline-executed rows for paired delayed-entry replay",
+    "perform exact read-only level-2 replay per model and per source run",
+    "evaluate both model overlays without ranking or selecting between them",
+    "atomically persist and reload the two-model pretest qualification"
+  ],
+  "safeguards": {
+    "qualification_batches_must_be_tuning_role": true,
+    "qualification_run_order_must_equal_preassigned_population": true,
+    "qualification_and_policy_run_overlap_rejected_before_inference": true,
+    "target_fields_accessed_during_ml_inference_or_ai_review": false,
+    "realized_targets_accessed_only_after_review_coverage_is_frozen": true,
+    "store_replay_is_read_only": true,
+    "store_replay_rejects_nonqualification_runs": true,
+    "original_action_selection_sha256_preserved_in_replay_instructions": true,
+    "ai_authority": "retain_reduce_or_veto_only",
+    "both_predeclared_models_must_pass": true,
+    "model_ranking_or_selection_performed": false,
+    "sealed_test_accessed": false
+  },
+  "corrected_defects": [
+    {
+      "defect": "replacing policy-selection traces for sealed replay changed the action-selection digest",
+      "correction": "the replay builder now accepts an explicit trace while binding the original frozen action-selection digest"
+    },
+    {
+      "defect": "AI qualification required exactly one executed trade per run",
+      "correction": "multiple chronological trades per run are accepted; inactive expected runs remain zero-exposure paired units"
+    }
+  ],
+  "verification": {
+    "connected_contract_tests_passed": 80,
+    "multi_trade_same_run_qualification_test_passed": true,
+    "two_model_fail_closed_persistence_test_passed": true,
+    "tuning_only_store_replay_test_passed": true,
+    "sealed_action_selection_digest_regression_test_passed": true,
+    "existing_sealed_uplift_segmented_development_action_and_calibration_tests_passed": true,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_ai_market_evaluation_performed": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 25,
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_limits": {
+    "tests_use_synthetic_contract_fixtures": true,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "drawdown_claim": false
+  },
+  "status": {
+    "implementation_complete_for_declared_delta": true,
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "design_sha256": "23fc9f0f4697deab0707d6543bb997cf299558c6a6258de85da1c2bceaa83917"
+}
