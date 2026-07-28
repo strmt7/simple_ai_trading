@@ -1,0 +1,137 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v63",
+  "artifact_kind": "presealed_two_model_development_qualification",
+  "created_utc": "2026-07-28T20:55:07.6170666Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v62.json",
+    "file_sha256": "2857a4757a2188d1468b9245e002e26a9b3e127f7c93648b11faa644ddf6bbae",
+    "design_sha256": "5e3906fab5f50630f64347a21bdc805891a7d87ff747a887c1dbbac0742f9808",
+    "unchanged_except_declared_delta": true
+  },
+  "implementation_git_commit": "adb8d9f4a49d81cbd5712829f1dd1ff88b96740c",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "ai_uplift_path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+    "ai_uplift_sha256": "9789f26fb6859d0814a2dd564a4d455d6850e1ed12ea37885cd99099c63f0f40",
+    "sealed_ledger_path": "src/simple_ai_trading/impact_absorption_event_sealed_ledger.py",
+    "sealed_ledger_sha256": "a75674d28ef82a4abdc4d6049750cf015b423fe891f3e67368f737f7d2ab5a14",
+    "review_provider_path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+    "review_provider_sha256": "9fb2830d38a4270ef9ec31103b6a8739398295383d3272f5a995f954a95ac4d3",
+    "sealed_evaluator_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+    "sealed_evaluator_sha256": "00d93d560a30e74a5c4db3a3bc25cd5cd22903cbf4730c4673cfc333f7970989",
+    "ai_uplift_test_path": "tests/test_impact_absorption_ai_uplift.py",
+    "ai_uplift_test_sha256": "6b588e642a9d05154cd9cc5d176c4830fd61b6469e0796638681075eb0086ed0",
+    "sealed_ledger_test_path": "tests/test_impact_absorption_event_sealed_ledger.py",
+    "sealed_ledger_test_sha256": "f36d91f23a6d0c8f7febdfb38302898bcc67fa5aebe13b0105b7e7fc0c0017ee"
+  },
+  "declared_delta": {
+    "development_qualification_required_before_sealed_reservation": true,
+    "exactly_two_predeclared_model_manifests_required": true,
+    "both_models_must_pass_existing_development_gates": true,
+    "development_model_ranking_or_selection_permitted": false,
+    "development_data_scope": "policy_selection_tuning_runs_only",
+    "sealed_test_accessed_by_qualification": false,
+    "qualification_artifact_hash_bound_into_ledger_claim": true,
+    "qualification_artifact_hash_bound_into_sealed_report": true,
+    "prepared_review_provider_requires_same_qualification": true,
+    "legacy_unqualified_claim_evaluation_permitted": false,
+    "ai_action_authority_changed": false,
+    "model_architecture_or_prompt_changed": false,
+    "sealed_test_consumed": false
+  },
+  "development_gate_contract": {
+    "baseline": "same_frozen_ml_action_trace",
+    "execution_basis": "exact_latency_adjusted_level_2_replay",
+    "ai_action_authority": "retain_reduce_or_veto_only",
+    "runtime_success_gate_preserved": true,
+    "minimum_retained_trade_gate_preserved": true,
+    "asset_diversification_gate_preserved": true,
+    "aggregate_after_cost_net_uplift_required": true,
+    "every_capture_run_noninferiority_required": true,
+    "every_observed_symbol_horizon_noninferiority_required": true,
+    "maximum_drawdown_noninferiority_required": true,
+    "identical_action_selection_required_across_models": true,
+    "identical_calibration_required_across_models": true,
+    "identical_latency_budget_required_across_models": true,
+    "identical_baseline_trace_required_across_models": true,
+    "failed_model_invalidates_entire_panel": true,
+    "one_passing_model_cannot_replace_one_failed_model_after_test_access": true
+  },
+  "artifact_integrity": {
+    "schema_version": "round-074-ai-pretest-qualification-v1",
+    "full_source_development_reports_embedded": true,
+    "canonical_sha256_identity": true,
+    "atomic_write_then_strict_reload": true,
+    "duplicate_json_keys_rejected": true,
+    "unknown_or_missing_policy_fields_rejected": true,
+    "boolean_type_confusion_rejected": true,
+    "model_manifest_order": "ascending_manifest_sha256",
+    "promotion_authority": false,
+    "trading_authority": false,
+    "profitability_claim": false
+  },
+  "research_basis": [
+    {
+      "title": "Fino1: On the Transferability of Reasoning Enhanced LLMs to Finance",
+      "url": "https://arxiv.org/abs/2502.08127",
+      "use": "supports evaluating a finance-specialized 8B reasoning model but does not establish microstructure or trading edge"
+    },
+    {
+      "title": "Qwen3 Technical Report",
+      "url": "https://arxiv.org/abs/2505.09388",
+      "use": "supports the predeclared general-reasoning control family and local deployment characteristics"
+    },
+    {
+      "title": "FinBen: A Holistic Financial Benchmark for Large Language Models",
+      "url": "https://arxiv.org/abs/2402.12659",
+      "use": "documents that financial language competence does not imply reliable advanced reasoning or forecasting"
+    },
+    {
+      "title": "FLaME: Financial Large Language Model Assessment and Metrics Evaluation",
+      "url": "https://arxiv.org/abs/2506.15846",
+      "use": "supports task-specific financial evaluation instead of relying on generic benchmark reputation"
+    }
+  ],
+  "verification": {
+    "focused_contract_tests_passed": 64,
+    "ai_qualification_persistence_and_tamper_tests_passed": true,
+    "sealed_one_shot_reservation_tests_passed": true,
+    "legacy_ledger_migration_test_passed": true,
+    "prepared_review_provider_binding_test_passed": true,
+    "exact_replay_provider_binding_test_passed": true,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "real_development_market_reports_created": false,
+    "real_sealed_test_accessed": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 24,
+    "prospective_campaign_complete": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_limits": {
+    "tests_use_synthetic_contract_fixtures": true,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "drawdown_claim": false
+  },
+  "status": {
+    "implementation_complete_for_declared_delta": true,
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "design_sha256": "ccd6213af1847b46ea11c0dbb04dcb2007c1919d64c856a20478b0807ba7696b"
+}
