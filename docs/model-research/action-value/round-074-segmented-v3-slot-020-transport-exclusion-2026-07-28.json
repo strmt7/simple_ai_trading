@@ -1,0 +1,109 @@
+{
+  "schema_version": "round-074-segmented-campaign-slot-recovery-evidence-v1",
+  "campaign": {
+    "plan_schema_version": "round-074-segmented-event-cohort-plan-v3",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "plan_file_sha256": "2a67f9637cb64e2a865ce94679beffa201a28095d0557a0553a59da6ce446913",
+    "scheduled_task": "SimpleAITrading-Round74-Segmented-v3",
+    "slot_ordinal": 20,
+    "role": "training",
+    "scheduled_start_wall_ns": 1785255600000000000
+  },
+  "reservation": {
+    "reserved_wall_ns": 1785255602768173000,
+    "reservation_sha256": "6e17022ef90a24720d829d906fa1ddb8d5710d58f5ec3bc8ce3a9332623dd5e1",
+    "reservation_file_sha256": "b3983ac96bbd1ba629c3eec74a3fa511bf53b1a9b0fbd32c58027aff43e77369",
+    "automatic_retry_permitted": false
+  },
+  "capture": {
+    "run_id": "e37d552bcd804bb3955986a58ae1c070",
+    "selected_run_id": "",
+    "capture_start_wall_ns": 1785255603366887600,
+    "capture_end_wall_ns": 1785256714923978800,
+    "elapsed_seconds": 1105.4220000000205,
+    "terminal_status": "failed",
+    "terminal_error": "ValueError:exact-capture cross-frame receipt reorder lag exceeded",
+    "failure_class": "writer",
+    "message_count": 1011948,
+    "frame_count": 256,
+    "compressed_payload_bytes": 29702621,
+    "event_counts": {
+      "aggTrade": 30887,
+      "bookTicker": 945850,
+      "depthSnapshot": 3,
+      "depthUpdate": 31837,
+      "exchangeInfo": 1,
+      "forceOrder": 8,
+      "markPriceUpdate": 3288,
+      "openInterest": 54,
+      "serverTime": 20
+    },
+    "queue_maximum_utilization": 0.05340576171875,
+    "reconnect_count": 0,
+    "capture_gate_passed": false,
+    "data_qualification_passed": false,
+    "resource_safety_passed": false,
+    "resource_safety_errors": [
+      "writer_failed"
+    ],
+    "storage_efficiency_passed": false,
+    "audit_passed": true
+  },
+  "adjudication": {
+    "status": "transport_excluded",
+    "reason_code": "in_run_writer_transport",
+    "admission_supported": false,
+    "binding_present": false,
+    "formal_epoch_audit_present": false,
+    "formal_epoch_audit_absence_reason": "the runner exited after the frozen exact-capture writer rejected cross-frame receipt order; no slot result or admissible epoch object was published",
+    "automatic_retry_permitted": false
+  },
+  "runner_terminal_failure": {
+    "normal_result_present": false,
+    "scheduled_task_result": 2,
+    "last_runner_state_phase": "running",
+    "runner_state_file_sha256": "4364c5a270370dc25e72204673c7514150431bd3e179e4189113626a3b20f443",
+    "failure_classification": "frozen_exact_capture_rejected_cross_frame_receipt_order",
+    "watchdog_clean_normal_result_claim": false
+  },
+  "stored_evidence": {
+    "capture_stdout_sha256": "ac34f1c99aac92c81fefa080859cb62a5dfcc28ac8b52674b1ecc9ffc73d050b",
+    "capture_stderr_sha256": "61bc044566b6298f97903176ec1ff729e5d7779bde711db31e9b7a6c02154e26",
+    "database_physical_bytes_from_capture": 1089744896,
+    "database_physical_growth_bytes_from_capture": 65273856,
+    "database_physical_growth_bytes_per_message": 64.50317209975216,
+    "process_io_write_bytes_per_message": 582.9866386415113,
+    "process_io_semantics": "process I/O transfer bytes; not physical SSD writes",
+    "partial_failed_run_data_may_be_used_for_training": false
+  },
+  "verification": {
+    "verified_at_utc": "2026-07-28T16:42:18Z",
+    "reservation_sha256_verified": true,
+    "stdout_sha256_verified": true,
+    "stderr_sha256_verified": true,
+    "capture_gate_failure_verified": true,
+    "writer_failure_verified": true,
+    "exact_reorder_violation_verified": true,
+    "selected_run_id_empty_verified": true,
+    "independent_database_reopen_performed": false,
+    "automatic_retry_performed": false,
+    "slot_shifted": false
+  },
+  "authority": {
+    "eligible_for_training": false,
+    "eligible_for_calibration": false,
+    "eligible_for_policy_selection": false,
+    "eligible_for_test": false,
+    "representative_cohort_complete": false,
+    "model_training_performed": false,
+    "profitability_or_edge_claim": false,
+    "orders_submitted": false,
+    "credentials_used": false,
+    "trading_authority": false
+  },
+  "operator_notes": [
+    "Slot 020 is permanently transport-excluded and will not be retried or shifted.",
+    "The failed partial run remains physically present for auditability but is forbidden from every model, calibration, policy-selection, and sealed-test population.",
+    "The missing formal epoch object is disclosed and must not be replaced with a fabricated digest."
+  ]
+}
