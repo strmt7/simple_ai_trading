@@ -6,13 +6,22 @@ import hashlib
 import pytest
 
 from simple_ai_trading.impact_absorption_event_dataset import (
+    Round74EventRunPartition,
     Round74EventRunPartitionEntry,
 )
-from simple_ai_trading.impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
+from simple_ai_trading.impact_absorption_event_segmented_cohort import (
+    Round74SegmentedCohortRunBinding,
+)
+from simple_ai_trading.impact_absorption_store import (
+    IMPACT_CAPTURE_SYMBOLS,
+    ImpactAbsorptionStore,
+)
+import simple_ai_trading.round74_segmented_model_operator as subject
 from simple_ai_trading.round74_segmented_model_operator import (
     ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS,
     round74_segmented_window_policy,
     round74_segmented_windows_per_symbol,
+    iter_round74_segmented_labeled_event_windows,
     select_round74_segmented_event_windows,
 )
 
@@ -30,6 +39,53 @@ def _entry(eligible_ns: int) -> Round74EventRunPartitionEntry:
         eligible_anchor_start_wall_ns=_START,
         eligible_anchor_end_wall_ns=_START + eligible_ns,
     )
+
+
+def _partition() -> Round74EventRunPartition:
+    entries = []
+    for index, role in enumerate(("training", "tuning", "test")):
+        start = _START + index * 2_000_000_000_000
+        entries.append(
+            Round74EventRunPartitionEntry(
+                run_id=f"{index + 1:032x}",
+                role=role,
+                capture_report_sha256=f"{index + 1:064x}",
+                capture_start_wall_ns=start,
+                capture_end_wall_ns=start + 600_000_000_000,
+                eligible_anchor_start_wall_ns=start,
+                eligible_anchor_end_wall_ns=start + 289_500_000_000,
+            )
+        )
+    selected = Round74EventRunPartition(
+        entries=tuple(entries),
+        cohort_plan_sha256="a" * 64,
+    )
+    selected.validate()
+    return selected
+
+
+def _binding(entry: Round74EventRunPartitionEntry) -> Round74SegmentedCohortRunBinding:
+    selected = Round74SegmentedCohortRunBinding(
+        plan_sha256="a" * 64,
+        slot_ordinal=0,
+        role=entry.role,
+        run_id=entry.run_id,
+        report_sha256=entry.capture_report_sha256,
+        supervisor_sha256="b" * 64,
+        fresh_frame_audit_sha256="c" * 64,
+        fresh_epoch_audit_sha256="d" * 64,
+        terminal_status="transport_ended",
+        terminal_error="public source ended",
+        capture_start_wall_ns=entry.capture_start_wall_ns,
+        capture_end_wall_ns=entry.capture_end_wall_ns,
+        feature_ready_wall_ns=entry.capture_start_wall_ns,
+        usable_end_wall_ns=entry.capture_end_wall_ns,
+        message_count=1,
+        frame_count=1,
+        compressed_payload_bytes=1,
+    )
+    selected.validate()
+    return selected
 
 
 @dataclass(frozen=True)
@@ -167,3 +223,59 @@ def test_segmented_policy_records_no_outcome_dependent_selection() -> None:
     assert policy["target_label_or_outcome_used_for_quota_or_rank"] is False
     assert policy["model_output_used_for_quota_or_rank"] is False
     assert policy["cross_epoch_state_feature_or_target_permitted"] is False
+
+
+def test_segmented_replay_uses_only_the_audited_epoch_iterator(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    partition = _partition()
+    entry = partition.entries[0]
+    binding = _binding(entry)
+    observed: list[object] = []
+
+    class _TargetAssembly:
+        def create_engine(self, *, anchors: tuple[object, ...]) -> object:
+            assert anchors == ()
+            return object()
+
+    class _Assembler:
+        def __init__(self, **kwargs: object) -> None:
+            assert kwargs["run_id"] == entry.run_id
+
+        def consume(self, observation: object) -> tuple[str, ...]:
+            observed.append(observation)
+            return (f"window-{observation}",)
+
+        def finish(self) -> tuple[str, ...]:
+            return ("finished",)
+
+    monkeypatch.setattr(subject, "Round74SourceTargetAssembly", _TargetAssembly)
+    monkeypatch.setattr(subject, "Round74EventDatasetAssembler", _Assembler)
+    monkeypatch.setattr(
+        subject,
+        "iter_round74_v10_segment_event_observations",
+        lambda store, *, binding: iter(("first", "second")),
+    )
+    store = ImpactAbsorptionStore(":memory:", read_only=True)
+
+    output = tuple(
+        iter_round74_segmented_labeled_event_windows(
+            store,
+            partition=partition,
+            binding=binding,
+            target_assembly=_TargetAssembly(),
+        )
+    )
+
+    assert observed == ["first", "second"]
+    assert output == ("window-first", "window-second", "finished")
+
+    with pytest.raises(ValueError, match="binding differs"):
+        tuple(
+            iter_round74_segmented_labeled_event_windows(
+                store,
+                partition=partition,
+                binding=replace(binding, report_sha256="f" * 64),
+                target_assembly=_TargetAssembly(),
+            )
+        )

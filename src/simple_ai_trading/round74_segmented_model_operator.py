@@ -2,16 +2,31 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator, Mapping
 import hashlib
 import json
 
 from .impact_absorption_event_dataset import (
+    ROUND74_EVENT_PARTITION_ROLES,
+    ROUND74_EVENT_WINDOW_REPRESENTATIONS,
+    Round74EventDatasetAssembler,
+    Round74EventRunPartition,
     Round74EventRunPartitionEntry,
+    Round74EventTrainingBatch,
     Round74LabeledEventWindow,
     Round74MatchedEventWindowPair,
+    build_round74_event_training_batch,
 )
-from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
+from .impact_absorption_event_scaling import Round74EventFeatureScaler
+from .impact_absorption_event_segmented_cohort import (
+    Round74SegmentedCohortRunBinding,
+    iter_round74_v10_segment_event_observations,
+)
+from .impact_absorption_store import (
+    IMPACT_CAPTURE_SYMBOLS,
+    ImpactAbsorptionStore,
+)
+from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 
 
 ROUND74_SEGMENTED_WINDOW_SELECTION_SCHEMA_VERSION = (
@@ -135,6 +150,137 @@ def _validate_sample_identity(
         or sample.symbol not in IMPACT_CAPTURE_SYMBOLS
     ):
         raise ValueError("Round 74 segmented window identity differs")
+
+
+def _require_read_only_store(store: object) -> ImpactAbsorptionStore:
+    if not isinstance(store, ImpactAbsorptionStore):
+        raise TypeError("Round 74 segmented model requires an ImpactAbsorptionStore")
+    if not store.read_only:
+        raise ValueError("Round 74 segmented model requires a read-only store")
+    return store
+
+
+def _validate_binding_entry(
+    binding: Round74SegmentedCohortRunBinding,
+    entry: Round74EventRunPartitionEntry,
+) -> None:
+    binding.validate()
+    entry.validate()
+    if (
+        binding.run_id != entry.run_id
+        or binding.role != entry.role
+        or binding.report_sha256 != entry.capture_report_sha256
+        or binding.feature_ready_wall_ns != entry.capture_start_wall_ns
+        or binding.usable_end_wall_ns != entry.capture_end_wall_ns
+        or not (
+            binding.feature_ready_wall_ns
+            <= entry.eligible_anchor_start_wall_ns
+            <= entry.eligible_anchor_end_wall_ns
+            <= binding.usable_end_wall_ns
+        )
+    ):
+        raise ValueError("Round 74 segmented model binding differs")
+
+
+def iter_round74_segmented_labeled_event_windows(
+    store: object,
+    *,
+    partition: Round74EventRunPartition,
+    binding: Round74SegmentedCohortRunBinding,
+    target_assembly: Round74SourceTargetAssembly,
+    pretest_model_policy_sha256: str | None = None,
+    test_unlock_sha256: str | None = None,
+    window_representation: str = "per_symbol",
+) -> Iterator[Round74LabeledEventWindow]:
+    """Assemble labels from one independently reaudited epoch only."""
+
+    selected_store = _require_read_only_store(store)
+    partition.validate()
+    entry = partition.entry(binding.run_id)
+    _validate_binding_entry(binding, entry)
+    if not isinstance(target_assembly, Round74SourceTargetAssembly):
+        raise TypeError("Round 74 segmented target assembly differs")
+    selected_representation = str(window_representation)
+    if selected_representation not in ROUND74_EVENT_WINDOW_REPRESENTATIONS:
+        raise ValueError("Round 74 segmented window representation differs")
+    assembler = Round74EventDatasetAssembler(
+        partition=partition,
+        run_id=entry.run_id,
+        target_engine=target_assembly.create_engine(anchors=()),
+        pretest_model_policy_sha256=pretest_model_policy_sha256,
+        test_unlock_sha256=test_unlock_sha256,
+        window_representation=selected_representation,
+    )
+    for observation in iter_round74_v10_segment_event_observations(
+        selected_store,
+        binding=binding,
+    ):
+        yield from assembler.consume(observation)
+    yield from assembler.finish()
+
+
+def assemble_round74_segmented_role_batches(
+    store: object,
+    *,
+    partition: Round74EventRunPartition,
+    bindings_by_run_id: Mapping[str, Round74SegmentedCohortRunBinding],
+    scaler: Round74EventFeatureScaler,
+    role: str,
+    target_assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
+    pretest_model_policy_sha256: str | None = None,
+    test_unlock_sha256: str | None = None,
+    window_representation: str = "per_symbol",
+) -> tuple[Round74EventTrainingBatch, ...]:
+    """Build variable-row batches without falling back to legacy replay."""
+
+    selected_store = _require_read_only_store(store)
+    partition.validate()
+    selected_role = str(role)
+    if selected_role not in ROUND74_EVENT_PARTITION_ROLES:
+        raise ValueError("Round 74 segmented model role differs")
+    entries = tuple(
+        entry for entry in partition.entries if entry.role == selected_role
+    )
+    expected = {entry.run_id for entry in entries}
+    bindings = dict(bindings_by_run_id)
+    assemblies = dict(target_assembly_by_run_id)
+    if set(bindings) != expected or set(assemblies) != expected:
+        raise ValueError("Round 74 segmented model role panel differs")
+    if selected_role == "test":
+        if pretest_model_policy_sha256 is None or test_unlock_sha256 is None:
+            raise ValueError("Round 74 segmented test authorization is missing")
+    elif pretest_model_policy_sha256 is not None or test_unlock_sha256 is not None:
+        raise ValueError(
+            "Round 74 segmented development role received test authorization"
+        )
+    batches: list[Round74EventTrainingBatch] = []
+    for entry in entries:
+        binding = bindings[entry.run_id]
+        _validate_binding_entry(binding, entry)
+        samples = select_round74_segmented_event_windows(
+            iter_round74_segmented_labeled_event_windows(
+                selected_store,
+                partition=partition,
+                binding=binding,
+                target_assembly=assemblies[entry.run_id],
+                pretest_model_policy_sha256=pretest_model_policy_sha256,
+                test_unlock_sha256=test_unlock_sha256,
+                window_representation=window_representation,
+            ),
+            entry=entry,
+        )
+        batch = build_round74_event_training_batch(samples, scaler=scaler)
+        batch.validate()
+        if (
+            batch.role != selected_role
+            or set(batch.run_id) != {entry.run_id}
+            or batch.rows
+            != len(IMPACT_CAPTURE_SYMBOLS)
+            * round74_segmented_windows_per_symbol(entry)
+        ):
+            raise ValueError("Round 74 segmented model batch identity differs")
+        batches.append(batch)
+    return tuple(batches)
 
 
 def select_round74_segmented_event_windows(
@@ -290,6 +436,8 @@ __all__ = [
     "ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS",
     "ROUND74_SEGMENTED_REFERENCE_WINDOWS_PER_SYMBOL",
     "ROUND74_SEGMENTED_WINDOW_SELECTION_SCHEMA_VERSION",
+    "assemble_round74_segmented_role_batches",
+    "iter_round74_segmented_labeled_event_windows",
     "round74_segmented_window_policy",
     "round74_segmented_windows_per_symbol",
     "select_round74_segmented_event_windows",
