@@ -1,0 +1,79 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v82",
+  "created_at_utc": "2026-07-28T09:55:18Z",
+  "implementation_git_commit": "1e9d21b8a751faeed390812d105c5a60f38ecbe7",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v81.json",
+    "design_sha256": "94934473ab1b8fcb1413cc5a72603bd71c15f8160b371bbbf288f4598577c1ab",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "calibration_path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+    "calibration_sha256": "ee675661cbdc029381172290023a66cd8cdc9e3a4307d6af43476b18791b2970",
+    "probability_calibration_schema_version": "round-074-temperature-calibration-v4",
+    "risk_quantile_calibration_schema_version": "round-074-risk-quantile-calibration-v2",
+    "risk_quantile_prior_schema_version": "round-074-risk-quantile-calibration-v1",
+    "development_operator_path": "src/simple_ai_trading/round74_event_development_operator.py",
+    "development_operator_sha256": "2577d512288fb3382537ca551a9ab3e009c362944c931ab6b6e6460ee06b1f45",
+    "development_operator_schema_version": "round-074-development-policy-operator-v4"
+  },
+  "worst_run_symbol_tail_contract": {
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "capture_run_count": 6,
+    "capture_run_grouping": "capture_run_x_symbol",
+    "required_group_count_per_horizon_side": 18,
+    "missing_eligible_group_fails_closed": true,
+    "capture_run_offset_selection": "maximum_of_each_run_symbol_finite_sample_higher_quantile",
+    "capture_run_coverage_reporting": "minimum_over_run_symbol_groups",
+    "eligible_target_offset_selection": "pooled_eligible_targets",
+    "eligible_target_complete_run_symbol_support_required": true,
+    "deployed_offset": "one_shared_worst_group_offset_per_horizon_side_tail",
+    "runtime_symbol_router_required": false,
+    "one_symbol_can_be_averaged_away_in_capture_run_mode": false,
+    "all_offsets_nonnegative": true,
+    "calibration_sample_nominal_coverage_fails_closed": true,
+    "prior_v1_payload_reload_supported": true,
+    "sealed_test_rows_accessed": false,
+    "exchangeability_assumed_or_established": false,
+    "symbol_conditional_future_coverage_claim": false,
+    "profitability_or_edge_claim": false
+  },
+  "verification": {
+    "relevant_tests_passed": 100,
+    "calibration_tests_passed": 12,
+    "affected_path_tests_passed": 60,
+    "adversarial_worse_sol_group_test_passed": true,
+    "prior_v1_roundtrip_test_passed": true,
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false
+  },
+  "evidence_boundary": {
+    "synthetic_data_only": true,
+    "real_prospective_cohort_capture_active_but_not_used": true,
+    "financial_backtest_performed": false,
+    "profitability_or_edge_inference_permitted": false,
+    "future_coverage_inference_permitted": false,
+    "ai_model_evaluated": false
+  },
+  "authority": {
+    "worst_run_symbol_tail_calibration_implementation": true,
+    "backward_compatible_v1_payload_loader": true,
+    "representative_market_evidence": false,
+    "symbol_conditional_future_coverage": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "a43dab3dc3ffb0abefe2d515f5b1ea16e591a71e5664eaebf2e28c41341d88ac"
+}
