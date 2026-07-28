@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
+from pathlib import Path
 import re
 from typing import Mapping, Sequence
 
@@ -40,9 +41,13 @@ from .impact_absorption_event_sequence import ROUND74_EVENT_SYMBOLS
 from .impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS,
 )
+from .storage import write_json_atomic
 
 
 ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v9"
+ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION = (
+    "round-074-ai-pretest-qualification-v1"
+)
 ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION = (
     "round-074-ai-execution-replay-evidence-v2"
 )
@@ -630,6 +635,18 @@ class Round74AIOverlayMetrics:
         self.validate()
         return dict(self.__dict__)
 
+    @classmethod
+    def from_dict(cls, value: Mapping[str, object]) -> Round74AIOverlayMetrics:
+        payload = dict(value)
+        try:
+            selected = cls(**payload)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Round 74 AI overlay metrics payload differs") from exc
+        selected.validate()
+        if selected.as_dict() != payload:
+            raise ValueError("Round 74 AI overlay metrics payload differs")
+        return selected
+
 
 def _scaled_metrics(
     trace: Round74ActionTrace,
@@ -1006,7 +1023,18 @@ class Round74AIUpliftDevelopmentReport:
                 abs_tol=1e-12,
             )
             or self.ai_metrics.baseline_trades != self.baseline_trace.metrics.trades
+            or not isinstance(self.development_gate_passed, bool)
             or self.development_gate_passed == bool(self.gate_reasons)
+            or any(
+                not isinstance(value, bool)
+                for value in (
+                    self.sealed_test_accessed,
+                    self.ai_model_selection_permitted,
+                    self.promotion_authority,
+                    self.trading_authority,
+                    self.profitability_claim,
+                )
+            )
             or any(
                 (
                     self.sealed_test_accessed,
@@ -1067,6 +1095,350 @@ class Round74AIUpliftDevelopmentReport:
         if include_sha256:
             value["report_sha256"] = _canonical_sha256(value)
         return value
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74AIUpliftDevelopmentReport:
+        original = dict(value)
+        payload = dict(original)
+        claimed = str(payload.pop("report_sha256", ""))
+        policy = {
+            "blocked_or_failed_review_policy": (
+                "paired_zero_exposure_veto_not_observation_deletion"
+            ),
+            "missing_review_policy": "invalidate_entire_evaluation",
+            "same_side_entry_exit_and_overlap_order": True,
+            "same_entry_fill_requires_measured_latency_eligibility": False,
+            "same_entry_latency_includes_historical_queue_delay": True,
+            "same_entry_latency_is_diagnostic_only": True,
+            "latency_adjusted_replay_performed": True,
+            "baseline_payoff_scaled_without_rewalking_book": False,
+            "sealed_test_accessed": False,
+            "ai_model_selection_permitted": False,
+            "promotion_authority": False,
+            "trading_authority": False,
+            "profitability_claim": False,
+        }
+        if any(
+            type(observed := payload.pop(key, None)) is not type(expected)
+            or observed != expected
+            for key, expected in policy.items()
+        ):
+            raise ValueError("Round 74 AI uplift report policy differs")
+        baseline_trace = payload.get("baseline_trace")
+        ai_metrics = payload.get("ai_metrics")
+        sequence_keys = (
+            "candidate_sha256",
+            "review_sha256",
+            "execution_replay_sha256",
+            "ai_scaled_net_payoff_bps",
+            "ai_scaled_maximum_adverse_excursion_bps",
+            "paired_runs",
+            "paired_symbol_horizons",
+            "gate_reasons",
+        )
+        if (
+            _SHA256.fullmatch(claimed) is None
+            or not isinstance(baseline_trace, Mapping)
+            or not isinstance(ai_metrics, Mapping)
+            or not isinstance(payload.get("development_gate_passed"), bool)
+            or any(not isinstance(payload.get(key), list) for key in sequence_keys)
+        ):
+            raise ValueError("Round 74 AI uplift report payload differs")
+        try:
+            selected = cls(
+                profile=str(payload["profile"]),
+                action_selection_sha256=str(payload["action_selection_sha256"]),
+                candidate_sha256=tuple(
+                    str(item) for item in payload["candidate_sha256"]
+                ),
+                pretest_policy_sha256=str(payload["pretest_policy_sha256"]),
+                probability_calibration_sha256=str(
+                    payload["probability_calibration_sha256"]
+                ),
+                model_manifest_sha256=str(payload["model_manifest_sha256"]),
+                same_entry_latency_budget_ns=payload["same_entry_latency_budget_ns"],
+                baseline_trace=Round74ActionTrace.from_dict(baseline_trace),
+                review_sha256=tuple(str(item) for item in payload["review_sha256"]),
+                execution_replay_sha256=tuple(
+                    str(item) for item in payload["execution_replay_sha256"]
+                ),
+                ai_scaled_net_payoff_bps=tuple(
+                    float(item) for item in payload["ai_scaled_net_payoff_bps"]
+                ),
+                ai_scaled_maximum_adverse_excursion_bps=tuple(
+                    float(item)
+                    for item in payload["ai_scaled_maximum_adverse_excursion_bps"]
+                ),
+                paired_runs=tuple(dict(item) for item in payload["paired_runs"]),
+                paired_symbol_horizons=tuple(
+                    dict(item) for item in payload["paired_symbol_horizons"]
+                ),
+                ai_metrics=Round74AIOverlayMetrics.from_dict(ai_metrics),
+                development_gate_passed=payload["development_gate_passed"],
+                gate_reasons=tuple(str(item) for item in payload["gate_reasons"]),
+                schema_version=str(payload["schema_version"]),
+            )
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("Round 74 AI uplift report payload differs") from exc
+        selected.validate()
+        if selected.report_sha256 != claimed or selected.as_dict() != original:
+            raise ValueError("Round 74 AI uplift report identity differs")
+        return selected
+
+
+@dataclass(frozen=True)
+class Round74AIPretestQualificationPanel:
+    """Bind two real development reports before any sealed-test reservation."""
+
+    development_reports: tuple[Round74AIUpliftDevelopmentReport, ...]
+    qualification_passed: bool
+    gate_reasons: tuple[str, ...]
+    schema_version: str = ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION
+    sealed_test_accessed: bool = False
+    model_selection_performed: bool = False
+    promotion_authority: bool = False
+    trading_authority: bool = False
+    profitability_claim: bool = False
+
+    def validate(self) -> None:
+        reports = tuple(self.development_reports)
+        for report in reports:
+            report.validate()
+        identities = {
+            (
+                report.profile,
+                report.action_selection_sha256,
+                report.candidate_sha256,
+                report.pretest_policy_sha256,
+                report.probability_calibration_sha256,
+                report.same_entry_latency_budget_ns,
+                _canonical_sha256(report.baseline_trace.as_dict()),
+            )
+            for report in reports
+        }
+        manifests = tuple(report.model_manifest_sha256 for report in reports)
+        expected_reasons = tuple(
+            sorted(
+                f"model:{report.model_manifest_sha256}:{reason}"
+                for report in reports
+                if not report.development_gate_passed
+                for reason in (
+                    report.gate_reasons
+                    if report.gate_reasons
+                    else ("development_gate_not_met",)
+                )
+            )
+        )
+        if (
+            self.schema_version != ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION
+            or len(reports) != 2
+            or len(identities) != 1
+            or manifests != tuple(sorted(manifests))
+            or len(set(manifests)) != 2
+            or self.gate_reasons != expected_reasons
+            or self.qualification_passed != (not expected_reasons)
+            or not isinstance(self.qualification_passed, bool)
+            or any(
+                not isinstance(value, bool)
+                for value in (
+                    self.sealed_test_accessed,
+                    self.model_selection_performed,
+                    self.promotion_authority,
+                    self.trading_authority,
+                    self.profitability_claim,
+                )
+            )
+            or any(
+                (
+                    self.sealed_test_accessed,
+                    self.model_selection_performed,
+                    self.promotion_authority,
+                    self.trading_authority,
+                    self.profitability_claim,
+                )
+            )
+        ):
+            raise ValueError("Round 74 AI pretest qualification differs")
+
+    @property
+    def profile(self) -> str:
+        self.validate()
+        return self.development_reports[0].profile
+
+    @property
+    def action_selection_sha256(self) -> str:
+        self.validate()
+        return self.development_reports[0].action_selection_sha256
+
+    @property
+    def pretest_policy_sha256(self) -> str:
+        self.validate()
+        return self.development_reports[0].pretest_policy_sha256
+
+    @property
+    def probability_calibration_sha256(self) -> str:
+        self.validate()
+        return self.development_reports[0].probability_calibration_sha256
+
+    @property
+    def model_manifest_sha256(self) -> tuple[str, ...]:
+        self.validate()
+        return tuple(
+            report.model_manifest_sha256 for report in self.development_reports
+        )
+
+    @property
+    def qualification_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        payload: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "development_reports": [
+                report.as_dict() for report in self.development_reports
+            ],
+            "qualification_passed": self.qualification_passed,
+            "gate_reasons": list(self.gate_reasons),
+            "model_manifest_sha256": list(self.model_manifest_sha256),
+            "development_report_sha256": [
+                report.report_sha256 for report in self.development_reports
+            ],
+            "development_data_scope": "policy_selection_tuning_runs_only",
+            "sealed_test_accessed": False,
+            "model_selection_performed": False,
+            "promotion_authority": False,
+            "trading_authority": False,
+            "profitability_claim": False,
+        }
+        if include_sha256:
+            payload["qualification_sha256"] = _canonical_sha256(payload)
+        return payload
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74AIPretestQualificationPanel:
+        original = dict(value)
+        payload = dict(original)
+        claimed = str(payload.pop("qualification_sha256", ""))
+        raw_reports = payload.get("development_reports")
+        raw_reasons = payload.get("gate_reasons")
+        if (
+            _SHA256.fullmatch(claimed) is None
+            or not isinstance(raw_reports, list)
+            or not isinstance(raw_reasons, list)
+            or not isinstance(payload.get("qualification_passed"), bool)
+            or any(not isinstance(item, Mapping) for item in raw_reports)
+        ):
+            raise ValueError("Round 74 AI pretest qualification payload differs")
+        reports = tuple(
+            Round74AIUpliftDevelopmentReport.from_dict(item) for item in raw_reports
+        )
+        expected_policy = {
+            "model_manifest_sha256": [
+                report.model_manifest_sha256 for report in reports
+            ],
+            "development_report_sha256": [report.report_sha256 for report in reports],
+            "development_data_scope": "policy_selection_tuning_runs_only",
+            "sealed_test_accessed": False,
+            "model_selection_performed": False,
+            "promotion_authority": False,
+            "trading_authority": False,
+            "profitability_claim": False,
+        }
+        if any(
+            type(observed := payload.pop(key, None)) is not type(expected)
+            or observed != expected
+            for key, expected in expected_policy.items()
+        ):
+            raise ValueError("Round 74 AI pretest qualification policy differs")
+        selected = cls(
+            development_reports=reports,
+            qualification_passed=payload["qualification_passed"],
+            gate_reasons=tuple(str(item) for item in raw_reasons),
+            schema_version=str(payload["schema_version"]),
+        )
+        selected.validate()
+        if selected.qualification_sha256 != claimed or selected.as_dict() != original:
+            raise ValueError("Round 74 AI pretest qualification identity differs")
+        return selected
+
+
+def build_round74_ai_pretest_qualification(
+    reports: Sequence[Round74AIUpliftDevelopmentReport],
+) -> Round74AIPretestQualificationPanel:
+    """Create a target-bound development screen with no sealed-test access."""
+
+    selected_reports = tuple(
+        sorted(tuple(reports), key=lambda report: report.model_manifest_sha256)
+    )
+    for report in selected_reports:
+        report.validate()
+    reasons = tuple(
+        sorted(
+            f"model:{report.model_manifest_sha256}:{reason}"
+            for report in selected_reports
+            if not report.development_gate_passed
+            for reason in (
+                report.gate_reasons
+                if report.gate_reasons
+                else ("development_gate_not_met",)
+            )
+        )
+    )
+    selected = Round74AIPretestQualificationPanel(
+        development_reports=selected_reports,
+        qualification_passed=not reasons,
+        gate_reasons=reasons,
+    )
+    selected.validate()
+    return selected
+
+
+def write_round74_ai_pretest_qualification(
+    qualification: Round74AIPretestQualificationPanel,
+    path: str | Path,
+) -> Path:
+    qualification.validate()
+    selected = Path(path)
+    write_json_atomic(selected, qualification.as_dict(), indent=2, sort_keys=True)
+    restored = load_round74_ai_pretest_qualification(selected)
+    if restored.qualification_sha256 != qualification.qualification_sha256:
+        raise RuntimeError("Round 74 AI pretest qualification persistence differs")
+    return selected
+
+
+def load_round74_ai_pretest_qualification(
+    path: str | Path,
+) -> Round74AIPretestQualificationPanel:
+    selected = Path(path)
+    raw = selected.read_bytes()
+    if not raw or len(raw) > 64 * 1024 * 1024:
+        raise ValueError("Round 74 AI pretest qualification file size differs")
+
+    def reject_duplicates(
+        pairs: list[tuple[str, object]],
+    ) -> dict[str, object]:
+        parsed: dict[str, object] = {}
+        for key, item in pairs:
+            if key in parsed:
+                raise ValueError("Round 74 AI pretest qualification has duplicate keys")
+            parsed[key] = item
+        return parsed
+
+    try:
+        payload = json.loads(raw.decode("utf-8"), object_pairs_hook=reject_duplicates)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Round 74 AI pretest qualification JSON differs") from exc
+    if not isinstance(payload, Mapping):
+        raise ValueError("Round 74 AI pretest qualification root differs")
+    return Round74AIPretestQualificationPanel.from_dict(payload)
 
 
 def evaluate_round74_ai_overlay_development(
@@ -1221,12 +1593,17 @@ def evaluate_round74_ai_overlay_development(
 __all__ = [
     "ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION",
     "ROUND74_AI_EXECUTION_REPLAY_STATUSES",
+    "ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION",
     "ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO",
     "ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE",
     "ROUND74_AI_UPLIFT_SCHEMA_VERSION",
     "Round74AIExecutionReplayEvidence",
     "Round74AIOverlayMetrics",
     "Round74AIPairedReviewEvidence",
+    "Round74AIPretestQualificationPanel",
     "Round74AIUpliftDevelopmentReport",
+    "build_round74_ai_pretest_qualification",
     "evaluate_round74_ai_overlay_development",
+    "load_round74_ai_pretest_qualification",
+    "write_round74_ai_pretest_qualification",
 ]

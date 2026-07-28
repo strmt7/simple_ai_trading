@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import json
+
+import pytest
 
 from simple_ai_trading.ai_runtime import OllamaResidencyReport
 from simple_ai_trading.impact_absorption_ai_protocol import (
@@ -16,7 +19,10 @@ from simple_ai_trading.impact_absorption_ai_runtime import (
 from simple_ai_trading.impact_absorption_ai_uplift import (
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
+    build_round74_ai_pretest_qualification,
     evaluate_round74_ai_overlay_development,
+    load_round74_ai_pretest_qualification,
+    write_round74_ai_pretest_qualification,
 )
 from simple_ai_trading.impact_absorption_ai_worker import (
     Round74AIWorkerResult,
@@ -368,6 +374,84 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
     assert report.promotion_authority is False
     assert report.profitability_claim is False
     assert len(report.report_sha256) == 64
+
+
+def test_ai_pretest_qualification_binds_two_passing_development_reports(
+    tmp_path,
+) -> None:
+    reviews = tuple(
+        _review(index, 0 if payoff < 0.0 else 10_000)
+        for index, payoff in enumerate(PAYOFFS)
+    )
+    first = evaluate_round74_ai_overlay_development(
+        _selection(),
+        reviews,
+        _executions(reviews),
+    )
+    second = replace(first, model_manifest_sha256="7" * 64)
+    second.validate()
+
+    qualification = build_round74_ai_pretest_qualification((second, first))
+
+    assert qualification.qualification_passed
+    assert qualification.model_manifest_sha256 == ("6" * 64, "7" * 64)
+    assert qualification.gate_reasons == ()
+    assert not qualification.sealed_test_accessed
+    assert not qualification.model_selection_performed
+    output = tmp_path / "ai-pretest-qualification.json"
+    write_round74_ai_pretest_qualification(qualification, output)
+    restored = load_round74_ai_pretest_qualification(output)
+    assert restored.as_dict() == qualification.as_dict()
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    payload["development_reports"][0]["ai_metrics"]["total_net_bps"] += 1.0
+    output.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError):
+        load_round74_ai_pretest_qualification(output)
+
+    for mutate in (
+        lambda value: value.__setitem__("qualification_passed", 1),
+        lambda value: value.__setitem__("sealed_test_accessed", 0),
+        lambda value: value["development_reports"][0].__setitem__(
+            "trading_authority",
+            0,
+        ),
+    ):
+        payload = qualification.as_dict()
+        mutate(payload)
+        output.write_text(json.dumps(payload), encoding="utf-8")
+        with pytest.raises(ValueError):
+            load_round74_ai_pretest_qualification(output)
+
+
+def test_ai_pretest_qualification_rejects_a_failed_model() -> None:
+    passing_reviews = tuple(
+        _review(index, 0 if payoff < 0.0 else 10_000)
+        for index, payoff in enumerate(PAYOFFS)
+    )
+    passing = evaluate_round74_ai_overlay_development(
+        _selection(),
+        passing_reviews,
+        _executions(passing_reviews),
+    )
+    failed_reviews = tuple(_review(index, 0) for index in range(6))
+    failed = replace(
+        evaluate_round74_ai_overlay_development(
+            _selection(),
+            failed_reviews,
+            _executions(failed_reviews),
+        ),
+        model_manifest_sha256="7" * 64,
+    )
+    failed.validate()
+
+    qualification = build_round74_ai_pretest_qualification((passing, failed))
+
+    assert not qualification.qualification_passed
+    assert qualification.gate_reasons
+    assert all(
+        reason.startswith(f"model:{'7' * 64}:") for reason in qualification.gate_reasons
+    )
 
 
 def test_aggregate_ai_uplift_cannot_hide_run_or_asset_harm() -> None:

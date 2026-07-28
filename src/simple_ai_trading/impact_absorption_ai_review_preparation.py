@@ -22,7 +22,10 @@ from .impact_absorption_ai_runtime import (
     review_round74_ai_candidate,
     unload_round74_ai_model,
 )
-from .impact_absorption_ai_uplift import Round74AIPairedReviewEvidence
+from .impact_absorption_ai_uplift import (
+    Round74AIPairedReviewEvidence,
+    Round74AIPretestQualificationPanel,
+)
 from .impact_absorption_event_action_policy import Round74ActionPolicySelection
 from .impact_absorption_event_calibration import Round74ProbabilityCalibration
 from .impact_absorption_event_model import Round74EventModelOutput
@@ -485,10 +488,7 @@ def prepare_round74_target_free_ai_reviews(
     all_reviews: list[tuple[Round74AIPairedReviewEvidence, ...]] = []
     selected_batch_finalizer = model_batch_finalizer
     selected_batch_preparer = model_batch_preparer
-    if (
-        selected_batch_preparer is None
-        and review_runner is review_round74_ai_candidate
-    ):
+    if selected_batch_preparer is None and review_runner is review_round74_ai_candidate:
         selected_batch_preparer = _prepare_round74_ai_model_batch
     if (
         selected_batch_finalizer is None
@@ -611,9 +611,8 @@ def prepare_round74_target_free_ai_reviews(
             if worker_session is not None:
                 worker_session.close()
             if (
-                (batch_attempted or batch_cleanup_required)
-                and selected_batch_finalizer is not None
-            ):
+                batch_attempted or batch_cleanup_required
+            ) and selected_batch_finalizer is not None:
                 selected_batch_finalizer(binding)
         all_reviews.append(tuple(reviews))
     result = Round74AIReviewPanel(
@@ -638,6 +637,7 @@ class Round74PreparedSealedAIReviewProvider:
 
     probability_calibration: Round74ProbabilityCalibration
     same_entry_latency_budget_ns: int
+    ai_pretest_qualification: Round74AIPretestQualificationPanel
     model_bindings: tuple[Round74AIReviewModelBinding, ...] = field(
         default_factory=round74_default_ai_review_model_panel
     )
@@ -651,6 +651,10 @@ class Round74PreparedSealedAIReviewProvider:
         bindings = tuple(self.model_bindings)
         object.__setattr__(self, "model_bindings", bindings)
         self.probability_calibration.validate()
+        self.ai_pretest_qualification.validate()
+        bound_manifests = tuple(
+            sorted(value.manifest.manifest_sha256 for value in bindings)
+        )
         if (
             isinstance(self.same_entry_latency_budget_ns, bool)
             or not isinstance(self.same_entry_latency_budget_ns, int)
@@ -672,6 +676,10 @@ class Round74PreparedSealedAIReviewProvider:
                 and not callable(self.progress_callback)
             )
             or not callable(self.wall_time_ns)
+            or not self.ai_pretest_qualification.qualification_passed
+            or self.ai_pretest_qualification.model_manifest_sha256 != bound_manifests
+            or self.ai_pretest_qualification.probability_calibration_sha256
+            != self.probability_calibration.calibration_sha256
         ):
             raise ValueError("Round 74 sealed AI review provider differs")
         for binding in bindings:
@@ -702,6 +710,14 @@ class Round74PreparedSealedAIReviewProvider:
         }
         if (
             claim.status != "reserved"
+            or not claim.ai_pretest_qualification_required
+            or claim.ai_pretest_qualification_sha256
+            != self.ai_pretest_qualification.qualification_sha256
+            or self.ai_pretest_qualification.action_selection_sha256
+            != action_selection.selection_sha256
+            or self.ai_pretest_qualification.pretest_policy_sha256
+            != action_selection.pretest_policy_sha256
+            or self.ai_pretest_qualification.profile != action_selection.profile
             or requested_manifests != claim.ai_manifest_sha256
             or set(bound_manifests) != set(requested_manifests)
             or action_selection.selection_sha256 != claim.action_selection_sha256

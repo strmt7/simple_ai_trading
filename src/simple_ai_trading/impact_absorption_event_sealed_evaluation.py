@@ -26,6 +26,7 @@ from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .impact_absorption_ai_uplift import (
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
+    Round74AIPretestQualificationPanel,
 )
 from .impact_absorption_ai_execution_replay import (
     Round74AIExecutionReplayInstruction,
@@ -1251,6 +1252,7 @@ class Round74SealedEvaluationReport:
     pretest_model_sha256: str
     probability_calibration_sha256: str
     action_selection_sha256: str
+    ai_pretest_qualification_sha256: str
     profile: str
     optimization_population: str
     test_batch_sha256: tuple[str, ...]
@@ -1288,6 +1290,7 @@ class Round74SealedEvaluationReport:
             self.pretest_model_sha256,
             self.probability_calibration_sha256,
             self.action_selection_sha256,
+            self.ai_pretest_qualification_sha256,
             *self.test_batch_sha256,
             *self.model_output_sha256,
             *self.candidate_sha256,
@@ -1378,6 +1381,7 @@ class Round74SealedEvaluationReport:
             "pretest_model_sha256": self.pretest_model_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "action_selection_sha256": self.action_selection_sha256,
+            "ai_pretest_qualification_sha256": (self.ai_pretest_qualification_sha256),
             "profile": self.profile,
             "optimization_population": self.optimization_population,
             "test_batch_sha256": list(self.test_batch_sha256),
@@ -2572,6 +2576,8 @@ def _evaluate_reserved(
         or action_selection.optimization_population != claim.optimization_population
         or probability_calibration.optimization_population
         != claim.optimization_population
+        or not claim.ai_pretest_qualification_required
+        or _SHA256.fullmatch(claim.ai_pretest_qualification_sha256) is None
         or len(policy_run_counts) != 1
     ):
         raise ValueError("Round 74 sealed reserved input identity differs")
@@ -2699,6 +2705,7 @@ def _evaluate_reserved(
         pretest_model_sha256=inference.pretest_model_sha256,
         probability_calibration_sha256=(probability_calibration.calibration_sha256),
         action_selection_sha256=action_selection.selection_sha256,
+        ai_pretest_qualification_sha256=(claim.ai_pretest_qualification_sha256),
         profile=action_selection.profile,
         optimization_population=claim.optimization_population,
         test_batch_sha256=claim.batch_sha256,
@@ -2730,7 +2737,7 @@ def evaluate_round74_sealed_once(
     action_selection: Round74ActionPolicySelection,
     probability_calibration: Round74ProbabilityCalibration,
     pretest_policy_path: str | Path,
-    ai_manifest_sha256: Sequence[str],
+    ai_pretest_qualification: Round74AIPretestQualificationPanel,
     ai_review_provider: Round74SealedAIReviewProvider,
     ai_execution_replay_provider: Round74SealedAIExecutionReplayProvider,
     ledger: Round74SealedEvaluationLedger,
@@ -2739,9 +2746,8 @@ def evaluate_round74_sealed_once(
 ) -> Round74SealedEvaluationOutcome:
     """Reserve metadata, load targets, replay AI, and finalize exactly once."""
 
-    manifests = tuple(
-        sorted(_require_sha256(value, "AI manifest") for value in ai_manifest_sha256)
-    )
+    ai_pretest_qualification.validate()
+    manifests = ai_pretest_qualification.model_manifest_sha256
     if (
         len(manifests) != ROUND74_SEALED_AI_MODEL_COUNT
         or len(set(manifests)) != ROUND74_SEALED_AI_MODEL_COUNT
@@ -2749,10 +2755,24 @@ def evaluate_round74_sealed_once(
         raise ValueError(
             "Round 74 sealed evaluation requires the exact two-model AI family"
         )
+    if not ai_pretest_qualification.qualification_passed:
+        raise ValueError(
+            "Round 74 sealed evaluation requires both AI models to pass pretest"
+        )
+    if (
+        ai_pretest_qualification.action_selection_sha256
+        != action_selection.selection_sha256
+        or ai_pretest_qualification.pretest_policy_sha256
+        != action_selection.pretest_policy_sha256
+        or ai_pretest_qualification.probability_calibration_sha256
+        != probability_calibration.calibration_sha256
+        or ai_pretest_qualification.profile != action_selection.profile
+    ):
+        raise ValueError("Round 74 sealed AI pretest qualification identity differs")
     claim = ledger.reserve_identity(
         test_identity=test_identity,
         action_selection=action_selection,
-        ai_manifest_sha256=manifests,
+        ai_pretest_qualification=ai_pretest_qualification,
     )
     try:
         if not ledger.claim_matches(claim, required_status="reserved"):
