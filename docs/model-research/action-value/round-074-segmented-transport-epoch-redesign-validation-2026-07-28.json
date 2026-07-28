@@ -1,0 +1,99 @@
+{
+  "schema_version": "round-074-segmented-transport-epoch-redesign-validation-v1",
+  "observed_at_utc": "2026-07-28T06:24:43Z",
+  "implementation": {
+    "main_git_commit": "049ac7840eed712154c4979c06b272f3cf31fb5b",
+    "development_git_commit": "6f0c8cf18dfbeaa8da274090087cba3355dab179",
+    "plan_schema_version": "round-074-segmented-event-cohort-plan-v2",
+    "binding_schema_version": "round-074-segmented-event-cohort-binding-v2",
+    "epoch_audit_schema_version": "round-074-segmented-transport-epoch-audit-v1"
+  },
+  "source": {
+    "database_relative_path": "data/round74-segmented-prerequisite-attempt-002-9d9b6b9.duckdb",
+    "database_bytes": 12595200,
+    "database_sha256": "293277520cb86c6e1a5be10ef619fc5ea44c683089d48940c91f5e6b717f8451",
+    "run_id": "822f3089e6e04210bbd90e21a4a9c5bc",
+    "prior_failure_artifact_sha256": "da4921c0dfed6e8e483d8a052717955ec6449ada0bc61b8a77ca5167a16b8237",
+    "database_opened_read_only": true,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "fresh_epoch_audit": {
+    "schema_version": "round-074-segmented-transport-epoch-audit-v1",
+    "run_id": "822f3089e6e04210bbd90e21a4a9c5bc",
+    "terminal_status": "transport_ended",
+    "terminal_error": "public_source:ConnectionClosedError:no close frame received or sent",
+    "report_sha256": "49b38555e6ed03c46d7cd61ccb34cae80b92d310ab5e6ff9a48e0d6d006f55c9",
+    "fresh_frame_audit_sha256": "02b12fa7e0402bc52f6a1a3101d62cccd4039f2f42912443c825ed055cd58b2c",
+    "capture_start_wall_ns": 1785218023136676300,
+    "capture_end_wall_ns": 1785218238845700000,
+    "feature_ready_wall_ns": 1785218028925936300,
+    "usable_end_wall_ns": 1785218238059960500,
+    "usable_duration_ns": 209134024200,
+    "eligible_anchor_duration_ns": 0,
+    "message_count": 91227,
+    "frame_count": 51,
+    "compressed_payload_bytes": 3217130,
+    "observation_count": 91205,
+    "token_count": 89555,
+    "fresh_depth_update_counts": {
+      "BTCUSDT": 2052,
+      "ETHUSDT": 2043,
+      "SOLUSDT": 1935
+    },
+    "last_fresh_depth_wall_ns": {
+      "BTCUSDT": 1785218238125684700,
+      "ETHUSDT": 1785218238103684200,
+      "SOLUSDT": 1785218238059960500
+    },
+    "minimum_usable_epoch_ns": 600000000000,
+    "maximum_target_span_ns": 310500000000,
+    "minimum_usable_epoch_passed": false,
+    "complete_target_span_possible": false,
+    "exact_frame_audit_passed": true,
+    "causal_depth_replay_passed": true,
+    "admission_supported": false,
+    "cross_epoch_feature_or_target_permitted": false,
+    "epoch_audit_sha256": "6ff821ad1048a3fc39b53eb0168798cb960be4029acb7c9e04c28493afe16584"
+  },
+  "prospective_contract": {
+    "predeclared_slots": 720,
+    "slot_period_ns": 1500000000000,
+    "maximum_capture_duration_ns": 1200000000000,
+    "minimum_usable_epoch_ns": 600000000000,
+    "role_counts": {
+      "training": 514,
+      "tuning": 103,
+      "test": 103
+    },
+    "required_eligible_anchor_ns": {
+      "training": 394740000000000,
+      "tuning": 78948000000000,
+      "test": 78948000000000
+    },
+    "all_qualifying_transport_prefixes_must_be_included": true,
+    "market_or_model_outcome_selection_permitted": false,
+    "cross_epoch_feature_or_target_permitted": false,
+    "whole_epoch_role_assignment_required": true,
+    "purge_and_embargo_required": true
+  },
+  "verification": {
+    "focused_tests": 9,
+    "neighboring_contract_tests": 35,
+    "focused_ruff_passed": true,
+    "diff_check_passed": true,
+    "real_database_epoch_audit_passed": true,
+    "real_database_admission_supported": false
+  },
+  "verdict": {
+    "attempt_002_remains_permanently_excluded": true,
+    "reason": "The independently replayed conservative usable interval is shorter than both the 600-second minimum and the 310.5-second complete target span.",
+    "cohort_plan_frozen": false,
+    "cohort_campaign_open": false,
+    "cohort_data_admitted": false,
+    "model_training_or_evaluation": false,
+    "profitability_or_edge_claim": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "e6155e6782cdcb5d4acfced391570238a22f8d79625b1e61ef97d18348904508"
+}
