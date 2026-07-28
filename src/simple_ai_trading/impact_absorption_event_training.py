@@ -40,6 +40,7 @@ from .impact_absorption_event_model import (
 )
 from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_PAYOFF_SIDES,
 )
@@ -47,10 +48,25 @@ from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v21"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v20"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v22"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v21"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION = "round-074-target-loss-scale-v1"
+ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION = "round-074-feature-view-v1"
+ROUND74_EVENT_FEATURE_VIEWS = ("clock_neutral", "full")
+ROUND74_EVENT_CLOCK_FEATURE_NAMES = tuple(
+    name for name in ROUND74_EVENT_FEATURE_NAMES if name.startswith("exchange_clock_")
+)
+ROUND74_EVENT_CLOCK_FEATURE_INDICES = tuple(
+    ROUND74_EVENT_FEATURE_NAMES.index(name) for name in ROUND74_EVENT_CLOCK_FEATURE_NAMES
+)
+ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256 = hashlib.sha256(
+    json.dumps(
+        ROUND74_EVENT_CLOCK_FEATURE_NAMES,
+        ensure_ascii=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+).hexdigest()
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
 ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS = 12
@@ -64,6 +80,12 @@ ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _SAFE_FILENAME = re.compile(r"[a-z0-9][a-z0-9._-]{0,159}")
+
+if (
+    len(ROUND74_EVENT_CLOCK_FEATURE_NAMES) != 9
+    or len(set(ROUND74_EVENT_CLOCK_FEATURE_INDICES)) != 9
+):
+    raise RuntimeError("Round 74 exchange-clock feature panel differs")
 
 
 def _canonical_json_bytes(value: object) -> bytes:
@@ -285,6 +307,9 @@ class Round74EventTrainingConfig:
             "device_run_group_size": int(self.device_run_group_size),
             "execution_mode": self.execution_mode,
             "architecture_selection_mode": self.architecture_selection_mode,
+            "feature_view_selection_mode": (
+                "mandatory_clock_neutral_incumbent_ablation_gate"
+            ),
             "training_order": "chronological_no_shuffle",
             "tuning_order": "chronological_no_shuffle",
             "checkpoint_policy": "best_state_in_memory_only",
@@ -602,10 +627,67 @@ def fit_round74_event_target_loss_scale(
     return selected
 
 
+def _round74_feature_view_pre_hook(
+    module: nn.Module,
+    args: tuple[object, ...],
+) -> tuple[torch.Tensor]:
+    if len(args) != 1 or not isinstance(args[0], torch.Tensor):
+        raise ValueError("Round 74 feature-view model input differs")
+    values = args[0]
+    if (
+        values.ndim != 3
+        or int(values.shape[2]) != len(ROUND74_EVENT_FEATURE_NAMES)
+    ):
+        raise ValueError("Round 74 feature-view tensor dimensions differ")
+    feature_view = getattr(module, "feature_view", None)
+    if feature_view == "full":
+        return (values,)
+    if feature_view != "clock_neutral":
+        raise ValueError("Round 74 model feature view differs")
+    mask = getattr(module, "_round74_feature_view_mask", None)
+    if not isinstance(mask, torch.Tensor) or mask.shape != (
+        1,
+        1,
+        len(ROUND74_EVENT_FEATURE_NAMES),
+    ):
+        raise RuntimeError("Round 74 model feature-view mask differs")
+    return (values * mask,)
+
+
+def _bind_round74_feature_view(model: nn.Module, feature_view: str) -> nn.Module:
+    selected = str(feature_view)
+    if selected not in ROUND74_EVENT_FEATURE_VIEWS:
+        raise ValueError("Round 74 model feature view differs")
+    if hasattr(model, "feature_view") or hasattr(
+        model,
+        "_round74_feature_view_mask",
+    ):
+        raise ValueError("Round 74 model feature view was already bound")
+    mask = torch.ones(
+        (1, 1, len(ROUND74_EVENT_FEATURE_NAMES)),
+        dtype=torch.float32,
+    )
+    mask[:, :, list(ROUND74_EVENT_CLOCK_FEATURE_INDICES)] = 0.0
+    model.register_buffer(
+        "_round74_feature_view_mask",
+        mask,
+        persistent=False,
+    )
+    model.feature_view = selected  # type: ignore[attr-defined]
+    model.register_forward_pre_hook(_round74_feature_view_pre_hook)
+    return model
+
+
 class Round74EventEnsemble(nn.Module):
     """Equal-weight seed ensemble for one fixed architecture."""
 
-    def __init__(self, candidate_id: str, peer_count: int) -> None:
+    def __init__(
+        self,
+        candidate_id: str,
+        peer_count: int,
+        *,
+        feature_view: str = "full",
+    ) -> None:
         super().__init__()
         if candidate_id not in ROUND74_EVENT_MODEL_CANDIDATES or peer_count < 1:
             raise ValueError("Round 74 event ensemble identity differs")
@@ -613,6 +695,7 @@ class Round74EventEnsemble(nn.Module):
         self.peers = nn.ModuleList(
             build_round74_event_model(candidate_id) for _ in range(int(peer_count))
         )
+        _bind_round74_feature_view(self, feature_view)
 
     def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
         outputs = tuple(peer(values) for peer in self.peers)
@@ -663,6 +746,7 @@ class Round74PretestPolicyArtifact:
     model_sha256: str
     model_path: Path
     selected_candidate_id: str
+    selected_feature_view: str
     tuning_loss: float
 
 
@@ -686,6 +770,7 @@ class _DevelopmentIdentity:
 @dataclass(frozen=True)
 class _CandidateFit:
     candidate_id: str
+    feature_view: str
     peer_states: tuple[dict[str, torch.Tensor], ...]
     peer_reports: tuple[dict[str, object], ...]
     ensemble_metrics: dict[str, float]
@@ -1572,6 +1657,7 @@ def _parameters_are_finite(model: nn.Module) -> bool:
 
 def _train_peer(
     candidate_id: str,
+    feature_view: str,
     seed: int,
     training_batches: Sequence[Round74EventTrainingBatch],
     tuning_batches: Sequence[Round74EventTrainingBatch],
@@ -1584,7 +1670,10 @@ def _train_peer(
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    model = build_round74_event_model(candidate_id).to(device)
+    model = _bind_round74_feature_view(
+        build_round74_event_model(candidate_id),
+        feature_view,
+    ).to(device)
     optimizer = ExplicitAdamW(
         tuple(model.parameters()),
         learning_rate=config.learning_rate,
@@ -1838,11 +1927,16 @@ def _prediction_sha256(
 
 def _ensemble_from_states(
     candidate_id: str,
+    feature_view: str,
     states: Sequence[Mapping[str, torch.Tensor]],
     *,
     device: object,
 ) -> Round74EventEnsemble:
-    ensemble = Round74EventEnsemble(candidate_id, len(states))
+    ensemble = Round74EventEnsemble(
+        candidate_id,
+        len(states),
+        feature_view=feature_view,
+    )
     for peer, state in zip(ensemble.peers, states, strict=True):
         peer.load_state_dict(dict(state), strict=True)
     return ensemble.to(device)
@@ -1850,6 +1944,7 @@ def _ensemble_from_states(
 
 def _fit_candidate(
     candidate_id: str,
+    feature_view: str,
     training_batches: Sequence[Round74EventTrainingBatch],
     tuning_batches: Sequence[Round74EventTrainingBatch],
     *,
@@ -1862,6 +1957,7 @@ def _fit_candidate(
     for seed in config.seeds:
         state, report = _train_peer(
             candidate_id,
+            feature_view,
             seed,
             training_batches,
             tuning_batches,
@@ -1871,7 +1967,12 @@ def _fit_candidate(
         )
         states.append(state)
         reports.append(report)
-    ensemble = _ensemble_from_states(candidate_id, states, device=device)
+    ensemble = _ensemble_from_states(
+        candidate_id,
+        feature_view,
+        states,
+        device=device,
+    )
     ensemble_metrics, ensemble_run_losses = _evaluate_model(
         ensemble,
         tuning_batches,
@@ -1899,6 +2000,7 @@ def _fit_candidate(
     )
     return _CandidateFit(
         candidate_id=candidate_id,
+        feature_view=feature_view,
         peer_states=tuple(states),
         peer_reports=tuple(reports),
         ensemble_metrics=ensemble_metrics,
@@ -1907,6 +2009,103 @@ def _fit_candidate(
         ensemble_prediction_sha256=prediction_sha256,
         parameter_count_per_peer=parameter_count,
     )
+
+
+def _paired_promotion_report(
+    incumbent_id: str,
+    challenger_id: str,
+    incumbent_losses: Sequence[float],
+    challenger_losses: Sequence[float],
+    *,
+    minimum_improvement: float,
+    required_paired_run_count: int,
+    incumbent_group_losses: Mapping[str, float] | None,
+    challenger_group_losses: Mapping[str, float] | None,
+) -> dict[str, object]:
+    improvements = tuple(
+        float(incumbent_loss) - float(challenger_loss)
+        for incumbent_loss, challenger_loss in zip(
+            incumbent_losses,
+            challenger_losses,
+            strict=True,
+        )
+    )
+    if not improvements:
+        raise ValueError("Round 74 paired-promotion losses are empty")
+    wins = sum(value > 0.0 for value in improvements)
+    losses_count = sum(value < 0.0 for value in improvements)
+    ties = len(improvements) - wins - losses_count
+    mean_improvement = sum(improvements) / len(improvements)
+    maximum_loss_degradation = max(-value for value in improvements)
+    complete_tuning_panel = len(improvements) == required_paired_run_count
+    all_runs_noninferior = maximum_loss_degradation <= minimum_improvement
+    if (incumbent_group_losses is None) != (challenger_group_losses is None):
+        raise ValueError("Round 74 paired-promotion subgroup panel differs")
+    if (
+        incumbent_group_losses is not None
+        and challenger_group_losses is not None
+        and set(incumbent_group_losses) != set(challenger_group_losses)
+    ):
+        raise ValueError("Round 74 paired-promotion subgroup panel differs")
+    subgroup_improvements = (
+        {
+            key: float(incumbent_group_losses[key])
+            - float(challenger_group_losses[key])
+            for key in sorted(incumbent_group_losses)
+        }
+        if incumbent_group_losses is not None
+        and challenger_group_losses is not None
+        else {}
+    )
+    worst_subgroup_key = (
+        min(
+            subgroup_improvements,
+            key=lambda key: (subgroup_improvements[key], key),
+        )
+        if subgroup_improvements
+        else None
+    )
+    maximum_subgroup_loss_degradation = (
+        -subgroup_improvements[worst_subgroup_key]
+        if worst_subgroup_key is not None
+        else None
+    )
+    all_subgroups_noninferior = (
+        maximum_subgroup_loss_degradation is None
+        or maximum_subgroup_loss_degradation <= minimum_improvement
+    )
+    promoted = (
+        complete_tuning_panel
+        and mean_improvement > minimum_improvement
+        and all_runs_noninferior
+        and all_subgroups_noninferior
+    )
+    return {
+        "incumbent_candidate_id": incumbent_id,
+        "challenger_candidate_id": challenger_id,
+        "paired_capture_run_count": len(improvements),
+        "required_paired_capture_run_count": required_paired_run_count,
+        "complete_tuning_panel": complete_tuning_panel,
+        "challenger_win_count": wins,
+        "challenger_loss_count": losses_count,
+        "exact_tie_count": ties,
+        "mean_proper_loss_improvement": mean_improvement,
+        "minimum_mean_proper_loss_improvement": minimum_improvement,
+        "maximum_paired_run_loss_degradation": maximum_loss_degradation,
+        "maximum_permitted_paired_run_loss_degradation": minimum_improvement,
+        "all_paired_runs_noninferior": all_runs_noninferior,
+        "subgroup_gate_applied": incumbent_group_losses is not None,
+        "paired_run_symbol_horizon_group_count": len(subgroup_improvements),
+        "worst_run_symbol_horizon_group": worst_subgroup_key,
+        "maximum_paired_group_loss_degradation": (
+            maximum_subgroup_loss_degradation
+        ),
+        "maximum_permitted_paired_group_loss_degradation": minimum_improvement,
+        "all_paired_run_symbol_horizon_groups_noninferior": (
+            all_subgroups_noninferior
+        ),
+        "promoted": promoted,
+    }
 
 
 def _complexity_gated_candidate_id(
@@ -1992,85 +2191,22 @@ def _complexity_gated_candidate_id(
     incumbent = ordered[0]
     reports: list[dict[str, object]] = []
     for challenger in ordered[1:]:
-        incumbent_losses = losses[incumbent]
-        challenger_losses = losses[challenger]
-        improvements = tuple(
-            incumbent_loss - challenger_loss
-            for incumbent_loss, challenger_loss in zip(
-                incumbent_losses,
-                challenger_losses,
-                strict=True,
-            )
+        report = _paired_promotion_report(
+            incumbent,
+            challenger,
+            losses[incumbent],
+            losses[challenger],
+            minimum_improvement=minimum_improvement,
+            required_paired_run_count=required_paired_run_count,
+            incumbent_group_losses=(
+                group_losses[incumbent] if group_losses is not None else None
+            ),
+            challenger_group_losses=(
+                group_losses[challenger] if group_losses is not None else None
+            ),
         )
-        wins = sum(value > 0.0 for value in improvements)
-        losses_count = sum(value < 0.0 for value in improvements)
-        ties = len(improvements) - wins - losses_count
-        mean_improvement = sum(improvements) / len(improvements)
-        maximum_loss_degradation = max(-value for value in improvements)
-        complete_tuning_panel = len(improvements) == required_paired_run_count
-        all_runs_noninferior = maximum_loss_degradation <= minimum_improvement
-        subgroup_improvements = (
-            {
-                key: group_losses[incumbent][key] - group_losses[challenger][key]
-                for key in group_keys
-            }
-            if group_losses is not None
-            else {}
-        )
-        worst_subgroup_key = (
-            min(
-                subgroup_improvements,
-                key=lambda key: (subgroup_improvements[key], key),
-            )
-            if subgroup_improvements
-            else None
-        )
-        maximum_subgroup_loss_degradation = (
-            -subgroup_improvements[worst_subgroup_key]
-            if worst_subgroup_key is not None
-            else None
-        )
-        all_subgroups_noninferior = (
-            maximum_subgroup_loss_degradation is None
-            or maximum_subgroup_loss_degradation <= minimum_improvement
-        )
-        promoted = (
-            complete_tuning_panel
-            and mean_improvement > minimum_improvement
-            and all_runs_noninferior
-            and all_subgroups_noninferior
-        )
-        reports.append(
-            {
-                "incumbent_candidate_id": incumbent,
-                "challenger_candidate_id": challenger,
-                "paired_capture_run_count": len(improvements),
-                "required_paired_capture_run_count": (required_paired_run_count),
-                "complete_tuning_panel": complete_tuning_panel,
-                "challenger_win_count": wins,
-                "challenger_loss_count": losses_count,
-                "exact_tie_count": ties,
-                "mean_proper_loss_improvement": mean_improvement,
-                "minimum_mean_proper_loss_improvement": minimum_improvement,
-                "maximum_paired_run_loss_degradation": maximum_loss_degradation,
-                "maximum_permitted_paired_run_loss_degradation": (minimum_improvement),
-                "all_paired_runs_noninferior": all_runs_noninferior,
-                "subgroup_gate_applied": group_losses is not None,
-                "paired_run_symbol_horizon_group_count": len(subgroup_improvements),
-                "worst_run_symbol_horizon_group": worst_subgroup_key,
-                "maximum_paired_group_loss_degradation": (
-                    maximum_subgroup_loss_degradation
-                ),
-                "maximum_permitted_paired_group_loss_degradation": (
-                    minimum_improvement
-                ),
-                "all_paired_run_symbol_horizon_groups_noninferior": (
-                    all_subgroups_noninferior
-                ),
-                "promoted": promoted,
-            }
-        )
-        if promoted:
+        reports.append(report)
+        if report["promoted"] is True:
             incumbent = challenger
     return incumbent, tuple(reports)
 
@@ -2104,6 +2240,200 @@ def _select_candidate_with_complexity_gate(
     return fit_by_id[selected_id], reports
 
 
+def _feature_view_promotion_report(
+    neutral_run_losses: Sequence[float],
+    full_run_losses: Sequence[float],
+    *,
+    neutral_group_losses: Mapping[str, float],
+    full_group_losses: Mapping[str, float],
+    minimum_mean_loss_improvement: float,
+    required_paired_run_count: int,
+) -> dict[str, object]:
+    raw_report = _paired_promotion_report(
+        "clock_neutral",
+        "full",
+        neutral_run_losses,
+        full_run_losses,
+        minimum_improvement=float(minimum_mean_loss_improvement),
+        required_paired_run_count=required_paired_run_count,
+        incumbent_group_losses=neutral_group_losses,
+        challenger_group_losses=full_group_losses,
+    )
+    return {
+        (
+            "incumbent_feature_view"
+            if key == "incumbent_candidate_id"
+            else "challenger_feature_view"
+            if key == "challenger_candidate_id"
+            else key
+        ): value
+        for key, value in raw_report.items()
+    }
+
+
+def _select_feature_view_with_ablation_gate(
+    neutral_fit: _CandidateFit,
+    full_fit: _CandidateFit,
+    *,
+    minimum_mean_loss_improvement: float,
+    required_paired_run_count: int,
+) -> tuple[_CandidateFit, dict[str, object]]:
+    if (
+        neutral_fit.candidate_id != full_fit.candidate_id
+        or neutral_fit.feature_view != "clock_neutral"
+        or full_fit.feature_view != "full"
+        or neutral_fit.parameter_count_per_peer != full_fit.parameter_count_per_peer
+        or len(neutral_fit.peer_states) != len(full_fit.peer_states)
+    ):
+        raise ValueError("Round 74 feature-view ablation panel differs")
+    report = _feature_view_promotion_report(
+        neutral_fit.ensemble_run_losses,
+        full_fit.ensemble_run_losses,
+        neutral_group_losses=neutral_fit.ensemble_group_losses,
+        full_group_losses=full_fit.ensemble_group_losses,
+        minimum_mean_loss_improvement=minimum_mean_loss_improvement,
+        required_paired_run_count=required_paired_run_count,
+    )
+    winner = full_fit if report["promoted"] is True else neutral_fit
+    return winner, report
+
+
+def _candidate_fit_report(fit: _CandidateFit) -> dict[str, object]:
+    return {
+        "candidate_id": fit.candidate_id,
+        "feature_view": fit.feature_view,
+        "parameter_count_per_peer": fit.parameter_count_per_peer,
+        "peer_count": len(fit.peer_states),
+        "peer_reports": list(fit.peer_reports),
+        "ensemble_tuning_metrics": fit.ensemble_metrics,
+        "ensemble_tuning_run_losses": list(fit.ensemble_run_losses),
+        "ensemble_tuning_run_symbol_horizon_losses": fit.ensemble_group_losses,
+        "ensemble_prediction_sha256": fit.ensemble_prediction_sha256,
+    }
+
+
+def _validated_candidate_fit_report(
+    report: Mapping[str, object],
+    *,
+    panel_key: str,
+    expected_candidate_id: str,
+    expected_feature_view: str,
+    seeds: Sequence[int],
+    tuning_run_count: int,
+    execution_mode: str,
+) -> tuple[Mapping[str, object], tuple[float, ...], dict[str, float], int]:
+    expected_metric_names = {
+        "payoff_pinball",
+        "maximum_adverse_excursion_pinball",
+        "positive_bce",
+        "adverse_bce",
+        "unpredictability_bce",
+        "loss",
+        "run_balanced_loss",
+        "worst_run_loss",
+        "run_count",
+        "eligible_action_targets",
+        "eligible_regime_targets",
+        "fully_censored_minibatches",
+        "fully_censored_rows",
+    }
+    metrics = report.get("ensemble_tuning_metrics")
+    raw_run_losses = report.get("ensemble_tuning_run_losses")
+    raw_group_losses = report.get("ensemble_tuning_run_symbol_horizon_losses")
+    peers = report.get("peer_reports")
+    parameter_count = report.get("parameter_count_per_peer")
+    if (
+        set(report)
+        != {
+            "candidate_id",
+            "feature_view",
+            "parameter_count_per_peer",
+            "peer_count",
+            "peer_reports",
+            "ensemble_tuning_metrics",
+            "ensemble_tuning_run_losses",
+            "ensemble_tuning_run_symbol_horizon_losses",
+            "ensemble_prediction_sha256",
+        }
+        or panel_key not in {expected_candidate_id, expected_feature_view}
+        or report.get("candidate_id") != expected_candidate_id
+        or report.get("feature_view") != expected_feature_view
+        or isinstance(parameter_count, bool)
+        or not isinstance(parameter_count, int)
+        or parameter_count <= 0
+        or report.get("peer_count") != len(seeds)
+        or not isinstance(peers, list)
+        or len(peers) != len(seeds)
+        or [peer.get("seed") for peer in peers if isinstance(peer, Mapping)]
+        != list(seeds)
+        or not isinstance(metrics, Mapping)
+        or set(metrics) != expected_metric_names
+        or not all(
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(float(value))
+            for value in metrics.values()
+        )
+        or float(metrics.get("run_count", 0.0)) != float(tuning_run_count)
+        or float(metrics.get("worst_run_loss", math.inf))
+        < float(metrics.get("run_balanced_loss", -math.inf))
+        or not isinstance(raw_run_losses, list)
+        or len(raw_run_losses) != tuning_run_count
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            for value in raw_run_losses
+        )
+        or not isinstance(raw_group_losses, Mapping)
+        or not raw_group_losses
+        or any(
+            not isinstance(key, str)
+            or len(key.split(":")) != 3
+            or key.split(":")[1] not in IMPACT_CAPTURE_SYMBOLS
+            or key.split(":")[2]
+            not in {str(value) for value in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS}
+            or isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            for key, value in raw_group_losses.items()
+        )
+        or (
+            execution_mode != "preflight"
+            and len(raw_group_losses)
+            != tuning_run_count
+            * len(IMPACT_CAPTURE_SYMBOLS)
+            * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+        )
+        or not math.isclose(
+            sum(float(value) for value in raw_run_losses) / len(raw_run_losses),
+            float(metrics.get("run_balanced_loss", math.inf)),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
+        or not math.isclose(
+            max(float(value) for value in raw_run_losses),
+            float(metrics.get("worst_run_loss", math.inf)),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
+        or _SHA256.fullmatch(
+            str(report.get("ensemble_prediction_sha256", ""))
+        )
+        is None
+    ):
+        raise ValueError("Round 74 pretest candidate report differs")
+    assert isinstance(metrics, Mapping)
+    assert isinstance(raw_run_losses, list)
+    assert isinstance(raw_group_losses, Mapping)
+    return (
+        metrics,
+        tuple(float(value) for value in raw_run_losses),
+        {str(key): float(value) for key, value in raw_group_losses.items()},
+        int(parameter_count),
+    )
+
+
 def _flatten_ensemble_state(
     fit: _CandidateFit,
 ) -> dict[str, torch.Tensor]:
@@ -2118,10 +2448,15 @@ def _load_ensemble_from_bytes(
     payload: bytes,
     *,
     candidate_id: str,
+    feature_view: str,
     peer_count: int,
 ) -> Round74EventEnsemble:
     state = load_safetensors(payload)
-    ensemble = Round74EventEnsemble(candidate_id, peer_count)
+    ensemble = Round74EventEnsemble(
+        candidate_id,
+        peer_count,
+        feature_view=feature_view,
+    )
     incompatible = ensemble.load_state_dict(state, strict=True)
     if incompatible.missing_keys or incompatible.unexpected_keys:
         raise ValueError("Round 74 pretest model tensor names differ")
@@ -2264,6 +2599,7 @@ def train_and_seal_round74_pretest_policy(
                 candidate_fits.append(
                     _fit_candidate(
                         candidate_id,
+                        "clock_neutral",
                         training_batches,
                         tuning_batches,
                         config=selected_config,
@@ -2277,23 +2613,13 @@ def train_and_seal_round74_pretest_policy(
         random.setstate(prior_python_random)
         np.random.set_state(prior_numpy_random)
         torch.set_rng_state(prior_torch_random)
-    fallback_messages = [
-        message
-        for message in warning_messages
-        if "not currently supported on the DML backend" in message
-        or "fall back to run on the CPU" in message
-    ]
-    if fallback_messages:
-        raise RuntimeError(
-            f"Round 74 event training used CPU fallback: {fallback_messages}"
-        )
     if selected_config.architecture_selection_mode == "complexity_gate":
         promotion_required_runs = (
             len(tuning_batches)
             if selected_config.execution_mode == "segmented_cohort"
             else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
         )
-        winner, promotion_reports = _select_candidate_with_complexity_gate(
+        architecture_winner, promotion_reports = _select_candidate_with_complexity_gate(
             candidate_fits,
             minimum_mean_loss_improvement=(selected_config.minimum_tuning_improvement),
             required_paired_run_count=promotion_required_runs,
@@ -2311,7 +2637,7 @@ def train_and_seal_round74_pretest_policy(
     else:
         if len(candidate_fits) != 1:
             raise RuntimeError("Round 74 fixed architecture panel differs")
-        winner = candidate_fits[0]
+        architecture_winner = candidate_fits[0]
         promotion_reports = ()
         selection_criterion = (
             "fixed baseline-selected architecture; no architecture search or "
@@ -2320,6 +2646,50 @@ def train_and_seal_round74_pretest_policy(
         planned_comparison_count = 0
         required_paired_capture_run_count = 0
         selection_improvement = 0.0
+    try:
+        torch.use_deterministic_algorithms(True)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            full_feature_fit = _fit_candidate(
+                architecture_winner.candidate_id,
+                "full",
+                training_batches,
+                tuning_batches,
+                config=selected_config,
+                device=device,
+                target_loss_scale=target_loss_scale,
+            )
+            warning_messages.extend(str(item.message) for item in caught)
+    finally:
+        torch.use_deterministic_algorithms(prior_deterministic)
+        random.setstate(prior_python_random)
+        np.random.set_state(prior_numpy_random)
+        torch.set_rng_state(prior_torch_random)
+    fallback_messages = [
+        message
+        for message in warning_messages
+        if "not currently supported on the DML backend" in message
+        or "fall back to run on the CPU" in message
+    ]
+    if fallback_messages:
+        raise RuntimeError(
+            f"Round 74 event training used CPU fallback: {fallback_messages}"
+        )
+    feature_view_required_runs = (
+        len(tuning_batches)
+        if selected_config.execution_mode == "segmented_cohort"
+        else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+    )
+    winner, feature_view_promotion_report = (
+        _select_feature_view_with_ablation_gate(
+            architecture_winner,
+            full_feature_fit,
+            minimum_mean_loss_improvement=(
+                selected_config.minimum_tuning_improvement
+            ),
+            required_paired_run_count=feature_view_required_runs,
+        )
+    )
     model_state = _flatten_ensemble_state(winner)
     # safetensors 0.8 metadata uses map ordering that is not byte-stable.
     # Identity belongs in the hash-bound policy; sorted tensors stay stable.
@@ -2330,6 +2700,7 @@ def train_and_seal_round74_pretest_policy(
     loaded = _load_ensemble_from_bytes(
         model_bytes,
         candidate_id=winner.candidate_id,
+        feature_view=winner.feature_view,
         peer_count=len(winner.peer_states),
     ).to(device)
     loaded_state = _cpu_state(loaded)
@@ -2417,26 +2788,22 @@ def train_and_seal_round74_pretest_policy(
             "warning_count": len(warning_messages),
         },
         "candidate_panel": {
-            fit.candidate_id: {
-                "parameter_count_per_peer": fit.parameter_count_per_peer,
-                "peer_count": len(fit.peer_states),
-                "peer_reports": list(fit.peer_reports),
-                "ensemble_tuning_metrics": fit.ensemble_metrics,
-                "ensemble_tuning_run_losses": list(fit.ensemble_run_losses),
-                "ensemble_tuning_run_symbol_horizon_losses": (
-                    fit.ensemble_group_losses
-                ),
-                "ensemble_prediction_sha256": (fit.ensemble_prediction_sha256),
-            }
+            fit.candidate_id: _candidate_fit_report(fit)
             for fit in candidate_fits
+        },
+        "feature_view_panel": {
+            architecture_winner.feature_view: _candidate_fit_report(
+                architecture_winner
+            ),
+            full_feature_fit.feature_view: _candidate_fit_report(full_feature_fit),
         },
         "selection": {
             "architecture_selection_mode": (
                 selected_config.architecture_selection_mode
             ),
             "criterion": selection_criterion,
-            "selected_candidate_id": winner.candidate_id,
-            "selected_tuning_metrics": winner.ensemble_metrics,
+            "selected_candidate_id": architecture_winner.candidate_id,
+            "selected_tuning_metrics": architecture_winner.ensemble_metrics,
             "ordered_candidate_ids": list(selected_config.candidate_ids),
             "planned_comparison_count": planned_comparison_count,
             "required_paired_capture_run_count": required_paired_capture_run_count,
@@ -2446,6 +2813,37 @@ def train_and_seal_round74_pretest_policy(
             "promotion_reports": list(promotion_reports),
             "complexity_promotion_privilege": False,
             "backtest_metric_used_for_selection": False,
+        },
+        "feature_view_selection": {
+            "schema_version": ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION,
+            "criterion": (
+                "the full exchange-clock view challenges a clock-neutral "
+                f"incumbent on all {feature_view_required_runs} paired "
+                "model-selection capture runs; promotion requires a strict "
+                "mean proper-loss improvement and no run or run-symbol-horizon "
+                "subgroup degradation beyond the numerical floor"
+            ),
+            "clock_feature_names": list(ROUND74_EVENT_CLOCK_FEATURE_NAMES),
+            "clock_feature_names_sha256": (
+                ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256
+            ),
+            "ordered_feature_views": list(ROUND74_EVENT_FEATURE_VIEWS),
+            "selected_feature_view": winner.feature_view,
+            "selected_candidate_id": winner.candidate_id,
+            "selected_tuning_metrics": winner.ensemble_metrics,
+            "required_paired_capture_run_count": feature_view_required_runs,
+            "minimum_mean_proper_loss_improvement": (
+                selected_config.minimum_tuning_improvement
+            ),
+            "maximum_permitted_paired_run_loss_degradation": (
+                selected_config.minimum_tuning_improvement
+            ),
+            "promotion_report": feature_view_promotion_report,
+            "architecture_fixed_before_ablation": True,
+            "neutral_default_on_gate_failure": True,
+            "statistical_independence_or_significance_claim": False,
+            "backtest_metric_used_for_selection": False,
+            "test_targets_used": False,
         },
         "model_artifact": {
             "filename": model_filename,
@@ -2487,6 +2885,7 @@ def train_and_seal_round74_pretest_policy(
     if (
         verified_policy["policy_sha256"] != policy_sha256
         or verified_model.candidate_id != winner.candidate_id
+        or verified_model.feature_view != winner.feature_view
     ):
         raise RuntimeError("Round 74 published pretest policy reload differs")
     return Round74PretestPolicyArtifact(
@@ -2495,6 +2894,7 @@ def train_and_seal_round74_pretest_policy(
         model_sha256=model_sha256,
         model_path=model_path,
         selected_candidate_id=winner.candidate_id,
+        selected_feature_view=winner.feature_view,
         tuning_loss=float(
             winner.ensemble_metrics[
                 "loss"
@@ -2602,6 +3002,8 @@ def load_round74_pretest_policy(
         "backend",
         "candidate_panel",
         "selection",
+        "feature_view_panel",
+        "feature_view_selection",
         "model_artifact",
         "scaler_artifact",
         "authority",
@@ -2619,6 +3021,8 @@ def load_round74_pretest_policy(
     ensemble_aggregation = policy.get("ensemble_aggregation")
     source_binding = policy.get("source_binding")
     candidate_panel = policy.get("candidate_panel")
+    feature_view_panel = policy.get("feature_view_panel")
+    feature_view_selection = policy.get("feature_view_selection")
     backend = policy.get("backend")
     if not all(
         isinstance(value, Mapping)
@@ -2634,6 +3038,8 @@ def load_round74_pretest_policy(
             ensemble_aggregation,
             source_binding,
             candidate_panel,
+            feature_view_panel,
+            feature_view_selection,
             backend,
         )
     ):
@@ -2649,8 +3055,13 @@ def load_round74_pretest_policy(
     assert isinstance(ensemble_aggregation, Mapping)
     assert isinstance(source_binding, Mapping)
     assert isinstance(candidate_panel, Mapping)
+    assert isinstance(feature_view_panel, Mapping)
+    assert isinstance(feature_view_selection, Mapping)
     assert isinstance(backend, Mapping)
     candidate_id = str(selection.get("selected_candidate_id", ""))
+    selected_feature_view = str(
+        feature_view_selection.get("selected_feature_view", "")
+    )
     seeds = training_policy.get("seeds")
     candidate_ids = training_policy.get("candidate_ids")
     filename = str(artifact.get("filename", ""))
@@ -2670,6 +3081,9 @@ def load_round74_pretest_policy(
         or any(value not in ROUND74_EVENT_MODEL_CANDIDATES for value in candidate_ids)
         or set(candidate_panel) != set(candidate_ids)
         or candidate_id not in candidate_panel
+        or set(feature_view_panel) != set(ROUND74_EVENT_FEATURE_VIEWS)
+        or selected_feature_view not in ROUND74_EVENT_FEATURE_VIEWS
+        or feature_view_selection.get("selected_candidate_id") != candidate_id
         or _SAFE_FILENAME.fullmatch(filename) is None
         or _SHA256.fullmatch(model_sha256) is None
         or filename != f"round74-{candidate_id}-{model_sha256}.safetensors"
@@ -2978,119 +3392,30 @@ def load_round74_pretest_policy(
         scaler_byte_count = 0
     if reconstructed_config.execution_mode != "preflight" and not scaler_available:
         raise ValueError("Round 74 cohort pretest scaler artifact is unavailable")
-    expected_metric_names = {
-        "payoff_pinball",
-        "maximum_adverse_excursion_pinball",
-        "positive_bce",
-        "adverse_bce",
-        "unpredictability_bce",
-        "loss",
-        "run_balanced_loss",
-        "worst_run_loss",
-        "run_count",
-        "eligible_action_targets",
-        "eligible_regime_targets",
-        "fully_censored_minibatches",
-        "fully_censored_rows",
-    }
     candidate_run_losses: dict[str, tuple[float, ...]] = {}
     candidate_group_losses: dict[str, dict[str, float]] = {}
     candidate_parameter_counts: dict[str, int] = {}
     for panel_candidate, raw_report in candidate_panel.items():
         if not isinstance(raw_report, Mapping):
             raise ValueError("Round 74 pretest candidate report differs")
-        metrics = raw_report.get("ensemble_tuning_metrics")
-        raw_run_losses = raw_report.get("ensemble_tuning_run_losses")
-        raw_group_losses = raw_report.get("ensemble_tuning_run_symbol_horizon_losses")
-        peers = raw_report.get("peer_reports")
-        parameter_count = raw_report.get("parameter_count_per_peer")
-        if (
-            set(raw_report)
-            != {
-                "parameter_count_per_peer",
-                "peer_count",
-                "peer_reports",
-                "ensemble_tuning_metrics",
-                "ensemble_tuning_run_losses",
-                "ensemble_tuning_run_symbol_horizon_losses",
-                "ensemble_prediction_sha256",
-            }
-            or isinstance(parameter_count, bool)
-            or not isinstance(parameter_count, int)
-            or parameter_count <= 0
-            or raw_report.get("peer_count") != len(seeds)
-            or not isinstance(peers, list)
-            or len(peers) != len(seeds)
-            or [peer.get("seed") for peer in peers if isinstance(peer, Mapping)]
-            != seeds
-            or not isinstance(metrics, Mapping)
-            or set(metrics) != expected_metric_names
-            or not all(
-                isinstance(value, (int, float))
-                and not isinstance(value, bool)
-                and math.isfinite(float(value))
-                for value in metrics.values()
-            )
-            or float(metrics.get("run_count", 0.0)) != float(len(tuning_batch_hashes))
-            or float(metrics.get("worst_run_loss", math.inf))
-            < float(metrics.get("run_balanced_loss", -math.inf))
-            or not isinstance(raw_run_losses, list)
-            or len(raw_run_losses) != len(tuning_batch_hashes)
-            or any(
-                isinstance(value, bool)
-                or not isinstance(value, (int, float))
-                or not math.isfinite(float(value))
-                for value in raw_run_losses
-            )
-            or not isinstance(raw_group_losses, Mapping)
-            or not raw_group_losses
-            or any(
-                not isinstance(key, str)
-                or len(key.split(":")) != 3
-                or key.split(":")[1] not in IMPACT_CAPTURE_SYMBOLS
-                or key.split(":")[2]
-                not in {str(value) for value in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS}
-                or isinstance(value, bool)
-                or not isinstance(value, (int, float))
-                or not math.isfinite(float(value))
-                for key, value in raw_group_losses.items()
-            )
-            or (
-                reconstructed_config.execution_mode != "preflight"
-                and len(raw_group_losses)
-                != len(tuning_batch_hashes)
-                * len(IMPACT_CAPTURE_SYMBOLS)
-                * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
-            )
-            or not math.isclose(
-                sum(float(value) for value in raw_run_losses) / len(raw_run_losses),
-                float(metrics.get("run_balanced_loss", math.inf)),
-                rel_tol=1e-12,
-                abs_tol=1e-12,
-            )
-            or not math.isclose(
-                max(float(value) for value in raw_run_losses),
-                float(metrics.get("worst_run_loss", math.inf)),
-                rel_tol=1e-12,
-                abs_tol=1e-12,
-            )
-            or _SHA256.fullmatch(str(raw_report.get("ensemble_prediction_sha256", "")))
-            is None
-            or panel_candidate not in reconstructed_config.candidate_ids
-        ):
+        if panel_candidate not in reconstructed_config.candidate_ids:
             raise ValueError("Round 74 pretest candidate report differs")
-        candidate_run_losses[str(panel_candidate)] = tuple(
-            float(value) for value in raw_run_losses
+        _metrics, run_losses, group_losses, parameter_count = (
+            _validated_candidate_fit_report(
+                raw_report,
+                panel_key=str(panel_candidate),
+                expected_candidate_id=str(panel_candidate),
+                expected_feature_view="clock_neutral",
+                seeds=seeds,
+                tuning_run_count=len(tuning_batch_hashes),
+                execution_mode=reconstructed_config.execution_mode,
+            )
         )
-        assert isinstance(raw_group_losses, Mapping)
-        candidate_group_losses[str(panel_candidate)] = {
-            str(key): float(value) for key, value in raw_group_losses.items()
-        }
-        candidate_parameter_counts[str(panel_candidate)] = int(parameter_count)
+        candidate_run_losses[str(panel_candidate)] = run_losses
+        candidate_group_losses[str(panel_candidate)] = group_losses
+        candidate_parameter_counts[str(panel_candidate)] = parameter_count
     if len({tuple(sorted(values)) for values in candidate_group_losses.values()}) != 1:
         raise ValueError("Round 74 pretest candidate subgroup panel differs")
-    selected_report = candidate_panel[candidate_id]
-    assert isinstance(selected_report, Mapping)
     if reconstructed_config.architecture_selection_mode == "complexity_gate":
         promotion_required_runs = (
             len(tuning_batch_hashes)
@@ -3127,6 +3452,126 @@ def load_round74_pretest_policy(
         expected_comparison_count = 0
         expected_paired_run_count = 0
         expected_improvement = 0.0
+    architecture_selected_report = candidate_panel[expected_winner]
+    assert isinstance(architecture_selected_report, Mapping)
+    feature_view_run_losses: dict[str, tuple[float, ...]] = {}
+    feature_view_group_losses: dict[str, dict[str, float]] = {}
+    feature_view_metrics: dict[str, Mapping[str, object]] = {}
+    feature_view_parameter_counts: dict[str, int] = {}
+    for feature_view, raw_report in feature_view_panel.items():
+        if not isinstance(raw_report, Mapping):
+            raise ValueError("Round 74 pretest feature-view report differs")
+        metrics, run_losses, group_losses, parameter_count = (
+            _validated_candidate_fit_report(
+                raw_report,
+                panel_key=str(feature_view),
+                expected_candidate_id=expected_winner,
+                expected_feature_view=str(feature_view),
+                seeds=seeds,
+                tuning_run_count=len(tuning_batch_hashes),
+                execution_mode=reconstructed_config.execution_mode,
+            )
+        )
+        feature_view_metrics[str(feature_view)] = metrics
+        feature_view_run_losses[str(feature_view)] = run_losses
+        feature_view_group_losses[str(feature_view)] = group_losses
+        feature_view_parameter_counts[str(feature_view)] = parameter_count
+    if (
+        feature_view_panel["clock_neutral"] != architecture_selected_report
+        or len(set(feature_view_parameter_counts.values())) != 1
+        or len(
+            {
+                tuple(sorted(group_losses))
+                for group_losses in feature_view_group_losses.values()
+            }
+        )
+        != 1
+    ):
+        raise ValueError("Round 74 pretest feature-view panel differs")
+    feature_view_required_runs = (
+        len(tuning_batch_hashes)
+        if reconstructed_config.execution_mode == "segmented_cohort"
+        else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+    )
+    expected_feature_view_report = _feature_view_promotion_report(
+        feature_view_run_losses["clock_neutral"],
+        feature_view_run_losses["full"],
+        neutral_group_losses=feature_view_group_losses["clock_neutral"],
+        full_group_losses=feature_view_group_losses["full"],
+        minimum_mean_loss_improvement=(
+            reconstructed_config.minimum_tuning_improvement
+        ),
+        required_paired_run_count=feature_view_required_runs,
+    )
+    expected_feature_view = (
+        "full" if expected_feature_view_report["promoted"] is True else "clock_neutral"
+    )
+    expected_feature_view_criterion = (
+        "the full exchange-clock view challenges a clock-neutral "
+        f"incumbent on all {feature_view_required_runs} paired "
+        "model-selection capture runs; promotion requires a strict "
+        "mean proper-loss improvement and no run or run-symbol-horizon "
+        "subgroup degradation beyond the numerical floor"
+    )
+    selected_feature_report = feature_view_panel[expected_feature_view]
+    assert isinstance(selected_feature_report, Mapping)
+    if (
+        set(feature_view_selection)
+        != {
+            "schema_version",
+            "criterion",
+            "clock_feature_names",
+            "clock_feature_names_sha256",
+            "ordered_feature_views",
+            "selected_feature_view",
+            "selected_candidate_id",
+            "selected_tuning_metrics",
+            "required_paired_capture_run_count",
+            "minimum_mean_proper_loss_improvement",
+            "maximum_permitted_paired_run_loss_degradation",
+            "promotion_report",
+            "architecture_fixed_before_ablation",
+            "neutral_default_on_gate_failure",
+            "statistical_independence_or_significance_claim",
+            "backtest_metric_used_for_selection",
+            "test_targets_used",
+        }
+        or feature_view_selection.get("schema_version")
+        != ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION
+        or feature_view_selection.get("criterion")
+        != expected_feature_view_criterion
+        or feature_view_selection.get("clock_feature_names")
+        != list(ROUND74_EVENT_CLOCK_FEATURE_NAMES)
+        or feature_view_selection.get("clock_feature_names_sha256")
+        != ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256
+        or feature_view_selection.get("ordered_feature_views")
+        != list(ROUND74_EVENT_FEATURE_VIEWS)
+        or selected_feature_view != expected_feature_view
+        or feature_view_selection.get("selected_candidate_id") != expected_winner
+        or feature_view_selection.get("selected_tuning_metrics")
+        != feature_view_metrics[expected_feature_view]
+        or feature_view_selection.get("required_paired_capture_run_count")
+        != feature_view_required_runs
+        or feature_view_selection.get("minimum_mean_proper_loss_improvement")
+        != reconstructed_config.minimum_tuning_improvement
+        or feature_view_selection.get(
+            "maximum_permitted_paired_run_loss_degradation"
+        )
+        != reconstructed_config.minimum_tuning_improvement
+        or feature_view_selection.get("promotion_report")
+        != expected_feature_view_report
+        or feature_view_selection.get("architecture_fixed_before_ablation")
+        is not True
+        or feature_view_selection.get("neutral_default_on_gate_failure") is not True
+        or feature_view_selection.get(
+            "statistical_independence_or_significance_claim"
+        )
+        is not False
+        or feature_view_selection.get("backtest_metric_used_for_selection")
+        is not False
+        or feature_view_selection.get("test_targets_used") is not False
+    ):
+        raise ValueError("Round 74 pretest feature-view selection differs")
     if (
         set(selection)
         != {
@@ -3161,9 +3606,9 @@ def load_round74_pretest_policy(
         or selection.get("complexity_promotion_privilege") is not False
         or selection.get("backtest_metric_used_for_selection") is not False
         or selection.get("selected_tuning_metrics")
-        != selected_report.get("ensemble_tuning_metrics")
+        != architecture_selected_report.get("ensemble_tuning_metrics")
         or artifact.get("prediction_sha256")
-        != selected_report.get("ensemble_prediction_sha256")
+        != selected_feature_report.get("ensemble_prediction_sha256")
         or _SHA256.fullmatch(str(artifact.get("prediction_sha256", ""))) is None
         or artifact.get("header_metadata_omitted_for_byte_stability") is not True
         or artifact.get("media_type") != "application/x-safetensors"
@@ -3234,6 +3679,7 @@ def load_round74_pretest_policy(
         model = _load_ensemble_from_bytes(
             model_bytes,
             candidate_id=candidate_id,
+            feature_view=selected_feature_view,
             peer_count=len(seeds),
         )
     except Exception as exc:
