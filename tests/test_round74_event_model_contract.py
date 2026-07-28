@@ -113,6 +113,9 @@ SEGMENTED_DIRECTML_PREFLIGHT_PATH = (
 SEGMENTED_DIRECTML_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v77.json"
 )
+SEGMENTED_POLICY_POPULATION_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v78.json"
+)
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -233,6 +236,69 @@ def test_round74_segmented_directml_preflight_is_bounded_and_hash_bound() -> Non
     assert design["evidence_boundary"]["synthetic_data_only"] is True
     assert design["authority"]["profitability_claim"] is False
     assert design["authority"]["live_trading_authority"] is False
+
+
+def test_round74_segmented_policy_population_is_consistent_and_source_bound() -> None:
+    previous = _load_hash_bound(
+        SEGMENTED_DIRECTML_DESIGN_PATH,
+        "design_sha256",
+    )
+    design = _load_hash_bound(
+        SEGMENTED_POLICY_POPULATION_DESIGN_PATH,
+        "design_sha256",
+    )
+    source = design["source_binding"]
+    population = design["segmented_optimization_population"]
+    compatibility = design["legacy_compatibility"]
+    authority = design["authority"]
+    commit = str(design["implementation_git_commit"])
+
+    assert design["schema_version"] == "round-074-event-sequence-model-design-v78"
+    assert design["base_design"]["design_sha256"] == previous["design_sha256"]
+    assert design["base_design"]["unchanged_except_declared_delta"] is True
+    for prefix in ("calibration", "action_policy", "development_operator"):
+        assert source[f"{prefix}_sha256"] == _file_sha256_at(
+            commit,
+            source[f"{prefix}_path"],
+        )
+    assert source["calibration_schema_version"] == (
+        "round-074-temperature-calibration-v3"
+    )
+    assert source["action_policy_schema_version"] == (
+        "round-074-action-policy-v9"
+    )
+    assert source["development_operator_schema_version"] == (
+        "round-074-development-policy-operator-v3"
+    )
+    assert source["development_bundle_schema_version"] == (
+        "round-074-development-policy-bundle-v4"
+    )
+    assert population["unit"] == "eligible_target"
+    assert population["precondition"] == (
+        "duration_normalized_target_blind_window_quota"
+    )
+    assert population["short_epoch_equal_vote_permitted"] is False
+    assert population["target_value_or_model_output_used_for_window_quota"] is False
+    assert population["test_role_used"] is False
+    assert (
+        compatibility[
+            "capture_run_population_remains_default_outside_segmented_execution"
+        ]
+        is True
+    )
+    assert compatibility[
+        "legacy_equal_run_temperature_and_threshold_behavior_changed"
+    ] is False
+    assert design["evidence_boundary"]["synthetic_data_only"] is True
+    assert design["evidence_boundary"]["real_cohort_data_used"] is False
+    assert design["evidence_boundary"]["financial_backtest_performed"] is False
+    assert authority["segmented_development_population_consistent"] is True
+    assert authority["financial_edge_tested"] is False
+    assert authority["profitability_claim"] is False
+    assert authority["ai_uplift_claim"] is False
+    assert authority["paper_trading_authority"] is False
+    assert authority["testnet_trading_authority"] is False
+    assert authority["live_trading_authority"] is False
 
 
 def test_round74_tuning_role_correction_is_disjoint_and_source_bound() -> None:

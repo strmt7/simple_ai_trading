@@ -1,0 +1,79 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v78",
+  "created_at_utc": "2026-07-28T08:26:58Z",
+  "implementation_git_commit": "927202797d3345364bf1ec014ca3dbf50cba018a",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v77.json",
+    "design_sha256": "84568bd65700b1d7cefdfa90c8ca9091cf174c32a39b15f86de1280485239fd1",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "calibration_path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+    "calibration_sha256": "5d690e1a28e1462fca4ff6b8a4da108a81627052b5a4d3a507cddea642acdc9b",
+    "calibration_schema_version": "round-074-temperature-calibration-v3",
+    "action_policy_path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+    "action_policy_sha256": "44d6436cfbcf6933147273cdea7b4f9fc381b446b14f7664524e33f782aac1a7",
+    "action_policy_schema_version": "round-074-action-policy-v9",
+    "development_operator_path": "src/simple_ai_trading/round74_event_development_operator.py",
+    "development_operator_sha256": "3e16d3c4f2622633f65259476ca79338229406d37a9dd08821db0979fd1fa164",
+    "development_operator_schema_version": "round-074-development-policy-operator-v3",
+    "development_bundle_schema_version": "round-074-development-policy-bundle-v4"
+  },
+  "segmented_optimization_population": {
+    "unit": "eligible_target",
+    "precondition": "duration_normalized_target_blind_window_quota",
+    "temperature_selection": "pooled_binary_cross_entropy_over_each_eligible_calibration_target_once",
+    "threshold_selection": "pooled_quantile_over_each_eligible_policy_selection_target_once",
+    "policy_objective": "fixed_panel_total_net_bps_minus_worst_drawdown_and_total_mae_penalties",
+    "short_epoch_equal_vote_permitted": false,
+    "target_value_or_model_output_used_for_window_quota": false,
+    "test_role_used": false
+  },
+  "legacy_compatibility": {
+    "capture_run_population_remains_default_outside_segmented_execution": true,
+    "temperature_calibration_v2_readable_as_capture_run_population": true,
+    "action_policy_v8_readable_as_capture_run_population": true,
+    "legacy_equal_run_temperature_and_threshold_behavior_changed": false
+  },
+  "research_constraints": [
+    {
+      "url": "https://arxiv.org/abs/2012.00168",
+      "use": "Irregularly sampled time series require time-aware treatment; row count is not silently treated as equal elapsed duration."
+    },
+    {
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "Forecast quality alone is not equated with an actionable complete transaction."
+    },
+    {
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "use": "No architecture or policy is promoted from repeated backtest search; the sealed-test and overfitting controls remain unchanged."
+    }
+  ],
+  "verification": {
+    "focused_tests_passed": 27,
+    "adjacent_consumer_tests_passed": 47,
+    "ruff_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false
+  },
+  "evidence_boundary": {
+    "synthetic_data_only": true,
+    "real_cohort_data_used": false,
+    "financial_backtest_performed": false,
+    "profitability_or_edge_inference_permitted": false,
+    "ai_model_evaluated": false
+  },
+  "authority": {
+    "segmented_development_population_consistent": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "10a6d90b767fed28a4cc89855303cdf575027e56aeb5f6338ff0d06e1a39eb2f"
+}
