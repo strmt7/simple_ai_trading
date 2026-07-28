@@ -18,9 +18,9 @@ from simple_ai_trading.impact_absorption_event_sequence import (
 
 def _training(rows: int = 100) -> np.ndarray:
     generator = np.random.default_rng(7410)
-    values = generator.normal(
-        size=(rows, len(ROUND74_EVENT_FEATURE_NAMES))
-    ).astype(np.float64)
+    values = generator.normal(size=(rows, len(ROUND74_EVENT_FEATURE_NAMES))).astype(
+        np.float64
+    )
     values[:, :ROUND74_EVENT_BINARY_FEATURE_COUNT] = 0.0
     for index in range(rows):
         values[index, index % 5] = 1.0
@@ -98,9 +98,7 @@ def test_round74_scaler_clip_statistics_are_training_only() -> None:
 
 def test_round74_scaler_does_not_erase_rare_training_flow() -> None:
     training = _training()
-    feature_index = ROUND74_EVENT_FEATURE_NAMES.index(
-        "liquidation_signed_quote_scaled"
-    )
+    feature_index = ROUND74_EVENT_FEATURE_NAMES.index("liquidation_signed_quote_scaled")
     training[:, feature_index] = 0.0
     training[-1, feature_index] = -3.0
 
@@ -145,8 +143,35 @@ def test_round74_scaler_sampling_and_serialization_are_deterministic() -> None:
         maximum_fit_rows=31,
     )
     assert chunked.scaler_sha256 == first.scaler_sha256
+    assert first.fit_source_scope == "unbound_training_matrix"
+    assert first.fit_source_run_ids == ()
     with pytest.raises(ValueError, match="sampling contract"):
         replace(first, fit_sampling_seed=first.fit_sampling_seed + 1)
+
+
+def test_round74_scaler_binds_exact_optimizer_run_provenance() -> None:
+    training = _training()
+    run_ids = ("1" * 32, "2" * 32)
+    scaler = fit_round74_event_feature_scaler(
+        training,
+        partition_role="training",
+        fit_source_scope="segmented_optimization_training_runs",
+        fit_source_run_ids=run_ids,
+        fit_source_partition_sha256="3" * 64,
+        fit_source_selection_sha256="4" * 64,
+    )
+    payload = scaler.as_dict()
+    restored = Round74EventFeatureScaler.from_dict(payload)
+
+    assert restored.fit_source_run_ids == run_ids
+    assert payload["fit_source_run_count"] == 2
+    assert payload["fit_source_partition_sha256"] == "3" * 64
+    assert payload["fit_source_selection_sha256"] == "4" * 64
+
+    with pytest.raises(ValueError, match="source provenance differs"):
+        replace(scaler, fit_source_run_ids=(run_ids[0], run_ids[0]))
+    with pytest.raises(ValueError, match="source provenance differs"):
+        replace(scaler, fit_source_selection_sha256="")
 
 
 def test_round74_scaler_rejects_nontraining_or_malformed_input() -> None:

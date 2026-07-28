@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 import hashlib
 
+import numpy as np
 import pytest
 
 from simple_ai_trading.impact_absorption_event_dataset import (
@@ -16,16 +17,22 @@ from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_SYMBOLS,
     ImpactAbsorptionStore,
 )
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+)
 import simple_ai_trading.round74_segmented_model_operator as subject
 from simple_ai_trading.round74_segmented_model_operator import (
     ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS,
     ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS,
     Round74SegmentedModelSelectionStages,
     Round74SegmentedTestPopulation,
+    Round74SegmentedTrainingSplit,
     Round74SegmentedTuningSubpartition,
     build_round74_segmented_model_selection_stages,
     build_round74_segmented_test_population,
+    build_round74_segmented_training_split,
     build_round74_segmented_tuning_subpartition,
+    fit_round74_segmented_optimization_feature_scaler,
     round74_segmented_window_policy,
     round74_segmented_windows_per_symbol,
     iter_round74_segmented_labeled_event_windows,
@@ -216,6 +223,61 @@ def _segmented_test_partition() -> tuple[
     return partition, bindings
 
 
+def _segmented_training_partition() -> tuple[
+    Round74EventRunPartition,
+    dict[str, Round74SegmentedCohortRunBinding],
+]:
+    scheduled = (
+        *((ordinal, "training") for ordinal in range(160)),
+        (514, "tuning"),
+        (617, "test"),
+    )
+    entries: list[Round74EventRunPartitionEntry] = []
+    bindings: dict[str, Round74SegmentedCohortRunBinding] = {}
+    for index, (ordinal, role) in enumerate(scheduled):
+        start = _START + index * 2_000_000_000_000
+        run_id = f"{index + 800:032x}"
+        report_sha256 = f"{index + 800:064x}"
+        entry = Round74EventRunPartitionEntry(
+            run_id=run_id,
+            role=role,
+            capture_report_sha256=report_sha256,
+            capture_start_wall_ns=start,
+            capture_end_wall_ns=start + 1_300_000_000_000,
+            eligible_anchor_start_wall_ns=start,
+            eligible_anchor_end_wall_ns=start + 900_000_000_000,
+        )
+        entries.append(entry)
+        if role == "training":
+            binding = Round74SegmentedCohortRunBinding(
+                plan_sha256="a" * 64,
+                slot_ordinal=ordinal,
+                role=role,
+                run_id=run_id,
+                report_sha256=report_sha256,
+                supervisor_sha256="b" * 64,
+                fresh_frame_audit_sha256="c" * 64,
+                fresh_epoch_audit_sha256="d" * 64,
+                terminal_status="completed",
+                terminal_error="",
+                capture_start_wall_ns=start,
+                capture_end_wall_ns=start + 1_300_000_000_000,
+                feature_ready_wall_ns=start,
+                usable_end_wall_ns=start + 1_300_000_000_000,
+                message_count=1,
+                frame_count=1,
+                compressed_payload_bytes=1,
+            )
+            binding.validate()
+            bindings[run_id] = binding
+    partition = Round74EventRunPartition(
+        entries=tuple(entries),
+        cohort_plan_sha256="a" * 64,
+    )
+    partition.validate()
+    return partition, bindings
+
+
 @dataclass(frozen=True)
 class _Sample:
     run_id: str
@@ -288,6 +350,101 @@ def test_segmented_quota_is_proportional_to_eligible_wall_time() -> None:
     ) + round74_segmented_windows_per_symbol(_entry(right_ns))
     combined = round74_segmented_windows_per_symbol(_entry(left_ns + right_ns))
     assert combined - split in {0, 1}
+
+
+def test_segmented_training_split_precedes_feature_and_target_replay() -> None:
+    partition, bindings = _segmented_training_partition()
+    selected = build_round74_segmented_training_split(
+        partition,
+        bindings_by_run_id=bindings,
+    )
+    payload = selected.as_dict()
+
+    assert isinstance(selected, Round74SegmentedTrainingSplit)
+    assert len(selected.optimization_run_ids) == 128
+    assert selected.purged_run_ids == ()
+    assert len(selected.early_stopping_run_ids) == 32
+    assert payload[
+        "feature_value_target_label_or_model_output_used_for_assignment"
+    ] is (False)
+    assert payload["early_stopping_run_used_for_scaler_fit"] is False
+    assert len(selected.split_sha256) == 64
+    assert Round74SegmentedTrainingSplit.from_dict(payload) == selected
+
+    incomplete = dict(bindings)
+    incomplete.pop(selected.early_stopping_run_ids[-1])
+    with pytest.raises(ValueError, match="binding panel differs"):
+        build_round74_segmented_training_split(
+            partition,
+            bindings_by_run_id=incomplete,
+        )
+
+
+def test_segmented_scaler_replays_only_optimizer_run_features(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    partition, bindings = _segmented_training_partition()
+    split = build_round74_segmented_training_split(
+        partition,
+        bindings_by_run_id=bindings,
+    )
+    observed_run_ids: list[str] = []
+
+    @dataclass(frozen=True)
+    class _Token:
+        received_wall_ns: int
+        feature_values: tuple[float, ...]
+
+    @dataclass(frozen=True)
+    class _Observation:
+        token: _Token
+
+    def observations(
+        _store: object,
+        *,
+        binding: Round74SegmentedCohortRunBinding,
+    ) -> tuple[_Observation, ...]:
+        observed_run_ids.append(binding.run_id)
+        values = np.zeros(len(ROUND74_EVENT_FEATURE_NAMES), dtype=np.float64)
+        values[0] = 1.0
+        values[5] = 1.0
+        return (
+            _Observation(
+                _Token(
+                    received_wall_ns=binding.feature_ready_wall_ns + 1,
+                    feature_values=tuple(values),
+                )
+            ),
+            _Observation(
+                _Token(
+                    received_wall_ns=binding.feature_ready_wall_ns + 2,
+                    feature_values=tuple(values),
+                )
+            ),
+        )
+
+    monkeypatch.setattr(
+        subject,
+        "iter_round74_v10_segment_event_observations",
+        observations,
+    )
+    scaler = fit_round74_segmented_optimization_feature_scaler(
+        ImpactAbsorptionStore(":memory:", read_only=True),
+        partition=partition,
+        bindings_by_run_id=bindings,
+        training_split=split,
+        chunk_rows=17,
+        maximum_fit_rows=31,
+    )
+
+    assert tuple(observed_run_ids) == split.optimization_run_ids
+    assert not set(observed_run_ids) & set(split.early_stopping_run_ids)
+    assert scaler.fit_input_rows == 256
+    assert scaler.fit_sample_rows == 31
+    assert scaler.fit_source_scope == "segmented_optimization_training_runs"
+    assert scaler.fit_source_run_ids == split.optimization_run_ids
+    assert scaler.fit_source_partition_sha256 == partition.partition_sha256
+    assert scaler.fit_source_selection_sha256 == split.split_sha256
 
 
 def test_segmented_selection_is_target_and_activity_blind() -> None:

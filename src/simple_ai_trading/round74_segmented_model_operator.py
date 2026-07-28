@@ -8,7 +8,10 @@ import hashlib
 import json
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from .impact_absorption_event_dataset import (
+    ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS,
     ROUND74_EVENT_PARTITION_ROLES,
     ROUND74_EVENT_WINDOW_REPRESENTATIONS,
     Round74EventDatasetAssembler,
@@ -19,7 +22,11 @@ from .impact_absorption_event_dataset import (
     Round74MatchedEventWindowPair,
     build_round74_event_training_batch,
 )
-from .impact_absorption_event_scaling import Round74EventFeatureScaler
+from .impact_absorption_event_scaling import (
+    ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+    Round74EventFeatureScaler,
+    fit_round74_event_feature_scaler_stream,
+)
 from .impact_absorption_event_segmented_cohort import (
     ROUND74_SEGMENTED_COHORT_REQUIRED_ELIGIBLE_ANCHOR_NS,
     ROUND74_SEGMENTED_COHORT_ROLE_COUNTS,
@@ -47,6 +54,9 @@ ROUND74_SEGMENTED_TUNING_SUBPARTITION_SCHEMA_VERSION = (
 ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_SCHEMA_VERSION = (
     "round-074-segmented-model-selection-stages-v1"
 )
+ROUND74_SEGMENTED_TRAINING_SPLIT_SCHEMA_VERSION = (
+    "round-074-segmented-training-selection-split-v1"
+)
 ROUND74_SEGMENTED_TEST_POPULATION_SCHEMA_VERSION = (
     "round-074-segmented-test-population-v1"
 )
@@ -61,6 +71,10 @@ ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS = (
     "state_conditioned_flow",
     "causal_pretraining",
 )
+ROUND74_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS = 128
+ROUND74_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS = 32
+ROUND74_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR = 8
+ROUND74_SEGMENTED_SCALER_FEATURE_CHUNK_ROWS = 8_192
 
 
 def _canonical_sha256(value: object) -> str:
@@ -130,6 +144,196 @@ def _segmented_model_selection_stage_required_anchor_ns() -> int:
     model_required_anchor_ns = _segmented_tuning_required_anchor_ns()[0]
     stage_count = len(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
     return (model_required_anchor_ns + stage_count - 1) // stage_count
+
+
+@dataclass(frozen=True)
+class Round74SegmentedTrainingSplit:
+    """Target-blind optimizer, purge, and early-stop run assignment."""
+
+    parent_partition_sha256: str
+    cohort_plan_sha256: str
+    optimization_run_ids: tuple[str, ...]
+    purged_run_ids: tuple[str, ...]
+    early_stopping_run_ids: tuple[str, ...]
+    optimization_slot_ordinals: tuple[int, ...]
+    purged_slot_ordinals: tuple[int, ...]
+    early_stopping_slot_ordinals: tuple[int, ...]
+    optimization_last_eligible_anchor_wall_ns: int
+    early_stopping_first_eligible_anchor_wall_ns: int
+    schema_version: str = ROUND74_SEGMENTED_TRAINING_SPLIT_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        run_groups = (
+            self.optimization_run_ids,
+            self.purged_run_ids,
+            self.early_stopping_run_ids,
+        )
+        ordinal_groups = (
+            self.optimization_slot_ordinals,
+            self.purged_slot_ordinals,
+            self.early_stopping_slot_ordinals,
+        )
+        all_runs = tuple(run_id for group in run_groups for run_id in group)
+        all_ordinals = tuple(ordinal for group in ordinal_groups for ordinal in group)
+        chronological_gap_ns = int(
+            self.early_stopping_first_eligible_anchor_wall_ns
+        ) - int(self.optimization_last_eligible_anchor_wall_ns)
+        if (
+            self.schema_version != ROUND74_SEGMENTED_TRAINING_SPLIT_SCHEMA_VERSION
+            or not _is_sha256(self.parent_partition_sha256)
+            or not _is_sha256(self.cohort_plan_sha256)
+            or len(self.optimization_run_ids)
+            < ROUND74_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
+            or len(self.early_stopping_run_ids)
+            < ROUND74_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS
+            or any(
+                len(run_ids) != len(ordinals)
+                for run_ids, ordinals in zip(
+                    run_groups,
+                    ordinal_groups,
+                    strict=True,
+                )
+            )
+            or any(
+                len(run_id) != 32
+                or any(character not in "0123456789abcdef" for character in run_id)
+                for run_id in all_runs
+            )
+            or len(set(all_runs)) != len(all_runs)
+            or any(
+                isinstance(ordinal, bool)
+                or not isinstance(ordinal, int)
+                or not 0 <= ordinal < ROUND74_SEGMENTED_COHORT_ROLE_COUNTS["training"]
+                for ordinal in all_ordinals
+            )
+            or len(set(all_ordinals)) != len(all_ordinals)
+            or any(
+                current <= prior
+                for prior, current in zip(
+                    all_ordinals,
+                    all_ordinals[1:],
+                    strict=False,
+                )
+            )
+            or chronological_gap_ns < ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
+        ):
+            raise ValueError("Round 74 segmented training split differs")
+
+    @property
+    def split_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        payload: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "parent_partition_sha256": self.parent_partition_sha256,
+            "cohort_plan_sha256": self.cohort_plan_sha256,
+            "assignment_basis": (
+                "chronological admitted training runs before feature or target replay"
+            ),
+            "split_unit": "whole_admitted_transport_segment",
+            "early_stopping_fraction_denominator": (
+                ROUND74_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR
+            ),
+            "minimum_optimization_run_count": (
+                ROUND74_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
+            ),
+            "minimum_early_stopping_run_count": (
+                ROUND74_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS
+            ),
+            "optimization_run_ids": list(self.optimization_run_ids),
+            "purged_run_ids": list(self.purged_run_ids),
+            "early_stopping_run_ids": list(self.early_stopping_run_ids),
+            "optimization_slot_ordinals": list(self.optimization_slot_ordinals),
+            "purged_slot_ordinals": list(self.purged_slot_ordinals),
+            "early_stopping_slot_ordinals": list(self.early_stopping_slot_ordinals),
+            "optimization_last_eligible_anchor_wall_ns": (
+                self.optimization_last_eligible_anchor_wall_ns
+            ),
+            "early_stopping_first_eligible_anchor_wall_ns": (
+                self.early_stopping_first_eligible_anchor_wall_ns
+            ),
+            "chronological_gap_ns": (
+                self.early_stopping_first_eligible_anchor_wall_ns
+                - self.optimization_last_eligible_anchor_wall_ns
+            ),
+            "minimum_chronological_gap_ns": (ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS),
+            "feature_value_target_label_or_model_output_used_for_assignment": False,
+            "all_admitted_training_segments_included": True,
+            "early_stopping_run_used_for_scaler_fit": False,
+            "purged_run_used_for_scaler_fit": False,
+        }
+        if include_sha256:
+            payload["split_sha256"] = _canonical_sha256(payload)
+        return payload
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74SegmentedTrainingSplit:
+        payload = dict(value)
+        claimed = payload.pop("split_sha256", None)
+        run_keys = (
+            "optimization_run_ids",
+            "purged_run_ids",
+            "early_stopping_run_ids",
+        )
+        ordinal_keys = (
+            "optimization_slot_ordinals",
+            "purged_slot_ordinals",
+            "early_stopping_slot_ordinals",
+        )
+        if (
+            not _is_sha256(claimed)
+            or claimed != _canonical_sha256(payload)
+            or any(
+                not isinstance(payload.get(key), list)
+                or any(not isinstance(item, str) for item in payload[key])
+                for key in run_keys
+            )
+            or any(
+                not isinstance(payload.get(key), list)
+                or any(
+                    isinstance(item, bool) or not isinstance(item, int)
+                    for item in payload[key]
+                )
+                for key in ordinal_keys
+            )
+        ):
+            raise ValueError("Round 74 segmented training split payload differs")
+        try:
+            selected = cls(
+                parent_partition_sha256=str(payload["parent_partition_sha256"]),
+                cohort_plan_sha256=str(payload["cohort_plan_sha256"]),
+                optimization_run_ids=tuple(payload["optimization_run_ids"]),
+                purged_run_ids=tuple(payload["purged_run_ids"]),
+                early_stopping_run_ids=tuple(payload["early_stopping_run_ids"]),
+                optimization_slot_ordinals=tuple(payload["optimization_slot_ordinals"]),
+                purged_slot_ordinals=tuple(payload["purged_slot_ordinals"]),
+                early_stopping_slot_ordinals=tuple(
+                    payload["early_stopping_slot_ordinals"]
+                ),
+                optimization_last_eligible_anchor_wall_ns=int(
+                    payload["optimization_last_eligible_anchor_wall_ns"]
+                ),
+                early_stopping_first_eligible_anchor_wall_ns=int(
+                    payload["early_stopping_first_eligible_anchor_wall_ns"]
+                ),
+                schema_version=str(payload["schema_version"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 74 segmented training split payload differs"
+            ) from exc
+        selected.validate()
+        if selected.as_dict(include_sha256=False) != payload:
+            raise ValueError("Round 74 segmented training split policy differs")
+        if selected.split_sha256 != claimed:
+            raise ValueError("Round 74 segmented training split identity differs")
+        return selected
 
 
 @dataclass(frozen=True)
@@ -700,6 +904,94 @@ class Round74SegmentedTestPopulation:
         return selected
 
 
+def build_round74_segmented_training_split(
+    partition: Round74EventRunPartition,
+    *,
+    bindings_by_run_id: Mapping[str, Round74SegmentedCohortRunBinding],
+) -> Round74SegmentedTrainingSplit:
+    """Assign training runs before replaying features, targets, or model output."""
+
+    partition.validate()
+    entries = tuple(entry for entry in partition.entries if entry.role == "training")
+    bindings = dict(bindings_by_run_id)
+    expected_run_ids = {entry.run_id for entry in entries}
+    if set(bindings) != expected_run_ids:
+        raise ValueError("Round 74 segmented training binding panel differs")
+    slot_ordinals: list[int] = []
+    for entry in entries:
+        binding = bindings[entry.run_id]
+        binding.validate()
+        if (
+            binding.plan_sha256 != partition.cohort_plan_sha256
+            or binding.role != "training"
+            or binding.run_id != entry.run_id
+            or binding.report_sha256 != entry.capture_report_sha256
+            or binding.feature_ready_wall_ns != entry.capture_start_wall_ns
+            or binding.usable_end_wall_ns != entry.capture_end_wall_ns
+            or not 0
+            <= binding.slot_ordinal
+            < ROUND74_SEGMENTED_COHORT_ROLE_COUNTS["training"]
+        ):
+            raise ValueError("Round 74 segmented training binding differs")
+        slot_ordinals.append(binding.slot_ordinal)
+    admitted_count = len(entries)
+    early_stopping_count = max(
+        ROUND74_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS,
+        (admitted_count + ROUND74_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR - 1)
+        // ROUND74_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR,
+    )
+    if (
+        admitted_count
+        < ROUND74_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS + early_stopping_count
+    ):
+        raise ValueError(
+            "Round 74 segmented training role is too small for isolated early stopping"
+        )
+    early_start = admitted_count - early_stopping_count
+    optimization_end = early_start
+    while (
+        optimization_end > ROUND74_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
+        and entries[early_start].eligible_anchor_start_wall_ns
+        - entries[optimization_end - 1].eligible_anchor_end_wall_ns
+        < ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
+    ):
+        optimization_end -= 1
+    if (
+        entries[early_start].eligible_anchor_start_wall_ns
+        - entries[optimization_end - 1].eligible_anchor_end_wall_ns
+        < ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
+    ):
+        raise ValueError("Round 74 segmented training early-stop purge is too short")
+    selected = Round74SegmentedTrainingSplit(
+        parent_partition_sha256=partition.partition_sha256,
+        cohort_plan_sha256=partition.cohort_plan_sha256,
+        optimization_run_ids=tuple(
+            entry.run_id for entry in entries[:optimization_end]
+        ),
+        purged_run_ids=tuple(
+            entry.run_id for entry in entries[optimization_end:early_start]
+        ),
+        early_stopping_run_ids=tuple(entry.run_id for entry in entries[early_start:]),
+        optimization_slot_ordinals=tuple(slot_ordinals[:optimization_end]),
+        purged_slot_ordinals=tuple(slot_ordinals[optimization_end:early_start]),
+        early_stopping_slot_ordinals=tuple(slot_ordinals[early_start:]),
+        optimization_last_eligible_anchor_wall_ns=(
+            entries[optimization_end - 1].eligible_anchor_end_wall_ns
+        ),
+        early_stopping_first_eligible_anchor_wall_ns=(
+            entries[early_start].eligible_anchor_start_wall_ns
+        ),
+    )
+    selected.validate()
+    if (
+        *selected.optimization_run_ids,
+        *selected.purged_run_ids,
+        *selected.early_stopping_run_ids,
+    ) != tuple(entry.run_id for entry in entries):
+        raise RuntimeError("Round 74 segmented training split coverage differs")
+    return selected
+
+
 def build_round74_segmented_test_population(
     partition: Round74EventRunPartition,
     *,
@@ -1016,6 +1308,104 @@ def _validate_binding_entry(
         raise ValueError("Round 74 segmented model binding differs")
 
 
+def iter_round74_segmented_optimization_feature_chunks(
+    store: object,
+    *,
+    partition: Round74EventRunPartition,
+    bindings_by_run_id: Mapping[str, Round74SegmentedCohortRunBinding],
+    training_split: Round74SegmentedTrainingSplit,
+    chunk_rows: int = ROUND74_SEGMENTED_SCALER_FEATURE_CHUNK_ROWS,
+) -> Iterator[np.ndarray]:
+    """Replay unique raw features from optimizer runs and no later run."""
+
+    selected_store = _require_read_only_store(store)
+    partition.validate()
+    training_split.validate()
+    training_entries = tuple(
+        entry for entry in partition.entries if entry.role == "training"
+    )
+    expected_run_ids = tuple(entry.run_id for entry in training_entries)
+    split_run_ids = (
+        *training_split.optimization_run_ids,
+        *training_split.purged_run_ids,
+        *training_split.early_stopping_run_ids,
+    )
+    bindings = dict(bindings_by_run_id)
+    if (
+        training_split.parent_partition_sha256 != partition.partition_sha256
+        or training_split.cohort_plan_sha256 != partition.cohort_plan_sha256
+        or split_run_ids != expected_run_ids
+        or set(bindings) != set(expected_run_ids)
+        or isinstance(chunk_rows, bool)
+        or not isinstance(chunk_rows, int)
+        or chunk_rows < 2
+    ):
+        raise ValueError("Round 74 segmented scaler input binding differs")
+    entries_by_run_id = {entry.run_id: entry for entry in training_entries}
+    values: list[tuple[float, ...]] = []
+    emitted_rows = 0
+    for run_id in training_split.optimization_run_ids:
+        entry = entries_by_run_id[run_id]
+        binding = bindings[run_id]
+        _validate_binding_entry(binding, entry)
+        for observation in iter_round74_v10_segment_event_observations(
+            selected_store,
+            binding=binding,
+        ):
+            token = observation.token
+            if token is None:
+                continue
+            if not (
+                entry.capture_start_wall_ns
+                <= token.received_wall_ns
+                <= entry.capture_end_wall_ns
+            ):
+                raise ValueError(
+                    "Round 74 segmented scaler event is outside its capture run"
+                )
+            values.append(token.feature_values)
+            if len(values) == chunk_rows:
+                chunk = np.asarray(values, dtype=np.float64)
+                emitted_rows += int(chunk.shape[0])
+                yield chunk
+                values.clear()
+    if values:
+        chunk = np.asarray(values, dtype=np.float64)
+        emitted_rows += int(chunk.shape[0])
+        yield chunk
+    if emitted_rows < 2:
+        raise ValueError("Round 74 segmented scaler events are insufficient")
+
+
+def fit_round74_segmented_optimization_feature_scaler(
+    store: object,
+    *,
+    partition: Round74EventRunPartition,
+    bindings_by_run_id: Mapping[str, Round74SegmentedCohortRunBinding],
+    training_split: Round74SegmentedTrainingSplit,
+    chunk_rows: int = ROUND74_SEGMENTED_SCALER_FEATURE_CHUNK_ROWS,
+    maximum_fit_rows: int = ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+) -> Round74EventFeatureScaler:
+    """Fit preprocessing on optimizer features before any label replay."""
+
+    training_split.validate()
+    return fit_round74_event_feature_scaler_stream(
+        iter_round74_segmented_optimization_feature_chunks(
+            store,
+            partition=partition,
+            bindings_by_run_id=bindings_by_run_id,
+            training_split=training_split,
+            chunk_rows=chunk_rows,
+        ),
+        partition_role="training",
+        maximum_fit_rows=maximum_fit_rows,
+        fit_source_scope="segmented_optimization_training_runs",
+        fit_source_run_ids=training_split.optimization_run_ids,
+        fit_source_partition_sha256=training_split.parent_partition_sha256,
+        fit_source_selection_sha256=training_split.split_sha256,
+    )
+
+
 def iter_round74_segmented_labeled_event_windows(
     store: object,
     *,
@@ -1255,23 +1645,32 @@ def select_round74_segmented_matched_event_windows(
 
 
 __all__ = [
+    "ROUND74_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR",
+    "ROUND74_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS",
+    "ROUND74_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS",
     "ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS",
     "ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS",
     "ROUND74_SEGMENTED_REFERENCE_WINDOWS_PER_SYMBOL",
+    "ROUND74_SEGMENTED_SCALER_FEATURE_CHUNK_ROWS",
     "ROUND74_SEGMENTED_TEST_POPULATION_SCHEMA_VERSION",
+    "ROUND74_SEGMENTED_TRAINING_SPLIT_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_TUNING_SUBPARTITION_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS",
     "ROUND74_SEGMENTED_WINDOW_SELECTION_SCHEMA_VERSION",
     "Round74SegmentedModelSelectionStages",
     "Round74SegmentedTestPopulation",
+    "Round74SegmentedTrainingSplit",
     "Round74SegmentedTuningSubpartition",
     "assemble_round74_segmented_role_batches",
     "build_round74_segmented_model_selection_stages",
     "build_round74_segmented_sealed_dataset_identity",
     "build_round74_segmented_test_population",
+    "build_round74_segmented_training_split",
     "build_round74_segmented_tuning_subpartition",
+    "fit_round74_segmented_optimization_feature_scaler",
     "iter_round74_segmented_labeled_event_windows",
+    "iter_round74_segmented_optimization_feature_chunks",
     "round74_segmented_window_policy",
     "round74_segmented_windows_per_symbol",
     "select_round74_segmented_event_windows",

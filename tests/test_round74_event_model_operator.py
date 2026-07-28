@@ -187,6 +187,9 @@ def test_scaler_stream_reads_unique_training_events_only(
     )
     assert scaler.fit_input_rows == 5
     assert scaler.fit_sample_rows == 4
+    assert scaler.fit_source_scope == "training_partition_all_runs"
+    assert scaler.fit_source_run_ids == (partition.entries[0].run_id,)
+    assert scaler.fit_source_partition_sha256 == partition.partition_sha256
 
 
 def test_feature_stream_rejects_bad_store_chunk_and_source_rows(
