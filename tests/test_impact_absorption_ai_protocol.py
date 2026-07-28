@@ -19,6 +19,9 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
 )
+from simple_ai_trading.impact_absorption_event_scaling import (
+    ROUND74_EVENT_BINARY_FEATURE_COUNT,
+)
 
 
 WALL_NS = 1_800_000_000_000_000_000
@@ -131,7 +134,7 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert len(request.request_sha256) == 64
     assert payload["asset"] == "asset_0"
     assert payload["risk_profile"] == "conservative"
-    assert payload["binary_feature_count"] == 8
+    assert payload["binary_feature_count"] == ROUND74_EVENT_BINARY_FEATURE_COUNT == 11
     assert payload["binary_feature_source_units"] == (
         "zero_or_one_indicator_before_summary"
     )
@@ -168,7 +171,10 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "future" not in user
     assert "Never infer an identity or date" in system
     assert "frozen conservative risk profile" in system
-    assert "first 8 source features are zero-or-one indicators" in system
+    assert (
+        f"first {ROUND74_EVENT_BINARY_FEATURE_COUNT} source features are "
+        "zero-or-one indicators"
+    ) in system
     assert "means are event fractions" in system
     assert "recent changes are signed differences between event fractions" in system
     assert "dimensionless training-scaler normalized statistics" in system
