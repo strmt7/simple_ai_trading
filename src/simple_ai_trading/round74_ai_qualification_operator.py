@@ -46,7 +46,7 @@ from .round74_event_model_operator import Round74PreparedTuningRoles
 
 
 ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION = (
-    "round-074-ai-qualification-operator-v1"
+    "round-074-ai-qualification-operator-v2"
 )
 
 ReviewRunner = Callable[..., Round74AIRuntimeOutcome]
@@ -108,17 +108,14 @@ class Round74AIQualificationOperatorResult:
             for binding in self.review_panel.model_bindings
         )
         report_by_manifest = {
-            report.model_manifest_sha256: report
-            for report in self.development_reports
+            report.model_manifest_sha256: report for report in self.development_reports
         }
         observed_runs = tuple(dict.fromkeys(self.baseline_trace.run_id))
         observed_run_set = set(observed_runs)
         if (
-            self.schema_version
-            != ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION
+            self.schema_version != ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION
             or self.inference.data_scope != "ai_qualification_tuning"
-            or self.inference.expected_run_ids
-            != self.qualification_population.run_ids
+            or self.inference.expected_run_ids != self.qualification_population.run_ids
             or self.baseline_trace.expected_run_ids
             != self.qualification_population.run_ids
             or observed_runs
@@ -264,7 +261,6 @@ def run_round74_ai_pretest_qualification(
     pretest_policy_path: str | Path,
     execution_replay_provider: Round74AIQualificationExecutionReplayProvider,
     qualification_output_path: str | Path,
-    same_entry_latency_budget_ns: int,
     compute_backend: str = "auto",
     inference_minibatch_rows: int = 2_048,
     model_bindings: Sequence[Round74AIReviewModelBinding] | None = None,
@@ -282,16 +278,9 @@ def run_round74_ai_pretest_qualification(
         action_selection=action_selection,
         probability_calibration=probability_calibration,
     )
-    if (
-        isinstance(same_entry_latency_budget_ns, bool)
-        or not isinstance(same_entry_latency_budget_ns, int)
-        or same_entry_latency_budget_ns <= 0
-        or not callable(execution_replay_provider)
-    ):
+    if not callable(execution_replay_provider):
         raise ValueError("Round 74 AI qualification execution input differs")
-    contexts = tuple(
-        build_round74_action_inference_context(batch) for batch in batches
-    )
+    contexts = tuple(build_round74_action_inference_context(batch) for batch in batches)
     inference = infer_round74_target_free_candidates(
         contexts,
         action_selection=action_selection,
@@ -314,7 +303,6 @@ def run_round74_ai_pretest_qualification(
         inference,
         action_selection=action_selection,
         probability_calibration=probability_calibration,
-        same_entry_latency_budget_ns=same_entry_latency_budget_ns,
         model_bindings=model_bindings,
         review_runner=review_runner,
         model_batch_preparer=model_batch_preparer,
@@ -336,9 +324,7 @@ def run_round74_ai_pretest_qualification(
                 by_row[row_index] for row_index in baseline_trace.row_index
             )
         except KeyError as exc:
-            raise ValueError(
-                "Round 74 AI qualification review is missing"
-            ) from exc
+            raise ValueError("Round 74 AI qualification review is missing") from exc
         selected_reviews_by_manifest[manifest] = selected_reviews
         instructions_by_manifest[manifest] = (
             build_round74_ai_execution_replay_instructions(
@@ -399,7 +385,6 @@ def run_round74_prepared_ai_pretest_qualification(
     pretest_policy_path: str | Path,
     execution_replay_provider: Round74AIQualificationExecutionReplayProvider,
     qualification_output_path: str | Path,
-    same_entry_latency_budget_ns: int,
     compute_backend: str = "auto",
     inference_minibatch_rows: int = 2_048,
     model_bindings: Sequence[Round74AIReviewModelBinding] | None = None,
@@ -422,9 +407,7 @@ def run_round74_prepared_ai_pretest_qualification(
         )
         != qualification_population.run_ids
     ):
-        raise ValueError(
-            "Round 74 prepared AI qualification population differs"
-        )
+        raise ValueError("Round 74 prepared AI qualification population differs")
     return run_round74_ai_pretest_qualification(
         prepared_tuning_roles.ai_qualification_batches,
         qualification_population=qualification_population,
@@ -433,7 +416,6 @@ def run_round74_prepared_ai_pretest_qualification(
         pretest_policy_path=pretest_policy_path,
         execution_replay_provider=execution_replay_provider,
         qualification_output_path=qualification_output_path,
-        same_entry_latency_budget_ns=same_entry_latency_budget_ns,
         compute_backend=compute_backend,
         inference_minibatch_rows=inference_minibatch_rows,
         model_bindings=model_bindings,

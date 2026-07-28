@@ -13,6 +13,9 @@ from .impact_absorption_ai_execution_replay import (
     Round74AIQualificationStoreExecutionReplayProvider,
 )
 from .impact_absorption_event_action_policy import ROUND74_ACTION_PROFILES
+from .impact_absorption_ai_uplift import (
+    ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
+)
 from .impact_absorption_store import (
     ImpactAbsorptionStore,
     validate_impact_store_resources,
@@ -42,7 +45,7 @@ from .round74_segmented_model_operator import (
 
 
 ROUND74_SEGMENTED_DEVELOPMENT_RUN_SCHEMA_VERSION = (
-    "round-074-segmented-development-run-v1"
+    "round-074-segmented-development-run-v2"
 )
 ROUND74_SEGMENTED_DEVELOPMENT_DATABASE_RELATIVE_PATH = Path(
     "data/round74-segmented-event-cohort-v3.duckdb"
@@ -134,9 +137,7 @@ def _validate_path_panel(
 def _guard_idle_database(database: Path, *, repeated: bool) -> int:
     if _active_segmented_capture_processes():
         state = "became active" if repeated else "is active"
-        raise RuntimeError(
-            f"Round 74 segmented development blocked: capture {state}"
-        )
+        raise RuntimeError(f"Round 74 segmented development blocked: capture {state}")
     database_bytes, wal_bytes = _database_and_wal_bytes(database)
     if database_bytes <= 0:
         raise RuntimeError("Round 74 segmented development database disappeared")
@@ -156,7 +157,6 @@ def _run_development(
     qualification_output_directory: Path,
     compute_backend: str,
     inference_minibatch_rows: int,
-    same_entry_latency_budget_ns: int | None,
     enable_ai: bool,
     progress: ProgressCallback,
 ) -> tuple[object, Round74SegmentedQualifiedDevelopment | None, str]:
@@ -195,14 +195,10 @@ def _run_development(
     )
     if not enable_ai:
         return policy, None, preparation_sha256
-    assert same_entry_latency_budget_ns is not None
-
     population = build_round74_segmented_ai_qualification_population(
         preparation.tuning_subpartition
     )
-    qualification_batches = tuple(
-        preparation.tuning_roles.ai_qualification_batches
-    )
+    qualification_batches = tuple(preparation.tuning_roles.ai_qualification_batches)
     qualification_assemblies = {
         run_id: assemblies[run_id] for run_id in population.run_ids
     }
@@ -256,7 +252,6 @@ def _run_development(
                 qualification_output_directory
                 / f"round74-ai-pretest-qualification-{profile}.json"
             ),
-            same_entry_latency_budget_ns=same_entry_latency_budget_ns,
             compute_backend=compute_backend,
             inference_minibatch_rows=inference_minibatch_rows,
             progress_callback=ai_progress,
@@ -297,7 +292,6 @@ def run_round74_segmented_development(
     inference_minibatch_rows: int = 128,
     progress_interval_seconds: float = 30.0,
     enable_ai: bool = True,
-    same_entry_latency_budget_ns: int | None = None,
 ) -> dict[str, object]:
     """Validate everything before opening the evidence store read-only."""
 
@@ -334,18 +328,6 @@ def run_round74_segmented_development(
         or isinstance(progress_interval_seconds, bool)
         or not 1.0 <= float(progress_interval_seconds) <= 300.0
         or not isinstance(enable_ai, bool)
-        or (
-            enable_ai
-            and (
-                isinstance(same_entry_latency_budget_ns, bool)
-                or not isinstance(same_entry_latency_budget_ns, int)
-                or same_entry_latency_budget_ns <= 0
-            )
-        )
-        or (
-            not enable_ai
-            and same_entry_latency_budget_ns is not None
-        )
     ):
         raise ValueError("Round 74 segmented development runtime policy differs")
 
@@ -396,7 +378,6 @@ def run_round74_segmented_development(
                 qualification_output_directory=qualification_output,
                 compute_backend=str(compute_backend),
                 inference_minibatch_rows=inference_minibatch_rows,
-                same_entry_latency_budget_ns=same_entry_latency_budget_ns,
                 enable_ai=enable_ai,
                 progress=progress,
             )
@@ -411,9 +392,7 @@ def run_round74_segmented_development(
             {
                 "profile": selected.profile,
                 "ml_action_policy_accepted": selected.accepted,
-                "ml_action_policy_rejection_reasons": list(
-                    selected.rejection_reasons
-                ),
+                "ml_action_policy_rejection_reasons": list(selected.rejection_reasons),
                 "ai_qualification_executed": qualification is not None,
                 "ai_qualification_passed": (
                     False
@@ -460,14 +439,17 @@ def run_round74_segmented_development(
             "pretest_policy_path": str(policy.pretest_policy.policy_path),
             "model_sha256": policy.pretest_policy.model_sha256,
             "model_path": str(policy.pretest_policy.model_path),
-            "selected_candidate_id": (
-                policy.pretest_policy.selected_candidate_id
-            ),
+            "selected_candidate_id": (policy.pretest_policy.selected_candidate_id),
             "segmented_tuning_proper_loss": policy.pretest_policy.tuning_loss,
         },
         "ai": {
             "enabled": enable_ai,
-            "same_entry_latency_budget_ns": same_entry_latency_budget_ns,
+            "action_validity_maximum_ns": (ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS),
+            "action_validity_policy": (
+                "minimum_of_forecast_horizon_and_target_maximum_delayed_entry"
+            ),
+            "action_latency_includes_historical_queue_delay": True,
+            "accepted_actions_use_exact_delayed_l2_replay": True,
             "qualified_development_sha256": (
                 None if qualified is None else qualified.result_sha256
             ),

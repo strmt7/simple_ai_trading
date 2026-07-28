@@ -44,12 +44,12 @@ from .impact_absorption_event_targets import (
 from .storage import write_json_atomic
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v11"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v12"
 ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION = (
     "round-074-ai-qualification-population-v1"
 )
 ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION = (
-    "round-074-ai-pretest-qualification-v1"
+    "round-074-ai-pretest-qualification-v2"
 )
 ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION = (
     "round-074-ai-execution-replay-evidence-v2"
@@ -60,6 +60,9 @@ ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO = {
     "regular": 0.50,
     "aggressive": 0.40,
 }
+ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS = (
+    ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+)
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
@@ -96,16 +99,29 @@ def _require_sha256(value: object, label: str) -> str:
     return selected
 
 
+def round74_ai_action_validity_latency_ns(horizon_seconds: int) -> int:
+    """Return the source-bound maximum age of an AI action."""
+
+    if (
+        isinstance(horizon_seconds, bool)
+        or not isinstance(horizon_seconds, int)
+        or horizon_seconds not in (30, 300)
+    ):
+        raise ValueError("Round 74 AI action-validity horizon differs")
+    return min(
+        horizon_seconds * 1_000_000_000,
+        ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
+    )
+
+
 def _trace_run_population_matches(
     trace: Round74ActionTrace,
     expected_run_ids: tuple[str, ...],
 ) -> bool:
     observed = tuple(dict.fromkeys(trace.run_id))
     observed_set = set(observed)
-    return (
-        observed_set.issubset(set(expected_run_ids))
-        and observed
-        == tuple(run_id for run_id in expected_run_ids if run_id in observed_set)
+    return observed_set.issubset(set(expected_run_ids)) and observed == tuple(
+        run_id for run_id in expected_run_ids if run_id in observed_set
     )
 
 
@@ -128,8 +144,8 @@ class Round74AIPairedReviewEvidence:
     runtime_elapsed_ns: int
     queue_delay_ns: int
     effective_review_latency_ns: int
-    same_entry_latency_budget_ns: int
-    same_entry_latency_eligible: bool
+    action_validity_latency_ns: int
+    action_latency_eligible: bool
     size_multiplier_bps: int
     decision: Round74AIReviewDecision | None
 
@@ -163,10 +179,9 @@ class Round74AIPairedReviewEvidence:
             or self.effective_review_latency_ns < 0
             or self.effective_review_latency_ns
             != self.runtime_elapsed_ns + self.queue_delay_ns
-            or isinstance(self.same_entry_latency_budget_ns, bool)
-            or not isinstance(self.same_entry_latency_budget_ns, int)
-            or self.same_entry_latency_budget_ns <= 0
-            or not isinstance(self.same_entry_latency_eligible, bool)
+            or self.action_validity_latency_ns
+            != round74_ai_action_validity_latency_ns(self.horizon_seconds)
+            or not isinstance(self.action_latency_eligible, bool)
             or isinstance(self.size_multiplier_bps, bool)
             or not isinstance(self.size_multiplier_bps, int)
             or not 0 <= self.size_multiplier_bps <= 10_000
@@ -174,19 +189,15 @@ class Round74AIPairedReviewEvidence:
             raise ValueError("Round 74 AI paired review differs")
         expected_latency_eligible = (
             self.runtime_status == "accepted"
-            and self.effective_review_latency_ns <= self.same_entry_latency_budget_ns
+            and self.effective_review_latency_ns <= self.action_validity_latency_ns
         )
-        if self.same_entry_latency_eligible != expected_latency_eligible:
-            raise ValueError("Round 74 AI same-entry latency eligibility differs")
+        if self.action_latency_eligible != expected_latency_eligible:
+            raise ValueError("Round 74 AI action-latency eligibility differs")
         if self.runtime_status == "accepted":
             if self.decision is None:
                 raise ValueError("Round 74 AI accepted review lacks a decision")
             self.decision.validate()
-            expected_multiplier = (
-                self.decision.size_multiplier_bps
-                if self.same_entry_latency_eligible
-                else 0
-            )
+            expected_multiplier = self.decision.size_multiplier_bps
             if self.size_multiplier_bps != expected_multiplier:
                 raise ValueError("Round 74 AI paired decision size differs")
         elif self.decision is not None or self.size_multiplier_bps != 0:
@@ -215,8 +226,8 @@ class Round74AIPairedReviewEvidence:
             "runtime_elapsed_ns": self.runtime_elapsed_ns,
             "queue_delay_ns": self.queue_delay_ns,
             "effective_review_latency_ns": self.effective_review_latency_ns,
-            "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
-            "same_entry_latency_eligible": self.same_entry_latency_eligible,
+            "action_validity_latency_ns": self.action_validity_latency_ns,
+            "action_latency_eligible": self.action_latency_eligible,
             "size_multiplier_bps": self.size_multiplier_bps,
             "decision": (
                 self.decision.as_dict() if self.decision is not None else None
@@ -226,8 +237,11 @@ class Round74AIPairedReviewEvidence:
             "late_accepted_review_policy": (
                 "retain_decision_for_exact_delayed_book_replay"
             ),
-            "size_multiplier_bps_is_same_entry_diagnostic_projection": True,
-            "same_entry_latency_includes_historical_queue_delay": True,
+            "action_validity_policy": (
+                "minimum_of_forecast_horizon_and_target_maximum_delayed_entry"
+            ),
+            "action_latency_includes_historical_queue_delay": True,
+            "action_latency_eligibility_controls_replay": True,
             "latency_adjusted_replay_performed": False,
         }
         if include_sha256:
@@ -246,7 +260,6 @@ class Round74AIPairedReviewEvidence:
         horizon_seconds: int,
         request: Round74AIReviewRequest,
         outcome: Round74AIRuntimeOutcome,
-        same_entry_latency_budget_ns: int,
         queue_delay_ns: int,
     ) -> Round74AIPairedReviewEvidence:
         """Validate parent/worker evidence before reducing it to paired data."""
@@ -264,29 +277,26 @@ class Round74AIPairedReviewEvidence:
         ):
             raise ValueError("Round 74 AI runtime review identity differs")
         if (
-            isinstance(same_entry_latency_budget_ns, bool)
-            or not isinstance(same_entry_latency_budget_ns, int)
-            or same_entry_latency_budget_ns <= 0
-        ):
-            raise ValueError("Round 74 AI same-entry latency budget differs")
-        if (
             isinstance(queue_delay_ns, bool)
             or not isinstance(queue_delay_ns, int)
             or queue_delay_ns < 0
         ):
             raise ValueError("Round 74 AI queue delay differs")
         effective_latency_ns = outcome.elapsed_ns + queue_delay_ns
+        action_validity_latency_ns = round74_ai_action_validity_latency_ns(
+            horizon_seconds
+        )
         decision: Round74AIReviewDecision | None = None
         multiplier = 0
         latency_eligible = (
             outcome.status == "accepted"
-            and effective_latency_ns <= same_entry_latency_budget_ns
+            and effective_latency_ns <= action_validity_latency_ns
         )
         if outcome.status == "accepted":
             assert outcome.worker_result is not None
             worker = Round74AIWorkerResult.from_dict(outcome.worker_result)
             decision = worker.decision
-            multiplier = decision.size_multiplier_bps if latency_eligible else 0
+            multiplier = decision.size_multiplier_bps
             expected_approved = (
                 request.proposed_risk_size_bps * decision.size_multiplier_bps // 10_000
             )
@@ -311,8 +321,8 @@ class Round74AIPairedReviewEvidence:
             runtime_elapsed_ns=outcome.elapsed_ns,
             queue_delay_ns=queue_delay_ns,
             effective_review_latency_ns=effective_latency_ns,
-            same_entry_latency_budget_ns=same_entry_latency_budget_ns,
-            same_entry_latency_eligible=latency_eligible,
+            action_validity_latency_ns=action_validity_latency_ns,
+            action_latency_eligible=latency_eligible,
             size_multiplier_bps=multiplier,
             decision=decision,
         )
@@ -548,8 +558,8 @@ class Round74AIOverlayMetrics:
     reduced_trades: int
     runtime_accepted_reviews: int
     runtime_success_rate: float
-    same_entry_latency_eligible_reviews: int
-    same_entry_latency_eligibility_rate: float
+    action_latency_eligible_reviews: int
+    action_latency_eligibility_rate: float
     exact_replay_required_reviews: int
     exact_replay_completed_reviews: int
     exact_replay_target_ineligible_reviews: int
@@ -572,7 +582,7 @@ class Round74AIOverlayMetrics:
             self.vetoed_trades,
             self.reduced_trades,
             self.runtime_accepted_reviews,
-            self.same_entry_latency_eligible_reviews,
+            self.action_latency_eligible_reviews,
             self.exact_replay_required_reviews,
             self.exact_replay_completed_reviews,
             self.exact_replay_target_ineligible_reviews,
@@ -581,7 +591,7 @@ class Round74AIOverlayMetrics:
         )
         ratios = (
             self.runtime_success_rate,
-            self.same_entry_latency_eligibility_rate,
+            self.action_latency_eligibility_rate,
             self.retained_trade_ratio,
             self.maximum_retained_symbol_share,
             self.profitable_run_ratio,
@@ -603,7 +613,7 @@ class Round74AIOverlayMetrics:
             or self.retained_trades + self.vetoed_trades != self.baseline_trades
             or self.reduced_trades > self.retained_trades
             or self.runtime_accepted_reviews > self.baseline_trades
-            or self.same_entry_latency_eligible_reviews > self.runtime_accepted_reviews
+            or self.action_latency_eligible_reviews > self.runtime_accepted_reviews
             or self.exact_replay_completed_reviews != self.exact_replay_required_reviews
             or self.exact_replay_target_ineligible_reviews
             > self.exact_replay_completed_reviews
@@ -631,8 +641,8 @@ class Round74AIOverlayMetrics:
                         abs_tol=1e-12,
                     )
                     or not math.isclose(
-                        self.same_entry_latency_eligibility_rate,
-                        self.same_entry_latency_eligible_reviews / self.baseline_trades,
+                        self.action_latency_eligibility_rate,
+                        self.action_latency_eligible_reviews / self.baseline_trades,
                         rel_tol=1e-12,
                         abs_tol=1e-12,
                     )
@@ -800,11 +810,11 @@ def _scaled_metrics(
         runtime_success_rate=float(
             np.mean([review.runtime_status == "accepted" for review in reviews])
         ),
-        same_entry_latency_eligible_reviews=sum(
-            review.same_entry_latency_eligible for review in reviews
+        action_latency_eligible_reviews=sum(
+            review.action_latency_eligible for review in reviews
         ),
-        same_entry_latency_eligibility_rate=float(
-            np.mean([review.same_entry_latency_eligible for review in reviews])
+        action_latency_eligibility_rate=float(
+            np.mean([review.action_latency_eligible for review in reviews])
         ),
         exact_replay_required_reviews=sum(
             value.requested_size_multiplier_bps > 0
@@ -995,7 +1005,6 @@ class Round74AIUpliftDevelopmentReport:
     pretest_policy_sha256: str
     probability_calibration_sha256: str
     model_manifest_sha256: str
-    same_entry_latency_budget_ns: int
     qualification_population: Round74AIQualificationPopulation
     baseline_trace: Round74ActionTrace
     review_sha256: tuple[str, ...]
@@ -1133,9 +1142,6 @@ class Round74AIUpliftDevelopmentReport:
                 self.baseline_trace,
                 self.qualification_population.run_ids,
             )
-            or isinstance(self.same_entry_latency_budget_ns, bool)
-            or not isinstance(self.same_entry_latency_budget_ns, int)
-            or self.same_entry_latency_budget_ns <= 0
             or len(set(self.candidate_sha256)) != len(self.candidate_sha256)
             or len(self.review_sha256) != self.baseline_trace.metrics.trades
             or len(set(self.review_sha256)) != len(self.review_sha256)
@@ -1228,7 +1234,7 @@ class Round74AIUpliftDevelopmentReport:
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "model_manifest_sha256": self.model_manifest_sha256,
-            "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
+            "action_validity_maximum_ns": ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
             "qualification_population": self.qualification_population.as_dict(),
             "qualification_population_sha256": (
                 self.qualification_population.population_sha256
@@ -1252,9 +1258,11 @@ class Round74AIUpliftDevelopmentReport:
             ),
             "missing_review_policy": "invalidate_entire_evaluation",
             "same_side_entry_exit_and_overlap_order": True,
-            "same_entry_fill_requires_measured_latency_eligibility": False,
-            "same_entry_latency_includes_historical_queue_delay": True,
-            "same_entry_latency_is_diagnostic_only": True,
+            "action_validity_policy": (
+                "minimum_of_forecast_horizon_and_target_maximum_delayed_entry"
+            ),
+            "action_latency_includes_historical_queue_delay": True,
+            "expired_action_policy": "paired_zero_exposure_not_observation_deletion",
             "latency_adjusted_replay_performed": True,
             "baseline_payoff_scaled_without_rewalking_book": False,
             "sealed_test_accessed": False,
@@ -1281,9 +1289,12 @@ class Round74AIUpliftDevelopmentReport:
             ),
             "missing_review_policy": "invalidate_entire_evaluation",
             "same_side_entry_exit_and_overlap_order": True,
-            "same_entry_fill_requires_measured_latency_eligibility": False,
-            "same_entry_latency_includes_historical_queue_delay": True,
-            "same_entry_latency_is_diagnostic_only": True,
+            "action_validity_maximum_ns": ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
+            "action_validity_policy": (
+                "minimum_of_forecast_horizon_and_target_maximum_delayed_entry"
+            ),
+            "action_latency_includes_historical_queue_delay": True,
+            "expired_action_policy": "paired_zero_exposure_not_observation_deletion",
             "latency_adjusted_replay_performed": True,
             "baseline_payoff_scaled_without_rewalking_book": False,
             "sealed_test_accessed": False,
@@ -1338,7 +1349,6 @@ class Round74AIUpliftDevelopmentReport:
                     payload["probability_calibration_sha256"]
                 ),
                 model_manifest_sha256=str(payload["model_manifest_sha256"]),
-                same_entry_latency_budget_ns=payload["same_entry_latency_budget_ns"],
                 qualification_population=population,
                 baseline_trace=Round74ActionTrace.from_dict(baseline_trace),
                 review_sha256=tuple(str(item) for item in payload["review_sha256"]),
@@ -1394,7 +1404,6 @@ class Round74AIPretestQualificationPanel:
                 report.candidate_sha256,
                 report.pretest_policy_sha256,
                 report.probability_calibration_sha256,
-                report.same_entry_latency_budget_ns,
                 report.qualification_population.population_sha256,
                 _canonical_sha256(report.baseline_trace.as_dict()),
             )
@@ -1593,9 +1602,7 @@ def write_round74_ai_pretest_qualification(
     if selected.exists():
         restored = load_round74_ai_pretest_qualification(selected)
         if restored.qualification_sha256 != qualification.qualification_sha256:
-            raise FileExistsError(
-                "Round 74 immutable AI pretest qualification differs"
-            )
+            raise FileExistsError("Round 74 immutable AI pretest qualification differs")
         return selected
     write_json_atomic(selected, qualification.as_dict(), indent=2, sort_keys=True)
     restored = load_round74_ai_pretest_qualification(selected)
@@ -1697,9 +1704,6 @@ def evaluate_round74_ai_overlay_development(
     manifest_values = {review.model_manifest_sha256 for review in review_rows}
     if len(manifest_values) != 1:
         raise ValueError("Round 74 AI paired model identity differs")
-    latency_budgets = {review.same_entry_latency_budget_ns for review in review_rows}
-    if len(latency_budgets) != 1:
-        raise ValueError("Round 74 AI paired latency budget differs")
     for index, review in enumerate(review_rows):
         execution = execution_rows[index]
         requested_multiplier = (
@@ -1735,15 +1739,13 @@ def evaluate_round74_ai_overlay_development(
             or (
                 review.runtime_status == "accepted"
                 and requested_multiplier > 0
-                and review.effective_review_latency_ns
-                > ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+                and not review.action_latency_eligible
                 and execution.status != "historical_review_expired"
             )
             or (
                 review.runtime_status == "accepted"
                 and requested_multiplier > 0
-                and review.effective_review_latency_ns
-                <= ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+                and review.action_latency_eligible
                 and execution.status
                 not in {
                     "target_ineligible",
@@ -1794,7 +1796,6 @@ def evaluate_round74_ai_overlay_development(
             action_selection.probability_calibration_sha256
         ),
         model_manifest_sha256=next(iter(manifest_values)),
-        same_entry_latency_budget_ns=next(iter(latency_budgets)),
         qualification_population=qualification_population,
         baseline_trace=trace,
         review_sha256=tuple(review.review_sha256 for review in review_rows),
@@ -1814,6 +1815,7 @@ def evaluate_round74_ai_overlay_development(
 __all__ = [
     "ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION",
     "ROUND74_AI_EXECUTION_REPLAY_STATUSES",
+    "ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS",
     "ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION",
     "ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION",
     "ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO",
@@ -1829,4 +1831,5 @@ __all__ = [
     "evaluate_round74_ai_overlay_development",
     "load_round74_ai_pretest_qualification",
     "write_round74_ai_pretest_qualification",
+    "round74_ai_action_validity_latency_ns",
 ]

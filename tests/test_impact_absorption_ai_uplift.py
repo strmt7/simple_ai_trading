@@ -17,6 +17,7 @@ from simple_ai_trading.impact_absorption_ai_runtime import (
     Round74AIRuntimeOutcome,
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
+    ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
     Round74AIQualificationPopulation,
@@ -48,7 +49,7 @@ POLICY_FEATURES = tuple(f"{index + 700:064x}" for index in range(6))
 SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT") * 2
 PAYOFFS = (2.0, -1.0, 2.0, -1.0, 2.0, 2.0)
 WALL_NS = 1_800_000_000_000_000_000
-SAME_ENTRY_LATENCY_BUDGET_NS = 1_000_000
+ACTION_VALIDITY_LATENCY_NS = ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS
 
 
 def _trace() -> Round74ActionTrace:
@@ -189,7 +190,7 @@ def _review(
             confidence_bps=8_000,
             reason_codes=("forecast_uncertainty",),
         )
-    latency_eligible = runtime_elapsed_ns <= SAME_ENTRY_LATENCY_BUDGET_NS
+    latency_eligible = runtime_elapsed_ns <= ACTION_VALIDITY_LATENCY_NS
     result = Round74AIPairedReviewEvidence(
         row_index=index,
         feature_row_sha256=FEATURES[index],
@@ -206,9 +207,9 @@ def _review(
         runtime_elapsed_ns=runtime_elapsed_ns,
         queue_delay_ns=0,
         effective_review_latency_ns=runtime_elapsed_ns,
-        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
-        same_entry_latency_eligible=latency_eligible,
-        size_multiplier_bps=multiplier if latency_eligible else 0,
+        action_validity_latency_ns=ACTION_VALIDITY_LATENCY_NS,
+        action_latency_eligible=latency_eligible,
+        size_multiplier_bps=multiplier,
         decision=decision,
     )
     result.validate()
@@ -336,11 +337,17 @@ def _execution(
 ) -> Round74AIExecutionReplayEvidence:
     decision = review.decision
     requested_multiplier = decision.size_multiplier_bps if decision is not None else 0
-    executed = review.runtime_status == "accepted" and requested_multiplier > 0
+    executed = (
+        review.runtime_status == "accepted"
+        and review.action_latency_eligible
+        and requested_multiplier > 0
+    )
     if review.runtime_status != "accepted":
         status = "runtime_veto"
     elif requested_multiplier == 0:
         status = "ai_veto"
+    elif not review.action_latency_eligible:
+        status = "historical_review_expired"
     else:
         status = "executed"
     scale = requested_multiplier / 10_000.0 if executed else 0.0
@@ -589,7 +596,7 @@ def test_blocked_runtime_review_is_a_paired_zero_exposure_veto() -> None:
     reviews[0] = replace(
         reviews[0],
         runtime_status="blocked_capability",
-        same_entry_latency_eligible=False,
+        action_latency_eligible=False,
         size_multiplier_bps=0,
         decision=None,
     )
@@ -650,13 +657,12 @@ def test_runtime_evidence_reduction_is_recomputed_and_bound() -> None:
         horizon_seconds=30,
         request=request,
         outcome=outcome,
-        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
         queue_delay_ns=0,
     )
 
     assert evidence.runtime_status == "accepted"
     assert evidence.runtime_elapsed_ns == 1_000
-    assert evidence.same_entry_latency_eligible
+    assert evidence.action_latency_eligible
     assert evidence.size_multiplier_bps == 5_000
     assert evidence.decision is not None
     changed = replace(outcome, approved_risk_size_bps=1_000)
@@ -671,7 +677,6 @@ def test_runtime_evidence_reduction_is_recomputed_and_bound() -> None:
             horizon_seconds=30,
             request=request,
             outcome=changed,
-            same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
             queue_delay_ns=0,
         )
     except ValueError as exc:
@@ -690,21 +695,20 @@ def test_blocked_runtime_evidence_reduces_to_zero_without_decision() -> None:
         horizon_seconds=30,
         request=_runtime_request(),
         outcome=_runtime_outcome(status="blocked_capability"),
-        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
         queue_delay_ns=0,
     )
 
     assert evidence.runtime_status == "blocked_capability"
-    assert evidence.same_entry_latency_eligible is False
+    assert evidence.action_latency_eligible is False
     assert evidence.size_multiplier_bps == 0
     assert evidence.decision is None
 
 
-def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
+def test_expired_accepted_review_is_audited_and_cannot_reach_replay() -> None:
     request = _runtime_request()
     late_outcome = replace(
         _runtime_outcome(),
-        elapsed_ns=SAME_ENTRY_LATENCY_BUDGET_NS + 1,
+        elapsed_ns=ACTION_VALIDITY_LATENCY_NS + 1,
     )
     late_outcome.validate()
 
@@ -717,15 +721,14 @@ def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
         horizon_seconds=30,
         request=request,
         outcome=late_outcome,
-        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
         queue_delay_ns=0,
     )
 
     assert evidence.runtime_status == "accepted"
     assert evidence.decision is not None
     assert evidence.decision.size_multiplier_bps == 5_000
-    assert evidence.same_entry_latency_eligible is False
-    assert evidence.size_multiplier_bps == 0
+    assert evidence.action_latency_eligible is False
+    assert evidence.size_multiplier_bps == 5_000
     assert evidence.as_dict()["latency_adjusted_replay_performed"] is False
     on_time_evidence = Round74AIPairedReviewEvidence.from_runtime(
         row_index=0,
@@ -736,7 +739,6 @@ def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
         horizon_seconds=30,
         request=request,
         outcome=_runtime_outcome(),
-        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
         queue_delay_ns=0,
     )
     assert evidence.review_sha256 != on_time_evidence.review_sha256
@@ -748,7 +750,7 @@ def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
     reviews[0] = _review(
         0,
         10_000,
-        runtime_elapsed_ns=SAME_ENTRY_LATENCY_BUDGET_NS + 1,
+        runtime_elapsed_ns=ACTION_VALIDITY_LATENCY_NS + 1,
     )
     report = _evaluate(
         _selection(),
@@ -756,13 +758,13 @@ def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
         _executions(tuple(reviews)),
     )
 
-    assert report.development_gate_passed
+    assert not report.development_gate_passed
     assert report.ai_metrics.runtime_success_rate == 1.0
-    assert report.ai_metrics.same_entry_latency_eligible_reviews == 5
-    assert report.ai_metrics.exact_replay_required_reviews == 4
-    assert report.ai_metrics.exact_replay_completed_reviews == 4
+    assert report.ai_metrics.action_latency_eligible_reviews == 5
+    assert report.ai_metrics.exact_replay_required_reviews == 3
+    assert report.ai_metrics.exact_replay_completed_reviews == 3
     assert report.as_dict()["latency_adjusted_replay_performed"] is True
-    assert "same_entry_latency_eligibility_rate_not_met" not in report.gate_reasons
+    assert "paired_run_noninferiority_not_met" in report.gate_reasons
 
 
 def test_exact_execution_evidence_is_causal_and_fail_closed() -> None:
@@ -824,7 +826,7 @@ def test_exact_execution_evidence_is_causal_and_fail_closed() -> None:
             raise AssertionError("invalid AI execution evidence was accepted")
 
 
-def test_queue_wait_is_included_in_same_entry_latency() -> None:
+def test_queue_wait_is_included_in_action_latency() -> None:
     evidence = Round74AIPairedReviewEvidence.from_runtime(
         row_index=0,
         feature_row_sha256=FEATURES[0],
@@ -834,13 +836,12 @@ def test_queue_wait_is_included_in_same_entry_latency() -> None:
         horizon_seconds=30,
         request=_runtime_request(),
         outcome=_runtime_outcome(),
-        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
-        queue_delay_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+        queue_delay_ns=ACTION_VALIDITY_LATENCY_NS,
     )
 
     assert evidence.runtime_elapsed_ns == 1_000
-    assert evidence.queue_delay_ns == SAME_ENTRY_LATENCY_BUDGET_NS
-    assert evidence.effective_review_latency_ns == 1_001_000
-    assert evidence.same_entry_latency_eligible is False
+    assert evidence.queue_delay_ns == ACTION_VALIDITY_LATENCY_NS
+    assert evidence.effective_review_latency_ns == ACTION_VALIDITY_LATENCY_NS + 1_000
+    assert evidence.action_latency_eligible is False
     assert evidence.decision is not None
-    assert evidence.size_multiplier_bps == 0
+    assert evidence.size_multiplier_bps == 5_000

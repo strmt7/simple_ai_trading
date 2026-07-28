@@ -39,7 +39,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v12"
+ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v13"
 ROUND74_AI_REVIEW_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_UNIT_RISK_BPS = 10_000
 
@@ -225,7 +225,6 @@ class Round74AIReviewPanel:
     pretest_policy_sha256: str
     probability_calibration_sha256: str
     profile: str
-    same_entry_latency_budget_ns: int
     rows: tuple[Round74TargetFreeReviewRow, ...]
     model_bindings: tuple[Round74AIReviewModelBinding, ...]
     reviews: tuple[tuple[Round74AIPairedReviewEvidence, ...], ...]
@@ -247,9 +246,6 @@ class Round74AIReviewPanel:
                 )
             )
             or self.profile not in ("conservative", "regular", "aggressive")
-            or isinstance(self.same_entry_latency_budget_ns, bool)
-            or not isinstance(self.same_entry_latency_budget_ns, int)
-            or self.same_entry_latency_budget_ns <= 0
             or not self.model_bindings
             or len(self.model_bindings) != len(self.reviews)
             or not isinstance(self.model_batch_unload_enforced, bool)
@@ -286,11 +282,6 @@ class Round74AIReviewPanel:
                 len(reviews) != len(self.rows)
                 or tuple(review.row_index for review in reviews) != expected_rows
                 or any(review.model_manifest_sha256 != manifest for review in reviews)
-                or any(
-                    review.same_entry_latency_budget_ns
-                    != self.same_entry_latency_budget_ns
-                    for review in reviews
-                )
                 or len({review.review_sha256 for review in reviews}) != len(reviews)
             ):
                 raise ValueError("Round 74 AI review evidence coverage differs")
@@ -320,7 +311,6 @@ class Round74AIReviewPanel:
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "profile": self.profile,
-            "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
             "rows": [row.as_dict() for row in self.rows],
             "model_bindings": [binding.as_dict() for binding in self.model_bindings],
             "reviews": [
@@ -334,13 +324,13 @@ class Round74AIReviewPanel:
                 else "not_applicable_to_injected_review_runner"
             ),
             "review_coverage_defined_before_target_scoring": True,
-            "same_entry_latency_budget_policy": (
-                "externally_measured_signal_to_entry_slack"
+            "action_validity_policy": (
+                "minimum_of_forecast_horizon_and_target_maximum_delayed_entry"
             ),
             "queue_model": (
                 "single_server_per_candidate_model_in_historical_decision_order"
             ),
-            "queue_delay_included_in_same_entry_eligibility": True,
+            "queue_delay_included_in_action_latency_eligibility": True,
             "latency_adjusted_replay_performed": False,
             "target_fields_accessed": False,
             "trading_authority": False,
@@ -444,7 +434,6 @@ def prepare_round74_target_free_ai_reviews(
     *,
     action_selection: Round74ActionPolicySelection,
     probability_calibration: Round74ProbabilityCalibration,
-    same_entry_latency_budget_ns: int,
     model_bindings: Sequence[Round74AIReviewModelBinding] | None = None,
     review_runner: ReviewRunner = review_round74_ai_candidate,
     model_batch_preparer: ModelBatchPreparer | None = None,
@@ -458,10 +447,7 @@ def prepare_round74_target_free_ai_reviews(
     action_selection.validate()
     probability_calibration.validate()
     if (
-        isinstance(same_entry_latency_budget_ns, bool)
-        or not isinstance(same_entry_latency_budget_ns, int)
-        or same_entry_latency_budget_ns <= 0
-        or not action_selection.accepted
+        not action_selection.accepted
         or action_selection.selected_threshold_score is None
         or inference.action_selection_sha256 != action_selection.selection_sha256
         or inference.pretest_policy_sha256 != action_selection.pretest_policy_sha256
@@ -583,7 +569,6 @@ def prepare_round74_target_free_ai_reviews(
                     horizon_seconds=row.horizon_seconds,
                     request=request,
                     outcome=outcome,
-                    same_entry_latency_budget_ns=same_entry_latency_budget_ns,
                     queue_delay_ns=queue_delay_ns,
                 )
                 reviews.append(evidence)
@@ -602,8 +587,8 @@ def prepare_round74_target_free_ai_reviews(
                             "effective_review_latency_ns": (
                                 evidence.effective_review_latency_ns
                             ),
-                            "same_entry_latency_eligible": (
-                                evidence.same_entry_latency_eligible
+                            "action_latency_eligible": (
+                                evidence.action_latency_eligible
                             ),
                         }
                     )
@@ -621,7 +606,6 @@ def prepare_round74_target_free_ai_reviews(
         pretest_policy_sha256=action_selection.pretest_policy_sha256,
         probability_calibration_sha256=(probability_calibration.calibration_sha256),
         profile=action_selection.profile,
-        same_entry_latency_budget_ns=same_entry_latency_budget_ns,
         rows=rows,
         model_bindings=bindings,
         reviews=tuple(all_reviews),
@@ -636,7 +620,6 @@ class Round74PreparedSealedAIReviewProvider:
     """Run the pinned target-free two-model panel for a reserved test claim."""
 
     probability_calibration: Round74ProbabilityCalibration
-    same_entry_latency_budget_ns: int
     ai_pretest_qualification: Round74AIPretestQualificationPanel
     model_bindings: tuple[Round74AIReviewModelBinding, ...] = field(
         default_factory=round74_default_ai_review_model_panel
@@ -656,10 +639,7 @@ class Round74PreparedSealedAIReviewProvider:
             sorted(value.manifest.manifest_sha256 for value in bindings)
         )
         if (
-            isinstance(self.same_entry_latency_budget_ns, bool)
-            or not isinstance(self.same_entry_latency_budget_ns, int)
-            or self.same_entry_latency_budget_ns <= 0
-            or len(bindings) != 2
+            len(bindings) != 2
             or tuple(value.role for value in bindings)
             != ("finance_primary", "general_control")
             or not callable(self.review_runner)
@@ -740,7 +720,6 @@ class Round74PreparedSealedAIReviewProvider:
             inference,
             action_selection=action_selection,
             probability_calibration=self.probability_calibration,
-            same_entry_latency_budget_ns=self.same_entry_latency_budget_ns,
             model_bindings=self.model_bindings,
             review_runner=self.review_runner,
             model_batch_preparer=self.model_batch_preparer,
