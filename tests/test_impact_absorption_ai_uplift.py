@@ -440,6 +440,18 @@ def test_ai_pretest_qualification_binds_two_passing_development_reports(
     write_round74_ai_pretest_qualification(qualification, output)
     restored = load_round74_ai_pretest_qualification(output)
     assert restored.as_dict() == qualification.as_dict()
+    write_round74_ai_pretest_qualification(qualification, output)
+    different = build_round74_ai_pretest_qualification(
+        (
+            first,
+            replace(second, model_manifest_sha256="8" * 64),
+        )
+    )
+    with pytest.raises(
+        FileExistsError,
+        match="immutable AI pretest qualification differs",
+    ):
+        write_round74_ai_pretest_qualification(different, output)
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     payload["development_reports"][0]["ai_metrics"]["total_net_bps"] += 1.0

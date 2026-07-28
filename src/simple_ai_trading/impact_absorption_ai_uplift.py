@@ -1588,6 +1588,15 @@ def write_round74_ai_pretest_qualification(
 ) -> Path:
     qualification.validate()
     selected = Path(path)
+    if selected.is_symlink():
+        raise ValueError("Round 74 AI pretest qualification path differs")
+    if selected.exists():
+        restored = load_round74_ai_pretest_qualification(selected)
+        if restored.qualification_sha256 != qualification.qualification_sha256:
+            raise FileExistsError(
+                "Round 74 immutable AI pretest qualification differs"
+            )
+        return selected
     write_json_atomic(selected, qualification.as_dict(), indent=2, sort_keys=True)
     restored = load_round74_ai_pretest_qualification(selected)
     if restored.qualification_sha256 != qualification.qualification_sha256:

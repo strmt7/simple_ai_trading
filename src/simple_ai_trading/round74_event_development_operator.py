@@ -896,6 +896,7 @@ def train_calibrate_and_select_round74_development_policy(
             *tuning_roles.model_selection_batches,
             *tuning_roles.calibration_batches,
             *tuning_roles.policy_selection_batches,
+            *tuple(getattr(tuning_roles, "ai_qualification_batches", ())),
         )
     )
     if (

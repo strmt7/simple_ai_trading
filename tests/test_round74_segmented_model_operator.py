@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 import hashlib
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -23,6 +24,16 @@ from simple_ai_trading.impact_absorption_store import (
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
 )
+from simple_ai_trading.impact_absorption_event_scaling import (
+    fit_round74_event_feature_scaler,
+)
+from simple_ai_trading.impact_absorption_event_training import (
+    Round74EventTrainingConfig,
+)
+from simple_ai_trading.impact_absorption_target_assembly import (
+    Round74SourceTargetAssembly,
+)
+import simple_ai_trading.round74_segmented_development_operator as development_subject
 import simple_ai_trading.round74_segmented_model_operator as subject
 from simple_ai_trading.round74_segmented_model_operator import (
     ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS,
@@ -45,6 +56,22 @@ from simple_ai_trading.round74_segmented_model_operator import (
 
 
 _START = 2_000_000_000_000_000_000
+
+
+@dataclass(frozen=True)
+class _PreparedBatch:
+    role: str
+    run_id: tuple[str, ...]
+    partition_sha256: str
+    scaler_sha256: str
+    batch_sha256: str
+    decision_wall_ns: np.ndarray
+    window_representation: str = "per_symbol"
+    rows: int = 1
+
+    def validate(self) -> None:
+        if self.role not in {"training", "tuning"} or len(self.run_id) != 1:
+            raise ValueError("prepared batch differs")
 
 
 def _entry(eligible_ns: int) -> Round74EventRunPartitionEntry:
@@ -703,3 +730,312 @@ def test_segmented_replay_uses_only_the_audited_epoch_iterator(
                 target_assembly=_TargetAssembly(),
             )
         )
+
+
+def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scheduled = (
+        (0, "training"),
+        (514, "tuning"),
+        (557, "tuning"),
+        (579, "tuning"),
+        (600, "tuning"),
+        (617, "test"),
+    )
+    entries: list[Round74EventRunPartitionEntry] = []
+    bindings: dict[str, Round74SegmentedCohortRunBinding] = {}
+    for index, (ordinal, role) in enumerate(scheduled):
+        run_id = f"{index + 1:032x}"
+        report_sha256 = f"{index + 1:064x}"
+        start = _START + index * 2_000_000_000_000
+        entry = Round74EventRunPartitionEntry(
+            run_id=run_id,
+            role=role,
+            capture_report_sha256=report_sha256,
+            capture_start_wall_ns=start,
+            capture_end_wall_ns=start + 1_300_000_000_000,
+            eligible_anchor_start_wall_ns=start,
+            eligible_anchor_end_wall_ns=start + 900_000_000_000,
+        )
+        entries.append(entry)
+        if role != "test":
+            binding = Round74SegmentedCohortRunBinding(
+                plan_sha256="a" * 64,
+                slot_ordinal=ordinal,
+                role=role,
+                run_id=run_id,
+                report_sha256=report_sha256,
+                supervisor_sha256="b" * 64,
+                fresh_frame_audit_sha256="c" * 64,
+                fresh_epoch_audit_sha256="d" * 64,
+                terminal_status="completed",
+                terminal_error="",
+                capture_start_wall_ns=start,
+                capture_end_wall_ns=start + 1_300_000_000_000,
+                feature_ready_wall_ns=start,
+                usable_end_wall_ns=start + 1_300_000_000_000,
+                message_count=1,
+                frame_count=1,
+                compressed_payload_bytes=1,
+            )
+            binding.validate()
+            bindings[run_id] = binding
+    partition = Round74EventRunPartition(
+        entries=tuple(entries),
+        cohort_plan_sha256="a" * 64,
+    )
+    partition.validate()
+    training_run_id = entries[0].run_id
+    tuning_run_ids = tuple(entry.run_id for entry in entries[1:5])
+    training_split = SimpleNamespace(
+        parent_partition_sha256=partition.partition_sha256,
+        cohort_plan_sha256=partition.cohort_plan_sha256,
+        optimization_run_ids=(training_run_id,),
+        purged_run_ids=(),
+        early_stopping_run_ids=(),
+        split_sha256="e" * 64,
+        validate=lambda: None,
+    )
+    tuning_subpartition = SimpleNamespace(
+        parent_partition_sha256=partition.partition_sha256,
+        cohort_plan_sha256=partition.cohort_plan_sha256,
+        model_selection_run_ids=(tuning_run_ids[0],),
+        calibration_run_ids=(tuning_run_ids[1],),
+        policy_selection_run_ids=(tuning_run_ids[2],),
+        ai_qualification_run_ids=(tuning_run_ids[3],),
+        subpartition_sha256="f" * 64,
+        validate=lambda: None,
+    )
+    scaler_values = np.zeros(
+        (3, len(ROUND74_EVENT_FEATURE_NAMES)),
+        dtype=np.float64,
+    )
+    scaler_values[:, 0] = 1.0
+    scaler_values[:, 5] = 1.0
+    raw_scaler = fit_round74_event_feature_scaler(
+        scaler_values,
+        partition_role="training",
+    )
+    scaler = replace(
+        raw_scaler,
+        fit_source_scope="segmented_optimization_training_runs",
+        fit_source_run_ids=(training_run_id,),
+        fit_source_partition_sha256=partition.partition_sha256,
+        fit_source_selection_sha256=training_split.split_sha256,
+    )
+    batches = {
+        entry.run_id: _PreparedBatch(
+            role=entry.role,
+            run_id=(entry.run_id,),
+            partition_sha256=partition.partition_sha256,
+            scaler_sha256=scaler.scaler_sha256,
+            batch_sha256=f"{index + 100:064x}",
+            decision_wall_ns=np.asarray(
+                [_START + index * 2_000_000_000_000],
+                dtype=np.int64,
+            ),
+        )
+        for index, entry in enumerate(entries[:5])
+    }
+    assemblies = {
+        run_id: object.__new__(Round74SourceTargetAssembly)
+        for run_id in bindings
+    }
+    label_passes: list[tuple[str, tuple[str, ...]]] = []
+
+    monkeypatch.setattr(
+        development_subject,
+        "build_round74_segmented_training_split",
+        lambda _partition, *, bindings_by_run_id: (
+            training_split
+            if tuple(bindings_by_run_id) == (training_run_id,)
+            else pytest.fail("training binding scope differs")
+        ),
+    )
+    monkeypatch.setattr(
+        development_subject,
+        "build_round74_segmented_tuning_subpartition",
+        lambda _partition, *, bindings_by_run_id: (
+            tuning_subpartition
+            if tuple(bindings_by_run_id) == tuning_run_ids
+            else pytest.fail("tuning binding scope differs")
+        ),
+    )
+    monkeypatch.setattr(
+        development_subject,
+        "fit_round74_segmented_optimization_feature_scaler",
+        lambda *_args, **_kwargs: scaler,
+    )
+
+    def assemble(
+        _store: object,
+        *,
+        role: str,
+        bindings_by_run_id: dict[str, Round74SegmentedCohortRunBinding],
+        **_kwargs: object,
+    ) -> tuple[_PreparedBatch, ...]:
+        run_ids = tuple(bindings_by_run_id)
+        label_passes.append((role, run_ids))
+        return tuple(batches[run_id] for run_id in run_ids)
+
+    monkeypatch.setattr(
+        development_subject,
+        "assemble_round74_segmented_role_batches",
+        assemble,
+    )
+    result = development_subject.prepare_round74_segmented_development(
+        object(),
+        partition=partition,
+        bindings_by_run_id=bindings,
+        target_assembly_by_run_id=assemblies,
+    )
+
+    result.validate()
+    assert label_passes == [
+        ("training", (training_run_id,)),
+        ("tuning", tuning_run_ids),
+    ]
+    assert result.tuning_roles.ai_qualification_batches == (
+        batches[tuning_run_ids[3]],
+    )
+    assert result.as_dict()["source_replay_passes"]["sealed_test_runs"] == 0
+
+    trained_policy = object()
+    training_calls: list[dict[str, object]] = []
+
+    def train(
+        prepared: object,
+        tuning_roles: object,
+        **kwargs: object,
+    ) -> object:
+        assert prepared is result.prepared
+        assert tuning_roles is result.tuning_roles
+        training_calls.append(kwargs)
+        return trained_policy
+
+    monkeypatch.setattr(
+        development_subject,
+        "train_calibrate_and_select_round74_development_policy",
+        train,
+    )
+    assert (
+        development_subject.train_round74_segmented_development_policy(
+            result,
+            store=object(),
+            partition=partition,
+            target_assembly_by_run_id=assemblies,
+            output_directory="unused",
+        )
+        is trained_policy
+    )
+    assert len(training_calls) == 1
+    assert training_calls[0]["config"].execution_mode == "segmented_cohort"
+    assert tuple(
+        training_calls[0]["execution_target_assembly_by_run_id"]
+    ) == tuning_subpartition.policy_selection_run_ids
+    with pytest.raises(
+        ValueError,
+        match="segmented development requires segmented mode",
+    ):
+        development_subject.train_round74_segmented_development_policy(
+            result,
+            store=object(),
+            partition=partition,
+            target_assembly_by_run_id=assemblies,
+            output_directory="unused",
+            config=Round74EventTrainingConfig(execution_mode="cohort"),
+        )
+
+    policies = tuple(
+        SimpleNamespace(profile=profile, selection_sha256=f"{index + 20:064x}")
+        for index, profile in enumerate(("conservative", "regular", "aggressive"))
+    )
+    bundle = SimpleNamespace(
+        action_policies=policies,
+        probability_calibration=object(),
+        pretest_policy_sha256="9" * 64,
+        validate=lambda: None,
+    )
+    policy = SimpleNamespace(
+        bundle=bundle,
+        bundle_sha256="8" * 64,
+        pretest_policy=SimpleNamespace(policy_path="policy.json"),
+    )
+    population = SimpleNamespace(
+        run_ids=tuning_subpartition.ai_qualification_run_ids,
+        validate=lambda: None,
+    )
+    replay_provider_calls: list[dict[str, object]] = []
+    qualification_calls: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        development_subject,
+        "train_round74_segmented_development_policy",
+        lambda *_args, **_kwargs: policy,
+    )
+    monkeypatch.setattr(
+        development_subject,
+        "build_round74_segmented_ai_qualification_population",
+        lambda selected: (
+            population
+            if selected is result.tuning_subpartition
+            else pytest.fail("AI population source differs")
+        ),
+    )
+
+    def replay_provider(**kwargs: object) -> object:
+        replay_provider_calls.append(kwargs)
+        return object()
+
+    monkeypatch.setattr(
+        development_subject,
+        "Round74AIQualificationStoreExecutionReplayProvider",
+        replay_provider,
+    )
+
+    def qualify(_roles: object, **kwargs: object) -> object:
+        qualification_calls.append(kwargs)
+        selected = kwargs["action_selection"]
+        return SimpleNamespace(
+            inference=SimpleNamespace(
+                action_selection_sha256=selected.selection_sha256,
+            ),
+            qualification=SimpleNamespace(
+                profile=selected.profile,
+                qualification_sha256=f"{len(qualification_calls) + 30:064x}",
+                qualification_passed=True,
+            ),
+            validate=lambda: None,
+        )
+
+    monkeypatch.setattr(
+        development_subject,
+        "run_round74_prepared_ai_pretest_qualification",
+        qualify,
+    )
+    qualified = development_subject.train_and_qualify_round74_segmented_development(
+        result,
+        store=object(),
+        partition=partition,
+        target_assembly_by_run_id=assemblies,
+        output_directory="unused",
+        qualification_output_directory="qualification",
+        same_entry_latency_budget_ns=1,
+    )
+
+    qualified.validate()
+    assert tuple(
+        profile for profile, _qualification in qualified.qualification_by_profile
+    ) == ("conservative", "regular", "aggressive")
+    assert len(replay_provider_calls) == 1
+    assert tuple(replay_provider_calls[0]["assembly_by_run_id"]) == (
+        tuning_subpartition.ai_qualification_run_ids
+    )
+    assert [
+        kwargs["qualification_output_path"].name
+        for kwargs in qualification_calls
+    ] == [
+        "round74-ai-pretest-qualification-conservative.json",
+        "round74-ai-pretest-qualification-regular.json",
+        "round74-ai-pretest-qualification-aggressive.json",
+    ]
