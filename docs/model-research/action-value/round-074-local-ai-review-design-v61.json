@@ -1,0 +1,108 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v61",
+  "artifact_kind": "sealed_ai_subgroup_qualification_delta",
+  "created_utc": "2026-07-28T10:47:17Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v60.json",
+    "file_sha256": "e07e0343dc07008465b657034c9cd22b2a7fd6b04458923e79c5126eb883d428",
+    "design_sha256": "9fe21d50e8f7b36fcd6b354c6e8e6e31e618af50543a49e37e5ff1cd9dbb9d1d",
+    "unchanged": true
+  },
+  "implementation_git_commit": "e1be9ac2ecaca9fba96edd6b01b6e7194145d717",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes_with_crlf_normalized_to_lf",
+    "sealed_evaluation": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "e036c99794c2b097fab14531f5408136cd877ebeec6f12d690a718ac27e65e37",
+      "schema_version": "round-074-sealed-evaluation-v13"
+    },
+    "focused_tests": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "680fe0b58bdce18d7f7c30c605d7c26e5ee95cb7cdb14bafc48066d545881184"
+    }
+  },
+  "sealed_qualification_contract": {
+    "test_access": "one_use_reserved_before_target_access",
+    "baseline": "same_frozen_ml_action_trace",
+    "execution_basis": "exact_delayed_level_2_replay",
+    "ai_action_authority": "retain_reduce_or_veto_only",
+    "ai_model_count": 2,
+    "expected_test_capture_runs": 24,
+    "assets": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "ai_review_horizons_seconds": [
+      30,
+      300
+    ],
+    "paired_run_panel_includes_every_expected_run": true,
+    "zero_observation_runs_retained": true,
+    "paired_symbol_horizon_panel_includes_every_observed_group": true,
+    "panel_counts_and_totals_reconcile_to_baseline_and_ai_metrics": true,
+    "aggregate_after_cost_net_uplift_required": true,
+    "two_model_bonferroni_positive_run_block_lower_bound_required": true,
+    "every_capture_run_delta_net_bps_minimum": -1e-12,
+    "every_observed_symbol_horizon_delta_net_bps_minimum": -1e-12,
+    "maximum_drawdown_noninferiority_required": true,
+    "missing_duplicate_nonfinite_or_inconsistent_evidence_fails_closed": true,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "failure_semantics": {
+    "positive_aggregate_may_not_offset_capture_run_harm": true,
+    "positive_familywise_bound_may_not_offset_capture_run_harm": true,
+    "positive_aggregate_may_not_offset_asset_horizon_harm": true,
+    "financial_gate_pass_may_not_offset_subgroup_harm": true,
+    "noninferiority_does_not_establish_edge_or_profitability": true
+  },
+  "research_basis": [
+    {
+      "title": "A Benchmark for Deep Learning in Limit Order Books",
+      "url": "https://openreview.net/forum?id=MhD9rLeU31",
+      "use": "asset-transfer gaps motivate explicit asset-conditional qualification"
+    },
+    {
+      "title": "Diagnosing Model Performance Under Distribution Shift",
+      "url": "https://arxiv.org/abs/2303.02011",
+      "use": "conditional degradation must not be hidden by aggregate metrics"
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "use": "sealed one-use evidence remains isolated from development selection"
+    }
+  ],
+  "verification": {
+    "focused_sealed_evaluation_tests_passed": 14,
+    "connected_contract_tests_passed": 57,
+    "adversarial_aggregate_uplift_positive": true,
+    "adversarial_two_model_familywise_lower_bound_positive": true,
+    "adversarial_financial_gate_passed": true,
+    "adversarial_harmed_sol_runs": 8,
+    "adversarial_harmed_sol_30_second_group_rejected": true,
+    "corrupted_run_delta_rejected": true,
+    "ruff_and_format_checks_passed": true,
+    "full_suite_executed": false,
+    "real_sealed_test_accessed": false
+  },
+  "evidence_limits": {
+    "test_evidence_is_synthetic": true,
+    "prospective_cohort_used": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_model_evaluated_for_market_uplift": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "design_sha256": "8d00638877fcf86caf8b7e65f25b499e5352f3dd823de8978807a31e3497c9a2"
+}
