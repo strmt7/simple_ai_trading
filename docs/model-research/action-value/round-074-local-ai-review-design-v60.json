@@ -1,0 +1,100 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v60",
+  "artifact_kind": "paired_development_noninferiority_delta",
+  "created_utc": "2026-07-28T10:38:55Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v59.json",
+    "file_sha256": "9e5251b1d6c0de2f1f26a5a914f87af15f560ea3b7f1f521ca260cb44f13fea2",
+    "unchanged": true
+  },
+  "implementation_git_commit": "9fe18a729bb9123e8c702dbc14a567c524826f17",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes_with_crlf_normalized_to_lf",
+    "ai_uplift": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+      "sha256": "ce45b6623a3b1500c172e73ec5305769f28cd17b36af1575431b3658aeaab8f9",
+      "schema_version": "round-074-ai-uplift-development-v9"
+    },
+    "focused_tests": {
+      "path": "tests/test_impact_absorption_ai_uplift.py",
+      "sha256": "bc6f76315eceec80d6bd1432f7233a4d03a9162515dfc9f0281f9231349b9adb"
+    }
+  },
+  "development_evaluation_contract": {
+    "decision_authority": "diagnostic_only",
+    "data_scope": "policy_selection_tuning_runs_only",
+    "expected_capture_run_count": 6,
+    "assets": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "ai_review_horizons_seconds": [
+      30,
+      300
+    ],
+    "pairing": "same_selected_action_and_exact_delayed_level_2_execution_replay",
+    "paired_run_evidence_retained": true,
+    "paired_observed_symbol_horizon_evidence_retained": true,
+    "missing_or_duplicate_paired_evidence_rejected": true,
+    "paired_evidence_totals_reconciled_to_aggregate_metrics": true,
+    "aggregate_after_cost_net_uplift_required": true,
+    "every_capture_run_delta_net_bps_minimum": -1e-12,
+    "every_observed_symbol_horizon_delta_net_bps_minimum": -1e-12,
+    "sealed_test_access_permitted": false,
+    "model_selection_authority": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "failure_semantics": {
+    "aggregate_gain_may_not_offset_capture_run_harm": true,
+    "aggregate_gain_may_not_offset_asset_horizon_harm": true,
+    "nonfinite_or_inconsistent_subgroup_evidence_fails_closed": true,
+    "no_profitability_or_edge_claim_from_noninferiority": true
+  },
+  "research_basis": [
+    {
+      "title": "A Benchmark for Deep Learning in Limit Order Books",
+      "url": "https://openreview.net/forum?id=MhD9rLeU31",
+      "use": "asset-transfer results motivate explicit asset-conditional evaluation"
+    },
+    {
+      "title": "Diagnosing Model Performance Under Distribution Shift",
+      "url": "https://arxiv.org/abs/2303.02011",
+      "use": "aggregate performance can mask conditional degradation"
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "use": "development evidence remains separated from sealed evaluation"
+    }
+  ],
+  "verification": {
+    "focused_ai_uplift_tests_passed": 10,
+    "connected_contract_tests_passed": 45,
+    "adversarial_aggregate_positive_but_run_harmed_rejected": true,
+    "adversarial_aggregate_positive_but_asset_horizon_harmed_rejected": true,
+    "corrupted_subgroup_evidence_rejected": true,
+    "ruff_and_format_checks_passed": true,
+    "full_suite_executed": false,
+    "sealed_test_accessed": false
+  },
+  "evidence_limits": {
+    "test_evidence_is_synthetic": true,
+    "prospective_cohort_used": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_model_evaluated_for_market_uplift": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "design_sha256": "9fe21d50e8f7b36fcd6b354c6e8e6e31e618af50543a49e37e5ff1cd9dbb9d1d"
+}
