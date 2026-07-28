@@ -1,0 +1,140 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v87",
+  "created_at_utc": "2026-07-28T13:44:50Z",
+  "implementation_git_commit": "324f4ae5a1974f7e9bd71ad63ed0c1d9749dbd67",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v86.json",
+    "file_sha256": "09ee40ce794f5381f39e1de2ebf030b4a3809121dac8d837b6b895ee848f3d42",
+    "design_sha256": "510884bedc764a48516eefddd8383b02b6a3f71c0a47ddf701b7ba492f23189b",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "953f37e97b34a2fe914cecf4e97861ec4f3dfd456885096f733c81624388a471",
+      "training_schema_version": "round-074-event-training-v22",
+      "pretest_policy_schema_version": "round-074-event-pretest-policy-v21",
+      "feature_view_schema_version": "round-074-feature-view-v1"
+    },
+    "tests": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "9b624fc973eae1f2efca15cebdf13913dd948a9a54459631589261ffe30f2e7e"
+    },
+    "event_feature_contract": {
+      "sequence_schema_version": "round-074-causal-event-sequence-v5",
+      "feature_count": 75,
+      "feature_names_sha256": "1487503fff95883204aa0a34a8141a126d72300f85cc0d72d005144a5f2d225e",
+      "exchange_clock_feature_count": 9,
+      "exchange_clock_feature_names_sha256": "0af2b7beda41a2829e1d67ae7291b607a500adfd354701587ce233cf62e6203b"
+    }
+  },
+  "declared_delta": {
+    "v86_feature_ablation_requirement_implemented": true,
+    "candidate_architecture_family_changed": false,
+    "target_contract_changed": false,
+    "financial_replay_contract_changed": false,
+    "risk_policy_changed": false,
+    "model_tensor_key_contract_changed": false,
+    "active_v3_campaign_main_branch_contract_changed": false
+  },
+  "feature_view_contract": {
+    "ordered_views": [
+      "clock_neutral",
+      "full"
+    ],
+    "clock_neutral_masked_features": [
+      "exchange_clock_60s_opening_10s",
+      "exchange_clock_300s_opening_10s",
+      "exchange_clock_900s_opening_10s",
+      "exchange_clock_60s_phase_sine",
+      "exchange_clock_60s_phase_cosine",
+      "exchange_clock_300s_phase_sine",
+      "exchange_clock_300s_phase_cosine",
+      "exchange_clock_900s_phase_sine",
+      "exchange_clock_900s_phase_cosine"
+    ],
+    "other_feature_count_preserved": 66,
+    "mask_location": "nonpersistent model forward-pre-hook",
+    "mask_bound_to_reloaded_ensemble": true,
+    "mask_tensor_serialized_as_model_parameter": false,
+    "model_parameter_count_changed_by_view": false,
+    "training_calibration_sealed_test_and_inference_parity": true,
+    "host_wall_clock_used": false,
+    "future_event_or_target_accessed": false
+  },
+  "selection_contract": {
+    "stage_1": {
+      "name": "architecture_selection",
+      "feature_view": "clock_neutral",
+      "candidate_order": [
+        "event_pooling_linear",
+        "event_pooling_mlp",
+        "causal_event_tcn",
+        "causal_event_attention"
+      ],
+      "paired_capture_run_gate": true,
+      "run_symbol_horizon_subgroup_gate": true,
+      "test_targets_used": false
+    },
+    "stage_2": {
+      "name": "exchange_clock_ablation",
+      "architecture": "stage_1_winner_frozen",
+      "seeds_and_training_policy_matched": true,
+      "incumbent": "clock_neutral",
+      "challenger": "full",
+      "promotion_requires_complete_model_selection_capture_run_panel": true,
+      "promotion_requires_strict_mean_proper_loss_improvement": true,
+      "promotion_requires_every_paired_run_noninferior": true,
+      "promotion_requires_every_run_symbol_horizon_subgroup_noninferior": true,
+      "incomplete_panel_outcome": "clock_neutral",
+      "gate_failure_outcome": "clock_neutral",
+      "test_targets_used": false,
+      "backtest_metric_used": false
+    },
+    "architecture_and_feature_view_recorded_separately": true,
+    "selected_feature_view_hash_bound_in_pretest_policy": true,
+    "selected_feature_view_recomputed_on_policy_load": true,
+    "recorded_winner_trusted_without_recomputation": false,
+    "statistical_independence_or_significance_claim": false
+  },
+  "verification": {
+    "focused_training_contract_tests_passed": 23,
+    "connected_training_operator_representation_and_ledger_tests_passed": 50,
+    "exact_nine_feature_mask_test_passed": true,
+    "non_clock_feature_preservation_test_passed": true,
+    "incomplete_panel_fail_closed_test_passed": true,
+    "subgroup_degradation_rejection_test_passed": true,
+    "policy_reload_feature_view_binding_test_passed": true,
+    "feature_view_tamper_rejection_test_passed": true,
+    "ruff_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false,
+    "directml_training_rerun": false,
+    "real_cohort_training_performed": false,
+    "financial_backtest_performed": false
+  },
+  "evidence_boundary": {
+    "implementation_and_contract_tests_only": true,
+    "real_prospective_capture_continues_under_frozen_v4_main_branch": true,
+    "clock_features_selected_on_real_data": false,
+    "clock_features_improve_predictive_accuracy_claim": false,
+    "clock_features_improve_profitability_claim": false,
+    "drawdown_inference_permitted": false,
+    "paper_effect_survives_execution_costs_claim": false,
+    "ai_model_evaluated": false,
+    "ai_uplift_inference_permitted": false
+  },
+  "authority": {
+    "causal_feature_ablation_implemented": true,
+    "pretest_policy_reload_enforcement": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "64e17fd425c6d4db9c9391672473492129267cfc8112e670a92fbd177b6ed453"
+}
