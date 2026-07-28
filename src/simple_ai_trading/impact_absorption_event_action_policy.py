@@ -24,6 +24,7 @@ from .impact_absorption_event_calibration import (
     Round74ProbabilityCalibration,
     Round74TuningSubpartition,
     apply_round74_probability_calibration,
+    apply_round74_risk_quantile_calibration,
 )
 from .impact_absorption_event_dataset import (
     ROUND74_EVENT_DATASET_SCHEMA_VERSION,
@@ -53,7 +54,7 @@ from .impact_absorption_event_targets import (
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v5"
 ROUND74_ACTION_EXECUTION_PANEL_SCHEMA_VERSION = "round-074-action-execution-panel-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v11"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v12"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
@@ -670,10 +671,16 @@ def derive_round74_action_candidates(
         adverse_selection_logits=model_output.adverse_selection_logits,
         regime_unpredictability_logits=(model_output.regime_unpredictability_logits),
     )
-    payoff = _tensor_array(model_output.payoff_quantiles_bps).astype(np.float64)
-    mae = _tensor_array(model_output.maximum_adverse_excursion_quantiles_bps).astype(
-        np.float64
-    )
+    calibrated_payoff = model_output.payoff_quantiles_bps
+    calibrated_mae = model_output.maximum_adverse_excursion_quantiles_bps
+    if probability_calibration.risk_quantiles is not None:
+        calibrated_payoff, calibrated_mae = apply_round74_risk_quantile_calibration(
+            probability_calibration.risk_quantiles,
+            payoff_quantiles_bps=calibrated_payoff,
+            maximum_adverse_excursion_quantiles_bps=calibrated_mae,
+        )
+    payoff = _tensor_array(calibrated_payoff).astype(np.float64)
+    mae = _tensor_array(calibrated_mae).astype(np.float64)
     positive_values = _tensor_array(positive).astype(np.float64)
     adverse_values = _tensor_array(adverse).astype(np.float64)
     unpredictable_values = _tensor_array(unpredictable).astype(np.float64)

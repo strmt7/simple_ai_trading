@@ -6,15 +6,10 @@ from pathlib import Path
 import subprocess  # nosec B404
 
 from simple_ai_trading.impact_absorption_event_action_policy import (
-    ROUND74_ACTION_POLICY_SCHEMA_VERSION,
     ROUND74_ACTION_PROFILES,
 )
 from simple_ai_trading.round74_delayed_execution_panel import (
     ROUND74_DELAYED_EXECUTION_REPLAY_SCHEMA_VERSION,
-)
-from simple_ai_trading.round74_event_development_operator import (
-    ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION,
-    ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION,
 )
 from simple_ai_trading.round74_online_decision_latency import (
     ROUND74_ONLINE_DECISION_LATENCY_SCHEMA_VERSION,
@@ -71,9 +66,7 @@ def test_round74_v70_binds_exact_profile_delayed_policy_economics() -> None:
             commit,
             source[f"{name}_path"],
         )
-    assert source["action_policy_schema_version"] == (
-        ROUND74_ACTION_POLICY_SCHEMA_VERSION
-    )
+    assert source["action_policy_schema_version"] == "round-074-action-policy-v8"
     assert source["online_decision_latency_schema_version"] == (
         ROUND74_ONLINE_DECISION_LATENCY_SCHEMA_VERSION
     )
@@ -81,10 +74,10 @@ def test_round74_v70_binds_exact_profile_delayed_policy_economics() -> None:
         ROUND74_DELAYED_EXECUTION_REPLAY_SCHEMA_VERSION
     )
     assert source["development_operator_schema_version"] == (
-        ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION
+        "round-074-development-policy-operator-v2"
     )
     assert source["development_bundle_schema_version"] == (
-        ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION
+        "round-074-development-policy-bundle-v3"
     )
 
     replay = design["exact_delayed_execution_contract"]

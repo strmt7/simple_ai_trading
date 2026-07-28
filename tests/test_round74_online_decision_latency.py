@@ -15,6 +15,7 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     build_round74_action_inference_context,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
+    ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     Round74ProbabilityCalibration,
     Round74TemperatureFit,
     Round74TuningSubpartition,
@@ -74,9 +75,7 @@ def _evidence() -> Round74OnlineDecisionLatencyEvidence:
         source_context_sha256=("6" * 64, "7" * 64),
         source_feature_row_sha256=tuple(
             f"{index + 1000:064x}"
-            for index in range(
-                ROUND74_ONLINE_DECISION_LATENCY_MEASUREMENTS_PER_PROFILE
-            )
+            for index in range(ROUND74_ONLINE_DECISION_LATENCY_MEASUREMENTS_PER_PROFILE)
         ),
         backend_requested="auto",
         backend_kind="cpu",
@@ -89,12 +88,8 @@ def _evidence() -> Round74OnlineDecisionLatencyEvidence:
             _profile(profile, index * 1_000)
             for index, profile in enumerate(ROUND74_ACTION_PROFILES)
         ),
-        decision_latency_module_sha256=_sha(
-            "round74_online_decision_latency.py"
-        ),
-        action_policy_module_sha256=_sha(
-            "impact_absorption_event_action_policy.py"
-        ),
+        decision_latency_module_sha256=_sha("round74_online_decision_latency.py"),
+        action_policy_module_sha256=_sha("impact_absorption_event_action_policy.py"),
         scaler_module_sha256=_sha("impact_absorption_event_scaling.py"),
     )
     result.validate()
@@ -146,9 +141,7 @@ def _context(scaler: Round74EventFeatureScaler):
         scaler_sha256=scaler.scaler_sha256,
         run_id=("a" * 32,),
         symbol=("BTCUSDT",),
-        decision_monotonic_ns=_readonly(
-            np.asarray([1_000_000_000], dtype=np.int64)
-        ),
+        decision_monotonic_ns=_readonly(np.asarray([1_000_000_000], dtype=np.int64)),
         decision_wall_ns=_readonly(
             np.asarray([1_800_000_000_000_000_000], dtype=np.int64)
         ),
@@ -171,9 +164,7 @@ def _context(scaler: Round74EventFeatureScaler):
             np.ones(action_shape, dtype=np.float32)
         ),
         adverse_selection=_readonly(np.zeros(action_shape, dtype=np.float32)),
-        regime_unpredictability=_readonly(
-            np.zeros(regime_shape, dtype=np.float32)
-        ),
+        regime_unpredictability=_readonly(np.zeros(regime_shape, dtype=np.float32)),
         action_eligibility=_readonly(np.ones(action_shape, dtype=np.float32)),
         regime_unpredictability_eligibility=_readonly(
             np.ones(regime_shape, dtype=np.float32)
@@ -219,6 +210,7 @@ def _calibration() -> Round74ProbabilityCalibration:
         regime_unpredictability=fit,
         backend_kind="cpu",
         backend_device="cpu",
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     )
     result.validate()
     return result
@@ -285,10 +277,7 @@ def test_round74_decision_latency_evidence_round_trips_and_rejects_drift() -> No
     evidence = _evidence()
     payload = evidence.as_dict()
 
-    assert (
-        Round74OnlineDecisionLatencyEvidence.from_dict(payload).as_dict()
-        == payload
-    )
+    assert Round74OnlineDecisionLatencyEvidence.from_dict(payload).as_dict() == payload
     assert payload["authority"] == {
         "component_latency_measured": True,
         "end_to_end_tick_to_trade_latency_measured": False,
@@ -357,6 +346,7 @@ def test_round74_decision_latency_benchmarks_real_target_free_path(
         ROUND74_ACTION_PROFILES
     )
     assert all(len(profile.latency_ns) == 3 for profile in evidence.profiles)
-    assert evidence.as_dict()["measurement_contract"][
-        "target_fields_or_outcomes_consumed"
-    ] is False
+    assert (
+        evidence.as_dict()["measurement_contract"]["target_fields_or_outcomes_consumed"]
+        is False
+    )

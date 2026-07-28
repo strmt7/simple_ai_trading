@@ -8,6 +8,8 @@ import torch
 
 from .impact_absorption_event_calibration import (
     Round74ProbabilityCalibration,
+    apply_round74_probability_calibration,
+    apply_round74_risk_quantile_calibration,
 )
 from .impact_absorption_ai_protocol import (
     ROUND74_AI_REVIEW_HORIZONS_SECONDS,
@@ -25,7 +27,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v4"
+ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v5"
 ROUND74_AI_RECENT_BLOCK_EVENTS = 16
 _ASSET_FEATURE_INDICES = tuple(
     ROUND74_EVENT_FEATURE_NAMES.index(name)
@@ -43,10 +45,9 @@ _TEMPORAL_FEATURE_INDICES = tuple(
 
 def _finite_probability(
     value: torch.Tensor,
-    temperature: float,
     label: str,
 ) -> float:
-    selected = float(torch.sigmoid(value.detach() / float(temperature)).item())
+    selected = float(value.detach().item())
     if not math.isfinite(selected) or not 0.0 <= selected <= 1.0:
         raise ValueError(f"Round 74 AI bridge {label} differs")
     return selected
@@ -179,9 +180,23 @@ def build_round74_ai_review_request(
         )
         for index in range(ROUND74_AI_TEMPORAL_BLOCK_COUNT)
     )
+    positive, adverse, unpredictable = apply_round74_probability_calibration(
+        probability_calibration,
+        positive_payoff_logits=model_output.positive_payoff_logits,
+        adverse_selection_logits=model_output.adverse_selection_logits,
+        regime_unpredictability_logits=(model_output.regime_unpredictability_logits),
+    )
+    calibrated_payoff = model_output.payoff_quantiles_bps
+    calibrated_mae = model_output.maximum_adverse_excursion_quantiles_bps
+    if probability_calibration.risk_quantiles is not None:
+        calibrated_payoff, calibrated_mae = apply_round74_risk_quantile_calibration(
+            probability_calibration.risk_quantiles,
+            payoff_quantiles_bps=calibrated_payoff,
+            maximum_adverse_excursion_quantiles_bps=calibrated_mae,
+        )
     quantile_count = int(model_output.payoff_quantiles_bps.shape[-1])
     payoff_quantiles = _finite_tuple(
-        model_output.payoff_quantiles_bps[
+        calibrated_payoff[
             row_index,
             horizon_index,
             side_index,
@@ -190,7 +205,7 @@ def build_round74_ai_review_request(
         label="payoff quantiles",
     )
     adverse_excursion_quantiles = _finite_tuple(
-        model_output.maximum_adverse_excursion_quantiles_bps[
+        calibrated_mae[
             row_index,
             horizon_index,
             side_index,
@@ -218,29 +233,26 @@ def build_round74_ai_review_request(
         payoff_quantiles_bps=payoff_quantiles,
         maximum_adverse_excursion_quantiles_bps=(adverse_excursion_quantiles),
         positive_payoff_probability=_finite_probability(
-            model_output.positive_payoff_logits[
+            positive[
                 row_index,
                 horizon_index,
                 side_index,
             ],
-            probability_calibration.positive_payoff.temperature,
             "positive-payoff probability",
         ),
         adverse_selection_probability=_finite_probability(
-            model_output.adverse_selection_logits[
+            adverse[
                 row_index,
                 horizon_index,
                 side_index,
             ],
-            probability_calibration.adverse_selection.temperature,
             "adverse-selection probability",
         ),
         regime_unpredictability_probability=_finite_probability(
-            model_output.regime_unpredictability_logits[
+            unpredictable[
                 row_index,
                 horizon_index,
             ],
-            probability_calibration.regime_unpredictability.temperature,
             "regime-unpredictability probability",
         ),
     )

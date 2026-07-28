@@ -12,7 +12,10 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_TEMPORAL_FEATURE_NAMES,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
+    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+    ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     Round74ProbabilityCalibration,
+    Round74RiskQuantileCalibration,
     Round74TemperatureFit,
 )
 from simple_ai_trading.impact_absorption_event_model import (
@@ -117,6 +120,45 @@ def _calibration() -> Round74ProbabilityCalibration:
         regime_unpredictability=_fit(4.0),
         backend_kind="cpu",
         backend_device="test",
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
+    )
+
+
+def _risk_calibration() -> Round74ProbabilityCalibration:
+    calibration = _calibration()
+    horizons = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    sides = len(ROUND74_EVENT_PAYOFF_SIDES)
+    lower_offsets = tuple(
+        tuple((1.0, 2.0) for _side in range(sides)) for _horizon in range(horizons)
+    )
+    matrices = tuple(
+        tuple(1.0 for _side in range(sides)) for _horizon in range(horizons)
+    )
+    counts = tuple(tuple(10 for _side in range(sides)) for _horizon in range(horizons))
+    lower_coverage_before = tuple(
+        tuple((0.1, 0.25) for _side in range(sides)) for _horizon in range(horizons)
+    )
+    lower_coverage_after = tuple(
+        tuple((0.9, 0.75) for _side in range(sides)) for _horizon in range(horizons)
+    )
+    return replace(
+        calibration,
+        risk_quantiles=Round74RiskQuantileCalibration(
+            payoff_lower_offsets_bps=lower_offsets,
+            mae_upper_offsets_bps=matrices,
+            eligible_observations=counts,
+            payoff_lower_empirical_coverage_before=lower_coverage_before,
+            payoff_lower_empirical_coverage_after=lower_coverage_after,
+            mae_upper_empirical_coverage_before=tuple(
+                tuple(0.9 for _side in range(sides)) for _horizon in range(horizons)
+            ),
+            mae_upper_empirical_coverage_after=tuple(
+                tuple(0.9 for _side in range(sides)) for _horizon in range(horizons)
+            ),
+            calibration_runs=6,
+            optimization_population="capture_run",
+        ),
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     )
 
 
@@ -189,6 +231,21 @@ def test_bridge_does_not_require_realized_target_arrays() -> None:
     assert "realized" not in str(payload)
     assert "target_context_sha256" not in payload
     assert payload["future_outcome_exposed_to_ai"] is False
+
+
+def test_bridge_uses_the_same_calibrated_risk_tails_as_execution() -> None:
+    calibration = _risk_calibration()
+    request = _build(probability_calibration=calibration)
+
+    assert request.payoff_quantiles_bps == (-6.0, -3.0, 2.0, 4.0, 7.0)
+    assert request.maximum_adverse_excursion_quantiles_bps == (
+        1.0,
+        2.0,
+        3.0,
+        5.0,
+        9.0,
+    )
+    assert request.probability_calibration_sha256 == (calibration.calibration_sha256)
 
 
 @pytest.mark.parametrize(

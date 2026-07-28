@@ -25,7 +25,10 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     _equal_run_score_threshold,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
+    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+    ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     Round74ProbabilityCalibration,
+    Round74RiskQuantileCalibration,
     Round74TemperatureFit,
     Round74TuningSubpartition,
 )
@@ -103,6 +106,40 @@ def _calibration() -> Round74ProbabilityCalibration:
         regime_unpredictability=fit,
         backend_kind="cpu",
         backend_device="test",
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
+    )
+
+
+def _risk_quantile_calibration() -> Round74RiskQuantileCalibration:
+    horizons = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    sides = len(ROUND74_EVENT_PAYOFF_SIDES)
+    lower_offsets = tuple(
+        tuple((100.0, 100.0) for _side in range(sides)) for _horizon in range(horizons)
+    )
+    coverage_before = tuple(
+        tuple((0.5, 0.5) for _side in range(sides)) for _horizon in range(horizons)
+    )
+    coverage_after = tuple(
+        tuple((1.0, 1.0) for _side in range(sides)) for _horizon in range(horizons)
+    )
+    return Round74RiskQuantileCalibration(
+        payoff_lower_offsets_bps=lower_offsets,
+        mae_upper_offsets_bps=tuple(
+            tuple(100.0 for _side in range(sides)) for _horizon in range(horizons)
+        ),
+        eligible_observations=tuple(
+            tuple(10 for _side in range(sides)) for _horizon in range(horizons)
+        ),
+        payoff_lower_empirical_coverage_before=coverage_before,
+        payoff_lower_empirical_coverage_after=coverage_after,
+        mae_upper_empirical_coverage_before=tuple(
+            tuple(0.5 for _side in range(sides)) for _horizon in range(horizons)
+        ),
+        mae_upper_empirical_coverage_after=tuple(
+            tuple(1.0 for _side in range(sides)) for _horizon in range(horizons)
+        ),
+        calibration_runs=6,
+        optimization_population="capture_run",
     )
 
 
@@ -176,9 +213,7 @@ def _batch(
         endpoint_message_index=_readonly(np.arange(rows, dtype=np.int64)),
         anchor_index=_readonly(np.arange(rows, dtype=np.int64)),
         sample_sha256=tuple(f"{1000 + index:064x}" for index in range(rows)),
-        feature_window_sha256=tuple(
-            f"{2000 + index:064x}" for index in range(rows)
-        ),
+        feature_window_sha256=tuple(f"{2000 + index:064x}" for index in range(rows)),
         target_context_sha256=tuple("6" * 64 for _ in range(rows)),
         test_access_sha256=tuple("" for _ in range(rows)),
         feature_values=_readonly(feature_values),
@@ -419,8 +454,7 @@ def _execution_panel(
                 .read_bytes()
                 .replace(b"\r\n", b"\n")
                 .replace(b"\r", b"\n")
-            )
-            .hexdigest()
+            ).hexdigest()
         ),
         rows=rows,
     )
@@ -544,6 +578,25 @@ def test_candidate_derivation_is_target_free_and_prefers_shorter_tie() -> None:
     assert global_context.context_sha256 != context.context_sha256
 
 
+def test_risk_tail_calibration_can_fail_closed_before_candidate_selection() -> None:
+    batch = _batch(payoff_sign=1.0)
+    calibration = replace(
+        _calibration(),
+        risk_quantiles=_risk_quantile_calibration(),
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+    )
+
+    candidates = derive_round74_action_candidates(
+        _output(batch.rows),
+        build_round74_action_inference_context(batch),
+        calibration,
+        pretest_policy_sha256=POLICY_SHA256,
+    )
+
+    assert not bool(candidates.eligible.any())
+    assert not bool(candidates.quality_score.any())
+
+
 def test_candidate_derivation_rejects_calibration_from_other_policy() -> None:
     batch = _batch()
     calibration = replace(
@@ -577,12 +630,9 @@ def test_exact_trace_rejects_same_symbol_overlap_but_resets_each_run() -> None:
     assert trace.as_dict()["maximum_concurrent_gross_capital_fraction"] == (
         pytest.approx(1.0)
     )
-    assert trace.metrics.total_net_bps == pytest.approx(
-        sum(trace.net_payoff_bps)
-    )
+    assert trace.metrics.total_net_bps == pytest.approx(sum(trace.net_payoff_bps))
     assert max(trace.net_payoff_bps) == pytest.approx(
-        ROUND74_ACTION_POSITION_CAPITAL_FRACTION
-        * float(np.max(batch.net_payoff_bps))
+        ROUND74_ACTION_POSITION_CAPITAL_FRACTION * float(np.max(batch.net_payoff_bps))
     )
     with pytest.raises(ValueError, match="metrics reconciliation differs"):
         replace(
@@ -637,8 +687,7 @@ def test_policy_selection_accepts_only_profitable_diversified_tuning_trace() -> 
         )
         assert evaluation.objective_bps == pytest.approx(expected_objective)
         assert metrics.mean_run_net_bps == pytest.approx(
-            metrics.total_net_bps
-            / len(_subpartition().policy_selection_run_ids)
+            metrics.total_net_bps / len(_subpartition().policy_selection_run_ids)
         )
 
 
@@ -834,8 +883,7 @@ def test_policy_selection_rejects_future_censored_selected_action() -> None:
     assert not selection.accepted
     assert all(
         evaluation.trace.skipped_target_ineligible == 1
-        and "selected_action_target_coverage_incomplete"
-        in evaluation.rejection_reasons
+        and "selected_action_target_coverage_incomplete" in evaluation.rejection_reasons
         for evaluation in selection.evaluations
     )
 
