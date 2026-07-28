@@ -1,0 +1,43 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v77",
+  "created_at_utc": "2026-07-28T07:42:18Z",
+  "implementation_git_commit": "f50551fb59f0a45bb7980faa8f6d87a27d5a6901",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v76.json",
+    "design_sha256": "72e4fe99a52545e3f85756ccebd585f1ddb5cfebdc1ca7b7a11d9b9bb7dfa7a6",
+    "unchanged": true
+  },
+  "directml_preflight": {
+    "path": "docs/model-research/action-value/round-074-segmented-training-directml-preflight-v1-2026-07-28.json",
+    "artifact_sha256": "e5edb6e497185a34caa16e29215854c7e5320910beca1c4f8fab7bf87e407051",
+    "device": "AMD Radeon RX 9070 XT",
+    "torch_device": "privateuseone:0",
+    "matrix_multiplication_finite": true,
+    "segmented_policy_train_seal_reload_passed": true,
+    "cpu_fallback_warning_count": 0,
+    "warning_count": 0,
+    "selection_loss_name": "loss",
+    "optimizer_steps": 1.0,
+    "short_run_minibatch_contributions": 1.0,
+    "long_run_minibatch_contributions": 3.0
+  },
+  "evidence_boundary": {
+    "synthetic_data_only": true,
+    "real_cohort_data_used": false,
+    "financial_backtest_performed": false,
+    "directml_throughput_benchmark_performed": false,
+    "profitability_or_edge_inference_permitted": false
+  },
+  "authority": {
+    "directml_segmented_training_mechanics_tested": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "84568bd65700b1d7cefdfa90c8ca9091cf174c32a39b15f86de1280485239fd1"
+}

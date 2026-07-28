@@ -432,8 +432,10 @@ After parser or taxonomy changes, regenerate the header through the native build
   epoch in isolation, and gives each eligible target one gradient weight. It
   never cycles a short epoch to match a long epoch. The CPU end-to-end
   train/seal/reload test and 32-test affected checkpoint passed; DirectML
-  behavior, real cohort training, P&L, drawdown, edge, and AI uplift remain
-  untested. Do not restore the equal-run trainer for segmented data.
+  behavior then passed separately on the host RX 9070 XT with zero fallback
+  warnings; read `round-074-event-sequence-model-design-v77.json`. Real cohort
+  training, P&L, drawdown, edge, and AI uplift remain untested. Do not restore
+  the equal-run trainer for segmented data.
 - Live Binance AI reviews are exact-case, asynchronous, hash-chained, and
   shadow-only. Pending, failed, or stale reviews block only new entries; exits
   retain the original ML side. `ai-uplift` rejects post-entry/reused reviews and
