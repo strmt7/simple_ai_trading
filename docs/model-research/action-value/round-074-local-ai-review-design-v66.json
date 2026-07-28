@@ -1,0 +1,75 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v66",
+  "artifact_kind": "four_way_tuning_to_ai_qualification_integration",
+  "created_utc": "2026-07-28T21:46:25.0120558Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v65.json",
+    "file_sha256": "47baa14786ed2f9f57d3b5a13eb9ceeaf2edd0a2a83baae279f09ea69537015e",
+    "design_sha256": "23fc9f0f4697deab0707d6543bb997cf299558c6a6258de85da1c2bceaa83917",
+    "unchanged_except_declared_delta": true
+  },
+  "implementation_git_commit": "fa03255a6a07e698f6b7e694e0bc72347a74c815",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "qualification_operator_path": "src/simple_ai_trading/round74_ai_qualification_operator.py",
+    "qualification_operator_sha256": "e8ccbf92735f4e06843785b9acc609c4286e6935150c240606e583ce9a9d66a3",
+    "model_operator_path": "src/simple_ai_trading/round74_event_model_operator.py",
+    "model_operator_sha256": "391838aaf87cef463c5c28512a658b2c55c526133c5aa499f3ab1030bc3f6fba",
+    "sealed_ledger_test_path": "tests/test_impact_absorption_event_sealed_ledger.py",
+    "sealed_ledger_test_sha256": "87eb434f22986f6888073db199b78ec17b7d4775c00b005d8d2804aa5bfde566",
+    "training_test_path": "tests/test_impact_absorption_event_training.py",
+    "training_test_sha256": "7a35fa157a8b1b69dae81eb2c42041e09623f2db787ffa2fa173347503c97849"
+  },
+  "declared_delta": {
+    "model_operator_schema_version": "round-074-event-model-operator-v6",
+    "prepared_tuning_roles_include_ai_qualification_batches": true,
+    "legacy_three_way_tuning_subpartitions_remain_supported": true,
+    "segmented_four_way_tuning_subpartitions_are_fully_consumed": true,
+    "ai_qualification_batches_forwarded_to_model_training": false,
+    "ai_qualification_batches_forwarded_to_calibration": false,
+    "ai_qualification_batches_forwarded_to_policy_selection": false,
+    "prepared_roles_can_invoke_ai_qualification_without_manual_filtering": true,
+    "sealed_test_consumed": false
+  },
+  "verification": {
+    "connected_contract_tests_passed": 126,
+    "all_seventeen_scheduled_ai_qualification_batches_retained_test_passed": true,
+    "model_training_receives_only_model_selection_batches_test_passed": true,
+    "prepared_role_wrapper_forwards_only_fourth_subrole_test_passed": true,
+    "legacy_three_way_split_tests_passed": true,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_ai_market_evaluation_performed": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 26,
+    "slot_032_result_sha256": "1ecc3219ca557107be878f0d0a82ca5ff755d003299e8a44bddde53919d61068",
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_limits": {
+    "tests_use_synthetic_contract_fixtures": true,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "drawdown_claim": false
+  },
+  "status": {
+    "implementation_complete_for_declared_delta": true,
+    "prospective_cohort_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "design_sha256": "082b434f813f4b75dbbc0dbbc883c690b5283ecccd3641bc7c4497c722533258"
+}
