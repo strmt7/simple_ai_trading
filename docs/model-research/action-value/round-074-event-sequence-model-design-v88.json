@@ -1,0 +1,212 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v88",
+  "created_at_utc": "2026-07-28T14:31:00Z",
+  "implementation_git_commit": "b0579d9ddcad3277c7e78b7efe1fab9411d3596d",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v87.json",
+    "file_sha256": "72225b459b5b5bbf3bac76b5ee7451072933a27b7fa2a1b53e6849e1e9bd5522",
+    "design_sha256": "64e17fd425c6d4db9c9391672473492129267cfc8112e670a92fbd177b6ed453",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "78936c89c5bbfb5dc139868556b0cc1312dcae157b8bd45117b893d14e323263",
+      "model_schema_version": "round-074-event-payoff-model-v7"
+    },
+    "pretraining": {
+      "path": "src/simple_ai_trading/impact_absorption_event_pretraining.py",
+      "sha256": "f61f68b3875eee8b1c12914436d1b81c8dc817703f294ec1050f9c8213dc3523",
+      "schema_version": "round-074-causal-next-event-pretraining-v1"
+    },
+    "training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "919517bc0103daac31a2e9376415a40dffda781369427f7935887075b299eff0",
+      "training_schema_version": "round-074-event-training-v23",
+      "pretest_policy_schema_version": "round-074-event-pretest-policy-v22"
+    },
+    "tests": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "5931b4eeb74871ba33f75489cdc2b702e9a927dd6bf1e3889767948439e14ed0"
+    }
+  },
+  "declared_delta": {
+    "causal_next_event_pretraining_challenger_added": true,
+    "random_initialization_remains_incumbent": true,
+    "candidate_architecture_family_changed": false,
+    "feature_contract_changed": false,
+    "target_contract_changed": false,
+    "financial_replay_contract_changed": false,
+    "risk_policy_changed": false,
+    "model_tensor_key_contract_changed": false,
+    "active_v3_campaign_main_branch_contract_changed": false
+  },
+  "research_basis": [
+    {
+      "title": "TradeFM: A Generative Foundation Model for Trade-flow and Market Microstructure",
+      "url": "https://arxiv.org/abs/2602.23784",
+      "primary_source": true,
+      "used_for": [
+        "causal next-event pretraining direction",
+        "scale-invariant event representation rationale"
+      ],
+      "not_transferred": [
+        "equity simulator performance",
+        "crypto predictive edge",
+        "trading profitability"
+      ]
+    },
+    {
+      "title": "LOBERT: Generative AI Foundation Model for Limit Order Book Messages",
+      "url": "https://arxiv.org/abs/2511.12563",
+      "primary_source": true,
+      "used_for": [
+        "one complete multidimensional message per event",
+        "next-message pretext rationale",
+        "continuous price volume and time representation"
+      ],
+      "not_transferred": [
+        "reported benchmark rank",
+        "cross-venue generalization",
+        "trading profitability"
+      ]
+    },
+    {
+      "title": "A Foundation Model for Multimodal Event Sequences in Financial Applications",
+      "url": "https://arxiv.org/abs/2607.09955",
+      "primary_source": true,
+      "used_for": [
+        "chronological event fusion",
+        "next-event representation pretraining"
+      ],
+      "not_transferred": [
+        "bank deployment result",
+        "customer-event transfer to market microstructure",
+        "trading profitability"
+      ]
+    },
+    {
+      "title": "Pretrained Time-Series Foundation Models for Financial Return Forecasting",
+      "url": "https://arxiv.org/abs/2606.27100",
+      "primary_source": true,
+      "used_for": [
+        "random initialization must remain the incumbent",
+        "pretraining is not presumed to improve noisy financial forecasts"
+      ],
+      "not_transferred": [
+        "equity model rankings",
+        "return forecast accuracy",
+        "economic significance"
+      ]
+    },
+    {
+      "title": "LOB-Bench: Benchmarking Generative AI for Finance - an Application to Limit Order Book Data",
+      "url": "https://proceedings.mlr.press/v267/nagy25a.html",
+      "primary_source": true,
+      "used_for": [
+        "distributional and market-impact evaluation remains necessary"
+      ],
+      "not_transferred": [
+        "generative realism",
+        "execution realism",
+        "financial edge"
+      ]
+    }
+  ],
+  "pretraining_contract": {
+    "eligible_architectures": [
+      "causal_event_tcn",
+      "causal_event_attention"
+    ],
+    "pooled_controls_pretrained": false,
+    "preflight_pretraining_permitted": false,
+    "input": "scaled causal event windows from training capture runs",
+    "event_target": "next event type",
+    "continuous_target": "next robust-scaled continuous feature delta",
+    "event_loss": "categorical log loss normalized by log of event-type count",
+    "continuous_loss": "dimension-mean Huber loss with beta 1",
+    "run_weighting": "equal capture run",
+    "training_order": "chronological",
+    "shorter_run_policy": "deterministic epoch-rotated cycling",
+    "validation_boundary": "one global chronological tail per capture run",
+    "validation_source_role": "training",
+    "per_symbol_purge_anchors": 128,
+    "minimum_purge_equals_full_event_window": true,
+    "temporary_prediction_head_persisted": false,
+    "encoder_parameters_initialized": true,
+    "downstream_readout_and_distribution_heads_initialized": false,
+    "supervised_dropout_rng_restored_to_paired_post-construction_state": true,
+    "target_mutation_changes_pretraining_split_identity": false,
+    "payoff_targets_read_by_pretraining": false,
+    "path_risk_targets_read_by_pretraining": false,
+    "tuning_features_read_by_pretraining": false,
+    "tuning_targets_read_by_pretraining": false,
+    "calibration_data_read_by_pretraining": false,
+    "test_data_read_by_pretraining": false
+  },
+  "selection_contract": {
+    "stage_1": "clock-neutral architecture complexity gate from v87",
+    "stage_2": "fixed-architecture exchange-clock feature ablation from v87",
+    "stage_3": {
+      "name": "causal_encoder_initialization_ablation",
+      "architecture": "stage_1_winner_frozen",
+      "feature_view": "stage_2_winner_frozen",
+      "supervised_seeds_and_training_policy_matched": true,
+      "incumbent": "random",
+      "challenger": "causal_next_event_pretrained",
+      "promotion_requires_complete_model_selection_capture_run_panel": true,
+      "promotion_requires_strict_mean_proper_loss_improvement": true,
+      "promotion_requires_every_paired_run_noninferior": true,
+      "promotion_requires_every_run_symbol_horizon_subgroup_noninferior": true,
+      "incomplete_panel_outcome": "random",
+      "gate_failure_outcome": "random",
+      "test_targets_used": false,
+      "backtest_metric_used": false
+    },
+    "selected_initialization_hash_bound_in_pretest_policy": true,
+    "selected_initialization_recomputed_on_policy_load": true,
+    "recorded_winner_trusted_without_recomputation": false,
+    "statistical_independence_or_significance_claim": false
+  },
+  "verification": {
+    "focused_and_connected_tests_passed": 119,
+    "global_chronological_split_test_passed": true,
+    "per_symbol_full_window_purge_test_passed": true,
+    "target_mutation_independence_test_passed": true,
+    "encoder_state_change_test_passed": true,
+    "temporary_head_nonpersistence_test_passed": true,
+    "policy_reload_initialization_binding_test_passed": true,
+    "initialization_tamper_rejection_test_passed": true,
+    "ruff_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false,
+    "directml_pretraining_rerun": false,
+    "real_cohort_pretraining_performed": false,
+    "paired_initialization_gate_run_on_real_cohort": false,
+    "financial_backtest_performed": false
+  },
+  "evidence_boundary": {
+    "implementation_and_contract_tests_only": true,
+    "real_prospective_capture_continues_under_frozen_v4_main_branch": true,
+    "pretraining_improves_predictive_accuracy_claim": false,
+    "pretraining_improves_calibration_claim": false,
+    "pretraining_improves_profitability_claim": false,
+    "drawdown_inference_permitted": false,
+    "ai_model_evaluated": false,
+    "ai_uplift_inference_permitted": false
+  },
+  "authority": {
+    "causal_pretraining_challenger_implemented": true,
+    "paired_promotion_gate_implemented": true,
+    "pretest_policy_reload_enforcement": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "ef4baaf2d0bdc76cff375fab95179c4e8cfed90124a1a779ff56eafdca17b364"
+}
