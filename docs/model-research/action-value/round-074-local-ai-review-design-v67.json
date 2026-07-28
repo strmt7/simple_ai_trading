@@ -1,0 +1,92 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v67",
+  "artifact_kind": "segmented_store_to_ml_and_ai_qualification_operator",
+  "created_utc": "2026-07-28T22:03:55.0341494Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v66.json",
+    "file_sha256": "2e95a5fe86030e5edca11441004e584e9dd344597450785717de624e237b0c2a",
+    "design_sha256": "082b434f813f4b75dbbc0dbbc883c690b5283ecccd3641bc7c4497c722533258",
+    "unchanged_except_declared_delta": true
+  },
+  "implementation_git_commit": "ac37fbf7d40943096a7d93ee6222919ae4494fac",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "segmented_development_operator_path": "src/simple_ai_trading/round74_segmented_development_operator.py",
+    "segmented_development_operator_sha256": "babc4b9e84e606f0ef5ef916fd9a0663277574a7df79c06d532b9299a4339aa7",
+    "development_operator_path": "src/simple_ai_trading/round74_event_development_operator.py",
+    "development_operator_sha256": "44a2b4d7abce4f1cfbe039c9556b0ba4775d71f44719010c2365dcd3a0f8ac20",
+    "qualification_operator_path": "src/simple_ai_trading/round74_ai_qualification_operator.py",
+    "qualification_operator_sha256": "e8ccbf92735f4e06843785b9acc609c4286e6935150c240606e583ce9a9d66a3",
+    "ai_uplift_path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+    "ai_uplift_sha256": "4fd036f49ddf8b51ef59da9ffc9f0b17786a44d3efcfb1181d30b513031885a1",
+    "segmented_operator_test_path": "tests/test_round74_segmented_model_operator.py",
+    "segmented_operator_test_sha256": "5ba0769109003f056e51cada46881a2aa23f6f8f2f1405f75fa3e967cebe730d",
+    "ai_uplift_test_path": "tests/test_impact_absorption_ai_uplift.py",
+    "ai_uplift_test_sha256": "83fdf64f08657e31eaebd069cee86be56fe84b27d4be2bf7ce34c600427f9781"
+  },
+  "declared_delta": {
+    "single_segmented_development_entry_point": true,
+    "sealed_test_binding_or_target_assembly_accepted": false,
+    "partition_and_bindings_split_before_label_replay": true,
+    "feature_scaler_fit_scope": "optimization_training_runs_only",
+    "training_configuration_requires_segmented_cohort_mode": true,
+    "all_four_tuning_roles_retained": true,
+    "execution_calibration_replay_scope": "policy_selection_tuning_runs_only",
+    "ai_execution_replay_scope": "ai_qualification_tuning_runs_only",
+    "qualification_profiles": [
+      "conservative",
+      "regular",
+      "aggressive"
+    ],
+    "profile_order_is_stable": true,
+    "qualification_artifacts_are_immutable_and_idempotent": true,
+    "qualification_symlink_target_rejected": true,
+    "overlapping_windows_persisted": false,
+    "sealed_test_consumed": false
+  },
+  "verification": {
+    "connected_model_ai_contract_tests_passed": 126,
+    "segmented_preparation_test_passed": true,
+    "segmented_training_mode_boundary_test_passed": true,
+    "three_profile_qualification_wiring_test_passed": true,
+    "immutable_qualification_write_test_passed": true,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "unrelated_active_qualification_contract_hash_mismatch_detected": true,
+    "representative_training_performed": false,
+    "representative_ai_market_evaluation_performed": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 26,
+    "latest_confirmed_admitted_slot_ordinal": 32,
+    "slot_032_result_sha256": "1ecc3219ca557107be878f0d0a82ca5ff755d003299e8a44bddde53919d61068",
+    "slot_033_state_at_document_time": "running",
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_limits": {
+    "tests_use_synthetic_contract_fixtures": true,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "probability_calibration_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "drawdown_claim": false
+  },
+  "status": {
+    "implementation_complete_for_declared_delta": true,
+    "prospective_cohort_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "design_sha256": "38fa5a874a59e45062808af7a79d91c34b04f4e1af602f59569f88fd9ec471ed"
+}
