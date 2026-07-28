@@ -1,0 +1,77 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v99",
+  "created_at_utc": "2026-07-28T21:46:25.0120558Z",
+  "implementation_git_commit": "fa03255a6a07e698f6b7e694e0bc72347a74c815",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v98.json",
+    "file_sha256": "772768a154dab3897ebc29efabf6a023d0442ca96578ee6efb4e766c59717da7",
+    "design_sha256": "41e0cec7d74bfb61159b4af870e59ee778bb5872e17266e1a13fccf416937d3e",
+    "unchanged_except_declared_delta": true
+  },
+  "local_ai_design": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v66.json",
+    "file_sha256": "2e95a5fe86030e5edca11441004e584e9dd344597450785717de624e237b0c2a",
+    "design_sha256": "082b434f813f4b75dbbc0dbbc883c690b5283ecccd3641bc7c4497c722533258"
+  },
+  "declared_delta": {
+    "prepared_tuning_roles": [
+      "model_selection",
+      "probability_and_risk_calibration",
+      "ml_action_policy_selection",
+      "ai_overlay_qualification"
+    ],
+    "all_admitted_tuning_runs_accounted_for_exactly_once": true,
+    "training_selection_or_calibration_can_consume_ai_runs": false,
+    "manual_ai_run_filtering_required": false,
+    "legacy_three_way_tuning_contract_supported": true,
+    "model_training_or_architecture_changed": false,
+    "feature_names_or_values_changed": false,
+    "supervised_targets_changed": false,
+    "proper_loss_changed": false,
+    "sealed_test_consumed": false
+  },
+  "verification": {
+    "connected_contract_tests_passed": 126,
+    "four_way_training_handoff_test_passed": true,
+    "prepared_ai_qualification_wrapper_test_passed": true,
+    "existing_training_development_segmented_action_calibration_sealed_and_ai_tests_passed": true,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "directml_training_path_changed": false,
+    "full_representative_training_performed": false,
+    "sealed_test_evaluated": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 26,
+    "slot_032_result_sha256": "1ecc3219ca557107be878f0d0a82ca5ff755d003299e8a44bddde53919d61068",
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "development_branch_only": true,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "63519672f55770ee88ced004ecb0bd27cada8e2ffd709506cf7442dc5a1dff67"
+}
