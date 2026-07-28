@@ -30,6 +30,15 @@ SPEC.loader.exec_module(PUBLISHER)
 assert isinstance(PUBLISHER, ModuleType)
 
 
+def test_round74_preflight_runner_uses_current_early_stopping_report_key() -> None:
+    runner = (
+        REPOSITORY / "tools" / "run_round74_event_training_preflight.py"
+    ).read_text(encoding="ascii")
+
+    assert 'peer["best_early_stopping_metrics"]' in runner
+    assert 'peer["best_tuning_metrics"]' not in runner
+
+
 def _source_sha256_at(commit: str, relative_path: str) -> str:
     completed = subprocess.run(  # nosec B603
         ["git", "show", f"{commit}:{relative_path}"],
