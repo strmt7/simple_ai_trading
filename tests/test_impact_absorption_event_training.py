@@ -222,9 +222,8 @@ def test_segmented_gradient_is_exactly_eligible_target_weighted() -> None:
 
     action_coefficient = 1.0 + 0.35 + 0.25 + 0.20
     regime_coefficient = 0.10
-    expected = (
-        action_coefficient * (1.0 * 2 / 8 + 3.0 * 6 / 8)
-        + regime_coefficient * (1.0 * 1 / 4 + 3.0 * 3 / 4)
+    expected = action_coefficient * (1.0 * 2 / 8 + 3.0 * 6 / 8) + regime_coefficient * (
+        1.0 * 1 / 4 + 3.0 * 3 / 4
     )
     assert float(objective) == pytest.approx(expected)
 
@@ -287,14 +286,8 @@ def test_segmented_training_seals_and_reloads_pooled_target_policy(
     first = report["history"][0]
     assert first["selection_loss_name"] == "loss"
     assert first["optimization_metrics"]["optimizer_steps"] == 1.0
-    assert (
-        first["optimization_metrics"]["minimum_run_minibatch_contributions"]
-        == 1.0
-    )
-    assert (
-        first["optimization_metrics"]["maximum_run_minibatch_contributions"]
-        == 3.0
-    )
+    assert first["optimization_metrics"]["minimum_run_minibatch_contributions"] == 1.0
+    assert first["optimization_metrics"]["maximum_run_minibatch_contributions"] == 3.0
     selected_metrics = policy["selection"]["selected_tuning_metrics"]
     assert artifact.tuning_loss == pytest.approx(selected_metrics["loss"])
 
@@ -560,6 +553,56 @@ def test_round74_complexity_gate_rejects_point_better_but_weak_challengers() -> 
     assert reports[0]["complete_tuning_panel"] is True
     assert reports[0]["all_paired_runs_noninferior"] is False
     assert reports[0]["maximum_paired_run_loss_degradation"] > 0.0
+
+
+def test_round74_complexity_gate_rejects_hidden_symbol_horizon_degradation() -> None:
+    candidate_ids = ROUND74_EVENT_MODEL_CANDIDATES
+    parameter_counts = {
+        "event_pooling_linear": 13_000,
+        "event_pooling_mlp": 31_396,
+        "causal_event_tcn": 129_060,
+        "causal_event_attention": 151_876,
+    }
+    run_losses = {
+        "event_pooling_linear": (1.0,) * 12,
+        "event_pooling_mlp": (0.9,) * 12,
+        "causal_event_tcn": (1.0,) * 12,
+        "causal_event_attention": (1.0,) * 12,
+    }
+    group_keys = tuple(
+        f"{run_id:032x}:{symbol}:{horizon}"
+        for run_id in range(12)
+        for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+        for horizon in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS
+    )
+    baseline_groups = {key: 1.0 for key in group_keys}
+    mlp_groups = {key: 0.9 for key in group_keys}
+    hidden_failure = next(key for key in group_keys if ":SOLUSDT:" in key)
+    mlp_groups[hidden_failure] = 1.2
+
+    winner, reports = _complexity_gated_candidate_id(
+        candidate_ids,
+        run_losses,
+        parameter_counts,
+        minimum_mean_loss_improvement=1e-5,
+        candidate_group_losses={
+            "event_pooling_linear": baseline_groups,
+            "event_pooling_mlp": mlp_groups,
+            "causal_event_tcn": baseline_groups,
+            "causal_event_attention": baseline_groups,
+        },
+    )
+
+    assert winner == "event_pooling_linear"
+    first = reports[0]
+    assert first["mean_proper_loss_improvement"] > 0.0
+    assert first["all_paired_runs_noninferior"] is True
+    assert first["subgroup_gate_applied"] is True
+    assert first["paired_run_symbol_horizon_group_count"] == len(group_keys)
+    assert first["worst_run_symbol_horizon_group"] == hidden_failure
+    assert first["maximum_paired_group_loss_degradation"] == pytest.approx(0.2)
+    assert first["all_paired_run_symbol_horizon_groups_noninferior"] is False
+    assert first["promoted"] is False
 
 
 def test_round74_complexity_gate_excludes_exact_ties() -> None:

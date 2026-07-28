@@ -39,11 +39,15 @@ from .impact_absorption_event_model import (
     round74_event_model_loss,
 )
 from .impact_absorption_event_scaling import Round74EventFeatureScaler
+from .impact_absorption_event_sequence import (
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+)
+from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v18"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v17"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v19"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v18"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
@@ -245,8 +249,7 @@ class Round74EventTrainingConfig:
             or int(self.minimum_role_rows) < 1
             or int(self.device_run_group_size) < 1
             or int(self.device_run_group_size) > 32
-            or self.execution_mode
-            not in {"cohort", "segmented_cohort", "preflight"}
+            or self.execution_mode not in {"cohort", "segmented_cohort", "preflight"}
             or self.execution_mode == "segmented_cohort"
             and self.architecture_selection_mode != "fixed"
         ):
@@ -377,6 +380,7 @@ class _CandidateFit:
     peer_reports: tuple[dict[str, object], ...]
     ensemble_metrics: dict[str, float]
     ensemble_run_losses: tuple[float, ...]
+    ensemble_group_losses: dict[str, float]
     ensemble_prediction_sha256: str
     parameter_count_per_peer: int
 
@@ -563,9 +567,7 @@ def _eligible_target_minibatch_schedule(
 
     if len(batches) != len(per_run_totals) or not batches:
         raise ValueError("Round 74 eligible-target schedule differs")
-    selected: list[
-        tuple[int, Round74EventTrainingBatch, slice, int, int]
-    ] = []
+    selected: list[tuple[int, Round74EventTrainingBatch, slice, int, int]] = []
     for run_index, (batch, run_totals) in enumerate(
         zip(batches, per_run_totals, strict=True)
     ):
@@ -594,28 +596,20 @@ def _eligible_target_minibatch_schedule(
 
 
 def _eligible_target_weighted_group_loss(
-    grouped: Sequence[
-        tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int]
-    ],
+    grouped: Sequence[tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int]],
     *,
     total_action_weight: int,
     total_regime_weight: int,
 ) -> torch.Tensor:
     """Return this group's exact contribution to the cohort objective."""
 
-    if (
-        not grouped
-        or total_action_weight <= 0
-        or total_regime_weight <= 0
-    ):
+    if not grouped or total_action_weight <= 0 or total_regime_weight <= 0:
         raise ValueError("Round 74 eligible-target gradient population differs")
     contributions: list[torch.Tensor] = []
     for _loss, components, action_weight, regime_weight in grouped:
         action_objective = (
             components["payoff_pinball"]
-            + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS[
-                "maximum_adverse_excursion"
-            ]
+            + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["maximum_adverse_excursion"]
             * components["maximum_adverse_excursion_pinball"]
             + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["positive_payoff"]
             * components["positive_bce"]
@@ -627,10 +621,8 @@ def _eligible_target_weighted_group_loss(
             * components["unpredictability_bce"]
         )
         contributions.append(
-            action_objective
-            * (float(action_weight) / float(total_action_weight))
-            + regime_objective
-            * (float(regime_weight) / float(total_regime_weight))
+            action_objective * (float(action_weight) / float(total_action_weight))
+            + regime_objective * (float(regime_weight) / float(total_regime_weight))
         )
     return torch.stack(tuple(contributions)).sum()
 
@@ -1013,6 +1005,186 @@ def _evaluate_model(
     return metrics, run_losses
 
 
+def _index_model_output(
+    output: Round74EventModelOutput,
+    indices: torch.Tensor,
+) -> Round74EventModelOutput:
+    selected = Round74EventModelOutput(
+        payoff_quantiles_bps=output.payoff_quantiles_bps.index_select(0, indices),
+        maximum_adverse_excursion_quantiles_bps=(
+            output.maximum_adverse_excursion_quantiles_bps.index_select(0, indices)
+        ),
+        positive_payoff_logits=output.positive_payoff_logits.index_select(0, indices),
+        adverse_selection_logits=output.adverse_selection_logits.index_select(
+            0,
+            indices,
+        ),
+        regime_unpredictability_logits=(
+            output.regime_unpredictability_logits.index_select(0, indices)
+        ),
+    )
+    selected.validate(int(indices.numel()))
+    return selected
+
+
+def _tuning_group_key(run_id: str, symbol: str, horizon_seconds: int) -> str:
+    return f"{run_id}:{symbol}:{int(horizon_seconds)}"
+
+
+def _evaluate_model_group_losses(
+    model: nn.Module,
+    batches: Sequence[Round74EventTrainingBatch],
+    *,
+    minibatch_rows: int,
+    device: object,
+    require_complete_symbol_panel: bool,
+) -> dict[str, float]:
+    """Measure proper loss for every eligible run-symbol-horizon subgroup."""
+
+    if not batches:
+        raise ValueError("Round 74 tuning subgroup panel is empty")
+    model.eval()
+    totals_by_group: dict[str, dict[str, float]] = {}
+    expected_groups: set[str] = set()
+    symbol_universe = set(IMPACT_CAPTURE_SYMBOLS)
+    horizon_count = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    horizon_masks = tuple(
+        torch.tensor(
+            tuple(
+                1.0 if candidate == horizon_index else 0.0
+                for candidate in range(horizon_count)
+            ),
+            dtype=torch.float32,
+            device=device,
+        )
+        for horizon_index in range(horizon_count)
+    )
+    with torch.no_grad():
+        for batch in batches:
+            batch.validate()
+            run_ids = set(batch.run_id)
+            observed_symbols = set(batch.symbol)
+            if len(run_ids) != 1 or not observed_symbols.issubset(symbol_universe):
+                raise ValueError("Round 74 tuning subgroup identity differs")
+            if require_complete_symbol_panel and observed_symbols != symbol_universe:
+                raise ValueError("Round 74 tuning subgroup symbol panel is incomplete")
+            run_id = next(iter(run_ids))
+            for symbol in IMPACT_CAPTURE_SYMBOLS:
+                if symbol not in observed_symbols:
+                    continue
+                for horizon_seconds in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS:
+                    key = _tuning_group_key(run_id, symbol, horizon_seconds)
+                    expected_groups.add(key)
+                    totals_by_group.setdefault(key, _empty_metric_sums())
+            for _selected, row_slice in _iter_minibatches((batch,), minibatch_rows):
+                start, stop, step = row_slice.indices(batch.rows)
+                if step != 1 or stop <= start:
+                    raise ValueError("Round 74 tuning subgroup slice differs")
+                output = model(
+                    _to_device_tensor(batch.feature_values, row_slice, device)
+                )
+                targets = {
+                    name: _to_device_tensor(getattr(batch, name), row_slice, device)
+                    for name in (
+                        "net_payoff_bps",
+                        "maximum_adverse_excursion_bps",
+                        "adverse_selection",
+                        "regime_unpredictability",
+                        "action_eligibility",
+                        "regime_unpredictability_eligibility",
+                    )
+                }
+                symbols = np.asarray(batch.symbol[start:stop], dtype=object)
+                for symbol in IMPACT_CAPTURE_SYMBOLS:
+                    row_indices = np.flatnonzero(symbols == symbol)
+                    if row_indices.size == 0:
+                        continue
+                    index = torch.tensor(
+                        row_indices.tolist(),
+                        dtype=torch.int64,
+                        device=device,
+                    )
+                    selected_output = _index_model_output(output, index)
+                    selected_targets = {
+                        name: tensor.index_select(0, index)
+                        for name, tensor in targets.items()
+                    }
+                    for horizon_index, horizon_seconds in enumerate(
+                        ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS
+                    ):
+                        horizon_mask = horizon_masks[horizon_index]
+                        action_eligibility = selected_targets[
+                            "action_eligibility"
+                        ] * horizon_mask.reshape(1, -1, 1)
+                        regime_eligibility = selected_targets[
+                            "regime_unpredictability_eligibility"
+                        ] * horizon_mask.reshape(1, -1)
+                        action_weight = int(
+                            float(action_eligibility.sum().detach().cpu())
+                        )
+                        regime_weight = int(
+                            float(regime_eligibility.sum().detach().cpu())
+                        )
+                        if action_weight == 0 and regime_weight == 0:
+                            continue
+                        if action_weight <= 0 or regime_weight <= 0:
+                            raise ValueError(
+                                "Round 74 tuning subgroup eligibility differs"
+                            )
+                        _loss, components = (
+                            _round74_event_model_loss_from_validated_inputs(
+                                selected_output,
+                                net_payoff_bps=selected_targets["net_payoff_bps"],
+                                maximum_adverse_excursion_bps=selected_targets[
+                                    "maximum_adverse_excursion_bps"
+                                ],
+                                adverse_selection=selected_targets["adverse_selection"],
+                                regime_unpredictable=selected_targets[
+                                    "regime_unpredictability"
+                                ],
+                                action_eligibility=action_eligibility,
+                                regime_unpredictability_eligibility=regime_eligibility,
+                                maximum_adverse_excursion_weight=(
+                                    ROUND74_EVENT_TRAINING_LOSS_WEIGHTS[
+                                        "maximum_adverse_excursion"
+                                    ]
+                                ),
+                                positive_weight=ROUND74_EVENT_TRAINING_LOSS_WEIGHTS[
+                                    "positive_payoff"
+                                ],
+                                adverse_weight=ROUND74_EVENT_TRAINING_LOSS_WEIGHTS[
+                                    "adverse_selection"
+                                ],
+                                unpredictability_weight=(
+                                    ROUND74_EVENT_TRAINING_LOSS_WEIGHTS[
+                                        "regime_unpredictability"
+                                    ]
+                                ),
+                            )
+                        )
+                        _accumulate_metrics(
+                            totals_by_group[
+                                _tuning_group_key(
+                                    run_id,
+                                    symbol,
+                                    horizon_seconds,
+                                )
+                            ],
+                            components,
+                            action_weight=action_weight,
+                            regime_weight=regime_weight,
+                        )
+    if not expected_groups or set(totals_by_group) != expected_groups:
+        raise ValueError("Round 74 tuning subgroup panel differs")
+    result = {
+        key: _finalize_metrics(totals_by_group[key])["loss"]
+        for key in sorted(expected_groups)
+    }
+    if not all(math.isfinite(value) for value in result.values()):
+        raise RuntimeError("Round 74 tuning subgroup loss is nonfinite")
+    return result
+
+
 def _cpu_state(model: nn.Module) -> dict[str, torch.Tensor]:
     return {
         name: value.detach().cpu().contiguous().clone()
@@ -1070,7 +1242,9 @@ def _train_peer(
                 len(selections),
                 config.device_run_group_size,
             ):
-                selected_group = selections[start : start + config.device_run_group_size]
+                selected_group = selections[
+                    start : start + config.device_run_group_size
+                ]
                 grouped = _losses_for_minibatch_group(
                     model,
                     tuple(
@@ -1115,9 +1289,7 @@ def _train_peer(
             )
             optimizer_steps = max(len(schedule) for schedule in schedules)
             contribution_counts = tuple(optimizer_steps for _batch in training_batches)
-            eligible_minibatch_counts = tuple(
-                len(schedule) for schedule in schedules
-            )
+            eligible_minibatch_counts = tuple(len(schedule) for schedule in schedules)
             for step in range(optimizer_steps):
                 optimizer.zero_grad(set_to_none=True)
                 selections = tuple(
@@ -1152,8 +1324,7 @@ def _train_peer(
                     _accumulate_group_metrics(
                         optimization_totals,
                         tuple(
-                            run_totals
-                            for _batch, _slice, run_totals in selected_group
+                            run_totals for _batch, _slice, run_totals in selected_group
                         ),
                         grouped,
                     )
@@ -1184,12 +1355,8 @@ def _train_peer(
                     if config.execution_mode != "segmented_cohort"
                     else float(len(selections))
                 ),
-                "minimum_run_minibatch_contributions": float(
-                    min(contribution_counts)
-                ),
-                "maximum_run_minibatch_contributions": float(
-                    max(contribution_counts)
-                ),
+                "minimum_run_minibatch_contributions": float(min(contribution_counts)),
+                "maximum_run_minibatch_contributions": float(max(contribution_counts)),
                 "minimum_eligible_minibatches_per_run": float(
                     min(eligible_minibatch_counts)
                 ),
@@ -1333,6 +1500,13 @@ def _fit_candidate(
         device_run_group_size=config.device_run_group_size,
         device=device,
     )
+    ensemble_group_losses = _evaluate_model_group_losses(
+        ensemble,
+        tuning_batches,
+        minibatch_rows=config.minibatch_rows,
+        device=device,
+        require_complete_symbol_panel=config.execution_mode != "preflight",
+    )
     prediction_sha256 = _prediction_sha256(
         ensemble,
         tuning_batches[0],
@@ -1348,6 +1522,7 @@ def _fit_candidate(
         peer_reports=tuple(reports),
         ensemble_metrics=ensemble_metrics,
         ensemble_run_losses=ensemble_run_losses,
+        ensemble_group_losses=ensemble_group_losses,
         ensemble_prediction_sha256=prediction_sha256,
         parameter_count_per_peer=parameter_count,
     )
@@ -1359,6 +1534,7 @@ def _complexity_gated_candidate_id(
     candidate_parameter_counts: Mapping[str, int],
     *,
     minimum_mean_loss_improvement: float,
+    candidate_group_losses: Mapping[str, Mapping[str, float]] | None = None,
 ) -> tuple[str, tuple[dict[str, object], ...]]:
     ordered = tuple(candidate_ids)
     minimum_improvement = float(minimum_mean_loss_improvement)
@@ -1400,6 +1576,32 @@ def _complexity_gated_candidate_id(
         )
     ):
         raise ValueError("Round 74 complexity-promotion run losses differ")
+    group_losses: dict[str, dict[str, float]] | None = None
+    group_keys: tuple[str, ...] = ()
+    if candidate_group_losses is not None:
+        if set(candidate_group_losses) != set(ordered):
+            raise ValueError("Round 74 complexity-promotion subgroup panel differs")
+        group_losses = {
+            candidate_id: {
+                str(key): float(value)
+                for key, value in candidate_group_losses[candidate_id].items()
+            }
+            for candidate_id in ordered
+        }
+        group_keys = tuple(sorted(group_losses[ordered[0]]))
+        if (
+            not group_keys
+            or any(
+                tuple(sorted(group_losses[candidate_id])) != group_keys
+                for candidate_id in ordered
+            )
+            or any(
+                not math.isfinite(value)
+                for candidate_losses in group_losses.values()
+                for value in candidate_losses.values()
+            )
+        ):
+            raise ValueError("Round 74 complexity-promotion subgroup panel differs")
     incumbent = ordered[0]
     reports: list[dict[str, object]] = []
     for challenger in ordered[1:]:
@@ -1422,10 +1624,36 @@ def _complexity_gated_candidate_id(
             len(improvements) == ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
         )
         all_runs_noninferior = maximum_loss_degradation <= minimum_improvement
+        subgroup_improvements = (
+            {
+                key: group_losses[incumbent][key] - group_losses[challenger][key]
+                for key in group_keys
+            }
+            if group_losses is not None
+            else {}
+        )
+        worst_subgroup_key = (
+            min(
+                subgroup_improvements,
+                key=lambda key: (subgroup_improvements[key], key),
+            )
+            if subgroup_improvements
+            else None
+        )
+        maximum_subgroup_loss_degradation = (
+            -subgroup_improvements[worst_subgroup_key]
+            if worst_subgroup_key is not None
+            else None
+        )
+        all_subgroups_noninferior = (
+            maximum_subgroup_loss_degradation is None
+            or maximum_subgroup_loss_degradation <= minimum_improvement
+        )
         promoted = (
             complete_tuning_panel
             and mean_improvement > minimum_improvement
             and all_runs_noninferior
+            and all_subgroups_noninferior
         )
         reports.append(
             {
@@ -1444,6 +1672,18 @@ def _complexity_gated_candidate_id(
                 "maximum_paired_run_loss_degradation": maximum_loss_degradation,
                 "maximum_permitted_paired_run_loss_degradation": (minimum_improvement),
                 "all_paired_runs_noninferior": all_runs_noninferior,
+                "subgroup_gate_applied": group_losses is not None,
+                "paired_run_symbol_horizon_group_count": len(subgroup_improvements),
+                "worst_run_symbol_horizon_group": worst_subgroup_key,
+                "maximum_paired_group_loss_degradation": (
+                    maximum_subgroup_loss_degradation
+                ),
+                "maximum_permitted_paired_group_loss_degradation": (
+                    minimum_improvement
+                ),
+                "all_paired_run_symbol_horizon_groups_noninferior": (
+                    all_subgroups_noninferior
+                ),
                 "promoted": promoted,
             }
         )
@@ -1471,6 +1711,10 @@ def _select_candidate_with_complexity_gate(
             for candidate_id in fit_by_id
         },
         minimum_mean_loss_improvement=minimum_mean_loss_improvement,
+        candidate_group_losses={
+            candidate_id: fit_by_id[candidate_id].ensemble_group_losses
+            for candidate_id in fit_by_id
+        },
     )
     return fit_by_id[selected_id], reports
 
@@ -1548,12 +1792,9 @@ def train_and_seal_round74_pretest_policy(
             representative_window_policy_sha256,
             matched_preparation_sha256,
         )
-        if (
-            selected_config.execution_mode == "segmented_cohort"
-            and (
-                window_policy_kind != "segmented_duration_normalized"
-                or matched_preparation is not None
-            )
+        if selected_config.execution_mode == "segmented_cohort" and (
+            window_policy_kind != "segmented_duration_normalized"
+            or matched_preparation is not None
         ):
             raise ValueError(
                 "Round 74 segmented training requires its duration-normalized "
@@ -1599,9 +1840,7 @@ def train_and_seal_round74_pretest_policy(
             raise ValueError("Round 74 fitted feature scaler identity differs")
         scaler_payload = _canonical_json_bytes(feature_scaler.as_dict()) + b"\n"
         scaler_file_sha256 = _sha256_bytes(scaler_payload)
-        scaler_filename = (
-            f"round74-feature-scaler-{feature_scaler.scaler_sha256}.json"
-        )
+        scaler_filename = f"round74-feature-scaler-{feature_scaler.scaler_sha256}.json"
         reloaded_scaler = _load_scaler_bytes(scaler_payload)
         if reloaded_scaler.as_dict() != feature_scaler.as_dict():
             raise RuntimeError("Round 74 feature scaler reload differs")
@@ -1657,15 +1896,13 @@ def train_and_seal_round74_pretest_policy(
     if selected_config.architecture_selection_mode == "complexity_gate":
         winner, promotion_reports = _select_candidate_with_complexity_gate(
             candidate_fits,
-            minimum_mean_loss_improvement=(
-                selected_config.minimum_tuning_improvement
-            ),
+            minimum_mean_loss_improvement=(selected_config.minimum_tuning_improvement),
         )
         selection_criterion = (
             "sequential parameter-count complexity promotion; each challenger "
             "requires all 12 model-selection capture runs, must strictly exceed the "
             "numerical mean-loss floor, and may not degrade any paired run "
-            "beyond that floor"
+            "or eligible run-symbol-horizon proper-loss subgroup beyond that floor"
         )
         planned_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
         required_paired_capture_run_count = (
@@ -1786,6 +2023,9 @@ def train_and_seal_round74_pretest_policy(
                 "peer_reports": list(fit.peer_reports),
                 "ensemble_tuning_metrics": fit.ensemble_metrics,
                 "ensemble_tuning_run_losses": list(fit.ensemble_run_losses),
+                "ensemble_tuning_run_symbol_horizon_losses": (
+                    fit.ensemble_group_losses
+                ),
                 "ensemble_prediction_sha256": (fit.ensemble_prediction_sha256),
             }
             for fit in candidate_fits
@@ -2286,8 +2526,7 @@ def load_round74_pretest_policy(
             or isinstance(scaler_byte_count, bool)
             or not isinstance(scaler_byte_count, int)
             or scaler_byte_count <= 0
-            or scaler_artifact.get("reason")
-            != "training_only_scaler_persisted"
+            or scaler_artifact.get("reason") != "training_only_scaler_persisted"
             or scaler_artifact.get("media_type") != "application/json"
             or scaler_artifact.get("fit_partition_role") != "training"
             or scaler_artifact.get("reload_verified") is not True
@@ -2327,12 +2566,14 @@ def load_round74_pretest_policy(
         "fully_censored_rows",
     }
     candidate_run_losses: dict[str, tuple[float, ...]] = {}
+    candidate_group_losses: dict[str, dict[str, float]] = {}
     candidate_parameter_counts: dict[str, int] = {}
     for panel_candidate, raw_report in candidate_panel.items():
         if not isinstance(raw_report, Mapping):
             raise ValueError("Round 74 pretest candidate report differs")
         metrics = raw_report.get("ensemble_tuning_metrics")
         raw_run_losses = raw_report.get("ensemble_tuning_run_losses")
+        raw_group_losses = raw_report.get("ensemble_tuning_run_symbol_horizon_losses")
         peers = raw_report.get("peer_reports")
         parameter_count = raw_report.get("parameter_count_per_peer")
         if (
@@ -2343,6 +2584,7 @@ def load_round74_pretest_policy(
                 "peer_reports",
                 "ensemble_tuning_metrics",
                 "ensemble_tuning_run_losses",
+                "ensemble_tuning_run_symbol_horizon_losses",
                 "ensemble_prediction_sha256",
             }
             or isinstance(parameter_count, bool)
@@ -2372,6 +2614,26 @@ def load_round74_pretest_policy(
                 or not math.isfinite(float(value))
                 for value in raw_run_losses
             )
+            or not isinstance(raw_group_losses, Mapping)
+            or not raw_group_losses
+            or any(
+                not isinstance(key, str)
+                or len(key.split(":")) != 3
+                or key.split(":")[1] not in IMPACT_CAPTURE_SYMBOLS
+                or key.split(":")[2]
+                not in {str(value) for value in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS}
+                or isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                for key, value in raw_group_losses.items()
+            )
+            or (
+                reconstructed_config.execution_mode != "preflight"
+                and len(raw_group_losses)
+                != len(tuning_batch_hashes)
+                * len(IMPACT_CAPTURE_SYMBOLS)
+                * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+            )
             or not math.isclose(
                 sum(float(value) for value in raw_run_losses) / len(raw_run_losses),
                 float(metrics.get("run_balanced_loss", math.inf)),
@@ -2392,7 +2654,13 @@ def load_round74_pretest_policy(
         candidate_run_losses[str(panel_candidate)] = tuple(
             float(value) for value in raw_run_losses
         )
+        assert isinstance(raw_group_losses, Mapping)
+        candidate_group_losses[str(panel_candidate)] = {
+            str(key): float(value) for key, value in raw_group_losses.items()
+        }
         candidate_parameter_counts[str(panel_candidate)] = int(parameter_count)
+    if len({tuple(sorted(values)) for values in candidate_group_losses.values()}) != 1:
+        raise ValueError("Round 74 pretest candidate subgroup panel differs")
     selected_report = candidate_panel[candidate_id]
     assert isinstance(selected_report, Mapping)
     if reconstructed_config.architecture_selection_mode == "complexity_gate":
@@ -2403,17 +2671,16 @@ def load_round74_pretest_policy(
             minimum_mean_loss_improvement=(
                 reconstructed_config.minimum_tuning_improvement
             ),
+            candidate_group_losses=candidate_group_losses,
         )
         expected_criterion = (
             "sequential parameter-count complexity promotion; each challenger "
             "requires all 12 model-selection capture runs, must strictly exceed the "
             "numerical mean-loss floor, and may not degrade any paired run "
-            "beyond that floor"
+            "or eligible run-symbol-horizon proper-loss subgroup beyond that floor"
         )
         expected_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
-        expected_paired_run_count = (
-            ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-        )
+        expected_paired_run_count = ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
         expected_improvement = reconstructed_config.minimum_tuning_improvement
     else:
         expected_winner = reconstructed_config.candidate_ids[0]
@@ -2448,12 +2715,10 @@ def load_round74_pretest_policy(
         or candidate_id != expected_winner
         or selection.get("ordered_candidate_ids")
         != list(reconstructed_config.candidate_ids)
-        or selection.get("planned_comparison_count")
-        != expected_comparison_count
+        or selection.get("planned_comparison_count") != expected_comparison_count
         or selection.get("required_paired_capture_run_count")
         != expected_paired_run_count
-        or selection.get("minimum_mean_proper_loss_improvement")
-        != expected_improvement
+        or selection.get("minimum_mean_proper_loss_improvement") != expected_improvement
         or selection.get("maximum_permitted_paired_run_loss_degradation")
         != expected_improvement
         or selection.get("statistical_independence_or_significance_claim") is not False
