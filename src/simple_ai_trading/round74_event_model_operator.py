@@ -177,6 +177,10 @@ def fit_round74_cohort_feature_scaler(
 ) -> Round74EventFeatureScaler:
     """Fit the bounded scaler from training events and no later role."""
 
+    partition.validate()
+    training_run_ids = tuple(
+        entry.run_id for entry in partition.entries if entry.role == "training"
+    )
     return fit_round74_event_feature_scaler_stream(
         iter_round74_training_feature_chunks(
             store,
@@ -185,6 +189,9 @@ def fit_round74_cohort_feature_scaler(
         ),
         partition_role="training",
         maximum_fit_rows=maximum_fit_rows,
+        fit_source_scope="training_partition_all_runs",
+        fit_source_run_ids=training_run_ids,
+        fit_source_partition_sha256=partition.partition_sha256,
     )
 
 

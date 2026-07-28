@@ -68,6 +68,9 @@ from .impact_absorption_event_sequence import (
 )
 from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 from .round74_segmented_model_operator import (
+    ROUND74_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR as ROUND74_EVENT_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR,
+    ROUND74_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS as ROUND74_EVENT_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS,
+    ROUND74_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS as ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS,
     ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS,
     Round74SegmentedModelSelectionStages,
     Round74SegmentedTuningSubpartition,
@@ -76,10 +79,10 @@ from .round74_segmented_model_operator import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v27"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v26"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v28"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v27"
 ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION = (
-    "round-074-event-selection-protocol-v1"
+    "round-074-event-selection-protocol-v2"
 )
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION = "round-074-target-loss-scale-v1"
@@ -90,9 +93,6 @@ ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
 ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS = 12
 ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS = 120
-ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS = 128
-ROUND74_EVENT_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS = 32
-ROUND74_EVENT_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR = 8
 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "maximum_adverse_excursion": 0.35,
     "positive_payoff": 0.25,
@@ -363,6 +363,7 @@ class Round74EventSelectionProtocol:
         ...,
     ]
     stage_partition: Round74SegmentedModelSelectionStages
+    scaler_fit_selection_sha256: str
     schema_version: str = ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -386,6 +387,7 @@ class Round74EventSelectionProtocol:
             or len(self.promotion_stage_batches)
             != len(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
             or any(not group for group in self.promotion_stage_batches)
+            or _SHA256.fullmatch(self.scaler_fit_selection_sha256) is None
         ):
             raise ValueError("Round 74 model-selection protocol differs")
         for batch in all_batches:
@@ -479,6 +481,11 @@ class Round74EventSelectionProtocol:
             "chronological_gap_ns": chronological_gap_ns,
             "minimum_chronological_gap_ns": (ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS),
             "target_loss_scale_fit_scope": "optimization_training_runs_only",
+            "feature_scaler_fit_scope": ("segmented_optimization_training_runs_only"),
+            "feature_scaler_fit_selection_sha256": (self.scaler_fit_selection_sha256),
+            "feature_scaler_fit_source_run_ids_sha256": _canonical_sha256(
+                [_batch_run_id(batch) for batch in self.optimization_batches]
+            ),
             "early_stopping_targets_used_for_gradient_updates": False,
             "promotion_targets_used_for_checkpoint_selection": False,
             "cross_stage_promotion_run_reuse_permitted": False,
@@ -493,6 +500,7 @@ class Round74EventSelectionProtocol:
 def _build_segmented_selection_protocol(
     training_batches: Sequence[Round74EventTrainingBatch],
     tuning_roles: object,
+    feature_scaler: Round74EventFeatureScaler,
 ) -> Round74EventSelectionProtocol:
     from .round74_event_model_operator import Round74PreparedTuningRoles
 
@@ -525,18 +533,27 @@ def _build_segmented_selection_protocol(
             "Round 74 segmented training role is too small for isolated early stopping"
         )
     early_stopping_batches = selected_training[-early_stopping_count:]
-    optimization_end = admitted_count - early_stopping_count
-    while (
-        optimization_end > ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
-        and int(early_stopping_batches[0].decision_wall_ns[0])
-        - int(selected_training[optimization_end - 1].decision_wall_ns[-1])
-        < ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
+    early_stopping_start = admitted_count - early_stopping_count
+    if (
+        not isinstance(feature_scaler, Round74EventFeatureScaler)
+        or feature_scaler.fit_source_scope != "segmented_optimization_training_runs"
+        or feature_scaler.fit_source_partition_sha256
+        != selected_training[0].partition_sha256
+        or _SHA256.fullmatch(feature_scaler.fit_source_selection_sha256) is None
     ):
-        optimization_end -= 1
+        raise ValueError("Round 74 segmented scaler provenance differs")
+    optimization_end = len(feature_scaler.fit_source_run_ids)
+    observed_optimization_run_ids = tuple(
+        _batch_run_id(batch) for batch in selected_training[:optimization_end]
+    )
+    if (
+        optimization_end < ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
+        or optimization_end > early_stopping_start
+        or feature_scaler.fit_source_run_ids != observed_optimization_run_ids
+    ):
+        raise ValueError("Round 74 segmented scaler optimization runs differ")
     optimization_batches = selected_training[:optimization_end]
-    purged_training_batches = selected_training[
-        optimization_end : admitted_count - early_stopping_count
-    ]
+    purged_training_batches = selected_training[optimization_end:early_stopping_start]
     stage_partition = build_round74_segmented_model_selection_stages(
         tuning_roles.subpartition
     )
@@ -556,6 +573,7 @@ def _build_segmented_selection_protocol(
         early_stopping_batches=early_stopping_batches,
         promotion_stage_batches=promotion_stage_batches,
         stage_partition=stage_partition,
+        scaler_fit_selection_sha256=feature_scaler.fit_source_selection_sha256,
     )
     selected.validate()
     if (
@@ -3012,6 +3030,9 @@ def train_and_seal_round74_pretest_policy(
             "byte_count": 0,
             "media_type": None,
             "fit_partition_role": None,
+            "fit_source_scope": None,
+            "fit_source_run_count": 0,
+            "fit_source_selection_sha256": None,
             "reload_verified": False,
         }
     else:
@@ -3020,6 +3041,24 @@ def train_and_seal_round74_pretest_policy(
             or feature_scaler.scaler_sha256 != development.scaler_sha256
         ):
             raise ValueError("Round 74 fitted feature scaler identity differs")
+        if selection_protocol is not None and (
+            feature_scaler.fit_source_scope != "segmented_optimization_training_runs"
+            or feature_scaler.fit_source_run_ids
+            != tuple(
+                _batch_run_id(batch)
+                for batch in selection_protocol.optimization_batches
+            )
+            or feature_scaler.fit_source_partition_sha256
+            != development.partition_sha256
+            or feature_scaler.fit_source_selection_sha256
+            != selection_protocol.scaler_fit_selection_sha256
+        ):
+            raise ValueError("Round 74 segmented scaler binding differs")
+        if (
+            selected_config.execution_mode == "cohort"
+            and feature_scaler.fit_source_scope != "training_partition_all_runs"
+        ):
+            raise ValueError("Round 74 cohort scaler provenance differs")
         scaler_payload = _canonical_json_bytes(feature_scaler.as_dict()) + b"\n"
         scaler_file_sha256 = _sha256_bytes(scaler_payload)
         scaler_filename = f"round74-feature-scaler-{feature_scaler.scaler_sha256}.json"
@@ -3035,6 +3074,11 @@ def train_and_seal_round74_pretest_policy(
             "byte_count": len(scaler_payload),
             "media_type": "application/json",
             "fit_partition_role": "training",
+            "fit_source_scope": feature_scaler.fit_source_scope,
+            "fit_source_run_count": len(feature_scaler.fit_source_run_ids),
+            "fit_source_selection_sha256": (
+                feature_scaler.fit_source_selection_sha256 or None
+            ),
             "reload_verified": True,
         }
     target_loss_scale = fit_round74_event_target_loss_scale(
@@ -3740,7 +3784,11 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
             round74_matched_representative_window_policy()["policy_sha256"]
         )
     selection_protocol = (
-        _build_segmented_selection_protocol(training_batches, tuning_roles)
+        _build_segmented_selection_protocol(
+            training_batches,
+            tuning_roles,
+            feature_scaler,
+        )
         if selected_config.execution_mode == "segmented_cohort"
         else None
     )
@@ -3983,6 +4031,8 @@ def load_round74_pretest_policy(
         "disjoint_promotion_stages": False,
         "eligible_for_segmented_cohort_policy": False,
     }
+    isolated_scaler_run_ids: tuple[str, ...] = ()
+    isolated_scaler_selection_sha256: str | None = None
     if selection_protocol_payload.get("mode") == "isolated_chronological_panels":
         protocol = selection_protocol_payload.get("protocol")
         stage_partition_payload = selection_protocol_payload.get("stage_partition")
@@ -4044,6 +4094,9 @@ def load_round74_pretest_policy(
             "chronological_gap_ns",
             "minimum_chronological_gap_ns",
             "target_loss_scale_fit_scope",
+            "feature_scaler_fit_scope",
+            "feature_scaler_fit_selection_sha256",
+            "feature_scaler_fit_source_run_ids_sha256",
             "early_stopping_targets_used_for_gradient_updates",
             "promotion_targets_used_for_checkpoint_selection",
             "cross_stage_promotion_run_reuse_permitted",
@@ -4165,6 +4218,14 @@ def load_round74_pretest_policy(
             != ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
             or protocol.get("target_loss_scale_fit_scope")
             != "optimization_training_runs_only"
+            or protocol.get("feature_scaler_fit_scope")
+            != "segmented_optimization_training_runs_only"
+            or _SHA256.fullmatch(
+                str(protocol.get("feature_scaler_fit_selection_sha256"))
+            )
+            is None
+            or protocol.get("feature_scaler_fit_source_run_ids_sha256")
+            != _canonical_sha256(optimization_run_ids)
             or protocol.get("early_stopping_targets_used_for_gradient_updates")
             is not False
             or protocol.get("promotion_targets_used_for_checkpoint_selection")
@@ -4176,6 +4237,10 @@ def load_round74_pretest_policy(
             raise ValueError("Round 74 pretest selection protocol differs")
         target_loss_scale_batch_sha256 = tuple(
             sorted(str(value) for value in optimization_hashes)
+        )
+        isolated_scaler_run_ids = tuple(str(value) for value in optimization_run_ids)
+        isolated_scaler_selection_sha256 = str(
+            protocol["feature_scaler_fit_selection_sha256"]
         )
         stage_tuning_run_counts = {
             stage_id: len(promotion_hashes[stage_id])
@@ -4395,6 +4460,9 @@ def load_round74_pretest_policy(
         "byte_count",
         "media_type",
         "fit_partition_role",
+        "fit_source_scope",
+        "fit_source_run_count",
+        "fit_source_selection_sha256",
         "reload_verified",
     }
     scaler_available = scaler_artifact.get("available")
@@ -4408,6 +4476,11 @@ def load_round74_pretest_policy(
         scaler_sha256 = scaler_artifact.get("scaler_sha256")
         scaler_file_sha256 = scaler_artifact.get("file_sha256")
         scaler_byte_count = scaler_artifact.get("byte_count")
+        scaler_source_scope = scaler_artifact.get("fit_source_scope")
+        scaler_source_run_count = scaler_artifact.get("fit_source_run_count")
+        scaler_source_selection_sha256 = scaler_artifact.get(
+            "fit_source_selection_sha256"
+        )
         if (
             not isinstance(scaler_filename, str)
             or _SAFE_FILENAME.fullmatch(scaler_filename) is None
@@ -4421,6 +4494,19 @@ def load_round74_pretest_policy(
             or scaler_artifact.get("reason") != "training_only_scaler_persisted"
             or scaler_artifact.get("media_type") != "application/json"
             or scaler_artifact.get("fit_partition_role") != "training"
+            or scaler_source_scope
+            not in {
+                "unbound_training_matrix",
+                "training_partition_all_runs",
+                "segmented_optimization_training_runs",
+            }
+            or isinstance(scaler_source_run_count, bool)
+            or not isinstance(scaler_source_run_count, int)
+            or scaler_source_run_count < 0
+            or (
+                scaler_source_selection_sha256 is not None
+                and _SHA256.fullmatch(str(scaler_source_selection_sha256)) is None
+            )
             or scaler_artifact.get("reload_verified") is not True
         ):
             raise ValueError("Round 74 pretest scaler artifact differs")
@@ -4434,6 +4520,9 @@ def load_round74_pretest_policy(
             "byte_count": 0,
             "media_type": None,
             "fit_partition_role": None,
+            "fit_source_scope": None,
+            "fit_source_run_count": 0,
+            "fit_source_selection_sha256": None,
             "reload_verified": False,
         }:
             raise ValueError("Round 74 pretest absent scaler artifact differs")
@@ -5269,8 +5358,29 @@ def load_round74_pretest_policy(
         ):
             raise ValueError("Round 74 pretest scaler artifact differs")
         loaded_scaler = _load_scaler_bytes(scaler_bytes)
-        if loaded_scaler.scaler_sha256 != development["scaler_sha256"]:
+        if (
+            loaded_scaler.scaler_sha256 != development["scaler_sha256"]
+            or loaded_scaler.fit_source_scope != scaler_source_scope
+            or len(loaded_scaler.fit_source_run_ids) != scaler_source_run_count
+            or (loaded_scaler.fit_source_selection_sha256 or None)
+            != scaler_source_selection_sha256
+        ):
             raise ValueError("Round 74 pretest scaler identity differs")
+        if isolated_scaler_selection_sha256 is not None and (
+            loaded_scaler.fit_source_scope != "segmented_optimization_training_runs"
+            or loaded_scaler.fit_source_run_ids != isolated_scaler_run_ids
+            or loaded_scaler.fit_source_partition_sha256
+            != development["partition_sha256"]
+            or loaded_scaler.fit_source_selection_sha256
+            != isolated_scaler_selection_sha256
+        ):
+            raise ValueError("Round 74 pretest segmented scaler binding differs")
+        if reconstructed_config.execution_mode == "cohort" and (
+            loaded_scaler.fit_source_scope != "training_partition_all_runs"
+            or loaded_scaler.fit_source_partition_sha256
+            != development["partition_sha256"]
+        ):
+            raise ValueError("Round 74 pretest cohort scaler binding differs")
     model_path = selected_path.parent / filename
     try:
         model_bytes = model_path.read_bytes()

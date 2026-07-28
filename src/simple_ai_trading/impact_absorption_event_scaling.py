@@ -16,13 +16,18 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_SCALER_SCHEMA_VERSION = "round-074-event-feature-scaler-v5"
+ROUND74_EVENT_SCALER_SCHEMA_VERSION = "round-074-event-feature-scaler-v6"
 ROUND74_EVENT_BINARY_FEATURE_COUNT = 11
 ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS = 250_000
 ROUND74_EVENT_SCALER_STANDARDIZED_CLIP = 12.0
 ROUND74_EVENT_SCALER_MINIMUM_SCALE = 1e-6
 ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM = "splitmix64-smallest-priority-v1"
 ROUND74_EVENT_SCALER_SAMPLING_SEED = 7404
+ROUND74_EVENT_SCALER_SOURCE_SCOPES = (
+    "unbound_training_matrix",
+    "training_partition_all_runs",
+    "segmented_optimization_training_runs",
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -46,6 +51,64 @@ def _finite_vector(value: object, *, label: str) -> np.ndarray:
     return np.ascontiguousarray(selected)
 
 
+def _validated_source_provenance(
+    *,
+    scope: object,
+    run_ids: object,
+    partition_sha256: object,
+    selection_sha256: object,
+) -> tuple[str, tuple[str, ...], str, str]:
+    selected_scope = str(scope)
+    try:
+        selected_run_ids = tuple(str(run_id) for run_id in run_ids)  # type: ignore[arg-type]
+    except TypeError as exc:
+        raise ValueError("Round 74 scaler source provenance differs") from exc
+    selected_partition = str(partition_sha256)
+    selected_selection = str(selection_sha256)
+    if (
+        selected_scope not in ROUND74_EVENT_SCALER_SOURCE_SCOPES
+        or len(set(selected_run_ids)) != len(selected_run_ids)
+        or any(
+            len(run_id) != 32
+            or any(character not in "0123456789abcdef" for character in run_id)
+            for run_id in selected_run_ids
+        )
+    ):
+        raise ValueError("Round 74 scaler source provenance differs")
+
+    def is_sha256(value: str) -> bool:
+        return len(value) == 64 and all(
+            character in "0123456789abcdef" for character in value
+        )
+
+    if selected_scope == "unbound_training_matrix":
+        valid = (
+            not selected_run_ids
+            and selected_partition == ""
+            and selected_selection == ""
+        )
+    elif selected_scope == "training_partition_all_runs":
+        valid = (
+            bool(selected_run_ids)
+            and is_sha256(selected_partition)
+            and selected_selection == ""
+        )
+    else:
+        valid = (
+            bool(selected_run_ids)
+            and is_sha256(selected_partition)
+            and is_sha256(selected_selection)
+        )
+    if not valid:
+        raise ValueError("Round 74 scaler source provenance differs")
+    return (
+        selected_scope,
+        selected_run_ids,
+        selected_partition,
+        selected_selection,
+    )
+
+
 @dataclass(frozen=True)
 class Round74EventFeatureScaler:
     """Training-only robust statistics bound to the exact feature schema."""
@@ -58,6 +121,10 @@ class Round74EventFeatureScaler:
     fit_input_rows: int
     fit_sample_rows: int
     fit_sample_index_sha256: str
+    fit_source_scope: str = "unbound_training_matrix"
+    fit_source_run_ids: tuple[str, ...] = ()
+    fit_source_partition_sha256: str = ""
+    fit_source_selection_sha256: str = ""
     fit_sampling_algorithm: str = ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM
     fit_sampling_seed: int = ROUND74_EVENT_SCALER_SAMPLING_SEED
     feature_names_sha256: str = ROUND74_EVENT_FEATURE_NAMES_SHA256
@@ -95,6 +162,17 @@ class Round74EventFeatureScaler:
             character not in "0123456789abcdef" for character in digest
         ):
             raise ValueError("Round 74 scaler sample-index digest is invalid")
+        (
+            source_scope,
+            source_run_ids,
+            source_partition_sha256,
+            source_selection_sha256,
+        ) = _validated_source_provenance(
+            scope=self.fit_source_scope,
+            run_ids=self.fit_source_run_ids,
+            partition_sha256=self.fit_source_partition_sha256,
+            selection_sha256=self.fit_source_selection_sha256,
+        )
         binary = slice(0, ROUND74_EVENT_BINARY_FEATURE_COUNT)
         if (
             np.any(median[binary] != 0.0)
@@ -109,6 +187,18 @@ class Round74EventFeatureScaler:
         object.__setattr__(self, "lower_clip", lower)
         object.__setattr__(self, "upper_clip", upper)
         object.__setattr__(self, "constant_mask", np.ascontiguousarray(constant))
+        object.__setattr__(self, "fit_source_scope", source_scope)
+        object.__setattr__(self, "fit_source_run_ids", source_run_ids)
+        object.__setattr__(
+            self,
+            "fit_source_partition_sha256",
+            source_partition_sha256,
+        )
+        object.__setattr__(
+            self,
+            "fit_source_selection_sha256",
+            source_selection_sha256,
+        )
 
     @property
     def scaler_sha256(self) -> str:
@@ -145,6 +235,14 @@ class Round74EventFeatureScaler:
             "feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
             "binary_feature_count": ROUND74_EVENT_BINARY_FEATURE_COUNT,
             "fit_partition_role": "training",
+            "fit_source_scope": self.fit_source_scope,
+            "fit_source_run_ids": list(self.fit_source_run_ids),
+            "fit_source_run_count": len(self.fit_source_run_ids),
+            "fit_source_run_ids_sha256": _canonical_sha256(
+                list(self.fit_source_run_ids)
+            ),
+            "fit_source_partition_sha256": self.fit_source_partition_sha256,
+            "fit_source_selection_sha256": self.fit_source_selection_sha256,
             "fit_input_rows": int(self.fit_input_rows),
             "fit_sample_rows": int(self.fit_sample_rows),
             "fit_sample_index_sha256": self.fit_sample_index_sha256,
@@ -177,6 +275,13 @@ class Round74EventFeatureScaler:
             fit_input_rows=int(payload["fit_input_rows"]),
             fit_sample_rows=int(payload["fit_sample_rows"]),
             fit_sample_index_sha256=str(payload["fit_sample_index_sha256"]),
+            fit_source_scope=str(payload["fit_source_scope"]),
+            fit_source_run_ids=tuple(
+                str(run_id)
+                for run_id in payload["fit_source_run_ids"]  # type: ignore[union-attr]
+            ),
+            fit_source_partition_sha256=str(payload["fit_source_partition_sha256"]),
+            fit_source_selection_sha256=str(payload["fit_source_selection_sha256"]),
             fit_sampling_algorithm=str(payload["fit_sampling_algorithm"]),
             fit_sampling_seed=int(payload["fit_sampling_seed"]),
             median=np.asarray(payload["median"], dtype=np.float64),
@@ -246,6 +351,10 @@ def _scaler_from_sample(
     input_rows: int,
     observed_minimum: np.ndarray,
     observed_maximum: np.ndarray,
+    fit_source_scope: str,
+    fit_source_run_ids: tuple[str, ...],
+    fit_source_partition_sha256: str,
+    fit_source_selection_sha256: str,
 ) -> Round74EventFeatureScaler:
     order = np.argsort(sample_indices, kind="stable")
     indices = np.ascontiguousarray(sample_indices[order], dtype=np.int64)
@@ -292,6 +401,10 @@ def _scaler_from_sample(
         fit_input_rows=int(input_rows),
         fit_sample_rows=int(indices.size),
         fit_sample_index_sha256=hashlib.sha256(indices.tobytes()).hexdigest(),
+        fit_source_scope=fit_source_scope,
+        fit_source_run_ids=fit_source_run_ids,
+        fit_source_partition_sha256=fit_source_partition_sha256,
+        fit_source_selection_sha256=fit_source_selection_sha256,
     )
 
 
@@ -300,11 +413,26 @@ def fit_round74_event_feature_scaler_stream(
     *,
     partition_role: str,
     maximum_fit_rows: int = ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+    fit_source_scope: str = "unbound_training_matrix",
+    fit_source_run_ids: Iterable[str] = (),
+    fit_source_partition_sha256: str = "",
+    fit_source_selection_sha256: str = "",
 ) -> Round74EventFeatureScaler:
     """Fit one bounded, chunk-invariant sample from unique training events."""
 
     if str(partition_role) != "training":
         raise ValueError("Round 74 scaler may only fit the training partition")
+    (
+        source_scope,
+        source_run_ids,
+        source_partition_sha256,
+        source_selection_sha256,
+    ) = _validated_source_provenance(
+        scope=fit_source_scope,
+        run_ids=fit_source_run_ids,
+        partition_sha256=fit_source_partition_sha256,
+        selection_sha256=fit_source_selection_sha256,
+    )
     if (
         not math.isfinite(float(maximum_fit_rows))
         or float(maximum_fit_rows) != int(maximum_fit_rows)
@@ -374,6 +502,10 @@ def fit_round74_event_feature_scaler_stream(
         input_rows=input_rows,
         observed_minimum=observed_minimum,
         observed_maximum=observed_maximum,
+        fit_source_scope=source_scope,
+        fit_source_run_ids=source_run_ids,
+        fit_source_partition_sha256=source_partition_sha256,
+        fit_source_selection_sha256=source_selection_sha256,
     )
 
 
@@ -382,6 +514,10 @@ def fit_round74_event_feature_scaler(
     *,
     partition_role: str,
     maximum_fit_rows: int = ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+    fit_source_scope: str = "unbound_training_matrix",
+    fit_source_run_ids: Iterable[str] = (),
+    fit_source_partition_sha256: str = "",
+    fit_source_selection_sha256: str = "",
 ) -> Round74EventFeatureScaler:
     """Fit bounded robust statistics from unique training events only."""
 
@@ -390,6 +526,10 @@ def fit_round74_event_feature_scaler(
         (values,),
         partition_role=partition_role,
         maximum_fit_rows=maximum_fit_rows,
+        fit_source_scope=fit_source_scope,
+        fit_source_run_ids=fit_source_run_ids,
+        fit_source_partition_sha256=fit_source_partition_sha256,
+        fit_source_selection_sha256=fit_source_selection_sha256,
     )
 
 
@@ -400,6 +540,7 @@ __all__ = [
     "ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM",
     "ROUND74_EVENT_SCALER_SAMPLING_SEED",
     "ROUND74_EVENT_SCALER_SCHEMA_VERSION",
+    "ROUND74_EVENT_SCALER_SOURCE_SCOPES",
     "ROUND74_EVENT_SCALER_STANDARDIZED_CLIP",
     "Round74EventFeatureScaler",
     "fit_round74_event_feature_scaler",

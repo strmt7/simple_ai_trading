@@ -824,13 +824,29 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
         )
         for index in range(160)
     )
+    with pytest.raises(ValueError, match="scaler provenance differs"):
+        train_and_seal_round74_pretest_policy_from_prepared_roles(
+            training,
+            roles,
+            output_directory=tmp_path,
+            compute_backend="cpu",
+            config=config,
+            feature_scaler=_scaler(),
+        )
+    segmented_scaler = replace(
+        _scaler(),
+        fit_source_scope="segmented_optimization_training_runs",
+        fit_source_run_ids=tuple(batch.run_id[0] for batch in training[:128]),
+        fit_source_partition_sha256="1" * 64,
+        fit_source_selection_sha256="6" * 64,
+    )
     result = train_and_seal_round74_pretest_policy_from_prepared_roles(
         training,
         roles,
         output_directory=tmp_path,
         compute_backend="cpu",
         config=config,
-        feature_scaler=_scaler(),
+        feature_scaler=segmented_scaler,
     )
 
     assert result is sentinel
@@ -860,6 +876,10 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
     assert protocol_payload["target_loss_scale_fit_scope"] == (
         "optimization_training_runs_only"
     )
+    assert protocol_payload["feature_scaler_fit_scope"] == (
+        "segmented_optimization_training_runs_only"
+    )
+    assert protocol_payload["feature_scaler_fit_selection_sha256"] == "6" * 64
     assert protocol_payload["early_stopping_targets_used_for_gradient_updates"] is False
     assert protocol_payload["promotion_targets_used_for_checkpoint_selection"] is False
     assert protocol_payload["cross_stage_promotion_run_reuse_permitted"] is False
