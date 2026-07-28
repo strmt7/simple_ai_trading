@@ -9,6 +9,13 @@ from pathlib import Path, PurePosixPath
 from typing import Mapping, Sequence
 
 from .impact_absorption_target_assembly import Round74SourceTargetAssembly
+from .impact_absorption_execution_scenario import (
+    ROUND74_PUBLIC_EXECUTION_SCENARIO_CONTRACT_SHA256,
+    ROUND74_PUBLIC_EXECUTION_SCENARIO_LATENCY_SOURCE_ID,
+    ROUND74_PUBLIC_EXECUTION_SCENARIO_SCHEMA_VERSION,
+    ROUND74_PUBLIC_EXECUTION_SCENARIO_SELECTED_NAME,
+    ROUND74_PUBLIC_EXECUTION_SCENARIO_SLIPPAGE_SOURCE_ID,
+)
 
 
 ROUND74_TARGET_ASSEMBLY_MANIFEST_SCHEMA_VERSION = (
@@ -134,6 +141,64 @@ def _evidence_sha256_by_kind(value: object) -> dict[str, str]:
                         "Round 74 source artifact evidence digest is ambiguous"
                     )
     return selected
+
+
+def _audit_execution_scenario_artifact(
+    value: Mapping[str, object],
+    *,
+    run_id: str,
+) -> None:
+    scenario = dict(value)
+    scenario_sha256 = str(scenario.pop("scenario_sha256", ""))
+    authority = scenario.get("authority")
+    upstream = scenario.get("upstream_testnet_calibration")
+    panel = scenario.get("scenario_panel")
+    source_ids = {
+        str(item)
+        for item in _find_key_values(scenario, "source_id")
+        if isinstance(item, str)
+    }
+    selected_rows = (
+        [
+            row
+            for row in panel
+            if isinstance(row, Mapping) and row.get("selected") is True
+        ]
+        if isinstance(panel, list)
+        else []
+    )
+    if (
+        scenario.get("schema_version")
+        != ROUND74_PUBLIC_EXECUTION_SCENARIO_SCHEMA_VERSION
+        or scenario.get("environment") != "binance_usdm_mainnet"
+        or scenario.get("run_id") != run_id
+        or scenario.get("scenario_contract_sha256")
+        != ROUND74_PUBLIC_EXECUTION_SCENARIO_CONTRACT_SHA256
+        or scenario.get("selected_scenario")
+        != ROUND74_PUBLIC_EXECUTION_SCENARIO_SELECTED_NAME
+        or scenario_sha256 != _canonical_sha256(scenario)
+        or source_ids
+        != {
+            ROUND74_PUBLIC_EXECUTION_SCENARIO_LATENCY_SOURCE_ID,
+            ROUND74_PUBLIC_EXECUTION_SCENARIO_SLIPPAGE_SOURCE_ID,
+        }
+        or not isinstance(authority, Mapping)
+        or authority.get("testnet_execution_equivalence") is not False
+        or authority.get("mainnet_fill_evidence") is not False
+        or authority.get("profitability_claim") is not False
+        or authority.get("orders_submitted") is not False
+        or authority.get("live_trading_authority") is not False
+        or not isinstance(upstream, Mapping)
+        or upstream.get("source_venue") != "binance_usdm_testnet"
+        or upstream.get("mainnet_execution_equivalence") is not False
+        or upstream.get("mainnet_transfer_permitted") is not False
+        or len(selected_rows) != 1
+        or selected_rows[0].get("name")
+        != ROUND74_PUBLIC_EXECUTION_SCENARIO_SELECTED_NAME
+        or selected_rows[0].get("exact_future_public_l2_replay_required") is not True
+        or selected_rows[0].get("mainnet_fill_estimate") is not False
+    ):
+        raise ValueError("Round 74 target source scenario artifact differs")
 
 
 @dataclass(frozen=True)
@@ -398,6 +463,11 @@ def audit_round74_target_assembly_manifest(
             }
         ):
             raise ValueError("Round 74 target source scenario contract differs")
+        if binding.label == "execution_scenario":
+            _audit_execution_scenario_artifact(
+                payload,
+                run_id=manifest.run_id,
+            )
     return manifest.assembly
 
 

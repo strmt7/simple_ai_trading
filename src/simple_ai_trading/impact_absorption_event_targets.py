@@ -56,6 +56,25 @@ ROUND74_EVENT_TARGET_EVIDENCE_SOURCES = {
     ),
     "funding_schedule": "binance_usdm_fapi_v1_funding_rate",
 }
+ROUND74_EVENT_TARGET_EVIDENCE_SOURCE_IDS = {
+    "quantity_rules": (
+        ROUND74_EVENT_TARGET_EVIDENCE_SOURCES["quantity_rules"],
+    ),
+    "commission": (
+        ROUND74_EVENT_TARGET_EVIDENCE_SOURCES["commission"],
+    ),
+    "entry_exit_latency": (
+        ROUND74_EVENT_TARGET_EVIDENCE_SOURCES["entry_exit_latency"],
+        "round74_public_mainnet_execution_latency_scenario_v1",
+    ),
+    "residual_slippage": (
+        ROUND74_EVENT_TARGET_EVIDENCE_SOURCES["residual_slippage"],
+        "round74_public_mainnet_residual_shortfall_scenario_v1",
+    ),
+    "funding_schedule": (
+        ROUND74_EVENT_TARGET_EVIDENCE_SOURCES["funding_schedule"],
+    ),
+}
 ROUND74_EVENT_TARGET_INELIGIBLE_REASONS = frozenset(
     {
         "decision_state_missing",
@@ -229,15 +248,23 @@ class Round74EventTargetEvidence:
         source_query_or_protocol_sha256: str,
         source_payload_sha256: str,
         claims: object,
+        source_id: str | None = None,
     ) -> Round74EventTargetEvidence:
         selected_kind = str(kind).strip()
         try:
-            source_id = ROUND74_EVENT_TARGET_EVIDENCE_SOURCES[selected_kind]
+            default_source_id = ROUND74_EVENT_TARGET_EVIDENCE_SOURCES[
+                selected_kind
+            ]
         except KeyError as exc:
             raise ValueError("Round 74 target evidence kind differs") from exc
+        selected_source_id = (
+            default_source_id
+            if source_id is None
+            else str(source_id).strip()
+        )
         return cls(
             kind=selected_kind,
-            source_id=source_id,
+            source_id=selected_source_id,
             environment=str(environment).strip(),
             observed_wall_ns=int(observed_wall_ns),
             record_count=int(record_count),
@@ -250,9 +277,9 @@ class Round74EventTargetEvidence:
 
     def __post_init__(self) -> None:
         if (
-            self.kind not in ROUND74_EVENT_TARGET_EVIDENCE_SOURCES
+            self.kind not in ROUND74_EVENT_TARGET_EVIDENCE_SOURCE_IDS
             or self.source_id
-            != ROUND74_EVENT_TARGET_EVIDENCE_SOURCES[self.kind]
+            not in ROUND74_EVENT_TARGET_EVIDENCE_SOURCE_IDS[self.kind]
         ):
             raise ValueError("Round 74 target evidence source differs")
         if self.environment not in ROUND74_EVENT_TARGET_ENVIRONMENTS:
@@ -2334,6 +2361,7 @@ class Round74EventTargetEngine:
 __all__ = [
     "ROUND74_EVENT_TARGET_ENVIRONMENTS",
     "ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION",
+    "ROUND74_EVENT_TARGET_EVIDENCE_SOURCE_IDS",
     "ROUND74_EVENT_TARGET_EVIDENCE_SOURCES",
     "ROUND74_EVENT_EXECUTION_OVERRIDE_SCHEMA_VERSION",
     "ROUND74_EVENT_TARGET_INELIGIBLE_REASONS",

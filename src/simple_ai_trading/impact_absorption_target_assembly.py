@@ -25,6 +25,9 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_execution_evidence import (
     build_round74_execution_calibration_evidence,
 )
+from .impact_absorption_execution_scenario import (
+    Round74PublicExecutionScenarioBundle,
+)
 from .impact_absorption_targets import Round73MarketQuantityRules
 
 
@@ -267,8 +270,88 @@ def assemble_round74_source_target(
     )
 
 
+def assemble_round74_public_paper_source_target(
+    *,
+    exchange_info_payload: Mapping[str, object],
+    commission_payload_by_symbol: Mapping[str, Mapping[str, object]],
+    funding_payload_by_symbol: Mapping[
+        str,
+        Sequence[Mapping[str, object]],
+    ],
+    funding_clock_probes: Sequence[Round74BinanceClockProbe],
+    execution_scenario: Round74PublicExecutionScenarioBundle,
+    exchange_info_observed_wall_ns: int,
+    commission_observed_wall_ns: int,
+    funding_observed_wall_ns: int,
+    funding_start_time_ms: int,
+    funding_end_time_ms: int,
+    funding_limit: int,
+) -> Round74SourceTargetAssembly:
+    """Assemble public-mainnet targets from a no-transfer scenario."""
+
+    execution_scenario.validate()
+    environment = "binance_usdm_mainnet"
+    quantity = build_round74_quantity_rules_evidence(
+        payload=exchange_info_payload,
+        environment=environment,
+        observed_wall_ns=exchange_info_observed_wall_ns,
+    )
+    commission = build_round74_commission_evidence(
+        payload_by_symbol=commission_payload_by_symbol,
+        environment=environment,
+        observed_wall_ns=commission_observed_wall_ns,
+    )
+    funding = build_round74_funding_evidence(
+        payload_by_symbol=funding_payload_by_symbol,
+        environment=environment,
+        observed_wall_ns=funding_observed_wall_ns,
+        start_time_ms=funding_start_time_ms,
+        end_time_ms=funding_end_time_ms,
+        limit=funding_limit,
+        clock_probes=funding_clock_probes,
+    )
+    rules = quantity.as_mapping()
+    spec = Round74EventTargetSpec.create(
+        reference_quote_notional=(
+            execution_scenario.reference_quote_notional
+        ),
+        decision_to_entry_latency_ns_by_symbol=(
+            execution_scenario.entry_latency_mapping()
+        ),
+        decision_to_exit_latency_ns_by_symbol=(
+            execution_scenario.exit_latency_mapping()
+        ),
+        taker_fee_bps_by_symbol=commission.as_mapping(),
+        funding_boundary_intervals_monotonic_ns=(
+            funding.boundary_mapping()
+        ),
+        funding_schedule_coverage_monotonic_ns=(
+            funding.coverage_mapping()
+        ),
+        additional_slippage_bps_per_side_by_symbol=(
+            execution_scenario.slippage_mapping()
+        ),
+        quantity_rules_evidence=quantity.evidence,
+        commission_evidence=commission.evidence,
+        entry_exit_latency_evidence=(
+            execution_scenario.entry_exit_latency_evidence
+        ),
+        slippage_evidence=(
+            execution_scenario.residual_slippage_evidence
+        ),
+        funding_schedule_evidence=funding.evidence,
+    )
+    return Round74SourceTargetAssembly(
+        spec=spec,
+        quantity_rules_by_symbol=tuple(
+            (symbol, rules[symbol]) for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+        ),
+    )
+
+
 __all__ = [
     "ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION",
     "Round74SourceTargetAssembly",
+    "assemble_round74_public_paper_source_target",
     "assemble_round74_source_target",
 ]
