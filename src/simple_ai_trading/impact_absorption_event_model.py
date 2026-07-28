@@ -19,6 +19,10 @@ from torch import nn
 from torch.nn import functional as F
 
 from .compute import require_backend, resolve_backend, torch_device_for_backend
+from .impact_absorption_event_features import (
+    ROUND74_EVENT_MARKET_STATE_FEATURE_INDICES,
+    ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES,
+)
 from .impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
@@ -28,7 +32,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v7"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v8"
 ROUND74_EVENT_MODEL_CANDIDATES = (
     "event_pooling_linear",
     "event_pooling_mlp",
@@ -507,9 +511,85 @@ class Round74CausalEventAttention(nn.Module):
         return self.heads(self.readout(encoded[:, -1, :]))
 
 
+class Round74StateConditionedFlow(nn.Module):
+    """Modulate order flow by contemporaneous market state before encoding."""
+
+    def __init__(self, base_candidate_id: str) -> None:
+        super().__init__()
+        if base_candidate_id not in ROUND74_EVENT_MODEL_CANDIDATES:
+            raise ValueError("Round 74 state-conditioned base candidate differs")
+        # Build the incumbent first so equal seeds preserve its initialization.
+        self.base_candidate_id = str(base_candidate_id)
+        self.base_model = build_round74_event_model(self.base_candidate_id)
+        self.state_to_flow_gate = nn.Linear(
+            len(ROUND74_EVENT_MARKET_STATE_FEATURE_INDICES),
+            len(ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES),
+        )
+        nn.init.zeros_(self.state_to_flow_gate.weight)
+        nn.init.zeros_(self.state_to_flow_gate.bias)
+        state_selector = torch.zeros(
+            len(ROUND74_EVENT_FEATURE_NAMES),
+            len(ROUND74_EVENT_MARKET_STATE_FEATURE_INDICES),
+        )
+        for state_index, feature_index in enumerate(
+            ROUND74_EVENT_MARKET_STATE_FEATURE_INDICES
+        ):
+            state_selector[feature_index, state_index] = 1.0
+        flow_to_original = torch.zeros(
+            len(ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES),
+            len(ROUND74_EVENT_FEATURE_NAMES),
+        )
+        for flow_index, feature_index in enumerate(
+            ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES
+        ):
+            flow_to_original[flow_index, feature_index] = 1.0
+        self.register_buffer(
+            "_state_selector",
+            state_selector,
+            persistent=False,
+        )
+        self.register_buffer(
+            "_flow_to_original",
+            flow_to_original,
+            persistent=False,
+        )
+
+    def _state_conditioned_values(self, values: torch.Tensor) -> torch.Tensor:
+        if (
+            values.ndim != 3
+            or int(values.shape[2]) != len(ROUND74_EVENT_FEATURE_NAMES)
+        ):
+            raise ValueError("Round 74 state-conditioned input dimensions are invalid")
+        state = torch.matmul(values, self._state_selector)
+        # Zero logits yield a multiplier of exactly one, making initialization
+        # functionally identical to the matched ungated incumbent.
+        flow_multiplier = 2.0 * torch.sigmoid(self.state_to_flow_gate(state))
+        multiplier = 1.0 + torch.matmul(
+            flow_multiplier - 1.0,
+            self._flow_to_original,
+        )
+        conditioned = values * multiplier
+        if conditioned.shape != values.shape or not bool(torch.isfinite(conditioned).all()):
+            raise ValueError("Round 74 state-conditioned values differ")
+        return conditioned
+
+    def encode_event_sequence(self, values: torch.Tensor) -> torch.Tensor:
+        """Return causal states from the conditioned base encoder."""
+
+        return encode_round74_event_sequence(
+            self.base_model,
+            self._state_conditioned_values(values),
+        )
+
+    def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
+        return self.base_model(self._state_conditioned_values(values))
+
+
 def round74_event_model_pretraining_channels(model: nn.Module) -> int | None:
     """Return the causal encoder width, or None for pooled controls."""
 
+    if isinstance(model, Round74StateConditionedFlow):
+        return round74_event_model_pretraining_channels(model.base_model)
     if isinstance(model, Round74CausalEventTCN):
         return int(model.projection.out_channels)
     if isinstance(model, Round74CausalEventAttention):
@@ -522,7 +602,13 @@ def round74_event_encoder_parameters(
 ) -> tuple[nn.Parameter, ...]:
     """Return only parameters that produce causal per-event states."""
 
-    if isinstance(model, Round74CausalEventTCN):
+    if isinstance(model, Round74StateConditionedFlow):
+        base_parameters = round74_event_encoder_parameters(model.base_model)
+        parameters = (
+            *tuple(model.state_to_flow_gate.parameters()),
+            *base_parameters,
+        )
+    elif isinstance(model, Round74CausalEventTCN):
         modules: tuple[nn.Module, ...] = (model.projection, *model.blocks)
         parameters = tuple(
             parameter for module in modules for parameter in module.parameters()
@@ -548,7 +634,9 @@ def encode_round74_event_sequence(
 ) -> torch.Tensor:
     """Expose causal states without giving pooled controls a fake sequence."""
 
-    if isinstance(model, (Round74CausalEventTCN, Round74CausalEventAttention)):
+    if isinstance(model, Round74StateConditionedFlow):
+        encoded = model.encode_event_sequence(values)
+    elif isinstance(model, (Round74CausalEventTCN, Round74CausalEventAttention)):
         encoded = model.encode_event_sequence(values)
     else:
         raise ValueError("Round 74 model has no causal event encoder")
@@ -561,8 +649,16 @@ def encode_round74_event_sequence(
     return encoded
 
 
-def build_round74_event_model(candidate_id: str) -> nn.Module:
+def build_round74_event_model(
+    candidate_id: str,
+    *,
+    state_conditioned_flow: bool = False,
+) -> nn.Module:
     selected = str(candidate_id).strip().lower()
+    if not isinstance(state_conditioned_flow, bool):
+        raise ValueError("Round 74 state-conditioned flow mode differs")
+    if state_conditioned_flow:
+        return Round74StateConditionedFlow(selected)
     if selected == "event_pooling_linear":
         return Round74EventPoolingLinear()
     if selected == "event_pooling_mlp":
@@ -963,6 +1059,10 @@ def round74_event_model_preflight(
 
 
 __all__ = [
+    "ROUND74_EVENT_ATTENTION_EXPANSION",
+    "ROUND74_EVENT_ATTENTION_HEADS",
+    "ROUND74_EVENT_ATTENTION_HIDDEN_CHANNELS",
+    "ROUND74_EVENT_ATTENTION_LAYERS",
     "ROUND74_EVENT_HIDDEN_CHANNELS",
     "ROUND74_EVENT_MODEL_CANDIDATES",
     "ROUND74_EVENT_MODEL_SCHEMA_VERSION",
@@ -973,10 +1073,12 @@ __all__ = [
     "ROUND74_EVENT_TCN_DILATIONS",
     "ROUND74_EVENT_TCN_KERNEL_SIZE",
     "ROUND74_EVENT_TCN_RECEPTIVE_FIELD",
+    "Round74CausalEventAttention",
     "Round74CausalEventTCN",
     "Round74EventModelOutput",
     "Round74EventPoolingLinear",
     "Round74EventPoolingMLP",
+    "Round74StateConditionedFlow",
     "build_round74_event_model",
     "encode_round74_event_sequence",
     "round74_event_encoder_parameters",

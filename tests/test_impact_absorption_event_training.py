@@ -38,14 +38,17 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     Round74EventEnsemble,
     Round74EventTargetLossScale,
     Round74EventTrainingConfig,
+    _CandidateFit,
     _complexity_gated_candidate_id,
     _eligible_target_minibatch_schedule,
     _eligible_target_weighted_group_loss,
     _empty_metric_sums,
+    _feature_view_contains_order_flow,
     _feature_view_promotion_report,
     _loss_for_minibatch,
     _losses_for_minibatch_group,
     _order_flow_challenger_feature_view,
+    _select_state_conditioned_flow_with_ablation_gate,
     fit_round74_event_target_loss_scale,
     load_round74_pretest_policy,
     load_round74_pretest_scaler,
@@ -1100,6 +1103,87 @@ def test_round74_feature_view_gate_is_complete_and_subgroup_noninferior() -> Non
         _order_flow_challenger_feature_view("full")
 
 
+def _interaction_fit(
+    *,
+    state_conditioned_flow: bool,
+    losses: tuple[float, ...],
+    group_losses: dict[str, float],
+    feature_view: str = "clock_neutral",
+) -> _CandidateFit:
+    return _CandidateFit(
+        candidate_id="causal_event_tcn",
+        feature_view=feature_view,
+        state_conditioned_flow=state_conditioned_flow,
+        peer_states=({},),
+        peer_reports=({},),
+        ensemble_metrics={"loss": sum(losses) / len(losses)},
+        ensemble_run_losses=losses,
+        ensemble_group_losses=group_losses,
+        ensemble_prediction_sha256="a" * 64,
+        parameter_count_per_peer=(
+            130_114 if state_conditioned_flow else 129_060
+        ),
+    )
+
+
+def test_round74_state_conditioned_flow_requires_admitted_flow_and_full_gate() -> None:
+    groups = {"run-a:BTCUSDT:5": 1.0, "run-b:ETHUSDT:30": 1.0}
+    incumbent = _interaction_fit(
+        state_conditioned_flow=False,
+        losses=(1.0, 1.0),
+        group_losses=groups,
+    )
+    challenger = _interaction_fit(
+        state_conditioned_flow=True,
+        losses=(0.9, 0.9),
+        group_losses={key: 0.9 for key in groups},
+    )
+
+    winner, report = _select_state_conditioned_flow_with_ablation_gate(
+        incumbent,
+        challenger,
+        minimum_mean_loss_improvement=1e-5,
+        required_paired_run_count=2,
+    )
+
+    assert winner is challenger
+    assert report["promoted"] is True
+    assert _feature_view_contains_order_flow("clock_neutral") is True
+    assert _feature_view_contains_order_flow("full") is True
+    assert _feature_view_contains_order_flow("market_state_clock_neutral") is False
+    with pytest.raises(ValueError, match="ablation panel differs"):
+        _select_state_conditioned_flow_with_ablation_gate(
+            replace(incumbent, feature_view="market_state_clock_neutral"),
+            replace(challenger, feature_view="market_state_clock_neutral"),
+            minimum_mean_loss_improvement=1e-5,
+            required_paired_run_count=2,
+        )
+
+
+def test_round74_state_conditioned_flow_rejects_hidden_subgroup_degradation() -> None:
+    incumbent = _interaction_fit(
+        state_conditioned_flow=False,
+        losses=(1.0, 1.0),
+        group_losses={"run-a:BTCUSDT:5": 1.0, "run-b:ETHUSDT:30": 1.0},
+    )
+    challenger = _interaction_fit(
+        state_conditioned_flow=True,
+        losses=(0.9, 0.9),
+        group_losses={"run-a:BTCUSDT:5": 0.8, "run-b:ETHUSDT:30": 1.1},
+    )
+
+    winner, report = _select_state_conditioned_flow_with_ablation_gate(
+        incumbent,
+        challenger,
+        minimum_mean_loss_improvement=1e-5,
+        required_paired_run_count=2,
+    )
+
+    assert winner is incumbent
+    assert report["promoted"] is False
+    assert report["all_paired_run_symbol_horizon_groups_noninferior"] is False
+
+
 def test_round74_complexity_gate_requires_consistent_complete_panel() -> None:
     candidate_ids = (
         "event_pooling_linear",
@@ -1672,6 +1756,23 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         policy["feature_view_selection"]["order_flow_default_on_gate_failure"]
         == "market_state_clock_neutral"
     )
+    assert set(policy["state_conditioned_flow_panel"]) == {
+        "unconditioned_order_flow"
+    }
+    assert (
+        policy["state_conditioned_flow_panel"]["unconditioned_order_flow"]
+        == policy["feature_view_panel"]["market_state_clock_neutral"]
+    )
+    interaction = policy["state_conditioned_flow_selection"]
+    assert interaction["reason"] == "order_flow_layer_not_selected"
+    assert interaction["evaluated"] is False
+    assert interaction["selected_state_conditioned_flow"] is False
+    assert interaction["promotion_report"] is None
+    assert interaction["required_paired_capture_run_count"] == 0
+    assert interaction["feature_view_fixed_before_interaction_gate"] is True
+    assert interaction["order_flow_required"] is True
+    assert interaction["neutral_multiplier_at_initialization"] == 1.0
+    assert interaction["test_targets_used"] is False
     assert set(policy["initialization_panel"]) == {"random"}
     assert (
         policy["initialization_panel"]["random"]
