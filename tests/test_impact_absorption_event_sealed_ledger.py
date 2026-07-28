@@ -1207,6 +1207,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     selection.validate()
     inference = _candidate_inference(batch, calibration, selection)
     progress: list[Mapping[str, object]] = []
+    prepared_models: list[str] = []
     finalized_models: list[str] = []
 
     panel = prepare_round74_target_free_ai_reviews(
@@ -1215,6 +1216,9 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
         probability_calibration=calibration,
         same_entry_latency_budget_ns=1_000_000,
         review_runner=_blocked_review,
+        model_batch_preparer=lambda binding: prepared_models.append(
+            binding.model_name
+        ),
         model_batch_finalizer=lambda binding: finalized_models.append(
             binding.model_name
         ),
@@ -1235,6 +1239,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     assert panel.reviews[0][1].effective_review_latency_ns == 6_000_000_000_000
     assert len(panel.reviews) == 2
     assert panel.model_batch_unload_enforced is True
+    assert prepared_models == ["fino1:8b", "qwen3:8b"]
     assert finalized_models == ["fino1:8b", "qwen3:8b"]
     assert all(len(value) == 24 for value in panel.reviews)
     assert all(
@@ -1252,6 +1257,36 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     assert panel.target_fields_accessed is False
     assert panel.trading_authority is False
     assert len(panel.panel_sha256) == 64
+
+
+def test_target_free_review_panel_finalizes_after_preload_failure() -> None:
+    batch = _test_batch()
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    inference = _candidate_inference(batch, calibration, selection)
+    finalized_models: list[str] = []
+
+    with pytest.raises(RuntimeError, match="preload failed"):
+        prepare_round74_target_free_ai_reviews(
+            inference,
+            action_selection=selection,
+            probability_calibration=calibration,
+            same_entry_latency_budget_ns=1_000_000,
+            review_runner=_blocked_review,
+            model_batch_preparer=lambda _binding: (_ for _ in ()).throw(
+                RuntimeError("preload failed")
+            ),
+            model_batch_finalizer=lambda binding: finalized_models.append(
+                binding.model_name
+            ),
+            wall_time_ns=lambda: 1_900_000_000_000_000_000,
+        )
+
+    assert finalized_models == ["fino1:8b"]
 
 
 def test_prepared_review_provider_binds_reserved_claim_and_model_panel(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
-from typing import Any
+from typing import Any, Mapping
 
 import pytest
 
@@ -21,6 +21,7 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 from simple_ai_trading.impact_absorption_ai_runtime import (
     Round74AIRuntimeConfig,
     Round74AIWorkerSession,
+    preload_round74_ai_model,
     review_round74_ai_candidate,
     unload_round74_ai_model,
 )
@@ -749,6 +750,107 @@ def test_declared_model_batch_unload_is_digest_bound_and_verified() -> None:
         )
     ]
     assert sleeps == [0.25]
+
+
+def test_declared_model_batch_preload_is_provenance_bound_and_gpu_verified() -> None:
+    unloaded = _unloaded_residency("", "fino1:8b", 1.0)
+    loaded = OllamaResidencyReport(
+        requested_model="fino1:8b",
+        status="gpu_resident",
+        loaded_model="fino1:8b",
+        digest=MODEL_DIGEST,
+        size_bytes=1_000,
+        size_vram_bytes=1_000,
+        vram_to_model_ratio=1.0,
+    )
+    reports = iter([unloaded, loaded])
+    requests: list[tuple[str, Mapping[str, object], float]] = []
+
+    def post(
+        url: str,
+        payload: Mapping[str, object],
+        timeout_seconds: float,
+    ) -> object:
+        requests.append((url, payload, timeout_seconds))
+        return {
+            "model": "fino1:8b",
+            "response": "",
+            "done": True,
+        }
+
+    result = preload_round74_ai_model(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        capability_detector=lambda _config: _capability(),
+        provenance_resolver=lambda *_args: (MODEL_DIGEST, METADATA_DIGEST),
+        residency_inspector=lambda *_args, **_kwargs: next(reports),
+        provider_poster=post,
+    )
+
+    assert result == loaded
+    assert requests == [
+        (
+            "http://127.0.0.1:11434/api/generate",
+            {
+                "model": "fino1:8b",
+                "keep_alive": "30m",
+                "stream": False,
+            },
+            120.0,
+        )
+    ]
+
+
+def test_declared_model_batch_preload_reuses_exact_gpu_residency() -> None:
+    loaded = OllamaResidencyReport(
+        requested_model="fino1:8b",
+        status="gpu_resident",
+        loaded_model="fino1:8b",
+        digest=MODEL_DIGEST,
+        size_bytes=1_000,
+        size_vram_bytes=1_000,
+        vram_to_model_ratio=1.0,
+    )
+    posted = False
+
+    def post(*_args: object, **_kwargs: object) -> object:
+        nonlocal posted
+        posted = True
+        return {}
+
+    result = preload_round74_ai_model(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        capability_detector=lambda _config: _capability(),
+        provenance_resolver=lambda *_args: (MODEL_DIGEST, METADATA_DIGEST),
+        residency_inspector=lambda *_args, **_kwargs: loaded,
+        provider_poster=post,
+    )
+
+    assert result == loaded
+    assert posted is False
+
+
+def test_declared_model_batch_preload_rejects_partial_gpu_residency() -> None:
+    partial = OllamaResidencyReport(
+        requested_model="fino1:8b",
+        status="gpu_resident",
+        loaded_model="fino1:8b",
+        digest=MODEL_DIGEST,
+        size_bytes=1_000,
+        size_vram_bytes=900,
+        vram_to_model_ratio=0.9,
+    )
+
+    with pytest.raises(ValueError, match="preload residency differs"):
+        preload_round74_ai_model(
+            Round74AIRuntimeConfig(model_name="fino1:8b"),
+            _manifest(),
+            capability_detector=lambda _config: _capability(),
+            provenance_resolver=lambda *_args: (MODEL_DIGEST, METADATA_DIGEST),
+            residency_inspector=lambda *_args, **_kwargs: partial,
+            provider_poster=lambda *_args, **_kwargs: {},
+        )
 
 
 def test_declared_model_batch_unload_does_not_load_an_absent_model() -> None:
