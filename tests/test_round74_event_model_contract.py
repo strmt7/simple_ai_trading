@@ -107,6 +107,13 @@ MODEL_INTEGRATION_DESIGN_PATH = (
 DURATION_NORMALIZED_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v76.json"
 )
+SEGMENTED_DIRECTML_PREFLIGHT_PATH = (
+    RESEARCH
+    / "round-074-segmented-training-directml-preflight-v1-2026-07-28.json"
+)
+SEGMENTED_DIRECTML_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v77.json"
+)
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -195,6 +202,38 @@ def test_round74_duration_normalized_design_is_hash_bound_and_nonfinancial() -> 
     assert authority["profitability_claim"] is False
     assert authority["ai_uplift_claim"] is False
     assert authority["live_trading_authority"] is False
+
+
+def test_round74_segmented_directml_preflight_is_bounded_and_hash_bound() -> None:
+    preflight = _load_hash_bound(
+        SEGMENTED_DIRECTML_PREFLIGHT_PATH,
+        "artifact_sha256",
+    )
+    design = _load_hash_bound(
+        SEGMENTED_DIRECTML_DESIGN_PATH,
+        "design_sha256",
+    )
+
+    assert design["base_design"]["design_sha256"] == (
+        "72e4fe99a52545e3f85756ccebd585f1ddb5cfebdc1ca7b7a11d9b9bb7dfa7a6"
+    )
+    assert design["directml_preflight"]["artifact_sha256"] == (
+        preflight["artifact_sha256"]
+    )
+    assert preflight["environment"]["directml_device_name"] == (
+        "AMD Radeon RX 9070 XT"
+    )
+    assert preflight["segmented_training_smoke"][
+        "policy_train_seal_reload_passed"
+    ] is True
+    assert preflight["segmented_training_smoke"][
+        "cpu_fallback_warning_count"
+    ] == 0
+    assert preflight["authority"]["representative_market_data_used"] is False
+    assert preflight["authority"]["financial_edge_tested"] is False
+    assert design["evidence_boundary"]["synthetic_data_only"] is True
+    assert design["authority"]["profitability_claim"] is False
+    assert design["authority"]["live_trading_authority"] is False
 
 
 def test_round74_tuning_role_correction_is_disjoint_and_source_bound() -> None:
