@@ -1,0 +1,73 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v79",
+  "created_at_utc": "2026-07-28T08:43:30Z",
+  "implementation_git_commit": "a4704a3969f1c01b14ec1c297abffccc39edb678",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v78.json",
+    "design_sha256": "10a6d90b767fed28a4cc89855303cdf575027e56aeb5f6338ff0d06e1a39eb2f",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "action_policy_path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+    "action_policy_sha256": "16f3032e59947e839dd3ded7ad5341511416db7d01a3d6722a14df6d1bd661a7",
+    "action_policy_schema_version": "round-074-action-policy-v10",
+    "ai_uplift_path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+    "ai_uplift_sha256": "ce52e4736cc3ab4eb3e7f0f2ddc7670969e6477b9a7a863d0a299c205db88213",
+    "sealed_evaluation_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+    "sealed_evaluation_sha256": "f5786bd44785573a496654c03e576c1a2b5af0f6d9f61ea2c11f4a75992b13c0"
+  },
+  "shared_capital_contract": {
+    "execution_mode": "unlevered_research_only",
+    "symbol_sleeves": 3,
+    "position_capital_fraction": 0.3333333333333333,
+    "maximum_concurrent_positions": 3,
+    "maximum_concurrent_gross_capital_fraction": 1.0,
+    "same_symbol_overlap_permitted": false,
+    "cross_symbol_capital_reuse_permitted": false,
+    "baseline_exact_replay_and_ai_overlay_use_same_capital_scale": true,
+    "trace_metrics_recomputed_from_realized_trade_vectors": true,
+    "independently_tampered_summary_metrics_permitted": false,
+    "leverage_applied": false
+  },
+  "research_constraints": [
+    {
+      "url": "https://www.sec.gov/rules-regulations/staff-guidance/trading-markets-frequently-asked-questions/divisionsmarketregfaq-0",
+      "use": "Automated pre-trade controls must prevent orders above pre-set capital thresholds and coordinate exposure across products."
+    },
+    {
+      "url": "https://www.sec.gov/file/Algo_Trading_Report_2020.pdf",
+      "use": "Automated trading risk management requires operational controls, resilience, and financial exposure limits."
+    },
+    {
+      "url": "https://arxiv.org/abs/1206.4810",
+      "use": "High-frequency decision systems must model inventory constraints rather than score directional forecasts in isolation."
+    }
+  ],
+  "verification": {
+    "relevant_tests_passed": 53,
+    "focused_action_policy_tests_passed": 15,
+    "ruff_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false
+  },
+  "evidence_boundary": {
+    "synthetic_data_only": true,
+    "real_cohort_data_used": false,
+    "financial_backtest_performed": false,
+    "profitability_or_edge_inference_permitted": false,
+    "ai_model_evaluated": false
+  },
+  "authority": {
+    "shared_capital_replay_implementation": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "3ecfc51b641e610f86b05165d25ae7384708fe8b67414af0abff05c4fee0bdcd"
+}
