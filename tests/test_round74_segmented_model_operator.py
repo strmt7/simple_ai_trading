@@ -403,18 +403,17 @@ def test_segmented_model_selection_stages_are_disjoint_and_target_blind() -> Non
     payload = selected.as_dict()
 
     assert isinstance(selected, Round74SegmentedModelSelectionStages)
-    assert payload["stage_order"] == list(
-        ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
-    )
+    assert payload["stage_order"] == list(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
     assert payload["scheduled_slot_bounds"] == [514, 525, 535, 546, 556, 566]
     assert payload["required_eligible_anchor_ns_per_stage"] == 7_894_800_000_000
     assert [len(run_ids) for run_ids in selected.stage_run_ids] == [9, 9, 9, 9, 9]
-    assert [
-        sum(durations) for durations in selected.stage_eligible_anchor_ns
-    ] == [8_100_000_000_000] * 5
-    assert tuple(
-        run_id for run_ids in selected.stage_run_ids for run_id in run_ids
-    ) == subpartition.model_selection_run_ids
+    assert [sum(durations) for durations in selected.stage_eligible_anchor_ns] == [
+        8_100_000_000_000
+    ] * 5
+    assert (
+        tuple(run_id for run_ids in selected.stage_run_ids for run_id in run_ids)
+        == subpartition.model_selection_run_ids
+    )
     assert payload["target_label_or_model_output_used_for_assignment"] is False
     assert payload["cross_stage_run_reuse_permitted"] is False
     assert payload["all_parent_model_selection_segments_included"] is True
@@ -435,9 +434,7 @@ def test_segmented_model_selection_stage_rejects_insufficient_duration() -> None
     shortened = replace(
         subpartition,
         model_selection_run_ids=subpartition.model_selection_run_ids[:-1],
-        model_selection_slot_ordinals=(
-            subpartition.model_selection_slot_ordinals[:-1]
-        ),
+        model_selection_slot_ordinals=(subpartition.model_selection_slot_ordinals[:-1]),
         model_selection_eligible_anchor_ns=(
             subpartition.model_selection_eligible_anchor_ns[:-1]
         ),
