@@ -1,0 +1,86 @@
+{
+  "capture_contract": {
+    "capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
+    "capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
+    "capture_report_schema_version": "round-074-capture-report-v10",
+    "capture_schema_version": "round-074-prospective-evidence-v10",
+    "complete_target_tail_required": true,
+    "credentials_used": false,
+    "depth_continuity_replay_required": true,
+    "in_unit_retry_permitted": false,
+    "maximum_reconnects": 0,
+    "minimum_usable_epoch_ns": 600000000000,
+    "orders_submitted": false,
+    "provider": "Binance USD-M public production market data",
+    "segment_admission_mode": "independently_audited_connection_epoch",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "transport_ended_prefix_admission_permitted": true,
+    "underlying_mode": "probe"
+  },
+  "implementation_git_commit": "05afda2f1b365375f3011f48e6b178c7799fec9c",
+  "missingness_policy": {
+    "all_admitted_units_included": true,
+    "all_predeclared_slots_require_terminal_outcomes": true,
+    "every_qualifying_transport_prefix_is_included": true,
+    "market_or_model_dependent_replacement_permitted": false,
+    "missed_units_are_model_data": false,
+    "role_eligible_anchor_time_must_pass": true,
+    "transport_excluded_units_are_model_data": false
+  },
+  "partition_policy": {
+    "cross_unit_feature_or_target_permitted": false,
+    "embargo_axis": "elapsed_wall_time_after_prior_audited_usable_end",
+    "maximum_target_span_ns": 310500000000,
+    "minimum_embargo_ns": 310500000000,
+    "minimum_purge_ns": 310500000000,
+    "random_row_split_permitted": false,
+    "role_order": [
+      "training",
+      "tuning",
+      "test"
+    ],
+    "split_unit": "whole_admitted_transport_unit",
+    "test_labels_or_outcomes_visible_before_pretest_seal": false
+  },
+  "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+  "prerequisite": {
+    "artifact_sha256": "3ff57cdf7598c683f1c310a8b2ce0f0b101e82568f96a868e871dff84998bc6d",
+    "must_pass_before_first_slot": true,
+    "prerequisite_capture_is_model_cohort_data": false,
+    "window_end_wall_ns": 1785221495138384300,
+    "window_start_wall_ns": 1785220287069310100
+  },
+  "role_counts": {
+    "test": 103,
+    "training": 514,
+    "tuning": 103
+  },
+  "role_required_eligible_anchor_ns": {
+    "test": 78948000000000,
+    "training": 394740000000000,
+    "tuning": 78948000000000
+  },
+  "schedule_formula": {
+    "capture_duration_ns": 1200000000000,
+    "fresh_audit_timeout_ns": 120000000000,
+    "maximum_end_overhead_ns": 120000000000,
+    "ordinal_origin": 0,
+    "slot_period_ns": 1500000000000,
+    "start_tolerance_ns": 30000000000
+  },
+  "scheduled_start_wall_ns": 1785225600000000000,
+  "schema_version": "round-074-segmented-event-cohort-plan-v3",
+  "scope": {
+    "financial_edge_tested_by_plan": false,
+    "long_horizon_edge_claim_permitted": false,
+    "profitability_claim": false,
+    "purpose": "initial live microstructure viability cohort",
+    "trading_authority": false,
+    "years_of_historical_coverage_claim": false
+  },
+  "total_slots": 720
+}
