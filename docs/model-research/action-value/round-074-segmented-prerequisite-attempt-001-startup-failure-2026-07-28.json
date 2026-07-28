@@ -1,0 +1,100 @@
+{
+  "schema_version": "round-074-segmented-prerequisite-startup-failure-v1",
+  "observed_at_utc": "2026-07-28T05:52:12Z",
+  "implementation_git_commit": "9d9b6b9bb8631345370e7e20710d56622ba99a53",
+  "attempt": {
+    "ordinal": 1,
+    "purpose": "validate one 1200-second zero-reconnect transport unit before freezing a cohort",
+    "database_relative_path": "data/round74-segmented-prerequisite-9d9b6b9.duckdb",
+    "database_created": false,
+    "database_bytes_after": 0,
+    "wal_created": false,
+    "wal_bytes_after": 0,
+    "supervisor_status": "failed",
+    "selected_run_id": "",
+    "attempt_count": 1,
+    "attempts": [],
+    "attempt_evidence_combined": false,
+    "reconnect_count": 0,
+    "reconnect_delays_seconds": [],
+    "startup_errors": [
+      "startup:TimeoutError:timed out during opening handshake"
+    ],
+    "terminal_error": "startup:TimeoutError:timed out during opening handshake",
+    "qualification_passed": false
+  },
+  "host_transport_diagnostics": {
+    "rest_server_time_reachable": true,
+    "dns_resolution_succeeded": true,
+    "resolved_address_tls_probe": {
+      "address_count": 8,
+      "tls_sni_passed": 5,
+      "tls_sni_timed_out": 3,
+      "certificate_verification_disabled": false
+    },
+    "subsequent_routed_stream_probe": {
+      "attempt_count": 5,
+      "lanes_per_attempt": [
+        "public",
+        "market"
+      ],
+      "all_ten_lane_connections_passed": true,
+      "public_first_message_seconds": [
+        1.055,
+        1.069,
+        1.033,
+        1.064,
+        1.027
+      ],
+      "market_first_message_seconds": [
+        1.125,
+        1.112,
+        1.227,
+        1.077,
+        1.133
+      ]
+    }
+  },
+  "root_cause_bounds": {
+    "classification": "transient_websocket_opening_handshake_timeout_before_run_creation",
+    "capture_or_writer_defect_established": false,
+    "provider_side_fault_established": false,
+    "host_wide_network_outage_established": false,
+    "causal_certainty_claimed": false,
+    "supported_conclusion": "The first prerequisite launch created no run or storage evidence and cannot validate the segmented path; subsequent public and market reachability alone does not convert it into a pass."
+  },
+  "adjudication": {
+    "attempt_status": "permanently_failed",
+    "attempt_reused": false,
+    "attempt_evidence_combined_with_future_capture": false,
+    "prerequisite_passed": false,
+    "cohort_data_created": false,
+    "model_or_target_access": false,
+    "profitability_or_edge_claim": false,
+    "credentials_used": false,
+    "orders_submitted": false,
+    "trading_authority": false
+  },
+  "prospective_action": {
+    "separate_attempt_002_permitted": true,
+    "reason": "The prerequisite is infrastructure-only, attempt 001 created no run or bytes, and five subsequent paired routed-stream probes passed without consulting market or model outcomes.",
+    "maximum_additional_attempts_under_this_adjudication": 1,
+    "attempt_001_mutation_permitted": false,
+    "attempt_001_data_admission_permitted": false
+  },
+  "sources": [
+    {
+      "publisher": "Binance",
+      "title": "USD-M Futures Websocket Market Streams",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect",
+      "retrieved_at_utc": "2026-07-28T05:50:00Z"
+    },
+    {
+      "publisher": "websockets",
+      "title": "Keepalive and latency",
+      "url": "https://websockets.readthedocs.io/en/stable/topics/keepalive.html",
+      "retrieved_at_utc": "2026-07-28T05:50:00Z"
+    }
+  ],
+  "artifact_sha256": "8f6492500b7cff49b87baf895ab84dd5732beb4047d0b2c31080da0deb0229a7"
+}
