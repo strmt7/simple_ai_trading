@@ -1,0 +1,360 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v90",
+  "created_at_utc": "2026-07-28T18:00:56.5726047Z",
+  "implementation_git_commit": "20058ba19b0bb13bb53174fb46658c5ee60c0e8c",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v89.json",
+    "file_sha256": "c9ce6a0a6e5c09e5d16d0fef937432a87ca4fa9fcb3343f0aa44193e24bd3429",
+    "design_sha256": "d62939c06f956489491d820cfdf330ca76c53f6998e44bbd67bf4b36c2b880e8",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "78936c89c5bbfb5dc139868556b0cc1312dcae157b8bd45117b893d14e323263",
+      "model_schema_version": "round-074-event-payoff-model-v7"
+    },
+    "pretraining": {
+      "path": "src/simple_ai_trading/impact_absorption_event_pretraining.py",
+      "sha256": "425dca1cd8006e08813364d246c64fc57bbdf217b7be3a798bf8e1c4fe1eb652",
+      "schema_version": "round-074-causal-next-event-pretraining-v3"
+    },
+    "training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "7527630fe4ebd0083eb9432fe30692eb31ff2a2c0b5cc83ea9607e460efc332b",
+      "training_schema_version": "round-074-event-training-v25",
+      "pretest_policy_schema_version": "round-074-event-pretest-policy-v24",
+      "feature_view_schema_version": "round-074-feature-view-v2"
+    },
+    "tests": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "c4f536351a0bb1f58bfd2e89eb1087c589456453f17ad965c146ccf51ddcac29"
+    },
+    "historical_test_hardening": [
+      {
+        "path": "tests/test_round74_event_model_design_v86.py",
+        "sha256": "01673e6de65657cd688cd162fa42e2417f670a5764a0336de4ab3129f1ed12b4"
+      },
+      {
+        "path": "tests/test_round74_event_model_design_v87.py",
+        "sha256": "5664a1674fab8db0900660982b6c736ea57fe18d822124703ca7681ce1311da8"
+      }
+    ]
+  },
+  "declared_delta": {
+    "state_first_feature_layering_added": true,
+    "clock_control_precedes_order_flow_gate": true,
+    "intraday_utc_phase_removed_from_state_only_view": true,
+    "causal_pretraining_raw_event_target_correction": true,
+    "feature_selection_metrics_frozen_before_initialization_gate": true,
+    "historical_design_tests_decoupled_from_current_runtime_constants": true,
+    "candidate_architecture_family_changed": false,
+    "supervised_target_contract_changed": false,
+    "financial_replay_contract_changed": false,
+    "risk_or_execution_policy_changed": false,
+    "active_v3_campaign_main_branch_contract_changed": false
+  },
+  "feature_layer_contract": {
+    "feature_count": 75,
+    "partition_is_exact_disjoint_and_complete": true,
+    "market_state": {
+      "feature_count": 33,
+      "feature_names_sha256": "943e0223f1afa4a1cc363ae42f3140786b313862c0fa8a0916b8338aefdbf8c0",
+      "feature_names": [
+        "symbol_is_btcusdt",
+        "symbol_is_ethusdt",
+        "symbol_is_solusdt",
+        "depth_update_is_stale",
+        "spread_bps",
+        "l1_imbalance",
+        "microprice_offset_bps",
+        "l2_imbalance_5",
+        "l2_imbalance_10",
+        "l2_imbalance_20",
+        "bid_depth_5_share_of_20",
+        "ask_depth_5_share_of_20",
+        "log1p_bid_depth_quote_20",
+        "log1p_ask_depth_quote_20",
+        "mid_log_return_bps",
+        "mark_to_mid_bps",
+        "index_to_mid_bps",
+        "funding_rate_bps",
+        "ewm_return_projection_5s_bps",
+        "ewm_realized_volatility_5s_bps",
+        "ewm_spread_5s_bps",
+        "ewm_l1_imbalance_5s",
+        "ewm_return_projection_30s_bps",
+        "ewm_realized_volatility_30s_bps",
+        "ewm_spread_30s_bps",
+        "ewm_l1_imbalance_30s",
+        "ewm_return_projection_300s_bps",
+        "ewm_realized_volatility_300s_bps",
+        "ewm_spread_300s_bps",
+        "ewm_l1_imbalance_300s",
+        "log1p_ms_since_depth_update",
+        "log1p_ms_since_book_ticker",
+        "log1p_ms_since_mark_price"
+      ]
+    },
+    "order_flow": {
+      "feature_count": 31,
+      "feature_names_sha256": "aad6e42539f3ae1677d51fbdfe0a02bca4709c1944b1f4978439df70601844b0",
+      "feature_names": [
+        "event_is_depth_update",
+        "event_is_book_ticker",
+        "event_is_aggregate_trade",
+        "event_is_mark_price",
+        "event_is_liquidation",
+        "log1p_interarrival_us",
+        "depth_signed_pressure_levels_1_5_scaled",
+        "depth_signed_pressure_levels_6_10_scaled",
+        "depth_signed_pressure_levels_11_20_scaled",
+        "depth_signed_pressure_outside_20_scaled",
+        "depth_absolute_flow_levels_1_5_scaled",
+        "depth_absolute_flow_levels_6_10_scaled",
+        "depth_absolute_flow_levels_11_20_scaled",
+        "depth_absolute_flow_outside_20_scaled",
+        "trade_signed_quote_scaled",
+        "trade_absolute_quote_scaled",
+        "trade_price_to_mid_bps",
+        "liquidation_signed_quote_scaled",
+        "bbo_bid_qty_change_scaled",
+        "bbo_ask_qty_change_scaled",
+        "ewm_signed_trade_pressure_per_second_5s",
+        "ewm_signed_depth_pressure_per_second_5s",
+        "ewm_signed_liquidation_pressure_per_second_5s",
+        "ewm_signed_trade_pressure_per_second_30s",
+        "ewm_signed_depth_pressure_per_second_30s",
+        "ewm_signed_liquidation_pressure_per_second_30s",
+        "ewm_signed_trade_pressure_per_second_300s",
+        "ewm_signed_depth_pressure_per_second_300s",
+        "ewm_signed_liquidation_pressure_per_second_300s",
+        "log1p_ms_since_aggregate_trade",
+        "log1p_ms_since_liquidation"
+      ]
+    },
+    "clock_and_intraday_phase": {
+      "feature_count": 11,
+      "feature_names_sha256": "495b4d1f98501b6093a2c0fefa504ef835f8248ec3b9e82407f4c52396fcd080",
+      "feature_names": [
+        "exchange_clock_60s_opening_10s",
+        "exchange_clock_300s_opening_10s",
+        "exchange_clock_900s_opening_10s",
+        "exchange_clock_60s_phase_sine",
+        "exchange_clock_60s_phase_cosine",
+        "exchange_clock_300s_phase_sine",
+        "exchange_clock_300s_phase_cosine",
+        "exchange_clock_900s_phase_sine",
+        "exchange_clock_900s_phase_cosine",
+        "utc_second_of_day_sine",
+        "utc_second_of_day_cosine"
+      ],
+      "utc_phase_permitted_in_state_only_view": false
+    },
+    "supported_views": {
+      "market_state_clock_neutral": {
+        "masked_feature_count": 42,
+        "retained_layers": [
+          "market_state"
+        ]
+      },
+      "market_state_with_clock": {
+        "masked_feature_count": 31,
+        "retained_layers": [
+          "market_state",
+          "clock_and_intraday_phase"
+        ]
+      },
+      "clock_neutral": {
+        "masked_feature_count": 11,
+        "retained_layers": [
+          "market_state",
+          "order_flow"
+        ]
+      },
+      "full": {
+        "masked_feature_count": 0,
+        "retained_layers": [
+          "market_state",
+          "clock_and_intraday_phase",
+          "order_flow"
+        ]
+      }
+    }
+  },
+  "selection_contract": {
+    "stage_1_architecture": {
+      "feature_view": "market_state_clock_neutral",
+      "candidate_panel_unchanged": true,
+      "complexity_gate_unchanged": true
+    },
+    "stage_2_clock_control": {
+      "incumbent": "market_state_clock_neutral",
+      "challenger": "market_state_with_clock",
+      "gate_failure_outcome": "market_state_clock_neutral"
+    },
+    "stage_3_order_flow": {
+      "incumbent": "stage_2_winner",
+      "challenger_if_clock_rejected": "clock_neutral",
+      "challenger_if_clock_promoted": "full",
+      "gate_failure_outcome": "stage_2_winner",
+      "order_flow_tested_after_available_clock_control": true
+    },
+    "stage_4_initialization": {
+      "architecture_and_feature_view_frozen": true,
+      "incumbent": "random",
+      "challenger": "causal_next_event_pretrained",
+      "feature_selection_metrics_taken_from_random_initialization_fit": true,
+      "pretraining_winner_cannot_rewrite_feature_layer_metrics": true
+    },
+    "every_layer_gate": {
+      "complete_model_selection_capture_run_panel_required": true,
+      "strict_mean_proper_loss_improvement_required": true,
+      "every_paired_run_noninferior_required": true,
+      "every_run_symbol_horizon_subgroup_noninferior_required": true,
+      "test_targets_used": false,
+      "backtest_metric_used": false,
+      "statistical_independence_or_significance_claim": false
+    }
+  },
+  "causal_pretraining_contract": {
+    "input_respects_selected_feature_mask": true,
+    "next_event_class_target_uses_unmasked_received_event_type": true,
+    "masked_event_type_inputs_do_not_zero_the_classification_target": true,
+    "continuous_delta_target_respects_selected_feature_view": true,
+    "supervised_targets_used": false,
+    "tuning_features_or_targets_used": false,
+    "test_data_used": false
+  },
+  "primary_source_review": [
+    {
+      "title": "When Does Order Flow Matter? State-Dependent L2 Liquidity-State Transitions in Crypto Futures",
+      "url": "https://arxiv.org/abs/2607.09230",
+      "publication": "arXiv:2607.09230v1, 2026",
+      "applied_decision": "use a fixed state-first same-panel feature-layer protocol and require later layers to improve on the layer below",
+      "limitations": [
+        "BTCUSDT and ETHUSDT only",
+        "one-minute top-20 snapshots",
+        "scheduled macro-event windows",
+        "liquidity-state transition target rather than payoff or execution",
+        "no SOL evidence",
+        "no sub-second fill or market-impact evidence"
+      ],
+      "reported_performance_transferred": false
+    },
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://arxiv.org/abs/1011.6402",
+      "publication": "Journal of Financial Econometrics 12(1), 2014",
+      "applied_decision": "retain depth-conditioned multi-level order-flow imbalance as a challenger rather than treating trade volume alone as sufficient",
+      "limitations": [
+        "NYSE equities rather than crypto futures",
+        "price-impact evidence rather than autonomous trading edge"
+      ],
+      "reported_performance_transferred": false
+    },
+    {
+      "title": "Periodicity in Cryptocurrency Volatility and Liquidity",
+      "url": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+      "publication": "Journal of Financial Econometrics 22(1), 2024",
+      "applied_decision": "treat UTC and interval phase as a distinct clock control that must pass its own out-of-sample gate",
+      "limitations": [
+        "BTC and ETH periodicity evidence does not prove directional predictability",
+        "no profitability or execution-cost conclusion"
+      ],
+      "reported_performance_transferred": false
+    },
+    {
+      "title": "LOB-Bench: Benchmarking Generative AI for Finance - an Application to Limit Order Book Data",
+      "url": "https://proceedings.mlr.press/v267/nagy25a.html",
+      "publication": "ICML 2025, PMLR 267",
+      "applied_decision": "retain spread, depth, imbalance, interarrival, conditional distribution, and market-impact diagnostics as later simulator evaluation requirements",
+      "limitations": [
+        "generative realism benchmark rather than predictive trading model",
+        "no direct financial-edge transfer"
+      ],
+      "reported_performance_transferred": false
+    },
+    {
+      "title": "Extended State-dependent Hawkes Process for Limit Order Books",
+      "url": "https://arxiv.org/abs/2604.23961",
+      "publication": "arXiv:2604.23961v1, 2026",
+      "applied_decision": "record physically constrained state-dependent event intensity as a future challenger, not as an accepted component",
+      "limitations": [
+        "three months of one Japanese equity",
+        "generative volatility-signature result",
+        "no crypto or downstream payoff evidence"
+      ],
+      "reported_performance_transferred": false
+    },
+    {
+      "title": "Limit Order Book Event Stream Prediction with Diffusion Model",
+      "url": "https://arxiv.org/abs/2412.09631",
+      "publication": "arXiv:2412.09631, 2024",
+      "applied_decision": "do not add diffusion inference to the latency-sensitive predictor without a downstream proper-loss and execution-cost benefit",
+      "limitations": [
+        "event-generation target rather than net payoff",
+        "reported datasets include single-day chronological splits",
+        "no BTC, ETH, or SOL financial-edge evidence"
+      ],
+      "reported_performance_transferred": false
+    }
+  ],
+  "verification": {
+    "model_and_training_tests_passed": 44,
+    "other_connected_event_pipeline_tests_passed": 142,
+    "connected_event_pipeline_tests_passed": 186,
+    "historical_design_tests_passed": 25,
+    "focused_tests_before_final_gate_order": 5,
+    "focused_tests_before_final_gate_order_counted_as_final": false,
+    "state_view_mask_test_passed": true,
+    "utc_phase_exclusion_regression_test_passed": true,
+    "raw_next_event_target_regression_test_passed": true,
+    "policy_reload_recomputes_both_layer_gates": true,
+    "feature_membership_tamper_rejection_test_passed": true,
+    "two_seed_segmented_pretraining_test_passed": true,
+    "ruff_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false,
+    "directml_preflight": {
+      "path": "docs/model-research/action-value/round-074-state-first-directml-preflight-2026-07-28.json",
+      "file_sha256": "d3282cce96dbe43076f05aaed7b38d1a3782ecd4abc7b2dfd8b27ef038d88f23",
+      "source_bound_final_pass": true
+    },
+    "real_cohort_model_training_performed": false,
+    "financial_backtest_performed": false
+  },
+  "campaign_isolation": {
+    "active_campaign": "round-074-segmented-event-cohort-plan-v3",
+    "active_campaign_main_branch_sources_modified": false,
+    "duckdb_reopened_by_model_tests": false,
+    "gpu_or_model_tests_run_while_campaign_writer_active": false,
+    "development_branch_only": true
+  },
+  "evidence_boundary": {
+    "implementation_and_contract_tests_only": true,
+    "directml_operator_compatibility_only": true,
+    "representative_market_evidence_complete": false,
+    "state_first_layering_improves_predictive_accuracy_claim": false,
+    "state_first_layering_improves_calibration_claim": false,
+    "state_first_layering_improves_profitability_claim": false,
+    "drawdown_inference_permitted": false,
+    "ai_model_evaluated": false,
+    "ai_uplift_inference_permitted": false
+  },
+  "authority": {
+    "state_first_feature_gate_implemented": true,
+    "clock_proxy_control_implemented": true,
+    "order_flow_promotion_gate_implemented": true,
+    "pretest_policy_reload_enforcement": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "405290d18c4723a8130013810c51ee2ce7b3c7f61f830c784a866d62f9a91cf7"
+}

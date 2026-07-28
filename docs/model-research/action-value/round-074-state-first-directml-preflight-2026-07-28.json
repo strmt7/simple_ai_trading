@@ -1,0 +1,64 @@
+{
+  "schema_version": "round-074-state-first-directml-preflight-v1",
+  "implementation_git_commit": "20058ba19b0bb13bb53174fb46658c5ee60c0e8c",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "pretraining_path": "src/simple_ai_trading/impact_absorption_event_pretraining.py",
+    "pretraining_sha256": "425dca1cd8006e08813364d246c64fc57bbdf217b7be3a798bf8e1c4fe1eb652",
+    "training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "training_sha256": "7527630fe4ebd0083eb9432fe30692eb31ff2a2c0b5cc83ea9607e460efc332b"
+  },
+  "runtime": {
+    "verified_at_utc": "2026-07-28T17:59:12.560805+00:00",
+    "backend_kind": "directml",
+    "backend_vendor": "AMD Radeon RX 9070 XT",
+    "device": "privateuseone:0",
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914"
+  },
+  "probe": {
+    "candidate_id": "causal_event_tcn",
+    "feature_view": "market_state_clock_neutral",
+    "rows": 2,
+    "sequence_length": 8,
+    "feature_count": 75,
+    "masked_feature_count": 42,
+    "optimized_parameter_tensor_count": 34,
+    "event_targets_are_valid_one_hot": true,
+    "raw_next_event_target_used": true,
+    "causal_encoder_forward_finite": true,
+    "causal_encoder_backward_finite": true,
+    "temporary_next_event_head_backward_finite": true,
+    "downstream_supervised_heads_expected_unoptimized": true,
+    "downstream_supervised_head_gradient_required": false
+  },
+  "operator_harness_history": {
+    "attempt_count": 2,
+    "first_attempt_status": "operator_harness_assertion_failed",
+    "first_attempt_reason": "the probe incorrectly required gradients on downstream supervised payoff heads that causal pretraining deliberately excludes",
+    "implementation_failure_observed": false,
+    "assertion_corrected_before_source_bound_pass": true,
+    "second_attempt_status": "passed",
+    "final_source_bound_pass_repeated_after_gate_order_correction": true
+  },
+  "verification": {
+    "directml_forward_passed": true,
+    "directml_backward_passed": true,
+    "nonfinite_gradient_observed": false,
+    "cpu_fallback_claim": false,
+    "full_cohort_training_performed": false,
+    "predictive_accuracy_evaluated": false,
+    "calibration_evaluated": false,
+    "financial_backtest_performed": false
+  },
+  "authority": {
+    "directml_operator_compatibility": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
