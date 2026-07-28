@@ -50,6 +50,23 @@ ROUND74_PAYOFF_LOWER_CALIBRATION_QUANTILES = (0.10, 0.25)
 ROUND74_MAE_UPPER_CALIBRATION_QUANTILE = 0.90
 
 
+def _valid_population_run_count(
+    count: object,
+    *,
+    optimization_population: str,
+    capture_run_count: int,
+) -> bool:
+    if (
+        isinstance(count, bool)
+        or not isinstance(count, int)
+        or optimization_population not in ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS
+    ):
+        return False
+    if optimization_population == "capture_run":
+        return count == capture_run_count
+    return count >= capture_run_count
+
+
 def _canonical_json(value: object) -> str:
     return json.dumps(
         value,
@@ -233,7 +250,8 @@ class Round74TemperatureFit:
             or not isinstance(self.positive_observations, int)
             or not 0 < self.positive_observations < self.eligible_observations
             or isinstance(self.calibration_runs, bool)
-            or self.calibration_runs != ROUND74_TUNING_CALIBRATION_RUNS
+            or not isinstance(self.calibration_runs, int)
+            or self.calibration_runs < 1
             or isinstance(self.minimum_run_observations, bool)
             or self.minimum_run_observations < 1
             or isinstance(self.maximum_run_observations, bool)
@@ -402,8 +420,11 @@ class Round74RiskQuantileCalibration:
             }
             or self.optimization_population
             not in ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS
-            or isinstance(self.calibration_runs, bool)
-            or self.calibration_runs != ROUND74_TUNING_CALIBRATION_RUNS
+            or not _valid_population_run_count(
+                self.calibration_runs,
+                optimization_population=self.optimization_population,
+                capture_run_count=ROUND74_TUNING_CALIBRATION_RUNS,
+            )
             or any(len(panel) != horizons for panel in lower_panels)
             or any(len(row) != sides for panel in lower_panels for row in panel)
             or any(
@@ -747,9 +768,14 @@ class Round74ProbabilityCalibration:
             "calibration source",
         )
         _require_sha256(self.calibration_data_sha256, "calibration data")
+        calibration_run_count = len(self.calibration_run_ids)
         if (
-            len(self.calibration_run_ids) != ROUND74_TUNING_CALIBRATION_RUNS
-            or len(set(self.calibration_run_ids)) != ROUND74_TUNING_CALIBRATION_RUNS
+            not _valid_population_run_count(
+                calibration_run_count,
+                optimization_population=self.optimization_population,
+                capture_run_count=ROUND74_TUNING_CALIBRATION_RUNS,
+            )
+            or len(set(self.calibration_run_ids)) != calibration_run_count
             or any(
                 len(value) != 32
                 or any(character not in "0123456789abcdef" for character in value)
@@ -778,6 +804,13 @@ class Round74ProbabilityCalibration:
             self.adverse_selection,
             self.regime_unpredictability,
         )
+        if any(fit.calibration_runs != calibration_run_count for fit in fits):
+            raise ValueError("Round 74 calibration fit run count differs")
+        if (
+            self.risk_quantiles is not None
+            and self.risk_quantiles.calibration_runs != calibration_run_count
+        ):
+            raise ValueError("Round 74 risk calibration run count differs")
         if self.optimization_population == "capture_run":
             worsened = any(
                 fit.calibrated_run_balanced_nll
@@ -1171,7 +1204,11 @@ def fit_round74_risk_quantile_calibration(
     if (
         selected_population not in ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS
         or expected != tuple(dict.fromkeys(expected))
-        or len(expected) != ROUND74_TUNING_CALIBRATION_RUNS
+        or not _valid_population_run_count(
+            len(expected),
+            optimization_population=selected_population,
+            capture_run_count=ROUND74_TUNING_CALIBRATION_RUNS,
+        )
         or set(selected_runs) != set(expected)
         or len(selected_symbols) != len(selected_runs)
         or set(selected_symbols) != set(ROUND74_EVENT_SYMBOLS)
@@ -1434,7 +1471,13 @@ def _fit_temperature(
             losses.append((F.softplus(scaled) - target * scaled).mean(dim=1))
     candidate_loss = torch.cat(losses)
     selected_index = int(torch.argmin(candidate_loss).item())
-    temperature = float(temperatures[selected_index].item())
+    temperature = min(
+        ROUND74_TEMPERATURE_MAXIMUM,
+        max(
+            ROUND74_TEMPERATURE_MINIMUM,
+            float(temperatures[selected_index].item()),
+        ),
+    )
     uncalibrated_probability = torch.sigmoid(logits)
     calibrated_probability = torch.sigmoid(logits / temperature)
     uncalibrated_run_balanced_nll = float(
@@ -1565,8 +1608,12 @@ def fit_round74_probability_calibration(
     rows = int(positive_payoff_logits.shape[0])
     if (
         len(selected_row_run_ids) != rows
-        or len(expected_runs) != ROUND74_TUNING_CALIBRATION_RUNS
-        or len(set(expected_runs)) != ROUND74_TUNING_CALIBRATION_RUNS
+        or not _valid_population_run_count(
+            len(expected_runs),
+            optimization_population=selected_population,
+            capture_run_count=ROUND74_TUNING_CALIBRATION_RUNS,
+        )
+        or len(set(expected_runs)) != len(expected_runs)
         or set(selected_row_run_ids) != set(expected_runs)
         or any(
             len(value) != 32

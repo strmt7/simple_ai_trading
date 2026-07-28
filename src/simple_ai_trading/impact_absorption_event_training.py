@@ -46,8 +46,8 @@ from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v19"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v18"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v20"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v19"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
@@ -250,8 +250,6 @@ class Round74EventTrainingConfig:
             or int(self.device_run_group_size) < 1
             or int(self.device_run_group_size) > 32
             or self.execution_mode not in {"cohort", "segmented_cohort", "preflight"}
-            or self.execution_mode == "segmented_cohort"
-            and self.architecture_selection_mode != "fixed"
         ):
             raise ValueError("Round 74 event training configuration differs")
         values = (
@@ -1535,6 +1533,9 @@ def _complexity_gated_candidate_id(
     *,
     minimum_mean_loss_improvement: float,
     candidate_group_losses: Mapping[str, Mapping[str, float]] | None = None,
+    required_paired_run_count: int = (
+        ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+    ),
 ) -> tuple[str, tuple[dict[str, object], ...]]:
     ordered = tuple(candidate_ids)
     minimum_improvement = float(minimum_mean_loss_improvement)
@@ -1544,6 +1545,9 @@ def _complexity_gated_candidate_id(
         or set(candidate_parameter_counts) != set(ordered)
         or not math.isfinite(minimum_improvement)
         or minimum_improvement < 0.0
+        or isinstance(required_paired_run_count, bool)
+        or not isinstance(required_paired_run_count, int)
+        or required_paired_run_count < 1
     ):
         raise ValueError("Round 74 complexity-promotion panel differs")
     parameter_counts = tuple(candidate_parameter_counts[value] for value in ordered)
@@ -1620,9 +1624,7 @@ def _complexity_gated_candidate_id(
         ties = len(improvements) - wins - losses_count
         mean_improvement = sum(improvements) / len(improvements)
         maximum_loss_degradation = max(-value for value in improvements)
-        complete_tuning_panel = (
-            len(improvements) == ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-        )
+        complete_tuning_panel = len(improvements) == required_paired_run_count
         all_runs_noninferior = maximum_loss_degradation <= minimum_improvement
         subgroup_improvements = (
             {
@@ -1660,9 +1662,7 @@ def _complexity_gated_candidate_id(
                 "incumbent_candidate_id": incumbent,
                 "challenger_candidate_id": challenger,
                 "paired_capture_run_count": len(improvements),
-                "required_paired_capture_run_count": (
-                    ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-                ),
+                "required_paired_capture_run_count": (required_paired_run_count),
                 "complete_tuning_panel": complete_tuning_panel,
                 "challenger_win_count": wins,
                 "challenger_loss_count": losses_count,
@@ -1696,6 +1696,7 @@ def _select_candidate_with_complexity_gate(
     fits: Sequence[_CandidateFit],
     *,
     minimum_mean_loss_improvement: float,
+    required_paired_run_count: int,
 ) -> tuple[_CandidateFit, tuple[dict[str, object], ...]]:
     fit_by_id = {fit.candidate_id: fit for fit in fits}
     if len(fit_by_id) != len(fits):
@@ -1715,6 +1716,7 @@ def _select_candidate_with_complexity_gate(
             candidate_id: fit_by_id[candidate_id].ensemble_group_losses
             for candidate_id in fit_by_id
         },
+        required_paired_run_count=required_paired_run_count,
     )
     return fit_by_id[selected_id], reports
 
@@ -1894,20 +1896,25 @@ def train_and_seal_round74_pretest_policy(
             f"Round 74 event training used CPU fallback: {fallback_messages}"
         )
     if selected_config.architecture_selection_mode == "complexity_gate":
+        promotion_required_runs = (
+            len(tuning_batches)
+            if selected_config.execution_mode == "segmented_cohort"
+            else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        )
         winner, promotion_reports = _select_candidate_with_complexity_gate(
             candidate_fits,
             minimum_mean_loss_improvement=(selected_config.minimum_tuning_improvement),
+            required_paired_run_count=promotion_required_runs,
         )
         selection_criterion = (
             "sequential parameter-count complexity promotion; each challenger "
-            "requires all 12 model-selection capture runs, must strictly exceed the "
-            "numerical mean-loss floor, and may not degrade any paired run "
+            f"requires all {promotion_required_runs} model-selection capture runs, "
+            "must strictly exceed the numerical mean-loss floor, and may not "
+            "degrade any paired run "
             "or eligible run-symbol-horizon proper-loss subgroup beyond that floor"
         )
         planned_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
-        required_paired_capture_run_count = (
-            ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-        )
+        required_paired_capture_run_count = promotion_required_runs
         selection_improvement = selected_config.minimum_tuning_improvement
     else:
         if len(candidate_fits) != 1:
@@ -2122,15 +2129,26 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
         round74_matched_representative_window_policy,
         round74_representative_window_policy,
     )
+    from .round74_segmented_model_operator import round74_segmented_window_policy
 
     if not isinstance(tuning_roles, Round74PreparedTuningRoles):
         raise TypeError("Round 74 prepared tuning roles are required")
     tuning_roles.validate()
     selected_config = config or Round74EventTrainingConfig()
     selected_config.validate()
-    if selected_config.execution_mode != "cohort":
-        raise ValueError("Round 74 prepared tuning roles require cohort mode")
-    if matched_preparation_sha256 is None:
+    if selected_config.execution_mode not in {"cohort", "segmented_cohort"}:
+        raise ValueError(
+            "Round 74 prepared tuning roles require a representative cohort mode"
+        )
+    if selected_config.execution_mode == "segmented_cohort":
+        if matched_preparation_sha256 is not None:
+            raise ValueError(
+                "Round 74 segmented tuning roles reject matched preparation"
+            )
+        representative_policy_sha256 = str(
+            round74_segmented_window_policy()["policy_sha256"]
+        )
+    elif matched_preparation_sha256 is None:
         representative_policy_sha256 = str(
             round74_representative_window_policy()["policy_sha256"]
         )
@@ -2664,6 +2682,11 @@ def load_round74_pretest_policy(
     selected_report = candidate_panel[candidate_id]
     assert isinstance(selected_report, Mapping)
     if reconstructed_config.architecture_selection_mode == "complexity_gate":
+        promotion_required_runs = (
+            len(tuning_batch_hashes)
+            if reconstructed_config.execution_mode == "segmented_cohort"
+            else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        )
         expected_winner, expected_promotion_reports = _complexity_gated_candidate_id(
             reconstructed_config.candidate_ids,
             candidate_run_losses,
@@ -2672,15 +2695,17 @@ def load_round74_pretest_policy(
                 reconstructed_config.minimum_tuning_improvement
             ),
             candidate_group_losses=candidate_group_losses,
+            required_paired_run_count=promotion_required_runs,
         )
         expected_criterion = (
             "sequential parameter-count complexity promotion; each challenger "
-            "requires all 12 model-selection capture runs, must strictly exceed the "
-            "numerical mean-loss floor, and may not degrade any paired run "
+            f"requires all {promotion_required_runs} model-selection capture "
+            "runs, must strictly exceed the numerical mean-loss floor, and may "
+            "not degrade any paired run "
             "or eligible run-symbol-horizon proper-loss subgroup beyond that floor"
         )
         expected_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
-        expected_paired_run_count = ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        expected_paired_run_count = promotion_required_runs
         expected_improvement = reconstructed_config.minimum_tuning_improvement
     else:
         expected_winner = reconstructed_config.candidate_ids[0]

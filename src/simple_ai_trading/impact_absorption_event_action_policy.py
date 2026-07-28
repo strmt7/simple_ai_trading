@@ -21,6 +21,7 @@ import torch
 
 from .impact_absorption_event_calibration import (
     ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS,
+    ROUND74_TUNING_POLICY_SELECTION_RUNS,
     Round74ProbabilityCalibration,
     Round74TuningSubpartition,
     apply_round74_probability_calibration,
@@ -54,7 +55,7 @@ from .impact_absorption_event_targets import (
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v5"
 ROUND74_ACTION_EXECUTION_PANEL_SCHEMA_VERSION = "round-074-action-execution-panel-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v12"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v13"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
@@ -1902,7 +1903,7 @@ def simulate_round74_action_trace_batches(
         threshold_score=threshold_score,
         expected_run_ids=expected_run_ids,
         required_role="tuning",
-        expected_run_count=6,
+        expected_run_count=len(expected_run_ids),
         execution_rows=execution_rows,
     )
 
@@ -1931,12 +1932,18 @@ def _trace_gate_reasons(
     spec: Round74ActionProfileSpec,
 ) -> tuple[str, ...]:
     metrics = trace.metrics
+    run_scale = len(trace.expected_run_ids) / ROUND74_TUNING_POLICY_SELECTION_RUNS
+    minimum_trades = math.ceil(spec.minimum_trades * run_scale)
+    minimum_active_runs = min(
+        len(trace.expected_run_ids),
+        math.ceil(spec.minimum_active_runs * run_scale),
+    )
     reasons: list[str] = []
     if trace.skipped_target_ineligible > 0:
         reasons.append("selected_action_target_coverage_incomplete")
-    if metrics.trades < spec.minimum_trades:
+    if metrics.trades < minimum_trades:
         reasons.append("minimum_trades_not_met")
-    if metrics.active_runs < spec.minimum_active_runs:
+    if metrics.active_runs < minimum_active_runs:
         reasons.append("minimum_active_runs_not_met")
     if metrics.distinct_symbols != len(ROUND74_EVENT_SYMBOLS):
         reasons.append("asset_diversification_not_met")
@@ -2421,7 +2428,7 @@ def select_round74_action_policy_batches(
     execution_panel: Round74ActionExecutionPanel | None = None,
     optimization_population: str = "capture_run",
 ) -> Round74ActionPolicySelection:
-    """Select one threshold from a bounded six-run tuning batch panel."""
+    """Select one threshold from the complete frozen policy-selection panel."""
 
     tuning_subpartition.validate()
     selected_population = str(optimization_population)
@@ -2445,7 +2452,7 @@ def select_round74_action_policy_batches(
         requested_candidate_batches,
         expected_run_ids=expected_runs,
         required_role="tuning",
-        expected_run_count=6,
+        expected_run_count=len(expected_runs),
     )
     first_candidates = selected_candidate_batches[0]
     if (
@@ -2490,7 +2497,7 @@ def select_round74_action_policy_batches(
                 threshold_score=threshold,
                 expected_run_ids=expected_runs,
                 required_role="tuning",
-                expected_run_count=6,
+                expected_run_count=len(expected_runs),
                 execution_rows=execution_rows,
             )
             reasons = _trace_gate_reasons(trace, spec)
@@ -2520,7 +2527,7 @@ def select_round74_action_policy_batches(
                 threshold_score=np.finfo(np.float64).max,
                 expected_run_ids=expected_runs,
                 required_role="tuning",
-                expected_run_count=6,
+                expected_run_count=len(expected_runs),
                 execution_rows=execution_rows,
             )
             _, objective_semantics = _action_selection_objective(

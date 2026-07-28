@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import replace
+import json
 from pathlib import Path
+import sqlite3
 
 import numpy as np
 import pytest
@@ -77,6 +79,10 @@ from simple_ai_trading.impact_absorption_store import ImpactAbsorptionStore
 from simple_ai_trading.impact_absorption_target_assembly import (
     Round74SourceTargetAssembly,
 )
+from simple_ai_trading.round74_segmented_model_operator import (
+    Round74SegmentedTestPopulation,
+    build_round74_segmented_sealed_dataset_identity,
+)
 
 
 TEST_RUNS = tuple(f"{index:032x}" for index in range(100, 124))
@@ -88,8 +94,12 @@ def _readonly(value: np.ndarray) -> np.ndarray:
     return value
 
 
-def _test_batch(*, role: str = "test") -> Round74EventTrainingBatch:
-    rows = 24
+def _test_batch(
+    *,
+    role: str = "test",
+    runs: tuple[str, ...] = TEST_RUNS,
+) -> Round74EventTrainingBatch:
+    rows = len(runs)
     action_shape = (
         rows,
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
@@ -125,7 +135,7 @@ def _test_batch(*, role: str = "test") -> Round74EventTrainingBatch:
         role=role,
         partition_sha256="1" * 64,
         scaler_sha256="2" * 64,
-        run_id=TEST_RUNS,
+        run_id=runs,
         symbol=symbols,
         decision_monotonic_ns=_readonly(np.full(rows, 1_000_000_000, dtype=np.int64)),
         decision_wall_ns=_readonly(wall),
@@ -156,12 +166,17 @@ def _test_batch(*, role: str = "test") -> Round74EventTrainingBatch:
     return result
 
 
-def _selection() -> Round74ActionPolicySelection:
+def _selection(
+    *,
+    policy_runs: tuple[str, ...] = POLICY_RUNS,
+    optimization_population: str = "capture_run",
+) -> Round74ActionPolicySelection:
+    rows = len(policy_runs)
     metrics = Round74ActionTraceMetrics(
-        trades=6,
-        active_runs=6,
+        trades=rows,
+        active_runs=rows,
         distinct_symbols=3,
-        total_net_bps=2.0,
+        total_net_bps=rows / 3.0,
         mean_run_net_bps=1.0 / 3.0,
         mean_net_bps=1.0 / 3.0,
         median_net_bps=1.0 / 3.0,
@@ -170,29 +185,32 @@ def _selection() -> Round74ActionPolicySelection:
         maximum_drawdown_bps=1.0 / 3.0,
         realized_maximum_drawdown_bps=0.0,
         maximum_concurrent_adverse_excursion_bps=1.0 / 3.0,
-        gross_profit_bps=2.0,
+        gross_profit_bps=rows / 3.0,
         gross_loss_bps=0.0,
         worst_trade_bps=1.0 / 3.0,
         mean_maximum_adverse_excursion_bps=1.0 / 3.0,
         mean_run_maximum_adverse_excursion_bps=1.0 / 3.0,
         adverse_selection_rate=0.0,
         profitable_run_ratio=1.0,
-        maximum_symbol_trade_share=1.0 / 3.0,
+        maximum_symbol_trade_share=((rows + 2) // 3 / rows),
     )
     trace = Round74ActionTrace(
         threshold_score=1.0,
-        expected_run_ids=POLICY_RUNS,
-        row_index=tuple(range(6)),
-        run_id=POLICY_RUNS,
-        symbol=ROUND74_EVENT_SYMBOLS * 2,
-        feature_row_sha256=tuple(f"{400 + index:064x}" for index in range(6)),
-        horizon_seconds=(30,) * 6,
-        side=(1,) * 6,
-        entry_monotonic_ns=(10,) * 6,
-        exit_monotonic_ns=(20,) * 6,
-        net_payoff_bps=(1.0 / 3.0,) * 6,
-        maximum_adverse_excursion_bps=(1.0 / 3.0,) * 6,
-        adverse_selection=(0,) * 6,
+        expected_run_ids=policy_runs,
+        row_index=tuple(range(rows)),
+        run_id=policy_runs,
+        symbol=tuple(
+            ROUND74_EVENT_SYMBOLS[index % len(ROUND74_EVENT_SYMBOLS)]
+            for index in range(rows)
+        ),
+        feature_row_sha256=tuple(f"{400 + index:064x}" for index in range(rows)),
+        horizon_seconds=(30,) * rows,
+        side=(1,) * rows,
+        entry_monotonic_ns=(10,) * rows,
+        exit_monotonic_ns=(20,) * rows,
+        net_payoff_bps=(1.0 / 3.0,) * rows,
+        maximum_adverse_excursion_bps=(1.0 / 3.0,) * rows,
+        adverse_selection=(0,) * rows,
         skipped_target_ineligible=0,
         skipped_same_symbol_overlap=0,
         metrics=metrics,
@@ -206,6 +224,13 @@ def _selection() -> Round74ActionPolicySelection:
             accepted=True,
             rejection_reasons=(),
             trace=trace,
+            objective_semantics=(
+                "total_net_bps_minus_worst_drawdown_and_total_mae_penalties"
+                if optimization_population == "eligible_target"
+                else (
+                    "mean_run_net_bps_minus_worst_drawdown_and_mean_run_mae_penalties"
+                )
+            ),
         )
         for quantile in quantiles
     )
@@ -221,6 +246,7 @@ def _selection() -> Round74ActionPolicySelection:
         selected_threshold_score=1.0,
         evaluations=evaluations,
         rejection_reasons=(),
+        optimization_population=optimization_population,
     )
     result.validate()
     return result
@@ -549,6 +575,174 @@ def test_reservation_consumes_test_access_before_evaluation(
             action_selection=_selection(),
             ai_manifest_sha256=("a" * 64, "b" * 64),
         )
+
+
+def test_segmented_reservation_and_bootstrap_keep_every_test_segment(
+    tmp_path: Path,
+) -> None:
+    test_runs = tuple(f"{1_000 + index:032x}" for index in range(90))
+    policy_runs = tuple(f"{2_000 + index:032x}" for index in range(23))
+    batch = _test_batch(runs=test_runs)
+    selection = _selection(
+        policy_runs=policy_runs,
+        optimization_population="eligible_target",
+    )
+    test_population = Round74SegmentedTestPopulation(
+        parent_partition_sha256=batch.partition_sha256,
+        cohort_plan_sha256="e" * 64,
+        test_run_ids=test_runs,
+        test_slot_ordinals=tuple(range(617, 707)),
+        test_eligible_anchor_ns=(900_000_000_000,) * len(test_runs),
+    )
+    identity = build_round74_segmented_sealed_dataset_identity(
+        (batch,),
+        test_population=test_population,
+    )
+    ledger = Round74SealedEvaluationLedger(tmp_path / "segmented.sqlite3")
+
+    claim = ledger.reserve_identity(
+        test_identity=identity,
+        action_selection=selection,
+        ai_manifest_sha256=("a" * 64, "b" * 64),
+    )
+    bootstrap = sealed_subject._run_bootstrap(
+        test_runs,
+        np.ones(len(test_runs), dtype=np.float64),
+        expected_run_ids=test_runs,
+        seed=sealed_subject.ROUND74_SEALED_BOOTSTRAP_SEED,
+        optimization_population="eligible_target",
+    )
+
+    assert claim.optimization_population == "eligible_target"
+    assert claim.test_population_sha256 == test_population.population_sha256
+    assert claim.test_run_ids == test_runs
+    assert Round74SealedEvaluationClaim.from_mapping(claim.as_dict()) == claim
+    assert bootstrap.blocks == 90
+    assert bootstrap.optimization_population == "eligible_target"
+    assert bootstrap.point_mean_run_net_bps == pytest.approx(1.0)
+    with pytest.raises(ValueError, match="dataset identity differs"):
+        build_round74_sealed_dataset_identity(
+            (batch,),
+            optimization_population="capture_run",
+        )
+    with pytest.raises(ValueError, match="test population differs"):
+        build_round74_segmented_sealed_dataset_identity(
+            (_test_batch(runs=test_runs[:-1]),),
+            test_population=test_population,
+        )
+
+
+def test_v1_ledger_migrates_only_to_legacy_capture_population(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "legacy.sqlite3"
+    connection = sqlite3.connect(path)
+    try:
+        connection.executescript(
+            """
+            CREATE TABLE round74_governance_metadata (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+            INSERT INTO round74_governance_metadata (key, value)
+            VALUES ('schema_version', 'round-074-sealed-ledger-v1');
+            INSERT INTO round74_governance_metadata (key, value)
+            VALUES ('ledger_id', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+            CREATE TABLE round74_sealed_claims (
+                reservation_id TEXT PRIMARY KEY,
+                ledger_id TEXT NOT NULL,
+                test_access_sha256 TEXT NOT NULL UNIQUE,
+                dataset_sha256 TEXT NOT NULL UNIQUE,
+                partition_sha256 TEXT NOT NULL,
+                scaler_sha256 TEXT NOT NULL,
+                pretest_policy_sha256 TEXT NOT NULL,
+                probability_calibration_sha256 TEXT NOT NULL,
+                action_selection_sha256 TEXT NOT NULL,
+                ai_manifest_sha256_json TEXT NOT NULL,
+                profile TEXT NOT NULL,
+                test_run_ids_json TEXT NOT NULL,
+                batch_sha256_json TEXT NOT NULL,
+                rows INTEGER NOT NULL,
+                first_wall_ns INTEGER NOT NULL,
+                last_wall_ns INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                result_outcome TEXT NOT NULL DEFAULT '',
+                result_sha256 TEXT NOT NULL DEFAULT '',
+                error TEXT NOT NULL DEFAULT '',
+                reserved_at_ns INTEGER NOT NULL,
+                completed_at_ns INTEGER
+            );
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO round74_sealed_claims (
+                reservation_id, ledger_id, test_access_sha256,
+                dataset_sha256, partition_sha256, scaler_sha256,
+                pretest_policy_sha256, probability_calibration_sha256,
+                action_selection_sha256, ai_manifest_sha256_json,
+                profile, test_run_ids_json, batch_sha256_json, rows,
+                first_wall_ns, last_wall_ns, status, reserved_at_ns
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "1" * 64,
+                "a" * 64,
+                "2" * 64,
+                "3" * 64,
+                "4" * 64,
+                "5" * 64,
+                "6" * 64,
+                "7" * 64,
+                "8" * 64,
+                json.dumps(["9" * 64]),
+                "aggressive",
+                json.dumps(list(TEST_RUNS)),
+                json.dumps(["b" * 64]),
+                len(TEST_RUNS),
+                1,
+                2,
+                "reserved",
+                1,
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    ledger = Round74SealedEvaluationLedger(path)
+    migrated = ledger._connect()
+    try:
+        columns = {
+            str(row[1])
+            for row in migrated.execute(
+                "PRAGMA table_info(round74_sealed_claims)"
+            ).fetchall()
+        }
+        schema = migrated.execute(
+            """
+            SELECT value FROM round74_governance_metadata
+            WHERE key = 'schema_version'
+            """
+        ).fetchone()
+        migrated_population = migrated.execute(
+            """
+            SELECT optimization_population, test_population_sha256
+            FROM round74_sealed_claims
+            WHERE reservation_id = ?
+            """,
+            ["1" * 64],
+        ).fetchone()
+    finally:
+        migrated.close()
+
+    assert "optimization_population" in columns
+    assert "test_population_sha256" in columns
+    assert schema is not None
+    assert schema[0] == "round-074-sealed-ledger-v2"
+    assert migrated_population is not None
+    assert migrated_population[0] == "capture_run"
+    assert len(migrated_population[1]) == 64
 
 
 def test_completed_or_failed_reservation_cannot_be_reset_or_finalized_twice(

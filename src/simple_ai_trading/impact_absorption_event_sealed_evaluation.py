@@ -58,6 +58,7 @@ from .impact_absorption_event_financial_metrics import (
 )
 from .impact_absorption_event_model import Round74EventModelOutput
 from .impact_absorption_event_sealed_ledger import (
+    ROUND74_SEALED_OPTIMIZATION_POPULATIONS,
     Round74SealedDatasetIdentity,
     Round74SealedEvaluationClaim,
     Round74SealedEvaluationLedger,
@@ -75,9 +76,9 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v13"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v14"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
-    "round-074-target-free-candidate-inference-v1"
+    "round-074-target-free-candidate-inference-v2"
 )
 ROUND74_SEALED_BOOTSTRAP_DRAWS = 10_000
 ROUND74_SEALED_BOOTSTRAP_SEED = 7_474_011
@@ -749,6 +750,7 @@ class Round74RunBlockBootstrap:
     two_ai_model_bonferroni_lower_mean_run_net_bps: float
     one_sided_95_lower_mean_run_net_bps: float
     one_sided_95_upper_mean_run_net_bps: float
+    optimization_population: str = "capture_run"
 
     def validate(self) -> None:
         values = (
@@ -759,7 +761,16 @@ class Round74RunBlockBootstrap:
             self.one_sided_95_upper_mean_run_net_bps,
         )
         if (
-            self.blocks != ROUND74_SEALED_TEST_RUNS
+            self.optimization_population
+            not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
+            or (
+                self.optimization_population == "capture_run"
+                and self.blocks != ROUND74_SEALED_TEST_RUNS
+            )
+            or (
+                self.optimization_population == "eligible_target"
+                and self.blocks < ROUND74_SEALED_TEST_RUNS
+            )
             or self.draws != ROUND74_SEALED_BOOTSTRAP_DRAWS
             or self.seed < 0
             or any(not math.isfinite(float(value)) for value in values)
@@ -807,12 +818,19 @@ class Round74SealedStrategyMetrics:
     adverse_selection_rate: float
     profitable_run_ratio: float
     maximum_symbol_trade_share: float
+    optimization_population: str
+    policy_selection_runs: int
     run_block_bootstrap: Round74RunBlockBootstrap
     financial_gate_passed: bool
     gate_reasons: tuple[str, ...]
 
     def validate(self) -> None:
         self.run_block_bootstrap.validate()
+        valid_policy_runs = (
+            self.policy_selection_runs == 6
+            if self.optimization_population == "capture_run"
+            else self.policy_selection_runs >= 6
+        )
         finite = (
             self.total_net_bps,
             self.mean_paired_net_bps,
@@ -842,7 +860,14 @@ class Round74SealedStrategyMetrics:
                 )
             )
             or self.executed_trades > self.paired_observations
-            or self.active_runs > ROUND74_SEALED_TEST_RUNS
+            or self.optimization_population
+            not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
+            or isinstance(self.policy_selection_runs, bool)
+            or not isinstance(self.policy_selection_runs, int)
+            or not valid_policy_runs
+            or self.run_block_bootstrap.optimization_population
+            != self.optimization_population
+            or self.active_runs > self.run_block_bootstrap.blocks
             or self.distinct_symbols > len(ROUND74_EVENT_SYMBOLS)
             or any(not math.isfinite(float(value)) for value in finite)
             or any(
@@ -1061,8 +1086,12 @@ class Round74SealedAIOverlay:
             or self.retained_trades + self.vetoed_trades
             != self.strategy_metrics.paired_observations
             or self.reduced_trades > self.retained_trades
-            or len(self.paired_runs) != ROUND74_SEALED_TEST_RUNS
+            or len(self.paired_runs) != self.paired_delta_bootstrap.blocks
             or len(set(run_ids)) != len(run_ids)
+            or self.strategy_metrics.optimization_population
+            != self.paired_delta_bootstrap.optimization_population
+            or self.strategy_metrics.run_block_bootstrap.blocks
+            != self.paired_delta_bootstrap.blocks
             or not self.paired_symbol_horizons
             or len(set(symbol_horizon_keys)) != len(symbol_horizon_keys)
             or sum(value.paired_observations for value in self.paired_runs)
@@ -1206,6 +1235,7 @@ class Round74SealedEvaluationReport:
     probability_calibration_sha256: str
     action_selection_sha256: str
     profile: str
+    optimization_population: str
     test_batch_sha256: tuple[str, ...]
     model_output_sha256: tuple[str, ...]
     candidate_sha256: tuple[str, ...]
@@ -1278,6 +1308,22 @@ class Round74SealedEvaluationReport:
             or len(set(self.test_batch_sha256)) != len(self.test_batch_sha256)
             or len(set(self.candidate_sha256)) != len(self.candidate_sha256)
             or self.profile not in ("conservative", "regular", "aggressive")
+            or self.optimization_population
+            not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
+            or self.baseline_metrics.optimization_population
+            != self.optimization_population
+            or len(self.baseline_trace.expected_run_ids)
+            != self.baseline_metrics.run_block_bootstrap.blocks
+            or any(
+                overlay.strategy_metrics.optimization_population
+                != self.optimization_population
+                for overlay in self.ai_overlays
+            )
+            or any(
+                overlay.strategy_metrics.policy_selection_runs
+                != self.baseline_metrics.policy_selection_runs
+                for overlay in self.ai_overlays
+            )
             or not self.inference_backend_kind
             or not self.inference_backend_device
             or not self.inference_backend_vendor
@@ -1316,6 +1362,7 @@ class Round74SealedEvaluationReport:
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "action_selection_sha256": self.action_selection_sha256,
             "profile": self.profile,
+            "optimization_population": self.optimization_population,
             "test_batch_sha256": list(self.test_batch_sha256),
             "model_output_sha256": list(self.model_output_sha256),
             "candidate_sha256": list(self.candidate_sha256),
@@ -1355,6 +1402,11 @@ class Round74SealedEvaluationOutcome:
             or self.finalized_claim.result_outcome != self.report.result_outcome
             or self.finalized_claim.result_sha256 != self.report.report_sha256
             or self.finalized_claim.reservation_id != self.report.reservation_id
+            or self.finalized_claim.dataset_sha256 != self.report.dataset_sha256
+            or self.finalized_claim.test_access_sha256
+            != self.report.test_access_sha256
+            or self.finalized_claim.optimization_population
+            != self.report.optimization_population
         ):
             raise ValueError("Round 74 sealed evaluation outcome differs")
 
@@ -1365,6 +1417,7 @@ def _run_bootstrap(
     *,
     expected_run_ids: tuple[str, ...],
     seed: int,
+    optimization_population: str = "capture_run",
 ) -> Round74RunBlockBootstrap:
     selected = np.asarray(values, dtype=np.float64)
     if selected.shape != (len(run_ids),) or not np.isfinite(selected).all():
@@ -1409,6 +1462,7 @@ def _run_bootstrap(
         ),
         one_sided_95_lower_mean_run_net_bps=float(np.quantile(sampled, 0.05)),
         one_sided_95_upper_mean_run_net_bps=float(np.quantile(sampled, 0.95)),
+        optimization_population=optimization_population,
     )
     result.validate()
     return result
@@ -1420,7 +1474,7 @@ def _financial_gate_reasons(
     profile: str,
 ) -> tuple[str, ...]:
     spec = round74_action_profile(profile)
-    scale = ROUND74_SEALED_TEST_RUNS / 6
+    scale = metrics.run_block_bootstrap.blocks / metrics.policy_selection_runs
     reasons: list[str] = []
     if metrics.selected_action_target_ineligible > 0:
         reasons.append("selected_action_target_coverage_incomplete")
@@ -1469,6 +1523,8 @@ def _strategy_metrics_from_execution_values(
     *,
     profile: str,
     seed: int,
+    optimization_population: str = "capture_run",
+    policy_selection_runs: int = 6,
 ) -> Round74SealedStrategyMetrics:
     scaled = np.asarray(net_payoff_bps, dtype=np.float64)
     scaled_mae = np.asarray(
@@ -1526,6 +1582,7 @@ def _strategy_metrics_from_execution_values(
         scaled,
         expected_run_ids=trace.expected_run_ids,
         seed=seed,
+        optimization_population=optimization_population,
     )
     realized_drawdown = round74_maximum_realized_drawdown_bps(
         scaled,
@@ -1576,6 +1633,8 @@ def _strategy_metrics_from_execution_values(
         ),
         profitable_run_ratio=float(np.mean(np.asarray(tuple(run_pnl.values())) > 0.0)),
         maximum_symbol_trade_share=float(maximum_symbol_share),
+        optimization_population=optimization_population,
+        policy_selection_runs=policy_selection_runs,
         run_block_bootstrap=bootstrap,
         financial_gate_passed=False,
         gate_reasons=("not_evaluated",),
@@ -1597,6 +1656,8 @@ def _baseline_strategy_metrics(
     *,
     profile: str,
     seed: int,
+    optimization_population: str = "capture_run",
+    policy_selection_runs: int = 6,
 ) -> Round74SealedStrategyMetrics:
     """Score the immutable baseline trace without execution substitution."""
 
@@ -1614,6 +1675,8 @@ def _baseline_strategy_metrics(
         trace.exit_monotonic_ns,
         profile=profile,
         seed=seed,
+        optimization_population=optimization_population,
+        policy_selection_runs=policy_selection_runs,
     )
 
 
@@ -1623,6 +1686,8 @@ def _exact_replay_strategy_metrics(
     *,
     profile: str,
     seed: int,
+    optimization_population: str = "capture_run",
+    policy_selection_runs: int = 6,
 ) -> Round74SealedStrategyMetrics:
     rows = tuple(executions)
     for row in rows:
@@ -1678,6 +1743,8 @@ def _exact_replay_strategy_metrics(
         ),
         profile=profile,
         seed=seed,
+        optimization_population=optimization_population,
+        policy_selection_runs=policy_selection_runs,
     )
 
 
@@ -1747,6 +1814,7 @@ class Round74TargetFreeCandidateInference:
     inference_backend_device: str
     inference_backend_vendor: str
     inference_warning_count: int
+    optimization_population: str = "capture_run"
     schema_version: str = ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
     target_fields_accessed: bool = False
     trading_authority: bool = False
@@ -1765,6 +1833,8 @@ class Round74TargetFreeCandidateInference:
             or not self.inference_backend_kind
             or not self.inference_backend_device
             or not self.inference_backend_vendor
+            or self.optimization_population
+            not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
             or isinstance(self.inference_warning_count, bool)
             or self.inference_warning_count < 0
             or self.target_fields_accessed
@@ -1825,7 +1895,12 @@ class Round74TargetFreeCandidateInference:
             feature_rows.update(current_features)
             run_ids.update(context.run_id)
             prior_key = last_key
-        if len(run_ids) != ROUND74_SEALED_TEST_RUNS:
+        if (
+            self.optimization_population == "capture_run"
+            and len(run_ids) != ROUND74_SEALED_TEST_RUNS
+            or self.optimization_population == "eligible_target"
+            and len(run_ids) < ROUND74_SEALED_TEST_RUNS
+        ):
             raise ValueError("Round 74 target-free inference run coverage differs")
 
     @property
@@ -1841,6 +1916,7 @@ class Round74TargetFreeCandidateInference:
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "action_selection_sha256": self.action_selection_sha256,
             "profile": self.profile,
+            "optimization_population": self.optimization_population,
             "context_sha256": [context.context_sha256 for context in self.contexts],
             "model_output_sha256": [
                 candidates.model_output_sha256 for candidates in self.candidates
@@ -1902,6 +1978,8 @@ def infer_round74_target_free_candidates(
         or probability_calibration.pretest_policy_sha256 != policy_sha256
         or probability_calibration.calibration_sha256
         != action_selection.probability_calibration_sha256
+        or probability_calibration.optimization_population
+        != action_selection.optimization_population
         or development.get("partition_sha256") != selected_contexts[0].partition_sha256
         or development.get("scaler_sha256") != selected_contexts[0].scaler_sha256
         or {context.window_representation for context in selected_contexts}
@@ -1968,6 +2046,7 @@ def infer_round74_target_free_candidates(
         inference_backend_device=str(device),
         inference_backend_vendor=backend.vendor,
         inference_warning_count=len(warning_messages),
+        optimization_population=action_selection.optimization_population,
     )
     result.validate()
     return result
@@ -2205,6 +2284,8 @@ def _ai_overlay(
     expected_partition_sha256: str,
     profile: str,
     seed: int,
+    optimization_population: str = "capture_run",
+    policy_selection_runs: int = 6,
 ) -> Round74SealedAIOverlay:
     by_row = {value.row_index: value for value in all_reviews}
     try:
@@ -2283,6 +2364,8 @@ def _ai_overlay(
         executions,
         profile=profile,
         seed=seed,
+        optimization_population=optimization_population,
+        policy_selection_runs=policy_selection_runs,
     )
     baseline_values = np.asarray(trace.net_payoff_bps, dtype=np.float64)
     exact_values = np.asarray(
@@ -2302,6 +2385,7 @@ def _ai_overlay(
         delta,
         expected_run_ids=trace.expected_run_ids,
         seed=seed + 500_000,
+        optimization_population=optimization_population,
     )
     runtime_success_rate = (
         sum(value.runtime_status == "accepted" for value in all_reviews)
@@ -2405,13 +2489,21 @@ def _evaluate_reserved(
 ) -> Round74SealedEvaluationReport:
     if not ledger.claim_matches(claim, required_status="reserved"):
         raise ValueError("Round 74 sealed reservation is not live")
+    policy_run_counts = {
+        len(value.trace.expected_run_ids) for value in action_selection.evaluations
+    }
     if (
         tuple(batch.batch_sha256 for batch in test_batches) != claim.batch_sha256
         or action_selection.selection_sha256 != claim.action_selection_sha256
         or action_selection.profile != claim.profile
         or action_selection.selected_threshold_score is None
+        or action_selection.optimization_population != claim.optimization_population
+        or probability_calibration.optimization_population
+        != claim.optimization_population
+        or len(policy_run_counts) != 1
     ):
         raise ValueError("Round 74 sealed reserved input identity differs")
+    policy_selection_runs = next(iter(policy_run_counts))
     inference, predictive = _derive_test_candidates(
         test_batches,
         action_selection=action_selection,
@@ -2448,12 +2540,14 @@ def _evaluate_reserved(
         threshold_score=threshold,
         expected_run_ids=claim.test_run_ids,
         required_role="test",
-        expected_run_count=ROUND74_SEALED_TEST_RUNS,
+        expected_run_count=len(claim.test_run_ids),
     )
     baseline = _baseline_strategy_metrics(
         trace,
         profile=action_selection.profile,
         seed=ROUND74_SEALED_BOOTSTRAP_SEED,
+        optimization_population=claim.optimization_population,
+        policy_selection_runs=policy_selection_runs,
     )
     replay_selection = replace(
         action_selection,
@@ -2503,6 +2597,8 @@ def _evaluate_reserved(
             expected_partition_sha256=expected_partition_sha256,
             profile=action_selection.profile,
             seed=ROUND74_SEALED_BOOTSTRAP_SEED + index + 1,
+            optimization_population=claim.optimization_population,
+            policy_selection_runs=policy_selection_runs,
         )
         for index, manifest in enumerate(sorted(reviews))
     )
@@ -2532,6 +2628,7 @@ def _evaluate_reserved(
         probability_calibration_sha256=(probability_calibration.calibration_sha256),
         action_selection_sha256=action_selection.selection_sha256,
         profile=action_selection.profile,
+        optimization_population=claim.optimization_population,
         test_batch_sha256=claim.batch_sha256,
         model_output_sha256=tuple(value.model_output_sha256 for value in candidates),
         candidate_sha256=tuple(value.candidate_sha256 for value in candidates),
@@ -2589,7 +2686,12 @@ def evaluate_round74_sealed_once(
         if not ledger.claim_matches(claim, required_status="reserved"):
             raise ValueError("Round 74 sealed reservation is not live")
         batches = tuple(test_batch_loader(claim=claim))
-        loaded_identity = build_round74_sealed_dataset_identity(batches)
+        loaded_identity = build_round74_sealed_dataset_identity(
+            batches,
+            optimization_population=claim.optimization_population,
+            expected_test_run_ids=claim.test_run_ids,
+            test_population_sha256=claim.test_population_sha256,
+        )
         if (
             loaded_identity.as_dict() != test_identity.as_dict()
             or loaded_identity.dataset_sha256 != claim.dataset_sha256
