@@ -64,8 +64,11 @@ def main() -> int:
     started_wall_ns = time.time_ns()
     results: list[dict[str, object]] = []
     preload = None
-    unloaded = False
+    unload_action_performed = False
+    model_absent_after_cleanup_verified = False
     incomplete_reason = ""
+    failure_class = ""
+    failure_message = ""
     print(
         f"round74-ai-screen: preloading {arguments.model_name}",
         file=sys.stderr,
@@ -126,13 +129,37 @@ def main() -> int:
                 file=sys.stderr,
                 flush=True,
             )
+    except Exception as exc:  # The report must survive every fail-closed path.
+        failure_class = type(exc).__name__
+        failure_message = str(exc)[:500]
+        if not incomplete_reason:
+            incomplete_reason = "screen_infrastructure_failure"
+        print(
+            f"round74-ai-screen: blocked {failure_class}: {failure_message}",
+            file=sys.stderr,
+            flush=True,
+        )
     finally:
         print(
             f"round74-ai-screen: unloading {arguments.model_name}",
             file=sys.stderr,
             flush=True,
         )
-        unloaded = unload_round74_ai_model(binding.runtime, binding.manifest)
+        try:
+            unload_action_performed = unload_round74_ai_model(
+                binding.runtime,
+                binding.manifest,
+            )
+            model_absent_after_cleanup_verified = True
+        except Exception as exc:
+            cleanup_message = str(exc)[:500]
+            failure_class = failure_class or type(exc).__name__
+            failure_message = (
+                f"{failure_message}; cleanup: {cleanup_message}"
+                if failure_message
+                else f"cleanup: {cleanup_message}"
+            )
+            incomplete_reason = "model_cleanup_failure"
     completed = len(results) == len(cases)
     report: dict[str, object] = {
         "schema_version": ROUND74_AI_CONTRACT_SCREEN_SCHEMA_VERSION,
@@ -148,13 +175,18 @@ def main() -> int:
         "case_count_completed": len(results),
         "complete": completed,
         "incomplete_reason": incomplete_reason,
+        "failure_class": failure_class,
+        "failure_message": failure_message,
         "all_runtime_accepted": completed
         and all(result["runtime_accepted"] for result in results),
         "all_runtime_failures_closed": all(result["fail_closed"] for result in results),
         "all_semantic_expectations_passed": completed
         and all(result["semantic_passed"] for result in results),
         "results": results,
-        "model_unload_requested_and_verified": unloaded,
+        "model_unload_action_performed": unload_action_performed,
+        "model_absent_after_cleanup_verified": (
+            model_absent_after_cleanup_verified
+        ),
         "elapsed_wall_ns": time.time_ns() - started_wall_ns,
         "synthetic_non_market_contract_packets_only": True,
         "real_market_data_used": False,
@@ -165,6 +197,8 @@ def main() -> int:
     }
     report["report_sha256"] = _canonical_sha256(report)
     print(json.dumps(report, indent=2, sort_keys=True))
+    if failure_class:
+        return 1
     return 0 if completed else 2
 
 
