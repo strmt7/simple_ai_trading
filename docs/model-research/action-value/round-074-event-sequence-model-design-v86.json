@@ -1,7 +1,7 @@
 {
   "schema_version": "round-074-event-sequence-model-design-v86",
   "created_at_utc": "2026-07-28T13:01:54Z",
-  "implementation_git_commit": "8b48b154d1aa4724beea6c961b775d8a97e939d2",
+  "implementation_git_commit": "cc602cbbde736021e81954b518a4cc0378ffd62d",
   "base_design": {
     "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v85.json",
     "file_sha256": "3cd51fa924a32634e74cb4962543ff7b51a8842cffb26ea1465b1bed4c176566",
@@ -12,10 +12,16 @@
     "file_sha256_normalization": "git_blob_bytes",
     "event_sequence": {
       "path": "src/simple_ai_trading/impact_absorption_event_sequence.py",
-      "sha256": "b17c30a5b031894f437b1e73813140441425e2aefbc8537a81c7e6d279e2368e",
+      "sha256": "6cd99986bfff5487d3f3cbd6fad5464be6ab1a2f0bb8a18a4f0e6b53953717b8",
       "schema_version": "round-074-causal-event-sequence-v5",
       "feature_count": 75,
-      "feature_names_sha256": "bf72f43bd2db29c7f696ddf10bc894e35cf3fd19f8c04a1930c4c406cb64d74b"
+      "feature_names_sha256": "1487503fff95883204aa0a34a8141a126d72300f85cc0d72d005144a5f2d225e"
+    },
+    "event_scaler": {
+      "path": "src/simple_ai_trading/impact_absorption_event_scaling.py",
+      "sha256": "8d6f798dedf11cf345effc0aabf1a2ff88ad828fe21c4e39a95be13390ac92e9",
+      "schema_version": "round-074-event-feature-scaler-v5",
+      "binary_feature_count": 11
     },
     "tests": [
       {
@@ -23,12 +29,24 @@
         "sha256": "094abd10be71f393ccf87f3941681fd3317c4dcc22e6715a483afb14553d2ecc"
       },
       {
+        "path": "tests/test_impact_absorption_event_scaling.py",
+        "sha256": "47211856a758ab686a8d149dc4d888e9c5330a6f452e2f205be4e6a662baa9e2"
+      },
+      {
+        "path": "tests/test_impact_absorption_ai_protocol.py",
+        "sha256": "badbd2680feb38bad400239685079b13ed032491a8db6919105f3bef6754f964"
+      },
+      {
+        "path": "tests/test_impact_absorption_ai_bridge.py",
+        "sha256": "36d3068aa1fc1e69a88546a1bf46bec2853b8b0f3def4a9dec684cd5ed842d3b"
+      },
+      {
         "path": "tests/test_round74_event_cohort_operator.py",
-        "sha256": "c49ba61b673d184750bfbf76183316520627c3821f4a08c1ee5146e644dcf2a8"
+        "sha256": "481ef4d42ab3f8b3236c68aae9ff5012e222132c996d6673e7fb61221bb2a951"
       },
       {
         "path": "tests/test_round74_event_model_contract.py",
-        "sha256": "5bea41ccccba0a48c3083d28090ebc15b27148c432aea7d1d638028471326db4"
+        "sha256": "4e2600902c3e1621607c0320298855743752cbbdd9533f03bfdedc6180026dbc"
       },
       {
         "path": "tests/test_round74_event_model_design_v72.py",
@@ -36,7 +54,7 @@
       },
       {
         "path": "tests/test_round74_local_ai_design.py",
-        "sha256": "e3120907e987d28f6f4d61fa2049bf5d42625706fa97f857b75cb60e7d58793a"
+        "sha256": "b0f077361e82ecf1a8ac7be23f54b778e31f610989ad5b06038945b85aa131ce"
       }
     ]
   },
@@ -64,6 +82,9 @@
       "opening_10s"
     ],
     "new_feature_count": 9,
+    "opening_indicators_are_leading_binary_features": true,
+    "binary_feature_count_after": 11,
+    "robust_scaler_may_standardize_opening_indicators": false,
     "opening_window_definition": "event_time_ms modulo period_ms is greater than or equal to zero and strictly less than 10000",
     "opening_boundary_tested_at_ms": [
       9999,
@@ -100,6 +121,7 @@
       "causal_event_attention": 154180
     },
     "training_only_scaler_fit_required": true,
+    "rare_opening_indicators_preserved_as_exact_zero_or_one": true,
     "feature_ablation_required_before_selection": true,
     "automatic_candidate_promotion_permitted": false,
     "paper_result_may_select_model": false,
@@ -114,12 +136,14 @@
     "v4_feature_count": 66,
     "v4_feature_names_sha256": "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a",
     "v5_feature_count": 75,
-    "v5_feature_names_sha256": "bf72f43bd2db29c7f696ddf10bc894e35cf3fd19f8c04a1930c4c406cb64d74b"
+    "v5_feature_names_sha256": "1487503fff95883204aa0a34a8141a126d72300f85cc0d72d005144a5f2d225e"
   },
   "verification": {
-    "connected_tests_passed": 55,
+    "connected_tests_passed": 103,
     "exact_exchange_time_source_test_passed": true,
     "opening_window_boundary_test_passed": true,
+    "rare_opening_indicator_scaler_preservation_test_passed": true,
+    "ai_prompt_binary_contract_test_passed": true,
     "event_sequence_dataset_scaler_model_operator_tests_passed": true,
     "ruff_check_passed": true,
     "git_diff_check_passed": true,
@@ -151,5 +175,5 @@
     "testnet_trading_authority": false,
     "live_trading_authority": false
   },
-  "design_sha256": "5e59ca12c67dddce7b5b8b85987410b1cd68295898a835893825e41580eeca62"
+  "design_sha256": "510884bedc764a48516eefddd8383b02b6a3f71c0a47ddf701b7ba492f23189b"
 }
