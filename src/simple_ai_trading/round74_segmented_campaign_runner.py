@@ -19,6 +19,7 @@ from .impact_absorption_event_segmented_cohort import (
     ROUND74_SEGMENTED_COHORT_SLOT_PERIOD_NS,
     ROUND74_SEGMENTED_COHORT_START_TOLERANCE_NS,
     Round74SegmentedCohortPlan,
+    Round74SegmentedTransportEpochAudit,
     load_round74_segmented_cohort_plan,
 )
 from .impact_absorption_store import ImpactAbsorptionStore
@@ -73,6 +74,7 @@ class Round74SegmentedCampaignRunnerConfig:
 
     repository: Path
     plan_path: Path
+    prerequisite_path: Path
     database_path: Path
     state_root: Path
     database_cap_bytes: int = ROUND74_SEGMENTED_CAMPAIGN_DATABASE_CAP_BYTES
@@ -85,11 +87,13 @@ class Round74SegmentedCampaignRunnerConfig:
         root = self.repository.resolve()
         paths = (
             self.plan_path.resolve(),
+            self.prerequisite_path.resolve(),
             self.database_path.resolve(),
             self.state_root.resolve(),
         )
         if (
             not self.plan_path.is_file()
+            or not self.prerequisite_path.is_file()
             or any(
                 path != root and root not in path.parents
                 for path in paths
@@ -152,11 +156,68 @@ def select_round74_segmented_campaign_slot(
     )
 
 
+def _validate_prerequisite(
+    config: Round74SegmentedCampaignRunnerConfig,
+    plan: Round74SegmentedCohortPlan,
+) -> None:
+    payload = dict(
+        _strict_json_mapping(
+            config.prerequisite_path.read_text(encoding="utf-8"),
+            "segmented campaign prerequisite",
+        )
+    )
+    claimed = str(payload.pop("artifact_sha256", ""))
+    source = payload.get("source")
+    capture = payload.get("capture")
+    epoch = payload.get("fresh_epoch_audit")
+    verdict = payload.get("verdict")
+    if (
+        claimed != _canonical_sha256(payload)
+        or claimed != plan.prerequisite_artifact_sha256
+        or payload.get("schema_version")
+        != "round-074-segmented-prerequisite-success-v1"
+        or not isinstance(source, Mapping)
+        or source.get("credentials_used") is not False
+        or source.get("orders_submitted") is not False
+        or not isinstance(capture, Mapping)
+        or capture.get("started_wall_ns")
+        != plan.prerequisite_window_start_wall_ns
+        or capture.get("ended_wall_ns")
+        != plan.prerequisite_window_end_wall_ns
+        or capture.get("supervisor_status") != "completed"
+        or capture.get("reconnect_count") != 0
+        or capture.get("audit_passed") is not True
+        or not isinstance(epoch, Mapping)
+        or not isinstance(verdict, Mapping)
+        or verdict.get("prerequisite_passed") is not True
+        or verdict.get("cohort_plan_frozen") is not False
+        or verdict.get("cohort_campaign_open") is not False
+        or verdict.get("cohort_data_admitted") is not False
+        or verdict.get("model_training_or_evaluation") is not False
+        or verdict.get("profitability_or_edge_claim") is not False
+        or verdict.get("trading_authority") is not False
+    ):
+        raise ValueError("Round 74 segmented campaign prerequisite differs")
+    audited = Round74SegmentedTransportEpochAudit.from_dict(epoch)
+    if (
+        not audited.admission_supported
+        or audited.run_id != capture.get("run_id")
+        or audited.report_sha256 != capture.get("report_sha256")
+        or audited.message_count != capture.get("message_count")
+        or audited.frame_count != capture.get("frame_count")
+        or audited.compressed_payload_bytes
+        != capture.get("compressed_payload_bytes")
+    ):
+        raise ValueError("Round 74 segmented prerequisite epoch differs")
+
+
 def _load_plan(config: Round74SegmentedCampaignRunnerConfig) -> Round74SegmentedCohortPlan:
     config.validate()
-    return load_round74_segmented_cohort_plan(
+    plan = load_round74_segmented_cohort_plan(
         config.plan_path.read_text(encoding="utf-8")
     )
+    _validate_prerequisite(config, plan)
+    return plan
 
 
 def _source_matches(

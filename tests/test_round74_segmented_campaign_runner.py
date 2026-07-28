@@ -21,13 +21,26 @@ from simple_ai_trading.round74_segmented_campaign_runner import (
 )
 
 
+_REPOSITORY = Path(__file__).resolve().parents[1]
+_PREREQUISITE = (
+    _REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-segmented-prerequisite-attempt-003-success-2026-07-28.json"
+)
+_PREREQUISITE_SHA256 = (
+    "3ff57cdf7598c683f1c310a8b2ce0f0b101e82568f96a868e871dff84998bc6d"
+)
+
+
 def _plan() -> Round74SegmentedCohortPlan:
     return Round74SegmentedCohortPlan(
         scheduled_start_wall_ns=2_000_000_000_000_000_000,
         implementation_git_commit="c" * 40,
-        prerequisite_artifact_sha256="a" * 64,
-        prerequisite_window_start_wall_ns=1_999_900_000_000_000_000,
-        prerequisite_window_end_wall_ns=1_999_904_000_000_000_000,
+        prerequisite_artifact_sha256=_PREREQUISITE_SHA256,
+        prerequisite_window_start_wall_ns=1_785_220_287_069_310_100,
+        prerequisite_window_end_wall_ns=1_785_221_495_138_384_300,
     )
 
 
@@ -37,11 +50,17 @@ def _config(root: Path) -> Round74SegmentedCampaignRunnerConfig:
         json.dumps(_plan().as_dict()),
         encoding="utf-8",
     )
+    prerequisite_path = root / "prerequisite.json"
+    prerequisite_path.write_text(
+        _PREREQUISITE.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
     data = root / "data"
     data.mkdir()
     return Round74SegmentedCampaignRunnerConfig(
         repository=root,
         plan_path=plan_path,
+        prerequisite_path=prerequisite_path,
         database_path=data / "cohort.duckdb",
         state_root=data / "cohort-state",
     )
@@ -160,3 +179,26 @@ def test_segmented_campaign_readiness_is_fail_closed(
     )
     assert wal_blocked["can_start_now"] is False
     assert wal_blocked["checks"]["wal_absent_before_slot_passed"] is False
+
+
+def test_segmented_campaign_rejects_prerequisite_tampering(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = _config(tmp_path)
+    payload = json.loads(config.prerequisite_path.read_text(encoding="utf-8"))
+    payload["capture"]["message_count"] += 1
+    config.prerequisite_path.write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.round74_segmented_campaign_runner._source_matches",
+        lambda *_args: (True, ()),
+    )
+
+    with pytest.raises(ValueError, match="prerequisite differs"):
+        inspect_round74_segmented_campaign_readiness(
+            config,
+            now_wall_ns=_plan().scheduled_start_wall_ns,
+        )
