@@ -20,6 +20,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--repository", default=".")
     parser.add_argument("--plan", required=True)
+    parser.add_argument("--prerequisite", required=True)
     parser.add_argument("--database", required=True)
     parser.add_argument("--state-root", required=True)
     parser.add_argument("--readiness-only", action="store_true")
@@ -32,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     config = Round74SegmentedCampaignRunnerConfig(
         repository=repository,
         plan_path=(repository / args.plan).resolve(),
+        prerequisite_path=(repository / args.prerequisite).resolve(),
         database_path=(repository / args.database).resolve(),
         state_root=(repository / args.state_root).resolve(),
     )
