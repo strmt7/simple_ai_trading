@@ -34,9 +34,6 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_HORIZONS_SECONDS,
     ROUND74_ACTION_PROFILES,
 )
-from simple_ai_trading.impact_absorption_event_dataset import (
-    ROUND74_EVENT_PARTITION_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_scaling import (
     ROUND74_EVENT_SCALER_SCHEMA_VERSION,
 )
@@ -371,10 +368,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION
     )
     assert source["event_dataset_schema_version"] == "round-074-event-dataset-v9"
-    assert (
-        source["event_partition_schema_version"]
-        == ROUND74_EVENT_PARTITION_SCHEMA_VERSION
-    )
+    assert source["event_partition_schema_version"] == "round-074-run-partition-v4"
     assert (
         source["event_action_context_schema_version"]
         == "round-074-action-context-v4"
