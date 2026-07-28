@@ -1,0 +1,139 @@
+{
+  "schema_version": "round-074-segmented-prerequisite-success-v1",
+  "observed_at_utc": "2026-07-28T06:55:00Z",
+  "implementation": {
+    "main_git_commit": "f6c46ead18930a8ab1b249bbf28dc48bc0857bba",
+    "development_git_commit": "88e73571c0dcc68f54df95f1dc8474dce8901f73",
+    "capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
+    "epoch_audit_schema_version": "round-074-segmented-transport-epoch-audit-v1",
+    "slot_adjudication_schema_version": "round-074-segmented-slot-adjudication-v1"
+  },
+  "source": {
+    "database_relative_path": "data/round74-segmented-prerequisite-attempt-003-f6c46ea.duckdb",
+    "database_bytes": 28323840,
+    "database_sha256": "29e5b56219d2178888bec350e4cdfdc2b5029e82978b2833f34e7037fef04eea",
+    "wal_present_after_capture_and_audit": false,
+    "capture_stdout_relative_path": ".tmp/round74-segmented-prerequisite-attempt-003/capture.stdout.json",
+    "capture_stdout_bytes": 4319,
+    "capture_stdout_sha256": "2cbe36d24ee228e5ec5e186650068559aec2b67410516aaa084900b18f81d941",
+    "capture_stderr_relative_path": ".tmp/round74-segmented-prerequisite-attempt-003/capture.stderr.log",
+    "capture_stderr_bytes": 5521,
+    "capture_stderr_sha256": "c48b7d97c7f5c9cb79835bc44ef3635f01fb5fbb4a4ef03a132df56a2eca41bb",
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "capture": {
+    "supervisor_sha256": "fd3fcd09c4ecaa677397ba474d233dee92aed3beca33e8f03bfcd43e61837a04",
+    "report_sha256": "faa8f17bcea9bac7fce582ee4d24bc7b74c19a84512303487577b51560ca3bf8",
+    "run_id": "b1ca49e7ba0645b5baa323eda8505af7",
+    "supervisor_status": "completed",
+    "run_status": "completed",
+    "failure_class": "none",
+    "error": "",
+    "attempt_count": 1,
+    "reconnect_count": 0,
+    "reconnect_delays_seconds": [],
+    "startup_errors": [],
+    "terminal_error": "",
+    "started_wall_ns": 1785220287069310100,
+    "ended_wall_ns": 1785221495138384300,
+    "elapsed_seconds": 1202.140000000014,
+    "message_count": 543530,
+    "frame_count": 291,
+    "compressed_payload_bytes": 18913522,
+    "queue_high_water_messages": 2001,
+    "queue_capacity_messages": 65536,
+    "queue_maximum_utilization": 0.0305328369140625,
+    "negative_corrected_latency_fraction": 0.0,
+    "database_physical_growth_bytes": 23330816,
+    "process_io_delta_write_bytes": 43451422,
+    "process_io_semantics": "process I/O transfer bytes; not physical SSD writes",
+    "resource_safety_passed": true,
+    "storage_efficiency_passed": true,
+    "capture_gate_passed": true,
+    "data_qualification_passed": true,
+    "audit_passed": true
+  },
+  "symbol_segments": {
+    "BTCUSDT": {
+      "status": "valid",
+      "depth_message_count": 11786,
+      "invalid_event_count": 0,
+      "sequence_gap_count": 0,
+      "crossed_book_count": 0
+    },
+    "ETHUSDT": {
+      "status": "valid",
+      "depth_message_count": 11718,
+      "invalid_event_count": 0,
+      "sequence_gap_count": 0,
+      "crossed_book_count": 0
+    },
+    "SOLUSDT": {
+      "status": "valid",
+      "depth_message_count": 11056,
+      "invalid_event_count": 0,
+      "sequence_gap_count": 0,
+      "crossed_book_count": 0
+    }
+  },
+  "fresh_epoch_audit": {
+    "schema_version": "round-074-segmented-transport-epoch-audit-v1",
+    "run_id": "b1ca49e7ba0645b5baa323eda8505af7",
+    "terminal_status": "completed",
+    "terminal_error": "",
+    "report_sha256": "faa8f17bcea9bac7fce582ee4d24bc7b74c19a84512303487577b51560ca3bf8",
+    "fresh_frame_audit_sha256": "8a2ea127d0648213243e0e41699a288fdf8dbe92316a010f409b03f835273b9b",
+    "capture_start_wall_ns": 1785220287069310100,
+    "capture_end_wall_ns": 1785221495138384300,
+    "feature_ready_wall_ns": 1785220292881476800,
+    "usable_end_wall_ns": 1785221492952237800,
+    "usable_duration_ns": 1200070761000,
+    "eligible_anchor_duration_ns": 889570761000,
+    "message_count": 543530,
+    "frame_count": 291,
+    "compressed_payload_bytes": 18913522,
+    "observation_count": 543444,
+    "token_count": 536739,
+    "fresh_depth_update_counts": {
+      "BTCUSDT": 11765,
+      "ETHUSDT": 11706,
+      "SOLUSDT": 11052
+    },
+    "last_fresh_depth_wall_ns": {
+      "BTCUSDT": 1785221492955237900,
+      "ETHUSDT": 1785221493002230300,
+      "SOLUSDT": 1785221492952237800
+    },
+    "minimum_usable_epoch_ns": 600000000000,
+    "maximum_target_span_ns": 310500000000,
+    "minimum_usable_epoch_passed": true,
+    "complete_target_span_possible": true,
+    "exact_frame_audit_passed": true,
+    "causal_depth_replay_passed": true,
+    "admission_supported": true,
+    "cross_epoch_feature_or_target_permitted": false,
+    "epoch_audit_sha256": "64f554a0e8e3af317fc9c591c39af1c365e5f1da6b221e1e04b28ee5d58f8f97"
+  },
+  "provisional_adjudication_check": {
+    "purpose": "exercise the deterministic binder without freezing a cohort plan",
+    "provisional_plan_sha256": "c08cfcefbd8a11b74b47c2c4c65aa3ea81b8b1b51d5babe266407b23f6f1da29",
+    "adjudication_sha256": "0a58a8d1a43b13f1bfca26015ec12bbe2384572f7182198cfc5c68a7f5277cc9",
+    "binding_sha256": "3d59b8237528b5103e42576a0b96bd1e80ce09475bec4937eceacca9e2fbb76a",
+    "classification": "admitted",
+    "prerequisite_is_cohort_data": false
+  },
+  "verdict": {
+    "prerequisite_passed": true,
+    "capture_contract_validated": true,
+    "transport_epoch_contract_validated": true,
+    "deterministic_adjudicator_validated": true,
+    "cohort_plan_frozen": false,
+    "cohort_campaign_open": false,
+    "cohort_data_admitted": false,
+    "model_training_or_evaluation": false,
+    "profitability_or_edge_claim": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "3ff57cdf7598c683f1c310a8b2ce0f0b101e82568f96a868e871dff84998bc6d"
+}
