@@ -38,6 +38,11 @@ from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_V10_SCHEMA_VERSION,
     ImpactAbsorptionStore,
 )
+from simple_ai_trading.round74_segmented_cohort_operator import (
+    Round74SegmentedSlotAdjudication,
+    adjudicate_round74_segmented_supervisor,
+    load_round74_segmented_slot_adjudication,
+)
 
 
 _SECOND_NS = 1_000_000_000
@@ -561,3 +566,114 @@ def test_segmented_replay_requires_read_only_store() -> None:
             )
     finally:
         store.close()
+
+
+def test_segmented_startup_transport_adjudication_round_trips() -> None:
+    plan = _plan()
+    error = "startup:TimeoutError:timed out during opening handshake"
+    supervisor = {
+        "schema_version": "round-074-capture-supervisor-report-v1",
+        "design_sha256": ROUND74_CAPTURE_DESIGN_SHA256,
+        "capture_schema_version": IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+        "capture_contract_sha256": IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+        "status": "failed",
+        "qualification_passed": False,
+        "selected_run_id": "",
+        "attempt_count": 1,
+        "reconnect_count": 0,
+        "reconnect_delays_seconds": [],
+        "attempts": [],
+        "startup_errors": [error],
+        "terminal_error": error,
+        "attempt_evidence_combined": False,
+    }
+    adjudication = adjudicate_round74_segmented_supervisor(
+        plan,
+        slot_ordinal=0,
+        supervisor_payload=supervisor,
+        epoch_audit=None,
+    )
+    payload = adjudication.as_dict()
+
+    assert adjudication.outcome.status == "transport_excluded"
+    assert adjudication.outcome.reason_code == "startup_transport"
+    assert adjudication.epoch_audit is None
+    assert (
+        load_round74_segmented_slot_adjudication(
+            json.dumps(payload),
+            plan=plan,
+        ).as_dict()
+        == payload
+    )
+
+
+def test_segmented_operator_admits_every_qualifying_transport_prefix() -> None:
+    plan = _plan()
+    supervisor, epoch = _supervisor_and_epoch(
+        plan,
+        0,
+        terminal_status="transport_ended",
+        usable_duration_ns=700 * _SECOND_NS,
+    )
+    adjudication = adjudicate_round74_segmented_supervisor(
+        plan,
+        slot_ordinal=0,
+        supervisor_payload=supervisor,
+        epoch_audit=epoch,
+    )
+
+    assert adjudication.outcome.status == "admitted"
+    assert adjudication.outcome.binding is not None
+    assert adjudication.outcome.binding.terminal_status == "transport_ended"
+
+    forged = Round74SegmentedSlotAdjudication(
+        plan_sha256=adjudication.plan_sha256,
+        slot_ordinal=adjudication.slot_ordinal,
+        supervisor_json=adjudication.supervisor_json,
+        outcome=Round74SegmentedCohortSlotOutcome(
+            plan_sha256=plan.plan_sha256,
+            slot_ordinal=0,
+            role="training",
+            status="transport_excluded",
+            reason_code="in_run_transport",
+            evidence_sha256=epoch.epoch_audit_sha256,
+        ),
+        epoch_audit=epoch,
+    )
+    with pytest.raises(ValueError, match="admitted adjudication differs"):
+        forged.validate(plan)
+
+
+def test_segmented_operator_excludes_only_audited_short_transport_prefix() -> None:
+    plan = _plan()
+    supervisor, epoch = _supervisor_and_epoch(
+        plan,
+        0,
+        terminal_status="transport_ended",
+        usable_duration_ns=(
+            ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS - 1
+        ),
+    )
+    adjudication = adjudicate_round74_segmented_supervisor(
+        plan,
+        slot_ordinal=0,
+        supervisor_payload=supervisor,
+        epoch_audit=epoch,
+    )
+
+    assert adjudication.outcome.status == "transport_excluded"
+    assert adjudication.outcome.reason_code == "in_run_transport"
+    assert adjudication.outcome.evidence_sha256 == epoch.epoch_audit_sha256
+    assert adjudication.outcome.binding is None
+
+    tampered = deepcopy(supervisor)
+    report = tampered["attempts"][0]
+    assert isinstance(report, dict)
+    report["writer_message_count"] += 1
+    with pytest.raises(ValueError, match="capture counts differ"):
+        adjudicate_round74_segmented_supervisor(
+            plan,
+            slot_ordinal=0,
+            supervisor_payload=tampered,
+            epoch_audit=epoch,
+        )
