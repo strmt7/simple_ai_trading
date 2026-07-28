@@ -53,6 +53,7 @@ from .round74_event_model_operator import (
     prepare_round74_development_data,
     split_round74_prepared_tuning_roles,
 )
+from .round74_segmented_model_operator import Round74SegmentedTrainingSplit
 from .round74_event_development_inputs import Round74DevelopmentInputs
 from .round74_delayed_execution_panel import (
     build_round74_delayed_execution_panels,
@@ -872,6 +873,7 @@ def train_calibrate_and_select_round74_development_policy(
     config: Round74EventTrainingConfig | None = None,
     inference_minibatch_rows: int = 128,
     matched_preparation_sha256: str | None = None,
+    segmented_training_split: Round74SegmentedTrainingSplit | None = None,
 ) -> Round74DevelopmentPolicyArtifact:
     """Run the complete development path and write one immutable bundle."""
 
@@ -913,6 +915,8 @@ def train_calibrate_and_select_round74_development_policy(
     }
     if matched_preparation_sha256 is not None:
         pretest_kwargs["matched_preparation_sha256"] = matched_preparation_sha256
+    if segmented_training_split is not None:
+        pretest_kwargs["segmented_training_split"] = segmented_training_split
     pretest = train_and_seal_round74_pretest_policy_from_prepared_roles(
         prepared.training_batches,
         tuning_roles,

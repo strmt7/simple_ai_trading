@@ -73,16 +73,17 @@ from .round74_segmented_model_operator import (
     ROUND74_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS as ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS,
     ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS,
     Round74SegmentedModelSelectionStages,
+    Round74SegmentedTrainingSplit,
     Round74SegmentedTuningSubpartition,
     build_round74_segmented_model_selection_stages,
 )
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v28"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v27"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v29"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v28"
 ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION = (
-    "round-074-event-selection-protocol-v2"
+    "round-074-event-selection-protocol-v3"
 )
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION = "round-074-target-loss-scale-v1"
@@ -363,11 +364,13 @@ class Round74EventSelectionProtocol:
         ...,
     ]
     stage_partition: Round74SegmentedModelSelectionStages
+    training_split: Round74SegmentedTrainingSplit
     scaler_fit_selection_sha256: str
     schema_version: str = ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION
 
     def validate(self) -> None:
         self.stage_partition.validate()
+        self.training_split.validate()
         training_groups = (
             self.optimization_batches,
             self.purged_training_batches,
@@ -388,6 +391,7 @@ class Round74EventSelectionProtocol:
             != len(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
             or any(not group for group in self.promotion_stage_batches)
             or _SHA256.fullmatch(self.scaler_fit_selection_sha256) is None
+            or self.scaler_fit_selection_sha256 != self.training_split.split_sha256
         ):
             raise ValueError("Round 74 model-selection protocol differs")
         for batch in all_batches:
@@ -410,6 +414,16 @@ class Round74EventSelectionProtocol:
             or len({batch.window_representation for batch in all_batches}) != 1
             or self.stage_partition.parent_partition_sha256
             != all_batches[0].partition_sha256
+            or self.training_split.parent_partition_sha256
+            != all_batches[0].partition_sha256
+            or self.training_split.cohort_plan_sha256
+            != self.stage_partition.cohort_plan_sha256
+            or self.training_split.optimization_run_ids
+            != tuple(_batch_run_id(batch) for batch in self.optimization_batches)
+            or self.training_split.purged_run_ids
+            != tuple(_batch_run_id(batch) for batch in self.purged_training_batches)
+            or self.training_split.early_stopping_run_ids
+            != tuple(_batch_run_id(batch) for batch in self.early_stopping_batches)
             or any(
                 int(current.decision_wall_ns[0]) <= int(prior.decision_wall_ns[-1])
                 for prior, current in zip(
@@ -439,6 +453,8 @@ class Round74EventSelectionProtocol:
         payload: dict[str, object] = {
             "schema_version": self.schema_version,
             "stage_partition_sha256": (self.stage_partition.stage_partition_sha256),
+            "training_split_sha256": self.training_split.split_sha256,
+            "training_split": self.training_split.as_dict(),
             "stage_order": list(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS),
             "training_role_assignment_basis": (
                 "chronological admitted-run order after transport adjudication"
@@ -501,6 +517,7 @@ def _build_segmented_selection_protocol(
     training_batches: Sequence[Round74EventTrainingBatch],
     tuning_roles: object,
     feature_scaler: Round74EventFeatureScaler,
+    training_split: Round74SegmentedTrainingSplit,
 ) -> Round74EventSelectionProtocol:
     from .round74_event_model_operator import Round74PreparedTuningRoles
 
@@ -513,6 +530,9 @@ def _build_segmented_selection_protocol(
     ):
         raise TypeError("Round 74 segmented tuning subpartition is required")
     selected_training = tuple(training_batches)
+    if not isinstance(training_split, Round74SegmentedTrainingSplit):
+        raise TypeError("Round 74 segmented training split is required")
+    training_split.validate()
     for batch in selected_training:
         batch.validate()
     admitted_count = len(selected_training)
@@ -550,6 +570,8 @@ def _build_segmented_selection_protocol(
         optimization_end < ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
         or optimization_end > early_stopping_start
         or feature_scaler.fit_source_run_ids != observed_optimization_run_ids
+        or feature_scaler.fit_source_selection_sha256
+        != training_split.split_sha256
     ):
         raise ValueError("Round 74 segmented scaler optimization runs differ")
     optimization_batches = selected_training[:optimization_end]
@@ -573,6 +595,7 @@ def _build_segmented_selection_protocol(
         early_stopping_batches=early_stopping_batches,
         promotion_stage_batches=promotion_stage_batches,
         stage_partition=stage_partition,
+        training_split=training_split,
         scaler_fit_selection_sha256=feature_scaler.fit_source_selection_sha256,
     )
     selected.validate()
@@ -3748,6 +3771,7 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
     config: Round74EventTrainingConfig | None = None,
     feature_scaler: Round74EventFeatureScaler,
     matched_preparation_sha256: str | None = None,
+    segmented_training_split: Round74SegmentedTrainingSplit | None = None,
 ) -> Round74PretestPolicyArtifact:
     """Fit candidates with model-selection runs and no later tuning role."""
 
@@ -3772,9 +3796,17 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
             raise ValueError(
                 "Round 74 segmented tuning roles reject matched preparation"
             )
+        if not isinstance(
+            segmented_training_split,
+            Round74SegmentedTrainingSplit,
+        ):
+            raise TypeError("Round 74 segmented training split is required")
+        segmented_training_split.validate()
         representative_policy_sha256 = str(
             round74_segmented_window_policy()["policy_sha256"]
         )
+    elif segmented_training_split is not None:
+        raise ValueError("Round 74 legacy cohort rejects segmented training split")
     elif matched_preparation_sha256 is None:
         representative_policy_sha256 = str(
             round74_representative_window_policy()["policy_sha256"]
@@ -3788,6 +3820,7 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
             training_batches,
             tuning_roles,
             feature_scaler,
+            segmented_training_split,
         )
         if selected_config.execution_mode == "segmented_cohort"
         else None
@@ -4069,6 +4102,15 @@ def load_round74_pretest_policy(
             ) from exc
         protocol_without_sha = dict(protocol)
         protocol_sha256 = protocol_without_sha.pop("protocol_sha256", None)
+        training_split_payload = protocol.get("training_split")
+        if not isinstance(training_split_payload, Mapping):
+            raise ValueError("Round 74 pretest training split differs")
+        try:
+            training_split = Round74SegmentedTrainingSplit.from_dict(
+                training_split_payload
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("Round 74 pretest training split differs") from exc
         promotion_hashes = protocol.get("promotion_stage_batch_sha256")
         optimization_hashes = protocol.get("optimization_batch_sha256")
         purged_hashes = protocol.get("purged_training_batch_sha256")
@@ -4079,6 +4121,8 @@ def load_round74_pretest_policy(
         expected_protocol_keys = {
             "schema_version",
             "stage_partition_sha256",
+            "training_split_sha256",
+            "training_split",
             "stage_order",
             "training_role_assignment_basis",
             "early_stopping_fraction_denominator",
@@ -4114,6 +4158,11 @@ def load_round74_pretest_policy(
             != ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION
             or protocol.get("stage_partition_sha256")
             != stage_partition.stage_partition_sha256
+            or protocol.get("training_split_sha256")
+            != training_split.split_sha256
+            or training_split.parent_partition_sha256
+            != stage_partition.parent_partition_sha256
+            or training_split.cohort_plan_sha256 != stage_partition.cohort_plan_sha256
             or not isinstance(optimization_hashes, list)
             or not isinstance(purged_hashes, list)
             or not isinstance(early_stopping_hashes, list)
@@ -4123,6 +4172,10 @@ def load_round74_pretest_policy(
             or len(optimization_run_ids) != len(optimization_hashes)
             or len(purged_run_ids) != len(purged_hashes)
             or len(early_stopping_run_ids) != len(early_stopping_hashes)
+            or optimization_run_ids != list(training_split.optimization_run_ids)
+            or purged_run_ids != list(training_split.purged_run_ids)
+            or early_stopping_run_ids
+            != list(training_split.early_stopping_run_ids)
             or any(
                 not isinstance(run_id, str)
                 or len(run_id) != 32
@@ -4224,6 +4277,8 @@ def load_round74_pretest_policy(
                 str(protocol.get("feature_scaler_fit_selection_sha256"))
             )
             is None
+            or protocol.get("feature_scaler_fit_selection_sha256")
+            != training_split.split_sha256
             or protocol.get("feature_scaler_fit_source_run_ids_sha256")
             != _canonical_sha256(optimization_run_ids)
             or protocol.get("early_stopping_targets_used_for_gradient_updates")
