@@ -1,0 +1,137 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v94",
+  "created_at_utc": "2026-07-28T20:04:37.2508224Z",
+  "implementation_git_commit": "4ae56047a68517d39073798c0302aa63b67d0146",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v93.json",
+    "file_sha256": "3a483f1526d59e11149f558174573aee2ab7cf6c405e331406c9c0430e9b4b74",
+    "design_sha256": "e111bbea1a3157fe2431b9d2c6be22020dac32f8019cb3a0bdab39f1deb90ba8",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "event_features_path": "src/simple_ai_trading/impact_absorption_event_features.py",
+    "event_features_sha256": "34a0b7888de5785d1d5efbe1c0abd94ec8fd1d14d285a45efad03fa8bf28706c",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_sha256": "63eea109243b3f26304845066fa874aae06515121c4ce8e814063aedf309c844",
+    "representation_comparison_path": "src/simple_ai_trading/round74_representation_comparison.py",
+    "representation_comparison_sha256": "8fefeff4c07bda0fd97897e06f86f3fe757e6961e9b2e8c53c518bffc11c0daa",
+    "event_training_test_path": "tests/test_impact_absorption_event_training.py",
+    "event_training_test_sha256": "36e35f16f24cceac608903e734f0834904fbc89e54c3cf6e57715a1295495365",
+    "representation_comparison_test_path": "tests/test_round74_representation_comparison.py",
+    "representation_comparison_test_sha256": "3e9275af7aadc20539e874c336a59eb41554841eb8125e064cd1b10e9307aa72",
+    "directml_evidence_path": "docs/model-research/action-value/round-074-robust-promotion-directml-preflight-2026-07-28.json",
+    "directml_evidence_file_sha256": "4495e2ed639551b5ad9c420d84b9a5fc1d10336ec42bcdd429eea1a4f6938b2f"
+  },
+  "declared_delta": {
+    "event_training_schema_version": "round-074-event-training-v30",
+    "pretest_policy_schema_version": "round-074-event-pretest-policy-v29",
+    "selection_protocol_schema_version": "round-074-event-selection-protocol-v4",
+    "feature_view_schema_version": "round-074-feature-view-v3",
+    "representation_comparison_schema_version": "round-074-representation-comparison-v3",
+    "material_capture_run_majority_gate_added": true,
+    "single_capture_run_deletion_stability_gate_added": true,
+    "representation_report_persists_exact_paired_run_improvements": true,
+    "representation_loader_recomputes_complete_proper_loss_report": true,
+    "feature_names_or_values_changed": false,
+    "supervised_targets_changed": false,
+    "proper_loss_changed": false,
+    "candidate_architectures_changed": false,
+    "cohort_roles_or_scheduled_slots_changed": false,
+    "sealed_test_consumed": false
+  },
+  "promotion_contract": {
+    "applies_to": [
+      "architecture_complexity",
+      "clock_features",
+      "order_flow_features",
+      "state_conditioned_order_flow",
+      "causal_pretraining",
+      "matched_representation"
+    ],
+    "complete_fixed_capture_run_panel_required": true,
+    "mean_proper_loss_improvement_above_numerical_floor_required": true,
+    "material_win_definition": "paired incumbent loss minus challenger loss is strictly greater than the immutable numerical improvement floor",
+    "material_win_on_strict_capture_run_majority_required": true,
+    "minimum_required_material_win_count": "floor(paired_capture_run_count / 2) + 1",
+    "single_capture_run_deletion_definition": "recompute the paired-run mean after removing each capture run in turn",
+    "every_single_capture_run_deletion_mean_above_numerical_floor_required": true,
+    "every_paired_capture_run_noninferior_required": true,
+    "every_run_symbol_horizon_subgroup_noninferior_required": true,
+    "one_capture_run_panel_can_promote": false,
+    "statistical_independence_or_significance_claim": false,
+    "default_on_gate_failure": "retain the simpler incumbent"
+  },
+  "research_basis": {
+    "primary_sources": [
+      {
+        "title": "On Over-fitting in Model Selection and Subsequent Selection Bias in Performance Evaluation",
+        "url": "https://www.jmlr.org/papers/v11/cawley10a.html",
+        "use": "finite-sample model-selection criteria can themselves be overfit; variance and selection bias must be controlled"
+      },
+      {
+        "title": "Comparing Predictive Accuracy, Twenty Years Later",
+        "url": "https://www.nber.org/papers/w18391",
+        "use": "Diebold-Mariano tests compare forecasts and should not be misrepresented as a universal model-comparison solution"
+      },
+      {
+        "title": "A Test for Superior Predictive Ability",
+        "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=264569",
+        "use": "multiple forecast alternatives create data-snooping and erratic-forecast concerns"
+      },
+      {
+        "title": "The Probability of Backtest Overfitting",
+        "url": "https://scholarworks.wmich.edu/math_pubs/42/",
+        "use": "investment-model selection requires explicit protection against backtest overfitting"
+      }
+    ],
+    "decision": "use deterministic finite-panel robustness gates now and reserve inferential claims for a prespecified method with enough independent blocks",
+    "why_no_asymptotic_or_bootstrap_p_value": "the small stage panels and their dependence structure do not establish the assumptions needed for a defensible significance claim",
+    "sealed_test_remains_unmodified": true,
+    "new_predictive_or_financial_hypothesis_introduced": false
+  },
+  "verification": {
+    "focused_model_selection_and_representation_test_count": 38,
+    "connected_test_count_before_v94_integrity": 104,
+    "v94_design_integrity_test_count": 1,
+    "connected_test_count_with_v94_integrity": 105,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "amd_directml_preflight_passed": true,
+    "directml_warning_count": 0,
+    "directml_cpu_fallback_warning_count": 0,
+    "directml_model_hash_matches_prior": true,
+    "directml_prediction_hash_matches_prior": true,
+    "full_representative_training_performed": false,
+    "sealed_test_evaluated": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "development_branch_only": true,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "1e3fc8f41fcf77ebb7e8deb74a838b2ce0babbe7007b768249a69943c2b9fc5f"
+}

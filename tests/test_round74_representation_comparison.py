@@ -228,6 +228,17 @@ def test_representation_comparison_cannot_overstate_authority() -> None:
     with pytest.raises(ValueError, match="paired economics differ"):
         subject.Round74RepresentationComparison.from_dict(forged_economics)
 
+    forged_proper_loss = deepcopy(payload)
+    forged_proper_loss["proper_loss_gate"]["paired_run_proper_loss_improvements"][0] = (
+        1.0
+    )
+    forged_proper_loss.pop("comparison_sha256")
+    forged_proper_loss["comparison_sha256"] = subject._canonical_sha256(
+        forged_proper_loss
+    )
+    with pytest.raises(ValueError, match="proper-loss result differs"):
+        subject.Round74RepresentationComparison.from_dict(forged_proper_loss)
+
 
 def test_representation_coordinator_fixes_challenger_architecture(
     monkeypatch: pytest.MonkeyPatch,

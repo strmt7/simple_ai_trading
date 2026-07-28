@@ -1,0 +1,98 @@
+{
+  "schema_version": "round-074-robust-promotion-directml-preflight-v1",
+  "created_at_utc": "2026-07-28T20:04:37.2508224Z",
+  "implementation_git_commit": "4ae56047a68517d39073798c0302aa63b67d0146",
+  "execution_git_commit": "3526788f246df12707642fafe7ca00a1e4716409",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "event_features_path": "src/simple_ai_trading/impact_absorption_event_features.py",
+    "event_features_sha256": "34a0b7888de5785d1d5efbe1c0abd94ec8fd1d14d285a45efad03fa8bf28706c",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_sha256": "63eea109243b3f26304845066fa874aae06515121c4ce8e814063aedf309c844",
+    "representation_comparison_path": "src/simple_ai_trading/round74_representation_comparison.py",
+    "representation_comparison_sha256": "8fefeff4c07bda0fd97897e06f86f3fe757e6961e9b2e8c53c518bffc11c0daa",
+    "preflight_runner_path": "tools/run_round74_event_training_preflight.py",
+    "preflight_runner_sha256": "4744b7a8c20c68e8beaf5396690cd171c30860e59729b223ca747cf243819364",
+    "event_training_test_path": "tests/test_impact_absorption_event_training.py",
+    "event_training_test_sha256": "36e35f16f24cceac608903e734f0834904fbc89e54c3cf6e57715a1295495365",
+    "representation_comparison_test_path": "tests/test_round74_representation_comparison.py",
+    "representation_comparison_test_sha256": "3e9275af7aadc20539e874c336a59eb41554841eb8125e064cd1b10e9307aa72"
+  },
+  "directml_runtime": {
+    "backend_requested": "directml",
+    "backend_kind": "directml",
+    "backend_vendor": "AMD Radeon RX 9070 XT",
+    "device": "privateuseone:0",
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914",
+    "safetensors_version": "0.8.0",
+    "accelerated": true,
+    "warning_count": 0,
+    "cpu_fallback_warning_count": 0
+  },
+  "directml_probe": {
+    "input_kind": "deterministic_constructed_tensor_compute_preflight",
+    "market_data_used": false,
+    "candidate_ids": [
+      "event_pooling_linear",
+      "event_pooling_mlp",
+      "causal_event_tcn",
+      "causal_event_attention"
+    ],
+    "all_candidates_trained": true,
+    "selected_candidate_id": "event_pooling_linear",
+    "selection_reason": "the constructed preflight has one promotion run while the immutable cohort contract requires twelve; every challenger therefore failed closed",
+    "all_promotion_reports_complete": false,
+    "all_promotion_reports_promoted": false,
+    "single_capture_run_deletion_gate_applied": false,
+    "single_capture_run_deletion_gate_reason": "one run cannot support a leave-one-capture-run-out panel",
+    "statistical_independence_or_significance_claim": false,
+    "model_sha256": "609d576038558c1ead61da20e0aff883f15c91a469751b33c0746091f69bea84",
+    "prediction_sha256": "6c298d4da0884ab97dca4fccf04f56af62d00cd5a68107d62ffc6bb9401f638b",
+    "matches_prior_current_stack_model_and_prediction_hashes": true,
+    "policy_sha256": "9cd01f52b7c2cd119af0f42d9eb02e86676ae2aaf32e4d163826ef6c967b34ea",
+    "policy_model_reload_passed": true,
+    "temporary_artifact_count_before_cleanup": 2,
+    "temporary_directory_removed": true,
+    "predictive_or_financial_interpretation_permitted": false
+  },
+  "promotion_contract": {
+    "complete_fixed_capture_run_panel_required": true,
+    "mean_proper_loss_improvement_above_numerical_floor_required": true,
+    "material_win_above_numerical_floor_on_strict_run_majority_required": true,
+    "mean_improvement_after_every_single_capture_run_deletion_required": true,
+    "every_paired_capture_run_noninferior_required": true,
+    "every_run_symbol_horizon_subgroup_noninferior_required": true,
+    "asymptotic_or_bootstrap_significance_claim_made": false,
+    "sealed_test_accessed": false
+  },
+  "verification": {
+    "focused_model_selection_and_representation_test_count": 38,
+    "connected_contract_test_count": 67,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "current_commit_directml_preflight_passed": true,
+    "current_commit_directml_cpu_fallback_warning_count": 0
+  },
+  "evidence_boundary": {
+    "constructed_tensors_are_market_evidence": false,
+    "representative_training_data_complete": false,
+    "full_representative_training_performed": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
