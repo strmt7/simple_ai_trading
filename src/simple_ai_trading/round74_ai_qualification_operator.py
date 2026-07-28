@@ -42,6 +42,7 @@ from .impact_absorption_event_sealed_evaluation import (
     Round74TargetFreeCandidateInference,
     infer_round74_target_free_candidates,
 )
+from .round74_event_model_operator import Round74PreparedTuningRoles
 
 
 ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION = (
@@ -389,9 +390,64 @@ def run_round74_ai_pretest_qualification(
     return result
 
 
+def run_round74_prepared_ai_pretest_qualification(
+    prepared_tuning_roles: Round74PreparedTuningRoles,
+    *,
+    qualification_population: Round74AIQualificationPopulation,
+    action_selection: Round74ActionPolicySelection,
+    probability_calibration: Round74ProbabilityCalibration,
+    pretest_policy_path: str | Path,
+    execution_replay_provider: Round74AIQualificationExecutionReplayProvider,
+    qualification_output_path: str | Path,
+    same_entry_latency_budget_ns: int,
+    compute_backend: str = "auto",
+    inference_minibatch_rows: int = 2_048,
+    model_bindings: Sequence[Round74AIReviewModelBinding] | None = None,
+    review_runner: ReviewRunner = review_round74_ai_candidate,
+    model_batch_preparer: ModelBatchHook | None = None,
+    model_batch_finalizer: ModelBatchHook | None = None,
+    progress_callback: ProgressCallback | None = None,
+) -> Round74AIQualificationOperatorResult:
+    """Run qualification directly from the validated four-way tuning split."""
+
+    if not isinstance(prepared_tuning_roles, Round74PreparedTuningRoles):
+        raise TypeError("Round 74 prepared tuning roles are required")
+    prepared_tuning_roles.validate()
+    qualification_population.validate()
+    if (
+        not prepared_tuning_roles.ai_qualification_batches
+        or tuple(
+            next(iter(set(batch.run_id)))
+            for batch in prepared_tuning_roles.ai_qualification_batches
+        )
+        != qualification_population.run_ids
+    ):
+        raise ValueError(
+            "Round 74 prepared AI qualification population differs"
+        )
+    return run_round74_ai_pretest_qualification(
+        prepared_tuning_roles.ai_qualification_batches,
+        qualification_population=qualification_population,
+        action_selection=action_selection,
+        probability_calibration=probability_calibration,
+        pretest_policy_path=pretest_policy_path,
+        execution_replay_provider=execution_replay_provider,
+        qualification_output_path=qualification_output_path,
+        same_entry_latency_budget_ns=same_entry_latency_budget_ns,
+        compute_backend=compute_backend,
+        inference_minibatch_rows=inference_minibatch_rows,
+        model_bindings=model_bindings,
+        review_runner=review_runner,
+        model_batch_preparer=model_batch_preparer,
+        model_batch_finalizer=model_batch_finalizer,
+        progress_callback=progress_callback,
+    )
+
+
 __all__ = [
     "ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION",
     "Round74AIQualificationExecutionReplayProvider",
     "Round74AIQualificationOperatorResult",
     "run_round74_ai_pretest_qualification",
+    "run_round74_prepared_ai_pretest_qualification",
 ]

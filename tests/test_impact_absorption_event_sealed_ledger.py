@@ -5,6 +5,7 @@ from dataclasses import replace
 import json
 from pathlib import Path
 import sqlite3
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -88,6 +89,9 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 from simple_ai_trading.round74_segmented_model_operator import (
     Round74SegmentedTestPopulation,
     build_round74_segmented_sealed_dataset_identity,
+)
+from simple_ai_trading.round74_event_model_operator import (
+    Round74PreparedTuningRoles,
 )
 
 
@@ -1977,3 +1981,64 @@ def test_ai_qualification_store_provider_is_tuning_only(
     assert observed_runs == [run_id, run_id]
     assert tuple(replayed) == manifests
     assert all(rows[0].status == "runtime_veto" for rows in replayed.values())
+
+
+def test_prepared_ai_qualification_wrapper_forwards_only_fourth_subrole(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ai_run_ids = TEST_RUNS[:2]
+    batches = tuple(
+        _test_batch(role="tuning", runs=(run_id,)) for run_id in ai_run_ids
+    )
+    subpartition = SimpleNamespace(
+        parent_partition_sha256=batches[0].partition_sha256,
+        model_selection_run_ids=(),
+        calibration_run_ids=(),
+        policy_selection_run_ids=(),
+        ai_qualification_run_ids=ai_run_ids,
+        subpartition_sha256="7" * 64,
+        validate=lambda: None,
+    )
+    roles = Round74PreparedTuningRoles(
+        subpartition=subpartition,
+        model_selection_batches=(),
+        calibration_batches=(),
+        policy_selection_batches=(),
+        ai_qualification_batches=batches,
+    )
+    roles.validate()
+    population = Round74AIQualificationPopulation(
+        parent_tuning_subpartition_sha256="7" * 64,
+        prior_run_ids=POLICY_RUNS,
+        prior_slot_ordinals=tuple(range(len(POLICY_RUNS))),
+        run_ids=ai_run_ids,
+        slot_ordinals=(600, 601),
+        eligible_anchor_ns=(900_000_000_000, 900_000_000_000),
+    )
+    sentinel = object()
+    observed: dict[str, object] = {}
+
+    def run(batches: object, **kwargs: object) -> object:
+        observed["batches"] = batches
+        observed.update(kwargs)
+        return sentinel
+
+    monkeypatch.setattr(
+        qualification_subject,
+        "run_round74_ai_pretest_qualification",
+        run,
+    )
+    result = qualification_subject.run_round74_prepared_ai_pretest_qualification(
+        roles,
+        qualification_population=population,
+        action_selection=_selection(),
+        probability_calibration=_calibration(),
+        pretest_policy_path="policy.json",
+        execution_replay_provider=lambda **_kwargs: {},
+        qualification_output_path="qualification.json",
+        same_entry_latency_budget_ns=1_000_000,
+    )
+
+    assert result is sentinel
+    assert observed["batches"] == batches
+    assert observed["qualification_population"] is population

@@ -749,8 +749,8 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
 ) -> None:
     import simple_ai_trading.impact_absorption_event_training as training_subject
 
-    model_count, calibration_count, policy_count = 45, 23, 23
-    total = model_count + calibration_count + policy_count
+    model_count, calibration_count, policy_count, ai_count = 43, 22, 21, 17
+    total = model_count + calibration_count + policy_count + ai_count
     batches = tuple(
         _batch(
             "tuning",
@@ -761,13 +761,7 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
     )
     model_end = model_count
     calibration_end = model_end + calibration_count
-    model_ordinals = (
-        *range(514, 523),
-        *range(525, 534),
-        *range(535, 544),
-        *range(546, 555),
-        *range(556, 565),
-    )
+    policy_end = calibration_end + policy_count
     subpartition = Round74SegmentedTuningSubpartition(
         parent_partition_sha256="1" * 64,
         cohort_plan_sha256="a" * 64,
@@ -776,20 +770,29 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
             batch.run_id[0] for batch in batches[model_end:calibration_end]
         ),
         policy_selection_run_ids=tuple(
-            batch.run_id[0] for batch in batches[calibration_end:]
+            batch.run_id[0] for batch in batches[calibration_end:policy_end]
         ),
-        model_selection_slot_ordinals=model_ordinals,
-        calibration_slot_ordinals=tuple(range(566, 589)),
-        policy_selection_slot_ordinals=tuple(range(592, 615)),
+        ai_qualification_run_ids=tuple(
+            batch.run_id[0] for batch in batches[policy_end:]
+        ),
+        model_selection_slot_ordinals=tuple(range(514, 557)),
+        calibration_slot_ordinals=tuple(range(557, 579)),
+        policy_selection_slot_ordinals=tuple(range(579, 600)),
+        ai_qualification_slot_ordinals=tuple(range(600, 617)),
         model_selection_eligible_anchor_ns=(900_000_000_000,) * model_count,
         calibration_eligible_anchor_ns=(900_000_000_000,) * calibration_count,
         policy_selection_eligible_anchor_ns=(900_000_000_000,) * policy_count,
+        ai_qualification_eligible_anchor_ns=(900_000_000_000,) * ai_count,
     )
     roles = split_round74_tuning_batch_roles(
         batches,
         subpartition=subpartition,
     )
     roles.validate()
+    assert len(roles.ai_qualification_batches) == ai_count
+    assert tuple(
+        batch.run_id[0] for batch in roles.ai_qualification_batches
+    ) == subpartition.ai_qualification_run_ids
     config = Round74EventTrainingConfig(
         seeds=(7411,),
         maximum_epochs=1,
@@ -888,9 +891,9 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
     assert [len(batches) for batches in protocol.promotion_stage_batches] == [
         9,
         9,
+        8,
         9,
-        9,
-        9,
+        8,
     ]
     assert (
         tuple(
