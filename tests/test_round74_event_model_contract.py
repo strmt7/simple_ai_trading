@@ -116,6 +116,9 @@ SHARED_CAPITAL_DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v
 OPEN_RISK_DRAWDOWN_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v80.json"
 )
+RISK_TAIL_CALIBRATION_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v81.json"
+)
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -393,6 +396,94 @@ def test_round74_open_risk_drawdown_is_conservative_and_source_bound() -> None:
     assert not design["evidence_boundary"]["real_cohort_data_used"]
     assert not design["evidence_boundary"]["financial_backtest_performed"]
     assert authority["conservative_open_risk_drawdown_implementation"]
+    assert not authority["financial_edge_tested"]
+    assert not authority["profitability_claim"]
+    assert not authority["drawdown_performance_claim"]
+    assert not authority["ai_uplift_claim"]
+    assert not authority["paper_trading_authority"]
+    assert not authority["testnet_trading_authority"]
+    assert not authority["live_trading_authority"]
+
+
+def test_round74_risk_tail_calibration_is_frozen_conservative_and_source_bound() -> (
+    None
+):
+    previous = _load_hash_bound(OPEN_RISK_DRAWDOWN_DESIGN_PATH, "design_sha256")
+    design = _load_hash_bound(RISK_TAIL_CALIBRATION_DESIGN_PATH, "design_sha256")
+    source = design["source_binding"]
+    contract = design["held_out_risk_tail_calibration_contract"]
+    parity = design["ml_ai_parity_contract"]
+    authority = design["authority"]
+    commit = str(design["implementation_git_commit"])
+
+    assert design["schema_version"] == "round-074-event-sequence-model-design-v81"
+    assert design["base_design"]["design_sha256"] == previous["design_sha256"]
+    assert design["base_design"]["unchanged_except_declared_delta"]
+    for prefix in (
+        "calibration",
+        "action_policy",
+        "ai_bridge",
+        "sealed_evaluation",
+        "development_operator",
+    ):
+        assert source[f"{prefix}_sha256"] == _file_sha256_at(
+            commit,
+            source[f"{prefix}_path"],
+        )
+    assert source["probability_calibration_schema_version"] == (
+        "round-074-temperature-calibration-v4"
+    )
+    assert source["risk_quantile_calibration_schema_version"] == (
+        "round-074-risk-quantile-calibration-v1"
+    )
+    assert source["action_policy_schema_version"] == "round-074-action-policy-v12"
+    assert source["ai_bridge_schema_version"] == "round-074-ai-bridge-v5"
+    assert source["sealed_evaluation_schema_version"] == (
+        "round-074-sealed-evaluation-v12"
+    )
+    assert source["development_operator_schema_version"] == (
+        "round-074-development-policy-operator-v4"
+    )
+    assert source["development_bundle_schema_version"] == (
+        "round-074-development-policy-bundle-v5"
+    )
+    assert contract["calibration_role"] == (
+        "six_chronological_calibration_capture_runs_only"
+    )
+    assert contract["payoff_lower_nominal_quantiles"] == [0.1, 0.25]
+    assert contract["maximum_adverse_excursion_upper_nominal_quantile"] == 0.9
+    assert contract["payoff_lower_offsets_are_nonnegative"]
+    assert contract["maximum_adverse_excursion_upper_offsets_are_nonnegative"]
+    assert contract["quantile_monotonicity_revalidated_after_application"]
+    assert contract["calibration_sample_nominal_coverage_fail_closed"]
+    assert not contract["model_selection_rows_reused"]
+    assert not contract["policy_selection_rows_reused"]
+    assert not contract["sealed_test_rows_accessed"]
+    assert not contract["symbol_conditional_coverage_established"]
+    assert not contract["exchangeability_assumed_or_established"]
+    assert not contract["future_coverage_claim"]
+    assert not contract["online_adaptive_calibration_enabled"]
+    assert contract["frozen_pretest_policy_preserved"]
+    assert parity["action_policy_uses_frozen_risk_tail_offsets"]
+    assert parity["sealed_predictive_metrics_use_frozen_risk_tail_offsets"]
+    assert parity["ai_review_uses_shared_probability_calibration_function"]
+    assert parity["ai_review_uses_shared_risk_tail_calibration_function"]
+    assert not parity["ai_review_receives_raw_uncalibrated_model_tails"]
+    assert parity["ai_review_calibration_sha256_binds_nested_risk_tail_calibration"]
+    assert parity["ai_may_only_veto_or_reduce"]
+    assert not parity["ai_may_create_or_expand_a_position"]
+    assert design["evidence_boundary"]["synthetic_data_only"]
+    assert design["evidence_boundary"][
+        "real_prospective_cohort_capture_active_but_not_used"
+    ]
+    assert not design["evidence_boundary"]["financial_backtest_performed"]
+    assert not design["evidence_boundary"]["profitability_or_edge_inference_permitted"]
+    assert not design["evidence_boundary"]["future_coverage_inference_permitted"]
+    assert not design["evidence_boundary"]["ai_model_evaluated"]
+    assert authority["held_out_nonnegative_risk_tail_calibration_implementation"]
+    assert authority["calibration_action_ai_sealed_parity_implementation"]
+    assert not authority["representative_market_evidence"]
+    assert not authority["symbol_conditional_risk_coverage"]
     assert not authority["financial_edge_tested"]
     assert not authority["profitability_claim"]
     assert not authority["drawdown_performance_claim"]
