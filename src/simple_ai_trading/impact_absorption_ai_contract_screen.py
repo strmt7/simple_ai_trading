@@ -6,9 +6,11 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
+from types import MappingProxyType
 from typing import Mapping
 
 from .impact_absorption_ai_protocol import (
+    ROUND74_AI_REVIEW_REASON_CODES,
     ROUND74_AI_TEMPORAL_BLOCK_COUNT,
     ROUND74_AI_TEMPORAL_FEATURE_NAMES,
     Round74AIReviewRequest,
@@ -33,6 +35,24 @@ ROUND74_AI_CONTRACT_CASE_IDS = (
 )
 _RETAIN_MINIMUM_MULTIPLIER_BPS = 5_000
 _REQUEST_VALIDITY_NS = 20_000_000_000
+_REQUEST_TEMPLATE_KEYS = frozenset(
+    {
+        "risk_profile",
+        "asset_slot",
+        "horizon_seconds",
+        "proposed_risk_size_bps",
+        "feature_last",
+        "feature_mean",
+        "feature_standard_deviation",
+        "feature_recent_change",
+        "feature_recent_block_means",
+        "payoff_quantiles_bps",
+        "maximum_adverse_excursion_quantiles_bps",
+        "positive_payoff_probability",
+        "adverse_selection_probability",
+        "regime_unpredictability_probability",
+    }
+)
 _DIRECTIONAL_FEATURES = (
     "l1_imbalance",
     "microprice_offset_bps",
@@ -78,6 +98,13 @@ class Round74AIContractCase:
     request_template: Mapping[str, object]
     schema_version: str = ROUND74_AI_CONTRACT_CASE_SCHEMA_VERSION
 
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "request_template",
+            MappingProxyType(dict(self.request_template)),
+        )
+
     def validate(self) -> None:
         if (
             self.schema_version != ROUND74_AI_CONTRACT_CASE_SCHEMA_VERSION
@@ -86,6 +113,10 @@ class Round74AIContractCase:
             or self.expected_behavior not in {"retain", "constrain"}
             or tuple(sorted(set(self.required_any_reason_codes)))
             != self.required_any_reason_codes
+            or not set(self.required_any_reason_codes).issubset(
+                ROUND74_AI_REVIEW_REASON_CODES
+            )
+            or set(self.request_template) != _REQUEST_TEMPLATE_KEYS
             or (
                 self.expected_behavior == "retain"
                 and self.required_any_reason_codes
