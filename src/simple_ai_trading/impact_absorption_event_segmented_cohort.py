@@ -35,16 +35,19 @@ from .impact_absorption_store import (
 
 
 ROUND74_SEGMENTED_COHORT_PLAN_SCHEMA_VERSION = (
-    "round-074-segmented-event-cohort-plan-v1"
+    "round-074-segmented-event-cohort-plan-v2"
 )
 ROUND74_SEGMENTED_COHORT_BINDING_SCHEMA_VERSION = (
-    "round-074-segmented-event-cohort-binding-v1"
+    "round-074-segmented-event-cohort-binding-v2"
 )
 ROUND74_SEGMENTED_COHORT_OUTCOME_SCHEMA_VERSION = (
-    "round-074-segmented-event-cohort-outcome-v1"
+    "round-074-segmented-event-cohort-outcome-v2"
 )
 ROUND74_SEGMENTED_COHORT_COVERAGE_SCHEMA_VERSION = (
-    "round-074-segmented-event-cohort-coverage-v1"
+    "round-074-segmented-event-cohort-coverage-v2"
+)
+ROUND74_SEGMENTED_TRANSPORT_EPOCH_AUDIT_SCHEMA_VERSION = (
+    "round-074-segmented-transport-epoch-audit-v1"
 )
 ROUND74_SEGMENTED_COHORT_CAPTURE_DURATION_NS = 1_200_000_000_000
 ROUND74_SEGMENTED_COHORT_SLOT_PERIOD_NS = 1_500_000_000_000
@@ -52,15 +55,16 @@ ROUND74_SEGMENTED_COHORT_START_TOLERANCE_NS = 30_000_000_000
 ROUND74_SEGMENTED_COHORT_END_OVERHEAD_NS = 120_000_000_000
 ROUND74_SEGMENTED_COHORT_FRESH_AUDIT_TIMEOUT_NS = 120_000_000_000
 ROUND74_SEGMENTED_COHORT_ROLE_COUNTS = {
-    "training": 386,
-    "tuning": 77,
-    "test": 77,
+    "training": 514,
+    "tuning": 103,
+    "test": 103,
 }
-ROUND74_SEGMENTED_COHORT_ROLE_QUORUMS = {
-    "training": 360,
-    "tuning": 72,
-    "test": 72,
+ROUND74_SEGMENTED_COHORT_REQUIRED_ELIGIBLE_ANCHOR_NS = {
+    "training": 394_740_000_000_000,
+    "tuning": 78_948_000_000_000,
+    "test": 78_948_000_000_000,
 }
+ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS = 600_000_000_000
 ROUND74_SEGMENTED_COHORT_TOTAL_SLOTS = sum(
     ROUND74_SEGMENTED_COHORT_ROLE_COUNTS.values()
 )
@@ -194,7 +198,7 @@ class Round74SegmentedCohortSlot:
 
 @dataclass(frozen=True)
 class Round74SegmentedCohortPlan:
-    """Frozen schedule with transport-only reserves and role quorums."""
+    """Frozen schedule with transport-only reserves and market-time quotas."""
 
     scheduled_start_wall_ns: int
     implementation_git_commit: str
@@ -284,7 +288,9 @@ class Round74SegmentedCohortPlan:
             "implementation_git_commit": self.implementation_git_commit,
             "scheduled_start_wall_ns": self.scheduled_start_wall_ns,
             "role_counts": dict(ROUND74_SEGMENTED_COHORT_ROLE_COUNTS),
-            "role_quorums": dict(ROUND74_SEGMENTED_COHORT_ROLE_QUORUMS),
+            "role_required_eligible_anchor_ns": dict(
+                ROUND74_SEGMENTED_COHORT_REQUIRED_ELIGIBLE_ANCHOR_NS
+            ),
             "total_slots": self.total_slots,
             "schedule_formula": {
                 "ordinal_origin": 0,
@@ -306,10 +312,15 @@ class Round74SegmentedCohortPlan:
                 "capture_design_sha256": ROUND74_CAPTURE_DESIGN_SHA256,
                 "capture_contract_sha256": IMPACT_CAPTURE_V10_CONTRACT_SHA256,
                 "underlying_mode": "probe",
-                "segment_admission_mode": "prospective_transport_unit",
+                "segment_admission_mode": "independently_audited_connection_epoch",
                 "maximum_reconnects": 0,
                 "in_unit_retry_permitted": False,
-                "failed_prefix_salvage_permitted": False,
+                "transport_ended_prefix_admission_permitted": True,
+                "minimum_usable_epoch_ns": (
+                    ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS
+                ),
+                "complete_target_tail_required": True,
+                "depth_continuity_replay_required": True,
                 "credentials_used": False,
                 "orders_submitted": False,
             },
@@ -319,7 +330,8 @@ class Round74SegmentedCohortPlan:
                 "market_or_model_dependent_replacement_permitted": False,
                 "transport_excluded_units_are_model_data": False,
                 "missed_units_are_model_data": False,
-                "role_quorums_must_pass": True,
+                "every_qualifying_transport_prefix_is_included": True,
+                "role_eligible_anchor_time_must_pass": True,
             },
             "prerequisite": {
                 "artifact_sha256": self.prerequisite_artifact_sha256,
@@ -385,8 +397,441 @@ class Round74SegmentedCohortPlan:
 
 
 @dataclass(frozen=True)
+class Round74SegmentedTransportEpochAudit:
+    """Independent exact-wire and causal-depth audit of one connection epoch."""
+
+    run_id: str
+    terminal_status: str
+    terminal_error: str
+    report_sha256: str
+    fresh_frame_audit_sha256: str
+    capture_start_wall_ns: int
+    capture_end_wall_ns: int
+    feature_ready_wall_ns: int
+    usable_end_wall_ns: int
+    message_count: int
+    frame_count: int
+    compressed_payload_bytes: int
+    observation_count: int
+    token_count: int
+    fresh_depth_update_counts: tuple[tuple[str, int], ...]
+    last_fresh_depth_wall_ns: tuple[tuple[str, int], ...]
+    schema_version: str = ROUND74_SEGMENTED_TRANSPORT_EPOCH_AUDIT_SCHEMA_VERSION
+
+    @property
+    def usable_duration_ns(self) -> int:
+        return int(self.usable_end_wall_ns) - int(self.feature_ready_wall_ns)
+
+    @property
+    def eligible_anchor_duration_ns(self) -> int:
+        return max(
+            0,
+            self.usable_duration_ns
+            - ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS,
+        )
+
+    @property
+    def minimum_usable_epoch_passed(self) -> bool:
+        return (
+            self.usable_duration_ns
+            >= ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS
+        )
+
+    @property
+    def complete_target_span_possible(self) -> bool:
+        return (
+            self.usable_duration_ns
+            >= ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
+        )
+
+    @property
+    def admission_supported(self) -> bool:
+        return (
+            self.minimum_usable_epoch_passed
+            and self.complete_target_span_possible
+        )
+
+    def validate(self) -> None:
+        counts = (
+            self.message_count,
+            self.frame_count,
+            self.compressed_payload_bytes,
+            self.observation_count,
+            self.token_count,
+        )
+        depth_counts = dict(self.fresh_depth_update_counts)
+        depth_times = dict(self.last_fresh_depth_wall_ns)
+        if (
+            self.schema_version
+            != ROUND74_SEGMENTED_TRANSPORT_EPOCH_AUDIT_SCHEMA_VERSION
+            or _RUN_ID.fullmatch(self.run_id) is None
+            or self.terminal_status not in {"completed", "transport_ended"}
+            or (self.terminal_status == "completed") != (self.terminal_error == "")
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
+                for value in counts
+            )
+            or tuple(sorted(depth_counts)) != IMPACT_CAPTURE_SYMBOLS
+            or tuple(sorted(depth_times)) != IMPACT_CAPTURE_SYMBOLS
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
+                for value in depth_counts.values()
+            )
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
+                for value in depth_times.values()
+            )
+            or not (
+                0
+                < int(self.capture_start_wall_ns)
+                <= int(self.feature_ready_wall_ns)
+                < int(self.usable_end_wall_ns)
+                <= int(self.capture_end_wall_ns)
+            )
+            or int(self.usable_end_wall_ns) != min(depth_times.values())
+        ):
+            raise ValueError("Round 74 segmented transport epoch audit differs")
+        _require_sha256(self.report_sha256, "report")
+        _require_sha256(self.fresh_frame_audit_sha256, "fresh frame audit")
+
+    @property
+    def epoch_audit_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        payload: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "run_id": self.run_id,
+            "terminal_status": self.terminal_status,
+            "terminal_error": self.terminal_error,
+            "report_sha256": self.report_sha256,
+            "fresh_frame_audit_sha256": self.fresh_frame_audit_sha256,
+            "capture_start_wall_ns": self.capture_start_wall_ns,
+            "capture_end_wall_ns": self.capture_end_wall_ns,
+            "feature_ready_wall_ns": self.feature_ready_wall_ns,
+            "usable_end_wall_ns": self.usable_end_wall_ns,
+            "usable_duration_ns": self.usable_duration_ns,
+            "eligible_anchor_duration_ns": self.eligible_anchor_duration_ns,
+            "message_count": self.message_count,
+            "frame_count": self.frame_count,
+            "compressed_payload_bytes": self.compressed_payload_bytes,
+            "observation_count": self.observation_count,
+            "token_count": self.token_count,
+            "fresh_depth_update_counts": dict(self.fresh_depth_update_counts),
+            "last_fresh_depth_wall_ns": dict(self.last_fresh_depth_wall_ns),
+            "minimum_usable_epoch_ns": (
+                ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS
+            ),
+            "maximum_target_span_ns": (
+                ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
+            ),
+            "minimum_usable_epoch_passed": self.minimum_usable_epoch_passed,
+            "complete_target_span_possible": self.complete_target_span_possible,
+            "exact_frame_audit_passed": True,
+            "causal_depth_replay_passed": True,
+            "admission_supported": self.admission_supported,
+            "cross_epoch_feature_or_target_permitted": False,
+        }
+        if include_sha256:
+            payload["epoch_audit_sha256"] = _canonical_sha256(payload)
+        return payload
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74SegmentedTransportEpochAudit:
+        payload = dict(value)
+        claimed = str(payload.pop("epoch_audit_sha256", ""))
+        if claimed != _canonical_sha256(payload):
+            raise ValueError("Round 74 segmented transport epoch digest differs")
+        depth_counts = payload.get("fresh_depth_update_counts")
+        depth_times = payload.get("last_fresh_depth_wall_ns")
+        if not isinstance(depth_counts, Mapping) or not isinstance(
+            depth_times,
+            Mapping,
+        ):
+            raise ValueError("Round 74 segmented transport epoch depth differs")
+        try:
+            selected = cls(
+                run_id=str(payload["run_id"]),
+                terminal_status=str(payload["terminal_status"]),
+                terminal_error=str(payload["terminal_error"]),
+                report_sha256=str(payload["report_sha256"]),
+                fresh_frame_audit_sha256=str(
+                    payload["fresh_frame_audit_sha256"]
+                ),
+                capture_start_wall_ns=int(payload["capture_start_wall_ns"]),
+                capture_end_wall_ns=int(payload["capture_end_wall_ns"]),
+                feature_ready_wall_ns=int(payload["feature_ready_wall_ns"]),
+                usable_end_wall_ns=int(payload["usable_end_wall_ns"]),
+                message_count=int(payload["message_count"]),
+                frame_count=int(payload["frame_count"]),
+                compressed_payload_bytes=int(
+                    payload["compressed_payload_bytes"]
+                ),
+                observation_count=int(payload["observation_count"]),
+                token_count=int(payload["token_count"]),
+                fresh_depth_update_counts=tuple(
+                    sorted(
+                        (str(key), int(count))
+                        for key, count in depth_counts.items()
+                    )
+                ),
+                last_fresh_depth_wall_ns=tuple(
+                    sorted(
+                        (str(key), int(timestamp))
+                        for key, timestamp in depth_times.items()
+                    )
+                ),
+                schema_version=str(payload["schema_version"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 74 segmented transport epoch payload differs"
+            ) from exc
+        if selected.as_dict(include_sha256=False) != payload:
+            raise ValueError("Round 74 segmented transport epoch policy differs")
+        selected.validate()
+        return selected
+
+
+def audit_round74_v10_transport_epoch(
+    store: ImpactAbsorptionStore,
+    *,
+    run_id: str,
+) -> Round74SegmentedTransportEpochAudit:
+    """Recompute exact-wire integrity and conservative usable depth time."""
+
+    if not isinstance(store, ImpactAbsorptionStore):
+        raise TypeError("Round 74 epoch audit requires an ImpactAbsorptionStore")
+    if not store.read_only:
+        raise ValueError("Round 74 epoch audit requires a read-only store")
+    connection = store.connect()
+    run = connection.execute(
+        """
+        SELECT status, schema_version, capture_contract_sha256,
+               started_wall_ns, ended_wall_ns, error
+        FROM impact_capture_run WHERE run_id = ?
+        """,
+        [run_id],
+    ).fetchone()
+    if run is None:
+        raise ValueError("Round 74 epoch audit run is missing")
+    report_row = connection.execute(
+        """
+        SELECT schema_version, capture_contract_sha256, report_json, report_sha256
+        FROM impact_capture_report WHERE run_id = ?
+        """,
+        [run_id],
+    ).fetchone()
+    if report_row is None:
+        raise ValueError("Round 74 epoch audit report is missing")
+    report_text = str(report_row[2])
+    report = _strict_json_object(report_text)
+    report_sha256 = str(report_row[3])
+    if (
+        str(run[1]) != IMPACT_CAPTURE_V10_SCHEMA_VERSION
+        or str(run[2]) != IMPACT_CAPTURE_V10_CONTRACT_SHA256
+        or str(report_row[0]) != IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
+        or str(report_row[1]) != IMPACT_CAPTURE_V10_CONTRACT_SHA256
+        or hashlib.sha256(report_text.encode("ascii")).hexdigest()
+        != report_sha256
+        or _canonical_sha256(report) != report_sha256
+        or report.get("run_id") != run_id
+        or report.get("schema_version")
+        != IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
+        or report.get("capture_contract_sha256")
+        != IMPACT_CAPTURE_V10_CONTRACT_SHA256
+        or report.get("design_sha256") != ROUND74_CAPTURE_DESIGN_SHA256
+        or report.get("mode") != "probe"
+        or report.get("qualification_passed") is not False
+    ):
+        raise ValueError("Round 74 epoch audit stored identity differs")
+    run_status = str(run[0])
+    terminal_error = str(run[5])
+    if (
+        run_status == "completed"
+        and report.get("status") == "completed"
+        and report.get("failure_class") == "none"
+        and report.get("error") == ""
+        and terminal_error == ""
+        and report.get("capture_gate_passed") is True
+        and report.get("data_qualification_passed") is True
+    ):
+        terminal_status = "completed"
+    elif (
+        run_status == "failed"
+        and report.get("status") == "failed"
+        and report.get("failure_class") == "transport"
+        and isinstance(report.get("error"), str)
+        and bool(str(report["error"]))
+        and terminal_error == report.get("error")
+        and report.get("capture_gate_passed") is False
+        and report.get("data_qualification_passed") is False
+    ):
+        terminal_status = "transport_ended"
+    else:
+        raise ValueError("Round 74 epoch audit terminal class differs")
+    if (
+        report.get("resource_safety_passed") is not True
+        or report.get("storage_efficiency_passed") is not True
+        or report.get("audit_passed") is not True
+        or report.get("audit_errors") != []
+        or report.get("resource_safety_errors") != []
+        or report.get("payload_cap_reached") is not False
+        or report.get("database_size_cap_reached") is not False
+    ):
+        raise ValueError("Round 74 epoch audit safety gates differ")
+    capture_start = _require_positive_integer(
+        report.get("started_wall_ns"),
+        "capture start",
+    )
+    capture_end = _require_positive_integer(
+        report.get("ended_wall_ns"),
+        "capture end",
+    )
+    if (
+        int(run[3]) != capture_start
+        or int(run[4]) != capture_end
+        or capture_end <= capture_start
+    ):
+        raise ValueError("Round 74 epoch audit capture clocks differ")
+    _validate_event_coverage(report)
+    message_count = _require_positive_integer(
+        report.get("writer_message_count"),
+        "message count",
+    )
+    frame_count = _require_positive_integer(
+        report.get("writer_frame_count"),
+        "frame count",
+    )
+    compressed_payload_bytes = _require_positive_integer(
+        report.get("writer_compressed_payload_bytes"),
+        "compressed payload bytes",
+    )
+    if message_count != sum(
+        int(value) for value in dict(report["event_counts"]).values()
+    ):
+        raise ValueError("Round 74 epoch audit capture counts differ")
+    frame_audit = store.audit_run(run_id)
+    frame_payload = frame_audit.as_dict()
+    frame_payload["run_status"] = run_status
+    frame_payload["stored_report_schema_version"] = str(report_row[0])
+    frame_payload["stored_report_sha256"] = report_sha256
+    if (
+        not frame_audit.passed
+        or frame_audit.errors
+        or frame_audit.message_count != message_count
+        or frame_audit.frame_count != frame_count
+        or frame_audit.compressed_payload_bytes != compressed_payload_bytes
+        or frame_audit.capture_contract_sha256
+        != IMPACT_CAPTURE_V10_CONTRACT_SHA256
+        or _SHA256.fullmatch(frame_audit.last_frame_sha256) is None
+    ):
+        raise ValueError("Round 74 epoch audit exact frame audit differs")
+    segment_rows = connection.execute(
+        """
+        SELECT symbol, status, tick_size, invalid_event_count,
+               sequence_gap_count, crossed_book_count, reason
+        FROM impact_capture_segment WHERE run_id = ? ORDER BY symbol
+        """,
+        [run_id],
+    ).fetchall()
+    if tuple(str(row[0]) for row in segment_rows) != IMPACT_CAPTURE_SYMBOLS:
+        raise ValueError("Round 74 epoch audit segment universe differs")
+    for row in segment_rows:
+        segment_status = str(row[1])
+        invalid_events = int(row[3])
+        sequence_gaps = int(row[4])
+        crossed_books = int(row[5])
+        reason = str(row[6])
+        completed_state = (
+            segment_status == "valid"
+            and invalid_events == 0
+            and sequence_gaps == 0
+            and crossed_books == 0
+            and reason == ""
+        )
+        transport_state = (
+            segment_status == "invalid"
+            and invalid_events == 1
+            and sequence_gaps == 0
+            and crossed_books == 0
+            and reason == terminal_error
+        )
+        if (
+            terminal_status == "completed"
+            and not completed_state
+            or terminal_status == "transport_ended"
+            and not transport_state
+        ):
+            raise ValueError("Round 74 epoch audit segment state differs")
+    preflight = load_impact_capture_v10_preflight(connection, run_id=run_id)
+    tick_sizes = {str(row[0]): float(row[2]) for row in segment_rows}
+    snapshots = {
+        symbol: _strict_json_object(record.raw_text)
+        for symbol, record in preflight.snapshot_records
+    }
+    replay = Round74MultiSymbolEventReplay(
+        tick_sizes=tick_sizes,
+        depth_snapshots=snapshots,
+        feature_ready_wall_ns=preflight.ready_wall_ns,
+    )
+    observation_count = 0
+    token_count = 0
+    fresh_depth_counts = {symbol: 0 for symbol in IMPACT_CAPTURE_SYMBOLS}
+    last_fresh_depth = {symbol: 0 for symbol in IMPACT_CAPTURE_SYMBOLS}
+    for frame_index, message_index, record in iter_impact_capture_v10_records(
+        connection,
+        run_id=run_id,
+    ):
+        observation = replay.consume_observation(
+            frame_index=frame_index,
+            message_index=message_index,
+            record=record,
+        )
+        if observation is None:
+            continue
+        observation_count += 1
+        if observation.token is not None:
+            token_count += 1
+        if (
+            observation.event_type == "depthUpdate"
+            and not observation.depth_update_is_stale
+            and observation.received_wall_ns >= preflight.ready_wall_ns
+        ):
+            fresh_depth_counts[observation.symbol] += 1
+            last_fresh_depth[observation.symbol] = observation.received_wall_ns
+    if any(value <= 0 for value in last_fresh_depth.values()):
+        raise ValueError("Round 74 epoch audit fresh depth coverage differs")
+    selected = Round74SegmentedTransportEpochAudit(
+        run_id=run_id,
+        terminal_status=terminal_status,
+        terminal_error=terminal_error,
+        report_sha256=report_sha256,
+        fresh_frame_audit_sha256=_canonical_sha256(frame_payload),
+        capture_start_wall_ns=capture_start,
+        capture_end_wall_ns=capture_end,
+        feature_ready_wall_ns=preflight.ready_wall_ns,
+        usable_end_wall_ns=min(last_fresh_depth.values()),
+        message_count=message_count,
+        frame_count=frame_count,
+        compressed_payload_bytes=compressed_payload_bytes,
+        observation_count=observation_count,
+        token_count=token_count,
+        fresh_depth_update_counts=tuple(sorted(fresh_depth_counts.items())),
+        last_fresh_depth_wall_ns=tuple(sorted(last_fresh_depth.items())),
+    )
+    selected.validate()
+    return selected
+
+
+@dataclass(frozen=True)
 class Round74SegmentedCohortRunBinding:
-    """One completed probe bound to a fresh independent exact-wire audit."""
+    """One prospective epoch bound to exact-wire and causal-depth audits."""
 
     plan_sha256: str
     slot_ordinal: int
@@ -394,9 +839,14 @@ class Round74SegmentedCohortRunBinding:
     run_id: str
     report_sha256: str
     supervisor_sha256: str
-    fresh_audit_sha256: str
+    fresh_frame_audit_sha256: str
+    fresh_epoch_audit_sha256: str
+    terminal_status: str
+    terminal_error: str
     capture_start_wall_ns: int
     capture_end_wall_ns: int
+    feature_ready_wall_ns: int
+    usable_end_wall_ns: int
     message_count: int
     frame_count: int
     compressed_payload_bytes: int
@@ -415,8 +865,18 @@ class Round74SegmentedCohortRunBinding:
             or isinstance(self.slot_ordinal, bool)
             or not isinstance(self.slot_ordinal, int)
             or self.slot_ordinal < 0
-            or int(self.capture_start_wall_ns) <= 0
-            or int(self.capture_end_wall_ns) <= int(self.capture_start_wall_ns)
+            or self.terminal_status not in {"completed", "transport_ended"}
+            or (self.terminal_status == "completed") != (self.terminal_error == "")
+            or not (
+                0
+                < int(self.capture_start_wall_ns)
+                <= int(self.feature_ready_wall_ns)
+                < int(self.usable_end_wall_ns)
+                <= int(self.capture_end_wall_ns)
+            )
+            or self.usable_duration_ns
+            < ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS
+            or self.eligible_anchor_duration_ns <= 0
             or any(
                 isinstance(value, bool) or not isinstance(value, int) or value <= 0
                 for value in counts
@@ -426,7 +886,20 @@ class Round74SegmentedCohortRunBinding:
         _require_sha256(self.plan_sha256, "plan")
         _require_sha256(self.report_sha256, "report")
         _require_sha256(self.supervisor_sha256, "supervisor")
-        _require_sha256(self.fresh_audit_sha256, "fresh audit")
+        _require_sha256(self.fresh_frame_audit_sha256, "fresh frame audit")
+        _require_sha256(self.fresh_epoch_audit_sha256, "fresh epoch audit")
+
+    @property
+    def usable_duration_ns(self) -> int:
+        return int(self.usable_end_wall_ns) - int(self.feature_ready_wall_ns)
+
+    @property
+    def eligible_anchor_duration_ns(self) -> int:
+        return max(
+            0,
+            self.usable_duration_ns
+            - ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS,
+        )
 
     @property
     def binding_sha256(self) -> str:
@@ -443,9 +916,16 @@ class Round74SegmentedCohortRunBinding:
             "run_id": self.run_id,
             "report_sha256": self.report_sha256,
             "supervisor_sha256": self.supervisor_sha256,
-            "fresh_audit_sha256": self.fresh_audit_sha256,
+            "fresh_frame_audit_sha256": self.fresh_frame_audit_sha256,
+            "fresh_epoch_audit_sha256": self.fresh_epoch_audit_sha256,
+            "terminal_status": self.terminal_status,
+            "terminal_error": self.terminal_error,
             "capture_start_wall_ns": self.capture_start_wall_ns,
             "capture_end_wall_ns": self.capture_end_wall_ns,
+            "feature_ready_wall_ns": self.feature_ready_wall_ns,
+            "usable_end_wall_ns": self.usable_end_wall_ns,
+            "usable_duration_ns": self.usable_duration_ns,
+            "eligible_anchor_duration_ns": self.eligible_anchor_duration_ns,
             "message_count": self.message_count,
             "frame_count": self.frame_count,
             "compressed_payload_bytes": self.compressed_payload_bytes,
@@ -471,9 +951,18 @@ class Round74SegmentedCohortRunBinding:
                 run_id=str(payload["run_id"]),
                 report_sha256=str(payload["report_sha256"]),
                 supervisor_sha256=str(payload["supervisor_sha256"]),
-                fresh_audit_sha256=str(payload["fresh_audit_sha256"]),
+                fresh_frame_audit_sha256=str(
+                    payload["fresh_frame_audit_sha256"]
+                ),
+                fresh_epoch_audit_sha256=str(
+                    payload["fresh_epoch_audit_sha256"]
+                ),
+                terminal_status=str(payload["terminal_status"]),
+                terminal_error=str(payload["terminal_error"]),
                 capture_start_wall_ns=int(payload["capture_start_wall_ns"]),
                 capture_end_wall_ns=int(payload["capture_end_wall_ns"]),
+                feature_ready_wall_ns=int(payload["feature_ready_wall_ns"]),
+                usable_end_wall_ns=int(payload["usable_end_wall_ns"]),
                 message_count=int(payload["message_count"]),
                 frame_count=int(payload["frame_count"]),
                 compressed_payload_bytes=int(payload["compressed_payload_bytes"]),
@@ -494,9 +983,9 @@ def bind_round74_segmented_probe_supervisor(
     *,
     slot_ordinal: int,
     supervisor_payload: Mapping[str, object],
-    fresh_audit_payload: Mapping[str, object],
+    fresh_epoch_audit_payload: Mapping[str, object],
 ) -> Round74SegmentedCohortRunBinding:
-    """Admit one completed zero-reconnect probe after a fresh exact audit."""
+    """Admit one zero-reconnect epoch only after both independent audits."""
 
     plan.validate()
     slot = plan.slot(slot_ordinal)
@@ -508,13 +997,12 @@ def bind_round74_segmented_probe_supervisor(
         or supervisor.get("capture_schema_version") != IMPACT_CAPTURE_V10_SCHEMA_VERSION
         or supervisor.get("capture_contract_sha256")
         != IMPACT_CAPTURE_V10_CONTRACT_SHA256
-        or supervisor.get("status") != "completed"
+        or supervisor.get("status") not in {"completed", "failed"}
         or supervisor.get("qualification_passed") is not False
         or supervisor.get("attempt_count") != 1
         or supervisor.get("reconnect_count") != 0
         or supervisor.get("reconnect_delays_seconds") != []
         or supervisor.get("startup_errors") != []
-        or supervisor.get("terminal_error") != ""
         or supervisor.get("attempt_evidence_combined") is not False
         or not isinstance(attempts, list)
         or len(attempts) != 1
@@ -526,24 +1014,44 @@ def bind_round74_segmented_probe_supervisor(
     run_id = str(report.get("run_id", ""))
     start = report.get("started_wall_ns")
     end = report.get("ended_wall_ns")
+    report_status = str(report.get("status", ""))
+    terminal_status = (
+        "completed" if report_status == "completed" else "transport_ended"
+    )
+    terminal_error = str(report.get("error", ""))
+    completed_terminal = (
+        supervisor.get("status") == "completed"
+        and supervisor.get("selected_run_id") == run_id
+        and supervisor.get("terminal_error") == ""
+        and report_status == "completed"
+        and report.get("failure_class") == "none"
+        and terminal_error == ""
+        and report.get("capture_gate_passed") is True
+        and report.get("data_qualification_passed") is True
+    )
+    transport_terminal = (
+        supervisor.get("status") == "failed"
+        and supervisor.get("selected_run_id") == ""
+        and supervisor.get("terminal_error") == terminal_error
+        and bool(terminal_error)
+        and report_status == "failed"
+        and report.get("failure_class") == "transport"
+        and report.get("capture_gate_passed") is False
+        and report.get("data_qualification_passed") is False
+    )
     if (
-        supervisor.get("selected_run_id") != run_id
-        or _RUN_ID.fullmatch(run_id) is None
+        _RUN_ID.fullmatch(run_id) is None
         or report.get("schema_version") != IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
         or report.get("capture_contract_sha256") != IMPACT_CAPTURE_V10_CONTRACT_SHA256
         or report.get("design_sha256") != ROUND74_CAPTURE_DESIGN_SHA256
         or report.get("mode") != "probe"
-        or report.get("status") != "completed"
         or report.get("qualification_passed") is not False
-        or report.get("capture_gate_passed") is not True
-        or report.get("data_qualification_passed") is not True
+        or not (completed_terminal or transport_terminal)
         or report.get("resource_safety_passed") is not True
         or report.get("storage_efficiency_passed") is not True
         or report.get("audit_passed") is not True
         or report.get("audit_errors") != []
         or report.get("resource_safety_errors") != []
-        or report.get("error") != ""
-        or report.get("failure_class") != "none"
         or report.get("payload_cap_reached") is not False
         or report.get("database_size_cap_reached") is not False
         or isinstance(start, bool)
@@ -551,7 +1059,6 @@ def bind_round74_segmented_probe_supervisor(
         or isinstance(end, bool)
         or not isinstance(end, int)
         or not (slot.scheduled_start_wall_ns <= start <= slot.start_window_end_wall_ns)
-        or end < start + ROUND74_SEGMENTED_COHORT_CAPTURE_DURATION_NS
         or end
         > slot.scheduled_end_wall_ns
         + ROUND74_SEGMENTED_COHORT_START_TOLERANCE_NS
@@ -563,7 +1070,7 @@ def bind_round74_segmented_probe_supervisor(
         isinstance(elapsed, bool)
         or not isinstance(elapsed, (int, float))
         or not math.isfinite(float(elapsed))
-        or float(elapsed) < ROUND74_SEGMENTED_COHORT_CAPTURE_DURATION_NS / 1_000_000_000
+        or float(elapsed) <= 0.0
         or float(elapsed)
         > (
             ROUND74_SEGMENTED_COHORT_CAPTURE_DURATION_NS
@@ -573,6 +1080,12 @@ def bind_round74_segmented_probe_supervisor(
         / 1_000_000_000
     ):
         raise ValueError("Round 74 segmented cohort elapsed time differs")
+    if completed_terminal and (
+        end < start + ROUND74_SEGMENTED_COHORT_CAPTURE_DURATION_NS
+        or float(elapsed)
+        < ROUND74_SEGMENTED_COHORT_CAPTURE_DURATION_NS / 1_000_000_000
+    ):
+        raise ValueError("Round 74 segmented cohort completed duration differs")
     _validate_event_coverage(report)
     counts = {
         "message_count": _require_positive_integer(
@@ -590,25 +1103,23 @@ def bind_round74_segmented_probe_supervisor(
         int(value) for value in dict(report["event_counts"]).values()
     ):
         raise ValueError("Round 74 segmented cohort capture counts differ")
-    fresh_audit = dict(fresh_audit_payload)
+    epoch_audit = Round74SegmentedTransportEpochAudit.from_dict(
+        fresh_epoch_audit_payload
+    )
     if (
-        fresh_audit.get("schema_version") != "round-074-capture-audit-v1"
-        or fresh_audit.get("passed") is not True
-        or fresh_audit.get("errors") != []
-        or fresh_audit.get("run_id") != run_id
-        or fresh_audit.get("run_status") != "completed"
-        or fresh_audit.get("stored_report_schema_version")
-        != IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
-        or fresh_audit.get("stored_report_sha256") != report_sha256
-        or fresh_audit.get("capture_contract_sha256")
-        != IMPACT_CAPTURE_V10_CONTRACT_SHA256
-        or fresh_audit.get("message_count") != counts["message_count"]
-        or fresh_audit.get("frame_count") != counts["frame_count"]
-        or fresh_audit.get("compressed_payload_bytes")
+        not epoch_audit.admission_supported
+        or epoch_audit.run_id != run_id
+        or epoch_audit.terminal_status != terminal_status
+        or epoch_audit.terminal_error != terminal_error
+        or epoch_audit.report_sha256 != report_sha256
+        or epoch_audit.capture_start_wall_ns != start
+        or epoch_audit.capture_end_wall_ns != end
+        or epoch_audit.message_count != counts["message_count"]
+        or epoch_audit.frame_count != counts["frame_count"]
+        or epoch_audit.compressed_payload_bytes
         != counts["compressed_payload_bytes"]
-        or _SHA256.fullmatch(str(fresh_audit.get("last_frame_sha256", ""))) is None
     ):
-        raise ValueError("Round 74 segmented cohort fresh audit differs")
+        raise ValueError("Round 74 segmented cohort epoch audit differs")
     binding = Round74SegmentedCohortRunBinding(
         plan_sha256=plan.plan_sha256,
         slot_ordinal=slot.ordinal,
@@ -616,9 +1127,14 @@ def bind_round74_segmented_probe_supervisor(
         run_id=run_id,
         report_sha256=report_sha256,
         supervisor_sha256=_canonical_sha256(supervisor),
-        fresh_audit_sha256=_canonical_sha256(fresh_audit),
+        fresh_frame_audit_sha256=epoch_audit.fresh_frame_audit_sha256,
+        fresh_epoch_audit_sha256=epoch_audit.epoch_audit_sha256,
+        terminal_status=terminal_status,
+        terminal_error=terminal_error,
         capture_start_wall_ns=start,
         capture_end_wall_ns=end,
+        feature_ready_wall_ns=epoch_audit.feature_ready_wall_ns,
+        usable_end_wall_ns=epoch_audit.usable_end_wall_ns,
         message_count=counts["message_count"],
         frame_count=counts["frame_count"],
         compressed_payload_bytes=counts["compressed_payload_bytes"],
@@ -630,9 +1146,12 @@ def bind_round74_segmented_probe_supervisor(
 def _validate_event_coverage(report: Mapping[str, object]) -> None:
     event_counts = report.get("event_counts")
     symbol_counts = report.get("symbol_event_counts")
+    required_global = _GLOBAL_EVENT_TYPES - {"forceOrder"}
+    required_symbol = _SYMBOL_EVENT_TYPES - {"forceOrder"}
     if (
         not isinstance(event_counts, Mapping)
-        or set(event_counts) != _GLOBAL_EVENT_TYPES
+        or not required_global.issubset(event_counts)
+        or not set(event_counts).issubset(_GLOBAL_EVENT_TYPES)
         or any(
             isinstance(value, bool) or not isinstance(value, int) or value < 0
             for value in event_counts.values()
@@ -651,7 +1170,8 @@ def _validate_event_coverage(report: Mapping[str, object]) -> None:
         counts = symbol_counts[symbol]
         if (
             not isinstance(counts, Mapping)
-            or set(counts) != _SYMBOL_EVENT_TYPES
+            or not required_symbol.issubset(counts)
+            or not set(counts).issubset(_SYMBOL_EVENT_TYPES)
             or any(
                 isinstance(value, bool) or not isinstance(value, int) or value < 0
                 for value in counts.values()
@@ -669,8 +1189,11 @@ def _validate_event_coverage(report: Mapping[str, object]) -> None:
         ):
             raise ValueError("Round 74 segmented cohort symbol coverage differs")
     if any(
-        sum(int(symbol_counts[symbol][name]) for symbol in IMPACT_CAPTURE_SYMBOLS)
-        != int(event_counts[name])
+        sum(
+            int(symbol_counts[symbol].get(name, 0))
+            for symbol in IMPACT_CAPTURE_SYMBOLS
+        )
+        != int(event_counts.get(name, 0))
         for name in _SYMBOL_GLOBAL_EVENT_TYPES
     ):
         raise ValueError("Round 74 segmented cohort symbol totals differ")
@@ -815,17 +1338,6 @@ def build_round74_segmented_event_run_partition(
     """Build a chronological partition from every admitted transport unit."""
 
     ordered = _validate_complete_outcomes(plan, outcomes)
-    admitted_by_role = {
-        role: sum(
-            outcome.status == "admitted" and outcome.role == role for outcome in ordered
-        )
-        for role in ROUND74_EVENT_PARTITION_ROLES
-    }
-    if any(
-        admitted_by_role[role] < ROUND74_SEGMENTED_COHORT_ROLE_QUORUMS[role]
-        for role in ROUND74_EVENT_PARTITION_ROLES
-    ):
-        raise ValueError("Round 74 segmented cohort role quorum failed")
     entries: list[Round74EventRunPartitionEntry] = []
     prior_role: str | None = None
     for outcome in ordered:
@@ -833,11 +1345,12 @@ def build_round74_segmented_event_run_partition(
         if binding is None:
             continue
         role_changed = prior_role is not None and binding.role != prior_role
-        anchor_start = binding.capture_start_wall_ns + (
+        anchor_start = binding.feature_ready_wall_ns + (
             ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS if role_changed else 0
         )
         anchor_end = (
-            binding.capture_end_wall_ns - ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
+            binding.usable_end_wall_ns
+            - ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
         )
         if role_changed:
             previous = entries[-1]
@@ -859,8 +1372,8 @@ def build_round74_segmented_event_run_partition(
                 run_id=binding.run_id,
                 role=binding.role,
                 capture_report_sha256=binding.report_sha256,
-                capture_start_wall_ns=binding.capture_start_wall_ns,
-                capture_end_wall_ns=binding.capture_end_wall_ns,
+                capture_start_wall_ns=binding.feature_ready_wall_ns,
+                capture_end_wall_ns=binding.usable_end_wall_ns,
                 eligible_anchor_start_wall_ns=anchor_start,
                 eligible_anchor_end_wall_ns=anchor_end,
             )
@@ -871,6 +1384,23 @@ def build_round74_segmented_event_run_partition(
         cohort_plan_sha256=plan.plan_sha256,
     )
     partition.validate()
+    eligible_by_role = {
+        role: sum(
+            entry.eligible_anchor_end_wall_ns
+            - entry.eligible_anchor_start_wall_ns
+            for entry in partition.entries
+            if entry.role == role
+        )
+        for role in ROUND74_EVENT_PARTITION_ROLES
+    }
+    if any(
+        eligible_by_role[role]
+        < ROUND74_SEGMENTED_COHORT_REQUIRED_ELIGIBLE_ANCHOR_NS[role]
+        for role in ROUND74_EVENT_PARTITION_ROLES
+    ):
+        raise ValueError(
+            "Round 74 segmented cohort eligible anchor time quota failed"
+        )
     return partition
 
 
@@ -914,7 +1444,15 @@ class Round74SegmentedCohortCoverage:
             "role_counts": {
                 role: {
                     "planned": ROUND74_SEGMENTED_COHORT_ROLE_COUNTS[role],
-                    "required_admitted": (ROUND74_SEGMENTED_COHORT_ROLE_QUORUMS[role]),
+                    "required_eligible_anchor_ns": (
+                        ROUND74_SEGMENTED_COHORT_REQUIRED_ELIGIBLE_ANCHOR_NS[role]
+                    ),
+                    "observed_eligible_anchor_ns": sum(
+                        entry.eligible_anchor_end_wall_ns
+                        - entry.eligible_anchor_start_wall_ns
+                        for entry in self.partition.entries
+                        if entry.role == role
+                    ),
                     **counts[role],
                 }
                 for role in ROUND74_EVENT_PARTITION_ROLES
@@ -981,75 +1519,39 @@ def iter_round74_v10_segment_event_observations(
         raise TypeError("Round 74 segmented replay requires an ImpactAbsorptionStore")
     if not store.read_only:
         raise ValueError("Round 74 segmented replay requires a read-only store")
-    audit = store.audit_run(binding.run_id)
-    audit_payload = audit.as_dict()
+    epoch_audit = audit_round74_v10_transport_epoch(
+        store,
+        run_id=binding.run_id,
+    )
     if (
-        not audit.passed
-        or audit_payload.get("run_status") != "completed"
-        or _canonical_sha256(audit_payload) != binding.fresh_audit_sha256
+        not epoch_audit.admission_supported
+        or epoch_audit.epoch_audit_sha256
+        != binding.fresh_epoch_audit_sha256
+        or epoch_audit.fresh_frame_audit_sha256
+        != binding.fresh_frame_audit_sha256
+        or epoch_audit.report_sha256 != binding.report_sha256
+        or epoch_audit.terminal_status != binding.terminal_status
+        or epoch_audit.terminal_error != binding.terminal_error
+        or epoch_audit.feature_ready_wall_ns
+        != binding.feature_ready_wall_ns
+        or epoch_audit.usable_end_wall_ns != binding.usable_end_wall_ns
     ):
-        raise ValueError("Round 74 segmented replay fresh audit differs")
+        raise ValueError("Round 74 segmented replay epoch audit differs")
     connection = store.connect()
-    run = connection.execute(
-        """
-        SELECT status, schema_version, capture_contract_sha256
-        FROM impact_capture_run WHERE run_id = ?
-        """,
-        [binding.run_id],
-    ).fetchone()
-    if run != (
-        "completed",
-        IMPACT_CAPTURE_V10_SCHEMA_VERSION,
-        IMPACT_CAPTURE_V10_CONTRACT_SHA256,
-    ):
-        raise ValueError("Round 74 segmented replay run identity differs")
-    report_row = connection.execute(
-        """
-        SELECT schema_version, capture_contract_sha256, report_json, report_sha256
-        FROM impact_capture_report WHERE run_id = ?
-        """,
-        [binding.run_id],
-    ).fetchone()
-    if report_row is None:
-        raise ValueError("Round 74 segmented replay report is missing")
-    report_text = str(report_row[2])
-    report = _strict_json_object(report_text)
-    if (
-        str(report_row[0]) != IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
-        or str(report_row[1]) != IMPACT_CAPTURE_V10_CONTRACT_SHA256
-        or str(report_row[3]) != binding.report_sha256
-        or hashlib.sha256(report_text.encode("ascii")).hexdigest()
-        != binding.report_sha256
-        or report.get("mode") != "probe"
-        or report.get("status") != "completed"
-        or report.get("qualification_passed") is not False
-        or not all(
-            report.get(field) is True
-            for field in (
-                "capture_gate_passed",
-                "data_qualification_passed",
-                "resource_safety_passed",
-                "storage_efficiency_passed",
-            )
-        )
-    ):
-        raise ValueError("Round 74 segmented replay report identity differs")
     preflight = load_impact_capture_v10_preflight(
         connection,
         run_id=binding.run_id,
     )
     segment_rows = connection.execute(
         """
-        SELECT symbol, status, tick_size
+        SELECT symbol, tick_size
         FROM impact_capture_segment WHERE run_id = ? ORDER BY symbol
         """,
         [binding.run_id],
     ).fetchall()
-    if tuple(str(row[0]) for row in segment_rows) != IMPACT_CAPTURE_SYMBOLS or any(
-        str(row[1]) != "valid" for row in segment_rows
-    ):
+    if tuple(str(row[0]) for row in segment_rows) != IMPACT_CAPTURE_SYMBOLS:
         raise ValueError("Round 74 segmented replay symbol state differs")
-    tick_sizes = {str(row[0]): float(row[2]) for row in segment_rows}
+    tick_sizes = {str(row[0]): float(row[1]) for row in segment_rows}
     snapshots = {
         symbol: _strict_json_object(record.raw_text)
         for symbol, record in preflight.snapshot_records
@@ -1068,7 +1570,10 @@ def iter_round74_v10_segment_event_observations(
             message_index=message_index,
             record=record,
         )
-        if observation is not None:
+        if (
+            observation is not None
+            and observation.received_wall_ns <= binding.usable_end_wall_ns
+        ):
             yield observation
 
 
@@ -1110,20 +1615,24 @@ __all__ = [
     "ROUND74_SEGMENTED_COHORT_END_OVERHEAD_NS",
     "ROUND74_SEGMENTED_COHORT_EXCLUSION_REASONS",
     "ROUND74_SEGMENTED_COHORT_FRESH_AUDIT_TIMEOUT_NS",
+    "ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS",
     "ROUND74_SEGMENTED_COHORT_MISSED_REASON",
     "ROUND74_SEGMENTED_COHORT_OUTCOME_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_COHORT_OUTCOME_STATUSES",
     "ROUND74_SEGMENTED_COHORT_PLAN_SCHEMA_VERSION",
+    "ROUND74_SEGMENTED_COHORT_REQUIRED_ELIGIBLE_ANCHOR_NS",
     "ROUND74_SEGMENTED_COHORT_ROLE_COUNTS",
-    "ROUND74_SEGMENTED_COHORT_ROLE_QUORUMS",
     "ROUND74_SEGMENTED_COHORT_SLOT_PERIOD_NS",
     "ROUND74_SEGMENTED_COHORT_START_TOLERANCE_NS",
     "ROUND74_SEGMENTED_COHORT_TOTAL_SLOTS",
+    "ROUND74_SEGMENTED_TRANSPORT_EPOCH_AUDIT_SCHEMA_VERSION",
     "Round74SegmentedCohortCoverage",
     "Round74SegmentedCohortPlan",
     "Round74SegmentedCohortRunBinding",
     "Round74SegmentedCohortSlot",
     "Round74SegmentedCohortSlotOutcome",
+    "Round74SegmentedTransportEpochAudit",
+    "audit_round74_v10_transport_epoch",
     "bind_round74_segmented_probe_supervisor",
     "build_round74_segmented_event_run_partition",
     "iter_round74_v10_segment_event_observations",
