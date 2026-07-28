@@ -1,0 +1,103 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v96",
+  "created_at_utc": "2026-07-28T20:55:07.6170666Z",
+  "implementation_git_commit": "adb8d9f4a49d81cbd5712829f1dd1ff88b96740c",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v95.json",
+    "file_sha256": "9ae6a74776a8dd2d1b5f11054661b7a28edcbc71403ca699b44b3e353409f993",
+    "design_sha256": "06fb337d7b21f29b03bc205b0921a755ad52acbf9ca07f2ce5ce2a71c9a7c791",
+    "unchanged_except_declared_delta": true
+  },
+  "local_ai_design": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v63.json",
+    "file_sha256": "4cafbde811cf7dfd6d1a68aed9ecc9b2647c17274ac3e61d5bb54f63cc1f1b86",
+    "design_sha256": "ccd6213af1847b46ea11c0dbb04dcb2007c1919d64c856a20478b0807ba7696b"
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "ai_uplift_path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+    "ai_uplift_sha256": "9789f26fb6859d0814a2dd564a4d455d6850e1ed12ea37885cd99099c63f0f40",
+    "sealed_ledger_path": "src/simple_ai_trading/impact_absorption_event_sealed_ledger.py",
+    "sealed_ledger_sha256": "a75674d28ef82a4abdc4d6049750cf015b423fe891f3e67368f737f7d2ab5a14",
+    "review_provider_path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+    "review_provider_sha256": "9fb2830d38a4270ef9ec31103b6a8739398295383d3272f5a995f954a95ac4d3",
+    "sealed_evaluator_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+    "sealed_evaluator_sha256": "00d93d560a30e74a5c4db3a3bc25cd5cd22903cbf4730c4673cfc333f7970989",
+    "sealed_ledger_test_path": "tests/test_impact_absorption_event_sealed_ledger.py",
+    "sealed_ledger_test_sha256": "f36d91f23a6d0c8f7febdfb38302898bcc67fa5aebe13b0105b7e7fc0c0017ee"
+  },
+  "declared_delta": {
+    "sealed_ledger_schema_version": "round-074-sealed-ledger-v3",
+    "sealed_claim_schema_version": "round-074-sealed-claim-v3",
+    "ai_pretest_qualification_schema_version": "round-074-ai-pretest-qualification-v1",
+    "two_passing_ai_development_reports_required_before_test_reservation": true,
+    "qualification_sha256_in_one_shot_claim_digest": true,
+    "qualification_sha256_in_sealed_evaluation_report": true,
+    "prior_v1_or_v2_claims_migrate_as_explicitly_unqualified": true,
+    "prior_unqualified_claims_can_be_evaluated": false,
+    "test_target_access_before_reservation_permitted": false,
+    "model_training_or_promotion_changed": false,
+    "feature_names_or_values_changed": false,
+    "supervised_targets_changed": false,
+    "proper_loss_changed": false,
+    "candidate_architectures_changed": false,
+    "cohort_roles_or_scheduled_slots_changed": false,
+    "sealed_test_consumed": false
+  },
+  "safeguard_rationale": {
+    "closed_gap": "Raw model manifest hashes previously satisfied sealed reservation without proving that either model passed the predeclared development market gates.",
+    "new_required_order": [
+      "freeze_ml_policy_and_probability_calibration",
+      "run_both_predeclared_ai_models_on_policy_selection_tuning_runs",
+      "perform_exact_latency_adjusted_level_2_replay",
+      "require_both_models_to_pass_all_existing_development_gates",
+      "persist_and_strictly_reload_the_two_report_qualification",
+      "reserve_one_shot_sealed_test_with_qualification_sha256",
+      "evaluate_the_same_two_manifests_without_ranking_or_substitution"
+    ],
+    "post_test_model_selection_permitted": false,
+    "failed_model_substitution_after_test_access_permitted": false,
+    "sealed_test_reuse_permitted": false
+  },
+  "verification": {
+    "focused_contract_tests_passed": 64,
+    "new_qualification_success_failure_tamper_and_type_tests_passed": true,
+    "v1_to_v3_migration_test_passed": true,
+    "new_v3_reservation_and_finalize_tests_passed": true,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "directml_training_path_changed": false,
+    "full_representative_training_performed": false,
+    "sealed_test_evaluated": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 24,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "development_branch_only": true,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "bcc664e73fbef869f56735f38db1505c651e8fd32fb4a3ace1e486fc277e5cc9"
+}
