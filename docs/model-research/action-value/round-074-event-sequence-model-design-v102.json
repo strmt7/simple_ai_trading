@@ -1,0 +1,153 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v102",
+  "created_at_utc": "2026-07-28T22:54:39.4566151Z",
+  "implementation_git_commit": "346a38d9b7b603f85fd452e75f194b8089755b2d",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v101.json",
+    "file_sha256": "236d273ec7811aa11cde0005dfcf1747592bb9a28f438f15fbfe650fe242765c",
+    "design_sha256": "417a2e70cc575db981c9518926ec6cd2a7fe7b7ce0ea68503fec630664a48a08",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "exact_file_bytes",
+    "event_targets": {
+      "path": "src/simple_ai_trading/impact_absorption_event_targets.py",
+      "sha256": "df3c7ee99d01869bab8c67c63185123a44e48309f1c3bcfa1fe391f75f3dc542"
+    },
+    "execution_scenario": {
+      "path": "src/simple_ai_trading/impact_absorption_execution_scenario.py",
+      "sha256": "f9a1aedaafd4bf8d0730f416b4d0c77a0216d6351b258d9f3ff9f3fd9ee365eb"
+    },
+    "target_assembly": {
+      "path": "src/simple_ai_trading/impact_absorption_target_assembly.py",
+      "sha256": "0d68f670a9de03eea8b7283491ba43b730d64384a17d6563115b48bc99c59db3"
+    },
+    "target_manifest": {
+      "path": "src/simple_ai_trading/round74_target_assembly_manifest.py",
+      "sha256": "fee78a05520f59594e7c3602231b0f6aeb6968ecc26733ce5321984dc9a3f0b8"
+    },
+    "scenario_tool": {
+      "path": "tools/build_round74_public_execution_scenario.py",
+      "sha256": "4c2a62106dfc5169ab3f6936d294d5db48d143707bca45b442c1a43498f543c9"
+    },
+    "scenario_test": {
+      "path": "tests/test_impact_absorption_execution_scenario.py",
+      "sha256": "b6289fa26c1e561b07c8257427ecf8a4cf9b3c4e0b0e5c67f15aa2dfbd423f62"
+    },
+    "manifest_test": {
+      "path": "tests/test_round74_target_assembly_manifest.py",
+      "sha256": "0d50878d838bfb35544b3b24fb0687a8c1b77de4f50edc8e2c5ff0f0b3084711"
+    }
+  },
+  "declared_delta": {
+    "scenario_schema_version": "round-074-public-mainnet-execution-scenario-v1",
+    "scenario_contract_sha256": "5d559104029b6fed6d3bc2cf400dc70167af5949632a96099a3115a810732a7a",
+    "scenario_environment": "binance_usdm_mainnet",
+    "testnet_execution_equivalence_claim": false,
+    "testnet_to_mainnet_multiplier_permitted": false,
+    "synthetic_mainnet_fill_point_estimate_permitted": false,
+    "testnet_empirical_p99_execution_tail_retained_as_scenario_input": true,
+    "production_public_feed_p99_upper_confidence_delay_added": true,
+    "clock_uncertainty_adds_half_observed_rest_probe_rtt": true,
+    "entry_and_exit_price_source": "exact run-bound production public L2 replay after selected delay",
+    "interpolation_permitted": false,
+    "invented_liquidity_permitted": false,
+    "selected_latency_above_target_bound_fails_closed": true,
+    "execution_scenario_source_ids_differ_from_empirical_fill_source_ids": true,
+    "mainnet_fill_evidence_claim": false,
+    "scenario_artifact_requires_complete_900_slot_testnet_execution_aggregate": true,
+    "scenario_artifact_requires_1800_reconciled_testnet_execution_records": true,
+    "minimum_fresh_public_transport_samples_per_symbol": 300,
+    "scenario_artifact_is_run_bound": true,
+    "scenario_artifact_is_hash_bound": true,
+    "manifest_reopens_and_semantically_audits_scenario_artifact": true,
+    "scenario_tuning_on_sealed_test_permitted": false,
+    "orders_submitted_by_scenario_builder": false,
+    "trading_authority": false
+  },
+  "research_basis": [
+    {
+      "source": "Binance USD-M Futures General Info",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info",
+      "observed_result": "Production and demo use distinct endpoints; HTTP 503 can leave execution status unknown; rate-limit and timing behavior must be handled explicitly.",
+      "contract_consequence": "No demo-to-production equivalence is asserted, and no order outcome may be inferred from a transport failure."
+    },
+    {
+      "source": "Binance USD-M local order book procedure",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly",
+      "observed_result": "Diff-depth updates require snapshot bridging and strict update-chain continuity; a sequence mismatch requires reinitialization.",
+      "contract_consequence": "Only fresh synchronized L2 states are eligible for exact delayed book walks."
+    },
+    {
+      "source": "Binance USD-M Exchange Information and Order Book API",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#exchange-information",
+      "observed_result": "Trading filters, market bounds, depth, and request weights are exchange- and symbol-supplied.",
+      "contract_consequence": "No static quantity, notional, spread, depth, or rate-limit assumption enters target construction."
+    },
+    {
+      "source": "Albers, Cucuringu, Howison, and Shestopaloff, The good, the bad, and latency",
+      "url": "https://doi.org/10.1080/14697688.2025.2515933",
+      "observed_result": "Live crypto order outcomes can differ adversely from the last observed book because of exchange, client, and communication latency; expected-book replay alone can overstate results.",
+      "contract_consequence": "The target retains empirical residual shortfall and adds a production-feed delay stress instead of treating the observed book as an instantaneous fill."
+    },
+    {
+      "source": "Stoikov and Waeber, Reducing Transaction Costs with Low-Latency Trading Algorithms",
+      "url": "https://doi.org/10.1080/14697688.2016.1155928",
+      "observed_result": "Short-horizon limit-order-book signal value can dissipate rapidly as latency increases.",
+      "contract_consequence": "Latency is part of every executable target and an unrepresentable latency blocks labels."
+    },
+    {
+      "source": "Huang, Lehalle, and Rosenbaum, Simulating and analyzing order book data",
+      "url": "https://arxiv.org/abs/1312.0563",
+      "observed_result": "Order-flow behavior depends on the current book state and naive independent-flow assumptions can distort execution analysis.",
+      "contract_consequence": "The primary target remains exact observed-book replay; a learned or naive simulator does not replace source observations."
+    }
+  ],
+  "verification": {
+    "focused_execution_target_manifest_tests_passed": 43,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "scenario_tool_help_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "live_scenario_artifact_created": false,
+    "complete_testnet_execution_aggregate_available": false,
+    "campaign_database_opened": false,
+    "orders_submitted": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 28,
+    "latest_confirmed_admitted_slot_ordinal": 34,
+    "slot_034_result_sha256": "802eddd4a37294aaf92fafc066f7a31fadc6aff19207d60914f4edb51d0aeae0",
+    "slot_035_state_at_document_time": "running",
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "060f03aafa5e358570ea4a0bbf5c108557801f57f69ebd205ebd9789a42f90b4"
+}
