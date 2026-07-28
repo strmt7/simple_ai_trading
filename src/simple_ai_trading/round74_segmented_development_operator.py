@@ -53,7 +53,7 @@ ROUND74_SEGMENTED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION = (
     "round-074-segmented-development-preparation-v1"
 )
 ROUND74_SEGMENTED_QUALIFIED_DEVELOPMENT_SCHEMA_VERSION = (
-    "round-074-segmented-qualified-development-v1"
+    "round-074-segmented-qualified-development-v2"
 )
 
 
@@ -187,6 +187,7 @@ class Round74SegmentedQualifiedDevelopment:
 
     preparation_sha256: str
     policy: Round74DevelopmentPolicyArtifact
+    requested_profiles: tuple[str, ...]
     qualification_by_profile: tuple[
         tuple[str, Round74AIQualificationOperatorResult],
         ...,
@@ -203,6 +204,11 @@ class Round74SegmentedQualifiedDevelopment:
         policies = {
             policy.profile: policy for policy in self.policy.bundle.action_policies
         }
+        expected_qualification_profiles = tuple(
+            profile
+            for profile in self.requested_profiles
+            if profile in policies and policies[profile].accepted
+        )
         for result in results:
             result.validate()
         if (
@@ -213,11 +219,17 @@ class Round74SegmentedQualifiedDevelopment:
                 character not in "0123456789abcdef"
                 for character in self.preparation_sha256
             )
-            or not profiles
+            or not self.requested_profiles
+            or len(set(self.requested_profiles)) != len(self.requested_profiles)
+            or self.requested_profiles
+            != tuple(
+                profile
+                for profile in ROUND74_ACTION_PROFILES
+                if profile in self.requested_profiles
+            )
             or len(set(profiles)) != len(profiles)
-            or profiles
-            != tuple(profile for profile in ROUND74_ACTION_PROFILES if profile in profiles)
-            or any(profile not in policies for profile in profiles)
+            or any(profile not in policies for profile in self.requested_profiles)
+            or profiles != expected_qualification_profiles
             or any(
                 result.inference.action_selection_sha256
                 != policies[profile].selection_sha256
@@ -249,6 +261,7 @@ class Round74SegmentedQualifiedDevelopment:
 
     def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
         self.validate()
+        qualifications = dict(self.qualification_by_profile)
         payload: dict[str, object] = {
             "schema_version": self.schema_version,
             "preparation_sha256": self.preparation_sha256,
@@ -256,19 +269,46 @@ class Round74SegmentedQualifiedDevelopment:
             "pretest_policy_sha256": (
                 self.policy.bundle.pretest_policy_sha256
             ),
-            "qualification_by_profile": {
+            "profile_results": {
                 profile: {
+                    "ml_action_policy_accepted": (
+                        next(
+                            policy
+                            for policy in self.policy.bundle.action_policies
+                            if policy.profile == profile
+                        ).accepted
+                    ),
+                    "ml_action_policy_rejection_reasons": list(
+                        next(
+                            policy
+                            for policy in self.policy.bundle.action_policies
+                            if policy.profile == profile
+                        ).rejection_reasons
+                    ),
+                    "ai_qualification_executed": profile in qualifications,
                     "action_selection_sha256": (
-                        result.inference.action_selection_sha256
+                        next(
+                            policy
+                            for policy in self.policy.bundle.action_policies
+                            if policy.profile == profile
+                        ).selection_sha256
                     ),
                     "qualification_sha256": (
-                        result.qualification.qualification_sha256
+                        None
+                        if profile not in qualifications
+                        else qualifications[
+                            profile
+                        ].qualification.qualification_sha256
                     ),
                     "qualification_passed": (
-                        result.qualification.qualification_passed
+                        False
+                        if profile not in qualifications
+                        else qualifications[
+                            profile
+                        ].qualification.qualification_passed
                     ),
                 }
-                for profile, result in self.qualification_by_profile
+                for profile in self.requested_profiles
             },
             "sealed_test_accessed": False,
             "trading_authority": False,
@@ -479,6 +519,9 @@ def train_and_qualify_round74_segmented_development(
     action_policies = {
         selected.profile: selected for selected in policy.bundle.action_policies
     }
+    qualifiable_profiles = tuple(
+        profile for profile in profiles if action_policies[profile].accepted
+    )
     qualification_directory = Path(qualification_output_directory)
     results = tuple(
         (
@@ -499,11 +542,12 @@ def train_and_qualify_round74_segmented_development(
                 inference_minibatch_rows=inference_minibatch_rows,
             ),
         )
-        for profile in profiles
+        for profile in qualifiable_profiles
     )
     result = Round74SegmentedQualifiedDevelopment(
         preparation_sha256=preparation.preparation_sha256,
         policy=policy,
+        requested_profiles=profiles,
         qualification_by_profile=results,
     )
     result.validate()

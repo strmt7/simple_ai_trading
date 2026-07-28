@@ -948,7 +948,14 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
         )
 
     policies = tuple(
-        SimpleNamespace(profile=profile, selection_sha256=f"{index + 20:064x}")
+        SimpleNamespace(
+            profile=profile,
+            selection_sha256=f"{index + 20:064x}",
+            accepted=profile != "regular",
+            rejection_reasons=(
+                () if profile != "regular" else ("no_viable_threshold",)
+            ),
+        )
         for index, profile in enumerate(("conservative", "regular", "aggressive"))
     )
     bundle = SimpleNamespace(
@@ -1026,7 +1033,11 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
     qualified.validate()
     assert tuple(
         profile for profile, _qualification in qualified.qualification_by_profile
-    ) == ("conservative", "regular", "aggressive")
+    ) == ("conservative", "aggressive")
+    profile_results = qualified.as_dict()["profile_results"]
+    assert profile_results["regular"]["ml_action_policy_accepted"] is False
+    assert profile_results["regular"]["ai_qualification_executed"] is False
+    assert profile_results["regular"]["qualification_passed"] is False
     assert len(replay_provider_calls) == 1
     assert tuple(replay_provider_calls[0]["assembly_by_run_id"]) == (
         tuning_subpartition.ai_qualification_run_ids
@@ -1036,6 +1047,5 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
         for kwargs in qualification_calls
     ] == [
         "round74-ai-pretest-qualification-conservative.json",
-        "round74-ai-pretest-qualification-regular.json",
         "round74-ai-pretest-qualification-aggressive.json",
     ]
