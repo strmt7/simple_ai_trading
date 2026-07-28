@@ -352,7 +352,22 @@ After parser or taxonomy changes, regenerate the header through the native build
   Round 74 cohort capture plan. A new plan must first freeze independently
   audited transport units, explicit gap rejection, whole-unit role assignment,
   purge/embargo, and sealed-test controls without modifying historical
-  evidence. Then read
+  evidence. Two later 20-minute prerequisite attempts also failed closed:
+  attempt 001 timed out during the opening handshake before run creation, while
+  attempt 002 ended on a public-WebSocket transport close after 209.781 seconds.
+  Attempt 002 preserved 91,227 exact messages and passed a fresh full-frame
+  audit. The v2 segmented contract now independently replays each connection
+  epoch and measures usable time from feature readiness through the earliest
+  final fresh BTC/ETH/SOL depth receipt. On attempt 002 that interval is only
+  209.134 seconds, shorter than both the 600-second admission minimum and the
+  310.5-second complete target span, so it remains permanently excluded with
+  zero eligible model time. The prospective implementation uses 720
+  predeclared slots and exact role-level eligible-time quotas; a qualifying
+  transport-ended prefix must be included, but no feature or target may cross
+  an epoch boundary. The implementation is validated, but no new plan is
+  frozen and no campaign is open. Read
+  `round-074-segmented-transport-epoch-redesign-validation-2026-07-28.json`,
+  then read
   `round-074-event-sequence-model-design-v64.json`, which composes the complete
   unchanged v63 model contract with the corrected plan, operator,
   execution-evidence, and research bindings, then
