@@ -47,7 +47,7 @@ class Round74TuningSubpartitionProtocol(Protocol):
     def subpartition_sha256(self) -> str: ...
 
 
-ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v5"
+ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v6"
 ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS = 8_192
 ROUND74_EVENT_MODEL_TEMPORAL_STRATA = 16
 ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM = 16
@@ -777,6 +777,7 @@ class Round74PreparedTuningRoles:
     model_selection_batches: tuple[Round74EventTrainingBatch, ...]
     calibration_batches: tuple[Round74EventTrainingBatch, ...]
     policy_selection_batches: tuple[Round74EventTrainingBatch, ...]
+    ai_qualification_batches: tuple[Round74EventTrainingBatch, ...] = ()
     schema_version: str = ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -790,6 +791,16 @@ class Round74PreparedTuningRoles:
             (
                 self.policy_selection_batches,
                 self.subpartition.policy_selection_run_ids,
+            ),
+            (
+                self.ai_qualification_batches,
+                tuple(
+                    getattr(
+                        self.subpartition,
+                        "ai_qualification_run_ids",
+                        (),
+                    )
+                ),
             ),
         )
         batches = tuple(batch for group, _run_ids in groups for batch in group)
@@ -834,9 +845,13 @@ class Round74PreparedTuningRoles:
             "policy_selection_batch_sha256": [
                 batch.batch_sha256 for batch in self.policy_selection_batches
             ],
+            "ai_qualification_batch_sha256": [
+                batch.batch_sha256 for batch in self.ai_qualification_batches
+            ],
             "model_selection_run_count": len(self.model_selection_batches),
             "calibration_run_count": len(self.calibration_batches),
             "policy_selection_run_count": len(self.policy_selection_batches),
+            "ai_qualification_run_count": len(self.ai_qualification_batches),
             "cross_role_run_reuse_permitted": False,
             "sealed_test_role_accessed": False,
         }
@@ -883,6 +898,7 @@ def split_round74_tuning_batch_roles(
         *subpartition.model_selection_run_ids,
         *subpartition.calibration_run_ids,
         *subpartition.policy_selection_run_ids,
+        *tuple(getattr(subpartition, "ai_qualification_run_ids", ())),
     )
     observed_run_ids = tuple(
         next(iter(set(batch.run_id))) for batch in selected_batches
@@ -891,11 +907,13 @@ def split_round74_tuning_batch_roles(
         raise ValueError("Round 74 prepared tuning chronology differs")
     model_end = len(subpartition.model_selection_run_ids)
     calibration_end = model_end + len(subpartition.calibration_run_ids)
+    policy_end = calibration_end + len(subpartition.policy_selection_run_ids)
     selected = Round74PreparedTuningRoles(
         subpartition=subpartition,
         model_selection_batches=selected_batches[:model_end],
         calibration_batches=selected_batches[model_end:calibration_end],
-        policy_selection_batches=selected_batches[calibration_end:],
+        policy_selection_batches=selected_batches[calibration_end:policy_end],
+        ai_qualification_batches=selected_batches[policy_end:],
     )
     selected.validate()
     return selected
