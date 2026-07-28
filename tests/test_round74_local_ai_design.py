@@ -172,6 +172,13 @@ LOCAL_AI_DEVELOPMENT_NONINFERIORITY_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v60.json"
 )
+SEALED_AI_NONINFERIORITY_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v61.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -937,6 +944,79 @@ def test_round74_ai_design_delta_binds_development_subgroup_noninferiority() -> 
     assert verification["corrupted_subgroup_evidence_rejected"]
     assert not verification["full_suite_executed"]
     assert not verification["sealed_test_accessed"]
+    assert limits["test_evidence_is_synthetic"]
+    assert not limits["prospective_cohort_used"]
+    assert not limits["representative_market_ai_evaluation_complete"]
+    assert not limits["ai_model_evaluated_for_market_uplift"]
+    assert not limits["financial_edge_established"]
+    assert not limits["profitability_established"]
+    assert all(value is False for value in artifact["status"].values())
+
+
+def test_round74_ai_design_delta_binds_sealed_subgroup_qualification() -> None:
+    previous = _load_json(LOCAL_AI_DEVELOPMENT_NONINFERIORITY_PATH)
+    artifact = _load_json(SEALED_AI_NONINFERIORITY_PATH)
+    claimed = artifact.pop("design_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    contract = artifact["sealed_qualification_contract"]
+    failure = artifact["failure_semantics"]
+    verification = artifact["verification"]
+    limits = artifact["evidence_limits"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v61"
+    base = artifact["base_design_binding"]
+    assert base["path"] == str(
+        LOCAL_AI_DEVELOPMENT_NONINFERIORITY_PATH.relative_to(REPOSITORY)
+    ).replace("\\", "/")
+    assert base["file_sha256"] == _file_sha256(base["path"])
+    assert base["design_sha256"] == previous["design_sha256"]
+    assert base["unchanged"]
+    for label in ("sealed_evaluation", "focused_tests"):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    assert source["sealed_evaluation"]["schema_version"] == (
+        "round-074-sealed-evaluation-v13"
+    )
+    assert contract["test_access"] == "one_use_reserved_before_target_access"
+    assert contract["baseline"] == "same_frozen_ml_action_trace"
+    assert contract["execution_basis"] == "exact_delayed_level_2_replay"
+    assert contract["ai_action_authority"] == "retain_reduce_or_veto_only"
+    assert contract["ai_model_count"] == 2
+    assert contract["expected_test_capture_runs"] == 24
+    assert contract["assets"] == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    assert contract["ai_review_horizons_seconds"] == [30, 300]
+    assert contract["paired_run_panel_includes_every_expected_run"]
+    assert contract["zero_observation_runs_retained"]
+    assert contract["paired_symbol_horizon_panel_includes_every_observed_group"]
+    assert contract["panel_counts_and_totals_reconcile_to_baseline_and_ai_metrics"]
+    assert contract["aggregate_after_cost_net_uplift_required"]
+    assert contract["two_model_bonferroni_positive_run_block_lower_bound_required"]
+    assert contract["every_capture_run_delta_net_bps_minimum"] == -1e-12
+    assert contract["every_observed_symbol_horizon_delta_net_bps_minimum"] == -1e-12
+    assert contract["maximum_drawdown_noninferiority_required"]
+    assert contract["missing_duplicate_nonfinite_or_inconsistent_evidence_fails_closed"]
+    assert not contract["promotion_authority"]
+    assert not contract["trading_authority"]
+    assert failure["positive_aggregate_may_not_offset_capture_run_harm"]
+    assert failure["positive_familywise_bound_may_not_offset_capture_run_harm"]
+    assert failure["positive_aggregate_may_not_offset_asset_horizon_harm"]
+    assert failure["financial_gate_pass_may_not_offset_subgroup_harm"]
+    assert failure["noninferiority_does_not_establish_edge_or_profitability"]
+    assert verification["focused_sealed_evaluation_tests_passed"] == 14
+    assert verification["connected_contract_tests_passed"] == 57
+    assert verification["adversarial_aggregate_uplift_positive"]
+    assert verification["adversarial_two_model_familywise_lower_bound_positive"]
+    assert verification["adversarial_financial_gate_passed"]
+    assert verification["adversarial_harmed_sol_runs"] == 8
+    assert verification["adversarial_harmed_sol_30_second_group_rejected"]
+    assert verification["corrupted_run_delta_rejected"]
+    assert not verification["full_suite_executed"]
+    assert not verification["real_sealed_test_accessed"]
     assert limits["test_evidence_is_synthetic"]
     assert not limits["prospective_cohort_used"]
     assert not limits["representative_market_ai_evaluation_complete"]
