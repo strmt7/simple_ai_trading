@@ -119,6 +119,9 @@ OPEN_RISK_DRAWDOWN_DESIGN_PATH = (
 RISK_TAIL_CALIBRATION_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v81.json"
 )
+WORST_SYMBOL_TAIL_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v82.json"
+)
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -484,6 +487,75 @@ def test_round74_risk_tail_calibration_is_frozen_conservative_and_source_bound()
     assert authority["calibration_action_ai_sealed_parity_implementation"]
     assert not authority["representative_market_evidence"]
     assert not authority["symbol_conditional_risk_coverage"]
+    assert not authority["financial_edge_tested"]
+    assert not authority["profitability_claim"]
+    assert not authority["drawdown_performance_claim"]
+    assert not authority["ai_uplift_claim"]
+    assert not authority["paper_trading_authority"]
+    assert not authority["testnet_trading_authority"]
+    assert not authority["live_trading_authority"]
+
+
+def test_round74_worst_symbol_tail_calibration_is_complete_and_source_bound() -> None:
+    previous = _load_hash_bound(RISK_TAIL_CALIBRATION_DESIGN_PATH, "design_sha256")
+    design = _load_hash_bound(WORST_SYMBOL_TAIL_DESIGN_PATH, "design_sha256")
+    source = design["source_binding"]
+    contract = design["worst_run_symbol_tail_contract"]
+    authority = design["authority"]
+    commit = str(design["implementation_git_commit"])
+
+    assert design["schema_version"] == "round-074-event-sequence-model-design-v82"
+    assert design["base_design"]["design_sha256"] == previous["design_sha256"]
+    assert design["base_design"]["unchanged_except_declared_delta"]
+    for prefix in ("calibration", "development_operator"):
+        assert source[f"{prefix}_sha256"] == _file_sha256_at(
+            commit,
+            source[f"{prefix}_path"],
+        )
+    assert source["probability_calibration_schema_version"] == (
+        "round-074-temperature-calibration-v4"
+    )
+    assert source["risk_quantile_calibration_schema_version"] == (
+        "round-074-risk-quantile-calibration-v2"
+    )
+    assert source["risk_quantile_prior_schema_version"] == (
+        "round-074-risk-quantile-calibration-v1"
+    )
+    assert source["development_operator_schema_version"] == (
+        "round-074-development-policy-operator-v4"
+    )
+    assert contract["symbols"] == list(ROUND74_EVENT_SYMBOLS)
+    assert contract["capture_run_count"] == 6
+    assert contract["required_group_count_per_horizon_side"] == (
+        6 * len(ROUND74_EVENT_SYMBOLS)
+    )
+    assert contract["capture_run_grouping"] == "capture_run_x_symbol"
+    assert contract["missing_eligible_group_fails_closed"]
+    assert contract["capture_run_coverage_reporting"] == (
+        "minimum_over_run_symbol_groups"
+    )
+    assert contract["eligible_target_complete_run_symbol_support_required"]
+    assert not contract["runtime_symbol_router_required"]
+    assert not contract["one_symbol_can_be_averaged_away_in_capture_run_mode"]
+    assert contract["all_offsets_nonnegative"]
+    assert contract["calibration_sample_nominal_coverage_fails_closed"]
+    assert contract["prior_v1_payload_reload_supported"]
+    assert not contract["sealed_test_rows_accessed"]
+    assert not contract["exchangeability_assumed_or_established"]
+    assert not contract["symbol_conditional_future_coverage_claim"]
+    assert not contract["profitability_or_edge_claim"]
+    assert design["evidence_boundary"]["synthetic_data_only"]
+    assert design["evidence_boundary"][
+        "real_prospective_cohort_capture_active_but_not_used"
+    ]
+    assert not design["evidence_boundary"]["financial_backtest_performed"]
+    assert not design["evidence_boundary"]["profitability_or_edge_inference_permitted"]
+    assert not design["evidence_boundary"]["future_coverage_inference_permitted"]
+    assert not design["evidence_boundary"]["ai_model_evaluated"]
+    assert authority["worst_run_symbol_tail_calibration_implementation"]
+    assert authority["backward_compatible_v1_payload_loader"]
+    assert not authority["representative_market_evidence"]
+    assert not authority["symbol_conditional_future_coverage"]
     assert not authority["financial_edge_tested"]
     assert not authority["profitability_claim"]
     assert not authority["drawdown_performance_claim"]
