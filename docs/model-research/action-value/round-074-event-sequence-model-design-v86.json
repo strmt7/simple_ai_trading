@@ -1,0 +1,155 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v86",
+  "created_at_utc": "2026-07-28T13:01:54Z",
+  "implementation_git_commit": "8b48b154d1aa4724beea6c961b775d8a97e939d2",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v85.json",
+    "file_sha256": "3cd51fa924a32634e74cb4962543ff7b51a8842cffb26ea1465b1bed4c176566",
+    "design_sha256": "8c17aefcc6b521b15f7653bdbaf1654e1b89a88a659d434740c8e30cf742abfe",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "event_sequence": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sequence.py",
+      "sha256": "b17c30a5b031894f437b1e73813140441425e2aefbc8537a81c7e6d279e2368e",
+      "schema_version": "round-074-causal-event-sequence-v5",
+      "feature_count": 75,
+      "feature_names_sha256": "bf72f43bd2db29c7f696ddf10bc894e35cf3fd19f8c04a1930c4c406cb64d74b"
+    },
+    "tests": [
+      {
+        "path": "tests/test_impact_absorption_event_sequence.py",
+        "sha256": "094abd10be71f393ccf87f3941681fd3317c4dcc22e6715a483afb14553d2ecc"
+      },
+      {
+        "path": "tests/test_round74_event_cohort_operator.py",
+        "sha256": "c49ba61b673d184750bfbf76183316520627c3821f4a08c1ee5146e644dcf2a8"
+      },
+      {
+        "path": "tests/test_round74_event_model_contract.py",
+        "sha256": "5bea41ccccba0a48c3083d28090ebc15b27148c432aea7d1d638028471326db4"
+      },
+      {
+        "path": "tests/test_round74_event_model_design_v72.py",
+        "sha256": "392fc6a9e1dc781a1db8bb4905590d8abbb3971b418d7a942a491fe2b88c9a89"
+      },
+      {
+        "path": "tests/test_round74_local_ai_design.py",
+        "sha256": "e3120907e987d28f6f4d61fa2049bf5d42625706fa97f857b75cb60e7d58793a"
+      }
+    ]
+  },
+  "research_basis": [
+    {
+      "title": "The Quarter-Hour Effect: Periodic Algorithmic Trading and Return Predictability in Cryptocurrency Futures",
+      "url": "https://arxiv.org/abs/2607.09426v2",
+      "bounded_use": "The paper documents one-, five-, and fifteen-minute activity and volatility bursts in Binance perpetuals, with the strongest quarter-hour activity in the first ten seconds. It motivates candidate clock-phase covariates only; its reported effects do not establish after-cost edge for this model, these assets, or these horizons."
+    },
+    {
+      "title": "Binance Developer Documentation",
+      "url": "https://developers.binance.com/en/docs/introduction",
+      "bounded_use": "The official documentation identifies WebSocket streams as push-based real-time market data and documents timestamped payload schemas. The implementation still validates every supported event timestamp locally before deriving a feature."
+    }
+  ],
+  "exchange_clock_feature_contract": {
+    "periods_seconds": [
+      60,
+      300,
+      900
+    ],
+    "features_per_period": [
+      "phase_sine",
+      "phase_cosine",
+      "opening_10s"
+    ],
+    "new_feature_count": 9,
+    "opening_window_definition": "event_time_ms modulo period_ms is greater than or equal to zero and strictly less than 10000",
+    "opening_boundary_tested_at_ms": [
+      9999,
+      10000
+    ],
+    "phase_resolution": "exchange event milliseconds",
+    "daily_utc_phase_source": "exchange_event_time_ms",
+    "host_received_wall_time_used_for_clock_phase": false,
+    "local_received_monotonic_time_remains_receipt_order_clock": true,
+    "feature_available_only_after_event_receipt": true,
+    "future_event_or_target_accessed": false,
+    "supported_event_types": [
+      "depthUpdate",
+      "bookTicker",
+      "aggTrade",
+      "markPriceUpdate",
+      "forceOrder"
+    ],
+    "positive_exchange_event_timestamp_required_by_every_parser": true,
+    "missing_timestamp_policy": "reject_event",
+    "nonlinear_boundary_flag_is_source_grounded": true
+  },
+  "model_contract_delta": {
+    "feature_count_before": 66,
+    "feature_count_after": 75,
+    "candidate_family_changed": false,
+    "target_contract_changed": false,
+    "financial_replay_contract_changed": false,
+    "risk_policy_changed": false,
+    "model_parameter_counts_after": {
+      "event_pooling_linear": 22600,
+      "event_pooling_mlp": 43684,
+      "causal_event_tcn": 131108,
+      "causal_event_attention": 154180
+    },
+    "training_only_scaler_fit_required": true,
+    "feature_ablation_required_before_selection": true,
+    "automatic_candidate_promotion_permitted": false,
+    "paper_result_may_select_model": false,
+    "v4_raw_capture_mutated": false,
+    "v5_features_reconstructible_from_exact_raw_receipts": true,
+    "active_v3_campaign_main_branch_contract_changed": false
+  },
+  "historical_evidence_compatibility": {
+    "v4_artifacts_remain_immutable": true,
+    "historical_tests_compare_literal_v4_schema_and_digest": true,
+    "historical_tests_compare_current_imported_feature_contract": false,
+    "v4_feature_count": 66,
+    "v4_feature_names_sha256": "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a",
+    "v5_feature_count": 75,
+    "v5_feature_names_sha256": "bf72f43bd2db29c7f696ddf10bc894e35cf3fd19f8c04a1930c4c406cb64d74b"
+  },
+  "verification": {
+    "connected_tests_passed": 55,
+    "exact_exchange_time_source_test_passed": true,
+    "opening_window_boundary_test_passed": true,
+    "event_sequence_dataset_scaler_model_operator_tests_passed": true,
+    "ruff_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false,
+    "directml_training_rerun": false,
+    "real_cohort_training_performed": false,
+    "financial_backtest_performed": false
+  },
+  "evidence_boundary": {
+    "implementation_and_contract_tests_only": true,
+    "real_prospective_capture_continues_under_frozen_v4_main_branch": true,
+    "financial_backtest_performed": false,
+    "clock_features_improve_predictive_accuracy_claim": false,
+    "clock_features_improve_profitability_claim": false,
+    "drawdown_inference_permitted": false,
+    "paper_effect_transfers_to_btc_eth_sol_claim": false,
+    "paper_effect_survives_execution_costs_claim": false,
+    "ai_model_evaluated": false,
+    "ai_uplift_inference_permitted": false
+  },
+  "authority": {
+    "causal_feature_implementation": true,
+    "historical_evidence_test_correction": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "5e59ca12c67dddce7b5b8b85987410b1cd68295898a835893825e41580eeca62"
+}
