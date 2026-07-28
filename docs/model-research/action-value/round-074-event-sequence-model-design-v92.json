@@ -1,0 +1,184 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v92",
+  "created_at_utc": "2026-07-28T19:35:12.670645Z",
+  "implementation_git_commit": "cb7b0a4502905a1c2a00e2804518573173152841",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v91.json",
+    "file_sha256": "587a0c31269276bd9bd368f26fa0efccda2e1a162537b65a1464b19278a2837b",
+    "design_sha256": "85da4bb88a787ce98fcffae7b0c8ce94a77bd724affb16073f127a9d0b9bf03b",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "event_scaling_path": "src/simple_ai_trading/impact_absorption_event_scaling.py",
+    "event_scaling_sha256": "8832c3723430359afd9df272f0c2c3c3be847937b134cdd2a1f36ffa207815f7",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_sha256": "c87eed9ae91410f31d73866adaec9f8918d164c1114688bf37060a6dc3612822",
+    "event_model_operator_path": "src/simple_ai_trading/round74_event_model_operator.py",
+    "event_model_operator_sha256": "22956d2391956a3c56862c26c447469420bb918274825dc5f843b4748d73579c",
+    "segmented_model_operator_path": "src/simple_ai_trading/round74_segmented_model_operator.py",
+    "segmented_model_operator_sha256": "080eb3bae7f55f4df17b8b067b992091623e279239152332dffd461227f59d14",
+    "preflight_runner_path": "tools/run_round74_event_training_preflight.py",
+    "preflight_runner_sha256": "4744b7a8c20c68e8beaf5396690cd171c30860e59729b223ca747cf243819364",
+    "event_scaling_test_path": "tests/test_impact_absorption_event_scaling.py",
+    "event_scaling_test_sha256": "4c7c5f6c576e7ddd627ebb08247db0c1239992bbe55c11ab8aa5459fdee08c79",
+    "event_training_test_path": "tests/test_impact_absorption_event_training.py",
+    "event_training_test_sha256": "36a9e7f1f9b55d43a3fbf372dd8eb08f85ef317810f437ac276da8249afefc2f",
+    "segmented_model_operator_test_path": "tests/test_round74_segmented_model_operator.py",
+    "segmented_model_operator_test_sha256": "402a11cdef31517a1be16468db5a98c235a9ae0632b6d9cf37d67bb3a304ac67",
+    "directml_evidence_path": "docs/model-research/action-value/round-074-isolated-selection-directml-preflight-2026-07-28.json",
+    "directml_evidence_file_sha256": "f0df899f55f43ed987d2e913ea0a66e16c40b92dcb948f88263e5c029012decb"
+  },
+  "declared_delta": {
+    "adaptive_model_selection_panels_isolated": true,
+    "training_early_stopping_panel_isolated": true,
+    "preprocessing_fitted_before_label_replay": true,
+    "preprocessing_bound_to_exact_optimizer_run_ids": true,
+    "preprocessing_partition_and_split_digests_persisted": true,
+    "legacy_unbound_scaler_rejected_in_segmented_mode": true,
+    "directml_preflight_reporter_updated_for_early_stopping_schema": true,
+    "event_scaler_schema_version": "round-074-event-feature-scaler-v6",
+    "event_training_schema_version": "round-074-event-training-v28",
+    "pretest_policy_schema_version": "round-074-event-pretest-policy-v27",
+    "selection_protocol_schema_version": "round-074-event-selection-protocol-v2",
+    "feature_names_or_values_changed": false,
+    "supervised_targets_changed": false,
+    "proper_loss_changed": false,
+    "candidate_architectures_changed": false,
+    "cohort_roles_or_scheduled_slots_changed": false,
+    "sealed_test_consumed": false
+  },
+  "training_selection_contract": {
+    "split_unit": "whole_admitted_transport_segment",
+    "assignment_time": "before feature target or model-output replay",
+    "assignment_basis": "chronological admitted training runs after transport adjudication",
+    "minimum_optimizer_run_count": 128,
+    "minimum_early_stopping_run_count": 32,
+    "early_stopping_run_count_formula": "max(32,ceil(admitted_training_runs/8))",
+    "purge_axis": "eligible_anchor_wall_time",
+    "minimum_purge_ns": 310500000000,
+    "optimizer_run_ids_are_chronological_prefix": true,
+    "early_stopping_run_ids_are_chronological_suffix": true,
+    "intervening_runs_are_purged": true,
+    "feature_value_used_for_assignment": false,
+    "target_label_used_for_assignment": false,
+    "model_output_used_for_assignment": false,
+    "all_admitted_training_runs_accounted_for_exactly_once": true
+  },
+  "preprocessing_isolation_contract": {
+    "fit_source_scope": "segmented_optimization_training_runs",
+    "fit_stream": "unique_raw_event_features_without_overlapping_window_copies",
+    "fit_source_run_ids_persisted": true,
+    "fit_source_run_ids_sha256_persisted": true,
+    "fit_source_partition_sha256_persisted": true,
+    "fit_source_selection_sha256_persisted": true,
+    "early_stopping_features_used_for_fit": false,
+    "purged_training_features_used_for_fit": false,
+    "tuning_features_used_for_fit": false,
+    "calibration_features_used_for_fit": false,
+    "policy_selection_features_used_for_fit": false,
+    "sealed_test_features_used_for_fit": false,
+    "policy_loader_rehashes_scaler_artifact": true,
+    "policy_loader_requires_exact_optimizer_run_identity": true,
+    "transductive_covariate_leakage_permitted": false
+  },
+  "adaptive_selection_contract": {
+    "training_optimizer_panel": "chronological_prefix_of_admitted_training_runs",
+    "training_early_stopping_panel": "chronological_suffix_of_admitted_training_runs",
+    "promotion_stage_order": [
+      "architecture",
+      "clock_features",
+      "order_flow_features",
+      "state_conditioned_flow",
+      "causal_pretraining"
+    ],
+    "promotion_stage_scheduled_slot_bounds": [
+      514,
+      525,
+      535,
+      546,
+      556,
+      566
+    ],
+    "minimum_eligible_anchor_ns_per_promotion_stage": 7894800000000,
+    "promotion_stage_panels_are_pairwise_disjoint": true,
+    "same_promotion_panel_reused_across_stages": false,
+    "incumbent_and_challenger_refitted_for_each_stage": true,
+    "checkpoint_selection_uses_training_early_stopping_only": true,
+    "promotion_decisions_use_current_stage_only": true,
+    "target_loss_scaler_fit_uses_optimizer_runs_only": true,
+    "calibration_or_policy_selection_used_for_model_selection": false,
+    "sealed_test_used_for_model_selection": false
+  },
+  "research_basis": [
+    {
+      "source": "Cawley and Talbot, On Over-fitting in Model Selection and Subsequent Selection Bias in Performance Evaluation",
+      "url": "https://www.jmlr.org/papers/v11/cawley10a.html",
+      "relevant_finding": "a finite model-selection criterion can itself be overfit and selection variance must not be ignored",
+      "implementation_transfer": "separate each adaptive selection decision onto a disjoint chronological panel",
+      "transfer_limit": "the paper does not establish that this crypto model has predictive or financial edge"
+    },
+    {
+      "source": "White, A Reality Check for Data Snooping",
+      "url": "https://doi.org/10.1111/1468-0262.00152",
+      "relevant_finding": "performance discovered after searching many alternatives may be attributable to data snooping",
+      "implementation_transfer": "record the search stages and prohibit repeated reuse of one promotion panel",
+      "transfer_limit": "the current round implements isolation but has not run a post-search statistical reality check"
+    },
+    {
+      "source": "Sullivan, Timmermann, and White, Data-Snooping, Technical Trading Rule Performance, and the Bootstrap",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=160330",
+      "relevant_finding": "technical-rule evaluation must account for the universe of rules searched rather than only the reported winner",
+      "implementation_transfer": "bind architecture and feature-layer challenges to explicit ordered stages and preserve all gate outcomes",
+      "transfer_limit": "the study does not validate this event representation, execution model, or crypto venue transfer"
+    },
+    {
+      "source": "Bailey, Borwein, Lopez de Prado, and Zhu, The Probability of Backtest Overfitting",
+      "url": "https://scholarworks.wmich.edu/math_pubs/42/",
+      "relevant_finding": "selection over many strategy configurations can produce an apparently optimal backtest that performs poorly out of sample",
+      "implementation_transfer": "reserve calibration, policy selection, and sealed test populations after model selection is frozen",
+      "transfer_limit": "probability-of-overfitting analysis remains pending until representative cohort outcomes exist"
+    }
+  ],
+  "verification": {
+    "focused_scaler_segmented_operator_and_training_test_count": 63,
+    "connected_test_count_before_v92_integrity_test": 105,
+    "v92_design_integrity_test_count": 1,
+    "expected_connected_test_count_with_v92_integrity": 106,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "current_commit_amd_directml_preflight_passed": true,
+    "current_commit_directml_cpu_fallback_warning_count": 0,
+    "preflight_reporter_stale_key_regression_tested": true,
+    "full_representative_training_performed": false,
+    "sealed_test_evaluated": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "development_branch_only": true,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "eb23b3f230afecbf42b5ece1b2d3a4fbfe0cfbc159e8975ef8e4a9bca79315f5"
+}
