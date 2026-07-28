@@ -42,8 +42,8 @@ from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v17"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v16"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v18"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v17"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
@@ -82,6 +82,7 @@ def _cohort_window_policy_identity(
         round74_matched_representative_window_policy,
         round74_representative_window_policy,
     )
+    from .round74_segmented_model_operator import round74_segmented_window_policy
 
     claimed = str(representative_window_policy_sha256)
     policies = {
@@ -90,6 +91,9 @@ def _cohort_window_policy_identity(
         ],
         "matched_representation": (
             round74_matched_representative_window_policy()["policy_sha256"]
+        ),
+        "segmented_duration_normalized": (
+            round74_segmented_window_policy()["policy_sha256"]
         ),
     }
     matching = tuple(kind for kind, digest in policies.items() if digest == claimed)
@@ -117,7 +121,30 @@ def _package_version(name: str) -> str:
         return "not-installed"
 
 
-def _optimization_population_policy() -> dict[str, object]:
+def _optimization_population_policy(
+    execution_mode: str = "cohort",
+    training_run_count: int = ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS,
+    tuning_run_count: int = ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS,
+) -> dict[str, object]:
+    if execution_mode == "segmented_cohort":
+        return {
+            "unit": "eligible_target",
+            "optimizer_step": (
+                "one exact full-development gradient per epoch accumulated "
+                "through bounded device groups"
+            ),
+            "gradient_divisor": (
+                "separate total eligible action and regime target counts"
+            ),
+            "shorter_run_policy": "no cycling; each selected row appears once per epoch",
+            "fully_censored_minibatches_contribute_gradients": False,
+            "fully_censored_capture_run_policy": "reject",
+            "row_pooled_optimizer_steps_permitted": True,
+            "training_capture_runs": int(training_run_count),
+            "model_selection_capture_runs": int(tuning_run_count),
+            "run_count_used_as_gradient_weight": False,
+            "calibration_or_policy_selection_runs_used_for_candidate_fit": False,
+        }
     return {
         "unit": "capture_run",
         "optimizer_step": (
@@ -218,7 +245,10 @@ class Round74EventTrainingConfig:
             or int(self.minimum_role_rows) < 1
             or int(self.device_run_group_size) < 1
             or int(self.device_run_group_size) > 32
-            or self.execution_mode not in {"cohort", "preflight"}
+            or self.execution_mode
+            not in {"cohort", "segmented_cohort", "preflight"}
+            or self.execution_mode == "segmented_cohort"
+            and self.architecture_selection_mode != "fixed"
         ):
             raise ValueError("Round 74 event training configuration differs")
         values = (
@@ -517,6 +547,92 @@ def _run_balanced_minibatch_schedules(
             raise ValueError("Round 74 training capture run is fully censored")
         schedules.append(tuple(eligible))
     return tuple(schedules)
+
+
+def _eligible_target_minibatch_schedule(
+    batches: Sequence[Round74EventTrainingBatch],
+    maximum_rows: int,
+    *,
+    totals: dict[str, float],
+    per_run_totals: Sequence[dict[str, float]],
+) -> tuple[
+    tuple[int, Round74EventTrainingBatch, slice, int, int],
+    ...,
+]:
+    """Visit each eligible segmented minibatch exactly once per epoch."""
+
+    if len(batches) != len(per_run_totals) or not batches:
+        raise ValueError("Round 74 eligible-target schedule differs")
+    selected: list[
+        tuple[int, Round74EventTrainingBatch, slice, int, int]
+    ] = []
+    for run_index, (batch, run_totals) in enumerate(
+        zip(batches, per_run_totals, strict=True)
+    ):
+        run_count = 0
+        for _batch, row_slice in _iter_minibatches((batch,), maximum_rows):
+            if _skip_fully_censored_minibatch(totals, batch, row_slice):
+                _skip_fully_censored_minibatch(run_totals, batch, row_slice)
+                continue
+            action_weight, regime_weight, _rows = _minibatch_target_counts(
+                batch,
+                row_slice,
+            )
+            selected.append(
+                (
+                    run_index,
+                    batch,
+                    row_slice,
+                    action_weight,
+                    regime_weight,
+                )
+            )
+            run_count += 1
+        if run_count == 0:
+            raise ValueError("Round 74 training capture run is fully censored")
+    return tuple(selected)
+
+
+def _eligible_target_weighted_group_loss(
+    grouped: Sequence[
+        tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int]
+    ],
+    *,
+    total_action_weight: int,
+    total_regime_weight: int,
+) -> torch.Tensor:
+    """Return this group's exact contribution to the cohort objective."""
+
+    if (
+        not grouped
+        or total_action_weight <= 0
+        or total_regime_weight <= 0
+    ):
+        raise ValueError("Round 74 eligible-target gradient population differs")
+    contributions: list[torch.Tensor] = []
+    for _loss, components, action_weight, regime_weight in grouped:
+        action_objective = (
+            components["payoff_pinball"]
+            + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS[
+                "maximum_adverse_excursion"
+            ]
+            * components["maximum_adverse_excursion_pinball"]
+            + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["positive_payoff"]
+            * components["positive_bce"]
+            + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["adverse_selection"]
+            * components["adverse_bce"]
+        )
+        regime_objective = (
+            ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["regime_unpredictability"]
+            * components["unpredictability_bce"]
+        )
+        contributions.append(
+            action_objective
+            * (float(action_weight) / float(total_action_weight))
+            + regime_objective
+            * (float(regime_weight) / float(total_regime_weight))
+        )
+    return torch.stack(tuple(contributions)).sum()
 
 
 def _to_device_tensor(
@@ -938,47 +1054,42 @@ def _train_peer(
         model.train()
         optimization_totals = _empty_metric_sums()
         per_run_totals = tuple(_empty_metric_sums() for _batch in training_batches)
-        schedules = _run_balanced_minibatch_schedules(
-            training_batches,
-            config.minibatch_rows,
-            totals=optimization_totals,
-            per_run_totals=per_run_totals,
-        )
-        optimizer_steps = max(len(schedule) for schedule in schedules)
-        run_count = len(schedules)
-        for step in range(optimizer_steps):
-            optimizer.zero_grad(set_to_none=True)
-            selections = tuple(
-                (
-                    batch,
-                    schedule[(step + epoch - 1) % len(schedule)],
-                    run_totals,
-                )
-                for batch, schedule, run_totals in zip(
-                    training_batches,
-                    schedules,
-                    per_run_totals,
-                    strict=True,
-                )
+        run_count = len(training_batches)
+        if config.execution_mode == "segmented_cohort":
+            selections = _eligible_target_minibatch_schedule(
+                training_batches,
+                config.minibatch_rows,
+                totals=optimization_totals,
+                per_run_totals=per_run_totals,
             )
-            for start in range(0, run_count, config.device_run_group_size):
-                selected_group = selections[
-                    start : start + config.device_run_group_size
-                ]
+            total_action_weight = sum(item[3] for item in selections)
+            total_regime_weight = sum(item[4] for item in selections)
+            optimizer.zero_grad(set_to_none=True)
+            for start in range(
+                0,
+                len(selections),
+                config.device_run_group_size,
+            ):
+                selected_group = selections[start : start + config.device_run_group_size]
                 grouped = _losses_for_minibatch_group(
                     model,
                     tuple(
                         (batch, row_slice)
-                        for batch, row_slice, _run_totals in selected_group
+                        for _index, batch, row_slice, _action, _regime in selected_group
                     ),
                     device,
                 )
-                (
-                    torch.stack(tuple(item[0] for item in grouped)).sum() / run_count
+                _eligible_target_weighted_group_loss(
+                    grouped,
+                    total_action_weight=total_action_weight,
+                    total_regime_weight=total_regime_weight,
                 ).backward()
                 _accumulate_group_metrics(
                     optimization_totals,
-                    tuple(run_totals for _batch, _slice, run_totals in selected_group),
+                    tuple(
+                        per_run_totals[index]
+                        for index, _batch, _slice, _action, _regime in selected_group
+                    ),
                     grouped,
                 )
             gradient_norm = torch.nn.utils.clip_grad_norm_(
@@ -989,6 +1100,71 @@ def _train_peer(
             if not math.isfinite(float(gradient_norm.detach().cpu())):
                 raise RuntimeError("Round 74 model gradient norm is nonfinite")
             optimizer.step()
+            optimizer_steps = 1
+            contribution_counts = tuple(
+                sum(item[0] == run_index for item in selections)
+                for run_index in range(run_count)
+            )
+            eligible_minibatch_counts = contribution_counts
+        else:
+            schedules = _run_balanced_minibatch_schedules(
+                training_batches,
+                config.minibatch_rows,
+                totals=optimization_totals,
+                per_run_totals=per_run_totals,
+            )
+            optimizer_steps = max(len(schedule) for schedule in schedules)
+            contribution_counts = tuple(optimizer_steps for _batch in training_batches)
+            eligible_minibatch_counts = tuple(
+                len(schedule) for schedule in schedules
+            )
+            for step in range(optimizer_steps):
+                optimizer.zero_grad(set_to_none=True)
+                selections = tuple(
+                    (
+                        batch,
+                        schedule[(step + epoch - 1) % len(schedule)],
+                        run_totals,
+                    )
+                    for batch, schedule, run_totals in zip(
+                        training_batches,
+                        schedules,
+                        per_run_totals,
+                        strict=True,
+                    )
+                )
+                for start in range(0, run_count, config.device_run_group_size):
+                    selected_group = selections[
+                        start : start + config.device_run_group_size
+                    ]
+                    grouped = _losses_for_minibatch_group(
+                        model,
+                        tuple(
+                            (batch, row_slice)
+                            for batch, row_slice, _run_totals in selected_group
+                        ),
+                        device,
+                    )
+                    (
+                        torch.stack(tuple(item[0] for item in grouped)).sum()
+                        / run_count
+                    ).backward()
+                    _accumulate_group_metrics(
+                        optimization_totals,
+                        tuple(
+                            run_totals
+                            for _batch, _slice, run_totals in selected_group
+                        ),
+                        grouped,
+                    )
+                gradient_norm = torch.nn.utils.clip_grad_norm_(
+                    model.parameters(),
+                    max_norm=config.gradient_clip_norm,
+                    foreach=False,
+                )
+                if not math.isfinite(float(gradient_norm.detach().cpu())):
+                    raise RuntimeError("Round 74 model gradient norm is nonfinite")
+                optimizer.step()
         if not _parameters_are_finite(model):
             raise RuntimeError("Round 74 model parameters are nonfinite")
         optimization_metrics = _finalize_metrics(optimization_totals)
@@ -1003,14 +1179,22 @@ def _train_peer(
                 "worst_run_loss": max(optimization_run_losses),
                 "run_count": float(run_count),
                 "optimizer_steps": float(optimizer_steps),
-                "run_contributions_per_optimizer_step": float(run_count),
-                "minimum_run_minibatch_contributions": float(optimizer_steps),
-                "maximum_run_minibatch_contributions": float(optimizer_steps),
+                "run_contributions_per_optimizer_step": (
+                    float(run_count)
+                    if config.execution_mode != "segmented_cohort"
+                    else float(len(selections))
+                ),
+                "minimum_run_minibatch_contributions": float(
+                    min(contribution_counts)
+                ),
+                "maximum_run_minibatch_contributions": float(
+                    max(contribution_counts)
+                ),
                 "minimum_eligible_minibatches_per_run": float(
-                    min(len(schedule) for schedule in schedules)
+                    min(eligible_minibatch_counts)
                 ),
                 "maximum_eligible_minibatches_per_run": float(
-                    max(len(schedule) for schedule in schedules)
+                    max(eligible_minibatch_counts)
                 ),
             }
         )
@@ -1023,7 +1207,12 @@ def _train_peer(
             device_run_group_size=config.device_run_group_size,
             device=device,
         )
-        tuning_loss = tuning_metrics["run_balanced_loss"]
+        selection_loss_name = (
+            "loss"
+            if config.execution_mode == "segmented_cohort"
+            else "run_balanced_loss"
+        )
+        tuning_loss = tuning_metrics[selection_loss_name]
         improved = (
             best_state is None
             or tuning_loss < best_loss - config.minimum_tuning_improvement
@@ -1040,6 +1229,7 @@ def _train_peer(
                 "epoch": epoch,
                 "optimization_metrics": optimization_metrics,
                 "tuning_metrics": tuning_metrics,
+                "selection_loss_name": selection_loss_name,
                 "improved": improved,
             }
         )
@@ -1056,12 +1246,12 @@ def _train_peer(
         device=device,
     )
     if not math.isclose(
-        restored_metrics["run_balanced_loss"],
+        restored_metrics[selection_loss_name],
         best_loss,
         rel_tol=1e-7,
         abs_tol=1e-7,
     ):
-        raise RuntimeError("Round 74 best-state run-balanced reload metric differs")
+        raise RuntimeError("Round 74 best-state selection reload metric differs")
     return best_state, {
         "seed": seed,
         "best_epoch": best_epoch,
@@ -1344,8 +1534,8 @@ def train_and_seal_round74_pretest_policy(
 
     selected_config = config or Round74EventTrainingConfig()
     selected_config.validate()
-    if selected_config.execution_mode == "cohort":
-        if (
+    if selected_config.execution_mode in {"cohort", "segmented_cohort"}:
+        if selected_config.execution_mode == "cohort" and (
             len(training_batches) != ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS
             or len(tuning_batches) != ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
         ):
@@ -1358,6 +1548,17 @@ def train_and_seal_round74_pretest_policy(
             representative_window_policy_sha256,
             matched_preparation_sha256,
         )
+        if (
+            selected_config.execution_mode == "segmented_cohort"
+            and (
+                window_policy_kind != "segmented_duration_normalized"
+                or matched_preparation is not None
+            )
+        ):
+            raise ValueError(
+                "Round 74 segmented training requires its duration-normalized "
+                "window policy"
+            )
     elif (
         representative_window_policy_sha256 is not None
         or matched_preparation_sha256 is not None
@@ -1374,8 +1575,10 @@ def train_and_seal_round74_pretest_policy(
         minimum_rows=selected_config.minimum_role_rows,
     )
     if feature_scaler is None:
-        if selected_config.execution_mode == "cohort":
-            raise ValueError("Round 74 cohort training requires its fitted feature scaler")
+        if selected_config.execution_mode != "preflight":
+            raise ValueError(
+                "Round 74 cohort training requires its fitted feature scaler"
+            )
         scaler_payload = b""
         scaler_artifact: dict[str, object] = {
             "available": False,
@@ -1530,7 +1733,7 @@ def train_and_seal_round74_pretest_policy(
             "representative_window_policy_kind": window_policy_kind,
             "matched_preparation_sha256": matched_preparation,
             "representative_window_policy_applied": (
-                selected_config.execution_mode == "cohort"
+                selected_config.execution_mode != "preflight"
             ),
             "training_rows": development.training_rows,
             "tuning_rows": development.tuning_rows,
@@ -1545,7 +1748,11 @@ def train_and_seal_round74_pretest_policy(
             "test_sample_digests_consumed": 0,
         },
         "training_policy": selected_config.as_dict(),
-        "optimization_population": _optimization_population_policy(),
+        "optimization_population": _optimization_population_policy(
+            selected_config.execution_mode,
+            len(training_batches),
+            len(tuning_batches),
+        ),
         "ensemble_aggregation": {
             "peer_weights": "equal",
             "payoff_and_adverse_excursion_quantiles": (
@@ -1648,7 +1855,13 @@ def train_and_seal_round74_pretest_policy(
         model_sha256=model_sha256,
         model_path=model_path,
         selected_candidate_id=winner.candidate_id,
-        tuning_loss=float(winner.ensemble_metrics["run_balanced_loss"]),
+        tuning_loss=float(
+            winner.ensemble_metrics[
+                "loss"
+                if selected_config.execution_mode == "segmented_cohort"
+                else "run_balanced_loss"
+            ]
+        ),
     )
 
 
@@ -1838,7 +2051,18 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest training policy differs") from exc
     if reconstructed_config.as_dict() != dict(training_policy):
         raise ValueError("Round 74 pretest training policy differs")
-    if dict(optimization_population) != _optimization_population_policy():
+    training_batch_sha256 = development.get("training_batch_sha256")
+    tuning_batch_sha256 = development.get("tuning_batch_sha256")
+    if (
+        not isinstance(training_batch_sha256, list)
+        or not isinstance(tuning_batch_sha256, list)
+        or dict(optimization_population)
+        != _optimization_population_policy(
+            reconstructed_config.execution_mode,
+            len(training_batch_sha256),
+            len(tuning_batch_sha256),
+        )
+    ):
         raise ValueError("Round 74 pretest optimization population differs")
     if dict(ensemble_aggregation) != {
         "peer_weights": "equal",
@@ -1967,7 +2191,7 @@ def load_round74_pretest_policy(
         }
         or training_batch_hashes & tuning_batch_hashes
         or development.get("representative_window_policy_applied")
-        is not (reconstructed_config.execution_mode == "cohort")
+        is not (reconstructed_config.execution_mode != "preflight")
         or development.get("window_representation")
         not in ROUND74_EVENT_WINDOW_REPRESENTATIONS
         or any(
@@ -2003,7 +2227,7 @@ def load_round74_pretest_policy(
     representative_policy_sha256 = development.get(
         "representative_window_policy_sha256"
     )
-    if reconstructed_config.execution_mode == "cohort":
+    if reconstructed_config.execution_mode in {"cohort", "segmented_cohort"}:
         try:
             expected_kind, expected_matched_preparation = (
                 _cohort_window_policy_identity(
@@ -2017,6 +2241,11 @@ def load_round74_pretest_policy(
             development.get("representative_window_policy_kind") != expected_kind
             or development.get("matched_preparation_sha256")
             != expected_matched_preparation
+            or reconstructed_config.execution_mode == "segmented_cohort"
+            and (
+                expected_kind != "segmented_duration_normalized"
+                or expected_matched_preparation is not None
+            )
         ):
             raise ValueError("Round 74 representative window policy differs")
     elif (
@@ -2080,7 +2309,7 @@ def load_round74_pretest_policy(
         scaler_filename = None
         scaler_file_sha256 = None
         scaler_byte_count = 0
-    if reconstructed_config.execution_mode == "cohort" and not scaler_available:
+    if reconstructed_config.execution_mode != "preflight" and not scaler_available:
         raise ValueError("Round 74 cohort pretest scaler artifact is unavailable")
     expected_metric_names = {
         "payoff_pinball",

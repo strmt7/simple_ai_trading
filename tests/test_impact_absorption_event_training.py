@@ -32,6 +32,9 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     Round74EventEnsemble,
     Round74EventTrainingConfig,
     _complexity_gated_candidate_id,
+    _eligible_target_minibatch_schedule,
+    _eligible_target_weighted_group_loss,
+    _empty_metric_sums,
     _loss_for_minibatch,
     _losses_for_minibatch_group,
     load_round74_pretest_policy,
@@ -39,6 +42,7 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     train_and_seal_round74_pretest_policy,
 )
 from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
+    ROUND74_EVENT_MODEL_CANDIDATES,
     Round74EventModelOutput,
     build_round74_event_model,
 )
@@ -161,6 +165,138 @@ def _scaler() -> Round74EventFeatureScaler:
         fit_sample_rows=10,
         fit_sample_index_sha256="5" * 64,
     )
+
+
+def test_segmented_training_requires_fixed_architecture_and_no_run_cycling() -> None:
+    with pytest.raises(ValueError, match="configuration differs"):
+        Round74EventTrainingConfig(execution_mode="segmented_cohort").validate()
+    config = Round74EventTrainingConfig(
+        candidate_ids=(ROUND74_EVENT_MODEL_CANDIDATES[0],),
+        architecture_selection_mode="fixed",
+        execution_mode="segmented_cohort",
+    )
+    config.validate()
+
+    short = _batch("training", start_wall_ns=WALL_NS, identity=1, rows=2)
+    long = _batch(
+        "training",
+        start_wall_ns=WALL_NS + 10_000_000_000,
+        identity=2,
+        rows=5,
+    )
+    totals = _empty_metric_sums()
+    per_run = (_empty_metric_sums(), _empty_metric_sums())
+    schedule = _eligible_target_minibatch_schedule(
+        (short, long),
+        2,
+        totals=totals,
+        per_run_totals=per_run,
+    )
+
+    assert sum(row[0] == 0 for row in schedule) == 1
+    assert sum(row[0] == 1 for row in schedule) == 3
+
+
+def test_segmented_gradient_is_exactly_eligible_target_weighted() -> None:
+    def components(value: float) -> dict[str, torch.Tensor]:
+        return {
+            name: torch.tensor(value, dtype=torch.float32)
+            for name in (
+                "payoff_pinball",
+                "maximum_adverse_excursion_pinball",
+                "positive_bce",
+                "adverse_bce",
+                "unpredictability_bce",
+            )
+        }
+
+    grouped = (
+        (torch.tensor(0.0), components(1.0), 2, 1),
+        (torch.tensor(0.0), components(3.0), 6, 3),
+    )
+    objective = _eligible_target_weighted_group_loss(
+        grouped,
+        total_action_weight=8,
+        total_regime_weight=4,
+    )
+
+    action_coefficient = 1.0 + 0.35 + 0.25 + 0.20
+    regime_coefficient = 0.10
+    expected = (
+        action_coefficient * (1.0 * 2 / 8 + 3.0 * 6 / 8)
+        + regime_coefficient * (1.0 * 1 / 4 + 3.0 * 3 / 4)
+    )
+    assert float(objective) == pytest.approx(expected)
+
+
+def test_segmented_training_seals_and_reloads_pooled_target_policy(
+    tmp_path: Path,
+) -> None:
+    from simple_ai_trading.round74_segmented_model_operator import (
+        round74_segmented_window_policy,
+    )
+
+    scaler = _scaler()
+    training = tuple(
+        replace(batch, scaler_sha256=scaler.scaler_sha256)
+        for batch in (
+            _batch("training", start_wall_ns=WALL_NS, identity=1, rows=2),
+            _batch(
+                "training",
+                start_wall_ns=WALL_NS + 10_000_000_000,
+                identity=2,
+                rows=5,
+            ),
+        )
+    )
+    tuning = replace(
+        _batch(
+            "tuning",
+            start_wall_ns=WALL_NS + PURGE_NS + 20_000_000_000,
+            identity=3,
+            rows=3,
+        ),
+        scaler_sha256=scaler.scaler_sha256,
+    )
+    config = Round74EventTrainingConfig(
+        candidate_ids=(ROUND74_EVENT_MODEL_CANDIDATES[0],),
+        seeds=(7411,),
+        maximum_epochs=2,
+        early_stopping_patience=1,
+        minibatch_rows=2,
+        minimum_role_rows=2,
+        execution_mode="segmented_cohort",
+        architecture_selection_mode="fixed",
+    )
+
+    artifact = train_and_seal_round74_pretest_policy(
+        training,
+        (tuning,),
+        output_directory=tmp_path,
+        compute_backend="cpu",
+        config=config,
+        representative_window_policy_sha256=(
+            round74_segmented_window_policy()["policy_sha256"]
+        ),
+        feature_scaler=scaler,
+    )
+    _model, policy = load_round74_pretest_policy(artifact.policy_path)
+
+    assert policy["optimization_population"]["unit"] == "eligible_target"
+    report = next(iter(policy["candidate_panel"].values()))["peer_reports"][0]
+    first = report["history"][0]
+    assert first["selection_loss_name"] == "loss"
+    assert first["optimization_metrics"]["optimizer_steps"] == 1.0
+    assert (
+        first["optimization_metrics"]["minimum_run_minibatch_contributions"]
+        == 1.0
+    )
+    assert (
+        first["optimization_metrics"]["maximum_run_minibatch_contributions"]
+        == 3.0
+    )
+    selected_metrics = policy["selection"]["selected_tuning_metrics"]
+    assert artifact.tuning_loss == pytest.approx(selected_metrics["loss"])
 
 
 def test_round74_cohort_mode_rejects_partial_or_unbound_population(
