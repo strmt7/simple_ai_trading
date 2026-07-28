@@ -67,11 +67,20 @@ from .impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_SIDES,
 )
 from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
+from .round74_segmented_model_operator import (
+    ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS,
+    Round74SegmentedModelSelectionStages,
+    Round74SegmentedTuningSubpartition,
+    build_round74_segmented_model_selection_stages,
+)
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v26"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v25"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v27"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v26"
+ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION = (
+    "round-074-event-selection-protocol-v1"
+)
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION = "round-074-target-loss-scale-v1"
 ROUND74_EVENT_STATE_CONDITIONED_FLOW_SCHEMA_VERSION = (
@@ -81,6 +90,9 @@ ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
 ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS = 12
 ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS = 120
+ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS = 128
+ROUND74_EVENT_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS = 32
+ROUND74_EVENT_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR = 8
 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "maximum_adverse_excursion": 0.35,
     "positive_payoff": 0.25,
@@ -90,6 +102,7 @@ ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _SAFE_FILENAME = re.compile(r"[a-z0-9][a-z0-9._-]{0,159}")
+
 
 def _canonical_json_bytes(value: object) -> bytes:
     return json.dumps(
@@ -329,6 +342,231 @@ class Round74EventTrainingConfig:
             "checkpoint_policy": "best_state_in_memory_only",
             "loss_weights": dict(ROUND74_EVENT_TRAINING_LOSS_WEIGHTS),
         }
+
+
+def _batch_run_id(batch: Round74EventTrainingBatch) -> str:
+    run_ids = set(batch.run_id)
+    if len(run_ids) != 1:
+        raise ValueError("Round 74 selection batch spans capture runs")
+    return next(iter(run_ids))
+
+
+@dataclass(frozen=True)
+class Round74EventSelectionProtocol:
+    """Training-only early stopping plus disjoint chronological promotions."""
+
+    optimization_batches: tuple[Round74EventTrainingBatch, ...]
+    purged_training_batches: tuple[Round74EventTrainingBatch, ...]
+    early_stopping_batches: tuple[Round74EventTrainingBatch, ...]
+    promotion_stage_batches: tuple[
+        tuple[Round74EventTrainingBatch, ...],
+        ...,
+    ]
+    stage_partition: Round74SegmentedModelSelectionStages
+    schema_version: str = ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        self.stage_partition.validate()
+        training_groups = (
+            self.optimization_batches,
+            self.purged_training_batches,
+            self.early_stopping_batches,
+        )
+        all_training = tuple(batch for group in training_groups for batch in group)
+        all_promotions = tuple(
+            batch for group in self.promotion_stage_batches for batch in group
+        )
+        all_batches = (*all_training, *all_promotions)
+        if (
+            self.schema_version != ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION
+            or len(self.optimization_batches)
+            < ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
+            or len(self.early_stopping_batches)
+            < ROUND74_EVENT_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS
+            or len(self.promotion_stage_batches)
+            != len(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
+            or any(not group for group in self.promotion_stage_batches)
+        ):
+            raise ValueError("Round 74 model-selection protocol differs")
+        for batch in all_batches:
+            batch.validate()
+        training_run_ids = tuple(_batch_run_id(batch) for batch in all_training)
+        promotion_run_ids = tuple(_batch_run_id(batch) for batch in all_promotions)
+        if (
+            any(batch.role != "training" for batch in all_training)
+            or any(batch.role != "tuning" for batch in all_promotions)
+            or len(set(training_run_ids)) != len(training_run_ids)
+            or len(set(promotion_run_ids)) != len(promotion_run_ids)
+            or set(training_run_ids) & set(promotion_run_ids)
+            or tuple(
+                tuple(_batch_run_id(batch) for batch in group)
+                for group in self.promotion_stage_batches
+            )
+            != self.stage_partition.stage_run_ids
+            or len({batch.partition_sha256 for batch in all_batches}) != 1
+            or len({batch.scaler_sha256 for batch in all_batches}) != 1
+            or len({batch.window_representation for batch in all_batches}) != 1
+            or self.stage_partition.parent_partition_sha256
+            != all_batches[0].partition_sha256
+            or any(
+                int(current.decision_wall_ns[0]) <= int(prior.decision_wall_ns[-1])
+                for prior, current in zip(
+                    all_training,
+                    all_training[1:],
+                    strict=False,
+                )
+            )
+        ):
+            raise ValueError("Round 74 model-selection role identity differs")
+        chronological_gap_ns = int(
+            self.early_stopping_batches[0].decision_wall_ns[0]
+        ) - int(self.optimization_batches[-1].decision_wall_ns[-1])
+        if chronological_gap_ns < ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS:
+            raise ValueError("Round 74 training early-stop purge is too short")
+
+    @property
+    def protocol_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        chronological_gap_ns = int(
+            self.early_stopping_batches[0].decision_wall_ns[0]
+        ) - int(self.optimization_batches[-1].decision_wall_ns[-1])
+        payload: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "stage_partition_sha256": (self.stage_partition.stage_partition_sha256),
+            "stage_order": list(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS),
+            "training_role_assignment_basis": (
+                "chronological admitted-run order after transport adjudication"
+            ),
+            "early_stopping_fraction_denominator": (
+                ROUND74_EVENT_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR
+            ),
+            "minimum_optimization_run_count": (
+                ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
+            ),
+            "minimum_early_stopping_run_count": (
+                ROUND74_EVENT_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS
+            ),
+            "optimization_run_ids": [
+                _batch_run_id(batch) for batch in self.optimization_batches
+            ],
+            "purged_training_run_ids": [
+                _batch_run_id(batch) for batch in self.purged_training_batches
+            ],
+            "early_stopping_run_ids": [
+                _batch_run_id(batch) for batch in self.early_stopping_batches
+            ],
+            "optimization_batch_sha256": [
+                batch.batch_sha256 for batch in self.optimization_batches
+            ],
+            "purged_training_batch_sha256": [
+                batch.batch_sha256 for batch in self.purged_training_batches
+            ],
+            "early_stopping_batch_sha256": [
+                batch.batch_sha256 for batch in self.early_stopping_batches
+            ],
+            "promotion_stage_batch_sha256": {
+                stage_id: [batch.batch_sha256 for batch in batches]
+                for stage_id, batches in zip(
+                    ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS,
+                    self.promotion_stage_batches,
+                    strict=True,
+                )
+            },
+            "chronological_gap_ns": chronological_gap_ns,
+            "minimum_chronological_gap_ns": (ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS),
+            "target_loss_scale_fit_scope": "optimization_training_runs_only",
+            "early_stopping_targets_used_for_gradient_updates": False,
+            "promotion_targets_used_for_checkpoint_selection": False,
+            "cross_stage_promotion_run_reuse_permitted": False,
+            "calibration_or_policy_selection_run_included": False,
+            "sealed_test_run_included": False,
+        }
+        if include_sha256:
+            payload["protocol_sha256"] = _canonical_sha256(payload)
+        return payload
+
+
+def _build_segmented_selection_protocol(
+    training_batches: Sequence[Round74EventTrainingBatch],
+    tuning_roles: object,
+) -> Round74EventSelectionProtocol:
+    from .round74_event_model_operator import Round74PreparedTuningRoles
+
+    if not isinstance(tuning_roles, Round74PreparedTuningRoles):
+        raise TypeError("Round 74 prepared tuning roles are required")
+    tuning_roles.validate()
+    if not isinstance(
+        tuning_roles.subpartition,
+        Round74SegmentedTuningSubpartition,
+    ):
+        raise TypeError("Round 74 segmented tuning subpartition is required")
+    selected_training = tuple(training_batches)
+    for batch in selected_training:
+        batch.validate()
+    admitted_count = len(selected_training)
+    early_stopping_count = max(
+        ROUND74_EVENT_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS,
+        (
+            admitted_count
+            + ROUND74_EVENT_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR
+            - 1
+        )
+        // ROUND74_EVENT_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR,
+    )
+    if (
+        admitted_count
+        < ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS + early_stopping_count
+    ):
+        raise ValueError(
+            "Round 74 segmented training role is too small for isolated early stopping"
+        )
+    early_stopping_batches = selected_training[-early_stopping_count:]
+    optimization_end = admitted_count - early_stopping_count
+    while (
+        optimization_end > ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
+        and int(early_stopping_batches[0].decision_wall_ns[0])
+        - int(selected_training[optimization_end - 1].decision_wall_ns[-1])
+        < ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
+    ):
+        optimization_end -= 1
+    optimization_batches = selected_training[:optimization_end]
+    purged_training_batches = selected_training[
+        optimization_end : admitted_count - early_stopping_count
+    ]
+    stage_partition = build_round74_segmented_model_selection_stages(
+        tuning_roles.subpartition
+    )
+    model_selection_by_run_id = {
+        _batch_run_id(batch): batch for batch in tuning_roles.model_selection_batches
+    }
+    promotion_stage_batches = tuple(
+        stage_partition.batches_for_stage(
+            stage_id,
+            model_selection_by_run_id,
+        )
+        for stage_id in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+    )
+    selected = Round74EventSelectionProtocol(
+        optimization_batches=optimization_batches,
+        purged_training_batches=purged_training_batches,
+        early_stopping_batches=early_stopping_batches,
+        promotion_stage_batches=promotion_stage_batches,
+        stage_partition=stage_partition,
+    )
+    selected.validate()
+    if (
+        *selected.optimization_batches,
+        *selected.purged_training_batches,
+        *selected.early_stopping_batches,
+    ) != selected_training or tuple(
+        batch for group in selected.promotion_stage_batches for batch in group
+    ) != tuning_roles.model_selection_batches:
+        raise RuntimeError("Round 74 model-selection coverage differs")
+    return selected
 
 
 def _readonly_array(value: np.ndarray) -> np.ndarray:
@@ -648,10 +886,7 @@ def _round74_feature_view_pre_hook(
     if len(args) != 1 or not isinstance(args[0], torch.Tensor):
         raise ValueError("Round 74 feature-view model input differs")
     values = args[0]
-    if (
-        values.ndim != 3
-        or int(values.shape[2]) != len(ROUND74_EVENT_FEATURE_NAMES)
-    ):
+    if values.ndim != 3 or int(values.shape[2]) != len(ROUND74_EVENT_FEATURE_NAMES):
         raise ValueError("Round 74 feature-view tensor dimensions differ")
     feature_view = getattr(module, "feature_view", None)
     if feature_view not in ROUND74_EVENT_FEATURE_VIEWS:
@@ -1688,7 +1923,7 @@ def _train_peer(
     initialization_id: str,
     seed: int,
     training_batches: Sequence[Round74EventTrainingBatch],
-    tuning_batches: Sequence[Round74EventTrainingBatch],
+    early_stopping_batches: Sequence[Round74EventTrainingBatch],
     *,
     config: Round74EventTrainingConfig,
     device: object,
@@ -1898,9 +2133,9 @@ def _train_peer(
         )
         if not all(math.isfinite(value) for value in optimization_metrics.values()):
             raise RuntimeError("Round 74 run-balanced optimization is nonfinite")
-        tuning_metrics, _tuning_run_losses = _evaluate_model(
+        early_stopping_metrics, _early_stopping_run_losses = _evaluate_model(
             model,
-            tuning_batches,
+            early_stopping_batches,
             minibatch_rows=config.minibatch_rows,
             device_run_group_size=config.device_run_group_size,
             device=device,
@@ -1911,13 +2146,13 @@ def _train_peer(
             if config.execution_mode == "segmented_cohort"
             else "run_balanced_loss"
         )
-        tuning_loss = tuning_metrics[selection_loss_name]
+        early_stopping_loss = early_stopping_metrics[selection_loss_name]
         improved = (
             best_state is None
-            or tuning_loss < best_loss - config.minimum_tuning_improvement
+            or early_stopping_loss < best_loss - config.minimum_tuning_improvement
         )
         if improved:
-            best_loss = tuning_loss
+            best_loss = early_stopping_loss
             best_epoch = epoch
             best_state = _cpu_state(model)
             epochs_without_improvement = 0
@@ -1927,7 +2162,7 @@ def _train_peer(
             {
                 "epoch": epoch,
                 "optimization_metrics": optimization_metrics,
-                "tuning_metrics": tuning_metrics,
+                "early_stopping_metrics": early_stopping_metrics,
                 "selection_loss_name": selection_loss_name,
                 "improved": improved,
             }
@@ -1939,7 +2174,7 @@ def _train_peer(
     model.load_state_dict(best_state, strict=True)
     restored_metrics, _restored_run_losses = _evaluate_model(
         model,
-        tuning_batches,
+        early_stopping_batches,
         minibatch_rows=config.minibatch_rows,
         device_run_group_size=config.device_run_group_size,
         device=device,
@@ -1959,7 +2194,7 @@ def _train_peer(
         "causal_pretraining": pretraining_report,
         "best_epoch": best_epoch,
         "epochs_completed": len(history),
-        "best_tuning_metrics": restored_metrics,
+        "best_early_stopping_metrics": restored_metrics,
         "history": history,
     }
 
@@ -2018,7 +2253,8 @@ def _fit_candidate(
     candidate_id: str,
     feature_view: str,
     training_batches: Sequence[Round74EventTrainingBatch],
-    tuning_batches: Sequence[Round74EventTrainingBatch],
+    early_stopping_batches: Sequence[Round74EventTrainingBatch],
+    promotion_batches: Sequence[Round74EventTrainingBatch],
     *,
     config: Round74EventTrainingConfig,
     device: object,
@@ -2044,7 +2280,7 @@ def _fit_candidate(
             initialization_id,
             seed,
             training_batches,
-            tuning_batches,
+            early_stopping_batches,
             config=config,
             device=device,
             target_loss_scale=target_loss_scale,
@@ -2061,7 +2297,7 @@ def _fit_candidate(
     )
     ensemble_metrics, ensemble_run_losses = _evaluate_model(
         ensemble,
-        tuning_batches,
+        promotion_batches,
         minibatch_rows=config.minibatch_rows,
         device_run_group_size=config.device_run_group_size,
         device=device,
@@ -2069,7 +2305,7 @@ def _fit_candidate(
     )
     ensemble_group_losses = _evaluate_model_group_losses(
         ensemble,
-        tuning_batches,
+        promotion_batches,
         minibatch_rows=config.minibatch_rows,
         device=device,
         require_complete_symbol_panel=config.execution_mode != "preflight",
@@ -2077,7 +2313,7 @@ def _fit_candidate(
     )
     prediction_sha256 = _prediction_sha256(
         ensemble,
-        tuning_batches[0],
+        early_stopping_batches[0],
         maximum_rows=config.minibatch_rows,
         device=device,
     )
@@ -2140,8 +2376,7 @@ def _paired_promotion_report(
             - float(challenger_group_losses[key])
             for key in sorted(incumbent_group_losses)
         }
-        if incumbent_group_losses is not None
-        and challenger_group_losses is not None
+        if incumbent_group_losses is not None and challenger_group_losses is not None
         else {}
     )
     worst_subgroup_key = (
@@ -2184,13 +2419,9 @@ def _paired_promotion_report(
         "subgroup_gate_applied": incumbent_group_losses is not None,
         "paired_run_symbol_horizon_group_count": len(subgroup_improvements),
         "worst_run_symbol_horizon_group": worst_subgroup_key,
-        "maximum_paired_group_loss_degradation": (
-            maximum_subgroup_loss_degradation
-        ),
+        "maximum_paired_group_loss_degradation": (maximum_subgroup_loss_degradation),
         "maximum_permitted_paired_group_loss_degradation": minimum_improvement,
-        "all_paired_run_symbol_horizon_groups_noninferior": (
-            all_subgroups_noninferior
-        ),
+        "all_paired_run_symbol_horizon_groups_noninferior": (all_subgroups_noninferior),
         "promoted": promoted,
     }
 
@@ -2405,14 +2636,20 @@ def _order_flow_challenger_feature_view(clock_winner_view: str) -> str:
     raise ValueError("Round 74 clock-control winner feature view differs")
 
 
-def _feature_view_selection_criterion(required_paired_run_count: int) -> str:
-    if required_paired_run_count < 1:
+def _feature_view_selection_criterion(
+    clock_required_paired_run_count: int,
+    order_flow_required_paired_run_count: int,
+) -> str:
+    if clock_required_paired_run_count < 1 or order_flow_required_paired_run_count < 1:
         raise ValueError("Round 74 feature-view paired-run count differs")
     return (
         "a fixed state-first sequence evaluates market state anchored "
         "by L2 liquidity, then controls for clock and intraday-phase "
-        f"features before admitting order flow; each challenger uses all "
-        f"{required_paired_run_count} paired model-selection capture runs "
+        "features before admitting order flow; the clock and order-flow "
+        f"challengers use their disjoint panels of "
+        f"{clock_required_paired_run_count} and "
+        f"{order_flow_required_paired_run_count} paired model-selection "
+        "capture runs, respectively, "
         "and requires strict mean proper-loss improvement with no run or "
         "run-symbol-horizon subgroup degradation beyond the numerical floor"
     )
@@ -2519,8 +2756,7 @@ def _validated_candidate_fit_report(
         or panel_key not in {expected_candidate_id, expected_feature_view}
         or report.get("candidate_id") != expected_candidate_id
         or report.get("feature_view") != expected_feature_view
-        or report.get("state_conditioned_flow")
-        is not expected_state_conditioned_flow
+        or report.get("state_conditioned_flow") is not expected_state_conditioned_flow
         or isinstance(parameter_count, bool)
         or not isinstance(parameter_count, int)
         or parameter_count <= 0
@@ -2531,8 +2767,7 @@ def _validated_candidate_fit_report(
         != list(seeds)
         or any(
             not isinstance(peer, Mapping)
-            or peer.get("state_conditioned_flow")
-            is not expected_state_conditioned_flow
+            or peer.get("state_conditioned_flow") is not expected_state_conditioned_flow
             for peer in peers
         )
         or not isinstance(metrics, Mapping)
@@ -2586,10 +2821,7 @@ def _validated_candidate_fit_report(
             rel_tol=1e-12,
             abs_tol=1e-12,
         )
-        or _SHA256.fullmatch(
-            str(report.get("ensemble_prediction_sha256", ""))
-        )
-        is None
+        or _SHA256.fullmatch(str(report.get("ensemble_prediction_sha256", ""))) is None
     ):
         raise ValueError("Round 74 pretest candidate report differs")
     assert isinstance(metrics, Mapping)
@@ -2646,6 +2878,7 @@ def _runtime_source_binding() -> dict[str, str]:
         "pretraining": "impact_absorption_event_pretraining.py",
         "training": "impact_absorption_event_training.py",
         "model_operator": "round74_event_model_operator.py",
+        "segmented_model_operator": "round74_segmented_model_operator.py",
         "storage": "storage.py",
     }
     return {
@@ -2666,6 +2899,7 @@ def train_and_seal_round74_pretest_policy(
     representative_window_policy_sha256: str | None = None,
     matched_preparation_sha256: str | None = None,
     feature_scaler: Round74EventFeatureScaler | None = None,
+    selection_protocol: Round74EventSelectionProtocol | None = None,
 ) -> Round74PretestPolicyArtifact:
     """Train the declared panel and publish one reload-verified pretest policy."""
 
@@ -2708,6 +2942,61 @@ def train_and_seal_round74_pretest_policy(
         tuning_batches,
         minimum_rows=selected_config.minimum_role_rows,
     )
+    if selection_protocol is None:
+        optimization_training_batches = tuple(training_batches)
+        early_stopping_batches = tuple(tuning_batches)
+        promotion_stage_batches = {
+            stage_id: tuple(tuning_batches)
+            for stage_id in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+        }
+        selection_protocol_payload: dict[str, object] = {
+            "schema_version": ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION,
+            "mode": "legacy_shared_tuning_panel",
+            "protocol_sha256": None,
+            "stage_partition": None,
+            "training_only_early_stopping": False,
+            "disjoint_promotion_stages": False,
+            "eligible_for_segmented_cohort_policy": False,
+        }
+    else:
+        selection_protocol.validate()
+        if (
+            selected_config.execution_mode != "segmented_cohort"
+            or tuple(
+                (
+                    *selection_protocol.optimization_batches,
+                    *selection_protocol.purged_training_batches,
+                    *selection_protocol.early_stopping_batches,
+                )
+            )
+            != tuple(training_batches)
+            or tuple(
+                batch
+                for group in selection_protocol.promotion_stage_batches
+                for batch in group
+            )
+            != tuple(tuning_batches)
+        ):
+            raise ValueError("Round 74 model-selection protocol binding differs")
+        optimization_training_batches = selection_protocol.optimization_batches
+        early_stopping_batches = selection_protocol.early_stopping_batches
+        promotion_stage_batches = dict(
+            zip(
+                ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS,
+                selection_protocol.promotion_stage_batches,
+                strict=True,
+            )
+        )
+        selection_protocol_payload = {
+            "schema_version": ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION,
+            "mode": "isolated_chronological_panels",
+            "protocol_sha256": selection_protocol.protocol_sha256,
+            "protocol": selection_protocol.as_dict(),
+            "stage_partition": selection_protocol.stage_partition.as_dict(),
+            "training_only_early_stopping": True,
+            "disjoint_promotion_stages": True,
+            "eligible_for_segmented_cohort_policy": True,
+        }
     if feature_scaler is None:
         if selected_config.execution_mode != "preflight":
             raise ValueError(
@@ -2749,11 +3038,11 @@ def train_and_seal_round74_pretest_policy(
             "reload_verified": True,
         }
     target_loss_scale = fit_round74_event_target_loss_scale(
-        training_batches,
+        optimization_training_batches,
         require_complete_panel=selected_config.execution_mode != "preflight",
     )
     if target_loss_scale.training_batch_sha256 != tuple(
-        sorted(development.training_batch_sha256)
+        sorted(batch.batch_sha256 for batch in optimization_training_batches)
     ):
         raise RuntimeError("Round 74 target-loss scale data binding differs")
     backend = require_backend(resolve_backend(compute_backend))
@@ -2773,8 +3062,9 @@ def train_and_seal_round74_pretest_policy(
                     _fit_candidate(
                         candidate_id,
                         "market_state_clock_neutral",
-                        training_batches,
-                        tuning_batches,
+                        optimization_training_batches,
+                        early_stopping_batches,
+                        promotion_stage_batches["architecture"],
                         config=selected_config,
                         device=device,
                         target_loss_scale=target_loss_scale,
@@ -2788,7 +3078,7 @@ def train_and_seal_round74_pretest_policy(
         torch.set_rng_state(prior_torch_random)
     if selected_config.architecture_selection_mode == "complexity_gate":
         promotion_required_runs = (
-            len(tuning_batches)
+            len(promotion_stage_batches["architecture"])
             if selected_config.execution_mode == "segmented_cohort"
             else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
         )
@@ -2823,11 +3113,22 @@ def train_and_seal_round74_pretest_policy(
         torch.use_deterministic_algorithms(True)
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
+            clock_incumbent_fit = _fit_candidate(
+                architecture_winner.candidate_id,
+                "market_state_clock_neutral",
+                optimization_training_batches,
+                early_stopping_batches,
+                promotion_stage_batches["clock_features"],
+                config=selected_config,
+                device=device,
+                target_loss_scale=target_loss_scale,
+            )
             clock_feature_fit = _fit_candidate(
                 architecture_winner.candidate_id,
                 "market_state_with_clock",
-                training_batches,
-                tuning_batches,
+                optimization_training_batches,
+                early_stopping_batches,
+                promotion_stage_batches["clock_features"],
                 config=selected_config,
                 device=device,
                 target_loss_scale=target_loss_scale,
@@ -2839,32 +3140,44 @@ def train_and_seal_round74_pretest_policy(
         np.random.set_state(prior_numpy_random)
         torch.set_rng_state(prior_torch_random)
     feature_view_required_runs = (
-        len(tuning_batches)
+        len(promotion_stage_batches["clock_features"])
         if selected_config.execution_mode == "segmented_cohort"
         else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
     )
-    clock_winner, clock_promotion_report = (
-        _select_feature_view_with_ablation_gate(
-            architecture_winner,
-            clock_feature_fit,
-            minimum_mean_loss_improvement=(
-                selected_config.minimum_tuning_improvement
-            ),
-            required_paired_run_count=feature_view_required_runs,
-        )
+    clock_winner, clock_promotion_report = _select_feature_view_with_ablation_gate(
+        clock_incumbent_fit,
+        clock_feature_fit,
+        minimum_mean_loss_improvement=(selected_config.minimum_tuning_improvement),
+        required_paired_run_count=feature_view_required_runs,
     )
     order_flow_challenger_view = _order_flow_challenger_feature_view(
         clock_winner.feature_view
+    )
+    order_flow_required_runs = (
+        len(promotion_stage_batches["order_flow_features"])
+        if selected_config.execution_mode == "segmented_cohort"
+        else feature_view_required_runs
     )
     try:
         torch.use_deterministic_algorithms(True)
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
+            order_flow_incumbent_fit = _fit_candidate(
+                architecture_winner.candidate_id,
+                clock_winner.feature_view,
+                optimization_training_batches,
+                early_stopping_batches,
+                promotion_stage_batches["order_flow_features"],
+                config=selected_config,
+                device=device,
+                target_loss_scale=target_loss_scale,
+            )
             order_flow_fit = _fit_candidate(
                 architecture_winner.candidate_id,
                 order_flow_challenger_view,
-                training_batches,
-                tuning_batches,
+                optimization_training_batches,
+                early_stopping_batches,
+                promotion_stage_batches["order_flow_features"],
                 config=selected_config,
                 device=device,
                 target_loss_scale=target_loss_scale,
@@ -2877,32 +3190,45 @@ def train_and_seal_round74_pretest_policy(
         torch.set_rng_state(prior_torch_random)
     feature_winner, order_flow_promotion_report = (
         _select_feature_view_with_ablation_gate(
-            clock_winner,
+            order_flow_incumbent_fit,
             order_flow_fit,
-            minimum_mean_loss_improvement=(
-                selected_config.minimum_tuning_improvement
-            ),
-            required_paired_run_count=feature_view_required_runs,
+            minimum_mean_loss_improvement=(selected_config.minimum_tuning_improvement),
+            required_paired_run_count=order_flow_required_runs,
         )
     )
-    feature_view_fits = (
-        architecture_winner,
-        clock_feature_fit,
-        order_flow_fit,
-    )
+    feature_view_fits = {
+        "clock_features": (clock_incumbent_fit, clock_feature_fit),
+        "order_flow_features": (order_flow_incumbent_fit, order_flow_fit),
+    }
     interaction_evaluated = _feature_view_contains_order_flow(
         feature_winner.feature_view
+    )
+    interaction_required_runs = (
+        len(promotion_stage_batches["state_conditioned_flow"])
+        if selected_config.execution_mode == "segmented_cohort"
+        else feature_view_required_runs
     )
     if interaction_evaluated:
         try:
             torch.use_deterministic_algorithms(True)
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
+                state_conditioned_flow_incumbent_fit = _fit_candidate(
+                    feature_winner.candidate_id,
+                    feature_winner.feature_view,
+                    optimization_training_batches,
+                    early_stopping_batches,
+                    promotion_stage_batches["state_conditioned_flow"],
+                    config=selected_config,
+                    device=device,
+                    target_loss_scale=target_loss_scale,
+                )
                 state_conditioned_flow_fit = _fit_candidate(
                     feature_winner.candidate_id,
                     feature_winner.feature_view,
-                    training_batches,
-                    tuning_batches,
+                    optimization_training_batches,
+                    early_stopping_batches,
+                    promotion_stage_batches["state_conditioned_flow"],
                     config=selected_config,
                     device=device,
                     target_loss_scale=target_loss_scale,
@@ -2916,16 +3242,18 @@ def train_and_seal_round74_pretest_policy(
             torch.set_rng_state(prior_torch_random)
         random_initialization_fit, interaction_promotion_report = (
             _select_state_conditioned_flow_with_ablation_gate(
-                feature_winner,
+                state_conditioned_flow_incumbent_fit,
                 state_conditioned_flow_fit,
                 minimum_mean_loss_improvement=(
                     selected_config.minimum_tuning_improvement
                 ),
-                required_paired_run_count=feature_view_required_runs,
+                required_paired_run_count=interaction_required_runs,
             )
         )
         interaction_panel = {
-            "unconditioned_order_flow": _candidate_fit_report(feature_winner),
+            "unconditioned_order_flow": _candidate_fit_report(
+                state_conditioned_flow_incumbent_fit
+            ),
             "state_conditioned_order_flow": _candidate_fit_report(
                 state_conditioned_flow_fit
             ),
@@ -2957,11 +3285,25 @@ def train_and_seal_round74_pretest_policy(
             torch.use_deterministic_algorithms(True)
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
+                random_initialization_incumbent_fit = _fit_candidate(
+                    random_initialization_fit.candidate_id,
+                    random_initialization_fit.feature_view,
+                    optimization_training_batches,
+                    early_stopping_batches,
+                    promotion_stage_batches["causal_pretraining"],
+                    config=selected_config,
+                    device=device,
+                    target_loss_scale=target_loss_scale,
+                    state_conditioned_flow=(
+                        random_initialization_fit.state_conditioned_flow
+                    ),
+                )
                 pretrained_initialization_fit = _fit_candidate(
                     random_initialization_fit.candidate_id,
                     random_initialization_fit.feature_view,
-                    training_batches,
-                    tuning_batches,
+                    optimization_training_batches,
+                    early_stopping_batches,
+                    promotion_stage_batches["causal_pretraining"],
                     config=selected_config,
                     device=device,
                     target_loss_scale=target_loss_scale,
@@ -2976,15 +3318,21 @@ def train_and_seal_round74_pretest_policy(
             random.setstate(prior_python_random)
             np.random.set_state(prior_numpy_random)
             torch.set_rng_state(prior_torch_random)
-        initialization_required_runs = feature_view_required_runs
+        initialization_required_runs = (
+            len(promotion_stage_batches["causal_pretraining"])
+            if selected_config.execution_mode == "segmented_cohort"
+            else feature_view_required_runs
+        )
         initialization_promotion_report = _paired_promotion_report(
             "random",
             "causal_next_event_pretrained",
-            random_initialization_fit.ensemble_run_losses,
+            random_initialization_incumbent_fit.ensemble_run_losses,
             pretrained_initialization_fit.ensemble_run_losses,
             minimum_improvement=selected_config.minimum_tuning_improvement,
             required_paired_run_count=initialization_required_runs,
-            incumbent_group_losses=random_initialization_fit.ensemble_group_losses,
+            incumbent_group_losses=(
+                random_initialization_incumbent_fit.ensemble_group_losses
+            ),
             challenger_group_losses=(
                 pretrained_initialization_fit.ensemble_group_losses
             ),
@@ -2992,14 +3340,19 @@ def train_and_seal_round74_pretest_policy(
         winner = (
             pretrained_initialization_fit
             if initialization_promotion_report["promoted"] is True
-            else random_initialization_fit
+            else random_initialization_incumbent_fit
         )
         initialization_panel = {
-            "random": _candidate_fit_report(random_initialization_fit),
+            "random": _candidate_fit_report(random_initialization_incumbent_fit),
             "causal_next_event_pretrained": _candidate_fit_report(
                 pretrained_initialization_fit
             ),
         }
+        selected_initialization_id = (
+            "causal_next_event_pretrained"
+            if winner is pretrained_initialization_fit
+            else "random"
+        )
         initialization_reason = "paired_proper_loss_gate_completed"
     else:
         winner = random_initialization_fit
@@ -3008,6 +3361,7 @@ def train_and_seal_round74_pretest_policy(
         initialization_panel = {
             "random": _candidate_fit_report(random_initialization_fit),
         }
+        selected_initialization_id = "random"
         initialization_reason = (
             "preflight_never_evaluates_pretraining"
             if selected_config.execution_mode == "preflight"
@@ -3044,7 +3398,7 @@ def train_and_seal_round74_pretest_policy(
         raise RuntimeError("Round 74 safetensors state reload differs")
     reload_prediction_sha256 = _prediction_sha256(
         loaded,
-        tuning_batches[0],
+        early_stopping_batches[0],
         maximum_rows=selected_config.minibatch_rows,
         device=device,
     )
@@ -3092,9 +3446,10 @@ def train_and_seal_round74_pretest_policy(
         "target_loss_scale": target_loss_scale.as_dict(),
         "optimization_population": _optimization_population_policy(
             selected_config.execution_mode,
-            len(training_batches),
+            len(optimization_training_batches),
             len(tuning_batches),
         ),
+        "selection_protocol": selection_protocol_payload,
         "ensemble_aggregation": {
             "peer_weights": "equal",
             "payoff_and_adverse_excursion_quantiles": (
@@ -3122,12 +3477,14 @@ def train_and_seal_round74_pretest_policy(
             "warning_count": len(warning_messages),
         },
         "candidate_panel": {
-            fit.candidate_id: _candidate_fit_report(fit)
-            for fit in candidate_fits
+            fit.candidate_id: _candidate_fit_report(fit) for fit in candidate_fits
         },
         "feature_view_panel": {
-            fit.feature_view: _candidate_fit_report(fit)
-            for fit in feature_view_fits
+            stage_id: {
+                "incumbent": _candidate_fit_report(fits[0]),
+                "challenger": _candidate_fit_report(fits[1]),
+            }
+            for stage_id, fits in feature_view_fits.items()
         },
         "selection": {
             "architecture_selection_mode": (
@@ -3149,7 +3506,8 @@ def train_and_seal_round74_pretest_policy(
         "feature_view_selection": {
             "schema_version": ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION,
             "criterion": _feature_view_selection_criterion(
-                feature_view_required_runs
+                feature_view_required_runs,
+                order_flow_required_runs,
             ),
             "market_state_feature_names": list(
                 ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES
@@ -3157,24 +3515,25 @@ def train_and_seal_round74_pretest_policy(
             "market_state_feature_names_sha256": (
                 ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES_SHA256
             ),
-            "order_flow_feature_names": list(
-                ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES
-            ),
+            "order_flow_feature_names": list(ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES),
             "order_flow_feature_names_sha256": (
                 ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES_SHA256
             ),
             "clock_feature_names": list(ROUND74_EVENT_CLOCK_FEATURE_NAMES),
-            "clock_feature_names_sha256": (
-                ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256
-            ),
+            "clock_feature_names_sha256": (ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256),
             "supported_feature_views": list(ROUND74_EVENT_FEATURE_VIEWS),
-            "evaluated_feature_views": [
-                fit.feature_view for fit in feature_view_fits
-            ],
+            "evaluated_feature_views": list(
+                dict.fromkeys(
+                    fit.feature_view
+                    for fits in feature_view_fits.values()
+                    for fit in fits
+                )
+            ),
             "selected_feature_view": feature_winner.feature_view,
             "selected_candidate_id": feature_winner.candidate_id,
             "selected_tuning_metrics": feature_winner.ensemble_metrics,
-            "required_paired_capture_run_count": feature_view_required_runs,
+            "clock_required_paired_capture_run_count": (feature_view_required_runs),
+            "order_flow_required_paired_capture_run_count": (order_flow_required_runs),
             "minimum_mean_proper_loss_improvement": (
                 selected_config.minimum_tuning_improvement
             ),
@@ -3193,9 +3552,7 @@ def train_and_seal_round74_pretest_policy(
         },
         "state_conditioned_flow_panel": interaction_panel,
         "state_conditioned_flow_selection": {
-            "schema_version": (
-                ROUND74_EVENT_STATE_CONDITIONED_FLOW_SCHEMA_VERSION
-            ),
+            "schema_version": (ROUND74_EVENT_STATE_CONDITIONED_FLOW_SCHEMA_VERSION),
             "criterion": (
                 "after the feature view is fixed, neutral-initialized "
                 "market-state modulation of admitted order flow challenges "
@@ -3211,11 +3568,9 @@ def train_and_seal_round74_pretest_policy(
             ),
             "selected_candidate_id": random_initialization_fit.candidate_id,
             "selected_feature_view": random_initialization_fit.feature_view,
-            "selected_tuning_metrics": (
-                random_initialization_fit.ensemble_metrics
-            ),
+            "selected_tuning_metrics": (random_initialization_fit.ensemble_metrics),
             "required_paired_capture_run_count": (
-                feature_view_required_runs if interaction_evaluated else 0
+                interaction_required_runs if interaction_evaluated else 0
             ),
             "minimum_mean_proper_loss_improvement": (
                 selected_config.minimum_tuning_improvement
@@ -3253,11 +3608,7 @@ def train_and_seal_round74_pretest_policy(
             "ordered_initialization_ids": list(
                 ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS
             ),
-            "selected_initialization_id": (
-                "causal_next_event_pretrained"
-                if winner is not random_initialization_fit
-                else "random"
-            ),
+            "selected_initialization_id": selected_initialization_id,
             "selected_candidate_id": winner.candidate_id,
             "selected_feature_view": winner.feature_view,
             "selected_state_conditioned_flow": winner.state_conditioned_flow,
@@ -3388,6 +3739,11 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
         representative_policy_sha256 = str(
             round74_matched_representative_window_policy()["policy_sha256"]
         )
+    selection_protocol = (
+        _build_segmented_selection_protocol(training_batches, tuning_roles)
+        if selected_config.execution_mode == "segmented_cohort"
+        else None
+    )
     return train_and_seal_round74_pretest_policy(
         training_batches,
         tuning_roles.model_selection_batches,
@@ -3397,6 +3753,7 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
         representative_window_policy_sha256=representative_policy_sha256,
         matched_preparation_sha256=matched_preparation_sha256,
         feature_scaler=feature_scaler,
+        selection_protocol=selection_protocol,
     )
 
 
@@ -3437,6 +3794,7 @@ def load_round74_pretest_policy(
         "training_policy",
         "target_loss_scale",
         "optimization_population",
+        "selection_protocol",
         "ensemble_aggregation",
         "backend",
         "candidate_panel",
@@ -3461,15 +3819,14 @@ def load_round74_pretest_policy(
     training_policy = policy.get("training_policy")
     target_loss_scale_payload = policy.get("target_loss_scale")
     optimization_population = policy.get("optimization_population")
+    selection_protocol_payload = policy.get("selection_protocol")
     ensemble_aggregation = policy.get("ensemble_aggregation")
     source_binding = policy.get("source_binding")
     candidate_panel = policy.get("candidate_panel")
     feature_view_panel = policy.get("feature_view_panel")
     feature_view_selection = policy.get("feature_view_selection")
     state_conditioned_flow_panel = policy.get("state_conditioned_flow_panel")
-    state_conditioned_flow_selection = policy.get(
-        "state_conditioned_flow_selection"
-    )
+    state_conditioned_flow_selection = policy.get("state_conditioned_flow_selection")
     initialization_panel = policy.get("initialization_panel")
     initialization_selection = policy.get("initialization_selection")
     backend = policy.get("backend")
@@ -3484,6 +3841,7 @@ def load_round74_pretest_policy(
             training_policy,
             target_loss_scale_payload,
             optimization_population,
+            selection_protocol_payload,
             ensemble_aggregation,
             source_binding,
             candidate_panel,
@@ -3505,6 +3863,7 @@ def load_round74_pretest_policy(
     assert isinstance(training_policy, Mapping)
     assert isinstance(target_loss_scale_payload, Mapping)
     assert isinstance(optimization_population, Mapping)
+    assert isinstance(selection_protocol_payload, Mapping)
     assert isinstance(ensemble_aggregation, Mapping)
     assert isinstance(source_binding, Mapping)
     assert isinstance(candidate_panel, Mapping)
@@ -3516,9 +3875,7 @@ def load_round74_pretest_policy(
     assert isinstance(initialization_selection, Mapping)
     assert isinstance(backend, Mapping)
     candidate_id = str(selection.get("selected_candidate_id", ""))
-    selected_feature_view = str(
-        feature_view_selection.get("selected_feature_view", "")
-    )
+    selected_feature_view = str(feature_view_selection.get("selected_feature_view", ""))
     selected_state_conditioned_flow = state_conditioned_flow_selection.get(
         "selected_state_conditioned_flow"
     )
@@ -3541,10 +3898,7 @@ def load_round74_pretest_policy(
         or any(value not in ROUND74_EVENT_MODEL_CANDIDATES for value in candidate_ids)
         or set(candidate_panel) != set(candidate_ids)
         or candidate_id not in candidate_panel
-        or len(feature_view_panel) != 3
-        or not set(feature_view_panel).issubset(ROUND74_EVENT_FEATURE_VIEWS)
-        or "market_state_clock_neutral" not in feature_view_panel
-        or "market_state_with_clock" not in feature_view_panel
+        or set(feature_view_panel) != {"clock_features", "order_flow_features"}
         or selected_feature_view not in ROUND74_EVENT_FEATURE_VIEWS
         or not isinstance(selected_state_conditioned_flow, bool)
         or feature_view_selection.get("selected_candidate_id") != candidate_id
@@ -3582,9 +3936,7 @@ def load_round74_pretest_policy(
             architecture_selection_mode=str(
                 training_policy["architecture_selection_mode"]
             ),
-            pretraining=Round74EventPretrainingConfig.from_dict(
-                pretraining_policy
-            ),
+            pretraining=Round74EventPretrainingConfig.from_dict(pretraining_policy),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("Round 74 pretest training policy differs") from exc
@@ -3598,20 +3950,248 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest target-loss scale differs") from exc
     training_batch_sha256 = development.get("training_batch_sha256")
     tuning_batch_sha256 = development.get("tuning_batch_sha256")
+    raw_protocol = selection_protocol_payload.get("protocol")
+    raw_optimization_hashes = (
+        raw_protocol.get("optimization_batch_sha256")
+        if isinstance(raw_protocol, Mapping)
+        else None
+    )
+    optimization_run_count = (
+        len(raw_optimization_hashes)
+        if isinstance(raw_optimization_hashes, list)
+        else len(training_batch_sha256)
+        if isinstance(training_batch_sha256, list)
+        else 0
+    )
     if (
         not isinstance(training_batch_sha256, list)
         or not isinstance(tuning_batch_sha256, list)
         or dict(optimization_population)
         != _optimization_population_policy(
             reconstructed_config.execution_mode,
-            len(training_batch_sha256),
+            optimization_run_count,
             len(tuning_batch_sha256),
         )
     ):
         raise ValueError("Round 74 pretest optimization population differs")
-    if target_loss_scale.training_batch_sha256 != tuple(
-        sorted(str(value) for value in training_batch_sha256)
-    ) or (
+    legacy_selection_protocol = {
+        "schema_version": ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION,
+        "mode": "legacy_shared_tuning_panel",
+        "protocol_sha256": None,
+        "stage_partition": None,
+        "training_only_early_stopping": False,
+        "disjoint_promotion_stages": False,
+        "eligible_for_segmented_cohort_policy": False,
+    }
+    if selection_protocol_payload.get("mode") == "isolated_chronological_panels":
+        protocol = selection_protocol_payload.get("protocol")
+        stage_partition_payload = selection_protocol_payload.get("stage_partition")
+        if (
+            set(selection_protocol_payload)
+            != {
+                "schema_version",
+                "mode",
+                "protocol_sha256",
+                "protocol",
+                "stage_partition",
+                "training_only_early_stopping",
+                "disjoint_promotion_stages",
+                "eligible_for_segmented_cohort_policy",
+            }
+            or selection_protocol_payload.get("schema_version")
+            != ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION
+            or not isinstance(protocol, Mapping)
+            or not isinstance(stage_partition_payload, Mapping)
+            or selection_protocol_payload.get("training_only_early_stopping")
+            is not True
+            or selection_protocol_payload.get("disjoint_promotion_stages") is not True
+            or selection_protocol_payload.get("eligible_for_segmented_cohort_policy")
+            is not True
+        ):
+            raise ValueError("Round 74 pretest selection protocol differs")
+        try:
+            stage_partition = Round74SegmentedModelSelectionStages.from_dict(
+                stage_partition_payload
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 74 pretest selection stage partition differs"
+            ) from exc
+        protocol_without_sha = dict(protocol)
+        protocol_sha256 = protocol_without_sha.pop("protocol_sha256", None)
+        promotion_hashes = protocol.get("promotion_stage_batch_sha256")
+        optimization_hashes = protocol.get("optimization_batch_sha256")
+        purged_hashes = protocol.get("purged_training_batch_sha256")
+        early_stopping_hashes = protocol.get("early_stopping_batch_sha256")
+        optimization_run_ids = protocol.get("optimization_run_ids")
+        purged_run_ids = protocol.get("purged_training_run_ids")
+        early_stopping_run_ids = protocol.get("early_stopping_run_ids")
+        expected_protocol_keys = {
+            "schema_version",
+            "stage_partition_sha256",
+            "stage_order",
+            "training_role_assignment_basis",
+            "early_stopping_fraction_denominator",
+            "minimum_optimization_run_count",
+            "minimum_early_stopping_run_count",
+            "optimization_run_ids",
+            "purged_training_run_ids",
+            "early_stopping_run_ids",
+            "optimization_batch_sha256",
+            "purged_training_batch_sha256",
+            "early_stopping_batch_sha256",
+            "promotion_stage_batch_sha256",
+            "chronological_gap_ns",
+            "minimum_chronological_gap_ns",
+            "target_loss_scale_fit_scope",
+            "early_stopping_targets_used_for_gradient_updates",
+            "promotion_targets_used_for_checkpoint_selection",
+            "cross_stage_promotion_run_reuse_permitted",
+            "calibration_or_policy_selection_run_included",
+            "sealed_test_run_included",
+            "protocol_sha256",
+        }
+        if (
+            set(protocol) != expected_protocol_keys
+            or not isinstance(protocol_sha256, str)
+            or _SHA256.fullmatch(protocol_sha256) is None
+            or protocol_sha256 != _canonical_sha256(protocol_without_sha)
+            or selection_protocol_payload.get("protocol_sha256") != protocol_sha256
+            or protocol.get("schema_version")
+            != ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION
+            or protocol.get("stage_partition_sha256")
+            != stage_partition.stage_partition_sha256
+            or not isinstance(optimization_hashes, list)
+            or not isinstance(purged_hashes, list)
+            or not isinstance(early_stopping_hashes, list)
+            or not isinstance(optimization_run_ids, list)
+            or not isinstance(purged_run_ids, list)
+            or not isinstance(early_stopping_run_ids, list)
+            or len(optimization_run_ids) != len(optimization_hashes)
+            or len(purged_run_ids) != len(purged_hashes)
+            or len(early_stopping_run_ids) != len(early_stopping_hashes)
+            or any(
+                not isinstance(run_id, str)
+                or len(run_id) != 32
+                or any(character not in "0123456789abcdef" for character in run_id)
+                for run_id in (
+                    *optimization_run_ids,
+                    *purged_run_ids,
+                    *early_stopping_run_ids,
+                )
+            )
+            or len(
+                {
+                    *optimization_run_ids,
+                    *purged_run_ids,
+                    *early_stopping_run_ids,
+                }
+            )
+            != len(optimization_run_ids)
+            + len(purged_run_ids)
+            + len(early_stopping_run_ids)
+            or set(
+                (
+                    *optimization_run_ids,
+                    *purged_run_ids,
+                    *early_stopping_run_ids,
+                )
+            )
+            & {
+                run_id
+                for run_ids in stage_partition.stage_run_ids
+                for run_id in run_ids
+            }
+            or not isinstance(promotion_hashes, Mapping)
+            or set(promotion_hashes) != set(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
+            or any(
+                not isinstance(promotion_hashes[stage_id], list)
+                or not promotion_hashes[stage_id]
+                or any(
+                    not isinstance(digest, str) or _SHA256.fullmatch(digest) is None
+                    for digest in promotion_hashes[stage_id]
+                )
+                for stage_id in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+            )
+            or any(
+                len(promotion_hashes[stage_id])
+                != len(stage_partition.stage_run_ids[index])
+                for index, stage_id in enumerate(
+                    ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+                )
+            )
+            or len(
+                {
+                    digest
+                    for stage_id in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+                    for digest in promotion_hashes[stage_id]
+                }
+            )
+            != sum(
+                len(promotion_hashes[stage_id])
+                for stage_id in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+            )
+            or [
+                *optimization_hashes,
+                *purged_hashes,
+                *early_stopping_hashes,
+            ]
+            != training_batch_sha256
+            or [
+                digest
+                for stage_id in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+                for digest in promotion_hashes[stage_id]
+            ]
+            != tuning_batch_sha256
+            or protocol.get("stage_order")
+            != list(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
+            or protocol.get("training_role_assignment_basis")
+            != "chronological admitted-run order after transport adjudication"
+            or protocol.get("early_stopping_fraction_denominator")
+            != ROUND74_EVENT_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR
+            or protocol.get("minimum_optimization_run_count")
+            != ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
+            or protocol.get("minimum_early_stopping_run_count")
+            != ROUND74_EVENT_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS
+            or len(optimization_hashes)
+            < ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
+            or len(early_stopping_hashes)
+            < ROUND74_EVENT_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS
+            or isinstance(protocol.get("chronological_gap_ns"), bool)
+            or not isinstance(protocol.get("chronological_gap_ns"), int)
+            or int(protocol["chronological_gap_ns"])
+            < ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
+            or protocol.get("minimum_chronological_gap_ns")
+            != ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
+            or protocol.get("target_loss_scale_fit_scope")
+            != "optimization_training_runs_only"
+            or protocol.get("early_stopping_targets_used_for_gradient_updates")
+            is not False
+            or protocol.get("promotion_targets_used_for_checkpoint_selection")
+            is not False
+            or protocol.get("cross_stage_promotion_run_reuse_permitted") is not False
+            or protocol.get("calibration_or_policy_selection_run_included") is not False
+            or protocol.get("sealed_test_run_included") is not False
+        ):
+            raise ValueError("Round 74 pretest selection protocol differs")
+        target_loss_scale_batch_sha256 = tuple(
+            sorted(str(value) for value in optimization_hashes)
+        )
+        stage_tuning_run_counts = {
+            stage_id: len(promotion_hashes[stage_id])
+            for stage_id in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+        }
+    else:
+        if dict(selection_protocol_payload) != legacy_selection_protocol:
+            raise ValueError("Round 74 pretest legacy selection protocol differs")
+        target_loss_scale_batch_sha256 = tuple(
+            sorted(str(value) for value in training_batch_sha256)
+        )
+        stage_tuning_run_counts = {
+            stage_id: len(tuning_batch_sha256)
+            for stage_id in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+        }
+    if target_loss_scale.training_batch_sha256 != (target_loss_scale_batch_sha256) or (
         reconstructed_config.execution_mode != "preflight"
         and np.any(target_loss_scale.eligible_target_count <= 0)
     ):
@@ -3878,7 +4458,7 @@ def load_round74_pretest_policy(
                 expected_feature_view="market_state_clock_neutral",
                 expected_state_conditioned_flow=False,
                 seeds=seeds,
-                tuning_run_count=len(tuning_batch_hashes),
+                tuning_run_count=stage_tuning_run_counts["architecture"],
                 execution_mode=reconstructed_config.execution_mode,
             )
         )
@@ -3889,7 +4469,7 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest candidate subgroup panel differs")
     if reconstructed_config.architecture_selection_mode == "complexity_gate":
         promotion_required_runs = (
-            len(tuning_batch_hashes)
+            stage_tuning_run_counts["architecture"]
             if reconstructed_config.execution_mode == "segmented_cohort"
             else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
         )
@@ -3925,61 +4505,89 @@ def load_round74_pretest_policy(
         expected_improvement = 0.0
     architecture_selected_report = candidate_panel[expected_winner]
     assert isinstance(architecture_selected_report, Mapping)
-    feature_view_run_losses: dict[str, tuple[float, ...]] = {}
-    feature_view_group_losses: dict[str, dict[str, float]] = {}
-    feature_view_metrics: dict[str, Mapping[str, object]] = {}
-    feature_view_parameter_counts: dict[str, int] = {}
-    for feature_view, raw_report in feature_view_panel.items():
-        if not isinstance(raw_report, Mapping):
-            raise ValueError("Round 74 pretest feature-view report differs")
-        metrics, run_losses, group_losses, parameter_count = (
-            _validated_candidate_fit_report(
-                raw_report,
-                panel_key=str(feature_view),
-                expected_candidate_id=expected_winner,
-                expected_feature_view=str(feature_view),
-                expected_state_conditioned_flow=False,
-                seeds=seeds,
-                tuning_run_count=len(tuning_batch_hashes),
-                execution_mode=reconstructed_config.execution_mode,
-            )
-        )
-        feature_view_metrics[str(feature_view)] = metrics
-        feature_view_run_losses[str(feature_view)] = run_losses
-        feature_view_group_losses[str(feature_view)] = group_losses
-        feature_view_parameter_counts[str(feature_view)] = parameter_count
-    if (
-        feature_view_panel["market_state_clock_neutral"]
-        != architecture_selected_report
-        or len(set(feature_view_parameter_counts.values())) != 1
-        or len(
-            {
-                tuple(sorted(group_losses))
-                for group_losses in feature_view_group_losses.values()
-            }
-        )
-        != 1
-    ):
+    if set(feature_view_panel) != {"clock_features", "order_flow_features"}:
         raise ValueError("Round 74 pretest feature-view panel differs")
+
+    def validated_feature_stage(
+        stage_id: str,
+        incumbent_feature_view: str,
+        challenger_feature_view: str,
+    ) -> tuple[
+        Mapping[str, object],
+        tuple[float, ...],
+        dict[str, float],
+        int,
+        Mapping[str, object],
+        tuple[float, ...],
+        dict[str, float],
+        int,
+    ]:
+        raw_stage = feature_view_panel.get(stage_id)
+        if (
+            not isinstance(raw_stage, Mapping)
+            or set(raw_stage) != {"incumbent", "challenger"}
+            or not isinstance(raw_stage.get("incumbent"), Mapping)
+            or not isinstance(raw_stage.get("challenger"), Mapping)
+        ):
+            raise ValueError("Round 74 pretest feature-view stage differs")
+        stage_run_count = stage_tuning_run_counts[stage_id]
+        incumbent = raw_stage["incumbent"]
+        challenger = raw_stage["challenger"]
+        assert isinstance(incumbent, Mapping)
+        assert isinstance(challenger, Mapping)
+        incumbent_values = _validated_candidate_fit_report(
+            incumbent,
+            panel_key=incumbent_feature_view,
+            expected_candidate_id=expected_winner,
+            expected_feature_view=incumbent_feature_view,
+            expected_state_conditioned_flow=False,
+            seeds=seeds,
+            tuning_run_count=stage_run_count,
+            execution_mode=reconstructed_config.execution_mode,
+        )
+        challenger_values = _validated_candidate_fit_report(
+            challenger,
+            panel_key=challenger_feature_view,
+            expected_candidate_id=expected_winner,
+            expected_feature_view=challenger_feature_view,
+            expected_state_conditioned_flow=False,
+            seeds=seeds,
+            tuning_run_count=stage_run_count,
+            execution_mode=reconstructed_config.execution_mode,
+        )
+        if incumbent_values[3] != challenger_values[3] or set(
+            incumbent_values[2]
+        ) != set(challenger_values[2]):
+            raise ValueError("Round 74 pretest feature-view stage differs")
+        return (*incumbent_values, *challenger_values)
+
+    (
+        _clock_incumbent_metrics,
+        clock_incumbent_run_losses,
+        clock_incumbent_group_losses,
+        _clock_incumbent_parameter_count,
+        _clock_challenger_metrics,
+        clock_challenger_run_losses,
+        clock_challenger_group_losses,
+        _clock_challenger_parameter_count,
+    ) = validated_feature_stage(
+        "clock_features",
+        "market_state_clock_neutral",
+        "market_state_with_clock",
+    )
     feature_view_required_runs = (
-        len(tuning_batch_hashes)
+        stage_tuning_run_counts["clock_features"]
         if reconstructed_config.execution_mode == "segmented_cohort"
         else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
     )
     expected_clock_report = _feature_view_promotion_report(
         "market_state_clock_neutral",
         "market_state_with_clock",
-        feature_view_run_losses["market_state_clock_neutral"],
-        feature_view_run_losses["market_state_with_clock"],
-        incumbent_group_losses=feature_view_group_losses[
-            "market_state_clock_neutral"
-        ],
-        challenger_group_losses=feature_view_group_losses[
-            "market_state_with_clock"
-        ],
-        minimum_mean_loss_improvement=(
-            reconstructed_config.minimum_tuning_improvement
-        ),
+        clock_incumbent_run_losses,
+        clock_challenger_run_losses,
+        incumbent_group_losses=clock_incumbent_group_losses,
+        challenger_group_losses=clock_challenger_group_losses,
+        minimum_mean_loss_improvement=(reconstructed_config.minimum_tuning_improvement),
         required_paired_run_count=feature_view_required_runs,
     )
     expected_clock_view = (
@@ -3990,28 +4598,34 @@ def load_round74_pretest_policy(
     expected_order_flow_challenger_view = _order_flow_challenger_feature_view(
         expected_clock_view
     )
-    expected_feature_view_keys = {
-        "market_state_clock_neutral",
-        "market_state_with_clock",
+    (
+        order_flow_incumbent_metrics,
+        order_flow_incumbent_run_losses,
+        order_flow_incumbent_group_losses,
+        _order_flow_incumbent_parameter_count,
+        order_flow_challenger_metrics,
+        order_flow_challenger_run_losses,
+        order_flow_challenger_group_losses,
+        _order_flow_challenger_parameter_count,
+    ) = validated_feature_stage(
+        "order_flow_features",
+        expected_clock_view,
         expected_order_flow_challenger_view,
-    }
-    if set(feature_view_panel) != expected_feature_view_keys:
-        raise ValueError("Round 74 pretest feature-view panel differs")
+    )
+    order_flow_required_runs = (
+        stage_tuning_run_counts["order_flow_features"]
+        if reconstructed_config.execution_mode == "segmented_cohort"
+        else feature_view_required_runs
+    )
     expected_order_flow_report = _feature_view_promotion_report(
         expected_clock_view,
         expected_order_flow_challenger_view,
-        feature_view_run_losses[expected_clock_view],
-        feature_view_run_losses[expected_order_flow_challenger_view],
-        incumbent_group_losses=feature_view_group_losses[
-            expected_clock_view
-        ],
-        challenger_group_losses=feature_view_group_losses[
-            expected_order_flow_challenger_view
-        ],
-        minimum_mean_loss_improvement=(
-            reconstructed_config.minimum_tuning_improvement
-        ),
-        required_paired_run_count=feature_view_required_runs,
+        order_flow_incumbent_run_losses,
+        order_flow_challenger_run_losses,
+        incumbent_group_losses=order_flow_incumbent_group_losses,
+        challenger_group_losses=order_flow_challenger_group_losses,
+        minimum_mean_loss_improvement=(reconstructed_config.minimum_tuning_improvement),
+        required_paired_run_count=order_flow_required_runs,
     )
     expected_feature_view = (
         expected_order_flow_challenger_view
@@ -4019,10 +4633,22 @@ def load_round74_pretest_policy(
         else expected_clock_view
     )
     expected_feature_view_criterion = _feature_view_selection_criterion(
-        feature_view_required_runs
+        feature_view_required_runs,
+        order_flow_required_runs,
     )
-    selected_feature_report = feature_view_panel[expected_feature_view]
+    order_flow_stage = feature_view_panel["order_flow_features"]
+    assert isinstance(order_flow_stage, Mapping)
+    selected_feature_report = (
+        order_flow_stage["challenger"]
+        if expected_order_flow_report["promoted"] is True
+        else order_flow_stage["incumbent"]
+    )
     assert isinstance(selected_feature_report, Mapping)
+    selected_feature_metrics = (
+        order_flow_challenger_metrics
+        if expected_order_flow_report["promoted"] is True
+        else order_flow_incumbent_metrics
+    )
     if (
         set(feature_view_selection)
         != {
@@ -4039,7 +4665,8 @@ def load_round74_pretest_policy(
             "selected_feature_view",
             "selected_candidate_id",
             "selected_tuning_metrics",
-            "required_paired_capture_run_count",
+            "clock_required_paired_capture_run_count",
+            "order_flow_required_paired_capture_run_count",
             "minimum_mean_proper_loss_improvement",
             "maximum_permitted_paired_run_loss_degradation",
             "order_flow_promotion_report",
@@ -4054,8 +4681,7 @@ def load_round74_pretest_policy(
         }
         or feature_view_selection.get("schema_version")
         != ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION
-        or feature_view_selection.get("criterion")
-        != expected_feature_view_criterion
+        or feature_view_selection.get("criterion") != expected_feature_view_criterion
         or feature_view_selection.get("market_state_feature_names")
         != list(ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES)
         or feature_view_selection.get("market_state_feature_names_sha256")
@@ -4079,17 +4705,16 @@ def load_round74_pretest_policy(
         or selected_feature_view != expected_feature_view
         or feature_view_selection.get("selected_candidate_id") != expected_winner
         or feature_view_selection.get("selected_tuning_metrics")
-        != feature_view_metrics[expected_feature_view]
-        or feature_view_selection.get("required_paired_capture_run_count")
+        != selected_feature_metrics
+        or feature_view_selection.get("clock_required_paired_capture_run_count")
         != feature_view_required_runs
+        or feature_view_selection.get("order_flow_required_paired_capture_run_count")
+        != order_flow_required_runs
         or feature_view_selection.get("minimum_mean_proper_loss_improvement")
         != reconstructed_config.minimum_tuning_improvement
-        or feature_view_selection.get(
-            "maximum_permitted_paired_run_loss_degradation"
-        )
+        or feature_view_selection.get("maximum_permitted_paired_run_loss_degradation")
         != reconstructed_config.minimum_tuning_improvement
-        or feature_view_selection.get("clock_promotion_report")
-        != expected_clock_report
+        or feature_view_selection.get("clock_promotion_report") != expected_clock_report
         or feature_view_selection.get("order_flow_promotion_report")
         != expected_order_flow_report
         or feature_view_selection.get("architecture_fixed_before_layer_gates")
@@ -4100,12 +4725,9 @@ def load_round74_pretest_policy(
         != "market_state_clock_neutral"
         or feature_view_selection.get("order_flow_default_on_gate_failure")
         != expected_clock_view
-        or feature_view_selection.get(
-            "statistical_independence_or_significance_claim"
-        )
+        or feature_view_selection.get("statistical_independence_or_significance_claim")
         is not False
-        or feature_view_selection.get("backtest_metric_used_for_selection")
-        is not False
+        or feature_view_selection.get("backtest_metric_used_for_selection") is not False
         or feature_view_selection.get("test_targets_used") is not False
     ):
         raise ValueError("Round 74 pretest feature-view selection differs")
@@ -4117,18 +4739,35 @@ def load_round74_pretest_policy(
         if expected_interaction_evaluated
         else {"unconditioned_order_flow"}
     )
-    if (
-        set(state_conditioned_flow_panel) != expected_interaction_keys
-        or state_conditioned_flow_panel.get("unconditioned_order_flow")
-        != selected_feature_report
-    ):
+    if set(state_conditioned_flow_panel) != expected_interaction_keys:
         raise ValueError("Round 74 state-conditioned flow panel differs")
     if expected_interaction_evaluated:
+        raw_unconditioned_report = state_conditioned_flow_panel.get(
+            "unconditioned_order_flow"
+        )
         raw_conditioned_report = state_conditioned_flow_panel.get(
             "state_conditioned_order_flow"
         )
-        if not isinstance(raw_conditioned_report, Mapping):
+        if not isinstance(raw_unconditioned_report, Mapping) or not isinstance(
+            raw_conditioned_report,
+            Mapping,
+        ):
             raise ValueError("Round 74 state-conditioned flow report differs")
+        (
+            unconditioned_metrics,
+            unconditioned_run_losses,
+            unconditioned_group_losses,
+            unconditioned_parameter_count,
+        ) = _validated_candidate_fit_report(
+            raw_unconditioned_report,
+            panel_key=expected_winner,
+            expected_candidate_id=expected_winner,
+            expected_feature_view=expected_feature_view,
+            expected_state_conditioned_flow=False,
+            seeds=seeds,
+            tuning_run_count=stage_tuning_run_counts["state_conditioned_flow"],
+            execution_mode=reconstructed_config.execution_mode,
+        )
         (
             conditioned_metrics,
             conditioned_run_losses,
@@ -4141,28 +4780,26 @@ def load_round74_pretest_policy(
             expected_feature_view=expected_feature_view,
             expected_state_conditioned_flow=True,
             seeds=seeds,
-            tuning_run_count=len(tuning_batch_hashes),
+            tuning_run_count=stage_tuning_run_counts["state_conditioned_flow"],
             execution_mode=reconstructed_config.execution_mode,
         )
-        incumbent_parameter_count = feature_view_parameter_counts[
-            expected_feature_view
-        ]
-        if conditioned_parameter_count <= incumbent_parameter_count:
-            raise ValueError(
-                "Round 74 state-conditioned flow complexity differs"
-            )
+        if conditioned_parameter_count <= unconditioned_parameter_count or set(
+            conditioned_group_losses
+        ) != set(unconditioned_group_losses):
+            raise ValueError("Round 74 state-conditioned flow complexity differs")
+        interaction_required_runs = (
+            stage_tuning_run_counts["state_conditioned_flow"]
+            if reconstructed_config.execution_mode == "segmented_cohort"
+            else feature_view_required_runs
+        )
         expected_interaction_promotion_report = _paired_promotion_report(
             "unconditioned_order_flow",
             "state_conditioned_order_flow",
-            feature_view_run_losses[expected_feature_view],
+            unconditioned_run_losses,
             conditioned_run_losses,
-            minimum_improvement=(
-                reconstructed_config.minimum_tuning_improvement
-            ),
-            required_paired_run_count=feature_view_required_runs,
-            incumbent_group_losses=feature_view_group_losses[
-                expected_feature_view
-            ],
+            minimum_improvement=(reconstructed_config.minimum_tuning_improvement),
+            required_paired_run_count=interaction_required_runs,
+            incumbent_group_losses=unconditioned_group_losses,
             challenger_group_losses=conditioned_group_losses,
         )
         expected_state_conditioned_flow = (
@@ -4171,23 +4808,28 @@ def load_round74_pretest_policy(
         selected_interaction_report = (
             raw_conditioned_report
             if expected_state_conditioned_flow
-            else selected_feature_report
+            else raw_unconditioned_report
         )
         expected_interaction_metrics = (
             conditioned_metrics
             if expected_state_conditioned_flow
-            else feature_view_metrics[expected_feature_view]
+            else unconditioned_metrics
         )
         expected_interaction_reason = "paired_proper_loss_gate_completed"
-        expected_interaction_required_runs = feature_view_required_runs
+        expected_interaction_required_runs = interaction_required_runs
         expected_interaction_improvement = (
             reconstructed_config.minimum_tuning_improvement
         )
     else:
+        if (
+            state_conditioned_flow_panel.get("unconditioned_order_flow")
+            != selected_feature_report
+        ):
+            raise ValueError("Round 74 state-conditioned flow panel differs")
         expected_interaction_promotion_report = None
         expected_state_conditioned_flow = False
         selected_interaction_report = selected_feature_report
-        expected_interaction_metrics = feature_view_metrics[expected_feature_view]
+        expected_interaction_metrics = selected_feature_metrics
         expected_interaction_reason = "order_flow_layer_not_selected"
         expected_interaction_required_runs = 0
         expected_interaction_improvement = 0.0
@@ -4225,8 +4867,7 @@ def load_round74_pretest_policy(
         != ROUND74_EVENT_STATE_CONDITIONED_FLOW_SCHEMA_VERSION
         or state_conditioned_flow_selection.get("criterion")
         != expected_interaction_criterion
-        or state_conditioned_flow_selection.get("reason")
-        != expected_interaction_reason
+        or state_conditioned_flow_selection.get("reason") != expected_interaction_reason
         or state_conditioned_flow_selection.get("evaluated")
         is not expected_interaction_evaluated
         or selected_state_conditioned_flow is not expected_state_conditioned_flow
@@ -4236,13 +4877,9 @@ def load_round74_pretest_policy(
         != expected_feature_view
         or state_conditioned_flow_selection.get("selected_tuning_metrics")
         != expected_interaction_metrics
-        or state_conditioned_flow_selection.get(
-            "required_paired_capture_run_count"
-        )
+        or state_conditioned_flow_selection.get("required_paired_capture_run_count")
         != expected_interaction_required_runs
-        or state_conditioned_flow_selection.get(
-            "minimum_mean_proper_loss_improvement"
-        )
+        or state_conditioned_flow_selection.get("minimum_mean_proper_loss_improvement")
         != expected_interaction_improvement
         or state_conditioned_flow_selection.get(
             "maximum_permitted_paired_run_loss_degradation"
@@ -4255,13 +4892,9 @@ def load_round74_pretest_policy(
         )
         is not True
         or state_conditioned_flow_selection.get("order_flow_required") is not True
-        or state_conditioned_flow_selection.get(
-            "neutral_multiplier_at_initialization"
-        )
+        or state_conditioned_flow_selection.get("neutral_multiplier_at_initialization")
         != 1.0
-        or state_conditioned_flow_selection.get(
-            "unconditioned_default_on_gate_failure"
-        )
+        or state_conditioned_flow_selection.get("unconditioned_default_on_gate_failure")
         is not True
         or state_conditioned_flow_selection.get(
             "statistical_independence_or_significance_claim"
@@ -4289,11 +4922,20 @@ def load_round74_pretest_policy(
         if pretraining_evaluated
         else {"random"}
     )
-    if (
-        set(initialization_panel) != expected_initialization_keys
-        or initialization_panel.get("random") != selected_interaction_report
+    if set(initialization_panel) != expected_initialization_keys or (
+        not pretraining_evaluated
+        and initialization_panel.get("random") != selected_interaction_report
     ):
         raise ValueError("Round 74 pretest initialization panel differs")
+    initialization_validation_run_count = (
+        stage_tuning_run_counts["causal_pretraining"]
+        if pretraining_evaluated
+        else (
+            stage_tuning_run_counts["state_conditioned_flow"]
+            if expected_interaction_evaluated
+            else stage_tuning_run_counts["order_flow_features"]
+        )
+    )
     initialization_metrics: dict[str, Mapping[str, object]] = {}
     initialization_run_losses: dict[str, tuple[float, ...]] = {}
     initialization_group_losses: dict[str, dict[str, float]] = {}
@@ -4313,11 +4955,9 @@ def load_round74_pretest_policy(
                 panel_key=expected_winner,
                 expected_candidate_id=expected_winner,
                 expected_feature_view=expected_feature_view,
-                expected_state_conditioned_flow=(
-                    expected_state_conditioned_flow
-                ),
+                expected_state_conditioned_flow=(expected_state_conditioned_flow),
                 seeds=seeds,
-                tuning_run_count=len(tuning_batch_hashes),
+                tuning_run_count=initialization_validation_run_count,
                 execution_mode=reconstructed_config.execution_mode,
             )
         )
@@ -4355,14 +4995,12 @@ def load_round74_pretest_policy(
                     "training_feature_batch_sha256"
                 )
                 if not isinstance(pretraining_feature_batches, list):
-                    raise ValueError(
-                        "Round 74 causal pretraining report differs"
-                    )
+                    raise ValueError("Round 74 causal pretraining report differs")
                 if (
-                    len(pretraining_feature_batches) != len(training_batch_hashes)
+                    len(pretraining_feature_batches)
+                    != len(target_loss_scale_batch_sha256)
                     or any(
-                        not isinstance(value, str)
-                        or _SHA256.fullmatch(value) is None
+                        not isinstance(value, str) or _SHA256.fullmatch(value) is None
                         for value in pretraining_feature_batches
                     )
                     or len(pretraining_feature_batches)
@@ -4370,11 +5008,9 @@ def load_round74_pretest_policy(
                     or pretraining_feature_batches
                     != sorted(pretraining_feature_batches)
                     or pretraining_report.get("training_capture_run_count")
-                    != len(training_batch_hashes)
+                    != len(target_loss_scale_batch_sha256)
                     or pretraining_report.get("encoder_state_restored") is not True
-                    or pretraining_report.get(
-                        "temporary_prediction_head_persisted"
-                    )
+                    or pretraining_report.get("temporary_prediction_head_persisted")
                     is not False
                     or _SHA256.fullmatch(
                         str(pretraining_report.get("split_sha256", ""))
@@ -4391,12 +5027,8 @@ def load_round74_pretest_policy(
                     or pretraining_report.get("initial_encoder_sha256")
                     == pretraining_report.get("final_encoder_sha256")
                 ):
-                    raise ValueError(
-                        "Round 74 causal pretraining report differs"
-                    )
-                pretraining_split_sha256.add(
-                    str(pretraining_report["split_sha256"])
-                )
+                    raise ValueError("Round 74 causal pretraining report differs")
+                pretraining_split_sha256.add(str(pretraining_report["split_sha256"]))
                 pretraining_feature_batch_sha256.add(
                     tuple(str(value) for value in pretraining_feature_batches)
                 )
@@ -4410,9 +5042,7 @@ def load_round74_pretest_policy(
                     or not isinstance(validation_rows, int)
                     or validation_rows < 1
                 ):
-                    raise ValueError(
-                        "Round 74 causal pretraining partition differs"
-                    )
+                    raise ValueError("Round 74 causal pretraining partition differs")
                 pretraining_partition_rows.add((training_rows, validation_rows))
         initialization_metrics[str(initialization_id)] = metrics
         initialization_run_losses[str(initialization_id)] = run_losses
@@ -4427,7 +5057,11 @@ def load_round74_pretest_policy(
     ):
         raise ValueError("Round 74 causal pretraining peer split differs")
     if pretraining_evaluated:
-        initialization_required_runs = feature_view_required_runs
+        initialization_required_runs = (
+            stage_tuning_run_counts["causal_pretraining"]
+            if reconstructed_config.execution_mode == "segmented_cohort"
+            else feature_view_required_runs
+        )
         expected_initialization_promotion_report = _paired_promotion_report(
             "random",
             "causal_next_event_pretrained",
@@ -4466,9 +5100,7 @@ def load_round74_pretest_policy(
         "proper-loss improvement and no paired run or "
         "run-symbol-horizon subgroup degradation beyond the numerical floor"
     )
-    selected_initialization_report = initialization_panel[
-        expected_initialization_id
-    ]
+    selected_initialization_report = initialization_panel[expected_initialization_id]
     assert isinstance(selected_initialization_report, Mapping)
     if (
         set(initialization_selection)
@@ -4502,8 +5134,7 @@ def load_round74_pretest_policy(
         != ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION
         or initialization_selection.get("criterion")
         != expected_initialization_criterion
-        or initialization_selection.get("reason")
-        != expected_initialization_reason
+        or initialization_selection.get("reason") != expected_initialization_reason
         or initialization_selection.get("pretraining_supported")
         is not pretraining_supported
         or initialization_selection.get("pretraining_evaluated")
@@ -4523,16 +5154,12 @@ def load_round74_pretest_policy(
         != initialization_required_runs
         or initialization_selection.get("minimum_mean_proper_loss_improvement")
         != expected_initialization_improvement
-        or initialization_selection.get(
-            "maximum_permitted_paired_run_loss_degradation"
-        )
+        or initialization_selection.get("maximum_permitted_paired_run_loss_degradation")
         != expected_initialization_improvement
         or initialization_selection.get("promotion_report")
         != expected_initialization_promotion_report
         or initialization_selection.get("training_features_only") is not True
-        or initialization_selection.get(
-            "supervised_targets_used_by_pretraining"
-        )
+        or initialization_selection.get("supervised_targets_used_by_pretraining")
         is not False
         or initialization_selection.get("tuning_features_used_by_pretraining")
         is not False
@@ -4541,8 +5168,7 @@ def load_round74_pretest_policy(
         or initialization_selection.get("calibration_data_used_by_pretraining")
         is not False
         or initialization_selection.get("test_data_used_by_pretraining") is not False
-        or initialization_selection.get("random_default_on_gate_failure")
-        is not True
+        or initialization_selection.get("random_default_on_gate_failure") is not True
         or initialization_selection.get(
             "statistical_independence_or_significance_claim"
         )
@@ -4693,6 +5319,10 @@ __all__ = [
     "ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT",
     "ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS",
     "ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION",
+    "ROUND74_EVENT_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR",
+    "ROUND74_EVENT_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS",
+    "ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS",
+    "ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION",
     "ROUND74_EVENT_STATE_CONDITIONED_FLOW_SCHEMA_VERSION",
     "ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION",
     "ROUND74_EVENT_TRAINING_DEFAULT_SEEDS",
@@ -4700,6 +5330,7 @@ __all__ = [
     "ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS",
     "ROUND74_EVENT_TRAINING_SCHEMA_VERSION",
     "Round74EventEnsemble",
+    "Round74EventSelectionProtocol",
     "Round74EventTrainingConfig",
     "Round74PretestPolicyArtifact",
     "load_round74_pretest_policy",

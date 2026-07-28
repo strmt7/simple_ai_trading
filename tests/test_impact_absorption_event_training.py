@@ -45,6 +45,7 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     _empty_metric_sums,
     _feature_view_contains_order_flow,
     _feature_view_promotion_report,
+    _fit_candidate,
     _loss_for_minibatch,
     _losses_for_minibatch_group,
     _order_flow_challenger_feature_view,
@@ -239,15 +240,12 @@ def test_causal_next_event_pretraining_is_training_only_and_purged() -> None:
     with pytest.raises(ValueError, match="split contract differs"):
         _validate_pretraining_split(split, (copied_feature_training,), config)
     assert set(split.training_indices[0]).isdisjoint(split.validation_indices[0])
-    assert (
-        int(training.decision_wall_ns[split.training_indices[0][-1]])
-        < int(training.decision_wall_ns[split.validation_indices[0][0]])
+    assert int(training.decision_wall_ns[split.training_indices[0][-1]]) < int(
+        training.decision_wall_ns[split.validation_indices[0][0]]
     )
     for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
         symbol_mask = np.asarray(training.symbol) == symbol
-        train_rows = split.training_indices[0][
-            symbol_mask[split.training_indices[0]]
-        ]
+        train_rows = split.training_indices[0][symbol_mask[split.training_indices[0]]]
         validation_rows = split.validation_indices[0][
             symbol_mask[split.validation_indices[0]]
         ]
@@ -445,9 +443,7 @@ def test_segmented_pretraining_reuses_one_split_across_peers(
     peers = policy["initialization_panel"]["causal_next_event_pretrained"][
         "peer_reports"
     ]
-    split_sha256 = {
-        peer["causal_pretraining"]["split_sha256"] for peer in peers
-    }
+    split_sha256 = {peer["causal_pretraining"]["split_sha256"] for peer in peers}
     feature_batches = {
         tuple(peer["causal_pretraining"]["training_feature_batch_sha256"])
         for peer in peers
@@ -463,17 +459,19 @@ def test_segmented_pretraining_reuses_one_split_across_peers(
     assert len(split_sha256) == 1
     assert len(feature_batches) == 1
     assert len(partition_rows) == 1
-    assert policy["feature_view_selection"]["selected_tuning_metrics"] == (
-        policy["initialization_panel"]["random"]["ensemble_tuning_metrics"]
+    assert (
+        policy["feature_view_selection"]["selected_tuning_metrics"]
+        == (policy["initialization_panel"]["random"]["ensemble_tuning_metrics"])
     )
-    assert policy["feature_view_selection"]["selected_feature_view"] == (
-        policy["initialization_panel"]["random"]["feature_view"]
+    assert (
+        policy["feature_view_selection"]["selected_feature_view"]
+        == (policy["initialization_panel"]["random"]["feature_view"])
     )
 
     tampered = json.loads(artifact.policy_path.read_text(encoding="ascii"))
-    tampered["initialization_panel"]["causal_next_event_pretrained"][
-        "peer_reports"
-    ][1]["causal_pretraining"]["split_sha256"] = "f" * 64
+    tampered["initialization_panel"]["causal_next_event_pretrained"]["peer_reports"][1][
+        "causal_pretraining"
+    ]["split_sha256"] = "f" * 64
     tampered_path = _write_rehashed_policy(tmp_path, tampered)
     with pytest.raises(ValueError, match="peer split differs"):
         load_round74_pretest_policy(tampered_path)
@@ -523,6 +521,66 @@ def test_target_loss_scale_is_training_only_complete_and_reloadable() -> None:
             ),
             require_complete_panel=True,
         )
+
+
+def test_checkpoint_selection_and_promotion_use_disjoint_batches() -> None:
+    training = _batch(
+        "training",
+        start_wall_ns=WALL_NS,
+        identity=711,
+        rows=3,
+    )
+    early_stopping = _batch(
+        "training",
+        start_wall_ns=WALL_NS + PURGE_NS + 1_000_000_000,
+        identity=712,
+        rows=3,
+    )
+    promotions = (
+        _batch(
+            "tuning",
+            start_wall_ns=WALL_NS + 2 * PURGE_NS + 2_000_000_000,
+            identity=713,
+            rows=3,
+        ),
+        _batch(
+            "tuning",
+            start_wall_ns=WALL_NS + 2 * PURGE_NS + 6_000_000_000,
+            identity=714,
+            rows=3,
+        ),
+    )
+    config = Round74EventTrainingConfig(
+        candidate_ids=("event_pooling_linear",),
+        seeds=(7411,),
+        maximum_epochs=1,
+        early_stopping_patience=1,
+        minibatch_rows=3,
+        minimum_role_rows=3,
+        execution_mode="preflight",
+        architecture_selection_mode="fixed",
+    )
+    target_loss_scale = fit_round74_event_target_loss_scale(
+        (training,),
+        require_complete_panel=False,
+    )
+
+    fit = _fit_candidate(
+        "event_pooling_linear",
+        "market_state_clock_neutral",
+        (training,),
+        (early_stopping,),
+        promotions,
+        config=config,
+        device=torch.device("cpu"),
+        target_loss_scale=target_loss_scale,
+    )
+
+    peer = fit.peer_reports[0]
+    assert peer["best_early_stopping_metrics"]["run_count"] == 1.0
+    assert peer["history"][0]["early_stopping_metrics"]["run_count"] == 1.0
+    assert fit.ensemble_metrics["run_count"] == 2.0
+    assert len(fit.ensemble_run_losses) == 2
 
 
 def test_segmented_training_supports_complexity_gate_and_no_run_cycling() -> None:
@@ -702,6 +760,13 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
     )
     model_end = model_count
     calibration_end = model_end + calibration_count
+    model_ordinals = (
+        *range(514, 523),
+        *range(525, 534),
+        *range(535, 544),
+        *range(546, 555),
+        *range(556, 565),
+    )
     subpartition = Round74SegmentedTuningSubpartition(
         parent_partition_sha256="1" * 64,
         cohort_plan_sha256="a" * 64,
@@ -712,7 +777,7 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
         policy_selection_run_ids=tuple(
             batch.run_id[0] for batch in batches[calibration_end:]
         ),
-        model_selection_slot_ordinals=tuple(range(514, 559)),
+        model_selection_slot_ordinals=model_ordinals,
         calibration_slot_ordinals=tuple(range(566, 589)),
         policy_selection_slot_ordinals=tuple(range(592, 615)),
         model_selection_eligible_anchor_ns=(900_000_000_000,) * model_count,
@@ -751,8 +816,16 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
         fake_train,
     )
 
+    training = tuple(
+        _batch(
+            "training",
+            start_wall_ns=(WALL_NS - (160 - index) * 1_500_000_000_000),
+            identity=1_000 + index,
+        )
+        for index in range(160)
+    )
     result = train_and_seal_round74_pretest_policy_from_prepared_roles(
-        (_batch("training", start_wall_ns=WALL_NS - PURGE_NS, identity=1),),
+        training,
         roles,
         output_directory=tmp_path,
         compute_backend="cpu",
@@ -762,6 +835,35 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
 
     assert result is sentinel
     assert observed["tuning_batches"] == roles.model_selection_batches
+    protocol = observed["selection_protocol"]
+    assert isinstance(protocol, training_subject.Round74EventSelectionProtocol)
+    assert len(protocol.optimization_batches) == 128
+    assert len(protocol.purged_training_batches) == 0
+    assert len(protocol.early_stopping_batches) == 32
+    assert [len(batches) for batches in protocol.promotion_stage_batches] == [
+        9,
+        9,
+        9,
+        9,
+        9,
+    ]
+    assert (
+        tuple(
+            batch
+            for stage_batches in protocol.promotion_stage_batches
+            for batch in stage_batches
+        )
+        == roles.model_selection_batches
+    )
+    protocol_payload = protocol.as_dict()
+    assert len(protocol.protocol_sha256) == 64
+    assert protocol_payload["target_loss_scale_fit_scope"] == (
+        "optimization_training_runs_only"
+    )
+    assert protocol_payload["early_stopping_targets_used_for_gradient_updates"] is False
+    assert protocol_payload["promotion_targets_used_for_checkpoint_selection"] is False
+    assert protocol_payload["cross_stage_promotion_run_reuse_permitted"] is False
+    assert protocol_payload["chronological_gap_ns"] >= PURGE_NS
     assert (
         observed["representative_window_policy_sha256"]
         == (round74_segmented_window_policy()["policy_sha256"])
@@ -980,10 +1082,13 @@ def test_round74_clock_neutral_view_masks_only_exchange_clock_features() -> None
     expected[:, :, list(ROUND74_EVENT_CLOCK_FEATURE_INDICES)] = 0.0
     torch.testing.assert_close(peer.last_values, expected)
     assert len(ROUND74_EVENT_CLOCK_FEATURE_NAMES) == 11
-    assert tuple(
-        ROUND74_EVENT_FEATURE_NAMES[index]
-        for index in ROUND74_EVENT_CLOCK_FEATURE_INDICES
-    ) == ROUND74_EVENT_CLOCK_FEATURE_NAMES
+    assert (
+        tuple(
+            ROUND74_EVENT_FEATURE_NAMES[index]
+            for index in ROUND74_EVENT_CLOCK_FEATURE_INDICES
+        )
+        == ROUND74_EVENT_CLOCK_FEATURE_NAMES
+    )
     assert {
         "utc_second_of_day_sine",
         "utc_second_of_day_cosine",
@@ -1029,10 +1134,13 @@ def test_round74_state_views_mask_the_fixed_order_flow_panel() -> None:
         torch.testing.assert_close(peer.last_values, expected)
     assert len(ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES) == 31
     assert len(ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES) == 33
-    assert tuple(
-        ROUND74_EVENT_FEATURE_NAMES[index]
-        for index in ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES
-    ) == ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES
+    assert (
+        tuple(
+            ROUND74_EVENT_FEATURE_NAMES[index]
+            for index in ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES
+        )
+        == ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES
+    )
     assert not set(ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES) & set(
         ROUND74_EVENT_CLOCK_FEATURE_INDICES
     )
@@ -1091,13 +1199,15 @@ def test_round74_feature_view_gate_is_complete_and_subgroup_noninferior() -> Non
     assert promoted["promoted"] is True
     assert incomplete["complete_tuning_panel"] is False
     assert incomplete["promoted"] is False
-    assert subgroup_degradation[
-        "all_paired_run_symbol_horizon_groups_noninferior"
-    ] is False
+    assert (
+        subgroup_degradation["all_paired_run_symbol_horizon_groups_noninferior"]
+        is False
+    )
     assert subgroup_degradation["promoted"] is False
-    assert _order_flow_challenger_feature_view(
-        "market_state_clock_neutral"
-    ) == "clock_neutral"
+    assert (
+        _order_flow_challenger_feature_view("market_state_clock_neutral")
+        == "clock_neutral"
+    )
     assert _order_flow_challenger_feature_view("market_state_with_clock") == "full"
     with pytest.raises(ValueError, match="clock-control winner"):
         _order_flow_challenger_feature_view("full")
@@ -1120,9 +1230,7 @@ def _interaction_fit(
         ensemble_run_losses=losses,
         ensemble_group_losses=group_losses,
         ensemble_prediction_sha256="a" * 64,
-        parameter_count_per_peer=(
-            130_114 if state_conditioned_flow else 129_060
-        ),
+        parameter_count_per_peer=(130_114 if state_conditioned_flow else 129_060),
     )
 
 
@@ -1703,6 +1811,10 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert target_loss_scale["tuning_targets_used"] is False
     assert target_loss_scale["test_targets_used"] is False
     assert target_loss_scale["forecast_units_changed"] is False
+    assert policy["selection_protocol"]["mode"] == "legacy_shared_tuning_panel"
+    assert policy["selection_protocol"]["training_only_early_stopping"] is False
+    assert policy["selection_protocol"]["disjoint_promotion_stages"] is False
+    assert policy["selection_protocol"]["eligible_for_segmented_cohort_policy"] is False
     assert policy["backend"]["kind"] == "cpu"
     assert set(policy["candidate_panel"]) == {
         "event_pooling_linear",
@@ -1711,10 +1823,17 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         "causal_event_attention",
     }
     assert set(policy["feature_view_panel"]) == {
-        "market_state_clock_neutral",
-        "clock_neutral",
-        "market_state_with_clock",
+        "clock_features",
+        "order_flow_features",
     }
+    clock_stage = policy["feature_view_panel"]["clock_features"]
+    order_flow_stage = policy["feature_view_panel"]["order_flow_features"]
+    assert clock_stage["incumbent"]["feature_view"] == ("market_state_clock_neutral")
+    assert clock_stage["challenger"]["feature_view"] == ("market_state_with_clock")
+    assert order_flow_stage["incumbent"]["feature_view"] == (
+        "market_state_clock_neutral"
+    )
+    assert order_flow_stage["challenger"]["feature_view"] == "clock_neutral"
     assert policy["feature_view_selection"]["supported_feature_views"] == list(
         ROUND74_EVENT_FEATURE_VIEWS
     )
@@ -1756,12 +1875,10 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         policy["feature_view_selection"]["order_flow_default_on_gate_failure"]
         == "market_state_clock_neutral"
     )
-    assert set(policy["state_conditioned_flow_panel"]) == {
-        "unconditioned_order_flow"
-    }
+    assert set(policy["state_conditioned_flow_panel"]) == {"unconditioned_order_flow"}
     assert (
         policy["state_conditioned_flow_panel"]["unconditioned_order_flow"]
-        == policy["feature_view_panel"]["market_state_clock_neutral"]
+        == order_flow_stage["incumbent"]
     )
     interaction = policy["state_conditioned_flow_selection"]
     assert interaction["reason"] == "order_flow_layer_not_selected"
@@ -1776,16 +1893,14 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert set(policy["initialization_panel"]) == {"random"}
     assert (
         policy["initialization_panel"]["random"]
-        == policy["feature_view_panel"]["market_state_clock_neutral"]
+        == policy["state_conditioned_flow_panel"]["unconditioned_order_flow"]
     )
     assert (
         policy["initialization_selection"]["reason"]
         == "preflight_never_evaluates_pretraining"
     )
     assert policy["initialization_selection"]["pretraining_evaluated"] is False
-    assert (
-        policy["initialization_selection"]["selected_initialization_id"] == "random"
-    )
+    assert policy["initialization_selection"]["selected_initialization_id"] == "random"
     assert policy["initialization_selection"]["promotion_report"] is None
     assert (
         policy["initialization_selection"]["supervised_targets_used_by_pretraining"]
@@ -1799,9 +1914,7 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         policy["initialization_selection"]["tuning_targets_used_by_pretraining"]
         is False
     )
-    assert (
-        policy["initialization_selection"]["test_data_used_by_pretraining"] is False
-    )
+    assert policy["initialization_selection"]["test_data_used_by_pretraining"] is False
     assert policy["selection"]["backtest_metric_used_for_selection"] is False
     assert policy["selection"]["criterion"].startswith(
         "sequential parameter-count complexity promotion"
@@ -1879,6 +1992,19 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     with pytest.raises(ValueError, match="data identity differs"):
         load_round74_pretest_policy(changed_representation_path)
 
+    changed_selection_protocol = json.loads(
+        artifact.policy_path.read_text(encoding="ascii")
+    )
+    changed_selection_protocol["selection_protocol"]["training_only_early_stopping"] = (
+        True
+    )
+    changed_selection_protocol_path = _write_rehashed_policy(
+        tmp_path,
+        changed_selection_protocol,
+    )
+    with pytest.raises(ValueError, match="legacy selection protocol differs"):
+        load_round74_pretest_policy(changed_selection_protocol_path)
+
     changed_promotion = json.loads(artifact.policy_path.read_text(encoding="ascii"))
     changed_promotion["selection"]["promotion_reports"][0]["promoted"] = True
     changed_promotion_path = _write_rehashed_policy(
@@ -1888,9 +2014,7 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     with pytest.raises(ValueError, match="selection or artifact differs"):
         load_round74_pretest_policy(changed_promotion_path)
 
-    changed_feature_view = json.loads(
-        artifact.policy_path.read_text(encoding="ascii")
-    )
+    changed_feature_view = json.loads(artifact.policy_path.read_text(encoding="ascii"))
     changed_feature_view["feature_view_selection"]["selected_feature_view"] = "full"
     changed_feature_view_path = _write_rehashed_policy(
         tmp_path,
@@ -1902,9 +2026,9 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     changed_feature_membership = json.loads(
         artifact.policy_path.read_text(encoding="ascii")
     )
-    changed_feature_membership["feature_view_selection"][
-        "order_flow_feature_names"
-    ][0] = "spread_bps"
+    changed_feature_membership["feature_view_selection"]["order_flow_feature_names"][
+        0
+    ] = "spread_bps"
     changed_feature_membership_path = _write_rehashed_policy(
         tmp_path,
         changed_feature_membership,
@@ -1915,9 +2039,9 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     changed_initialization = json.loads(
         artifact.policy_path.read_text(encoding="ascii")
     )
-    changed_initialization["initialization_selection"][
-        "selected_initialization_id"
-    ] = "causal_next_event_pretrained"
+    changed_initialization["initialization_selection"]["selected_initialization_id"] = (
+        "causal_next_event_pretrained"
+    )
     changed_initialization_path = _write_rehashed_policy(
         tmp_path,
         changed_initialization,
