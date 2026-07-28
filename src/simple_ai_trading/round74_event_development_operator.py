@@ -65,9 +65,9 @@ from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 from .storage import write_bytes_atomic
 
 
-ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v2"
+ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v3"
 ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION = (
-    "round-074-development-policy-bundle-v3"
+    "round-074-development-policy-bundle-v4"
 )
 
 _SHA256 = "0123456789abcdef"
@@ -350,6 +350,8 @@ class Round74DevelopmentPolicyBundle:
                 policy.pretest_policy_sha256 != self.pretest_policy_sha256
                 or policy.probability_calibration_sha256
                 != self.probability_calibration.calibration_sha256
+                or policy.optimization_population
+                != self.probability_calibration.optimization_population
                 or policy.tuning_subpartition_sha256 != self.tuning_subpartition_sha256
                 or policy.target_batch_sha256 != self.policy_selection_batch_sha256
                 or policy.execution_outcome_panel_sha256
@@ -598,6 +600,7 @@ def _fit_calibration(
     backend_kind: str,
     backend_device: str,
     device: object,
+    optimization_population: str,
 ) -> Round74ProbabilityCalibration:
     combined = _concatenate_outputs(outputs)
     selected_batches = tuple(batches)
@@ -632,6 +635,7 @@ def _fit_calibration(
         ),
         backend_kind=backend_kind,
         backend_device=backend_device,
+        optimization_population=optimization_population,
     )
 
 
@@ -648,6 +652,7 @@ def calibrate_and_select_round74_development_policy(
     ],
     compute_backend: str = "auto",
     minibatch_rows: int = 128,
+    optimization_population: str = "capture_run",
 ) -> Round74DevelopmentPolicyBundle:
     """Calibrate and select all profiles without loading sealed test data."""
 
@@ -737,6 +742,7 @@ def calibrate_and_select_round74_development_policy(
                 backend_kind=backend.kind,
                 backend_device=str(device),
                 device=device,
+                optimization_population=optimization_population,
             )
             policy_outputs = tuple(
                 _infer_batch(
@@ -807,6 +813,7 @@ def calibrate_and_select_round74_development_policy(
             candidates_by_profile[profile],
             tuning_roles.subpartition,
             execution_panel=panel,
+            optimization_population=optimization_population,
         )
         for profile, panel in zip(
             ROUND74_ACTION_PROFILES,
@@ -869,6 +876,13 @@ def train_calibrate_and_select_round74_development_policy(
     prepared.validate()
     tuning_roles.validate()
     execution_partition.validate()
+    selected_config = config or Round74EventTrainingConfig()
+    selected_config.validate()
+    optimization_population = (
+        "eligible_target"
+        if selected_config.execution_mode == "segmented_cohort"
+        else "capture_run"
+    )
     prepared_tuning_sha256 = tuple(
         batch.batch_sha256 for batch in prepared.tuning_batches
     )
@@ -892,7 +906,7 @@ def train_calibrate_and_select_round74_development_policy(
     pretest_kwargs: dict[str, object] = {
         "output_directory": output,
         "compute_backend": compute_backend,
-        "config": config,
+        "config": selected_config,
         "feature_scaler": prepared.scaler,
     }
     if matched_preparation_sha256 is not None:
@@ -913,6 +927,7 @@ def train_calibrate_and_select_round74_development_policy(
         ),
         compute_backend=compute_backend,
         minibatch_rows=inference_minibatch_rows,
+        optimization_population=optimization_population,
     )
     payload = _canonical_bytes(bundle.as_dict()) + b"\n"
     path = output / f"round74-development-policy-{bundle.bundle_sha256}.json"

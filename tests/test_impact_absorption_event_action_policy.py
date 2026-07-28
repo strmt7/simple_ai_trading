@@ -20,6 +20,7 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     select_round74_action_policy_batches,
     simulate_round74_action_trace,
     simulate_round74_action_trace_batches,
+    _eligible_target_score_threshold,
     _equal_run_score_threshold,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
@@ -480,6 +481,36 @@ def test_threshold_grid_is_invariant_to_busy_run_row_duplication() -> None:
     assert observed == expected
 
 
+def test_eligible_target_threshold_weights_duration_normalized_rows() -> None:
+    runs = _subpartition().policy_selection_run_ids
+    base = {
+        runs[0]: (100.0,),
+        runs[1]: (1.0,),
+        runs[2]: (2.0,),
+        runs[3]: (3.0,),
+        runs[4]: (4.0,),
+        runs[5]: (5.0,),
+    }
+    duplicated = {
+        **base,
+        runs[0]: (100.0,) * 100,
+    }
+
+    expected = _eligible_target_score_threshold(
+        base,
+        quantile=0.5,
+        expected_run_ids=runs,
+    )
+    observed = _eligible_target_score_threshold(
+        duplicated,
+        quantile=0.5,
+        expected_run_ids=runs,
+    )
+
+    assert expected == 3.5
+    assert observed == 100.0
+
+
 def test_candidate_derivation_is_target_free_and_prefers_shorter_tie() -> None:
     positive_batch = _batch(payoff_sign=1.0)
     negative_batch = _batch(payoff_sign=-1.0)
@@ -626,6 +657,36 @@ def test_batch_panel_selection_matches_single_batch_without_feature_copy() -> No
         np.shares_memory(value.feature_values, batch.feature_values)
         for value in batches
     )
+
+
+def test_segmented_policy_selection_uses_eligible_target_objective() -> None:
+    batch = _batch(payoff_sign=1.0)
+    batches = _run_batch_panel(batch)
+    candidates = tuple(_candidates(value) for value in batches)
+
+    selection = select_round74_action_policy_batches(
+        batches,
+        candidates,
+        _subpartition(),
+        optimization_population="eligible_target",
+    )
+
+    assert selection.optimization_population == "eligible_target"
+    assert type(selection).from_dict(selection.as_dict()) == selection
+    for evaluation in selection.evaluations:
+        metrics = evaluation.trace.metrics
+        expected_objective = (
+            metrics.total_net_bps
+            - round74_action_profile().objective_drawdown_penalty
+            * metrics.maximum_drawdown_bps
+            - round74_action_profile().objective_adverse_excursion_penalty
+            * metrics.mean_run_maximum_adverse_excursion_bps
+            * len(_subpartition().policy_selection_run_ids)
+        )
+        assert evaluation.objective_bps == pytest.approx(expected_objective)
+        assert evaluation.objective_semantics == (
+            "total_net_bps_minus_worst_drawdown_and_total_mae_penalties"
+        )
 
 
 def test_batch_panel_rejects_non_chronological_or_duplicate_panels() -> None:

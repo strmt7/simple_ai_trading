@@ -220,6 +220,70 @@ def test_temperature_selection_is_invariant_to_busy_run_duplication() -> None:
     assert duplicated.calibration_data_sha256 != baseline.calibration_data_sha256
 
 
+def test_eligible_target_temperature_tracks_duration_normalized_rows() -> None:
+    subpartition = _tuning_subpartition()
+    expected = subpartition.calibration_run_ids
+    base_logits = torch.tensor(
+        [
+            [-4.0, 4.0],
+            [-2.0, 2.0],
+            [-2.0, 2.0],
+            [-2.0, 2.0],
+            [-2.0, 2.0],
+            [-2.0, 2.0],
+        ],
+        dtype=torch.float32,
+    )
+    base_labels = torch.tensor(
+        [
+            [1.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+        ],
+        dtype=torch.float32,
+    )
+
+    def fit(logits: torch.Tensor, labels: torch.Tensor, runs: tuple[str, ...]):
+        mask = torch.ones_like(logits)
+        return fit_round74_probability_calibration(
+            positive_payoff_logits=logits,
+            positive_payoff_labels=labels,
+            adverse_selection_logits=-logits,
+            adverse_selection_labels=1.0 - labels,
+            action_eligibility=mask,
+            regime_unpredictability_logits=logits,
+            regime_unpredictability_labels=labels,
+            regime_eligibility=mask,
+            row_run_ids=runs,
+            tuning_subpartition=subpartition,
+            pretest_policy_sha256="1" * 64,
+            calibration_source_sha256="3" * 64,
+            backend_kind="cpu",
+            backend_device="test",
+            optimization_population="eligible_target",
+        )
+
+    baseline = fit(base_logits, base_labels, expected)
+    repeated = 100
+    duplicated = fit(
+        torch.cat((base_logits[:1].repeat(repeated, 1), base_logits[1:])),
+        torch.cat((base_labels[:1].repeat(repeated, 1), base_labels[1:])),
+        (expected[0],) * repeated + expected[1:],
+    )
+
+    assert baseline.optimization_population == "eligible_target"
+    assert duplicated.positive_payoff.temperature != (
+        baseline.positive_payoff.temperature
+    )
+    assert duplicated.positive_payoff.calibrated_nll <= (
+        duplicated.positive_payoff.uncalibrated_nll + 1e-7
+    )
+    assert Round74ProbabilityCalibration.from_dict(duplicated.as_dict()) == duplicated
+
+
 def test_temperature_application_uses_frozen_head_specific_values() -> None:
     calibration = _calibration()
     logits = torch.tensor([0.0, 1.0], dtype=torch.float32)
