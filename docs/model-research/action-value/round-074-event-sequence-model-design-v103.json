@@ -1,0 +1,154 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v103",
+  "created_at_utc": "2026-07-28T23:17:00Z",
+  "implementation_git_commit": "17f45308ee7028ef91aaadccc180da07000163fe",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v102.json",
+    "file_sha256": "369bffe4da3c436cd544019d13b5946e5c5f2965b84f8f6bea351993fac99e46",
+    "design_sha256": "060f03aafa5e358570ea4a0bbf5c108557801f57f69ebd205ebd9789a42f90b4",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "exact_file_bytes",
+    "public_target_sources": {
+      "path": "src/simple_ai_trading/round74_public_target_sources.py",
+      "sha256": "615c26a185025fb781b0f08a68eb7506ba7e41426ac7a55434b66a3a1b43a854"
+    },
+    "public_target_operator": {
+      "path": "src/simple_ai_trading/round74_public_target_operator.py",
+      "sha256": "44f85861e2c8617c3d00f9a58ad11f900c9832d12968b45126acd2f675423169"
+    },
+    "target_manifest": {
+      "path": "src/simple_ai_trading/round74_target_assembly_manifest.py",
+      "sha256": "75500344c67966a087f786f5354a7bad341d51980ececc7220974bccd0c3e124"
+    },
+    "cohort_source_tool": {
+      "path": "tools/build_round74_cohort_capture_source.py",
+      "sha256": "790ca32f73cfbc1c38c7685c21fde9ddfddf2eb913e6b654d4f937cf0f61dae4"
+    },
+    "target_manifest_tool": {
+      "path": "tools/build_round74_public_target_manifest.py",
+      "sha256": "88cbb7c895ce29c7bcd19a8ed76704a7dddf520b57308a7cc394ba503dce8141"
+    },
+    "execution_scenario_tool": {
+      "path": "tools/build_round74_public_execution_scenario.py",
+      "sha256": "705ccabb79d406cf7a82448283d98af713df0e2ff578cf782641e5aeb034d25e"
+    },
+    "public_target_operator_test": {
+      "path": "tests/test_round74_public_target_operator.py",
+      "sha256": "b4f4b363c4fb4692dcd327ed6522debe489c4fc918219330fe7482d61c62f55a"
+    },
+    "design_test": {
+      "path": "tests/test_round74_event_model_design_v103.py",
+      "sha256": "b37bdad8aef17c01bfd937c1be39df3a6dd73e0ad1faa2bd3a6f7a13799ab653"
+    },
+    "target_manifest_test": {
+      "path": "tests/test_round74_target_assembly_manifest.py",
+      "sha256": "93e826f33b53401afd28ed9b05b8f0e531848106c7b8eb15cb3a7473b474b918"
+    }
+  },
+  "declared_delta": {
+    "cohort_capture_source_schema_version": "round-074-segmented-cohort-capture-source-v1",
+    "target_manifest_schema_version": "round-074-target-assembly-manifest-v1",
+    "target_environment": "binance_usdm_mainnet",
+    "source_artifact_count": 6,
+    "source_artifact_labels": [
+      "cohort_capture",
+      "exchange_info",
+      "commission",
+      "funding",
+      "execution_calibration",
+      "execution_scenario"
+    ],
+    "cohort_source_wraps_exact_admitted_binding": true,
+    "cohort_source_is_compatible_with_read_only_funding_capture": true,
+    "execution_scenario_accepts_bare_or_wrapped_cohort_binding": true,
+    "all_source_paths_are_root_confined_relative_json_paths": true,
+    "duplicate_source_paths_permitted": false,
+    "symlinked_sources_permitted": false,
+    "duplicate_json_keys_permitted": false,
+    "nonfinite_json_values_permitted": false,
+    "unapproved_json_encodings_permitted": false,
+    "source_artifact_logical_sha256_verified": true,
+    "source_artifact_physical_sha256_verified": true,
+    "source_specific_schema_and_authority_audits_required": true,
+    "exact_btc_eth_sol_symbol_panel_required": true,
+    "mixed_source_environments_permitted": false,
+    "execution_calibration_environment": "binance_usdm_testnet",
+    "testnet_execution_calibration_transferred_as_mainnet_fill_evidence": false,
+    "scenario_run_id_must_match_cohort_run_id": true,
+    "scenario_report_must_match_cohort_report": true,
+    "scenario_testnet_aggregate_logical_and_physical_hashes_must_match": true,
+    "scenario_testnet_evidence_hashes_must_match": true,
+    "funding_run_id_must_match_cohort_run_id": true,
+    "target_values_are_derived_only_from_validated_sources": true,
+    "caller_supplied_fees_latency_slippage_funding_or_quantity_values_permitted": false,
+    "manifest_reload_reopens_and_reaudits_all_six_sources": true,
+    "manifest_write_is_immutable_and_exactly_idempotent": true,
+    "network_accessed_by_target_assembler": false,
+    "database_opened_by_target_assembler": false,
+    "credential_material_read_by_target_assembler": false,
+    "orders_submitted_by_target_assembler": false,
+    "trading_authority": false
+  },
+  "verification": {
+    "focused_current_source_pipeline_tests_passed": 51,
+    "focused_plus_historical_design_tests_passed": 87,
+    "full_six_source_round_trip_test_passed": true,
+    "physical_source_tamper_rejection_test_passed": true,
+    "source_path_escape_rejection_test_passed": true,
+    "cohort_binding_tamper_rejection_test_passed": true,
+    "duplicate_json_key_rejection_test_passed": true,
+    "wrapped_scenario_binding_loader_test_passed": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "python_compilation_passed": true,
+    "cohort_source_tool_help_passed": true,
+    "target_manifest_tool_help_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "live_cohort_source_artifact_created": false,
+    "live_target_manifest_created": false,
+    "complete_testnet_execution_aggregate_available": false,
+    "account_specific_mainnet_commission_artifact_available": false,
+    "campaign_database_opened": false,
+    "network_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 29,
+    "latest_confirmed_admitted_slot_ordinal": 35,
+    "slot_035_result_sha256": "0a8e25bc15ef28b4a35881f6fc249a974111530a97abe062cffdfbcd6091abfa",
+    "slot_036_state_at_document_time": "running",
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "9da65d086cf876b85e3894eb1e049b047a11f6a1cdac20700f91a197e740eb8a"
+}
