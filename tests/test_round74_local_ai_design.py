@@ -12,7 +12,6 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 )
 from simple_ai_trading.impact_absorption_ai_bridge import ROUND74_AI_RECENT_BLOCK_EVENTS
 from simple_ai_trading.impact_absorption_event_calibration import (
-    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_ai_review_preparation import (
@@ -20,7 +19,6 @@ from simple_ai_trading.impact_absorption_ai_review_preparation import (
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION,
-    ROUND74_AI_UPLIFT_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_ai_execution_replay import (
     ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION,
@@ -40,9 +38,6 @@ from simple_ai_trading.impact_absorption_event_sealed_ledger import (
     ROUND74_SEALED_CLAIM_SCHEMA_VERSION,
     ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION,
     ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_financial_metrics import (
-    ROUND74_REALIZED_METRICS_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION,
@@ -440,9 +435,7 @@ def test_round74_ai_design_delta_binds_frozen_risk_profile() -> None:
         "round-074-ai-prompt-payload-v3"
     )
     assert source["bridge"]["schema_version"] == "round-074-ai-bridge-v3"
-    assert source["review_panel"]["schema_version"] == (
-        "round-074-ai-review-panel-v5"
-    )
+    assert source["review_panel"]["schema_version"] == ("round-074-ai-review-panel-v5")
     assert profile["profiles"] == ["conservative", "regular", "aggressive"]
     assert profile["default_profile"] == "conservative"
     assert profile["profile_is_frozen_before_ai_review"]
@@ -496,9 +489,7 @@ def test_round74_ai_design_delta_disambiguates_feature_units() -> None:
     assert source["protocol"]["prompt_payload_schema_version"] == (
         "round-074-ai-prompt-payload-v4"
     )
-    assert source["review_panel"]["schema_version"] == (
-        "round-074-ai-review-panel-v6"
-    )
+    assert source["review_panel"]["schema_version"] == ("round-074-ai-review-panel-v6")
     assert units["standardized_feature_value_units"] == (
         "dimensionless_training_scaler_z_scores"
     )
@@ -539,9 +530,7 @@ def test_round74_ai_design_delta_corrects_binary_feature_units() -> None:
     assert source["protocol"]["prompt_payload_schema_version"] == (
         "round-074-ai-prompt-payload-v5"
     )
-    assert source["review_panel"]["schema_version"] == (
-        "round-074-ai-review-panel-v7"
-    )
+    assert source["review_panel"]["schema_version"] == ("round-074-ai-review-panel-v7")
     assert source["event_scaler"]["schema_version"] == (
         "round-074-event-feature-scaler-v4"
     )
@@ -556,9 +545,7 @@ def test_round74_ai_design_delta_corrects_binary_feature_units() -> None:
         "continuous_scaling_uses_training_only_robust_location_scale_and_clipping"
     ]
     assert correction["prompt_payload_hash_binds_corrected_unit_metadata"]
-    assert correction[
-        "system_prompt_states_binary_and_continuous_contracts_separately"
-    ]
+    assert correction["system_prompt_states_binary_and_continuous_contracts_separately"]
     assert not correction["financial_uplift_assumed"]
     assert verification["focused_tests_passed"] == 98
     assert verification["binary_indicator_metadata_asserted"]
@@ -593,9 +580,7 @@ def test_round74_ai_design_delta_binds_causal_microstructure_blocks() -> None:
         "round-074-ai-prompt-payload-v6"
     )
     assert source["bridge"]["schema_version"] == "round-074-ai-bridge-v4"
-    assert source["review_panel"]["schema_version"] == (
-        "round-074-ai-review-panel-v8"
-    )
+    assert source["review_panel"]["schema_version"] == ("round-074-ai-review-panel-v8")
     assert trajectory["block_count"] == 4
     assert trajectory["events_per_block"] == 16
     assert trajectory["event_span"] == 64
@@ -643,9 +628,7 @@ def test_round74_ai_design_delta_corrects_summary_units_and_preflight() -> None:
     assert source["protocol"]["prompt_payload_schema_version"] == (
         "round-074-ai-prompt-payload-v7"
     )
-    assert source["review_panel"]["schema_version"] == (
-        "round-074-ai-review-panel-v9"
-    )
+    assert source["review_panel"]["schema_version"] == ("round-074-ai-review-panel-v9")
     assert source["runtime_preflight_publisher"]["schema_version"] == (
         "round-074-local-ai-runtime-preflight-v3"
     )
@@ -705,12 +688,8 @@ def test_round74_ai_design_delta_binds_runtime_semantics_and_host_preflight() ->
     assert source["protocol"]["system_prompt_schema_version"] == (
         "round-074-ai-system-prompt-v1"
     )
-    assert source["runtime"]["schema_version"] == (
-        "round-074-ai-runtime-outcome-v3"
-    )
-    assert source["review_panel"]["schema_version"] == (
-        "round-074-ai-review-panel-v11"
-    )
+    assert source["runtime"]["schema_version"] == ("round-074-ai-runtime-outcome-v3")
+    assert source["review_panel"]["schema_version"] == ("round-074-ai-review-panel-v11")
     assert source["runtime_preflight_publisher"]["schema_version"] == (
         "round-074-local-ai-runtime-preflight-v5"
     )
@@ -818,9 +797,7 @@ def test_round74_ai_design_delta_keeps_microstructure_hypotheses_out_of_round() 
         "flash_stress_and_liquidity_stratified_evaluation",
         "simple_model_feature_quality_baseline",
     }
-    assert all(
-        not value["current_round_74_family_changed"] for value in hypotheses
-    )
+    assert all(not value["current_round_74_family_changed"] for value in hypotheses)
     assert not inference["paper_results_transfer_directly_to_current_assets"]
     assert not inference["reported_accuracy_implies_after_cost_edge"]
     assert not inference["level_3_spoofing_claim_can_be_made_from_level_2_data"]
@@ -857,12 +834,8 @@ def test_round74_ai_design_delta_binds_supervised_worker_latency_reduction() -> 
             commit,
             binding["path"],
         )
-    assert source["runtime"]["schema_version"] == (
-        "round-074-ai-runtime-outcome-v4"
-    )
-    assert source["review_panel"]["schema_version"] == (
-        "round-074-ai-review-panel-v12"
-    )
+    assert source["runtime"]["schema_version"] == ("round-074-ai-runtime-outcome-v4")
+    assert source["review_panel"]["schema_version"] == ("round-074-ai-review-panel-v12")
     assert session["serialization"] == "strict_canonical_json_without_pickle"
     assert session["model_identity_bound_on_first_request"]
     assert not session["model_identity_change_permitted"]
@@ -967,9 +940,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["model_manifest_schema_version"] == (
         ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
     )
-    assert source["review_request_schema_version"] == (
-        "round-074-ai-review-request-v3"
-    )
+    assert source["review_request_schema_version"] == ("round-074-ai-review-request-v3")
     assert source["review_decision_schema_version"] == (
         ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION
     )
@@ -987,7 +958,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION
     )
     assert source["temperature_calibration_schema_version"] == (
-        ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+        "round-074-temperature-calibration-v2"
     )
     assert source["action_context_schema_version"] == "round-074-action-context-v4"
     assert source["action_policy_schema_version"] == "round-074-action-policy-v7"
@@ -996,7 +967,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION
     )
     assert source["uplift_evaluator_schema_version"] == (
-        ROUND74_AI_UPLIFT_SCHEMA_VERSION
+        "round-074-ai-uplift-development-v7"
     )
     assert source["execution_replay_plan_schema_version"] == (
         ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
@@ -1017,7 +988,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "round-074-sealed-evaluation-v9"
     )
     assert source["financial_metrics_schema_version"] == (
-        ROUND74_REALIZED_METRICS_SCHEMA_VERSION
+        "round-074-realized-payoff-metrics-v1"
     )
     assert source["target_free_inference_schema_version"] == (
         ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION

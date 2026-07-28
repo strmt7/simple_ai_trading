@@ -53,7 +53,9 @@ def _trace() -> Round74ActionTrace:
         median_net_bps=2.0 / 3.0,
         win_rate=4.0 / 6.0,
         profit_factor=4.0,
-        maximum_drawdown_bps=1.0 / 3.0,
+        maximum_drawdown_bps=2.0 / 3.0,
+        realized_maximum_drawdown_bps=1.0 / 3.0,
+        maximum_concurrent_adverse_excursion_bps=1.0 / 3.0,
         gross_profit_bps=8.0 / 3.0,
         gross_loss_bps=2.0 / 3.0,
         worst_trade_bps=-1.0 / 3.0,
@@ -289,12 +291,8 @@ def _execution(
     index: int,
 ) -> Round74AIExecutionReplayEvidence:
     decision = review.decision
-    requested_multiplier = (
-        decision.size_multiplier_bps if decision is not None else 0
-    )
-    executed = (
-        review.runtime_status == "accepted" and requested_multiplier > 0
-    )
+    requested_multiplier = decision.size_multiplier_bps if decision is not None else 0
+    executed = review.runtime_status == "accepted" and requested_multiplier > 0
     if review.runtime_status != "accepted":
         status = "runtime_veto"
     elif requested_multiplier == 0:
@@ -315,9 +313,7 @@ def _execution(
         target_spec_sha256="9" * 64,
         status=status,
         requested_size_multiplier_bps=requested_multiplier,
-        applied_size_multiplier_bps=(
-            requested_multiplier if executed else 0
-        ),
+        applied_size_multiplier_bps=(requested_multiplier if executed else 0),
         exact_l2_replay_performed=executed,
         target_outcome_sha256=f"{index + 400:064x}" if executed else None,
         target_context_sha256=f"{index + 500:064x}" if executed else None,
@@ -358,7 +354,9 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
 
     assert report.development_gate_passed
     assert report.ai_metrics.total_net_bps == 8.0 / 3.0
-    assert report.ai_metrics.maximum_drawdown_bps == 0.0
+    assert report.ai_metrics.realized_maximum_drawdown_bps == 0.0
+    assert report.ai_metrics.maximum_concurrent_adverse_excursion_bps == (1.0 / 3.0)
+    assert report.ai_metrics.maximum_drawdown_bps == 1.0 / 3.0
     assert report.ai_metrics.retained_trades == 4
     assert report.ai_metrics.distinct_retained_symbols == 3
     assert report.sealed_test_accessed is False
