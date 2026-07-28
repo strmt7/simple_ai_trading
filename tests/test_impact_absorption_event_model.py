@@ -209,6 +209,62 @@ def test_round74_loss_is_finite_and_backpropagates() -> None:
     )
 
 
+def test_round74_loss_scales_only_distributional_components() -> None:
+    output = Round74EventPoolingMLP(dropout=0.0)(_inputs())
+    generator = torch.Generator().manual_seed(74031)
+    action_shape = (
+        3,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
+    targets = {
+        "net_payoff_bps": torch.randn(action_shape, generator=generator),
+        "maximum_adverse_excursion_bps": torch.rand(
+            action_shape,
+            generator=generator,
+        ),
+        "adverse_selection": torch.randint(
+            0,
+            2,
+            action_shape,
+            generator=generator,
+        ).float(),
+        "regime_unpredictable": torch.randint(
+            0,
+            2,
+            (3, len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)),
+            generator=generator,
+        ).float(),
+    }
+    _unit_loss, unit = round74_event_model_loss(output, **targets)
+    _scaled_loss, scaled = round74_event_model_loss(
+        output,
+        **targets,
+        payoff_loss_scale_bps=torch.full(action_shape, 10.0),
+        maximum_adverse_excursion_loss_scale_bps=torch.full(
+            action_shape,
+            5.0,
+        ),
+    )
+
+    torch.testing.assert_close(
+        scaled["payoff_pinball"],
+        unit["payoff_pinball"] / 10.0,
+    )
+    torch.testing.assert_close(
+        scaled["maximum_adverse_excursion_pinball"],
+        unit["maximum_adverse_excursion_pinball"] / 5.0,
+    )
+    for name in ("positive_bce", "adverse_bce", "unpredictability_bce"):
+        torch.testing.assert_close(scaled[name], unit[name])
+    with pytest.raises(ValueError, match="not positive"):
+        round74_event_model_loss(
+            output,
+            **targets,
+            payoff_loss_scale_bps=torch.zeros(action_shape),
+        )
+
+
 def test_round74_loss_excludes_censored_actions_and_rejects_empty_batches() -> None:
     output = Round74EventPoolingMLP(dropout=0.0)(_inputs())
     action_shape = (

@@ -41,14 +41,16 @@ from .impact_absorption_event_model import (
 from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+    ROUND74_EVENT_PAYOFF_SIDES,
 )
 from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v20"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v19"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v21"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v20"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
+ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION = "round-074-target-loss-scale-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
 ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS = 12
@@ -288,6 +290,316 @@ class Round74EventTrainingConfig:
             "checkpoint_policy": "best_state_in_memory_only",
             "loss_weights": dict(ROUND74_EVENT_TRAINING_LOSS_WEIGHTS),
         }
+
+
+def _readonly_array(value: np.ndarray) -> np.ndarray:
+    selected = np.ascontiguousarray(value)
+    selected.setflags(write=False)
+    return selected
+
+
+def _robust_positive_scale(values: np.ndarray) -> float:
+    selected = np.asarray(values, dtype=np.float64)
+    if selected.ndim != 1 or selected.size < 1 or not np.isfinite(selected).all():
+        raise ValueError("Round 74 target-loss scale observations differ")
+    q25, q50, q75 = np.quantile(selected, (0.25, 0.50, 0.75))
+    scale = max(float(q75 - q25), float(np.median(np.abs(selected))), abs(float(q50)))
+    return scale if math.isfinite(scale) and scale > 0.0 else 0.0
+
+
+@dataclass(frozen=True)
+class Round74EventTargetLossScale:
+    """Training-only empirical scales for comparable proper-loss gradients."""
+
+    payoff_scale_bps: np.ndarray
+    maximum_adverse_excursion_scale_bps: np.ndarray
+    eligible_target_count: np.ndarray
+    training_batch_sha256: tuple[str, ...]
+    payoff_fallback_groups: tuple[str, ...] = ()
+    maximum_adverse_excursion_fallback_groups: tuple[str, ...] = ()
+    schema_version: str = ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        shape = (
+            len(IMPACT_CAPTURE_SYMBOLS),
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            len(ROUND74_EVENT_PAYOFF_SIDES),
+        )
+        if (
+            self.schema_version != ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION
+            or self.payoff_scale_bps.shape != shape
+            or self.maximum_adverse_excursion_scale_bps.shape != shape
+            or self.eligible_target_count.shape != shape
+            or self.payoff_scale_bps.dtype != np.float64
+            or self.maximum_adverse_excursion_scale_bps.dtype != np.float64
+            or self.eligible_target_count.dtype != np.int64
+            or self.payoff_scale_bps.flags.writeable
+            or self.maximum_adverse_excursion_scale_bps.flags.writeable
+            or self.eligible_target_count.flags.writeable
+            or not np.isfinite(self.payoff_scale_bps).all()
+            or not np.isfinite(self.maximum_adverse_excursion_scale_bps).all()
+            or np.any(self.payoff_scale_bps <= 0.0)
+            or np.any(self.maximum_adverse_excursion_scale_bps <= 0.0)
+            or np.any(self.eligible_target_count < 0)
+            or not self.training_batch_sha256
+            or tuple(sorted(self.training_batch_sha256)) != self.training_batch_sha256
+            or len(set(self.training_batch_sha256)) != len(self.training_batch_sha256)
+            or any(
+                _SHA256.fullmatch(value) is None for value in self.training_batch_sha256
+            )
+        ):
+            raise ValueError("Round 74 target-loss scale contract differs")
+        valid_groups = {
+            f"{symbol}:{horizon}:{side}"
+            for symbol in IMPACT_CAPTURE_SYMBOLS
+            for horizon in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS
+            for side in ROUND74_EVENT_PAYOFF_SIDES
+        }
+        for values in (
+            self.payoff_fallback_groups,
+            self.maximum_adverse_excursion_fallback_groups,
+        ):
+            if (
+                tuple(sorted(values)) != values
+                or len(values) != len(set(values))
+                or any(value not in valid_groups for value in values)
+            ):
+                raise ValueError("Round 74 target-loss fallback group differs")
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        payload: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "symbols": list(IMPACT_CAPTURE_SYMBOLS),
+            "horizons_seconds": list(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            "sides": list(ROUND74_EVENT_PAYOFF_SIDES),
+            "payoff_scale_bps": self.payoff_scale_bps.tolist(),
+            "maximum_adverse_excursion_scale_bps": (
+                self.maximum_adverse_excursion_scale_bps.tolist()
+            ),
+            "eligible_target_count": self.eligible_target_count.tolist(),
+            "training_batch_sha256": list(self.training_batch_sha256),
+            "payoff_fallback_groups": list(self.payoff_fallback_groups),
+            "maximum_adverse_excursion_fallback_groups": list(
+                self.maximum_adverse_excursion_fallback_groups
+            ),
+            "fit_partition_role": "training",
+            "tuning_targets_used": False,
+            "test_targets_used": False,
+            "forecast_units_changed": False,
+            "financial_outcome_units": "basis_points",
+        }
+        if include_sha256:
+            payload["target_loss_scale_sha256"] = _canonical_sha256(payload)
+        return payload
+
+    @property
+    def target_loss_scale_sha256(self) -> str:
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74EventTargetLossScale:
+        payload = dict(value)
+        claimed = str(payload.pop("target_loss_scale_sha256", ""))
+        if claimed != _canonical_sha256(payload):
+            raise ValueError("Round 74 target-loss scale digest differs")
+        if (
+            payload.get("symbols") != list(IMPACT_CAPTURE_SYMBOLS)
+            or payload.get("horizons_seconds")
+            != list(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+            or payload.get("sides") != list(ROUND74_EVENT_PAYOFF_SIDES)
+            or payload.get("fit_partition_role") != "training"
+            or payload.get("tuning_targets_used") is not False
+            or payload.get("test_targets_used") is not False
+            or payload.get("forecast_units_changed") is not False
+            or payload.get("financial_outcome_units") != "basis_points"
+        ):
+            raise ValueError("Round 74 target-loss scale policy differs")
+        try:
+            selected = cls(
+                payoff_scale_bps=_readonly_array(
+                    np.asarray(payload["payoff_scale_bps"], dtype=np.float64)
+                ),
+                maximum_adverse_excursion_scale_bps=_readonly_array(
+                    np.asarray(
+                        payload["maximum_adverse_excursion_scale_bps"],
+                        dtype=np.float64,
+                    )
+                ),
+                eligible_target_count=_readonly_array(
+                    np.asarray(payload["eligible_target_count"], dtype=np.int64)
+                ),
+                training_batch_sha256=tuple(
+                    str(item) for item in payload["training_batch_sha256"]
+                ),
+                payoff_fallback_groups=tuple(
+                    str(item) for item in payload["payoff_fallback_groups"]
+                ),
+                maximum_adverse_excursion_fallback_groups=tuple(
+                    str(item)
+                    for item in payload["maximum_adverse_excursion_fallback_groups"]
+                ),
+                schema_version=str(payload["schema_version"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("Round 74 target-loss scale payload differs") from exc
+        selected.validate()
+        if selected.as_dict(include_sha256=False) != payload:
+            raise ValueError("Round 74 target-loss scale reload differs")
+        return selected
+
+    def for_batch(
+        self,
+        batch: Round74EventTrainingBatch,
+        row_slice: slice,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        start, stop, step = row_slice.indices(batch.rows)
+        if step != 1 or stop <= start:
+            raise ValueError("Round 74 target-loss scale slice differs")
+        symbol_indexes = np.fromiter(
+            (
+                IMPACT_CAPTURE_SYMBOLS.index(symbol)
+                for symbol in batch.symbol[start:stop]
+            ),
+            dtype=np.int64,
+            count=stop - start,
+        )
+        return (
+            np.ascontiguousarray(
+                self.payoff_scale_bps[symbol_indexes],
+                dtype=np.float32,
+            ),
+            np.ascontiguousarray(
+                self.maximum_adverse_excursion_scale_bps[symbol_indexes],
+                dtype=np.float32,
+            ),
+        )
+
+
+def fit_round74_event_target_loss_scale(
+    training_batches: Sequence[Round74EventTrainingBatch],
+    *,
+    require_complete_panel: bool,
+) -> Round74EventTargetLossScale:
+    """Fit subgroup scales using eligible training targets and no later role."""
+
+    batches = tuple(training_batches)
+    if not batches or not isinstance(require_complete_panel, bool):
+        raise ValueError("Round 74 target-loss scale fit inputs differ")
+    for batch in batches:
+        batch.validate()
+        if batch.role != "training":
+            raise ValueError("Round 74 target-loss scale used a non-training role")
+    hashes = tuple(sorted(batch.batch_sha256 for batch in batches))
+    if len(hashes) != len(set(hashes)):
+        raise ValueError("Round 74 target-loss scale training batches repeat")
+    shape = (
+        len(IMPACT_CAPTURE_SYMBOLS),
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
+    payoff_groups: dict[tuple[int, int, int], list[np.ndarray]] = {}
+    adverse_groups: dict[tuple[int, int, int], list[np.ndarray]] = {}
+    counts = np.zeros(shape, dtype=np.int64)
+    pooled_payoff: list[np.ndarray] = []
+    pooled_adverse: list[np.ndarray] = []
+    for batch in batches:
+        symbols = np.asarray(
+            tuple(IMPACT_CAPTURE_SYMBOLS.index(value) for value in batch.symbol),
+            dtype=np.int64,
+        )
+        for symbol_index in range(len(IMPACT_CAPTURE_SYMBOLS)):
+            row_mask = symbols == symbol_index
+            if not np.any(row_mask):
+                continue
+            for horizon_index in range(len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)):
+                for side_index in range(len(ROUND74_EVENT_PAYOFF_SIDES)):
+                    eligible = row_mask & (
+                        batch.action_eligibility[:, horizon_index, side_index] == 1.0
+                    )
+                    if not np.any(eligible):
+                        continue
+                    key = (symbol_index, horizon_index, side_index)
+                    payoff = np.asarray(
+                        batch.net_payoff_bps[
+                            eligible,
+                            horizon_index,
+                            side_index,
+                        ],
+                        dtype=np.float64,
+                    )
+                    adverse = np.asarray(
+                        batch.maximum_adverse_excursion_bps[
+                            eligible,
+                            horizon_index,
+                            side_index,
+                        ],
+                        dtype=np.float64,
+                    )
+                    payoff_groups.setdefault(key, []).append(payoff)
+                    adverse_groups.setdefault(key, []).append(adverse)
+                    counts[key] += int(payoff.size)
+                    pooled_payoff.append(payoff)
+                    pooled_adverse.append(adverse)
+    if not pooled_payoff or not pooled_adverse:
+        raise ValueError("Round 74 target-loss scale has no eligible targets")
+    pooled_payoff_scale = _robust_positive_scale(np.concatenate(pooled_payoff))
+    pooled_adverse_scale = _robust_positive_scale(np.concatenate(pooled_adverse))
+    if require_complete_panel and (
+        pooled_payoff_scale <= 0.0 or pooled_adverse_scale <= 0.0
+    ):
+        raise ValueError("Round 74 target-loss scale population is degenerate")
+    pooled_payoff_scale = pooled_payoff_scale or 1.0
+    pooled_adverse_scale = pooled_adverse_scale or 1.0
+    payoff_scales = np.empty(shape, dtype=np.float64)
+    adverse_scales = np.empty(shape, dtype=np.float64)
+    payoff_fallbacks: list[str] = []
+    adverse_fallbacks: list[str] = []
+    for symbol_index, symbol in enumerate(IMPACT_CAPTURE_SYMBOLS):
+        for horizon_index, horizon in enumerate(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS):
+            for side_index, side in enumerate(ROUND74_EVENT_PAYOFF_SIDES):
+                key = (symbol_index, horizon_index, side_index)
+                label = f"{symbol}:{horizon}:{side}"
+                if key not in payoff_groups:
+                    if require_complete_panel:
+                        raise ValueError(
+                            "Round 74 target-loss scale subgroup panel is incomplete"
+                        )
+                    payoff_scale = pooled_payoff_scale
+                    adverse_scale = pooled_adverse_scale
+                    payoff_fallbacks.append(label)
+                    adverse_fallbacks.append(label)
+                else:
+                    payoff_scale = _robust_positive_scale(
+                        np.concatenate(payoff_groups[key])
+                    )
+                    adverse_scale = _robust_positive_scale(
+                        np.concatenate(adverse_groups[key])
+                    )
+                    if payoff_scale <= 0.0:
+                        payoff_scale = pooled_payoff_scale
+                        payoff_fallbacks.append(label)
+                    if adverse_scale <= 0.0:
+                        adverse_scale = pooled_adverse_scale
+                        adverse_fallbacks.append(label)
+                payoff_scales[key] = payoff_scale
+                adverse_scales[key] = adverse_scale
+    selected = Round74EventTargetLossScale(
+        payoff_scale_bps=_readonly_array(payoff_scales),
+        maximum_adverse_excursion_scale_bps=_readonly_array(adverse_scales),
+        eligible_target_count=_readonly_array(counts),
+        training_batch_sha256=hashes,
+        payoff_fallback_groups=tuple(sorted(payoff_fallbacks)),
+        maximum_adverse_excursion_fallback_groups=tuple(sorted(adverse_fallbacks)),
+    )
+    selected.validate()
+    reloaded = Round74EventTargetLossScale.from_dict(selected.as_dict())
+    if reloaded.as_dict() != selected.as_dict():
+        raise RuntimeError("Round 74 target-loss scale reload differs")
+    return selected
 
 
 class Round74EventEnsemble(nn.Module):
@@ -669,6 +981,8 @@ def _loss_for_minibatch(
     batch: Round74EventTrainingBatch,
     row_slice: slice,
     device: object,
+    *,
+    target_loss_scale: Round74EventTargetLossScale | None = None,
 ) -> tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int]:
     action_weight, regime_weight, _rows = _minibatch_target_counts(batch, row_slice)
     features = _to_device_tensor(batch.feature_values, row_slice, device)
@@ -694,6 +1008,16 @@ def _loss_for_minibatch(
         row_slice,
         device,
     )
+    if target_loss_scale is None:
+        payoff_loss_scale = torch.ones_like(payoff)
+        adverse_excursion_loss_scale = torch.ones_like(adverse_excursion)
+    else:
+        payoff_scale_values, adverse_scale_values = target_loss_scale.for_batch(
+            batch,
+            row_slice,
+        )
+        payoff_loss_scale = torch.from_numpy(payoff_scale_values).to(device)
+        adverse_excursion_loss_scale = torch.from_numpy(adverse_scale_values).to(device)
     output = model(features)
     loss, components = round74_event_model_loss(
         output,
@@ -703,6 +1027,8 @@ def _loss_for_minibatch(
         regime_unpredictable=unpredictable,
         action_eligibility=action_eligibility,
         regime_unpredictability_eligibility=regime_eligibility,
+        payoff_loss_scale_bps=payoff_loss_scale,
+        maximum_adverse_excursion_loss_scale_bps=(adverse_excursion_loss_scale),
         maximum_adverse_excursion_weight=(
             ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["maximum_adverse_excursion"]
         ),
@@ -759,6 +1085,8 @@ def _losses_for_minibatch_group(
     model: nn.Module,
     selections: Sequence[tuple[Round74EventTrainingBatch, slice]],
     device: object,
+    *,
+    target_loss_scale: Round74EventTargetLossScale | None = None,
 ) -> tuple[
     tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int],
     ...,
@@ -786,6 +1114,26 @@ def _losses_for_minibatch_group(
             "regime_unpredictability_eligibility",
         )
     }
+    if target_loss_scale is None:
+        payoff_loss_scale = torch.ones_like(targets["net_payoff_bps"])
+        adverse_excursion_loss_scale = torch.ones_like(
+            targets["maximum_adverse_excursion_bps"]
+        )
+    else:
+        scale_values = tuple(
+            target_loss_scale.for_batch(batch, row_slice)
+            for batch, row_slice in selections
+        )
+        payoff_loss_scale = torch.from_numpy(
+            np.ascontiguousarray(
+                np.concatenate(tuple(value[0] for value in scale_values), axis=0)
+            )
+        ).to(device)
+        adverse_excursion_loss_scale = torch.from_numpy(
+            np.ascontiguousarray(
+                np.concatenate(tuple(value[1] for value in scale_values), axis=0)
+            )
+        ).to(device)
     output = model(features)
     results: list[tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int]] = []
     offset = 0
@@ -803,6 +1151,10 @@ def _losses_for_minibatch_group(
             action_eligibility=targets["action_eligibility"][offset:stop],
             regime_unpredictability_eligibility=(
                 targets["regime_unpredictability_eligibility"][offset:stop]
+            ),
+            payoff_loss_scale_bps=payoff_loss_scale[offset:stop],
+            maximum_adverse_excursion_loss_scale_bps=(
+                adverse_excursion_loss_scale[offset:stop]
             ),
             maximum_adverse_excursion_weight=(
                 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["maximum_adverse_excursion"]
@@ -949,7 +1301,9 @@ def _evaluate_model(
     minibatch_rows: int,
     device_run_group_size: int,
     device: object,
+    target_loss_scale: Round74EventTargetLossScale,
 ) -> tuple[dict[str, float], tuple[float, ...]]:
+    target_loss_scale.validate()
     model.eval()
     totals = _empty_metric_sums()
     per_run_totals = tuple(_empty_metric_sums() for _batch in batches)
@@ -980,6 +1334,7 @@ def _evaluate_model(
                     (batch, row_slice) for _index, batch, row_slice in selected_group
                 ),
                 device,
+                target_loss_scale=target_loss_scale,
             )
             _accumulate_group_metrics(
                 totals,
@@ -1036,9 +1391,11 @@ def _evaluate_model_group_losses(
     minibatch_rows: int,
     device: object,
     require_complete_symbol_panel: bool,
+    target_loss_scale: Round74EventTargetLossScale,
 ) -> dict[str, float]:
     """Measure proper loss for every eligible run-symbol-horizon subgroup."""
 
+    target_loss_scale.validate()
     if not batches:
         raise ValueError("Round 74 tuning subgroup panel is empty")
     model.eval()
@@ -1092,6 +1449,13 @@ def _evaluate_model_group_losses(
                         "regime_unpredictability_eligibility",
                     )
                 }
+                payoff_scale_values, adverse_scale_values = target_loss_scale.for_batch(
+                    batch, row_slice
+                )
+                payoff_loss_scale = torch.from_numpy(payoff_scale_values).to(device)
+                adverse_excursion_loss_scale = torch.from_numpy(
+                    adverse_scale_values
+                ).to(device)
                 symbols = np.asarray(batch.symbol[start:stop], dtype=object)
                 for symbol in IMPACT_CAPTURE_SYMBOLS:
                     row_indices = np.flatnonzero(symbols == symbol)
@@ -1142,6 +1506,15 @@ def _evaluate_model_group_losses(
                                 ],
                                 action_eligibility=action_eligibility,
                                 regime_unpredictability_eligibility=regime_eligibility,
+                                payoff_loss_scale_bps=(
+                                    payoff_loss_scale.index_select(0, index)
+                                ),
+                                maximum_adverse_excursion_loss_scale_bps=(
+                                    adverse_excursion_loss_scale.index_select(
+                                        0,
+                                        index,
+                                    )
+                                ),
                                 maximum_adverse_excursion_weight=(
                                     ROUND74_EVENT_TRAINING_LOSS_WEIGHTS[
                                         "maximum_adverse_excursion"
@@ -1205,7 +1578,9 @@ def _train_peer(
     *,
     config: Round74EventTrainingConfig,
     device: object,
+    target_loss_scale: Round74EventTargetLossScale,
 ) -> tuple[dict[str, torch.Tensor], dict[str, object]]:
+    target_loss_scale.validate()
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -1250,6 +1625,7 @@ def _train_peer(
                         for _index, batch, row_slice, _action, _regime in selected_group
                     ),
                     device,
+                    target_loss_scale=target_loss_scale,
                 )
                 _eligible_target_weighted_group_loss(
                     grouped,
@@ -1314,6 +1690,7 @@ def _train_peer(
                             for batch, row_slice, _run_totals in selected_group
                         ),
                         device,
+                        target_loss_scale=target_loss_scale,
                     )
                     (
                         torch.stack(tuple(item[0] for item in grouped)).sum()
@@ -1371,6 +1748,7 @@ def _train_peer(
             minibatch_rows=config.minibatch_rows,
             device_run_group_size=config.device_run_group_size,
             device=device,
+            target_loss_scale=target_loss_scale,
         )
         selection_loss_name = (
             "loss"
@@ -1409,6 +1787,7 @@ def _train_peer(
         minibatch_rows=config.minibatch_rows,
         device_run_group_size=config.device_run_group_size,
         device=device,
+        target_loss_scale=target_loss_scale,
     )
     if not math.isclose(
         restored_metrics[selection_loss_name],
@@ -1476,6 +1855,7 @@ def _fit_candidate(
     *,
     config: Round74EventTrainingConfig,
     device: object,
+    target_loss_scale: Round74EventTargetLossScale,
 ) -> _CandidateFit:
     states: list[dict[str, torch.Tensor]] = []
     reports: list[dict[str, object]] = []
@@ -1487,6 +1867,7 @@ def _fit_candidate(
             tuning_batches,
             config=config,
             device=device,
+            target_loss_scale=target_loss_scale,
         )
         states.append(state)
         reports.append(report)
@@ -1497,6 +1878,7 @@ def _fit_candidate(
         minibatch_rows=config.minibatch_rows,
         device_run_group_size=config.device_run_group_size,
         device=device,
+        target_loss_scale=target_loss_scale,
     )
     ensemble_group_losses = _evaluate_model_group_losses(
         ensemble,
@@ -1504,6 +1886,7 @@ def _fit_candidate(
         minibatch_rows=config.minibatch_rows,
         device=device,
         require_complete_symbol_panel=config.execution_mode != "preflight",
+        target_loss_scale=target_loss_scale,
     )
     prediction_sha256 = _prediction_sha256(
         ensemble,
@@ -1857,6 +2240,14 @@ def train_and_seal_round74_pretest_policy(
             "fit_partition_role": "training",
             "reload_verified": True,
         }
+    target_loss_scale = fit_round74_event_target_loss_scale(
+        training_batches,
+        require_complete_panel=selected_config.execution_mode != "preflight",
+    )
+    if target_loss_scale.training_batch_sha256 != tuple(
+        sorted(development.training_batch_sha256)
+    ):
+        raise RuntimeError("Round 74 target-loss scale data binding differs")
     backend = require_backend(resolve_backend(compute_backend))
     device = torch_device_for_backend(backend)
     prior_deterministic = torch.are_deterministic_algorithms_enabled()
@@ -1877,6 +2268,7 @@ def train_and_seal_round74_pretest_policy(
                         tuning_batches,
                         config=selected_config,
                         device=device,
+                        target_loss_scale=target_loss_scale,
                     )
                 )
             warning_messages.extend(str(item.message) for item in caught)
@@ -1992,6 +2384,7 @@ def train_and_seal_round74_pretest_policy(
             "test_sample_digests_consumed": 0,
         },
         "training_policy": selected_config.as_dict(),
+        "target_loss_scale": target_loss_scale.as_dict(),
         "optimization_population": _optimization_population_policy(
             selected_config.execution_mode,
             len(training_batches),
@@ -2203,6 +2596,7 @@ def load_round74_pretest_policy(
         "source_binding",
         "development_data",
         "training_policy",
+        "target_loss_scale",
         "optimization_population",
         "ensemble_aggregation",
         "backend",
@@ -2220,6 +2614,7 @@ def load_round74_pretest_policy(
     development = policy.get("development_data")
     authority = policy.get("authority")
     training_policy = policy.get("training_policy")
+    target_loss_scale_payload = policy.get("target_loss_scale")
     optimization_population = policy.get("optimization_population")
     ensemble_aggregation = policy.get("ensemble_aggregation")
     source_binding = policy.get("source_binding")
@@ -2234,6 +2629,7 @@ def load_round74_pretest_policy(
             development,
             authority,
             training_policy,
+            target_loss_scale_payload,
             optimization_population,
             ensemble_aggregation,
             source_binding,
@@ -2248,6 +2644,7 @@ def load_round74_pretest_policy(
     assert isinstance(development, Mapping)
     assert isinstance(authority, Mapping)
     assert isinstance(training_policy, Mapping)
+    assert isinstance(target_loss_scale_payload, Mapping)
     assert isinstance(optimization_population, Mapping)
     assert isinstance(ensemble_aggregation, Mapping)
     assert isinstance(source_binding, Mapping)
@@ -2309,6 +2706,12 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest training policy differs") from exc
     if reconstructed_config.as_dict() != dict(training_policy):
         raise ValueError("Round 74 pretest training policy differs")
+    try:
+        target_loss_scale = Round74EventTargetLossScale.from_dict(
+            target_loss_scale_payload
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("Round 74 pretest target-loss scale differs") from exc
     training_batch_sha256 = development.get("training_batch_sha256")
     tuning_batch_sha256 = development.get("tuning_batch_sha256")
     if (
@@ -2322,6 +2725,13 @@ def load_round74_pretest_policy(
         )
     ):
         raise ValueError("Round 74 pretest optimization population differs")
+    if target_loss_scale.training_batch_sha256 != tuple(
+        sorted(str(value) for value in training_batch_sha256)
+    ) or (
+        reconstructed_config.execution_mode != "preflight"
+        and np.any(target_loss_scale.eligible_target_count <= 0)
+    ):
+        raise ValueError("Round 74 pretest target-loss scale binding differs")
     if dict(ensemble_aggregation) != {
         "peer_weights": "equal",
         "payoff_and_adverse_excursion_quantiles": ("arithmetic_mean_of_peer_quantiles"),
