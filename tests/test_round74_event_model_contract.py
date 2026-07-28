@@ -6,27 +6,9 @@ from pathlib import Path
 import subprocess  # nosec B404
 
 from simple_ai_trading.impact_absorption_ai_protocol import (
-    ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION,
     ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_ai_bridge import ROUND74_AI_RECENT_BLOCK_EVENTS
-from simple_ai_trading.impact_absorption_ai_uplift import (
-    ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_ai_execution_replay import (
-    ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_ai_worker import (
-    ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION,
-    ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_cohort import (
-    ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION,
-    ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_calibration import (
-    ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_DEFAULT_PROFILE,
     ROUND74_ACTION_HORIZONS_SECONDS,
@@ -37,26 +19,14 @@ from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
     ROUND74_SEALED_BOOTSTRAP_DRAWS,
     ROUND74_SEALED_FAMILYWISE_ALPHA,
     ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT,
-    ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_sealed_ledger import (
-    ROUND74_SEALED_CLAIM_SCHEMA_VERSION,
-    ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION,
-    ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
-    ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS,
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
     ROUND74_EVENT_SYMBOLS,
 )
-from simple_ai_trading.impact_absorption_event_targets import (
-    ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION,
-    ROUND74_EVENT_TARGET_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT,
-    ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_DEFAULT_SEEDS,
 )
 from simple_ai_trading.impact_absorption_event_model import (
@@ -64,13 +34,8 @@ from simple_ai_trading.impact_absorption_event_model import (
     ROUND74_EVENT_ATTENTION_HIDDEN_CHANNELS,
     ROUND74_EVENT_ATTENTION_LAYERS,
     ROUND74_EVENT_MODEL_CANDIDATES,
-    ROUND74_EVENT_MODEL_SCHEMA_VERSION,
     ROUND74_EVENT_TCN_DILATIONS,
     ROUND74_EVENT_TCN_RECEPTIVE_FIELD,
-)
-from simple_ai_trading.impact_absorption_event_evidence import (
-    ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION,
-    ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_execution_evidence import (
     ROUND74_EXECUTION_CALIBRATION_MAXIMUM_BOOK_AGE_NS,
@@ -78,12 +43,6 @@ from simple_ai_trading.impact_absorption_execution_evidence import (
     ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL_SIDE,
     ROUND74_EXECUTION_CALIBRATION_QUANTILE,
     ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE,
-)
-from simple_ai_trading.impact_absorption_exchange_info_evidence import (
-    ROUND74_EXCHANGE_INFO_EVIDENCE_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_target_assembly import (
-    ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION,
 )
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -758,25 +717,25 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert (
         source["event_target_source_evidence_schema_version"]
-        == ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION
+        == "round-074-binance-source-evidence-v3"
     )
     assert (
         source["event_target_clock_probe_schema_version"]
-        == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
+        == "round-074-binance-clock-probe-v1"
     )
     assert source["event_exchange_info_evidence_sha256"] == _file_sha256(
         source["event_exchange_info_evidence_path"]
     )
     assert (
         source["event_exchange_info_evidence_schema_version"]
-        == ROUND74_EXCHANGE_INFO_EVIDENCE_SCHEMA_VERSION
+        == "round-074-exchange-info-source-evidence-v1"
     )
     assert source["event_target_assembly_sha256"] == _file_sha256(
         source["event_target_assembly_path"]
     )
     assert (
         source["event_target_assembly_schema_version"]
-        == ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION
+        == "round-074-source-target-assembly-v1"
     )
     assert source["event_model_operator_sha256"] == _file_sha256(
         source["event_model_operator_path"]
@@ -829,13 +788,16 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_sequence_schema_version"] == (
         "round-074-causal-event-sequence-v4"
     )
-    assert source["event_model_schema_version"] == ROUND74_EVENT_MODEL_SCHEMA_VERSION
+    assert source["event_model_schema_version"] == "round-074-event-payoff-model-v6"
     assert source["event_scaler_schema_version"] == (
         "round-074-event-feature-scaler-v4"
     )
-    assert source["event_target_schema_version"] == ROUND74_EVENT_TARGET_SCHEMA_VERSION
+    assert (
+        source["event_target_schema_version"]
+        == "round-074-executable-event-target-v10"
+    )
     assert source["event_target_evidence_schema_version"] == (
-        ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION
+        "round-074-target-evidence-v1"
     )
     assert source["event_dataset_schema_version"] == "round-074-event-dataset-v9"
     assert source["event_partition_schema_version"] == "round-074-run-partition-v4"
@@ -847,53 +809,53 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         "round-074-ai-uplift-development-v7"
     )
     assert source["ai_execution_replay_plan_schema_version"] == (
-        ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
+        "round-074-ai-execution-replay-plan-v1"
     )
     assert source["ai_execution_replay_evidence_schema_version"] == (
-        ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION
+        "round-074-ai-execution-replay-evidence-v2"
     )
     assert (
-        source["sealed_ledger_schema_version"] == ROUND74_SEALED_LEDGER_SCHEMA_VERSION
+        source["sealed_ledger_schema_version"] == "round-074-sealed-ledger-v1"
     )
     assert source["sealed_dataset_identity_schema_version"] == (
-        ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
+        "round-074-sealed-dataset-identity-v1"
     )
-    assert source["sealed_claim_schema_version"] == ROUND74_SEALED_CLAIM_SCHEMA_VERSION
+    assert source["sealed_claim_schema_version"] == "round-074-sealed-claim-v1"
     assert source["sealed_evaluator_schema_version"] == "round-074-sealed-evaluation-v9"
     assert source["financial_metrics_schema_version"] == (
         "round-074-realized-payoff-metrics-v1"
     )
     assert (
         source["target_free_inference_schema_version"]
-        == ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
+        == "round-074-target-free-candidate-inference-v1"
     )
     assert source["ai_review_panel_schema_version"] == "round-074-ai-review-panel-v3"
     assert (
         source["event_cohort_plan_schema_version"]
-        == ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION
+        == "round-074-event-cohort-plan-v4"
     )
     assert (
         source["event_cohort_binding_schema_version"]
-        == ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION
+        == "round-074-event-cohort-binding-v1"
     )
     assert (
         source["ai_model_manifest_schema_version"]
-        == ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
+        == "round-074-ai-model-manifest-v1"
     )
     assert (
         source["ai_review_request_schema_version"] == "round-074-ai-review-request-v3"
     )
     assert (
         source["ai_review_decision_schema_version"]
-        == ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION
+        == "round-074-ai-review-decision-v2"
     )
     assert (
         source["ai_worker_envelope_schema_version"]
-        == ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION
+        == "round-074-ai-worker-envelope-v1"
     )
     assert (
         source["ai_worker_result_schema_version"]
-        == ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION
+        == "round-074-ai-worker-result-v1"
     )
     assert source["ai_runtime_outcome_schema_version"] == (
         "round-074-ai-runtime-outcome-v1"
@@ -901,7 +863,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["ai_bridge_schema_version"] == "round-074-ai-bridge-v2"
     assert (
         source["tuning_subpartition_schema_version"]
-        == ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION
+        == "round-074-tuning-subpartition-v1"
     )
     assert (
         source["temperature_calibration_schema_version"]
@@ -912,7 +874,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         "round-074-event-pretest-policy-v11"
     )
     assert source["target_context_panel_schema_version"] == (
-        ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
+        "round-074-target-context-panel-v1"
     )
     assert source["feature_count"] == 66
     assert source["feature_names_sha256"] == (
@@ -949,13 +911,13 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert features["window_may_cross_long_gap"] is False
     assert features["absolute_top_20_bid_and_ask_quote_depth_retained"] is True
     assert features["continuous_time_state_half_lives_seconds"] == list(
-        ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+        (5.0, 30.0, 300.0)
     )
     assert features["continuous_time_decay_uses_receipt_nanoseconds"] is True
     assert features["fixed_event_rate_assumption_permitted"] is False
     assert features["state_future_receipt_or_target_access"] is False
     assert features["state_reset_after_receipt_gap_nanoseconds"] == (
-        ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS
+        5_000_000_000
     )
     assert features["unobserved_gap_interpolation_permitted"] is False
     assert features["gap_crossing_return_used_in_slow_state"] is False

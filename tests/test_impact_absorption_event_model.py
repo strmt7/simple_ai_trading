@@ -24,8 +24,14 @@ from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
     Round74CausalEventTCN,
     Round74EventPoolingLinear,
     Round74EventPoolingMLP,
+    Round74StateConditionedFlow,
     build_round74_event_model,
     round74_event_model_loss,
+)
+from simple_ai_trading.impact_absorption_event_features import (  # noqa: E402
+    ROUND74_EVENT_CLOCK_FEATURE_INDICES,
+    ROUND74_EVENT_MARKET_STATE_FEATURE_INDICES,
+    ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
     ROUND74_EVENT_FEATURE_NAMES,
@@ -95,6 +101,65 @@ def test_round74_candidate_complexity_order_is_strict() -> None:
             ordered_counts[1:],
             strict=True,
         )
+    )
+
+
+@pytest.mark.parametrize("candidate_id", ROUND74_EVENT_MODEL_CANDIDATES)
+def test_round74_state_conditioned_flow_is_neutral_at_initialization(
+    candidate_id: str,
+) -> None:
+    torch.manual_seed(74021)
+    incumbent = build_round74_event_model(candidate_id).eval()
+    torch.manual_seed(74021)
+    challenger = build_round74_event_model(
+        candidate_id,
+        state_conditioned_flow=True,
+    ).eval()
+    assert isinstance(challenger, Round74StateConditionedFlow)
+    values = _inputs(batch_size=2, sequence_length=17)
+
+    with torch.no_grad():
+        incumbent_output = incumbent(values)
+        challenger_output = challenger(values)
+
+    for name in vars(incumbent_output):
+        torch.testing.assert_close(
+            getattr(incumbent_output, name),
+            getattr(challenger_output, name),
+            rtol=0.0,
+            atol=0.0,
+        )
+    assert (
+        sum(parameter.numel() for parameter in challenger.parameters())
+        - sum(parameter.numel() for parameter in incumbent.parameters())
+        == (
+            len(ROUND74_EVENT_MARKET_STATE_FEATURE_INDICES) + 1
+        )
+        * len(ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES)
+    )
+
+
+def test_round74_state_conditioning_changes_only_order_flow_columns() -> None:
+    model = Round74StateConditionedFlow("causal_event_tcn")
+    values = _inputs(batch_size=2, sequence_length=17)
+    with torch.no_grad():
+        model.state_to_flow_gate.weight.fill_(0.125)
+        model.state_to_flow_gate.bias.fill_(-0.25)
+        conditioned = model._state_conditioned_values(values)
+
+    preserved_indices = (
+        *ROUND74_EVENT_MARKET_STATE_FEATURE_INDICES,
+        *ROUND74_EVENT_CLOCK_FEATURE_INDICES,
+    )
+    torch.testing.assert_close(
+        conditioned[:, :, preserved_indices],
+        values[:, :, preserved_indices],
+        rtol=0.0,
+        atol=0.0,
+    )
+    assert not torch.equal(
+        conditioned[:, :, ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES],
+        values[:, :, ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES],
     )
 
 
@@ -411,3 +476,90 @@ def test_round74_directml_preflight_has_no_cpu_fallback() -> None:
     assert evidence["financial_edge_tested"] is False
     assert evidence["profitability_claim"] is False
     assert set(evidence["candidates"]) == set(ROUND74_EVENT_MODEL_CANDIDATES)
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("torch_directml") is None,
+    reason="torch-directml is not installed",
+)
+def test_round74_state_conditioned_flow_stays_on_directml() -> None:
+    script = """
+import json
+import warnings
+
+import torch
+
+from simple_ai_trading.compute import (
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
+from simple_ai_trading.impact_absorption_event_model import (
+    build_round74_event_model,
+)
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+)
+
+backend = require_backend(resolve_backend("directml"))
+device = torch_device_for_backend(backend)
+torch.manual_seed(7491)
+model = build_round74_event_model(
+    "causal_event_tcn",
+    state_conditioned_flow=True,
+).to(device)
+values = torch.randn(
+    2,
+    8,
+    len(ROUND74_EVENT_FEATURE_NAMES),
+    device=device,
+)
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    output = model(values)
+    loss = sum(getattr(output, name).mean() for name in vars(output))
+    loss.backward()
+gate_parameters = tuple(model.state_to_flow_gate.parameters())
+messages = [str(item.message) for item in caught]
+print(
+    json.dumps(
+        {
+            "backend_kind": backend.kind,
+            "backend_vendor": backend.vendor,
+            "gate_gradients_finite": all(
+                parameter.grad is not None
+                and bool(torch.isfinite(parameter.grad).all().detach().cpu())
+                for parameter in gate_parameters
+            ),
+            "gate_gradients_nonzero": all(
+                parameter.grad is not None
+                and bool((parameter.grad != 0).any().detach().cpu())
+                for parameter in gate_parameters
+            ),
+            "warning_messages": messages,
+            "cpu_fallback_warning_count": sum(
+                "fall back to run on the CPU" in message
+                or "not currently supported on the DML backend" in message
+                for message in messages
+            ),
+        },
+        sort_keys=True,
+    )
+)
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=60,
+    )
+    assert completed.returncode == 0, completed.stderr
+    evidence = json.loads(completed.stdout)
+
+    assert evidence["backend_kind"] == "directml"
+    assert evidence["backend_vendor"]
+    assert evidence["gate_gradients_finite"] is True
+    assert evidence["gate_gradients_nonzero"] is True
+    assert evidence["warning_messages"] == []
+    assert evidence["cpu_fallback_warning_count"] == 0
