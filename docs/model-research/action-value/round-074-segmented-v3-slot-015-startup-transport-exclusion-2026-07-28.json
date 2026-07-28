@@ -1,0 +1,75 @@
+{
+  "schema_version": "round-074-segmented-campaign-slot-evidence-v1",
+  "campaign": {
+    "plan_schema_version": "round-074-segmented-event-cohort-plan-v3",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "plan_file_sha256": "2a67f9637cb64e2a865ce94679beffa201a28095d0557a0553a59da6ce446913",
+    "scheduled_task": "SimpleAITrading-Round74-Segmented-v3",
+    "slot_ordinal": 15,
+    "role": "training",
+    "scheduled_start_wall_ns": 1785248100000000000
+  },
+  "reservation": {
+    "reserved_wall_ns": 1785248104271362800,
+    "reservation_sha256": "d06043bfd404a9aec1bf736044d4f9e9c9f0a285734d0a1a784c4b239697a486",
+    "reservation_file_sha256": "58afd8ae98f5539ceed53d37998214aa508e1f1b265eaf3f29d13472362566fd",
+    "automatic_retry_permitted": false
+  },
+  "capture": {
+    "run_id": "",
+    "selected_run_id": "",
+    "terminal_status": "failed",
+    "terminal_error": "startup:RuntimeError:public_source:ConnectionClosedError:no close frame received or sent",
+    "failure_class": "startup_transport",
+    "attempt_count": 1,
+    "persisted_attempt_count": 0,
+    "reconnect_count": 0,
+    "qualification_passed": false,
+    "database_growth_bytes": 0
+  },
+  "adjudication": {
+    "status": "transport_excluded",
+    "reason_code": "startup_transport",
+    "adjudication_sha256": "788681b7f597c41430a35f84e749948ce11b9e4178c01fd314c3384d950b3f5d",
+    "epoch_audit_present": false,
+    "outcome_sha256": "d7891368cdf87edb03a55cbb6062f3ccb4ca2b0f2065519ce99d0fbd0b2dc0ac",
+    "evidence_sha256": "63f09aa71a2e179a7730e78f4bdba17490a325c9f3b1c7b772ec9c4e3421bb78",
+    "admission_supported": false,
+    "binding_present": false
+  },
+  "stored_evidence": {
+    "result_sha256": "cf787c9ed64a516ccf26fe3e3d1679bc6dc8b7aab883b1611d13d3e990c5985e",
+    "result_file_sha256": "d73691fe0354b2c0dd0a60a5d497b710e73269334d4980b4d2835f5cb1a59841",
+    "state_file_sha256": "6f104c546bb1cb476cd27634fc3cea9004357542df379a3d49aa49c91f398d83",
+    "capture_stdout_sha256": "12ffc0092869a42af4cd546c14eba086bbb7926533def5c65076b015e2247580",
+    "capture_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "maximum_observed_slot_growth_bytes": 0,
+    "monitor_sample_count": 1
+  },
+  "verification": {
+    "verified_at_utc": "2026-07-28T14:15:31Z",
+    "reservation_sha256_verified": true,
+    "result_sha256_verified": true,
+    "stdout_sha256_verified": true,
+    "stderr_sha256_verified": true,
+    "automatic_retry_performed": false,
+    "slot_shifted": false
+  },
+  "authority": {
+    "eligible_for_training": false,
+    "eligible_for_calibration": false,
+    "eligible_for_policy_selection": false,
+    "eligible_for_test": false,
+    "representative_cohort_complete": false,
+    "model_training_performed": false,
+    "profitability_or_edge_claim": false,
+    "orders_submitted": false,
+    "credentials_used": false,
+    "trading_authority": false
+  },
+  "operator_notes": [
+    "Slot 015 is permanently startup-transport-excluded and will not be retried or shifted.",
+    "The public stream closed before a capture attempt was persisted; the slot contributed no database growth and no model evidence.",
+    "This transport exclusion neither supports nor refutes predictive or financial edge."
+  ]
+}
