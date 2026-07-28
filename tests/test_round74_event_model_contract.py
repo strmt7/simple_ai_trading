@@ -54,6 +54,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
+    ROUND74_EVENT_SYMBOLS,
 )
 from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION,
@@ -115,6 +116,9 @@ SEGMENTED_DIRECTML_DESIGN_PATH = (
 )
 SEGMENTED_POLICY_POPULATION_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v78.json"
+)
+SHARED_CAPITAL_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v79.json"
 )
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
@@ -293,6 +297,51 @@ def test_round74_segmented_policy_population_is_consistent_and_source_bound() ->
     assert design["evidence_boundary"]["real_cohort_data_used"] is False
     assert design["evidence_boundary"]["financial_backtest_performed"] is False
     assert authority["segmented_development_population_consistent"] is True
+    assert authority["financial_edge_tested"] is False
+    assert authority["profitability_claim"] is False
+    assert authority["ai_uplift_claim"] is False
+    assert authority["paper_trading_authority"] is False
+    assert authority["testnet_trading_authority"] is False
+    assert authority["live_trading_authority"] is False
+
+
+def test_round74_shared_capital_replay_is_bounded_and_source_bound() -> None:
+    previous = _load_hash_bound(
+        SEGMENTED_POLICY_POPULATION_DESIGN_PATH,
+        "design_sha256",
+    )
+    design = _load_hash_bound(SHARED_CAPITAL_DESIGN_PATH, "design_sha256")
+    source = design["source_binding"]
+    capital = design["shared_capital_contract"]
+    authority = design["authority"]
+    commit = str(design["implementation_git_commit"])
+
+    assert design["schema_version"] == "round-074-event-sequence-model-design-v79"
+    assert design["base_design"]["design_sha256"] == previous["design_sha256"]
+    for prefix in ("action_policy", "ai_uplift", "sealed_evaluation"):
+        assert source[f"{prefix}_sha256"] == _file_sha256_at(
+            commit,
+            source[f"{prefix}_path"],
+        )
+    assert source["action_policy_schema_version"] == (
+        "round-074-action-policy-v10"
+    )
+    assert capital["execution_mode"] == "unlevered_research_only"
+    assert capital["symbol_sleeves"] == len(ROUND74_EVENT_SYMBOLS)
+    assert capital["position_capital_fraction"] == (
+        1.0 / len(ROUND74_EVENT_SYMBOLS)
+    )
+    assert capital["maximum_concurrent_positions"] == len(ROUND74_EVENT_SYMBOLS)
+    assert capital["maximum_concurrent_gross_capital_fraction"] == 1.0
+    assert capital["same_symbol_overlap_permitted"] is False
+    assert capital["cross_symbol_capital_reuse_permitted"] is False
+    assert capital["baseline_exact_replay_and_ai_overlay_use_same_capital_scale"] is True
+    assert capital["trace_metrics_recomputed_from_realized_trade_vectors"] is True
+    assert capital["independently_tampered_summary_metrics_permitted"] is False
+    assert capital["leverage_applied"] is False
+    assert design["evidence_boundary"]["real_cohort_data_used"] is False
+    assert design["evidence_boundary"]["financial_backtest_performed"] is False
+    assert authority["shared_capital_replay_implementation"] is True
     assert authority["financial_edge_tested"] is False
     assert authority["profitability_claim"] is False
     assert authority["ai_uplift_claim"] is False
