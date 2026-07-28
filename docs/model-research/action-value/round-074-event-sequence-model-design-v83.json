@@ -1,0 +1,115 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v83",
+  "created_at_utc": "2026-07-28T10:19:41Z",
+  "implementation_git_commit": "fa646eaca7a51b442ef7348f929ecb495091bc44",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v82.json",
+    "design_sha256": "a43dab3dc3ffb0abefe2d515f5b1ea16e591a71e5664eaebf2e28c41341d88ac",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_sha256": "fe1715635762699a79f5b2099b283f66efcd1ad2a1e591ab8cf8606fa685dbe9",
+    "event_training_schema_version": "round-074-event-training-v19",
+    "pretest_policy_schema_version": "round-074-event-pretest-policy-v18",
+    "test_path": "tests/test_impact_absorption_event_training.py",
+    "test_sha256": "ba82372c39cebda60e91ea512dc86ee3eb7b6a018d95e92d47495b54a5928c49"
+  },
+  "research_basis": [
+    {
+      "title": "A Benchmark Study For Limit Order Book Models and Time Series Forecasting Models on LOB Data",
+      "url": "https://openreview.net/forum?id=MhD9rLeU31",
+      "bounded_use": "Reported transfer gaps across assets motivate asset-conditional evaluation; the paper does not validate this implementation or establish an edge."
+    },
+    {
+      "title": "Diagnosing Model Performance Under Distribution Shift",
+      "url": "https://arxiv.org/abs/2303.02011",
+      "bounded_use": "Conditional performance can differ under distribution shift, so aggregate validation is not treated as sufficient evidence."
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "bounded_use": "The gate uses proper predictive loss on the predeclared model-selection role and never selects architecture on backtest PnL."
+    }
+  ],
+  "run_symbol_horizon_promotion_contract": {
+    "candidate_panel": [
+      "event_pooling_linear",
+      "event_pooling_mlp",
+      "causal_event_tcn",
+      "causal_event_attention"
+    ],
+    "model_selection_capture_runs": 12,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "horizons_seconds": [
+      1,
+      5,
+      30,
+      300
+    ],
+    "required_cohort_group_count": 144,
+    "group_key": "capture_run_id_x_symbol_x_horizon_seconds",
+    "long_and_short_sides_pooled_within_each_group": true,
+    "proper_loss_components_and_weights_match_training_objective": true,
+    "ensemble_evaluated_after_peer_training": true,
+    "one_additional_bounded_inference_pass_per_candidate": true,
+    "minibatch_output_reused_across_symbol_horizon_groups": true,
+    "complete_symbol_panel_required_outside_preflight": true,
+    "missing_or_ineligible_required_group_fails_closed": true,
+    "group_keys_must_match_across_candidates": true,
+    "all_group_losses_must_be_finite": true,
+    "promotion_requires_complete_12_run_panel": true,
+    "promotion_requires_mean_run_loss_improvement_above_floor": true,
+    "promotion_requires_every_capture_run_noninferior": true,
+    "promotion_requires_every_run_symbol_horizon_group_noninferior": true,
+    "worst_degraded_group_recorded": true,
+    "fixed_architecture_mode_changed_by_this_delta": false,
+    "backtest_pnl_used_for_architecture_selection": false,
+    "sealed_test_rows_accessed": false,
+    "ai_output_used_for_architecture_selection": false
+  },
+  "verification": {
+    "focused_training_tests_passed": 18,
+    "downstream_policy_runtime_representation_contract_tests_passed": 44,
+    "adversarial_hidden_sol_horizon_degradation_test_passed": true,
+    "train_seal_reload_test_passed": true,
+    "directml_host_probe": {
+      "backend_kind": "directml",
+      "device": "privateuseone:0",
+      "symbols": 3,
+      "horizons": 4,
+      "group_count": 12,
+      "all_group_losses_finite": true
+    },
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false
+  },
+  "evidence_boundary": {
+    "synthetic_data_only": true,
+    "real_prospective_cohort_capture_active_but_not_used": true,
+    "financial_backtest_performed": false,
+    "profitability_or_edge_inference_permitted": false,
+    "drawdown_inference_permitted": false,
+    "ai_model_evaluated": false
+  },
+  "authority": {
+    "run_symbol_horizon_proper_loss_gate_implementation": true,
+    "directml_group_evaluation_preflight": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "9dffc66a9c82f7267124b0029cc689141c1e3fa24680ec6b8004a6169a5259f4"
+}
