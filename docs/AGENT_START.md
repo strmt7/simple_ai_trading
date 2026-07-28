@@ -425,6 +425,15 @@ After parser or taxonomy changes, regenerate the header through the native build
   then unloaded both models. This proves local protocol, provenance, latency,
   and residency mechanics only; it is not representative-market AI evaluation,
   uplift, edge, profitability, or trading authority.
+  The fixed 768-window/equal-run mechanics are superseded for the segmented
+  cohort by `round-074-event-sequence-model-design-v76.json`. V76 scales each
+  symbol's target-blind window quota by audited eligible wall time, selects one
+  endpoint nearest each equal-time stratum midpoint, reaudits and replays each
+  epoch in isolation, and gives each eligible target one gradient weight. It
+  never cycles a short epoch to match a long epoch. The CPU end-to-end
+  train/seal/reload test and 32-test affected checkpoint passed; DirectML
+  behavior, real cohort training, P&L, drawdown, edge, and AI uplift remain
+  untested. Do not restore the equal-run trainer for segmented data.
 - Live Binance AI reviews are exact-case, asynchronous, hash-chained, and
   shadow-only. Pending, failed, or stale reviews block only new entries; exits
   retain the original ML side. `ai-uplift` rejects post-entry/reused reviews and
