@@ -784,6 +784,16 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert overlay.retained_trades == 24
     assert overlay.exact_replay_required_reviews == 24
     assert overlay.exact_replay_completed_reviews == 24
+    assert len(overlay.paired_runs) == 24
+    assert tuple(value.run_id for value in overlay.paired_runs) == TEST_RUNS
+    assert sum(value.paired_observations for value in overlay.paired_runs) == 24
+    assert tuple(
+        (value.symbol, value.horizon_seconds)
+        for value in overlay.paired_symbol_horizons
+    ) == tuple((symbol, 30) for symbol in ROUND74_EVENT_SYMBOLS)
+    assert (
+        sum(value.paired_observations for value in overlay.paired_symbol_horizons) == 24
+    )
     assert "same_entry_latency_eligibility_rate_not_met" not in overlay.gate_reasons
     assert overlay.strategy_metrics.total_net_bps == 8.0
     assert (
@@ -810,6 +820,90 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert instructions[0].pre_replay_status == "replay_required"
     assert instructions[0].requested_size_multiplier_bps == 10_000
     assert not instructions[0].same_entry_latency_eligible
+
+
+def test_sealed_ai_overlay_rejects_aggregate_gain_that_harms_subgroups() -> None:
+    batch = _test_batch()
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    candidates = derive_round74_action_candidates(
+        _model_output(batch.rows),
+        build_round74_action_inference_context(batch),
+        calibration,
+        pretest_policy_sha256=selection.pretest_policy_sha256,
+        profile=selection.profile,
+    )
+    trace = sealed_subject._simulate_round74_action_trace_batches(
+        (batch,),
+        (candidates,),
+        threshold_score=float(selection.selected_threshold_score or 0.0),
+        expected_run_ids=TEST_RUNS,
+        required_role="test",
+        expected_run_count=24,
+    )
+    manifest = "c" * 64
+    reviews = _reviews(
+        batch,
+        calibration,
+        selection,
+        manifest=manifest,
+    )
+    executions = []
+    for execution in _execution_replays(
+        reviews,
+        partition_sha256=batch.partition_sha256,
+    ):
+        position_net_bps = 0.3 if execution.symbol == "SOLUSDT" else 3.0
+        updated = replace(
+            execution,
+            position_net_payoff_bps=position_net_bps,
+            capital_scaled_net_payoff_bps=position_net_bps,
+        )
+        updated.validate()
+        executions.append(updated)
+
+    overlay = sealed_subject._ai_overlay(
+        trace,
+        reviews,
+        tuple(executions),
+        manifest=manifest,
+        expected_partition_sha256=batch.partition_sha256,
+        profile=selection.profile,
+        seed=sealed_subject.ROUND74_SEALED_BOOTSTRAP_SEED,
+    )
+
+    assert overlay.strategy_metrics.financial_gate_passed
+    assert overlay.strategy_metrics.total_net_bps > trace.metrics.total_net_bps
+    assert (
+        overlay.paired_delta_bootstrap.two_ai_model_bonferroni_lower_mean_run_net_bps
+        > 0.0
+    )
+    assert not overlay.uplift_gate_passed
+    assert "paired_run_noninferiority_not_met" in overlay.gate_reasons
+    assert "paired_symbol_horizon_noninferiority_not_met" in overlay.gate_reasons
+    assert sum(value.delta_net_bps < 0.0 for value in overlay.paired_runs) == 8
+    sol = next(
+        value for value in overlay.paired_symbol_horizons if value.symbol == "SOLUSDT"
+    )
+    assert sol.delta_net_bps < 0.0
+    assert all(
+        value.delta_net_bps > 0.0
+        for value in overlay.paired_symbol_horizons
+        if value.symbol != "SOLUSDT"
+    )
+    corrupted = replace(
+        overlay.paired_runs[0],
+        delta_net_bps=overlay.paired_runs[0].delta_net_bps + 1.0,
+    )
+    with pytest.raises(ValueError, match="paired run delta differs"):
+        replace(
+            overlay,
+            paired_runs=(corrupted, *overlay.paired_runs[1:]),
+        ).validate()
 
 
 def test_sealed_evaluator_rejects_incomplete_ai_family_before_reservation(
