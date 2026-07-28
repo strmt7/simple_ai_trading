@@ -643,12 +643,16 @@ def _scaled_metrics(
 ]:
     baseline = np.asarray(trace.net_payoff_bps, dtype=np.float64)
     scaled = np.asarray(
-        [value.capital_scaled_net_payoff_bps for value in executions],
+        [
+            trace.position_capital_fraction * value.capital_scaled_net_payoff_bps
+            for value in executions
+        ],
         dtype=np.float64,
     )
     scaled_mae = np.asarray(
         [
-            value.capital_scaled_maximum_adverse_excursion_bps
+            trace.position_capital_fraction
+            * value.capital_scaled_maximum_adverse_excursion_bps
             for value in executions
         ],
         dtype=np.float64,

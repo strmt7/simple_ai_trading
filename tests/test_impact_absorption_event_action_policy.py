@@ -11,6 +11,7 @@ import torch
 
 from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_DEFAULT_PROFILE,
+    ROUND74_ACTION_POSITION_CAPITAL_FRACTION,
     Round74ActionExecutionOutcomeRow,
     Round74ActionExecutionPanel,
     build_round74_action_inference_context,
@@ -572,6 +573,29 @@ def test_exact_trace_rejects_same_symbol_overlap_but_resets_each_run() -> None:
 
     assert trace.metrics.trades == 18
     assert trace.skipped_same_symbol_overlap == 18
+    assert trace.position_capital_fraction == pytest.approx(1.0 / 3.0)
+    assert trace.as_dict()["maximum_concurrent_gross_capital_fraction"] == (
+        pytest.approx(1.0)
+    )
+    assert trace.metrics.total_net_bps == pytest.approx(
+        sum(trace.net_payoff_bps)
+    )
+    assert max(trace.net_payoff_bps) == pytest.approx(
+        ROUND74_ACTION_POSITION_CAPITAL_FRACTION
+        * float(np.max(batch.net_payoff_bps))
+    )
+    with pytest.raises(ValueError, match="metrics reconciliation differs"):
+        replace(
+            trace,
+            metrics=replace(
+                trace.metrics,
+                total_net_bps=trace.metrics.total_net_bps + 1.0,
+            ),
+        ).validate()
+    tampered = trace.as_dict()
+    tampered["position_capital_fraction"] = 1.0
+    with pytest.raises(ValueError, match="action trace differs"):
+        type(trace).from_dict(tampered)
     assert trace.metrics.active_runs == 6
     assert trace.metrics.distinct_symbols == 3
     assert trace.metrics.maximum_symbol_trade_share == pytest.approx(1.0 / 3.0)

@@ -160,18 +160,18 @@ def _selection() -> Round74ActionPolicySelection:
         trades=6,
         active_runs=6,
         distinct_symbols=3,
-        total_net_bps=6.0,
-        mean_run_net_bps=1.0,
-        mean_net_bps=1.0,
-        median_net_bps=1.0,
+        total_net_bps=2.0,
+        mean_run_net_bps=1.0 / 3.0,
+        mean_net_bps=1.0 / 3.0,
+        median_net_bps=1.0 / 3.0,
         win_rate=1.0,
         profit_factor=None,
         maximum_drawdown_bps=0.0,
-        gross_profit_bps=6.0,
+        gross_profit_bps=2.0,
         gross_loss_bps=0.0,
-        worst_trade_bps=1.0,
-        mean_maximum_adverse_excursion_bps=1.0,
-        mean_run_maximum_adverse_excursion_bps=1.0,
+        worst_trade_bps=1.0 / 3.0,
+        mean_maximum_adverse_excursion_bps=1.0 / 3.0,
+        mean_run_maximum_adverse_excursion_bps=1.0 / 3.0,
         adverse_selection_rate=0.0,
         profitable_run_ratio=1.0,
         maximum_symbol_trade_share=1.0 / 3.0,
@@ -187,8 +187,8 @@ def _selection() -> Round74ActionPolicySelection:
         side=(1,) * 6,
         entry_monotonic_ns=(10,) * 6,
         exit_monotonic_ns=(20,) * 6,
-        net_payoff_bps=(1.0,) * 6,
-        maximum_adverse_excursion_bps=(1.0,) * 6,
+        net_payoff_bps=(1.0 / 3.0,) * 6,
+        maximum_adverse_excursion_bps=(1.0 / 3.0,) * 6,
         adverse_selection=(0,) * 6,
         skipped_target_ineligible=0,
         skipped_same_symbol_overlap=0,
@@ -781,7 +781,7 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert overlay.exact_replay_required_reviews == 24
     assert overlay.exact_replay_completed_reviews == 24
     assert "same_entry_latency_eligibility_rate_not_met" not in overlay.gate_reasons
-    assert overlay.strategy_metrics.total_net_bps == 24.0
+    assert overlay.strategy_metrics.total_net_bps == 8.0
     assert (
         "positive_paired_delta_familywise_confidence_lower_bound_not_met"
         in overlay.gate_reasons
