@@ -381,10 +381,18 @@ After parser or taxonomy changes, regenerate the header through the native build
   cadence. Windows task `SimpleAITrading-Round74-Segmented-v3` is registered
   for that exact schedule with no retry, no slot shifting, bounded resources,
   durable heartbeats, independent post-capture audit, and deterministic
-  adjudication. The campaign is open, but no slot has started and no cohort
-  data exists at the current host-schedule artifact. Read
+  adjudication. Slot 000 ran at its exact 2026-07-28 08:00 UTC boundary and
+  ended after the primary public WebSocket exceeded its receive deadline. Its
+  23,833-message prefix passed exact-wire and causal-depth audit, but only
+  19.5823092 seconds remained usable after feature readiness. It is therefore
+  immutably `transport_excluded` with zero eligible model time and no binding.
+  Never retry, pool, salvage, relabel, or use slot 000 for features, targets,
+  fitting, calibration, policy selection, test evaluation, or financial
+  claims. The campaign remains open; later scheduled slots are independent
+  epochs. Read
   `round-074-segmented-prerequisite-attempt-003-success-2026-07-28.json` and
   `round-074-segmented-cohort-host-schedule-v2-2026-07-28.json`, then
+  `round-074-segmented-v3-slot-000-transport-exclusion-2026-07-28.json`, then
   `round-074-segmented-transport-epoch-redesign-validation-2026-07-28.json`,
   then read
   `round-074-event-sequence-model-design-v64.json`, which composes the complete

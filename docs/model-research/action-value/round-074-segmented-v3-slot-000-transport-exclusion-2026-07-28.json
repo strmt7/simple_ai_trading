@@ -1,0 +1,95 @@
+{
+  "schema_version": "round-074-segmented-campaign-slot-evidence-v1",
+  "campaign": {
+    "plan_schema_version": "round-074-segmented-event-cohort-plan-v3",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "plan_file_sha256": "2a67f9637cb64e2a865ce94679beffa201a28095d0557a0553a59da6ce446913",
+    "scheduled_task": "SimpleAITrading-Round74-Segmented-v3",
+    "slot_ordinal": 0,
+    "role": "training",
+    "scheduled_start_wall_ns": 1785225600000000000
+  },
+  "reservation": {
+    "reserved_wall_ns": 1785225601793719700,
+    "reservation_sha256": "4a3a6a2861f8adf77ba5c2db30b23c4c4bbe72889c0dd9acd9d0900954c9b267",
+    "reservation_file_sha256": "3fad323fef49e3a4965ce21745f423931bf3071228cefae187d4ddbed57822e6",
+    "automatic_retry_permitted": false
+  },
+  "capture": {
+    "run_id": "f2ea9c7f181c4eaabd14c3833f0618e4",
+    "capture_start_wall_ns": 1785225602177067900,
+    "capture_end_wall_ns": 1785225646652494900,
+    "terminal_status": "transport_ended",
+    "terminal_error": "public_source:TimeoutError:",
+    "failure_class": "transport",
+    "message_count": 23833,
+    "frame_count": 9,
+    "observation_count": 23823,
+    "token_count": 17034,
+    "compressed_payload_bytes": 789111,
+    "queue_maximum_utilization": 0.0152740478515625,
+    "resource_safety_passed": true,
+    "storage_efficiency_passed": true,
+    "audit_passed": true,
+    "exact_frame_audit_passed": true,
+    "causal_depth_replay_passed": true
+  },
+  "adjudication": {
+    "status": "transport_excluded",
+    "reason_code": "in_run_transport",
+    "adjudication_sha256": "57b13dd44d6f031c32e149aec1db165f9cd95cdb91c6ea934d6eb26287f0b916",
+    "epoch_audit_sha256": "641454ece2e8c6746a30d7e6aed2c84f88f6f83c60358aa9dca05ea636729407",
+    "outcome_sha256": "7f36fb4659d0641310a7f963014fd48e0b41f460ea427f11cd6f1baf3881cc08",
+    "feature_ready_wall_ns": 1785225609922405800,
+    "usable_end_wall_ns": 1785225629504715000,
+    "usable_duration_ns": 19582309200,
+    "minimum_usable_epoch_ns": 600000000000,
+    "minimum_usable_epoch_passed": false,
+    "maximum_target_span_ns": 310500000000,
+    "complete_target_span_possible": false,
+    "eligible_anchor_duration_ns": 0,
+    "admission_supported": false,
+    "binding_present": false
+  },
+  "stored_evidence": {
+    "result_sha256": "d7d41e589ac1e198bd544a651c70fd2cf0f70d717f6844367ea6432fffaf9188",
+    "result_file_sha256": "213e54fcb346b85b44e717daab120ac0a41ea703f0a8f627731c70c2a3d69807",
+    "state_file_sha256": "996f4397e6ce4f444c93fcd7e943e21796c5803f6cd6c15b1eaa85793eec855a",
+    "capture_stdout_sha256": "26724f2d3537da09d052f8430edffaf231adb258b42adc17dfe14202323406b7",
+    "capture_stderr_sha256": "68d74f2e44063c7e106fcac169819cfd6408170cf64333a2abe01deb7fd3e136",
+    "database_snapshot_sha256": "7c0620f01ece7beb12eeb269edb2a593bfc654a0976d640eae4e61cd3e915c50",
+    "database_snapshot_bytes": 9973760,
+    "database_snapshot_utc": "2026-07-28T08:10:14.6492385Z",
+    "database_snapshot_is_mutable_campaign_storage": true,
+    "v10_frame_rows": 9,
+    "v10_rest_rows": 10,
+    "run_rows": 1,
+    "report_rows": 1,
+    "wal_present_after_terminal_adjudication": false
+  },
+  "verification": {
+    "verified_at_utc": "2026-07-28T08:10:14.6492385Z",
+    "result_sha256_verified": true,
+    "stdout_sha256_verified": true,
+    "stderr_sha256_verified": true,
+    "adjudication_reload_verified": true,
+    "outcome_reload_verified": true,
+    "automatic_retry_performed": false,
+    "slot_shifted": false
+  },
+  "authority": {
+    "eligible_for_training": false,
+    "eligible_for_calibration": false,
+    "eligible_for_policy_selection": false,
+    "eligible_for_test": false,
+    "profitability_or_edge_claim": false,
+    "orders_submitted": false,
+    "credentials_used": false,
+    "trading_authority": false
+  },
+  "operator_notes": [
+    "Slot 000 is immutable failed-prefix evidence and must never be retried, pooled, salvaged, relabelled, or used for features, targets, model fitting, calibration, policy selection, test evaluation, or financial claims.",
+    "The primary public WebSocket receiver exceeded its receive deadline after market data had been flowing. The evidence does not identify a host-wide or provider-side root cause.",
+    "The campaign remains open. Later slots are independent transport epochs and may not read state from this excluded prefix."
+  ]
+}
