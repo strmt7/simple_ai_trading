@@ -24,6 +24,7 @@ from simple_ai_trading.impact_absorption_ai_review_preparation import (  # noqa:
     round74_default_ai_review_model_panel,
 )
 from simple_ai_trading.impact_absorption_ai_runtime import (  # noqa: E402
+    ROUND74_AI_RUNTIME_PRELOAD_TIMEOUT_SECONDS,
     preload_round74_ai_model,
     review_round74_ai_candidate,
     unload_round74_ai_model,
@@ -71,7 +72,20 @@ def main() -> int:
         flush=True,
     )
     try:
-        preload = preload_round74_ai_model(binding.runtime, binding.manifest)
+        preload_timeout = ROUND74_AI_RUNTIME_PRELOAD_TIMEOUT_SECONDS
+        if arguments.hard_stop_wall_ns is not None:
+            available_seconds = (
+                arguments.hard_stop_wall_ns - time.time_ns()
+            ) / 1_000_000_000 - arguments.unload_reserve_seconds
+            if available_seconds <= 0.0:
+                incomplete_reason = "hard_stop_preload_reserve_reached"
+                raise TimeoutError(incomplete_reason)
+            preload_timeout = min(preload_timeout, available_seconds)
+        preload = preload_round74_ai_model(
+            binding.runtime,
+            binding.manifest,
+            timeout_seconds=preload_timeout,
+        )
         print(
             "round74-ai-screen: preload passed with full GPU residency",
             file=sys.stderr,

@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import replace
 import json
 
+import pytest
+
 from simple_ai_trading.ai_runtime import OllamaResidencyReport
 from simple_ai_trading.impact_absorption_ai_contract_screen import (
     ROUND74_AI_CONTRACT_CASE_IDS,
@@ -91,6 +93,8 @@ def test_round74_ai_contract_cases_are_frozen_anonymized_and_non_market() -> Non
         assert str(request.requested_wall_ns) not in encoded
         assert case.as_dict()["synthetic_non_market_contract_packet"] is True
         assert case.as_dict()["financial_edge_tested"] is False
+        with pytest.raises(TypeError):
+            case.request_template["risk_profile"] = "aggressive"
 
 
 def test_round74_ai_contract_mirrors_directional_packets() -> None:
