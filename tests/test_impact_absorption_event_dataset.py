@@ -174,7 +174,7 @@ def _engine() -> Round74EventTargetEngine:
 def _partition() -> Round74EventRunPartition:
     entries = []
     for index, role in enumerate(("training", "tuning", "test")):
-        start = WALL + index * 2_000 * NS
+        start = WALL + index * 1_200 * NS
         anchor = start + (
             12_700_000_000 if index == 0 else 310_500_000_000
         )
@@ -251,6 +251,10 @@ def test_round74_partition_is_whole_run_chronological_and_hash_bound() -> None:
     assert restored.partition_sha256 == partition.partition_sha256
     assert partition.as_dict()["split_unit"] == "whole_capture_run"
     assert partition.as_dict()["random_row_split_permitted"] is False
+    assert (
+        partition.as_dict()["embargo_axis"]
+        == "elapsed_wall_time_after_prior_audited_usable_end"
+    )
 
     tampered = partition.as_dict()
     tampered["purge_ns"] = 1
@@ -444,7 +448,7 @@ def test_round74_test_access_and_exact_order_fail_closed() -> None:
             test_unlock_sha256="e" * 64,
         )
 
-    observation = _observation(index=0, monotonic_ns=4_000 * NS, token=False)
+    observation = _observation(index=0, monotonic_ns=2_400 * NS, token=False)
     test_assembler.consume(observation)
     with pytest.raises(ValueError, match="order regressed"):
         test_assembler.consume(observation)
