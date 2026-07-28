@@ -15,6 +15,10 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_scaling import (
+    ROUND74_EVENT_BINARY_FEATURE_COUNT,
+    ROUND74_EVENT_SCALER_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -61,12 +65,21 @@ def test_round74_v86_binds_causal_exchange_clock_features() -> None:
     commit = design["implementation_git_commit"]
     sequence = source["event_sequence"]
     assert sequence["sha256"] == _git_file_sha256(commit, sequence["path"])
+    scaler = source["event_scaler"]
+    assert scaler["sha256"] == _git_file_sha256(commit, scaler["path"])
     for test in source["tests"]:
         assert test["sha256"] == _git_file_sha256(commit, test["path"])
 
     assert sequence["schema_version"] == ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
     assert sequence["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 75
     assert sequence["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert scaler["schema_version"] == ROUND74_EVENT_SCALER_SCHEMA_VERSION
+    assert (
+        scaler["binary_feature_count"]
+        == feature_contract["binary_feature_count_after"]
+        == ROUND74_EVENT_BINARY_FEATURE_COUNT
+        == 11
+    )
     assert tuple(feature_contract["periods_seconds"]) == (
         ROUND74_EVENT_CLOCK_PERIODS_SECONDS
     )
@@ -75,6 +88,10 @@ def test_round74_v86_binds_causal_exchange_clock_features() -> None:
     assert feature_contract["feature_available_only_after_event_receipt"] is True
     assert feature_contract["future_event_or_target_accessed"] is False
     assert feature_contract["missing_timestamp_policy"] == "reject_event"
+    assert feature_contract["opening_indicators_are_leading_binary_features"] is True
+    assert (
+        feature_contract["robust_scaler_may_standardize_opening_indicators"] is False
+    )
 
     parameter_counts = {
         candidate_id: sum(
