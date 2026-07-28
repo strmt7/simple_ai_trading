@@ -336,11 +336,23 @@ After parser or taxonomy changes, regenerate the header through the native build
   the same reference capital; requested size is never substituted for realized
   deployed notional after quantity quantization or delayed price movement.
   The first 65-minute cohort halted on slot 000 before admission because terminal
-  analysis exceeded its operator budget; that run remains excluded. The
-  separately hash-bound v5 plan uses a 75-minute cadence and preserves the same
-  120/24/24 roles. Read `round-074-event-sequence-model-design-v64.json`, which
-  composes the complete unchanged v63 model contract with the corrected plan,
-  operator, execution-evidence, and research bindings, then
+  analysis exceeded its operator budget; that run remains excluded. The later
+  75-minute v5-r1 campaign also halted on slot 000 before admission: Binance
+  closed the public WebSocket before any run existed, its attempts were empty,
+  and database/WAL bytes did not change. V5-r1 is permanently excluded and its
+  host task is disabled. Fresh plan v5-r2,
+  `213a564026654905d62d2e74fd1c1944ff9ffd6d44af32557ccc20628ce59a04`,
+  starts at 2026-07-28 00:45 UTC and preserves the 75-minute cadence and
+  120/24/24 roles. It permits at most one separately persisted pre-admission
+  startup relaunch only when no run, database/WAL change, active capture, or
+  resource breach exists and the second launch still fits the original
+  30-second start window. Every admitted hour still requires zero reconnects and
+  one uncombined supervisor attempt. Read the v5-r1 startup-failure artifact,
+  the startup-prerequisite artifact, operator v12, and plan v5-r2 before
+  operating the cohort. Then read
+  `round-074-event-sequence-model-design-v64.json`, which composes the complete
+  unchanged v63 model contract with the corrected plan, operator,
+  execution-evidence, and research bindings, then
   `round-074-event-sequence-model-design-v65.json`. V65 adds the only guarded
   development runner: it requires all 168 run bindings and exactly 144
   development target assemblies before opening the database, reads DuckDB only,
