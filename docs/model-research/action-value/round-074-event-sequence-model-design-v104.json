@@ -1,0 +1,166 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v104",
+  "created_at_utc": "2026-07-28T23:40:10Z",
+  "implementation_git_commit": "7dc9c96c09245fa715d899057b5780cf4b272839",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v103.json",
+    "file_sha256": "639e36b044d825ed9309426c623f529248e8c0870ecee12a37516390913e32d2",
+    "design_sha256": "9da65d086cf876b85e3894eb1e049b047a11f6a1cdac20700f91a197e740eb8a",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "ai_uplift": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+      "sha256": "ca41cebb5feeb071998398eb93c89f8ac8e6e044789ac9066c2c89352cdf7c74"
+    },
+    "ai_review_preparation": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "76743ac10208f2942c995357603f0a1fc9cbf44f6f37f876ebce4b6c3cd8213d"
+    },
+    "ai_execution_replay": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_execution_replay.py",
+      "sha256": "c9687b205b37cb928da78f41506ccfbe10249c40989e5212e23b63a00aceda23"
+    },
+    "ai_qualification_operator": {
+      "path": "src/simple_ai_trading/round74_ai_qualification_operator.py",
+      "sha256": "279b5f952a69a284387e9d7c03464a333059d670656e8845b65a3462950a2cd9"
+    },
+    "segmented_development_operator": {
+      "path": "src/simple_ai_trading/round74_segmented_development_operator.py",
+      "sha256": "37d48302aca397d7a562889e410899d57b1e99e50cec6c7b474e433a73b5de74"
+    },
+    "segmented_development_runtime": {
+      "path": "src/simple_ai_trading/round74_segmented_development_runtime.py",
+      "sha256": "03c28dcc9f8410aa00fb79c4abfb771cdb6d6be97744e131b22f6f63d43074a6"
+    },
+    "sealed_evaluation": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "3ebb8df09607877b4b588b8efaa528126131daf216bd449b7cc540eacb0cc9b5"
+    },
+    "segmented_development_tool": {
+      "path": "tools/run_round74_segmented_development.py",
+      "sha256": "c013591037a3eb083683c664a5f446ca56de8913aa1f1a6d745ba62636297b65"
+    },
+    "ai_uplift_test": {
+      "path": "tests/test_impact_absorption_ai_uplift.py",
+      "sha256": "5facb72cd566970ee14c0c268516421f61cb7679f4bf1eee599de01e62df7b2a"
+    },
+    "sealed_evaluation_test": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "d3eb122b90c8ecb23c9bb026a9e59fe5022d7914b0f8396e7bf8b333845207e9"
+    },
+    "design_test": {
+      "path": "tests/test_round74_event_model_design_v104.py",
+      "sha256": "97eb0fae76d1b120ded64c4f49c61cbe057de8e23dedd476c9dd3856f5470e9d"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://doi.org/10.1080/14697688.2025.2515933",
+      "finding": "Millions of live Binance and Bybit orders show latency, volatility, and liquidity drive adverse fill divergence; snapshot fills cannot be inherited after review delay.",
+      "implementation_consequence": "Every surviving AI action requires delayed historical L2 replay."
+    },
+    {
+      "source": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3433739",
+      "finding": "The limit order book can update while a trader processes information and submits an order, so the intended fill is not guaranteed.",
+      "implementation_consequence": "Latency is measured and changes replay timing instead of scaling the baseline payoff."
+    },
+    {
+      "source": "https://arxiv.org/abs/2412.04856",
+      "finding": "Tested LLMs generated frequently but achieved only 5 to 10 percent instruction accuracy and had substantial missing fields.",
+      "implementation_consequence": "AI remains schema-validated, fail-closed, and limited to vetoing or reducing an ML-selected action."
+    },
+    {
+      "source": "https://arxiv.org/abs/2502.15757",
+      "finding": "A simple MLP can outperform more complex LOB models, while transaction-cost-aware evaluation materially degrades apparent predictability.",
+      "implementation_consequence": "Model complexity is not treated as evidence of edge; after-cost paired replay remains authoritative."
+    },
+    {
+      "source": "https://arxiv.org/abs/2505.02139",
+      "finding": "LOB representation evaluation requires consistent preprocessing and attention to autocorrelation, cross-feature constraints, and scale disparity.",
+      "implementation_consequence": "Future representation changes require isolated ablation and may not bypass the current causal scaler and disjoint split."
+    },
+    {
+      "source": "https://arxiv.org/abs/2511.12563",
+      "finding": "Message-level self-supervised LOB encoders are a plausible representation-learning direction.",
+      "implementation_consequence": "LOB foundation pretraining is recorded as a future ablation, not deployed or credited with uplift."
+    }
+  ],
+  "declared_delta": {
+    "arbitrary_same_entry_diagnostic_removed": true,
+    "caller_supplied_ai_latency_budget_permitted": false,
+    "action_validity_formula": "min(forecast_horizon_ns, target_maximum_additional_entry_latency_ns)",
+    "action_validity_maximum_ns": 30000000000,
+    "qualification_horizons_seconds": [
+      30,
+      300
+    ],
+    "runtime_elapsed_and_historical_queue_delay_are_summed": true,
+    "accepted_ai_decision_zeroed_by_diagnostic_latency": false,
+    "expired_action_is_retained_as_paired_zero_exposure": true,
+    "eligible_action_requires_exact_delayed_l2_replay": true,
+    "baseline_fill_or_payoff_inherited_after_ai_delay": false,
+    "ai_may_create_side_or_horizon": false,
+    "ai_may_increase_ml_selected_size": false,
+    "blocked_or_invalid_ai_review_policy": "paired_zero_exposure_veto",
+    "missing_ai_review_policy": "invalidate_entire_evaluation",
+    "action_validity_tamper_recomputed_on_review_and_instruction_validation": true,
+    "development_and_sealed_artifact_schema_versions_bumped": true,
+    "segmented_cli_ai_enabled_by_default": true,
+    "segmented_cli_requires_manual_latency_value": false,
+    "trading_authority": false
+  },
+  "verification": {
+    "focused_tests_passed": 145,
+    "focused_test_files": 11,
+    "development_expired_action_test_passed": true,
+    "sealed_expired_action_test_passed": true,
+    "serialization_round_trip_tests_passed": true,
+    "runtime_and_worker_contract_tests_passed": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_ai_reviews_executed": false,
+    "local_multibillion_parameter_model_invoked": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false,
+    "campaign_database_opened": false,
+    "network_accessed_by_implementation_tests": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs_before_slot_036_independent_audit": 29,
+    "slot_036_result_reports_admitted": true,
+    "slot_036_result_sha256": "82c1fb30d64acbdc2c99cf6263aa5ae1f38be7a70d52f8f12384ac42d4377d66",
+    "slot_036_independent_admission_evidence_created": false,
+    "slot_037_state_at_document_time": "running",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "9cc988ff0f2a6d11fda7fbefaefe2b2b3951ac59ba6f7ddb101cfb517373bbd0"
+}
