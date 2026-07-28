@@ -32,12 +32,6 @@ from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
     ROUND74_SEALED_BOOTSTRAP_DRAWS,
     ROUND74_SEALED_FAMILYWISE_ALPHA,
     ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT,
-    ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_sealed_ledger import (
-    ROUND74_SEALED_CLAIM_SCHEMA_VERSION,
-    ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION,
-    ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION,
@@ -61,7 +55,6 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 )
 from simple_ai_trading.impact_absorption_event_model import (
     ROUND74_EVENT_MODEL_CANDIDATES,
-    ROUND74_EVENT_MODEL_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
@@ -1120,15 +1113,11 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["execution_replay_evidence_schema_version"] == (
         ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION
     )
-    assert source["sealed_ledger_schema_version"] == (
-        ROUND74_SEALED_LEDGER_SCHEMA_VERSION
-    )
+    assert source["sealed_ledger_schema_version"] == "round-074-sealed-ledger-v1"
     assert source["sealed_dataset_identity_schema_version"] == (
-        ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
+        "round-074-sealed-dataset-identity-v1"
     )
-    assert source["sealed_claim_schema_version"] == (
-        ROUND74_SEALED_CLAIM_SCHEMA_VERSION
-    )
+    assert source["sealed_claim_schema_version"] == "round-074-sealed-claim-v1"
     assert source["sealed_evaluator_schema_version"] == (
         "round-074-sealed-evaluation-v9"
     )
@@ -1136,7 +1125,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "round-074-realized-payoff-metrics-v1"
     )
     assert source["target_free_inference_schema_version"] == (
-        ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
+        "round-074-target-free-candidate-inference-v1"
     )
     assert source["review_panel_schema_version"] == "round-074-ai-review-panel-v3"
     assert (
@@ -1162,7 +1151,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         source["execution_calibration_schema_version"]
         == "round-074-execution-calibration-source-v1"
     )
-    assert source["event_model_schema_version"] == ROUND74_EVENT_MODEL_SCHEMA_VERSION
+    assert source["event_model_schema_version"] == "round-074-event-payoff-model-v6"
     assert source["event_sequence_schema_version"] == (
         "round-074-causal-event-sequence-v4"
     )
