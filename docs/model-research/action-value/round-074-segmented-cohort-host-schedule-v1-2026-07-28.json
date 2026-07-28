@@ -1,0 +1,88 @@
+{
+  "schema_version": "round-074-segmented-cohort-host-schedule-v1",
+  "observed_at_utc": "2026-07-28T07:05:56Z",
+  "plan": {
+    "relative_path": "docs/model-research/action-value/round-074-segmented-event-cohort-plan-v2.json",
+    "plan_sha256": "d4cd88393fe4b0a4299609d52be9995f6027202a09ea95b4c8d87316f39f0b26",
+    "file_sha256": "c9eee3d772a86199287d10adec93918523f66f6094401e10e1d9ed2f5083a2ae",
+    "implementation_git_commit": "0e0fcef5dff73a550e8ea18b962069fe8a2bde22",
+    "publication_git_commit": "752980caf5c78001e33ec7d6c684f189913173d0",
+    "prerequisite_artifact_sha256": "3ff57cdf7598c683f1c310a8b2ce0f0b101e82568f96a868e871dff84998bc6d",
+    "scheduled_start_utc": "2026-07-28T07:30:00Z",
+    "scheduled_start_wall_ns": 1785223800000000000,
+    "total_slots": 720,
+    "slot_period_ns": 1500000000000,
+    "capture_duration_ns": 1200000000000,
+    "start_tolerance_ns": 30000000000
+  },
+  "source_binding": {
+    "hash_mode": "utf8_lf_normalized_sha256",
+    "files": {
+      "src/simple_ai_trading/impact_absorption_event_segmented_cohort.py": "79df2d6ddb21d89c5917639e3485c370915a70cb1b9516cc6b4a4f8403772b29",
+      "src/simple_ai_trading/round74_segmented_campaign_runner.py": "747b6958a7631c38b2560be1d43c555294e4ca890b3658d7e2efa1d5aa6b4254",
+      "src/simple_ai_trading/round74_segmented_capture.py": "a2f099acc0834921e2cb9cfee45d49ab28a5c6c278f0c06e6128fa3e263ac8eb",
+      "src/simple_ai_trading/round74_segmented_cohort_operator.py": "270b8fd37ac74d08a5e0e2906bb656f65b5466370a8327a3b971c02380c2422c",
+      "tools/run_round74_segmented_campaign_slot.py": "303eec06cf4ded4fb5518868697f6fe99555d2403a7cf95c9cc57495f204a9ae",
+      "tools/run_round74_segmented_capture.py": "d80b1389c0581c9c7aef1197af836debff26c30641e4dc084902b4b47ada3a2f"
+    }
+  },
+  "host_task": {
+    "provider": "Windows Task Scheduler",
+    "task_name": "SimpleAITrading-Round74-Segmented-v2",
+    "state": "Ready",
+    "next_run_time_local": "2026-07-28T09:30:00+02:00",
+    "start_boundary": "2026-07-28T09:30:00+02:00",
+    "repetition_interval": "PT25M",
+    "repetition_duration": "P13D",
+    "execution_time_limit": "PT24M",
+    "multiple_instances": "IgnoreNew",
+    "wake_to_run": true,
+    "logon_type": "Interactive",
+    "working_directory": "C:/trader/simple_ai_trading",
+    "executable": "C:/trader/simple_ai_trading/.venv/Scripts/python.exe",
+    "tool": "tools/run_round74_segmented_campaign_slot.py",
+    "plan_argument": "docs/model-research/action-value/round-074-segmented-event-cohort-plan-v2.json",
+    "prerequisite_argument": "docs/model-research/action-value/round-074-segmented-prerequisite-attempt-003-success-2026-07-28.json",
+    "database_argument": "data/round74-segmented-event-cohort-v2.duckdb",
+    "state_root_argument": "data/round74-segmented-event-cohort-v2-state"
+  },
+  "resource_contract": {
+    "database_cap_bytes": 68719476736,
+    "per_slot_database_and_wal_growth_cap_bytes": 536870912,
+    "minimum_free_space_bytes": 107374182400,
+    "duckdb_memory_limit": "2GB",
+    "duckdb_threads": 2,
+    "monitor_interval_seconds": 5,
+    "durable_heartbeat_interval_seconds": 30,
+    "automatic_retry_permitted": false,
+    "maximum_reconnects": 0,
+    "late_slot_shift_permitted": false,
+    "market_or_model_dependent_replacement_permitted": false
+  },
+  "start_boundary_readiness": {
+    "can_start_now": true,
+    "frozen_source_passed": true,
+    "prerequisite_identity_passed": true,
+    "database_cap_passed": true,
+    "minimum_free_space_passed": true,
+    "wal_absent_before_slot_passed": true,
+    "no_active_segmented_capture_passed": true,
+    "slot_not_reserved_passed": true,
+    "database_bytes": 0,
+    "wal_bytes": 0,
+    "free_bytes": 2447079694336
+  },
+  "status": {
+    "plan_frozen": true,
+    "host_task_registered": true,
+    "campaign_open": true,
+    "first_slot_started": false,
+    "cohort_data_admitted": false,
+    "model_training_or_evaluation": false,
+    "profitability_or_edge_claim": false,
+    "credentials_used": false,
+    "orders_submitted": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "866950baa9e6e12da58ac3fa6ac6e36257eebba7ae8059422ce2500319ae95d1"
+}
