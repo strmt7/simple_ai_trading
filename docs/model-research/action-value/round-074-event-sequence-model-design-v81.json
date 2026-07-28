@@ -1,0 +1,115 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v81",
+  "created_at_utc": "2026-07-28T09:44:33Z",
+  "implementation_git_commit": "8d87e20638255e6ba87917c977c286d053fea399",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v80.json",
+    "design_sha256": "22a4d288e824bc6b1614a3dfa11e2e7cb76e14885090c3955b685636c0eef0bd",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "calibration_path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+    "calibration_sha256": "7307bdce2c7dfc9b6c8fb0832db8b2addbcbec40415fb9999c1a57aca2d580e5",
+    "probability_calibration_schema_version": "round-074-temperature-calibration-v4",
+    "risk_quantile_calibration_schema_version": "round-074-risk-quantile-calibration-v1",
+    "action_policy_path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+    "action_policy_sha256": "eca286024199549076e5fbff77888b841a164551388cccc4354bd40343fee7c7",
+    "action_policy_schema_version": "round-074-action-policy-v12",
+    "ai_bridge_path": "src/simple_ai_trading/impact_absorption_ai_bridge.py",
+    "ai_bridge_sha256": "e19be7bf4f650d808d3ab7438fb2fcfdd44d96c31847a763769e06caaba73281",
+    "ai_bridge_schema_version": "round-074-ai-bridge-v5",
+    "sealed_evaluation_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+    "sealed_evaluation_sha256": "85396c41a4bb78bd1eff86625de3a7d0af0f83533d38fa48997ee754a533d1ff",
+    "sealed_evaluation_schema_version": "round-074-sealed-evaluation-v12",
+    "development_operator_path": "src/simple_ai_trading/round74_event_development_operator.py",
+    "development_operator_sha256": "057c20048ea2cecf9c1f2989c87a132f4a80214291f871e0a27bf6a26e58bc7b",
+    "development_operator_schema_version": "round-074-development-policy-operator-v4",
+    "development_bundle_schema_version": "round-074-development-policy-bundle-v5"
+  },
+  "held_out_risk_tail_calibration_contract": {
+    "calibration_role": "six_chronological_calibration_capture_runs_only",
+    "model_selection_rows_reused": false,
+    "policy_selection_rows_reused": false,
+    "sealed_test_rows_accessed": false,
+    "payoff_lower_nominal_quantiles": [
+      0.1,
+      0.25
+    ],
+    "maximum_adverse_excursion_upper_nominal_quantile": 0.9,
+    "payoff_lower_offsets_are_nonnegative": true,
+    "maximum_adverse_excursion_upper_offsets_are_nonnegative": true,
+    "median_and_upper_payoff_quantiles_unchanged": true,
+    "lower_and_median_adverse_excursion_quantiles_unchanged": true,
+    "quantile_monotonicity_revalidated_after_application": true,
+    "capture_run_population_correction": "maximum_of_per_capture_run_finite_sample_higher_quantile_corrections",
+    "eligible_target_population_correction": "pooled_finite_sample_higher_quantile_correction",
+    "finite_sample_rank": "ceil((n_plus_1)*level)_capped_at_n",
+    "calibration_sample_nominal_coverage_fail_closed": true,
+    "asset_conditioning": "pooled_across_btcusdt_ethusdt_solusdt",
+    "symbol_conditional_coverage_established": false,
+    "exchangeability_assumed_or_established": false,
+    "future_coverage_claim": false,
+    "online_adaptive_calibration_enabled": false,
+    "frozen_pretest_policy_preserved": true
+  },
+  "ml_ai_parity_contract": {
+    "action_policy_uses_frozen_probability_temperatures": true,
+    "action_policy_uses_frozen_risk_tail_offsets": true,
+    "sealed_predictive_metrics_use_frozen_risk_tail_offsets": true,
+    "ai_review_uses_shared_probability_calibration_function": true,
+    "ai_review_uses_shared_risk_tail_calibration_function": true,
+    "ai_review_receives_raw_uncalibrated_model_tails": false,
+    "ai_review_calibration_sha256_binds_nested_risk_tail_calibration": true,
+    "ai_may_only_veto_or_reduce": true,
+    "ai_may_create_or_expand_a_position": false
+  },
+  "research_constraints": [
+    {
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2019/file/5103c3584b063c431bd1268e9b5e76fb-Paper.pdf",
+      "use": "Held-out residual calibration can widen quantile-regression intervals, but the paper's finite-sample future-coverage result requires exchangeability."
+    },
+    {
+      "url": "https://arxiv.org/abs/2106.00170",
+      "use": "Adaptive conformal inference addresses time-varying distributions; it is deferred because post-freeze online updates would violate this experiment's immutable pretest policy."
+    },
+    {
+      "url": "https://arxiv.org/abs/2208.08401",
+      "use": "Arbitrary distribution shifts motivate later adaptive-calibration research, not an untested coverage claim for this frozen nonstationary crypto cohort."
+    },
+    {
+      "url": "https://papers.ssrn.com/sol3/Papers.cfm?abstract_id=2326253",
+      "use": "Backtest-overfitting risk requires disjoint chronological roles and prohibits repeated tuning on the sealed test."
+    }
+  ],
+  "verification": {
+    "relevant_tests_passed": 98,
+    "focused_calibration_bridge_action_tests_passed": 38,
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false
+  },
+  "evidence_boundary": {
+    "synthetic_data_only": true,
+    "real_prospective_cohort_capture_active_but_not_used": true,
+    "financial_backtest_performed": false,
+    "profitability_or_edge_inference_permitted": false,
+    "future_coverage_inference_permitted": false,
+    "ai_model_evaluated": false
+  },
+  "authority": {
+    "held_out_nonnegative_risk_tail_calibration_implementation": true,
+    "calibration_action_ai_sealed_parity_implementation": true,
+    "representative_market_evidence": false,
+    "symbol_conditional_risk_coverage": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "94934473ab1b8fcb1413cc5a72603bd71c15f8160b371bbbf288f4598577c1ab"
+}
