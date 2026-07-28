@@ -1,0 +1,103 @@
+{
+  "schema_version": "round-074-segmented-campaign-slot-recovery-evidence-v1",
+  "campaign": {
+    "plan_schema_version": "round-074-segmented-event-cohort-plan-v3",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "plan_file_sha256": "2a67f9637cb64e2a865ce94679beffa201a28095d0557a0553a59da6ce446913",
+    "scheduled_task": "SimpleAITrading-Round74-Segmented-v3",
+    "slot_ordinal": 28,
+    "role": "training",
+    "scheduled_start_wall_ns": 1785267600000000000
+  },
+  "reservation": {
+    "reserved_wall_ns": 1785267602556800400,
+    "reservation_sha256": "4c9909f6023478bd3dc1e835a64da300f2f7a8cf8d93c6d0c1059afc0249e284",
+    "reservation_file_sha256": "074da192565851f5a899eaa50d1a6de679ba2767ddc5e1999c6197328063dbc9",
+    "automatic_retry_permitted": false
+  },
+  "capture": {
+    "run_id": "b5b84ad2da2f4b939a639fdda799b6d4",
+    "selected_run_id": "",
+    "capture_start_wall_ns": 1785267602980028100,
+    "capture_end_wall_ns": 1785268821472628400,
+    "elapsed_seconds": 1212.0779999999795,
+    "terminal_status": "failed",
+    "terminal_error": "writer_shutdown_timeout",
+    "failure_class": "writer",
+    "message_count": 770788,
+    "frame_count": 287,
+    "compressed_payload_bytes": 24463617,
+    "event_counts": {},
+    "symbol_event_counts": {},
+    "queue_maximum_utilization": 0.0780792236328125,
+    "reconnect_count": 0,
+    "capture_gate_passed": false,
+    "data_qualification_passed": false,
+    "resource_safety_passed": true,
+    "resource_safety_errors": [],
+    "storage_efficiency_passed": true,
+    "audit_passed": false,
+    "audit_errors": [
+      "writer_shutdown_timeout"
+    ]
+  },
+  "adjudication": {
+    "status": "transport_excluded",
+    "reason_code": "writer_shutdown_timeout",
+    "admission_supported": false,
+    "binding_present": false,
+    "formal_epoch_audit_present": false,
+    "formal_epoch_audit_absence_reason": "the frozen supervisor failed the capture before a slot result or admissible epoch object was published",
+    "automatic_retry_permitted": false
+  },
+  "runner_terminal_failure": {
+    "normal_result_present": false,
+    "scheduled_task_result": 2,
+    "last_runner_state_phase": "running",
+    "runner_state_file_sha256": "fb9dacd9e740fed138f4845b5b2fc055d568271c8f26ac991e3fd5e5b886cedc",
+    "failure_classification": "frozen_exact_capture_writer_shutdown_timeout",
+    "watchdog_clean_normal_result_claim": false
+  },
+  "stored_evidence": {
+    "capture_stdout_sha256": "5cb43ca234fe56286235e7c2b43a9c67fddee60c62236925f06526473a0c317c",
+    "capture_stderr_sha256": "e5a3604548b710cad64036a6097e384e614e2704fea610c2cdb32d34e659c899",
+    "database_physical_bytes_from_capture": 1620021444,
+    "database_physical_growth_bytes_from_capture": 25387144,
+    "database_physical_growth_bytes_per_message": 32.936610326055934,
+    "process_io_write_bytes_per_message": 1084.5290261394832,
+    "process_io_semantics": "process I/O transfer bytes; not physical SSD writes",
+    "partial_failed_run_data_may_be_used_for_training": false
+  },
+  "verification": {
+    "verified_at_utc": "2026-07-28T20:01:58Z",
+    "reservation_sha256_verified": true,
+    "stdout_sha256_verified": true,
+    "stderr_sha256_verified": true,
+    "capture_gate_failure_verified": true,
+    "writer_failure_verified": true,
+    "writer_shutdown_timeout_verified": true,
+    "selected_run_id_empty_verified": true,
+    "capture_process_absent_verified": true,
+    "independent_database_reopen_performed": false,
+    "automatic_retry_performed": false,
+    "slot_shifted": false
+  },
+  "authority": {
+    "eligible_for_training": false,
+    "eligible_for_calibration": false,
+    "eligible_for_policy_selection": false,
+    "eligible_for_test": false,
+    "representative_cohort_complete": false,
+    "model_training_performed": false,
+    "profitability_or_edge_claim": false,
+    "orders_submitted": false,
+    "credentials_used": false,
+    "trading_authority": false
+  },
+  "operator_notes": [
+    "Slot 028 is permanently transport-excluded and will not be retried or shifted.",
+    "The failed partial run remains physically present for auditability but is forbidden from every model, calibration, policy-selection, and sealed-test population.",
+    "The supervisor omitted event summaries because the writer did not shut down cleanly; the empty summaries must not be interpreted as zero captured messages.",
+    "The missing formal epoch object is disclosed and must not be replaced with a fabricated digest."
+  ]
+}
