@@ -1,0 +1,113 @@
+{
+  "schema_version": "round-074-segmented-campaign-slot-evidence-v1",
+  "campaign": {
+    "plan_schema_version": "round-074-segmented-event-cohort-plan-v3",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "plan_file_sha256": "2a67f9637cb64e2a865ce94679beffa201a28095d0557a0553a59da6ce446913",
+    "scheduled_task": "SimpleAITrading-Round74-Segmented-v3",
+    "slot_ordinal": 1,
+    "role": "training",
+    "scheduled_start_wall_ns": 1785227100000000000
+  },
+  "reservation": {
+    "reserved_wall_ns": 1785227102589278000,
+    "reservation_sha256": "6cae0412c9654969d73074ca0462b538aedb648d746a538c31ef59f0128060af",
+    "reservation_file_sha256": "dbacc6835032909a36ca0753bfc1b6e3db1c6daa3cb5419dbafb02bdb58f5b1e",
+    "automatic_retry_permitted": false
+  },
+  "capture": {
+    "run_id": "76e2da0087e74c01af8157760392ecc5",
+    "capture_start_wall_ns": 1785227102981015400,
+    "capture_end_wall_ns": 1785228310913349400,
+    "terminal_status": "completed",
+    "terminal_error": "",
+    "failure_class": "none",
+    "message_count": 506946,
+    "frame_count": 290,
+    "observation_count": 506860,
+    "token_count": 505930,
+    "compressed_payload_bytes": 18049515,
+    "event_counts": {
+      "aggTrade": 14897,
+      "bookTicker": 453660,
+      "depthSnapshot": 3,
+      "depthUpdate": 34699,
+      "exchangeInfo": 1,
+      "forceOrder": 7,
+      "markPriceUpdate": 3597,
+      "openInterest": 60,
+      "serverTime": 22
+    },
+    "queue_maximum_utilization": 0.0353240966796875,
+    "reconnect_count": 0,
+    "resource_safety_passed": true,
+    "storage_efficiency_passed": true,
+    "audit_passed": true,
+    "exact_frame_audit_passed": true,
+    "causal_depth_replay_passed": true
+  },
+  "adjudication": {
+    "status": "admitted",
+    "reason_code": "admitted",
+    "adjudication_sha256": "2aa87a85946b78a05c02a5780b4a3203ce3d7d6ec8bd69fdcbefea1ff2ad6ec1",
+    "epoch_audit_sha256": "d22561e76c314d7d09dc79e643fa32bedf711fb02b1e348259a689cef560f6e0",
+    "outcome_sha256": "faf55c58f8f12b45fabeae78443f981a61549941432eb1da6b50ec64e698ff50",
+    "binding_sha256": "d6deb58d3ed3e6e536aa5d89c29b0aa5a4ce2b34dae48523a2a7ede576f23752",
+    "feature_ready_wall_ns": 1785227108601189400,
+    "usable_end_wall_ns": 1785228308741136800,
+    "usable_duration_ns": 1200139947400,
+    "minimum_usable_epoch_ns": 600000000000,
+    "minimum_usable_epoch_passed": true,
+    "maximum_target_span_ns": 310500000000,
+    "complete_target_span_possible": true,
+    "eligible_anchor_duration_ns": 889639947400,
+    "admission_supported": true,
+    "binding_present": true
+  },
+  "stored_evidence": {
+    "result_sha256": "b88c729fd399d23adf3522f1ef57a3eff7f2f7b5bd3fa20afd85ed84c2d88ecf",
+    "result_file_sha256": "99cd0423617168de048fe51cf4160b975f185ab2f87d1e55df56605f363a3ec4",
+    "state_file_sha256": "0c2245980f0ee499072be7d1627d2604608772fbc46dd9b92409a5348f11bb76",
+    "capture_stdout_sha256": "77e8b9709ec4799cec2f0899da4be81cbf2b9653250bea3c734b9790c81a0b6a",
+    "capture_stderr_sha256": "e7a8897b0f27624adf728c354a3236217c4e21074d35ec64ba27137d9ad23b26",
+    "database_snapshot_sha256": "737a32276dca6a932c07a7001fa0ac101329b9e297a2efa9d0d9d951ad01ff9f",
+    "database_snapshot_bytes": 30683136,
+    "database_snapshot_utc": "2026-07-28T08:48:26.4908600Z",
+    "database_snapshot_is_mutable_campaign_storage": true,
+    "v10_frame_rows_for_run": 290,
+    "v10_rest_rows_for_run": 86,
+    "run_rows_for_run": 1,
+    "report_rows_for_run": 1,
+    "wal_present_after_terminal_adjudication": false
+  },
+  "verification": {
+    "verified_at_utc": "2026-07-28T08:48:26.4908600Z",
+    "result_sha256_verified": true,
+    "stdout_sha256_verified": true,
+    "stderr_sha256_verified": true,
+    "adjudication_reload_verified": true,
+    "outcome_reload_verified": true,
+    "binding_reload_verified": true,
+    "epoch_audit_reload_verified": true,
+    "database_run_reconciliation_verified": true,
+    "automatic_retry_performed": false,
+    "slot_shifted": false
+  },
+  "authority": {
+    "eligible_for_training": true,
+    "eligible_for_calibration": false,
+    "eligible_for_policy_selection": false,
+    "eligible_for_test": false,
+    "representative_cohort_complete": false,
+    "model_training_performed": false,
+    "profitability_or_edge_claim": false,
+    "orders_submitted": false,
+    "credentials_used": false,
+    "trading_authority": false
+  },
+  "operator_notes": [
+    "Slot 001 is the first admitted v3 training epoch. It is one independent run, not a complete training cohort and not evidence of predictive or financial edge.",
+    "The mutable database snapshot digest identifies the exact post-slot-001 checkpoint only. Later scheduled slots are expected to change the database.",
+    "No data from transport-excluded slot 000 may be pooled with or used to extend this admitted epoch."
+  ]
+}

@@ -388,11 +388,20 @@ After parser or taxonomy changes, regenerate the header through the native build
   immutably `transport_excluded` with zero eligible model time and no binding.
   Never retry, pool, salvage, relabel, or use slot 000 for features, targets,
   fitting, calibration, policy selection, test evaluation, or financial
-  claims. The campaign remains open; later scheduled slots are independent
-  epochs. Read
+  claims. Slot 001 then completed its independent 20-minute transport epoch
+  with 506,946 exact public messages, 290 frames, zero reconnects, 3.54% peak
+  queue use, and no WAL left behind. Exact-wire and causal-depth replay
+  produced 505,930 tokens, 1,200.140 seconds of usable time, and 889.640
+  seconds of eligible anchor time. It is therefore admitted with binding
+  SHA-256
+  `d6deb58d3ed3e6e536aa5d89c29b0aa5a4ce2b34dae48523a2a7ede576f23752`
+  as the first training run. This is not a complete cohort, model fit,
+  backtest, AI comparison, or financial result. The campaign remains open;
+  later scheduled slots are independent epochs. Read
   `round-074-segmented-prerequisite-attempt-003-success-2026-07-28.json` and
   `round-074-segmented-cohort-host-schedule-v2-2026-07-28.json`, then
   `round-074-segmented-v3-slot-000-transport-exclusion-2026-07-28.json`, then
+  `round-074-segmented-v3-slot-001-admission-2026-07-28.json`, then
   `round-074-segmented-transport-epoch-redesign-validation-2026-07-28.json`,
   then read
   `round-074-event-sequence-model-design-v64.json`, which composes the complete
