@@ -12,7 +12,6 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 from simple_ai_trading.impact_absorption_ai_bridge import ROUND74_AI_RECENT_BLOCK_EVENTS
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION,
-    ROUND74_AI_UPLIFT_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_ai_execution_replay import (
     ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION,
@@ -74,9 +73,6 @@ from simple_ai_trading.impact_absorption_event_model import (
     ROUND74_EVENT_TCN_DILATIONS,
     ROUND74_EVENT_TCN_RECEPTIVE_FIELD,
 )
-from simple_ai_trading.impact_absorption_event_financial_metrics import (
-    ROUND74_REALIZED_METRICS_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_evidence import (
     ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION,
     ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION,
@@ -108,8 +104,7 @@ DURATION_NORMALIZED_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v76.json"
 )
 SEGMENTED_DIRECTML_PREFLIGHT_PATH = (
-    RESEARCH
-    / "round-074-segmented-training-directml-preflight-v1-2026-07-28.json"
+    RESEARCH / "round-074-segmented-training-directml-preflight-v1-2026-07-28.json"
 )
 SEGMENTED_DIRECTML_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v77.json"
@@ -117,9 +112,7 @@ SEGMENTED_DIRECTML_DESIGN_PATH = (
 SEGMENTED_POLICY_POPULATION_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v78.json"
 )
-SHARED_CAPITAL_DESIGN_PATH = (
-    RESEARCH / "round-074-event-sequence-model-design-v79.json"
-)
+SHARED_CAPITAL_DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v79.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -199,7 +192,9 @@ def test_round74_duration_normalized_design_is_hash_bound_and_nonfinancial() -> 
     assert source["partition_schema_version"] == "round-074-run-partition-v5"
     assert source["training_schema_version"] == "round-074-event-training-v18"
     assert implementation["short_epoch_cycling_permitted"] is False
-    assert implementation["target_feature_model_activity_used_for_quota_or_rank"] is False
+    assert (
+        implementation["target_feature_model_activity_used_for_quota_or_rank"] is False
+    )
     assert implementation["cross_epoch_state_feature_or_target_permitted"] is False
     assert design["verification"]["focused_tests_passed"] == 32
     assert design["verification"]["real_cohort_training_performed"] is False
@@ -223,18 +218,15 @@ def test_round74_segmented_directml_preflight_is_bounded_and_hash_bound() -> Non
     assert design["base_design"]["design_sha256"] == (
         "72e4fe99a52545e3f85756ccebd585f1ddb5cfebdc1ca7b7a11d9b9bb7dfa7a6"
     )
-    assert design["directml_preflight"]["artifact_sha256"] == (
-        preflight["artifact_sha256"]
+    assert (
+        design["directml_preflight"]["artifact_sha256"]
+        == (preflight["artifact_sha256"])
     )
-    assert preflight["environment"]["directml_device_name"] == (
-        "AMD Radeon RX 9070 XT"
+    assert preflight["environment"]["directml_device_name"] == ("AMD Radeon RX 9070 XT")
+    assert (
+        preflight["segmented_training_smoke"]["policy_train_seal_reload_passed"] is True
     )
-    assert preflight["segmented_training_smoke"][
-        "policy_train_seal_reload_passed"
-    ] is True
-    assert preflight["segmented_training_smoke"][
-        "cpu_fallback_warning_count"
-    ] == 0
+    assert preflight["segmented_training_smoke"]["cpu_fallback_warning_count"] == 0
     assert preflight["authority"]["representative_market_data_used"] is False
     assert preflight["authority"]["financial_edge_tested"] is False
     assert design["evidence_boundary"]["synthetic_data_only"] is True
@@ -268,9 +260,7 @@ def test_round74_segmented_policy_population_is_consistent_and_source_bound() ->
     assert source["calibration_schema_version"] == (
         "round-074-temperature-calibration-v3"
     )
-    assert source["action_policy_schema_version"] == (
-        "round-074-action-policy-v9"
-    )
+    assert source["action_policy_schema_version"] == ("round-074-action-policy-v9")
     assert source["development_operator_schema_version"] == (
         "round-074-development-policy-operator-v3"
     )
@@ -290,9 +280,10 @@ def test_round74_segmented_policy_population_is_consistent_and_source_bound() ->
         ]
         is True
     )
-    assert compatibility[
-        "legacy_equal_run_temperature_and_threshold_behavior_changed"
-    ] is False
+    assert (
+        compatibility["legacy_equal_run_temperature_and_threshold_behavior_changed"]
+        is False
+    )
     assert design["evidence_boundary"]["synthetic_data_only"] is True
     assert design["evidence_boundary"]["real_cohort_data_used"] is False
     assert design["evidence_boundary"]["financial_backtest_performed"] is False
@@ -323,19 +314,17 @@ def test_round74_shared_capital_replay_is_bounded_and_source_bound() -> None:
             commit,
             source[f"{prefix}_path"],
         )
-    assert source["action_policy_schema_version"] == (
-        "round-074-action-policy-v10"
-    )
+    assert source["action_policy_schema_version"] == ("round-074-action-policy-v10")
     assert capital["execution_mode"] == "unlevered_research_only"
     assert capital["symbol_sleeves"] == len(ROUND74_EVENT_SYMBOLS)
-    assert capital["position_capital_fraction"] == (
-        1.0 / len(ROUND74_EVENT_SYMBOLS)
-    )
+    assert capital["position_capital_fraction"] == (1.0 / len(ROUND74_EVENT_SYMBOLS))
     assert capital["maximum_concurrent_positions"] == len(ROUND74_EVENT_SYMBOLS)
     assert capital["maximum_concurrent_gross_capital_fraction"] == 1.0
     assert capital["same_symbol_overlap_permitted"] is False
     assert capital["cross_symbol_capital_reuse_permitted"] is False
-    assert capital["baseline_exact_replay_and_ai_overlay_use_same_capital_scale"] is True
+    assert (
+        capital["baseline_exact_replay_and_ai_overlay_use_same_capital_scale"] is True
+    )
     assert capital["trace_metrics_recomputed_from_realized_trade_vectors"] is True
     assert capital["independently_tampered_summary_metrics_permitted"] is False
     assert capital["leverage_applied"] is False
@@ -552,15 +541,11 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_dataset_schema_version"] == "round-074-event-dataset-v9"
     assert source["event_partition_schema_version"] == "round-074-run-partition-v4"
     assert (
-        source["event_action_context_schema_version"]
-        == "round-074-action-context-v4"
+        source["event_action_context_schema_version"] == "round-074-action-context-v4"
     )
-    assert (
-        source["event_action_policy_schema_version"]
-        == "round-074-action-policy-v7"
-    )
-    assert (
-        source["ai_uplift_evaluator_schema_version"] == ROUND74_AI_UPLIFT_SCHEMA_VERSION
+    assert source["event_action_policy_schema_version"] == "round-074-action-policy-v7"
+    assert source["ai_uplift_evaluator_schema_version"] == (
+        "round-074-ai-uplift-development-v7"
     )
     assert source["ai_execution_replay_plan_schema_version"] == (
         ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
@@ -575,12 +560,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
     )
     assert source["sealed_claim_schema_version"] == ROUND74_SEALED_CLAIM_SCHEMA_VERSION
-    assert (
-        source["sealed_evaluator_schema_version"]
-        == "round-074-sealed-evaluation-v9"
-    )
+    assert source["sealed_evaluator_schema_version"] == "round-074-sealed-evaluation-v9"
     assert source["financial_metrics_schema_version"] == (
-        ROUND74_REALIZED_METRICS_SCHEMA_VERSION
+        "round-074-realized-payoff-metrics-v1"
     )
     assert (
         source["target_free_inference_schema_version"]
@@ -600,8 +582,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         == ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
     )
     assert (
-        source["ai_review_request_schema_version"]
-        == "round-074-ai-review-request-v3"
+        source["ai_review_request_schema_version"] == "round-074-ai-review-request-v3"
     )
     assert (
         source["ai_review_decision_schema_version"]

@@ -51,6 +51,8 @@ from .impact_absorption_event_cohort import (
 )
 from .impact_absorption_event_dataset import Round74EventTrainingBatch
 from .impact_absorption_event_financial_metrics import (
+    round74_conservative_maximum_drawdown_bps,
+    round74_maximum_concurrent_adverse_excursion_bps,
     round74_maximum_realized_drawdown_bps,
 )
 from .impact_absorption_event_model import Round74EventModelOutput
@@ -72,7 +74,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v10"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v11"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v1"
 )
@@ -785,6 +787,8 @@ class Round74SealedStrategyMetrics:
     win_rate: float
     profit_factor: float | None
     maximum_drawdown_bps: float
+    realized_maximum_drawdown_bps: float
+    maximum_concurrent_adverse_excursion_bps: float
     gross_profit_bps: float
     gross_loss_bps: float
     expected_shortfall_95_bps: float
@@ -805,6 +809,8 @@ class Round74SealedStrategyMetrics:
             self.median_executed_trade_net_bps,
             self.win_rate,
             self.maximum_drawdown_bps,
+            self.realized_maximum_drawdown_bps,
+            self.maximum_concurrent_adverse_excursion_bps,
             self.gross_profit_bps,
             self.gross_loss_bps,
             self.expected_shortfall_95_bps,
@@ -839,11 +845,16 @@ class Round74SealedStrategyMetrics:
             )
             or min(
                 self.maximum_drawdown_bps,
+                self.realized_maximum_drawdown_bps,
+                self.maximum_concurrent_adverse_excursion_bps,
                 self.gross_profit_bps,
                 self.gross_loss_bps,
                 self.mean_maximum_adverse_excursion_bps,
             )
             < 0.0
+            or self.maximum_drawdown_bps + 1e-12 < self.realized_maximum_drawdown_bps
+            or self.maximum_drawdown_bps + 1e-12
+            < self.maximum_concurrent_adverse_excursion_bps
             or (
                 self.profit_factor is not None
                 and (
@@ -868,8 +879,8 @@ class Round74SealedStrategyMetrics:
             "annualized_return_reported": False,
             "sharpe_sortino_calmar_reported": False,
             "reason": (
-                "unlevered trade-payoff evidence has no capital allocation path "
-                "and the sealed horizon is too short for defensible annualization"
+                "the fixed unlevered sleeve path and sealed horizon are too "
+                "short for defensible annualization"
             ),
         }
 
@@ -1083,9 +1094,7 @@ class Round74SealedEvaluationReport:
             or any(_SHA256.fullmatch(value) is None for value in digests)
             or not self.test_batch_sha256
             or len(self.ai_overlays) != ROUND74_SEALED_AI_MODEL_COUNT
-            or len(
-                {value.model_manifest_sha256 for value in self.ai_overlays}
-            )
+            or len({value.model_manifest_sha256 for value in self.ai_overlays})
             != ROUND74_SEALED_AI_MODEL_COUNT
             or len(self.test_batch_sha256) != len(self.model_output_sha256)
             or len(self.test_batch_sha256) != len(self.candidate_sha256)
@@ -1278,6 +1287,7 @@ def _strategy_metrics_from_execution_values(
     maximum_adverse_excursion_bps: np.ndarray,
     retained: np.ndarray,
     adverse_selection: np.ndarray,
+    entry_monotonic_ns: Sequence[int],
     exit_monotonic_ns: Sequence[int],
     *,
     profile: str,
@@ -1290,6 +1300,7 @@ def _strategy_metrics_from_execution_values(
     )
     retained_mask = np.asarray(retained, dtype=np.bool_)
     adverse = np.asarray(adverse_selection, dtype=np.bool_)
+    entries = tuple(int(value) for value in entry_monotonic_ns)
     exits = tuple(int(value) for value in exit_monotonic_ns)
     shape = (trace.metrics.trades,)
     if (
@@ -1304,7 +1315,10 @@ def _strategy_metrics_from_execution_values(
         or np.any(scaled[~retained_mask] != 0.0)
         or np.any(scaled_mae[~retained_mask] != 0.0)
         or np.any(adverse[~retained_mask])
+        or len(entries) != trace.metrics.trades
         or any(value < 0 for value in exits)
+        or any(value < 0 for value in entries)
+        or any(exit_value < entry for entry, exit_value in zip(entries, exits))
     ):
         raise ValueError("Round 74 sealed strategy execution values differ")
     executed = scaled[retained_mask]
@@ -1336,6 +1350,27 @@ def _strategy_metrics_from_execution_values(
         expected_run_ids=trace.expected_run_ids,
         seed=seed,
     )
+    realized_drawdown = round74_maximum_realized_drawdown_bps(
+        scaled,
+        run_ids=trace.run_id,
+        exit_monotonic_ns=exits,
+        expected_run_ids=trace.expected_run_ids,
+    )
+    concurrent_adverse_excursion = round74_maximum_concurrent_adverse_excursion_bps(
+        scaled_mae,
+        run_ids=trace.run_id,
+        entry_monotonic_ns=entries,
+        exit_monotonic_ns=exits,
+        expected_run_ids=trace.expected_run_ids,
+    )
+    conservative_drawdown = round74_conservative_maximum_drawdown_bps(
+        scaled,
+        scaled_mae,
+        run_ids=trace.run_id,
+        entry_monotonic_ns=entries,
+        exit_monotonic_ns=exits,
+        expected_run_ids=trace.expected_run_ids,
+    )
     provisional = Round74SealedStrategyMetrics(
         paired_observations=trace.metrics.trades,
         selected_action_target_ineligible=trace.skipped_target_ineligible,
@@ -1350,12 +1385,9 @@ def _strategy_metrics_from_execution_values(
         ),
         win_rate=float(np.mean(executed > 0.0)) if executed.size else 0.0,
         profit_factor=(gross_profit / gross_loss if gross_loss > 0.0 else None),
-        maximum_drawdown_bps=round74_maximum_realized_drawdown_bps(
-            scaled,
-            run_ids=trace.run_id,
-            exit_monotonic_ns=exits,
-            expected_run_ids=trace.expected_run_ids,
-        ),
+        maximum_drawdown_bps=conservative_drawdown,
+        realized_maximum_drawdown_bps=realized_drawdown,
+        maximum_concurrent_adverse_excursion_bps=(concurrent_adverse_excursion),
         gross_profit_bps=gross_profit,
         gross_loss_bps=gross_loss,
         expected_shortfall_95_bps=expected_shortfall,
@@ -1401,6 +1433,7 @@ def _baseline_strategy_metrics(
         ),
         retained,
         np.asarray(trace.adverse_selection, dtype=np.bool_),
+        trace.entry_monotonic_ns,
         trace.exit_monotonic_ns,
         profile=profile,
         seed=seed,
@@ -1427,8 +1460,7 @@ def _exact_replay_strategy_metrics(
         trace,
         np.asarray(
             [
-                trace.position_capital_fraction
-                * row.capital_scaled_net_payoff_bps
+                trace.position_capital_fraction * row.capital_scaled_net_payoff_bps
                 for row in rows
             ],
             dtype=np.float64,
@@ -1443,6 +1475,18 @@ def _exact_replay_strategy_metrics(
         ),
         retained,
         np.asarray([row.adverse_selection for row in rows], dtype=np.bool_),
+        tuple(
+            (
+                row.actual_entry_monotonic_ns
+                if row.actual_entry_monotonic_ns is not None
+                else baseline_entry
+            )
+            for row, baseline_entry in zip(
+                rows,
+                trace.entry_monotonic_ns,
+                strict=True,
+            )
+        ),
         tuple(
             (
                 row.actual_exit_monotonic_ns
@@ -2003,8 +2047,7 @@ def _ai_overlay(
     baseline_values = np.asarray(trace.net_payoff_bps, dtype=np.float64)
     exact_values = np.asarray(
         [
-            trace.position_capital_fraction
-            * value.capital_scaled_net_payoff_bps
+            trace.position_capital_fraction * value.capital_scaled_net_payoff_bps
             for value in executions
         ],
         dtype=np.float64,

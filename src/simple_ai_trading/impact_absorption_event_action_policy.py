@@ -32,6 +32,8 @@ from .impact_absorption_event_dataset import (
     Round74EventTrainingBatch,
 )
 from .impact_absorption_event_financial_metrics import (
+    round74_conservative_maximum_drawdown_bps,
+    round74_maximum_concurrent_adverse_excursion_bps,
     round74_maximum_realized_drawdown_bps,
 )
 from .impact_absorption_event_model import Round74EventModelOutput
@@ -51,7 +53,7 @@ from .impact_absorption_event_targets import (
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v5"
 ROUND74_ACTION_EXECUTION_PANEL_SCHEMA_VERSION = "round-074-action-execution-panel-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v10"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v11"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
@@ -848,10 +850,7 @@ class Round74ActionExecutionOutcomeRow:
                 raise TypeError("Round 74 action execution outcome type differs")
             outcome.validate()
         if (
-            tuple(
-                (outcome.horizon_seconds, outcome.side)
-                for outcome in self.outcomes
-            )
+            tuple((outcome.horizon_seconds, outcome.side) for outcome in self.outcomes)
             != expected_keys
             or any(
                 outcome.symbol != self.symbol
@@ -975,19 +974,11 @@ class Round74ActionExecutionPanel:
             "schema_version": self.schema_version,
             "profile": self.profile,
             "partition_sha256": self.partition_sha256,
-            "decision_latency_evidence_sha256": (
-                self.decision_latency_evidence_sha256
-            ),
+            "decision_latency_evidence_sha256": (self.decision_latency_evidence_sha256),
             "additional_entry_latency_ns": self.additional_entry_latency_ns,
-            "source_target_assembly_sha256": dict(
-                self.source_target_assembly_sha256
-            ),
-            "source_capture_report_sha256": dict(
-                self.source_capture_report_sha256
-            ),
-            "execution_replay_module_sha256": (
-                self.execution_replay_module_sha256
-            ),
+            "source_target_assembly_sha256": dict(self.source_target_assembly_sha256),
+            "source_capture_report_sha256": dict(self.source_capture_report_sha256),
+            "execution_replay_module_sha256": (self.execution_replay_module_sha256),
             "row_sha256": [row.row_sha256 for row in self.rows],
             "row_count": len(self.rows),
             "target_outcome_count": sum(len(row.outcomes) for row in self.rows),
@@ -1019,6 +1010,8 @@ class Round74ActionTraceMetrics:
     win_rate: float
     profit_factor: float | None
     maximum_drawdown_bps: float
+    realized_maximum_drawdown_bps: float
+    maximum_concurrent_adverse_excursion_bps: float
     gross_profit_bps: float
     gross_loss_bps: float
     worst_trade_bps: float
@@ -1036,6 +1029,8 @@ class Round74ActionTraceMetrics:
             self.median_net_bps,
             self.win_rate,
             self.maximum_drawdown_bps,
+            self.realized_maximum_drawdown_bps,
+            self.maximum_concurrent_adverse_excursion_bps,
             self.gross_profit_bps,
             self.gross_loss_bps,
             self.worst_trade_bps,
@@ -1066,12 +1061,17 @@ class Round74ActionTraceMetrics:
             )
             or min(
                 self.maximum_drawdown_bps,
+                self.realized_maximum_drawdown_bps,
+                self.maximum_concurrent_adverse_excursion_bps,
                 self.gross_profit_bps,
                 self.gross_loss_bps,
                 self.mean_maximum_adverse_excursion_bps,
                 self.mean_run_maximum_adverse_excursion_bps,
             )
             < 0.0
+            or self.maximum_drawdown_bps + 1e-12 < self.realized_maximum_drawdown_bps
+            or self.maximum_drawdown_bps + 1e-12
+            < self.maximum_concurrent_adverse_excursion_bps
             or (
                 self.profit_factor is not None
                 and (
@@ -1122,6 +1122,10 @@ class Round74ActionTraceMetrics:
             win_rate=number("win_rate"),
             profit_factor=profit_factor,
             maximum_drawdown_bps=number("maximum_drawdown_bps"),
+            realized_maximum_drawdown_bps=number("realized_maximum_drawdown_bps"),
+            maximum_concurrent_adverse_excursion_bps=number(
+                "maximum_concurrent_adverse_excursion_bps"
+            ),
             gross_profit_bps=number("gross_profit_bps"),
             gross_loss_bps=number("gross_loss_bps"),
             worst_trade_bps=number("worst_trade_bps"),
@@ -1264,6 +1268,7 @@ class Round74ActionTrace:
             net_payoff_bps=self.net_payoff_bps,
             maximum_adverse_excursion_bps=self.maximum_adverse_excursion_bps,
             adverse_selection=self.adverse_selection,
+            entry_monotonic_ns=self.entry_monotonic_ns,
             exit_monotonic_ns=self.exit_monotonic_ns,
             expected_run_ids=self.expected_run_ids,
         )
@@ -1294,9 +1299,7 @@ class Round74ActionTrace:
             "maximum_concurrent_gross_capital_fraction": (
                 self.position_capital_fraction * len(ROUND74_EVENT_SYMBOLS)
             ),
-            "replay_semantics": (
-                "one_equal_capital_sleeve_per_run_and_symbol"
-            ),
+            "replay_semantics": ("one_equal_capital_sleeve_per_run_and_symbol"),
             "exact_target_entry_exit_times_used": True,
             "drawdown_order": (
                 "expected_run_then_actual_exit_monotonic_ns_then_signal_order"
@@ -1402,9 +1405,7 @@ class Round74ActionTrace:
                 maximum_concurrent_gross_capital_fraction,
                 (int, float),
             )
-            or not math.isfinite(
-                float(maximum_concurrent_gross_capital_fraction)
-            )
+            or not math.isfinite(float(maximum_concurrent_gross_capital_fraction))
         ):
             raise ValueError("Round 74 action trace types differ")
         selected = cls(
@@ -1455,6 +1456,7 @@ def _trace_metrics(
     net_payoff_bps: tuple[float, ...],
     maximum_adverse_excursion_bps: tuple[float, ...],
     adverse_selection: tuple[int, ...],
+    entry_monotonic_ns: tuple[int, ...],
     exit_monotonic_ns: tuple[int, ...],
     expected_run_ids: tuple[str, ...],
 ) -> Round74ActionTraceMetrics:
@@ -1489,6 +1491,27 @@ def _trace_metrics(
         run_pnl[run_id] += float(value)
         run_adverse_excursion[run_id] += float(excursion)
         run_trades[run_id] += 1
+    realized_drawdown = round74_maximum_realized_drawdown_bps(
+        values,
+        run_ids=run_ids,
+        exit_monotonic_ns=exit_monotonic_ns,
+        expected_run_ids=expected_run_ids,
+    )
+    concurrent_adverse_excursion = round74_maximum_concurrent_adverse_excursion_bps(
+        adverse_excursion,
+        run_ids=run_ids,
+        entry_monotonic_ns=entry_monotonic_ns,
+        exit_monotonic_ns=exit_monotonic_ns,
+        expected_run_ids=expected_run_ids,
+    )
+    conservative_drawdown = round74_conservative_maximum_drawdown_bps(
+        values,
+        adverse_excursion,
+        run_ids=run_ids,
+        entry_monotonic_ns=entry_monotonic_ns,
+        exit_monotonic_ns=exit_monotonic_ns,
+        expected_run_ids=expected_run_ids,
+    )
     result = Round74ActionTraceMetrics(
         trades=int(values.size),
         active_runs=sum(count > 0 for count in run_trades.values()),
@@ -1499,12 +1522,9 @@ def _trace_metrics(
         median_net_bps=float(np.median(values)) if values.size else 0.0,
         win_rate=float(np.mean(values > 0.0)) if values.size else 0.0,
         profit_factor=profit_factor,
-        maximum_drawdown_bps=round74_maximum_realized_drawdown_bps(
-            values,
-            run_ids=run_ids,
-            exit_monotonic_ns=exit_monotonic_ns,
-            expected_run_ids=expected_run_ids,
-        ),
+        maximum_drawdown_bps=conservative_drawdown,
+        realized_maximum_drawdown_bps=realized_drawdown,
+        maximum_concurrent_adverse_excursion_bps=(concurrent_adverse_excursion),
         gross_profit_bps=gross_profit,
         gross_loss_bps=gross_loss,
         worst_trade_bps=float(values.min()) if values.size else 0.0,
@@ -1663,9 +1683,7 @@ def _validated_execution_rows(
         or len(selected_batches) != len(selected_candidates)
         or execution_panel.partition_sha256 != selected_batches[0].partition_sha256
         or execution_panel.profile != selected_candidates[0].profile
-        or tuple(
-            run_id for run_id, _ in execution_panel.source_target_assembly_sha256
-        )
+        or tuple(run_id for run_id, _ in execution_panel.source_target_assembly_sha256)
         != expected
         or tuple(rows) != feature_rows
     ):
@@ -1675,16 +1693,13 @@ def _validated_execution_rows(
         selected_candidates,
         strict=True,
     ):
-        for row_index, feature_row_sha256 in enumerate(
-            candidates.feature_row_sha256
-        ):
+        for row_index, feature_row_sha256 in enumerate(candidates.feature_row_sha256):
             row = rows[feature_row_sha256]
             if (
                 row.run_id != batch.run_id[row_index]
                 or row.symbol != batch.symbol[row_index]
                 or row.anchor_index != int(batch.anchor_index[row_index])
-                or row.feature_window_sha256
-                != batch.feature_window_sha256[row_index]
+                or row.feature_window_sha256 != batch.feature_window_sha256[row_index]
             ):
                 raise ValueError("Round 74 action execution row binding differs")
     return rows
@@ -1794,10 +1809,7 @@ def _simulate_round74_action_trace_batches(
                 assert outcome.actual_entry_monotonic_ns is not None
                 assert outcome.actual_exit_monotonic_ns is not None
                 assert outcome.capital_scaled_net_payoff_bps is not None
-                assert (
-                    outcome.capital_scaled_maximum_adverse_excursion_bps
-                    is not None
-                )
+                assert outcome.capital_scaled_maximum_adverse_excursion_bps is not None
                 assert outcome.adverse_selection is not None
                 entry = int(outcome.actual_entry_monotonic_ns)
                 exit_value = int(outcome.actual_exit_monotonic_ns)
@@ -1852,6 +1864,7 @@ def _simulate_round74_action_trace_batches(
             net_payoff_bps=payoff_tuple,
             maximum_adverse_excursion_bps=adverse_excursion_tuple,
             adverse_selection=adverse_selection_tuple,
+            entry_monotonic_ns=tuple(entries),
             exit_monotonic_ns=tuple(exits),
             expected_run_ids=expected,
         ),
@@ -2144,9 +2157,7 @@ class Round74ActionPolicySelection:
             "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
             "target_batch_sha256": list(self.target_batch_sha256),
             "candidate_sha256": list(self.candidate_sha256),
-            "execution_outcome_panel_sha256": (
-                self.execution_outcome_panel_sha256
-            ),
+            "execution_outcome_panel_sha256": (self.execution_outcome_panel_sha256),
             "execution_economics_source": (
                 "profile_specific_exact_delayed_l2_panel"
                 if self.execution_outcome_panel_sha256 is not None
@@ -2264,9 +2275,7 @@ class Round74ActionPolicySelection:
                 if payload["execution_outcome_panel_sha256"] is not None
                 else None
             ),
-            optimization_population=(
-                str(payload["optimization_population"])
-            ),
+            optimization_population=(str(payload["optimization_population"])),
             schema_version=str(payload["schema_version"]),
             sealed_test_accessed=payload["sealed_test_accessed"],
             trading_authority=payload["trading_authority"],
@@ -2346,9 +2355,7 @@ def _eligible_target_score_threshold(
         for run_id in expected
     )
     if any(
-        values.ndim != 1
-        or not np.isfinite(values).all()
-        or np.any(values < 0.0)
+        values.ndim != 1 or not np.isfinite(values).all() or np.any(values < 0.0)
         for values in panels
     ):
         raise ValueError("Round 74 eligible-target threshold score differs")

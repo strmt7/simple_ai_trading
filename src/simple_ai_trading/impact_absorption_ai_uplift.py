@@ -32,6 +32,8 @@ from .impact_absorption_event_action_policy import (
     round74_action_profile,
 )
 from .impact_absorption_event_financial_metrics import (
+    round74_conservative_maximum_drawdown_bps,
+    round74_maximum_concurrent_adverse_excursion_bps,
     round74_maximum_realized_drawdown_bps,
 )
 from .impact_absorption_event_sequence import ROUND74_EVENT_SYMBOLS
@@ -40,7 +42,7 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v7"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v8"
 ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION = (
     "round-074-ai-execution-replay-evidence-v2"
 )
@@ -151,8 +153,7 @@ class Round74AIPairedReviewEvidence:
             raise ValueError("Round 74 AI paired review differs")
         expected_latency_eligible = (
             self.runtime_status == "accepted"
-            and self.effective_review_latency_ns
-            <= self.same_entry_latency_budget_ns
+            and self.effective_review_latency_ns <= self.same_entry_latency_budget_ns
         )
         if self.same_entry_latency_eligible != expected_latency_eligible:
             raise ValueError("Round 74 AI same-entry latency eligibility differs")
@@ -266,9 +267,7 @@ class Round74AIPairedReviewEvidence:
             decision = worker.decision
             multiplier = decision.size_multiplier_bps if latency_eligible else 0
             expected_approved = (
-                request.proposed_risk_size_bps
-                * decision.size_multiplier_bps
-                // 10_000
+                request.proposed_risk_size_bps * decision.size_multiplier_bps // 10_000
             )
             if outcome.approved_risk_size_bps != expected_approved:
                 raise ValueError("Round 74 AI approved risk size differs")
@@ -376,8 +375,7 @@ class Round74AIExecutionReplayEvidence:
             or isinstance(self.applied_size_multiplier_bps, bool)
             or not isinstance(self.applied_size_multiplier_bps, int)
             or not 0 <= self.applied_size_multiplier_bps <= 10_000
-            or self.applied_size_multiplier_bps
-            > self.requested_size_multiplier_bps
+            or self.applied_size_multiplier_bps > self.requested_size_multiplier_bps
             or self.exact_l2_replay_performed != replay_status
             or target_bound != replay_status
             or (
@@ -409,14 +407,8 @@ class Round74AIExecutionReplayEvidence:
             or self.position_maximum_adverse_excursion_bps < 0.0
             or self.capital_scaled_maximum_adverse_excursion_bps < 0.0
             or not isinstance(self.adverse_selection, bool)
-            or (
-                replay_status
-                and self.requested_size_multiplier_bps <= 0
-            )
-            or (
-                replay_status
-                and self.requested_entry_monotonic_ns is None
-            )
+            or (replay_status and self.requested_size_multiplier_bps <= 0)
+            or (replay_status and self.requested_entry_monotonic_ns is None)
             or (
                 actual_entry is not None
                 and self.requested_entry_monotonic_ns is not None
@@ -547,6 +539,8 @@ class Round74AIOverlayMetrics:
     total_net_bps: float
     mean_paired_net_bps: float
     maximum_drawdown_bps: float
+    realized_maximum_drawdown_bps: float
+    maximum_concurrent_adverse_excursion_bps: float
     mean_maximum_adverse_excursion_bps: float
     profitable_run_ratio: float
 
@@ -576,6 +570,8 @@ class Round74AIOverlayMetrics:
             self.total_net_bps,
             self.mean_paired_net_bps,
             self.maximum_drawdown_bps,
+            self.realized_maximum_drawdown_bps,
+            self.maximum_concurrent_adverse_excursion_bps,
             self.mean_maximum_adverse_excursion_bps,
         )
         if (
@@ -587,8 +583,7 @@ class Round74AIOverlayMetrics:
             or self.reduced_trades > self.retained_trades
             or self.runtime_accepted_reviews > self.baseline_trades
             or self.same_entry_latency_eligible_reviews > self.runtime_accepted_reviews
-            or self.exact_replay_completed_reviews
-            != self.exact_replay_required_reviews
+            or self.exact_replay_completed_reviews != self.exact_replay_required_reviews
             or self.exact_replay_target_ineligible_reviews
             > self.exact_replay_completed_reviews
             or self.delayed_overlap_vetoes > self.exact_replay_completed_reviews
@@ -597,9 +592,14 @@ class Round74AIOverlayMetrics:
             or any(not 0.0 <= float(value) <= 1.0 for value in ratios)
             or min(
                 self.maximum_drawdown_bps,
+                self.realized_maximum_drawdown_bps,
+                self.maximum_concurrent_adverse_excursion_bps,
                 self.mean_maximum_adverse_excursion_bps,
             )
             < 0.0
+            or self.maximum_drawdown_bps + 1e-12 < self.realized_maximum_drawdown_bps
+            or self.maximum_drawdown_bps + 1e-12
+            < self.maximum_concurrent_adverse_excursion_bps
             or (
                 self.baseline_trades > 0
                 and (
@@ -689,6 +689,47 @@ def _scaled_metrics(
         }
         for run_id in trace.expected_run_ids
     )
+    actual_entries = tuple(
+        execution.actual_entry_monotonic_ns
+        if execution.actual_entry_monotonic_ns is not None
+        else baseline_entry
+        for execution, baseline_entry in zip(
+            executions,
+            trace.entry_monotonic_ns,
+            strict=True,
+        )
+    )
+    actual_exits = tuple(
+        execution.actual_exit_monotonic_ns
+        if execution.actual_exit_monotonic_ns is not None
+        else baseline_exit
+        for execution, baseline_exit in zip(
+            executions,
+            trace.exit_monotonic_ns,
+            strict=True,
+        )
+    )
+    realized_drawdown = round74_maximum_realized_drawdown_bps(
+        scaled,
+        run_ids=trace.run_id,
+        exit_monotonic_ns=actual_exits,
+        expected_run_ids=trace.expected_run_ids,
+    )
+    concurrent_adverse_excursion = round74_maximum_concurrent_adverse_excursion_bps(
+        scaled_mae,
+        run_ids=trace.run_id,
+        entry_monotonic_ns=actual_entries,
+        exit_monotonic_ns=actual_exits,
+        expected_run_ids=trace.expected_run_ids,
+    )
+    conservative_drawdown = round74_conservative_maximum_drawdown_bps(
+        scaled,
+        scaled_mae,
+        run_ids=trace.run_id,
+        entry_monotonic_ns=actual_entries,
+        exit_monotonic_ns=actual_exits,
+        expected_run_ids=trace.expected_run_ids,
+    )
     metrics = Round74AIOverlayMetrics(
         baseline_trades=len(reviews),
         retained_trades=int(retained.sum()),
@@ -729,21 +770,9 @@ def _scaled_metrics(
         maximum_retained_symbol_share=float(maximum_symbol_share),
         total_net_bps=float(scaled.sum()),
         mean_paired_net_bps=float(scaled.mean()),
-        maximum_drawdown_bps=round74_maximum_realized_drawdown_bps(
-            scaled,
-            run_ids=trace.run_id,
-            exit_monotonic_ns=tuple(
-                execution.actual_exit_monotonic_ns
-                if execution.actual_exit_monotonic_ns is not None
-                else baseline_exit
-                for execution, baseline_exit in zip(
-                    executions,
-                    trace.exit_monotonic_ns,
-                    strict=True,
-                )
-            ),
-            expected_run_ids=trace.expected_run_ids,
-        ),
+        maximum_drawdown_bps=conservative_drawdown,
+        realized_maximum_drawdown_bps=realized_drawdown,
+        maximum_concurrent_adverse_excursion_bps=(concurrent_adverse_excursion),
         mean_maximum_adverse_excursion_bps=float(scaled_mae.mean()),
         profitable_run_ratio=float(np.mean(np.asarray(tuple(run_ai.values())) > 0.0)),
     )
@@ -842,8 +871,7 @@ class Round74AIUpliftDevelopmentReport:
             or len(set(self.candidate_sha256)) != len(self.candidate_sha256)
             or len(self.review_sha256) != self.baseline_trace.metrics.trades
             or len(set(self.review_sha256)) != len(self.review_sha256)
-            or len(self.execution_replay_sha256)
-            != self.baseline_trace.metrics.trades
+            or len(self.execution_replay_sha256) != self.baseline_trace.metrics.trades
             or len(set(self.execution_replay_sha256))
             != len(self.execution_replay_sha256)
             or len(self.ai_scaled_net_payoff_bps) != self.baseline_trace.metrics.trades
@@ -964,8 +992,7 @@ def evaluate_round74_ai_overlay_development(
         or tuple(review.row_index for review in review_rows) != trace.row_index
         or tuple(value.row_index for value in execution_rows) != trace.row_index
         or len({review.row_index for review in review_rows}) != len(review_rows)
-        or len({value.row_index for value in execution_rows})
-        != len(execution_rows)
+        or len({value.row_index for value in execution_rows}) != len(execution_rows)
     ):
         raise ValueError("Round 74 AI paired review coverage differs")
     manifest_values = {review.model_manifest_sha256 for review in review_rows}
@@ -978,8 +1005,7 @@ def evaluate_round74_ai_overlay_development(
         execution = execution_rows[index]
         requested_multiplier = (
             review.decision.size_multiplier_bps
-            if review.runtime_status == "accepted"
-            and review.decision is not None
+            if review.runtime_status == "accepted" and review.decision is not None
             else 0
         )
         if (
@@ -997,8 +1023,7 @@ def evaluate_round74_ai_overlay_development(
             or execution.side != trace.side[index]
             or execution.horizon_seconds != trace.horizon_seconds[index]
             or execution.source_review_sha256 != review.review_sha256
-            or execution.requested_size_multiplier_bps
-            != requested_multiplier
+            or execution.requested_size_multiplier_bps != requested_multiplier
             or (
                 review.runtime_status != "accepted"
                 and execution.status != "runtime_veto"
@@ -1069,9 +1094,7 @@ def evaluate_round74_ai_overlay_development(
         same_entry_latency_budget_ns=next(iter(latency_budgets)),
         baseline_trace=trace,
         review_sha256=tuple(review.review_sha256 for review in review_rows),
-        execution_replay_sha256=tuple(
-            value.replay_sha256 for value in execution_rows
-        ),
+        execution_replay_sha256=tuple(value.replay_sha256 for value in execution_rows),
         ai_scaled_net_payoff_bps=scaled,
         ai_scaled_maximum_adverse_excursion_bps=scaled_mae,
         paired_runs=paired_runs,
