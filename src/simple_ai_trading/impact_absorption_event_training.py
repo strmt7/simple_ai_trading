@@ -80,10 +80,10 @@ from .round74_segmented_model_operator import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v29"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v28"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v30"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v29"
 ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION = (
-    "round-074-event-selection-protocol-v3"
+    "round-074-event-selection-protocol-v4"
 )
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION = "round-074-target-loss-scale-v1"
@@ -570,8 +570,7 @@ def _build_segmented_selection_protocol(
         optimization_end < ROUND74_EVENT_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS
         or optimization_end > early_stopping_start
         or feature_scaler.fit_source_run_ids != observed_optimization_run_ids
-        or feature_scaler.fit_source_selection_sha256
-        != training_split.split_sha256
+        or feature_scaler.fit_source_selection_sha256 != training_split.split_sha256
     ):
         raise ValueError("Round 74 segmented scaler optimization runs differ")
     optimization_batches = selected_training[:optimization_end]
@@ -2375,6 +2374,57 @@ def _fit_candidate(
     )
 
 
+def round74_paired_run_stability_evidence(
+    improvements: Sequence[float],
+    *,
+    minimum_improvement: float,
+) -> dict[str, object]:
+    """Return assumption-free robustness gates for paired capture-run gains."""
+
+    values = tuple(float(value) for value in improvements)
+    minimum = float(minimum_improvement)
+    if (
+        not values
+        or not math.isfinite(minimum)
+        or minimum < 0.0
+        or any(not math.isfinite(value) for value in values)
+    ):
+        raise ValueError("Round 74 paired-run stability panel differs")
+    material_win_count = sum(value > minimum for value in values)
+    required_material_win_count = len(values) // 2 + 1
+    material_win_majority = material_win_count >= required_material_win_count
+    deletion_gate_applied = len(values) > 1
+    minimum_deletion_mean = (
+        min(
+            math.fsum(
+                value
+                for candidate_index, value in enumerate(values)
+                if candidate_index != removed_index
+            )
+            / (len(values) - 1)
+            for removed_index in range(len(values))
+        )
+        if deletion_gate_applied
+        else None
+    )
+    deletion_stable = (
+        minimum_deletion_mean is not None and minimum_deletion_mean > minimum
+    )
+    return {
+        "material_challenger_win_count": material_win_count,
+        "minimum_required_material_win_count": required_material_win_count,
+        "material_win_majority": material_win_majority,
+        "single_capture_run_deletion_gate_applied": deletion_gate_applied,
+        "minimum_leave_one_capture_run_out_mean_proper_loss_improvement": (
+            minimum_deletion_mean
+        ),
+        "all_leave_one_capture_run_out_panels_exceed_minimum_mean_improvement": (
+            deletion_stable
+        ),
+        "statistical_independence_or_significance_claim": False,
+    }
+
+
 def _paired_promotion_report(
     incumbent_id: str,
     challenger_id: str,
@@ -2399,8 +2449,12 @@ def _paired_promotion_report(
     wins = sum(value > 0.0 for value in improvements)
     losses_count = sum(value < 0.0 for value in improvements)
     ties = len(improvements) - wins - losses_count
-    mean_improvement = sum(improvements) / len(improvements)
+    mean_improvement = math.fsum(improvements) / len(improvements)
     maximum_loss_degradation = max(-value for value in improvements)
+    stability = round74_paired_run_stability_evidence(
+        improvements,
+        minimum_improvement=minimum_improvement,
+    )
     complete_tuning_panel = len(improvements) == required_paired_run_count
     all_runs_noninferior = maximum_loss_degradation <= minimum_improvement
     if (incumbent_group_losses is None) != (challenger_group_losses is None):
@@ -2442,6 +2496,11 @@ def _paired_promotion_report(
         and mean_improvement > minimum_improvement
         and all_runs_noninferior
         and all_subgroups_noninferior
+        and stability["material_win_majority"] is True
+        and stability[
+            "all_leave_one_capture_run_out_panels_exceed_minimum_mean_improvement"
+        ]
+        is True
     )
     return {
         "incumbent_candidate_id": incumbent_id,
@@ -2463,6 +2522,7 @@ def _paired_promotion_report(
         "maximum_paired_group_loss_degradation": (maximum_subgroup_loss_degradation),
         "maximum_permitted_paired_group_loss_degradation": minimum_improvement,
         "all_paired_run_symbol_horizon_groups_noninferior": (all_subgroups_noninferior),
+        **stability,
         "promoted": promoted,
     }
 
@@ -2692,7 +2752,9 @@ def _feature_view_selection_criterion(
         f"{order_flow_required_paired_run_count} paired model-selection "
         "capture runs, respectively, "
         "and requires strict mean proper-loss improvement with no run or "
-        "run-symbol-horizon subgroup degradation beyond the numerical floor"
+        "run-symbol-horizon subgroup degradation beyond the numerical floor, "
+        "a material win on a strict majority of capture runs, and mean "
+        "improvement above the floor after deleting any one capture run"
     )
 
 
@@ -3157,9 +3219,10 @@ def train_and_seal_round74_pretest_policy(
         selection_criterion = (
             "sequential parameter-count complexity promotion; each challenger "
             f"requires all {promotion_required_runs} model-selection capture runs, "
-            "must strictly exceed the numerical mean-loss floor, and may not "
-            "degrade any paired run "
-            "or eligible run-symbol-horizon proper-loss subgroup beyond that floor"
+            "must strictly exceed the numerical mean-loss floor after deleting "
+            "any one capture run, must materially win a strict majority of capture "
+            "runs, and may not degrade any paired run or eligible "
+            "run-symbol-horizon proper-loss subgroup beyond that floor"
         )
         planned_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
         required_paired_capture_run_count = promotion_required_runs
@@ -4158,8 +4221,7 @@ def load_round74_pretest_policy(
             != ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION
             or protocol.get("stage_partition_sha256")
             != stage_partition.stage_partition_sha256
-            or protocol.get("training_split_sha256")
-            != training_split.split_sha256
+            or protocol.get("training_split_sha256") != training_split.split_sha256
             or training_split.parent_partition_sha256
             != stage_partition.parent_partition_sha256
             or training_split.cohort_plan_sha256 != stage_partition.cohort_plan_sha256
@@ -4174,8 +4236,7 @@ def load_round74_pretest_policy(
             or len(early_stopping_run_ids) != len(early_stopping_hashes)
             or optimization_run_ids != list(training_split.optimization_run_ids)
             or purged_run_ids != list(training_split.purged_run_ids)
-            or early_stopping_run_ids
-            != list(training_split.early_stopping_run_ids)
+            or early_stopping_run_ids != list(training_split.early_stopping_run_ids)
             or any(
                 not isinstance(run_id, str)
                 or len(run_id) != 32
@@ -4630,9 +4691,10 @@ def load_round74_pretest_policy(
         expected_criterion = (
             "sequential parameter-count complexity promotion; each challenger "
             f"requires all {promotion_required_runs} model-selection capture "
-            "runs, must strictly exceed the numerical mean-loss floor, and may "
-            "not degrade any paired run "
-            "or eligible run-symbol-horizon proper-loss subgroup beyond that floor"
+            "runs, must strictly exceed the numerical mean-loss floor after "
+            "deleting any one capture run, must materially win a strict majority "
+            "of capture runs, and may not degrade any paired run or eligible "
+            "run-symbol-horizon proper-loss subgroup beyond that floor"
         )
         expected_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
         expected_paired_run_count = promotion_required_runs
@@ -5500,6 +5562,7 @@ __all__ = [
     "Round74PretestPolicyArtifact",
     "load_round74_pretest_policy",
     "load_round74_pretest_scaler",
+    "round74_paired_run_stability_evidence",
     "train_and_seal_round74_pretest_policy",
     "train_and_seal_round74_pretest_policy_from_prepared_roles",
 ]

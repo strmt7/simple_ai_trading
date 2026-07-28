@@ -23,6 +23,7 @@ from .impact_absorption_event_training import (
     ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS,
     Round74EventTrainingConfig,
     load_round74_pretest_policy,
+    round74_paired_run_stability_evidence,
 )
 from .round74_event_development_inputs import Round74DevelopmentInputs
 from .round74_event_development_operator import (
@@ -39,7 +40,7 @@ from .storage import write_bytes_atomic
 
 
 ROUND74_REPRESENTATION_COMPARISON_SCHEMA_VERSION = (
-    "round-074-representation-comparison-v2"
+    "round-074-representation-comparison-v3"
 )
 
 
@@ -105,10 +106,22 @@ def round74_representation_proper_loss_gate(
         incumbent - candidate
         for incumbent, candidate in zip(baseline, challenger, strict=True)
     )
-    mean_improvement = sum(improvements) / len(improvements)
+    mean_improvement = math.fsum(improvements) / len(improvements)
     maximum_degradation = max(-value for value in improvements)
     all_runs_noninferior = maximum_degradation <= minimum
-    promoted = mean_improvement > minimum and all_runs_noninferior
+    stability = round74_paired_run_stability_evidence(
+        improvements,
+        minimum_improvement=minimum,
+    )
+    promoted = (
+        mean_improvement > minimum
+        and all_runs_noninferior
+        and stability["material_win_majority"] is True
+        and stability[
+            "all_leave_one_capture_run_out_panels_exceed_minimum_mean_improvement"
+        ]
+        is True
+    )
     return {
         "paired_capture_run_count": len(improvements),
         "minimum_mean_proper_loss_improvement": minimum,
@@ -118,9 +131,10 @@ def round74_representation_proper_loss_gate(
         "challenger_win_count": sum(value > 0.0 for value in improvements),
         "challenger_loss_count": sum(value < 0.0 for value in improvements),
         "exact_tie_count": sum(value == 0.0 for value in improvements),
+        "paired_run_proper_loss_improvements": list(improvements),
         "all_paired_runs_noninferior": all_runs_noninferior,
+        **stability,
         "promoted": promoted,
-        "statistical_independence_or_significance_claim": False,
         "sealed_test_accessed": False,
     }
 
@@ -150,10 +164,9 @@ def _profile_policy_map(
     for policy in selected:
         policy.validate()
     result = {policy.profile: policy for policy in selected}
-    if (
-        tuple(policy.profile for policy in selected) != ROUND74_ACTION_PROFILES
-        or set(result) != set(ROUND74_ACTION_PROFILES)
-    ):
+    if tuple(policy.profile for policy in selected) != ROUND74_ACTION_PROFILES or set(
+        result
+    ) != set(ROUND74_ACTION_PROFILES):
         raise ValueError("Round 74 representation profile panel differs")
     return result
 
@@ -177,9 +190,8 @@ def _paired_run_net_deltas(
     ) -> tuple[float, ...]:
         trace = evaluation.trace
         values = {run_id: 0.0 for run_id in baseline_run_ids}
-        if (
-            len(trace.run_id) != len(trace.net_payoff_bps)
-            or any(run_id not in values for run_id in trace.run_id)
+        if len(trace.run_id) != len(trace.net_payoff_bps) or any(
+            run_id not in values for run_id in trace.run_id
         ):
             raise ValueError("Round 74 representation economic trace differs")
         for run_id, payoff in zip(
@@ -234,11 +246,9 @@ def round74_representation_economic_gate(
         if baseline_evaluation is not None and challenger_evaluation is not None:
             baseline_metrics = baseline_evaluation.trace.metrics
             challenger_metrics = challenger_evaluation.trace.metrics
-            paired_run_ids_sha256, paired_run_net_deltas_bps = (
-                _paired_run_net_deltas(
-                    baseline_evaluation,
-                    challenger_evaluation,
-                )
+            paired_run_ids_sha256, paired_run_net_deltas_bps = _paired_run_net_deltas(
+                baseline_evaluation,
+                challenger_evaluation,
             )
             minimum_paired_run_net_delta_bps = min(paired_run_net_deltas_bps)
             challenger_worse_run_count = sum(
@@ -297,8 +307,7 @@ def round74_representation_economic_gate(
                             baseline_evaluation.trace.metrics.adverse_selection_rate
                         ),
                         "mean_run_maximum_adverse_excursion_bps": (
-                            baseline_evaluation.trace.metrics
-                            .mean_run_maximum_adverse_excursion_bps
+                            baseline_evaluation.trace.metrics.mean_run_maximum_adverse_excursion_bps
                         ),
                     }
                 ),
@@ -317,8 +326,7 @@ def round74_representation_economic_gate(
                             challenger_evaluation.trace.metrics.adverse_selection_rate
                         ),
                         "mean_run_maximum_adverse_excursion_bps": (
-                            challenger_evaluation.trace.metrics
-                            .mean_run_maximum_adverse_excursion_bps
+                            challenger_evaluation.trace.metrics.mean_run_maximum_adverse_excursion_bps
                         ),
                     }
                 ),
@@ -328,13 +336,9 @@ def round74_representation_economic_gate(
                     if paired_run_net_deltas_bps is None
                     else list(paired_run_net_deltas_bps)
                 ),
-                "minimum_paired_run_net_delta_bps": (
-                    minimum_paired_run_net_delta_bps
-                ),
+                "minimum_paired_run_net_delta_bps": (minimum_paired_run_net_delta_bps),
                 "challenger_worse_run_count": challenger_worse_run_count,
-                "all_paired_runs_net_noninferior": (
-                    all_paired_runs_net_noninferior
-                ),
+                "all_paired_runs_net_noninferior": (all_paired_runs_net_noninferior),
                 "noninferior": not reasons,
                 "reasons": reasons,
                 "sealed_test_accessed": False,
@@ -344,64 +348,32 @@ def round74_representation_economic_gate(
 
 
 def _validate_proper_loss_report(value: Mapping[str, object]) -> bool:
-    expected_keys = {
-        "paired_capture_run_count",
-        "minimum_mean_proper_loss_improvement",
-        "mean_proper_loss_improvement",
-        "maximum_permitted_paired_run_loss_degradation",
-        "maximum_paired_run_loss_degradation",
-        "challenger_win_count",
-        "challenger_loss_count",
-        "exact_tie_count",
-        "all_paired_runs_noninferior",
-        "promoted",
-        "statistical_independence_or_significance_claim",
-        "sealed_test_accessed",
-    }
-    counts = tuple(
-        value.get(name)
-        for name in (
-            "challenger_win_count",
-            "challenger_loss_count",
-            "exact_tie_count",
-        )
-    )
-    numbers = tuple(
-        value.get(name)
-        for name in (
-            "minimum_mean_proper_loss_improvement",
-            "mean_proper_loss_improvement",
-            "maximum_permitted_paired_run_loss_degradation",
-            "maximum_paired_run_loss_degradation",
-        )
-    )
+    raw_improvements = value.get("paired_run_proper_loss_improvements")
+    minimum = value.get("minimum_mean_proper_loss_improvement")
     if (
-        set(value) != expected_keys
-        or value.get("paired_capture_run_count")
-        != ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-        or any(
-            isinstance(item, bool) or not isinstance(item, int) or item < 0
-            for item in counts
-        )
-        or sum(counts) != ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        not isinstance(raw_improvements, list)
+        or len(raw_improvements) != ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
         or any(
             isinstance(item, bool)
             or not isinstance(item, (int, float))
             or not math.isfinite(float(item))
-            for item in numbers
+            for item in raw_improvements
         )
-        or not isinstance(value.get("all_paired_runs_noninferior"), bool)
-        or not isinstance(value.get("promoted"), bool)
-        or value.get("statistical_independence_or_significance_claim") is not False
-        or value.get("sealed_test_accessed") is not False
+        or isinstance(minimum, bool)
+        or not isinstance(minimum, (int, float))
+        or not math.isfinite(float(minimum))
+        or float(minimum) < 0.0
     ):
         raise ValueError("Round 74 representation proper-loss report differs")
-    expected_promoted = bool(value["all_paired_runs_noninferior"]) and float(
-        value["mean_proper_loss_improvement"]
-    ) > float(value["minimum_mean_proper_loss_improvement"])
-    if value.get("promoted") is not expected_promoted:
+    improvements = tuple(float(item) for item in raw_improvements)
+    expected = round74_representation_proper_loss_gate(
+        (0.0,) * len(improvements),
+        tuple(-item for item in improvements),
+        minimum_mean_improvement=float(minimum),
+    )
+    if dict(value) != expected:
         raise ValueError("Round 74 representation proper-loss result differs")
-    return expected_promoted
+    return expected["promoted"] is True
 
 
 def _validate_profile_reports(
@@ -474,9 +446,7 @@ def _validate_profile_reports(
                 raise ValueError("Round 74 representation profile metrics differ")
         paired_run_ids_sha256 = value.get("paired_run_ids_sha256")
         paired_run_net_deltas = value.get("paired_run_net_deltas_bps")
-        minimum_paired_run_net_delta = value.get(
-            "minimum_paired_run_net_delta_bps"
-        )
+        minimum_paired_run_net_delta = value.get("minimum_paired_run_net_delta_bps")
         worse_run_count = value.get("challenger_worse_run_count")
         all_run_noninferior = value.get("all_paired_runs_net_noninferior")
         both_accepted = (
@@ -516,18 +486,14 @@ def _validate_profile_reports(
         ):
             raise ValueError("Round 74 representation paired economics differ")
         expected_minimum = min(float(item) for item in paired_run_net_deltas)
-        expected_worse_count = sum(
-            float(item) < 0.0 for item in paired_run_net_deltas
-        )
+        expected_worse_count = sum(float(item) < 0.0 for item in paired_run_net_deltas)
         if (
             float(minimum_paired_run_net_delta) != expected_minimum
             or worse_run_count != expected_worse_count
             or all_run_noninferior is not (expected_worse_count == 0)
             or (
                 value["profile"] == "conservative"
-                and (
-                    "conservative_paired_run_net_payoff_degraded" in reasons
-                )
+                and ("conservative_paired_run_net_payoff_degraded" in reasons)
                 is all_run_noninferior
             )
         ):
@@ -598,9 +564,7 @@ class Round74RepresentationComparison:
             "baseline_representation": "per_symbol",
             "challenger_representation": "global_cross_asset",
             "baseline_pretest_policy_sha256": self.baseline_pretest_policy_sha256,
-            "challenger_pretest_policy_sha256": (
-                self.challenger_pretest_policy_sha256
-            ),
+            "challenger_pretest_policy_sha256": (self.challenger_pretest_policy_sha256),
             "baseline_development_bundle_sha256": (
                 self.baseline_development_bundle_sha256
             ),
@@ -740,9 +704,7 @@ def load_round74_representation_comparison(
     if not isinstance(payload, Mapping):
         raise ValueError("Round 74 representation result root differs")
     result = Round74RepresentationComparison.from_dict(payload)
-    expected_name = (
-        f"round74-representation-comparison-{result.comparison_sha256}.json"
-    )
+    expected_name = f"round74-representation-comparison-{result.comparison_sha256}.json"
     if selected_path.name != expected_name:
         raise ValueError("Round 74 representation result filename differs")
     return result
@@ -827,8 +789,7 @@ def build_round74_representation_comparison(
         batches = expected_batches[representation]
         if (
             artifact.bundle_sha256 != artifact.bundle.bundle_sha256
-            or policy.get("policy_sha256")
-            != artifact.pretest_policy.policy_sha256
+            or policy.get("policy_sha256") != artifact.pretest_policy.policy_sha256
             or artifact.bundle.model_selection_batch_sha256
             != tuple(batch.batch_sha256 for batch in batches[:12])
             or artifact.bundle.calibration_batch_sha256
@@ -883,9 +844,7 @@ def build_round74_representation_comparison(
         seeds=baseline_seeds,
         proper_loss_gate=proper,
         profile_economic_gates=profiles,
-        selected_representation=(
-            "global_cross_asset" if promoted else "per_symbol"
-        ),
+        selected_representation=("global_cross_asset" if promoted else "per_symbol"),
         promoted=promoted,
         source_module_sha256=_module_sha256(),
     )
@@ -928,8 +887,7 @@ def train_and_compare_round74_representations(
         for representation in ROUND74_EVENT_WINDOW_REPRESENTATIONS
     }
     execution_assemblies = {
-        run_id: assemblies[run_id]
-        for run_id in subpartition.policy_selection_run_ids
+        run_id: assemblies[run_id] for run_id in subpartition.policy_selection_run_ids
     }
     output = Path(output_directory)
     baseline = train_calibrate_and_select_round74_development_policy(
@@ -978,7 +936,10 @@ def train_and_compare_round74_representations(
         minimum_mean_improvement=selected_config.minimum_tuning_improvement,
     )
     payload = _canonical_bytes(comparison.as_dict()) + b"\n"
-    path = output / f"round74-representation-comparison-{comparison.comparison_sha256}.json"
+    path = (
+        output
+        / f"round74-representation-comparison-{comparison.comparison_sha256}.json"
+    )
     if path.exists():
         if path.read_bytes() != payload:
             raise FileExistsError("Round 74 immutable representation result differs")
