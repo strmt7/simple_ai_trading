@@ -44,7 +44,7 @@ from .impact_absorption_event_targets import (
 from .storage import write_json_atomic
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v10"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v11"
 ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION = (
     "round-074-ai-qualification-population-v1"
 )
@@ -94,6 +94,19 @@ def _require_sha256(value: object, label: str) -> str:
     if _SHA256.fullmatch(selected) is None:
         raise ValueError(f"Round 74 AI uplift {label} digest differs")
     return selected
+
+
+def _trace_run_population_matches(
+    trace: Round74ActionTrace,
+    expected_run_ids: tuple[str, ...],
+) -> bool:
+    observed = tuple(dict.fromkeys(trace.run_id))
+    observed_set = set(observed)
+    return (
+        observed_set.issubset(set(expected_run_ids))
+        and observed
+        == tuple(run_id for run_id in expected_run_ids if run_id in observed_set)
+    )
 
 
 @dataclass(frozen=True)
@@ -1116,7 +1129,10 @@ class Round74AIUpliftDevelopmentReport:
             or not self.candidate_sha256
             or self.baseline_trace.expected_run_ids
             != self.qualification_population.run_ids
-            or self.baseline_trace.run_id != self.qualification_population.run_ids
+            or not _trace_run_population_matches(
+                self.baseline_trace,
+                self.qualification_population.run_ids,
+            )
             or isinstance(self.same_entry_latency_budget_ns, bool)
             or not isinstance(self.same_entry_latency_budget_ns, int)
             or self.same_entry_latency_budget_ns <= 0
@@ -1645,7 +1661,10 @@ def evaluate_round74_ai_overlay_development(
         or qualification_population.parent_tuning_subpartition_sha256
         != action_selection.tuning_subpartition_sha256
         or trace.expected_run_ids != qualification_population.run_ids
-        or trace.run_id != qualification_population.run_ids
+        or not _trace_run_population_matches(
+            trace,
+            qualification_population.run_ids,
+        )
         or not policy_run_ids.issubset(set(qualification_population.prior_run_ids))
         or policy_run_ids.intersection(qualification_population.run_ids)
         or trace.threshold_score != action_selection.selected_threshold_score

@@ -10,7 +10,7 @@ retain, reduce, or veto those same observations.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import hashlib
 import json
 import math
@@ -77,9 +77,13 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v15"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v16"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
-    "round-074-target-free-candidate-inference-v2"
+    "round-074-target-free-candidate-inference-v3"
+)
+ROUND74_TARGET_FREE_INFERENCE_DATA_SCOPES = (
+    "sealed_test",
+    "ai_qualification_tuning",
 )
 ROUND74_SEALED_BOOTSTRAP_DRAWS = 10_000
 ROUND74_SEALED_BOOTSTRAP_SEED = 7_474_011
@@ -1891,6 +1895,8 @@ class Round74TargetFreeCandidateInference:
     inference_backend_vendor: str
     inference_warning_count: int
     optimization_population: str = "capture_run"
+    data_scope: str = "sealed_test"
+    expected_run_ids: tuple[str, ...] = ()
     schema_version: str = ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
     target_fields_accessed: bool = False
     trading_authority: bool = False
@@ -1911,6 +1917,9 @@ class Round74TargetFreeCandidateInference:
             or not self.inference_backend_vendor
             or self.optimization_population
             not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
+            or self.data_scope not in ROUND74_TARGET_FREE_INFERENCE_DATA_SCOPES
+            or any(_RUN_ID.fullmatch(value) is None for value in self.expected_run_ids)
+            or len(set(self.expected_run_ids)) != len(self.expected_run_ids)
             or isinstance(self.inference_warning_count, bool)
             or self.inference_warning_count < 0
             or self.target_fields_accessed
@@ -1919,8 +1928,12 @@ class Round74TargetFreeCandidateInference:
             raise ValueError("Round 74 target-free inference differs")
         first = self.contexts[0]
         run_ids: set[str] = set()
+        ordered_run_ids: list[str] = []
         feature_rows: set[str] = set()
         prior_key: tuple[int, str, int, int, int, str, int] | None = None
+        required_role = (
+            "test" if self.data_scope == "sealed_test" else "tuning"
+        )
         for context, output, candidates in zip(
             self.contexts,
             self.model_outputs,
@@ -1951,7 +1964,7 @@ class Round74TargetFreeCandidateInference:
             )
             current_features = set(context.feature_row_sha256)
             if (
-                context.role != "test"
+                context.role != required_role
                 or context.partition_sha256 != first.partition_sha256
                 or context.scaler_sha256 != first.scaler_sha256
                 or candidates.context_sha256 != context.context_sha256
@@ -1969,13 +1982,35 @@ class Round74TargetFreeCandidateInference:
             ):
                 raise ValueError("Round 74 target-free inference identity differs")
             feature_rows.update(current_features)
-            run_ids.update(context.run_id)
+            for run_id in context.run_id:
+                if run_id not in run_ids:
+                    run_ids.add(run_id)
+                    ordered_run_ids.append(run_id)
             prior_key = last_key
+        expected_run_ids = (
+            self.expected_run_ids
+            if self.expected_run_ids
+            else tuple(ordered_run_ids)
+        )
         if (
-            self.optimization_population == "capture_run"
-            and len(run_ids) != ROUND74_SEALED_TEST_RUNS
-            or self.optimization_population == "eligible_target"
-            and len(run_ids) < ROUND74_SEALED_TEST_RUNS
+            tuple(ordered_run_ids) != expected_run_ids
+            or (
+                self.data_scope == "sealed_test"
+                and self.optimization_population == "capture_run"
+                and len(run_ids) != ROUND74_SEALED_TEST_RUNS
+            )
+            or (
+                self.data_scope == "sealed_test"
+                and self.optimization_population == "eligible_target"
+                and len(run_ids) < ROUND74_SEALED_TEST_RUNS
+            )
+            or (
+                self.data_scope == "ai_qualification_tuning"
+                and (
+                    not self.expected_run_ids
+                    or self.optimization_population != "eligible_target"
+                )
+            )
         ):
             raise ValueError("Round 74 target-free inference run coverage differs")
 
@@ -1993,6 +2028,18 @@ class Round74TargetFreeCandidateInference:
             "action_selection_sha256": self.action_selection_sha256,
             "profile": self.profile,
             "optimization_population": self.optimization_population,
+            "data_scope": self.data_scope,
+            "expected_run_ids": list(
+                self.expected_run_ids
+                if self.expected_run_ids
+                else tuple(
+                    dict.fromkeys(
+                        run_id
+                        for context in self.contexts
+                        for run_id in context.run_id
+                    )
+                )
+            ),
             "context_sha256": [context.context_sha256 for context in self.contexts],
             "model_output_sha256": [
                 candidates.model_output_sha256 for candidates in self.candidates
@@ -2022,16 +2069,45 @@ def infer_round74_target_free_candidates(
     pretest_policy_path: str | Path,
     compute_backend: str = "auto",
     minibatch_rows: int = ROUND74_SEALED_INFERENCE_MINIBATCH_ROWS,
+    data_scope: str = "sealed_test",
+    expected_run_ids: Sequence[str] | None = None,
 ) -> Round74TargetFreeCandidateInference:
-    """Run the frozen model on immutable causal contexts without target access."""
+    """Run the frozen model on one explicitly scoped target-free population."""
 
     selected_contexts = tuple(contexts)
+    selected_scope = str(data_scope)
+    selected_expected_run_ids = (
+        tuple(expected_run_ids) if expected_run_ids is not None else ()
+    )
     if isinstance(minibatch_rows, bool) or minibatch_rows < 1:
         raise ValueError("Round 74 sealed inference minibatch differs")
     if not selected_contexts:
         raise ValueError("Round 74 target-free inference contexts are missing")
     for context in selected_contexts:
         context.validate()
+    observed_run_ids = tuple(
+        dict.fromkeys(
+            run_id for context in selected_contexts for run_id in context.run_id
+        )
+    )
+    required_role = "test" if selected_scope == "sealed_test" else "tuning"
+    if (
+        selected_scope not in ROUND74_TARGET_FREE_INFERENCE_DATA_SCOPES
+        or any(context.role != required_role for context in selected_contexts)
+        or (
+            selected_scope == "ai_qualification_tuning"
+            and (
+                not selected_expected_run_ids
+                or selected_expected_run_ids != observed_run_ids
+            )
+        )
+        or (
+            selected_scope == "sealed_test"
+            and selected_expected_run_ids
+            and selected_expected_run_ids != observed_run_ids
+        )
+    ):
+        raise ValueError("Round 74 target-free inference scope differs")
     action_selection.validate()
     if (
         not action_selection.accepted
@@ -2123,6 +2199,12 @@ def infer_round74_target_free_candidates(
         inference_backend_vendor=backend.vendor,
         inference_warning_count=len(warning_messages),
         optimization_population=action_selection.optimization_population,
+        data_scope=selected_scope,
+        expected_run_ids=(
+            selected_expected_run_ids
+            if selected_expected_run_ids
+            else observed_run_ids
+        ),
     )
     result.validate()
     return result
@@ -2627,13 +2709,6 @@ def _evaluate_reserved(
         optimization_population=claim.optimization_population,
         policy_selection_runs=policy_selection_runs,
     )
-    replay_selection = replace(
-        action_selection,
-        evaluations=tuple(
-            replace(value, trace=trace) for value in action_selection.evaluations
-        ),
-    )
-    replay_selection.validate()
     instructions_by_manifest: dict[
         str,
         tuple[Round74AIExecutionReplayInstruction, ...],
@@ -2646,9 +2721,10 @@ def _evaluate_reserved(
             raise ValueError("Round 74 sealed AI execution review is missing") from exc
         instructions_by_manifest[manifest] = (
             build_round74_ai_execution_replay_instructions(
-                replay_selection,
+                action_selection,
                 contexts=contexts,
                 reviews=selected_reviews,
+                trace=trace,
             )
         )
     if not ledger.claim_matches(claim, required_status="reserved"):
@@ -2845,6 +2921,7 @@ __all__ = [
     "ROUND74_SEALED_FAMILYWISE_ALPHA",
     "ROUND74_SEALED_INFERENCE_MINIBATCH_ROWS",
     "ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT",
+    "ROUND74_TARGET_FREE_INFERENCE_DATA_SCOPES",
     "ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION",
     "Round74ActionForecastSlice",
     "Round74BinaryForecastMetrics",

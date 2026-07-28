@@ -14,11 +14,13 @@ from simple_ai_trading import (
     impact_absorption_ai_execution_replay as replay_subject,
     impact_absorption_event_action_policy as action_policy_subject,
     impact_absorption_event_sealed_evaluation as sealed_subject,
+    round74_ai_qualification_operator as qualification_subject,
 )
 from simple_ai_trading.impact_absorption_ai_protocol import (
     Round74AIReviewDecision,
 )
 from simple_ai_trading.impact_absorption_ai_execution_replay import (
+    Round74AIQualificationStoreExecutionReplayProvider,
     Round74AIExecutionReplayInstruction,
     Round74SealedStoreExecutionReplayProvider,
     build_round74_ai_execution_replay_instructions,
@@ -1098,6 +1100,12 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     ) -> Mapping[str, tuple[Round74AIExecutionReplayEvidence, ...]]:
         assert ledger.claim_matches(claim, required_status="reserved")
         assert tuple(instructions_by_manifest) == manifests
+        assert all(
+            instruction.action_selection_sha256
+            == claim.action_selection_sha256
+            for instructions in instructions_by_manifest.values()
+            for instruction in instructions
+        )
         provider_order.append("replay")
         return execution_replays_by_manifest
 
@@ -1751,3 +1759,221 @@ def test_tampered_claim_or_duplicate_manifest_panel_is_rejected(
     tampered_payload["rows"] = 25
     with pytest.raises(ValueError, match="digest differs"):
         Round74SealedEvaluationClaim.from_mapping(tampered_payload)
+
+
+def test_ai_qualification_operator_uses_disjoint_tuning_scope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    raw_batches = tuple(
+        _test_batch(
+            role="tuning",
+            runs=(run_id, run_id) if index == 0 else (run_id,),
+        )
+        for index, run_id in enumerate(TEST_RUNS)
+    )
+    batches = tuple(
+        replace(
+            batch,
+            sample_sha256=tuple(
+                f"{7_000 + index * 10 + local_index:064x}"
+                for local_index in range(batch.rows)
+            ),
+            feature_window_sha256=tuple(
+                f"{8_000 + index * 10 + local_index:064x}"
+                for local_index in range(batch.rows)
+            ),
+            target_context_sha256=tuple(
+                f"{9_000 + index * 10 + local_index:064x}"
+                for local_index in range(batch.rows)
+            ),
+            decision_wall_ns=_readonly(
+                np.arange(batch.rows, dtype=np.int64) * 4_000_000_000_000
+                + 1_800_000_000_000_000_000
+                + index * 10_000_000_000_000
+            ),
+        )
+        for index, batch in enumerate(raw_batches)
+    )
+    for batch in batches:
+        batch.validate()
+    calibration = replace(_calibration(), optimization_population="eligible_target")
+    calibration.validate()
+    selection = replace(
+        _selection(optimization_population="eligible_target"),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    population = Round74AIQualificationPopulation(
+        parent_tuning_subpartition_sha256=selection.tuning_subpartition_sha256,
+        prior_run_ids=POLICY_RUNS,
+        prior_slot_ordinals=tuple(range(594, 600)),
+        run_ids=TEST_RUNS,
+        slot_ordinals=tuple(range(600, 624)),
+        eligible_anchor_ns=(900_000_000_000,) * len(TEST_RUNS),
+    )
+    population.validate()
+    contexts = tuple(
+        build_round74_action_inference_context(batch) for batch in batches
+    )
+    outputs = tuple(_model_output(batch.rows) for batch in batches)
+    candidates = tuple(
+        derive_round74_action_candidates(
+            output,
+            context,
+            calibration,
+            pretest_policy_sha256=selection.pretest_policy_sha256,
+            profile=selection.profile,
+        )
+        for output, context in zip(outputs, contexts, strict=True)
+    )
+    inference = Round74TargetFreeCandidateInference(
+        contexts=contexts,
+        model_outputs=outputs,
+        candidates=candidates,
+        pretest_policy_sha256=selection.pretest_policy_sha256,
+        pretest_model_sha256="d" * 64,
+        probability_calibration_sha256=calibration.calibration_sha256,
+        action_selection_sha256=selection.selection_sha256,
+        profile=selection.profile,
+        inference_backend_kind="cpu",
+        inference_backend_device="cpu",
+        inference_backend_vendor="test",
+        inference_warning_count=0,
+        optimization_population="eligible_target",
+        data_scope="ai_qualification_tuning",
+        expected_run_ids=TEST_RUNS,
+    )
+    inference.validate()
+    monkeypatch.setattr(
+        qualification_subject,
+        "infer_round74_target_free_candidates",
+        lambda *_args, **_kwargs: inference,
+    )
+
+    def replay_provider(
+        *,
+        qualification_population: Round74AIQualificationPopulation,
+        action_selection: Round74ActionPolicySelection,
+        instructions_by_manifest: Mapping[
+            str,
+            tuple[Round74AIExecutionReplayInstruction, ...],
+        ],
+    ) -> Mapping[str, tuple[Round74AIExecutionReplayEvidence, ...]]:
+        assert qualification_population.population_sha256 == population.population_sha256
+        assert action_selection.selection_sha256 == selection.selection_sha256
+        return {
+            manifest: tuple(
+                replay_subject._non_replay_evidence(
+                    instruction,
+                    capture_report_sha256=f"{index + 6_000:064x}",
+                    target_spec_sha256="e" * 64,
+                )
+                for index, instruction in enumerate(instructions)
+            )
+            for manifest, instructions in instructions_by_manifest.items()
+        }
+
+    output_path = tmp_path / "ai-qualification.json"
+    result = qualification_subject.run_round74_ai_pretest_qualification(
+        batches,
+        qualification_population=population,
+        action_selection=selection,
+        probability_calibration=calibration,
+        pretest_policy_path=tmp_path / "not-read-by-injected-inference.json",
+        execution_replay_provider=replay_provider,
+        qualification_output_path=output_path,
+        same_entry_latency_budget_ns=1_000_000,
+        review_runner=_blocked_review,
+        model_batch_preparer=lambda _binding: None,
+        model_batch_finalizer=lambda _binding: None,
+    )
+
+    assert output_path.is_file()
+    assert result.inference.data_scope == "ai_qualification_tuning"
+    assert result.baseline_trace.expected_run_ids == TEST_RUNS
+    assert result.baseline_trace.metrics.trades > len(TEST_RUNS)
+    assert result.baseline_trace.run_id[:2] == (TEST_RUNS[0], TEST_RUNS[0])
+    assert len(result.development_reports) == 2
+    assert not result.qualification.qualification_passed
+    assert all(
+        instruction.action_selection_sha256 == selection.selection_sha256
+        for _manifest, instructions in result.instructions_by_manifest
+        for instruction in instructions
+    )
+
+
+def test_ai_qualification_store_provider_is_tuning_only(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    partition = _provider_partition()
+    selection = _selection()
+    run_id = f"{2:032x}"
+    population = Round74AIQualificationPopulation(
+        parent_tuning_subpartition_sha256=selection.tuning_subpartition_sha256,
+        prior_run_ids=POLICY_RUNS,
+        prior_slot_ordinals=tuple(range(len(POLICY_RUNS))),
+        run_ids=(run_id,),
+        slot_ordinals=(len(POLICY_RUNS),),
+        eligible_anchor_ns=(900_000_000_000,),
+    )
+    population.validate()
+    store = ImpactAbsorptionStore(tmp_path / "qualification.duckdb", read_only=True)
+    assembly = object.__new__(Round74SourceTargetAssembly)
+    provider = Round74AIQualificationStoreExecutionReplayProvider(
+        store=store,
+        partition=partition,
+        qualification_population=population,
+        assembly_by_run_id={run_id: assembly},
+    )
+    manifests = ("a" * 64, "b" * 64)
+    instructions = {
+        manifest: (
+            _replay_instruction(
+                row_index=0,
+                run_id=run_id,
+                manifest=manifest,
+                partition_sha256=partition.partition_sha256,
+                action_selection_sha256=selection.selection_sha256,
+            ),
+        )
+        for manifest in manifests
+    }
+    observed_runs: list[str] = []
+
+    def replay_run(
+        selected_store: object,
+        *,
+        partition: Round74EventRunPartition,
+        run_id: str,
+        assembly: Round74SourceTargetAssembly,
+        instructions: tuple[Round74AIExecutionReplayInstruction, ...],
+    ) -> tuple[Round74AIExecutionReplayEvidence, ...]:
+        assert selected_store is store
+        assert partition is provider.partition
+        assert assembly is provider.assembly_by_run_id[run_id]
+        observed_runs.append(run_id)
+        return tuple(
+            replay_subject._non_replay_evidence(
+                row,
+                capture_report_sha256=partition.entry(run_id).capture_report_sha256,
+                target_spec_sha256="f" * 64,
+            )
+            for row in instructions
+        )
+
+    monkeypatch.setattr(
+        replay_subject,
+        "replay_round74_ai_execution_store_run",
+        replay_run,
+    )
+    replayed = provider(
+        qualification_population=population,
+        action_selection=selection,
+        instructions_by_manifest=instructions,
+    )
+
+    assert observed_runs == [run_id, run_id]
+    assert tuple(replayed) == manifests
+    assert all(rows[0].status == "runtime_veto" for rows in replayed.values())
