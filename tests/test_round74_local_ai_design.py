@@ -165,6 +165,13 @@ WORKER_SESSION_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v59.json"
 )
+LOCAL_AI_DEVELOPMENT_NONINFERIORITY_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v60.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -872,6 +879,70 @@ def test_round74_ai_design_delta_binds_supervised_worker_latency_reduction() -> 
     assert verification["host_two_model_session_reuse_verified"]
     assert verification["post_execution_residency_empty"]
     assert not verification["sealed_test_accessed"]
+    assert all(value is False for value in artifact["status"].values())
+
+
+def test_round74_ai_design_delta_binds_development_subgroup_noninferiority() -> None:
+    previous = _load_json(WORKER_SESSION_ARTIFACT_PATH)
+    artifact = _load_json(LOCAL_AI_DEVELOPMENT_NONINFERIORITY_PATH)
+    claimed = artifact.pop("design_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    contract = artifact["development_evaluation_contract"]
+    limits = artifact["evidence_limits"]
+    verification = artifact["verification"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v60"
+    base = artifact["base_design_binding"]
+    assert base["path"] == str(
+        WORKER_SESSION_ARTIFACT_PATH.relative_to(REPOSITORY)
+    ).replace("\\", "/")
+    assert base["file_sha256"] == _file_sha256(base["path"])
+    assert base["unchanged"]
+    assert previous["artifact_sha256"] == (
+        "691ff6e0544a01f006a70a87e0e32459253fe69857838aa102ab44b0705b9865"
+    )
+    for label in ("ai_uplift", "focused_tests"):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    assert source["ai_uplift"]["schema_version"] == (
+        "round-074-ai-uplift-development-v9"
+    )
+    assert contract["decision_authority"] == "diagnostic_only"
+    assert contract["data_scope"] == "policy_selection_tuning_runs_only"
+    assert contract["expected_capture_run_count"] == 6
+    assert contract["assets"] == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    assert contract["ai_review_horizons_seconds"] == [30, 300]
+    assert contract["paired_run_evidence_retained"]
+    assert contract["paired_observed_symbol_horizon_evidence_retained"]
+    assert contract["missing_or_duplicate_paired_evidence_rejected"]
+    assert contract["paired_evidence_totals_reconciled_to_aggregate_metrics"]
+    assert contract["aggregate_after_cost_net_uplift_required"]
+    assert contract["every_capture_run_delta_net_bps_minimum"] == -1e-12
+    assert contract["every_observed_symbol_horizon_delta_net_bps_minimum"] == -1e-12
+    assert not contract["sealed_test_access_permitted"]
+    assert not contract["model_selection_authority"]
+    assert not contract["promotion_authority"]
+    assert not contract["trading_authority"]
+    assert verification["focused_ai_uplift_tests_passed"] == 10
+    assert verification["connected_contract_tests_passed"] == 45
+    assert verification["adversarial_aggregate_positive_but_run_harmed_rejected"]
+    assert verification[
+        "adversarial_aggregate_positive_but_asset_horizon_harmed_rejected"
+    ]
+    assert verification["corrupted_subgroup_evidence_rejected"]
+    assert not verification["full_suite_executed"]
+    assert not verification["sealed_test_accessed"]
+    assert limits["test_evidence_is_synthetic"]
+    assert not limits["prospective_cohort_used"]
+    assert not limits["representative_market_ai_evaluation_complete"]
+    assert not limits["ai_model_evaluated_for_market_uplift"]
+    assert not limits["financial_edge_established"]
+    assert not limits["profitability_established"]
     assert all(value is False for value in artifact["status"].values())
 
 
