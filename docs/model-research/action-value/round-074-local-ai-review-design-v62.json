@@ -1,0 +1,134 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v62",
+  "artifact_kind": "dependence_preserving_sealed_ai_inference_delta",
+  "created_utc": "2026-07-28T20:17:24.5539019Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v61.json",
+    "file_sha256": "05d34d4a312a127918e77144c42c65fa580ea99fc716fa73a27b61844b8f9cda",
+    "design_sha256": "8d00638877fcf86caf8b7e65f25b499e5352f3dd823de8978807a31e3497c9a2",
+    "unchanged_except_declared_delta": true
+  },
+  "implementation_git_commit": "d75a888801b0c1346d8abca761ce92175af77e7b",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "sealed_evaluator_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+    "sealed_evaluator_sha256": "58425a1d556e1e533f183e7b350d4aec825f5e6a82de542f32b418385a3ee27f",
+    "sealed_evaluator_schema_version": "round-074-sealed-evaluation-v15",
+    "sealed_ledger_test_path": "tests/test_impact_absorption_event_sealed_ledger.py",
+    "sealed_ledger_test_sha256": "f9d6fc0cbcda14d627f0f11c3f9a4d24338ac594c45adcc2323092a7a84b1085",
+    "historical_ai_design_test_path": "tests/test_round74_local_ai_design.py",
+    "historical_ai_design_test_sha256": "cb9f3629386eb400e26f8ccbbd03060ff0db9fc082726de6cca9ed222000f9ce"
+  },
+  "declared_delta": {
+    "iid_capture_run_bootstrap_removed": true,
+    "circular_stationary_bootstrap_added": true,
+    "chronological_capture_run_order_preserved": true,
+    "mean_block_length_policy": "ceil_sqrt_expected_capture_run_count",
+    "mean_block_length_uses_target_or_pnl_values": false,
+    "dynamic_segmented_test_population_supported": true,
+    "two_ai_model_bonferroni_gate_changed": false,
+    "per_run_noninferiority_gate_changed": false,
+    "per_symbol_horizon_noninferiority_gate_changed": false,
+    "maximum_drawdown_noninferiority_gate_changed": false,
+    "ai_action_authority_changed": false,
+    "sealed_test_consumed": false
+  },
+  "sealed_qualification_contract": {
+    "test_access": "one_use_reserved_before_target_access",
+    "baseline": "same_frozen_ml_action_trace",
+    "execution_basis": "exact_delayed_level_2_replay",
+    "ai_action_authority": "retain_reduce_or_veto_only",
+    "ai_model_count": 2,
+    "expected_test_capture_runs": "all admitted segments in the immutable sealed test population",
+    "minimum_expected_test_capture_runs": 24,
+    "assets": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "ai_review_horizons_seconds": [
+      30,
+      300
+    ],
+    "bootstrap_resampling_unit": "whole_20_minute_capture_run",
+    "bootstrap_method": "circular_stationary_bootstrap",
+    "bootstrap_draws": 10000,
+    "bootstrap_mean_block_length_runs": "ceil(sqrt(expected_test_capture_runs))",
+    "bootstrap_restart_probability": "1 / mean_block_length_runs",
+    "bootstrap_block_length_selected_without_outcomes": true,
+    "bootstrap_preserves_adjacent_run_dependence": true,
+    "bootstrap_wraps_last_run_to_first_run": true,
+    "iid_capture_run_resampling_permitted": false,
+    "paired_run_panel_includes_every_expected_run": true,
+    "zero_observation_runs_retained": true,
+    "paired_symbol_horizon_panel_includes_every_observed_group": true,
+    "aggregate_after_cost_net_uplift_required": true,
+    "two_model_bonferroni_positive_stationary_run_block_lower_bound_required": true,
+    "every_capture_run_delta_net_bps_minimum": -1e-12,
+    "every_observed_symbol_horizon_delta_net_bps_minimum": -1e-12,
+    "maximum_drawdown_noninferiority_required": true,
+    "missing_duplicate_nonfinite_or_inconsistent_evidence_fails_closed": true,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "assumption_boundary": {
+    "weak_stationarity_and_weak_dependence_required_for_bootstrap_interpretation": true,
+    "stationarity_proven_by_implementation": false,
+    "block_length_optimality_claim": false,
+    "independence_between_adjacent_capture_runs_assumed": false,
+    "bootstrap_lower_bound_alone_can_establish_ai_uplift": false,
+    "every_run_and_symbol_horizon_noninferiority_still_required": true,
+    "representative_market_evidence_required_before_any_uplift_claim": true
+  },
+  "research_basis": [
+    {
+      "title": "The Stationary Bootstrap",
+      "url": "https://doi.org/10.1080/01621459.1994.10476870",
+      "use": "preserve weak temporal dependence while resampling a stationary pseudo-time-series"
+    },
+    {
+      "title": "A Reality Check for Data Snooping",
+      "url": "https://doi.org/10.1111/1468-0262.00152",
+      "use": "time-series model evaluation must account for data reuse and dependence rather than treat observations as independent"
+    },
+    {
+      "title": "Data-Snooping, Technical Trading Rule Performance, and the Bootstrap",
+      "url": "https://doi.org/10.1111/0022-1082.00163",
+      "use": "dependence-aware resampling is directly relevant to trading-rule evaluation"
+    },
+    {
+      "title": "Correction to Automatic Block-Length Selection for the Dependent Bootstrap",
+      "url": "https://doi.org/10.1080/07474930802459016",
+      "use": "block-length choice is consequential and must be explicit; this implementation uses a prespecified panel-size rule rather than claiming estimated optimality"
+    }
+  ],
+  "verification": {
+    "focused_sealed_evaluation_tests_passed": 18,
+    "connected_sealed_model_and_ai_contract_tests_passed": 52,
+    "same_multiset_different_chronology_produces_different_lower_bounds": true,
+    "dynamic_90_run_panel_mean_block_length_runs": 10,
+    "legacy_24_run_panel_mean_block_length_runs": 5,
+    "historical_v47_artifact_test_uses_historical_schema_literals": true,
+    "ruff_and_format_checks_passed": true,
+    "full_suite_executed": false,
+    "real_sealed_test_accessed": false
+  },
+  "evidence_limits": {
+    "test_evidence_is_synthetic": true,
+    "prospective_cohort_used": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_model_evaluated_for_market_uplift": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "design_sha256": "5e3906fab5f50630f64347a21bdc805891a7d87ff747a887c1dbbac0742f9808"
+}
