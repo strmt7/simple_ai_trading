@@ -306,6 +306,10 @@ def test_segmented_plan_is_exact_hash_bound_and_round_trips() -> None:
     )
     assert payload["capture_contract"]["maximum_reconnects"] == 0
     assert payload["missingness_policy"]["all_admitted_units_included"] is True
+    assert (
+        payload["partition_policy"]["embargo_axis"]
+        == "elapsed_wall_time_after_prior_audited_usable_end"
+    )
     assert load_round74_segmented_cohort_plan(json.dumps(payload)).as_dict() == payload
 
     duplicate = json.dumps(payload).replace(
