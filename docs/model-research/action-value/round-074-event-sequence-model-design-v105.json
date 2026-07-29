@@ -1,0 +1,165 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v105",
+  "created_at_utc": "2026-07-29T00:00:28Z",
+  "implementation_git_commit": "7a36499a9fc746f4cd1a5e77c572b280b8c5bc9e",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v104.json",
+    "file_sha256": "f2975eea8015b14aaf2facaf1be38d29b579cbf5e0edc1a4b7c32e85f2a7dfdd",
+    "design_sha256": "9cc988ff0f2a6d11fda7fbefaefe2b2b3951ac59ba6f7ddb101cfb517373bbd0",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "ai_review_preparation": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "05bca9f45f0e84d4382bb2ff7b4909e3e15872fbb34f3b66410631f57fd8238b"
+    },
+    "ai_uplift": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+      "sha256": "fd40f5ed6c0424284135a1a135c18b1d9e425296e4d8dea83b9c37089391afef"
+    },
+    "sealed_evaluation": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "be5f31e3b8de12606b39206b66e72e297a56b5d7b3e4042be9ac44db1117c6ec"
+    },
+    "ai_qualification_operator": {
+      "path": "src/simple_ai_trading/round74_ai_qualification_operator.py",
+      "sha256": "85e771e7f51c568d9dcbfdfdf61fcbfdc3987f7356e0ab4bdbe9ce9ccb5589c6"
+    },
+    "segmented_development_operator": {
+      "path": "src/simple_ai_trading/round74_segmented_development_operator.py",
+      "sha256": "86038775df77927a0f57e7f4ac55270d3696b68a0cb4ec71ede5993fb18df1c3"
+    },
+    "segmented_development_runtime": {
+      "path": "src/simple_ai_trading/round74_segmented_development_runtime.py",
+      "sha256": "64d09542a668c8e12c291def74d0cc2afcade00fc9807da863c1650205cdc46f"
+    },
+    "ai_uplift_test": {
+      "path": "tests/test_impact_absorption_ai_uplift.py",
+      "sha256": "1f8649133f341b0b9f3ded45f6e17557d44dd399b6fc42617d1a647dbca0adb3"
+    },
+    "sealed_evaluation_test": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "38ee358df89b8117e71d3b8ca2caca6d590f0c4e20f68d10bf64f27d5be871aa"
+    },
+    "runtime_preflight_test": {
+      "path": "tests/test_round74_ai_runtime_preflight_publisher.py",
+      "sha256": "31729f7bea5257906a79b7d8a90ee6fe6ef44e427c9ee8ee4ea8c6290b3784cd"
+    },
+    "historical_design_v103_test": {
+      "path": "tests/test_round74_event_model_design_v103.py",
+      "sha256": "cf416dea9727e964895794ad7eda1baa0cc641559abd851ec3037027d3d26636"
+    },
+    "historical_design_v104_test": {
+      "path": "tests/test_round74_event_model_design_v104.py",
+      "sha256": "c56871f70b4d55bbb0a0064f26c474ce577be76af2a44e99f71fbaf76de8d3c6"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://grpc.io/docs/guides/deadlines/",
+      "finding": "Deadline propagation deducts elapsed time, and servers should stop work after the request can no longer complete usefully.",
+      "implementation_consequence": "Historical queue age consumes the same source-bound action-validity budget as inference."
+    },
+    {
+      "source": "https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/batcher.html",
+      "finding": "Production inference schedulers support queue timeouts and rejection of requests that wait beyond their configured limit.",
+      "implementation_consequence": "A queue-expired review is rejected before model inference rather than processed and discarded later."
+    },
+    {
+      "source": "https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html",
+      "finding": "Queue duration is separate from compute duration, and scheduler timeout rejections are counted as failed requests.",
+      "implementation_consequence": "Queue delay remains explicit evidence and queue-expired reviews count against AI qualification."
+    },
+    {
+      "source": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3433739",
+      "finding": "Limit-order-book state can change during processing and order submission, so latency changes executable liquidity.",
+      "implementation_consequence": "Late AI decisions remain zero exposure and cannot inherit an earlier fill or payoff."
+    }
+  ],
+  "declared_delta": {
+    "action_validity_formula": "min(forecast_horizon_ns, target_maximum_additional_entry_latency_ns)",
+    "action_validity_maximum_ns": 30000000000,
+    "historical_queue_model": "single_server_per_candidate_model_in_historical_decision_order",
+    "candidate_models_are_independent_overlay_candidates": true,
+    "candidate_models_are_treated_as_concurrent_ensemble": false,
+    "queue_expiration_boundary": "queue_delay_ns_greater_than_or_equal_to_action_validity_latency_ns",
+    "queue_timeout_action": "reject_before_model_inference",
+    "expired_request_invokes_injected_model_runner": false,
+    "expired_request_passes_capability_provenance_or_worker_boundary": false,
+    "expired_request_runtime_status": "blocked_expired",
+    "expired_request_retained_as_paired_observation": true,
+    "expired_request_exposure_bps": 0,
+    "expired_request_counts_against_ai_qualification": true,
+    "expiration_handler_elapsed_time_updates_historical_server_availability": true,
+    "accepted_late_model_output_permitted_for_replay": false,
+    "surviving_ai_action_requires_exact_delayed_l2_replay": true,
+    "ai_may_create_side_horizon_or_order": false,
+    "ai_may_increase_ml_selected_size": false,
+    "artifact_schema_versions_bumped": true,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "ai_review_panel": "round-074-ai-review-panel-v14",
+    "ai_uplift_development": "round-074-ai-uplift-development-v13",
+    "ai_pretest_qualification": "round-074-ai-pretest-qualification-v3",
+    "ai_qualification_operator": "round-074-ai-qualification-operator-v3",
+    "sealed_evaluation": "round-074-sealed-evaluation-v18",
+    "segmented_qualified_development": "round-074-segmented-qualified-development-v3",
+    "segmented_development_run": "round-074-segmented-development-run-v3"
+  },
+  "verification": {
+    "focused_tests_passed": 158,
+    "focused_test_files": 16,
+    "queue_expiration_bypasses_injected_model_runner_tested": true,
+    "queue_expiration_preserves_paired_zero_exposure_tested": true,
+    "queue_expiration_progress_telemetry_tested": true,
+    "dependent_schema_consumers_tested": true,
+    "ruff_lint_passed": true,
+    "python_compileall_passed": true,
+    "git_diff_check_passed": true,
+    "preexisting_unrelated_compile_warnings": [
+      "tools/publish_round59_funding_persistence_feasibility.py: invalid escape sequence",
+      "tools/publish_round60_full_history_funding_replication.py: invalid escape sequence"
+    ],
+    "full_suite_executed": false,
+    "representative_ai_reviews_executed": false,
+    "local_multibillion_parameter_model_invoked": false,
+    "gpu_model_inference_executed": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false,
+    "campaign_database_opened": false,
+    "network_accessed_by_implementation_tests": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 31,
+    "quarantined_slot_017_counted_as_admitted": false,
+    "slot_038_state_at_document_time": "running",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "796e550a0763c98c1f308d6c167d906d985690af63ef682d1568d02a28b332b7"
+}
