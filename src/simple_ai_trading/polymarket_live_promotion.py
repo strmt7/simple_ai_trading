@@ -15,6 +15,9 @@ from .polymarket_live import PolymarketLiveBlocked
 
 
 POLYMARKET_LIVE_PROMOTION_SCHEMA_VERSION = "polymarket-live-promotion-v1"
+POLYMARKET_LIVE_MARKET_VARIANTS = frozenset(
+    {"fiveminute", "fifteenminute"}
+)
 _MAX_PROMOTION_BYTES = 128 * 1024
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _GIT_COMMIT = re.compile(r"^[0-9a-f]{40}$")
@@ -136,6 +139,7 @@ class PolymarketLivePromotion:
     expires_at_ms: int
     source_commit: str
     bot_id: str
+    market_variant: str
     model_artifact: PolymarketPromotionEvidence
     evaluation_report: PolymarketPromotionEvidence
     implementation_manifest: PolymarketPromotionEvidence
@@ -171,6 +175,10 @@ class PolymarketLivePromotion:
         if not 8 <= len(bot_id) <= 128 or not re.fullmatch(r"[A-Za-z0-9._:-]+", bot_id):
             raise ValueError("Polymarket promotion bot_id is invalid")
         object.__setattr__(self, "bot_id", bot_id)
+        market_variant = str(self.market_variant or "").strip().lower()
+        if market_variant not in POLYMARKET_LIVE_MARKET_VARIANTS:
+            raise ValueError("Polymarket promotion market variant is invalid")
+        object.__setattr__(self, "market_variant", market_variant)
         gates = dict(self.gates)
         if set(gates) != _REQUIRED_GATES or any(
             type(value) is not bool for value in gates.values()
@@ -277,7 +285,7 @@ def validate_polymarket_live_promotion(
         or payload["venue"] != "polymarket"
         or payload["protocol_version"] != 2
         or payload["asset"] != "BTC"
-        or payload["market_variant"] != "fiveminute"
+        or payload["market_variant"] not in POLYMARKET_LIVE_MARKET_VARIANTS
         or payload["environment"] != "live"
     ):
         raise ValueError("Polymarket promotion scope is invalid")
@@ -304,6 +312,7 @@ def validate_polymarket_live_promotion(
         expires_at_ms=int(payload["expires_at_ms"]),
         source_commit=str(payload["source_commit"]),
         bot_id=str(payload["bot_id"]),
+        market_variant=str(payload["market_variant"]),
         model_artifact=_evidence(payload["model_artifact"], name="model artifact"),
         evaluation_report=_evidence(
             payload["evaluation_report"],
@@ -385,6 +394,7 @@ def load_polymarket_live_promotion(
 
 
 __all__ = [
+    "POLYMARKET_LIVE_MARKET_VARIANTS",
     "POLYMARKET_LIVE_PROMOTION_SCHEMA_VERSION",
     "PolymarketLivePromotion",
     "PolymarketPromotionEvidence",

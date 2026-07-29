@@ -36,6 +36,10 @@ _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _TOKEN_ID = re.compile(r"^[0-9]{20,80}$")
 _QUANTITY_STEP = Decimal("0.000001")
 _HALF = Decimal("0.5")
+_MARKET_VARIANT_DURATION_MS = {
+    "fiveminute": 300_000,
+    "fifteenminute": 900_000,
+}
 
 
 def _decimal(value: object, *, name: str) -> Decimal:
@@ -113,8 +117,10 @@ class PolymarketAutonomousOpenProposal:
         symbol = str(self.symbol or "").strip().upper()
         variant = str(self.market_variant or "").strip().lower()
         outcome = str(self.outcome or "").strip().title()
-        if symbol != "BTC" or variant != "fiveminute":
-            raise ValueError("autonomous live Polymarket proposals are BTC 5m only")
+        if symbol != "BTC" or variant not in _MARKET_VARIANT_DURATION_MS:
+            raise ValueError(
+                "autonomous live Polymarket proposals must be BTC 5m or 15m"
+            )
         if outcome not in {"Up", "Down"}:
             raise ValueError("Polymarket proposal outcome must be Up or Down")
         object.__setattr__(self, "symbol", symbol)
@@ -137,10 +143,11 @@ class PolymarketAutonomousOpenProposal:
         end = int(self.event_end_time_ms)
         decision = int(self.decision_time_ms)
         expires = int(self.expires_at_ms)
+        duration_ms = _MARKET_VARIANT_DURATION_MS[variant]
         if (
             start <= 0
-            or start % 300_000
-            or end - start != 300_000
+            or start % duration_ms
+            or end - start != duration_ms
             or not start <= decision < end
             or not decision < expires <= end
         ):
@@ -272,6 +279,8 @@ def submit_promoted_open(
         raise PolymarketLiveBlocked("Polymarket proposal promotion hash differs")
     if proposal.model_artifact_sha256 != policy.model_artifact.sha256:
         raise PolymarketLiveBlocked("Polymarket proposal model hash differs")
+    if proposal.market_variant != policy.market_variant:
+        raise PolymarketLiveBlocked("Polymarket proposal market variant differs")
     quantity = _effective_quantity(
         proposal,
         external_signal,

@@ -153,6 +153,36 @@ def _proposal(
     )
 
 
+def test_fifteen_minute_proposal_has_horizon_bound_chronology() -> None:
+    values = {
+        "proposal_id": "fifteen-minute-proposal",
+        "input_sha256": "1" * 64,
+        "model_artifact_sha256": "2" * 64,
+        "promotion_sha256": "3" * 64,
+        "market_id": "0x" + "4" * 64,
+        "token_id": "5" * 40,
+        "symbol": "BTC",
+        "market_variant": "fifteenminute",
+        "outcome": "Up",
+        "selected_outcome_probability": Decimal("0.60"),
+        "requested_quantity": Decimal("5.000000"),
+        "event_start_time_ms": 1_800_000_000_000,
+        "event_end_time_ms": 1_800_000_900_000,
+        "decision_time_ms": 1_800_000_120_000,
+        "expires_at_ms": 1_800_000_121_000,
+    }
+    proposal = PolymarketAutonomousOpenProposal(**values)
+
+    assert proposal.market_variant == "fifteenminute"
+    with pytest.raises(ValueError, match="chronology"):
+        PolymarketAutonomousOpenProposal(
+            **{
+                **values,
+                "event_end_time_ms": 1_800_000_300_000,
+            }
+        )
+
+
 class _Venue:
     def __init__(self, *, observed_at_ms: int = NOW_MS) -> None:
         self.observed_at_ms = observed_at_ms
