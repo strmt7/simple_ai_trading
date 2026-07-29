@@ -61,12 +61,19 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--database", type=Path, default=DEFAULT_DATABASE)
     parser.add_argument("--cache-root", type=Path, default=DEFAULT_CACHE)
     parser.add_argument("--maximum-days", type=int, default=0)
+    parser.add_argument(
+        "--period",
+        default="",
+        help="ingest exactly one frozen YYYY-MM-DD period",
+    )
     parser.add_argument("--timeout-seconds", type=float, default=180.0)
     parser.add_argument("--memory-limit", default="2GB")
     parser.add_argument("--threads", type=int, default=4)
     values = parser.parse_args()
     if values.maximum_days < 0:
         parser.error("--maximum-days cannot be negative")
+    if values.period and values.maximum_days:
+        parser.error("--period and --maximum-days are mutually exclusive")
     return values
 
 
@@ -105,6 +112,14 @@ def _status(
 def main() -> int:
     args = _arguments()
     contract = load_polymarket_btc_history_contract(args.inventory)
+    if args.period:
+        selected_days = tuple(
+            day for day in contract.days if day.period == str(args.period)
+        )
+        if len(selected_days) != 1:
+            raise ValueError("--period is outside the frozen BTC history")
+    else:
+        selected_days = contract.days
     with SpotPerpetualCorpusStore(
         args.database,
         cache_root=args.cache_root,
@@ -126,6 +141,7 @@ def main() -> int:
         processed = 0
         last_progress_at = 0.0
         last_phase = ""
+        active_period = ""
 
         def progress(phase: str, current: int, total: int | None) -> None:
             nonlocal last_progress_at, last_phase
@@ -137,13 +153,16 @@ def main() -> int:
             _emit(
                 "history_progress",
                 phase=phase,
+                period=active_period,
                 current=int(current),
                 total=None if total is None else int(total),
             )
 
-        for index, day in enumerate(contract.days):
+        for day in selected_days:
             if args.maximum_days and processed >= args.maximum_days:
                 break
+            active_period = day.period
+            inventory_index = contract.days.index(day)
             result = store.ingest_day(
                 day,
                 inventory_sha256=contract.inventory_sha256,
@@ -155,7 +174,7 @@ def main() -> int:
             processed += 1
             _emit(
                 "history_day_complete",
-                day_index=index,
+                day_index=inventory_index,
                 period=result.period,
                 source_count=result.source_count,
                 flow_rows=result.flow_rows,
