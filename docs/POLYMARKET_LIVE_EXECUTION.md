@@ -21,6 +21,8 @@ flowchart LR
     R["REST ownership reconciliation"] --> A
     A --> E["Exact-ID CLOB V2 gateway"]
     E --> L["Hash-bound SQLite ownership ledger"]
+    L --> S["Resolved-position settlement gate"]
+    S --> X["One-shot Polygon or relayer transaction"]
     U --> L
     R --> L
 ```
@@ -42,6 +44,19 @@ flowchart LR
   market-wide cancellation are prohibited.
 - Hash-bound order and fill snapshots, an append-only audit chain, exact fill
   economics, cumulative-fill caps, and restart reconciliation.
+- Hash-bound, numbered redemption attempts. Exact confirmed local inventory
+  must equal the dedicated wallet snapshot; every account order must be closed
+  and every token for the condition must be redeemable.
+- Read-only settlement preflight proves market resolution, the exact standard
+  or negative-risk adapter approval, and EOA gas reserve. It never creates an
+  approval or deploys a wallet.
+- EOA settlement broadcasts once through the pinned unified SDK. Proxy, Safe,
+  and Deposit Wallet settlement uses its audited one-shot relayer primitive,
+  bypassing the SDK retry wrapper. Transaction ID/hash is persisted before
+  waiting; only matching Polygon or terminal relayer proof resolves ambiguity.
+- Proven transaction failures create a new numbered attempt only after a fresh
+  ownership and preflight check. Unknown outcomes are never retried and block
+  new exposure.
 - Independent user-stream and REST loops. Stream freshness is mandatory for
   opens; a fresh ownership reconciliation can still permit an owned close.
 - Foreign orders, positions, or authenticated stream events fail closed and
@@ -51,8 +66,6 @@ flowchart LR
 
 - No Polymarket model has passed prospective, after-cost promotion gates.
 - No account credentials are available for an authenticated host test.
-- Automatic redemption is not yet connected to the durable transaction
-  ledger.
 - CLI and Windows controls do not yet expose this boundary.
 
 These gaps block release authority. A public API check or offline signature is
@@ -61,11 +74,12 @@ not an authenticated order, cancellation, fill, or redemption test.
 ## Current Public Host Evidence
 
 On 2026-07-29, the production read endpoints returned CLOB protocol V2 and a
-non-blocked CH/ZH geoblock result from this host. Two current BTC five-minute
-markets matched Gamma and CLOB identity, token, tick-size, minimum-size, fee,
-and payload-hash checks. An offline SDK signature against one current token
-preserved the requested 5 shares at 0.50 and derived the expected V2 order
-hash. No order was submitted.
+non-blocked CH/ZH geoblock result from this host; the settlement RPC returned
+Polygon chain ID 137. Two current BTC five-minute markets matched Gamma and
+CLOB identity, token, tick-size, minimum-size, fee, and payload-hash checks. An
+offline SDK signature against one current token preserved the requested 5
+shares at 0.50 and derived the expected V2 order hash. No order, approval,
+wallet deployment, or transaction was submitted.
 
 ## Primary Contracts
 
@@ -74,6 +88,7 @@ hash. No order was submitted.
 - [Order placement](https://docs.polymarket.com/trading/place-orders)
 - [Real-time order updates](https://docs.polymarket.com/trading/realtime-order-updates)
 - [Wallets and authentication](https://docs.polymarket.com/trading/wallets-auth)
+- [Manage and redeem positions](https://docs.polymarket.com/trading/positions/manage#redeem-resolved-positions)
+- [Current position schema](https://docs.polymarket.com/api-reference/core/get-current-positions-for-a-user)
 - [Geographic restrictions](https://docs.polymarket.com/api-reference/geoblock)
 - [Rate limits](https://docs.polymarket.com/api-reference/rate-limits)
-

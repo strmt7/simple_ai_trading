@@ -24,7 +24,8 @@ override prose if they disagree.
   AI may only veto or reduce risk after matched uplift evidence and may never
   override a safety gate or block a close.
 - Future books, labels, resolutions, fills, and PnL never enter inference.
-  Unknown order state blocks new exposure.
+  Unknown order or redemption state blocks new exposure. Polymarket settlement
+  never auto-deploys wallets or creates token approvals.
 - Never print, prompt, log, serialize, test, document, or commit credentials,
   secrets, tokens, signed requests, or unredacted secret fields.
 - Preserve testnet, dry-run, diversification, liquidity gating, and the app's
