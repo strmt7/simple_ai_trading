@@ -33,8 +33,8 @@ from simple_ai_trading.impact_absorption_event_training import (
 )
 
 
-EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v20"
-RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v8"
+EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v21"
+RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v9"
 SOURCE_PATHS = {
     "event_sequence": "src/simple_ai_trading/impact_absorption_event_sequence.py",
     "event_scaling": "src/simple_ai_trading/impact_absorption_event_scaling.py",

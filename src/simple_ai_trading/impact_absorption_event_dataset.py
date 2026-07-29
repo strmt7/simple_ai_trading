@@ -35,7 +35,7 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v10"
+ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v11"
 ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v5"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_WINDOW_REPRESENTATIONS = ("per_symbol", "global_cross_asset")
@@ -325,6 +325,38 @@ class Round74LabeledEventWindow:
                 or outcome.feature_window_sha256 != self.feature_window_sha256
             ):
                 raise ValueError("Round 74 labeled window outcome identity differs")
+        for side in ROUND74_EVENT_PAYOFF_SIDES:
+            eligible = tuple(
+                sorted(
+                    (
+                        outcome
+                        for outcome in self.outcomes
+                        if outcome.side == side and outcome.eligible
+                    ),
+                    key=lambda outcome: outcome.horizon_seconds,
+                )
+            )
+            for prior, current in pairwise(eligible):
+                if (
+                    current.actual_entry_monotonic_ns != prior.actual_entry_monotonic_ns
+                    or current.actual_entry_frame_index
+                    != prior.actual_entry_frame_index
+                    or current.actual_entry_message_index
+                    != prior.actual_entry_message_index
+                    or current.actual_exit_monotonic_ns < prior.actual_exit_monotonic_ns
+                    or current.maximum_adverse_excursion_bps
+                    < prior.maximum_adverse_excursion_bps
+                    or current.capital_scaled_maximum_adverse_excursion_bps
+                    < prior.capital_scaled_maximum_adverse_excursion_bps
+                    or current.maximum_favorable_excursion_bps
+                    < prior.maximum_favorable_excursion_bps
+                    or current.maximum_spread_bps < prior.maximum_spread_bps
+                    or current.minimum_exit_side_capacity_ratio
+                    > prior.minimum_exit_side_capacity_ratio
+                ):
+                    raise ValueError(
+                        "Round 74 labeled window path extrema regress across horizons"
+                    )
         contexts = {outcome.target_context_sha256 for outcome in self.outcomes}
         if len(contexts) != 1:
             raise ValueError("Round 74 labeled window target context differs")
@@ -407,8 +439,7 @@ class Round74MatchedEventWindowPair:
                 right.endpoint_frame_index,
                 right.endpoint_message_index,
             )
-            or _matched_target_panel_sha256(left)
-            != _matched_target_panel_sha256(right)
+            or _matched_target_panel_sha256(left) != _matched_target_panel_sha256(right)
         ):
             raise ValueError("Round 74 matched event-window pair differs")
 
@@ -623,6 +654,55 @@ class Round74EventTrainingBatch:
             )
         ):
             raise ValueError("Round 74 event training batch targets differ")
+        for lower_horizon in range(len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS) - 1):
+            for upper_horizon in range(
+                lower_horizon + 1,
+                len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            ):
+                jointly_eligible = (action_mask[:, lower_horizon, :] == 1.0) & (
+                    action_mask[:, upper_horizon, :] == 1.0
+                )
+                if (
+                    np.any(
+                        self.actual_entry_monotonic_ns[
+                            :,
+                            upper_horizon,
+                            :,
+                        ][jointly_eligible]
+                        != self.actual_entry_monotonic_ns[
+                            :,
+                            lower_horizon,
+                            :,
+                        ][jointly_eligible]
+                    )
+                    or np.any(
+                        self.actual_exit_monotonic_ns[
+                            :,
+                            upper_horizon,
+                            :,
+                        ][jointly_eligible]
+                        < self.actual_exit_monotonic_ns[
+                            :,
+                            lower_horizon,
+                            :,
+                        ][jointly_eligible]
+                    )
+                    or np.any(
+                        self.maximum_adverse_excursion_bps[
+                            :,
+                            upper_horizon,
+                            :,
+                        ][jointly_eligible]
+                        < self.maximum_adverse_excursion_bps[
+                            :,
+                            lower_horizon,
+                            :,
+                        ][jointly_eligible]
+                    )
+                ):
+                    raise ValueError(
+                        "Round 74 event training path risk regresses across horizons"
+                    )
 
     @property
     def batch_sha256(self) -> str:
@@ -676,12 +756,10 @@ def build_round74_event_training_batch(
     roles = {sample.role for sample in selected}
     partitions = {sample.partition_sha256 for sample in selected}
     representations = {sample.window_representation for sample in selected}
-    if (
-        len(roles) != 1
-        or len(partitions) != 1
-        or len(representations) != 1
-    ):
-        raise ValueError("Round 74 event batch crossed role partition or representation")
+    if len(roles) != 1 or len(partitions) != 1 or len(representations) != 1:
+        raise ValueError(
+            "Round 74 event batch crossed role partition or representation"
+        )
     raw_features = np.asarray(
         [sample.feature_values for sample in selected],
         dtype=np.float64,

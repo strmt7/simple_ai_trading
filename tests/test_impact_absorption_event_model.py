@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import importlib.util
 import json
 import subprocess
@@ -80,7 +81,24 @@ def test_round74_candidate_outputs_are_finite_and_monotone(model: object) -> Non
     ):
         differences = quantiles[..., 1:] - quantiles[..., :-1]
         assert bool((differences >= 0.0).all())
+    horizon_differences = (
+        output.maximum_adverse_excursion_quantiles_bps[:, 1:, ...]
+        - output.maximum_adverse_excursion_quantiles_bps[:, :-1, ...]
+    )
+    assert bool((horizon_differences >= 0.0).all())
     assert bool((output.maximum_adverse_excursion_quantiles_bps >= 0.0).all())
+
+
+def test_round74_model_output_rejects_path_risk_horizon_regression() -> None:
+    output = Round74EventPoolingLinear()(_inputs(batch_size=1))
+    regressed = output.maximum_adverse_excursion_quantiles_bps.clone()
+    regressed[:, 1, ...] = 0.0
+
+    with pytest.raises(ValueError, match="regresses across horizons"):
+        replace(
+            output,
+            maximum_adverse_excursion_quantiles_bps=regressed,
+        ).validate(1)
 
 
 def test_round74_candidate_complexity_order_is_strict() -> None:
@@ -129,13 +147,10 @@ def test_round74_state_conditioned_flow_is_neutral_at_initialization(
             rtol=0.0,
             atol=0.0,
         )
-    assert (
-        sum(parameter.numel() for parameter in challenger.parameters())
-        - sum(parameter.numel() for parameter in incumbent.parameters())
-        == (
-            len(ROUND74_EVENT_MARKET_STATE_FEATURE_INDICES) + 1
-        )
-        * len(ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES)
+    assert sum(parameter.numel() for parameter in challenger.parameters()) - sum(
+        parameter.numel() for parameter in incumbent.parameters()
+    ) == (len(ROUND74_EVENT_MARKET_STATE_FEATURE_INDICES) + 1) * len(
+        ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES
     )
 
 

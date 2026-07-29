@@ -102,9 +102,7 @@ def _engine(*, additional_slippage_bps: float = 1.0) -> Round74EventTargetEngine
     exit_latencies = {symbol: 100_000_000 for symbol in symbols}
     fees = {symbol: 5.0 for symbol in symbols}
     funding_intervals = {symbol: () for symbol in symbols}
-    funding_coverage = {
-        symbol: (0, 1_000_000_000_000) for symbol in symbols
-    }
+    funding_coverage = {symbol: (0, 1_000_000_000_000) for symbol in symbols}
     slippage = {symbol: additional_slippage_bps for symbol in symbols}
     rules = _rules()
 
@@ -177,9 +175,7 @@ def _partition() -> Round74EventRunPartition:
     entries = []
     for index, role in enumerate(("training", "tuning", "test")):
         start = WALL + index * 1_200 * NS
-        anchor = start + (
-            12_700_000_000 if index == 0 else 310_500_000_000
-        )
+        anchor = start + (12_700_000_000 if index == 0 else 310_500_000_000)
         entries.append(
             Round74EventRunPartitionEntry(
                 run_id=f"{index + 1:032x}",
@@ -342,6 +338,29 @@ def test_round74_streaming_assembler_builds_complete_bounded_panel() -> None:
     assert sample.eligible_action_count == 8
     assert len(sample.outcomes) == 8
     assert sample.sample_sha256 == sample.sample_sha256
+    for side in ROUND74_EVENT_PAYOFF_SIDES:
+        path = sorted(
+            (outcome for outcome in sample.outcomes if outcome.side == side),
+            key=lambda outcome: outcome.horizon_seconds,
+        )
+        assert all(
+            current.maximum_adverse_excursion_bps >= prior.maximum_adverse_excursion_bps
+            for prior, current in zip(path[:-1], path[1:], strict=True)
+        )
+        assert all(
+            current.maximum_favorable_excursion_bps
+            >= prior.maximum_favorable_excursion_bps
+            for prior, current in zip(path[:-1], path[1:], strict=True)
+        )
+        assert all(
+            current.maximum_spread_bps >= prior.maximum_spread_bps
+            for prior, current in zip(path[:-1], path[1:], strict=True)
+        )
+        assert all(
+            current.minimum_exit_side_capacity_ratio
+            <= prior.minimum_exit_side_capacity_ratio
+            for prior, current in zip(path[:-1], path[1:], strict=True)
+        )
     assert assembler.pending_window_count == 0
     scaler = fit_round74_event_feature_scaler(
         np.asarray(sample.feature_values, dtype=np.float64),
@@ -380,6 +399,37 @@ def test_round74_streaming_assembler_builds_complete_bounded_panel() -> None:
     )
     assert len(batch.batch_sha256) == 64
     assert not batch.feature_values.flags.writeable
+
+    first_side = sorted(
+        (
+            outcome
+            for outcome in sample.outcomes
+            if outcome.side == ROUND74_EVENT_PAYOFF_SIDES[0]
+        ),
+        key=lambda outcome: outcome.horizon_seconds,
+    )
+    assert first_side[0].maximum_adverse_excursion_bps > 0.0
+    regressed_outcome = replace(
+        first_side[1],
+        maximum_adverse_excursion_bps=0.0,
+        capital_scaled_maximum_adverse_excursion_bps=0.0,
+    )
+    regressed_outcomes = tuple(
+        regressed_outcome if outcome is first_side[1] else outcome
+        for outcome in sample.outcomes
+    )
+    with pytest.raises(ValueError, match="path extrema regress"):
+        replace(sample, outcomes=regressed_outcomes).validate()
+
+    regressed_mae = batch.maximum_adverse_excursion_bps.copy()
+    regressed_mae[0, 0, 0] = 1.0
+    regressed_mae[0, 1, 0] = 0.0
+    regressed_mae.setflags(write=False)
+    with pytest.raises(ValueError, match="path risk regresses"):
+        replace(
+            batch,
+            maximum_adverse_excursion_bps=regressed_mae,
+        ).validate()
 
 
 def test_round74_dataset_binds_and_separates_window_representations() -> None:

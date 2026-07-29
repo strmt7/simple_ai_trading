@@ -1,16 +1,9 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 from pathlib import Path
 import subprocess  # nosec B404
-from types import ModuleType
-
-from simple_ai_trading.impact_absorption_event_training import (
-    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
-    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
-)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,15 +14,6 @@ DESIGN = (
     / "action-value"
     / "round-074-event-sequence-model-design-v106.json"
 )
-PUBLISHER_PATH = ROOT / "tools" / "publish_round74_event_training_preflight.py"
-SPEC = importlib.util.spec_from_file_location(
-    "round74_v106_preflight_publisher",
-    PUBLISHER_PATH,
-)
-assert SPEC is not None and SPEC.loader is not None
-PUBLISHER = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(PUBLISHER)
-assert isinstance(PUBLISHER, ModuleType)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -96,11 +80,11 @@ def test_round74_v106_records_telemetry_without_optimizer_or_edge_claims() -> No
     assert delta["per_task_gradient_cosines_measured"] is False
     assert delta["gradient_conflict_claim"] is False
     assert schemas == {
-        "event_training": ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
-        "event_pretest_policy": ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
-        "event_training_preflight_run": PUBLISHER.RUN_SCHEMA_VERSION,
+        "event_training": "round-074-event-training-v31",
+        "event_pretest_policy": "round-074-event-pretest-policy-v30",
+        "event_training_preflight_run": "round-074-event-training-preflight-run-v8",
         "event_training_directml_preflight_evidence": (
-            PUBLISHER.EVIDENCE_SCHEMA_VERSION
+            "round-074-event-training-directml-preflight-evidence-v20"
         ),
     }
     assert verification["focused_tests_passed"] == 104

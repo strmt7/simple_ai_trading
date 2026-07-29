@@ -329,6 +329,7 @@ def _output(rows: int) -> Round74EventModelOutput:
             adverse[row_index, horizon_index, 0] = _logit(0.10)
             regime[row_index, horizon_index] = _logit(0.10)
         payoff[row_index, 3, 0, :] -= 1.0
+    mae[:, :2, 0, :] = mae[:, 2:3, 0, :]
     result = Round74EventModelOutput(
         payoff_quantiles_bps=payoff,
         maximum_adverse_excursion_quantiles_bps=mae,

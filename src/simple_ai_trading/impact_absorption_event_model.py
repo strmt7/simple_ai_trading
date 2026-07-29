@@ -32,7 +32,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v8"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v9"
 ROUND74_EVENT_MODEL_CANDIDATES = (
     "event_pooling_linear",
     "event_pooling_mlp",
@@ -102,10 +102,16 @@ class Round74EventModelOutput:
             self.maximum_adverse_excursion_quantiles_bps[..., 1:]
             - self.maximum_adverse_excursion_quantiles_bps[..., :-1]
         )
+        adverse_horizon_differences = (
+            self.maximum_adverse_excursion_quantiles_bps[:, 1:, ...]
+            - self.maximum_adverse_excursion_quantiles_bps[:, :-1, ...]
+        )
         if bool((payoff_differences < 0.0).any()) or bool(
             (adverse_differences < 0.0).any()
         ):
             raise ValueError("Round 74 payoff quantiles cross")
+        if bool((adverse_horizon_differences < 0.0).any()):
+            raise ValueError("Round 74 adverse excursion regresses across horizons")
         if bool((self.maximum_adverse_excursion_quantiles_bps < 0.0).any()):
             raise ValueError("Round 74 adverse excursion is negative")
 
@@ -176,6 +182,24 @@ class _Round74DistributionalHeads(nn.Module):
         adverse_q50 = adverse_q25 + F.softplus(adverse_raw[..., 2])
         adverse_q75 = adverse_q50 + F.softplus(adverse_raw[..., 3])
         adverse_q90 = adverse_q75 + F.softplus(adverse_raw[..., 4])
+        adverse_quantiles = torch.stack(
+            (
+                adverse_q10,
+                adverse_q25,
+                adverse_q50,
+                adverse_q75,
+                adverse_q90,
+            ),
+            dim=3,
+        )
+        monotone_horizons = [adverse_quantiles[:, 0, ...]]
+        for horizon_index in range(1, adverse_quantiles.shape[1]):
+            monotone_horizons.append(
+                torch.maximum(
+                    monotone_horizons[-1],
+                    adverse_quantiles[:, horizon_index, ...],
+                )
+            )
         expected_sides = (
             encoded.shape[0],
             len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
@@ -187,14 +211,8 @@ class _Round74DistributionalHeads(nn.Module):
                 dim=3,
             ),
             maximum_adverse_excursion_quantiles_bps=torch.stack(
-                (
-                    adverse_q10,
-                    adverse_q25,
-                    adverse_q50,
-                    adverse_q75,
-                    adverse_q90,
-                ),
-                dim=3,
+                monotone_horizons,
+                dim=1,
             ),
             positive_payoff_logits=self.positive(encoded).reshape(expected_sides),
             adverse_selection_logits=self.adverse(encoded).reshape(expected_sides),
@@ -555,10 +573,7 @@ class Round74StateConditionedFlow(nn.Module):
         )
 
     def _state_conditioned_values(self, values: torch.Tensor) -> torch.Tensor:
-        if (
-            values.ndim != 3
-            or int(values.shape[2]) != len(ROUND74_EVENT_FEATURE_NAMES)
-        ):
+        if values.ndim != 3 or int(values.shape[2]) != len(ROUND74_EVENT_FEATURE_NAMES):
             raise ValueError("Round 74 state-conditioned input dimensions are invalid")
         state = torch.matmul(values, self._state_selector)
         # Zero logits yield a multiplier of exactly one, making initialization
@@ -569,7 +584,9 @@ class Round74StateConditionedFlow(nn.Module):
             self._flow_to_original,
         )
         conditioned = values * multiplier
-        if conditioned.shape != values.shape or not bool(torch.isfinite(conditioned).all()):
+        if conditioned.shape != values.shape or not bool(
+            torch.isfinite(conditioned).all()
+        ):
             raise ValueError("Round 74 state-conditioned values differ")
         return conditioned
 
