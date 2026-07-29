@@ -6,6 +6,7 @@ import asyncio
 from dataclasses import dataclass
 from decimal import Decimal
 import json
+import re
 from threading import RLock
 import time
 from typing import Callable, Mapping, Sequence
@@ -24,6 +25,7 @@ from .polymarket_live_v2 import PolymarketLiveCredentials
 POLYMARKET_USER_STREAM_URL = (
     "wss://ws-subscriptions-clob.polymarket.com/ws/user"
 )
+_CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -371,13 +373,62 @@ class PolymarketAuthenticatedUserStream:
     ) -> None:
         self.credentials = credentials
         self.consumer = consumer
-        self.markets = tuple(dict.fromkeys(str(value).lower() for value in markets))
+        normalized = self._normalize_markets(markets)
+        self._markets = set(normalized)
+        self._market_lock = asyncio.Lock()
+        self._market_updates: asyncio.Queue[None] = asyncio.Queue(maxsize=1)
         self.message_timeout_seconds = max(
             11.0,
             min(60.0, float(message_timeout_seconds)),
         )
 
-    def _subscription(self) -> str:
+    @staticmethod
+    def _normalize_markets(markets: Sequence[str]) -> tuple[str, ...]:
+        normalized = tuple(
+            dict.fromkeys(str(value or "").strip().lower() for value in markets)
+        )
+        if any(_CONDITION_ID.fullmatch(value) is None for value in normalized):
+            raise ValueError("Polymarket user-stream condition ID is invalid")
+        return normalized
+
+    @property
+    def markets(self) -> tuple[str, ...]:
+        return tuple(sorted(self._markets))
+
+    async def _market_snapshot(self) -> tuple[str, ...]:
+        async with self._market_lock:
+            return self.markets
+
+    def _signal_market_update(self) -> None:
+        if self._market_updates.empty():
+            self._market_updates.put_nowait(None)
+
+    async def subscribe_markets(self, markets: Sequence[str]) -> tuple[str, ...]:
+        selected = self._normalize_markets(markets)
+        if not selected:
+            raise ValueError("Polymarket user-stream subscribe set is empty")
+        async with self._market_lock:
+            before = set(self._markets)
+            self._markets.update(selected)
+            changed = tuple(sorted(self._markets - before))
+        if changed:
+            self._signal_market_update()
+        return changed
+
+    async def unsubscribe_markets(self, markets: Sequence[str]) -> tuple[str, ...]:
+        selected = self._normalize_markets(markets)
+        if not selected:
+            raise ValueError("Polymarket user-stream unsubscribe set is empty")
+        async with self._market_lock:
+            before = set(self._markets)
+            self._markets.difference_update(selected)
+            changed = tuple(sorted(before - self._markets))
+        if changed:
+            self._signal_market_update()
+        return changed
+
+    def _subscription(self, markets: Sequence[str] | None = None) -> str:
+        selected = self.markets if markets is None else tuple(markets)
         return json.dumps(
             {
                 "auth": {
@@ -385,14 +436,33 @@ class PolymarketAuthenticatedUserStream:
                     "secret": self.credentials.api_secret,
                     "passphrase": self.credentials.api_passphrase,
                 },
-                "markets": list(self.markets),
+                "markets": list(selected),
                 "type": "user",
             },
             separators=(",", ":"),
             sort_keys=True,
         )
 
-    async def _connected(self, websocket: object, stop: asyncio.Event) -> None:
+    @staticmethod
+    def _subscription_update(operation: str, markets: Sequence[str]) -> str:
+        if operation not in {"subscribe", "unsubscribe"} or not markets:
+            raise ValueError("Polymarket user-stream update is invalid")
+        return json.dumps(
+            {
+                "markets": list(markets),
+                "operation": operation,
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+
+    async def _connected(
+        self,
+        websocket: object,
+        stop: asyncio.Event,
+        *,
+        active_markets: Sequence[str],
+    ) -> None:
         async def ping_loop() -> None:
             while not stop.is_set():
                 await websocket.send("PING")
@@ -409,10 +479,29 @@ class PolymarketAuthenticatedUserStream:
                 )
                 self.consumer.handle(message)
 
+        async def subscription_loop() -> None:
+            active = set(active_markets)
+            while not stop.is_set():
+                await self._market_updates.get()
+                desired = set(await self._market_snapshot())
+                added = tuple(sorted(desired - active))
+                removed = tuple(sorted(active - desired))
+                if added:
+                    await websocket.send(
+                        self._subscription_update("subscribe", added)
+                    )
+                    active.update(added)
+                if removed:
+                    await websocket.send(
+                        self._subscription_update("unsubscribe", removed)
+                    )
+                    active.difference_update(removed)
+
         ping = asyncio.create_task(ping_loop())
         receive = asyncio.create_task(receive_loop())
+        subscriptions = asyncio.create_task(subscription_loop())
         stopped = asyncio.create_task(stop.wait())
-        tasks = {ping, receive, stopped}
+        tasks = {ping, receive, subscriptions, stopped}
         try:
             done, _ = await asyncio.wait(
                 tasks,
@@ -443,10 +532,15 @@ class PolymarketAuthenticatedUserStream:
                     max_size=2 * 1024 * 1024,
                     max_queue=256,
                 ) as websocket:
-                    await websocket.send(self._subscription())
+                    active_markets = await self._market_snapshot()
+                    await websocket.send(self._subscription(active_markets))
                     self.consumer.runtime_guard.note_stream_liveness()
                     delay_seconds = 0.5
-                    await self._connected(websocket, stop)
+                    await self._connected(
+                        websocket,
+                        stop,
+                        active_markets=active_markets,
+                    )
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
