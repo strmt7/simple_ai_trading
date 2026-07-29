@@ -13,8 +13,10 @@ override prose if they disagree.
   host, placeholder, vendor, model, tool, CI, previous-commit, global-config,
   or noreply identity. Read `docs/AI_COMMIT_IDENTITY.md` before creating or
   auditing history.
-- Scope is BTC, ETH, and SOL. Binance is testnet/Demo or paper only;
-  Polymarket is paper/research only. No live-money authority exists.
+- Binance scope is BTC, ETH, and SOL on testnet/Demo or paper only.
+  Polymarket research covers BTC/ETH/SOL; its independent live-capable boundary
+  is BTC-only and disabled by default. No model or release has live-money
+  authority.
 - Conservative is the default. Leverage is a ceiling, never evidence of edge.
   Do not claim profitability, production readiness, ROI, or drawdown without
   reproducible source-bound, after-cost evidence.
