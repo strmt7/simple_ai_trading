@@ -397,6 +397,84 @@ def _identity_digest(connection: duckdb.DuckDBPyConnection) -> str:
 ProgressCallback = Callable[[str, Mapping[str, object]], None]
 
 
+def _insert_feature_rows(
+    connection: duckdb.DuckDBPyConnection,
+    rows: Sequence[HistoricalFeatureRow],
+    *,
+    progress: ProgressCallback | None,
+) -> None:
+    if not rows:
+        return
+    feature_matrix = np.stack(
+        [row.feature_values for row in rows],
+        axis=0,
+    ).astype(np.float32, copy=False)
+    if feature_matrix.shape != (len(rows), len(FEATURE_NAMES)):
+        raise ValueError("historical feature insert matrix differs")
+    feature_matrix = feature_matrix.T
+    metadata_matrix = np.asarray(
+        [
+            [row.condition_id for row in rows],
+            [row.role for row in rows],
+            [row.event_start_ms for row in rows],
+            [row.decision_time_ms for row in rows],
+            [row.decision_offset_seconds for row in rows],
+            [row.feature_vector_sha256 for row in rows],
+            [row.row_sha256 for row in rows],
+        ],
+        dtype=object,
+    )
+    if feature_matrix.shape != (
+        len(FEATURE_NAMES),
+        len(rows),
+    ) or metadata_matrix.shape != (7, len(rows)):
+        raise ValueError("historical feature insert relation differs")
+    vector_expression = ",".join(
+        f"f.column{index}" for index in range(len(FEATURE_NAMES))
+    )
+    if progress:
+        progress(
+            "historical_feature_write",
+            {
+                "rows_written": 0,
+                "row_count": len(rows),
+            },
+        )
+    connection.execute(
+        f"""
+        INSERT INTO feature.causal_row
+        WITH metadata AS (
+            SELECT row_number() OVER () AS row_index, *
+            FROM metadata_matrix
+        ),
+        features AS (
+            SELECT row_number() OVER () AS row_index, *
+            FROM feature_matrix
+        )
+        SELECT
+            m.column0,
+            m.column1,
+            m.column2,
+            m.column3,
+            m.column4,
+            array_value({vector_expression}),
+            m.column5,
+            m.column6
+        FROM metadata AS m
+        INNER JOIN features AS f USING (row_index)
+        ORDER BY row_index
+        """
+    )
+    if progress:
+        progress(
+            "historical_feature_write",
+            {
+                "rows_written": len(rows),
+                "row_count": len(rows),
+            },
+        )
+
+
 def materialize_historical_causal_features(
     store: HistoricalScreenStore,
     *,
@@ -510,23 +588,10 @@ def materialize_historical_causal_features(
     try:
         connection.execute("DELETE FROM feature.causal_row")
         connection.execute("DELETE FROM feature.dataset_manifest")
-        connection.executemany(
-            """
-            INSERT INTO feature.causal_row VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                (
-                    row.condition_id,
-                    row.role,
-                    row.event_start_ms,
-                    row.decision_time_ms,
-                    row.decision_offset_seconds,
-                    row.feature_values.tolist(),
-                    row.feature_vector_sha256,
-                    row.row_sha256,
-                )
-                for row in rows
-            ],
+        _insert_feature_rows(
+            connection,
+            rows,
+            progress=progress,
         )
         connection.execute(
             """
