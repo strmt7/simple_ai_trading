@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import time
@@ -34,6 +35,16 @@ from .polymarket_round16_dataset import (
 ROUND16_PRETEST_SCHEMA_VERSION = "polymarket-round16-btc-15m-pretest-v1"
 ROUND16_MODEL_SEED = 16_015
 ROUND16_RIDGE_L2_GRID = (0.01, 0.1, 1.0, 10.0)
+ROUND16_SETTLEMENT_ANOMALY_QUANTILE = 0.995
+ROUND16_SETTLEMENT_QUOTE_FEATURE = (
+    "terminal_spot_log_quote_rate_ratio_30s_to_prior_120s"
+)
+ROUND16_SETTLEMENT_DISAGREEMENT_FEATURE = (
+    "terminal_spot_perpetual_signed_aggressive_share_difference_30s"
+)
+ROUND16_SUPPORT_OUTER_IQR_MULTIPLIER = 5.0
+ROUND16_SUPPORT_MAXIMUM_OUTSIDE_TRAINING_RANGE = 4
+ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS = 0
 _GIT_COMMIT = re.compile(r"^[0-9a-f]{40}$")
 _LIGHTGBM_GRID = (
     {
@@ -470,6 +481,271 @@ def _finalize_candidate(
     return {**body, "artifact_sha256": _canonical_sha256(body)}
 
 
+def freeze_round16_settlement_controls(
+    tune: Round16ModelPanel,
+) -> Mapping[str, object]:
+    """Freeze label-blind anomaly thresholds from the tune partition only."""
+
+    tune.validate(expected_roles=("tune",))
+    quote_index = ROUND16_FEATURE_NAMES.index(
+        ROUND16_SETTLEMENT_QUOTE_FEATURE
+    )
+    disagreement_index = ROUND16_FEATURE_NAMES.index(
+        ROUND16_SETTLEMENT_DISAGREEMENT_FEATURE
+    )
+    quote = np.asarray(tune.features[:, quote_index], dtype=np.float64)
+    disagreement = np.abs(
+        np.asarray(
+            tune.features[:, disagreement_index],
+            dtype=np.float64,
+        )
+    )
+    quote_threshold = float(
+        np.quantile(
+            quote,
+            ROUND16_SETTLEMENT_ANOMALY_QUANTILE,
+            method="linear",
+        )
+    )
+    disagreement_threshold = float(
+        np.quantile(
+            disagreement,
+            ROUND16_SETTLEMENT_ANOMALY_QUANTILE,
+            method="linear",
+        )
+    )
+    if (
+        not math.isfinite(quote_threshold)
+        or not math.isfinite(disagreement_threshold)
+        or disagreement_threshold < 0.0
+    ):
+        raise ValueError("Round 16 settlement thresholds are invalid")
+    return {
+        "schema_version": "polymarket-round16-settlement-screen-v1",
+        "partition": "tune",
+        "labels_used": False,
+        "quantile": format(ROUND16_SETTLEMENT_ANOMALY_QUANTILE, ".17g"),
+        "quantile_method": "linear",
+        "quote_feature": ROUND16_SETTLEMENT_QUOTE_FEATURE,
+        "quote_upper_threshold": format(quote_threshold, ".17g"),
+        "disagreement_feature": ROUND16_SETTLEMENT_DISAGREEMENT_FEATURE,
+        "disagreement_absolute_threshold": format(
+            disagreement_threshold,
+            ".17g",
+        ),
+        "abnormal_action": "abstain",
+        "new_exposure_in_final_30_seconds": False,
+        "test_features_used": False,
+        "live_features_used": False,
+        "trading_authority": False,
+    }
+
+
+def freeze_round16_feature_support(
+    train: Round16ModelPanel,
+) -> Mapping[str, object]:
+    """Freeze broad prospective abstention bounds from training features."""
+
+    train.validate(expected_roles=("train",))
+    matrix = np.asarray(train.features, dtype=np.float64)
+    minimum = np.min(matrix, axis=0)
+    maximum = np.max(matrix, axis=0)
+    first_quartile, third_quartile = np.quantile(
+        matrix,
+        (0.25, 0.75),
+        axis=0,
+        method="linear",
+    )
+    iqr = third_quartile - first_quartile
+    outer_lower = np.minimum(
+        minimum,
+        first_quartile - ROUND16_SUPPORT_OUTER_IQR_MULTIPLIER * iqr,
+    )
+    outer_upper = np.maximum(
+        maximum,
+        third_quartile + ROUND16_SUPPORT_OUTER_IQR_MULTIPLIER * iqr,
+    )
+
+    def encode(values: np.ndarray) -> list[str]:
+        if values.shape != (len(ROUND16_FEATURE_NAMES),) or np.any(
+            ~np.isfinite(values)
+        ):
+            raise ValueError("Round 16 feature-support statistics are invalid")
+        return [format(float(value), ".17g") for value in values]
+
+    return {
+        "schema_version": "polymarket-round16-feature-support-v1",
+        "partition": "train",
+        "labels_used": False,
+        "feature_names_sha256": _canonical_sha256(ROUND16_FEATURE_NAMES),
+        "training_rows": len(matrix),
+        "training_conditions": len(np.unique(train.condition_ids)),
+        "statistics": {
+            "minimum": encode(minimum),
+            "maximum": encode(maximum),
+            "outer_lower": encode(outer_lower),
+            "outer_upper": encode(outer_upper),
+        },
+        "gate": {
+            "maximum_outside_training_range": (
+                ROUND16_SUPPORT_MAXIMUM_OUTSIDE_TRAINING_RANGE
+            ),
+            "maximum_extreme_outliers": (
+                ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS
+            ),
+            "outer_iqr_multiplier": format(
+                ROUND16_SUPPORT_OUTER_IQR_MULTIPLIER,
+                ".17g",
+            ),
+            "action": "abstain",
+        },
+        "test_features_used": False,
+        "live_features_used": False,
+        "trading_authority": False,
+    }
+
+
+def round16_feature_support_admission(
+    features: np.ndarray,
+    support: Mapping[str, object],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return admission and per-row support exceptions for frozen features."""
+
+    matrix = np.asarray(features, dtype=np.float64)
+    statistics = support.get("statistics")
+    gate = support.get("gate")
+    if (
+        matrix.ndim != 2
+        or matrix.shape[1] != len(ROUND16_FEATURE_NAMES)
+        or np.any(~np.isfinite(matrix))
+        or support.get("schema_version")
+        != "polymarket-round16-feature-support-v1"
+        or support.get("partition") != "train"
+        or support.get("labels_used") is not False
+        or support.get("feature_names_sha256")
+        != _canonical_sha256(ROUND16_FEATURE_NAMES)
+        or not isinstance(statistics, Mapping)
+        or not isinstance(gate, Mapping)
+        or support.get("test_features_used") is not False
+        or support.get("live_features_used") is not False
+        or support.get("trading_authority") is not False
+        or dict(gate)
+        != {
+            "maximum_outside_training_range": (
+                ROUND16_SUPPORT_MAXIMUM_OUTSIDE_TRAINING_RANGE
+            ),
+            "maximum_extreme_outliers": (
+                ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS
+            ),
+            "outer_iqr_multiplier": format(
+                ROUND16_SUPPORT_OUTER_IQR_MULTIPLIER,
+                ".17g",
+            ),
+            "action": "abstain",
+        }
+    ):
+        raise ValueError("Round 16 feature-support identity differs")
+
+    def decode(name: str) -> np.ndarray:
+        raw = statistics.get(name)
+        if not isinstance(raw, list) or len(raw) != len(ROUND16_FEATURE_NAMES):
+            raise ValueError("Round 16 feature-support statistics differ")
+        try:
+            values = np.asarray([float(item) for item in raw], dtype=np.float64)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 16 feature-support statistics are malformed"
+            ) from exc
+        if np.any(~np.isfinite(values)):
+            raise ValueError("Round 16 feature-support statistics are invalid")
+        return values
+
+    minimum = decode("minimum")
+    maximum = decode("maximum")
+    outer_lower = decode("outer_lower")
+    outer_upper = decode("outer_upper")
+    if (
+        np.any(minimum > maximum)
+        or np.any(outer_lower > minimum)
+        or np.any(outer_upper < maximum)
+    ):
+        raise ValueError("Round 16 feature-support bounds differ")
+    outside = np.sum(
+        (matrix < minimum[None, :]) | (matrix > maximum[None, :]),
+        axis=1,
+        dtype=np.int64,
+    )
+    extreme = np.sum(
+        (matrix < outer_lower[None, :]) | (matrix > outer_upper[None, :]),
+        axis=1,
+        dtype=np.int64,
+    )
+    admitted = (
+        outside <= ROUND16_SUPPORT_MAXIMUM_OUTSIDE_TRAINING_RANGE
+    ) & (extreme <= ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS)
+    return np.asarray(admitted, dtype=np.bool_), outside, extreme
+
+
+def round16_settlement_admission_mask(
+    features: np.ndarray,
+    controls: Mapping[str, object],
+) -> np.ndarray:
+    """Apply the immutable settlement-anomaly screen without target access."""
+
+    matrix = np.asarray(features, dtype=np.float64)
+    expected = {
+        "schema_version": "polymarket-round16-settlement-screen-v1",
+        "partition": "tune",
+        "labels_used": False,
+        "quantile": format(ROUND16_SETTLEMENT_ANOMALY_QUANTILE, ".17g"),
+        "quantile_method": "linear",
+        "quote_feature": ROUND16_SETTLEMENT_QUOTE_FEATURE,
+        "disagreement_feature": ROUND16_SETTLEMENT_DISAGREEMENT_FEATURE,
+        "abnormal_action": "abstain",
+        "new_exposure_in_final_30_seconds": False,
+        "test_features_used": False,
+        "live_features_used": False,
+        "trading_authority": False,
+    }
+    if (
+        matrix.ndim != 2
+        or matrix.shape[1] != len(ROUND16_FEATURE_NAMES)
+        or np.any(~np.isfinite(matrix))
+        or any(
+            controls.get(key) != value
+            for key, value in expected.items()
+        )
+    ):
+        raise ValueError("Round 16 settlement screen identity differs")
+    try:
+        quote_threshold = float(controls["quote_upper_threshold"])
+        disagreement_threshold = float(
+            controls["disagreement_absolute_threshold"]
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("Round 16 settlement thresholds are malformed") from exc
+    if (
+        not math.isfinite(quote_threshold)
+        or not math.isfinite(disagreement_threshold)
+        or disagreement_threshold < 0.0
+    ):
+        raise ValueError("Round 16 settlement thresholds are invalid")
+    quote_index = ROUND16_FEATURE_NAMES.index(
+        ROUND16_SETTLEMENT_QUOTE_FEATURE
+    )
+    disagreement_index = ROUND16_FEATURE_NAMES.index(
+        ROUND16_SETTLEMENT_DISAGREEMENT_FEATURE
+    )
+    return np.asarray(
+        (matrix[:, quote_index] <= quote_threshold)
+        & (
+            np.abs(matrix[:, disagreement_index])
+            <= disagreement_threshold
+        ),
+        dtype=np.bool_,
+    )
+
+
 def fit_round16_pretest_candidates(
     train: Round16ModelPanel,
     tune: Round16ModelPanel,
@@ -616,6 +892,10 @@ def build_round16_pretest_artifact(
         "selected_best_control": str(best_control["candidate_id"]),
         "selected_best_challenger": str(best_challenger["candidate_id"]),
         "selection_metric": "condition_balanced_tune_log_loss",
+        "feature_support": freeze_round16_feature_support(train),
+        "settlement_manipulation_controls": (
+            freeze_round16_settlement_controls(tune)
+        ),
         "implementation_sha256": implementation,
         "test_targets_accessed": False,
         "paper_authority": False,
@@ -717,10 +997,20 @@ __all__ = [
     "ROUND16_MODEL_SEED",
     "ROUND16_PRETEST_SCHEMA_VERSION",
     "ROUND16_RIDGE_L2_GRID",
+    "ROUND16_SETTLEMENT_ANOMALY_QUANTILE",
+    "ROUND16_SETTLEMENT_DISAGREEMENT_FEATURE",
+    "ROUND16_SETTLEMENT_QUOTE_FEATURE",
+    "ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS",
+    "ROUND16_SUPPORT_MAXIMUM_OUTSIDE_TRAINING_RANGE",
+    "ROUND16_SUPPORT_OUTER_IQR_MULTIPLIER",
     "Round16ModelPanel",
     "build_round16_pretest_artifact",
     "fit_round16_pretest_candidates",
+    "freeze_round16_feature_support",
+    "freeze_round16_settlement_controls",
     "load_round16_model_panel",
     "predict_round16_candidate",
     "record_round16_pretest_artifact",
+    "round16_feature_support_admission",
+    "round16_settlement_admission_mask",
 ]
