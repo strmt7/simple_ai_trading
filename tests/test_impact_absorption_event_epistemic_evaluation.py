@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import json
 
 import numpy as np
 import pytest
 
 import simple_ai_trading.impact_absorption_event_epistemic_evaluation as subject
+from simple_ai_trading.impact_absorption_event_epistemic_policy import (
+    Round74EpistemicActionFilter,
+    fit_round74_epistemic_action_filter,
+)
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_PAYOFF_QUANTILES,
@@ -171,6 +176,65 @@ def test_epistemic_report_requires_every_conditional_stratum(
         subject.Round74EpistemicRiskCoverageReport.from_dict(payload)
 
 
+def test_epistemic_action_filter_is_profile_specific_and_target_free(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(subject, "ROUND74_EPISTEMIC_BOOTSTRAP_SAMPLES", 200)
+    batches = tuple(_evaluation_batch(index) for index in range(1, 7))
+    report = subject.evaluate_round74_epistemic_risk_coverage(
+        batches,
+        expected_policy_selection_run_ids=tuple(
+            f"{index:032x}" for index in range(1, 7)
+        ),
+    )
+
+    conservative = fit_round74_epistemic_action_filter(
+        batches,
+        report,
+        profile="conservative",
+    )
+    regular = fit_round74_epistemic_action_filter(
+        batches,
+        report,
+        profile="regular",
+    )
+    aggressive = fit_round74_epistemic_action_filter(
+        batches,
+        report,
+        profile="aggressive",
+    )
+
+    assert conservative.component_quantile == pytest.approx(0.95)
+    assert regular.component_quantile == pytest.approx(0.97)
+    assert aggressive.component_quantile == pytest.approx(0.99)
+    assert np.all(conservative.action_thresholds <= regular.action_thresholds)
+    assert np.all(regular.action_thresholds <= aggressive.action_thresholds)
+    assert np.all(conservative.regime_thresholds <= regular.regime_thresholds)
+    assert np.all(regular.regime_thresholds <= aggressive.regime_thresholds)
+    payload = json.loads(json.dumps(conservative.as_dict()))
+    assert Round74EpistemicActionFilter.from_dict(payload).filter_sha256 == (
+        conservative.filter_sha256
+    )
+
+    target_mutated = (
+        replace(
+            batches[0],
+            net_payoff_bps=_readonly(-batches[0].net_payoff_bps),
+            adverse_selection=_readonly(1.0 - batches[0].adverse_selection),
+            regime_unpredictability=_readonly(
+                1.0 - batches[0].regime_unpredictability
+            ),
+        ),
+        *batches[1:],
+    )
+    target_invariant = fit_round74_epistemic_action_filter(
+        target_mutated,
+        report,
+        profile="conservative",
+    )
+    assert target_invariant.filter_sha256 == conservative.filter_sha256
+
+
 def test_missing_outcome_classes_fail_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -197,3 +261,9 @@ def test_missing_outcome_classes_fail_closed(
         "leverage_changed": False,
         "automatic_policy_gate_enabled": False,
     }
+    with pytest.raises(ValueError, match="action-filter source differs"):
+        fit_round74_epistemic_action_filter(
+            batches,
+            report,
+            profile="conservative",
+        )

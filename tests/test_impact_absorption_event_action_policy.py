@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import hashlib
+import json
 import math
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import torch
 
 from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_DEFAULT_PROFILE,
+    ROUND74_ACTION_HORIZONS_SECONDS,
     ROUND74_ACTION_POSITION_CAPITAL_FRACTION,
     Round74ActionExecutionOutcomeRow,
     Round74ActionExecutionPanel,
@@ -24,6 +26,12 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     _eligible_target_score_threshold,
     _equal_run_score_threshold,
 )
+from simple_ai_trading.impact_absorption_event_epistemic_policy import (
+    ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS,
+    Round74EpistemicActionFilter,
+    Round74EpistemicActionFilterApplication,
+    apply_round74_epistemic_action_filter,
+)
 from simple_ai_trading.impact_absorption_event_calibration import (
     ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION,
     ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
@@ -36,6 +44,7 @@ from simple_ai_trading.impact_absorption_event_dataset import (
     Round74EventTrainingBatch,
 )
 from simple_ai_trading.impact_absorption_event_model import (
+    Round74EventEpistemicDiagnostics,
     Round74EventModelOutput,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
@@ -629,6 +638,115 @@ def test_candidate_derivation_is_target_free_and_prefers_shorter_tie() -> None:
     global_context = build_round74_action_inference_context(global_batch)
     assert global_context.window_representation == "global_cross_asset"
     assert global_context.context_sha256 != context.context_sha256
+
+
+def test_epistemic_runtime_filter_only_removes_and_zeroes_candidates() -> None:
+    batch = _batch(payoff_sign=1.0)
+    base = _output(batch.rows)
+    payoff_dispersion = torch.full_like(base.payoff_quantiles_bps, 0.01)
+    mae_dispersion = torch.full_like(
+        base.maximum_adverse_excursion_quantiles_bps,
+        0.01,
+    )
+    positive_dispersion = torch.full_like(base.positive_payoff_logits, 0.01)
+    adverse_dispersion = torch.full_like(base.adverse_selection_logits, 0.01)
+    regime_dispersion = torch.full_like(
+        base.regime_unpredictability_logits,
+        0.01,
+    )
+    selected_horizon = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(30)
+    payoff_dispersion[0, selected_horizon, 0, :] = 0.10
+    output = replace(
+        base,
+        epistemic_diagnostics=Round74EventEpistemicDiagnostics(
+            peer_count=3,
+            payoff_quantile_standard_deviation_bps=payoff_dispersion,
+            maximum_adverse_excursion_quantile_standard_deviation_bps=(
+                mae_dispersion
+            ),
+            positive_payoff_probability_standard_deviation=positive_dispersion,
+            adverse_selection_probability_standard_deviation=adverse_dispersion,
+            regime_unpredictability_probability_standard_deviation=(
+                regime_dispersion
+            ),
+        ),
+    )
+    output.validate(batch.rows)
+    calibration = _calibration()
+    candidate = derive_round74_action_candidates(
+        output,
+        build_round74_action_inference_context(batch),
+        calibration,
+        pretest_policy_sha256=POLICY_SHA256,
+        profile="conservative",
+    )
+    action_shape = (
+        len(ROUND74_EVENT_SYMBOLS),
+        len(ROUND74_ACTION_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+        len(ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS) - 1,
+    )
+    regime_shape = action_shape[:2]
+    runs = _subpartition().policy_selection_run_ids
+    action_filter = Round74EpistemicActionFilter(
+        profile="conservative",
+        risk_coverage_report_sha256="e" * 64,
+        tuning_subpartition_sha256=calibration.tuning_subpartition_sha256,
+        probability_calibration_sha256=calibration.calibration_sha256,
+        source_run_ids=runs,
+        source_batch_sha256=tuple(f"{index + 1:064x}" for index in range(6)),
+        source_model_output_sha256=tuple(
+            f"{index + 101:064x}" for index in range(6)
+        ),
+        peer_count=3,
+        total_rejection_budget=0.25,
+        component_tail_budget=0.05,
+        component_quantile=0.95,
+        action_thresholds=_readonly(
+            np.full(action_shape, 0.05, dtype=np.float64)
+        ),
+        regime_thresholds=_readonly(
+            np.full(regime_shape, 0.05, dtype=np.float64)
+        ),
+        action_fit_rows=_readonly(
+            np.full(action_shape[:3], 300, dtype=np.int64)
+        ),
+        regime_fit_rows=_readonly(
+            np.full(regime_shape, 300, dtype=np.int64)
+        ),
+    )
+
+    filtered, application = apply_round74_epistemic_action_filter(
+        candidate,
+        output,
+        action_filter,
+    )
+
+    assert candidate.eligible.all()
+    assert filtered.eligible[0] == np.False_
+    assert filtered.eligible[1:].all()
+    assert not np.any(filtered.eligible & ~candidate.eligible)
+    for value in (
+        filtered.horizon_seconds,
+        filtered.side,
+        filtered.risk_adjusted_strength_bps,
+        filtered.quality_score,
+        filtered.positive_payoff_probability,
+        filtered.adverse_selection_probability,
+        filtered.regime_unpredictability_probability,
+        filtered.payoff_quantiles_bps,
+        filtered.maximum_adverse_excursion_quantiles_bps,
+    ):
+        assert np.all(value[0] == 0)
+    assert application.eligible_rows_after == application.eligible_rows_before - 1
+    assert application.blocked_rows_by_component == (1, 0, 0, 0, 0)
+    assert application.target_fields_consumed is False
+    assert application.candidate_set_only_reduced is True
+    assert application.position_size_changed is False
+    assert application.leverage_changed is False
+    assert application.trading_authority is False
+    payload = json.loads(json.dumps(application.as_dict()))
+    assert Round74EpistemicActionFilterApplication.from_dict(payload) == application
 
 
 def test_risk_tail_calibration_can_fail_closed_before_candidate_selection() -> None:
