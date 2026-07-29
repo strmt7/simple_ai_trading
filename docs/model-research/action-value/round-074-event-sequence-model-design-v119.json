@@ -1,0 +1,198 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v119",
+  "created_at_utc": "2026-07-29T04:18:46Z",
+  "implementation_git_commit": "4e302f89d142c0607e0c359871622733371fd673",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v118.json",
+    "file_sha256": "ca9dc7747732565956fb50de45f377266985b5b1a19a280d3cafdc9ebc847aec",
+    "design_sha256": "f1ce5faf06ada1fa04b4e63850635c1ac5ef1b17f18c79d21c46a570db64b739",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "ai_bridge": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_bridge.py",
+      "sha256": "f0b3bd8194e3841316e2d966103cc43bf4dad244505ad6e881b3e42bb24db501"
+    },
+    "ai_contract_screen": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_contract_screen.py",
+      "sha256": "fce0da164eb1a4c24286a13e881bf3ca92c6c033c553e7b993447cef88a3994d"
+    },
+    "ai_protocol": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+      "sha256": "0607c29427b327bba3d1bf06143e24fbcd6be29bdc6e762d89581671e1215dc0"
+    },
+    "ai_review_preparation": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "bb0ed39b8e7b5eccaf3cca73666e2f1942feff65fb6c4a20b39ec15ce1817e4f"
+    },
+    "ai_preflight_publisher": {
+      "path": "tools/publish_round74_ai_runtime_preflight.py",
+      "sha256": "4108ea07368304654d1aa76fb2e9be3f6d55613648ea06b82b191873a15a6c8c"
+    },
+    "ai_bridge_test": {
+      "path": "tests/test_impact_absorption_ai_bridge.py",
+      "sha256": "2b6b6c92aef6ee43517bef694999c468a05b825cbd43c168ff3248424ba22bb3"
+    },
+    "ai_contract_screen_test": {
+      "path": "tests/test_impact_absorption_ai_contract_screen.py",
+      "sha256": "c3607a2022b225a6341f226068efbd12ebf79f75613de481a864e22fb68ed3c9"
+    },
+    "ai_protocol_test": {
+      "path": "tests/test_impact_absorption_ai_protocol.py",
+      "sha256": "426c17ed5504e95d896fc5d3419bb3cae105471b3cc82b89e8d0860fb68b5186"
+    },
+    "ai_runtime_test": {
+      "path": "tests/test_impact_absorption_ai_runtime.py",
+      "sha256": "6971207a571129040f1b1eecb26c11eabe44b89cfa9e8fd7ee935f0f270e0416"
+    },
+    "ai_uplift_test": {
+      "path": "tests/test_impact_absorption_ai_uplift.py",
+      "sha256": "4d48a0fa999ab6e6d3ef7065b4175a9b23e37dccd00912ae4b7e847d49f2668d"
+    },
+    "ai_worker_test": {
+      "path": "tests/test_impact_absorption_ai_worker.py",
+      "sha256": "f99fcb7f2758441284428d76b40d44d24f046959ccf31bd89edbe3b8c21cdb3a"
+    },
+    "ai_preflight_publisher_test": {
+      "path": "tests/test_round74_ai_runtime_preflight_publisher.py",
+      "sha256": "31f8bc8745a92424f21b45a4a8456fc135a9d51eb24f143607940f39094d02ed"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://jmlr.org/papers/v17/14-294.html",
+      "finding": "A coherent multiclass probability prediction represents all mutually exclusive outcomes rather than one marginal in isolation.",
+      "implementation_consequence": "The AI packet now carries proposed-side positive, opposing-side positive, and neither-side positive probabilities from the calibrated v115 outcome distribution."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v333/lopez26a.html",
+      "finding": "Selective prediction can fail despite strong aggregate metrics when uncertainty is class-dependently miscalibrated.",
+      "implementation_consequence": "The deterministic qualification path does not trust AI confidence alone; it exposes the complete outcome context, preserves abstention, and still requires disjoint paired after-cost uplift."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v304/tayebati26a.html",
+      "finding": "Context-adaptive abstention is intended to align risk control with instance-specific uncertainty instead of a single global confidence signal.",
+      "implementation_consequence": "The prompt explicitly treats substantial opposing probability or a small directional margin as ambiguity that may reduce, veto, or abstain, never as authority to reverse the trade."
+    }
+  ],
+  "ai_joint_probability_context": {
+    "request_schema_version": "round-074-ai-review-request-v6",
+    "prompt_payload_schema_version": "round-074-ai-prompt-payload-v9",
+    "system_prompt_schema_version": "round-074-ai-system-prompt-v3",
+    "bridge_schema_version": "round-074-ai-bridge-v6",
+    "review_panel_schema_version": "round-074-ai-review-panel-v16",
+    "contract_screen_schema_version": "round-074-ai-contract-screen-v2",
+    "contract_case_schema_version": "round-074-ai-contract-case-v2",
+    "runtime_preflight_publisher_schema_version": "round-074-local-ai-runtime-preflight-v8",
+    "outcomes": [
+      "proposed_side_positive_after_cost",
+      "opposing_side_positive_after_cost",
+      "neither_side_positive_after_cost"
+    ],
+    "probability_sum_required": 1.0,
+    "probability_sum_absolute_tolerance": 1e-07,
+    "directional_margin": "proposed_side_probability_minus_opposing_side_probability",
+    "directional_margin_precomputed_for_ai": true,
+    "opposing_side_quantiles_exposed": false,
+    "realized_targets_exposed": false,
+    "real_symbol_exposed": false,
+    "absolute_date_exposed": false,
+    "ai_may_switch_side": false,
+    "ai_may_increase_size": false,
+    "ai_may_set_leverage": false,
+    "ai_may_submit_or_cancel_orders": false
+  },
+  "semantic_screen_delta": {
+    "previous_case_count": 8,
+    "new_case_count": 10,
+    "new_cases": [
+      "directional_ambiguity_mirror_long",
+      "directional_ambiguity_mirror_short"
+    ],
+    "new_case_proposed_side_probability": 0.58,
+    "new_case_opposing_side_probability": 0.39,
+    "new_case_neither_side_probability": 0.03,
+    "new_case_directional_margin": 0.19,
+    "expected_behavior": "constrain",
+    "acceptable_reason_codes": [
+      "forecast_uncertainty",
+      "model_inconsistency"
+    ],
+    "side_mirror_consistency_required": true,
+    "synthetic_non_market_screen_only": true
+  },
+  "declared_delta": {
+    "ai_receives_complete_positive_payoff_distribution": true,
+    "ai_receives_precomputed_directional_margin": true,
+    "incoherent_probability_packets_rejected": true,
+    "ai_authority_changed": false,
+    "ml_candidate_direction_changed": false,
+    "deterministic_risk_gate_changed": false,
+    "event_model_changed": false,
+    "event_training_changed": false,
+    "probability_calibration_changed": false,
+    "action_policy_changed": false,
+    "execution_replay_changed": false,
+    "market_data_reads_added": 0,
+    "ai_market_review_calls_executed": 0,
+    "campaign_source_files_changed_on_main": false,
+    "trading_authority": false
+  },
+  "verification": {
+    "unique_tests_passed": 189,
+    "affected_implementation_and_consumer_tests_passed": 187,
+    "v119_design_tests_passed": 2,
+    "asymmetric_long_short_probability_swap_tested": true,
+    "probability_unit_sum_tested": true,
+    "malformed_probability_sum_rejected": true,
+    "negative_neither_probability_rejected": true,
+    "request_round_trip_hash_stability_tested": true,
+    "ambiguity_mirror_semantics_tested": true,
+    "review_uplift_and_sealed_consumers_tested": true,
+    "real_local_ai_inference_executed_for_v119": false,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "status_observed_at_utc": "2026-07-29T04:18:23Z",
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 38,
+    "latest_independently_adjudicated_slot": 47,
+    "slot_048_status_at_observation": "running",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_or_wal_hashed_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "real_ai_semantic_screen_completed": false,
+    "representative_training_data_complete": false,
+    "model_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "ai_model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "cda7286d6b1377b83b9902c54f7871f37bfd2383435f29620b48ac34554e464d"
+}
