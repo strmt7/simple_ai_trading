@@ -1,0 +1,152 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v106",
+  "created_at_utc": "2026-07-29T00:17:06Z",
+  "implementation_git_commit": "b9e0b829b4a65d757cc5fa18bffed9ba95054fd1",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v105.json",
+    "file_sha256": "54254128316f9f6d6150ffb11921188bb8833437ad768662d609b52c464d4556",
+    "design_sha256": "796e550a0763c98c1f308d6c167d906d985690af63ef682d1568d02a28b332b7",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "event_training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "7240d731ed00c6d6c84d4b5f5a69e92f0370b24ca602eeb4a95cbc3687537e0b"
+    },
+    "preflight_runner": {
+      "path": "tools/run_round74_event_training_preflight.py",
+      "sha256": "7ca8e7842bc08ce7683b95a8bc1ce6576f30c43b83769558147f5bc359d9b54b"
+    },
+    "preflight_publisher": {
+      "path": "tools/publish_round74_event_training_preflight.py",
+      "sha256": "1e58a35691c90ac7ea6956b423d7d05a65cbcc24090d149f11d6a642995b4523"
+    },
+    "event_training_test": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "2b69b808fe1c591d65f90943c5e8abb953704250bcb7d1f4ec3ec4bdd7b05b88"
+    },
+    "preflight_publisher_test": {
+      "path": "tests/test_round74_event_training_preflight_publisher.py",
+      "sha256": "5ffdd2fab173d53757d7de749703ea2c3767502d5f3a55987409731cafe5ca1d"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://docs.pytorch.org/docs/main/generated/torch.nn.utils.clip_grad_norm_.html",
+      "finding": "PyTorch documents that clip_grad_norm_ computes the total norm across parameter gradients, modifies gradients in place, and returns the pre-clipping total norm.",
+      "implementation_consequence": "The trainer reuses the already returned norm rather than adding a second norm pass or backward pass."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v80/chen18a.html",
+      "finding": "GradNorm dynamically changes task loss weights to balance gradient magnitudes and task training rates.",
+      "implementation_consequence": "GradNorm is not enabled without representative evidence that fixed auxiliary weights create harmful imbalance."
+    },
+    {
+      "source": "https://papers.neurips.cc/paper_files/paper/2020/file/3fe78a8acf5fda99de95303940a2420c-Paper.pdf",
+      "finding": "PCGrad defines conflict using negative task-gradient cosine similarity and projects conflicting per-task gradients before the optimizer update.",
+      "implementation_consequence": "Total-gradient norm telemetry is not mislabeled as task-conflict evidence, and PCGrad remains a separately registered future ablation."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v162/navon22a.html",
+      "finding": "Nash-MTL treats per-task gradient combination as a bargaining problem and introduces a distinct joint update procedure.",
+      "implementation_consequence": "Nash-MTL is not introduced as an untested replacement for the current proper-loss objective."
+    }
+  ],
+  "declared_delta": {
+    "gradient_norm_source": "preclipping_total_norm_returned_by_existing_clip_grad_norm_call",
+    "additional_forward_passes_per_optimizer_step": 0,
+    "additional_backward_passes_per_optimizer_step": 0,
+    "additional_gradient_norm_traversals_per_optimizer_step": 0,
+    "additional_device_to_host_scalar_extractions_per_optimizer_step": 0,
+    "additional_training_disk_writes": 0,
+    "epoch_gradient_health_metrics": [
+      "preclip_gradient_norm_minimum",
+      "preclip_gradient_norm_mean",
+      "preclip_gradient_norm_maximum",
+      "zero_gradient_steps",
+      "zero_gradient_fraction",
+      "clipped_gradient_steps",
+      "gradient_clip_fraction",
+      "gradient_clip_norm_limit"
+    ],
+    "zero_gradient_definition": "preclip_total_norm_equal_to_zero",
+    "clipped_gradient_definition": "preclip_total_norm_greater_than_gradient_clip_norm_limit",
+    "nonfinite_gradient_norm_rejected_before_optimizer_step": true,
+    "gradient_health_count_and_range_invariants_enforced": true,
+    "preflight_evidence_exposes_gradient_health": true,
+    "preflight_evidence_validates_count_fraction_coherence": true,
+    "fixed_auxiliary_loss_weights_changed": false,
+    "proper_scoring_losses_changed": false,
+    "target_loss_scaling_changed": false,
+    "optimizer_parameter_updates_changed": false,
+    "gradnorm_enabled": false,
+    "pcgrad_enabled": false,
+    "nash_mtl_enabled": false,
+    "per_task_gradient_norms_measured": false,
+    "per_task_gradient_cosines_measured": false,
+    "gradient_conflict_claim": false,
+    "adaptive_loss_balancing_claim": false,
+    "future_optimizer_ablation_requires_representative_training_evidence": true,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "event_training": "round-074-event-training-v31",
+    "event_pretest_policy": "round-074-event-pretest-policy-v30",
+    "event_training_preflight_run": "round-074-event-training-preflight-run-v8",
+    "event_training_directml_preflight_evidence": "round-074-event-training-directml-preflight-evidence-v20"
+  },
+  "verification": {
+    "focused_tests_passed": 104,
+    "focused_test_files": 9,
+    "segmented_one_step_gradient_health_tested": true,
+    "run_balanced_three_step_gradient_health_tested": true,
+    "gradient_health_count_fraction_coherence_tested": true,
+    "preflight_publisher_rejects_incoherent_gradient_health": true,
+    "dependent_schema_consumers_tested": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "python_compileall_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "directml_preflight_executed_for_this_delta": false,
+    "representative_training_performed": false,
+    "gradient_health_measured_on_representative_data": false,
+    "sealed_test_accessed": false,
+    "campaign_database_opened": false,
+    "network_accessed_by_implementation_tests": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 32,
+    "quarantined_slot_017_counted_as_admitted": false,
+    "slot_038_independently_verified_without_database_reopen": true,
+    "slot_039_state_at_document_time": "running",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "gradient_health_interpretable_for_model_selection": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "e237ecbe4b73450d0f2704484650723b99a55e068e65d8e640bbd72da234eb4a"
+}
