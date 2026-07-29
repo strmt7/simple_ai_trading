@@ -732,6 +732,121 @@ def test_segmented_replay_uses_only_the_audited_epoch_iterator(
         )
 
 
+def test_segmented_matched_replay_uses_one_audited_epoch_for_both_views(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    partition = _partition()
+    entry = partition.entries[0]
+    binding = _binding(entry)
+    observed: list[object] = []
+    engines: list[object] = []
+
+    class _TargetAssembly:
+        def create_engine(self, *, anchors: tuple[object, ...]) -> object:
+            assert anchors == ()
+            engine = object()
+            engines.append(engine)
+            return engine
+
+    class _Assembler:
+        def __init__(self, **kwargs: object) -> None:
+            assert kwargs["run_id"] == entry.run_id
+            assert tuple(kwargs["target_engines"]) == (
+                "per_symbol",
+                "global_cross_asset",
+            )
+
+        def consume(self, observation: object) -> tuple[str, ...]:
+            observed.append(observation)
+            return (f"pair-{observation}",)
+
+        def finish(self) -> tuple[str, ...]:
+            return ("finished-pair",)
+
+    monkeypatch.setattr(subject, "Round74SourceTargetAssembly", _TargetAssembly)
+    monkeypatch.setattr(
+        subject,
+        "Round74MatchedEventDatasetAssembler",
+        _Assembler,
+    )
+    monkeypatch.setattr(
+        subject,
+        "iter_round74_v10_segment_event_observations",
+        lambda store, *, binding: iter(("first", "second")),
+    )
+    store = ImpactAbsorptionStore(":memory:", read_only=True)
+
+    output = tuple(
+        subject.iter_round74_segmented_matched_labeled_event_windows(
+            store,
+            partition=partition,
+            binding=binding,
+            target_assembly=_TargetAssembly(),
+        )
+    )
+
+    assert len(engines) == 2
+    assert engines[0] is not engines[1]
+    assert observed == ["first", "second"]
+    assert output == ("pair-first", "pair-second", "finished-pair")
+
+    test_entry = partition.entries[2]
+    with pytest.raises(ValueError, match="rejects test data"):
+        tuple(
+            subject.iter_round74_segmented_matched_labeled_event_windows(
+                store,
+                partition=partition,
+                binding=_binding(test_entry),
+                target_assembly=_TargetAssembly(),
+            )
+        )
+
+
+def test_segmented_matched_role_accepts_variable_rows_but_requires_exact_pairing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    left = _PreparedBatch(
+        role="training",
+        run_id=("1" * 32,),
+        partition_sha256="a" * 64,
+        scaler_sha256="b" * 64,
+        batch_sha256="c" * 64,
+        decision_wall_ns=np.asarray([_START], dtype=np.int64),
+        window_representation="per_symbol",
+        rows=37,
+    )
+    right = replace(
+        left,
+        batch_sha256="d" * 64,
+        window_representation="global_cross_asset",
+    )
+    monkeypatch.setattr(
+        subject,
+        "_segmented_matched_batches_differ",
+        lambda _left, _right: False,
+    )
+
+    matched = subject.Round74SegmentedMatchedRepresentationRoleBatches(
+        role="training",
+        per_symbol=(left,),
+        global_cross_asset=(right,),
+    )
+    matched.validate()
+
+    with pytest.raises(ValueError, match="identity differs"):
+        replace(
+            matched,
+            global_cross_asset=(replace(right, rows=36),),
+        ).validate()
+    monkeypatch.setattr(
+        subject,
+        "_segmented_matched_batches_differ",
+        lambda _left, _right: True,
+    )
+    with pytest.raises(ValueError, match="identity differs"):
+        matched.validate()
+
+
 def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -923,11 +1038,13 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
             partition=partition,
             target_assembly_by_run_id=assemblies,
             output_directory="unused",
+            matched_preparation_sha256="d" * 64,
         )
         is trained_policy
     )
     assert len(training_calls) == 1
     assert training_calls[0]["config"].execution_mode == "segmented_cohort"
+    assert training_calls[0]["matched_preparation_sha256"] == "d" * 64
     assert (
         tuple(training_calls[0]["execution_target_assembly_by_run_id"])
         == tuning_subpartition.policy_selection_run_ids

@@ -16,6 +16,7 @@ from .impact_absorption_event_action_configuration import (
     select_round74_final_action_configuration,
 )
 from .impact_absorption_event_dataset import (
+    ROUND74_EVENT_WINDOW_REPRESENTATIONS,
     Round74EventRunPartition,
 )
 from .impact_absorption_event_segmented_cohort import (
@@ -23,6 +24,7 @@ from .impact_absorption_event_segmented_cohort import (
 )
 from .impact_absorption_event_scaling import (
     ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+    Round74EventFeatureScaler,
 )
 from .impact_absorption_event_training import Round74EventTrainingConfig
 from .impact_absorption_target_assembly import Round74SourceTargetAssembly
@@ -43,6 +45,8 @@ from .round74_segmented_model_operator import (
     Round74SegmentedTrainingSplit,
     Round74SegmentedTuningSubpartition,
     ROUND74_SEGMENTED_SCALER_FEATURE_CHUNK_ROWS,
+    Round74SegmentedMatchedRepresentationRoleBatches,
+    assemble_round74_segmented_matched_representation_role_batches,
     assemble_round74_segmented_role_batches,
     build_round74_segmented_ai_qualification_population,
     build_round74_segmented_training_split,
@@ -54,6 +58,9 @@ from .round74_segmented_model_operator import (
 
 ROUND74_SEGMENTED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION = (
     "round-074-segmented-development-preparation-v1"
+)
+ROUND74_SEGMENTED_MATCHED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION = (
+    "round-074-segmented-matched-development-preparation-v1"
 )
 ROUND74_SEGMENTED_QUALIFIED_DEVELOPMENT_SCHEMA_VERSION = (
     "round-074-segmented-qualified-development-v4"
@@ -328,6 +335,134 @@ class Round74SegmentedQualifiedDevelopment:
         return payload
 
 
+@dataclass(frozen=True)
+class Round74SegmentedPreparedMatchedDevelopment:
+    """One-scaler, one-replay segmented panel for both representations."""
+
+    partition_sha256: str
+    training_split: Round74SegmentedTrainingSplit
+    tuning_subpartition: Round74SegmentedTuningSubpartition
+    scaler: Round74EventFeatureScaler
+    training: Round74SegmentedMatchedRepresentationRoleBatches
+    tuning: Round74SegmentedMatchedRepresentationRoleBatches
+    schema_version: str = (
+        ROUND74_SEGMENTED_MATCHED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION
+    )
+    sealed_test_accessed: bool = False
+    overlapping_windows_persisted: bool = False
+
+    def validate(self) -> None:
+        self.training_split.validate()
+        self.tuning_subpartition.validate()
+        self.training.validate()
+        self.tuning.validate()
+        if not isinstance(self.scaler, Round74EventFeatureScaler):
+            raise ValueError("Round 74 segmented matched scaler differs")
+        self.scaler.validate()
+        training_run_ids = tuple(batch.run_id[0] for batch in self.training.per_symbol)
+        tuning_run_ids = tuple(batch.run_id[0] for batch in self.tuning.per_symbol)
+        expected_training = (
+            *self.training_split.optimization_run_ids,
+            *self.training_split.purged_run_ids,
+            *self.training_split.early_stopping_run_ids,
+        )
+        expected_tuning = (
+            *self.tuning_subpartition.model_selection_run_ids,
+            *self.tuning_subpartition.calibration_run_ids,
+            *self.tuning_subpartition.policy_selection_run_ids,
+            *self.tuning_subpartition.ai_qualification_run_ids,
+        )
+        batches = (
+            *self.training.per_symbol,
+            *self.training.global_cross_asset,
+            *self.tuning.per_symbol,
+            *self.tuning.global_cross_asset,
+        )
+        if (
+            self.schema_version
+            != ROUND74_SEGMENTED_MATCHED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION
+            or self.partition_sha256 != self.training_split.parent_partition_sha256
+            or self.partition_sha256 != self.tuning_subpartition.parent_partition_sha256
+            or self.training.role != "training"
+            or self.tuning.role != "tuning"
+            or training_run_ids != expected_training
+            or tuning_run_ids != expected_tuning
+            or {batch.partition_sha256 for batch in batches}
+            != {self.partition_sha256}
+            or {batch.scaler_sha256 for batch in batches}
+            != {self.scaler.scaler_sha256}
+            or self.scaler.fit_source_scope
+            != "segmented_optimization_training_runs"
+            or self.scaler.fit_source_run_ids
+            != self.training_split.optimization_run_ids
+            or self.scaler.fit_source_partition_sha256 != self.partition_sha256
+            or self.scaler.fit_source_selection_sha256
+            != self.training_split.split_sha256
+            or not isinstance(self.sealed_test_accessed, bool)
+            or not isinstance(self.overlapping_windows_persisted, bool)
+            or self.sealed_test_accessed
+            or self.overlapping_windows_persisted
+        ):
+            raise ValueError("Round 74 segmented matched preparation differs")
+        if int(self.training.per_symbol[-1].decision_wall_ns[-1]) >= int(
+            self.tuning.per_symbol[0].decision_wall_ns[0]
+        ):
+            raise ValueError("Round 74 segmented matched chronology differs")
+
+    def representation(self, value: str) -> Round74SegmentedPreparedDevelopment:
+        self.validate()
+        selected = str(value)
+        if selected not in ROUND74_EVENT_WINDOW_REPRESENTATIONS:
+            raise ValueError("Round 74 segmented matched representation differs")
+        prepared = Round74PreparedDevelopmentData(
+            scaler=self.scaler,
+            training_batches=getattr(self.training, selected),
+            tuning_batches=getattr(self.tuning, selected),
+        )
+        prepared.validate()
+        tuning_roles = split_round74_prepared_tuning_roles(
+            prepared,
+            subpartition=self.tuning_subpartition,
+        )
+        result = Round74SegmentedPreparedDevelopment(
+            partition_sha256=self.partition_sha256,
+            training_split=self.training_split,
+            tuning_subpartition=self.tuning_subpartition,
+            prepared=prepared,
+            tuning_roles=tuning_roles,
+        )
+        result.validate()
+        return result
+
+    @property
+    def preparation_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict())
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "schema_version": self.schema_version,
+            "partition_sha256": self.partition_sha256,
+            "training_split_sha256": self.training_split.split_sha256,
+            "tuning_subpartition_sha256": self.tuning_subpartition.subpartition_sha256,
+            "feature_scaler_sha256": self.scaler.scaler_sha256,
+            "training_matched_role_sha256": self.training.matched_role_sha256,
+            "tuning_matched_role_sha256": self.tuning.matched_role_sha256,
+            "representations": list(ROUND74_EVENT_WINDOW_REPRESENTATIONS),
+            "source_replay_passes": {
+                "optimization_training_runs": 2,
+                "purged_training_runs": 1,
+                "early_stopping_training_runs": 1,
+                "tuning_runs": 1,
+                "sealed_test_runs": 0,
+            },
+            "target_value_or_outcome_used_for_sampling": False,
+            "overlapping_windows_persisted": False,
+            "sealed_test_accessed": False,
+        }
+
+
 def prepare_round74_segmented_development(
     store: object,
     *,
@@ -428,6 +563,94 @@ def prepare_round74_segmented_development(
     return result
 
 
+def prepare_round74_segmented_matched_development(
+    store: object,
+    *,
+    partition: Round74EventRunPartition,
+    bindings_by_run_id: Mapping[str, Round74SegmentedCohortRunBinding],
+    target_assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
+    scaler_chunk_rows: int = ROUND74_SEGMENTED_SCALER_FEATURE_CHUNK_ROWS,
+    scaler_maximum_fit_rows: int = ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+) -> Round74SegmentedPreparedMatchedDevelopment:
+    """Prepare endpoint-identical per-symbol and cross-asset development views."""
+
+    partition.validate()
+    development_entries = tuple(
+        entry for entry in partition.entries if entry.role != "test"
+    )
+    development_run_ids = tuple(entry.run_id for entry in development_entries)
+    bindings = dict(bindings_by_run_id)
+    assemblies = dict(target_assembly_by_run_id)
+    if (
+        set(bindings) != set(development_run_ids)
+        or set(assemblies) != set(development_run_ids)
+        or any(
+            not isinstance(bindings[entry.run_id], Round74SegmentedCohortRunBinding)
+            or bindings[entry.run_id].role != entry.role
+            for entry in development_entries
+        )
+        or any(
+            not isinstance(assemblies[run_id], Round74SourceTargetAssembly)
+            for run_id in development_run_ids
+        )
+    ):
+        raise ValueError("Round 74 segmented matched development inputs differ")
+    training_bindings = {
+        entry.run_id: bindings[entry.run_id]
+        for entry in development_entries
+        if entry.role == "training"
+    }
+    tuning_bindings = {
+        entry.run_id: bindings[entry.run_id]
+        for entry in development_entries
+        if entry.role == "tuning"
+    }
+    training_assemblies = {run_id: assemblies[run_id] for run_id in training_bindings}
+    tuning_assemblies = {run_id: assemblies[run_id] for run_id in tuning_bindings}
+    training_split = build_round74_segmented_training_split(
+        partition,
+        bindings_by_run_id=training_bindings,
+    )
+    tuning_subpartition = build_round74_segmented_tuning_subpartition(
+        partition,
+        bindings_by_run_id=tuning_bindings,
+    )
+    scaler = fit_round74_segmented_optimization_feature_scaler(
+        store,
+        partition=partition,
+        bindings_by_run_id=training_bindings,
+        training_split=training_split,
+        chunk_rows=scaler_chunk_rows,
+        maximum_fit_rows=scaler_maximum_fit_rows,
+    )
+    training = assemble_round74_segmented_matched_representation_role_batches(
+        store,
+        partition=partition,
+        bindings_by_run_id=training_bindings,
+        scaler=scaler,
+        role="training",
+        target_assembly_by_run_id=training_assemblies,
+    )
+    tuning = assemble_round74_segmented_matched_representation_role_batches(
+        store,
+        partition=partition,
+        bindings_by_run_id=tuning_bindings,
+        scaler=scaler,
+        role="tuning",
+        target_assembly_by_run_id=tuning_assemblies,
+    )
+    result = Round74SegmentedPreparedMatchedDevelopment(
+        partition_sha256=partition.partition_sha256,
+        training_split=training_split,
+        tuning_subpartition=tuning_subpartition,
+        scaler=scaler,
+        training=training,
+        tuning=tuning,
+    )
+    result.validate()
+    return result
+
+
 def train_round74_segmented_development_policy(
     preparation: Round74SegmentedPreparedDevelopment,
     *,
@@ -438,6 +661,7 @@ def train_round74_segmented_development_policy(
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
     inference_minibatch_rows: int = 128,
+    matched_preparation_sha256: str | None = None,
 ) -> Round74DevelopmentPolicyArtifact:
     """Train, calibrate, and select ML policies from one preparation."""
 
@@ -471,6 +695,7 @@ def train_round74_segmented_development_policy(
         config=selected_config,
         inference_minibatch_rows=inference_minibatch_rows,
         segmented_training_split=preparation.training_split,
+        matched_preparation_sha256=matched_preparation_sha256,
     )
 
 
@@ -564,10 +789,13 @@ def train_and_qualify_round74_segmented_development(
 
 __all__ = [
     "ROUND74_SEGMENTED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION",
+    "ROUND74_SEGMENTED_MATCHED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_QUALIFIED_DEVELOPMENT_SCHEMA_VERSION",
+    "Round74SegmentedPreparedMatchedDevelopment",
     "Round74SegmentedPreparedDevelopment",
     "Round74SegmentedQualifiedDevelopment",
     "prepare_round74_segmented_development",
+    "prepare_round74_segmented_matched_development",
     "train_and_qualify_round74_segmented_development",
     "train_round74_segmented_development_policy",
 ]

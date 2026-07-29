@@ -19,6 +19,7 @@ from .impact_absorption_event_dataset import (
     Round74EventRunPartitionEntry,
     Round74EventTrainingBatch,
     Round74LabeledEventWindow,
+    Round74MatchedEventDatasetAssembler,
     Round74MatchedEventWindowPair,
     build_round74_event_training_batch,
 )
@@ -46,6 +47,9 @@ if TYPE_CHECKING:
 
 ROUND74_SEGMENTED_WINDOW_SELECTION_SCHEMA_VERSION = (
     "round-074-segmented-duration-normalized-window-selection-v1"
+)
+ROUND74_SEGMENTED_MATCHED_ROLE_SCHEMA_VERSION = (
+    "round-074-segmented-matched-representation-role-v1"
 )
 ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS = 3_289_500_000_000
 ROUND74_SEGMENTED_REFERENCE_WINDOWS_PER_SYMBOL = 256
@@ -1569,6 +1573,241 @@ def assemble_round74_segmented_role_batches(
     return tuple(batches)
 
 
+def iter_round74_segmented_matched_labeled_event_windows(
+    store: object,
+    *,
+    partition: Round74EventRunPartition,
+    binding: Round74SegmentedCohortRunBinding,
+    target_assembly: Round74SourceTargetAssembly,
+) -> Iterator[Round74MatchedEventWindowPair]:
+    """Replay one development epoch once into endpoint-identical views."""
+
+    selected_store = _require_read_only_store(store)
+    partition.validate()
+    entry = partition.entry(binding.run_id)
+    _validate_binding_entry(binding, entry)
+    if entry.role == "test":
+        raise ValueError("Round 74 segmented matched replay rejects test data")
+    if not isinstance(target_assembly, Round74SourceTargetAssembly):
+        raise TypeError("Round 74 segmented matched target assembly differs")
+    assembler = Round74MatchedEventDatasetAssembler(
+        partition=partition,
+        run_id=entry.run_id,
+        target_engines={
+            representation: target_assembly.create_engine(anchors=())
+            for representation in ROUND74_EVENT_WINDOW_REPRESENTATIONS
+        },
+    )
+    for observation in iter_round74_v10_segment_event_observations(
+        selected_store,
+        binding=binding,
+    ):
+        yield from assembler.consume(observation)
+    yield from assembler.finish()
+
+
+def _segmented_matched_batch_endpoint_sha256(
+    batch: Round74EventTrainingBatch,
+) -> str:
+    return _canonical_sha256(
+        {
+            "role": batch.role,
+            "partition_sha256": batch.partition_sha256,
+            "scaler_sha256": batch.scaler_sha256,
+            "run_id": list(batch.run_id),
+            "symbol": list(batch.symbol),
+            "decision_monotonic_ns": batch.decision_monotonic_ns.tolist(),
+            "decision_wall_ns": batch.decision_wall_ns.tolist(),
+            "endpoint_frame_index": batch.endpoint_frame_index.tolist(),
+            "endpoint_message_index": batch.endpoint_message_index.tolist(),
+            "anchor_index": batch.anchor_index.tolist(),
+            "target_context_sha256": list(batch.target_context_sha256),
+            "test_access_sha256": list(batch.test_access_sha256),
+        }
+    )
+
+
+def _segmented_matched_batches_differ(
+    left: Round74EventTrainingBatch,
+    right: Round74EventTrainingBatch,
+) -> bool:
+    scalar_or_tuple_fields = (
+        "role",
+        "partition_sha256",
+        "scaler_sha256",
+        "run_id",
+        "symbol",
+        "target_context_sha256",
+        "test_access_sha256",
+    )
+    identity_arrays = (
+        "decision_monotonic_ns",
+        "decision_wall_ns",
+        "endpoint_frame_index",
+        "endpoint_message_index",
+        "anchor_index",
+    )
+    target_arrays = (
+        "actual_entry_monotonic_ns",
+        "actual_exit_monotonic_ns",
+        "net_payoff_bps",
+        "maximum_adverse_excursion_bps",
+        "adverse_selection",
+        "regime_unpredictability",
+        "action_eligibility",
+        "regime_unpredictability_eligibility",
+    )
+    return (
+        any(getattr(left, name) != getattr(right, name) for name in scalar_or_tuple_fields)
+        or any(
+            not np.array_equal(getattr(left, name), getattr(right, name))
+            for name in identity_arrays
+        )
+        or any(
+            not np.array_equal(
+                getattr(left, name),
+                getattr(right, name),
+                equal_nan=True,
+            )
+            for name in target_arrays
+        )
+    )
+
+
+@dataclass(frozen=True)
+class Round74SegmentedMatchedRepresentationRoleBatches:
+    """Variable-row endpoint- and target-identical segmented batches."""
+
+    role: str
+    per_symbol: tuple[Round74EventTrainingBatch, ...]
+    global_cross_asset: tuple[Round74EventTrainingBatch, ...]
+    schema_version: str = ROUND74_SEGMENTED_MATCHED_ROLE_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        if (
+            self.schema_version != ROUND74_SEGMENTED_MATCHED_ROLE_SCHEMA_VERSION
+            or self.role not in {"training", "tuning"}
+            or not self.per_symbol
+            or len(self.per_symbol) != len(self.global_cross_asset)
+        ):
+            raise ValueError("Round 74 segmented matched role batches differ")
+        run_ids: list[str] = []
+        first_wall_ns: list[int] = []
+        for left, right in zip(
+            self.per_symbol,
+            self.global_cross_asset,
+            strict=True,
+        ):
+            left.validate()
+            right.validate()
+            if (
+                left.role != self.role
+                or left.window_representation != "per_symbol"
+                or right.window_representation != "global_cross_asset"
+                or left.rows < 1
+                or left.rows != right.rows
+                or left.batch_sha256 == right.batch_sha256
+                or _segmented_matched_batches_differ(left, right)
+                or len(set(left.run_id)) != 1
+            ):
+                raise ValueError("Round 74 segmented matched role identity differs")
+            run_ids.append(left.run_id[0])
+            first_wall_ns.append(int(left.decision_wall_ns[0]))
+        if len(run_ids) != len(set(run_ids)) or any(
+            current <= prior
+            for prior, current in zip(first_wall_ns, first_wall_ns[1:])
+        ):
+            raise ValueError("Round 74 segmented matched role chronology differs")
+
+    @property
+    def matched_role_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict())
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "schema_version": self.schema_version,
+            "role": self.role,
+            "representations": list(ROUND74_EVENT_WINDOW_REPRESENTATIONS),
+            "per_symbol_batch_sha256": [
+                batch.batch_sha256 for batch in self.per_symbol
+            ],
+            "global_cross_asset_batch_sha256": [
+                batch.batch_sha256 for batch in self.global_cross_asset
+            ],
+            "endpoint_panel_sha256": [
+                _segmented_matched_batch_endpoint_sha256(batch)
+                for batch in self.per_symbol
+            ],
+            "rows": sum(batch.rows for batch in self.per_symbol),
+            "source_replay_passes_per_run": 1,
+            "target_value_or_outcome_used_for_sampling": False,
+            "sealed_test_role_accessed": False,
+            "window_selection_policy": round74_segmented_window_policy(),
+        }
+
+
+def assemble_round74_segmented_matched_representation_role_batches(
+    store: object,
+    *,
+    partition: Round74EventRunPartition,
+    bindings_by_run_id: Mapping[str, Round74SegmentedCohortRunBinding],
+    scaler: Round74EventFeatureScaler,
+    role: str,
+    target_assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
+) -> Round74SegmentedMatchedRepresentationRoleBatches:
+    """Replay one segmented development role once into both representations."""
+
+    selected_store = _require_read_only_store(store)
+    partition.validate()
+    selected_role = str(role)
+    if selected_role not in {"training", "tuning"}:
+        raise ValueError("Round 74 segmented matched role must be development data")
+    entries = tuple(entry for entry in partition.entries if entry.role == selected_role)
+    expected = {entry.run_id for entry in entries}
+    bindings = dict(bindings_by_run_id)
+    assemblies = dict(target_assembly_by_run_id)
+    if set(bindings) != expected or set(assemblies) != expected:
+        raise ValueError("Round 74 segmented matched role panel differs")
+    batches: dict[str, list[Round74EventTrainingBatch]] = {
+        representation: []
+        for representation in ROUND74_EVENT_WINDOW_REPRESENTATIONS
+    }
+    for entry in entries:
+        binding = bindings[entry.run_id]
+        _validate_binding_entry(binding, entry)
+        assembly = assemblies[entry.run_id]
+        if not isinstance(assembly, Round74SourceTargetAssembly):
+            raise TypeError("Round 74 segmented matched target assembly differs")
+        pairs = select_round74_segmented_matched_event_windows(
+            iter_round74_segmented_matched_labeled_event_windows(
+                selected_store,
+                partition=partition,
+                binding=binding,
+                target_assembly=assembly,
+            ),
+            entry=entry,
+        )
+        expected_rows = len(IMPACT_CAPTURE_SYMBOLS) * round74_segmented_windows_per_symbol(
+            entry
+        )
+        for representation in ROUND74_EVENT_WINDOW_REPRESENTATIONS:
+            samples = tuple(getattr(pair, representation) for pair in pairs)
+            batch = build_round74_event_training_batch(samples, scaler=scaler)
+            batch.validate()
+            if batch.rows != expected_rows:
+                raise ValueError("Round 74 segmented matched batch rows differ")
+            batches[representation].append(batch)
+    result = Round74SegmentedMatchedRepresentationRoleBatches(
+        role=selected_role,
+        per_symbol=tuple(batches["per_symbol"]),
+        global_cross_asset=tuple(batches["global_cross_asset"]),
+    )
+    result.validate()
+    return result
+
+
 def select_round74_segmented_event_windows(
     windows: Iterable[Round74LabeledEventWindow],
     *,
@@ -1713,6 +1952,7 @@ __all__ = [
     "ROUND74_SEGMENTED_EARLY_STOPPING_FRACTION_DENOMINATOR",
     "ROUND74_SEGMENTED_MINIMUM_EARLY_STOPPING_RUNS",
     "ROUND74_SEGMENTED_MINIMUM_OPTIMIZATION_RUNS",
+    "ROUND74_SEGMENTED_MATCHED_ROLE_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS",
     "ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS",
@@ -1724,9 +1964,11 @@ __all__ = [
     "ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS",
     "ROUND74_SEGMENTED_WINDOW_SELECTION_SCHEMA_VERSION",
     "Round74SegmentedModelSelectionStages",
+    "Round74SegmentedMatchedRepresentationRoleBatches",
     "Round74SegmentedTestPopulation",
     "Round74SegmentedTrainingSplit",
     "Round74SegmentedTuningSubpartition",
+    "assemble_round74_segmented_matched_representation_role_batches",
     "assemble_round74_segmented_role_batches",
     "build_round74_segmented_model_selection_stages",
     "build_round74_segmented_ai_qualification_population",
@@ -1736,6 +1978,7 @@ __all__ = [
     "build_round74_segmented_tuning_subpartition",
     "fit_round74_segmented_optimization_feature_scaler",
     "iter_round74_segmented_labeled_event_windows",
+    "iter_round74_segmented_matched_labeled_event_windows",
     "iter_round74_segmented_optimization_feature_chunks",
     "round74_segmented_window_policy",
     "round74_segmented_windows_per_symbol",
