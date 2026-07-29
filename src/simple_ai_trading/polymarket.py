@@ -1,4 +1,4 @@
-"""Strict public Polymarket market discovery for BTC/ETH/SOL five-minute paper trading."""
+"""Strict public Polymarket short-horizon crypto market discovery."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import hashlib
 import json
 import re
 from threading import Lock
-from typing import Mapping, Sequence
+from typing import Callable, Mapping, Sequence, TypeVar
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -19,6 +19,9 @@ from .paper_execution import BookLevel, PaperBookSnapshot, PolymarketFeeModel
 
 
 POLYMARKET_MARKET_SCHEMA_VERSION = "polymarket-crypto-5m-market-v1"
+POLYMARKET_FIFTEEN_MINUTE_MARKET_SCHEMA_VERSION = (
+    "polymarket-crypto-15m-market-v1"
+)
 # Polymarket identifies this independently from the general ``seconds_delay``
 # field. See the official 2026-06-05 CLOB maintenance record.
 POLYMARKET_TAKER_ORDER_DELAY_MS = 250
@@ -27,6 +30,7 @@ GAMMA_MARKETS_URL = "https://gamma-api.polymarket.com/markets"
 CLOB_BASE_URL = "https://clob.polymarket.com"
 POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION = 2
 _SLUG = re.compile(r"^(btc|eth|sol)-updown-5m-([0-9]{10})$")
+_FIFTEEN_MINUTE_SLUG = re.compile(r"^(btc)-updown-15m-([0-9]{10})$")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _TOKEN_ID = re.compile(r"^[0-9]{20,80}$")
 _RESOLUTION_PATH = {
@@ -158,9 +162,17 @@ class PolymarketFiveMinuteMarket:
     def token_ids(self) -> tuple[str, str]:
         return self.up_token_id, self.down_token_id
 
+    @property
+    def horizon_minutes(self) -> int:
+        return 5
+
+    @property
+    def schema_version(self) -> str:
+        return POLYMARKET_MARKET_SCHEMA_VERSION
+
     def asdict(self) -> dict[str, object]:
         return {
-            "schema_version": POLYMARKET_MARKET_SCHEMA_VERSION,
+            "schema_version": self.schema_version,
             "asset": self.asset,
             "market_id": self.market_id,
             "condition_id": self.condition_id,
@@ -184,18 +196,40 @@ class PolymarketFiveMinuteMarket:
         }
 
 
-def parse_polymarket_five_minute_market(
-    payload: Mapping[str, object],
-) -> PolymarketFiveMinuteMarket:
-    """Parse one Gamma object without accepting inferred market metadata."""
+@dataclass(frozen=True)
+class PolymarketFifteenMinuteMarket(PolymarketFiveMinuteMarket):
+    """A separately typed BTC 15-minute contract with shared CLOB semantics."""
 
+    @property
+    def horizon_minutes(self) -> int:
+        return 15
+
+    @property
+    def schema_version(self) -> str:
+        return POLYMARKET_FIFTEEN_MINUTE_MARKET_SCHEMA_VERSION
+
+    def asdict(self) -> dict[str, object]:
+        payload = super().asdict()
+        payload["horizon_minutes"] = self.horizon_minutes
+        return payload
+
+
+_MarketT = TypeVar("_MarketT", bound=PolymarketFiveMinuteMarket)
+
+
+def _parse_polymarket_short_horizon_market(
+    payload: Mapping[str, object],
+    *,
+    slug_pattern: re.Pattern[str],
+    duration_ms: int,
+    market_type: type[PolymarketFiveMinuteMarket],
+    horizon_label: str,
+) -> PolymarketFiveMinuteMarket:
     raw = dict(payload)
     slug = str(raw.get("slug") or "").strip().lower()
-    match = _SLUG.fullmatch(slug)
+    match = slug_pattern.fullmatch(slug)
     if match is None:
-        raise ValueError(
-            "market slug is not a supported BTC/ETH/SOL five-minute market"
-        )
+        raise ValueError(f"market slug is not a supported {horizon_label} market")
     asset = match.group(1).upper()
     slug_epoch_ms = int(match.group(2)) * 1_000
     if raw.get("active") is not True or raw.get("closed") is not False:
@@ -204,8 +238,8 @@ def parse_polymarket_five_minute_market(
         raise ValueError("market order book is not accepting orders")
     event_start_ms = _utc_ms(raw.get("eventStartTime"), name="eventStartTime")
     end_ms = _utc_ms(raw.get("endDate"), name="endDate")
-    if event_start_ms != slug_epoch_ms or end_ms - event_start_ms != 300_000:
-        raise ValueError("slug epoch and exact five-minute event window disagree")
+    if event_start_ms != slug_epoch_ms or end_ms - event_start_ms != duration_ms:
+        raise ValueError(f"slug epoch and exact {horizon_label} event window disagree")
     condition_id = str(raw.get("conditionId") or "").strip().lower()
     if not _CONDITION_ID.fullmatch(condition_id):
         raise ValueError("conditionId is invalid")
@@ -272,7 +306,7 @@ def parse_polymarket_five_minute_market(
     if not question or len(question) > 500:
         raise ValueError("market question is invalid")
     canonical = _canonical_json(raw)
-    return PolymarketFiveMinuteMarket(
+    return market_type(
         asset=asset,
         market_id=market_id,
         condition_id=condition_id,
@@ -297,6 +331,37 @@ def parse_polymarket_five_minute_market(
         gamma_payload_sha256=hashlib.sha256(canonical.encode("ascii")).hexdigest(),
         gamma_payload_json=canonical,
     )
+
+
+def parse_polymarket_five_minute_market(
+    payload: Mapping[str, object],
+) -> PolymarketFiveMinuteMarket:
+    """Parse one Gamma object without accepting inferred market metadata."""
+
+    return _parse_polymarket_short_horizon_market(
+        payload,
+        slug_pattern=_SLUG,
+        duration_ms=300_000,
+        market_type=PolymarketFiveMinuteMarket,
+        horizon_label="BTC/ETH/SOL five-minute",
+    )
+
+
+def parse_polymarket_fifteen_minute_market(
+    payload: Mapping[str, object],
+) -> PolymarketFifteenMinuteMarket:
+    """Parse one active BTC 15-minute Gamma object without inferred metadata."""
+
+    parsed = _parse_polymarket_short_horizon_market(
+        payload,
+        slug_pattern=_FIFTEEN_MINUTE_SLUG,
+        duration_ms=900_000,
+        market_type=PolymarketFifteenMinuteMarket,
+        horizon_label="BTC fifteen-minute",
+    )
+    if not isinstance(parsed, PolymarketFifteenMinuteMarket):
+        raise AssertionError("fifteen-minute parser returned the wrong market type")
+    return parsed
 
 
 def validate_clob_market_info(
@@ -485,25 +550,76 @@ class PolymarketPublicClient:
         require_all_assets: bool = True,
         assets: Sequence[str] | None = None,
     ) -> tuple[PolymarketFiveMinuteMarket, ...]:
-        now = int(now_ms)
-        if now < 0:
-            raise ValueError("now_ms must be non-negative")
         selected_assets = (
             SUPPORTED_POLYMARKET_ASSETS
             if assets is None
             else tuple(str(asset or "").strip().upper() for asset in assets)
         )
+        return self._discover_short_horizon_markets(
+            now_ms=now_ms,
+            include_next=include_next,
+            require_all_assets=require_all_assets,
+            selected_assets=selected_assets,
+            supported_assets=SUPPORTED_POLYMARKET_ASSETS,
+            interval_seconds=300,
+            slug_horizon="5m",
+            parser=parse_polymarket_five_minute_market,
+        )
+
+    def discover_fifteen_minute_markets(
+        self,
+        *,
+        now_ms: int,
+        include_next: bool = True,
+        require_market: bool = True,
+    ) -> tuple[PolymarketFifteenMinuteMarket, ...]:
+        """Discover active BTC 15-minute markets without fixed market identities."""
+
+        return self._discover_short_horizon_markets(
+            now_ms=now_ms,
+            include_next=include_next,
+            require_all_assets=require_market,
+            selected_assets=("BTC",),
+            supported_assets=("BTC",),
+            interval_seconds=900,
+            slug_horizon="15m",
+            parser=parse_polymarket_fifteen_minute_market,
+        )
+
+    def _discover_short_horizon_markets(
+        self,
+        *,
+        now_ms: int,
+        include_next: bool,
+        require_all_assets: bool,
+        selected_assets: Sequence[str],
+        supported_assets: Sequence[str],
+        interval_seconds: int,
+        slug_horizon: str,
+        parser: Callable[[Mapping[str, object]], _MarketT],
+    ) -> tuple[_MarketT, ...]:
+        now = int(now_ms)
+        if now < 0:
+            raise ValueError("now_ms must be non-negative")
+        selected = tuple(
+            str(asset or "").strip().upper() for asset in selected_assets
+        )
         if (
-            not selected_assets
-            or len(set(selected_assets)) != len(selected_assets)
-            or any(asset not in SUPPORTED_POLYMARKET_ASSETS for asset in selected_assets)
+            not selected
+            or len(set(selected)) != len(selected)
+            or any(asset not in supported_assets for asset in selected)
         ):
             raise ValueError("Polymarket discovery assets are invalid")
-        base_epoch = now // 300_000 * 300
-        epochs = (base_epoch, base_epoch + 300) if include_next else (base_epoch,)
+        interval_ms = interval_seconds * 1_000
+        base_epoch = now // interval_ms * interval_seconds
+        epochs = (
+            (base_epoch, base_epoch + interval_seconds)
+            if include_next
+            else (base_epoch,)
+        )
         slugs = [
-            f"{asset.lower()}-updown-5m-{epoch}"
-            for asset in selected_assets
+            f"{asset.lower()}-updown-{slug_horizon}-{epoch}"
+            for asset in selected
             for epoch in epochs
         ]
         params = [("slug", slug) for slug in slugs]
@@ -514,7 +630,7 @@ class PolymarketPublicClient:
         markets = tuple(
             sorted(
                 (
-                    parse_polymarket_five_minute_market(row)
+                    parser(row)
                     for row in response
                     if isinstance(row, Mapping)
                 ),
@@ -526,11 +642,13 @@ class PolymarketPublicClient:
         if duplicates or unexpected:
             raise ValueError("Gamma returned duplicate or unrequested markets")
         if require_all_assets:
-            assets = {market.asset for market in markets if market.end_ms > now}
-            missing = sorted(set(selected_assets) - assets)
+            discovered_assets = {
+                market.asset for market in markets if market.end_ms > now
+            }
+            missing = sorted(set(selected) - discovered_assets)
             if missing:
                 raise ValueError(
-                    f"active five-minute markets missing for: {','.join(missing)}"
+                    f"active {slug_horizon} markets missing for: {','.join(missing)}"
                 )
         return markets
 
@@ -612,14 +730,17 @@ class PolymarketPublicClient:
 __all__ = [
     "CLOB_BASE_URL",
     "GAMMA_MARKETS_URL",
+    "POLYMARKET_FIFTEEN_MINUTE_MARKET_SCHEMA_VERSION",
     "POLYMARKET_MARKET_SCHEMA_VERSION",
     "POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION",
     "POLYMARKET_TAKER_ORDER_DELAY_MS",
     "SUPPORTED_POLYMARKET_ASSETS",
     "PolymarketFeeSchedule",
+    "PolymarketFifteenMinuteMarket",
     "PolymarketFiveMinuteMarket",
     "PolymarketPublicClient",
     "parse_clob_general_order_delay_seconds",
+    "parse_polymarket_fifteen_minute_market",
     "parse_polymarket_five_minute_market",
     "validate_clob_order_book",
     "validate_clob_market_info",
