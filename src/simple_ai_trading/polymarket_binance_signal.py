@@ -78,7 +78,7 @@ def parse_binance_btc_public_tick(
             payload.get("T"),
             name="Futures transaction time",
         )
-        if transaction_time > event_time_ms + 1_000:
+        if transaction_time > event_time_ms:
             raise ValueError("Binance Futures transaction time is invalid")
     else:
         raise ValueError("unsupported Binance public signal source")

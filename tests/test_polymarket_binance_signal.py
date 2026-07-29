@@ -120,6 +120,11 @@ def test_parse_documented_spot_and_futures_payloads() -> None:
             _futures().replace('"bookTicker"', '"trade"'),
             "book ticker",
         ),
+        (
+            "BINANCE_USD_M_FUTURES",
+            _futures().replace(str(NOW_MS - 95), str(NOW_MS)),
+            "transaction time",
+        ),
     ],
 )
 def test_parser_rejects_wrong_or_unsafe_payloads(
