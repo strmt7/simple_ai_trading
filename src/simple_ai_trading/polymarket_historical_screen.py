@@ -1138,7 +1138,26 @@ class HistoricalScreenStore:
         start, end = _day_bounds(day)
         if day not in self.contract.eligible_days:
             raise ValueError("historical identity checkpoint day is outside scope")
-        if day in self.complete_identity_days():
+        terminal = self._connection.execute(
+            """
+            SELECT count(*) FROM feature.gamma_page_receipt
+            WHERE day = ? AND next_cursor_sha256 = ?
+            """,
+            [day, "0" * 64],
+        ).fetchone()
+        market_count = self._connection.execute(
+            """
+            SELECT count(*) FROM feature.market_identity
+            WHERE event_start_ms >= ? AND event_start_ms < ?
+            """,
+            [start, end],
+        ).fetchone()
+        if (
+            terminal is not None
+            and int(terminal[0]) > 0
+            and market_count is not None
+            and int(market_count[0]) == self.contract.required_market_count_per_day
+        ):
             raise ValueError("complete historical identity day cannot be reset")
         self._connection.execute("BEGIN TRANSACTION")
         try:
