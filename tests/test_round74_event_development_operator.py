@@ -178,6 +178,11 @@ class _EpistemicReport:
     policy_selection_batch_sha256: tuple[str, ...]
     tuning_subpartition_sha256: str = _Subpartition.subpartition_sha256
     probability_calibration_sha256: str = _Calibration.calibration_sha256
+    policy_challenge_eligible: bool = False
+    policy_selection_run_ids: tuple[str, ...] = ()
+    model_output_sha256: tuple[str, ...] = ()
+    peer_count: int = 3
+    report_sha256: str = "e" * 64
 
     def validate(self) -> None:
         return None
@@ -187,7 +192,7 @@ class _EpistemicReport:
             "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "policy_selection_batch_sha256": list(self.policy_selection_batch_sha256),
-            "policy_challenge_eligible": False,
+            "policy_challenge_eligible": self.policy_challenge_eligible,
         }
 
 
@@ -205,6 +210,10 @@ class _Policy:
         self.target_batch_sha256 = target_sha256
         self.execution_outcome_panel_sha256 = execution_outcome_panel_sha256
         self.optimization_population = "capture_run"
+        self.accepted = True
+        self.selection_sha256 = _digest(
+            900 + subject.ROUND74_ACTION_PROFILES.index(profile)
+        )
 
     def validate(self) -> None:
         return None
@@ -214,6 +223,38 @@ class _Policy:
             "profile": self.profile,
             "target_batch_sha256": list(self.target_batch_sha256),
             "execution_outcome_panel_sha256": (self.execution_outcome_panel_sha256),
+        }
+
+
+@dataclass(frozen=True)
+class _EpistemicFilter:
+    profile: str
+    risk_coverage_report_sha256: str
+    tuning_subpartition_sha256: str
+    probability_calibration_sha256: str
+    source_run_ids: tuple[str, ...]
+    source_batch_sha256: tuple[str, ...]
+    source_model_output_sha256: tuple[str, ...]
+    peer_count: int
+
+
+@dataclass(frozen=True)
+class _EpistemicChallenge:
+    profile: str
+    action_filter: _EpistemicFilter
+    baseline_policy_selection_sha256: str
+    execution_panel_sha256: str
+
+    def validate(self) -> None:
+        return None
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "profile": self.profile,
+            "baseline_policy_selection_sha256": (
+                self.baseline_policy_selection_sha256
+            ),
+            "execution_panel_sha256": self.execution_panel_sha256,
         }
 
 
@@ -351,6 +392,8 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
     roles = _Roles()
     inference_calls: list[_Batch] = []
     derivations: list[tuple[object, str]] = []
+    filter_calls: list[str] = []
+    challenge_calls: list[tuple[str, tuple[object, ...]]] = []
 
     monkeypatch.setattr(
         subject,
@@ -397,11 +440,49 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         subject,
         "evaluate_round74_epistemic_risk_coverage",
         lambda batches, *, expected_policy_selection_run_ids: (
-            _EpistemicReport(tuple(batch.batch_sha256 for batch in batches))
+            _EpistemicReport(
+                tuple(batch.batch_sha256 for batch in batches),
+                policy_challenge_eligible=True,
+                policy_selection_run_ids=(
+                    roles.subpartition.policy_selection_run_ids
+                ),
+                model_output_sha256=tuple(
+                    batch.model_output_sha256 for batch in batches
+                ),
+            )
             if tuple(expected_policy_selection_run_ids)
             == roles.subpartition.policy_selection_run_ids
             else pytest.fail("epistemic run panel differs")
         ),
+    )
+
+    def fit_epistemic_filter(
+        batches: tuple[_EpistemicBatch, ...],
+        report: _EpistemicReport,
+        *,
+        profile: str,
+    ) -> _EpistemicFilter:
+        filter_calls.append(profile)
+        assert tuple(batch.batch_sha256 for batch in batches) == (
+            report.policy_selection_batch_sha256
+        )
+        return _EpistemicFilter(
+            profile=profile,
+            risk_coverage_report_sha256=report.report_sha256,
+            tuning_subpartition_sha256=report.tuning_subpartition_sha256,
+            probability_calibration_sha256=(
+                report.probability_calibration_sha256
+            ),
+            source_run_ids=report.policy_selection_run_ids,
+            source_batch_sha256=report.policy_selection_batch_sha256,
+            source_model_output_sha256=report.model_output_sha256,
+            peer_count=report.peer_count,
+        )
+
+    monkeypatch.setattr(
+        subject,
+        "fit_round74_epistemic_action_filter",
+        fit_epistemic_filter,
     )
 
     def derive(
@@ -443,6 +524,35 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
 
     monkeypatch.setattr(subject, "select_round74_action_policy_batches", select)
 
+    def evaluate_epistemic_challenge(
+        batches: tuple[_Batch, ...],
+        outputs: tuple[object, ...],
+        candidates: tuple[object, ...],
+        *,
+        risk_coverage_report: _EpistemicReport,
+        action_filter: _EpistemicFilter,
+        baseline_policy: _Policy,
+        execution_panel: _ExecutionPanel,
+    ) -> _EpistemicChallenge:
+        assert tuple(batch.batch_sha256 for batch in batches) == (
+            risk_coverage_report.policy_selection_batch_sha256
+        )
+        assert all(candidate.profile == action_filter.profile for candidate in candidates)
+        assert baseline_policy.profile == action_filter.profile
+        challenge_calls.append((action_filter.profile, outputs))
+        return _EpistemicChallenge(
+            profile=action_filter.profile,
+            action_filter=action_filter,
+            baseline_policy_selection_sha256=baseline_policy.selection_sha256,
+            execution_panel_sha256=execution_panel.panel_sha256,
+        )
+
+    monkeypatch.setattr(
+        subject,
+        "evaluate_round74_epistemic_action_replay_challenge",
+        evaluate_epistemic_challenge,
+    )
+
     result = subject.calibrate_and_select_round74_development_policy(
         roles,  # type: ignore[arg-type]
         pretest_policy_path="unused.json",
@@ -460,6 +570,17 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
     assert len(derivations) == 18
     assert tuple(policy.profile for policy in result.action_policies) == (
         subject.ROUND74_ACTION_PROFILES
+    )
+    assert filter_calls == list(subject.ROUND74_ACTION_PROFILES)
+    assert tuple(
+        challenge.profile for challenge in result.epistemic_action_challenges
+    ) == subject.ROUND74_ACTION_PROFILES
+    assert tuple(profile for profile, _outputs in challenge_calls) == (
+        subject.ROUND74_ACTION_PROFILES
+    )
+    assert all(
+        outputs is challenge_calls[0][1]
+        for _profile, outputs in challenge_calls
     )
     for index in range(6):
         reused = tuple(derivations[profile * 6 + index][0] for profile in range(3))
@@ -592,6 +713,7 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
         policy.sealed_test_accessed is False for policy in result.action_policies
     )
     assert all(policy.profitability_claim is False for policy in result.action_policies)
+    assert result.epistemic_action_challenges == ()
     assert len(result.bundle_sha256) == 64
 
     output = tmp_path / (f"round74-development-policy-{result.bundle_sha256}.json")
@@ -600,6 +722,7 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
     assert restored == result
     assert restored.probability_calibration == result.probability_calibration
     assert restored.action_policies == result.action_policies
+    assert restored.epistemic_action_challenges == ()
 
     duplicate = tmp_path / output.name
     duplicate.write_bytes(

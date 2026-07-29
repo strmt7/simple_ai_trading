@@ -40,6 +40,11 @@ from .impact_absorption_event_epistemic_evaluation import (
     evaluate_round74_epistemic_risk_coverage,
     prepare_round74_epistemic_evaluation_batch,
 )
+from .impact_absorption_event_epistemic_policy import (
+    Round74EpistemicActionReplayChallenge,
+    evaluate_round74_epistemic_action_replay_challenge,
+    fit_round74_epistemic_action_filter,
+)
 from .impact_absorption_event_model import (
     Round74EventEpistemicDiagnostics,
     Round74EventModelOutput,
@@ -74,9 +79,9 @@ from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 from .storage import write_bytes_atomic
 
 
-ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v5"
+ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v6"
 ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION = (
-    "round-074-development-policy-bundle-v6"
+    "round-074-development-policy-bundle-v7"
 )
 
 _SHA256 = "0123456789abcdef"
@@ -128,6 +133,9 @@ def _current_source_sha256() -> dict[str, str]:
         ),
         "epistemic_evaluation_module_sha256": _module_sha256(
             "impact_absorption_event_epistemic_evaluation.py"
+        ),
+        "epistemic_action_policy_module_sha256": _module_sha256(
+            "impact_absorption_event_epistemic_policy.py"
         ),
         "decision_latency_module_sha256": _module_sha256(
             "round74_online_decision_latency.py"
@@ -263,6 +271,10 @@ class Round74DevelopmentPolicyBundle:
     policy_selection_batch_sha256: tuple[str, ...]
     probability_calibration: Round74ProbabilityCalibration
     epistemic_risk_coverage: Round74EpistemicRiskCoverageReport
+    epistemic_action_challenges: tuple[
+        Round74EpistemicActionReplayChallenge,
+        ...,
+    ]
     online_decision_latency: Round74OnlineDecisionLatencyEvidence
     execution_outcome_panel_sha256: tuple[str, ...]
     execution_outcome_panel_rows: tuple[int, ...]
@@ -275,6 +287,7 @@ class Round74DevelopmentPolicyBundle:
     calibration_module_sha256: str
     action_policy_module_sha256: str
     epistemic_evaluation_module_sha256: str
+    epistemic_action_policy_module_sha256: str
     decision_latency_module_sha256: str
     delayed_execution_module_sha256: str
     development_operator_module_sha256: str
@@ -294,6 +307,7 @@ class Round74DevelopmentPolicyBundle:
             self.calibration_module_sha256,
             self.action_policy_module_sha256,
             self.epistemic_evaluation_module_sha256,
+            self.epistemic_action_policy_module_sha256,
             self.decision_latency_module_sha256,
             self.delayed_execution_module_sha256,
             self.development_operator_module_sha256,
@@ -337,6 +351,9 @@ class Round74DevelopmentPolicyBundle:
             "epistemic_evaluation_module_sha256": (
                 self.epistemic_evaluation_module_sha256
             ),
+            "epistemic_action_policy_module_sha256": (
+                self.epistemic_action_policy_module_sha256
+            ),
             "decision_latency_module_sha256": (self.decision_latency_module_sha256),
             "delayed_execution_module_sha256": (self.delayed_execution_module_sha256),
             "development_operator_module_sha256": (
@@ -361,6 +378,16 @@ class Round74DevelopmentPolicyBundle:
             != self.policy_selection_batch_sha256
             or tuple(policy.profile for policy in self.action_policies)
             != ROUND74_ACTION_PROFILES
+            or tuple(
+                challenge.profile for challenge in self.epistemic_action_challenges
+            )
+            != (
+                tuple(
+                    policy.profile for policy in self.action_policies if policy.accepted
+                )
+                if self.epistemic_risk_coverage.policy_challenge_eligible
+                else ()
+            )
             or self.online_decision_latency.pretest_policy_sha256
             != self.pretest_policy_sha256
             or self.online_decision_latency.pretest_model_sha256
@@ -391,6 +418,37 @@ class Round74DevelopmentPolicyBundle:
                 ]
             ):
                 raise ValueError("Round 74 development action policy differs")
+        policy_by_profile = {
+            policy.profile: policy for policy in self.action_policies
+        }
+        for challenge in self.epistemic_action_challenges:
+            challenge.validate()
+            policy = policy_by_profile[challenge.profile]
+            profile_index = ROUND74_ACTION_PROFILES.index(challenge.profile)
+            if (
+                not policy.accepted
+                or challenge.baseline_policy_selection_sha256
+                != policy.selection_sha256
+                or challenge.execution_panel_sha256
+                != self.execution_outcome_panel_sha256[profile_index]
+                or challenge.action_filter.risk_coverage_report_sha256
+                != self.epistemic_risk_coverage.report_sha256
+                or challenge.action_filter.tuning_subpartition_sha256
+                != self.tuning_subpartition_sha256
+                or challenge.action_filter.probability_calibration_sha256
+                != self.probability_calibration.calibration_sha256
+                or challenge.action_filter.source_run_ids
+                != self.epistemic_risk_coverage.policy_selection_run_ids
+                or challenge.action_filter.source_batch_sha256
+                != self.policy_selection_batch_sha256
+                or challenge.action_filter.source_model_output_sha256
+                != self.epistemic_risk_coverage.model_output_sha256
+                or challenge.action_filter.peer_count
+                != self.epistemic_risk_coverage.peer_count
+            ):
+                raise ValueError(
+                    "Round 74 development epistemic challenge differs"
+                )
 
     @property
     def bundle_sha256(self) -> str:
@@ -411,6 +469,10 @@ class Round74DevelopmentPolicyBundle:
             "policy_selection_batch_sha256": list(self.policy_selection_batch_sha256),
             "probability_calibration": self.probability_calibration.as_dict(),
             "epistemic_risk_coverage": self.epistemic_risk_coverage.as_dict(),
+            "epistemic_action_challenges": [
+                challenge.as_dict()
+                for challenge in self.epistemic_action_challenges
+            ],
             "online_decision_latency": self.online_decision_latency.as_dict(),
             "execution_outcome_panels": [
                 {
@@ -447,6 +509,9 @@ class Round74DevelopmentPolicyBundle:
                 "action_policy_module_sha256": self.action_policy_module_sha256,
                 "epistemic_evaluation_module_sha256": (
                     self.epistemic_evaluation_module_sha256
+                ),
+                "epistemic_action_policy_module_sha256": (
+                    self.epistemic_action_policy_module_sha256
                 ),
                 "decision_latency_module_sha256": (self.decision_latency_module_sha256),
                 "delayed_execution_module_sha256": (
@@ -492,6 +557,7 @@ class Round74DevelopmentPolicyBundle:
             "policy_selection_batch_sha256",
             "probability_calibration",
             "epistemic_risk_coverage",
+            "epistemic_action_challenges",
             "online_decision_latency",
             "execution_outcome_panels",
             "action_policies",
@@ -512,6 +578,7 @@ class Round74DevelopmentPolicyBundle:
 
         calibration = payload["probability_calibration"]
         epistemic = payload["epistemic_risk_coverage"]
+        epistemic_challenges = payload["epistemic_action_challenges"]
         latency = payload["online_decision_latency"]
         execution_panels = payload["execution_outcome_panels"]
         policies = payload["action_policies"]
@@ -520,6 +587,11 @@ class Round74DevelopmentPolicyBundle:
         if (
             not isinstance(calibration, Mapping)
             or not isinstance(epistemic, Mapping)
+            or not isinstance(epistemic_challenges, list)
+            or any(
+                not isinstance(item, Mapping)
+                for item in epistemic_challenges
+            )
             or not isinstance(latency, Mapping)
             or not isinstance(execution_panels, list)
             or len(execution_panels) != len(ROUND74_ACTION_PROFILES)
@@ -584,6 +656,10 @@ class Round74DevelopmentPolicyBundle:
                 epistemic_risk_coverage=(
                     Round74EpistemicRiskCoverageReport.from_dict(epistemic)
                 ),
+                epistemic_action_challenges=tuple(
+                    Round74EpistemicActionReplayChallenge.from_dict(item)
+                    for item in epistemic_challenges
+                ),
                 online_decision_latency=(
                     Round74OnlineDecisionLatencyEvidence.from_dict(latency)
                 ),
@@ -601,6 +677,9 @@ class Round74DevelopmentPolicyBundle:
                 action_policy_module_sha256=str(source["action_policy_module_sha256"]),
                 epistemic_evaluation_module_sha256=str(
                     source["epistemic_evaluation_module_sha256"]
+                ),
+                epistemic_action_policy_module_sha256=str(
+                    source["epistemic_action_policy_module_sha256"]
                 ),
                 decision_latency_module_sha256=str(
                     source["decision_latency_module_sha256"]
@@ -859,7 +938,7 @@ def calibrate_and_select_round74_development_policy(
     finally:
         torch.use_deterministic_algorithms(prior_deterministic)
         model.to("cpu")
-    del calibration_outputs, epistemic_batches, policy_outputs
+    del calibration_outputs
     fallback = tuple(
         message
         for message in warning_messages
@@ -891,6 +970,38 @@ def calibrate_and_select_round74_development_policy(
             strict=True,
         )
     )
+    epistemic_action_challenges: tuple[
+        Round74EpistemicActionReplayChallenge,
+        ...,
+    ] = ()
+    if epistemic_risk_coverage.policy_challenge_eligible:
+        selected_challenges: list[Round74EpistemicActionReplayChallenge] = []
+        for profile, panel, policy_selection in zip(
+            ROUND74_ACTION_PROFILES,
+            execution_panels,
+            action_policies,
+            strict=True,
+        ):
+            if not policy_selection.accepted:
+                continue
+            action_filter = fit_round74_epistemic_action_filter(
+                epistemic_batches,
+                epistemic_risk_coverage,
+                profile=profile,
+            )
+            selected_challenges.append(
+                evaluate_round74_epistemic_action_replay_challenge(
+                    tuning_roles.policy_selection_batches,
+                    policy_outputs,
+                    candidates_by_profile[profile],
+                    risk_coverage_report=epistemic_risk_coverage,
+                    action_filter=action_filter,
+                    baseline_policy=policy_selection,
+                    execution_panel=panel,
+                )
+            )
+        epistemic_action_challenges = tuple(selected_challenges)
+    del epistemic_batches, policy_outputs
     source_sha256 = _current_source_sha256()
     result = Round74DevelopmentPolicyBundle(
         pretest_policy_sha256=str(policy["policy_sha256"]),
@@ -908,6 +1019,7 @@ def calibrate_and_select_round74_development_policy(
         ),
         probability_calibration=calibration,
         epistemic_risk_coverage=epistemic_risk_coverage,
+        epistemic_action_challenges=epistemic_action_challenges,
         online_decision_latency=decision_latency,
         execution_outcome_panel_sha256=tuple(
             panel.panel_sha256 for panel in execution_panels
