@@ -252,6 +252,20 @@ class PolymarketBtcFlowBuffer:
     def faults(self) -> tuple[str, ...]:
         return tuple(sorted(self._faults))
 
+    def reset_market(self, market: str) -> None:
+        """Discard one feed epoch so reconnect gaps require a full warmup."""
+
+        normalized = str(market or "").strip().lower()
+        if normalized not in _MARKETS:
+            raise ValueError("shadow flow market is invalid")
+        self._events[normalized].clear()
+        self._identities[normalized].clear()
+        self._last[normalized] = None
+        prefix = f"{normalized}_"
+        self._faults = {
+            fault for fault in self._faults if not fault.startswith(prefix)
+        }
+
     def ingest(self, observation: BtcAggregateTradeObservation) -> bool:
         if not isinstance(observation, BtcAggregateTradeObservation):
             raise TypeError("observation must be BtcAggregateTradeObservation")
