@@ -103,6 +103,7 @@ class FakeClient:
         self.get_order_calls: list[str] = []
         self.get_order_error: Exception | None = None
         self.order_book: object = {}
+        self.market_info: object = {}
         self.tick_size = "0.01"
         self.neg_risk = False
 
@@ -123,6 +124,10 @@ class FakeClient:
     def get_order_book(self, token_id: str) -> object:
         del token_id
         return self.order_book
+
+    def get_clob_market_info(self, condition_id: str) -> object:
+        del condition_id
+        return self.market_info
 
     def get_tick_size(self, token_id: str) -> str:
         del token_id
@@ -355,6 +360,156 @@ def test_exact_order_lookup_rejects_invalid_requested_hash() -> None:
 
     with pytest.raises(ValueError, match="invalid ID"):
         venue.orders_by_id(("not-an-order",))
+
+
+def test_open_quote_walks_exact_asks_and_reconciles_per_level_fees() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    now = int(time.time() * 1_000)
+    client.order_book = {
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "timestamp": str(now),
+        "tick_size": "0.01",
+        "min_order_size": "5",
+        "neg_risk": False,
+        "bids": [{"price": "0.48", "size": "10"}],
+        "asks": [
+            {"price": "0.50", "size": "3"},
+            {"price": "0.51", "size": "4"},
+        ],
+    }
+    client.market_info = {
+        "c": MARKET_ID,
+        "t": [{"t": TOKEN_ID, "o": "Up"}, {"t": "2" * 40, "o": "Down"}],
+        "mos": 5,
+        "mts": 0.01,
+        "fd": {"r": 0.07, "e": 1, "to": True},
+    }
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    quote = venue.open_quote(
+        market_id=MARKET_ID,
+        token_id=TOKEN_ID,
+        outcome="Up",
+        quantity=Decimal("5"),
+        maximum_book_age_ms=1_500,
+    )
+
+    assert quote.limit_price == Decimal("0.51")
+    assert quote.average_price == Decimal("0.504")
+    assert quote.fee_quote == Decimal("0.08749")
+    assert quote.total_quote == Decimal("2.60749")
+    assert quote.fee_per_share == Decimal("0.017498")
+    assert quote.source_age_ms >= 0
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ({"asks": [{"price": "0.50", "size": "4"}]}, "cannot fill"),
+        (
+            {
+                "bids": [{"price": "0.50", "size": "10"}],
+                "asks": [{"price": "0.50", "size": "5"}],
+            },
+            "crossed or locked",
+        ),
+    ],
+)
+def test_open_quote_rejects_non_executable_books(
+    mutation: Mapping[str, object],
+    message: str,
+) -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    now = int(time.time() * 1_000)
+    client.order_book = {
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "timestamp": str(now),
+        "tick_size": "0.01",
+        "min_order_size": "5",
+        "neg_risk": False,
+        "bids": [{"price": "0.48", "size": "10"}],
+        "asks": [{"price": "0.50", "size": "5"}],
+        **mutation,
+    }
+    client.market_info = {
+        "c": MARKET_ID,
+        "t": [{"t": TOKEN_ID, "o": "Up"}],
+        "mos": 5,
+        "mts": 0.01,
+        "fd": {"r": 0.07, "e": 1, "to": True},
+    }
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    with pytest.raises(PolymarketLiveBlocked, match=message):
+        venue.open_quote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            outcome="Up",
+            quantity=Decimal("5"),
+            maximum_book_age_ms=1_500,
+        )
+
+
+def test_open_quote_rejects_market_or_fee_parameter_drift() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    now = int(time.time() * 1_000)
+    client.order_book = {
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "timestamp": str(now),
+        "tick_size": "0.01",
+        "min_order_size": "5",
+        "neg_risk": False,
+        "bids": [{"price": "0.48", "size": "10"}],
+        "asks": [{"price": "0.50", "size": "5"}],
+    }
+    client.market_info = {
+        "c": MARKET_ID,
+        "t": [{"t": TOKEN_ID, "o": "Up"}],
+        "mos": 5,
+        "mts": 0.01,
+        "fd": {"r": 0.07, "e": 1, "to": False},
+    }
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    with pytest.raises(ValueError, match="fee parameters"):
+        venue.open_quote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            outcome="Up",
+            quantity=Decimal("5"),
+            maximum_book_age_ms=1_500,
+        )
+    client.market_info = {
+        **client.market_info,
+        "t": [{"t": "2" * 40, "o": "Down"}],
+        "fd": {"r": 0.07, "e": 1, "to": True},
+    }
+    with pytest.raises(PolymarketLiveBlocked, match="market token differs"):
+        venue.open_quote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            outcome="Up",
+            quantity=Decimal("5"),
+            maximum_book_age_ms=1_500,
+        )
+    client.market_info = {
+        **client.market_info,
+        "t": [{"t": TOKEN_ID, "o": "Down"}],
+    }
+    with pytest.raises(PolymarketLiveBlocked, match="token outcome differs"):
+        venue.open_quote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            outcome="Up",
+            quantity=Decimal("5"),
+            maximum_book_age_ms=1_500,
+        )
 
 
 def test_close_quote_walks_exact_displayed_bids_and_cross_checks_parameters() -> None:
