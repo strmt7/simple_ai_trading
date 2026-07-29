@@ -1,0 +1,162 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v112",
+  "created_at_utc": "2026-07-29T02:43:50Z",
+  "implementation_git_commit": "7de464014c0274400500e8ea4e8baf01218a4540",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v111.json",
+    "file_sha256": "08acb63f12643c1b724eba0517be5019a2431040ff9f89818bd1c17005c88582",
+    "design_sha256": "6509bfb62f662c7a62caf8b2b0371b0402cdcba4d62c8092dcaad6aac6d8bfc4",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "ai_uplift": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+      "sha256": "6df9aacf773697f9dc244add6ffe10c1a177362cb4eb0375c8ab5d5848bb5223"
+    },
+    "sealed_evaluation": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "1fa0dd8617a39094ef88fa2ea8777bd9fba9aca7b018f0f66ad6ce93267c009b"
+    },
+    "ai_uplift_test": {
+      "path": "tests/test_impact_absorption_ai_uplift.py",
+      "sha256": "91b0ac4dd99b224ca52c550174158a00c1d411739c2e88d7e9f18c827c402dfc"
+    },
+    "sealed_evaluation_test": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "d49c1e37756475e3f781bd3ba00dd7762026b7543ce8a631e767161c8c823265"
+    },
+    "historical_v105_contract_test": {
+      "path": "tests/test_round74_event_model_design_v105.py",
+      "sha256": "65ab32aa616c932e0ffc084806e7b4722bc4f2f42ef86ced52831c74401280da"
+    },
+    "historical_v110_contract_test": {
+      "path": "tests/test_round74_event_model_design_v110.py",
+      "sha256": "d3af245aaee98a5e7006f9c623b7de6484902a07bcd38314c2fb327287125e78"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://www.federalreserve.gov/bankinforeg/srletters/sr1107a1.pdf",
+      "finding": "Model changes require parallel outcomes analysis, a range of tests, documented thresholds, and scrutiny of individual models as well as aggregates.",
+      "implementation_consequence": "The AI overlay challenger is compared with the immutable ML baseline at global, capture-run, symbol-horizon, and capture-run-symbol-horizon levels."
+    },
+    {
+      "source": "https://www.bis.org/basel_framework/chapter/MAR/99.htm?inforce=20191215&published=20191215&tldate=20170929",
+      "finding": "Basel backtesting guidance identifies disaggregated sub-portfolio results as useful for locating problems hidden by aggregate trading outcomes.",
+      "implementation_consequence": "A gain elsewhere can no longer offset negative paired after-cost PnL in an observed capture-run-symbol-horizon cell."
+    },
+    {
+      "source": "https://airc.nist.gov/airmf-resources/playbook/measure/",
+      "finding": "NIST recommends disaggregated evaluation, documented segment metrics, thresholds, and monitoring for differences in performance.",
+      "implementation_consequence": "Development and sealed reports retain a complete, ordered, digest-bound cell panel and recompute canonical gate reasons from that evidence."
+    }
+  ],
+  "declared_delta": {
+    "ai_role": "veto_or_reduce_only",
+    "development_report_schema_version": "round-074-ai-uplift-development-v14",
+    "sealed_evaluation_schema_version": "round-074-sealed-evaluation-v22",
+    "new_paired_panel_dimensions": [
+      "capture_run",
+      "symbol",
+      "forecast_horizon_seconds"
+    ],
+    "new_paired_panel_measure": "capital_scaled_after_cost_net_payoff_bps",
+    "every_observed_cell_has_exactly_one_panel_entry": true,
+    "panel_observation_count_reconciles_to_baseline_trace": true,
+    "panel_baseline_sum_reconciles_to_baseline_trace": true,
+    "panel_ai_sum_reconciles_to_ai_overlay": true,
+    "negative_cell_delta_may_be_offset_by_other_cells": false,
+    "capture_run_aggregate_gate_retained": true,
+    "symbol_horizon_aggregate_gate_retained": true,
+    "global_strict_uplift_gate_retained": true,
+    "maximum_drawdown_noninferiority_gate_retained": true,
+    "development_gate_reasons_recomputed_from_evidence": true,
+    "sealed_gate_reasons_recomputed_from_evidence": true,
+    "stored_gate_flags_trusted_without_semantic_recalculation": false,
+    "historical_v105_contract_frozen_to_literal_versions": true,
+    "historical_v110_contract_frozen_to_literal_versions": true,
+    "historical_artifacts_compared_to_moving_runtime_versions": false,
+    "model_parameters_changed": false,
+    "training_objective_changed": false,
+    "forward_passes_added": 0,
+    "backward_passes_added": 0,
+    "market_data_reads_added": 0,
+    "ai_model_calls_added": 0,
+    "action_thresholds_changed": false,
+    "execution_replay_changed": false,
+    "compute_backend_changed": false,
+    "campaign_source_files_changed": false,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "ai_uplift_development": "round-074-ai-uplift-development-v14",
+    "sealed_evaluation": "round-074-sealed-evaluation-v22",
+    "ai_pretest_qualification": "round-074-ai-pretest-qualification-v3",
+    "ai_qualification_operator": "round-074-ai-qualification-operator-v3",
+    "event_model": "round-074-event-payoff-model-v9",
+    "event_training": "round-074-event-training-v33",
+    "event_pretest_policy": "round-074-event-pretest-policy-v32"
+  },
+  "verification": {
+    "unique_tests_passed": 164,
+    "focused_ai_and_sealed_tests_passed": 50,
+    "additional_compatibility_tests_passed": 114,
+    "new_development_masking_counterexample_rejected": true,
+    "new_sealed_masking_counterexample_rejected": true,
+    "capture_run_aggregate_passes_in_masking_counterexamples": true,
+    "symbol_horizon_aggregate_passes_in_masking_counterexamples": true,
+    "run_symbol_horizon_gate_is_decisive_in_masking_counterexamples": true,
+    "stored_gate_reason_tampering_rejected": true,
+    "historical_v105_contract_frozen_to_literals": true,
+    "historical_v110_contract_frozen_to_literals": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "directml_preflight_executed_for_this_delta": false,
+    "representative_training_performed": false,
+    "representative_ai_reviews_executed": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "status_observed_at_utc": "2026-07-29T02:43:50Z",
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 35,
+    "latest_independently_adjudicated_slot": 41,
+    "slot_042_admitted": false,
+    "slot_043_status": "missed",
+    "slot_044_status": "missed",
+    "slot_045_status_at_observation": "scheduled",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_or_wal_hashed_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "subgroup_safeguard_proven_on_synthetic_counterexamples": true,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "quantile_accuracy_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "dadfda1f0afbb7643bc8cc0e8b90067bd18e60a23e84301b597883bc1dc78ea8"
+}
