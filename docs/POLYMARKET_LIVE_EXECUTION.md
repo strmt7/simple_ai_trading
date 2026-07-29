@@ -42,8 +42,22 @@ flowchart LR
   blindly retried.
 - Exact owned-order cancellation only. Account-wide heartbeat, cancel-all, and
   market-wide cancellation are prohibited.
+- Missing FAK/FOK orders are resolved through authenticated exact-ID lookup.
+  Only documented V2 `LIVE`, `INVALID`, `CANCELED_MARKET_RESOLVED`,
+  `CANCELED`, and `MATCHED` states are accepted. Market, token, side, original
+  quantity, matched quantity, and fill evidence must reconcile.
 - Hash-bound order and fill snapshots, an append-only audit chain, exact fill
   economics, cumulative-fill caps, and restart reconciliation.
+- Confirmed BUY fills form parent-specific bot-owned lots. Confirmed and
+  provisional child SELL fills, outstanding close reservations, and
+  redemptions are reconciled per parent, preventing two closes from consuming
+  the same shares.
+- Stop cancels only exact bot-owned hashes, walks a fresh Polymarket bid book
+  for each unreserved lot, cross-checks tick size and negative-risk mode, and
+  submits bounded FAK SELLs. It succeeds only at zero bot-owned inventory and
+  zero bot-owned open orders. Stale books, insufficient depth, sub-minimum
+  dust, ambiguity, or timeout return a nonzero incomplete result with the exact
+  remaining inventory.
 - Hash-bound, numbered redemption attempts. Exact confirmed local inventory
   must equal the dedicated wallet snapshot; every account order must be closed
   and every token for the condition must be redeemable.
@@ -65,7 +79,7 @@ flowchart LR
   contract. `polymarket-live` exposes credential-free local status,
   authenticated preflight and reconciliation, foreground user-stream and
   settlement supervision, exact owned-order cancellation, redemption recovery,
-  and explicitly confirmed redemption.
+  exact owned-position Stop, and explicitly confirmed redemption.
 - Local status does not create a missing ledger. Supervision opens no exposure;
   it runs only the independent authenticated safety and recovery loops.
 
@@ -86,6 +100,7 @@ simple-ai-trading polymarket-live --action status
 simple-ai-trading polymarket-live --action preflight --json
 simple-ai-trading polymarket-live --action supervise
 simple-ai-trading polymarket-live --action cancel-owned
+simple-ai-trading polymarket-live --action stop --stop-timeout-seconds 30
 simple-ai-trading polymarket-live --action recover-redemptions
 ```
 
@@ -111,7 +126,10 @@ submitted.
 
 - [CLOB V2 migration](https://docs.polymarket.com/v2-migration)
 - [Order lifecycle](https://docs.polymarket.com/concepts/order-lifecycle)
+- [Get one authenticated order](https://docs.polymarket.com/api-reference/trade/get-single-order-by-id)
+- [Get the current order book](https://docs.polymarket.com/api-reference/market-data/get-order-book)
 - [Order placement](https://docs.polymarket.com/trading/place-orders)
+- [Trading fees](https://docs.polymarket.com/trading/fees)
 - [Real-time order updates](https://docs.polymarket.com/trading/realtime-order-updates)
 - [Wallets and authentication](https://docs.polymarket.com/trading/wallets-auth)
 - [Manage and redeem positions](https://docs.polymarket.com/trading/positions/manage#redeem-resolved-positions)

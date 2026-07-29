@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from decimal import Decimal
+import hashlib
 import json
 from pathlib import Path
 import sqlite3
@@ -12,6 +13,7 @@ import pytest
 
 from simple_ai_trading.polymarket_live import (
     PolymarketCancelResult,
+    PolymarketCloseQuote,
     PolymarketFundingPreflight,
     PolymarketLiveBlocked,
     PolymarketLiveCoordinator,
@@ -21,6 +23,7 @@ from simple_ai_trading.polymarket_live import (
     PolymarketLiveRiskLimits,
     PolymarketLiveUnknownState,
     PolymarketOwnedInventory,
+    PolymarketOwnedLot,
     PolymarketPreparedOrder,
     PolymarketReconciliation,
     PolymarketRemoteFill,
@@ -122,6 +125,8 @@ class FakeVenue:
         self.open: tuple[PolymarketRemoteOrder, ...] = ()
         self.remote_positions: tuple[PolymarketRemotePosition, ...] = ()
         self.fills: tuple[PolymarketRemoteFill, ...] = ()
+        self.exact_orders: tuple[PolymarketRemoteOrder, ...] = ()
+        self.exact_order_calls: list[tuple[str, ...]] = []
         self.geoblocked = False
         self.closed_only = False
         self.protocol_version = 2
@@ -139,6 +144,8 @@ class FakeVenue:
         self.cancel_error: Exception | None = None
         self.funding_balance = Decimal("100")
         self.funding_allowance = Decimal("100")
+        self.close_quotes: list[PolymarketCloseQuote] = []
+        self.close_quote_calls: list[tuple[str, str, Decimal, int]] = []
 
     def preflight(self) -> PolymarketVenuePreflight:
         return PolymarketVenuePreflight(
@@ -162,10 +169,15 @@ class FakeVenue:
         neg_risk: bool,
     ) -> PolymarketPreparedOrder:
         del tick_size, neg_risk
-        seed = int(intent.intent_id.rsplit("-", 1)[-1])
+        suffix = intent.intent_id.rsplit("-", 1)[-1]
+        order_id = (
+            _order_id(int(suffix))
+            if suffix.isdigit()
+            else "0x" + hashlib.sha256(intent.intent_id.encode("ascii")).hexdigest()
+        )
         return PolymarketPreparedOrder(
             intent=intent,
-            expected_order_id=_order_id(seed),
+            expected_order_id=order_id,
             metadata=intent.metadata,
             opaque_signed_order={
                 "signature": "signed-order-must-never-enter-the-ledger",
@@ -200,6 +212,43 @@ class FakeVenue:
         del market_ids
         requested = set(order_ids)
         return tuple(fill for fill in self.fills if fill.order_id in requested)
+
+    def orders_by_id(
+        self,
+        order_ids: Sequence[str],
+    ) -> tuple[PolymarketRemoteOrder, ...]:
+        requested = tuple(order_ids)
+        self.exact_order_calls.append(requested)
+        requested_set = set(requested)
+        return tuple(
+            order for order in self.exact_orders if order.order_id in requested_set
+        )
+
+    def close_quote(
+        self,
+        *,
+        market_id: str,
+        token_id: str,
+        quantity: Decimal,
+        maximum_book_age_ms: int,
+    ) -> PolymarketCloseQuote:
+        self.close_quote_calls.append(
+            (market_id, token_id, quantity, maximum_book_age_ms)
+        )
+        if self.close_quotes:
+            return self.close_quotes.pop(0)
+        return PolymarketCloseQuote(
+            market_id=market_id,
+            token_id=token_id,
+            quantity=quantity,
+            limit_price=Decimal("0.49"),
+            tick_size=Decimal("0.01"),
+            minimum_order_size=Decimal("0.1"),
+            neg_risk=False,
+            source_time_ms=int(time.time() * 1_000),
+            observed_at_ms=int(time.time() * 1_000),
+            book_payload_sha256="a" * 64,
+        )
 
     def positions(self) -> tuple[PolymarketRemotePosition, ...]:
         return self.remote_positions
@@ -269,6 +318,48 @@ def test_live_credentials_never_render_secrets() -> None:
     assert "0x" + "1" * 64 not in rendered
 
 
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"limit_price": Decimal("0.495")}, "venue tick"),
+        ({"quantity": Decimal("4.9")}, "venue minimum"),
+        ({"source_time_ms": 0}, "chronology"),
+        ({"book_payload_sha256": "bad"}, "payload hash"),
+    ],
+)
+def test_close_quote_value_object_rejects_invalid_evidence(
+    changes: dict[str, object],
+    message: str,
+) -> None:
+    values: dict[str, object] = {
+        "market_id": MARKET_ID,
+        "token_id": TOKEN_ID,
+        "quantity": Decimal("5"),
+        "limit_price": Decimal("0.49"),
+        "tick_size": Decimal("0.01"),
+        "minimum_order_size": Decimal("5"),
+        "neg_risk": False,
+        "source_time_ms": NOW_MS,
+        "observed_at_ms": NOW_MS + 1,
+        "book_payload_sha256": "a" * 64,
+        **changes,
+    }
+    with pytest.raises(ValueError, match=message):
+        PolymarketCloseQuote(**values)  # type: ignore[arg-type]
+
+
+def test_owned_lot_cannot_reserve_more_than_it_owns() -> None:
+    with pytest.raises(ValueError, match="exceeds lot"):
+        PolymarketOwnedLot(
+            parent_intent_id="intent-0001",
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1"),
+            reserved_close_quantity=Decimal("1.1"),
+            provisional=False,
+        )
+
+
 def test_submission_reserves_expected_hash_before_network_and_stores_no_signature(
     tmp_path: Path,
 ) -> None:
@@ -305,6 +396,28 @@ def test_ambiguous_submission_is_never_retried_and_blocks_exposure(
     assert venue.submit_calls == 1
     assert ledger.record("intent-0001").state == "unknown"
     assert coordinator.preflight().can_open is False
+
+
+def test_submission_response_order_id_mismatch_is_unknown(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "submission-id-mismatch.sqlite3")
+    venue = FakeVenue()
+    venue.submission_factory = lambda _prepared: PolymarketSubmission(
+        accepted=True,
+        order_id=_order_id(999),
+        status="live",
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    with pytest.raises(PolymarketLiveUnknownState, match="order ID differs"):
+        coordinator.submit(
+            _intent(),
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+
+    record = ledger.record(_intent().intent_id)
+    assert record.state == "unknown"
+    assert record.failure_code == "venue_order_id_mismatch"
 
 
 @pytest.mark.parametrize("transport_error", [False, True])
@@ -408,16 +521,8 @@ def test_cancellation_targets_only_exact_owned_open_order_ids(tmp_path: Path) ->
 def test_cancel_result_rejects_duplicate_ids(
     result: PolymarketCancelResult,
 ) -> None:
-    values = (
-        (result.cancelled_order_ids[0],) * 2
-        if result.cancelled_order_ids
-        else ()
-    )
-    failures = (
-        (result.failed_order_ids[0],) * 2
-        if result.failed_order_ids
-        else ()
-    )
+    values = (result.cancelled_order_ids[0],) * 2 if result.cancelled_order_ids else ()
+    failures = (result.failed_order_ids[0],) * 2 if result.failed_order_ids else ()
     with pytest.raises(ValueError, match="duplicates"):
         PolymarketCancelResult(values, failures)
 
@@ -458,9 +563,7 @@ def test_incomplete_or_unrequested_cancel_response_fails_closed(
 
     assert ledger.record(intent.intent_id).state == "cancel_unknown"
 
-    second_ledger = PolymarketLiveOrderLedger(
-        tmp_path / "cancel-unrequested.sqlite3"
-    )
+    second_ledger = PolymarketLiveOrderLedger(tmp_path / "cancel-unrequested.sqlite3")
     second_venue = FakeVenue()
     second_intent = _intent(2)
     second_prepared = _seed_live_order(
@@ -531,9 +634,7 @@ def test_cancel_snapshot_compare_and_swap_conflict_stays_fail_closed(
     intent = _intent()
     prepared = _seed_live_order(ledger, venue, intent)
     venue.open = (
-        (_remote_order(intent, prepared.expected_order_id),)
-        if remote_present
-        else ()
+        (_remote_order(intent, prepared.expected_order_id),) if remote_present else ()
     )
     coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
 
@@ -696,6 +797,281 @@ def test_reconciliation_never_associates_fill_by_token_only(tmp_path: Path) -> N
     assert ledger.record(first.intent_id).matched_quantity == Decimal("1")
     assert ledger.record(second.intent_id).state == "unknown"
     assert "unknown_order_state" in gate.errors
+
+
+@pytest.mark.parametrize(
+    ("remote_status", "expected_state"),
+    [
+        ("ORDER_STATUS_CANCELED", "cancelled"),
+        ("ORDER_STATUS_CANCELED_MARKET_RESOLVED", "expired"),
+        ("ORDER_STATUS_INVALID", "rejected"),
+    ],
+)
+def test_exact_terminal_order_proves_zero_fill_without_open_snapshot(
+    tmp_path: Path,
+    remote_status: str,
+    expected_state: str,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / f"{expected_state}.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    venue.exact_orders = (
+        replace(
+            _remote_order(intent, prepared.expected_order_id),
+            status=remote_status,
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    gate = coordinator.reconcile()
+
+    assert venue.exact_order_calls == [(prepared.expected_order_id,)]
+    assert ledger.record(intent.intent_id).state == expected_state
+    assert "unknown_order_state" not in gate.errors
+
+
+def test_terminal_partial_match_waits_for_exact_confirmed_fill(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "terminal-partial.sqlite3")
+    venue = FakeVenue()
+    intent = _intent(quantity="1")
+    prepared = _seed_live_order(ledger, venue, intent)
+    venue.exact_orders = (
+        replace(
+            _remote_order(intent, prepared.expected_order_id, matched="0.4"),
+            status="ORDER_STATUS_CANCELED",
+        ),
+    )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("0.4"),
+            redeemable=False,
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    first_gate = coordinator.reconcile()
+
+    first = ledger.record(intent.intent_id)
+    assert first.state == "matched_pending"
+    assert first.matched_quantity == Decimal("0.4")
+    assert first.failure_code == "terminal_order_awaiting_exact_fill_evidence"
+    assert "unknown_order_state" not in first_gate.errors
+    assert "provisional_fill_state" not in first_gate.errors
+
+    venue.fills = (
+        _fill(
+            intent,
+            prepared.expected_order_id,
+            quantity="0.4",
+            status="MATCHED",
+        ),
+    )
+    second_gate = coordinator.reconcile()
+    assert ledger.record(intent.intent_id).state == "matched_pending"
+    assert "provisional_fill_state" in second_gate.errors
+
+    venue.fills = (
+        _fill(
+            intent,
+            prepared.expected_order_id,
+            quantity="0.4",
+            status="CONFIRMED",
+        ),
+    )
+    final_gate = coordinator.reconcile()
+
+    final = ledger.record(intent.intent_id)
+    assert final.state == "filled"
+    assert final.matched_quantity == Decimal("0.4")
+    assert final.failure_code == ""
+    assert final_gate.ok is True
+
+
+def test_unsupported_exact_order_status_stays_unknown(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "unsupported-status.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    venue.exact_orders = (
+        replace(
+            _remote_order(intent, prepared.expected_order_id),
+            status="ORDER_STATUS_UNDOCUMENTED",
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    gate = coordinator.reconcile()
+
+    record = ledger.record(intent.intent_id)
+    assert record.state == "unknown"
+    assert record.failure_code == "unsupported_remote_order_status"
+    assert "unknown_order_state" in gate.errors
+
+
+def test_unrequested_exact_order_response_is_rejected(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "foreign-exact.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    _seed_live_order(ledger, venue, intent)
+    venue.exact_orders = (_remote_order(intent, _order_id(999)),)
+    venue.orders_by_id = lambda order_ids: venue.exact_orders  # type: ignore[method-assign]
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    with pytest.raises(PolymarketLiveBlocked, match="unrequested"):
+        coordinator.reconcile()
+
+
+def test_duplicate_exact_order_response_is_rejected(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "duplicate-exact.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    exact = _remote_order(intent, prepared.expected_order_id)
+    venue.orders_by_id = lambda order_ids: (exact, exact)  # type: ignore[method-assign]
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    with pytest.raises(PolymarketLiveBlocked, match="duplicate"):
+        coordinator.reconcile()
+
+
+@pytest.mark.parametrize(
+    ("remote_factory", "fill", "failure_code"),
+    [
+        (
+            lambda intent, order_id: replace(
+                _remote_order(intent, order_id),
+                token_id="2" * 40,
+            ),
+            None,
+            "remote_order_identity_mismatch",
+        ),
+        (
+            lambda intent, order_id: _remote_order(intent, order_id),
+            ("0.2", "CONFIRMED"),
+            "remote_order_fill_quantity_mismatch",
+        ),
+        (
+            lambda intent, order_id: replace(
+                _remote_order(intent, order_id, matched="0.2"),
+                status="ORDER_STATUS_INVALID",
+            ),
+            None,
+            "invalid_order_has_fill_evidence",
+        ),
+        (
+            lambda intent, order_id: replace(
+                _remote_order(intent, order_id),
+                status="ORDER_STATUS_MATCHED",
+            ),
+            None,
+            "terminal_order_fill_quantity_mismatch",
+        ),
+    ],
+)
+def test_exact_order_contradictions_remain_unknown(
+    tmp_path: Path,
+    remote_factory: Callable[
+        [PolymarketLiveOrderIntent, str],
+        PolymarketRemoteOrder,
+    ],
+    fill: tuple[str, str] | None,
+    failure_code: str,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / f"{failure_code}.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    if fill is not None:
+        ledger.record_fill(
+            _fill(
+                intent,
+                prepared.expected_order_id,
+                quantity=fill[0],
+                status=fill[1],
+            )
+        )
+        venue.remote_positions = (
+            PolymarketRemotePosition(
+                market_id=MARKET_ID,
+                token_id=TOKEN_ID,
+                quantity=Decimal(fill[0]),
+                redeemable=False,
+            ),
+        )
+    venue.exact_orders = (remote_factory(intent, prepared.expected_order_id),)
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    gate = coordinator.reconcile()
+
+    record = ledger.record(intent.intent_id)
+    assert record.state == "unknown"
+    assert record.failure_code == failure_code
+    assert "unknown_order_state" in gate.errors
+
+
+def test_cancel_uses_exact_live_proof_but_never_queries_foreign_ids(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "exact-live-cancel.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    venue.exact_orders = (
+        replace(
+            _remote_order(intent, prepared.expected_order_id),
+            status="ORDER_STATUS_LIVE",
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    result = coordinator.cancel_owned_open_orders()
+
+    assert venue.exact_order_calls == [(prepared.expected_order_id,)]
+    assert venue.cancel_calls == [(prepared.expected_order_id,)]
+    assert result.cancelled_order_ids == (prepared.expected_order_id,)
+    assert ledger.record(intent.intent_id).state == "cancelled"
+
+
+def test_cancel_rejects_duplicate_exact_order_evidence(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "duplicate-cancel-exact.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    exact = _remote_order(intent, prepared.expected_order_id)
+    venue.orders_by_id = lambda order_ids: (exact, exact)  # type: ignore[method-assign]
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    with pytest.raises(PolymarketLiveBlocked, match="duplicate"):
+        coordinator.cancel_owned_open_orders()
+
+    assert venue.cancel_calls == []
+
+
+def test_cancel_accepts_exact_zero_fill_terminal_proof_without_retry(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "exact-terminal-cancel.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    venue.exact_orders = (
+        replace(
+            _remote_order(intent, prepared.expected_order_id),
+            status="ORDER_STATUS_CANCELED",
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    result = coordinator.cancel_owned_open_orders()
+
+    assert result == PolymarketCancelResult((), ())
+    assert venue.cancel_calls == []
+    assert ledger.record(intent.intent_id).state == "cancelled"
 
 
 def test_unresolved_redemption_blocks_reconciled_exposure(
@@ -938,6 +1314,379 @@ def test_closing_order_requires_matching_confirmed_owned_inventory(
     assert close.intent.parent_intent_id == parent.intent_id
     assert close.intent.closing_only is True
     assert close.state == "live"
+
+
+def test_owned_lots_bind_close_capacity_to_exact_parent(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "parent-lots.sqlite3")
+    venue = FakeVenue()
+    first = _intent(1, quantity="0.4")
+    second = _intent(2, quantity="1")
+    first_prepared = _seed_live_order(ledger, venue, first)
+    second_prepared = _seed_live_order(ledger, venue, second)
+    ledger.record_fill(
+        _fill(first, first_prepared.expected_order_id, quantity="0.4", seed=1)
+    )
+    ledger.record_fill(
+        _fill(second, second_prepared.expected_order_id, quantity="1", seed=2)
+    )
+    for intent in (first, second):
+        ledger.transition(
+            intent.intent_id,
+            expected_states=("live",),
+            state="filled",
+            observed_at_ms=NOW_MS + 10,
+            remote_status="MATCHED",
+            matched_quantity=intent.quantity,
+        )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1.4"),
+            redeemable=False,
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    close = replace(
+        _intent(3, quantity="0.5", side="SELL", closing_only=True),
+        parent_intent_id=first.intent_id,
+    )
+
+    with pytest.raises(PolymarketLiveBlocked, match="unreserved bot-owned lot"):
+        coordinator.submit(close, tick_size=Decimal("0.01"), neg_risk=False)
+
+    assert ledger.owned_lots() == (
+        PolymarketOwnedLot(
+            parent_intent_id=first.intent_id,
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("0.4"),
+            reserved_close_quantity=Decimal("0"),
+            provisional=False,
+        ),
+        PolymarketOwnedLot(
+            parent_intent_id=second.intent_id,
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1"),
+            reserved_close_quantity=Decimal("0"),
+            provisional=False,
+        ),
+    )
+
+
+def test_open_close_reserves_parent_lot_and_cancellation_releases_it(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "close-reservation.sqlite3")
+    venue = FakeVenue()
+    parent = _intent(1)
+    prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, prepared.expected_order_id))
+    ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 10,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("1"),
+    )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1"),
+            redeemable=False,
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    first_close = replace(
+        _intent(2, quantity="0.6", side="SELL", closing_only=True),
+        parent_intent_id=parent.intent_id,
+    )
+
+    submitted = coordinator.submit(
+        first_close,
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+    )
+    lot = ledger.owned_lots()[0]
+    assert lot.reserved_close_quantity == Decimal("0.6")
+    assert lot.available_quantity == Decimal("0.4")
+
+    second_close = replace(
+        _intent(3, quantity="0.5", side="SELL", closing_only=True),
+        parent_intent_id=parent.intent_id,
+    )
+    with pytest.raises(PolymarketLiveBlocked, match="unreserved bot-owned lot"):
+        coordinator.submit(
+            second_close,
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+
+    ledger.transition(
+        submitted.intent.intent_id,
+        expected_states=("live",),
+        state="cancelled",
+        observed_at_ms=NOW_MS + 20,
+        remote_status="CANCELED",
+    )
+    assert ledger.owned_lots()[0].available_quantity == Decimal("1")
+
+
+def test_partial_close_fill_is_provisional_and_reserves_only_remainder(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "partial-close-lot.sqlite3")
+    venue = FakeVenue()
+    parent = _intent(1)
+    parent_prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, parent_prepared.expected_order_id))
+    ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 10,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("1"),
+    )
+    close = replace(
+        _intent(2, quantity="0.6", side="SELL", closing_only=True),
+        parent_intent_id=parent.intent_id,
+    )
+    close_prepared = _seed_live_order(ledger, venue, close)
+    ledger.record_fill(
+        _fill(
+            close,
+            close_prepared.expected_order_id,
+            quantity="0.2",
+            seed=2,
+            status="MATCHED",
+        )
+    )
+
+    provisional = ledger.owned_lots()[0]
+    assert provisional.quantity == Decimal("0.8")
+    assert provisional.reserved_close_quantity == Decimal("0.4")
+    assert provisional.provisional is True
+    assert provisional.available_quantity == Decimal("0")
+
+    ledger.record_fill(
+        _fill(
+            close,
+            close_prepared.expected_order_id,
+            quantity="0.2",
+            seed=2,
+            status="CONFIRMED",
+        )
+    )
+    confirmed = ledger.owned_lots()[0]
+    assert confirmed.quantity == Decimal("0.8")
+    assert confirmed.reserved_close_quantity == Decimal("0.4")
+    assert confirmed.provisional is False
+    assert confirmed.available_quantity == Decimal("0.4")
+
+
+def test_owned_close_uses_fresh_polymarket_quote_for_exact_parent_lot(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "owned-close.sqlite3")
+    venue = FakeVenue()
+    parent = _intent(1, quantity="5")
+    prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, prepared.expected_order_id, quantity="5"))
+    ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 10,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("5"),
+    )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            redeemable=False,
+        ),
+    )
+    observed = int(time.time() * 1_000)
+    venue.close_quotes = [
+        PolymarketCloseQuote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            limit_price=Decimal("0.47"),
+            tick_size=Decimal("0.01"),
+            minimum_order_size=Decimal("5"),
+            neg_risk=True,
+            source_time_ms=observed - 20,
+            observed_at_ms=observed,
+            book_payload_sha256="b" * 64,
+        )
+    ]
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    closes = coordinator.submit_owned_close_orders(maximum_book_age_ms=500)
+
+    assert venue.close_quote_calls == [(MARKET_ID, TOKEN_ID, Decimal("5"), 500)]
+    assert len(closes) == 1
+    close = closes[0]
+    assert close.intent.side == "SELL"
+    assert close.intent.closing_only is True
+    assert close.intent.parent_intent_id == parent.intent_id
+    assert close.intent.quantity == Decimal("5")
+    assert close.intent.limit_price == Decimal("0.47")
+    assert close.intent.order_type == "FAK"
+    assert close.state == "live"
+
+
+def test_owned_close_rejects_stale_or_mismatched_quote_without_signing(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "bad-close-quote.sqlite3")
+    venue = FakeVenue()
+    parent = _intent(1, quantity="5")
+    prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, prepared.expected_order_id, quantity="5"))
+    ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 10,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("5"),
+    )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            redeemable=False,
+        ),
+    )
+    observed = int(time.time() * 1_000)
+    venue.close_quotes = [
+        PolymarketCloseQuote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            limit_price=Decimal("0.47"),
+            tick_size=Decimal("0.01"),
+            minimum_order_size=Decimal("5"),
+            neg_risk=False,
+            source_time_ms=observed - 2_000,
+            observed_at_ms=observed,
+            book_payload_sha256="c" * 64,
+        )
+    ]
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    with pytest.raises(PolymarketLiveBlocked, match="freshness"):
+        coordinator.submit_owned_close_orders(maximum_book_age_ms=500)
+
+    assert venue.submit_calls == 0
+
+
+def test_owned_close_validates_bounds_gate_prior_orders_and_provisional_lots(
+    tmp_path: Path,
+) -> None:
+    empty = PolymarketLiveCoordinator(
+        FakeVenue(),
+        PolymarketLiveOrderLedger(tmp_path / "empty-close.sqlite3"),
+        risk_limits=RISK_LIMITS,
+    )
+    with pytest.raises(ValueError, match="maximum_book_age_ms"):
+        empty.submit_owned_close_orders(maximum_book_age_ms=99)
+
+    foreign_venue = FakeVenue()
+    foreign_venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id="2" * 40,
+            quantity=Decimal("1"),
+            redeemable=False,
+        ),
+    )
+    foreign = PolymarketLiveCoordinator(
+        foreign_venue,
+        PolymarketLiveOrderLedger(tmp_path / "foreign-close.sqlite3"),
+        risk_limits=RISK_LIMITS,
+    )
+    with pytest.raises(PolymarketLiveBlocked, match="foreign_positions"):
+        foreign.submit_owned_close_orders()
+
+    open_ledger = PolymarketLiveOrderLedger(tmp_path / "open-close.sqlite3")
+    open_venue = FakeVenue()
+    open_intent = _intent()
+    open_prepared = _seed_live_order(open_ledger, open_venue, open_intent)
+    open_venue.open = (_remote_order(open_intent, open_prepared.expected_order_id),)
+    open_coordinator = PolymarketLiveCoordinator(
+        open_venue,
+        open_ledger,
+        risk_limits=RISK_LIMITS,
+    )
+    with pytest.raises(PolymarketLiveBlocked, match="prior bot orders"):
+        open_coordinator.submit_owned_close_orders()
+
+    provisional_ledger = PolymarketLiveOrderLedger(
+        tmp_path / "provisional-close.sqlite3"
+    )
+    provisional_venue = FakeVenue()
+    parent = _intent(1, quantity="5")
+    prepared = _seed_live_order(provisional_ledger, provisional_venue, parent)
+    provisional_ledger.record_fill(
+        _fill(
+            parent,
+            prepared.expected_order_id,
+            quantity="5",
+            status="MATCHED",
+        )
+    )
+    provisional_ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 10,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("5"),
+    )
+    provisional_venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            redeemable=False,
+        ),
+    )
+    provisional = PolymarketLiveCoordinator(
+        provisional_venue,
+        provisional_ledger,
+        risk_limits=RISK_LIMITS,
+    )
+    with pytest.raises(PolymarketLiveBlocked, match="confirmed unreserved"):
+        provisional.submit_owned_close_orders()
+
+
+def test_reserving_same_intent_id_with_different_order_hash_is_blocked(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "intent-rebind.sqlite3")
+    venue = FakeVenue()
+    prepared = venue.prepare_order(
+        _intent(),
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+    )
+    ledger.reserve(prepared, observed_at_ms=NOW_MS)
+
+    with pytest.raises(PolymarketLiveBlocked, match="bound differently"):
+        ledger.reserve(
+            replace(prepared, expected_order_id=_order_id(999)),
+            observed_at_ms=NOW_MS + 1,
+        )
 
 
 def test_runtime_guard_requires_fresh_stream_for_open_but_not_owned_close() -> None:

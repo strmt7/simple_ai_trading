@@ -15,6 +15,9 @@ agents to canonical evidence without replacing that evidence.
 - Risk, reconciliation, Stop, and ownership checks are deterministic. AI may
   veto or downsize only after matched uplift evidence and may never block a
   close or override a safety gate.
+- Polymarket terminal state requires authenticated exact-ID order evidence or
+  exact fill evidence. Stop cancels only owned hashes and closes only
+  parent-bound, confirmed, unreserved lots from fresh Polymarket books.
 - AI uplift v3 requires at least 30 non-tied matched outcomes. Exact ties are
   excluded from the paired sign test but retained in the moving-block bootstrap
   and the contiguous 90-day coverage evidence.

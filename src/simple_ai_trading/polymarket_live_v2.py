@@ -5,7 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
+import hashlib
 from importlib.metadata import PackageNotFoundError, version as package_version
+import json
 import os
 import re
 import time
@@ -18,6 +20,7 @@ from urllib3.util.retry import Retry
 from .polymarket import CLOB_BASE_URL, POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION
 from .polymarket_live import (
     PolymarketCancelResult,
+    PolymarketCloseQuote,
     PolymarketFundingPreflight,
     PolymarketLiveBlocked,
     PolymarketLiveOrderIntent,
@@ -39,6 +42,7 @@ POLYMARKET_DATA_POSITIONS_URL = "https://data-api.polymarket.com/positions"
 _PRIVATE_KEY = re.compile(r"^0x[0-9a-fA-F]{64}$")
 _ADDRESS = re.compile(r"^0x[0-9a-fA-F]{40}$")
 _ORDER_ID = re.compile(r"^0x[0-9a-f]{64}$")
+_TOKEN_ID = re.compile(r"^[0-9]{20,80}$")
 _SAFE_REJECTION_STATUSES = frozenset({400, 401, 403, 404, 422})
 _TOKEN_SCALE = Decimal("1000000")
 
@@ -87,7 +91,9 @@ class PolymarketLiveCredentials:
             "funder_address": "SIMPLE_AI_TRADING_POLYMARKET_FUNDER_ADDRESS",
             "signature_type": "SIMPLE_AI_TRADING_POLYMARKET_SIGNATURE_TYPE",
         }
-        missing = [name for name in names.values() if not str(source.get(name, "")).strip()]
+        missing = [
+            name for name in names.values() if not str(source.get(name, "")).strip()
+        ]
         if missing:
             raise ValueError(
                 "missing Polymarket live environment variables: " + ",".join(missing)
@@ -190,7 +196,9 @@ class OfficialPolymarketV2Venue:
                 "Polymarket live execution requires the 'polymarket-live' extra"
             ) from exc
         if sdk_version != POLYMARKET_LIVE_SDK_VERSION:
-            raise RuntimeError("Polymarket CLOB SDK version differs from the audited pin")
+            raise RuntimeError(
+                "Polymarket CLOB SDK version differs from the audited pin"
+            )
         creds = ApiCreds(
             api_key=self.credentials.api_key,
             api_secret=self.credentials.api_secret,
@@ -208,7 +216,9 @@ class OfficialPolymarketV2Venue:
         )
         funder = str(getattr(client.builder, "funder", "")).lower()
         if funder != self.credentials.funder_address:
-            raise PolymarketLiveBlocked("SDK funder differs from configured dedicated wallet")
+            raise PolymarketLiveBlocked(
+                "SDK funder differs from configured dedicated wallet"
+            )
         return client
 
     def _get_json(
@@ -287,6 +297,142 @@ class OfficialPolymarketV2Venue:
             raise ValueError("Polymarket open-order response contains duplicates")
         return orders
 
+    def orders_by_id(
+        self,
+        order_ids: Sequence[str],
+    ) -> tuple[PolymarketRemoteOrder, ...]:
+        requested = tuple(dict.fromkeys(str(value).lower() for value in order_ids))
+        if any(_ORDER_ID.fullmatch(order_id) is None for order_id in requested):
+            raise ValueError("Polymarket exact-order request contains an invalid ID")
+        output: list[PolymarketRemoteOrder] = []
+        for order_id in requested:
+            try:
+                payload = self._client.get_order(order_id)
+            except Exception as exc:
+                if self._api_status(exc) == 404:
+                    continue
+                raise
+            remote = self._remote_order(payload)
+            if remote.order_id != order_id:
+                raise PolymarketLiveBlocked(
+                    "Polymarket exact-order response ID differs from request"
+                )
+            output.append(remote)
+        return tuple(output)
+
+    def close_quote(
+        self,
+        *,
+        market_id: str,
+        token_id: str,
+        quantity: Decimal,
+        maximum_book_age_ms: int,
+    ) -> PolymarketCloseQuote:
+        condition = str(market_id or "").strip().lower()
+        token = str(token_id or "").strip()
+        requested_quantity = Decimal(str(quantity))
+        maximum_age = int(maximum_book_age_ms)
+        if re.fullmatch(r"^0x[0-9a-f]{64}$", condition) is None:
+            raise ValueError("Polymarket close condition ID is invalid")
+        if _TOKEN_ID.fullmatch(token) is None or requested_quantity <= 0:
+            raise ValueError("Polymarket close token or quantity is invalid")
+        if not 100 <= maximum_age <= 5_000:
+            raise ValueError("Polymarket close book-age bound is invalid")
+        payload = _mapping(
+            self._client.get_order_book(token),
+            name="close order book",
+        )
+        observed_at_ms = int(time.time() * 1_000)
+        if str(payload.get("market") or "").strip().lower() != condition:
+            raise PolymarketLiveBlocked("Polymarket close book condition differs")
+        if str(payload.get("asset_id") or "").strip() != token:
+            raise PolymarketLiveBlocked("Polymarket close book token differs")
+        try:
+            source_time_ms = int(str(payload.get("timestamp") or ""))
+        except ValueError as exc:
+            raise ValueError("Polymarket close book timestamp is invalid") from exc
+        if source_time_ms < 10_000_000_000:
+            source_time_ms *= 1_000
+        source_age_ms = observed_at_ms - source_time_ms
+        if source_age_ms < -5_000 or source_age_ms > maximum_age:
+            raise PolymarketLiveBlocked("Polymarket close book is stale")
+        tick = Decimal(str(payload.get("tick_size")))
+        minimum = Decimal(str(payload.get("min_order_size")))
+        neg_risk = payload.get("neg_risk")
+        if tick <= 0 or tick > Decimal("0.1") or minimum <= 0:
+            raise ValueError("Polymarket close book parameters are invalid")
+        if type(neg_risk) is not bool:
+            raise ValueError("Polymarket close book neg-risk flag is invalid")
+        sdk_tick = Decimal(str(self._client.get_tick_size(token)))
+        sdk_neg_risk = self._client.get_neg_risk(token)
+        if tick != sdk_tick or type(sdk_neg_risk) is not bool:
+            raise PolymarketLiveBlocked("Polymarket close execution parameters differ")
+        if neg_risk is not sdk_neg_risk:
+            raise PolymarketLiveBlocked("Polymarket close neg-risk parameters differ")
+        if requested_quantity < minimum:
+            raise PolymarketLiveBlocked(
+                "bot-owned close quantity is below the venue minimum"
+            )
+
+        def levels(name: str, *, reverse: bool) -> tuple[tuple[Decimal, Decimal], ...]:
+            raw_levels = payload.get(name)
+            if not isinstance(raw_levels, list):
+                raise ValueError(f"Polymarket close book {name} are invalid")
+            parsed: list[tuple[Decimal, Decimal]] = []
+            for raw in raw_levels:
+                level = _mapping(raw, name=f"close book {name} level")
+                price = Decimal(str(level.get("price")))
+                size = Decimal(str(level.get("size")))
+                if price <= 0 or price >= 1 or price % tick or size <= 0:
+                    raise ValueError(f"Polymarket close book {name} level is invalid")
+                parsed.append((price, size))
+            if len({price for price, _ in parsed}) != len(parsed):
+                raise ValueError(
+                    f"Polymarket close book {name} contain duplicate prices"
+                )
+            return tuple(sorted(parsed, key=lambda item: item[0], reverse=reverse))
+
+        bids = levels("bids", reverse=True)
+        asks = levels("asks", reverse=False)
+        if bids and asks and bids[0][0] >= asks[0][0]:
+            raise PolymarketLiveBlocked("Polymarket close book is crossed or locked")
+        remaining = requested_quantity
+        limit_price: Decimal | None = None
+        for price, size in bids:
+            consumed = min(size, remaining)
+            if consumed:
+                remaining -= consumed
+                limit_price = price
+            if remaining <= 0:
+                break
+        if remaining > 0 or limit_price is None:
+            raise PolymarketLiveBlocked(
+                "displayed Polymarket bids cannot close the bot-owned lot"
+            )
+        payload_json = json.dumps(
+            dict(payload),
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        )
+        if len(payload_json.encode("ascii")) > self.maximum_response_bytes:
+            raise ValueError("Polymarket close book exceeded the bounded size")
+        return PolymarketCloseQuote(
+            market_id=condition,
+            token_id=token,
+            quantity=requested_quantity,
+            limit_price=limit_price,
+            tick_size=tick,
+            minimum_order_size=minimum,
+            neg_risk=neg_risk,
+            source_time_ms=source_time_ms,
+            observed_at_ms=observed_at_ms,
+            book_payload_sha256=hashlib.sha256(
+                payload_json.encode("ascii")
+            ).hexdigest(),
+        )
+
     def positions(self) -> tuple[PolymarketRemotePosition, ...]:
         output: list[PolymarketRemotePosition] = []
         offset = 0
@@ -319,7 +465,9 @@ class OfficialPolymarketV2Venue:
                 break
             offset += 500
             if offset > 10_000:
-                raise PolymarketLiveBlocked("Polymarket position pagination exceeded its bound")
+                raise PolymarketLiveBlocked(
+                    "Polymarket position pagination exceeded its bound"
+                )
         if len({item.token_id for item in output}) != len(output):
             raise ValueError("Polymarket position response contains duplicate tokens")
         return tuple(sorted(output, key=lambda item: (item.market_id, item.token_id)))
@@ -345,9 +493,7 @@ class OfficialPolymarketV2Venue:
                 "Polymarket live execution requires the 'polymarket-live' extra"
             ) from exc
         asset_type = (
-            AssetType.COLLATERAL
-            if intent.side == "BUY"
-            else AssetType.CONDITIONAL
+            AssetType.COLLATERAL if intent.side == "BUY" else AssetType.CONDITIONAL
         )
         token_id = "" if intent.side == "BUY" else intent.token_id
         response = _mapping(
@@ -452,8 +598,7 @@ class OfficialPolymarketV2Venue:
             ),
         )
         if (
-            str(getattr(signed, "maker", "")).lower()
-            != self.credentials.funder_address
+            str(getattr(signed, "maker", "")).lower() != self.credentials.funder_address
             or str(getattr(signed, "tokenId", "")) != intent.token_id
             or getattr(signed, "side", None) != side
             or int(getattr(signed, "expiration", -1)) != expiration
@@ -480,9 +625,7 @@ class OfficialPolymarketV2Venue:
                 "official SDK changed the requested limit economics"
             )
         config = get_contract_config(POLYGON_CHAIN_ID)
-        exchange = (
-            config.neg_risk_exchange_v2 if neg_risk else config.exchange_v2
-        )
+        exchange = config.neg_risk_exchange_v2 if neg_risk else config.exchange_v2
         hash_builder = ExchangeOrderBuilderV2(
             exchange,
             POLYGON_CHAIN_ID,
@@ -638,7 +781,9 @@ class OfficialPolymarketV2Venue:
         cancelled = tuple(str(value).lower() for value in cancelled_raw)
         failed = tuple(str(value).lower() for value in failed_raw)
         if (set(cancelled) | set(failed)) - set(requested):
-            raise PolymarketLiveBlocked("Polymarket cancel response included a foreign order")
+            raise PolymarketLiveBlocked(
+                "Polymarket cancel response included a foreign order"
+            )
         return PolymarketCancelResult(cancelled, failed)
 
     def close(self) -> None:

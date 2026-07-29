@@ -44,6 +44,10 @@ _OPEN_STATES = frozenset(
 _TERMINAL_STATES = frozenset({"rejected", "cancelled", "expired", "failed", "filled"})
 _FILL_ACTIVE_STATUSES = frozenset({"MATCHED", "MINED", "CONFIRMED", "RETRYING"})
 _FILL_TERMINAL_STATUSES = frozenset({"CONFIRMED", "FAILED"})
+_REMOTE_ORDER_ACTIVE_STATUSES = frozenset({"LIVE"})
+_REMOTE_ORDER_TERMINAL_STATUSES = frozenset(
+    {"INVALID", "CANCELED_MARKET_RESOLVED", "CANCELED", "MATCHED"}
+)
 _REDEMPTION_TRANSITIONS = {
     "prepared": frozenset({"submitting", "failed"}),
     "submitting": frozenset({"submitted", "unknown", "failed"}),
@@ -86,6 +90,13 @@ def _canonical_json(value: object) -> str:
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _remote_order_status(value: object) -> str:
+    status = str(value or "").strip().upper()
+    if status.startswith("ORDER_STATUS_"):
+        status = status.removeprefix("ORDER_STATUS_")
+    return status
 
 
 def _decimal(
@@ -168,7 +179,9 @@ class PolymarketLiveOrderIntent:
     closing_only: bool = False
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "intent_id", _identifier(self.intent_id, name="intent_id"))
+        object.__setattr__(
+            self, "intent_id", _identifier(self.intent_id, name="intent_id")
+        )
         object.__setattr__(self, "bot_id", _identifier(self.bot_id, name="bot_id"))
         object.__setattr__(self, "market_id", _condition_id(self.market_id))
         object.__setattr__(self, "token_id", _token_id(self.token_id))
@@ -345,7 +358,9 @@ class PolymarketRemoteFill:
     observed_at_ms: int
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "trade_id", _identifier(self.trade_id, name="trade_id"))
+        object.__setattr__(
+            self, "trade_id", _identifier(self.trade_id, name="trade_id")
+        )
         object.__setattr__(self, "order_id", _order_id(self.order_id))
         object.__setattr__(self, "market_id", _condition_id(self.market_id))
         object.__setattr__(self, "token_id", _token_id(self.token_id))
@@ -447,6 +462,54 @@ class PolymarketFundingPreflight:
 
 
 @dataclass(frozen=True, slots=True)
+class PolymarketCloseQuote:
+    market_id: str
+    token_id: str
+    quantity: Decimal
+    limit_price: Decimal
+    tick_size: Decimal
+    minimum_order_size: Decimal
+    neg_risk: bool
+    source_time_ms: int
+    observed_at_ms: int
+    book_payload_sha256: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "market_id", _condition_id(self.market_id))
+        object.__setattr__(self, "token_id", _token_id(self.token_id))
+        quantity = _decimal(self.quantity, name="close quantity", positive=True)
+        price = _decimal(self.limit_price, name="close limit price", positive=True)
+        tick = _decimal(self.tick_size, name="close tick size", positive=True)
+        minimum = _decimal(
+            self.minimum_order_size,
+            name="close minimum order size",
+            positive=True,
+        )
+        if price >= 1 or price % tick:
+            raise ValueError("close limit price is invalid for the venue tick")
+        if quantity < minimum:
+            raise ValueError("close quantity is below the venue minimum")
+        source_time = int(self.source_time_ms)
+        observed_at = int(self.observed_at_ms)
+        if source_time <= 0 or observed_at <= 0:
+            raise ValueError("close quote chronology is invalid")
+        digest = str(self.book_payload_sha256 or "").strip().lower()
+        if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise ValueError("close quote payload hash is invalid")
+        object.__setattr__(self, "quantity", quantity)
+        object.__setattr__(self, "limit_price", price)
+        object.__setattr__(self, "tick_size", tick)
+        object.__setattr__(self, "minimum_order_size", minimum)
+        object.__setattr__(self, "source_time_ms", source_time)
+        object.__setattr__(self, "observed_at_ms", observed_at)
+        object.__setattr__(self, "book_payload_sha256", digest)
+
+    @property
+    def source_age_ms(self) -> int:
+        return self.observed_at_ms - self.source_time_ms
+
+
+@dataclass(frozen=True, slots=True)
 class PolymarketCancelResult:
     cancelled_order_ids: tuple[str, ...]
     failed_order_ids: tuple[str, ...]
@@ -483,9 +546,25 @@ class PolymarketLiveVenue(Protocol):
         neg_risk: bool,
     ) -> PolymarketPreparedOrder: ...
 
-    def submit_order(self, prepared: PolymarketPreparedOrder) -> PolymarketSubmission: ...
+    def submit_order(
+        self, prepared: PolymarketPreparedOrder
+    ) -> PolymarketSubmission: ...
 
     def open_orders(self) -> tuple[PolymarketRemoteOrder, ...]: ...
+
+    def orders_by_id(
+        self,
+        order_ids: Sequence[str],
+    ) -> tuple[PolymarketRemoteOrder, ...]: ...
+
+    def close_quote(
+        self,
+        *,
+        market_id: str,
+        token_id: str,
+        quantity: Decimal,
+        maximum_book_age_ms: int,
+    ) -> PolymarketCloseQuote: ...
 
     def fills_for_orders(
         self,
@@ -537,6 +616,41 @@ class PolymarketOwnedInventory:
     token_id: str
     quantity: Decimal
     provisional: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PolymarketOwnedLot:
+    parent_intent_id: str
+    market_id: str
+    token_id: str
+    quantity: Decimal
+    reserved_close_quantity: Decimal
+    provisional: bool
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "parent_intent_id",
+            _identifier(self.parent_intent_id, name="parent_intent_id"),
+        )
+        object.__setattr__(self, "market_id", _condition_id(self.market_id))
+        object.__setattr__(self, "token_id", _token_id(self.token_id))
+        quantity = _decimal(self.quantity, name="lot quantity", positive=True)
+        reserved = _decimal(
+            self.reserved_close_quantity,
+            name="reserved close quantity",
+            nonnegative=True,
+        )
+        if reserved > quantity:
+            raise ValueError("reserved close quantity exceeds lot quantity")
+        object.__setattr__(self, "quantity", quantity)
+        object.__setattr__(self, "reserved_close_quantity", reserved)
+
+    @property
+    def available_quantity(self) -> Decimal:
+        if self.provisional:
+            return Decimal("0")
+        return self.quantity - self.reserved_close_quantity
 
 
 @dataclass(frozen=True, slots=True)
@@ -621,7 +735,9 @@ class PolymarketLiveOrderLedger:
             connection.execute("PRAGMA busy_timeout=30000")
             connection.execute("PRAGMA foreign_keys=ON")
             connection.execute("PRAGMA trusted_schema=OFF")
-            mode = str(connection.execute("PRAGMA journal_mode=WAL").fetchone()[0]).lower()
+            mode = str(
+                connection.execute("PRAGMA journal_mode=WAL").fetchone()[0]
+            ).lower()
             if mode != "wal":
                 raise PolymarketLiveError("live ledger could not enable WAL mode")
             connection.execute("PRAGMA synchronous=FULL")
@@ -768,9 +884,7 @@ class PolymarketLiveOrderLedger:
 
     @classmethod
     def _verify_order_row(cls, row: Mapping[str, object]) -> None:
-        if str(row["record_sha256"]) != _canonical_sha256(
-            cls._order_row_payload(row)
-        ):
+        if str(row["record_sha256"]) != _canonical_sha256(cls._order_row_payload(row)):
             raise PolymarketLiveError("live order snapshot hash differs")
 
     @classmethod
@@ -810,9 +924,7 @@ class PolymarketLiveOrderLedger:
 
     @classmethod
     def _verify_fill_row(cls, row: Mapping[str, object]) -> None:
-        if str(row["fill_sha256"]) != _canonical_sha256(
-            cls._fill_row_payload(row)
-        ):
+        if str(row["fill_sha256"]) != _canonical_sha256(cls._fill_row_payload(row)):
             raise PolymarketLiveError("live fill snapshot hash differs")
 
     @staticmethod
@@ -942,7 +1054,9 @@ class PolymarketLiveOrderLedger:
             ],
         )
 
-    def reserve(self, prepared: PolymarketPreparedOrder, *, observed_at_ms: int) -> None:
+    def reserve(
+        self, prepared: PolymarketPreparedOrder, *, observed_at_ms: int
+    ) -> None:
         intent = prepared.intent
         intent_payload = intent.asdict()
         now = int(observed_at_ms)
@@ -962,7 +1076,9 @@ class PolymarketLiveOrderLedger:
                     str(existing["intent_sha256"]) != intent_sha
                     or str(existing["expected_order_id"]) != prepared.expected_order_id
                 ):
-                    raise PolymarketLiveBlocked("intent_id was already bound differently")
+                    raise PolymarketLiveBlocked(
+                        "intent_id was already bound differently"
+                    )
                 connection.execute("COMMIT")
                 return
             connection.execute(
@@ -1442,10 +1558,7 @@ class PolymarketLiveOrderLedger:
             payload = json.loads(inventory_json)
         except json.JSONDecodeError as exc:
             raise PolymarketLiveError("redemption inventory JSON is invalid") from exc
-        if (
-            not isinstance(payload, list)
-            or _canonical_json(payload) != inventory_json
-        ):
+        if not isinstance(payload, list) or _canonical_json(payload) != inventory_json:
             raise PolymarketLiveError("redemption inventory JSON is not canonical")
         output: list[PolymarketOwnedInventory] = []
         for raw in payload:
@@ -1706,13 +1819,9 @@ class PolymarketLiveOrderLedger:
             prior_id = str(row["transaction_id"])
             prior_hash = str(row["transaction_hash"])
             if prior_id and resolved_id != prior_id:
-                raise PolymarketLiveBlocked(
-                    "redemption transaction ID cannot change"
-                )
+                raise PolymarketLiveBlocked("redemption transaction ID cannot change")
             if prior_hash and resolved_hash != prior_hash:
-                raise PolymarketLiveBlocked(
-                    "redemption transaction hash cannot change"
-                )
+                raise PolymarketLiveBlocked("redemption transaction hash cannot change")
             duplicate = connection.execute(
                 """
                 SELECT transaction_id, transaction_hash
@@ -1793,7 +1902,7 @@ class PolymarketLiveOrderLedger:
         finally:
             connection.close()
 
-    def owned_inventory(self) -> tuple[PolymarketOwnedInventory, ...]:
+    def owned_lots(self) -> tuple[PolymarketOwnedLot, ...]:
         connection = self._connect()
         try:
             rows = connection.execute(
@@ -1807,41 +1916,138 @@ class PolymarketLiveOrderLedger:
             ).fetchall()
         finally:
             connection.close()
-        quantities: dict[tuple[str, str], Decimal] = {}
-        provisional: dict[tuple[str, str], bool] = {}
+        records = self.records()
+        by_intent = {record.intent.intent_id: record for record in records}
+        fills_by_order: dict[str, list[sqlite3.Row]] = {}
         for row in rows:
             self._verify_fill_row(row)
-            key = (str(row["market_id"]), str(row["token_id"]))
-            quantity = _decimal(row["quantity"], name="fill quantity", positive=True)
-            signed = quantity if str(row["side"]) == "BUY" else -quantity
-            quantities[key] = quantities.get(key, Decimal("0")) + signed
-            if str(row["status"]) != "CONFIRMED":
-                provisional[key] = True
+            fills_by_order.setdefault(str(row["order_id"]), []).append(row)
+        quantities: dict[str, Decimal] = {}
+        reserved: dict[str, Decimal] = {}
+        provisional: dict[str, bool] = {}
+        for record in records:
+            if record.intent.side != "BUY":
+                continue
+            fill_rows = fills_by_order.get(record.expected_order_id, [])
+            quantity = sum(
+                (
+                    _decimal(row["quantity"], name="fill quantity", positive=True)
+                    for row in fill_rows
+                ),
+                Decimal("0"),
+            )
+            if quantity > 0:
+                quantities[record.intent.intent_id] = quantity
+                reserved[record.intent.intent_id] = Decimal("0")
+                provisional[record.intent.intent_id] = any(
+                    str(row["status"]) != "CONFIRMED" for row in fill_rows
+                )
+        for record in records:
+            if not record.intent.closing_only:
+                continue
+            parent_id = record.intent.parent_intent_id
+            parent = by_intent.get(parent_id)
+            if (
+                parent is None
+                or parent.intent.side != "BUY"
+                or parent.intent.closing_only
+                or parent.intent.bot_id != record.intent.bot_id
+                or parent.intent.market_id != record.intent.market_id
+                or parent.intent.token_id != record.intent.token_id
+            ):
+                raise PolymarketLiveError("closing order parent ownership is invalid")
+            fill_rows = fills_by_order.get(record.expected_order_id, [])
+            sold = sum(
+                (
+                    _decimal(row["quantity"], name="fill quantity", positive=True)
+                    for row in fill_rows
+                ),
+                Decimal("0"),
+            )
+            if sold:
+                quantities[parent_id] = quantities.get(parent_id, Decimal("0")) - sold
+                if any(str(row["status"]) != "CONFIRMED" for row in fill_rows):
+                    provisional[parent_id] = True
+            if record.state in _OPEN_STATES:
+                outstanding = record.intent.quantity - sold
+                if outstanding < 0:
+                    raise PolymarketLiveError(
+                        "closing fills exceed the closing intent quantity"
+                    )
+                reserved[parent_id] = (
+                    reserved.get(parent_id, Decimal("0")) + outstanding
+                )
         for redemption in self.redemption_records():
             if redemption.state != "confirmed":
                 continue
             for item in redemption.inventory:
-                key = (item.market_id, item.token_id)
-                remaining = quantities.get(key, Decimal("0")) - item.quantity
-                if remaining < -_POSITION_TOLERANCE:
+                remaining = item.quantity
+                candidates = (
+                    record
+                    for record in records
+                    if record.intent.side == "BUY"
+                    and record.intent.market_id == item.market_id
+                    and record.intent.token_id == item.token_id
+                )
+                for parent in candidates:
+                    parent_id = parent.intent.intent_id
+                    available = max(
+                        Decimal("0"),
+                        quantities.get(parent_id, Decimal("0")),
+                    )
+                    consumed = min(available, remaining)
+                    quantities[parent_id] = available - consumed
+                    remaining -= consumed
+                    if remaining <= _POSITION_TOLERANCE:
+                        remaining = Decimal("0")
+                        break
+                if remaining > _POSITION_TOLERANCE:
                     raise PolymarketLiveError(
                         "confirmed redemption exceeds owned inventory"
                     )
-                quantities[key] = max(Decimal("0"), remaining)
-        output: list[PolymarketOwnedInventory] = []
-        for (market_id, token_id), quantity in sorted(quantities.items()):
+        output: list[PolymarketOwnedLot] = []
+        for record in records:
+            if record.intent.side != "BUY":
+                continue
+            parent_id = record.intent.intent_id
+            quantity = quantities.get(parent_id, Decimal("0"))
+            held = reserved.get(parent_id, Decimal("0"))
             if quantity < -_POSITION_TOLERANCE:
-                raise PolymarketLiveError("owned inventory became negative")
+                raise PolymarketLiveError("bot-owned lot became negative")
+            quantity = max(Decimal("0"), quantity)
+            if held > quantity + _POSITION_TOLERANCE:
+                raise PolymarketLiveError(
+                    "reserved close quantity exceeds bot-owned lot"
+                )
             if quantity > _POSITION_TOLERANCE:
                 output.append(
-                    PolymarketOwnedInventory(
-                        market_id=market_id,
-                        token_id=token_id,
+                    PolymarketOwnedLot(
+                        parent_intent_id=parent_id,
+                        market_id=record.intent.market_id,
+                        token_id=record.intent.token_id,
                         quantity=quantity,
-                        provisional=provisional.get((market_id, token_id), False),
+                        reserved_close_quantity=min(held, quantity),
+                        provisional=provisional.get(parent_id, False),
                     )
                 )
         return tuple(output)
+
+    def owned_inventory(self) -> tuple[PolymarketOwnedInventory, ...]:
+        quantities: dict[tuple[str, str], Decimal] = {}
+        provisional: dict[tuple[str, str], bool] = {}
+        for lot in self.owned_lots():
+            key = (lot.market_id, lot.token_id)
+            quantities[key] = quantities.get(key, Decimal("0")) + lot.quantity
+            provisional[key] = provisional.get(key, False) or lot.provisional
+        return tuple(
+            PolymarketOwnedInventory(
+                market_id=market_id,
+                token_id=token_id,
+                quantity=quantity,
+                provisional=provisional[(market_id, token_id)],
+            )
+            for (market_id, token_id), quantity in sorted(quantities.items())
+        )
 
 
 class PolymarketLiveCoordinator:
@@ -1905,7 +2111,7 @@ class PolymarketLiveCoordinator:
         remote_status: str,
         matched_quantity: Decimal,
         failure_code: str = "",
-    ) -> None:
+    ) -> bool:
         try:
             self.ledger.transition(
                 record.intent.intent_id,
@@ -1918,49 +2124,167 @@ class PolymarketLiveCoordinator:
             )
         except PolymarketStateConflict:
             # The authenticated stream advanced the same order concurrently.
-            return
+            return False
+        return True
+
+    @staticmethod
+    def _remote_identity_matches(
+        record: PolymarketLiveOrderRecord,
+        remote: PolymarketRemoteOrder,
+    ) -> bool:
+        return (
+            remote.order_id == record.expected_order_id
+            and remote.market_id == record.intent.market_id
+            and remote.token_id == record.intent.token_id
+            and remote.side == record.intent.side
+            and remote.original_quantity == record.intent.quantity
+        )
+
+    def _apply_remote_order_evidence(
+        self,
+        record: PolymarketLiveOrderRecord,
+        remote: PolymarketRemoteOrder,
+        *,
+        fill_evidence: PolymarketOrderFillEvidence,
+        observed_at_ms: int,
+    ) -> bool:
+        if not self._remote_identity_matches(record, remote):
+            return self._transition_reconciled(
+                record,
+                state="unknown",
+                observed_at_ms=observed_at_ms,
+                remote_status=remote.status,
+                matched_quantity=record.matched_quantity,
+                failure_code="remote_order_identity_mismatch",
+            )
+        status = _remote_order_status(remote.status)
+        if status in _REMOTE_ORDER_ACTIVE_STATUSES:
+            if fill_evidence.quantity > remote.matched_quantity:
+                return self._transition_reconciled(
+                    record,
+                    state="unknown",
+                    observed_at_ms=observed_at_ms,
+                    remote_status=remote.status,
+                    matched_quantity=record.matched_quantity,
+                    failure_code="remote_order_fill_quantity_mismatch",
+                )
+            return self._transition_reconciled(
+                record,
+                state="partial" if remote.matched_quantity > 0 else "live",
+                observed_at_ms=observed_at_ms,
+                remote_status=remote.status,
+                matched_quantity=remote.matched_quantity,
+            )
+        if status not in _REMOTE_ORDER_TERMINAL_STATUSES:
+            return self._transition_reconciled(
+                record,
+                state="unknown",
+                observed_at_ms=observed_at_ms,
+                remote_status=remote.status,
+                matched_quantity=record.matched_quantity,
+                failure_code="unsupported_remote_order_status",
+            )
+        if status == "INVALID":
+            if remote.matched_quantity > 0 or fill_evidence.has_active_fills:
+                return self._transition_reconciled(
+                    record,
+                    state="unknown",
+                    observed_at_ms=observed_at_ms,
+                    remote_status=remote.status,
+                    matched_quantity=record.matched_quantity,
+                    failure_code="invalid_order_has_fill_evidence",
+                )
+            return self._transition_reconciled(
+                record,
+                state="rejected",
+                observed_at_ms=observed_at_ms,
+                remote_status=remote.status,
+                matched_quantity=Decimal("0"),
+            )
+        if remote.matched_quantity == 0:
+            if fill_evidence.has_active_fills or status == "MATCHED":
+                return self._transition_reconciled(
+                    record,
+                    state="unknown",
+                    observed_at_ms=observed_at_ms,
+                    remote_status=remote.status,
+                    matched_quantity=record.matched_quantity,
+                    failure_code="terminal_order_fill_quantity_mismatch",
+                )
+            terminal_state = (
+                "expired" if status == "CANCELED_MARKET_RESOLVED" else "cancelled"
+            )
+            return self._transition_reconciled(
+                record,
+                state=terminal_state,
+                observed_at_ms=observed_at_ms,
+                remote_status=remote.status,
+                matched_quantity=Decimal("0"),
+            )
+        if (
+            not fill_evidence.has_active_fills
+            or fill_evidence.quantity != remote.matched_quantity
+        ):
+            return self._transition_reconciled(
+                record,
+                state="matched_pending",
+                observed_at_ms=observed_at_ms,
+                remote_status=remote.status,
+                matched_quantity=remote.matched_quantity,
+                failure_code="terminal_order_awaiting_exact_fill_evidence",
+            )
+        return self._transition_reconciled(
+            record,
+            state=(
+                "filled"
+                if fill_evidence.all_active_fills_confirmed
+                else "matched_pending"
+            ),
+            observed_at_ms=observed_at_ms,
+            remote_status=remote.status,
+            matched_quantity=remote.matched_quantity,
+        )
 
     def reconcile(self) -> PolymarketReconciliation:
         now = int(time.time() * 1_000)
         targets = self.ledger.reconciliation_targets(observed_at_ms=now)
         owned_ids = tuple(record.expected_order_id for record in targets)
-        market_ids = tuple(
-            sorted({record.intent.market_id for record in targets})
-        )
+        market_ids = tuple(sorted({record.intent.market_id for record in targets}))
         for fill in self.venue.fills_for_orders(owned_ids, market_ids=market_ids):
             self.ledger.record_fill(fill)
         open_orders = self.venue.open_orders()
         remote_by_id = {order.order_id: order for order in open_orders}
-        for record in self.ledger.records():
+        records = self.ledger.records()
+        missing_active_ids = tuple(
+            record.expected_order_id
+            for record in records
+            if record.state in _OPEN_STATES
+            and record.expected_order_id not in remote_by_id
+        )
+        exact_orders = self.venue.orders_by_id(missing_active_ids)
+        requested_exact_ids = set(missing_active_ids)
+        if any(order.order_id not in requested_exact_ids for order in exact_orders):
+            raise PolymarketLiveBlocked(
+                "venue returned an unrequested exact-order record"
+            )
+        if len({order.order_id for order in exact_orders}) != len(exact_orders):
+            raise PolymarketLiveBlocked("venue returned duplicate exact-order records")
+        exact_by_id = {order.order_id: order for order in exact_orders}
+        for record in records:
             remote = remote_by_id.get(record.expected_order_id)
+            if remote is None:
+                remote = exact_by_id.get(record.expected_order_id)
             if remote is not None:
-                if (
-                    remote.market_id != record.intent.market_id
-                    or remote.token_id != record.intent.token_id
-                    or remote.side != record.intent.side
-                    or remote.original_quantity != record.intent.quantity
-                ):
-                    self._transition_reconciled(
-                        record,
-                        state="unknown",
-                        observed_at_ms=now,
-                        remote_status=remote.status,
-                        matched_quantity=record.matched_quantity,
-                        failure_code="remote_order_identity_mismatch",
-                    )
-                    continue
-                state = "partial" if remote.matched_quantity > 0 else "live"
-                self._transition_reconciled(
+                self._apply_remote_order_evidence(
                     record,
-                    state=state,
+                    remote,
+                    fill_evidence=self.ledger.order_fill_evidence(
+                        record.expected_order_id
+                    ),
                     observed_at_ms=now,
-                    remote_status=remote.status,
-                    matched_quantity=remote.matched_quantity,
                 )
                 continue
-            fill_evidence = self.ledger.order_fill_evidence(
-                record.expected_order_id
-            )
+            fill_evidence = self.ledger.order_fill_evidence(record.expected_order_id)
             if record.state in {
                 "submitting",
                 "unknown",
@@ -2016,11 +2340,17 @@ class PolymarketLiveCoordinator:
         records = self.ledger.records()
         owned_ids = {record.expected_order_id for record in records}
         foreign_orders = tuple(
-            sorted(order.order_id for order in open_orders if order.order_id not in owned_ids)
+            sorted(
+                order.order_id
+                for order in open_orders
+                if order.order_id not in owned_ids
+            )
         )
         if foreign_orders:
             errors.append("foreign_open_orders")
-        owned_inventory = {item.token_id: item for item in self.ledger.owned_inventory()}
+        owned_inventory = {
+            item.token_id: item for item in self.ledger.owned_inventory()
+        }
         remote_positions = {item.token_id: item for item in positions}
         foreign_positions = tuple(
             sorted(
@@ -2045,9 +2375,7 @@ class PolymarketLiveCoordinator:
         if missing_positions:
             errors.append("owned_position_mismatch")
         blocking = tuple(
-            record.intent.intent_id
-            for record in records
-            if record.blocks_new_exposure
+            record.intent.intent_id for record in records if record.blocks_new_exposure
         )
         if any(
             record.state in {"submitting", "unknown", "cancel_unknown"}
@@ -2062,7 +2390,9 @@ class PolymarketLiveCoordinator:
         ):
             errors.append("unknown_redemption_state")
         unique_errors = tuple(dict.fromkeys(errors))
-        ownership_ok = not foreign_orders and not foreign_positions and not missing_positions
+        ownership_ok = (
+            not foreign_orders and not foreign_positions and not missing_positions
+        )
         can_close = ownership_ok and "geoblocked" not in unique_errors
         can_open = not unique_errors and not blocking
         return PolymarketReconciliation(
@@ -2112,17 +2442,22 @@ class PolymarketLiveCoordinator:
                 or parent.intent.token_id != intent.token_id
                 or parent.intent.side != "BUY"
                 or parent.intent.closing_only
+                or parent.state not in _TERMINAL_STATES
             ):
                 raise PolymarketLiveBlocked(
                     "closing intent differs from its bot-owned parent"
                 )
-            inventory = {
-                item.token_id: item.quantity
-                for item in self.ledger.owned_inventory()
-            }
-            if inventory.get(intent.token_id, Decimal("0")) < intent.quantity:
+            lots = {item.parent_intent_id: item for item in self.ledger.owned_lots()}
+            lot = lots.get(intent.parent_intent_id)
+            if (
+                lot is None
+                or lot.market_id != intent.market_id
+                or lot.token_id != intent.token_id
+                or lot.provisional
+                or lot.available_quantity < intent.quantity
+            ):
                 raise PolymarketLiveBlocked(
-                    "closing intent exceeds confirmed bot-owned inventory"
+                    "closing intent exceeds its confirmed unreserved bot-owned lot"
                 )
         elif not gate.can_open:
             raise PolymarketLiveBlocked(
@@ -2135,8 +2470,7 @@ class PolymarketLiveCoordinator:
             if order_quote > self.risk_limits.maximum_order_quote:
                 raise PolymarketLiveBlocked("live order exceeds its quote ceiling")
             inventory = {
-                item.token_id: item.quantity
-                for item in self.ledger.owned_inventory()
+                item.token_id: item.quantity for item in self.ledger.owned_inventory()
             }
             if (
                 inventory.get(intent.token_id, Decimal("0")) + intent.quantity
@@ -2152,9 +2486,7 @@ class PolymarketLiveCoordinator:
         if intent.side == "BUY":
             if funding.asset_type != "COLLATERAL":
                 raise PolymarketLiveBlocked("venue returned the wrong funding asset")
-            required = (
-                intent.limit_price * intent.quantity + intent.fee_reserve_quote
-            )
+            required = intent.limit_price * intent.quantity + intent.fee_reserve_quote
         else:
             if (
                 funding.asset_type != "CONDITIONAL"
@@ -2266,7 +2598,9 @@ class PolymarketLiveCoordinator:
                 matched_quantity=current.matched_quantity,
                 failure_code="venue_order_id_mismatch",
             )
-            raise PolymarketLiveUnknownState("venue order ID differs from signed order hash")
+            raise PolymarketLiveUnknownState(
+                "venue order ID differs from signed order hash"
+            )
         state = (
             "live"
             if response.status in {"live", "delayed", "unmatched"}
@@ -2307,18 +2641,121 @@ class PolymarketLiveCoordinator:
         )
         return self.ledger.record(intent.intent_id)
 
+    def submit_owned_close_orders(
+        self,
+        *,
+        maximum_book_age_ms: int = 1_500,
+    ) -> tuple[PolymarketLiveOrderRecord, ...]:
+        maximum_age = int(maximum_book_age_ms)
+        if not 100 <= maximum_age <= 5_000:
+            raise ValueError("maximum_book_age_ms must lie in [100, 5000]")
+        gate = self.reconcile()
+        if not gate.can_close:
+            raise PolymarketLiveBlocked(
+                f"owned close blocked by reconciliation: {gate.errors}"
+            )
+        if self.ledger.open_owned_order_ids():
+            raise PolymarketLiveBlocked(
+                "owned close requires all prior bot orders to be terminal"
+            )
+        records = self.ledger.records()
+        by_intent = {record.intent.intent_id: record for record in records}
+        output: list[PolymarketLiveOrderRecord] = []
+        for lot in self.ledger.owned_lots():
+            if lot.provisional or lot.reserved_close_quantity:
+                raise PolymarketLiveBlocked(
+                    "owned close requires confirmed unreserved lots"
+                )
+            quantity = lot.available_quantity
+            parent = by_intent[lot.parent_intent_id]
+            quote = self.venue.close_quote(
+                market_id=lot.market_id,
+                token_id=lot.token_id,
+                quantity=quantity,
+                maximum_book_age_ms=maximum_age,
+            )
+            if (
+                quote.market_id != lot.market_id
+                or quote.token_id != lot.token_id
+                or quote.quantity != quantity
+                or quote.source_age_ms < -self.maximum_clock_skew_ms
+                or quote.source_age_ms > maximum_age
+            ):
+                raise PolymarketLiveBlocked(
+                    "owned close quote identity or freshness differs"
+                )
+            attempt = 1 + sum(
+                record.intent.closing_only
+                and record.intent.parent_intent_id == lot.parent_intent_id
+                for record in records
+            )
+            now = int(time.time() * 1_000)
+            identity = _canonical_sha256(
+                {
+                    "parent_intent_id": lot.parent_intent_id,
+                    "attempt": attempt,
+                    "quantity": format(quantity, "f"),
+                    "limit_price": format(quote.limit_price, "f"),
+                    "book_payload_sha256": quote.book_payload_sha256,
+                    "observed_at_ms": quote.observed_at_ms,
+                }
+            )
+            intent = PolymarketLiveOrderIntent(
+                intent_id=f"stop-close-{identity[:48]}",
+                bot_id=parent.intent.bot_id,
+                market_id=lot.market_id,
+                token_id=lot.token_id,
+                symbol="BTC",
+                outcome=parent.intent.outcome,
+                side="SELL",
+                order_type="FAK",
+                limit_price=quote.limit_price,
+                quantity=quantity,
+                fee_reserve_quote=Decimal("0"),
+                created_at_ms=now,
+                expires_at_ms=now + 10_000,
+                parent_intent_id=lot.parent_intent_id,
+                closing_only=True,
+            )
+            output.append(
+                self.submit(
+                    intent,
+                    tick_size=quote.tick_size,
+                    neg_risk=quote.neg_risk,
+                )
+            )
+        return tuple(output)
+
     def cancel_owned_open_orders(self) -> PolymarketCancelResult:
         records = tuple(
             record for record in self.ledger.records() if record.state in _OPEN_STATES
         )
         if not records:
             return PolymarketCancelResult((), ())
-        remote = {order.order_id for order in self.venue.open_orders()}
+        open_orders = self.venue.open_orders()
+        remote_by_id = {order.order_id: order for order in open_orders}
+        missing_ids = tuple(
+            record.expected_order_id
+            for record in records
+            if record.expected_order_id not in remote_by_id
+        )
+        exact_orders = self.venue.orders_by_id(missing_ids)
+        requested_exact_ids = set(missing_ids)
+        if any(order.order_id not in requested_exact_ids for order in exact_orders):
+            raise PolymarketLiveBlocked(
+                "venue returned an unrequested exact-order record"
+            )
+        if len({order.order_id for order in exact_orders}) != len(exact_orders):
+            raise PolymarketLiveBlocked("venue returned duplicate exact-order records")
+        exact_by_id = {order.order_id: order for order in exact_orders}
         now = int(time.time() * 1_000)
         missing_evidence = False
         target_records: list[PolymarketLiveOrderRecord] = []
         for record in records:
-            if record.expected_order_id not in remote:
+            remote = remote_by_id.get(record.expected_order_id)
+            if remote is None:
+                remote = exact_by_id.get(record.expected_order_id)
+            if remote is None:
                 try:
                     self.ledger.transition(
                         record.intent.intent_id,
@@ -2340,16 +2777,33 @@ class PolymarketLiveCoordinator:
                 # prove that the order remains open before another exact-ID cancel.
                 missing_evidence = True
                 continue
+            evidence_applied = self._apply_remote_order_evidence(
+                record,
+                remote,
+                fill_evidence=self.ledger.order_fill_evidence(record.expected_order_id),
+                observed_at_ms=now,
+            )
+            if not evidence_applied:
+                current = self.ledger.record(record.intent.intent_id)
+                if current.state not in _TERMINAL_STATES:
+                    missing_evidence = True
+                continue
+            current = self.ledger.record(record.intent.intent_id)
+            if current.state in _TERMINAL_STATES:
+                continue
+            if current.state not in {"live", "partial"}:
+                missing_evidence = True
+                continue
             try:
                 self.ledger.transition(
                     record.intent.intent_id,
-                    expected_states=(record.state,),
+                    expected_states=(current.state,),
                     state="cancel_pending",
                     observed_at_ms=now,
-                    remote_status=record.remote_status,
-                    matched_quantity=record.matched_quantity,
+                    remote_status=current.remote_status,
+                    matched_quantity=current.matched_quantity,
                 )
-                target_records.append(record)
+                target_records.append(current)
             except PolymarketStateConflict:
                 current = self.ledger.record(record.intent.intent_id)
                 if current.state not in _TERMINAL_STATES:
@@ -2440,7 +2894,9 @@ class PolymarketLiveCoordinator:
                         )
                     except PolymarketStateConflict:
                         pass
-            raise PolymarketLiveUnknownState("venue cancellation response was incomplete")
+            raise PolymarketLiveUnknownState(
+                "venue cancellation response was incomplete"
+            )
         if missing_evidence:
             raise PolymarketLiveUnknownState(
                 "one or more owned orders are absent or lack terminal "
@@ -2453,6 +2909,7 @@ __all__ = [
     "POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION",
     "POLYMARKET_LIVE_ORDER_SCHEMA_VERSION",
     "PolymarketCancelResult",
+    "PolymarketCloseQuote",
     "PolymarketFundingPreflight",
     "PolymarketLiveBlocked",
     "PolymarketLiveCoordinator",
@@ -2466,6 +2923,7 @@ __all__ = [
     "PolymarketRuntimeAuthority",
     "PolymarketOrderFillEvidence",
     "PolymarketOwnedInventory",
+    "PolymarketOwnedLot",
     "PolymarketPreparedOrder",
     "PolymarketRedemptionRecord",
     "PolymarketReconciliation",
