@@ -1,0 +1,152 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v111",
+  "created_at_utc": "2026-07-29T02:26:07Z",
+  "implementation_git_commit": "f7f19267527f26df9dc15b3faab40b7ddb087fa4",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v110.json",
+    "file_sha256": "5422f956f3291ab0b4fc7471ba1ee5088a6358b5ec423586f15b1139ce762481",
+    "design_sha256": "b0f0cfcb1172edf76f38ff44efb7578cd02bac1673f19af3ae67a7df67d6ff71",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "03adcaa356988af519544675102599948ff1571c17b2dc33da47c20b29347042"
+    },
+    "event_training_test": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "618bd0bb612e8f431afe0c24e0f01e325ee58eebcf5fda746a1c7140c43eb60b"
+    },
+    "historical_v107_contract_test": {
+      "path": "tests/test_round74_event_model_design_v107.py",
+      "sha256": "6eabafe989a5a01e01b8d72c91344be0b3458db289c383a12992b9a50dabc12a"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://doi.org/10.1609/aaai.v33i01.33019977",
+      "finding": "Multi-task average performance can improve while an individual task deteriorates through negative transfer.",
+      "implementation_consequence": "A challenger can no longer hide deterioration of a forecast head inside lower aggregate proper loss."
+    },
+    {
+      "source": "https://papers.nips.cc/paper_files/paper/2018/hash/432aca3a1e345e339f35a30c8f65edce-Abstract.html",
+      "finding": "Multi-task learning is a multi-objective problem in which scalarized aggregate loss does not expose every task trade-off.",
+      "implementation_consequence": "Promotion now requires task-level non-degradation in addition to strict aggregate improvement."
+    },
+    {
+      "source": "https://papers.nips.cc/paper_files/paper/2020/hash/3fe78a8acf5fda99de95303940a2420c-Abstract.html",
+      "finding": "Shared multi-task models can suffer detrimental interference between task gradients.",
+      "implementation_consequence": "The trainer does not claim conflict resolution, but every architecture and ablation promotion is blocked when a critical task becomes worse."
+    },
+    {
+      "source": "https://doi.org/10.1198/016214506000001437",
+      "finding": "Proper scores support coherent comparison of probabilistic forecasts.",
+      "implementation_consequence": "Task non-degradation is measured with the existing pinball and binary cross-entropy proper losses, not backtest profit."
+    }
+  ],
+  "declared_delta": {
+    "event_training_schema_version": "round-074-event-training-v33",
+    "event_pretest_policy_schema_version": "round-074-event-pretest-policy-v32",
+    "promotion_task_count": 5,
+    "promotion_tasks": [
+      "net_payoff_quantiles",
+      "maximum_adverse_excursion_quantiles",
+      "positive_payoff",
+      "adverse_selection",
+      "regime_unpredictability"
+    ],
+    "aggregate_subgroup_axis": "capture_run_symbol_horizon",
+    "task_subgroup_axis": "capture_run_symbol_horizon_task",
+    "promotion_paths_protected": [
+      "architecture_complexity",
+      "exchange_clock_features",
+      "order_flow_features",
+      "state_conditioned_flow",
+      "causal_next_event_pretraining"
+    ],
+    "aggregate_mean_proper_loss_improvement_remains_mandatory": true,
+    "paired_run_noninferiority_remains_mandatory": true,
+    "paired_run_symbol_horizon_noninferiority_remains_mandatory": true,
+    "every_paired_run_symbol_horizon_task_noninferior_within_numerical_floor": true,
+    "task_deterioration_may_be_offset_by_other_tasks": false,
+    "task_losses_derived_from_existing_forward_pass": true,
+    "additional_forward_passes": 0,
+    "additional_backward_passes": 0,
+    "additional_market_data_reads": 0,
+    "training_objective_changed": false,
+    "early_stopping_metric_changed": false,
+    "target_loss_scaling_changed": false,
+    "model_parameters_changed": false,
+    "optimizer_changed": false,
+    "action_thresholds_changed": false,
+    "execution_replay_changed": false,
+    "historical_v107_schema_contract_frozen_to_literals": true,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "event_dataset": "round-074-event-dataset-v11",
+    "event_model": "round-074-event-payoff-model-v9",
+    "event_training": "round-074-event-training-v33",
+    "event_pretest_policy": "round-074-event-pretest-policy-v32",
+    "sealed_evaluation": "round-074-sealed-evaluation-v21"
+  },
+  "verification": {
+    "focused_tests_passed": 53,
+    "focused_test_files": 6,
+    "training_artifact_seal_and_reload_tested": true,
+    "preflight_publication_tested": true,
+    "hidden_sol_net_payoff_task_degradation_counterexample_rejected": true,
+    "aggregate_run_losses_pass_in_counterexample": true,
+    "aggregate_run_symbol_horizon_losses_pass_in_counterexample": true,
+    "task_noninferiority_gate_is_decisive_in_counterexample": true,
+    "historical_v107_schema_contract_frozen_to_literals": true,
+    "historical_v108_v109_v110_contracts_passed": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "directml_preflight_executed_for_this_delta": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 35,
+    "latest_independently_adjudicated_slot": 41,
+    "slot_042_admitted": false,
+    "slot_043_status": "missed",
+    "slot_044_status": "missed",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_opened_for_separate_documented_wal_recovery": true,
+    "wal_recovery_evidence_commit_on_main": "9c98aed8",
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "task_promotion_gate_proven_on_synthetic_counterexample": true,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "quantile_accuracy_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "6509bfb62f662c7a62caf8b2b0371b0402cdcba4d62c8092dcaad6aac6d8bfc4"
+}
