@@ -44,6 +44,14 @@ _OPEN_STATES = frozenset(
 _TERMINAL_STATES = frozenset({"rejected", "cancelled", "expired", "failed", "filled"})
 _FILL_ACTIVE_STATUSES = frozenset({"MATCHED", "MINED", "CONFIRMED", "RETRYING"})
 _FILL_TERMINAL_STATUSES = frozenset({"CONFIRMED", "FAILED"})
+_REDEMPTION_TRANSITIONS = {
+    "prepared": frozenset({"submitting", "failed"}),
+    "submitting": frozenset({"submitted", "unknown", "failed"}),
+    "submitted": frozenset({"confirmed", "unknown", "failed"}),
+    "unknown": frozenset({"confirmed", "failed"}),
+    "confirmed": frozenset(),
+    "failed": frozenset(),
+}
 
 
 class PolymarketLiveError(RuntimeError):
@@ -454,6 +462,10 @@ class PolymarketCancelResult:
             "failed_order_ids",
             tuple(_order_id(value) for value in self.failed_order_ids),
         )
+        if len(set(self.cancelled_order_ids)) != len(self.cancelled_order_ids):
+            raise ValueError("cancelled order IDs contain duplicates")
+        if len(set(self.failed_order_ids)) != len(self.failed_order_ids):
+            raise ValueError("failed order IDs contain duplicates")
         if set(self.cancelled_order_ids) & set(self.failed_order_ids):
             raise ValueError("cancel result sets overlap")
 
@@ -533,6 +545,21 @@ class PolymarketOrderFillEvidence:
     quantity: Decimal
     has_active_fills: bool
     all_active_fills_confirmed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PolymarketRedemptionRecord:
+    redemption_id: str
+    condition_id: str
+    attempt: int
+    inventory: tuple[PolymarketOwnedInventory, ...]
+    preflight_json: str
+    state: str
+    transaction_id: str
+    transaction_hash: str
+    failure_code: str
+    created_at_ms: int
+    updated_at_ms: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -672,6 +699,30 @@ class PolymarketLiveOrderLedger:
                 record_sha256 TEXT NOT NULL UNIQUE,
                 observed_at_ms INTEGER NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS polymarket_live_redemptions (
+                redemption_id TEXT PRIMARY KEY,
+                condition_id TEXT NOT NULL,
+                attempt INTEGER NOT NULL,
+                inventory_json TEXT NOT NULL,
+                preflight_json TEXT NOT NULL,
+                state TEXT NOT NULL,
+                transaction_id TEXT NOT NULL,
+                transaction_hash TEXT NOT NULL,
+                failure_code TEXT NOT NULL,
+                created_at_ms INTEGER NOT NULL,
+                updated_at_ms INTEGER NOT NULL,
+                record_sha256 TEXT NOT NULL,
+                UNIQUE (condition_id, attempt),
+                CHECK (attempt > 0)
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS
+                polymarket_live_redemptions_transaction_id
+                ON polymarket_live_redemptions (transaction_id)
+                WHERE transaction_id != '';
+            CREATE UNIQUE INDEX IF NOT EXISTS
+                polymarket_live_redemptions_transaction_hash
+                ON polymarket_live_redemptions (transaction_hash)
+                WHERE transaction_hash != '';
             """
         )
         connection.execute(
@@ -763,6 +814,52 @@ class PolymarketLiveOrderLedger:
             cls._fill_row_payload(row)
         ):
             raise PolymarketLiveError("live fill snapshot hash differs")
+
+    @staticmethod
+    def _redemption_row_payload(row: Mapping[str, object]) -> dict[str, object]:
+        return {
+            "redemption_id": str(row["redemption_id"]),
+            "condition_id": str(row["condition_id"]),
+            "attempt": int(row["attempt"]),
+            "inventory_json": str(row["inventory_json"]),
+            "preflight_json": str(row["preflight_json"]),
+            "state": str(row["state"]),
+            "transaction_id": str(row["transaction_id"]),
+            "transaction_hash": str(row["transaction_hash"]),
+            "failure_code": str(row["failure_code"]),
+            "created_at_ms": int(row["created_at_ms"]),
+            "updated_at_ms": int(row["updated_at_ms"]),
+        }
+
+    @classmethod
+    def _verify_redemption_row(cls, row: Mapping[str, object]) -> None:
+        if str(row["record_sha256"]) != _canonical_sha256(
+            cls._redemption_row_payload(row)
+        ):
+            raise PolymarketLiveError("live redemption snapshot hash differs")
+
+    @classmethod
+    def _write_redemption_row_hash(
+        cls,
+        connection: sqlite3.Connection,
+        redemption_id: str,
+    ) -> None:
+        row = connection.execute(
+            """
+            SELECT * FROM polymarket_live_redemptions
+            WHERE redemption_id = ?
+            """,
+            [redemption_id],
+        ).fetchone()
+        if row is None:
+            raise KeyError(redemption_id)
+        connection.execute(
+            """
+            UPDATE polymarket_live_redemptions SET record_sha256 = ?
+            WHERE redemption_id = ?
+            """,
+            [_canonical_sha256(cls._redemption_row_payload(row)), redemption_id],
+        )
 
     @staticmethod
     def _verify_event_chain(connection: sqlite3.Connection) -> None:
@@ -1305,6 +1402,397 @@ class PolymarketLiveOrderLedger:
             and all(str(row["status"]) == "CONFIRMED" for row in rows),
         )
 
+    @staticmethod
+    def _redemption_inventory_json(
+        condition_id: str,
+        inventory: Sequence[PolymarketOwnedInventory],
+    ) -> str:
+        condition = _condition_id(condition_id)
+        items = tuple(
+            sorted(
+                inventory,
+                key=lambda item: (item.market_id, item.token_id),
+            )
+        )
+        if not items:
+            raise ValueError("redemption inventory cannot be empty")
+        if any(item.market_id != condition or item.provisional for item in items):
+            raise ValueError(
+                "redemption requires confirmed inventory for one condition"
+            )
+        if len({item.token_id for item in items}) != len(items):
+            raise ValueError("redemption inventory contains duplicate tokens")
+        return _canonical_json(
+            [
+                {
+                    "market_id": item.market_id,
+                    "token_id": item.token_id,
+                    "quantity": format(item.quantity, "f"),
+                }
+                for item in items
+            ]
+        )
+
+    @staticmethod
+    def _parse_redemption_inventory(
+        condition_id: str,
+        inventory_json: str,
+    ) -> tuple[PolymarketOwnedInventory, ...]:
+        try:
+            payload = json.loads(inventory_json)
+        except json.JSONDecodeError as exc:
+            raise PolymarketLiveError("redemption inventory JSON is invalid") from exc
+        if (
+            not isinstance(payload, list)
+            or _canonical_json(payload) != inventory_json
+        ):
+            raise PolymarketLiveError("redemption inventory JSON is not canonical")
+        output: list[PolymarketOwnedInventory] = []
+        for raw in payload:
+            if not isinstance(raw, Mapping):
+                raise PolymarketLiveError("redemption inventory row is invalid")
+            item = PolymarketOwnedInventory(
+                market_id=_condition_id(raw.get("market_id")),
+                token_id=_token_id(raw.get("token_id")),
+                quantity=_decimal(
+                    raw.get("quantity"),
+                    name="redemption quantity",
+                    positive=True,
+                ),
+                provisional=False,
+            )
+            if item.market_id != condition_id:
+                raise PolymarketLiveError("redemption inventory condition differs")
+            output.append(item)
+        if not output or len({item.token_id for item in output}) != len(output):
+            raise PolymarketLiveError("redemption inventory token set is invalid")
+        return tuple(output)
+
+    @classmethod
+    def _redemption_record(cls, row: sqlite3.Row) -> PolymarketRedemptionRecord:
+        cls._verify_redemption_row(row)
+        redemption_id = _identifier(
+            row["redemption_id"],
+            name="redemption_id",
+        )
+        condition_id = _condition_id(row["condition_id"])
+        attempt = int(row["attempt"])
+        expected_id = f"redemption:{condition_id[2:]}:{attempt:06d}"
+        if attempt <= 0 or redemption_id != expected_id:
+            raise PolymarketLiveError("redemption attempt identity is invalid")
+        state = str(row["state"])
+        if state not in {
+            "prepared",
+            "submitting",
+            "submitted",
+            "unknown",
+            "confirmed",
+            "failed",
+        }:
+            raise PolymarketLiveError("redemption state is invalid")
+        transaction_id = str(row["transaction_id"])
+        if transaction_id:
+            transaction_id = _identifier(
+                transaction_id,
+                name="transaction_id",
+            )
+        transaction_hash = str(row["transaction_hash"]).lower()
+        if transaction_hash:
+            transaction_hash = _order_id(
+                transaction_hash,
+                name="transaction_hash",
+            )
+        created_at_ms = int(row["created_at_ms"])
+        updated_at_ms = int(row["updated_at_ms"])
+        if created_at_ms <= 0 or updated_at_ms < created_at_ms:
+            raise PolymarketLiveError("redemption chronology is invalid")
+        preflight_json = str(row["preflight_json"])
+        try:
+            preflight = json.loads(preflight_json)
+        except json.JSONDecodeError as exc:
+            raise PolymarketLiveError("redemption preflight JSON is invalid") from exc
+        if (
+            not isinstance(preflight, Mapping)
+            or _canonical_json(preflight) != preflight_json
+        ):
+            raise PolymarketLiveError("redemption preflight JSON is not canonical")
+        return PolymarketRedemptionRecord(
+            redemption_id=redemption_id,
+            condition_id=condition_id,
+            attempt=attempt,
+            inventory=cls._parse_redemption_inventory(
+                condition_id,
+                str(row["inventory_json"]),
+            ),
+            preflight_json=preflight_json,
+            state=state,
+            transaction_id=transaction_id,
+            transaction_hash=transaction_hash,
+            failure_code=str(row["failure_code"]),
+            created_at_ms=created_at_ms,
+            updated_at_ms=updated_at_ms,
+        )
+
+    def redemption_records(self) -> tuple[PolymarketRedemptionRecord, ...]:
+        connection = self._connect()
+        try:
+            rows = connection.execute(
+                """
+                SELECT * FROM polymarket_live_redemptions
+                ORDER BY created_at_ms, condition_id, attempt
+                """
+            ).fetchall()
+            return tuple(self._redemption_record(row) for row in rows)
+        finally:
+            connection.close()
+
+    def reserve_redemption(
+        self,
+        condition_id: str,
+        inventory: Sequence[PolymarketOwnedInventory],
+        *,
+        observed_at_ms: int,
+        preflight: Mapping[str, object] | None = None,
+    ) -> PolymarketRedemptionRecord:
+        condition = _condition_id(condition_id)
+        inventory_json = self._redemption_inventory_json(condition, inventory)
+        preflight_json = _canonical_json(dict(preflight or {}))
+        now = int(observed_at_ms)
+        if now <= 0:
+            raise ValueError("redemption observation time must be positive")
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            existing = connection.execute(
+                """
+                SELECT * FROM polymarket_live_redemptions
+                WHERE condition_id = ?
+                ORDER BY attempt DESC
+                LIMIT 1
+                """,
+                [condition],
+            ).fetchone()
+            if existing is not None:
+                self._verify_redemption_row(existing)
+                if str(existing["inventory_json"]) != inventory_json:
+                    raise PolymarketLiveBlocked(
+                        "condition was already bound to different redemption inventory"
+                    )
+                if str(existing["state"]) != "failed":
+                    connection.execute("COMMIT")
+                    return self._redemption_record(existing)
+                attempt = int(existing["attempt"]) + 1
+            else:
+                attempt = 1
+            redemption_id = f"redemption:{condition[2:]}:{attempt:06d}"
+            connection.execute(
+                """
+                INSERT INTO polymarket_live_redemptions (
+                    redemption_id, condition_id, attempt, inventory_json,
+                    preflight_json, state, transaction_id, transaction_hash, failure_code,
+                    created_at_ms, updated_at_ms, record_sha256
+                ) VALUES (?, ?, ?, ?, ?, 'prepared', '', '', '', ?, ?, '')
+                """,
+                [
+                    redemption_id,
+                    condition,
+                    attempt,
+                    inventory_json,
+                    preflight_json,
+                    now,
+                    now,
+                ],
+            )
+            self._write_redemption_row_hash(connection, redemption_id)
+            self._append_audit(
+                connection,
+                intent_id=redemption_id,
+                event_type="redemption_prepared",
+                payload={
+                    "condition_id": condition,
+                    "attempt": attempt,
+                    "inventory_json": inventory_json,
+                    "preflight_json": preflight_json,
+                },
+                observed_at_ms=now,
+            )
+            row = connection.execute(
+                """
+                SELECT * FROM polymarket_live_redemptions
+                WHERE redemption_id = ?
+                """,
+                [redemption_id],
+            ).fetchone()
+            if row is None:
+                raise PolymarketLiveError("redemption reservation disappeared")
+            record = self._redemption_record(row)
+            connection.execute("COMMIT")
+            return record
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def transition_redemption(
+        self,
+        redemption_id: str,
+        *,
+        expected_states: Sequence[str],
+        state: str,
+        observed_at_ms: int,
+        transaction_id: str | None = None,
+        transaction_hash: str | None = None,
+        failure_code: str = "",
+    ) -> PolymarketRedemptionRecord:
+        normalized_id = _identifier(redemption_id, name="redemption_id")
+        expected = tuple(str(value) for value in expected_states)
+        if not expected:
+            raise ValueError("expected redemption states cannot be empty")
+        if state not in {
+            "prepared",
+            "submitting",
+            "submitted",
+            "unknown",
+            "confirmed",
+            "failed",
+        }:
+            raise ValueError("redemption state is invalid")
+        now = int(observed_at_ms)
+        if now <= 0:
+            raise ValueError("redemption observation time must be positive")
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT * FROM polymarket_live_redemptions
+                WHERE redemption_id = ?
+                """,
+                [normalized_id],
+            ).fetchone()
+            if row is None:
+                raise KeyError(normalized_id)
+            self._verify_redemption_row(row)
+            if str(row["state"]) not in expected:
+                raise PolymarketStateConflict(
+                    f"redemption state {row['state']} does not permit {state}"
+                )
+            prior_state = str(row["state"])
+            if state not in _REDEMPTION_TRANSITIONS[prior_state]:
+                raise PolymarketStateConflict(
+                    f"redemption transition {prior_state} -> {state} is invalid"
+                )
+            if now < int(row["updated_at_ms"]):
+                raise ValueError("redemption observation time moved backwards")
+            resolved_id = (
+                str(row["transaction_id"])
+                if transaction_id is None
+                else str(transaction_id).strip()
+            )
+            resolved_hash = (
+                str(row["transaction_hash"])
+                if transaction_hash is None
+                else str(transaction_hash).strip().lower()
+            )
+            if resolved_id:
+                resolved_id = _identifier(resolved_id, name="transaction_id")
+            if resolved_hash:
+                resolved_hash = _order_id(
+                    resolved_hash,
+                    name="transaction_hash",
+                )
+            prior_id = str(row["transaction_id"])
+            prior_hash = str(row["transaction_hash"])
+            if prior_id and resolved_id != prior_id:
+                raise PolymarketLiveBlocked(
+                    "redemption transaction ID cannot change"
+                )
+            if prior_hash and resolved_hash != prior_hash:
+                raise PolymarketLiveBlocked(
+                    "redemption transaction hash cannot change"
+                )
+            duplicate = connection.execute(
+                """
+                SELECT transaction_id, transaction_hash
+                FROM polymarket_live_redemptions
+                WHERE redemption_id != ?
+                  AND (
+                    (? != '' AND transaction_id = ?)
+                    OR (? != '' AND transaction_hash = ?)
+                  )
+                LIMIT 1
+                """,
+                [
+                    normalized_id,
+                    resolved_id,
+                    resolved_id,
+                    resolved_hash,
+                    resolved_hash,
+                ],
+            ).fetchone()
+            if duplicate is not None:
+                raise PolymarketLiveBlocked(
+                    "redemption transaction identity was already used"
+                )
+            if state in {"submitted", "confirmed"} and not (
+                resolved_id or resolved_hash
+            ):
+                raise ValueError("submitted redemption lacks transaction identity")
+            if state == "confirmed" and not resolved_hash:
+                raise ValueError("confirmed redemption lacks a transaction hash")
+            resolved_failure = str(failure_code or "").strip()
+            if len(resolved_failure) > 256:
+                raise ValueError("redemption failure code is too long")
+            connection.execute(
+                """
+                UPDATE polymarket_live_redemptions
+                SET state = ?, transaction_id = ?, transaction_hash = ?,
+                    failure_code = ?, updated_at_ms = ?
+                WHERE redemption_id = ?
+                """,
+                [
+                    state,
+                    resolved_id,
+                    resolved_hash,
+                    resolved_failure,
+                    now,
+                    normalized_id,
+                ],
+            )
+            self._write_redemption_row_hash(connection, normalized_id)
+            self._append_audit(
+                connection,
+                intent_id=normalized_id,
+                event_type=f"redemption_{state}",
+                payload={
+                    "prior_state": prior_state,
+                    "transaction_id": resolved_id,
+                    "transaction_hash": resolved_hash,
+                    "failure_code": resolved_failure,
+                },
+                observed_at_ms=now,
+            )
+            updated = connection.execute(
+                """
+                SELECT * FROM polymarket_live_redemptions
+                WHERE redemption_id = ?
+                """,
+                [normalized_id],
+            ).fetchone()
+            if updated is None:
+                raise PolymarketLiveError("redemption transition disappeared")
+            record = self._redemption_record(updated)
+            connection.execute("COMMIT")
+            return record
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
     def owned_inventory(self) -> tuple[PolymarketOwnedInventory, ...]:
         connection = self._connect()
         try:
@@ -1329,6 +1817,17 @@ class PolymarketLiveOrderLedger:
             quantities[key] = quantities.get(key, Decimal("0")) + signed
             if str(row["status"]) != "CONFIRMED":
                 provisional[key] = True
+        for redemption in self.redemption_records():
+            if redemption.state != "confirmed":
+                continue
+            for item in redemption.inventory:
+                key = (item.market_id, item.token_id)
+                remaining = quantities.get(key, Decimal("0")) - item.quantity
+                if remaining < -_POSITION_TOLERANCE:
+                    raise PolymarketLiveError(
+                        "confirmed redemption exceeds owned inventory"
+                    )
+                quantities[key] = max(Decimal("0"), remaining)
         output: list[PolymarketOwnedInventory] = []
         for (market_id, token_id), quantity in sorted(quantities.items()):
             if quantity < -_POSITION_TOLERANCE:
@@ -1557,6 +2056,11 @@ class PolymarketLiveCoordinator:
             errors.append("unknown_order_state")
         if any(item.provisional for item in owned_inventory.values()):
             errors.append("provisional_fill_state")
+        if any(
+            record.state in {"prepared", "submitting", "submitted", "unknown"}
+            for record in self.ledger.redemption_records()
+        ):
+            errors.append("unknown_redemption_state")
         unique_errors = tuple(dict.fromkeys(errors))
         ownership_ok = not foreign_orders and not foreign_positions and not missing_positions
         can_close = ownership_ok and "geoblocked" not in unique_errors
@@ -1804,104 +2308,143 @@ class PolymarketLiveCoordinator:
         return self.ledger.record(intent.intent_id)
 
     def cancel_owned_open_orders(self) -> PolymarketCancelResult:
-        owned = self.ledger.open_owned_order_ids()
-        if not owned:
+        records = tuple(
+            record for record in self.ledger.records() if record.state in _OPEN_STATES
+        )
+        if not records:
             return PolymarketCancelResult((), ())
         remote = {order.order_id for order in self.venue.open_orders()}
-        targets = tuple(order_id for order_id in owned if order_id in remote)
-        missing = tuple(order_id for order_id in owned if order_id not in remote)
         now = int(time.time() * 1_000)
-        by_order = {
-            record.expected_order_id: record for record in self.ledger.records()
-        }
-        for order_id in missing:
-            record = by_order[order_id]
-            self.ledger.transition(
-                record.intent.intent_id,
-                expected_states=(record.state,),
-                state="cancel_unknown",
-                observed_at_ms=now,
-                remote_status=record.remote_status or "MISSING",
-                matched_quantity=record.matched_quantity,
-                failure_code="remote_order_absent_without_terminal_evidence",
-            )
+        missing_evidence = False
+        target_records: list[PolymarketLiveOrderRecord] = []
+        for record in records:
+            if record.expected_order_id not in remote:
+                try:
+                    self.ledger.transition(
+                        record.intent.intent_id,
+                        expected_states=(record.state,),
+                        state="cancel_unknown",
+                        observed_at_ms=now,
+                        remote_status=record.remote_status or "MISSING",
+                        matched_quantity=record.matched_quantity,
+                        failure_code="remote_order_absent_without_terminal_evidence",
+                    )
+                    missing_evidence = True
+                except PolymarketStateConflict:
+                    current = self.ledger.record(record.intent.intent_id)
+                    if current.state not in _TERMINAL_STATES:
+                        missing_evidence = True
+                continue
+            if record.state == "cancel_pending":
+                # A prior attempt may still be in flight. Reconciliation must first
+                # prove that the order remains open before another exact-ID cancel.
+                missing_evidence = True
+                continue
+            try:
+                self.ledger.transition(
+                    record.intent.intent_id,
+                    expected_states=(record.state,),
+                    state="cancel_pending",
+                    observed_at_ms=now,
+                    remote_status=record.remote_status,
+                    matched_quantity=record.matched_quantity,
+                )
+                target_records.append(record)
+            except PolymarketStateConflict:
+                current = self.ledger.record(record.intent.intent_id)
+                if current.state not in _TERMINAL_STATES:
+                    missing_evidence = True
+        targets = tuple(record.expected_order_id for record in target_records)
+        by_order = {record.expected_order_id: record for record in target_records}
         if not targets:
-            raise PolymarketLiveUnknownState(
-                "owned orders are absent without terminal cancellation evidence"
-            )
-        for order_id in targets:
-            record = by_order[order_id]
-            self.ledger.transition(
-                record.intent.intent_id,
-                expected_states=(record.state,),
-                state="cancel_pending",
-                observed_at_ms=now,
-                remote_status=record.remote_status,
-                matched_quantity=record.matched_quantity,
-            )
+            if missing_evidence:
+                raise PolymarketLiveUnknownState(
+                    "owned orders lack terminal cancellation evidence"
+                )
+            return PolymarketCancelResult((), ())
         try:
             result = self.venue.cancel_orders(targets)
         except Exception as exc:
-            for order_id in targets:
-                record = by_order[order_id]
+            for record in target_records:
                 current = self.ledger.record(record.intent.intent_id)
-                self.ledger.transition(
-                    record.intent.intent_id,
-                    expected_states=("cancel_pending",),
-                    state="cancel_unknown",
-                    observed_at_ms=int(time.time() * 1_000),
-                    remote_status=current.remote_status,
-                    matched_quantity=current.matched_quantity,
-                    failure_code=exc.__class__.__name__,
-                )
+                if current.state != "cancel_pending":
+                    continue
+                try:
+                    self.ledger.transition(
+                        record.intent.intent_id,
+                        expected_states=("cancel_pending",),
+                        state="cancel_unknown",
+                        observed_at_ms=int(time.time() * 1_000),
+                        remote_status=current.remote_status,
+                        matched_quantity=current.matched_quantity,
+                        failure_code=exc.__class__.__name__,
+                    )
+                except PolymarketStateConflict:
+                    pass
             raise PolymarketLiveUnknownState(
                 "Polymarket cancellation outcome is unknown"
             ) from exc
+        reported = set(result.cancelled_order_ids) | set(result.failed_order_ids)
+        if not reported <= set(targets):
+            raise PolymarketLiveBlocked("venue reported an unrequested order")
         for order_id in result.cancelled_order_ids:
-            if order_id not in targets:
-                raise PolymarketLiveBlocked("venue cancelled an unrequested order")
             record = by_order[order_id]
             current = self.ledger.record(record.intent.intent_id)
-            self.ledger.transition(
-                record.intent.intent_id,
-                expected_states=("cancel_pending",),
-                state="cancelled",
-                observed_at_ms=int(time.time() * 1_000),
-                remote_status="CANCELLED",
-                matched_quantity=current.matched_quantity,
-            )
+            if current.state == "cancel_pending":
+                try:
+                    self.ledger.transition(
+                        record.intent.intent_id,
+                        expected_states=("cancel_pending",),
+                        state="cancelled",
+                        observed_at_ms=int(time.time() * 1_000),
+                        remote_status="CANCELLED",
+                        matched_quantity=current.matched_quantity,
+                    )
+                except PolymarketStateConflict:
+                    missing_evidence = True
+            elif current.state not in _TERMINAL_STATES:
+                missing_evidence = True
         for order_id in result.failed_order_ids:
-            if order_id not in targets:
-                raise PolymarketLiveBlocked("venue reported an unrequested order")
+            missing_evidence = True
             record = by_order[order_id]
             current = self.ledger.record(record.intent.intent_id)
-            self.ledger.transition(
-                record.intent.intent_id,
-                expected_states=("cancel_pending",),
-                state="cancel_unknown",
-                observed_at_ms=int(time.time() * 1_000),
-                remote_status=current.remote_status,
-                matched_quantity=current.matched_quantity,
-                failure_code="venue_cancel_failed",
-            )
-        accounted = set(result.cancelled_order_ids) | set(result.failed_order_ids)
-        if accounted != set(targets):
-            for order_id in set(targets) - accounted:
+            if current.state == "cancel_pending":
+                try:
+                    self.ledger.transition(
+                        record.intent.intent_id,
+                        expected_states=("cancel_pending",),
+                        state="cancel_unknown",
+                        observed_at_ms=int(time.time() * 1_000),
+                        remote_status=current.remote_status,
+                        matched_quantity=current.matched_quantity,
+                        failure_code="venue_cancel_failed",
+                    )
+                except PolymarketStateConflict:
+                    missing_evidence = True
+            elif current.state not in _TERMINAL_STATES:
+                missing_evidence = True
+        if reported != set(targets):
+            for order_id in set(targets) - reported:
                 record = by_order[order_id]
                 current = self.ledger.record(record.intent.intent_id)
-                self.ledger.transition(
-                    record.intent.intent_id,
-                    expected_states=("cancel_pending",),
-                    state="cancel_unknown",
-                    observed_at_ms=int(time.time() * 1_000),
-                    remote_status=current.remote_status,
-                    matched_quantity=current.matched_quantity,
-                    failure_code="venue_cancel_response_incomplete",
-                )
+                if current.state == "cancel_pending":
+                    try:
+                        self.ledger.transition(
+                            record.intent.intent_id,
+                            expected_states=("cancel_pending",),
+                            state="cancel_unknown",
+                            observed_at_ms=int(time.time() * 1_000),
+                            remote_status=current.remote_status,
+                            matched_quantity=current.matched_quantity,
+                            failure_code="venue_cancel_response_incomplete",
+                        )
+                    except PolymarketStateConflict:
+                        pass
             raise PolymarketLiveUnknownState("venue cancellation response was incomplete")
-        if missing:
+        if missing_evidence:
             raise PolymarketLiveUnknownState(
-                "one or more owned orders were absent during cancellation"
+                "one or more owned orders are absent or lack terminal "
+                "cancellation evidence"
             )
         return result
 
@@ -1924,6 +2467,7 @@ __all__ = [
     "PolymarketOrderFillEvidence",
     "PolymarketOwnedInventory",
     "PolymarketPreparedOrder",
+    "PolymarketRedemptionRecord",
     "PolymarketReconciliation",
     "PolymarketRemoteFill",
     "PolymarketRemoteOrder",
