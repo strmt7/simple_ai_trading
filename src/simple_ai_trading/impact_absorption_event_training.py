@@ -80,8 +80,8 @@ from .round74_segmented_model_operator import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v32"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v31"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v33"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v32"
 ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION = (
     "round-074-event-selection-protocol-v4"
 )
@@ -100,6 +100,16 @@ ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "adverse_selection": 0.20,
     "regime_unpredictability": 0.10,
 }
+ROUND74_EVENT_PROMOTION_TASK_METRICS = (
+    ("net_payoff_quantiles", "payoff_pinball"),
+    (
+        "maximum_adverse_excursion_quantiles",
+        "maximum_adverse_excursion_pinball",
+    ),
+    ("positive_payoff", "positive_bce"),
+    ("adverse_selection", "adverse_bce"),
+    ("regime_unpredictability", "unpredictability_bce"),
+)
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _SAFE_FILENAME = re.compile(r"[a-z0-9][a-z0-9._-]{0,159}")
@@ -342,6 +352,19 @@ class Round74EventTrainingConfig:
             "tuning_order": "chronological_no_shuffle",
             "checkpoint_policy": "best_state_in_memory_only",
             "loss_weights": dict(ROUND74_EVENT_TRAINING_LOSS_WEIGHTS),
+            "promotion_loss_panel": {
+                "aggregate_subgroup_axis": "capture_run_symbol_horizon",
+                "task_subgroup_axis": "capture_run_symbol_horizon_task",
+                "tasks": [
+                    task_name
+                    for task_name, _metric_name in ROUND74_EVENT_PROMOTION_TASK_METRICS
+                ],
+                "task_promotion_rule": (
+                    "every_task_subgroup_noninferior_within_numerical_floor"
+                ),
+                "additional_forward_passes": 0,
+                "additional_backward_passes": 0,
+            },
             "gradient_health_metrics": (
                 "preclip_norm_minimum_mean_maximum_zero_fraction_and_clip_fraction"
             ),
@@ -1080,6 +1103,7 @@ class _CandidateFit:
     ensemble_metrics: dict[str, float]
     ensemble_run_losses: tuple[float, ...]
     ensemble_group_losses: dict[str, float]
+    ensemble_task_group_losses: dict[str, float]
     ensemble_prediction_sha256: str
     parameter_count_per_peer: int
 
@@ -1781,8 +1805,8 @@ def _evaluate_model_group_losses(
     device: object,
     require_complete_symbol_panel: bool,
     target_loss_scale: Round74EventTargetLossScale,
-) -> dict[str, float]:
-    """Measure proper loss for every eligible run-symbol-horizon subgroup."""
+) -> tuple[dict[str, float], dict[str, float]]:
+    """Measure aggregate and task losses for each run-symbol-horizon subgroup."""
 
     target_loss_scale.validate()
     if not batches:
@@ -1936,13 +1960,20 @@ def _evaluate_model_group_losses(
                         )
     if not expected_groups or set(totals_by_group) != expected_groups:
         raise ValueError("Round 74 tuning subgroup panel differs")
-    result = {
-        key: _finalize_metrics(totals_by_group[key])["loss"]
-        for key in sorted(expected_groups)
+    finalized = {
+        key: _finalize_metrics(totals_by_group[key]) for key in sorted(expected_groups)
     }
-    if not all(math.isfinite(value) for value in result.values()):
+    result = {key: metrics["loss"] for key, metrics in finalized.items()}
+    task_result = {
+        f"{key}:{task_name}": metrics[metric_name]
+        for key, metrics in finalized.items()
+        for task_name, metric_name in ROUND74_EVENT_PROMOTION_TASK_METRICS
+    }
+    if not all(
+        math.isfinite(value) for value in (*result.values(), *task_result.values())
+    ):
         raise RuntimeError("Round 74 tuning subgroup loss is nonfinite")
-    return result
+    return result, task_result
 
 
 def _cpu_state(model: nn.Module) -> dict[str, torch.Tensor]:
@@ -2401,7 +2432,7 @@ def _fit_candidate(
         device=device,
         target_loss_scale=target_loss_scale,
     )
-    ensemble_group_losses = _evaluate_model_group_losses(
+    ensemble_group_losses, ensemble_task_group_losses = _evaluate_model_group_losses(
         ensemble,
         promotion_batches,
         minibatch_rows=config.minibatch_rows,
@@ -2427,6 +2458,7 @@ def _fit_candidate(
         ensemble_metrics=ensemble_metrics,
         ensemble_run_losses=ensemble_run_losses,
         ensemble_group_losses=ensemble_group_losses,
+        ensemble_task_group_losses=ensemble_task_group_losses,
         ensemble_prediction_sha256=prediction_sha256,
         parameter_count_per_peer=parameter_count,
     )
@@ -2493,6 +2525,8 @@ def _paired_promotion_report(
     required_paired_run_count: int,
     incumbent_group_losses: Mapping[str, float] | None,
     challenger_group_losses: Mapping[str, float] | None,
+    incumbent_task_group_losses: Mapping[str, float] | None = None,
+    challenger_task_group_losses: Mapping[str, float] | None = None,
 ) -> dict[str, object]:
     improvements = tuple(
         float(incumbent_loss) - float(challenger_loss)
@@ -2549,11 +2583,49 @@ def _paired_promotion_report(
         maximum_subgroup_loss_degradation is None
         or maximum_subgroup_loss_degradation <= minimum_improvement
     )
+    if (incumbent_task_group_losses is None) != (challenger_task_group_losses is None):
+        raise ValueError("Round 74 paired-promotion task subgroup panel differs")
+    if (
+        incumbent_task_group_losses is not None
+        and challenger_task_group_losses is not None
+        and set(incumbent_task_group_losses) != set(challenger_task_group_losses)
+    ):
+        raise ValueError("Round 74 paired-promotion task subgroup panel differs")
+    task_subgroup_improvements = (
+        {
+            key: float(incumbent_task_group_losses[key])
+            - float(challenger_task_group_losses[key])
+            for key in sorted(incumbent_task_group_losses)
+        }
+        if incumbent_task_group_losses is not None
+        and challenger_task_group_losses is not None
+        else {}
+    )
+    if not all(math.isfinite(value) for value in task_subgroup_improvements.values()):
+        raise ValueError("Round 74 paired-promotion task subgroup loss differs")
+    worst_task_subgroup_key = (
+        min(
+            task_subgroup_improvements,
+            key=lambda key: (task_subgroup_improvements[key], key),
+        )
+        if task_subgroup_improvements
+        else None
+    )
+    maximum_task_subgroup_loss_degradation = (
+        -task_subgroup_improvements[worst_task_subgroup_key]
+        if worst_task_subgroup_key is not None
+        else None
+    )
+    all_task_subgroups_noninferior = (
+        maximum_task_subgroup_loss_degradation is None
+        or maximum_task_subgroup_loss_degradation <= minimum_improvement
+    )
     promoted = (
         complete_tuning_panel
         and mean_improvement > minimum_improvement
         and all_runs_noninferior
         and all_subgroups_noninferior
+        and all_task_subgroups_noninferior
         and stability["material_win_majority"] is True
         and stability[
             "all_leave_one_capture_run_out_panels_exceed_minimum_mean_improvement"
@@ -2580,6 +2652,16 @@ def _paired_promotion_report(
         "maximum_paired_group_loss_degradation": (maximum_subgroup_loss_degradation),
         "maximum_permitted_paired_group_loss_degradation": minimum_improvement,
         "all_paired_run_symbol_horizon_groups_noninferior": (all_subgroups_noninferior),
+        "task_subgroup_gate_applied": incumbent_task_group_losses is not None,
+        "paired_run_symbol_horizon_task_count": len(task_subgroup_improvements),
+        "worst_run_symbol_horizon_task": worst_task_subgroup_key,
+        "maximum_paired_task_group_loss_degradation": (
+            maximum_task_subgroup_loss_degradation
+        ),
+        "maximum_permitted_paired_task_group_loss_degradation": minimum_improvement,
+        "all_paired_run_symbol_horizon_tasks_noninferior": (
+            all_task_subgroups_noninferior
+        ),
         **stability,
         "promoted": promoted,
     }
@@ -2592,6 +2674,7 @@ def _complexity_gated_candidate_id(
     *,
     minimum_mean_loss_improvement: float,
     candidate_group_losses: Mapping[str, Mapping[str, float]] | None = None,
+    candidate_task_group_losses: Mapping[str, Mapping[str, float]] | None = None,
     required_paired_run_count: int = (
         ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
     ),
@@ -2665,6 +2748,36 @@ def _complexity_gated_candidate_id(
             )
         ):
             raise ValueError("Round 74 complexity-promotion subgroup panel differs")
+    task_group_losses: dict[str, dict[str, float]] | None = None
+    task_group_keys: tuple[str, ...] = ()
+    if candidate_task_group_losses is not None:
+        if set(candidate_task_group_losses) != set(ordered):
+            raise ValueError(
+                "Round 74 complexity-promotion task subgroup panel differs"
+            )
+        task_group_losses = {
+            candidate_id: {
+                str(key): float(value)
+                for key, value in candidate_task_group_losses[candidate_id].items()
+            }
+            for candidate_id in ordered
+        }
+        task_group_keys = tuple(sorted(task_group_losses[ordered[0]]))
+        if (
+            not task_group_keys
+            or any(
+                tuple(sorted(task_group_losses[candidate_id])) != task_group_keys
+                for candidate_id in ordered
+            )
+            or any(
+                not math.isfinite(value)
+                for candidate_losses in task_group_losses.values()
+                for value in candidate_losses.values()
+            )
+        ):
+            raise ValueError(
+                "Round 74 complexity-promotion task subgroup panel differs"
+            )
     incumbent = ordered[0]
     reports: list[dict[str, object]] = []
     for challenger in ordered[1:]:
@@ -2680,6 +2793,12 @@ def _complexity_gated_candidate_id(
             ),
             challenger_group_losses=(
                 group_losses[challenger] if group_losses is not None else None
+            ),
+            incumbent_task_group_losses=(
+                task_group_losses[incumbent] if task_group_losses is not None else None
+            ),
+            challenger_task_group_losses=(
+                task_group_losses[challenger] if task_group_losses is not None else None
             ),
         )
         reports.append(report)
@@ -2712,6 +2831,10 @@ def _select_candidate_with_complexity_gate(
             candidate_id: fit_by_id[candidate_id].ensemble_group_losses
             for candidate_id in fit_by_id
         },
+        candidate_task_group_losses={
+            candidate_id: fit_by_id[candidate_id].ensemble_task_group_losses
+            for candidate_id in fit_by_id
+        },
         required_paired_run_count=required_paired_run_count,
     )
     return fit_by_id[selected_id], reports
@@ -2725,6 +2848,8 @@ def _feature_view_promotion_report(
     *,
     incumbent_group_losses: Mapping[str, float],
     challenger_group_losses: Mapping[str, float],
+    incumbent_task_group_losses: Mapping[str, float],
+    challenger_task_group_losses: Mapping[str, float],
     minimum_mean_loss_improvement: float,
     required_paired_run_count: int,
 ) -> dict[str, object]:
@@ -2743,6 +2868,8 @@ def _feature_view_promotion_report(
         required_paired_run_count=required_paired_run_count,
         incumbent_group_losses=incumbent_group_losses,
         challenger_group_losses=challenger_group_losses,
+        incumbent_task_group_losses=incumbent_task_group_losses,
+        challenger_task_group_losses=challenger_task_group_losses,
     )
     return {
         (
@@ -2780,6 +2907,8 @@ def _select_feature_view_with_ablation_gate(
         challenger_fit.ensemble_run_losses,
         incumbent_group_losses=incumbent_fit.ensemble_group_losses,
         challenger_group_losses=challenger_fit.ensemble_group_losses,
+        incumbent_task_group_losses=incumbent_fit.ensemble_task_group_losses,
+        challenger_task_group_losses=challenger_fit.ensemble_task_group_losses,
         minimum_mean_loss_improvement=minimum_mean_loss_improvement,
         required_paired_run_count=required_paired_run_count,
     )
@@ -2810,7 +2939,8 @@ def _feature_view_selection_criterion(
         f"{order_flow_required_paired_run_count} paired model-selection "
         "capture runs, respectively, "
         "and requires strict mean proper-loss improvement with no run or "
-        "run-symbol-horizon subgroup degradation beyond the numerical floor, "
+        "run-symbol-horizon or run-symbol-horizon-task subgroup degradation "
+        "beyond the numerical floor, "
         "a material win on a strict majority of capture runs, and mean "
         "improvement above the floor after deleting any one capture run"
     )
@@ -2849,6 +2979,8 @@ def _select_state_conditioned_flow_with_ablation_gate(
         required_paired_run_count=required_paired_run_count,
         incumbent_group_losses=incumbent_fit.ensemble_group_losses,
         challenger_group_losses=challenger_fit.ensemble_group_losses,
+        incumbent_task_group_losses=incumbent_fit.ensemble_task_group_losses,
+        challenger_task_group_losses=challenger_fit.ensemble_task_group_losses,
     )
     winner = challenger_fit if report["promoted"] is True else incumbent_fit
     return winner, report
@@ -2865,6 +2997,9 @@ def _candidate_fit_report(fit: _CandidateFit) -> dict[str, object]:
         "ensemble_tuning_metrics": fit.ensemble_metrics,
         "ensemble_tuning_run_losses": list(fit.ensemble_run_losses),
         "ensemble_tuning_run_symbol_horizon_losses": fit.ensemble_group_losses,
+        "ensemble_tuning_run_symbol_horizon_task_losses": (
+            fit.ensemble_task_group_losses
+        ),
         "ensemble_prediction_sha256": fit.ensemble_prediction_sha256,
     }
 
@@ -2879,7 +3014,13 @@ def _validated_candidate_fit_report(
     seeds: Sequence[int],
     tuning_run_count: int,
     execution_mode: str,
-) -> tuple[Mapping[str, object], tuple[float, ...], dict[str, float], int]:
+) -> tuple[
+    Mapping[str, object],
+    tuple[float, ...],
+    dict[str, float],
+    dict[str, float],
+    int,
+]:
     expected_metric_names = {
         "payoff_pinball",
         "maximum_adverse_excursion_pinball",
@@ -2898,6 +3039,7 @@ def _validated_candidate_fit_report(
     metrics = report.get("ensemble_tuning_metrics")
     raw_run_losses = report.get("ensemble_tuning_run_losses")
     raw_group_losses = report.get("ensemble_tuning_run_symbol_horizon_losses")
+    raw_task_group_losses = report.get("ensemble_tuning_run_symbol_horizon_task_losses")
     peers = report.get("peer_reports")
     parameter_count = report.get("parameter_count_per_peer")
     if (
@@ -2912,6 +3054,7 @@ def _validated_candidate_fit_report(
             "ensemble_tuning_metrics",
             "ensemble_tuning_run_losses",
             "ensemble_tuning_run_symbol_horizon_losses",
+            "ensemble_tuning_run_symbol_horizon_task_losses",
             "ensemble_prediction_sha256",
         }
         or panel_key not in {expected_candidate_id, expected_feature_view}
@@ -2970,6 +3113,35 @@ def _validated_candidate_fit_report(
             * len(IMPACT_CAPTURE_SYMBOLS)
             * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
         )
+        or not isinstance(raw_task_group_losses, Mapping)
+        or not raw_task_group_losses
+        or any(
+            not isinstance(key, str)
+            or len(key.split(":")) != 4
+            or key.split(":")[1] not in IMPACT_CAPTURE_SYMBOLS
+            or key.split(":")[2]
+            not in {str(value) for value in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS}
+            or key.split(":")[3]
+            not in {name for name, _metric in ROUND74_EVENT_PROMOTION_TASK_METRICS}
+            or isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            for key, value in raw_task_group_losses.items()
+        )
+        or set(raw_task_group_losses)
+        != {
+            f"{key}:{task_name}"
+            for key in raw_group_losses
+            for task_name, _metric_name in ROUND74_EVENT_PROMOTION_TASK_METRICS
+        }
+        or (
+            execution_mode != "preflight"
+            and len(raw_task_group_losses)
+            != tuning_run_count
+            * len(IMPACT_CAPTURE_SYMBOLS)
+            * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+            * len(ROUND74_EVENT_PROMOTION_TASK_METRICS)
+        )
         or not math.isclose(
             sum(float(value) for value in raw_run_losses) / len(raw_run_losses),
             float(metrics.get("run_balanced_loss", math.inf)),
@@ -2988,10 +3160,12 @@ def _validated_candidate_fit_report(
     assert isinstance(metrics, Mapping)
     assert isinstance(raw_run_losses, list)
     assert isinstance(raw_group_losses, Mapping)
+    assert isinstance(raw_task_group_losses, Mapping)
     return (
         metrics,
         tuple(float(value) for value in raw_run_losses),
         {str(key): float(value) for key, value in raw_group_losses.items()},
+        {str(key): float(value) for key, value in raw_task_group_losses.items()},
         int(parameter_count),
     )
 
@@ -3280,7 +3454,8 @@ def train_and_seal_round74_pretest_policy(
             "must strictly exceed the numerical mean-loss floor after deleting "
             "any one capture run, must materially win a strict majority of capture "
             "runs, and may not degrade any paired run or eligible "
-            "run-symbol-horizon proper-loss subgroup beyond that floor"
+            "run-symbol-horizon aggregate or task proper-loss subgroup beyond "
+            "that floor"
         )
         planned_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
         required_paired_capture_run_count = promotion_required_runs
@@ -3524,6 +3699,12 @@ def train_and_seal_round74_pretest_policy(
             challenger_group_losses=(
                 pretrained_initialization_fit.ensemble_group_losses
             ),
+            incumbent_task_group_losses=(
+                random_initialization_incumbent_fit.ensemble_task_group_losses
+            ),
+            challenger_task_group_losses=(
+                pretrained_initialization_fit.ensemble_task_group_losses
+            ),
         )
         winner = (
             pretrained_initialization_fit
@@ -3746,8 +3927,9 @@ def train_and_seal_round74_pretest_policy(
                 "market-state modulation of admitted order flow challenges "
                 "the unconditioned incumbent on identical seeds and the "
                 "supervised objective; promotion requires strict mean proper-"
-                "loss improvement and no paired run or run-symbol-horizon "
-                "subgroup degradation beyond the numerical floor"
+                "loss improvement and no paired run, run-symbol-horizon, or "
+                "run-symbol-horizon-task subgroup degradation beyond the "
+                "numerical floor"
             ),
             "reason": interaction_reason,
             "evaluated": interaction_evaluated,
@@ -3787,8 +3969,8 @@ def train_and_seal_round74_pretest_policy(
                 "initialization on the fixed architecture, feature view, seeds, "
                 "and supervised objective; promotion requires strict mean "
                 "proper-loss improvement and no paired run or "
-                "run-symbol-horizon subgroup degradation beyond the numerical "
-                "floor"
+                "run-symbol-horizon or run-symbol-horizon-task subgroup "
+                "degradation beyond the numerical floor"
             ),
             "reason": initialization_reason,
             "pretraining_supported": pretraining_supported,
@@ -4707,13 +4889,14 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 cohort pretest scaler artifact is unavailable")
     candidate_run_losses: dict[str, tuple[float, ...]] = {}
     candidate_group_losses: dict[str, dict[str, float]] = {}
+    candidate_task_group_losses: dict[str, dict[str, float]] = {}
     candidate_parameter_counts: dict[str, int] = {}
     for panel_candidate, raw_report in candidate_panel.items():
         if not isinstance(raw_report, Mapping):
             raise ValueError("Round 74 pretest candidate report differs")
         if panel_candidate not in reconstructed_config.candidate_ids:
             raise ValueError("Round 74 pretest candidate report differs")
-        _metrics, run_losses, group_losses, parameter_count = (
+        _metrics, run_losses, group_losses, task_group_losses, parameter_count = (
             _validated_candidate_fit_report(
                 raw_report,
                 panel_key=str(panel_candidate),
@@ -4727,9 +4910,15 @@ def load_round74_pretest_policy(
         )
         candidate_run_losses[str(panel_candidate)] = run_losses
         candidate_group_losses[str(panel_candidate)] = group_losses
+        candidate_task_group_losses[str(panel_candidate)] = task_group_losses
         candidate_parameter_counts[str(panel_candidate)] = parameter_count
     if len({tuple(sorted(values)) for values in candidate_group_losses.values()}) != 1:
         raise ValueError("Round 74 pretest candidate subgroup panel differs")
+    if (
+        len({tuple(sorted(values)) for values in candidate_task_group_losses.values()})
+        != 1
+    ):
+        raise ValueError("Round 74 pretest candidate task subgroup panel differs")
     if reconstructed_config.architecture_selection_mode == "complexity_gate":
         promotion_required_runs = (
             stage_tuning_run_counts["architecture"]
@@ -4744,6 +4933,7 @@ def load_round74_pretest_policy(
                 reconstructed_config.minimum_tuning_improvement
             ),
             candidate_group_losses=candidate_group_losses,
+            candidate_task_group_losses=candidate_task_group_losses,
             required_paired_run_count=promotion_required_runs,
         )
         expected_criterion = (
@@ -4752,7 +4942,8 @@ def load_round74_pretest_policy(
             "runs, must strictly exceed the numerical mean-loss floor after "
             "deleting any one capture run, must materially win a strict majority "
             "of capture runs, and may not degrade any paired run or eligible "
-            "run-symbol-horizon proper-loss subgroup beyond that floor"
+            "run-symbol-horizon aggregate or task proper-loss subgroup beyond "
+            "that floor"
         )
         expected_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
         expected_paired_run_count = promotion_required_runs
@@ -4819,9 +5010,11 @@ def load_round74_pretest_policy(
             tuning_run_count=stage_run_count,
             execution_mode=reconstructed_config.execution_mode,
         )
-        if incumbent_values[3] != challenger_values[3] or set(
-            incumbent_values[2]
-        ) != set(challenger_values[2]):
+        if (
+            incumbent_values[4] != challenger_values[4]
+            or set(incumbent_values[2]) != set(challenger_values[2])
+            or set(incumbent_values[3]) != set(challenger_values[3])
+        ):
             raise ValueError("Round 74 pretest feature-view stage differs")
         return (*incumbent_values, *challenger_values)
 
@@ -4829,10 +5022,12 @@ def load_round74_pretest_policy(
         _clock_incumbent_metrics,
         clock_incumbent_run_losses,
         clock_incumbent_group_losses,
+        clock_incumbent_task_group_losses,
         _clock_incumbent_parameter_count,
         _clock_challenger_metrics,
         clock_challenger_run_losses,
         clock_challenger_group_losses,
+        clock_challenger_task_group_losses,
         _clock_challenger_parameter_count,
     ) = validated_feature_stage(
         "clock_features",
@@ -4851,6 +5046,8 @@ def load_round74_pretest_policy(
         clock_challenger_run_losses,
         incumbent_group_losses=clock_incumbent_group_losses,
         challenger_group_losses=clock_challenger_group_losses,
+        incumbent_task_group_losses=clock_incumbent_task_group_losses,
+        challenger_task_group_losses=clock_challenger_task_group_losses,
         minimum_mean_loss_improvement=(reconstructed_config.minimum_tuning_improvement),
         required_paired_run_count=feature_view_required_runs,
     )
@@ -4866,10 +5063,12 @@ def load_round74_pretest_policy(
         order_flow_incumbent_metrics,
         order_flow_incumbent_run_losses,
         order_flow_incumbent_group_losses,
+        order_flow_incumbent_task_group_losses,
         _order_flow_incumbent_parameter_count,
         order_flow_challenger_metrics,
         order_flow_challenger_run_losses,
         order_flow_challenger_group_losses,
+        order_flow_challenger_task_group_losses,
         _order_flow_challenger_parameter_count,
     ) = validated_feature_stage(
         "order_flow_features",
@@ -4888,6 +5087,8 @@ def load_round74_pretest_policy(
         order_flow_challenger_run_losses,
         incumbent_group_losses=order_flow_incumbent_group_losses,
         challenger_group_losses=order_flow_challenger_group_losses,
+        incumbent_task_group_losses=order_flow_incumbent_task_group_losses,
+        challenger_task_group_losses=order_flow_challenger_task_group_losses,
         minimum_mean_loss_improvement=(reconstructed_config.minimum_tuning_improvement),
         required_paired_run_count=order_flow_required_runs,
     )
@@ -5021,6 +5222,7 @@ def load_round74_pretest_policy(
             unconditioned_metrics,
             unconditioned_run_losses,
             unconditioned_group_losses,
+            unconditioned_task_group_losses,
             unconditioned_parameter_count,
         ) = _validated_candidate_fit_report(
             raw_unconditioned_report,
@@ -5036,6 +5238,7 @@ def load_round74_pretest_policy(
             conditioned_metrics,
             conditioned_run_losses,
             conditioned_group_losses,
+            conditioned_task_group_losses,
             conditioned_parameter_count,
         ) = _validated_candidate_fit_report(
             raw_conditioned_report,
@@ -5047,9 +5250,12 @@ def load_round74_pretest_policy(
             tuning_run_count=stage_tuning_run_counts["state_conditioned_flow"],
             execution_mode=reconstructed_config.execution_mode,
         )
-        if conditioned_parameter_count <= unconditioned_parameter_count or set(
-            conditioned_group_losses
-        ) != set(unconditioned_group_losses):
+        if (
+            conditioned_parameter_count <= unconditioned_parameter_count
+            or set(conditioned_group_losses) != set(unconditioned_group_losses)
+            or set(conditioned_task_group_losses)
+            != set(unconditioned_task_group_losses)
+        ):
             raise ValueError("Round 74 state-conditioned flow complexity differs")
         interaction_required_runs = (
             stage_tuning_run_counts["state_conditioned_flow"]
@@ -5065,6 +5271,8 @@ def load_round74_pretest_policy(
             required_paired_run_count=interaction_required_runs,
             incumbent_group_losses=unconditioned_group_losses,
             challenger_group_losses=conditioned_group_losses,
+            incumbent_task_group_losses=unconditioned_task_group_losses,
+            challenger_task_group_losses=conditioned_task_group_losses,
         )
         expected_state_conditioned_flow = (
             expected_interaction_promotion_report["promoted"] is True
@@ -5101,8 +5309,9 @@ def load_round74_pretest_policy(
         "after the feature view is fixed, neutral-initialized market-state "
         "modulation of admitted order flow challenges the unconditioned "
         "incumbent on identical seeds and the supervised objective; promotion "
-        "requires strict mean proper-loss improvement and no paired run or "
-        "run-symbol-horizon subgroup degradation beyond the numerical floor"
+        "requires strict mean proper-loss improvement and no paired run, "
+        "run-symbol-horizon, or run-symbol-horizon-task subgroup degradation "
+        "beyond the numerical floor"
     )
     if (
         set(state_conditioned_flow_selection)
@@ -5203,6 +5412,7 @@ def load_round74_pretest_policy(
     initialization_metrics: dict[str, Mapping[str, object]] = {}
     initialization_run_losses: dict[str, tuple[float, ...]] = {}
     initialization_group_losses: dict[str, dict[str, float]] = {}
+    initialization_task_group_losses: dict[str, dict[str, float]] = {}
     initialization_parameter_counts: dict[str, int] = {}
     pretraining_split_sha256: set[str] = set()
     pretraining_feature_batch_sha256: set[tuple[str, ...]] = set()
@@ -5213,7 +5423,7 @@ def load_round74_pretest_policy(
             or not isinstance(raw_report, Mapping)
         ):
             raise ValueError("Round 74 pretest initialization report differs")
-        metrics, run_losses, group_losses, parameter_count = (
+        metrics, run_losses, group_losses, task_group_losses, parameter_count = (
             _validated_candidate_fit_report(
                 raw_report,
                 panel_key=expected_winner,
@@ -5311,6 +5521,7 @@ def load_round74_pretest_policy(
         initialization_metrics[str(initialization_id)] = metrics
         initialization_run_losses[str(initialization_id)] = run_losses
         initialization_group_losses[str(initialization_id)] = group_losses
+        initialization_task_group_losses[str(initialization_id)] = task_group_losses
         initialization_parameter_counts[str(initialization_id)] = parameter_count
     if len(set(initialization_parameter_counts.values())) != 1:
         raise ValueError("Round 74 pretest initialization parameter count differs")
@@ -5335,6 +5546,10 @@ def load_round74_pretest_policy(
             required_paired_run_count=initialization_required_runs,
             incumbent_group_losses=initialization_group_losses["random"],
             challenger_group_losses=initialization_group_losses[
+                "causal_next_event_pretrained"
+            ],
+            incumbent_task_group_losses=initialization_task_group_losses["random"],
+            challenger_task_group_losses=initialization_task_group_losses[
                 "causal_next_event_pretrained"
             ],
         )
@@ -5362,7 +5577,8 @@ def load_round74_pretest_policy(
         "initialization on the fixed architecture, feature view, seeds, "
         "and supervised objective; promotion requires strict mean "
         "proper-loss improvement and no paired run or "
-        "run-symbol-horizon subgroup degradation beyond the numerical floor"
+        "run-symbol-horizon or run-symbol-horizon-task subgroup degradation "
+        "beyond the numerical floor"
     )
     selected_initialization_report = initialization_panel[expected_initialization_id]
     assert isinstance(selected_initialization_report, Mapping)

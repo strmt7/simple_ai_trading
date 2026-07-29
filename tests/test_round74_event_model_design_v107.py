@@ -1,23 +1,9 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 from pathlib import Path
 import subprocess  # nosec B404
-from types import ModuleType
-
-from simple_ai_trading.impact_absorption_event_dataset import (
-    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_model import (
-    ROUND74_EVENT_MODEL_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_training import (
-    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
-    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
-)
-
 
 ROOT = Path(__file__).resolve().parents[1]
 DESIGN = (
@@ -27,15 +13,6 @@ DESIGN = (
     / "action-value"
     / "round-074-event-sequence-model-design-v107.json"
 )
-PUBLISHER_PATH = ROOT / "tools" / "publish_round74_event_training_preflight.py"
-SPEC = importlib.util.spec_from_file_location(
-    "round74_v107_preflight_publisher",
-    PUBLISHER_PATH,
-)
-assert SPEC is not None and SPEC.loader is not None
-PUBLISHER = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(PUBLISHER)
-assert isinstance(PUBLISHER, ModuleType)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -106,13 +83,13 @@ def test_round74_v107_enforces_path_law_without_financial_claims() -> None:
     assert delta["fixed_auxiliary_loss_weights_changed"] is False
     assert delta["dominated_raw_horizon_head_gradient_effect_evaluated"] is False
     assert schemas == {
-        "event_dataset": ROUND74_EVENT_DATASET_SCHEMA_VERSION,
-        "event_model": ROUND74_EVENT_MODEL_SCHEMA_VERSION,
-        "event_training": ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
-        "event_pretest_policy": ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
-        "event_training_preflight_run": PUBLISHER.RUN_SCHEMA_VERSION,
+        "event_dataset": "round-074-event-dataset-v11",
+        "event_model": "round-074-event-payoff-model-v9",
+        "event_training": "round-074-event-training-v32",
+        "event_pretest_policy": "round-074-event-pretest-policy-v31",
+        "event_training_preflight_run": "round-074-event-training-preflight-run-v9",
         "event_training_directml_preflight_evidence": (
-            PUBLISHER.EVIDENCE_SCHEMA_VERSION
+            "round-074-event-training-directml-preflight-evidence-v21"
         ),
     }
     assert verification["focused_tests_passed"] == 160
