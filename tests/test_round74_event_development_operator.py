@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+import simple_ai_trading.impact_absorption_event_epistemic_evaluation as epistemic_subject
 import simple_ai_trading.round74_event_development_operator as subject
 from simple_ai_trading.impact_absorption_event_calibration import (
     Round74TuningSubpartition,
@@ -15,9 +16,7 @@ from simple_ai_trading.impact_absorption_event_calibration import (
 from simple_ai_trading.impact_absorption_event_dataset import (
     Round74EventTrainingBatch,
 )
-from simple_ai_trading.impact_absorption_event_model import (
-    build_round74_event_model,
-)
+from simple_ai_trading.impact_absorption_event_training import Round74EventEnsemble
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
@@ -159,6 +158,36 @@ class _Calibration:
         return {
             "calibration_sha256": self.calibration_sha256,
             "pretest_policy_sha256": self.pretest_policy_sha256,
+        }
+
+
+@dataclass(frozen=True)
+class _EpistemicBatch:
+    batch_sha256: str
+    model_output_sha256: str
+    probability_calibration_sha256: str = _Calibration.calibration_sha256
+    tuning_subpartition_sha256: str = _Subpartition.subpartition_sha256
+    peer_count: int = 3
+
+    def validate(self) -> None:
+        return None
+
+
+@dataclass(frozen=True)
+class _EpistemicReport:
+    policy_selection_batch_sha256: tuple[str, ...]
+    tuning_subpartition_sha256: str = _Subpartition.subpartition_sha256
+    probability_calibration_sha256: str = _Calibration.calibration_sha256
+
+    def validate(self) -> None:
+        return None
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
+            "probability_calibration_sha256": (self.probability_calibration_sha256),
+            "policy_selection_batch_sha256": list(self.policy_selection_batch_sha256),
+            "policy_challenge_eligible": False,
         }
 
 
@@ -356,6 +385,24 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         "build_round74_action_inference_context",
         lambda batch: SimpleNamespace(batch_sha256=batch.batch_sha256),
     )
+    monkeypatch.setattr(
+        subject,
+        "prepare_round74_epistemic_evaluation_batch",
+        lambda batch, output, _calibration: _EpistemicBatch(
+            batch.batch_sha256,
+            output.batch_sha256,
+        ),
+    )
+    monkeypatch.setattr(
+        subject,
+        "evaluate_round74_epistemic_risk_coverage",
+        lambda batches, *, expected_policy_selection_run_ids: (
+            _EpistemicReport(tuple(batch.batch_sha256 for batch in batches))
+            if tuple(expected_policy_selection_run_ids)
+            == roles.subpartition.policy_selection_run_ids
+            else pytest.fail("epistemic run panel differs")
+        ),
+    )
 
     def derive(
         output: object,
@@ -491,7 +538,12 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
         "model_artifact": {"sha256": _digest(701)},
         "authority": {"sealed_test_evaluated": False},
     }
-    model = build_round74_event_model("event_pooling_linear")
+    model = Round74EventEnsemble("event_pooling_linear", 3)
+    monkeypatch.setattr(
+        epistemic_subject,
+        "ROUND74_EPISTEMIC_BOOTSTRAP_SAMPLES",
+        200,
+    )
     monkeypatch.setattr(
         subject,
         "load_round74_pretest_policy",

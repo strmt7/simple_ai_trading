@@ -35,6 +35,11 @@ from .impact_absorption_event_dataset import (
     Round74EventRunPartition,
     Round74EventTrainingBatch,
 )
+from .impact_absorption_event_epistemic_evaluation import (
+    Round74EpistemicRiskCoverageReport,
+    evaluate_round74_epistemic_risk_coverage,
+    prepare_round74_epistemic_evaluation_batch,
+)
 from .impact_absorption_event_model import (
     Round74EventEpistemicDiagnostics,
     Round74EventModelOutput,
@@ -69,9 +74,9 @@ from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 from .storage import write_bytes_atomic
 
 
-ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v4"
+ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v5"
 ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION = (
-    "round-074-development-policy-bundle-v5"
+    "round-074-development-policy-bundle-v6"
 )
 
 _SHA256 = "0123456789abcdef"
@@ -120,6 +125,9 @@ def _current_source_sha256() -> dict[str, str]:
         ),
         "action_policy_module_sha256": _module_sha256(
             "impact_absorption_event_action_policy.py"
+        ),
+        "epistemic_evaluation_module_sha256": _module_sha256(
+            "impact_absorption_event_epistemic_evaluation.py"
         ),
         "decision_latency_module_sha256": _module_sha256(
             "round74_online_decision_latency.py"
@@ -254,6 +262,7 @@ class Round74DevelopmentPolicyBundle:
     calibration_batch_sha256: tuple[str, ...]
     policy_selection_batch_sha256: tuple[str, ...]
     probability_calibration: Round74ProbabilityCalibration
+    epistemic_risk_coverage: Round74EpistemicRiskCoverageReport
     online_decision_latency: Round74OnlineDecisionLatencyEvidence
     execution_outcome_panel_sha256: tuple[str, ...]
     execution_outcome_panel_rows: tuple[int, ...]
@@ -265,6 +274,7 @@ class Round74DevelopmentPolicyBundle:
     event_model_module_sha256: str
     calibration_module_sha256: str
     action_policy_module_sha256: str
+    epistemic_evaluation_module_sha256: str
     decision_latency_module_sha256: str
     delayed_execution_module_sha256: str
     development_operator_module_sha256: str
@@ -283,6 +293,7 @@ class Round74DevelopmentPolicyBundle:
             self.event_model_module_sha256,
             self.calibration_module_sha256,
             self.action_policy_module_sha256,
+            self.epistemic_evaluation_module_sha256,
             self.decision_latency_module_sha256,
             self.delayed_execution_module_sha256,
             self.development_operator_module_sha256,
@@ -323,6 +334,9 @@ class Round74DevelopmentPolicyBundle:
             "event_model_module_sha256": self.event_model_module_sha256,
             "calibration_module_sha256": self.calibration_module_sha256,
             "action_policy_module_sha256": self.action_policy_module_sha256,
+            "epistemic_evaluation_module_sha256": (
+                self.epistemic_evaluation_module_sha256
+            ),
             "decision_latency_module_sha256": (self.decision_latency_module_sha256),
             "delayed_execution_module_sha256": (self.delayed_execution_module_sha256),
             "development_operator_module_sha256": (
@@ -331,6 +345,7 @@ class Round74DevelopmentPolicyBundle:
         } != _current_source_sha256():
             raise ValueError("Round 74 development policy source identity differs")
         self.probability_calibration.validate()
+        self.epistemic_risk_coverage.validate()
         self.online_decision_latency.validate()
         if (
             self.probability_calibration.risk_quantiles is None
@@ -338,6 +353,12 @@ class Round74DevelopmentPolicyBundle:
             != self.pretest_policy_sha256
             or self.probability_calibration.tuning_subpartition_sha256
             != self.tuning_subpartition_sha256
+            or self.epistemic_risk_coverage.tuning_subpartition_sha256
+            != self.tuning_subpartition_sha256
+            or self.epistemic_risk_coverage.probability_calibration_sha256
+            != self.probability_calibration.calibration_sha256
+            or self.epistemic_risk_coverage.policy_selection_batch_sha256
+            != self.policy_selection_batch_sha256
             or tuple(policy.profile for policy in self.action_policies)
             != ROUND74_ACTION_PROFILES
             or self.online_decision_latency.pretest_policy_sha256
@@ -389,6 +410,7 @@ class Round74DevelopmentPolicyBundle:
             "calibration_batch_sha256": list(self.calibration_batch_sha256),
             "policy_selection_batch_sha256": list(self.policy_selection_batch_sha256),
             "probability_calibration": self.probability_calibration.as_dict(),
+            "epistemic_risk_coverage": self.epistemic_risk_coverage.as_dict(),
             "online_decision_latency": self.online_decision_latency.as_dict(),
             "execution_outcome_panels": [
                 {
@@ -423,6 +445,9 @@ class Round74DevelopmentPolicyBundle:
                 "event_model_module_sha256": self.event_model_module_sha256,
                 "calibration_module_sha256": self.calibration_module_sha256,
                 "action_policy_module_sha256": self.action_policy_module_sha256,
+                "epistemic_evaluation_module_sha256": (
+                    self.epistemic_evaluation_module_sha256
+                ),
                 "decision_latency_module_sha256": (self.decision_latency_module_sha256),
                 "delayed_execution_module_sha256": (
                     self.delayed_execution_module_sha256
@@ -466,6 +491,7 @@ class Round74DevelopmentPolicyBundle:
             "calibration_batch_sha256",
             "policy_selection_batch_sha256",
             "probability_calibration",
+            "epistemic_risk_coverage",
             "online_decision_latency",
             "execution_outcome_panels",
             "action_policies",
@@ -485,6 +511,7 @@ class Round74DevelopmentPolicyBundle:
             return tuple(values)
 
         calibration = payload["probability_calibration"]
+        epistemic = payload["epistemic_risk_coverage"]
         latency = payload["online_decision_latency"]
         execution_panels = payload["execution_outcome_panels"]
         policies = payload["action_policies"]
@@ -492,6 +519,7 @@ class Round74DevelopmentPolicyBundle:
         source = payload["source"]
         if (
             not isinstance(calibration, Mapping)
+            or not isinstance(epistemic, Mapping)
             or not isinstance(latency, Mapping)
             or not isinstance(execution_panels, list)
             or len(execution_panels) != len(ROUND74_ACTION_PROFILES)
@@ -553,6 +581,9 @@ class Round74DevelopmentPolicyBundle:
                 probability_calibration=Round74ProbabilityCalibration.from_dict(
                     calibration
                 ),
+                epistemic_risk_coverage=(
+                    Round74EpistemicRiskCoverageReport.from_dict(epistemic)
+                ),
                 online_decision_latency=(
                     Round74OnlineDecisionLatencyEvidence.from_dict(latency)
                 ),
@@ -568,6 +599,9 @@ class Round74DevelopmentPolicyBundle:
                 event_model_module_sha256=str(source["event_model_module_sha256"]),
                 calibration_module_sha256=str(source["calibration_module_sha256"]),
                 action_policy_module_sha256=str(source["action_policy_module_sha256"]),
+                epistemic_evaluation_module_sha256=str(
+                    source["epistemic_evaluation_module_sha256"]
+                ),
                 decision_latency_module_sha256=str(
                     source["decision_latency_module_sha256"]
                 ),
@@ -771,6 +805,24 @@ def calibrate_and_select_round74_development_policy(
                 )
                 for batch in tuning_roles.policy_selection_batches
             )
+            epistemic_batches = tuple(
+                prepare_round74_epistemic_evaluation_batch(
+                    batch,
+                    output,
+                    calibration,
+                )
+                for batch, output in zip(
+                    tuning_roles.policy_selection_batches,
+                    policy_outputs,
+                    strict=True,
+                )
+            )
+            epistemic_risk_coverage = evaluate_round74_epistemic_risk_coverage(
+                epistemic_batches,
+                expected_policy_selection_run_ids=(
+                    tuning_roles.subpartition.policy_selection_run_ids
+                ),
+            )
             contexts = tuple(
                 build_round74_action_inference_context(batch)
                 for batch in tuning_roles.policy_selection_batches
@@ -807,7 +859,7 @@ def calibrate_and_select_round74_development_policy(
     finally:
         torch.use_deterministic_algorithms(prior_deterministic)
         model.to("cpu")
-    del calibration_outputs, policy_outputs
+    del calibration_outputs, epistemic_batches, policy_outputs
     fallback = tuple(
         message
         for message in warning_messages
@@ -855,6 +907,7 @@ def calibrate_and_select_round74_development_policy(
             batch.batch_sha256 for batch in tuning_roles.policy_selection_batches
         ),
         probability_calibration=calibration,
+        epistemic_risk_coverage=epistemic_risk_coverage,
         online_decision_latency=decision_latency,
         execution_outcome_panel_sha256=tuple(
             panel.panel_sha256 for panel in execution_panels
