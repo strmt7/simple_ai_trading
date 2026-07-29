@@ -1,0 +1,188 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v122",
+  "artifact_kind": "epistemic_action_filter_implementation_evidence",
+  "created_utc": "2026-07-29T06:02:36.242342Z",
+  "supersedes_artifact_sha256": "a2411838831f722370f4a608e974d74881f79956f100d17e23f209c3cc3f4abc",
+  "implementation_git_commit": "1639e53df6a9f36747a4d8d6ae430b6eba593764",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "action_policy": {
+      "path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+      "sha256": "d3e80f7e7dba89ed55b09ee38e1626fff8a43234dec4121f6da318ee0760076b"
+    },
+    "epistemic_action_policy": {
+      "path": "src/simple_ai_trading/impact_absorption_event_epistemic_policy.py",
+      "sha256": "09f555aa470539219e9757d4fdd0b8d4778ae7c95aa20587c41e5be276656ebd"
+    },
+    "action_policy_test": {
+      "path": "tests/test_impact_absorption_event_action_policy.py",
+      "sha256": "426e883a37a9f0236806db857c007b171f696d2f058fd0d8761c20c30a76d9d7"
+    },
+    "epistemic_evaluation_test": {
+      "path": "tests/test_impact_absorption_event_epistemic_evaluation.py",
+      "sha256": "949632b93f1850fd01a5322f41f0ad171aacc011b77fae3f9275030ed7911a15"
+    },
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v121.json",
+      "sha256": "b927fba4a3ec1d9528999d5a490b6c99c6dbe2206a129c5e4ffd1c6b2c838841"
+    }
+  },
+  "declared_delta": {
+    "summary": "Add a target-free, profile-specific ensemble-disagreement filter that may only turn an existing action candidate into abstention after the v121 ordering gate passes.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "probability_calibration_changed": false,
+    "baseline_candidate_derivation_changed": false,
+    "policy_selection_changed": false,
+    "automatic_policy_effect_enabled": false,
+    "runtime_filter_primitive_added": true,
+    "tuning_threshold_fitter_added": true,
+    "source_model_output_identity_api_added": true,
+    "sealed_test_access_changed": false
+  },
+  "filter_contract": {
+    "profiles": {
+      "conservative": {
+        "empirical_total_rejection_budget": 0.25,
+        "per_component_tail_budget": 0.05,
+        "component_quantile": 0.95
+      },
+      "regular": {
+        "empirical_total_rejection_budget": 0.15,
+        "per_component_tail_budget": 0.03,
+        "component_quantile": 0.97
+      },
+      "aggressive": {
+        "empirical_total_rejection_budget": 0.05,
+        "per_component_tail_budget": 0.01,
+        "component_quantile": 0.99
+      }
+    },
+    "components": [
+      "payoff_quantile_peer_dispersion",
+      "adverse_excursion_quantile_peer_dispersion",
+      "positive_payoff_probability_peer_dispersion",
+      "adverse_selection_probability_peer_dispersion",
+      "regime_unpredictability_probability_peer_dispersion"
+    ],
+    "stratification": [
+      "symbol",
+      "action_horizon",
+      "side"
+    ],
+    "regime_component_shared_across_sides": true,
+    "tail_allocation": "bonferroni_equal_across_five_components",
+    "quantile_method": "higher",
+    "minimum_rows_per_required_stratum": 256,
+    "required_capture_runs": 6,
+    "required_peer_count": 3,
+    "requires_complete_v121_conditional_ordering_support": true,
+    "target_fields_used_for_threshold_fit": false,
+    "runtime_target_fields_consumed": false,
+    "future_rejection_rate_guaranteed": false,
+    "exchangeability_claim": false,
+    "thresholds_transfer_across_symbols_or_horizons": false
+  },
+  "runtime_safeguards": {
+    "candidate_model_output_digest_must_match_runtime_output": true,
+    "probability_calibration_digest_must_match": true,
+    "tuning_subpartition_digest_must_match": true,
+    "peer_count_must_match": true,
+    "risk_profile_must_match": true,
+    "rejected_candidate_horizon_and_side_zeroed": true,
+    "rejected_candidate_scores_probabilities_and_quantiles_zeroed": true,
+    "candidate_set_expansion_permitted": false,
+    "trade_side_creation_permitted": false,
+    "position_size_change_permitted": false,
+    "leverage_change_permitted": false,
+    "order_submission_permitted": false,
+    "position_management_permitted": false,
+    "application_evidence_hash_bound": true
+  },
+  "execution_path_caveat": {
+    "candidate_subset_proves_executed_trade_subset": false,
+    "reason": "Removing an earlier overlapping candidate can make a later baseline candidate executable.",
+    "automatic_integration_permitted_before_exact_delayed_l2_replay": false,
+    "representative_replay_must_measure_replacement_trade_effects": true,
+    "sealed_comparison_must_use_the_same_causal_execution_semantics": true
+  },
+  "implementation_status": {
+    "threshold_fitter_implemented": true,
+    "target_free_runtime_filter_implemented": true,
+    "canonical_serialization_and_tamper_detection_implemented": true,
+    "profile_monotonicity_tested": true,
+    "target_mutation_invariance_tested": true,
+    "candidate_zeroing_and_subset_tested": true,
+    "development_coordinator_integration_completed": false,
+    "representative_thresholds_fitted": false,
+    "representative_delayed_l2_replay_completed": false,
+    "automatic_policy_use_enabled": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_observation": {
+    "slot_ordinal": 52,
+    "role": "training",
+    "capture_status": "failed",
+    "failure_class": "writer",
+    "terminal_error": "writer_shutdown_timeout",
+    "writer_message_count": 705200,
+    "reconnect_count": 0,
+    "resource_safety_passed": true,
+    "storage_efficiency_passed": true,
+    "qualification_passed": false,
+    "admitted_to_cohort": false,
+    "automatic_retry_permitted": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "verification": {
+    "complete_affected_test_modules_passed": 22,
+    "focused_epistemic_tests_passed": 5,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "representative_policy_selection_evaluation_run": false,
+    "representative_market_backtest_run": false,
+    "sealed_test_accessed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "research_sources": [
+    {
+      "title": "Overcoming Common Flaws in the Evaluation of Selective Classification Systems",
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2024/hash/047c84ec50bd8ea29349b996fc64af4b-Abstract-Conference.html",
+      "used_for": "retain generalized-risk evaluation and avoid treating a working threshold as sufficient evidence"
+    },
+    {
+      "title": "Automatically Adaptive Conformal Risk Control",
+      "url": "https://proceedings.mlr.press/v258/blot25a.html",
+      "used_for": "conditional-risk motivation only; no conformal guarantee is claimed for this nonstationary event stream"
+    },
+    {
+      "title": "Rectifying Conformity Scores for Better Conditional Coverage",
+      "url": "https://proceedings.mlr.press/v267/plassier25a.html",
+      "used_for": "motivation for symbol, horizon, and side conditional thresholds"
+    },
+    {
+      "title": "Adaptive Conformal Inference for Multi-Step Ahead Time-Series Forecasting Online",
+      "url": "https://arxiv.org/abs/2409.14792",
+      "used_for": "record that time-dependent deployment requires a separate online adaptation and monitoring contract"
+    }
+  ],
+  "evidence_boundary": {
+    "uncertainty_ordering_established_on_representative_data": false,
+    "runtime_filter_improves_predictive_accuracy_established": false,
+    "runtime_filter_improves_after_cost_net_return_established": false,
+    "runtime_filter_reduces_drawdown_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "ai_uplift_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "c49ae4d5deb11814e50f473f558cb9dceb5e1c9aaefd36c7c92d357419284e49"
+}
