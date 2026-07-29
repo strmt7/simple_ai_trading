@@ -1,0 +1,157 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v110",
+  "created_at_utc": "2026-07-29T02:03:17Z",
+  "implementation_git_commit": "dd94e1d7384de9e89c696d3776d200a9339954f2",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v109.json",
+    "file_sha256": "b6a3c833f49c89c30c39ca47350ce3cf367a1980af69c7ac9e1519ea8fbc7d3e",
+    "design_sha256": "c78cafa35d7b13d9670c6fd3a7fc62412fdcb3f0d1bbcb3ed4320e4e4313bd8a",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "sealed_evaluator": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "e1a60e6439096a9a3ddcf68a5ade12e0d53f85bafeea72512a7425c4800c7ae7"
+    },
+    "sealed_evaluator_test": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "f908699e4e062dd3639852d979bd8cc094efb26dd2d0f5aaae6ca3e7cc0659f2"
+    },
+    "historical_v109_contract_test": {
+      "path": "tests/test_round74_event_model_design_v109.py",
+      "sha256": "0b4dcba8841d8eb14ddb44d47c0341f745ed63da3171af5246506559aaddd993"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://doi.org/10.1111/1468-0262.00152",
+      "finding": "Repeated search and comparison across alternatives can create apparent predictive superiority unless multiplicity is controlled.",
+      "implementation_consequence": "The one-sided familywise error budget now covers every pooled and symbol-specific predictive comparison."
+    },
+    {
+      "source": "https://arxiv.org/abs/1810.03993",
+      "finding": "Transparent model evaluation should report performance across relevant operating groups rather than only aggregate metrics.",
+      "implementation_consequence": "BTCUSDT, ETHUSDT, and SOLUSDT each receive explicit Brier and pinball skill evidence for every modeled task."
+    },
+    {
+      "source": "https://doi.org/10.1080/01621459.1994.10476870",
+      "finding": "Stationary-bootstrap inference preserves dependence by resampling random-length chronological blocks.",
+      "implementation_consequence": "Every symbol-task comparison uses whole capture-run improvements and an independently seeded circular stationary bootstrap."
+    },
+    {
+      "source": "https://doi.org/10.1198/016214506000001437",
+      "finding": "Proper scores support coherent comparison of probabilistic forecasts against declared reference forecasts.",
+      "implementation_consequence": "The per-symbol tests retain Brier scoring for binary heads and pinball scoring for quantile heads."
+    }
+  ],
+  "declared_delta": {
+    "sealed_evaluation_schema_version": "round-074-sealed-evaluation-v21",
+    "pooled_predictive_task_count": 5,
+    "symbol_count": 3,
+    "symbol_specific_predictive_task_count": 15,
+    "familywise_predictive_comparison_count": 20,
+    "familywise_alpha": 0.05,
+    "per_comparison_one_sided_alpha": 0.0025,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "predictive_tasks": [
+      "positive_payoff",
+      "adverse_selection",
+      "regime_unpredictability",
+      "net_payoff_quantiles",
+      "maximum_adverse_excursion_quantiles"
+    ],
+    "required_scopes": [
+      "pooled",
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "symbol_skill_population": "equal_weight_chronological_capture_run",
+    "every_expected_test_capture_run_requires_symbol_evidence": true,
+    "symbol_specific_failure_may_be_offset_by_other_symbols": false,
+    "overall_predictive_gate": "conjunction_of_all_twenty_pooled_and_symbol_task_gates",
+    "bootstrap_draws_per_comparison": 10000,
+    "independent_deterministic_bootstrap_seed_per_comparison": true,
+    "binary_scoring_rule": "Brier_score",
+    "quantile_scoring_rule": "mean_pinball_loss_across_predeclared_quantiles",
+    "binary_no_information_baseline_changed": false,
+    "quantile_no_information_baseline_changed": false,
+    "probability_calibration_changed": false,
+    "financial_gate_remains_independent_and_mandatory": true,
+    "ai_overlay_may_rescue_predictive_gate_failure": false,
+    "model_parameters_changed": false,
+    "training_objective_changed": false,
+    "action_thresholds_changed": false,
+    "execution_replay_changed": false,
+    "compute_backend_changed": false,
+    "test_access_reuse_permitted": false,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "sealed_evaluation": "round-074-sealed-evaluation-v21",
+    "temperature_calibration": "round-074-temperature-calibration-v5",
+    "risk_quantile_calibration": "round-074-risk-quantile-calibration-v2",
+    "no_information_quantile_baseline": "round-074-no-information-quantile-baseline-v1",
+    "event_model": "round-074-event-payoff-model-v9",
+    "event_training": "round-074-event-training-v32",
+    "event_pretest_policy": "round-074-event-pretest-policy-v31"
+  },
+  "verification": {
+    "focused_tests_passed": 70,
+    "focused_test_files": 6,
+    "pooled_and_all_symbol_tasks_pass_skilled_counterexample": true,
+    "pooled_payoff_gate_passes_masking_counterexample": true,
+    "unskilled_sol_payoff_symbol_gate_rejects_masking_counterexample": true,
+    "unskilled_sol_cannot_be_offset_by_btc_and_eth": true,
+    "all_twenty_comparisons_have_complete_run_coverage_in_passing_counterexample": true,
+    "historical_v109_schema_contract_frozen_to_literals": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "representative_predictive_skill_evaluated": false,
+    "sealed_test_accessed": false,
+    "campaign_database_opened": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 35,
+    "latest_independently_adjudicated_slot": 41,
+    "quarantined_slot_017_counted_as_admitted": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_skill_gate_proven_on_synthetic_counterexamples": true,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "quantile_accuracy_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "b0f0cfcb1172edf76f38ff44efb7578cd02bac1673f19af3ae67a7df67d6ff71"
+}
