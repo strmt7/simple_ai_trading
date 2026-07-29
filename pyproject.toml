@@ -72,7 +72,7 @@ conflicts = [
 ]
 
 [project.scripts]
-simple-ai-trading = "simple_ai_trading.cli:main"
+simple-ai-trading = "simple_ai_trading.entrypoint:main"
 simple-ai-trading-windows = "simple_ai_trading.windows_app:main"
 
 [tool.pytest.ini_options]

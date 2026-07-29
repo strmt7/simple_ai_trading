@@ -2172,7 +2172,7 @@ class MainWindow {
             command += L"set \"PYTHONUTF8=1\" && ";
             command += L"set \"PYTHONPATH=" + root_text + L"\\src;%PYTHONPATH%\" && ";
         }
-        command += python_invocation(root) + L" -m simple_ai_trading " + args + L" 2>&1\"";
+        command += python_invocation(root) + L" -m simple_ai_trading.entrypoint " + args + L" 2>&1\"";
         return command;
     }
 

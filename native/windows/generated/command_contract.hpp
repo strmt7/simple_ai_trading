@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"2d7754ad8d971826e4b8a7c663624aa1baef497c22c5866ed01c31b06710c558";
+inline constexpr const wchar_t* kCommandContractSha256 = L"78dc4be61af9cbafc16a7e25a91550d397d17afd420548718c3b5c6ad2562851";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -645,6 +645,18 @@ inline constexpr CommandOptionSpec kOptions_polymarket_features[] = {
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_polymarket_live[] = {
+    {L"--action", L"action", L"status, preflight, reconcile, supervise, cancel-owned, recover-redemptions, redeem", L"status", L"", L"1", false, true, false},
+    {L"--ledger", L"ledger", L"", L"data\\polymarket\\live-ownership.sqlite3", L"durable hash-bound Polymarket ownership ledger", L"1", false, true, false},
+    {L"--risk-level", L"risk_level", L"conservative, regular, aggressive", L"conservative", L"hard Polymarket execution ceiling profile; conservative is default", L"1", false, true, false},
+    {L"--duration-seconds", L"duration_seconds", L"", L"0.0", L"supervision duration; zero runs until interrupted", L"1", false, true, false},
+    {L"--reconciliation-seconds", L"reconciliation_seconds", L"", L"5.0", L"authenticated reconciliation interval", L"1", false, true, false},
+    {L"--condition-id", L"condition_id", L"", L"", L"optional exact condition ID for one redemption", L"1", false, true, false},
+    {L"--confirm-redemption", L"confirm_redemption", L"", L"false", L"confirm one settlement transaction after a fresh read-only preflight", L"0", false, false, false},
+    {L"--automatic-redemption", L"automatic_redemption", L"", L"false", L"allow supervision to redeem proven resolved inventory one condition at a time", L"0", false, false, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_polymarket_mlp[] = {
     {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
     {L"--ridge-report-sha256", L"ridge_report_sha256", L"", L"", L"immutable development-passed report digest from polymarket-ridge", L"1", true, true, false},
@@ -1230,6 +1242,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-action-value", L"Build hash-bound BTC/ETH/SOL action-value evidence in resumable synchronized market batches. A sealed Round 13 run additionally materializes label-free treatment, control, and stress decisions before official outcomes can be requested.", kOptions_polymarket_action_value, 9},
     {L"polymarket-continuity", L"Evaluate recorder errors, stream gaps, connection segments, market snapshot timing, and fresh CLOB baselines without consulting outcomes, labels, utilities, or model scores.", kOptions_polymarket_continuity, 5},
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one validated prospective Polymarket recorder run. Strict gap-free replay is the default. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 9},
+    {L"polymarket-live", L"Inspect or supervise the independent BTC Polymarket CLOB V2 boundary. It never shares Binance orders, balances, positions, or risk state. No action opens exposure because no Polymarket model has live authority.", kOptions_polymarket_live, 9},
     {L"polymarket-mlp", L"Load one fully materialized, development-passed Round 9 ridge report; fit the preregistered condition-balanced MLP ensemble; open its test partition only after the validation gates pass; and persist weights, traces, predictions, actions, equity, and market PnL. This command grants no foundation-AI, trading, or profitability authority.", kOptions_polymarket_mlp, 6},
     {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 25},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 23},
@@ -1278,6 +1291,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Trading", L"Connectivity and ownership", L"close"},
     {L"Trading", L"Execution diagnostics", L"spot-roundtrip"},
     {L"Trading", L"Execution diagnostics", L"polymarket-paper"},
+    {L"Trading", L"Polymarket live", L"polymarket-live"},
     {L"Research", L"Polymarket evidence", L"polymarket-continuity"},
     {L"Research", L"Polymarket evidence", L"polymarket-features"},
     {L"Research", L"Polymarket evidence", L"polymarket-action-value"},

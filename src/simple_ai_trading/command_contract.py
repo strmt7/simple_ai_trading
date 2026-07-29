@@ -9,7 +9,7 @@ import hashlib
 import json
 from typing import Any
 
-from .cli import _build_parser
+from .entrypoint import _build_parser
 
 
 @dataclass(frozen=True)
@@ -74,6 +74,11 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         "Trading",
         "Execution diagnostics",
         ("spot-roundtrip", "polymarket-paper"),
+    ),
+    (
+        "Trading",
+        "Polymarket live",
+        ("polymarket-live",),
     ),
     (
         "Research",

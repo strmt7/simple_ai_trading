@@ -641,6 +641,12 @@ class OfficialPolymarketV2Venue:
             raise PolymarketLiveBlocked("Polymarket cancel response included a foreign order")
         return PolymarketCancelResult(cancelled, failed)
 
+    def close(self) -> None:
+        close = getattr(self._client, "close", None)
+        if callable(close):
+            close()
+        self.session.close()
+
 
 __all__ = [
     "OfficialPolymarketV2Venue",

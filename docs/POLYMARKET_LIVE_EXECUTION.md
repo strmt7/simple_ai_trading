@@ -61,25 +61,51 @@ flowchart LR
   opens; a fresh ownership reconciliation can still permit an owned close.
 - Foreign orders, positions, or authenticated stream events fail closed and
   are never modified.
+- The installed CLI and native Windows app consume one generated command
+  contract. `polymarket-live` exposes credential-free local status,
+  authenticated preflight and reconciliation, foreground user-stream and
+  settlement supervision, exact owned-order cancellation, redemption recovery,
+  and explicitly confirmed redemption.
+- Local status does not create a missing ledger. Supervision opens no exposure;
+  it runs only the independent authenticated safety and recovery loops.
 
 ## Still Closed
 
 - No Polymarket model has passed prospective, after-cost promotion gates.
 - No account credentials are available for an authenticated host test.
-- CLI and Windows controls do not yet expose this boundary.
+- No autonomous Polymarket decision policy has live-order authority. The
+  operator command therefore cannot open exposure.
 
 These gaps block release authority. A public API check or offline signature is
 not an authenticated order, cancellation, fill, or redemption test.
 
+## Operator Surface
+
+```powershell
+simple-ai-trading polymarket-live --action status
+simple-ai-trading polymarket-live --action preflight --json
+simple-ai-trading polymarket-live --action supervise
+simple-ai-trading polymarket-live --action cancel-owned
+simple-ai-trading polymarket-live --action recover-redemptions
+```
+
+`redeem` additionally requires `--confirm-redemption`. Automatic redemption is
+off unless `--automatic-redemption` is set. Smart-wallet settlement also
+requires exactly one complete relayer or builder credential set. Credentials
+come only from process environment variables and are never stored in the
+ledger, command contract, output, or documentation.
+
 ## Current Public Host Evidence
 
-On 2026-07-29, the production read endpoints returned CLOB protocol V2 and a
-non-blocked CH/ZH geoblock result from this host; the settlement RPC returned
-Polygon chain ID 137. Two current BTC five-minute markets matched Gamma and
-CLOB identity, token, tick-size, minimum-size, fee, and payload-hash checks. An
-offline SDK signature against one current token preserved the requested 5
-shares at 0.50 and derived the expected V2 order hash. No order, approval,
-wallet deployment, or transaction was submitted.
+On 2026-07-29, a fresh production read probe returned CLOB protocol V2 and a
+non-blocked CH/ZH geoblock result from this host. The documented
+`polygon.drpc.org` endpoint returned Polygon chain ID 137. Two current BTC
+five-minute markets matched Gamma and CLOB identity, token, tick-size,
+minimum-size, fee, and payload-hash checks; all four token books passed strict
+identity and level validation. An offline SDK signature against one current
+token preserved the requested 5 shares at 0.50 and derived the expected V2
+order hash. No order, approval, wallet deployment, or transaction was
+submitted.
 
 ## Primary Contracts
 
