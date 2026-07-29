@@ -74,6 +74,7 @@ def _status(
     store: SpotPerpetualCorpusStore,
     *,
     expected_days: int,
+    inventory_sha256: str,
 ) -> dict[str, object]:
     row = store.connect().execute(
         """
@@ -83,9 +84,10 @@ def _status(
                min(period),
                max(period)
         FROM spot_perpetual_flow_day_manifest
-        WHERE research_round = ? AND status = 'complete' AND is_current
+        WHERE research_round = ? AND inventory_sha256 = ?
+          AND status = 'complete' AND is_current
         """,
-        [POLYMARKET_BTC_HISTORY_RESEARCH_ROUND],
+        [POLYMARKET_BTC_HISTORY_RESEARCH_ROUND, inventory_sha256],
     ).fetchone()
     completed = int(row[0])
     return {
@@ -111,7 +113,14 @@ def main() -> int:
         symbols=POLYMARKET_BTC_HISTORY_SYMBOLS,
         research_round=POLYMARKET_BTC_HISTORY_RESEARCH_ROUND,
     ) as store:
-        _emit("history_status", **_status(store, expected_days=len(contract.days)))
+        _emit(
+            "history_status",
+            **_status(
+                store,
+                expected_days=len(contract.days),
+                inventory_sha256=contract.inventory_sha256,
+            ),
+        )
         if args.phase == "status":
             return 0
         processed = 0
@@ -153,7 +162,11 @@ def main() -> int:
                 compressed_bytes=result.compressed_bytes,
                 combined_flow_sha256=result.combined_flow_sha256,
             )
-        status = _status(store, expected_days=len(contract.days))
+        status = _status(
+            store,
+            expected_days=len(contract.days),
+            inventory_sha256=contract.inventory_sha256,
+        )
         _emit("history_run_complete", processed_days=processed, **status)
     return 0
 
