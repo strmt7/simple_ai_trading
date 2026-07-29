@@ -176,6 +176,13 @@ def test_round15_contract_excludes_every_previously_observed_target_day() -> Non
     assert contract.required_source_symbol_count == 1
     assert contract.required_flow_rows_per_day == 86_400
     assert contract.required_market_count_per_day == 288
+    assert contract.test_gates.minimum_terminal_conditions == 3_500
+    assert contract.test_gates.minimum_outcomes_per_class == 1_000
+    assert contract.test_gates.minimum_decision_rows == 20_000
+    assert contract.test_gates.bootstrap_repetitions == 10_000
+    assert contract.test_gates.calibration_slope_minimum == 0.85
+    assert contract.test_gates.calibration_slope_maximum == 1.15
+    assert contract.test_gates.expected_calibration_error_maximum == 0.03
 
 
 def test_target_free_identity_parser_omits_terminal_outcome() -> None:

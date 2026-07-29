@@ -8,6 +8,7 @@ import pytest
 from simple_ai_trading.polymarket_historical_dataset import FEATURE_NAMES
 from simple_ai_trading.polymarket_historical_model import (
     HistoricalModelPanel,
+    _paired_block_bootstrap,
     condition_balanced_binary_metrics,
     fit_historical_pretest_candidates,
     load_historical_model_panel,
@@ -118,6 +119,26 @@ def test_test_panel_is_rejected_before_one_use_state() -> None:
 
     with pytest.raises(ValueError, match="not authorized"):
         load_historical_model_panel(Store(), roles=("test",))  # type: ignore[arg-type]
+
+
+def test_paired_bootstrap_obeys_contract_sample_and_repetition_gates() -> None:
+    values = np.linspace(-0.01, 0.02, 3_500, dtype=np.float64)
+
+    result = _paired_block_bootstrap(
+        values,
+        repetitions=100,
+        minimum_conditions=3_500,
+    )
+
+    assert result["repetitions"] == 100
+    assert result["block_conditions"] == 12
+    assert float(result["lower_95"]) < float(result["upper_95"])
+    with pytest.raises(ValueError, match="bootstrap inputs"):
+        _paired_block_bootstrap(
+            values[:-1],
+            repetitions=100,
+            minimum_conditions=3_500,
+        )
 
 
 _EPSILON = 1e-6
