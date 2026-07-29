@@ -11,6 +11,11 @@ promotion. The canonical
 [economic evaluation](../evidence/round-014-btc-5m-shadow-hour-evaluation-v1.json)
 overrides the earlier predictive-only result below.
 
+![Round 14 cumulative after-cost shadow P&L](shadow/cumulative-pnl.svg)
+
+The plotted values are preserved in the
+[exact event-outcome table](shadow/event-outcomes.csv).
+
 Round 14 tested a frozen BTC five-minute direction model on all 287 eligible
 conditions from 2026-06-22 UTC. The shallow Binance-flow LightGBM challenger
 recorded log loss `0.644667` versus
