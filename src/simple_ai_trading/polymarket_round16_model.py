@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import time
 from typing import Callable, Mapping, Sequence
 
 import lightgbm as lgb
@@ -582,6 +583,9 @@ def build_round16_pretest_artifact(
             source_root / "polymarket_round16_dataset.py"
         ),
         "round16_identity": _file_sha256(source_root / "polymarket_round16.py"),
+        "round16_evaluation": _file_sha256(
+            source_root / "polymarket_round16_evaluation.py"
+        ),
         "shared_model_primitives": _file_sha256(
             source_root / "polymarket_historical_model.py"
         ),
@@ -621,6 +625,94 @@ def build_round16_pretest_artifact(
     return {**body, "artifact_sha256": _canonical_sha256(body)}
 
 
+def record_round16_pretest_artifact(
+    store: HistoricalScreenStore,
+    contract: Round16HistoricalContract,
+    artifact: Mapping[str, object],
+) -> str:
+    """Seal the pretest artifact before the one-use test-label phase."""
+
+    if store.contract != contract.historical or store.state != (
+        "development_targets_complete"
+    ):
+        raise ValueError("Round 16 pretest phase is not authorized")
+    value = dict(artifact)
+    claimed = str(value.pop("artifact_sha256", ""))
+    if (
+        len(claimed) != 64
+        or _canonical_sha256(value) != claimed
+        or value.get("schema_version") != ROUND16_PRETEST_SCHEMA_VERSION
+        or value.get("contract_sha256") != contract.contract_sha256
+        or value.get("test_targets_accessed") is not False
+        or value.get("paper_authority") is not False
+        or value.get("live_authority") is not False
+        or value.get("profitability_claim") is not False
+    ):
+        raise ValueError("Round 16 pretest artifact integrity differs")
+    full_artifact = {**value, "artifact_sha256": claimed}
+    dataset = store.connect().execute(
+        """
+        SELECT dataset_sha256
+        FROM feature.round16_dataset_manifest
+        WHERE singleton
+        """
+    ).fetchone()
+    test_count = int(
+        store.connect()
+        .execute(
+            """
+            SELECT count(*)
+            FROM target.official_resolution
+            WHERE role = 'test'
+            """
+        )
+        .fetchone()[0]
+    )
+    if (
+        dataset is None
+        or str(dataset[0]) != value.get("dataset_sha256")
+        or test_count != 0
+    ):
+        raise ValueError("Round 16 pretest dataset or test boundary differs")
+    canonical = _canonical_json(full_artifact)
+    envelope_sha = hashlib.sha256(canonical.encode("ascii")).hexdigest()
+    now = time.time_ns() // 1_000_000
+    connection = store.connect()
+    connection.execute("BEGIN TRANSACTION")
+    try:
+        connection.execute(
+            """
+            INSERT INTO feature.pretest_manifest VALUES (
+                true, ?, ?, ?, ?, ?, ?
+            )
+            """,
+            [
+                ROUND16_PRETEST_SCHEMA_VERSION,
+                contract.contract_sha256,
+                str(dataset[0]),
+                canonical,
+                envelope_sha,
+                now,
+            ],
+        )
+        changed = connection.execute(
+            """
+            UPDATE feature.screen_manifest
+            SET state = 'pretest_complete', updated_at_ms = ?
+            WHERE singleton AND state = 'development_targets_complete'
+            RETURNING state
+            """,
+            [now],
+        ).fetchone()
+        if changed is None:
+            raise ValueError("Round 16 pretest state changed concurrently")
+        connection.execute("COMMIT")
+    except BaseException:
+        connection.execute("ROLLBACK")
+        raise
+    return envelope_sha
+
+
 __all__ = [
     "ROUND16_MODEL_SEED",
     "ROUND16_PRETEST_SCHEMA_VERSION",
@@ -630,4 +722,5 @@ __all__ = [
     "fit_round16_pretest_candidates",
     "load_round16_model_panel",
     "predict_round16_candidate",
+    "record_round16_pretest_artifact",
 ]

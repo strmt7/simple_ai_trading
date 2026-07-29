@@ -11,11 +11,14 @@ from simple_ai_trading.polymarket_round16 import (
     load_round16_historical_contract,
 )
 from simple_ai_trading.polymarket_round16_dataset import ROUND16_FEATURE_NAMES
+from simple_ai_trading.polymarket_round16_evaluation import evaluate_round16_panel
+from simple_ai_trading.polymarket_historical_screen import HistoricalScreenStore
 from simple_ai_trading.polymarket_round16_model import (
     Round16ModelPanel,
     build_round16_pretest_artifact,
     fit_round16_pretest_candidates,
     predict_round16_candidate,
+    record_round16_pretest_artifact,
 )
 
 
@@ -103,7 +106,9 @@ def test_round16_candidate_screen_is_bounded_and_reproducible() -> None:
         assert _canonical_sha256(body) == claimed
 
 
-def test_round16_pretest_artifact_has_no_test_or_trading_authority() -> None:
+def test_round16_pretest_artifact_has_no_test_or_trading_authority(
+    tmp_path: Path,
+) -> None:
     contract = load_round16_historical_contract(CONTRACT_PATH)
     train = _panel(role="train", condition_count=80, seed=16015)
     tune = _panel(role="tune", condition_count=40, seed=16016)
@@ -139,6 +144,70 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority() -> None:
             contract=contract,
             source_commit="b" * 40,
         )
+
+    with HistoricalScreenStore(
+        tmp_path / "round16-model.duckdb",
+        contract=contract.historical,
+    ) as store:
+        store.transition("initialized", "identities_complete")
+        store.transition("identities_complete", "features_complete")
+        store.transition("features_complete", "development_targets_complete")
+        store.connect().execute(
+            """
+            CREATE TABLE feature.round16_dataset_manifest (
+                singleton BOOLEAN PRIMARY KEY,
+                manifest_json VARCHAR NOT NULL,
+                dataset_sha256 VARCHAR NOT NULL,
+                created_at_ms BIGINT NOT NULL
+            )
+            """
+        )
+        store.connect().execute(
+            "INSERT INTO feature.round16_dataset_manifest VALUES (true, '{}', ?, 1)",
+            [train.dataset_sha256],
+        )
+        tampered_artifact = dict(artifact)
+        tampered_artifact["selected_best_control"] = "tampered"
+        with pytest.raises(ValueError, match="integrity differs"):
+            record_round16_pretest_artifact(
+                store,
+                contract,
+                tampered_artifact,
+            )
+
+        envelope_sha = record_round16_pretest_artifact(
+            store,
+            contract,
+            artifact,
+        )
+
+        assert len(envelope_sha) == 64
+        assert store.state == "pretest_complete"
+        stored, stored_sha = store.pretest_artifact()
+    assert stored["artifact_sha256"] == artifact["artifact_sha256"]
+    assert stored_sha == envelope_sha
+
+    test = _panel(role="test", condition_count=1_200, seed=16017)
+    evaluation = evaluate_round16_panel(test, artifact, contract)
+
+    assert evaluation["test"]["conditions"] == 1_200
+    assert evaluation["test"]["decision_rows"] == 16_800
+    assert evaluation["scope"]["predictive_screen_only"] is True
+    assert evaluation["scope"]["execution_or_profitability_claim"] is False
+    assert evaluation["paper_authority"] is False
+    assert evaluation["live_authority"] is False
+    assert evaluation["profitability_claim"] is False
+    assert set(evaluation["gates"]) == {
+        "minimum_terminal_conditions",
+        "minimum_outcomes_per_class",
+        "minimum_decision_rows",
+        "challenger_log_loss_skill_positive",
+        "challenger_brier_skill_positive",
+        "challenger_balanced_accuracy_not_lower",
+        "paired_log_loss_improvement_lower_positive",
+        "calibration_slope_in_range",
+        "expected_calibration_error_at_most_contract_maximum",
+    }
 
 
 def test_round16_panel_requires_fourteen_decisions_per_condition() -> None:
