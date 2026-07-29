@@ -299,3 +299,69 @@ def test_historical_source_has_no_account_or_execution_boundary() -> None:
         "position_risk",
     ):
         assert forbidden not in source.lower()
+
+
+def test_pretest_and_evaluation_artifacts_advance_atomically(
+    tmp_path: Path,
+) -> None:
+    contract = load_historical_screen_contract(CONTRACT_PATH)
+    dataset_sha = "7" * 64
+    with HistoricalScreenStore(
+        tmp_path / "artifacts.duckdb", contract=contract
+    ) as store:
+        store.connect().execute(
+            """
+            INSERT INTO feature.dataset_manifest VALUES (
+                true, 'test-dataset', ?, '[]', ?, '[]', ?, ?, ?, 8000,
+                1000, '{}', ?, ?, 1
+            )
+            """,
+            [
+                contract.contract_sha256,
+                "1" * 64,
+                "2" * 64,
+                "3" * 64,
+                "4" * 64,
+                "5" * 64,
+                dataset_sha,
+            ],
+        )
+        store.transition("initialized", "identities_complete")
+        store.transition("identities_complete", "features_complete")
+        store.transition("features_complete", "development_targets_complete")
+        pretest = {
+            "schema_version": "polymarket-historical-btc-pretest-v1",
+            "contract_sha256": contract.contract_sha256,
+            "dataset_sha256": dataset_sha,
+            "selected_candidate_id": "candidate",
+        }
+
+        pretest_sha = store.record_pretest_artifact(pretest)
+
+        assert store.state == "pretest_complete"
+        loaded, loaded_sha = store.pretest_artifact()
+        assert loaded == pretest
+        assert loaded_sha == pretest_sha
+        store.transition("pretest_complete", "targets_complete")
+        evaluation = {
+            "schema_version": "polymarket-historical-btc-evaluation-v1",
+            "contract_sha256": contract.contract_sha256,
+            "dataset_sha256": dataset_sha,
+            "pretest_artifact_sha256": pretest_sha,
+            "accepted_predictive_edge": False,
+        }
+
+        evaluation_sha = store.record_evaluation_artifact(evaluation)
+
+        assert store.state == "evaluated"
+        assert (
+            store.connect()
+            .execute(
+                """
+                SELECT artifact_sha256 FROM target.evaluation_manifest
+                WHERE singleton
+                """
+            )
+            .fetchone()[0]
+            == evaluation_sha
+        )

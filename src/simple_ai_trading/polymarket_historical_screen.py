@@ -754,6 +754,16 @@ class HistoricalScreenStore:
                 evidence_sha256 VARCHAR NOT NULL,
                 observed_at_ms BIGINT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS target.evaluation_manifest (
+                singleton BOOLEAN PRIMARY KEY,
+                schema_version VARCHAR NOT NULL,
+                contract_sha256 VARCHAR NOT NULL,
+                dataset_sha256 VARCHAR NOT NULL,
+                pretest_artifact_sha256 VARCHAR NOT NULL,
+                artifact_json VARCHAR NOT NULL,
+                artifact_sha256 VARCHAR NOT NULL,
+                created_at_ms BIGINT NOT NULL
+            );
             """
         )
         now = time.time_ns() // 1_000_000
@@ -992,6 +1002,140 @@ class HistoricalScreenStore:
             list(selected),
         ).fetchall()
         return frozenset(str(row[0]) for row in rows)
+
+    def record_pretest_artifact(self, artifact: Mapping[str, object]) -> str:
+        if self.read_only or self.state != "development_targets_complete":
+            raise ValueError("historical pretest artifact phase is not authorized")
+        test_count = int(
+            self._connection.execute(
+                """
+                SELECT count(*) FROM target.official_resolution
+                WHERE role = 'test'
+                """
+            ).fetchone()[0]
+        )
+        dataset = self._connection.execute(
+            """
+            SELECT dataset_sha256 FROM feature.dataset_manifest
+            WHERE singleton
+            """
+        ).fetchone()
+        value = dict(artifact)
+        if (
+            test_count != 0
+            or dataset is None
+            or value.get("schema_version") != "polymarket-historical-btc-pretest-v1"
+            or value.get("contract_sha256") != self.contract.contract_sha256
+            or value.get("dataset_sha256") != str(dataset[0])
+        ):
+            raise ValueError("historical pretest artifact binding differs")
+        canonical = _canonical_json(value)
+        artifact_sha = hashlib.sha256(canonical.encode("ascii")).hexdigest()
+        now = time.time_ns() // 1_000_000
+        self._connection.execute("BEGIN TRANSACTION")
+        try:
+            self._connection.execute(
+                """
+                INSERT INTO feature.pretest_manifest VALUES (
+                    true, ?, ?, ?, ?, ?, ?
+                )
+                """,
+                [
+                    str(value["schema_version"]),
+                    self.contract.contract_sha256,
+                    str(dataset[0]),
+                    canonical,
+                    artifact_sha,
+                    now,
+                ],
+            )
+            changed = self._connection.execute(
+                """
+                UPDATE feature.screen_manifest
+                SET state = 'pretest_complete', updated_at_ms = ?
+                WHERE singleton AND state = 'development_targets_complete'
+                RETURNING state
+                """,
+                [now],
+            ).fetchone()
+            if changed is None:
+                raise ValueError("historical pretest state changed concurrently")
+            self._connection.execute("COMMIT")
+        except BaseException:
+            self._connection.execute("ROLLBACK")
+            raise
+        return artifact_sha
+
+    def pretest_artifact(self) -> tuple[Mapping[str, object], str]:
+        row = self._connection.execute(
+            """
+            SELECT artifact_json, artifact_sha256
+            FROM feature.pretest_manifest WHERE singleton
+            """
+        ).fetchone()
+        if row is None:
+            raise ValueError("historical pretest artifact is missing")
+        value = _decode_json(
+            str(row[0]).encode("ascii"),
+            name="historical pretest artifact",
+        )
+        if (
+            not isinstance(value, Mapping)
+            or _canonical_json(dict(value)) != str(row[0])
+            or hashlib.sha256(str(row[0]).encode("ascii")).hexdigest() != str(row[1])
+        ):
+            raise ValueError("historical pretest artifact integrity failed")
+        return value, str(row[1])
+
+    def record_evaluation_artifact(self, artifact: Mapping[str, object]) -> str:
+        if self.read_only or self.state != "targets_complete":
+            raise ValueError("historical evaluation phase is not authorized")
+        pretest, pretest_sha = self.pretest_artifact()
+        value = dict(artifact)
+        if (
+            value.get("schema_version") != "polymarket-historical-btc-evaluation-v1"
+            or value.get("contract_sha256") != self.contract.contract_sha256
+            or value.get("dataset_sha256") != pretest.get("dataset_sha256")
+            or value.get("pretest_artifact_sha256") != pretest_sha
+        ):
+            raise ValueError("historical evaluation artifact binding differs")
+        canonical = _canonical_json(value)
+        artifact_sha = hashlib.sha256(canonical.encode("ascii")).hexdigest()
+        now = time.time_ns() // 1_000_000
+        self._connection.execute("BEGIN TRANSACTION")
+        try:
+            self._connection.execute(
+                """
+                INSERT INTO target.evaluation_manifest VALUES (
+                    true, ?, ?, ?, ?, ?, ?, ?
+                )
+                """,
+                [
+                    str(value["schema_version"]),
+                    self.contract.contract_sha256,
+                    str(value["dataset_sha256"]),
+                    pretest_sha,
+                    canonical,
+                    artifact_sha,
+                    now,
+                ],
+            )
+            changed = self._connection.execute(
+                """
+                UPDATE feature.screen_manifest
+                SET state = 'evaluated', updated_at_ms = ?
+                WHERE singleton AND state = 'targets_complete'
+                RETURNING state
+                """,
+                [now],
+            ).fetchone()
+            if changed is None:
+                raise ValueError("historical evaluation state changed concurrently")
+            self._connection.execute("COMMIT")
+        except BaseException:
+            self._connection.execute("ROLLBACK")
+            raise
+        return artifact_sha
 
     def record_resolution(
         self,

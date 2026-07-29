@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import subprocess
 import sys
 
 
@@ -13,6 +14,10 @@ if str(SRC) not in sys.path:
 
 from simple_ai_trading.polymarket_historical_dataset import (  # noqa: E402
     materialize_historical_causal_features,
+)
+from simple_ai_trading.polymarket_historical_model import (  # noqa: E402
+    evaluate_historical_test_once,
+    freeze_historical_pretest,
 )
 from simple_ai_trading.polymarket_historical_screen import (  # noqa: E402
     HistoricalScreenStore,
@@ -87,6 +92,11 @@ def _status(store: HistoricalScreenStore) -> dict[str, object]:
                 "SELECT count(*) FROM feature.pretest_manifest"
             ).fetchone()[0]
         ),
+        "evaluation_manifest_count": int(
+            connection.execute(
+                "SELECT count(*) FROM target.evaluation_manifest"
+            ).fetchone()[0]
+        ),
     }
     return {
         "state": store.state,
@@ -132,6 +142,51 @@ def _materialize_features(
     )
 
 
+def _committed_source_head() -> str:
+    source_paths = (
+        "src/simple_ai_trading/polymarket_historical_screen.py",
+        "src/simple_ai_trading/polymarket_historical_dataset.py",
+        "src/simple_ai_trading/polymarket_historical_model.py",
+        "tools/run_polymarket_round14_historical_screen.py",
+    )
+    tracked = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", *source_paths],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if tracked.returncode != 0:
+        raise ValueError("historical model source must be tracked before fitting")
+    for cached in (False, True):
+        command = ["git", "diff", "--quiet"]
+        if cached:
+            command.append("--cached")
+        command.extend(["HEAD", "--", *source_paths])
+        result = subprocess.run(
+            command,
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            raise ValueError(
+                "historical model source must be committed before pretest fitting"
+            )
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    return result.stdout.strip().lower()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
@@ -146,7 +201,9 @@ def main() -> int:
             "features",
             "unlabeled",
             "development-targets",
+            "fit",
             "test-targets",
+            "evaluate",
         ),
     )
     parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
@@ -155,6 +212,11 @@ def main() -> int:
         "--microstructure",
         type=Path,
         default=DEFAULT_MICROSTRUCTURE,
+    )
+    parser.add_argument(
+        "--compute-backend",
+        choices=("auto", "cpu", "directml", "cuda", "rocm"),
+        default="auto",
     )
     args = parser.parse_args()
     contract = load_historical_screen_contract(args.contract)
@@ -174,6 +236,22 @@ def main() -> int:
                 progress=_emit,
             )
             _emit("historical_development_targets_complete", dict(counts))
+        if args.phase == "fit":
+            artifact, artifact_sha = freeze_historical_pretest(
+                store,
+                source_commit=_committed_source_head(),
+                compute_backend=args.compute_backend,
+                progress=_emit,
+            )
+            _emit(
+                "historical_pretest_complete",
+                {
+                    "artifact_sha256": artifact_sha,
+                    "best_control_id": artifact["best_control_id"],
+                    "best_challenger_id": artifact["best_challenger_id"],
+                    "selected_candidate_id": artifact["selected_candidate_id"],
+                },
+            )
         if args.phase == "test-targets":
             counts = collect_historical_test_targets(
                 store,
@@ -181,6 +259,18 @@ def main() -> int:
                 progress=_emit,
             )
             _emit("historical_test_targets_complete", dict(counts))
+        if args.phase == "evaluate":
+            artifact, artifact_sha = evaluate_historical_test_once(store)
+            _emit(
+                "historical_evaluation_complete",
+                {
+                    "artifact_sha256": artifact_sha,
+                    "accepted_predictive_edge": artifact["accepted_predictive_edge"],
+                    "best_control_id": artifact["best_control_id"],
+                    "best_challenger_id": artifact["best_challenger_id"],
+                    "gates": artifact["gates"],
+                },
+            )
         _emit("historical_screen_status", _status(store))
     return 0
 
