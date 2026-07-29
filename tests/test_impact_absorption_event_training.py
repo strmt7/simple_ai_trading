@@ -182,6 +182,30 @@ def _config() -> Round74EventTrainingConfig:
     )
 
 
+def _assert_gradient_health(
+    optimization: dict[str, float],
+    *,
+    optimizer_steps: int,
+    gradient_clip_norm: float,
+) -> None:
+    minimum = optimization["preclip_gradient_norm_minimum"]
+    mean = optimization["preclip_gradient_norm_mean"]
+    maximum = optimization["preclip_gradient_norm_maximum"]
+    zero_steps = optimization["zero_gradient_steps"]
+    clipped_steps = optimization["clipped_gradient_steps"]
+
+    assert 0.0 <= minimum <= mean <= maximum
+    assert zero_steps in {float(step) for step in range(optimizer_steps + 1)}
+    assert clipped_steps in {float(step) for step in range(optimizer_steps + 1)}
+    assert optimization["zero_gradient_fraction"] == pytest.approx(
+        zero_steps / optimizer_steps
+    )
+    assert optimization["gradient_clip_fraction"] == pytest.approx(
+        clipped_steps / optimizer_steps
+    )
+    assert optimization["gradient_clip_norm_limit"] == pytest.approx(gradient_clip_norm)
+
+
 def _scaler() -> Round74EventFeatureScaler:
     feature_count = len(ROUND74_EVENT_FEATURE_NAMES)
     lower = np.full(feature_count, -10.0, dtype=np.float64)
@@ -739,6 +763,11 @@ def test_segmented_training_seals_and_reloads_pooled_target_policy(
     assert first["optimization_metrics"]["optimizer_steps"] == 1.0
     assert first["optimization_metrics"]["minimum_run_minibatch_contributions"] == 1.0
     assert first["optimization_metrics"]["maximum_run_minibatch_contributions"] == 3.0
+    _assert_gradient_health(
+        first["optimization_metrics"],
+        optimizer_steps=1,
+        gradient_clip_norm=config.gradient_clip_norm,
+    )
     selected_metrics = policy["selection"]["selected_tuning_metrics"]
     assert artifact.tuning_loss == pytest.approx(selected_metrics["loss"])
 
@@ -790,9 +819,10 @@ def test_prepared_roles_forward_segmented_model_selection_without_discarding_run
     )
     roles.validate()
     assert len(roles.ai_qualification_batches) == ai_count
-    assert tuple(
-        batch.run_id[0] for batch in roles.ai_qualification_batches
-    ) == subpartition.ai_qualification_run_ids
+    assert (
+        tuple(batch.run_id[0] for batch in roles.ai_qualification_batches)
+        == subpartition.ai_qualification_run_ids
+    )
     config = Round74EventTrainingConfig(
         seeds=(7411,),
         maximum_epochs=1,
@@ -1803,6 +1833,11 @@ def test_round74_trainer_balances_optimizer_contributions_by_capture_run(
         assert optimization["minimum_eligible_minibatches_per_run"] == 1.0
         assert optimization["maximum_eligible_minibatches_per_run"] == 3.0
         assert optimization["worst_run_loss"] >= (optimization["run_balanced_loss"])
+        _assert_gradient_health(
+            optimization,
+            optimizer_steps=3,
+            gradient_clip_norm=_config().gradient_clip_norm,
+        )
 
 
 def test_round74_device_run_group_preserves_equal_run_gradient() -> None:

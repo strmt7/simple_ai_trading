@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import subprocess  # nosec B404
 import sys
@@ -32,8 +33,8 @@ from simple_ai_trading.impact_absorption_event_training import (
 )
 
 
-EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v19"
-RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v7"
+EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v20"
+RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v8"
 SOURCE_PATHS = {
     "event_sequence": "src/simple_ai_trading/impact_absorption_event_sequence.py",
     "event_scaling": "src/simple_ai_trading/impact_absorption_event_scaling.py",
@@ -263,17 +264,59 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         "minimum_eligible_minibatches_per_run": 1.0,
         "maximum_eligible_minibatches_per_run": 3.0,
     }
-    if (
-        not isinstance(schedules, dict)
-        or set(schedules) != set(candidate_ids)
-        or any(
-            not isinstance(schedules[candidate_id], list)
-            or len(schedules[candidate_id]) != len(seeds)
-            or any(value != schedule_contract for value in schedules[candidate_id])
-            for candidate_id in candidate_ids
-        )
-    ):
+    if not isinstance(schedules, dict) or set(schedules) != set(candidate_ids):
         raise RuntimeError("Round 74 run-balanced optimization proof differs")
+    for candidate_id in candidate_ids:
+        candidate_schedules = schedules[candidate_id]
+        if not isinstance(candidate_schedules, list) or len(candidate_schedules) != len(
+            seeds
+        ):
+            raise RuntimeError("Round 74 run-balanced optimization proof differs")
+        for schedule in candidate_schedules:
+            if not isinstance(schedule, dict) or any(
+                schedule.get(key) != value for key, value in schedule_contract.items()
+            ):
+                raise RuntimeError("Round 74 run-balanced optimization proof differs")
+            gradient_values = (
+                schedule.get("preclip_gradient_norm_minimum"),
+                schedule.get("preclip_gradient_norm_mean"),
+                schedule.get("preclip_gradient_norm_maximum"),
+            )
+            zero_steps = schedule.get("zero_gradient_steps")
+            clipped_steps = schedule.get("clipped_gradient_steps")
+            zero_fraction = schedule.get("zero_gradient_fraction")
+            clipped_fraction = schedule.get("gradient_clip_fraction")
+            clip_limit = schedule.get("gradient_clip_norm_limit")
+            if (
+                any(
+                    not isinstance(value, (int, float))
+                    or not math.isfinite(float(value))
+                    for value in (
+                        *gradient_values,
+                        zero_steps,
+                        clipped_steps,
+                        zero_fraction,
+                        clipped_fraction,
+                        clip_limit,
+                    )
+                )
+                or not 0.0
+                <= float(gradient_values[0])
+                <= float(gradient_values[1])
+                <= float(gradient_values[2])
+                or float(zero_steps) not in {0.0, 1.0, 2.0, 3.0}
+                or float(clipped_steps) not in {0.0, 1.0, 2.0, 3.0}
+                or not math.isclose(
+                    float(zero_fraction),
+                    float(zero_steps) / 3.0,
+                )
+                or not math.isclose(
+                    float(clipped_fraction),
+                    float(clipped_steps) / 3.0,
+                )
+                or float(clip_limit) <= 0.0
+            ):
+                raise RuntimeError("Round 74 gradient health proof differs")
     for field in ("policy_sha256", "model_sha256", "prediction_sha256"):
         _require_sha256(result.get(field), field)
     selection = result.get("selection")

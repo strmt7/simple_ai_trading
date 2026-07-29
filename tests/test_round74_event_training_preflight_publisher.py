@@ -198,6 +198,14 @@ def _run() -> dict[str, object]:
                         "maximum_run_minibatch_contributions": 3.0,
                         "minimum_eligible_minibatches_per_run": 1.0,
                         "maximum_eligible_minibatches_per_run": 3.0,
+                        "preclip_gradient_norm_minimum": 0.5,
+                        "preclip_gradient_norm_mean": 1.0,
+                        "preclip_gradient_norm_maximum": 1.5,
+                        "zero_gradient_steps": 0.0,
+                        "zero_gradient_fraction": 0.0,
+                        "clipped_gradient_steps": 1.0,
+                        "gradient_clip_fraction": 1.0 / 3.0,
+                        "gradient_clip_norm_limit": 1.0,
                     }
                     for _seed in (7411, 7423, 7433)
                 ]
@@ -283,6 +291,17 @@ def test_validate_run_rejects_unearned_complexity_promotion() -> None:
     run = _run()
     run["result"]["selection"]["promotion_reports"][0]["promoted"] = True
     with pytest.raises(RuntimeError, match="complexity-promotion"):
+        PUBLISHER._validate_run(run, commit="a" * 40)
+
+
+def test_validate_run_rejects_incoherent_gradient_health() -> None:
+    run = _run()
+    schedule = run["result"]["peer_run_balanced_optimization_schedule"][
+        "event_pooling_linear"
+    ][0]
+    schedule["zero_gradient_fraction"] = 0.5
+
+    with pytest.raises(RuntimeError, match="gradient health"):
         PUBLISHER._validate_run(run, commit="a" * 40)
 
 

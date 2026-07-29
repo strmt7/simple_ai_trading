@@ -185,7 +185,7 @@ def _run(repository: Path) -> dict[str, object]:
         backend = policy["backend"]
         optimization_population = policy["optimization_population"]
         result: dict[str, object] = {
-            "schema_version": "round-074-event-training-preflight-run-v7",
+            "schema_version": "round-074-event-training-preflight-run-v8",
             "execution_git_commit": _git_commit(repository),
             "backend": {
                 key: backend[key]
@@ -281,6 +281,14 @@ def _run(repository: Path) -> dict[str, object]:
                                 "maximum_run_minibatch_contributions",
                                 "minimum_eligible_minibatches_per_run",
                                 "maximum_eligible_minibatches_per_run",
+                                "preclip_gradient_norm_minimum",
+                                "preclip_gradient_norm_mean",
+                                "preclip_gradient_norm_maximum",
+                                "zero_gradient_steps",
+                                "zero_gradient_fraction",
+                                "clipped_gradient_steps",
+                                "gradient_clip_fraction",
+                                "gradient_clip_norm_limit",
                             )
                         }
                         for peer in panel[candidate_id]["peer_reports"]
