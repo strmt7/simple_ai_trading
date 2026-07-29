@@ -26,6 +26,10 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     _eligible_target_score_threshold,
     _equal_run_score_threshold,
 )
+from simple_ai_trading.impact_absorption_event_action_configuration import (
+    Round74FinalActionConfiguration,
+    _build_round74_final_action_configuration,
+)
 from simple_ai_trading.impact_absorption_event_epistemic_policy import (
     ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS,
     Round74EpistemicActionFilter,
@@ -902,6 +906,63 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
     assert restored.challenge_sha256 == challenge.challenge_sha256
     assert restored.as_dict() == payload
 
+    configuration = _build_round74_final_action_configuration(
+        development_bundle_sha256="f" * 64,
+        action_selection=baseline,
+        epistemic_action_challenge=challenge,
+    )
+    assert configuration.mode == "epistemic_filter"
+    assert configuration.action_filter_sha256 == action_filter.filter_sha256
+    assert configuration.sealed_test_accessed is False
+    assert configuration.trading_authority is False
+    configuration_payload = json.loads(json.dumps(configuration.as_dict()))
+    assert (
+        Round74FinalActionConfiguration.from_dict(configuration_payload).as_dict()
+        == configuration_payload
+    )
+    invalid_mode = dict(configuration_payload)
+    invalid_mode["mode"] = "baseline"
+    unsigned_configuration = dict(invalid_mode)
+    unsigned_configuration.pop("configuration_sha256")
+    invalid_mode["configuration_sha256"] = hashlib.sha256(
+        json.dumps(
+            unsigned_configuration,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(ValueError, match="configuration differs"):
+        Round74FinalActionConfiguration.from_dict(invalid_mode)
+    invalid_contract_type = json.loads(json.dumps(configuration_payload))
+    invalid_contract_type["selection_contract"][
+        "single_final_ml_configuration"
+    ] = 1
+    unsigned_contract = dict(invalid_contract_type)
+    unsigned_contract.pop("configuration_sha256")
+    invalid_contract_type["configuration_sha256"] = hashlib.sha256(
+        json.dumps(
+            unsigned_contract,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(ValueError, match="payload differs"):
+        Round74FinalActionConfiguration.from_dict(invalid_contract_type)
+    baseline_only_configuration = _build_round74_final_action_configuration(
+        development_bundle_sha256="f" * 64,
+        action_selection=baseline,
+        epistemic_action_challenge=None,
+    )
+    assert baseline_only_configuration.mode == "baseline"
+    assert baseline_only_configuration.decision_reason_code == (
+        "baseline_no_epistemic_challenge"
+    )
+    assert baseline_only_configuration.action_filter_sha256 is None
+
     invalid_count = json.loads(json.dumps(payload))
     invalid_count["baseline_trade_count"] = True
     unsigned = dict(invalid_count)
@@ -961,6 +1022,16 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
         harmful.baseline_metrics.total_net_bps
     )
     assert harmful.tuning_challenge_eligible is False
+    baseline_configuration = _build_round74_final_action_configuration(
+        development_bundle_sha256="f" * 64,
+        action_selection=harmful_baseline,
+        epistemic_action_challenge=harmful,
+    )
+    assert baseline_configuration.mode == "baseline"
+    assert baseline_configuration.decision_reason_code == (
+        "baseline_epistemic_challenge_not_eligible"
+    )
+    assert baseline_configuration.action_filter_sha256 is None
 
 
 def test_risk_tail_calibration_can_fail_closed_before_candidate_selection() -> None:
