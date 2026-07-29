@@ -28,9 +28,11 @@ from .impact_absorption_ai_runtime import (
 )
 from .impact_absorption_ai_worker import Round74AIWorkerResult
 from .impact_absorption_event_action_policy import (
-    Round74ActionPolicySelection,
     Round74ActionTrace,
     round74_action_profile,
+)
+from .impact_absorption_event_action_configuration import (
+    Round74FinalActionConfiguration,
 )
 from .impact_absorption_event_financial_metrics import (
     round74_conservative_maximum_drawdown_bps,
@@ -45,12 +47,12 @@ from .statistical_resampling import moving_block_bootstrap_mean
 from .storage import write_json_atomic
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v16"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v17"
 ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION = (
     "round-074-ai-qualification-population-v1"
 )
 ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION = (
-    "round-074-ai-pretest-qualification-v4"
+    "round-074-ai-pretest-qualification-v5"
 )
 ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION = (
     "round-074-ai-execution-replay-evidence-v2"
@@ -1146,6 +1148,10 @@ class Round74AIUpliftDevelopmentReport:
 
     profile: str
     action_selection_sha256: str
+    final_action_configuration_sha256: str
+    final_action_configuration_mode: str
+    epistemic_action_filter_sha256: str | None
+    epistemic_action_filter_application_sha256: tuple[str, ...]
     candidate_sha256: tuple[str, ...]
     pretest_policy_sha256: str
     probability_calibration_sha256: str
@@ -1376,12 +1382,32 @@ class Round74AIUpliftDevelopmentReport:
                 _SHA256.fullmatch(value) is None
                 for value in (
                     self.action_selection_sha256,
+                    self.final_action_configuration_sha256,
                     self.pretest_policy_sha256,
                     self.probability_calibration_sha256,
                     self.model_manifest_sha256,
                     *self.candidate_sha256,
                     *self.review_sha256,
                     *self.execution_replay_sha256,
+                    *self.epistemic_action_filter_application_sha256,
+                )
+            )
+            or self.final_action_configuration_mode
+            not in ("baseline", "epistemic_filter")
+            or (
+                self.final_action_configuration_mode == "baseline"
+                and (
+                    self.epistemic_action_filter_sha256 is not None
+                    or self.epistemic_action_filter_application_sha256
+                )
+            )
+            or (
+                self.final_action_configuration_mode == "epistemic_filter"
+                and (
+                    self.epistemic_action_filter_sha256 is None
+                    or _SHA256.fullmatch(self.epistemic_action_filter_sha256) is None
+                    or len(self.epistemic_action_filter_application_sha256)
+                    != len(self.candidate_sha256)
                 )
             )
             or not self.candidate_sha256
@@ -1524,6 +1550,16 @@ class Round74AIUpliftDevelopmentReport:
             "schema_version": self.schema_version,
             "profile": self.profile,
             "action_selection_sha256": self.action_selection_sha256,
+            "final_action_configuration_sha256": (
+                self.final_action_configuration_sha256
+            ),
+            "final_action_configuration_mode": self.final_action_configuration_mode,
+            "epistemic_action_filter_sha256": (
+                self.epistemic_action_filter_sha256
+            ),
+            "epistemic_action_filter_application_sha256": list(
+                self.epistemic_action_filter_application_sha256
+            ),
             "candidate_sha256": list(self.candidate_sha256),
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
@@ -1624,6 +1660,7 @@ class Round74AIUpliftDevelopmentReport:
         claimed_run_uplift = payload.pop("paired_run_uplift_bootstrap", None)
         sequence_keys = (
             "candidate_sha256",
+            "epistemic_action_filter_application_sha256",
             "review_sha256",
             "execution_replay_sha256",
             "ai_scaled_net_payoff_bps",
@@ -1635,11 +1672,33 @@ class Round74AIUpliftDevelopmentReport:
         )
         if (
             _SHA256.fullmatch(claimed) is None
+            or not isinstance(
+                payload.get("final_action_configuration_sha256"),
+                str,
+            )
+            or not isinstance(
+                payload.get("final_action_configuration_mode"),
+                str,
+            )
+            or (
+                payload.get("epistemic_action_filter_sha256") is not None
+                and not isinstance(
+                    payload.get("epistemic_action_filter_sha256"),
+                    str,
+                )
+            )
             or not isinstance(baseline_trace, Mapping)
             or not isinstance(ai_metrics, Mapping)
             or not isinstance(qualification_population, Mapping)
             or not isinstance(payload.get("development_gate_passed"), bool)
             or any(not isinstance(payload.get(key), list) for key in sequence_keys)
+            or any(
+                not isinstance(item, str)
+                for item in payload.get(
+                    "epistemic_action_filter_application_sha256",
+                    (),
+                )
+            )
         ):
             raise ValueError("Round 74 AI uplift report payload differs")
         try:
@@ -1651,6 +1710,23 @@ class Round74AIUpliftDevelopmentReport:
             selected = cls(
                 profile=str(payload["profile"]),
                 action_selection_sha256=str(payload["action_selection_sha256"]),
+                final_action_configuration_sha256=str(
+                    payload["final_action_configuration_sha256"]
+                ),
+                final_action_configuration_mode=str(
+                    payload["final_action_configuration_mode"]
+                ),
+                epistemic_action_filter_sha256=(
+                    str(payload["epistemic_action_filter_sha256"])
+                    if payload["epistemic_action_filter_sha256"] is not None
+                    else None
+                ),
+                epistemic_action_filter_application_sha256=tuple(
+                    str(item)
+                    for item in payload[
+                        "epistemic_action_filter_application_sha256"
+                    ]
+                ),
                 candidate_sha256=tuple(
                     str(item) for item in payload["candidate_sha256"]
                 ),
@@ -1718,6 +1794,10 @@ class Round74AIPretestQualificationPanel:
             (
                 report.profile,
                 report.action_selection_sha256,
+                report.final_action_configuration_sha256,
+                report.final_action_configuration_mode,
+                report.epistemic_action_filter_sha256,
+                report.epistemic_action_filter_application_sha256,
                 report.candidate_sha256,
                 report.pretest_policy_sha256,
                 report.probability_calibration_sha256,
@@ -1786,6 +1866,11 @@ class Round74AIPretestQualificationPanel:
         return self.development_reports[0].pretest_policy_sha256
 
     @property
+    def final_action_configuration_sha256(self) -> str:
+        self.validate()
+        return self.development_reports[0].final_action_configuration_sha256
+
+    @property
     def probability_calibration_sha256(self) -> str:
         self.validate()
         return self.development_reports[0].probability_calibration_sha256
@@ -1812,6 +1897,9 @@ class Round74AIPretestQualificationPanel:
             "qualification_passed": self.qualification_passed,
             "gate_reasons": list(self.gate_reasons),
             "model_manifest_sha256": list(self.model_manifest_sha256),
+            "final_action_configuration_sha256": (
+                self.final_action_configuration_sha256
+            ),
             "development_report_sha256": [
                 report.report_sha256 for report in self.development_reports
             ],
@@ -1851,6 +1939,11 @@ class Round74AIPretestQualificationPanel:
             "model_manifest_sha256": [
                 report.model_manifest_sha256 for report in reports
             ],
+            "final_action_configuration_sha256": (
+                reports[0].final_action_configuration_sha256
+                if reports
+                else ""
+            ),
             "development_report_sha256": [report.report_sha256 for report in reports],
             "development_data_scope": "ai_qualification_tuning_runs_only",
             "sealed_test_accessed": False,
@@ -1956,17 +2049,19 @@ def load_round74_ai_pretest_qualification(
 
 
 def evaluate_round74_ai_overlay_development(
-    action_selection: Round74ActionPolicySelection,
+    final_action_configuration: Round74FinalActionConfiguration,
     reviews: Sequence[Round74AIPairedReviewEvidence],
     executions: Sequence[Round74AIExecutionReplayEvidence],
     *,
     qualification_population: Round74AIQualificationPopulation,
     qualification_trace: Round74ActionTrace,
     qualification_candidate_sha256: Sequence[str],
+    epistemic_action_filter_application_sha256: Sequence[str] = (),
 ) -> Round74AIUpliftDevelopmentReport:
     """Compare one AI overlay on a disjoint, preassigned tuning population."""
 
-    action_selection.validate()
+    final_action_configuration.validate()
+    action_selection = final_action_configuration.action_selection
     qualification_population.validate()
     qualification_trace.validate()
     selected = [
@@ -1981,6 +2076,10 @@ def evaluate_round74_ai_overlay_development(
     selected_candidate_sha256 = tuple(
         _require_sha256(value, "qualification candidate")
         for value in qualification_candidate_sha256
+    )
+    filter_application_sha256 = tuple(
+        _require_sha256(value, "epistemic filter application")
+        for value in epistemic_action_filter_application_sha256
     )
     policy_run_ids = {
         run_id
@@ -2001,6 +2100,14 @@ def evaluate_round74_ai_overlay_development(
         or not policy_run_ids.issubset(set(qualification_population.prior_run_ids))
         or policy_run_ids.intersection(qualification_population.run_ids)
         or trace.threshold_score != action_selection.selected_threshold_score
+        or (
+            final_action_configuration.mode == "baseline"
+            and filter_application_sha256
+        )
+        or (
+            final_action_configuration.mode == "epistemic_filter"
+            and len(filter_application_sha256) != len(selected_candidate_sha256)
+        )
     ):
         raise ValueError("Round 74 AI qualification population identity differs")
     review_rows = tuple(reviews)
@@ -2092,6 +2199,14 @@ def evaluate_round74_ai_overlay_development(
     result = Round74AIUpliftDevelopmentReport(
         profile=profile.profile,
         action_selection_sha256=action_selection.selection_sha256,
+        final_action_configuration_sha256=(
+            final_action_configuration.configuration_sha256
+        ),
+        final_action_configuration_mode=final_action_configuration.mode,
+        epistemic_action_filter_sha256=(
+            final_action_configuration.action_filter_sha256
+        ),
+        epistemic_action_filter_application_sha256=filter_application_sha256,
         candidate_sha256=selected_candidate_sha256,
         pretest_policy_sha256=action_selection.pretest_policy_sha256,
         probability_calibration_sha256=(

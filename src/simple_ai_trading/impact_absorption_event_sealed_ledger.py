@@ -15,7 +15,9 @@ import time
 from .impact_absorption_ai_uplift import Round74AIPretestQualificationPanel
 from .impact_absorption_event_action_policy import (
     ROUND74_ACTION_PROFILES,
-    Round74ActionPolicySelection,
+)
+from .impact_absorption_event_action_configuration import (
+    Round74FinalActionConfiguration,
 )
 from .impact_absorption_event_cohort import (
     ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS,
@@ -24,10 +26,11 @@ from .impact_absorption_event_dataset import Round74EventTrainingBatch
 from .types import config_paths
 
 
-ROUND74_SEALED_LEDGER_SCHEMA_VERSION = "round-074-sealed-ledger-v3"
+ROUND74_SEALED_LEDGER_SCHEMA_VERSION = "round-074-sealed-ledger-v4"
+ROUND74_SEALED_LEDGER_PRECONFIG_SCHEMA_VERSION = "round-074-sealed-ledger-v3"
 ROUND74_SEALED_LEDGER_PRETEST_SCHEMA_VERSION = "round-074-sealed-ledger-v2"
 ROUND74_SEALED_LEDGER_LEGACY_SCHEMA_VERSION = "round-074-sealed-ledger-v1"
-ROUND74_SEALED_CLAIM_SCHEMA_VERSION = "round-074-sealed-claim-v3"
+ROUND74_SEALED_CLAIM_SCHEMA_VERSION = "round-074-sealed-claim-v4"
 ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION = "round-074-sealed-dataset-identity-v2"
 ROUND74_SEALED_TEST_POPULATION_SCHEMA_VERSION = "round-074-sealed-test-population-v1"
 ROUND74_SEALED_OPTIMIZATION_POPULATIONS = ("capture_run", "eligible_target")
@@ -120,6 +123,7 @@ class Round74SealedEvaluationClaim:
     pretest_policy_sha256: str
     probability_calibration_sha256: str
     action_selection_sha256: str
+    final_action_configuration_sha256: str
     ai_pretest_qualification_sha256: str
     ai_pretest_qualification_required: bool
     ai_manifest_sha256: tuple[str, ...]
@@ -158,6 +162,14 @@ class Round74SealedEvaluationClaim:
                     self.test_population_sha256,
                     *self.ai_manifest_sha256,
                     *self.batch_sha256,
+                )
+            )
+            or (
+                not isinstance(self.final_action_configuration_sha256, str)
+                or (
+                    self.final_action_configuration_sha256
+                    and _SHA256.fullmatch(self.final_action_configuration_sha256)
+                    is None
                 )
             )
             or not self.ai_manifest_sha256
@@ -240,6 +252,9 @@ class Round74SealedEvaluationClaim:
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "action_selection_sha256": self.action_selection_sha256,
+            "final_action_configuration_sha256": (
+                self.final_action_configuration_sha256
+            ),
             "ai_pretest_qualification_sha256": (self.ai_pretest_qualification_sha256),
             "ai_pretest_qualification_required": (
                 self.ai_pretest_qualification_required
@@ -260,6 +275,9 @@ class Round74SealedEvaluationClaim:
             "reserved_at_ns": self.reserved_at_ns,
             "completed_at_ns": self.completed_at_ns,
             "test_access_consumed_at_reservation": True,
+            "final_action_configuration_bound": bool(
+                self.final_action_configuration_sha256
+            ),
             "reservation_reset_api_available": False,
         }
         if include_sha256:
@@ -277,6 +295,12 @@ class Round74SealedEvaluationClaim:
             raise ValueError("Round 74 sealed claim digest differs")
         if (
             payload.pop("test_access_consumed_at_reservation", None) is not True
+            or not isinstance(
+                payload.get("final_action_configuration_sha256"),
+                str,
+            )
+            or payload.pop("final_action_configuration_bound", None)
+            is not bool(payload.get("final_action_configuration_sha256"))
             or payload.pop("reservation_reset_api_available", None) is not False
         ):
             raise ValueError("Round 74 sealed claim policy differs")
@@ -293,6 +317,9 @@ class Round74SealedEvaluationClaim:
                     payload["probability_calibration_sha256"]
                 ),
                 action_selection_sha256=str(payload["action_selection_sha256"]),
+                final_action_configuration_sha256=str(
+                    payload["final_action_configuration_sha256"]
+                ),
                 ai_pretest_qualification_sha256=str(
                     payload["ai_pretest_qualification_sha256"]
                 ),
@@ -555,6 +582,7 @@ class Round74SealedEvaluationLedger:
                 pretest_policy_sha256 TEXT NOT NULL,
                 probability_calibration_sha256 TEXT NOT NULL,
                 action_selection_sha256 TEXT NOT NULL,
+                final_action_configuration_sha256 TEXT NOT NULL,
                 ai_pretest_qualification_sha256 TEXT NOT NULL,
                 ai_pretest_qualification_required INTEGER NOT NULL,
                 ai_manifest_sha256_json TEXT NOT NULL,
@@ -592,6 +620,14 @@ class Round74SealedEvaluationLedger:
                 ALTER TABLE round74_sealed_claims
                 ADD COLUMN optimization_population TEXT NOT NULL
                 DEFAULT 'capture_run'
+                """
+            )
+        if "final_action_configuration_sha256" not in columns:
+            connection.execute(
+                """
+                ALTER TABLE round74_sealed_claims
+                ADD COLUMN final_action_configuration_sha256 TEXT NOT NULL
+                DEFAULT ''
                 """
             )
         if "test_population_sha256" not in columns:
@@ -670,6 +706,7 @@ class Round74SealedEvaluationLedger:
         if schema is not None and str(schema[0]) in {
             ROUND74_SEALED_LEDGER_LEGACY_SCHEMA_VERSION,
             ROUND74_SEALED_LEDGER_PRETEST_SCHEMA_VERSION,
+            ROUND74_SEALED_LEDGER_PRECONFIG_SCHEMA_VERSION,
         }:
             prior_schema = str(schema[0])
             connection.execute(
@@ -739,6 +776,9 @@ class Round74SealedEvaluationLedger:
             pretest_policy_sha256=str(row["pretest_policy_sha256"]),
             probability_calibration_sha256=str(row["probability_calibration_sha256"]),
             action_selection_sha256=str(row["action_selection_sha256"]),
+            final_action_configuration_sha256=str(
+                row["final_action_configuration_sha256"]
+            ),
             ai_pretest_qualification_sha256=str(row["ai_pretest_qualification_sha256"]),
             ai_pretest_qualification_required=bool(qualification_required),
             ai_manifest_sha256=tuple(str(value) for value in manifests),
@@ -768,7 +808,7 @@ class Round74SealedEvaluationLedger:
         self,
         *,
         test_batches: Sequence[Round74EventTrainingBatch],
-        action_selection: Round74ActionPolicySelection,
+        final_action_configuration: Round74FinalActionConfiguration,
         ai_pretest_qualification: Round74AIPretestQualificationPanel,
     ) -> Round74SealedEvaluationClaim:
         """Reserve an already loaded panel for low-level callers and tests."""
@@ -776,9 +816,11 @@ class Round74SealedEvaluationLedger:
         return self.reserve_identity(
             test_identity=build_round74_sealed_dataset_identity(
                 test_batches,
-                optimization_population=action_selection.optimization_population,
+                optimization_population=(
+                    final_action_configuration.action_selection.optimization_population
+                ),
             ),
-            action_selection=action_selection,
+            final_action_configuration=final_action_configuration,
             ai_pretest_qualification=ai_pretest_qualification,
         )
 
@@ -786,12 +828,13 @@ class Round74SealedEvaluationLedger:
         self,
         *,
         test_identity: Round74SealedDatasetIdentity,
-        action_selection: Round74ActionPolicySelection,
+        final_action_configuration: Round74FinalActionConfiguration,
         ai_pretest_qualification: Round74AIPretestQualificationPanel,
     ) -> Round74SealedEvaluationClaim:
         """Atomically consume metadata-only test access before target loading."""
 
-        action_selection.validate()
+        final_action_configuration.validate()
+        action_selection = final_action_configuration.action_selection
         if not action_selection.accepted:
             raise ValueError("Round 74 sealed action policy is not accepted")
         test_identity.validate()
@@ -808,6 +851,8 @@ class Round74SealedEvaluationLedger:
         if (
             ai_pretest_qualification.action_selection_sha256
             != action_selection.selection_sha256
+            or ai_pretest_qualification.final_action_configuration_sha256
+            != final_action_configuration.configuration_sha256
             or ai_pretest_qualification.pretest_policy_sha256
             != action_selection.pretest_policy_sha256
             or ai_pretest_qualification.probability_calibration_sha256
@@ -835,6 +880,9 @@ class Round74SealedEvaluationLedger:
                 action_selection.probability_calibration_sha256
             ),
             "action_selection_sha256": action_selection.selection_sha256,
+            "final_action_configuration_sha256": (
+                final_action_configuration.configuration_sha256
+            ),
             "ai_pretest_qualification_sha256": qualification_sha256,
             "ai_pretest_qualification_required": True,
             "ai_manifest_sha256": manifests,
@@ -887,6 +935,7 @@ class Round74SealedEvaluationLedger:
                     dataset_sha256, partition_sha256, scaler_sha256,
                     pretest_policy_sha256, probability_calibration_sha256,
                     action_selection_sha256,
+                    final_action_configuration_sha256,
                     ai_pretest_qualification_sha256,
                     ai_pretest_qualification_required,
                     ai_manifest_sha256_json,
@@ -894,7 +943,7 @@ class Round74SealedEvaluationLedger:
                     test_run_ids_json, batch_sha256_json, rows,
                     first_wall_ns, last_wall_ns, status, reserved_at_ns
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                          ?, 'reserved', ?)
+                          ?, ?, 'reserved', ?)
                 """,
                 [
                     reservation_id,
@@ -906,6 +955,7 @@ class Round74SealedEvaluationLedger:
                     action_selection.pretest_policy_sha256,
                     action_selection.probability_calibration_sha256,
                     action_selection.selection_sha256,
+                    final_action_configuration.configuration_sha256,
                     qualification_sha256,
                     1,
                     _canonical_json(list(manifests)),
@@ -1032,7 +1082,14 @@ class Round74SealedEvaluationLedger:
         required_status: str,
     ) -> bool:
         claim.validate()
-        if required_status not in _CLAIM_STATUSES or claim.status != required_status:
+        if (
+            required_status not in _CLAIM_STATUSES
+            or claim.status != required_status
+            or (
+                required_status == "reserved"
+                and not claim.final_action_configuration_sha256
+            )
+        ):
             return False
         try:
             stored = self.claim(claim.reservation_id)

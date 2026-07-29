@@ -82,6 +82,23 @@ def test_segmented_runtime_releases_training_batches_before_accepted_ai_profiles
             else pytest.fail("qualification subpartition differs")
         ),
     )
+    monkeypatch.setattr(
+        subject,
+        "select_round74_final_action_configuration",
+        lambda selected_bundle, *, profile: SimpleNamespace(
+            profile=profile,
+            action_selection=next(
+                policy
+                for policy in selected_bundle.action_policies
+                if policy.profile == profile
+            ),
+            configuration_sha256=(
+                f"{subject.ROUND74_ACTION_PROFILES.index(profile) + 30:064x}"
+            ),
+            mode="baseline",
+            development_bundle_sha256="7" * 64,
+        ),
+    )
 
     def provider(**kwargs: object) -> object:
         provider_calls.append(kwargs)
@@ -99,10 +116,12 @@ def test_segmented_runtime_releases_training_batches_before_accepted_ai_profiles
     )
 
     def qualify(_batches: object, **kwargs: object) -> object:
-        selected = kwargs["action_selection"]
+        configuration = kwargs["final_action_configuration"]
+        selected = configuration.action_selection
         events.append(f"qualify-{selected.profile}")
         qualification_calls.append(kwargs)
         return SimpleNamespace(
+            final_action_configuration=configuration,
             inference=SimpleNamespace(
                 action_selection_sha256=selected.selection_sha256,
             ),
@@ -110,6 +129,9 @@ def test_segmented_runtime_releases_training_batches_before_accepted_ai_profiles
                 profile=selected.profile,
                 qualification_sha256=f"{len(qualification_calls) + 20:064x}",
                 qualification_passed=True,
+                final_action_configuration_sha256=(
+                    configuration.configuration_sha256
+                ),
             ),
             validate=lambda: None,
         )

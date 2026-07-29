@@ -29,6 +29,7 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
 from simple_ai_trading.impact_absorption_event_action_configuration import (
     Round74FinalActionConfiguration,
     _build_round74_final_action_configuration,
+    apply_round74_final_action_configuration,
 )
 from simple_ai_trading.impact_absorption_event_epistemic_policy import (
     ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS,
@@ -915,6 +916,26 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
     assert configuration.action_filter_sha256 == action_filter.filter_sha256
     assert configuration.sealed_test_accessed is False
     assert configuration.trading_authority is False
+    filtered_candidates, sealed_applications = (
+        apply_round74_final_action_configuration(
+            candidates,
+            outputs,
+            configuration,
+        )
+    )
+    assert len(filtered_candidates) == len(candidates)
+    assert len(sealed_applications) == len(candidates)
+    assert sealed_applications[0].blocked_distinct_rows == 1
+    assert sealed_applications[0].source_candidate_sha256 == (
+        candidates[0].candidate_sha256
+    )
+    assert sealed_applications[0].filtered_candidate_sha256 == (
+        filtered_candidates[0].candidate_sha256
+    )
+    assert all(
+        application.target_fields_consumed is False
+        for application in sealed_applications
+    )
     configuration_payload = json.loads(json.dumps(configuration.as_dict()))
     assert (
         Round74FinalActionConfiguration.from_dict(configuration_payload).as_dict()
@@ -962,6 +983,18 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
         "baseline_no_epistemic_challenge"
     )
     assert baseline_only_configuration.action_filter_sha256 is None
+    baseline_candidates, baseline_applications = (
+        apply_round74_final_action_configuration(
+            candidates,
+            outputs,
+            baseline_only_configuration,
+        )
+    )
+    assert all(
+        left is right
+        for left, right in zip(baseline_candidates, candidates, strict=True)
+    )
+    assert baseline_applications == ()
 
     invalid_count = json.loads(json.dumps(payload))
     invalid_count["baseline_trade_count"] = True

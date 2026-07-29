@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Protocol
 
@@ -36,8 +36,15 @@ from .impact_absorption_event_action_policy import (
     build_round74_action_inference_context,
     simulate_round74_action_trace_batches,
 )
+from .impact_absorption_event_action_configuration import (
+    Round74FinalActionConfiguration,
+    apply_round74_final_action_configuration,
+)
 from .impact_absorption_event_calibration import Round74ProbabilityCalibration
 from .impact_absorption_event_dataset import Round74EventTrainingBatch
+from .impact_absorption_event_epistemic_policy import (
+    Round74EpistemicActionFilterApplication,
+)
 from .impact_absorption_event_sealed_evaluation import (
     Round74TargetFreeCandidateInference,
     infer_round74_target_free_candidates,
@@ -46,7 +53,7 @@ from .round74_event_model_operator import Round74PreparedTuningRoles
 
 
 ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION = (
-    "round-074-ai-qualification-operator-v3"
+    "round-074-ai-qualification-operator-v4"
 )
 
 ReviewRunner = Callable[..., Round74AIRuntimeOutcome]
@@ -74,6 +81,11 @@ class Round74AIQualificationOperatorResult:
     """In-memory, hash-bound evidence produced before sealed-test access."""
 
     qualification_population: Round74AIQualificationPopulation
+    final_action_configuration: Round74FinalActionConfiguration
+    epistemic_action_filter_applications: tuple[
+        Round74EpistemicActionFilterApplication,
+        ...,
+    ]
     inference: Round74TargetFreeCandidateInference
     baseline_trace: Round74ActionTrace
     review_panel: Round74AIReviewPanel
@@ -95,6 +107,9 @@ class Round74AIQualificationOperatorResult:
 
     def validate(self) -> None:
         self.qualification_population.validate()
+        self.final_action_configuration.validate()
+        for application in self.epistemic_action_filter_applications:
+            application.validate()
         self.inference.validate()
         self.baseline_trace.validate()
         self.review_panel.validate()
@@ -114,6 +129,8 @@ class Round74AIQualificationOperatorResult:
         observed_run_set = set(observed_runs)
         if (
             self.schema_version != ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION
+            or self.qualification.final_action_configuration_sha256
+            != self.final_action_configuration.configuration_sha256
             or self.inference.data_scope != "ai_qualification_tuning"
             or self.inference.expected_run_ids != self.qualification_population.run_ids
             or self.baseline_trace.expected_run_ids
@@ -126,6 +143,21 @@ class Round74AIQualificationOperatorResult:
             )
             or self.review_panel.candidate_inference_sha256
             != self.inference.inference_sha256
+            or (
+                self.epistemic_action_filter_applications
+                and (
+                    len(self.epistemic_action_filter_applications)
+                    != len(self.inference.candidates)
+                    or tuple(
+                        application.filtered_candidate_sha256
+                        for application in self.epistemic_action_filter_applications
+                    )
+                    != tuple(
+                        candidate.candidate_sha256
+                        for candidate in self.inference.candidates
+                    )
+                )
+            )
             or tuple(instructions) != panel_manifests
             or tuple(executions) != panel_manifests
             or len(instructions) != 2
@@ -194,6 +226,11 @@ class Round74AIQualificationOperatorResult:
                     for candidate in self.inference.candidates
                 )
                 != report.candidate_sha256
+                or tuple(
+                    application.application_sha256
+                    for application in self.epistemic_action_filter_applications
+                )
+                != report.epistemic_action_filter_application_sha256
             ):
                 raise ValueError(
                     "Round 74 AI qualification instruction coverage differs"
@@ -204,11 +241,12 @@ def _validate_qualification_inputs(
     batches: tuple[Round74EventTrainingBatch, ...],
     *,
     population: Round74AIQualificationPopulation,
-    action_selection: Round74ActionPolicySelection,
+    final_action_configuration: Round74FinalActionConfiguration,
     probability_calibration: Round74ProbabilityCalibration,
 ) -> None:
     population.validate()
-    action_selection.validate()
+    final_action_configuration.validate()
+    action_selection = final_action_configuration.action_selection
     probability_calibration.validate()
     if not batches:
         raise ValueError("Round 74 AI qualification batches are missing")
@@ -256,7 +294,7 @@ def run_round74_ai_pretest_qualification(
     qualification_batches: Sequence[Round74EventTrainingBatch],
     *,
     qualification_population: Round74AIQualificationPopulation,
-    action_selection: Round74ActionPolicySelection,
+    final_action_configuration: Round74FinalActionConfiguration,
     probability_calibration: Round74ProbabilityCalibration,
     pretest_policy_path: str | Path,
     execution_replay_provider: Round74AIQualificationExecutionReplayProvider,
@@ -272,10 +310,12 @@ def run_round74_ai_pretest_qualification(
     """Run both pinned AI reviewers on the fourth tuning subpopulation."""
 
     batches = tuple(qualification_batches)
+    final_action_configuration.validate()
+    action_selection = final_action_configuration.action_selection
     _validate_qualification_inputs(
         batches,
         population=qualification_population,
-        action_selection=action_selection,
+        final_action_configuration=final_action_configuration,
         probability_calibration=probability_calibration,
     )
     if not callable(execution_replay_provider):
@@ -291,6 +331,15 @@ def run_round74_ai_pretest_qualification(
         data_scope="ai_qualification_tuning",
         expected_run_ids=qualification_population.run_ids,
     )
+    filtered_candidates, filter_applications = (
+        apply_round74_final_action_configuration(
+            inference.candidates,
+            inference.model_outputs,
+            final_action_configuration,
+        )
+    )
+    inference = replace(inference, candidates=filtered_candidates)
+    inference.validate()
     threshold = action_selection.selected_threshold_score
     assert threshold is not None
     baseline_trace = simulate_round74_action_trace_batches(
@@ -346,13 +395,17 @@ def run_round74_ai_pretest_qualification(
         raise ValueError("Round 74 AI qualification replay panel differs")
     reports = tuple(
         evaluate_round74_ai_overlay_development(
-            action_selection,
+            final_action_configuration,
             selected_reviews_by_manifest[manifest],
             replayed[manifest],
             qualification_population=qualification_population,
             qualification_trace=baseline_trace,
             qualification_candidate_sha256=tuple(
                 candidate.candidate_sha256 for candidate in inference.candidates
+            ),
+            epistemic_action_filter_application_sha256=tuple(
+                application.application_sha256
+                for application in filter_applications
             ),
         )
         for manifest in instructions_by_manifest
@@ -364,6 +417,8 @@ def run_round74_ai_pretest_qualification(
     )
     result = Round74AIQualificationOperatorResult(
         qualification_population=qualification_population,
+        final_action_configuration=final_action_configuration,
+        epistemic_action_filter_applications=filter_applications,
         inference=inference,
         baseline_trace=baseline_trace,
         review_panel=review_panel,
@@ -380,7 +435,7 @@ def run_round74_prepared_ai_pretest_qualification(
     prepared_tuning_roles: Round74PreparedTuningRoles,
     *,
     qualification_population: Round74AIQualificationPopulation,
-    action_selection: Round74ActionPolicySelection,
+    final_action_configuration: Round74FinalActionConfiguration,
     probability_calibration: Round74ProbabilityCalibration,
     pretest_policy_path: str | Path,
     execution_replay_provider: Round74AIQualificationExecutionReplayProvider,
@@ -411,7 +466,7 @@ def run_round74_prepared_ai_pretest_qualification(
     return run_round74_ai_pretest_qualification(
         prepared_tuning_roles.ai_qualification_batches,
         qualification_population=qualification_population,
-        action_selection=action_selection,
+        final_action_configuration=final_action_configuration,
         probability_calibration=probability_calibration,
         pretest_policy_path=pretest_policy_path,
         execution_replay_provider=execution_replay_provider,

@@ -12,6 +12,9 @@ from .impact_absorption_ai_execution_replay import (
     Round74AIQualificationStoreExecutionReplayProvider,
 )
 from .impact_absorption_event_action_policy import ROUND74_ACTION_PROFILES
+from .impact_absorption_event_action_configuration import (
+    select_round74_final_action_configuration,
+)
 from .impact_absorption_event_dataset import (
     Round74EventRunPartition,
 )
@@ -53,7 +56,7 @@ ROUND74_SEGMENTED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION = (
     "round-074-segmented-development-preparation-v1"
 )
 ROUND74_SEGMENTED_QUALIFIED_DEVELOPMENT_SCHEMA_VERSION = (
-    "round-074-segmented-qualified-development-v3"
+    "round-074-segmented-qualified-development-v4"
 )
 
 
@@ -228,6 +231,12 @@ class Round74SegmentedQualifiedDevelopment:
                 result.inference.action_selection_sha256
                 != policies[profile].selection_sha256
                 or result.qualification.profile != profile
+                or result.final_action_configuration.development_bundle_sha256
+                != self.policy.bundle_sha256
+                or result.final_action_configuration.action_selection.selection_sha256
+                != policies[profile].selection_sha256
+                or result.qualification.final_action_configuration_sha256
+                != result.final_action_configuration.configuration_sha256
                 for profile, result in self.qualification_by_profile
             )
             or any(
@@ -289,6 +298,18 @@ class Round74SegmentedQualifiedDevelopment:
                         None
                         if profile not in qualifications
                         else qualifications[profile].qualification.qualification_sha256
+                    ),
+                    "final_action_configuration_sha256": (
+                        None
+                        if profile not in qualifications
+                        else qualifications[
+                            profile
+                        ].final_action_configuration.configuration_sha256
+                    ),
+                    "final_action_configuration_mode": (
+                        None
+                        if profile not in qualifications
+                        else qualifications[profile].final_action_configuration.mode
                     ),
                     "qualification_passed": (
                         False
@@ -512,7 +533,12 @@ def train_and_qualify_round74_segmented_development(
             run_round74_prepared_ai_pretest_qualification(
                 preparation.tuning_roles,
                 qualification_population=population,
-                action_selection=action_policies[profile],
+                final_action_configuration=(
+                    select_round74_final_action_configuration(
+                        policy.bundle,
+                        profile=profile,
+                    )
+                ),
                 probability_calibration=policy.bundle.probability_calibration,
                 pretest_policy_path=policy.pretest_policy.policy_path,
                 execution_replay_provider=replay_provider,
