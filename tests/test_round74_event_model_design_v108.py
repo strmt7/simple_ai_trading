@@ -7,9 +7,7 @@ import subprocess  # nosec B404
 
 from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
     ROUND74_SEALED_BOOTSTRAP_DRAWS,
-    ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
     ROUND74_SEALED_FAMILYWISE_ALPHA,
-    ROUND74_SEALED_PREDICTIVE_TASKS,
 )
 
 
@@ -75,9 +73,13 @@ def test_round74_v108_requires_skill_without_claiming_edge() -> None:
     verification = design["verification"]
 
     assert delta["sealed_evaluation_schema_version"] == (
-        ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
+        "round-074-sealed-evaluation-v19"
     )
-    assert tuple(delta["predictive_tasks"]) == ROUND74_SEALED_PREDICTIVE_TASKS
+    assert tuple(delta["predictive_tasks"]) == (
+        "positive_payoff",
+        "adverse_selection",
+        "regime_unpredictability",
+    )
     assert delta["bootstrap_draws"] == ROUND74_SEALED_BOOTSTRAP_DRAWS
     assert delta["familywise_alpha"] == ROUND74_SEALED_FAMILYWISE_ALPHA
     assert delta["overall_predictive_gate"] == ("conjunction_of_all_three_task_gates")

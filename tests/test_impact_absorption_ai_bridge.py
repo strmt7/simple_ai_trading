@@ -12,7 +12,7 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_TEMPORAL_FEATURE_NAMES,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
-    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+    ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION,
     ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     Round74ProbabilityCalibration,
     Round74RiskQuantileCalibration,
@@ -159,7 +159,7 @@ def _risk_calibration() -> Round74ProbabilityCalibration:
             calibration_runs=6,
             optimization_population="capture_run",
         ),
-        schema_version=ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION,
     )
 
 

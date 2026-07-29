@@ -11,12 +11,14 @@ from simple_ai_trading.impact_absorption_event_calibration import (
     ROUND74_TUNING_CALIBRATION_RUNS,
     ROUND74_TUNING_MODEL_SELECTION_RUNS,
     ROUND74_TUNING_POLICY_SELECTION_RUNS,
+    Round74NoInformationQuantileBaseline,
     Round74ProbabilityCalibration,
     Round74RiskQuantileCalibration,
     Round74TuningSubpartition,
     apply_round74_probability_calibration,
     apply_round74_risk_quantile_calibration,
     build_round74_tuning_subpartition,
+    fit_round74_no_information_quantile_baseline,
     fit_round74_probability_calibration,
     fit_round74_risk_quantile_calibration,
 )
@@ -416,6 +418,98 @@ def _risk_calibration_panel(
     )
 
 
+def test_capture_run_quantile_baseline_is_invariant_to_busy_run_duplication() -> None:
+    (
+        _payoff,
+        targets,
+        _mae,
+        mae_targets,
+        eligibility,
+        row_runs,
+        row_symbols,
+    ) = _risk_calibration_panel()
+    expected_runs = _tuning_subpartition().calibration_run_ids
+    first_run_indices = tuple(
+        index for index, run_id in enumerate(row_runs) if run_id == expected_runs[0]
+    )
+    targets = targets.clone()
+    mae_targets = mae_targets.clone()
+    targets[list(first_run_indices)] *= 4.0
+    mae_targets[list(first_run_indices)] += 5.0
+    baseline = fit_round74_no_information_quantile_baseline(
+        net_payoff_bps=targets,
+        maximum_adverse_excursion_bps=mae_targets,
+        action_eligibility=eligibility,
+        row_run_ids=row_runs,
+        row_symbols=row_symbols,
+        expected_run_ids=expected_runs,
+        optimization_population="capture_run",
+    )
+
+    repeated_indices = torch.tensor(
+        tuple(index for _ in range(32) for index in first_run_indices),
+        dtype=torch.int64,
+    )
+    duplicated = fit_round74_no_information_quantile_baseline(
+        net_payoff_bps=torch.cat((targets, targets[repeated_indices])),
+        maximum_adverse_excursion_bps=torch.cat(
+            (mae_targets, mae_targets[repeated_indices])
+        ),
+        action_eligibility=torch.cat((eligibility, eligibility[repeated_indices])),
+        row_run_ids=row_runs
+        + tuple(row_runs[index] for index in repeated_indices.tolist()),
+        row_symbols=row_symbols
+        + tuple(row_symbols[index] for index in repeated_indices.tolist()),
+        expected_run_ids=expected_runs,
+        optimization_population="capture_run",
+    )
+
+    assert duplicated.payoff_quantiles_bps == baseline.payoff_quantiles_bps
+    assert (
+        duplicated.maximum_adverse_excursion_quantiles_bps
+        == baseline.maximum_adverse_excursion_quantiles_bps
+    )
+    assert duplicated.eligible_observations != baseline.eligible_observations
+    payload = baseline.as_dict()
+    assert payload["capture_run_quantile_method"] == (
+        "equal_capture_run_mass_weighted_empirical_inverse_cdf"
+    )
+    assert payload["capture_run_x_symbol_support_required"] is True
+
+
+def test_quantile_baseline_requires_every_calibration_run_symbol_group() -> None:
+    (
+        _payoff,
+        targets,
+        _mae,
+        mae_targets,
+        eligibility,
+        row_runs,
+        row_symbols,
+    ) = _risk_calibration_panel()
+    expected_runs = _tuning_subpartition().calibration_run_ids
+    missing = eligibility.clone()
+    missing_rows = tuple(
+        index
+        for index, (run_id, symbol) in enumerate(
+            zip(row_runs, row_symbols, strict=True)
+        )
+        if run_id == expected_runs[0] and symbol == ROUND74_EVENT_SYMBOLS[0]
+    )
+    missing[list(missing_rows), 0, 0] = 0.0
+
+    with pytest.raises(ValueError, match="support differs"):
+        fit_round74_no_information_quantile_baseline(
+            net_payoff_bps=targets,
+            maximum_adverse_excursion_bps=mae_targets,
+            action_eligibility=missing,
+            row_run_ids=row_runs,
+            row_symbols=row_symbols,
+            expected_run_ids=expected_runs,
+            optimization_population="eligible_target",
+        )
+
+
 def test_segmented_calibration_uses_every_frozen_calibration_segment() -> None:
     subpartition = _segmented_tuning_subpartition()
     (
@@ -657,7 +751,33 @@ def test_composite_calibration_hash_binds_risk_targets_and_offsets() -> None:
     assert calibration.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
     assert calibration.risk_quantiles is not None
     assert calibration.risk_quantiles.optimization_population == "eligible_target"
+    assert calibration.quantile_baseline is not None
+    assert calibration.quantile_baseline.calibration_runs == len(
+        subpartition.calibration_run_ids
+    )
+    assert calibration.quantile_baseline.optimization_population == "eligible_target"
+    assert calibration.quantile_baseline.payoff_quantiles_bps[0][0][0] == (
+        pytest.approx((-3.0, -3.0, -1.0, 1.0, 1.0))
+    )
+    assert calibration.quantile_baseline.maximum_adverse_excursion_quantiles_bps[0][0][
+        0
+    ] == pytest.approx((0.2, 0.2, 0.85, 1.5, 1.5))
+    baseline_payload = calibration.quantile_baseline.as_dict()
+    assert baseline_payload["fit_population"] == (
+        "disjoint_probability_calibration_runs_only"
+    )
+    assert baseline_payload["sealed_test_accessed"] is False
+    assert baseline_payload["test_labels_used_for_baseline_fit"] is False
+    assert (
+        Round74NoInformationQuantileBaseline.from_dict(baseline_payload)
+        == calibration.quantile_baseline
+    )
     assert Round74ProbabilityCalibration.from_dict(calibration.as_dict()) == calibration
+
+    malformed = calibration.quantile_baseline.as_dict()
+    malformed["eligible_observations"][0][0][0] = True
+    with pytest.raises(ValueError, match="types differ"):
+        Round74NoInformationQuantileBaseline.from_dict(malformed)
 
 
 def test_temperature_calibration_rejects_missing_class_support() -> None:
