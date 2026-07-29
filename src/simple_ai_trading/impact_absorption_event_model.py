@@ -32,7 +32,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v11"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v12"
 ROUND74_EVENT_MODEL_CANDIDATES = (
     "event_pooling_linear",
     "event_pooling_mlp",
@@ -855,13 +855,34 @@ def _round74_event_model_loss_impl(
         adverse_excursion_pinball_values * action_eligibility.unsqueeze(3)
     ).sum() / (action_weight * len(ROUND74_EVENT_PAYOFF_QUANTILES))
     positive_targets = (net_payoff_bps > 0.0).to(net_payoff_bps.dtype)
-    # BCE(logits) = softplus(logits) - target * logits. Keeping this explicit
-    # avoids torch-directml's silent CPU fallback through log_sigmoid_forward.
-    positive_values = (
+    side_count = action_eligibility.sum(dim=2)
+    jointly_eligible = (side_count == 2.0).to(net_payoff_bps.dtype)
+    singly_eligible = (side_count == 1.0).to(net_payoff_bps.dtype).unsqueeze(2)
+    positive_probabilities = torch.sigmoid(output.positive_payoff_logits)
+    neither_probability = 1.0 - positive_probabilities.sum(dim=2)
+    outcome_probabilities = torch.cat(
+        (neither_probability.unsqueeze(2), positive_probabilities),
+        dim=2,
+    ).clamp_min(torch.finfo(positive_probabilities.dtype).tiny)
+    joint_positive_targets = positive_targets * jointly_eligible.unsqueeze(2)
+    outcome_targets = torch.cat(
+        (
+            (jointly_eligible - joint_positive_targets.sum(dim=2)).unsqueeze(2),
+            joint_positive_targets,
+        ),
+        dim=2,
+    )
+    joint_log_loss = -(outcome_targets * torch.log(outcome_probabilities)).sum(dim=2)
+    # One-sided censoring identifies only one marginal. Keep its exact binary
+    # log score without inventing a target for the unavailable direction.
+    marginal_log_loss = (
         F.softplus(output.positive_payoff_logits)
         - positive_targets * output.positive_payoff_logits
     )
-    positive = (positive_values * action_eligibility).sum() / action_weight
+    positive = (
+        (2.0 * joint_log_loss * jointly_eligible).sum()
+        + (marginal_log_loss * action_eligibility * singly_eligible).sum()
+    ) / action_weight
     adverse_values = (
         F.softplus(output.adverse_selection_logits)
         - adverse_selection * output.adverse_selection_logits
@@ -886,7 +907,7 @@ def _round74_event_model_loss_impl(
     return total, {
         "payoff_pinball": payoff_pinball,
         "maximum_adverse_excursion_pinball": adverse_excursion_pinball,
-        "positive_bce": positive,
+        "positive_log_loss": positive,
         "adverse_bce": adverse,
         "unpredictability_bce": unpredictability,
     }

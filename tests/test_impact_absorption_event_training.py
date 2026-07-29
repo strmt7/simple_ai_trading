@@ -693,7 +693,7 @@ def test_segmented_gradient_is_exactly_eligible_target_weighted() -> None:
             for name in (
                 "payoff_pinball",
                 "maximum_adverse_excursion_pinball",
-                "positive_bce",
+                "positive_log_loss",
                 "adverse_bce",
                 "unpredictability_bce",
             )
