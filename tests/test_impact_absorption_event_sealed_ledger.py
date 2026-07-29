@@ -1145,10 +1145,15 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
 
     assert provider_order == ["load", "review", "replay"]
     assert outcome.finalized_claim.status == "complete"
-    assert outcome.report.result_outcome == "candidate_passed_predeclared_gates"
-    assert outcome.report.qualified_configuration == ("ml_baseline",)
+    assert outcome.report.result_outcome == "candidate_failed_predeclared_gates"
+    assert outcome.report.qualified_configuration == ()
     assert outcome.report.baseline_metrics.executed_trades == 24
     assert outcome.report.baseline_metrics.financial_gate_passed
+    assert not outcome.report.predictive_gate.gate_passed
+    assert (
+        "positive_payoff:non_single_class_evidence_missing"
+        in outcome.report.predictive_gate.gate_reasons
+    )
     assert len(outcome.report.ai_overlays) == 2
     with pytest.raises(ValueError, match="sealed evaluation report differs"):
         replace(
@@ -1205,6 +1210,110 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert instructions[0].pre_replay_status == "historical_review_expired"
     assert instructions[0].requested_size_multiplier_bps == 10_000
     assert not instructions[0].action_latency_eligible
+
+
+def test_predictive_gate_requires_familywise_skill_for_every_binary_task() -> None:
+    batch = _test_batch()
+    rows = batch.rows
+    horizon_count = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    side_count = len(ROUND74_EVENT_PAYOFF_SIDES)
+    quantile_count = len(ROUND74_EVENT_PAYOFF_QUANTILES)
+    occurrence = np.arange(rows, dtype=np.int64) // len(ROUND74_EVENT_SYMBOLS)
+    positive_truth = occurrence % 2 == 1
+    regime_truth = (occurrence // 2) % 2 == 1
+    adverse_truth = np.logical_xor(positive_truth, regime_truth)
+    payoff_sign = np.where(positive_truth, 1.0, -1.0).astype(np.float32)
+    action_shape = (rows, horizon_count, side_count)
+    regime_shape = (rows, horizon_count)
+    batch = replace(
+        batch,
+        net_payoff_bps=_readonly(
+            np.broadcast_to(payoff_sign[:, None, None], action_shape).copy()
+        ),
+        adverse_selection=_readonly(
+            np.broadcast_to(
+                adverse_truth.astype(np.float32)[:, None, None],
+                action_shape,
+            ).copy()
+        ),
+        regime_unpredictability=_readonly(
+            np.broadcast_to(
+                regime_truth.astype(np.float32)[:, None],
+                regime_shape,
+            ).copy()
+        ),
+    )
+    batch.validate()
+    payoff_offsets = np.asarray(
+        (-0.50, -0.25, 0.0, 0.25, 0.50),
+        dtype=np.float32,
+    )
+    payoff = np.broadcast_to(
+        payoff_sign[:, None, None, None] + payoff_offsets,
+        (rows, horizon_count, side_count, quantile_count),
+    ).copy()
+    mae_quantiles = np.asarray(
+        (0.20, 0.40, 0.60, 0.80, 1.00),
+        dtype=np.float32,
+    )
+    mae = np.broadcast_to(
+        mae_quantiles,
+        (rows, horizon_count, side_count, quantile_count),
+    ).copy()
+    positive_logits = np.broadcast_to(
+        np.where(positive_truth, 4.0, -4.0)[:, None, None],
+        action_shape,
+    ).copy()
+    adverse_logits = np.broadcast_to(
+        np.where(adverse_truth, 4.0, -4.0)[:, None, None],
+        action_shape,
+    ).copy()
+    regime_logits = np.broadcast_to(
+        np.where(regime_truth, 4.0, -4.0)[:, None],
+        regime_shape,
+    ).copy()
+    output = Round74EventModelOutput(
+        payoff_quantiles_bps=torch.from_numpy(payoff),
+        maximum_adverse_excursion_quantiles_bps=torch.from_numpy(mae),
+        positive_payoff_logits=torch.from_numpy(positive_logits),
+        adverse_selection_logits=torch.from_numpy(adverse_logits),
+        regime_unpredictability_logits=torch.from_numpy(regime_logits),
+    )
+    output.validate(rows)
+    accumulator = sealed_subject._PredictiveAccumulator()
+    accumulator.update(batch, output, _calibration())
+    diagnostics, gate = accumulator.result(expected_run_ids=TEST_RUNS)
+
+    assert diagnostics.eligible_action_targets == rows * horizon_count * side_count
+    assert gate.gate_passed
+    assert gate.gate_reasons == ()
+    assert tuple(value.task for value in gate.task_skills) == (
+        "positive_payoff",
+        "adverse_selection",
+        "regime_unpredictability",
+    )
+    assert all(value.gate_passed for value in gate.task_skills)
+    assert all(
+        value.covered_capture_runs == len(TEST_RUNS) for value in gate.task_skills
+    )
+    assert all(value.brier_skill_score > 0.0 for value in gate.task_skills)
+    assert all(
+        value.familywise_lower_mean_run_brier_improvement > 0.0
+        for value in gate.task_skills
+    )
+    unskilled_output = replace(
+        output,
+        positive_payoff_logits=torch.zeros_like(output.positive_payoff_logits),
+        adverse_selection_logits=torch.zeros_like(output.adverse_selection_logits),
+        regime_unpredictability_logits=torch.zeros_like(
+            output.regime_unpredictability_logits
+        ),
+    )
+    unskilled = sealed_subject._PredictiveAccumulator()
+    unskilled.update(batch, unskilled_output, _calibration())
+    _diagnostics, unskilled_gate = unskilled.result(expected_run_ids=TEST_RUNS)
+    assert not unskilled_gate.gate_passed
+    assert "positive_payoff:positive_brier_skill_not_met" in unskilled_gate.gate_reasons
 
 
 def test_sealed_ai_overlay_rejects_aggregate_gain_that_harms_subgroups() -> None:

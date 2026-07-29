@@ -9,9 +9,6 @@ from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION,
     ROUND74_AI_UPLIFT_SCHEMA_VERSION,
 )
-from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
-    ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
-)
 from simple_ai_trading.round74_ai_qualification_operator import (
     ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION,
 )
@@ -104,7 +101,7 @@ def test_round74_v105_rejects_stale_queue_work_without_financial_claims() -> Non
         "ai_uplift_development": ROUND74_AI_UPLIFT_SCHEMA_VERSION,
         "ai_pretest_qualification": (ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION),
         "ai_qualification_operator": (ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION),
-        "sealed_evaluation": ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
+        "sealed_evaluation": "round-074-sealed-evaluation-v18",
         "segmented_qualified_development": (
             ROUND74_SEGMENTED_QUALIFIED_DEVELOPMENT_SCHEMA_VERSION
         ),
