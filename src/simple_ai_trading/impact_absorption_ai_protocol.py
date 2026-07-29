@@ -26,10 +26,10 @@ from .impact_absorption_event_scaling import ROUND74_EVENT_BINARY_FEATURE_COUNT
 
 
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
-ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v5"
+ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v6"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
-ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v8"
-ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION = "round-074-ai-system-prompt-v2"
+ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v9"
+ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION = "round-074-ai-system-prompt-v3"
 ROUND74_AI_TEMPORAL_BLOCK_COUNT = 4
 ROUND74_AI_TEMPORAL_BLOCK_EVENTS = 16
 ROUND74_AI_TEMPORAL_FEATURE_NAMES = (
@@ -313,6 +313,8 @@ class Round74AIReviewRequest:
     payoff_quantiles_bps: tuple[float, ...]
     maximum_adverse_excursion_quantiles_bps: tuple[float, ...]
     positive_payoff_probability: float
+    opposing_positive_payoff_probability: float
+    neither_positive_payoff_probability: float
     adverse_selection_probability: float
     regime_unpredictability_probability: float
     schema_version: str = ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
@@ -365,8 +367,15 @@ class Round74AIReviewRequest:
         )
         probabilities = (
             self.positive_payoff_probability,
+            self.opposing_positive_payoff_probability,
+            self.neither_positive_payoff_probability,
             self.adverse_selection_probability,
             self.regime_unpredictability_probability,
+        )
+        positive_outcome_probability_sum = (
+            self.positive_payoff_probability
+            + self.opposing_positive_payoff_probability
+            + self.neither_positive_payoff_probability
         )
         if (
             self.schema_version != ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
@@ -395,6 +404,12 @@ class Round74AIReviewRequest:
                 or not math.isfinite(float(value))
                 or not 0.0 <= float(value) <= 1.0
                 for value in probabilities
+            )
+            or not math.isclose(
+                positive_outcome_probability_sum,
+                1.0,
+                rel_tol=0.0,
+                abs_tol=1e-7,
             )
             or feature_last != self.feature_last
             or feature_mean != self.feature_mean
@@ -448,6 +463,12 @@ class Round74AIReviewRequest:
                 self.maximum_adverse_excursion_quantiles_bps
             ),
             "positive_payoff_probability": (self.positive_payoff_probability),
+            "opposing_positive_payoff_probability": (
+                self.opposing_positive_payoff_probability
+            ),
+            "neither_positive_payoff_probability": (
+                self.neither_positive_payoff_probability
+            ),
             "adverse_selection_probability": (self.adverse_selection_probability),
             "regime_unpredictability_probability": (
                 self.regime_unpredictability_probability
@@ -507,6 +528,12 @@ class Round74AIReviewRequest:
                 ),
                 positive_payoff_probability=float(
                     payload["positive_payoff_probability"]
+                ),
+                opposing_positive_payoff_probability=float(
+                    payload["opposing_positive_payoff_probability"]
+                ),
+                neither_positive_payoff_probability=float(
+                    payload["neither_positive_payoff_probability"]
                 ),
                 adverse_selection_probability=float(
                     payload["adverse_selection_probability"]
@@ -602,8 +629,13 @@ class Round74AIReviewRequest:
                 ),
             },
             "probability_contract": {
-                "positive_payoff_probability": (
-                    "calibrated_probability_capital_scaled_net_payoff_is_positive"
+                "positive_payoff_outcome_probabilities": (
+                    "calibrated_mutually_exclusive_distribution_over_proposed_"
+                    "side_positive_opposing_side_positive_and_neither_positive"
+                ),
+                "positive_payoff_outcome_probability_sum": 1.0,
+                "directional_probability_margin": (
+                    "proposed_side_probability_minus_opposing_side_probability"
                 ),
                 "adverse_selection_probability": (
                     "calibrated_probability_latency_adjusted_midpoint_payoff_is_negative"
@@ -623,10 +655,25 @@ class Round74AIReviewRequest:
                 _rounded(value, 6)
                 for value in self.maximum_adverse_excursion_quantiles_bps
             ],
-            "positive_payoff_probability": _rounded(
-                self.positive_payoff_probability,
-                8,
-            ),
+            "positive_payoff_outcome_probabilities": {
+                "proposed_side_positive": _rounded(
+                    self.positive_payoff_probability,
+                    8,
+                ),
+                "opposing_side_positive": _rounded(
+                    self.opposing_positive_payoff_probability,
+                    8,
+                ),
+                "neither_side_positive": _rounded(
+                    self.neither_positive_payoff_probability,
+                    8,
+                ),
+                "proposed_minus_opposing_margin": _rounded(
+                    self.positive_payoff_probability
+                    - self.opposing_positive_payoff_probability,
+                    8,
+                ),
+            },
             "adverse_selection_probability": _rounded(
                 self.adverse_selection_probability,
                 8,
@@ -765,7 +812,14 @@ def build_round74_ai_review_prompt(
         "on the same net-payoff path. regime_unpredictability_probability is "
         "a calibrated expected path-unpredictability score from zero "
         "(directional) to one (variation with little net directional "
-        "displacement), not the probability of a named binary event. "
+        "displacement), not the probability of a named binary event. The "
+        "positive-payoff outcome probabilities are one mutually exclusive "
+        "distribution over the proposed side being profitable after costs, "
+        "the opposing side being profitable after costs, and neither side "
+        "being profitable after costs. Use the supplied directional margin "
+        "to assess ambiguity; substantial opposing mass or a small margin "
+        "may justify reducing, vetoing, or abstaining, but never permits "
+        "switching to the opposing side. "
         "Recent causal blocks are ordered oldest to newest and contain no "
         "future observations. Never invent a missing premise or fill one from "
         "background knowledge. If the supplied numeric packet cannot justify "

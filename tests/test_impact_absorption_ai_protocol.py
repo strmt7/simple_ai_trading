@@ -78,6 +78,8 @@ def _request() -> Round74AIReviewRequest:
             8.0,
         ),
         positive_payoff_probability=0.61,
+        opposing_positive_payoff_probability=0.19,
+        neither_positive_payoff_probability=0.20,
         adverse_selection_probability=0.27,
         regime_unpredictability_probability=0.18,
     )
@@ -170,8 +172,13 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
         ),
     }
     assert payload["probability_contract"] == {
-        "positive_payoff_probability": (
-            "calibrated_probability_capital_scaled_net_payoff_is_positive"
+        "positive_payoff_outcome_probabilities": (
+            "calibrated_mutually_exclusive_distribution_over_proposed_"
+            "side_positive_opposing_side_positive_and_neither_positive"
+        ),
+        "positive_payoff_outcome_probability_sum": 1.0,
+        "directional_probability_margin": (
+            "proposed_side_probability_minus_opposing_side_probability"
         ),
         "adverse_selection_probability": (
             "calibrated_probability_latency_adjusted_midpoint_payoff_is_negative"
@@ -183,6 +190,12 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
             "zero": "directional_path",
             "one": "path_variation_with_little_net_directional_displacement",
         },
+    }
+    assert payload["positive_payoff_outcome_probabilities"] == {
+        "proposed_side_positive": 0.61,
+        "opposing_side_positive": 0.19,
+        "neither_side_positive": 0.2,
+        "proposed_minus_opposing_margin": 0.42,
     }
     assert payload["horizon_seconds"] == 30
     assert "asset_identity_0" in payload["standardized_feature_summary"]
@@ -213,6 +226,8 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "capital-scaled net payoff, not gross return" in system
     assert "Never subtract those costs again" in system
     assert "not the probability of a named binary event" in system
+    assert "one mutually exclusive distribution" in system
+    assert "never permits switching to the opposing side" in system
     assert "Never invent a missing premise" in system
     assert "abstain with forecast_uncertainty or model_inconsistency" in system
     assert "contain no future observations" in system
@@ -247,6 +262,8 @@ def test_ai_risk_profile_is_hash_bound_and_changes_only_review_tolerance() -> No
         {"expires_wall_ns": (WALL_NS + ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS + 1)},
         {"proposed_risk_size_bps": 10_001},
         {"positive_payoff_probability": float("nan")},
+        {"opposing_positive_payoff_probability": 0.40},
+        {"neither_positive_payoff_probability": -0.01},
         {"feature_recent_block_means": ((0.0,),)},
         {"payoff_quantiles_bps": (-5.0, 0.0, -1.0, 4.0, 7.0)},
         {

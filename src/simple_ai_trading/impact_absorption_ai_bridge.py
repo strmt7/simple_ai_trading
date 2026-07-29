@@ -27,7 +27,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v5"
+ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v6"
 ROUND74_AI_RECENT_BLOCK_EVENTS = 16
 _ASSET_FEATURE_INDICES = tuple(
     ROUND74_EVENT_FEATURE_NAMES.index(name)
@@ -213,6 +213,26 @@ def build_round74_ai_review_request(
         expected_length=quantile_count,
         label="adverse-excursion quantiles",
     )
+    positive_payoff_probability = _finite_probability(
+        positive[
+            row_index,
+            horizon_index,
+            side_index,
+        ],
+        "positive-payoff probability",
+    )
+    opposing_positive_payoff_probability = _finite_probability(
+        positive[
+            row_index,
+            horizon_index,
+            1 - side_index,
+        ],
+        "opposing positive-payoff probability",
+    )
+    neither_positive_payoff_probability = _finite_probability(
+        1.0 - positive[row_index, horizon_index].sum(),
+        "neither positive-payoff probability",
+    )
     request = Round74AIReviewRequest(
         pretest_policy_sha256=pretest_policy_sha256,
         probability_calibration_sha256=(probability_calibration.calibration_sha256),
@@ -232,14 +252,9 @@ def build_round74_ai_review_request(
         feature_recent_block_means=feature_recent_block_means,
         payoff_quantiles_bps=payoff_quantiles,
         maximum_adverse_excursion_quantiles_bps=(adverse_excursion_quantiles),
-        positive_payoff_probability=_finite_probability(
-            positive[
-                row_index,
-                horizon_index,
-                side_index,
-            ],
-            "positive-payoff probability",
-        ),
+        positive_payoff_probability=positive_payoff_probability,
+        opposing_positive_payoff_probability=(opposing_positive_payoff_probability),
+        neither_positive_payoff_probability=neither_positive_payoff_probability,
         adverse_selection_probability=_finite_probability(
             adverse[
                 row_index,

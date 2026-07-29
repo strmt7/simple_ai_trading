@@ -82,7 +82,7 @@ def test_round74_ai_contract_cases_are_frozen_anonymized_and_non_market() -> Non
     cases = round74_ai_contract_cases()
 
     assert tuple(case.case_id for case in cases) == ROUND74_AI_CONTRACT_CASE_IDS
-    assert len({case.case_sha256 for case in cases}) == len(cases) == 8
+    assert len({case.case_sha256 for case in cases}) == len(cases) == 10
     for case in cases:
         request = case.build_request(1_800_000_000_000_000_000)
         payload = request.prompt_payload()
@@ -111,6 +111,23 @@ def test_round74_ai_contract_mirrors_directional_packets() -> None:
         == short.maximum_adverse_excursion_quantiles_bps
     )
     assert long.positive_payoff_probability == short.positive_payoff_probability
+    assert (
+        long.opposing_positive_payoff_probability
+        == short.opposing_positive_payoff_probability
+    )
+    assert (
+        long.neither_positive_payoff_probability
+        == short.neither_positive_payoff_probability
+    )
+
+    ambiguous_long = cases[4].build_request(1_800_000_000_000_000_000)
+    ambiguous_short = cases[5].build_request(1_800_000_000_000_000_000)
+    for request in (ambiguous_long, ambiguous_short):
+        assert request.positive_payoff_probability == 0.58
+        assert request.opposing_positive_payoff_probability == 0.39
+        assert request.neither_positive_payoff_probability == pytest.approx(0.03)
+        prompt = request.prompt_payload()["positive_payoff_outcome_probabilities"]
+        assert prompt["proposed_minus_opposing_margin"] == 0.19
 
 
 def test_round74_ai_contract_scores_retention_and_risk_semantics() -> None:
@@ -157,9 +174,7 @@ def test_round74_ai_contract_scores_retention_and_risk_semantics() -> None:
         elapsed_ns=2,
     )
     assert (
-        evaluate_round74_ai_contract_outcome(cases[2], wrong_reason)[
-            "semantic_passed"
-        ]
+        evaluate_round74_ai_contract_outcome(cases[2], wrong_reason)["semantic_passed"]
         is False
     )
 
@@ -185,3 +200,27 @@ def test_round74_ai_contract_scores_mirrored_side_consistency() -> None:
     assert checks[1]["pair_id"] == "unpredictable"
     assert checks[1]["complete"] is False
     assert checks[1]["passed"] is False
+    assert checks[2]["pair_id"] == "directional_ambiguity"
+    assert checks[2]["complete"] is False
+    assert checks[2]["passed"] is False
+
+
+def test_round74_ai_contract_scores_ambiguity_mirror_consistency() -> None:
+    cases = round74_ai_contract_cases()
+    decision = Round74AIReviewDecision(
+        verdict="reduce",
+        size_multiplier_bps=5_000,
+        confidence_bps=8_000,
+        reason_codes=("model_inconsistency",),
+    )
+    results = [
+        evaluate_round74_ai_contract_outcome(case, _outcome(case, decision))
+        for case in cases[4:6]
+    ]
+
+    checks = evaluate_round74_ai_mirror_consistency(results)
+
+    assert checks[2]["pair_id"] == "directional_ambiguity"
+    assert checks[2]["complete"] is True
+    assert checks[2]["runtime_accepted"] is True
+    assert checks[2]["passed"] is True

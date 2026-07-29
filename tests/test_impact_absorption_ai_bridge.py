@@ -206,6 +206,14 @@ def test_bridge_builds_target_free_request_from_causal_prediction() -> None:
         8.0,
     )
     assert request.positive_payoff_probability == 0.5
+    assert request.opposing_positive_payoff_probability == 0.5
+    assert request.neither_positive_payoff_probability == 0.0
+    assert (
+        request.positive_payoff_probability
+        + request.opposing_positive_payoff_probability
+        + request.neither_positive_payoff_probability
+        == 1.0
+    )
     assert request.adverse_selection_probability == pytest.approx(0.4174298)
     assert request.regime_unpredictability_probability == pytest.approx(0.37754067)
     assert request.probability_calibration_sha256 == (_calibration().calibration_sha256)
@@ -223,6 +231,34 @@ def test_bridge_builds_target_free_request_from_causal_prediction() -> None:
         ]
         == 0.0
     )
+
+
+def test_bridge_exposes_coherent_directional_probability_context() -> None:
+    output = _output()
+    marginal_probabilities = torch.tensor((0.60, 0.25), dtype=torch.float32)
+    logits = torch.logit(marginal_probabilities).expand_as(
+        output.positive_payoff_logits
+    )
+    selected_output = replace(output, positive_payoff_logits=logits)
+
+    long_request = _build(model_output=selected_output, side="long")
+    short_request = _build(model_output=selected_output, side="short")
+
+    assert long_request.positive_payoff_probability == pytest.approx(
+        short_request.opposing_positive_payoff_probability
+    )
+    assert long_request.opposing_positive_payoff_probability == pytest.approx(
+        short_request.positive_payoff_probability
+    )
+    assert long_request.neither_positive_payoff_probability == pytest.approx(
+        short_request.neither_positive_payoff_probability
+    )
+    for request in (long_request, short_request):
+        assert (
+            request.positive_payoff_probability
+            + request.opposing_positive_payoff_probability
+            + request.neither_positive_payoff_probability
+        ) == pytest.approx(1.0)
 
 
 def test_bridge_does_not_require_realized_target_arrays() -> None:
@@ -309,3 +345,5 @@ def test_bridge_detaches_model_tensors_before_serialization() -> None:
     )
 
     assert isinstance(request.positive_payoff_probability, float)
+    assert isinstance(request.opposing_positive_payoff_probability, float)
+    assert isinstance(request.neither_positive_payoff_probability, float)

@@ -47,18 +47,18 @@ def _source_sha256_at(commit: str, relative_path: str) -> str:
 
 
 def test_preflight_schema_tracks_current_ai_contract() -> None:
-    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v7"
+    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v8"
     assert PUBLISHER.ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION == (
-        "round-074-ai-review-request-v5"
+        "round-074-ai-review-request-v6"
     )
     assert PUBLISHER.ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION == (
-        "round-074-ai-prompt-payload-v8"
+        "round-074-ai-prompt-payload-v9"
     )
     assert PUBLISHER.ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION == (
-        "round-074-ai-system-prompt-v2"
+        "round-074-ai-system-prompt-v3"
     )
     assert PUBLISHER.ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION == (
-        "round-074-ai-review-panel-v15"
+        "round-074-ai-review-panel-v16"
     )
 
 
@@ -71,6 +71,9 @@ def test_synthetic_request_exercises_profile_and_temporal_path() -> None:
     assert request.feature_last[5:8] == (1.0, 0.0, 0.0)
     assert sum(request.feature_mean[:5]) == 1.0
     assert request.feature_mean[5:8] == (1.0, 0.0, 0.0)
+    assert request.positive_payoff_probability == 0.70
+    assert request.opposing_positive_payoff_probability == 0.10
+    assert request.neither_positive_payoff_probability == 0.20
     assert len(request.feature_recent_block_means) == (
         PUBLISHER.ROUND74_AI_TEMPORAL_BLOCK_COUNT
     )
@@ -109,18 +112,10 @@ def test_persisted_preflight_is_source_bound_isolated_and_nonfinancial() -> None
             commit,
             source[f"{label}_path"],
         )
-    assert inputs["review_request_schema_version"] == (
-        "round-074-ai-review-request-v5"
-    )
-    assert inputs["prompt_payload_schema_version"] == (
-        "round-074-ai-prompt-payload-v7"
-    )
-    assert inputs["system_prompt_schema_version"] == (
-        "round-074-ai-system-prompt-v1"
-    )
-    assert inputs["review_panel_schema_version"] == (
-        "round-074-ai-review-panel-v11"
-    )
+    assert inputs["review_request_schema_version"] == ("round-074-ai-review-request-v5")
+    assert inputs["prompt_payload_schema_version"] == ("round-074-ai-prompt-payload-v7")
+    assert inputs["system_prompt_schema_version"] == ("round-074-ai-system-prompt-v1")
+    assert inputs["review_panel_schema_version"] == ("round-074-ai-review-panel-v11")
     assert inputs["risk_profile"] == "conservative"
     assert inputs["temporal_block_count"] == 4
     assert inputs["temporal_feature_count"] == 14
@@ -130,8 +125,7 @@ def test_persisted_preflight_is_source_bound_isolated_and_nonfinancial() -> None
     assert not inputs["test_partition_accessed"]
     assert len(outcomes) == 4
     assert [
-        (value["role"], value["model_name"], value["phase"])
-        for value in outcomes
+        (value["role"], value["model_name"], value["phase"]) for value in outcomes
     ] == [
         ("finance_primary", "fino1:8b", "cold"),
         ("finance_primary", "fino1:8b", "warm"),
@@ -162,9 +156,7 @@ def test_persisted_preflight_is_source_bound_isolated_and_nonfinancial() -> None
             assert capability[
                 "pre_inference_warm_equivalent_preload_ram_headroom_passed"
             ]
-            assert (
-                capability["pre_inference_warm_equivalent_preload_ram_gb"] >= 16.0
-            )
+            assert capability["pre_inference_warm_equivalent_preload_ram_gb"] >= 16.0
     for cold, warm in ((outcomes[0], outcomes[1]), (outcomes[2], outcomes[3])):
         cold_worker = cold["outcome"]["worker_result"]
         warm_worker = warm["outcome"]["worker_result"]
@@ -178,7 +170,9 @@ def test_persisted_preflight_is_source_bound_isolated_and_nonfinancial() -> None
     assert verification["all_models_fully_gpu_resident"]
     assert evidence["runtime_isolation"]["resident_models_before"] == []
     assert evidence["runtime_isolation"]["resident_models_after"] == []
-    assert not evidence["interpretation"]["representative_market_ai_evaluation_completed"]
+    assert not evidence["interpretation"][
+        "representative_market_ai_evaluation_completed"
+    ]
     assert not evidence["interpretation"]["ai_uplift_established"]
     assert not evidence["interpretation"]["financial_edge_established"]
     assert not evidence["interpretation"]["profitability_claim"]
@@ -220,8 +214,9 @@ def test_persisted_session_preflight_reuses_workers_and_reduces_warm_latency() -
         assert outcome["model_name"] == prior_outcome["model_name"]
         assert outcome["phase"] == prior_outcome["phase"]
         assert outcome["outcome"]["status"] == "accepted"
-        assert outcome["outcome"]["worker_result"]["decision"] == (
-            prior_outcome["outcome"]["worker_result"]["decision"]
+        assert (
+            outcome["outcome"]["worker_result"]["decision"]
+            == (prior_outcome["outcome"]["worker_result"]["decision"])
         )
         assert capability["worker_process_mode"] == "persistent_model_batch"
         assert capability["worker_session_request_ordinal"] == (
@@ -229,21 +224,31 @@ def test_persisted_session_preflight_reuses_workers_and_reduces_warm_latency() -
         )
         assert capability["worker_session_restart_count_before_request"] == 0
         assert capability["worker_session_restart_count_after_request"] == 0
-    assert outcomes[1]["outcome"]["elapsed_ns"] < (
-        prior["model_outcomes"][1]["outcome"]["elapsed_ns"]
+    assert (
+        outcomes[1]["outcome"]["elapsed_ns"]
+        < (prior["model_outcomes"][1]["outcome"]["elapsed_ns"])
     )
-    assert outcomes[3]["outcome"]["elapsed_ns"] < (
-        prior["model_outcomes"][3]["outcome"]["elapsed_ns"]
+    assert (
+        outcomes[3]["outcome"]["elapsed_ns"]
+        < (prior["model_outcomes"][3]["outcome"]["elapsed_ns"])
     )
-    assert outcomes[1]["outcome"]["elapsed_ns"] * 10_000 // (
-        prior["model_outcomes"][1]["outcome"]["elapsed_ns"]
-    ) == 4_082
-    assert outcomes[3]["outcome"]["elapsed_ns"] * 10_000 // (
-        prior["model_outcomes"][3]["outcome"]["elapsed_ns"]
-    ) == 5_955
+    assert (
+        outcomes[1]["outcome"]["elapsed_ns"]
+        * 10_000
+        // (prior["model_outcomes"][1]["outcome"]["elapsed_ns"])
+        == 4_082
+    )
+    assert (
+        outcomes[3]["outcome"]["elapsed_ns"]
+        * 10_000
+        // (prior["model_outcomes"][3]["outcome"]["elapsed_ns"])
+        == 5_955
+    )
     assert verification["all_model_batches_reused_one_isolated_worker_process"]
     assert verification["all_worker_session_restart_counts_zero"]
-    assert not evidence["interpretation"]["representative_market_ai_evaluation_completed"]
+    assert not evidence["interpretation"][
+        "representative_market_ai_evaluation_completed"
+    ]
     assert not evidence["interpretation"]["ai_uplift_established"]
     assert not evidence["interpretation"]["financial_edge_established"]
     assert not evidence["interpretation"]["profitability_claim"]

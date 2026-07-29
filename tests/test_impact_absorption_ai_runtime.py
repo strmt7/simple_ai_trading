@@ -87,6 +87,8 @@ def _request() -> Round74AIReviewRequest:
             8.0,
         ),
         positive_payoff_probability=0.61,
+        opposing_positive_payoff_probability=0.19,
+        neither_positive_payoff_probability=0.20,
         adverse_selection_probability=0.27,
         regime_unpredictability_probability=0.18,
     )
@@ -457,9 +459,10 @@ def test_runtime_accepts_warm_exact_gpu_model_when_cold_load_headroom_is_low() -
     assert outcome.capability["pre_inference_cold_load_headroom_passed"] is False
     assert outcome.capability["pre_inference_exact_model_fully_gpu_resident"] is True
     assert outcome.capability["pre_inference_warm_ram_headroom_passed"] is True
-    assert outcome.capability[
-        "pre_inference_warm_equivalent_preload_ram_headroom_passed"
-    ] is True
+    assert (
+        outcome.capability["pre_inference_warm_equivalent_preload_ram_headroom_passed"]
+        is True
+    )
     assert outcome.capability["provider_runtime_full_gpu_residency_verified"] is True
 
 
@@ -502,9 +505,10 @@ def test_runtime_accepts_warm_model_with_state_aware_ram_headroom() -> None:
     assert detected_minimums == [16.0, 8.0]
     assert outcome.capability is not None
     assert outcome.capability["pre_inference_warm_ram_headroom_passed"] is True
-    assert outcome.capability[
-        "pre_inference_warm_equivalent_preload_ram_headroom_passed"
-    ] is True
+    assert (
+        outcome.capability["pre_inference_warm_equivalent_preload_ram_headroom_passed"]
+        is True
+    )
     assert outcome.capability["pre_inference_warm_equivalent_preload_ram_gb"] == 19.5
 
 
@@ -587,9 +591,10 @@ def test_runtime_blocks_warm_model_without_equivalent_preload_ram_headroom() -> 
     assert outcome.status == "blocked_capability"
     assert outcome.capability is not None
     assert outcome.capability["pre_inference_warm_ram_headroom_passed"] is True
-    assert outcome.capability[
-        "pre_inference_warm_equivalent_preload_ram_headroom_passed"
-    ] is False
+    assert (
+        outcome.capability["pre_inference_warm_equivalent_preload_ram_headroom_passed"]
+        is False
+    )
     assert outcome.capability["pre_inference_warm_equivalent_preload_ram_gb"] == 13.5
     assert "pre-load headroom" in outcome.message
 
