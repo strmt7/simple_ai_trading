@@ -143,6 +143,12 @@ def _model_output_sha256(output: Round74EventModelOutput) -> str:
     return digest.hexdigest()
 
 
+def round74_action_model_output_sha256(output: Round74EventModelOutput) -> str:
+    """Return the canonical action-policy identity of one validated output."""
+
+    return _model_output_sha256(output)
+
+
 @dataclass(frozen=True)
 class Round74ActionProfileSpec:
     """Predeclared selectivity and tuning gates for one risk appetite."""
@@ -2646,6 +2652,7 @@ __all__ = [
     "build_round74_action_inference_context",
     "derive_round74_action_candidates",
     "round74_action_profile",
+    "round74_action_model_output_sha256",
     "select_round74_action_policy",
     "select_round74_action_policy_batches",
     "simulate_round74_action_trace",
