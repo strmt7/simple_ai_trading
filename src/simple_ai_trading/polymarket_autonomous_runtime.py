@@ -491,6 +491,9 @@ class PolymarketAutonomousSupervisor:
         ]
         if self.settlement is not None:
             tasks.append(asyncio.create_task(self.settlement.run(services_stop)))
+        external_run = getattr(self.external_signal_provider, "run", None)
+        if callable(external_run):
+            tasks.append(asyncio.create_task(external_run(services_stop)))
         timer: asyncio.Task[None] | None = None
         if duration:
             async def request_stop_after_duration() -> None:
