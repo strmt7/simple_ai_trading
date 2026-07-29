@@ -23,6 +23,9 @@ override prose if they disagree.
 - Risk, ownership, reconciliation, Stop, and close controls are deterministic.
   AI may only veto or reduce risk after matched uplift evidence and may never
   override a safety gate or block a close.
+- Polymarket terminal state requires authenticated exact-order evidence or
+  exact fill evidence. Stop may cancel and sell only bot-owned hashes and
+  parent-bound lots; foreign state is never modified.
 - Future books, labels, resolutions, fills, and PnL never enter inference.
   Unknown order or redemption state blocks new exposure. Polymarket settlement
   never auto-deploys wallets or creates token approvals.

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 import tomllib
+from decimal import Decimal
 
 import pytest
 
@@ -51,6 +52,7 @@ def test_entrypoint_registers_independent_polymarket_live_command() -> None:
     assert args.action == "status"
     assert args.risk_level == "conservative"
     assert args.automatic_redemption is False
+    assert args.stop_timeout_seconds == 30
     assert args.func is live_cli.command_polymarket_live
 
 
@@ -60,9 +62,9 @@ def test_installed_cli_native_app_and_contract_share_entrypoint() -> None:
     native = (root / "native" / "windows" / "src" / "main.cpp").read_text(
         encoding="utf-8"
     )
-    contract = (
-        root / "src" / "simple_ai_trading" / "command_contract.py"
-    ).read_text(encoding="utf-8")
+    contract = (root / "src" / "simple_ai_trading" / "command_contract.py").read_text(
+        encoding="utf-8"
+    )
 
     assert (
         project["project"]["scripts"]["simple-ai-trading"]
@@ -108,9 +110,12 @@ def test_local_status_does_not_create_missing_ledger(
 ) -> None:
     ledger = tmp_path / "missing.sqlite3"
 
-    assert live_cli.command_polymarket_live(
-        _args("--action", "status", "--ledger", str(ledger), "--json")
-    ) == 0
+    assert (
+        live_cli.command_polymarket_live(
+            _args("--action", "status", "--ledger", str(ledger), "--json")
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["venue"] == "polymarket"
@@ -127,9 +132,12 @@ def test_local_status_audits_existing_empty_ledger(
     path = tmp_path / "live.sqlite3"
     PolymarketLiveOrderLedger(path).records()
 
-    assert live_cli.command_polymarket_live(
-        _args("--action", "status", "--ledger", str(path))
-    ) == 0
+    assert (
+        live_cli.command_polymarket_live(
+            _args("--action", "status", "--ledger", str(path))
+        )
+        == 0
+    )
 
     rendered = capsys.readouterr().out
     assert "ledger_exists=True" in rendered
@@ -325,6 +333,264 @@ def test_cancel_owned_reports_exact_result_and_final_gate(
     assert result == 2
     assert payload["cancelled_order_ids"] == [order_id]
     assert payload["reconciliation"]["errors"] == ["unknown_order_state"]
+
+
+def test_stop_owned_exposure_closes_only_local_inventory() -> None:
+    order_id = "0x" + "1" * 64
+    inventory = [
+        SimpleNamespace(
+            market_id="0x" + "2" * 64,
+            token_id="2" * 40,
+            quantity=Decimal("5"),
+            provisional=False,
+        )
+    ]
+
+    class Ledger:
+        def owned_inventory(self):
+            return tuple(inventory)
+
+        def open_owned_order_ids(self):
+            return ()
+
+    class Coordinator:
+        def cancel_owned_open_orders(self):
+            return PolymarketCancelResult((order_id,), ())
+
+        def reconcile(self):
+            return _reconciliation(
+                ok=False,
+                can_open=False,
+                can_close=True,
+                errors=("foreign_positions",),
+            )
+
+        def submit_owned_close_orders(self, *, maximum_book_age_ms: int):
+            assert maximum_book_age_ms == 1_500
+            inventory.clear()
+            return (
+                SimpleNamespace(
+                    intent=SimpleNamespace(intent_id="stop-close-test-intent")
+                ),
+            )
+
+    payload, status = live_cli._stop_owned_exposure(
+        coordinator=Coordinator(),  # type: ignore[arg-type]
+        ledger=Ledger(),  # type: ignore[arg-type]
+        timeout_seconds=2,
+    )
+
+    assert status == 0
+    assert payload["completed"] is True
+    assert payload["initial_owned_quantity"] == "5"
+    assert payload["remaining_owned_quantity"] == "0"
+    assert payload["cancelled_order_ids"] == [order_id]
+    assert payload["submitted_close_intent_ids"] == ["stop-close-test-intent"]
+    assert payload["foreign_state_untouched"] is True
+
+
+def test_stop_owned_exposure_reports_blocked_inventory_without_claiming_close() -> None:
+    inventory = (
+        SimpleNamespace(
+            market_id="0x" + "2" * 64,
+            token_id="2" * 40,
+            quantity=Decimal("4.9"),
+            provisional=False,
+        ),
+    )
+    cancelled = False
+
+    class Ledger:
+        def owned_inventory(self):
+            return inventory
+
+        def open_owned_order_ids(self):
+            return ()
+
+    class Coordinator:
+        def cancel_owned_open_orders(self):
+            nonlocal cancelled
+            cancelled = True
+            return PolymarketCancelResult((), ())
+
+        def reconcile(self):
+            return _reconciliation()
+
+        def submit_owned_close_orders(self, *, maximum_book_age_ms: int):
+            del maximum_book_age_ms
+            raise PolymarketLiveBlocked(
+                "bot-owned close quantity is below the venue minimum"
+            )
+
+    payload, status = live_cli._stop_owned_exposure(
+        coordinator=Coordinator(),  # type: ignore[arg-type]
+        ledger=Ledger(),  # type: ignore[arg-type]
+        timeout_seconds=2,
+    )
+
+    assert cancelled is True
+    assert status == 2
+    assert payload["completed"] is False
+    assert payload["remaining_owned_quantity"] == "4.9"
+    assert "below the venue minimum" in str(payload["reason"])
+
+
+def test_stop_owned_exposure_validates_timeout_and_reports_no_close() -> None:
+    empty_ledger = SimpleNamespace(
+        owned_inventory=lambda: (),
+        open_owned_order_ids=lambda: (),
+    )
+    with pytest.raises(ValueError, match="stop-timeout-seconds"):
+        live_cli._stop_owned_exposure(
+            coordinator=SimpleNamespace(),  # type: ignore[arg-type]
+            ledger=empty_ledger,  # type: ignore[arg-type]
+            timeout_seconds=0,
+        )
+
+    inventory = (
+        SimpleNamespace(
+            market_id="0x" + "2" * 64,
+            token_id="2" * 40,
+            quantity=Decimal("5"),
+            provisional=False,
+        ),
+    )
+    ledger = SimpleNamespace(
+        owned_inventory=lambda: inventory,
+        open_owned_order_ids=lambda: (),
+    )
+    coordinator = SimpleNamespace(
+        cancel_owned_open_orders=lambda: PolymarketCancelResult((), ()),
+        reconcile=lambda: _reconciliation(),
+        submit_owned_close_orders=lambda **_kwargs: (),
+    )
+
+    payload, status = live_cli._stop_owned_exposure(
+        coordinator=coordinator,  # type: ignore[arg-type]
+        ledger=ledger,  # type: ignore[arg-type]
+        timeout_seconds=2,
+    )
+
+    assert status == 2
+    assert payload["reason"] == "owned_inventory_has_no_executable_close"
+
+
+def test_stop_owned_exposure_polls_open_order_then_times_out(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    inventory = (
+        SimpleNamespace(
+            market_id="0x" + "2" * 64,
+            token_id="2" * 40,
+            quantity=Decimal("5"),
+            provisional=False,
+        ),
+    )
+    ledger = SimpleNamespace(
+        owned_inventory=lambda: inventory,
+        open_owned_order_ids=lambda: ("0x" + "3" * 64,),
+    )
+    coordinator = SimpleNamespace(
+        cancel_owned_open_orders=lambda: PolymarketCancelResult((), ()),
+        reconcile=lambda: _reconciliation(),
+    )
+    clock = iter((0.0, 0.0, 0.0, 2.0, 2.0, 2.0))
+    sleeps: list[float] = []
+    monkeypatch.setattr(live_cli.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(live_cli.time, "sleep", sleeps.append)
+
+    payload, status = live_cli._stop_owned_exposure(
+        coordinator=coordinator,  # type: ignore[arg-type]
+        ledger=ledger,  # type: ignore[arg-type]
+        timeout_seconds=1,
+    )
+
+    assert status == 2
+    assert payload["reason"] == "stop_timeout"
+    assert sleeps == [0.25]
+
+
+def test_stop_owned_exposure_detects_concurrent_inventory_after_empty_snapshot() -> (
+    None
+):
+    item = SimpleNamespace(
+        market_id="0x" + "2" * 64,
+        token_id="2" * 40,
+        quantity=Decimal("5"),
+        provisional=False,
+    )
+    snapshots = iter(((), (), (item,), (item,)))
+
+    class Ledger:
+        def owned_inventory(self):
+            return next(snapshots)
+
+        def open_owned_order_ids(self):
+            return ()
+
+    coordinator = SimpleNamespace(
+        cancel_owned_open_orders=lambda: PolymarketCancelResult((), ()),
+        reconcile=lambda: _reconciliation(),
+    )
+
+    payload, status = live_cli._stop_owned_exposure(
+        coordinator=coordinator,  # type: ignore[arg-type]
+        ledger=Ledger(),  # type: ignore[arg-type]
+        timeout_seconds=2,
+    )
+
+    assert status == 2
+    assert payload["reason"] == "owned_exposure_remains"
+
+
+def test_stop_command_dispatches_bounded_owned_close(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    venue = SimpleNamespace(close=lambda: None)
+    monkeypatch.setattr(
+        live_cli,
+        "_credentials_and_venue",
+        lambda: (SimpleNamespace(signature_type=0), venue),
+    )
+    coordinator = SimpleNamespace()
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketLiveCoordinator",
+        lambda *_args, **_kwargs: coordinator,
+    )
+    called: dict[str, object] = {}
+
+    def stop_owned_exposure(**kwargs):
+        called.update(kwargs)
+        return (
+            {
+                "schema_version": "polymarket-live-stop-result-v1",
+                "action": "stop",
+                "completed": True,
+            },
+            0,
+        )
+
+    monkeypatch.setattr(live_cli, "_stop_owned_exposure", stop_owned_exposure)
+
+    result = live_cli.command_polymarket_live(
+        _args(
+            "--action",
+            "stop",
+            "--stop-timeout-seconds",
+            "12",
+            "--ledger",
+            str(tmp_path / "live.sqlite3"),
+            "--json",
+        )
+    )
+
+    assert result == 0
+    assert called["coordinator"] is coordinator
+    assert called["timeout_seconds"] == 12
+    assert json.loads(capsys.readouterr().out)["completed"] is True
 
 
 def test_redeem_requires_confirmation_before_settlement_client_creation(
@@ -658,14 +924,10 @@ def test_supervision_runs_independent_services_and_stops_cleanly(
             await stop.wait()
             events.append(f"{self.name}-stop")
 
-    settlement_venue = SimpleNamespace(
-        close=lambda: events.append("settlement-close")
-    )
+    settlement_venue = SimpleNamespace(close=lambda: events.append("settlement-close"))
     ledger = SimpleNamespace(
         records=lambda: (
-            SimpleNamespace(
-                intent=SimpleNamespace(market_id="0x" + "1" * 64)
-            ),
+            SimpleNamespace(intent=SimpleNamespace(market_id="0x" + "1" * 64)),
         )
     )
     monkeypatch.setattr(live_cli, "PolymarketLiveRuntimeGuard", Guard)
@@ -679,18 +941,14 @@ def test_supervision_runs_independent_services_and_stops_cleanly(
         live_cli,
         "PolymarketAuthenticatedUserStream",
         lambda _credentials, _consumer, *, markets: (
-            WaitService("stream")
-            if markets == ("0x" + "1" * 64,)
-            else pytest.fail()
+            WaitService("stream") if markets == ("0x" + "1" * 64,) else pytest.fail()
         ),
     )
     monkeypatch.setattr(
         live_cli,
         "PolymarketReconciliationService",
         lambda _coordinator, _guard, *, interval_seconds: (
-            WaitService("reconciliation")
-            if interval_seconds == 2
-            else pytest.fail()
+            WaitService("reconciliation") if interval_seconds == 2 else pytest.fail()
         ),
     )
     monkeypatch.setattr(

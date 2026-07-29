@@ -10,12 +10,14 @@ import pytest
 
 from simple_ai_trading.polymarket import CLOB_BASE_URL
 from simple_ai_trading.polymarket_live import (
+    PolymarketLiveBlocked,
     PolymarketLiveOrderIntent,
     PolymarketPreparedOrder,
 )
 from simple_ai_trading.polymarket_live_v2 import (
     OfficialPolymarketV2Venue,
     POLYGON_CHAIN_ID,
+    POLYMARKET_DATA_POSITIONS_URL,
     POLYMARKET_GEOBLOCK_URL,
     PolymarketLiveCredentials,
 )
@@ -97,6 +99,12 @@ class FakeClient:
         self.post_response: object = {}
         self.post_error: Exception | None = None
         self.post_calls = 0
+        self.orders: dict[str, object] = {}
+        self.get_order_calls: list[str] = []
+        self.get_order_error: Exception | None = None
+        self.order_book: object = {}
+        self.tick_size = "0.01"
+        self.neg_risk = False
 
     def get_balance_allowance(self, params: object) -> object:
         del params
@@ -105,6 +113,24 @@ class FakeClient:
     def get_trades(self, params: object) -> list[object]:
         del params
         return self.trades
+
+    def get_order(self, order_id: str) -> object:
+        self.get_order_calls.append(order_id)
+        if self.get_order_error is not None:
+            raise self.get_order_error
+        return self.orders[order_id]
+
+    def get_order_book(self, token_id: str) -> object:
+        del token_id
+        return self.order_book
+
+    def get_tick_size(self, token_id: str) -> str:
+        del token_id
+        return self.tick_size
+
+    def get_neg_risk(self, token_id: str) -> bool:
+        del token_id
+        return self.neg_risk
 
     def cancel_orders(self, order_ids: list[str]) -> object:
         del order_ids
@@ -206,7 +232,9 @@ def test_funding_selects_allowance_for_exact_v2_exchange(
     assert result.available_allowance == Decimal("7.654321")
 
 
-def test_trade_parser_binds_maker_fill_to_exact_owned_hash_and_normalizes_status() -> None:
+def test_trade_parser_binds_maker_fill_to_exact_owned_hash_and_normalizes_status() -> (
+    None
+):
     pytest.importorskip("py_clob_client_v2")
     credentials = _credentials()
     client = FakeClient()
@@ -258,6 +286,304 @@ def test_submission_transport_error_is_propagated_after_one_attempt() -> None:
         venue.submit_order(prepared)
 
     assert client.post_calls == 1
+
+
+def test_exact_order_lookup_parses_only_requested_owned_hashes() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    first = "0x" + "2" * 64
+    second = "0x" + "3" * 64
+    for order_id in (first, second):
+        client.orders[order_id] = {
+            "id": order_id,
+            "market": MARKET_ID,
+            "asset_id": TOKEN_ID,
+            "side": "BUY",
+            "status": "ORDER_STATUS_CANCELED",
+            "original_size": "5",
+            "size_matched": "0",
+        }
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    orders = venue.orders_by_id((first, first, second))
+
+    assert client.get_order_calls == [first, second]
+    assert tuple(order.order_id for order in orders) == (first, second)
+    assert all(order.status == "ORDER_STATUS_CANCELED" for order in orders)
+
+
+def test_exact_order_lookup_treats_only_authenticated_404_as_absent() -> None:
+    class ApiError(RuntimeError):
+        def __init__(self, status_code: int) -> None:
+            super().__init__(f"HTTP {status_code}")
+            self.status_code = status_code
+
+    credentials = _credentials()
+    client = FakeClient()
+    order_id = "0x" + "2" * 64
+    client.get_order_error = ApiError(404)
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    assert venue.orders_by_id((order_id,)) == ()
+
+    client.get_order_error = ApiError(503)
+    with pytest.raises(ApiError, match="503"):
+        venue.orders_by_id((order_id,))
+
+
+def test_exact_order_lookup_rejects_response_identity_mismatch() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    requested = "0x" + "2" * 64
+    client.orders[requested] = {
+        "id": "0x" + "3" * 64,
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "side": "BUY",
+        "status": "ORDER_STATUS_LIVE",
+        "original_size": "5",
+        "size_matched": "0",
+    }
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    with pytest.raises(Exception, match="response ID differs"):
+        venue.orders_by_id((requested,))
+
+
+def test_exact_order_lookup_rejects_invalid_requested_hash() -> None:
+    venue = OfficialPolymarketV2Venue(_credentials(), client=FakeClient())
+
+    with pytest.raises(ValueError, match="invalid ID"):
+        venue.orders_by_id(("not-an-order",))
+
+
+def test_close_quote_walks_exact_displayed_bids_and_cross_checks_parameters() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    now = int(time.time() * 1_000)
+    client.order_book = {
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "timestamp": str(now - 25),
+        "hash": "0xbook",
+        "bids": [
+            {"price": "0.47", "size": "4"},
+            {"price": "0.49", "size": "2"},
+            {"price": "0.48", "size": "3"},
+        ],
+        "asks": [{"price": "0.51", "size": "10"}],
+        "min_order_size": "5",
+        "tick_size": "0.01",
+        "neg_risk": False,
+    }
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    quote = venue.close_quote(
+        market_id=MARKET_ID,
+        token_id=TOKEN_ID,
+        quantity=Decimal("5"),
+        maximum_book_age_ms=500,
+    )
+
+    assert quote.limit_price == Decimal("0.48")
+    assert quote.quantity == Decimal("5")
+    assert quote.tick_size == Decimal("0.01")
+    assert quote.neg_risk is False
+    assert 0 <= quote.source_age_ms <= 500
+    assert len(quote.book_payload_sha256) == 64
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ({"timestamp": "1"}, "stale"),
+        ({"market": "0x" + "2" * 64}, "condition differs"),
+        ({"asset_id": "2" * 40}, "token differs"),
+        ({"bids": [{"price": "0.49", "size": "4"}]}, "cannot close"),
+        (
+            {
+                "bids": [{"price": "0.51", "size": "5"}],
+                "asks": [{"price": "0.51", "size": "5"}],
+            },
+            "crossed or locked",
+        ),
+    ],
+)
+def test_close_quote_fails_closed_on_book_evidence_drift(
+    mutation: dict[str, object],
+    message: str,
+) -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    payload: dict[str, object] = {
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "timestamp": str(int(time.time() * 1_000)),
+        "bids": [{"price": "0.49", "size": "5"}],
+        "asks": [{"price": "0.51", "size": "5"}],
+        "min_order_size": "5",
+        "tick_size": "0.01",
+        "neg_risk": False,
+    }
+    payload.update(mutation)
+    client.order_book = payload
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    with pytest.raises(Exception, match=message):
+        venue.close_quote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            maximum_book_age_ms=500,
+        )
+
+
+def test_close_quote_rejects_subminimum_dust_and_sdk_parameter_drift() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    client.order_book = {
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "timestamp": str(int(time.time() * 1_000)),
+        "bids": [{"price": "0.49", "size": "10"}],
+        "asks": [{"price": "0.51", "size": "10"}],
+        "min_order_size": "5",
+        "tick_size": "0.01",
+        "neg_risk": False,
+    }
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    with pytest.raises(Exception, match="below the venue minimum"):
+        venue.close_quote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("4.9"),
+            maximum_book_age_ms=500,
+        )
+
+    client.tick_size = "0.001"
+    with pytest.raises(Exception, match="parameters differ"):
+        venue.close_quote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            maximum_book_age_ms=500,
+        )
+
+
+def test_close_quote_rejects_invalid_inputs_and_malformed_book_fields() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    base: dict[str, object] = {
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "timestamp": str(int(time.time() * 1_000)),
+        "bids": [{"price": "0.49", "size": "5"}],
+        "asks": [{"price": "0.51", "size": "5"}],
+        "min_order_size": "5",
+        "tick_size": "0.01",
+        "neg_risk": False,
+    }
+    client.order_book = dict(base)
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    for kwargs, message in (
+        ({"market_id": "bad"}, "condition ID"),
+        ({"token_id": "bad"}, "token or quantity"),
+        ({"quantity": Decimal("0")}, "token or quantity"),
+        ({"maximum_book_age_ms": 99}, "book-age"),
+    ):
+        arguments = {
+            "market_id": MARKET_ID,
+            "token_id": TOKEN_ID,
+            "quantity": Decimal("5"),
+            "maximum_book_age_ms": 500,
+            **kwargs,
+        }
+        with pytest.raises(ValueError, match=message):
+            venue.close_quote(**arguments)
+
+    for mutation, message in (
+        ({"timestamp": ""}, "timestamp"),
+        ({"tick_size": "0"}, "parameters"),
+        ({"neg_risk": None}, "neg-risk flag"),
+        ({"bids": {}}, "bids are invalid"),
+        ({"bids": [{"price": "0.495", "size": "5"}]}, "level is invalid"),
+        (
+            {
+                "bids": [
+                    {"price": "0.49", "size": "2"},
+                    {"price": "0.49", "size": "3"},
+                ]
+            },
+            "duplicate prices",
+        ),
+    ):
+        client.order_book = {**base, **mutation}
+        with pytest.raises((ValueError, PolymarketLiveBlocked), match=message):
+            venue.close_quote(
+                market_id=MARKET_ID,
+                token_id=TOKEN_ID,
+                quantity=Decimal("5"),
+                maximum_book_age_ms=500,
+            )
+
+    client.order_book = dict(base)
+    client.neg_risk = True
+    with pytest.raises(PolymarketLiveBlocked, match="neg-risk parameters"):
+        venue.close_quote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            maximum_book_age_ms=500,
+        )
+
+    client.neg_risk = False
+    venue.maximum_response_bytes = 1
+    with pytest.raises(ValueError, match="bounded size"):
+        venue.close_quote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            maximum_book_age_ms=500,
+        )
+
+
+def test_missing_environment_and_foreign_cancel_response_fail_closed() -> None:
+    with pytest.raises(ValueError, match="missing Polymarket"):
+        PolymarketLiveCredentials.from_environment({})
+
+    client = FakeClient()
+    requested = "0x" + "2" * 64
+    client.cancel_response = {
+        "canceled": ["0x" + "3" * 64],
+        "not_canceled": {},
+    }
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+    with pytest.raises(PolymarketLiveBlocked, match="foreign order"):
+        venue.cancel_orders((requested,))
+
+
+def test_position_pagination_has_a_hard_bound() -> None:
+    row = {
+        "conditionId": MARKET_ID,
+        "asset": TOKEN_ID,
+        "size": "1",
+        "redeemable": False,
+    }
+    session = FakeSession(
+        {
+            POLYMARKET_DATA_POSITIONS_URL: [row] * 500,
+        }
+    )
+    venue = OfficialPolymarketV2Venue(
+        _credentials(),
+        client=FakeClient(),
+        session=session,  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(PolymarketLiveBlocked, match="pagination exceeded"):
+        venue.positions()
 
 
 def test_public_preflight_parser_requires_v2_and_retains_geoblock_result() -> None:
