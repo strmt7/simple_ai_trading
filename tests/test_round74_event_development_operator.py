@@ -13,6 +13,9 @@ import simple_ai_trading.round74_event_development_operator as subject
 from simple_ai_trading.impact_absorption_event_calibration import (
     Round74TuningSubpartition,
 )
+from simple_ai_trading.impact_absorption_event_action_configuration import (
+    select_round74_final_action_configuration,
+)
 from simple_ai_trading.impact_absorption_event_dataset import (
     Round74EventTrainingBatch,
 )
@@ -715,6 +718,12 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
     assert all(policy.profitability_claim is False for policy in result.action_policies)
     assert result.epistemic_action_challenges == ()
     assert len(result.bundle_sha256) == 64
+    assert result.action_policies[0].accepted is False
+    with pytest.raises(ValueError, match="configuration differs"):
+        select_round74_final_action_configuration(
+            result,
+            profile="conservative",
+        )
 
     output = tmp_path / (f"round74-development-policy-{result.bundle_sha256}.json")
     output.write_bytes(subject._canonical_bytes(result.as_dict()) + b"\n")
