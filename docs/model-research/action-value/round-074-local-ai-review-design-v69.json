@@ -1,0 +1,205 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v69",
+  "artifact_kind": "capital_scaled_net_forecast_semantics_and_missing_premise_abstention",
+  "created_utc": "2026-07-29T00:57:11.3038137Z",
+  "base_design_binding": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v68.json",
+    "file_sha256": "edf097040719679377dabb9595f9991d2c7911ed9700c2e38d1ea8284530219d",
+    "design_sha256": "7b6d09158b26ffcd2bed5a35cc10a8f8b68e4f8b5a0b43672ab707ee5a243cad",
+    "unchanged_except_declared_delta": true
+  },
+  "implementation_git_commit": "13e4714344e903bbd5d439f408da5065a880678f",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "ai_protocol": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+      "sha256": "b019f87c4aa5ac30b7401e253fa9bda99e4e27853f044b58ce5057a4084fa277"
+    },
+    "ai_review_preparation": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "946a5ad104527ced595ec789d3baa438ca722c4f66eb6349c5772d747b6d5b03"
+    },
+    "ai_runtime_preflight_publisher": {
+      "path": "tools/publish_round74_ai_runtime_preflight.py",
+      "sha256": "b344de6e87668662280b551a27d266ae34cef929bc197a3da55acec6afb5e33a"
+    },
+    "ai_protocol_test": {
+      "path": "tests/test_impact_absorption_ai_protocol.py",
+      "sha256": "6b1b9b9f1af06cb8db2d3637d22ee32238e8e91f89874565243b8f64f61aace7"
+    },
+    "ai_runtime_preflight_test": {
+      "path": "tests/test_round74_ai_runtime_preflight_publisher.py",
+      "sha256": "7ad375432b3f7f2fc2034e768e8dca4cb5d3c831924a3ad374ec89ee2e5c5b23"
+    },
+    "historical_v105_test": {
+      "path": "tests/test_round74_event_model_design_v105.py",
+      "sha256": "47c3a931f379050723eac7f739f56f7bee9c976a67cad92eb813b0e4fb048424"
+    }
+  },
+  "declared_delta": {
+    "payoff_forecast_quantity": "capital_scaled_net_payoff_bps",
+    "payoff_forecast_is_gross_return": false,
+    "payoff_execution_components_already_included": [
+      "symbol_specific_latency_scenario_at_entry_and_exit",
+      "executable_l2_book_walk_at_entry_and_exit",
+      "round_trip_taker_commission",
+      "symbol_specific_round_trip_residual_slippage"
+    ],
+    "capital_scale": "entry_quote_notional_divided_by_reference_quote_notional",
+    "ai_may_deduct_execution_costs_again": false,
+    "maximum_adverse_excursion_quantity": "capital_scaled_maximum_adverse_excursion_bps",
+    "maximum_adverse_excursion_path_basis": "minimum_net_payoff_after_executable_entry",
+    "positive_payoff_probability_semantics": "calibrated_probability_capital_scaled_net_payoff_is_positive",
+    "adverse_selection_probability_semantics": "calibrated_probability_latency_adjusted_midpoint_payoff_is_negative",
+    "regime_unpredictability_field_semantics": "calibrated_expected_path_unpredictability_score",
+    "regime_unpredictability_is_binary_event_probability": false,
+    "missing_premise_policy": "abstain_with_forecast_uncertainty_or_model_inconsistency",
+    "background_knowledge_may_fill_missing_premises": false,
+    "prompt_payload_hash_binds_financial_semantics": true,
+    "model_panel_changed": false,
+    "model_weights_changed": false,
+    "risk_sizing_changed": false,
+    "execution_authority_changed": false,
+    "campaign_source_files_changed": false
+  },
+  "schema_contract": {
+    "ai_review_request": "round-074-ai-review-request-v5",
+    "ai_review_decision": "round-074-ai-review-decision-v2",
+    "ai_prompt_payload": "round-074-ai-prompt-payload-v8",
+    "ai_system_prompt": "round-074-ai-system-prompt-v2",
+    "ai_review_panel": "round-074-ai-review-panel-v15",
+    "ai_runtime_preflight": "round-074-local-ai-runtime-preflight-v7"
+  },
+  "model_research_audit": {
+    "current_panel": [
+      {
+        "role": "finance_primary",
+        "model": "fino1:8b",
+        "upstream": "TheFinAI/Fino1-8B",
+        "status": "retained_as_predeclared_candidate_not_promoted"
+      },
+      {
+        "role": "general_control",
+        "model": "qwen3:8b",
+        "upstream": "Qwen/Qwen3-8B",
+        "status": "retained_as_predeclared_candidate_not_promoted"
+      }
+    ],
+    "tracked_v7_adversarial_safety_results": {
+      "contract_is_current": false,
+      "market_edge_tested": false,
+      "qwen3_8b_action_matches": "9/11",
+      "fin_r1_8b_action_matches": "8/11",
+      "qwen3_5_9b_action_matches": "8/11",
+      "fino1_8b_action_matches": "8/11",
+      "models_passing_all_cases": 0
+    },
+    "fin_r1": {
+      "upstream_model": "SUFE-AIFLM-Lab/Fin-R1",
+      "upstream_revision": "026768c4a015b591b54b240743edeac1de0970fa",
+      "parameter_count": 7615616512,
+      "upstream_license_declared": false,
+      "license_file_present": false,
+      "operational_candidate": false,
+      "reason": "missing_upstream_license_and_no_round74_market_uplift"
+    },
+    "agentar_fin_r1": {
+      "paper_reports_parameter_classes": [
+        "8B",
+        "32B"
+      ],
+      "official_weight_repository_found_in_hugging_face_api_search": false,
+      "operational_candidate": false,
+      "reason": "paper_only_without_verified_official_weight_artifact"
+    },
+    "oda_fin_rl_8b": {
+      "upstream_model": "OpenDataArena/ODA-Fin-RL-8B",
+      "upstream_revision": "948c22ea48f9bf93e5747f4211657fcad9cb0295",
+      "parameter_count": 8190735360,
+      "license": "Apache-2.0",
+      "installed_on_host": false,
+      "round74_runtime_preflight_completed": false,
+      "round74_after_cost_uplift_completed": false,
+      "operational_candidate": false,
+      "status": "research_challenger_only"
+    },
+    "selection_rule": "no_model_replacement_without_exact_artifact_provenance_local_gpu_preflight_and_disjoint_after_cost_uplift"
+  },
+  "host_observation": {
+    "observed_local": "2026-07-29T02:56:18.8214913+02:00",
+    "free_physical_memory_gib": 14.715,
+    "minimum_required_free_memory_gib": 16.0,
+    "ollama_resident_model_count": 0,
+    "live_ai_preflight_executed": false,
+    "block_reason": "free_physical_memory_below_enforced_minimum",
+    "resource_gate_lowered": false
+  },
+  "verification": {
+    "connected_ai_tests_passed": 111,
+    "final_directly_affected_tests_passed": 31,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "working_tree_clean_after_implementation_commit": true,
+    "representative_market_ai_evaluation_performed": false,
+    "local_multibillion_parameter_model_invoked_for_this_delta": false,
+    "sealed_test_accessed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "research_sources": [
+    {
+      "title": "RealFin: How Well Do LLMs Reason About Finance When Users Leave Things Unsaid?",
+      "url": "https://aclanthology.org/2026.findings-acl.1255/",
+      "used_for": "explicit missing-premise abstention and rejection of benchmark-only trust claims"
+    },
+    {
+      "title": "Unlocking Data Value in Finance: A Study on Distillation and Difficulty-Aware Training",
+      "url": "https://arxiv.org/abs/2603.07223",
+      "used_for": "ODA-Fin-RL-8B challenger identification and benchmark-scope review"
+    },
+    {
+      "title": "ODA-Fin-RL-8B model card",
+      "url": "https://huggingface.co/OpenDataArena/ODA-Fin-RL-8B",
+      "used_for": "revision license parameter count training scope and benchmark claims"
+    },
+    {
+      "title": "Agentar-Fin-R1",
+      "url": "https://arxiv.org/abs/2507.16802",
+      "used_for": "finance reasoning and compliance challenger research"
+    },
+    {
+      "title": "Fin-R1 model repository",
+      "url": "https://huggingface.co/SUFE-AIFLM-Lab/Fin-R1",
+      "used_for": "revision parameter count and missing-license audit"
+    },
+    {
+      "title": "Fino1 model repository",
+      "url": "https://huggingface.co/TheFinAI/Fino1-8B",
+      "used_for": "current finance candidate provenance review"
+    },
+    {
+      "title": "Qwen3-8B model repository",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B",
+      "used_for": "current general control provenance and explicit non-thinking runtime review"
+    }
+  ],
+  "evidence_boundary": {
+    "prompt_semantics_match_round74_training_targets": true,
+    "prompt_semantics_hash_bound": true,
+    "model_behavior_improved_established": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "probability_calibration_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "drawdown_claim": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "5373fe559c56f9f68cfe5dba7d1b22286f9a7dad84a5d71fed828ed8e96eab78"
+}
