@@ -136,8 +136,16 @@ def _market() -> PolymarketFifteenMinuteMarket:
 
 
 class _PublicClient(PolymarketPublicClient):
-    def __init__(self, *, ask_price: str = "0.40") -> None:
+    def __init__(
+        self,
+        *,
+        ask_price: str = "0.40",
+        ask_size: str = "100",
+        source_time_ms: int = NOW_MS,
+    ) -> None:
         self.ask_price = ask_price
+        self.ask_size = ask_size
+        self.source_time_ms = source_time_ms
         self.calls = 0
 
     def order_book(self, token_id: str) -> dict[str, object]:
@@ -145,9 +153,9 @@ class _PublicClient(PolymarketPublicClient):
         return {
             "market": MARKET_ID,
             "asset_id": token_id,
-            "timestamp": str(NOW_MS),
+            "timestamp": str(self.source_time_ms),
             "bids": [{"price": "0.39", "size": "100"}],
-            "asks": [{"price": self.ask_price, "size": "100"}],
+            "asks": [{"price": self.ask_price, "size": self.ask_size}],
         }
 
 
@@ -250,3 +258,40 @@ def test_round16_provider_rejects_edge_and_evidence_drift(
             promotion=promotion,
             requested_quantity=Decimal("5"),
         )
+
+
+def test_round16_provider_selects_down_and_rejects_unsafe_books(
+    tmp_path: Path,
+) -> None:
+    promotion = _promotion(tmp_path)
+    down = PolymarketRound16PromotedDecisionProvider(
+        public_client=_PublicClient(),
+        scorer=_Scorer(promotion=promotion, probability_up=0.3),
+        promotion=promotion,
+        requested_quantity=Decimal("5"),
+        clock_ms=lambda: NOW_MS,
+        monotonic_ns=lambda: 1,
+    ).decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    stale = PolymarketRound16PromotedDecisionProvider(
+        public_client=_PublicClient(source_time_ms=NOW_MS - 1_001),
+        scorer=_Scorer(promotion=promotion, probability_up=0.7),
+        promotion=promotion,
+        requested_quantity=Decimal("5"),
+        clock_ms=lambda: NOW_MS,
+        monotonic_ns=lambda: 1,
+    ).decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    shallow = PolymarketRound16PromotedDecisionProvider(
+        public_client=_PublicClient(ask_size="4.999999"),
+        scorer=_Scorer(promotion=promotion, probability_up=0.7),
+        promotion=promotion,
+        requested_quantity=Decimal("5"),
+        clock_ms=lambda: NOW_MS,
+        monotonic_ns=lambda: 1,
+    ).decide(markets=(_market(),), observed_at_ms=NOW_MS)
+
+    assert down.proposals[0].outcome == "Down"
+    assert down.proposals[0].token_id == DOWN_TOKEN
+    assert stale.proposals == ()
+    assert stale.reasons == ("polymarket_book_stale",)
+    assert shallow.proposals == ()
+    assert shallow.reasons == ("insufficient_displayed_ask_depth",)
