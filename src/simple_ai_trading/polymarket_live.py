@@ -510,6 +510,109 @@ class PolymarketCloseQuote:
 
 
 @dataclass(frozen=True, slots=True)
+class PolymarketOpenQuote:
+    market_id: str
+    token_id: str
+    outcome: str
+    quantity: Decimal
+    limit_price: Decimal
+    average_price: Decimal
+    fee_quote: Decimal
+    total_quote: Decimal
+    fee_rate: Decimal
+    fee_exponent: int
+    tick_size: Decimal
+    minimum_order_size: Decimal
+    neg_risk: bool
+    source_time_ms: int
+    observed_at_ms: int
+    book_payload_sha256: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "market_id", _condition_id(self.market_id))
+        object.__setattr__(self, "token_id", _token_id(self.token_id))
+        outcome = str(self.outcome or "").strip().title()
+        if outcome not in {"Up", "Down"}:
+            raise ValueError("open quote outcome must be Up or Down")
+        object.__setattr__(self, "outcome", outcome)
+        quantity = _decimal(self.quantity, name="open quantity", positive=True)
+        limit_price = _decimal(
+            self.limit_price,
+            name="open limit price",
+            positive=True,
+        )
+        average_price = _decimal(
+            self.average_price,
+            name="open average price",
+            positive=True,
+        )
+        fee_quote = _decimal(
+            self.fee_quote,
+            name="open fee quote",
+            nonnegative=True,
+        )
+        total_quote = _decimal(
+            self.total_quote,
+            name="open total quote",
+            positive=True,
+        )
+        fee_rate = _decimal(
+            self.fee_rate,
+            name="open fee rate",
+            nonnegative=True,
+        )
+        fee_exponent = int(self.fee_exponent)
+        tick = _decimal(self.tick_size, name="open tick size", positive=True)
+        minimum = _decimal(
+            self.minimum_order_size,
+            name="open minimum order size",
+            positive=True,
+        )
+        if (
+            limit_price >= 1
+            or limit_price % tick
+            or average_price >= 1
+            or average_price > limit_price
+        ):
+            raise ValueError("open price is invalid for the venue tick")
+        if quantity < minimum:
+            raise ValueError("open quantity is below the venue minimum")
+        if fee_rate > 1 or fee_exponent <= 0:
+            raise ValueError("open fee parameters are invalid")
+        if total_quote != average_price * quantity + fee_quote:
+            raise ValueError("open quote cost does not reconcile")
+        if type(self.neg_risk) is not bool:
+            raise ValueError("open quote neg-risk flag is invalid")
+        source_time = int(self.source_time_ms)
+        observed_at = int(self.observed_at_ms)
+        if source_time <= 0 or observed_at <= 0:
+            raise ValueError("open quote chronology is invalid")
+        digest = str(self.book_payload_sha256 or "").strip().lower()
+        if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise ValueError("open quote payload hash is invalid")
+        object.__setattr__(self, "quantity", quantity)
+        object.__setattr__(self, "limit_price", limit_price)
+        object.__setattr__(self, "average_price", average_price)
+        object.__setattr__(self, "fee_quote", fee_quote)
+        object.__setattr__(self, "total_quote", total_quote)
+        object.__setattr__(self, "fee_rate", fee_rate)
+        object.__setattr__(self, "fee_exponent", fee_exponent)
+        object.__setattr__(self, "tick_size", tick)
+        object.__setattr__(self, "minimum_order_size", minimum)
+        object.__setattr__(self, "source_time_ms", source_time)
+        object.__setattr__(self, "observed_at_ms", observed_at)
+        object.__setattr__(self, "book_payload_sha256", digest)
+
+    @property
+    def source_age_ms(self) -> int:
+        return self.observed_at_ms - self.source_time_ms
+
+    @property
+    def fee_per_share(self) -> Decimal:
+        return self.fee_quote / self.quantity
+
+
+@dataclass(frozen=True, slots=True)
 class PolymarketCancelResult:
     cancelled_order_ids: tuple[str, ...]
     failed_order_ids: tuple[str, ...]
@@ -556,6 +659,16 @@ class PolymarketLiveVenue(Protocol):
         self,
         order_ids: Sequence[str],
     ) -> tuple[PolymarketRemoteOrder, ...]: ...
+
+    def open_quote(
+        self,
+        *,
+        market_id: str,
+        token_id: str,
+        outcome: str,
+        quantity: Decimal,
+        maximum_book_age_ms: int,
+    ) -> PolymarketOpenQuote: ...
 
     def close_quote(
         self,
@@ -2920,6 +3033,7 @@ __all__ = [
     "PolymarketLiveRiskLimits",
     "PolymarketLiveUnknownState",
     "PolymarketLiveVenue",
+    "PolymarketOpenQuote",
     "PolymarketRuntimeAuthority",
     "PolymarketOrderFillEvidence",
     "PolymarketOwnedInventory",

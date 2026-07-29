@@ -24,6 +24,7 @@ from .polymarket_live import (
     PolymarketFundingPreflight,
     PolymarketLiveBlocked,
     PolymarketLiveOrderIntent,
+    PolymarketOpenQuote,
     PolymarketPreparedOrder,
     PolymarketRemoteFill,
     PolymarketRemoteOrder,
@@ -32,6 +33,7 @@ from .polymarket_live import (
     PolymarketVenuePreflight,
     PolymarketVenueRejected,
 )
+from .paper_execution import PolymarketFeeModel
 
 
 POLYMARKET_LIVE_SDK_VERSION = "1.1.0"
@@ -319,6 +321,192 @@ class OfficialPolymarketV2Venue:
                 )
             output.append(remote)
         return tuple(output)
+
+    def open_quote(
+        self,
+        *,
+        market_id: str,
+        token_id: str,
+        outcome: str,
+        quantity: Decimal,
+        maximum_book_age_ms: int,
+    ) -> PolymarketOpenQuote:
+        condition = str(market_id or "").strip().lower()
+        token = str(token_id or "").strip()
+        expected_outcome = str(outcome or "").strip().title()
+        requested_quantity = Decimal(str(quantity))
+        maximum_age = int(maximum_book_age_ms)
+        if re.fullmatch(r"^0x[0-9a-f]{64}$", condition) is None:
+            raise ValueError("Polymarket open condition ID is invalid")
+        if _TOKEN_ID.fullmatch(token) is None or requested_quantity <= 0:
+            raise ValueError("Polymarket open token or quantity is invalid")
+        if expected_outcome not in {"Up", "Down"}:
+            raise ValueError("Polymarket open outcome is invalid")
+        if not 100 <= maximum_age <= 5_000:
+            raise ValueError("Polymarket open book-age bound is invalid")
+        payload = _mapping(
+            self._client.get_order_book(token),
+            name="open order book",
+        )
+        market_info = _mapping(
+            self._client.get_clob_market_info(condition),
+            name="open market info",
+        )
+        observed_at_ms = int(time.time() * 1_000)
+        if str(payload.get("market") or "").strip().lower() != condition:
+            raise PolymarketLiveBlocked("Polymarket open book condition differs")
+        if str(payload.get("asset_id") or "").strip() != token:
+            raise PolymarketLiveBlocked("Polymarket open book token differs")
+        if str(market_info.get("c") or "").strip().lower() != condition:
+            raise PolymarketLiveBlocked("Polymarket open market identity differs")
+        market_tokens = market_info.get("t")
+        if not isinstance(market_tokens, list):
+            raise ValueError("Polymarket open market token mapping is invalid")
+        token_outcomes: dict[str, str] = {}
+        for value in market_tokens:
+            market_token = _mapping(value, name="open market token")
+            market_token_id = str(market_token.get("t") or "").strip()
+            market_outcome = str(market_token.get("o") or "").strip().title()
+            if (
+                _TOKEN_ID.fullmatch(market_token_id) is None
+                or market_outcome not in {"Up", "Down"}
+                or market_token_id in token_outcomes
+                or market_outcome in token_outcomes.values()
+            ):
+                raise ValueError("Polymarket open market token mapping is invalid")
+            token_outcomes[market_token_id] = market_outcome
+        if token not in token_outcomes:
+            raise PolymarketLiveBlocked("Polymarket open market token differs")
+        if token_outcomes[token] != expected_outcome:
+            raise PolymarketLiveBlocked("Polymarket open token outcome differs")
+        try:
+            source_time_ms = int(str(payload.get("timestamp") or ""))
+        except ValueError as exc:
+            raise ValueError("Polymarket open book timestamp is invalid") from exc
+        if source_time_ms < 10_000_000_000:
+            source_time_ms *= 1_000
+        source_age_ms = observed_at_ms - source_time_ms
+        if source_age_ms < -5_000 or source_age_ms > maximum_age:
+            raise PolymarketLiveBlocked("Polymarket open book is stale")
+        tick = Decimal(str(payload.get("tick_size")))
+        minimum = Decimal(str(payload.get("min_order_size")))
+        neg_risk = payload.get("neg_risk")
+        if tick <= 0 or tick > Decimal("0.1") or minimum <= 0:
+            raise ValueError("Polymarket open book parameters are invalid")
+        if type(neg_risk) is not bool:
+            raise ValueError("Polymarket open book neg-risk flag is invalid")
+        sdk_tick = Decimal(str(self._client.get_tick_size(token)))
+        sdk_neg_risk = self._client.get_neg_risk(token)
+        info_tick = Decimal(str(market_info.get("mts")))
+        info_minimum = Decimal(str(market_info.get("mos")))
+        if (
+            tick != sdk_tick
+            or tick != info_tick
+            or minimum != info_minimum
+            or type(sdk_neg_risk) is not bool
+        ):
+            raise PolymarketLiveBlocked("Polymarket open execution parameters differ")
+        if neg_risk is not sdk_neg_risk:
+            raise PolymarketLiveBlocked("Polymarket open neg-risk parameters differ")
+        if requested_quantity < minimum:
+            raise PolymarketLiveBlocked(
+                "proposed Polymarket quantity is below the venue minimum"
+            )
+        fee_details = _mapping(
+            market_info.get("fd"),
+            name="open market fee details",
+        )
+        fee_rate = Decimal(str(fee_details.get("r")))
+        fee_exponent_raw = fee_details.get("e")
+        taker_only = fee_details.get("to")
+        if (
+            fee_rate < 0
+            or fee_rate > 1
+            or type(fee_exponent_raw) is not int
+            or fee_exponent_raw <= 0
+            or taker_only is not True
+        ):
+            raise ValueError("Polymarket open fee parameters are invalid")
+        fee_model = PolymarketFeeModel(
+            enabled=fee_rate > 0,
+            rate=fee_rate,
+            exponent=fee_exponent_raw,
+            taker_only=True,
+        )
+
+        def levels(name: str, *, reverse: bool) -> tuple[tuple[Decimal, Decimal], ...]:
+            raw_levels = payload.get(name)
+            if not isinstance(raw_levels, list):
+                raise ValueError(f"Polymarket open book {name} are invalid")
+            parsed: list[tuple[Decimal, Decimal]] = []
+            for raw in raw_levels:
+                level = _mapping(raw, name=f"open book {name} level")
+                price = Decimal(str(level.get("price")))
+                size = Decimal(str(level.get("size")))
+                if price <= 0 or price >= 1 or price % tick or size <= 0:
+                    raise ValueError(f"Polymarket open book {name} level is invalid")
+                parsed.append((price, size))
+            if len({price for price, _ in parsed}) != len(parsed):
+                raise ValueError(
+                    f"Polymarket open book {name} contain duplicate prices"
+                )
+            return tuple(sorted(parsed, key=lambda item: item[0], reverse=reverse))
+
+        bids = levels("bids", reverse=True)
+        asks = levels("asks", reverse=False)
+        if bids and asks and bids[0][0] >= asks[0][0]:
+            raise PolymarketLiveBlocked("Polymarket open book is crossed or locked")
+        remaining = requested_quantity
+        limit_price: Decimal | None = None
+        notional = Decimal("0")
+        fee_quote = Decimal("0")
+        for price, size in asks:
+            consumed = min(size, remaining)
+            if consumed:
+                remaining -= consumed
+                limit_price = price
+                notional += price * consumed
+                fee_quote += fee_model(price, consumed, "taker")
+            if remaining <= 0:
+                break
+        if remaining > 0 or limit_price is None:
+            raise PolymarketLiveBlocked(
+                "displayed Polymarket asks cannot fill the proposed quantity"
+            )
+        identity_payload = {
+            "book": dict(payload),
+            "market_info": dict(market_info),
+        }
+        payload_json = json.dumps(
+            identity_payload,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        )
+        if len(payload_json.encode("ascii")) > self.maximum_response_bytes:
+            raise ValueError("Polymarket open evidence exceeded the bounded size")
+        average_price = notional / requested_quantity
+        return PolymarketOpenQuote(
+            market_id=condition,
+            token_id=token,
+            outcome=expected_outcome,
+            quantity=requested_quantity,
+            limit_price=limit_price,
+            average_price=average_price,
+            fee_quote=fee_quote,
+            total_quote=notional + fee_quote,
+            fee_rate=fee_rate,
+            fee_exponent=fee_exponent_raw,
+            tick_size=tick,
+            minimum_order_size=minimum,
+            neg_risk=neg_risk,
+            source_time_ms=source_time_ms,
+            observed_at_ms=observed_at_ms,
+            book_payload_sha256=hashlib.sha256(
+                payload_json.encode("ascii")
+            ).hexdigest(),
+        )
 
     def close_quote(
         self,
