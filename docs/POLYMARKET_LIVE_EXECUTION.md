@@ -7,9 +7,13 @@ default. It has no promoted trading model, live-money release authority,
 authenticated account test, or profitability claim. Binance testnet balances,
 positions, orders, credentials, and execution state are never shared with it.
 
-Optional Binance BTCUSDT spot and USD-M futures observations are read-only
-exogenous features. They can preserve, reduce, or veto a separately approved
-Polymarket action; they cannot create one.
+Optional public Binance BTCUSDT spot and USD-M futures observations are
+read-only exogenous predictor features. A promoted Polymarket model may use
+them to estimate BTC direction, and a separate safety overlay may preserve,
+reduce, or veto its proposal. They cannot authenticate, fund, place, cancel,
+settle, or reconcile an order, grant trading authority, or increase an approved
+size. Disabling the Binance predictor leaves the Polymarket market, wallet,
+order, ownership, risk, stop, and settlement system intact.
 
 ```mermaid
 flowchart LR
@@ -82,6 +86,12 @@ flowchart LR
   exact owned-position Stop, and explicitly confirmed redemption.
 - Local status does not create a missing ledger. Supervision opens no exposure;
   it runs only the independent authenticated safety and recovery loops.
+- The current execution proposal contract is five-minute-only. Round 16
+  preregisters a separate fifteen-minute comparison after July 2026 research
+  reported settlement manipulation in five-minute BTC contracts. The proposal
+  contract may be generalized only after the fifteen-minute prediction and
+  prospective after-cost gates pass; the venue boundary itself remains
+  Polymarket-only.
 
 ## Still Closed
 
@@ -89,6 +99,10 @@ flowchart LR
 - No account credentials are available for an authenticated host test.
 - No autonomous Polymarket decision policy has live-order authority. The
   operator command therefore cannot open exposure.
+- The CLI has promotion-gated one-order submission primitives and independent
+  safety supervision, but not yet the complete autonomous
+  discovery-to-inference-to-execution loop. Calling the boundary
+  "live-capable" does not mean that loop is complete.
 
 These gaps block release authority. A public API check or offline signature is
 not an authenticated order, cancellation, fill, or redemption test.
@@ -136,3 +150,4 @@ submitted.
 - [Current position schema](https://docs.polymarket.com/api-reference/core/get-current-positions-for-a-user)
 - [Geographic restrictions](https://docs.polymarket.com/api-reference/geoblock)
 - [Rate limits](https://docs.polymarket.com/api-reference/rate-limits)
+- [Settlement Manipulation in Prediction Markets](https://arxiv.org/abs/2606.31675)

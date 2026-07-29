@@ -256,8 +256,8 @@ extends the established parser with independently registered commands.
   authority. Any successor must use a new preregistered contract and untouched
   capture; never resume, pool, or reinterpret the failed Round 13 prefix.
   Round 12 is invalidated before
-  outcome access and is neither model nor performance evidence. Round 11 remains
-  the latest scored result and is rejected. It reused the real
+  outcome access and is neither model nor performance evidence. Round 11 is an
+  older rejected scored result. It reused the real
   47-group Round 9 corpus for development only, modeled one FOK entry held to
   resolution, and evaluated 42 chronological validation markets. The selected
   simulated point estimate was `+22.44105` quote across 42 displayed-book fills,
@@ -269,21 +269,49 @@ extends the established parser with independently registered commands.
   `docs/model-research/polymarket/latest/README.md`, then the Round 13 contract,
   Round 12 invalidation, and Round 11 report. Round 10 rejected the one-second scalp on negative action scores;
   Round 9 remains the immutable unknown-state admission failure.
-- Polymarket Round 14 is the only open BTC five-minute successor design. Its
+- Polymarket Round 14 is the active prospective BTC five-minute campaign. Its
   public-wire, compressed-storage, overlap, and strict causal-replay
   qualification passed on commit `f2da0796`; that 60-second run is permanently
   non-model evidence. The immutable 30-day campaign is scheduled from
   2026-07-29 17:00 UTC through 2026-08-28 17:00 UTC under plan
-  `c19ef773...`. No prospective condition has been admitted and no label, fit,
-  backtest, PnL, AI uplift, paper authority, or live authority exists. Read
+  `c19ef773...`. A separate one-hour shadow resolved 12 conditions and rejected
+  the current first-candidate policy: 3 wins, 9 losses, `-9.87720`
+  counterfactual after-cost quote PnL, `0.455725` profit factor, and `11.69847`
+  quote maximum drawdown. It submitted zero orders and observed zero fills, so
+  it is diagnostic evidence only and grants no profitability or trading
+  authority. Read
   `round-014-btc-5m-prospective-contract-v1.json`, the campaign plan, and the
-  live qualification artifact. Outcome-blind condition admission is frozen by
+  one-hour evaluation before modifying this lane. Outcome-blind condition
+  admission is frozen by
   `round-014-btc-5m-admission-spec-v1.json` (`17dfe108...`) and implemented in
   `polymarket_round14_dataset.py`; replay must use
   `include_resolutions=False`. The 60-second qualification correctly admits
   zero rows because it cannot cover a complete decision window. Never weaken
   the split, source, coverage, gap, power, cost, latency, depth, uncertainty, or
   promotion gates.
+- Polymarket Round 15 is the preregistered expanded BTC five-minute historical
+  screen. It binds 154 complete UTC days of official one-second BTCUSDT spot
+  and USD-M perpetual archives, excludes all four previously consulted
+  Round 14 target days, and reserves 15 untouched July days for one-use test
+  access. Its fixed eight decision offsets must be selected on tune data only;
+  never use the failed one-hour shadow to choose an offset. Round 15 is
+  predictive research only and cannot establish execution, fill, latency, PnL,
+  or live authority.
+- Polymarket Round 16 is a separately preregistered BTC fifteen-minute horizon
+  comparison motivated by `arXiv:2606.31675`, which reports settlement-time
+  manipulation in five-minute BTC contracts and substantially less in
+  fifteen-minute contracts. It reuses the certified Round 15 Binance feature
+  facts without duplicating them, but has separate Polymarket identities,
+  targets, pretest, and holdout. No eligible Round 16 identity or terminal
+  target was accessed before contract
+  `96c56d1ce835dd193d2852f75acc45edf533e1c4c6cef0e145c628a1a2b700f9`
+  was frozen. Neither horizon may be pooled, selected, or promoted without its
+  own prediction and prospective after-cost gates.
+- Every Polymarket lane is execution-independent from Binance. Binance may
+  supply optional public BTCUSDT predictor observations, but no Binance
+  credential, account, balance, order, fill, position, capital, PnL, risk, or
+  execution state may enter the Polymarket wallet, ownership ledger,
+  reconciliation, stop, or settlement boundary.
 - Captures `eae374e2662c440fb93970d5710937b1`,
   `3a67757c7f174df4b62f2722ea9211cb`, and
   `b8a270da20fe4116a01a4626607e42da` are permanently development-only. The

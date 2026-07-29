@@ -1,0 +1,279 @@
+{
+  "schema_version": "polymarket-round16-btc-15m-horizon-comparison-v1",
+  "round": 16,
+  "created_at_utc": "2026-07-29T20:00:00Z",
+  "status": "preregistered_before_any_round16_identity_or_terminal_target_access",
+  "predecessors": {
+    "round15_contract_path": "docs/model-research/polymarket/round-015-btc-5m-historical-screen-v1.json",
+    "round15_contract_sha256": "34b67d3a4dcc034523795882f68170c4140ef135a49bcd5eae34b888fcc5d10d",
+    "round14_shadow_evaluation_path": "docs/model-research/polymarket/evidence/round-014-btc-5m-shadow-hour-evaluation-v1.json",
+    "round14_shadow_result": "rejected_negative_counterfactual_after_cost_pnl",
+    "round14_shadow_artifact_sha256": "23797c254f7b8f81ddafe4116f90979140d8e9d4cf7fd755dba2620d5946e283"
+  },
+  "scope": {
+    "venue": "polymarket",
+    "asset": "BTC",
+    "market_variant": "fifteenminute",
+    "purpose": "preregistered_horizon_comparison_after_five_minute_settlement_manipulation_evidence",
+    "development_only": true,
+    "hypothesis": "A fifteen-minute event horizon preserves causal BTC price-discovery information while reducing the settlement-manipulation and terminal-noise exposure documented for five-minute Polymarket BTC contracts.",
+    "independence": {
+      "execution_venue": "polymarket_only",
+      "market_discovery": "polymarket_only",
+      "market_data": "polymarket_only",
+      "wallet_and_authentication": "polymarket_only",
+      "orders_and_fills": "polymarket_only",
+      "positions_and_pnl": "polymarket_only",
+      "risk_ledger": "polymarket_only",
+      "reconciliation_and_stop": "polymarket_only",
+      "settlement_and_redemption": "polymarket_only",
+      "binance_role": "optional_public_read_only_BTCUSDT_spot_and_USD-M_perpetual_predictor_features",
+      "binance_forbidden": [
+        "credentials",
+        "account state",
+        "balances",
+        "orders",
+        "fills",
+        "positions",
+        "capital",
+        "PnL",
+        "risk authority",
+        "execution authority"
+      ]
+    },
+    "authority": {
+      "paper_trading": false,
+      "live_trading": false,
+      "promotion": false
+    },
+    "claims_forbidden": [
+      "executable profitability",
+      "live profitability",
+      "fill probability",
+      "latency advantage",
+      "market impact",
+      "live readiness",
+      "five-minute superiority",
+      "fifteen-minute superiority"
+    ]
+  },
+  "research_basis": {
+    "settlement_manipulation_paper": "https://arxiv.org/abs/2606.31675",
+    "paper_version_observed": "2026-07-02",
+    "paper_finding": "The paper reports settlement-time spot-flow spikes and reversals in Polymarket BTC five-minute contracts and reports that manipulation is largely absent in fifteen-minute contracts.",
+    "polymarket_market_stream": "https://docs.polymarket.com/market-data/realtime-data",
+    "bitcoin_price_discovery_paper": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4983566",
+    "current_series_probe": {
+      "observed_at_utc": "2026-07-29T19:58:07Z",
+      "gamma_series_id": 10192,
+      "ticker": "btc-up-or-down-15m",
+      "recurrence": "15m",
+      "active": true
+    }
+  },
+  "source_contract": {
+    "polymarket_series_id": 10192,
+    "gamma_identity_endpoint": "https://gamma-api.polymarket.com/events/keyset",
+    "gamma_terminal_endpoint": "https://gamma-api.polymarket.com/markets/{market_id}",
+    "clob_terminal_endpoint": "https://clob.polymarket.com/markets/{condition_id}",
+    "historical_polymarket_price_or_trade_features": false,
+    "binance_source": "frozen_round15_btc_spot_perpetual_flow_1s",
+    "binance_inventory_path": "docs/model-research/polymarket/round-015-btc-5m-full-history-inventory-v1.json",
+    "binance_inventory_sha256": "f68c0dc7709c98f342d04bacbd1b120c87ee07712ab0aeedbb3e1915cb8e77e2",
+    "binance_symbol": "BTCUSDT",
+    "binance_availability_rule": "A completed second becomes available only at second_ms plus 1000 milliseconds.",
+    "shared_flow_database": "data/polymarket-btc-flow-history-v1.duckdb",
+    "duplicate_binance_storage_allowed": false,
+    "raw_binance_copy_allowed": false,
+    "eligible_interval": {
+      "first_day": "2026-02-12",
+      "last_day": "2026-07-15",
+      "day_count": 154
+    },
+    "required_flow_rows_per_day": 86400,
+    "required_market_count_per_day": 96,
+    "required_market_duration_ms": 900000,
+    "required_resolution_source": "https://data.chain.link/streams/btc-usd"
+  },
+  "target_contract": {
+    "label": "Up when official terminal CLOB and Gamma evidence both identify the Up token as the unique winner; Down when both identify Down.",
+    "joint_terminal_crosscheck_required": true,
+    "gamma_terminal_prices_required": [
+      "0",
+      "1"
+    ],
+    "development_access": "Train and tune targets may be collected only after all Round 16 feature rows and their dataset manifest are immutable.",
+    "test_access": "Test targets may be collected once only after an immutable pretest artifact binds model, scaling, calibration, timing policy, dataset, implementation, and source commit.",
+    "round16_eligible_terminal_targets_consulted_before_freeze": false
+  },
+  "causal_feature_contract": {
+    "decision_offsets_seconds": [
+      60,
+      120,
+      180,
+      240,
+      300,
+      360,
+      420,
+      480,
+      540,
+      600,
+      660,
+      720,
+      780,
+      840
+    ],
+    "return_horizons_seconds": [
+      1,
+      5,
+      15,
+      30,
+      60,
+      120
+    ],
+    "flow_windows_seconds": [
+      1,
+      5,
+      15,
+      30,
+      60,
+      120
+    ],
+    "binance_features": [
+      "spot and perpetual log returns",
+      "spot and perpetual realized variance",
+      "spot and perpetual quote volume",
+      "spot and perpetual signed aggressive quote share",
+      "spot and perpetual aggregate-trade intensity",
+      "spot and perpetual constituent-trade intensity",
+      "spot and perpetual maximum aggregate quote",
+      "spot and perpetual aggregate-quote concentration",
+      "spot-perpetual basis level and change",
+      "spot-perpetual return disagreement",
+      "last-trade age",
+      "terminal-window spot-flow anomaly",
+      "terminal-window spot-perpetual disagreement"
+    ],
+    "target_blind_controls": [
+      "UTC day phase",
+      "event elapsed fraction",
+      "event remaining fraction"
+    ],
+    "forbidden": [
+      "Polymarket historical price or trade history",
+      "future Binance seconds",
+      "Gamma outcome prices",
+      "CLOB winner flags",
+      "resolution",
+      "closePrice",
+      "fills",
+      "PnL",
+      "account state",
+      "wallet state",
+      "orders",
+      "positions"
+    ]
+  },
+  "settlement_manipulation_controls": {
+    "new_exposure_in_final_30_seconds": false,
+    "abnormal_terminal_spot_flow_action": "abstain",
+    "abnormal_terminal_spot_perpetual_disagreement_action": "abstain",
+    "threshold_selection_partition": "tune_only",
+    "held_out_reporting": [
+      "all decision offsets",
+      "last 180 seconds",
+      "last 120 seconds",
+      "last 60 seconds"
+    ],
+    "live_authority_from_this_contract": false
+  },
+  "partition": {
+    "method": "chronological_whole_UTC_days",
+    "train_interval": {
+      "first_day": "2026-02-12",
+      "last_day": "2026-05-31",
+      "day_count": 109
+    },
+    "tune_interval": {
+      "first_day": "2026-06-01",
+      "last_day": "2026-06-30",
+      "day_count": 30
+    },
+    "test_interval": {
+      "first_day": "2026-07-01",
+      "last_day": "2026-07-15",
+      "day_count": 15
+    },
+    "test_access": "one_use_after_immutable_pretest_model_and_policy_manifest",
+    "insufficient_power": "Reject or extend under a new preregistered contract. Never relax gates after test access."
+  },
+  "candidate_contract": {
+    "controls": [
+      "constant_training_prevalence",
+      "regularized_calendar_logistic"
+    ],
+    "challengers": [
+      "regularized_binance_logistic",
+      "shallow_binance_lightgbm"
+    ],
+    "selection_metric": "condition_balanced_tune_log_loss",
+    "secondary_metrics": [
+      "Brier score",
+      "balanced accuracy",
+      "accuracy",
+      "calibration intercept",
+      "calibration slope",
+      "expected calibration error"
+    ],
+    "search": "A fixed bounded regularization and tree-complexity grid only. No test-driven changes.",
+    "calibration": "Choose no calibration or tune-only logistic calibration using tune log loss before test access.",
+    "ai": "No language model is screened on this historical lane because reproducible point-in-time text inputs do not exist. AI remains veto-or-reduce only in the separately gated prospective lane."
+  },
+  "test_gates": {
+    "minimum_terminal_conditions": 1200,
+    "minimum_outcomes_per_class": 400,
+    "minimum_decision_rows": 10000,
+    "challenger_log_loss_skill_over_best_control_strictly_positive": true,
+    "challenger_brier_skill_over_best_control_strictly_positive": true,
+    "challenger_balanced_accuracy_not_lower_than_best_control": true,
+    "paired_condition_block_bootstrap_repetitions": 10000,
+    "paired_log_loss_improvement_lower_bound_strictly_positive": true,
+    "calibration_slope_range": [
+      "0.85",
+      "1.15"
+    ],
+    "expected_calibration_error_maximum": "0.03",
+    "failure_action": "reject_candidate_without_trading_or_profitability_claim"
+  },
+  "horizon_comparison_gate": {
+    "comparison_population": "common untouched UTC test days only",
+    "five_minute_contract": "round15",
+    "fifteen_minute_contract": "round16",
+    "prediction_gate_required_for_each_horizon": true,
+    "separate_prospective_after_cost_shadow_required_for_each_horizon": true,
+    "selection_metrics": [
+      "paired condition-balanced log loss",
+      "paired Brier score",
+      "calibration",
+      "after-cost profit lower bound",
+      "maximum drawdown",
+      "settlement-window instability",
+      "displayed-depth and latency stress"
+    ],
+    "automatic_horizon_pooling_allowed": false,
+    "automatic_live_promotion_allowed": false
+  },
+  "resource_contract": {
+    "network": "Use bounded retries, Retry-After, request-size limits, cursor checkpoints, and no authenticated endpoint.",
+    "rate": "At most five requests per second per public origin with no burst above five.",
+    "storage": "Reuse the certified Round 15 one-second Binance facts without a second copy; store each Polymarket identity and terminal payload once.",
+    "memory": "Process one UTC day at a time with a two-gigabyte DuckDB memory ceiling.",
+    "database": "Use the existing compact BTC flow database and separate Round 16 identity, feature, and target schemas with durable phase transitions.",
+    "ssd": "No raw archive retention, no duplicate BTC corpus, no Polymarket trade-history copy, and no write-heavy hidden process."
+  },
+  "round16_identity_rows_consulted_before_freeze": false,
+  "round16_terminal_targets_consulted_before_freeze": false,
+  "round16_model_scores_consulted_before_freeze": false,
+  "profitability_claim": false,
+  "contract_sha256": "96c56d1ce835dd193d2852f75acc45edf533e1c4c6cef0e145c628a1a2b700f9"
+}
