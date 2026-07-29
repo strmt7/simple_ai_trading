@@ -1,0 +1,150 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v116",
+  "created_at_utc": "2026-07-29T03:42:54Z",
+  "implementation_git_commit": "548a8fe47730f74c194251e8062ea7dd5ab8126a",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v115.json",
+    "file_sha256": "da499e8a977ccdf3e55aac26ecd97d08bf716f42fd2f51109ab533a3b1028442",
+    "design_sha256": "1f7e51c6f48344507e139c6e52517ddceb429208d54470f5a06e4f98e1308dc2",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "ai_uplift": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+      "sha256": "7c4b321f1df0e1c5cbb782a6a09f2bc8d6da9d27ccda85d261b20b9d41180e07"
+    },
+    "ai_uplift_test": {
+      "path": "tests/test_impact_absorption_ai_uplift.py",
+      "sha256": "f7ce774701a4ec86a189b148eab5511b41027cb4d975879e7b76e9380d18d386"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://doi.org/10.1214/aos/1176347265",
+      "finding": "Kunsch introduced block resampling for general stationary observations so local dependence is not destroyed by independent single-observation resampling.",
+      "implementation_consequence": "Chronologically ordered capture-run uplift deltas are resampled in moving blocks rather than as independent trades."
+    },
+    {
+      "source": "https://doi.org/10.1007/978-1-4757-3803-2",
+      "finding": "Lahiri documents block-bootstrap methods for inference on dependent temporal data and the importance of block-size choice.",
+      "implementation_consequence": "The predeclared shared resampler uses a bounded square-root run block length and reports that length with every result."
+    },
+    {
+      "source": "https://www.itl.nist.gov/div898/handbook/prc/section4/prc473.htm",
+      "finding": "Bonferroni simultaneous intervals retain at least the requested overall confidence when each of g preselected intervals uses confidence one minus alpha divided by g.",
+      "implementation_consequence": "Two pinned AI reviewers each use a 97.5 percent interval so the family of two has at least 95 percent simultaneous coverage."
+    },
+    {
+      "source": "https://onlinelibrary.wiley.com/doi/abs/10.3982/ecta5771",
+      "finding": "Comparing multiple predictive models without accounting for selection uncertainty can admit spurious winners.",
+      "implementation_consequence": "Neither AI reviewer qualifies unless its own dependence-aware lower uplift bound is strictly positive; no best-reviewer selection occurs in development."
+    }
+  ],
+  "statistical_contract": {
+    "estimand": "mean_capture_run_total_after_cost_net_bps_uplift_of_ai_overlay_over_frozen_ml_actions",
+    "sampling_unit": "whole_independently_adjudicated_capture_run",
+    "ordering": "immutable_chronological_capture_run_order",
+    "resampler": "moving_block_bootstrap_mean",
+    "block_length_rule": "round_square_root_of_run_count_bounded_to_one_through_run_count",
+    "bootstrap_samples": 10000,
+    "familywise_confidence": 0.95,
+    "pinned_ai_model_comparisons": 2,
+    "bonferroni_per_model_confidence": 0.975,
+    "promotion_gate": "per_model_mean_ci_lower_strictly_greater_than_zero",
+    "seed_material": "schema_version_plus_target_blind_ordered_run_ids",
+    "trade_rows_resampled_independently": false,
+    "failed_or_vetoed_reviews_removed": false,
+    "existing_run_symbol_horizon_noninferiority_required": true,
+    "existing_run_symbol_horizon_adverse_excursion_noninferiority_required": true,
+    "existing_drawdown_noninferiority_required": true
+  },
+  "declared_delta": {
+    "ai_uplift_schema_version": "round-074-ai-uplift-development-v16",
+    "ai_pretest_qualification_schema_version": "round-074-ai-pretest-qualification-v4",
+    "ai_run_uplift_bootstrap_schema_version": "round-074-ai-paired-run-uplift-bootstrap-v1",
+    "previous_gate": "positive_total_uplift_plus_exact_run_and_cell_noninferiority",
+    "previous_failure": "a_positive_total_from_too_few_avoided_losses_could_pass_without_a_dependence_aware_uncertainty_gate",
+    "new_gate": "strictly_positive_bonferroni_adjusted_moving_block_bootstrap_lower_bound_for_each_pinned_ai_model",
+    "bootstrap_evidence_hash_bound_in_report": true,
+    "bootstrap_evidence_recomputed_on_load": true,
+    "sparse_single_avoided_loss_rejected": true,
+    "distributed_chronological_uplift_can_pass": true,
+    "candidate_ai_models_changed": false,
+    "ai_prompt_changed": false,
+    "ai_runtime_changed": false,
+    "ml_model_changed": false,
+    "execution_replay_changed": false,
+    "action_policy_changed": false,
+    "market_data_reads_added": 0,
+    "ai_model_calls_added": 0,
+    "gpu_training_work_added": false,
+    "bounded_cpu_resampling_only": true,
+    "campaign_source_files_changed_on_main": false,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "event_model": "round-074-event-payoff-model-v11",
+    "event_dataset": "round-074-event-dataset-v12",
+    "event_training": "round-074-event-training-v34",
+    "event_pretest_policy": "round-074-event-pretest-policy-v33",
+    "ai_uplift_development": "round-074-ai-uplift-development-v16",
+    "ai_pretest_qualification": "round-074-ai-pretest-qualification-v4",
+    "sealed_evaluation": "round-074-sealed-evaluation-v23"
+  },
+  "verification": {
+    "unique_tests_passed": 51,
+    "ai_uplift_tests_passed": 16,
+    "operator_persistence_sealed_ledger_and_design_compatibility_tests_passed": 35,
+    "sparse_positive_aggregate_uplift_rejected": true,
+    "distributed_uplift_lower_bound_positive": true,
+    "serialized_bootstrap_tampering_rejected": true,
+    "two_passing_reports_round_trip_immutably": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_ai_qualification_performed": false,
+    "real_ai_model_called": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "status_observed_at_utc": "2026-07-29T03:42:38Z",
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 37,
+    "latest_independently_adjudicated_slot": 46,
+    "slot_047_status_at_observation": "running",
+    "slot_047_process_count_at_observation": 4,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_or_wal_hashed_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "sparse_uplift_failure_reproduced_and_blocked_by_synthetic_test": true,
+    "bootstrap_interval_is_a_finite_sample_development_screen_not_a_guarantee": true,
+    "representative_training_data_complete": false,
+    "model_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "representative_ai_qualification_performed": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "ai_model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "d4837051e962097dad803342ebdebf07977faa8121b5523bfac74e08e12d977e"
+}
