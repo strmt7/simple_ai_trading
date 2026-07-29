@@ -1,0 +1,187 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v109",
+  "created_at_utc": "2026-07-29T01:51:24Z",
+  "implementation_git_commit": "e979d17b5d4e09128ca53854ae52d2bdd3b3774a",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v108.json",
+    "file_sha256": "473e672687a733cba4d2ffe932547165323e9941ad539d53038cb67ef3bdea4c",
+    "design_sha256": "16936432c123482c78edba2012118f0c5f8a14e119193ad4a1fade13204edf0e",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "calibration": {
+      "path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+      "sha256": "04e623ba99631d2a1d68adbbc874d29a40a18352f451f1a46c0522e919a035fe"
+    },
+    "sealed_evaluator": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "98c86922e6d0a588fe8acea1e2ab21c7cd489e30c5023ccbb01a29b992510d47"
+    },
+    "calibration_test": {
+      "path": "tests/test_impact_absorption_event_calibration.py",
+      "sha256": "f89d1bdf4e2dc89978d91c822e712d0f16405b6b367040443ae721879dad5e7b"
+    },
+    "sealed_evaluator_test": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "9650ff8f65027b641034a175d7a30683b2123faa41a3e136bad2830fdce1c799"
+    },
+    "action_policy_compatibility_test": {
+      "path": "tests/test_impact_absorption_event_action_policy.py",
+      "sha256": "bc96d810489e1158d707477c775d933ebaba8f9f38d653c72fc2569dfe1cd42c"
+    },
+    "ai_bridge_compatibility_test": {
+      "path": "tests/test_impact_absorption_ai_bridge.py",
+      "sha256": "cff231cd4b1ad95df795190a4312a11d86447b9cab3257705b16a61a027599f1"
+    },
+    "historical_v108_contract_test": {
+      "path": "tests/test_round74_event_model_design_v108.py",
+      "sha256": "a89375090fad8f1a9c7a7378717947004ddf84261f1fdb061516df0ef6c510fa"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://doi.org/10.1198/016214506000001437",
+      "finding": "Proper scoring rules assess probabilistic forecasts without rewarding strategically distorted distributions, and quantile scores are proper for quantile forecasts.",
+      "implementation_consequence": "Sealed promotion now requires positive pinball skill for both net-payoff and maximum-adverse-excursion quantile heads."
+    },
+    {
+      "source": "https://doi.org/10.2307/1913643",
+      "finding": "Quantile estimation is based on the asymmetric absolute-loss objective underlying the pinball score.",
+      "implementation_consequence": "Each forecast quantile is evaluated at its declared probability level rather than by point-error accuracy."
+    },
+    {
+      "source": "https://doi.org/10.1080/01621459.1994.10476870",
+      "finding": "The stationary bootstrap preserves local temporal dependence by resampling random-length blocks.",
+      "implementation_consequence": "Quantile-score improvement is reduced to whole chronological capture runs before the existing circular stationary bootstrap."
+    },
+    {
+      "source": "https://arxiv.org/abs/1503.08195",
+      "finding": "Forecast comparison must use scoring functions consistent with the statistical functional being forecast.",
+      "implementation_consequence": "Binary heads retain Brier scoring while continuous payoff and path-risk heads use quantile-consistent pinball scoring."
+    }
+  ],
+  "declared_delta": {
+    "sealed_evaluation_schema_version": "round-074-sealed-evaluation-v20",
+    "temperature_calibration_schema_version": "round-074-temperature-calibration-v5",
+    "no_information_quantile_baseline_schema_version": "round-074-no-information-quantile-baseline-v1",
+    "predictive_tasks": [
+      "positive_payoff",
+      "adverse_selection",
+      "regime_unpredictability",
+      "net_payoff_quantiles",
+      "maximum_adverse_excursion_quantiles"
+    ],
+    "quantile_scoring_rule": "mean_pinball_loss_across_predeclared_quantiles",
+    "quantile_skill_score": "one_minus_model_pinball_loss_divided_by_fixed_no_information_pinball_loss",
+    "quantile_no_information_fit_scope": "disjoint_probability_calibration_runs_only",
+    "quantile_no_information_dimensions": [
+      "symbol",
+      "horizon_seconds",
+      "side",
+      "quantile"
+    ],
+    "capture_run_baseline_quantile_method": "equal_capture_run_mass_weighted_empirical_inverse_cdf",
+    "eligible_target_baseline_quantile_method": "pooled_eligible_target_linear_empirical_quantile",
+    "capture_run_busy_row_duplication_changes_baseline": false,
+    "every_calibration_run_symbol_group_requires_eligible_support": true,
+    "maximum_adverse_excursion_baseline_is_nonnegative": true,
+    "maximum_adverse_excursion_baseline_is_horizon_monotone": true,
+    "sealed_test_labels_used_for_quantile_baseline_fit": false,
+    "quantile_baseline_is_probability_calibration_hash_bound": true,
+    "deployed_risk_calibration_applied_before_quantile_scoring": true,
+    "optimization_population": "equal_weight_chronological_capture_run",
+    "all_expected_test_capture_runs_require_quantile_evidence": true,
+    "bootstrap_draws": 10000,
+    "familywise_alpha": 0.05,
+    "familywise_task_count": 5,
+    "per_task_one_sided_alpha": 0.01,
+    "per_quantile_task_requirements": [
+      "positive_pooled_pinball_skill",
+      "positive_familywise_lower_mean_run_pinball_improvement",
+      "complete_capture_run_coverage"
+    ],
+    "overall_predictive_gate": "conjunction_of_all_five_task_gates",
+    "binary_scoring_logic_changed": false,
+    "financial_gate_remains_independent_and_mandatory": true,
+    "ai_overlay_may_rescue_predictive_gate_failure": false,
+    "model_parameters_changed": false,
+    "training_objective_changed": false,
+    "action_thresholds_changed": false,
+    "execution_replay_changed": false,
+    "compute_backend_changed": false,
+    "test_access_reuse_permitted": false,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "sealed_evaluation": "round-074-sealed-evaluation-v20",
+    "temperature_calibration": "round-074-temperature-calibration-v5",
+    "risk_quantile_calibration": "round-074-risk-quantile-calibration-v2",
+    "no_information_quantile_baseline": "round-074-no-information-quantile-baseline-v1",
+    "event_model": "round-074-event-payoff-model-v9",
+    "event_training": "round-074-event-training-v32",
+    "event_pretest_policy": "round-074-event-pretest-policy-v31"
+  },
+  "verification": {
+    "focused_tests_passed": 68,
+    "focused_test_files": 5,
+    "capture_run_busy_row_duplication_factor_tested": 32,
+    "capture_run_baseline_duplication_invariance_passed": true,
+    "missing_calibration_run_symbol_support_rejected": true,
+    "malformed_boolean_observation_count_rejected": true,
+    "all_five_predictive_tasks_pass_skilled_counterexample": true,
+    "zero_binary_skill_counterexample_rejected": true,
+    "action_policy_current_and_prior_calibration_compatibility_passed": true,
+    "ai_bridge_current_and_prior_calibration_compatibility_passed": true,
+    "historical_v108_schema_contract_frozen_to_literal": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "broader_compatibility_tests_collected": 115,
+    "broader_compatibility_tests_passed": 113,
+    "broader_compatibility_failures": [
+      "unchanged_round_072_publication_blob_binding_is_stale",
+      "unchanged_local_ai_design_uses_a_moving_execution_replay_schema_constant"
+    ],
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "representative_predictive_skill_evaluated": false,
+    "sealed_test_accessed": false,
+    "campaign_database_opened": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs_before_this_change": 34,
+    "quarantined_slot_017_counted_as_admitted": false,
+    "slot_041_independently_adjudicated_by_this_change": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_skill_gate_proven_on_synthetic_counterexamples": true,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "quantile_accuracy_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "c78cafa35d7b13d9670c6fd3a7fc62412fdcb3f0d1bbcb3ed4320e4e4313bd8a"
+}
