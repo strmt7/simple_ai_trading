@@ -185,6 +185,17 @@ def _iso_seconds(timestamp_ms: int) -> str:
 
 
 @dataclass(frozen=True, slots=True)
+class HistoricalScreenTestGates:
+    minimum_terminal_conditions: int
+    minimum_outcomes_per_class: int
+    minimum_decision_rows: int
+    bootstrap_repetitions: int
+    calibration_slope_minimum: float
+    calibration_slope_maximum: float
+    expected_calibration_error_maximum: float
+
+
+@dataclass(frozen=True, slots=True)
 class HistoricalScreenContract:
     path: Path
     contract_sha256: str
@@ -201,6 +212,7 @@ class HistoricalScreenContract:
     required_source_symbol_count: int
     required_flow_rows_per_day: int
     required_market_count_per_day: int
+    test_gates: HistoricalScreenTestGates
 
     def role_for_day(self, day: str) -> str:
         try:
@@ -231,9 +243,10 @@ def load_historical_screen_contract(
     target = payload.get("target_contract")
     causal = payload.get("causal_feature_contract")
     partition = payload.get("partition")
+    test_gates_value = payload.get("test_gates")
     if not all(
         isinstance(value, Mapping)
-        for value in (scope, source, target, causal, partition)
+        for value in (scope, source, target, causal, partition, test_gates_value)
     ):
         raise ValueError("historical screen contract sections are missing")
     authority = scope.get("authority")
@@ -351,6 +364,43 @@ def load_historical_screen_contract(
         if schema_version == "polymarket-round14-btc-5m-historical-screen-v2"
         else "frozen_round15_btc_spot_perpetual_flow_1s"
     )
+    slope_range = tuple(test_gates_value.get("calibration_slope_range", ()))
+    if len(slope_range) != 2:
+        raise ValueError("historical screen calibration slope range differs")
+    test_gates = HistoricalScreenTestGates(
+        minimum_terminal_conditions=int(
+            test_gates_value.get("minimum_terminal_conditions", 0)
+        ),
+        minimum_outcomes_per_class=int(
+            test_gates_value.get("minimum_outcomes_per_class", 0)
+        ),
+        minimum_decision_rows=int(
+            test_gates_value.get("minimum_decision_rows", 0)
+        ),
+        bootstrap_repetitions=int(
+            test_gates_value.get(
+                "paired_condition_block_bootstrap_repetitions",
+                0,
+            )
+        ),
+        calibration_slope_minimum=float(
+            _decimal(slope_range[0], name="calibration slope minimum")
+        ),
+        calibration_slope_maximum=float(
+            _decimal(slope_range[1], name="calibration slope maximum")
+        ),
+        expected_calibration_error_maximum=float(
+            _decimal(
+                test_gates_value.get("expected_calibration_error_maximum"),
+                name="expected calibration error maximum",
+            )
+        ),
+    )
+    expected_gate_numbers = (
+        (250, 50, 1_500, 2_000, 0.75, 1.25, 0.05)
+        if schema_version == "polymarket-round14-btc-5m-historical-screen-v2"
+        else (3_500, 1_000, 20_000, 10_000, 0.85, 1.15, 0.03)
+    )
     if (
         str(source.get("polymarket_series_id")) != _SERIES_ID
         or source.get("historical_polymarket_price_or_trade_features") is not False
@@ -364,6 +414,25 @@ def load_historical_screen_contract(
         or windows != (1, 5, 15, 30)
         or not excluded
         or any(_SLUG.fullmatch(value) is None for value in excluded)
+        or (
+            test_gates.minimum_terminal_conditions,
+            test_gates.minimum_outcomes_per_class,
+            test_gates.minimum_decision_rows,
+            test_gates.bootstrap_repetitions,
+            test_gates.calibration_slope_minimum,
+            test_gates.calibration_slope_maximum,
+            test_gates.expected_calibration_error_maximum,
+        )
+        != expected_gate_numbers
+        or any(
+            test_gates_value.get(key) is not True
+            for key in (
+                "challenger_log_loss_skill_over_best_control_strictly_positive",
+                "challenger_brier_skill_over_best_control_strictly_positive",
+                "challenger_balanced_accuracy_not_lower_than_best_control",
+                "paired_log_loss_improvement_lower_bound_strictly_positive",
+            )
+        )
     ):
         raise ValueError("historical screen source or feature contract differs")
     return HistoricalScreenContract(
@@ -384,6 +453,7 @@ def load_historical_screen_contract(
             required_rows_per_symbol * required_source_symbol_count
         ),
         required_market_count_per_day=required_market_count,
+        test_gates=test_gates,
     )
 
 
@@ -1524,6 +1594,7 @@ __all__ = [
     "HISTORICAL_SCREEN_SCHEMA_VERSION",
     "HistoricalBtcMarket",
     "HistoricalScreenContract",
+    "HistoricalScreenTestGates",
     "HistoricalScreenStore",
     "PolymarketHistoricalPublicClient",
     "PublicPayload",

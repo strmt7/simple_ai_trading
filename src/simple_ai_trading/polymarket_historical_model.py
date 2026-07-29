@@ -841,7 +841,9 @@ def freeze_historical_pretest(
         "best_challenger_id": str(best_challenger["candidate_id"]),
         "selected_candidate_id": str(selected["candidate_id"]),
         "evaluation_policy": {
-            "bootstrap_repetitions": BOOTSTRAP_REPETITIONS,
+            "bootstrap_repetitions": (
+                store.contract.test_gates.bootstrap_repetitions
+            ),
             "bootstrap_block_conditions": BOOTSTRAP_BLOCK_CONDITIONS,
             "bootstrap_seed": MODEL_SEED,
             "probability_threshold": 0.5,
@@ -876,20 +878,33 @@ def _condition_loss_delta(
     return np.asarray(deltas, dtype=np.float64)
 
 
-def _paired_block_bootstrap(delta: np.ndarray) -> Mapping[str, float | int]:
+def _paired_block_bootstrap(
+    delta: np.ndarray,
+    *,
+    repetitions: int = BOOTSTRAP_REPETITIONS,
+    minimum_conditions: int = 250,
+) -> Mapping[str, float | int]:
     values = np.asarray(delta, dtype=np.float64)
-    if values.ndim != 1 or len(values) < 250 or not np.all(np.isfinite(values)):
+    selected_repetitions = int(repetitions)
+    required_conditions = int(minimum_conditions)
+    if (
+        values.ndim != 1
+        or len(values) < required_conditions
+        or not np.all(np.isfinite(values))
+        or not 100 <= selected_repetitions <= 100_000
+        or required_conditions < 2
+    ):
         raise ValueError("historical paired bootstrap inputs are invalid")
     generator = np.random.default_rng(MODEL_SEED)
     sample_count = math.ceil(len(values) / BOOTSTRAP_BLOCK_CONDITIONS)
-    estimates = np.empty(BOOTSTRAP_REPETITIONS, dtype=np.float64)
+    estimates = np.empty(selected_repetitions, dtype=np.float64)
     offsets = np.arange(BOOTSTRAP_BLOCK_CONDITIONS, dtype=np.int64)
-    for repetition in range(BOOTSTRAP_REPETITIONS):
+    for repetition in range(selected_repetitions):
         starts = generator.integers(0, len(values), size=sample_count)
         indexes = (starts[:, None] + offsets[None, :]) % len(values)
         estimates[repetition] = float(np.mean(values[indexes.ravel()[: len(values)]]))
     return {
-        "repetitions": BOOTSTRAP_REPETITIONS,
+        "repetitions": selected_repetitions,
         "block_conditions": BOOTSTRAP_BLOCK_CONDITIONS,
         "lower_95": float(np.quantile(estimates, 0.025)),
         "median": float(np.quantile(estimates, 0.5)),
@@ -931,8 +946,13 @@ def evaluate_historical_test_once(
             panel,
             predictions[control_id],
             predictions[challenger_id],
-        )
+        ),
+        repetitions=store.contract.test_gates.bootstrap_repetitions,
+        minimum_conditions=(
+            store.contract.test_gates.minimum_terminal_conditions
+        ),
     )
+    test_gates = store.contract.test_gates
     unique_conditions = _ordered_conditions(panel.condition_ids)
     condition_labels = np.asarray(
         [
@@ -941,13 +961,17 @@ def evaluate_historical_test_once(
         ]
     )
     gates = {
-        "minimum_terminal_conditions": len(unique_conditions) >= 250,
+        "minimum_terminal_conditions": (
+            len(unique_conditions) >= test_gates.minimum_terminal_conditions
+        ),
         "minimum_outcomes_per_class": min(
             np.count_nonzero(condition_labels == 0.0),
             np.count_nonzero(condition_labels == 1.0),
         )
-        >= 50,
-        "minimum_decision_rows": len(panel.labels) >= 1_500,
+        >= test_gates.minimum_outcomes_per_class,
+        "minimum_decision_rows": (
+            len(panel.labels) >= test_gates.minimum_decision_rows
+        ),
         "challenger_log_loss_skill_positive": (
             float(challenger["log_loss"]) < float(control["log_loss"])
         ),
@@ -962,10 +986,13 @@ def evaluate_historical_test_once(
             float(bootstrap["lower_95"]) > 0.0
         ),
         "calibration_slope_in_range": (
-            0.75 <= float(challenger["calibration_slope"]) <= 1.25
+            test_gates.calibration_slope_minimum
+            <= float(challenger["calibration_slope"])
+            <= test_gates.calibration_slope_maximum
         ),
-        "expected_calibration_error_at_most_0_05": (
-            float(challenger["expected_calibration_error"]) <= 0.05
+        "expected_calibration_error_at_most_contract_maximum": (
+            float(challenger["expected_calibration_error"])
+            <= test_gates.expected_calibration_error_maximum
         ),
     }
     artifact: dict[str, object] = {
