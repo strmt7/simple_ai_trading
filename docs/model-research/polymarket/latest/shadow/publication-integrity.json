@@ -1,0 +1,34 @@
+{
+  "artifacts": [
+    {
+      "bytes": 989,
+      "path": "README.md",
+      "sha256": "c432ad8f9cc2be4049e36543f01c54e5be9c156022ab91510829617a57f316bf"
+    },
+    {
+      "bytes": 4111,
+      "path": "cumulative-pnl.svg",
+      "sha256": "8cb97eec4dbac4c8ce02506e1a4d62f71091c0bd7931b530d9d02f66d5ab0651",
+      "source_table": "event-outcomes.csv"
+    },
+    {
+      "bytes": 2511,
+      "path": "event-outcomes.csv",
+      "row_count": 12,
+      "sha256": "a09957f115c4952fa1f14838c2a52d5524d803faf3a3ccd4c07b325808d62555"
+    }
+  ],
+  "asset": "BTC",
+  "manifest_sha256": "d96e0f9a0beef23c1f7dbd78eeb8caf72e2ad868e50b9250dd8e1077ec51a21a",
+  "manual_chart_edits_permitted": false,
+  "market_variant": "fiveminute",
+  "profitability_claim": false,
+  "real_fills_observed": 0,
+  "real_orders_submitted": 0,
+  "resolved_events": 12,
+  "schema_version": "polymarket-shadow-hour-publication-v1",
+  "source_evaluation_artifact_sha256": "23797c254f7b8f81ddafe4116f90979140d8e9d4cf7fd755dba2620d5946e283",
+  "source_evaluation_file_sha256": "c7d623ba216f87587628b6b47b5bb0d3f1326b83977b5724a0c9e937bfa87a01",
+  "source_evaluation_path": "docs/model-research/polymarket/evidence/round-014-btc-5m-shadow-hour-evaluation-v1.json",
+  "trading_authority": false
+}
