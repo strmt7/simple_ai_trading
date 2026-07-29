@@ -17,7 +17,7 @@ dependencies = [
     "requests>=2.32.0,<3",
     "scipy==1.17.1",
     "textual==8.2.8",
-    "websockets==16.1.1",
+    "websockets==15.0.1",
     "zstandard==0.25.0",
 ]
 
@@ -38,6 +38,10 @@ terminal-test = [
 ]
 microstructure = [
     "hftbacktest==2.4.4",
+]
+polymarket-live = [
+    "polymarket-client==0.2.0",
+    "py-clob-client-v2==1.1.0",
 ]
 foundation-ai = [
     "einops==0.8.2",

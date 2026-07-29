@@ -5,8 +5,10 @@ agents to canonical evidence without replacing that evidence.
 
 ## Non-negotiable truth
 
-- Scope is BTC, ETH, and SOL. Binance is testnet/Demo or paper only. Polymarket
-  is paper and research only. No mainnet or live-money authority exists.
+- Binance scope is BTC, ETH, and SOL on testnet/Demo or paper only. Polymarket
+  research covers BTC/ETH/SOL; its independent live-capable boundary is
+  BTC-only and disabled by default. No model or release has live-money
+  authority.
 - Conservative is the default profile. Leverage is a risk ceiling, never a
   source of edge. Profitability, ROI, and drawdown claims require reproducible
   source-bound after-cost evidence.
@@ -36,7 +38,7 @@ agents to canonical evidence without replacing that evidence.
 | Prior model failure | last row plus the relevant mechanism row in `docs/model-research/action-value/latest/progress.csv` | that row's named design/report only |
 | Polymarket model | Round 13 program/evaluator and focused tests; use Round 11 only for predecessor diagnostics | `docs/model-research/polymarket/latest/README.md`, then the Round 13 contract |
 | Polymarket recorder/replay | matching recorder or replay module and test | `docs/model-research/polymarket/prospective-continuity-contract-v2.json` |
-| Risk or execution | nearest risk/execution module and test | `docs/LIVE_MARKET_SIMULATION.md` or `docs/POLYMARKET_PAPER_TRADING.md` only at the relevant heading |
+| Risk or execution | nearest risk/execution module and test | `docs/LIVE_MARKET_SIMULATION.md`, `docs/POLYMARKET_PAPER_TRADING.md`, or `docs/POLYMARKET_LIVE_EXECUTION.md` only at the relevant heading |
 | AI provider/model | nearest AI module and test | `docs/ai/risk-review/latest/comparison.json` and its sibling provenance |
 | CLI | command handler, parser definition, and CLI tests | parser-generated help; do not infer parity from docs |
 | Windows app | `src/simple_ai_trading/command_contract.py`, `src/simple_ai_trading/windows_app.py`, and the UI/parity tests | `native/windows/generated/command_contract.hpp` and `tests/test_ai_runtime_and_parity.py`; edit the shared taxonomy, never the generated header |
