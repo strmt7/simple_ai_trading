@@ -558,3 +558,26 @@ def test_run_with_pre_requested_stop_never_invokes_model(tmp_path: Path) -> None
     assert calls == 0
     assert supervisor.snapshot().stop_completed is True
     assert supervisor.snapshot().stop_requested is True
+
+
+def test_run_starts_optional_public_signal_service(tmp_path: Path) -> None:
+    started = False
+
+    class External:
+        def evaluate(self, **_kwargs: object) -> PolymarketExternalSignalDecision:
+            raise AssertionError("no proposal should be evaluated")
+
+        async def run(self, stop: asyncio.Event) -> None:
+            nonlocal started
+            started = True
+            await stop.wait()
+
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+        external=External(),
+    )
+    supervisor.request_stop()
+    asyncio.run(supervisor.run())
+
+    assert started is True

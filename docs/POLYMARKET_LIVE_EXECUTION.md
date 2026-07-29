@@ -89,6 +89,14 @@ flowchart LR
   object and can only preserve, reduce, or veto a promoted Polymarket proposal.
   Failure or timeout vetoes the proposal. The runtime imports no Binance
   execution module and reports that no Binance execution connection exists.
+- The concrete public-signal service uses the credential-free Binance
+  market-data endpoint. Spot uses the documented one-second individual ticker,
+  which includes exchange event time and best bid/ask. USD-M uses the real-time
+  individual book ticker, which includes event time, transaction time, and
+  update ID. Spot `bookTicker` is intentionally not used because its documented
+  payload has no exchange timestamp; treating local receipt time as exchange
+  time would understate transport latency. Missing, stale, crossed, regressed,
+  delayed, or cross-feed-skewed observations veto the Polymarket proposal.
 - Foreign orders, positions, or authenticated stream events fail closed and
   are never modified.
 - The installed CLI and native Windows app consume one generated command
@@ -166,3 +174,5 @@ submitted.
 - [Geographic restrictions](https://docs.polymarket.com/api-reference/geoblock)
 - [Rate limits](https://docs.polymarket.com/api-reference/rate-limits)
 - [Settlement Manipulation in Prediction Markets](https://arxiv.org/abs/2606.31675)
+- [Binance Spot WebSocket streams](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams)
+- [Binance USD-M individual book ticker](https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/Individual-Symbol-Book-Ticker-Streams)
