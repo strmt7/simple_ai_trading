@@ -22,6 +22,7 @@ from simple_ai_trading.impact_absorption_ai_contract_screen import (  # noqa: E4
     round74_ai_contract_cases,
 )
 from simple_ai_trading.impact_absorption_ai_review_preparation import (  # noqa: E402
+    round74_ai_review_challenger_model_panel,
     round74_default_ai_review_model_panel,
 )
 from simple_ai_trading.impact_absorption_ai_runtime import (  # noqa: E402
@@ -56,7 +57,10 @@ def main() -> int:
     arguments = _arguments()
     bindings = {
         binding.runtime.model_name: binding
-        for binding in round74_default_ai_review_model_panel()
+        for binding in (
+            *round74_default_ai_review_model_panel(),
+            *round74_ai_review_challenger_model_panel(),
+        )
     }
     if arguments.model_name not in bindings:
         raise ValueError("model name is not in the frozen default panel")
@@ -98,10 +102,7 @@ def main() -> int:
         for index, case in enumerate(cases, start=1):
             if arguments.hard_stop_wall_ns is not None:
                 reserve_ns = int(
-                    (
-                        binding.runtime.timeout_seconds
-                        + arguments.unload_reserve_seconds
-                    )
+                    (binding.runtime.timeout_seconds + arguments.unload_reserve_seconds)
                     * 1_000_000_000
                 )
                 if time.time_ns() + reserve_ns >= arguments.hard_stop_wall_ns:
@@ -189,9 +190,7 @@ def main() -> int:
         and all(check["passed"] for check in mirror_checks),
         "results": results,
         "model_unload_action_performed": unload_action_performed,
-        "model_absent_after_cleanup_verified": (
-            model_absent_after_cleanup_verified
-        ),
+        "model_absent_after_cleanup_verified": (model_absent_after_cleanup_verified),
         "elapsed_wall_ns": time.time_ns() - started_wall_ns,
         "synthetic_non_market_contract_packets_only": True,
         "real_market_data_used": False,

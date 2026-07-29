@@ -15,6 +15,10 @@ from simple_ai_trading.impact_absorption_ai_contract_screen import (
 from simple_ai_trading.impact_absorption_ai_protocol import (
     Round74AIReviewDecision,
 )
+from simple_ai_trading.impact_absorption_ai_review_preparation import (
+    round74_ai_review_challenger_model_panel,
+    round74_default_ai_review_model_panel,
+)
 from simple_ai_trading.impact_absorption_ai_runtime import (
     Round74AIRuntimeOutcome,
 )
@@ -96,6 +100,30 @@ def test_round74_ai_contract_cases_are_frozen_anonymized_and_non_market() -> Non
         assert case.as_dict()["financial_edge_tested"] is False
         with pytest.raises(TypeError):
             case.request_template["risk_profile"] = "aggressive"
+
+
+def test_round74_fin_r1_is_pinned_as_screen_only_challenger() -> None:
+    default_panel = round74_default_ai_review_model_panel()
+    challengers = round74_ai_review_challenger_model_panel()
+
+    assert tuple(value.model_name for value in default_panel) == (
+        "fino1:8b",
+        "qwen3:8b",
+    )
+    assert tuple(value.model_name for value in challengers) == ("fin-r1:8b",)
+    challenger = challengers[0]
+    assert challenger.manifest.model_id == "SUFE-AIFLM-Lab/Fin-R1"
+    assert challenger.manifest.model_revision == (
+        "026768c4a015b591b54b240743edeac1de0970fa"
+    )
+    assert challenger.manifest.model_artifact_sha256 == (
+        "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377"
+    )
+    assert challenger.manifest.parameter_count == 7_620_000_000
+    assert challenger.manifest.quantization == "q6_k"
+    assert {value.manifest.manifest_sha256 for value in default_panel}.isdisjoint(
+        value.manifest.manifest_sha256 for value in challengers
+    )
 
 
 def test_round74_ai_contract_mirrors_directional_packets() -> None:
