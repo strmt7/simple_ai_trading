@@ -1,0 +1,160 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v108",
+  "created_at_utc": "2026-07-29T01:28:06Z",
+  "implementation_git_commit": "40f16c38",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v107.json",
+    "file_sha256": "f73c4cdea167175bdb157d78334f8e79eacddc1686e4d96fe5dec4288887387b",
+    "design_sha256": "fa1464ebf283f3aead349bcac2656713ecced82326eea0fde5f4ffe97c1b695c",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "sealed_evaluator": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "6f1b352892914d11a3b5d7153ef397bcda4637e5560c778206b2239fdf33e621"
+    },
+    "sealed_evaluator_test": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "30c9375079ea60c9f6c11ec64a63666690f60fc55870ad3ce3778d301c4ac48d"
+    },
+    "historical_v105_contract_test": {
+      "path": "tests/test_round74_event_model_design_v105.py",
+      "sha256": "da23ed21eaf22660d8599d1b24ec7459bc7fde53d269ad083013a1a4d025a971"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://doi.org/10.1198/016214506000001437",
+      "finding": "Strictly proper scoring rules reward truthful probabilistic forecasts; the quadratic Brier score is strictly proper for binary events.",
+      "implementation_consequence": "Sealed promotion now requires positive Brier skill rather than classification accuracy alone."
+    },
+    {
+      "source": "https://doi.org/10.1080/01621459.1994.10476870",
+      "finding": "The stationary bootstrap constructs inference for weakly dependent stationary observations by resampling dependent blocks.",
+      "implementation_consequence": "Brier improvement is aggregated per chronological capture run and evaluated with the existing circular stationary-bootstrap implementation."
+    },
+    {
+      "source": "https://arxiv.org/abs/2403.09267",
+      "finding": "Limit-order-book forecasting metrics and actionable trading results are distinct, and model efficacy varies with microstructure.",
+      "implementation_consequence": "Predictive validity and after-cost financial viability are independent mandatory gates; neither substitutes for the other."
+    },
+    {
+      "source": "https://arxiv.org/abs/2502.02861",
+      "finding": "Calibrated predictions provide a principled basis for prediction-dependent decisions under uncertainty.",
+      "implementation_consequence": "The gate scores the already temperature-calibrated probability heads before action-threshold selection."
+    }
+  ],
+  "declared_delta": {
+    "sealed_evaluation_schema_version": "round-074-sealed-evaluation-v19",
+    "predictive_gate_added": true,
+    "predictive_tasks": [
+      "positive_payoff",
+      "adverse_selection",
+      "regime_unpredictability"
+    ],
+    "scoring_rule": "Brier_score",
+    "skill_score": "one_minus_model_Brier_divided_by_no_information_Brier",
+    "no_information_forecast": "observed_prevalence_within_each_predeclared_test_slice",
+    "no_information_baseline_uses_test_labels_for_threshold_selection": false,
+    "single_class_slice_contributes_to_skill_estimate": false,
+    "absence_of_non_single_class_evidence_fails_closed": true,
+    "slice_definitions_changed": false,
+    "positive_and_adverse_slice_keys": [
+      "symbol",
+      "horizon_seconds",
+      "side",
+      "realized_activity_regime"
+    ],
+    "regime_slice_keys": [
+      "symbol",
+      "horizon_seconds"
+    ],
+    "run_level_improvement": "no_information_Brier_minus_model_Brier",
+    "optimization_population": "equal_weight_chronological_capture_run",
+    "all_expected_capture_runs_require_evaluable_evidence": true,
+    "resampling_method": "circular_stationary_bootstrap",
+    "bootstrap_draws": 10000,
+    "bootstrap_mean_block_length": "ceil_sqrt_capture_run_count_with_minimum_2",
+    "familywise_alpha": 0.05,
+    "familywise_task_count": 3,
+    "per_task_one_sided_alpha": 0.016666666666666666,
+    "per_task_requirements": [
+      "positive_pooled_Brier_skill",
+      "positive_familywise_lower_mean_run_Brier_improvement",
+      "complete_capture_run_coverage"
+    ],
+    "overall_predictive_gate": "conjunction_of_all_three_task_gates",
+    "financial_gate_remains_independent_and_mandatory": true,
+    "ai_overlay_may_rescue_predictive_gate_failure": false,
+    "quantile_and_path_risk_diagnostics_removed": false,
+    "quantile_skill_promotion_gate_added": false,
+    "quantile_gate_deferral_reason": "a source-bound pretest no-information quantile forecast is not yet present, and retaining all sealed target rows solely to fit a test baseline would add avoidable memory and test-label dependence",
+    "model_parameters_changed": false,
+    "training_objective_changed": false,
+    "action_thresholds_changed": false,
+    "execution_replay_changed": false,
+    "test_access_reuse_permitted": false,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "sealed_evaluation": "round-074-sealed-evaluation-v19",
+    "event_model": "round-074-event-payoff-model-v9",
+    "event_training": "round-074-event-training-v32",
+    "event_pretest_policy": "round-074-event-pretest-policy-v31"
+  },
+  "verification": {
+    "focused_tests_passed": 25,
+    "focused_test_files": 2,
+    "profitable_single_class_counterexample_rejected": true,
+    "mixed_class_full_run_skilled_counterexample_passed": true,
+    "mixed_class_zero_skill_counterexample_rejected": true,
+    "all_three_predictive_tasks_covered": true,
+    "every_expected_capture_run_required": true,
+    "ai_overlay_blocked_when_predictive_gate_fails": true,
+    "historical_v105_schema_contract_frozen_to_literal": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "representative_predictive_skill_evaluated": false,
+    "sealed_test_accessed": false,
+    "campaign_database_opened": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 34,
+    "quarantined_slot_017_counted_as_admitted": false,
+    "slot_041_state_at_document_time": "running",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_skill_gate_proven_on_synthetic_counterexamples": true,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "quantile_accuracy_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "16936432c123482c78edba2012118f0c5f8a14e119193ad4a1fade13204edf0e"
+}
