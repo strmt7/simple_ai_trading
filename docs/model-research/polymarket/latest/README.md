@@ -32,6 +32,12 @@ train-only feature-support bounds and label-blind tune-only settlement-anomaly
 thresholds. A future prospective scorer can activate only from caller-pinned
 artifacts that pass every predictive gate; it has no execution authority.
 
+The resumable workflow is intentionally phase-separated:
+`python tools/run_polymarket_round16_screen.py status`, then `identities`,
+`features`, `development-targets`, and `fit`. The one-use `test-targets` phase
+requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
+`export` run. No command grants trading authority.
+
 ## Audit
 
 - [Evaluation artifact](round-014-evaluation.json)
