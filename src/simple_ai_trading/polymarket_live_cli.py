@@ -24,6 +24,7 @@ from .polymarket_live_runtime import (
     PolymarketReconciliationService,
     PolymarketUserStreamConsumer,
 )
+from .polymarket_live_stop import stop_owned_polymarket_exposure
 from .polymarket_live_settlement import (
     OfficialPolymarketUnifiedRedemptionVenue,
     PolymarketGaslessCredentials,
@@ -198,73 +199,12 @@ def _stop_owned_exposure(
     ledger: PolymarketLiveOrderLedger,
     timeout_seconds: float,
 ) -> tuple[dict[str, object], int]:
-    timeout = float(timeout_seconds)
-    if not 1 <= timeout <= 300:
-        raise ValueError("stop-timeout-seconds must lie in [1, 300]")
-    started = time.monotonic()
-    deadline = started + timeout
-    initial_inventory = ledger.owned_inventory()
-    initial_quantity = sum(
-        (item.quantity for item in initial_inventory),
-        Decimal("0"),
-    )
-    cancellation = coordinator.cancel_owned_open_orders()
-    submitted_intent_ids: list[str] = []
-    reason = ""
-    final = coordinator.reconcile()
-    while True:
-        inventory = ledger.owned_inventory()
-        open_order_ids = ledger.open_owned_order_ids()
-        if not inventory and not open_order_ids:
-            break
-        if time.monotonic() >= deadline:
-            reason = "stop_timeout"
-            break
-        if open_order_ids:
-            time.sleep(min(0.25, max(0.0, deadline - time.monotonic())))
-            final = coordinator.reconcile()
-            continue
-        try:
-            closes = coordinator.submit_owned_close_orders(
-                maximum_book_age_ms=1_500,
-            )
-        except PolymarketLiveBlocked as exc:
-            reason = str(exc)
-            break
-        submitted_intent_ids.extend(record.intent.intent_id for record in closes)
-        if not closes:
-            reason = "owned_inventory_has_no_executable_close"
-            break
-        time.sleep(min(0.25, max(0.0, deadline - time.monotonic())))
-        final = coordinator.reconcile()
-    final = coordinator.reconcile()
-    remaining = ledger.owned_inventory()
-    remaining_quantity = sum(
-        (item.quantity for item in remaining),
-        Decimal("0"),
-    )
-    completed = not remaining and not ledger.open_owned_order_ids()
-    if not completed and not reason:
-        reason = "owned_exposure_remains"
-    return (
-        {
-            "schema_version": "polymarket-live-stop-result-v1",
-            "action": "stop",
-            "venue": "polymarket",
-            "symbol": "BTC",
-            "completed": completed,
-            "cancelled_order_ids": list(cancellation.cancelled_order_ids),
-            "failed_order_ids": list(cancellation.failed_order_ids),
-            "submitted_close_intent_ids": submitted_intent_ids,
-            "initial_owned_quantity": format(initial_quantity, "f"),
-            "remaining_owned_quantity": format(remaining_quantity, "f"),
-            "remaining_owned_inventory": _owned_inventory_payload(ledger),
-            "reason": reason,
-            "foreign_state_untouched": True,
-            "elapsed_seconds": round(time.monotonic() - started, 3),
-            "reconciliation": _reconciliation_payload(final),
-        },
-        0 if completed else 2,
+    return stop_owned_polymarket_exposure(
+        coordinator=coordinator,
+        ledger=ledger,
+        timeout_seconds=timeout_seconds,
+        monotonic=time.monotonic,
+        sleep=time.sleep,
     )
 
 
