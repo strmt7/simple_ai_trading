@@ -41,6 +41,13 @@ LIVE_BOUNDARY_IMPORTS = {
     "polymarket_binance_signal.py": frozenset(
         {"polymarket_autonomous", "polymarket_external_signal"}
     ),
+    "polymarket_round16_shadow.py": frozenset(
+        {
+            "polymarket_historical_shadow",
+            "polymarket_round16",
+            "polymarket_round16_dataset",
+        }
+    ),
 }
 
 

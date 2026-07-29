@@ -100,6 +100,14 @@ flowchart LR
   payload has no exchange timestamp; treating local receipt time as exchange
   time would understate transport latency. Missing, stale, crossed, regressed,
   delayed, or cross-feed-skewed observations veto the Polymarket proposal.
+- The predictive shadow has a separate credential-free BTC aggregate-trade
+  feed for Binance Spot and USD-M perpetual. It maintains bounded in-memory
+  one-second flow only; raw messages are not persisted. Feed reconnects reset
+  that venue's epoch and require a complete causal warmup. Model scoring takes
+  one locked, copied cross-feed snapshot so ingestion cannot mutate a vector
+  halfway through assembly. Automated parity tests prove that the live
+  five-minute and fifteen-minute vectors are bit-identical to their historical
+  builders. This feature path has no order or promotion authority.
 - Foreign orders, positions, or authenticated stream events fail closed and
   are never modified.
 - The installed CLI and native Windows app consume one generated command

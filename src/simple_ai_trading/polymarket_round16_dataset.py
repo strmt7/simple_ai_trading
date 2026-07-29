@@ -201,29 +201,39 @@ def _terminal_controls(
     return quote_anomaly, spot_share - perpetual_share
 
 
-def build_round16_feature_row(
-    market: HistoricalBtcMarket,
+def build_round16_feature_vector(
     *,
+    event_start_ms: int,
+    event_end_ms: int,
     flow_start_ms: int,
-    decision_offset_seconds: int,
+    decision_time_ms: int,
     flow: Mapping[str, np.ndarray],
-) -> HistoricalFeatureRow:
-    offset = int(decision_offset_seconds)
+) -> np.ndarray:
+    """Build the exact causal Round 16 vector for history or live scoring."""
+
+    event_start = int(event_start_ms)
+    event_end = int(event_end_ms)
+    decision_time = int(decision_time_ms)
+    offset, offset_remainder = divmod(decision_time - event_start, 1_000)
     if offset not in ROUND16_DECISION_OFFSETS_SECONDS:
         raise ValueError("Round 16 decision offset differs")
-    if market.end_ms - market.event_start_ms != ROUND16_DURATION_MS:
+    if (
+        offset_remainder != 0
+        or event_start <= 0
+        or event_start % ROUND16_DURATION_MS
+        or event_end - event_start != ROUND16_DURATION_MS
+    ):
         raise ValueError("Round 16 market duration differs")
     event_index, start_remainder = divmod(
-        market.event_start_ms - int(flow_start_ms),
+        event_start - int(flow_start_ms),
         1_000,
     )
-    decision_time_ms = market.event_start_ms + offset * 1_000
     end_index = int(event_index + offset - 1)
     if (
         start_remainder != 0
         or end_index < 149
         or end_index >= len(flow["second_ms"])
-        or int(flow["second_ms"][end_index]) + 1_000 > decision_time_ms
+        or int(flow["second_ms"][end_index]) + 1_000 > decision_time
     ):
         raise ValueError("Round 16 decision lacks a causal flow lookback")
     values = dict(flow)
@@ -251,8 +261,8 @@ def build_round16_feature_row(
         for horizon in ROUND16_RETURN_HORIZONS_SECONDS
     )
     vector.extend(_terminal_controls(values, end_index=end_index))
-    day_start_ms = market.event_start_ms // 86_400_000 * 86_400_000
-    seconds_of_day = (decision_time_ms - day_start_ms) / 1_000.0
+    day_start_ms = event_start // 86_400_000 * 86_400_000
+    seconds_of_day = (decision_time - day_start_ms) / 1_000.0
     phase = 2.0 * math.pi * seconds_of_day / 86_400.0
     event_duration_seconds = ROUND16_DURATION_MS // 1_000
     vector.extend(
@@ -268,6 +278,25 @@ def build_round16_feature_row(
         ~np.isfinite(feature_values)
     ):
         raise ValueError("Round 16 causal feature vector is invalid")
+    return feature_values
+
+
+def build_round16_feature_row(
+    market: HistoricalBtcMarket,
+    *,
+    flow_start_ms: int,
+    decision_offset_seconds: int,
+    flow: Mapping[str, np.ndarray],
+) -> HistoricalFeatureRow:
+    offset = int(decision_offset_seconds)
+    decision_time_ms = market.event_start_ms + offset * 1_000
+    feature_values = build_round16_feature_vector(
+        event_start_ms=market.event_start_ms,
+        event_end_ms=market.end_ms,
+        flow_start_ms=flow_start_ms,
+        decision_time_ms=decision_time_ms,
+        flow=flow,
+    )
     vector_sha = hashlib.sha256(
         feature_values.astype("<f4", copy=False).tobytes()
     ).hexdigest()
@@ -595,6 +624,7 @@ __all__ = [
     "ROUND16_DATASET_SCHEMA_VERSION",
     "ROUND16_FEATURE_NAMES",
     "build_round16_feature_row",
+    "build_round16_feature_vector",
     "materialize_round16_causal_features",
     "round16_feature_names",
 ]
