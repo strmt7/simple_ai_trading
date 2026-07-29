@@ -1,0 +1,86 @@
+{
+  "accepted_predictive_edge": true,
+  "artifact_sha256": "f69d20389edc1d9da4fc5fb811b8618b472521abf98d4ca1215e80c79e926950",
+  "best_challenger_id": "lgbm-depth2-leaves3",
+  "best_control_id": "calendar_ridge_logistic-l2-10",
+  "candidate_metrics": {
+    "binance_ridge_logistic-l2-1": {
+      "accuracy": 0.6084494773519163,
+      "balanced_accuracy": 0.6110123411534701,
+      "brier_score": 0.2297172794105452,
+      "calibration_intercept": -0.2082495868063741,
+      "calibration_slope": 0.95590632486536,
+      "expected_calibration_error": 0.04847412130608819,
+      "log_loss": 0.6499999846802695
+    },
+    "calendar_ridge_logistic-l2-10": {
+      "accuracy": 0.5357142857142857,
+      "balanced_accuracy": 0.5059445259042034,
+      "brier_score": 0.24908537943163955,
+      "calibration_intercept": -0.02921438948352014,
+      "calibration_slope": 3.782218496742892,
+      "expected_calibration_error": 0.03135888639901886,
+      "log_loss": 0.6913174736863489
+    },
+    "lgbm-depth2-leaves3": {
+      "accuracy": 0.625,
+      "balanced_accuracy": 0.6207844574780059,
+      "brier_score": 0.2266334047047051,
+      "calibration_intercept": -0.14400928609871966,
+      "calibration_slope": 0.9412421643669883,
+      "expected_calibration_error": 0.039149935179899065,
+      "log_loss": 0.6446668121801812
+    },
+    "training-prevalence": {
+      "accuracy": 0.5400696864111498,
+      "balanced_accuracy": 0.5,
+      "brier_score": 0.24937779990106518,
+      "calibration_intercept": -0.1606231943328758,
+      "calibration_slope": 0.0,
+      "expected_calibration_error": 0.03135888502726203,
+      "log_loss": 0.69190266212075
+    }
+  },
+  "challenger_skill": {
+    "brier": 0.09013766596082484,
+    "log_loss": 0.06748080770678322
+  },
+  "contract_sha256": "086365c0488ac404124ac1a9ff14f7a96784576b53baeeed1b725e9b8999fb79",
+  "dataset_sha256": "f00f64cca78beeead476ed6bde90555af13ece79c189104b0f27b898827fefb2",
+  "failure_action": "retain_as_predictive_research_only",
+  "gates": {
+    "calibration_slope_in_range": true,
+    "challenger_balanced_accuracy_not_lower": true,
+    "challenger_brier_skill_positive": true,
+    "challenger_log_loss_skill_positive": true,
+    "expected_calibration_error_at_most_0_05": true,
+    "minimum_decision_rows": true,
+    "minimum_outcomes_per_class": true,
+    "minimum_terminal_conditions": true,
+    "paired_log_loss_improvement_lower_positive": true
+  },
+  "paired_condition_block_bootstrap": {
+    "block_conditions": 12,
+    "lower_95": 0.03544282204502044,
+    "median": 0.04663942691720373,
+    "repetitions": 2000,
+    "upper_95": 0.058646059538557706
+  },
+  "pretest_artifact_sha256": "211d7e418135d8d57e27d832d24647d8c13930ed31d710de5a89193023565a94",
+  "schema_version": "polymarket-historical-btc-evaluation-v1",
+  "scope": {
+    "asset": "BTC",
+    "execution_or_profitability_claim": false,
+    "market_variant": "fiveminute",
+    "predictive_screen_only": true,
+    "venue": "polymarket"
+  },
+  "test": {
+    "conditions": 287,
+    "decision_rows": 2296,
+    "down_conditions": 155,
+    "first_event_start_ms": 1782086700000,
+    "last_event_start_ms": 1782172500000,
+    "up_conditions": 132
+  }
+}
