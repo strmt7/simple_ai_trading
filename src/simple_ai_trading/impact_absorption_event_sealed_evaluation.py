@@ -78,7 +78,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v20"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v21"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v3"
 )
@@ -107,6 +107,9 @@ ROUND74_SEALED_QUANTILE_PREDICTIVE_TASKS = (
 ROUND74_SEALED_PREDICTIVE_TASKS = (
     *ROUND74_SEALED_BINARY_PREDICTIVE_TASKS,
     *ROUND74_SEALED_QUANTILE_PREDICTIVE_TASKS,
+)
+ROUND74_SEALED_PREDICTIVE_COMPARISON_COUNT = len(ROUND74_SEALED_PREDICTIVE_TASKS) * (
+    1 + len(ROUND74_EVENT_SYMBOLS)
 )
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -428,6 +431,7 @@ class Round74PredictiveBrierSkill:
     """Proper-score evidence against a slice-specific prevalence forecast."""
 
     task: str
+    scope_symbol: str
     observations: int
     evaluable_slices: int
     capture_runs: int
@@ -471,6 +475,7 @@ class Round74PredictiveBrierSkill:
         )
         if (
             self.task not in ROUND74_SEALED_BINARY_PREDICTIVE_TASKS
+            or self.scope_symbol not in ("all", *ROUND74_EVENT_SYMBOLS)
             or any(
                 isinstance(value, bool) or not isinstance(value, int)
                 for value in integers
@@ -505,6 +510,7 @@ class Round74PredictiveBrierSkill:
         self.validate()
         return {
             "task": self.task,
+            "scope_symbol": self.scope_symbol,
             "observations": self.observations,
             "evaluable_slices": self.evaluable_slices,
             "capture_runs": self.capture_runs,
@@ -514,7 +520,8 @@ class Round74PredictiveBrierSkill:
             "brier_skill_score": self.brier_skill_score,
             "mean_run_brier_improvement": self.mean_run_brier_improvement,
             "familywise_alpha": (
-                ROUND74_SEALED_FAMILYWISE_ALPHA / len(ROUND74_SEALED_PREDICTIVE_TASKS)
+                ROUND74_SEALED_FAMILYWISE_ALPHA
+                / ROUND74_SEALED_PREDICTIVE_COMPARISON_COUNT
             ),
             "familywise_lower_mean_run_brier_improvement": (
                 self.familywise_lower_mean_run_brier_improvement
@@ -557,6 +564,7 @@ class Round74PredictiveQuantileSkill:
     """Pinball skill against a calibration-only unconditional distribution."""
 
     task: str
+    scope_symbol: str
     observations: int
     evaluable_slices: int
     capture_runs: int
@@ -602,6 +610,7 @@ class Round74PredictiveQuantileSkill:
         )
         if (
             self.task not in ROUND74_SEALED_QUANTILE_PREDICTIVE_TASKS
+            or self.scope_symbol not in ("all", *ROUND74_EVENT_SYMBOLS)
             or any(
                 isinstance(value, bool) or not isinstance(value, int)
                 for value in integers
@@ -636,6 +645,7 @@ class Round74PredictiveQuantileSkill:
         self.validate()
         return {
             "task": self.task,
+            "scope_symbol": self.scope_symbol,
             "observations": self.observations,
             "evaluable_slices": self.evaluable_slices,
             "capture_runs": self.capture_runs,
@@ -647,7 +657,8 @@ class Round74PredictiveQuantileSkill:
             "pinball_skill_score": self.pinball_skill_score,
             "mean_run_pinball_improvement_bps": (self.mean_run_pinball_improvement_bps),
             "familywise_alpha": (
-                ROUND74_SEALED_FAMILYWISE_ALPHA / len(ROUND74_SEALED_PREDICTIVE_TASKS)
+                ROUND74_SEALED_FAMILYWISE_ALPHA
+                / ROUND74_SEALED_PREDICTIVE_COMPARISON_COUNT
             ),
             "familywise_lower_mean_run_pinball_improvement_bps": (
                 self.familywise_lower_mean_run_pinball_improvement_bps
@@ -667,21 +678,42 @@ class Round74SealedPredictiveGate:
         Round74PredictiveBrierSkill | Round74PredictiveQuantileSkill,
         ...,
     ]
+    symbol_task_skills: tuple[
+        Round74PredictiveBrierSkill | Round74PredictiveQuantileSkill,
+        ...,
+    ]
     gate_passed: bool
     gate_reasons: tuple[str, ...]
     scope: str = "all_evaluable_test_slices_before_action_threshold"
 
     def validate(self) -> None:
-        for value in self.task_skills:
+        for value in (*self.task_skills, *self.symbol_task_skills):
             value.validate()
         expected_tasks = tuple(value.task for value in self.task_skills)
-        expected_reasons = tuple(
-            f"{value.task}:{reason}"
-            for value in self.task_skills
-            for reason in value.gate_reasons
+        expected_symbol_tasks = tuple(
+            (value.scope_symbol, value.task) for value in self.symbol_task_skills
+        )
+        expected_reasons = (
+            *(
+                f"{value.task}:{reason}"
+                for value in self.task_skills
+                for reason in value.gate_reasons
+            ),
+            *(
+                f"{value.scope_symbol}:{value.task}:{reason}"
+                for value in self.symbol_task_skills
+                for reason in value.gate_reasons
+            ),
         )
         if (
             expected_tasks != ROUND74_SEALED_PREDICTIVE_TASKS
+            or any(value.scope_symbol != "all" for value in self.task_skills)
+            or expected_symbol_tasks
+            != tuple(
+                (symbol, task)
+                for symbol in ROUND74_EVENT_SYMBOLS
+                for task in ROUND74_SEALED_PREDICTIVE_TASKS
+            )
             or self.scope != "all_evaluable_test_slices_before_action_threshold"
             or self.gate_reasons != expected_reasons
             or self.gate_passed != (not expected_reasons)
@@ -693,6 +725,9 @@ class Round74SealedPredictiveGate:
         return {
             "scope": self.scope,
             "task_skills": [value.as_dict() for value in self.task_skills],
+            "symbol_task_skills": [
+                value.as_dict() for value in self.symbol_task_skills
+            ],
             "gate_passed": self.gate_passed,
             "gate_reasons": list(self.gate_reasons),
             "test_labels_used_for_threshold_selection": False,
@@ -704,6 +739,7 @@ class Round74SealedPredictiveGate:
                 "calibration_runs"
             ),
             "test_labels_used_for_quantile_baseline_fit": False,
+            "symbol_specific_failure_may_be_offset_by_other_symbols": False,
         }
 
 
@@ -1005,11 +1041,13 @@ def _build_predictive_brier_skill(
     task: str,
     accumulators: Sequence[_BinaryAccumulator],
     *,
+    scope_symbol: str,
     expected_run_ids: tuple[str, ...],
     seed: int,
 ) -> Round74PredictiveBrierSkill:
     if (
         task not in ROUND74_SEALED_BINARY_PREDICTIVE_TASKS
+        or scope_symbol not in ("all", *ROUND74_EVENT_SYMBOLS)
         or len(expected_run_ids) < 2
         or len(set(expected_run_ids)) != len(expected_run_ids)
         or any(_RUN_ID.fullmatch(value) is None for value in expected_run_ids)
@@ -1060,7 +1098,8 @@ def _build_predictive_brier_skill(
     lower = float(
         np.quantile(
             sampled,
-            ROUND74_SEALED_FAMILYWISE_ALPHA / len(ROUND74_SEALED_PREDICTIVE_TASKS),
+            ROUND74_SEALED_FAMILYWISE_ALPHA
+            / ROUND74_SEALED_PREDICTIVE_COMPARISON_COUNT,
         )
     )
     covered_runs = int(np.count_nonzero(run_count))
@@ -1075,6 +1114,7 @@ def _build_predictive_brier_skill(
     )
     result = Round74PredictiveBrierSkill(
         task=task,
+        scope_symbol=scope_symbol,
         observations=observations,
         evaluable_slices=len(selected),
         capture_runs=len(expected_run_ids),
@@ -1097,11 +1137,13 @@ def _build_predictive_quantile_skill(
     task: str,
     accumulators: Sequence[_QuantileAccumulator],
     *,
+    scope_symbol: str,
     expected_run_ids: tuple[str, ...],
     seed: int,
 ) -> Round74PredictiveQuantileSkill:
     if (
         task not in ROUND74_SEALED_QUANTILE_PREDICTIVE_TASKS
+        or scope_symbol not in ("all", *ROUND74_EVENT_SYMBOLS)
         or len(expected_run_ids) < 2
         or len(set(expected_run_ids)) != len(expected_run_ids)
         or any(_RUN_ID.fullmatch(value) is None for value in expected_run_ids)
@@ -1144,7 +1186,8 @@ def _build_predictive_quantile_skill(
     lower = float(
         np.quantile(
             sampled,
-            ROUND74_SEALED_FAMILYWISE_ALPHA / len(ROUND74_SEALED_PREDICTIVE_TASKS),
+            ROUND74_SEALED_FAMILYWISE_ALPHA
+            / ROUND74_SEALED_PREDICTIVE_COMPARISON_COUNT,
         )
     )
     covered_runs = int(np.count_nonzero(run_count))
@@ -1159,6 +1202,7 @@ def _build_predictive_quantile_skill(
     )
     result = Round74PredictiveQuantileSkill(
         task=task,
+        scope_symbol=scope_symbol,
         observations=observations,
         evaluable_slices=len(selected),
         capture_runs=len(expected_run_ids),
@@ -1377,46 +1421,87 @@ class _PredictiveAccumulator:
             eligible_regime_targets=self.eligible_regime_targets,
         )
         diagnostics.validate()
-        action_accumulators = tuple(self.action.values())
-        task_skills = (
-            _build_predictive_brier_skill(
-                "positive_payoff",
-                tuple(value.positive for value in action_accumulators),
-                expected_run_ids=expected_run_ids,
-                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 101,
-            ),
-            _build_predictive_brier_skill(
-                "adverse_selection",
-                tuple(value.adverse for value in action_accumulators),
-                expected_run_ids=expected_run_ids,
-                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 102,
-            ),
-            _build_predictive_brier_skill(
-                "regime_unpredictability",
-                tuple(self.regime.values()),
-                expected_run_ids=expected_run_ids,
-                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 103,
-            ),
-            _build_predictive_quantile_skill(
-                "net_payoff_quantiles",
-                tuple(value.payoff for value in action_accumulators),
-                expected_run_ids=expected_run_ids,
-                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 104,
-            ),
-            _build_predictive_quantile_skill(
-                "maximum_adverse_excursion_quantiles",
-                tuple(value.mae for value in action_accumulators),
-                expected_run_ids=expected_run_ids,
-                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 105,
-            ),
+        action_items = tuple(self.action.items())
+        regime_items = tuple(self.regime.items())
+
+        def build_task_skills(
+            scope_symbol: str,
+            *,
+            seed_group: int,
+        ) -> tuple[
+            Round74PredictiveBrierSkill | Round74PredictiveQuantileSkill,
+            ...,
+        ]:
+            action_accumulators = tuple(
+                value
+                for key, value in action_items
+                if scope_symbol == "all" or key[0] == scope_symbol
+            )
+            regime_accumulators = tuple(
+                value
+                for key, value in regime_items
+                if scope_symbol == "all" or key[0] == scope_symbol
+            )
+            seed_base = ROUND74_SEALED_BOOTSTRAP_SEED + 100 + seed_group * 10
+            return (
+                _build_predictive_brier_skill(
+                    "positive_payoff",
+                    tuple(value.positive for value in action_accumulators),
+                    scope_symbol=scope_symbol,
+                    expected_run_ids=expected_run_ids,
+                    seed=seed_base + 1,
+                ),
+                _build_predictive_brier_skill(
+                    "adverse_selection",
+                    tuple(value.adverse for value in action_accumulators),
+                    scope_symbol=scope_symbol,
+                    expected_run_ids=expected_run_ids,
+                    seed=seed_base + 2,
+                ),
+                _build_predictive_brier_skill(
+                    "regime_unpredictability",
+                    regime_accumulators,
+                    scope_symbol=scope_symbol,
+                    expected_run_ids=expected_run_ids,
+                    seed=seed_base + 3,
+                ),
+                _build_predictive_quantile_skill(
+                    "net_payoff_quantiles",
+                    tuple(value.payoff for value in action_accumulators),
+                    scope_symbol=scope_symbol,
+                    expected_run_ids=expected_run_ids,
+                    seed=seed_base + 4,
+                ),
+                _build_predictive_quantile_skill(
+                    "maximum_adverse_excursion_quantiles",
+                    tuple(value.mae for value in action_accumulators),
+                    scope_symbol=scope_symbol,
+                    expected_run_ids=expected_run_ids,
+                    seed=seed_base + 5,
+                ),
+            )
+
+        task_skills = build_task_skills("all", seed_group=0)
+        symbol_task_skills = tuple(
+            skill
+            for index, symbol in enumerate(ROUND74_EVENT_SYMBOLS, start=1)
+            for skill in build_task_skills(symbol, seed_group=index)
         )
-        gate_reasons = tuple(
-            f"{value.task}:{reason}"
-            for value in task_skills
-            for reason in value.gate_reasons
+        gate_reasons = (
+            *(
+                f"{value.task}:{reason}"
+                for value in task_skills
+                for reason in value.gate_reasons
+            ),
+            *(
+                f"{value.scope_symbol}:{value.task}:{reason}"
+                for value in symbol_task_skills
+                for reason in value.gate_reasons
+            ),
         )
         gate = Round74SealedPredictiveGate(
             task_skills=task_skills,
+            symbol_task_skills=symbol_task_skills,
             gate_passed=not gate_reasons,
             gate_reasons=gate_reasons,
         )

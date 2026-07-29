@@ -1275,7 +1275,9 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
 
 
 def test_predictive_gate_requires_familywise_skill_for_every_forecast_task() -> None:
-    batch = _test_batch()
+    batch = _test_batch(
+        runs=tuple(run_id for run_id in TEST_RUNS for _symbol in ROUND74_EVENT_SYMBOLS)
+    )
     rows = batch.rows
     horizon_count = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
     side_count = len(ROUND74_EVENT_PAYOFF_SIDES)
@@ -1356,9 +1358,22 @@ def test_predictive_gate_requires_familywise_skill_for_every_forecast_task() -> 
         "net_payoff_quantiles",
         "maximum_adverse_excursion_quantiles",
     )
+    assert all(value.scope_symbol == "all" for value in gate.task_skills)
+    assert tuple(
+        (value.scope_symbol, value.task) for value in gate.symbol_task_skills
+    ) == tuple(
+        (symbol, task)
+        for symbol in ROUND74_EVENT_SYMBOLS
+        for task in sealed_subject.ROUND74_SEALED_PREDICTIVE_TASKS
+    )
     assert all(value.gate_passed for value in gate.task_skills)
+    assert all(value.gate_passed for value in gate.symbol_task_skills)
     assert all(
         value.covered_capture_runs == len(TEST_RUNS) for value in gate.task_skills
+    )
+    assert all(
+        value.covered_capture_runs == len(TEST_RUNS)
+        for value in gate.symbol_task_skills
     )
     binary_skills = gate.task_skills[:3]
     quantile_skills = gate.task_skills[3:]
@@ -1372,6 +1387,38 @@ def test_predictive_gate_requires_familywise_skill_for_every_forecast_task() -> 
         value.familywise_lower_mean_run_pinball_improvement_bps > 0.0
         for value in quantile_skills
     )
+
+    sol_rows = torch.tensor(
+        tuple(symbol == "SOLUSDT" for symbol in batch.symbol),
+        dtype=torch.bool,
+    )
+    sol_unskilled_payoff = output.payoff_quantiles_bps.clone()
+    sol_unskilled_payoff[sol_rows] = 0.0
+    masked = sealed_subject._PredictiveAccumulator()
+    masked.update(
+        batch,
+        replace(output, payoff_quantiles_bps=sol_unskilled_payoff),
+        _calibration(),
+    )
+    _masked_diagnostics, masked_gate = masked.result(expected_run_ids=TEST_RUNS)
+    pooled_payoff = next(
+        value
+        for value in masked_gate.task_skills
+        if value.task == "net_payoff_quantiles"
+    )
+    sol_payoff = next(
+        value
+        for value in masked_gate.symbol_task_skills
+        if value.scope_symbol == "SOLUSDT" and value.task == "net_payoff_quantiles"
+    )
+    assert pooled_payoff.gate_passed
+    assert not sol_payoff.gate_passed
+    assert not masked_gate.gate_passed
+    assert (
+        "SOLUSDT:net_payoff_quantiles:positive_pinball_skill_not_met"
+        in masked_gate.gate_reasons
+    )
+
     unskilled_output = replace(
         output,
         positive_payoff_logits=torch.zeros_like(output.positive_payoff_logits),
