@@ -171,6 +171,15 @@ token preserved the requested 5 shares at 0.50 and derived the expected V2
 order hash. No order, approval, wallet deployment, or transaction was
 submitted.
 
+A separate six-second public predictor probe connected both credential-free
+Binance BTC aggregate-trade streams and both bid/ask advisory streams. It
+ingested 28 Spot and 19 USD-M aggregate messages with zero reconnects or wire
+errors; the final advisory receipt ages were 481 ms and 88 ms. Both services
+shut down cleanly and reported no credentials or execution authority. The
+exact [machine-readable probe](model-research/polymarket/latest/public-predictor-live-probe.json)
+explicitly records that the short transport check did not complete model
+warmup and proves neither predictive nor financial edge.
+
 ## Primary Contracts
 
 - [CLOB V2 migration](https://docs.polymarket.com/v2-migration)

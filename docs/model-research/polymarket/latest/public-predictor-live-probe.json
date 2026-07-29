@@ -1,0 +1,48 @@
+{
+  "schema_version": "polymarket-public-predictor-live-probe-v1",
+  "observed_at_utc": "2026-07-29T22:25:47.0490000Z",
+  "observed_at_ms": 1785363947049,
+  "source_commit": "9e1299c969853a6a3787b2a4c710b438aa7a233b",
+  "duration_seconds": 6,
+  "scope": {
+    "asset": "BTC",
+    "binance_symbol": "BTCUSDT",
+    "polymarket_execution_used": false,
+    "binance_execution_used": false,
+    "credentials_used": false,
+    "orders_submitted": 0
+  },
+  "aggregate_trade_feed": {
+    "spot_received": 28,
+    "spot_ingested": 28,
+    "perpetual_received": 20,
+    "perpetual_ingested": 19,
+    "queue_size_at_snapshot": 1,
+    "spot_reconnects": 0,
+    "perpetual_reconnects": 0,
+    "spot_last_error": "",
+    "perpetual_last_error": "",
+    "trading_authority": false
+  },
+  "book_advisory_feed": {
+    "spot_connected": true,
+    "perpetual_connected": true,
+    "spot_receipt_age_ms": 481,
+    "perpetual_receipt_age_ms": 88,
+    "spot_fault": "",
+    "perpetual_fault": "",
+    "credentials_used": false,
+    "execution_authority": false
+  },
+  "shutdown": {
+    "aggregate_trade_feed": "ok",
+    "book_advisory_feed": "ok"
+  },
+  "interpretation": {
+    "public_transport_and_wire_schema_passed": true,
+    "feature_warmup_completed": false,
+    "predictive_edge_tested": false,
+    "financial_edge_tested": false,
+    "live_trading_readiness_proved": false
+  }
+}
