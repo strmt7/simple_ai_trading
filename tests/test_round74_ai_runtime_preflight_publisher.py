@@ -47,18 +47,18 @@ def _source_sha256_at(commit: str, relative_path: str) -> str:
 
 
 def test_preflight_schema_tracks_current_ai_contract() -> None:
-    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v6"
+    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v7"
     assert PUBLISHER.ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION == (
         "round-074-ai-review-request-v5"
     )
     assert PUBLISHER.ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION == (
-        "round-074-ai-prompt-payload-v7"
+        "round-074-ai-prompt-payload-v8"
     )
     assert PUBLISHER.ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION == (
-        "round-074-ai-system-prompt-v1"
+        "round-074-ai-system-prompt-v2"
     )
     assert PUBLISHER.ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION == (
-        "round-074-ai-review-panel-v14"
+        "round-074-ai-review-panel-v15"
     )
 
 

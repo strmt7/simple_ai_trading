@@ -142,9 +142,7 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
         "last": "zero_or_one_indicator",
         "mean": "fraction_of_events",
         "standard_deviation": "population_standard_deviation",
-        "recent_16_minus_prior_16_mean": (
-            "signed_fraction_of_events_difference"
-        ),
+        "recent_16_minus_prior_16_mean": ("signed_fraction_of_events_difference"),
     }
     assert payload["continuous_feature_source_units"] == (
         "dimensionless_training_scaler_normalized_values"
@@ -153,6 +151,39 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
         "dimensionless_training_scaler_normalized_statistics"
     )
     assert payload["forecast_value_units"] == "basis_points"
+    assert payload["forecast_contract"] == {
+        "payoff_quantity": "capital_scaled_net_payoff_bps",
+        "payoff_execution_components": [
+            "latency_scenario_applied_to_entry_and_exit",
+            "executable_l2_book_walk_at_entry_and_exit",
+            "round_trip_taker_commission",
+            "symbol_specific_round_trip_residual_slippage",
+        ],
+        "capital_scale": "entry_quote_notional_divided_by_reference_quote_notional",
+        "costs_already_deducted": True,
+        "costs_must_not_be_deducted_again": True,
+        "maximum_adverse_excursion_quantity": (
+            "capital_scaled_maximum_adverse_excursion_bps"
+        ),
+        "maximum_adverse_excursion_path_basis": (
+            "minimum_net_payoff_after_executable_entry"
+        ),
+    }
+    assert payload["probability_contract"] == {
+        "positive_payoff_probability": (
+            "calibrated_probability_capital_scaled_net_payoff_is_positive"
+        ),
+        "adverse_selection_probability": (
+            "calibrated_probability_latency_adjusted_midpoint_payoff_is_negative"
+        ),
+        "regime_unpredictability_probability": (
+            "calibrated_expected_path_unpredictability_score_not_binary_event_probability"
+        ),
+        "regime_unpredictability_score_bounds": {
+            "zero": "directional_path",
+            "one": "path_variation_with_little_net_directional_displacement",
+        },
+    }
     assert payload["horizon_seconds"] == 30
     assert "asset_identity_0" in payload["standardized_feature_summary"]
     assert payload["summary_value_order"][-1] == ("recent_16_minus_prior_16_mean")
@@ -179,6 +210,11 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "recent changes are signed differences between event fractions" in system
     assert "dimensionless training-scaler normalized statistics" in system
     assert "Only forecast and adverse-excursion arrays are in basis points" in system
+    assert "capital-scaled net payoff, not gross return" in system
+    assert "Never subtract those costs again" in system
+    assert "not the probability of a named binary event" in system
+    assert "Never invent a missing premise" in system
+    assert "abstain with forecast_uncertainty or model_inconsistency" in system
     assert "contain no future observations" in system
     assert "Semantic coupling is mandatory" in system
     assert "never combine allow_unchanged with a risk reason" in system
