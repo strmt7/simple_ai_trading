@@ -1,0 +1,246 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v120",
+  "created_at_utc": "2026-07-29T05:13:36Z",
+  "implementation_git_commit": "892b9291",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v119.json",
+    "file_sha256": "ea8c436a16df7f013b48f90022102d1bec99035f35062917440e0f8e2064884d",
+    "design_sha256": "cda7286d6b1377b83b9902c54f7871f37bfd2383435f29620b48ac34554e464d",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "d5a14683f94ba0fc31b0dc981b9d938f8df4d7d54c1de6d4c2d729f3a0971424"
+    },
+    "event_training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "2ac12748172eaf5a0e3df23619999ef7d2595d2c2d4243a9e5da722c78c0d373"
+    },
+    "action_policy": {
+      "path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+      "sha256": "4e2164f227e25cfd1102c7db15dc79c689df554c56bcc64a4c5a6f29a761b063"
+    },
+    "sealed_evaluation": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "978b62ff4358ef4f4b7de252032b1d8034fd11bf2b31388a374c8a709d8845e1"
+    },
+    "development_operator": {
+      "path": "src/simple_ai_trading/round74_event_development_operator.py",
+      "sha256": "6454a38965fba2afeb1966518cc1166421f260a95fb1a57a4fd39b89c6ffd434"
+    },
+    "ai_review_preparation": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "ff0504611aaa5cbbb6a04fb7caf58a90f7778ad0aba4bb0121829d77ca478e59"
+    },
+    "ai_runtime": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_runtime.py",
+      "sha256": "444a028c14acb90d5ea32b9fcf05e8264032a436f449376275d52f4a3dc09841"
+    },
+    "ai_contract_screen_runner": {
+      "path": "tools/run_round74_ai_contract_screen.py",
+      "sha256": "47626c458005d3fb72d3e034d49a458656d1eaa3d12e700d36c8d734ec8a8c93"
+    },
+    "event_model_test": {
+      "path": "tests/test_impact_absorption_event_model.py",
+      "sha256": "17af3bc1e5fe7df01406f5c512ef9b4fcedfe49b35fb1bfb8118480f5699d8bd"
+    },
+    "event_training_test": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "047b060333e0c4aa0cf73f109d2d9e5336d48c0318869b76bc4fb3f04a8f870c"
+    },
+    "ai_runtime_test": {
+      "path": "tests/test_impact_absorption_ai_runtime.py",
+      "sha256": "19fa83cf4b93aaa387e5fa9583d6b35533c0a09b8306a7f90629d8888206c767"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://arxiv.org/abs/1612.01474",
+      "finding": "Independently initialized deep ensembles provide a practical predictive-uncertainty baseline, but disagreement is evidence rather than a guarantee.",
+      "implementation_consequence": "The existing three peer outputs now retain population dispersion for every payoff, path-risk, and probability prediction without another forward pass."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v333/lopez26a.html",
+      "finding": "Aggregate uncertainty can produce worse selective prediction when error ordering is class-dependently miscalibrated.",
+      "implementation_consequence": "Disagreement is telemetry only. It cannot veto, resize, rank, or promote a trade until a disjoint risk-coverage study passes by symbol, horizon, side, and outcome class."
+    },
+    {
+      "source": "https://arxiv.org/abs/2502.15757",
+      "finding": "Limit-order-book benchmarks show that architecture complexity has no automatic predictive privilege and that transaction costs materially reduce apparent trend performance.",
+      "implementation_consequence": "The telemetry applies equally to simple and complex candidates, while the existing proper-loss complexity gate and after-cost action replay remain authoritative."
+    },
+    {
+      "source": "https://microsoft.github.io/DirectML/#get-started",
+      "finding": "DirectML is the Windows hardware-agnostic execution provider used by the AMD host.",
+      "implementation_consequence": "The exact three-peer telemetry path was executed on privateuseone:0 and the incompatible sealed inference_mode context was replaced with no_grad rather than permitting CPU fallback."
+    }
+  ],
+  "epistemic_telemetry_contract": {
+    "event_model_schema_version": "round-074-event-payoff-model-v13",
+    "event_training_schema_version": "round-074-event-training-v36",
+    "event_pretest_policy_schema_version": "round-074-event-pretest-policy-v35",
+    "action_policy_schema_version": "round-074-action-policy-v14",
+    "production_peer_count": 3,
+    "dispersion_estimator": "population_standard_deviation_across_independently_initialized_peers",
+    "bessel_correction_applied": false,
+    "additional_model_forward_passes": 0,
+    "telemetry_fields": [
+      "payoff_quantile_standard_deviation_bps",
+      "maximum_adverse_excursion_quantile_standard_deviation_bps",
+      "positive_payoff_probability_standard_deviation",
+      "adverse_selection_probability_standard_deviation",
+      "regime_unpredictability_probability_standard_deviation"
+    ],
+    "probability_dispersion_valid_range": [
+      0.0,
+      0.5
+    ],
+    "finite_nonnegative_validation_required": true,
+    "prediction_dtype_and_device_identity_required": true,
+    "one_peer_control_emits_diagnostics": false,
+    "model_output_sha256_includes_diagnostics": true,
+    "minibatch_slice_preserves_diagnostics": true,
+    "index_selection_preserves_diagnostics": true,
+    "cpu_transfer_preserves_diagnostics": true,
+    "concatenation_preserves_diagnostics": true,
+    "ai_review_row_extraction_preserves_diagnostics": true,
+    "candidate_eligibility_changed": false,
+    "candidate_ranking_changed": false,
+    "position_size_changed": false,
+    "leverage_changed": false,
+    "ai_prompt_changed": false,
+    "risk_policy_changed": false
+  },
+  "epistemic_policy_challenge_preconditions": {
+    "status": "not_started",
+    "required_evaluation_role": "disjoint_tuning_policy_selection_runs",
+    "required_group_axes": [
+      "symbol",
+      "horizon_seconds",
+      "side",
+      "outcome_class"
+    ],
+    "required_metrics": [
+      "tie_safe_risk_coverage_curve",
+      "area_under_risk_coverage_curve",
+      "class_conditional_error_ordering",
+      "coverage_at_fixed_risk"
+    ],
+    "aggregate_only_promotion_permitted": false,
+    "sealed_test_use_permitted": false,
+    "automatic_live_gate_use_permitted": false
+  },
+  "directml_runtime_evidence": {
+    "backend_kind": "directml",
+    "backend_device": "privateuseone:0",
+    "gpu_vendor": "amd",
+    "peer_count": 3,
+    "finite_diagnostics": true,
+    "cpu_fallback_warning_count": 0,
+    "warning_messages": [],
+    "inference_mode_failure_observed": "Cannot set version_counter for inference tensor",
+    "sealed_inference_context_after_fix": "torch.no_grad",
+    "sealed_inference_semantics_changed": false,
+    "market_database_opened": false,
+    "orders_submitted": false
+  },
+  "fin_r1_preload_evidence": {
+    "path": "docs/ai/risk-review/latest/round74-fin-r1-v120-preload-blocked.json",
+    "file_sha256": "d8a4386d2260dcf6de4ae0ad7619599b28a4cee72c30d34df3c3236625ffb4e4",
+    "report_sha256": "606db04ac454e445fa2e6c14866a413cf8d17c6c6202d43e864a35a6334908d0",
+    "model_name": "fin-r1:8b",
+    "model_manifest_sha256": "10526543c716283a43513138e77e277e1dcca9a613628cfba322790a8cc3d513",
+    "model_artifact_sha256": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+    "screen_case_count_required": 10,
+    "screen_case_count_completed": 0,
+    "complete": false,
+    "failure_class": "ValueError",
+    "failure_message": "Round 74 AI preload capability gate failed: free system RAM 14.0 GiB is below required 16.0 GiB",
+    "minimum_free_system_ram_gib": 16.0,
+    "observed_free_system_ram_gib": 14.0,
+    "minimum_free_system_ram_requirement_relaxed": false,
+    "full_gpu_residency_verified": false,
+    "model_absent_after_cleanup_verified": true,
+    "real_model_inference_executed": false,
+    "synthetic_contract_case_executed": false,
+    "model_quality_conclusion_permitted": false,
+    "financial_edge_tested": false
+  },
+  "campaign_isolation": {
+    "status_observed_at_utc": "2026-07-29T05:12:58Z",
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 40,
+    "latest_independently_adjudicated_slot": 50,
+    "latest_admitted_run_id": "b08e0344c116430899fc18d289261be5",
+    "latest_adjudication_sha256": "95cc5eb557d1d082638d2ea015efa4db4101637614c7fc1b7d06ae1ad822fad3",
+    "latest_result_sha256": "90619b41833fc989ba65a4171e2bfea09e40892544ea5022c0093a1bf547881d",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_or_wal_hashed_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "verification": {
+    "unique_tests_passed": 168,
+    "affected_model_and_transport_tests_passed": 135,
+    "ai_runtime_and_contract_screen_tests_passed": 31,
+    "v120_design_tests_passed": 2,
+    "directml_three_peer_telemetry_preflight_passed": true,
+    "directml_cpu_fallback_warning_count": 0,
+    "directml_inference_mode_failure_reproduced_before_fix": true,
+    "fin_r1_preload_attempted": true,
+    "fin_r1_model_loaded": false,
+    "fin_r1_contract_cases_executed": 0,
+    "fin_r1_model_absence_after_cleanup_verified": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "declared_delta": {
+    "ensemble_epistemic_telemetry_added": true,
+    "directml_sealed_inference_repaired": true,
+    "ai_preload_failure_diagnostics_improved": true,
+    "fin_r1_challenger_promoted": false,
+    "event_architecture_changed": false,
+    "training_objective_changed": false,
+    "probability_calibration_changed": false,
+    "action_policy_behavior_changed": false,
+    "execution_replay_changed": false,
+    "market_data_reads_added": 0,
+    "campaign_source_files_changed_on_main": false,
+    "trading_authority": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "epistemic_risk_coverage_evaluated": false,
+    "epistemic_policy_challenger_qualified": false,
+    "real_ai_semantic_screen_completed": false,
+    "representative_training_data_complete": false,
+    "model_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "ai_model_selection_authority": false,
+    "epistemic_gate_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "ee41f427b0714275173ca0fdc720e4fdf7db496928d44ff3b9f9a30fc4a1c7af"
+}
