@@ -149,7 +149,7 @@ class BinanceBtcPublicSignalProvider:
             self._connected[source] = False
             self._faults[source] = fault
 
-    def handle_message(
+    def _handle_message(
         self,
         source: str,
         raw_message: str | bytes,
@@ -222,7 +222,7 @@ class BinanceBtcPublicSignalProvider:
                             websocket.recv(),
                             timeout=self.message_timeout_seconds,
                         )
-                        self.handle_message(source, message)
+                        self._handle_message(source, message)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
