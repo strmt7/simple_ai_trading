@@ -295,3 +295,21 @@ def test_round16_provider_selects_down_and_rejects_unsafe_books(
     assert stale.reasons == ("polymarket_book_stale",)
     assert shallow.proposals == ()
     assert shallow.reasons == ("insufficient_displayed_ask_depth",)
+
+
+def test_round16_provider_counts_book_fetch_time_against_prediction_ttl(
+    tmp_path: Path,
+) -> None:
+    promotion = _promotion(tmp_path)
+    times = iter((NOW_MS, NOW_MS + 1_001))
+    expired = PolymarketRound16PromotedDecisionProvider(
+        public_client=_PublicClient(source_time_ms=NOW_MS + 1_001),
+        scorer=_Scorer(promotion=promotion, probability_up=0.7),
+        promotion=promotion,
+        requested_quantity=Decimal("5"),
+        clock_ms=lambda: next(times),
+        monotonic_ns=lambda: 1,
+    ).decide(markets=(_market(),), observed_at_ms=NOW_MS)
+
+    assert expired.proposals == ()
+    assert expired.reasons == ("proposal_expired_during_book_fetch",)

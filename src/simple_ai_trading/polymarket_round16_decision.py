@@ -170,15 +170,21 @@ class PolymarketRound16PromotedDecisionProvider:
             selected_probability = Decimal(
                 format(1.0 - shadow.probability_up, ".17g")
             )
-        received_at_ms = int(self._clock_ms())
-        if received_at_ms < now:
+        requested_at_ms = int(self._clock_ms())
+        if requested_at_ms < now:
             raise PolymarketLiveBlocked(
                 "Round 16 decision clock regressed"
+            )
+        book_payload = self.public_client.order_book(token_id)
+        received_at_ms = int(self._clock_ms())
+        if received_at_ms < requested_at_ms:
+            raise PolymarketLiveBlocked(
+                "Round 16 book receipt clock regressed"
             )
         book = validate_clob_order_book(
             market,
             token_id,
-            self.public_client.order_book(token_id),
+            book_payload,
             received_wall_ms=received_at_ms,
             received_monotonic_ns=int(self._monotonic_ns()),
         )
@@ -246,6 +252,7 @@ class PolymarketRound16PromotedDecisionProvider:
                     "f",
                 ),
                 "decision_time_ms": decision_time,
+                "book_requested_at_ms": requested_at_ms,
                 "book_received_at_ms": received_at_ms,
             }
         )
