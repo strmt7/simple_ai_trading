@@ -1,0 +1,216 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v127",
+  "artifact_kind": "final_action_configuration_sealed_governance_integration",
+  "created_utc": "2026-07-29T07:25:20.778214Z",
+  "supersedes_artifact_sha256": "6fa1410e9f1be50d5f01139ff5c6e79ef14e55e494934e6f6bf65815002e6ca9",
+  "implementation_git_commit": "dc4f0f32e51ec7becc968af47927632c7d57778a",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+        "sha256": "8af823344980f0a30d128be85698c41ccbe1f1a8344ce73b4237b6e482a22287"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_action_configuration.py",
+        "sha256": "ff61e9a6e2a7598d637a241fe7db4c640ca812b87539c5afa799bda018d6cd5c"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+        "sha256": "fd1795a33d44de1fe69d10c7224b39fa5a9d38cbaa24788391d4bbe2c1b25bfa"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_sealed_ledger.py",
+        "sha256": "5328165e0f09ceada47bf79bc07d2ab8455971f49e7077d84bd7b94fce556cd9"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_ai_qualification_operator.py",
+        "sha256": "239ba4afc7ace70ebb0023bb94b4edd9fafdc78d6f11e232f71f5467139bae61"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_segmented_development_operator.py",
+        "sha256": "1f5b77366fba3eec138d31f065f519de556d9ce0ef9dbf2be715aed48988a367"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_segmented_development_runtime.py",
+        "sha256": "578f47e1005a93babe37e8049eb41f476147da5189c9dab0c9f696fe7fc17673"
+      }
+    ],
+    "affected_tests": [
+      {
+        "path": "tests/test_impact_absorption_ai_uplift.py",
+        "sha256": "fc7fb56ec9178ffdc80d183771ecca9da5338b949fe896cf4cf0af45160d2ae1"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_action_policy.py",
+        "sha256": "f1cae8c8ad7f9e0f3fce2607e0f09768d63c4f6fbb2aa1c9a9124d7c81212275"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+        "sha256": "c413e1163acaa0bdf1974fa2840862fb91119176f1c43f26495cf8f5f6841c66"
+      },
+      {
+        "path": "tests/test_round74_segmented_development_runtime.py",
+        "sha256": "81e340d1fbb1ccc6e8039ad85d111493ec01e68785b2440813f8ae0cdf867cea"
+      },
+      {
+        "path": "tests/test_round74_segmented_model_operator.py",
+        "sha256": "4f1824003f7bf1811ce638e267155dad7a9265073b2a5f66320c208b77d46701"
+      }
+    ],
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v126.json",
+      "sha256": "69c14cdba7ad359c7a604063a5bf7faaa7b29c11482ba9c9b686fc6c02dee86b"
+    }
+  },
+  "schema_contract": {
+    "final_action_configuration": "round-074-final-action-configuration-v1",
+    "ai_uplift_development": "round-074-ai-uplift-development-v17",
+    "ai_pretest_qualification": "round-074-ai-pretest-qualification-v5",
+    "ai_qualification_operator": "round-074-ai-qualification-operator-v4",
+    "sealed_ledger": "round-074-sealed-ledger-v4",
+    "sealed_claim": "round-074-sealed-claim-v4",
+    "sealed_evaluation": "round-074-sealed-evaluation-v24",
+    "segmented_qualified_development": "round-074-segmented-qualified-development-v4",
+    "segmented_development_run": "round-074-segmented-development-run-v4"
+  },
+  "declared_delta": {
+    "summary": "Bind the tuning-selected final ML configuration through AI qualification, one-use ledger reservation, target-free candidate filtering, and sealed evaluation reporting.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "probability_calibration_changed": false,
+    "baseline_quality_threshold_changed": false,
+    "ai_qualification_baseline_identity_changed": true,
+    "sealed_ledger_identity_changed": true,
+    "sealed_evaluator_candidate_filtering_changed": true,
+    "sealed_qualification_family_count_changed": false,
+    "runtime_trading_path_changed": false
+  },
+  "governance_contract": {
+    "final_configuration_selected_from_tuning_only": true,
+    "final_configuration_digest_bound_before_target_loading": true,
+    "ai_prequalification_must_bind_same_configuration_digest": true,
+    "development_bundle_digest_transitively_bound": true,
+    "action_selection_digest_transitively_bound": true,
+    "legacy_unbound_reservation_remains_consumed": true,
+    "legacy_unbound_reservation_is_live_evaluation_authority": false,
+    "reservation_reset_api_available": false,
+    "post_sealed_test_configuration_switching_permitted": false
+  },
+  "target_free_filter_contract": {
+    "filter_applied_before_ai_review": true,
+    "filter_applied_before_financial_replay": true,
+    "filter_applied_before_ai_execution_instruction_creation": true,
+    "realized_target_fields_consumed": false,
+    "candidate_set_only_reduced": true,
+    "position_size_changed": false,
+    "leverage_changed": false,
+    "source_and_filtered_candidate_digests_recorded": true,
+    "filter_application_digests_bound_into_ai_qualification": true,
+    "filter_application_evidence_bound_into_sealed_report": true,
+    "baseline_mode_preserves_candidate_object_identity": true
+  },
+  "ai_qualification_contract": {
+    "same_final_ml_configuration_as_sealed_evaluation_required": true,
+    "per_model_report_binds_final_configuration_digest": true,
+    "two_model_panel_binds_common_final_configuration_digest": true,
+    "filtered_candidate_digest_panel_persisted": true,
+    "filter_application_digest_panel_persisted": true,
+    "qualification_population_remains_disjoint_tuning_data": true,
+    "ai_role_remains_veto_or_reduce_only": true,
+    "ai_model_selection_performed": false
+  },
+  "sealed_family_contract": {
+    "ml_configuration_count": 1,
+    "ai_overlay_configuration_count": 2,
+    "total_qualification_configuration_count": 3,
+    "epistemic_filter_is_pretest_ml_configuration_component": true,
+    "epistemic_filter_is_fourth_post_hoc_hypothesis": false,
+    "familywise_error_gate_changed": false
+  },
+  "implementation_status": {
+    "configuration_object_completed": true,
+    "ai_qualification_configuration_binding_completed": true,
+    "segmented_development_configuration_binding_completed": true,
+    "ledger_schema_migration_completed": true,
+    "ledger_reservation_configuration_binding_completed": true,
+    "target_free_filter_application_completed": true,
+    "sealed_report_filter_evidence_completed": true,
+    "baseline_end_to_end_sealed_control_passed": true,
+    "filtered_target_free_application_control_passed": true,
+    "filtered_representative_ai_qualification_run": false,
+    "filtered_representative_sealed_run": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_observation": {
+    "admitted_run_count_after_slot_055": 44,
+    "slot_055_status": "admitted",
+    "slot_055_run_id": "e47e9d06450e43b8a58fc43179d3bec7",
+    "slot_055_observation_count": 626677,
+    "slot_055_usable_duration_ns": 1200142093100,
+    "slot_055_eligible_anchor_duration_ns": 889642093100,
+    "slot_055_reconnect_count": 0,
+    "slot_056_role": "training",
+    "slot_056_phase_observed": "running",
+    "capture_database_or_wal_opened_for_this_delta": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "verification": {
+    "complete_affected_tests_passed": 77,
+    "ai_uplift_tests_passed": 16,
+    "action_policy_tests_passed": 19,
+    "sealed_ledger_and_evaluator_tests_passed": 25,
+    "segmented_development_tests_passed": 17,
+    "canonical_persistence_tested": true,
+    "legacy_unbound_reservation_non_live_control_passed": true,
+    "baseline_sealed_evaluation_finalization_tested": true,
+    "strict_type_controls_tested": true,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "representative_market_backtest_run": false,
+    "sealed_test_accessed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "research_sources": [
+    {
+      "title": "Datasets: Dividing the original dataset",
+      "url": "https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets",
+      "accessed_utc": "2026-07-29",
+      "used_for": "freeze all model and filter choices on development data before one final test"
+    },
+    {
+      "title": "Nested versus non-nested cross-validation",
+      "url": "https://scikit-learn.org/stable/auto_examples/model_selection/plot_nested_cross_validation_iris.html",
+      "accessed_utc": "2026-07-29",
+      "used_for": "prevent selection bias from choosing between configurations after evaluation"
+    },
+    {
+      "title": "Optimal Strategies for Reject Option Classifiers",
+      "url": "https://jmlr.org/papers/v24/21-0048.html",
+      "accessed_utc": "2026-07-29",
+      "used_for": "treat uncertainty filtering as a preselected risk-coverage mechanism"
+    }
+  ],
+  "evidence_boundary": {
+    "representative_configuration_selected": false,
+    "representative_ai_qualification_completed": false,
+    "representative_sealed_evaluation_completed": false,
+    "uncertainty_ordering_established_on_representative_data": false,
+    "filter_improves_after_cost_net_return_established": false,
+    "filter_reduces_drawdown_established": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "09ec6e519c7876025de4ea99bf6dec2037c35bbe9064097d3ac8546a523ce2c2"
+}
