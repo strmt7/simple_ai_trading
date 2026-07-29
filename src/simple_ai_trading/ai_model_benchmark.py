@@ -133,6 +133,15 @@ class FinanceAIModelCandidate:
     finance_specialized: bool
     reasoning_or_risk_review: bool
     notes: str
+    research_only: bool = False
+    upstream_revision: str | None = None
+    license_id: str | None = None
+    runtime_artifact: str | None = None
+    runtime_artifact_revision: str | None = None
+    runtime_artifact_filename: str | None = None
+    runtime_artifact_sha256: str | None = None
+    runtime_artifact_size_bytes: int | None = None
+    quantization: str | None = None
 
     @property
     def model_parameters_b(self) -> float | None:
@@ -212,7 +221,7 @@ class AIModelBenchmarkReport:
 def finance_ai_candidates() -> tuple[FinanceAIModelCandidate, ...]:
     """Return the curated small/local finance AI candidate order."""
 
-    return (
+    candidates = (
         FinanceAIModelCandidate(
             model="qwen3:8b",
             family="qwen",
@@ -231,6 +240,30 @@ def finance_ai_candidates() -> tuple[FinanceAIModelCandidate, ...]:
                 "newer 9B local structured-output challenger; must clear the full "
                 "adversarial risk gate and paired uplift before selection"
             ),
+        ),
+        FinanceAIModelCandidate(
+            model="OpenDataArena/ODA-Fin-RL-8B",
+            family="oda-fin-rl",
+            local_priority=98,
+            finance_specialized=True,
+            reasoning_or_risk_review=True,
+            notes=(
+                "deferred finance-reasoning challenger; external financial-QA "
+                "benchmarks are not trading, safety, or after-cost uplift evidence; "
+                "the exact third-party Q4_K_M artifact requires explicit local "
+                "evaluation before any operational use"
+            ),
+            research_only=True,
+            upstream_revision="948c22ea48f9bf93e5747f4211657fcad9cb0295",
+            license_id="Apache-2.0",
+            runtime_artifact="alexsabaka/ODA-Fin-RL-8B-GGUF",
+            runtime_artifact_revision="fb986718fcec8c8c559f0ebd5d50e6cf9f4ac67f",
+            runtime_artifact_filename="ODA-Fin-RL-8B.Q4_K_M.gguf",
+            runtime_artifact_sha256=(
+                "d40d1dd4105be8d85cbb444cb58e92c4882623f0baa4dea5d296745d6bc13861"
+            ),
+            runtime_artifact_size_bytes=5_027_784_512,
+            quantization="Q4_K_M",
         ),
         FinanceAIModelCandidate(
             model="deepseek-r1:8b",
@@ -320,6 +353,12 @@ def finance_ai_candidates() -> tuple[FinanceAIModelCandidate, ...]:
             reasoning_or_risk_review=False,
             notes="finance-tuned candidate; best treated as a specialist signal, not sole risk reviewer",
         ),
+    )
+    priorities = [candidate.local_priority for candidate in candidates]
+    if len(set(priorities)) != len(priorities):
+        raise ValueError("finance AI candidate priorities must be unique")
+    return tuple(
+        sorted(candidates, key=lambda candidate: candidate.local_priority, reverse=True)
     )
 
 
@@ -1372,10 +1411,15 @@ def _resolve_benchmark_models(
     candidates = [
         candidate.model
         for candidate in finance_ai_candidates()
-        if candidate.model.lower() in installed_set
+        if not candidate.research_only and candidate.model.lower() in installed_set
     ]
     return tuple(
-        candidates or [candidate.model for candidate in finance_ai_candidates()[:4]]
+        candidates
+        or [
+            candidate.model
+            for candidate in finance_ai_candidates()
+            if not candidate.research_only
+        ][:4]
     )
 
 

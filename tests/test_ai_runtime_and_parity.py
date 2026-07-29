@@ -16,6 +16,7 @@ from simple_ai_trading.ai_model_benchmark import (
     _json_mapping_from_text,
     _post_json,
     _prompt,
+    _resolve_benchmark_models,
     benchmark_finance_ai_models,
     default_finance_ai_test_cases,
     finance_ai_candidates,
@@ -576,11 +577,34 @@ def test_finance_ai_benchmark_rejects_unverifiable_provider_evidence(
 
 
 def test_finance_ai_candidate_registry_includes_local_and_finance_specialists() -> None:
-    candidates = {candidate.model: candidate for candidate in finance_ai_candidates()}
+    ordered = finance_ai_candidates()
+    candidates = {candidate.model: candidate for candidate in ordered}
 
+    assert [candidate.local_priority for candidate in ordered] == sorted(
+        (candidate.local_priority for candidate in ordered),
+        reverse=True,
+    )
+    assert len({candidate.local_priority for candidate in ordered}) == len(ordered)
     assert candidates["qwen3:8b"].reasoning_or_risk_review is True
     assert candidates["qwen3.5:9b"].reasoning_or_risk_review is True
     assert candidates["qwen3.5:9b"].model_parameters_b == 9.0
+    oda = candidates["OpenDataArena/ODA-Fin-RL-8B"]
+    assert oda.finance_specialized is True
+    assert oda.reasoning_or_risk_review is True
+    assert oda.model_parameters_b == 8.0
+    assert oda.research_only is True
+    assert oda.upstream_revision == "948c22ea48f9bf93e5747f4211657fcad9cb0295"
+    assert oda.license_id == "Apache-2.0"
+    assert oda.runtime_artifact == "alexsabaka/ODA-Fin-RL-8B-GGUF"
+    assert oda.runtime_artifact_revision == (
+        "fb986718fcec8c8c559f0ebd5d50e6cf9f4ac67f"
+    )
+    assert oda.runtime_artifact_filename == "ODA-Fin-RL-8B.Q4_K_M.gguf"
+    assert oda.runtime_artifact_sha256 == (
+        "d40d1dd4105be8d85cbb444cb58e92c4882623f0baa4dea5d296745d6bc13861"
+    )
+    assert oda.runtime_artifact_size_bytes == 5_027_784_512
+    assert oda.quantization == "Q4_K_M"
     assert candidates["fin-r1:8b"].finance_specialized is True
     assert candidates["fin-r1:8b"].reasoning_or_risk_review is True
     assert candidates["fin-r1:8b"].model_parameters_b == 8.0
@@ -593,6 +617,18 @@ def test_finance_ai_candidate_registry_includes_local_and_finance_specialists() 
     assert candidates["DragonLLM/Qwen-Open-Finance-R-8B"].finance_specialized is True
     assert candidates["DragonLLM/Qwen-Open-Finance-R-8B"].model_parameters_b == 8.0
     assert candidates["FinGPT/fingpt-mt_llama2-7b_lora"].finance_specialized is True
+
+
+def test_research_only_ai_candidate_requires_explicit_benchmark_selection() -> None:
+    model = "OpenDataArena/ODA-Fin-RL-8B"
+
+    assert _resolve_benchmark_models(None, [model]) == (
+        "qwen3:8b",
+        "qwen3.5:9b",
+        "fin-r1:8b",
+        "deepseek-r1:8b",
+    )
+    assert _resolve_benchmark_models([model], [model]) == (model,)
 
 
 def test_finance_ai_benchmark_fails_wrong_actions() -> None:
