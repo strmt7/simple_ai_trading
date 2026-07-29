@@ -1,0 +1,125 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v125",
+  "artifact_kind": "development_coordinator_epistemic_replay_integration",
+  "created_utc": "2026-07-29T06:30:07.705565Z",
+  "supersedes_artifact_sha256": "22c721db57b783d45f9bfee4c548d46c8f2676203b48aafc0f270b8d9cb46606",
+  "implementation_git_commit": "868f3b1edf8256a6efb7f910d23bce74e4fd933f",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "development_operator": {
+      "path": "src/simple_ai_trading/round74_event_development_operator.py",
+      "sha256": "034eb9b2d77423303ac32f5667e3eacefac954ac3433004ddabb38a2e5ad16a8"
+    },
+    "development_operator_test": {
+      "path": "tests/test_round74_event_development_operator.py",
+      "sha256": "7305deb761482aad7be472eb386820a0a4aabc7346b42f4acb0d4c4de37c9317"
+    },
+    "epistemic_action_policy": {
+      "path": "src/simple_ai_trading/impact_absorption_event_epistemic_policy.py",
+      "sha256": "6c18ebbe99ce7a65599d53b63d3ab5cc0b21c6345e9a4100cad49071b36bdd60"
+    },
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v124.json",
+      "sha256": "7d637e3bfb46f81bd5c15012585dbda832a46445758378274193fab99f4f063c"
+    }
+  },
+  "schema_contract": {
+    "development_operator_schema_version": "round-074-development-policy-operator-v6",
+    "development_bundle_schema_version": "round-074-development-policy-bundle-v7",
+    "epistemic_action_policy_source_digest_required": true,
+    "challenge_payloads_are_canonical_and_hash_bound": true
+  },
+  "declared_delta": {
+    "summary": "Run and persist v123 exact-replay challenges in the development coordinator after the v121 ordering gate, without changing authoritative baseline policy selection.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "probability_calibration_changed": false,
+    "baseline_policy_selection_changed": false,
+    "runtime_filter_changed": false,
+    "development_coordinator_integration_added": true,
+    "development_bundle_persistence_added": true,
+    "automatic_policy_effect_enabled": false,
+    "sealed_test_access_changed": false
+  },
+  "coordinator_contract": {
+    "shared_policy_selection_model_outputs_reused": true,
+    "duplicate_model_inference_for_profile_challenges": false,
+    "risk_coverage_policy_challenge_gate_required": true,
+    "accepted_baseline_policy_required_per_profile": true,
+    "rejected_baseline_profile_is_not_challenged": true,
+    "same_profile_exact_execution_panel_reused": true,
+    "same_profile_candidate_batches_reused": true,
+    "challenge_profiles_preserve_conservative_regular_aggressive_order": true,
+    "challenge_failure_aborts_bundle_creation": true,
+    "baseline_action_policies_remain_authoritative": true,
+    "challenge_eligibility_changes_selected_policy": false,
+    "challenge_eligibility_grants_execution_authority": false,
+    "sealed_test_accessed": false
+  },
+  "bundle_validation_contract": {
+    "challenge_presence_requires_ordering_gate": true,
+    "challenge_presence_requires_accepted_baseline": true,
+    "baseline_policy_selection_digest_must_match": true,
+    "execution_panel_digest_must_match_profile": true,
+    "risk_coverage_report_digest_must_match": true,
+    "tuning_subpartition_digest_must_match": true,
+    "probability_calibration_digest_must_match": true,
+    "source_run_batch_model_output_order_must_match": true,
+    "peer_count_must_match": true,
+    "epistemic_action_policy_module_digest_must_match_runtime": true
+  },
+  "implementation_status": {
+    "coordinator_integration_completed": true,
+    "positive_ordering_gate_wiring_control_passed": true,
+    "closed_ordering_gate_empty_challenge_control_passed": true,
+    "bundle_empty_challenge_roundtrip_passed": true,
+    "representative_epistemic_ordering_evaluated": false,
+    "representative_exact_replay_challenge_evaluated": false,
+    "automatic_policy_use_enabled": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_observation": {
+    "admitted_run_count_after_slot_053": 42,
+    "slot_053_status": "admitted",
+    "slot_053_run_id": "6581984411a64ae898737ab404d1030f",
+    "slot_053_usable_duration_ns": 1200452016900,
+    "slot_053_eligible_anchor_duration_ns": 889952016900,
+    "slot_053_reconnect_count": 0,
+    "slot_054_role": "training",
+    "slot_054_phase_observed": "running",
+    "slot_054_reservation_sha256": "c1991d9b0da343b643175fc7bdf3e0f5a1720018e71bccf73ff438b4af7033bc",
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "verification": {
+    "complete_affected_tests_passed": 27,
+    "development_operator_tests_passed": 4,
+    "positive_challenge_wiring_profiles_tested": 3,
+    "shared_model_output_identity_checked": true,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "representative_policy_selection_evaluation_run": false,
+    "representative_market_backtest_run": false,
+    "sealed_test_accessed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "uncertainty_ordering_established_on_representative_data": false,
+    "filter_thresholds_fitted_on_representative_data": false,
+    "replacement_trade_effects_measured_on_representative_data": false,
+    "runtime_filter_improves_after_cost_net_return_established": false,
+    "runtime_filter_reduces_drawdown_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "ai_uplift_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "34d61ea06f815c44065b3ca8e0148e7bb8fe1007688bc30f406b15a65d484d0f"
+}
