@@ -21,8 +21,16 @@ from .impact_absorption_event_action_policy import (
     ROUND74_ACTION_HORIZONS_SECONDS,
     ROUND74_ACTION_PROFILES,
     Round74ActionCandidateBatch,
+    Round74ActionExecutionPanel,
+    Round74ActionPolicySelection,
+    Round74ActionTrace,
+    Round74ActionTraceMetrics,
     round74_action_model_output_sha256,
+    round74_action_selection_objective,
+    round74_action_trace_gate_reasons,
+    simulate_round74_action_trace_batches,
 )
+from .impact_absorption_event_dataset import Round74EventTrainingBatch
 from .impact_absorption_event_epistemic_evaluation import (
     ROUND74_EPISTEMIC_MINIMUM_STRATUM_ROWS,
     ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS,
@@ -42,6 +50,9 @@ ROUND74_EPISTEMIC_ACTION_FILTER_SCHEMA_VERSION = (
 )
 ROUND74_EPISTEMIC_ACTION_FILTER_APPLICATION_SCHEMA_VERSION = (
     "round-074-epistemic-action-filter-application-v1"
+)
+ROUND74_EPISTEMIC_ACTION_REPLAY_CHALLENGE_SCHEMA_VERSION = (
+    "round-074-epistemic-action-replay-challenge-v1"
 )
 ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS = (
     "payoff_quantile_peer_dispersion",
@@ -811,13 +822,376 @@ def apply_round74_epistemic_action_filter(
     return filtered, application
 
 
+def _trace_sha256(trace: Round74ActionTrace) -> str:
+    trace.validate()
+    return _canonical_sha256(trace.as_dict())
+
+
+@dataclass(frozen=True)
+class Round74EpistemicActionReplayChallenge:
+    """Tuning-only exact-execution comparison at the baseline threshold."""
+
+    profile: str
+    action_filter: Round74EpistemicActionFilter
+    applications: tuple[Round74EpistemicActionFilterApplication, ...]
+    baseline_policy_selection_sha256: str
+    execution_panel_sha256: str
+    baseline_trace_sha256: str
+    baseline_metrics: Round74ActionTraceMetrics
+    challenger_trace: Round74ActionTrace
+    baseline_objective_bps: float
+    challenger_objective_bps: float
+    objective_semantics: str
+    baseline_trade_count: int
+    challenger_trade_count: int
+    retained_trade_count: int
+    removed_trade_count: int
+    replacement_trade_count: int
+    challenger_gate_reasons: tuple[str, ...]
+    tuning_challenge_eligible: bool
+    schema_version: str = ROUND74_EPISTEMIC_ACTION_REPLAY_CHALLENGE_SCHEMA_VERSION
+    automatic_policy_use_enabled: bool = False
+    sealed_test_accessed: bool = False
+    trading_authority: bool = False
+    profitability_claim: bool = False
+
+    def validate(self) -> None:
+        self.action_filter.validate()
+        self.baseline_metrics.validate()
+        self.challenger_trace.validate()
+        numbers = (self.baseline_objective_bps, self.challenger_objective_bps)
+        counts = (
+            self.baseline_trade_count,
+            self.challenger_trade_count,
+            self.retained_trade_count,
+            self.removed_trade_count,
+            self.replacement_trade_count,
+        )
+        expected_eligible = (
+            not self.challenger_gate_reasons
+            and self.challenger_objective_bps > self.baseline_objective_bps + 1e-12
+            and self.challenger_trace.metrics.total_net_bps
+            >= self.baseline_metrics.total_net_bps - 1e-12
+            and self.challenger_trace.metrics.maximum_drawdown_bps
+            <= self.baseline_metrics.maximum_drawdown_bps + 1e-12
+            and self.challenger_trace.metrics.maximum_concurrent_adverse_excursion_bps
+            <= self.baseline_metrics.maximum_concurrent_adverse_excursion_bps + 1e-12
+            and self.challenger_trace.metrics.adverse_selection_rate
+            <= self.baseline_metrics.adverse_selection_rate + 1e-12
+        )
+        if (
+            self.schema_version
+            != ROUND74_EPISTEMIC_ACTION_REPLAY_CHALLENGE_SCHEMA_VERSION
+            or self.profile != self.action_filter.profile
+            or any(
+                _SHA256.fullmatch(value) is None
+                for value in (
+                    self.baseline_policy_selection_sha256,
+                    self.execution_panel_sha256,
+                    self.baseline_trace_sha256,
+                )
+            )
+            or len(self.applications)
+            != ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+            or any(
+                application.filter_sha256 != self.action_filter.filter_sha256
+                for application in self.applications
+            )
+            or self.challenger_trace.expected_run_ids
+            != self.action_filter.source_run_ids
+            or any(not math.isfinite(value) for value in numbers)
+            or any(isinstance(value, bool) or value < 0 for value in counts)
+            or self.baseline_trade_count
+            != self.retained_trade_count + self.removed_trade_count
+            or self.challenger_trade_count
+            != self.retained_trade_count + self.replacement_trade_count
+            or self.baseline_trade_count != self.baseline_metrics.trades
+            or self.challenger_trade_count != self.challenger_trace.metrics.trades
+            or tuple(sorted(set(self.challenger_gate_reasons)))
+            != self.challenger_gate_reasons
+            or any(not value for value in self.challenger_gate_reasons)
+            or not isinstance(self.tuning_challenge_eligible, bool)
+            or self.tuning_challenge_eligible != expected_eligible
+            or self.automatic_policy_use_enabled
+            or self.sealed_test_accessed
+            or self.trading_authority
+            or self.profitability_claim
+        ):
+            raise ValueError("Round 74 epistemic replay challenge differs")
+
+    @property
+    def challenge_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        value: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "profile": self.profile,
+            "action_filter": self.action_filter.as_dict(),
+            "applications": [
+                application.as_dict() for application in self.applications
+            ],
+            "baseline_policy_selection_sha256": (
+                self.baseline_policy_selection_sha256
+            ),
+            "execution_panel_sha256": self.execution_panel_sha256,
+            "baseline_trace_sha256": self.baseline_trace_sha256,
+            "baseline_metrics": self.baseline_metrics.as_dict(),
+            "challenger_trace": self.challenger_trace.as_dict(),
+            "baseline_objective_bps": self.baseline_objective_bps,
+            "challenger_objective_bps": self.challenger_objective_bps,
+            "objective_semantics": self.objective_semantics,
+            "baseline_trade_count": self.baseline_trade_count,
+            "challenger_trade_count": self.challenger_trade_count,
+            "retained_trade_count": self.retained_trade_count,
+            "removed_trade_count": self.removed_trade_count,
+            "replacement_trade_count": self.replacement_trade_count,
+            "challenger_gate_reasons": list(self.challenger_gate_reasons),
+            "tuning_challenge_eligible": self.tuning_challenge_eligible,
+            "evaluation_contract": {
+                "baseline_quality_threshold_held_fixed": True,
+                "exact_delayed_l2_execution_panel_used": True,
+                "replacement_trades_measured": True,
+                "candidate_derivation_target_free": True,
+                "automatic_policy_use_enabled": False,
+                "sealed_test_accessed": False,
+            },
+            "automatic_policy_use_enabled": False,
+            "sealed_test_accessed": False,
+            "trading_authority": False,
+            "profitability_claim": False,
+        }
+        if include_sha256:
+            value["challenge_sha256"] = _canonical_sha256(value)
+        return value
+
+
+def _evaluate_round74_epistemic_action_replay_challenge(
+    batches: Sequence[Round74EventTrainingBatch],
+    model_outputs: Sequence[Round74EventModelOutput],
+    candidate_batches: Sequence[Round74ActionCandidateBatch],
+    *,
+    action_filter: Round74EpistemicActionFilter,
+    baseline_policy: Round74ActionPolicySelection,
+    execution_panel: Round74ActionExecutionPanel,
+) -> Round74EpistemicActionReplayChallenge:
+    """Compare a filter against the accepted baseline on exact delayed-L2 replay."""
+
+    selected_batches = tuple(batches)
+    selected_outputs = tuple(model_outputs)
+    selected_candidates = tuple(candidate_batches)
+    action_filter.validate()
+    baseline_policy.validate()
+    execution_panel.validate()
+    if (
+        not baseline_policy.accepted
+        or baseline_policy.selected_quantile is None
+        or baseline_policy.selected_threshold_score is None
+        or len(selected_batches)
+        != ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+        or len(selected_outputs) != len(selected_batches)
+        or len(selected_candidates) != len(selected_batches)
+        or tuple(batch.batch_sha256 for batch in selected_batches)
+        != action_filter.source_batch_sha256
+        or tuple(
+            round74_action_model_output_sha256(output)
+            for output in selected_outputs
+        )
+        != action_filter.source_model_output_sha256
+        or tuple(
+            tuple(dict.fromkeys(batch.run_id)) for batch in selected_batches
+        )
+        != tuple((run_id,) for run_id in action_filter.source_run_ids)
+        or tuple(batch.batch_sha256 for batch in selected_batches)
+        != baseline_policy.target_batch_sha256
+        or tuple(candidate.candidate_sha256 for candidate in selected_candidates)
+        != baseline_policy.candidate_sha256
+        or baseline_policy.execution_outcome_panel_sha256
+        != execution_panel.panel_sha256
+        or baseline_policy.profile != action_filter.profile
+        or baseline_policy.tuning_subpartition_sha256
+        != action_filter.tuning_subpartition_sha256
+        or baseline_policy.probability_calibration_sha256
+        != action_filter.probability_calibration_sha256
+    ):
+        raise ValueError("Round 74 epistemic replay challenge source differs")
+    selected_evaluations = tuple(
+        evaluation
+        for evaluation in baseline_policy.evaluations
+        if evaluation.quantile == baseline_policy.selected_quantile
+        and evaluation.threshold_score == baseline_policy.selected_threshold_score
+    )
+    if len(selected_evaluations) != 1:
+        raise ValueError("Round 74 epistemic baseline trace differs")
+    baseline_evaluation = selected_evaluations[0]
+    baseline_trace = baseline_evaluation.trace
+    recomputed_baseline = simulate_round74_action_trace_batches(
+        selected_batches,
+        selected_candidates,
+        threshold_score=baseline_policy.selected_threshold_score,
+        expected_run_ids=action_filter.source_run_ids,
+        execution_panel=execution_panel,
+    )
+    if recomputed_baseline.as_dict() != baseline_trace.as_dict():
+        raise ValueError("Round 74 epistemic baseline replay differs")
+    filtered_candidates: list[Round74ActionCandidateBatch] = []
+    applications: list[Round74EpistemicActionFilterApplication] = []
+    for candidate, output in zip(
+        selected_candidates,
+        selected_outputs,
+        strict=True,
+    ):
+        filtered, application = apply_round74_epistemic_action_filter(
+            candidate,
+            output,
+            action_filter,
+        )
+        filtered_candidates.append(filtered)
+        applications.append(application)
+    challenger_trace = simulate_round74_action_trace_batches(
+        selected_batches,
+        filtered_candidates,
+        threshold_score=baseline_policy.selected_threshold_score,
+        expected_run_ids=action_filter.source_run_ids,
+        execution_panel=execution_panel,
+    )
+    baseline_objective, baseline_semantics = round74_action_selection_objective(
+        baseline_trace.metrics,
+        profile=action_filter.profile,
+        optimization_population=baseline_policy.optimization_population,
+        expected_run_count=len(action_filter.source_run_ids),
+    )
+    challenger_objective, challenger_semantics = round74_action_selection_objective(
+        challenger_trace.metrics,
+        profile=action_filter.profile,
+        optimization_population=baseline_policy.optimization_population,
+        expected_run_count=len(action_filter.source_run_ids),
+    )
+    if (
+        baseline_semantics != baseline_evaluation.objective_semantics
+        or baseline_semantics != challenger_semantics
+        or not math.isclose(
+            baseline_objective,
+            baseline_evaluation.objective_bps,
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
+    ):
+        raise ValueError("Round 74 epistemic replay objective differs")
+
+    def identities(trace: Round74ActionTrace) -> set[tuple[str, str, int, int]]:
+        return set(
+            zip(
+                trace.run_id,
+                trace.feature_row_sha256,
+                trace.horizon_seconds,
+                trace.side,
+                strict=True,
+            )
+        )
+
+    baseline_identities = identities(baseline_trace)
+    challenger_identities = identities(challenger_trace)
+    retained = baseline_identities & challenger_identities
+    removed = baseline_identities - challenger_identities
+    replacements = challenger_identities - baseline_identities
+    gate_reasons = tuple(
+        sorted(
+            round74_action_trace_gate_reasons(
+                challenger_trace,
+                profile=action_filter.profile,
+            )
+        )
+    )
+    expected_eligible = (
+        not gate_reasons
+        and challenger_objective > baseline_objective + 1e-12
+        and challenger_trace.metrics.total_net_bps
+        >= baseline_trace.metrics.total_net_bps - 1e-12
+        and challenger_trace.metrics.maximum_drawdown_bps
+        <= baseline_trace.metrics.maximum_drawdown_bps + 1e-12
+        and challenger_trace.metrics.maximum_concurrent_adverse_excursion_bps
+        <= baseline_trace.metrics.maximum_concurrent_adverse_excursion_bps + 1e-12
+        and challenger_trace.metrics.adverse_selection_rate
+        <= baseline_trace.metrics.adverse_selection_rate + 1e-12
+    )
+    result = Round74EpistemicActionReplayChallenge(
+        profile=action_filter.profile,
+        action_filter=action_filter,
+        applications=tuple(applications),
+        baseline_policy_selection_sha256=baseline_policy.selection_sha256,
+        execution_panel_sha256=execution_panel.panel_sha256,
+        baseline_trace_sha256=_trace_sha256(baseline_trace),
+        baseline_metrics=baseline_trace.metrics,
+        challenger_trace=challenger_trace,
+        baseline_objective_bps=baseline_objective,
+        challenger_objective_bps=challenger_objective,
+        objective_semantics=baseline_semantics,
+        baseline_trade_count=len(baseline_identities),
+        challenger_trade_count=len(challenger_identities),
+        retained_trade_count=len(retained),
+        removed_trade_count=len(removed),
+        replacement_trade_count=len(replacements),
+        challenger_gate_reasons=gate_reasons,
+        tuning_challenge_eligible=expected_eligible,
+    )
+    result.validate()
+    return result
+
+
+def evaluate_round74_epistemic_action_replay_challenge(
+    batches: Sequence[Round74EventTrainingBatch],
+    model_outputs: Sequence[Round74EventModelOutput],
+    candidate_batches: Sequence[Round74ActionCandidateBatch],
+    *,
+    risk_coverage_report: Round74EpistemicRiskCoverageReport,
+    action_filter: Round74EpistemicActionFilter,
+    baseline_policy: Round74ActionPolicySelection,
+    execution_panel: Round74ActionExecutionPanel,
+) -> Round74EpistemicActionReplayChallenge:
+    """Require the ordering gate before exact replay of one filter challenger."""
+
+    risk_coverage_report.validate()
+    action_filter.validate()
+    if (
+        not risk_coverage_report.policy_challenge_eligible
+        or action_filter.risk_coverage_report_sha256
+        != risk_coverage_report.report_sha256
+        or action_filter.tuning_subpartition_sha256
+        != risk_coverage_report.tuning_subpartition_sha256
+        or action_filter.probability_calibration_sha256
+        != risk_coverage_report.probability_calibration_sha256
+        or action_filter.source_run_ids
+        != risk_coverage_report.policy_selection_run_ids
+        or action_filter.source_batch_sha256
+        != risk_coverage_report.policy_selection_batch_sha256
+        or action_filter.source_model_output_sha256
+        != risk_coverage_report.model_output_sha256
+        or action_filter.peer_count != risk_coverage_report.peer_count
+    ):
+        raise ValueError("Round 74 epistemic replay ordering gate differs")
+    return _evaluate_round74_epistemic_action_replay_challenge(
+        batches,
+        model_outputs,
+        candidate_batches,
+        action_filter=action_filter,
+        baseline_policy=baseline_policy,
+        execution_panel=execution_panel,
+    )
+
+
 __all__ = [
     "ROUND74_EPISTEMIC_ACTION_FILTER_APPLICATION_SCHEMA_VERSION",
     "ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS",
     "ROUND74_EPISTEMIC_ACTION_FILTER_SCHEMA_VERSION",
+    "ROUND74_EPISTEMIC_ACTION_REPLAY_CHALLENGE_SCHEMA_VERSION",
     "ROUND74_EPISTEMIC_ACTION_REJECTION_BUDGETS",
     "Round74EpistemicActionFilter",
     "Round74EpistemicActionFilterApplication",
+    "Round74EpistemicActionReplayChallenge",
     "apply_round74_epistemic_action_filter",
+    "evaluate_round74_epistemic_action_replay_challenge",
     "fit_round74_epistemic_action_filter",
 ]

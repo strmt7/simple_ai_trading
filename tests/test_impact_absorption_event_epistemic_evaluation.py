@@ -9,6 +9,7 @@ import pytest
 import simple_ai_trading.impact_absorption_event_epistemic_evaluation as subject
 from simple_ai_trading.impact_absorption_event_epistemic_policy import (
     Round74EpistemicActionFilter,
+    evaluate_round74_epistemic_action_replay_challenge,
     fit_round74_epistemic_action_filter,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
@@ -215,6 +216,19 @@ def test_epistemic_action_filter_is_profile_specific_and_target_free(
     assert Round74EpistemicActionFilter.from_dict(payload).filter_sha256 == (
         conservative.filter_sha256
     )
+    with pytest.raises(ValueError, match="replay ordering gate differs"):
+        evaluate_round74_epistemic_action_replay_challenge(
+            (),
+            (),
+            (),
+            risk_coverage_report=report,
+            action_filter=replace(
+                conservative,
+                risk_coverage_report_sha256="f" * 64,
+            ),
+            baseline_policy=None,  # type: ignore[arg-type]
+            execution_panel=None,  # type: ignore[arg-type]
+        )
 
     target_mutated = (
         replace(
