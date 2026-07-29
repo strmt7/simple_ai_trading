@@ -1,0 +1,94 @@
+{
+  "artifact_sha256": "686729ff754fc7163bae58a1c2dca1439b64b4e26f17d76f44e836a7dd5923fc",
+  "authority": {
+    "execution_evidence": false,
+    "profitability_claim": false,
+    "proposal_authority": false,
+    "trading_authority": false
+  },
+  "displayed_depth_counterfactual": {
+    "entry_cost_quote": "3.08400",
+    "fill_assumed_from_displayed_depth": true,
+    "interpretation": "Counterfactual only: the pre-settlement displayed-depth quote is treated as filled exactly; no real order or fill occurred.",
+    "net_pnl_quote": "1.91600",
+    "quantity": "5",
+    "real_fill_observed": false,
+    "real_order_submitted": false,
+    "return_on_entry_cost": "0.6212710765239948119325551232",
+    "terminal_payout_quote": "5"
+  },
+  "identity": {
+    "condition_id": "0x31fb3fc437006d4c6c57e2a7e40dd6b718c342eaf07cf29a871a05cdec30ec66",
+    "decision_time_ms": 1785348390000,
+    "event_end_ms": 1785348600000,
+    "event_start_ms": 1785348300000,
+    "gamma_market_id": "3171114",
+    "opportunity_observed_at_ms": 1785348390693,
+    "resolution_observed_at_ms": 1785349038442,
+    "slug": "btc-updown-5m-1785348300"
+  },
+  "implementation_sha256": {
+    "opportunity": "1da72f1f52af4289c3b5ebc1f068ed102fee7da26b50b6e5359821a6bcc22fae",
+    "settlement": "131703d1488c36fadf02ef9e6b4c36a859ba1b4302a4c550073241a05f343771"
+  },
+  "official_resolution": {
+    "clob_closed": true,
+    "clob_payload_sha256": "e365dc1d0e2e0b543c6ce26a5d29b8fbe2d875b9bee198153b01c1a42e12462d",
+    "gamma_closed": true,
+    "gamma_payload_sha256": "0781e6485e4b00cb6272b2d5961b114ae2742ca160189112d24513fc4865eebf",
+    "sources_agree": true,
+    "winner": "Up"
+  },
+  "opportunity_artifact_sha256": "67b9c23819b29b0cad2e45d6e1b4afb217727bde8e8c865544f047d7a2416b7a",
+  "prediction": {
+    "brier_score": 0.055362629430567696,
+    "log_loss": 0.26826206260430396,
+    "probability_up": "0.7647073536411142",
+    "selected_outcome": "Up",
+    "selected_outcome_won": true
+  },
+  "profitability_claim": false,
+  "schema_version": "polymarket-btc-shadow-settlement-evidence-v1",
+  "source_commit": "d78bdaeff8ad8988ce65b037128658a5b9fe8beb",
+  "source_log_sha256": "affb67f02d012eb78186d8edc2a56f375fc5a0b4a3a2c3afbc11109e5e080231",
+  "terminal_feed_health": {
+    "current_epochs": {
+      "perpetual": 1,
+      "spot": 1
+    },
+    "ingested_counts": {
+      "perpetual": 6385,
+      "spot": 2762
+    },
+    "last_errors": {
+      "perpetual": "",
+      "spot": ""
+    },
+    "last_event_time_ms": {
+      "perpetual": 1785348400754,
+      "spot": 1785348400851
+    },
+    "last_received_at_ms": {
+      "perpetual": 1785348401257,
+      "spot": 1785348401268
+    },
+    "queue_capacity": 32768,
+    "queue_high_watermark": 230,
+    "queue_size": 0,
+    "received_counts": {
+      "perpetual": 6385,
+      "spot": 2762
+    },
+    "reconnect_counts": {
+      "perpetual": 0,
+      "spot": 0
+    },
+    "running": false,
+    "stale_epoch_discard_counts": {
+      "perpetual": 0,
+      "spot": 0
+    },
+    "trading_authority": false
+  },
+  "trading_authority": false
+}
