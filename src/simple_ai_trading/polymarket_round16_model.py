@@ -862,6 +862,9 @@ def build_round16_pretest_artifact(
         "round16_evaluation": _file_sha256(
             source_root / "polymarket_round16_evaluation.py"
         ),
+        "lightgbm_backend": _file_sha256(
+            source_root / "lightgbm_backend.py"
+        ),
         "shared_model_primitives": _file_sha256(
             source_root / "polymarket_historical_model.py"
         ),
