@@ -19,6 +19,9 @@ from simple_ai_trading.impact_absorption_ai_runtime import (
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
+    ROUND74_AI_UPLIFT_BOOTSTRAP_SAMPLES,
+    ROUND74_AI_UPLIFT_FAMILYWISE_CONFIDENCE,
+    ROUND74_AI_UPLIFT_PER_MODEL_CONFIDENCE,
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
     Round74AIQualificationPopulation,
@@ -420,6 +423,11 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
         float(value["delta_net_bps"]) >= 0.0
         for value in report.paired_run_symbol_horizons
     )
+    bootstrap = report.paired_run_uplift_bootstrap
+    assert bootstrap["samples"] == ROUND74_AI_UPLIFT_BOOTSTRAP_SAMPLES
+    assert bootstrap["familywise_confidence"] == ROUND74_AI_UPLIFT_FAMILYWISE_CONFIDENCE
+    assert bootstrap["per_model_confidence"] == ROUND74_AI_UPLIFT_PER_MODEL_CONFIDENCE
+    assert float(bootstrap["mean_ci_lower"]) > 0.0
     assert report.sealed_test_accessed is False
     assert report.ai_model_selection_permitted is False
     assert report.promotion_authority is False
@@ -479,12 +487,33 @@ def test_ai_pretest_qualification_binds_two_passing_development_reports(
             "trading_authority",
             0,
         ),
+        lambda value: value["development_reports"][0][
+            "paired_run_uplift_bootstrap"
+        ].__setitem__("mean_ci_lower", 1000.0),
     ):
         payload = qualification.as_dict()
         mutate(payload)
         output.write_text(json.dumps(payload), encoding="utf-8")
         with pytest.raises(ValueError):
             load_round74_ai_pretest_qualification(output)
+
+
+def test_sparse_ai_uplift_fails_dependence_aware_confidence_gate() -> None:
+    reviews = tuple(
+        _review(index, 0 if index == 1 else 10_000) for index in range(len(PAYOFFS))
+    )
+
+    report = _evaluate(
+        _selection(),
+        reviews,
+        _executions(reviews),
+    )
+
+    assert report.ai_metrics.total_net_bps > report.baseline_trace.metrics.total_net_bps
+    assert all(float(value["delta_net_bps"]) >= 0.0 for value in report.paired_runs)
+    assert float(report.paired_run_uplift_bootstrap["mean_ci_lower"]) == 0.0
+    assert not report.development_gate_passed
+    assert report.gate_reasons == ("paired_run_uplift_confidence_not_met",)
 
 
 def test_ai_pretest_qualification_rejects_a_failed_model() -> None:

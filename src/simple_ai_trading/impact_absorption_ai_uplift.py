@@ -41,15 +41,16 @@ from .impact_absorption_event_sequence import ROUND74_EVENT_SYMBOLS
 from .impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS,
 )
+from .statistical_resampling import moving_block_bootstrap_mean
 from .storage import write_json_atomic
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v15"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v16"
 ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION = (
     "round-074-ai-qualification-population-v1"
 )
 ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION = (
-    "round-074-ai-pretest-qualification-v3"
+    "round-074-ai-pretest-qualification-v4"
 )
 ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION = (
     "round-074-ai-execution-replay-evidence-v2"
@@ -62,6 +63,16 @@ ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO = {
 }
 ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS = (
     ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+)
+ROUND74_AI_UPLIFT_BOOTSTRAP_SCHEMA_VERSION = (
+    "round-074-ai-paired-run-uplift-bootstrap-v1"
+)
+ROUND74_AI_UPLIFT_BOOTSTRAP_SAMPLES = 10_000
+ROUND74_AI_UPLIFT_FAMILYWISE_CONFIDENCE = 0.95
+ROUND74_AI_UPLIFT_MODEL_COMPARISONS = 2
+ROUND74_AI_UPLIFT_PER_MODEL_CONFIDENCE = 1.0 - (
+    (1.0 - ROUND74_AI_UPLIFT_FAMILYWISE_CONFIDENCE)
+    / ROUND74_AI_UPLIFT_MODEL_COMPARISONS
 )
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -937,6 +948,9 @@ def _development_gate_reasons(
         reasons.append("retained_symbol_concentration_not_met")
     if metrics.total_net_bps <= baseline_trace.metrics.total_net_bps:
         reasons.append("positive_paired_after_cost_uplift_not_met")
+    run_uplift = _paired_run_uplift_bootstrap(paired_runs)
+    if float(run_uplift["mean_ci_lower"]) <= 0.0:
+        reasons.append("paired_run_uplift_confidence_not_met")
     if any(float(value["delta_net_bps"]) < -1e-12 for value in paired_runs):
         reasons.append("paired_run_noninferiority_not_met")
     if any(float(value["delta_net_bps"]) < -1e-12 for value in paired_symbol_horizons):
@@ -955,6 +969,32 @@ def _development_gate_reasons(
     if metrics.maximum_drawdown_bps > baseline_trace.metrics.maximum_drawdown_bps:
         reasons.append("maximum_drawdown_noninferiority_not_met")
     return tuple(reasons)
+
+
+def _paired_run_uplift_bootstrap(
+    paired_runs: Sequence[Mapping[str, object]],
+) -> dict[str, object]:
+    """Return a deterministic dependence-aware interval over ordered run uplift."""
+
+    run_ids = tuple(str(value["run_id"]) for value in paired_runs)
+    deltas = tuple(float(value["delta_net_bps"]) for value in paired_runs)
+    evidence = moving_block_bootstrap_mean(
+        deltas,
+        samples=ROUND74_AI_UPLIFT_BOOTSTRAP_SAMPLES,
+        confidence=ROUND74_AI_UPLIFT_PER_MODEL_CONFIDENCE,
+        seed_material=(
+            f"{ROUND74_AI_UPLIFT_BOOTSTRAP_SCHEMA_VERSION}:{'|'.join(run_ids)}"
+        ),
+    )
+    return {
+        "schema_version": ROUND74_AI_UPLIFT_BOOTSTRAP_SCHEMA_VERSION,
+        "sampling_unit": "chronologically_ordered_capture_run_total_net_bps_delta",
+        "run_count": len(deltas),
+        "familywise_confidence": ROUND74_AI_UPLIFT_FAMILYWISE_CONFIDENCE,
+        "model_comparisons": ROUND74_AI_UPLIFT_MODEL_COMPARISONS,
+        "per_model_confidence": ROUND74_AI_UPLIFT_PER_MODEL_CONFIDENCE,
+        **evidence,
+    }
 
 
 @dataclass(frozen=True)
@@ -1473,6 +1513,11 @@ class Round74AIUpliftDevelopmentReport:
     def report_sha256(self) -> str:
         return _canonical_sha256(self.as_dict(include_sha256=False))
 
+    @property
+    def paired_run_uplift_bootstrap(self) -> Mapping[str, object]:
+        self.validate()
+        return _paired_run_uplift_bootstrap(self.paired_runs)
+
     def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
         self.validate()
         value: dict[str, object] = {
@@ -1502,6 +1547,9 @@ class Round74AIUpliftDevelopmentReport:
             "paired_run_symbol_horizons": [
                 dict(value) for value in self.paired_run_symbol_horizons
             ],
+            "paired_run_uplift_bootstrap": _paired_run_uplift_bootstrap(
+                self.paired_runs
+            ),
             "ai_metrics": self.ai_metrics.as_dict(),
             "development_gate_passed": self.development_gate_passed,
             "gate_reasons": list(self.gate_reasons),
@@ -1573,6 +1621,7 @@ class Round74AIUpliftDevelopmentReport:
         ai_metrics = payload.get("ai_metrics")
         qualification_population = payload.get("qualification_population")
         claimed_population = payload.pop("qualification_population_sha256", None)
+        claimed_run_uplift = payload.pop("paired_run_uplift_bootstrap", None)
         sequence_keys = (
             "candidate_sha256",
             "review_sha256",
@@ -1638,7 +1687,11 @@ class Round74AIUpliftDevelopmentReport:
         except (KeyError, TypeError, ValueError, OverflowError) as exc:
             raise ValueError("Round 74 AI uplift report payload differs") from exc
         selected.validate()
-        if selected.report_sha256 != claimed or selected.as_dict() != original:
+        if (
+            claimed_run_uplift != _paired_run_uplift_bootstrap(selected.paired_runs)
+            or selected.report_sha256 != claimed
+            or selected.as_dict() != original
+        ):
             raise ValueError("Round 74 AI uplift report identity differs")
         return selected
 
@@ -2068,8 +2121,13 @@ __all__ = [
     "ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS",
     "ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION",
     "ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION",
+    "ROUND74_AI_UPLIFT_BOOTSTRAP_SAMPLES",
+    "ROUND74_AI_UPLIFT_BOOTSTRAP_SCHEMA_VERSION",
+    "ROUND74_AI_UPLIFT_FAMILYWISE_CONFIDENCE",
     "ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO",
     "ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE",
+    "ROUND74_AI_UPLIFT_MODEL_COMPARISONS",
+    "ROUND74_AI_UPLIFT_PER_MODEL_CONFIDENCE",
     "ROUND74_AI_UPLIFT_SCHEMA_VERSION",
     "Round74AIExecutionReplayEvidence",
     "Round74AIOverlayMetrics",
