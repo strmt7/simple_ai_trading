@@ -1,0 +1,168 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v126",
+  "artifact_kind": "pretest_final_action_configuration",
+  "created_utc": "2026-07-29T07:00:12.349194Z",
+  "supersedes_artifact_sha256": "34d61ea06f815c44065b3ca8e0148e7bb8fe1007688bc30f406b15a65d484d0f",
+  "implementation_git_commit": "7e080e024d4698f183ba3bc5d282ff2521db737b",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "final_action_configuration": {
+      "path": "src/simple_ai_trading/impact_absorption_event_action_configuration.py",
+      "sha256": "5201459d0ebc6b9397314a4cc4efec7119e1ef06088dc66073f8e853ff74f51f"
+    },
+    "action_policy_test": {
+      "path": "tests/test_impact_absorption_event_action_policy.py",
+      "sha256": "d1ab095f0f217a0a0af9e5c54e80f48039a6c88cdac672cc0d419374b812da5c"
+    },
+    "development_operator_test": {
+      "path": "tests/test_round74_event_development_operator.py",
+      "sha256": "1062d5f5f7fd366071f906f9222863f64e20a53569a8ffd2690f5392a12c19a6"
+    },
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v125.json",
+      "sha256": "98e830e2eaf52638b3e0c8bc12f1e7c1331ac5d5143ea62bf4b66e1f57c3d287"
+    }
+  },
+  "declared_delta": {
+    "summary": "Choose and hash-bind one final ML action configuration using tuning evidence only, before any sealed-test reservation.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "probability_calibration_changed": false,
+    "baseline_quality_threshold_changed": false,
+    "tuning_only_configuration_selection_added": true,
+    "post_test_model_selection_permitted": false,
+    "sealed_ledger_integration_changed": false,
+    "sealed_evaluator_integration_changed": false,
+    "runtime_trading_path_changed": false
+  },
+  "configuration_contract": {
+    "schema_version": "round-074-final-action-configuration-v1",
+    "modes": [
+      "baseline",
+      "epistemic_filter"
+    ],
+    "accepted_baseline_action_selection_required": true,
+    "exact_delayed_l2_execution_panel_required": true,
+    "development_bundle_digest_required": true,
+    "full_action_selection_persisted": true,
+    "full_epistemic_challenge_persisted_when_available": true,
+    "profile_identity_must_match": true,
+    "baseline_selection_digest_must_match": true,
+    "execution_panel_digest_must_match": true,
+    "tuning_subpartition_digest_must_match": true,
+    "probability_calibration_digest_must_match": true,
+    "policy_selection_batch_order_must_match": true,
+    "canonical_configuration_digest_required": true,
+    "exact_field_and_type_contract_required": true
+  },
+  "selection_rule": {
+    "selection_data_role": "tuning_only",
+    "epistemic_filter_selected_only_when_tuning_challenge_eligible": true,
+    "challenge_requires_strict_objective_improvement": true,
+    "challenge_may_not_reduce_total_net_return": true,
+    "challenge_may_not_increase_maximum_drawdown": true,
+    "challenge_may_not_increase_maximum_concurrent_adverse_excursion": true,
+    "challenge_may_not_increase_adverse_selection_rate": true,
+    "ineligible_or_absent_challenge_selects_baseline": true,
+    "manual_mode_override_permitted": false,
+    "post_sealed_test_switching_permitted": false
+  },
+  "sealed_qualification_family": {
+    "single_final_ml_configuration": true,
+    "ml_configuration_count": 1,
+    "ai_overlay_configuration_count": 2,
+    "total_configuration_count": 3,
+    "epistemic_filter_is_not_a_post_hoc_fourth_configuration": true,
+    "familywise_gate_redesign_required": false
+  },
+  "fail_closed_controls": {
+    "rejected_baseline_policy_rejected": true,
+    "missing_exact_execution_panel_rejected": true,
+    "mismatched_profile_rejected": true,
+    "mismatched_baseline_digest_rejected": true,
+    "mismatched_execution_panel_rejected": true,
+    "mismatched_calibration_or_tuning_identity_rejected": true,
+    "rehashed_boolean_as_integer_contract_rejected": true,
+    "sealed_test_accessed": false,
+    "trading_authority": false,
+    "profitability_claim": false
+  },
+  "implementation_status": {
+    "configuration_object_completed": true,
+    "canonical_roundtrip_completed": true,
+    "eligible_filter_selection_control_passed": true,
+    "ineligible_filter_fallback_control_passed": true,
+    "missing_challenge_baseline_control_passed": true,
+    "rejected_policy_fail_closed_control_passed": true,
+    "sealed_ledger_configuration_digest_binding_completed": false,
+    "sealed_evaluator_filter_application_completed": false,
+    "representative_configuration_selected": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_observation": {
+    "admitted_run_count_after_slot_054": 43,
+    "slot_054_status": "admitted",
+    "slot_054_run_id": "754b938e2c6d49b38ee935ed5f2cc28e",
+    "slot_054_observation_count": 907803,
+    "slot_054_usable_duration_ns": 1200329704000,
+    "slot_054_eligible_anchor_duration_ns": 889829704000,
+    "slot_054_reconnect_count": 0,
+    "slot_055_role": "training",
+    "slot_055_phase_observed": "running",
+    "capture_database_or_wal_opened_for_this_delta": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "verification": {
+    "targeted_tests_passed": 2,
+    "eligible_and_ineligible_exact_replay_paths_tested": true,
+    "canonical_persistence_tested": true,
+    "strict_nested_boolean_type_control_tested": true,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "representative_policy_selection_evaluation_run": false,
+    "representative_market_backtest_run": false,
+    "sealed_test_accessed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "research_sources": [
+    {
+      "title": "Datasets: Dividing the original dataset",
+      "url": "https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets",
+      "accessed_utc": "2026-07-29",
+      "used_for": "validation data guides model choices while a separate test set is reserved for final evaluation"
+    },
+    {
+      "title": "Nested versus non-nested cross-validation",
+      "url": "https://scikit-learn.org/stable/auto_examples/model_selection/plot_nested_cross_validation_iris.html",
+      "accessed_utc": "2026-07-29",
+      "used_for": "avoiding optimistic selection bias from tuning and evaluating on the same observations"
+    },
+    {
+      "title": "Optimal Strategies for Reject Option Classifiers",
+      "url": "https://jmlr.org/papers/v24/21-0048.html",
+      "accessed_utc": "2026-07-29",
+      "used_for": "uncertainty-aware abstention as a risk-coverage decision selected before final evaluation"
+    }
+  ],
+  "evidence_boundary": {
+    "representative_configuration_selected": false,
+    "uncertainty_ordering_established_on_representative_data": false,
+    "filter_thresholds_fitted_on_representative_data": false,
+    "filter_improves_after_cost_net_return_established": false,
+    "filter_reduces_drawdown_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "ai_uplift_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "6fa1410e9f1be50d5f01139ff5c6e79ef14e55e494934e6f6bf65815002e6ca9"
+}
