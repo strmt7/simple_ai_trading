@@ -223,7 +223,11 @@ def main(
     )
     args = parser.parse_args()
     contract = load_historical_screen_contract(args.contract)
-    with HistoricalScreenStore(args.database, contract=contract) as store:
+    with HistoricalScreenStore(
+        args.database,
+        contract=contract,
+        read_only=args.phase == "status",
+    ) as store:
         _emit("historical_screen_status", _status(store))
         if args.phase == "status":
             return 0
