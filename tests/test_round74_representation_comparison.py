@@ -358,7 +358,7 @@ def test_build_comparison_binds_matched_batches_and_selection_modes() -> None:
 
     def batches(start: int):
         return tuple(
-            SimpleNamespace(batch_sha256=f"{start + index:064x}") for index in range(24)
+            SimpleNamespace(batch_sha256=f"{start + index:064x}") for index in range(30)
         )
 
     per_symbol_batches = batches(100)
@@ -388,7 +388,7 @@ def test_build_comparison_binds_matched_batches_and_selection_modes() -> None:
                 batch.batch_sha256 for batch in selected_batches[12:18]
             ),
             policy_selection_batch_sha256=tuple(
-                batch.batch_sha256 for batch in selected_batches[18:]
+                batch.batch_sha256 for batch in selected_batches[18:24]
             ),
             feature_scaler_sha256="e" * 64,
             tuning_subpartition_sha256="f" * 64,
@@ -464,7 +464,11 @@ def test_build_comparison_binds_matched_batches_and_selection_modes() -> None:
         preparation_sha256=preparation_sha256,
         tuning=SimpleNamespace(
             per_symbol=per_symbol_batches,
-            global_cross_asset=global_batches[:-1] + per_symbol_batches[-1:],
+            global_cross_asset=(
+                global_batches[:23]
+                + per_symbol_batches[23:24]
+                + global_batches[24:]
+            ),
         ),
     )
     with pytest.raises(ValueError, match="development binding differs"):

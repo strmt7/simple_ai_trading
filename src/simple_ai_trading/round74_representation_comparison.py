@@ -787,15 +787,27 @@ def build_round74_representation_comparison(
         (challenger, challenger_policy, "global_cross_asset"),
     ):
         batches = expected_batches[representation]
+        model_end = len(artifact.bundle.model_selection_batch_sha256)
+        calibration_end = model_end + len(
+            artifact.bundle.calibration_batch_sha256
+        )
+        policy_end = calibration_end + len(
+            artifact.bundle.policy_selection_batch_sha256
+        )
         if (
             artifact.bundle_sha256 != artifact.bundle.bundle_sha256
             or policy.get("policy_sha256") != artifact.pretest_policy.policy_sha256
+            or len(batches) < policy_end
             or artifact.bundle.model_selection_batch_sha256
-            != tuple(batch.batch_sha256 for batch in batches[:12])
+            != tuple(batch.batch_sha256 for batch in batches[:model_end])
             or artifact.bundle.calibration_batch_sha256
-            != tuple(batch.batch_sha256 for batch in batches[12:18])
+            != tuple(
+                batch.batch_sha256 for batch in batches[model_end:calibration_end]
+            )
             or artifact.bundle.policy_selection_batch_sha256
-            != tuple(batch.batch_sha256 for batch in batches[18:])
+            != tuple(
+                batch.batch_sha256 for batch in batches[calibration_end:policy_end]
+            )
         ):
             raise ValueError("Round 74 representation development binding differs")
     candidate_id, baseline_seeds, baseline_losses = _policy_candidate_losses(
