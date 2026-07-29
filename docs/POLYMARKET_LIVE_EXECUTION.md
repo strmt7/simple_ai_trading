@@ -87,6 +87,12 @@ flowchart LR
   blocks new proposals and retries exact bot-owned cancellation and closing
   until no owned order or position remains; an incomplete close is never
   reported as stopped.
+- Every user-stream, reconciliation, settlement, model, and enabled public
+  signal task is supervised as critical. Safety services receive one scheduling
+  turn before model decisions begin. An unexpected task exception or return
+  immediately latches Stop, prevents further model work, closes only exact
+  bot-owned exposure, awaits all service shutdowns, and surfaces the named
+  failure after cleanup.
 - The optional external BTC signal is a read-only callback. It receives no
   wallet, venue, coordinator, ledger, credential, balance, position, or order
   object and can only preserve, reduce, or veto a promoted Polymarket proposal.

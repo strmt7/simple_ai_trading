@@ -275,7 +275,7 @@ class PolymarketAutonomousSupervisor:
         )
         if len(active) != 1:
             raise PolymarketLiveBlocked(
-                "exactly one current BTC five-minute market is required"
+                "exactly one current BTC promoted-horizon market is required"
             )
         self._markets = markets
         desired = {market.condition_id for market in markets}
@@ -508,16 +508,23 @@ class PolymarketAutonomousSupervisor:
             )
         await self._discover_and_subscribe(observed_at_ms=self._clock_ms())
         services_stop = asyncio.Event()
-        tasks = [
-            asyncio.create_task(self.user_stream.run(services_stop)),
-            asyncio.create_task(self.reconciliation.run(services_stop)),
-            asyncio.create_task(self._model_loop(services_stop)),
-        ]
+        tasks: dict[str, asyncio.Task[None]] = {
+            "authenticated_user_stream": asyncio.create_task(
+                self.user_stream.run(services_stop)
+            ),
+            "ownership_reconciliation": asyncio.create_task(
+                self.reconciliation.run(services_stop)
+            ),
+        }
         if self.settlement is not None:
-            tasks.append(asyncio.create_task(self.settlement.run(services_stop)))
+            tasks["settlement"] = asyncio.create_task(
+                self.settlement.run(services_stop)
+            )
         external_run = getattr(self.external_signal_provider, "run", None)
         if callable(external_run):
-            tasks.append(asyncio.create_task(external_run(services_stop)))
+            tasks["external_public_signal"] = asyncio.create_task(
+                external_run(services_stop)
+            )
         timer: asyncio.Task[None] | None = None
         if duration:
             async def request_stop_after_duration() -> None:
@@ -525,8 +532,56 @@ class PolymarketAutonomousSupervisor:
                 self.request_stop()
 
             timer = asyncio.create_task(request_stop_after_duration())
+        critical_error: RuntimeError | None = None
+        critical_fault = ""
         try:
-            await tasks[2]
+            # Give safety services one scheduling turn before model decisions.
+            await asyncio.sleep(0)
+            early = {
+                name: task for name, task in tasks.items() if task.done()
+            }
+            if early:
+                name, task = next(iter(early.items()))
+                exception = (
+                    task.exception() if not task.cancelled() else None
+                )
+                detail = (
+                    exception.__class__.__name__
+                    if exception is not None
+                    else "returned"
+                )
+                critical_fault = f"critical_service_exit:{name}:{detail}"
+                self._last_fault = critical_fault
+                self.request_stop()
+                critical_error = RuntimeError(critical_fault)
+            else:
+                tasks["model"] = asyncio.create_task(
+                    self._model_loop(services_stop)
+                )
+                done, _ = await asyncio.wait(
+                    set(tasks.values()),
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if not self._shutdown_requested.is_set():
+                    by_task = {task: name for name, task in tasks.items()}
+                    failed_task = next(iter(done))
+                    name = by_task[failed_task]
+                    exception = (
+                        failed_task.exception()
+                        if not failed_task.cancelled()
+                        else None
+                    )
+                    detail = (
+                        exception.__class__.__name__
+                        if exception is not None
+                        else "returned"
+                    )
+                    critical_fault = (
+                        f"critical_service_exit:{name}:{detail}"
+                    )
+                    self._last_fault = critical_fault
+                    self.request_stop()
+                    critical_error = RuntimeError(critical_fault)
         finally:
             self.request_stop()
             if self._owned_market_ids():
@@ -534,11 +589,15 @@ class PolymarketAutonomousSupervisor:
             services_stop.set()
             if timer is not None:
                 timer.cancel()
-            await asyncio.gather(*tasks, return_exceptions=True)
+            await asyncio.gather(*tasks.values(), return_exceptions=True)
             if timer is not None:
                 await asyncio.gather(timer, return_exceptions=True)
             self._stop_completed = not self._owned_market_ids()
             self.runtime_guard.mark_stopped()
+            if critical_fault:
+                self._last_fault = critical_fault
+        if critical_error is not None:
+            raise critical_error
 
 
 __all__ = [

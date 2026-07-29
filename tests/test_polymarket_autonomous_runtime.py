@@ -634,3 +634,39 @@ def test_run_starts_optional_public_signal_service(tmp_path: Path) -> None:
     asyncio.run(supervisor.run())
 
     assert started is True
+
+
+def test_unexpected_safety_service_exit_stops_before_model_decision(
+    tmp_path: Path,
+) -> None:
+    calls = 0
+
+    class Provider:
+        def decide(self, **_kwargs: object) -> PolymarketAutonomousDecision:
+            nonlocal calls
+            calls += 1
+            return PolymarketAutonomousDecision()
+
+    supervisor = _supervisor(tmp_path, provider=Provider())
+
+    async def failed_stream(_stop: asyncio.Event) -> None:
+        raise ConnectionError("authenticated stream failed")
+
+    supervisor.user_stream.run = failed_stream  # type: ignore[method-assign]
+
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            "critical_service_exit:"
+            "authenticated_user_stream:ConnectionError"
+        ),
+    ):
+        asyncio.run(supervisor.run())
+
+    assert calls == 0
+    assert supervisor.snapshot().stop_requested is True
+    assert supervisor.snapshot().stop_completed is True
+    assert supervisor.snapshot().last_fault == (
+        "critical_service_exit:"
+        "authenticated_user_stream:ConnectionError"
+    )
