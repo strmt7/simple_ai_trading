@@ -127,6 +127,7 @@ def main() -> int:
         threads=args.threads,
         symbols=POLYMARKET_BTC_HISTORY_SYMBOLS,
         research_round=POLYMARKET_BTC_HISTORY_RESEARCH_ROUND,
+        read_only=args.phase == "status",
     ) as store:
         _emit(
             "history_status",
