@@ -213,6 +213,34 @@ class FrozenFlowContract:
     inventory_file_sha256: str
     selected_compressed_bytes: int
     days: tuple[FrozenFlowDay, ...]
+    symbols: tuple[str, ...] = FLOW_SYMBOLS
+
+    def __post_init__(self) -> None:
+        symbols = tuple(str(value) for value in self.symbols)
+        if (
+            not symbols
+            or len(symbols) != len(set(symbols))
+            or tuple(sorted(symbols)) != symbols
+            or any(symbol not in FLOW_SYMBOLS for symbol in symbols)
+        ):
+            raise ValueError("frozen flow contract symbols are invalid")
+        expected_streams = {
+            (market_type, symbol)
+            for market_type in FLOW_MARKET_TYPES
+            for symbol in symbols
+        }
+        for day in self.days:
+            observed_streams = {
+                (archive.market_type, archive.symbol) for archive in day.archives
+            }
+            if (
+                len(day.archives) != len(expected_streams)
+                or observed_streams != expected_streams
+            ):
+                raise ValueError(
+                    f"{day.period} frozen flow streams differ from contract symbols"
+                )
+        object.__setattr__(self, "symbols", symbols)
 
     @property
     def expected_files(self) -> int:
@@ -220,7 +248,7 @@ class FrozenFlowContract:
 
     @property
     def expected_rows(self) -> int:
-        return len(self.days) * len(FLOW_SYMBOLS) * SECONDS_PER_DAY
+        return len(self.days) * len(self.symbols) * SECONDS_PER_DAY
 
 
 @dataclass(frozen=True)
@@ -434,7 +462,20 @@ class SpotPerpetualCorpusStore:
         memory_limit: str = "8GB",
         threads: int = 8,
         read_only: bool = False,
+        symbols: Sequence[str] = FLOW_SYMBOLS,
+        research_round: int = SPOT_PERPETUAL_RESEARCH_ROUND,
     ) -> None:
+        normalized_symbols = tuple(str(value) for value in symbols)
+        if (
+            not normalized_symbols
+            or len(normalized_symbols) != len(set(normalized_symbols))
+            or tuple(sorted(normalized_symbols)) != normalized_symbols
+            or any(symbol not in FLOW_SYMBOLS for symbol in normalized_symbols)
+        ):
+            raise ValueError("spot/perpetual corpus symbols are invalid")
+        normalized_round = int(research_round)
+        if not 1 <= normalized_round <= 1_000_000:
+            raise ValueError("spot/perpetual corpus research round is invalid")
         self._warehouse = MicrostructureWarehouse(
             path,
             cache_root=cache_root,
@@ -443,6 +484,8 @@ class SpotPerpetualCorpusStore:
             read_only=read_only,
         )
         self.read_only = bool(read_only)
+        self.symbols = normalized_symbols
+        self.research_round = normalized_round
         self._schema_ready = False
 
     @property
@@ -614,17 +657,30 @@ class SpotPerpetualCorpusStore:
             ]
         )
 
-    @staticmethod
     def _validate_sources(
+        self,
         day: FrozenFlowDay,
         sources: Sequence[VerifiedFlowSource],
     ) -> tuple[VerifiedFlowSource, ...]:
         ordered = tuple(sorted(sources, key=lambda value: value.archive.source_key))
         expected = {value.source_key: value for value in day.archives}
-        if len(ordered) != len(expected) or {
-            value.archive.source_key for value in ordered
-        } != set(expected):
-            raise ValueError("verified flow sources differ from the frozen six-stream day")
+        expected_streams = {
+            (market_type, symbol)
+            for market_type in FLOW_MARKET_TYPES
+            for symbol in self.symbols
+        }
+        day_streams = {
+            (archive.market_type, archive.symbol) for archive in day.archives
+        }
+        if (
+            len(day.archives) != len(expected_streams)
+            or day_streams != expected_streams
+            or len(ordered) != len(expected)
+            or {value.archive.source_key for value in ordered} != set(expected)
+        ):
+            raise ValueError(
+                "verified flow sources differ from the frozen contract streams"
+            )
         for source in ordered:
             archive = expected[source.archive.source_key]
             if source.archive != archive:
@@ -700,7 +756,7 @@ class SpotPerpetualCorpusStore:
         constituent_count = sum(
             value.flow.audit.constituent_trade_count for value in ordered
         )
-        flow_rows = len(FLOW_SYMBOLS) * SECONDS_PER_DAY
+        flow_rows = len(self.symbols) * SECONDS_PER_DAY
         first_second_ms = min(value.flow.second_ms[0] for value in ordered)
         last_second_ms = max(value.flow.second_ms[-1] for value in ordered)
         now_ms = int(time.time() * 1_000)
@@ -750,7 +806,7 @@ class SpotPerpetualCorpusStore:
                 "perpetual_maximum_aggregate_quote,perpetual_squared_aggregate_quote_sum,"
                 "perpetual_last_trade_age_seconds"
             )
-            for symbol in FLOW_SYMBOLS:
+            for symbol in self.symbols:
                 batch = self._batch(
                     by_stream[("spot", symbol)], by_stream[("futures", symbol)]
                 )
@@ -818,14 +874,14 @@ class SpotPerpetualCorpusStore:
                 [
                     day_id,
                     SPOT_PERPETUAL_CORPUS_SCHEMA,
-                    SPOT_PERPETUAL_RESEARCH_ROUND,
+                    self.research_round,
                     day.period,
                     day.month,
                     inventory_sha256,
                     day_id,
                     combined_flow_sha256,
                     len(ordered),
-                    len(FLOW_SYMBOLS),
+                    len(self.symbols),
                     SECONDS_PER_DAY,
                     flow_rows,
                     day.compressed_bytes,
@@ -1045,17 +1101,17 @@ class SpotPerpetualCorpusStore:
         day_start_ms = int(
             datetime.fromisoformat(day.period).replace(tzinfo=UTC).timestamp() * 1_000
         )
-        expected_rows = len(FLOW_SYMBOLS) * SECONDS_PER_DAY
+        expected_rows = len(self.symbols) * SECONDS_PER_DAY
         if manifest is None or (
             str(manifest[0]) != SPOT_PERPETUAL_CORPUS_SCHEMA
-            or int(manifest[1]) != SPOT_PERPETUAL_RESEARCH_ROUND
+            or int(manifest[1]) != self.research_round
             or str(manifest[2]) != day.period
             or str(manifest[3]) != day.month
             or str(manifest[4]) != inventory_sha256
             or str(manifest[5]) != day_id
             or not _SHA256_RE.fullmatch(str(manifest[6]))
             or int(manifest[7]) != len(day.archives)
-            or int(manifest[8]) != len(FLOW_SYMBOLS)
+            or int(manifest[8]) != len(self.symbols)
             or int(manifest[9]) != SECONDS_PER_DAY
             or int(manifest[10]) != expected_rows
             or int(manifest[11]) != day.compressed_bytes
@@ -1151,14 +1207,14 @@ class SpotPerpetualCorpusStore:
         ).fetchall()
         if physical is None or (
             int(physical[0]) != expected_rows
-            or int(physical[1]) != len(FLOW_SYMBOLS)
+            or int(physical[1]) != len(self.symbols)
             or int(physical[2]) != 0
             or int(physical[3]) != day_start_ms
             or int(physical[4]) != day_start_ms + (SECONDS_PER_DAY - 1) * 1_000
             or int(physical[5]) != 0
             or int(physical[6]) != 0
-            or len(by_symbol) != len(FLOW_SYMBOLS)
-            or {str(row[0]) for row in by_symbol} != set(FLOW_SYMBOLS)
+            or len(by_symbol) != len(self.symbols)
+            or {str(row[0]) for row in by_symbol} != set(self.symbols)
             or any(
                 int(row[1]) != SECONDS_PER_DAY
                 or int(row[2]) != day_start_ms
@@ -1180,6 +1236,8 @@ class SpotPerpetualCorpusStore:
     def certify_corpus(self, contract: FrozenFlowContract) -> dict[str, object]:
         """Certify the complete frozen corpus with one fact-table scan."""
 
+        if contract.symbols != self.symbols:
+            raise ValueError("corpus contract symbols differ from the store")
         inventory_sha256 = _require_sha256(
             contract.inventory_sha256, "inventory SHA-256"
         )
@@ -1212,16 +1270,16 @@ class SpotPerpetualCorpusStore:
                 or str(row[3]) != day_id
                 or not _SHA256_RE.fullmatch(str(row[4]))
                 or int(row[5]) != len(day.archives)
-                or int(row[6]) != len(FLOW_SYMBOLS)
+                or int(row[6]) != len(self.symbols)
                 or int(row[7]) != SECONDS_PER_DAY
-                or int(row[8]) != len(FLOW_SYMBOLS) * SECONDS_PER_DAY
+                or int(row[8]) != len(self.symbols) * SECONDS_PER_DAY
                 or int(row[9]) != day.compressed_bytes
                 or int(row[10]) != day.compressed_bytes
                 or int(row[11]) <= 0
                 or str(row[12]) != "complete"
                 or bool(row[13]) is not True
                 or str(row[14]) != SPOT_PERPETUAL_CORPUS_SCHEMA
-                or int(row[15]) != SPOT_PERPETUAL_RESEARCH_ROUND
+                or int(row[15]) != self.research_round
             ):
                 raise ValueError(f"{day.period} corpus manifest differs")
 
@@ -1313,7 +1371,7 @@ class SpotPerpetualCorpusStore:
         expected_fact_keys = {
             (day_id, symbol)
             for day_id in expected_days
-            for symbol in FLOW_SYMBOLS
+            for symbol in self.symbols
         }
         if len(facts) != len(expected_fact_keys) or {
             (str(row[0]), str(row[1])) for row in facts
@@ -1359,12 +1417,12 @@ class SpotPerpetualCorpusStore:
         )
         return {
             "schema_version": "spot-perpetual-corpus-certificate-v1",
-            "research_round": SPOT_PERPETUAL_RESEARCH_ROUND,
+            "research_round": self.research_round,
             "inventory_sha256": inventory_sha256,
             "status": "complete",
             "day_count": len(manifests),
             "source_count": len(sources),
-            "symbol_count": len(FLOW_SYMBOLS),
+            "symbol_count": len(self.symbols),
             "flow_rows": sum(int(row[2]) for row in facts),
             "compressed_bytes": sum(int(row[5]) for row in sources),
             "uncompressed_bytes": sum(int(row[11]) for row in manifests),
