@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
+from datetime import UTC, datetime
 import time
 from typing import Mapping
 
@@ -12,7 +12,11 @@ import numpy as np
 
 from .polymarket_historical_model import condition_balanced_binary_metrics
 from .polymarket_historical_screen import HistoricalScreenStore
-from .polymarket_round16 import Round16HistoricalContract
+from .polymarket_round16 import (
+    ROUND16_MARKETS_PER_DAY,
+    ROUND16_TEST_DAYS,
+    Round16HistoricalContract,
+)
 from .polymarket_round16_model import (
     ROUND16_PRETEST_SCHEMA_VERSION,
     Round16ModelPanel,
@@ -23,8 +27,7 @@ from .polymarket_round16_model import (
 )
 
 
-ROUND16_EVALUATION_SCHEMA_VERSION = "polymarket-round16-btc-15m-evaluation-v1"
-ROUND16_BOOTSTRAP_BLOCK_CONDITIONS = 12
+ROUND16_EVALUATION_SCHEMA_VERSION = "polymarket-round16-btc-15m-evaluation-v2"
 ROUND16_BOOTSTRAP_SEED = 16_016
 
 
@@ -57,7 +60,7 @@ def _condition_loss_delta(
     panel: Round16ModelPanel,
     control: np.ndarray,
     challenger: np.ndarray,
-) -> np.ndarray:
+) -> tuple[np.ndarray, tuple[str, ...]]:
     truth = panel.labels
     control_probability = _probability(control)
     challenger_probability = _probability(challenger)
@@ -69,58 +72,86 @@ def _condition_loss_delta(
         truth * np.log(challenger_probability)
         + (1.0 - truth) * np.log1p(-challenger_probability)
     )
-    return np.asarray(
+    conditions = _ordered_conditions(panel.condition_ids)
+    delta = control_loss - challenger_loss
+    values: list[float] = []
+    utc_days: list[str] = []
+    for condition in conditions:
+        selected = np.flatnonzero(panel.condition_ids == condition)
+        event_start_ms = np.unique(panel.event_start_ms[selected])
+        if len(event_start_ms) != 1:
+            raise ValueError("Round 16 condition spans multiple event starts")
+        values.append(float(np.mean(delta[selected])))
+        utc_days.append(
+            datetime.fromtimestamp(
+                int(event_start_ms[0]) / 1_000,
+                tz=UTC,
+            ).date().isoformat()
+        )
+    return np.asarray(values, dtype=np.float64), tuple(utc_days)
+
+
+def _daily_loss_delta(
+    condition_delta: np.ndarray,
+    condition_utc_days: tuple[str, ...],
+    expected_utc_days: tuple[str, ...],
+) -> tuple[np.ndarray, Mapping[str, int]]:
+    values = np.asarray(condition_delta, dtype=np.float64)
+    if (
+        values.ndim != 1
+        or len(values) != len(condition_utc_days)
+        or not np.all(np.isfinite(values))
+        or len(set(expected_utc_days)) != len(expected_utc_days)
+    ):
+        raise ValueError("Round 16 daily loss inputs are invalid")
+    grouped: dict[str, list[float]] = {}
+    for day, value in zip(condition_utc_days, values, strict=True):
+        grouped.setdefault(day, []).append(float(value))
+    daily_delta = np.asarray(
         [
-            float(
-                np.mean(
-                    (control_loss - challenger_loss)[
-                        panel.condition_ids == condition
-                    ]
-                )
-            )
-            for condition in _ordered_conditions(panel.condition_ids)
+            float(np.mean(grouped[day]))
+            for day in expected_utc_days
+            if day in grouped
         ],
         dtype=np.float64,
     )
+    return daily_delta, {
+        day: len(grouped.get(day, ()))
+        for day in (*expected_utc_days, *sorted(set(grouped) - set(expected_utc_days)))
+    }
 
 
-def _paired_block_bootstrap(
-    delta: np.ndarray,
+def _paired_utc_day_bootstrap(
+    daily_delta: np.ndarray,
     *,
     repetitions: int,
-    minimum_conditions: int,
-) -> Mapping[str, float | int]:
-    values = np.asarray(delta, dtype=np.float64)
+) -> Mapping[str, float | int | str]:
+    values = np.asarray(daily_delta, dtype=np.float64)
     selected_repetitions = int(repetitions)
-    required_conditions = int(minimum_conditions)
     if (
         values.ndim != 1
-        or len(values) < required_conditions
+        or len(values) < 2
         or not np.all(np.isfinite(values))
         or not 100 <= selected_repetitions <= 100_000
-        or required_conditions < 2
     ):
-        raise ValueError("Round 16 paired bootstrap inputs are invalid")
+        raise ValueError("Round 16 paired UTC-day bootstrap inputs are invalid")
     generator = np.random.default_rng(ROUND16_BOOTSTRAP_SEED)
-    sample_count = math.ceil(len(values) / ROUND16_BOOTSTRAP_BLOCK_CONDITIONS)
-    offsets = np.arange(ROUND16_BOOTSTRAP_BLOCK_CONDITIONS, dtype=np.int64)
     estimates = np.empty(selected_repetitions, dtype=np.float64)
     batch_size = 256
     for first in range(0, selected_repetitions, batch_size):
         count = min(batch_size, selected_repetitions - first)
-        starts = generator.integers(
+        indexes = generator.integers(
             0,
             len(values),
-            size=(count, sample_count),
+            size=(count, len(values)),
         )
-        indexes = (
-            starts[:, :, None] + offsets[None, None, :]
-        ) % len(values)
-        sampled = values[indexes.reshape(count, -1)[:, : len(values)]]
+        sampled = values[indexes]
         estimates[first : first + count] = np.mean(sampled, axis=1)
     return {
         "repetitions": selected_repetitions,
-        "block_conditions": ROUND16_BOOTSTRAP_BLOCK_CONDITIONS,
+        "resampling_unit": "whole_UTC_day",
+        "day_count": len(values),
+        "within_day_aggregation": "equal_weight_condition_mean",
         "lower_95": float(np.quantile(estimates, 0.025)),
         "median": float(np.quantile(estimates, 0.5)),
         "upper_95": float(np.quantile(estimates, 0.975)),
@@ -245,14 +276,32 @@ def evaluate_round16_panel(
     control = metrics[control_id]
     challenger = metrics[challenger_id]
     gates_contract = contract.historical.test_gates
-    bootstrap = _paired_block_bootstrap(
-        _condition_loss_delta(
-            panel,
-            predictions[control_id],
-            predictions[challenger_id],
-        ),
+    condition_delta, condition_utc_days = _condition_loss_delta(
+        panel,
+        predictions[control_id],
+        predictions[challenger_id],
+    )
+    expected_test_days = tuple(
+        day
+        for day in contract.historical.eligible_days
+        if contract.historical.roles[day] == "test"
+    )
+    daily_delta, conditions_by_day = _daily_loss_delta(
+        condition_delta,
+        condition_utc_days,
+        expected_test_days,
+    )
+    complete_test_days = tuple(
+        day
+        for day in expected_test_days
+        if conditions_by_day[day] == ROUND16_MARKETS_PER_DAY
+    )
+    unexpected_test_days = tuple(
+        day for day in conditions_by_day if day not in expected_test_days
+    )
+    bootstrap = _paired_utc_day_bootstrap(
+        daily_delta,
         repetitions=gates_contract.bootstrap_repetitions,
-        minimum_conditions=gates_contract.minimum_terminal_conditions,
     )
     unique_conditions = _ordered_conditions(panel.condition_ids)
     condition_labels = np.asarray(
@@ -265,6 +314,11 @@ def evaluate_round16_panel(
     gates = {
         "minimum_terminal_conditions": (
             len(unique_conditions) >= gates_contract.minimum_terminal_conditions
+        ),
+        "complete_utc_test_days": (
+            len(complete_test_days) == ROUND16_TEST_DAYS
+            and len(expected_test_days) == ROUND16_TEST_DAYS
+            and not unexpected_test_days
         ),
         "minimum_outcomes_per_class": min(
             np.count_nonzero(condition_labels == 0.0),
@@ -316,6 +370,10 @@ def evaluate_round16_panel(
             "down_conditions": int(np.count_nonzero(condition_labels == 0.0)),
             "first_event_start_ms": int(np.min(panel.event_start_ms)),
             "last_event_start_ms": int(np.max(panel.event_start_ms)),
+            "expected_utc_days": list(expected_test_days),
+            "complete_utc_days": list(complete_test_days),
+            "unexpected_utc_days": list(unexpected_test_days),
+            "conditions_by_utc_day": conditions_by_day,
         },
         "best_control_id": control_id,
         "best_challenger_id": challenger_id,
@@ -326,7 +384,7 @@ def evaluate_round16_panel(
             "brier": 1.0
             - float(challenger["brier_score"]) / float(control["brier_score"]),
         },
-        "paired_condition_block_bootstrap": bootstrap,
+        "paired_utc_day_bootstrap": bootstrap,
         "settlement_manipulation_screen": _settlement_screen_report(
             panel,
             pretest,
@@ -397,7 +455,6 @@ def evaluate_round16_test_once(
 
 
 __all__ = [
-    "ROUND16_BOOTSTRAP_BLOCK_CONDITIONS",
     "ROUND16_BOOTSTRAP_SEED",
     "ROUND16_EVALUATION_SCHEMA_VERSION",
     "evaluate_round16_panel",

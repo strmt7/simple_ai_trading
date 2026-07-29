@@ -304,7 +304,7 @@ extends the established parser with independently registered commands.
   facts without duplicating them, but has separate Polymarket identities,
   targets, pretest, and holdout. No eligible Round 16 identity or terminal
   target was accessed before contract
-  `ba4a0fdd8b24baaa82fd1b4c6085b1a4907e910f4ebcefac00f2e92fb95d1996`
+  `fa119c3f110c4a13345341ab26cb87010788cb2e92b85a23647714d3aede163d`
   was frozen. It binds label-blind tune-only settlement-anomaly thresholds
   and train-only feature-support abstention before held-out access. Neither
   horizon may be pooled, selected, or promoted without its own prediction and
