@@ -11,6 +11,7 @@ import pytest
 from simple_ai_trading.binance_archive import archive_file_url
 from simple_ai_trading.spot_perpetual_corpus import (
     FrozenFlowArchive,
+    FrozenFlowContract,
     FrozenFlowDay,
     SpotPerpetualCorpusStore,
     VerifiedFlowSource,
@@ -187,6 +188,59 @@ def test_spot_perpetual_commit_rejects_unverified_source_without_writes(tmp_path
         assert store.connect().execute(
             "SELECT count(*) FROM spot_perpetual_flow_1s"
         ).fetchone()[0] == 0
+
+
+def test_spot_perpetual_corpus_supports_btc_only_history_without_other_archives(
+    tmp_path,
+) -> None:
+    day, verified = _verified_day(tmp_path)
+    btc_archives = tuple(
+        archive for archive in day.archives if archive.symbol == "BTCUSDT"
+    )
+    btc_day = replace(
+        day,
+        compressed_bytes=sum(archive.expected_bytes for archive in btc_archives),
+        archives=btc_archives,
+    )
+    btc_verified = tuple(
+        source for source in verified if source.archive.symbol == "BTCUSDT"
+    )
+    inventory_sha256 = "d" * 64
+    contract = FrozenFlowContract(
+        design_sha256="e" * 64,
+        inventory_sha256=inventory_sha256,
+        inventory_file_sha256="f" * 64,
+        selected_compressed_bytes=btc_day.compressed_bytes,
+        days=(btc_day,),
+        symbols=("BTCUSDT",),
+    )
+
+    with SpotPerpetualCorpusStore(
+        tmp_path / "btc-flow.duckdb",
+        cache_root=tmp_path / "cache",
+        memory_limit="512MB",
+        threads=1,
+        symbols=("BTCUSDT",),
+        research_round=15,
+    ) as store:
+        result = store.commit_verified_day(
+            btc_day,
+            inventory_sha256=inventory_sha256,
+            sources=btc_verified,
+        )
+        certificate = store.certify_corpus(contract)
+        manifest = store.connect().execute(
+            "SELECT research_round, symbol_count, source_count, flow_rows "
+            "FROM spot_perpetual_flow_day_manifest"
+        ).fetchone()
+
+    assert contract.expected_files == 2
+    assert contract.expected_rows == SECONDS_PER_DAY
+    assert result.source_count == 2
+    assert result.flow_rows == SECONDS_PER_DAY
+    assert certificate["research_round"] == 15
+    assert certificate["symbol_count"] == 1
+    assert manifest == (15, 1, 2, SECONDS_PER_DAY)
 
 
 def test_checksum_sidecar_is_bound_to_frozen_metadata_and_filename() -> None:
