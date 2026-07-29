@@ -100,7 +100,7 @@ def _segmented_tuning_subpartition() -> Round74SegmentedTuningSubpartition:
 def _calibration() -> Round74ProbabilityCalibration:
     action_logits = (
         torch.tensor(
-            [-4.0, -2.0, -1.0, 1.0, 2.0, 4.0],
+            [-4.0, -2.0, -1.0, 1.0, 2.0, -4.0],
             dtype=torch.float32,
         )
         .reshape(1, 3, 2)
@@ -108,7 +108,7 @@ def _calibration() -> Round74ProbabilityCalibration:
     )
     action_labels = (
         torch.tensor(
-            [0.0, 0.0, 1.0, 0.0, 1.0, 1.0],
+            [0.0, 0.0, 1.0, 0.0, 0.0, 1.0],
             dtype=torch.float32,
         )
         .reshape(1, 3, 2)
@@ -333,7 +333,7 @@ def test_eligible_target_temperature_tracks_duration_normalized_rows() -> None:
 
 def test_temperature_application_uses_frozen_head_specific_values() -> None:
     calibration = _calibration()
-    logits = torch.tensor([0.0, 1.0], dtype=torch.float32)
+    logits = torch.tensor([-1.0, 1.0], dtype=torch.float32)
     positive, adverse, regime = apply_round74_probability_calibration(
         calibration,
         positive_payoff_logits=logits,
@@ -353,6 +353,20 @@ def test_temperature_application_uses_frozen_head_specific_values() -> None:
         regime,
         torch.sigmoid(logits / calibration.regime_unpredictability.temperature),
     )
+    assert float(positive.sum()) <= 1.0 + 1e-6
+
+
+def test_temperature_calibration_rejects_positive_payoff_simplex_violation() -> None:
+    calibration = _calibration()
+    incoherent_logits = torch.tensor([1.0, 1.0], dtype=torch.float32)
+
+    with pytest.raises(ValueError, match="inference input differs"):
+        apply_round74_probability_calibration(
+            calibration,
+            positive_payoff_logits=incoherent_logits,
+            adverse_selection_logits=incoherent_logits,
+            regime_unpredictability_logits=incoherent_logits,
+        )
 
 
 def _risk_calibration_panel(

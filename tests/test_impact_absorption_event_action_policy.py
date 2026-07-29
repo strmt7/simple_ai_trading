@@ -244,7 +244,9 @@ def _batch(
     for row_index, value in enumerate(monotonic):
         entry[row_index, :, :] = value + 100_000_000
         exit_value[row_index, :, :] = value + 30_100_000_000
-    payoff = np.full(action_shape, 2.0 * payoff_sign, dtype=np.float32)
+    payoff = np.empty(action_shape, dtype=np.float32)
+    payoff[:, :, 0] = 2.0 * payoff_sign
+    payoff[:, :, 1] = -2.0 * payoff_sign - 0.5
     mae = np.full(action_shape, 1.0, dtype=np.float32)
     adverse = np.zeros(action_shape, dtype=np.float32)
     eligibility = np.ones(action_shape, dtype=np.float32)

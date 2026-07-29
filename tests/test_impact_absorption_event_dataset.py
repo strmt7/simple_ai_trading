@@ -431,6 +431,15 @@ def test_round74_streaming_assembler_builds_complete_bounded_panel() -> None:
             maximum_adverse_excursion_bps=regressed_mae,
         ).validate()
 
+    mutually_positive = batch.net_payoff_bps.copy()
+    mutually_positive[0, 0, :] = 1.0
+    mutually_positive.setflags(write=False)
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        replace(
+            batch,
+            net_payoff_bps=mutually_positive,
+        ).validate()
+
 
 def test_round74_dataset_binds_and_separates_window_representations() -> None:
     assert ROUND74_EVENT_WINDOW_REPRESENTATIONS == (
