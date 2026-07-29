@@ -1,0 +1,79 @@
+{
+  "schema_version": "round-074-segmented-wal-recovery-evidence-v1",
+  "created_at_utc": "2026-07-29T02:22:55.5591221Z",
+  "cohort_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+  "incident": {
+    "failed_slot_ordinal": 42,
+    "failed_slot_result_present": false,
+    "failed_slot_admitted": false,
+    "capture_status": "failed",
+    "terminal_error": "writer_shutdown_timeout",
+    "failure_class": "writer",
+    "audit_passed": false,
+    "data_qualification_passed": false,
+    "slot_043_status": "missed_while_failed_writer_process_was_winding_down",
+    "slot_044_status": "missed_due_to_preexisting_wal_fail_closed_gate",
+    "slot_044_reserved": false
+  },
+  "failed_slot_evidence": {
+    "state_sha256": "20c0c9d4ade8cd9f1bde36f847d952e3645b3f941305c9a94c2dbd4b42b5a3b3",
+    "capture_stdout_sha256": "ec76b3c5876abd9d4a9c46e87c7e26ac4d178156d47d6a78d117c65b327d9624",
+    "capture_stderr_sha256": "576b18958ee073600d17d40737074c2ade927d376d22c71c7bb243f145091ea2"
+  },
+  "pre_recovery": {
+    "scheduled_task_disabled": true,
+    "active_segmented_capture_process_count": 0,
+    "database_bytes": 2242916352,
+    "wal_present": true,
+    "wal_bytes": 37301926,
+    "failed_slot_result_present": false
+  },
+  "recovery": {
+    "official_method": "open_persistent_database_replay_wal_then_checkpoint_and_close",
+    "duckdb_version": "v1.5.4",
+    "started_wall_ns": 1785291732807043700,
+    "completed_wall_ns": 1785291735264125800,
+    "duration_ns": 2457082100,
+    "checkpoint_statement_completed": true,
+    "database_opened": true,
+    "market_data_rows_queried": false,
+    "database_or_wal_hash_computed": false,
+    "wal_deleted_without_replay": false,
+    "database_backup_copy_created": false
+  },
+  "post_recovery": {
+    "database_bytes": 2317365248,
+    "wal_present": false,
+    "wal_bytes": 0,
+    "frozen_source_passed": true,
+    "database_cap_passed": true,
+    "minimum_free_space_passed": true,
+    "no_active_segmented_capture_passed": true,
+    "slot_not_reserved_passed": true,
+    "wal_absent_before_slot_passed": true,
+    "scheduled_task_reenabled": true,
+    "next_scheduled_run_local": "2026-07-29T04:45:00+02:00"
+  },
+  "research_basis": [
+    {
+      "source": "https://duckdb.org/docs/lts/guides/troubleshooting/crashes",
+      "finding": "DuckDB documents reopening the persistent database to replay and checkpoint a WAL left by a crashed writer."
+    },
+    {
+      "source": "https://duckdb.org/docs/current/sql/statements/checkpoint",
+      "finding": "DuckDB documents CHECKPOINT as synchronizing write-ahead-log data into the database file."
+    }
+  ],
+  "evidence_boundary": {
+    "admitted_capture_created": false,
+    "failed_or_missed_slot_retried": false,
+    "future_slot_schedule_shifted": false,
+    "frozen_campaign_source_changed": false,
+    "orders_submitted": false,
+    "credentials_used": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "trading_authority": false
+  },
+  "evidence_sha256": "9653fd61a9a5278f05a3ac04b7e31897847fe6d3a8d0832db893246104f6a94f"
+}
