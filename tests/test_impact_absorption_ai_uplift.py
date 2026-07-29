@@ -5,6 +5,7 @@ import json
 
 import pytest
 
+import simple_ai_trading.impact_absorption_event_action_policy as action_policy_subject
 from simple_ai_trading.ai_runtime import OllamaResidencyReport
 from simple_ai_trading.impact_absorption_ai_protocol import (
     Round74AIModelManifest,
@@ -411,8 +412,13 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
     assert report.ai_metrics.retained_trades == 4
     assert report.ai_metrics.distinct_retained_symbols == 3
     assert len(report.paired_symbol_horizons) == 3
+    assert len(report.paired_run_symbol_horizons) == 6
     assert all(
         float(value["delta_net_bps"]) >= 0.0 for value in report.paired_symbol_horizons
+    )
+    assert all(
+        float(value["delta_net_bps"]) >= 0.0
+        for value in report.paired_run_symbol_horizons
     )
     assert report.sealed_test_accessed is False
     assert report.ai_model_selection_permitted is False
@@ -560,6 +566,7 @@ def test_aggregate_ai_uplift_cannot_hide_run_or_asset_harm() -> None:
     assert not report.development_gate_passed
     assert "paired_run_noninferiority_not_met" in report.gate_reasons
     assert "paired_symbol_horizon_noninferiority_not_met" in report.gate_reasons
+    assert "paired_run_symbol_horizon_noninferiority_not_met" in report.gate_reasons
     sol = next(
         value for value in report.paired_symbol_horizons if value["symbol"] == "SOLUSDT"
     )
@@ -572,6 +579,115 @@ def test_aggregate_ai_uplift_cannot_hide_run_or_asset_harm() -> None:
         assert "report differs" in str(exc)
     else:
         raise AssertionError("corrupted AI subgroup evidence was accepted")
+
+
+def test_run_and_symbol_aggregates_cannot_hide_one_harmed_cell() -> None:
+    run_ids = (RUNS[0], RUNS[0], RUNS[1], RUNS[1], RUNS[2], RUNS[2])
+    expected_run_ids = RUNS[:3]
+    symbols = ("BTCUSDT", "ETHUSDT", "BTCUSDT", "SOLUSDT", "ETHUSDT", "SOLUSDT")
+    position_payoffs = (3.0, -3.0, -3.0, 3.0, 3.0, 3.0)
+    baseline_payoffs = tuple(value / 3.0 for value in position_payoffs)
+    entry = (10,) * len(run_ids)
+    exit_value = (20,) * len(run_ids)
+    trace = Round74ActionTrace(
+        threshold_score=1.0,
+        expected_run_ids=expected_run_ids,
+        row_index=tuple(range(len(run_ids))),
+        run_id=run_ids,
+        symbol=symbols,
+        feature_row_sha256=FEATURES,
+        horizon_seconds=(30,) * len(run_ids),
+        side=(1,) * len(run_ids),
+        entry_monotonic_ns=entry,
+        exit_monotonic_ns=exit_value,
+        net_payoff_bps=baseline_payoffs,
+        maximum_adverse_excursion_bps=(1.0 / 3.0,) * len(run_ids),
+        adverse_selection=(0,) * len(run_ids),
+        skipped_target_ineligible=0,
+        skipped_same_symbol_overlap=0,
+        metrics=action_policy_subject._trace_metrics(
+            run_ids=run_ids,
+            symbols=symbols,
+            net_payoff_bps=baseline_payoffs,
+            maximum_adverse_excursion_bps=(1.0 / 3.0,) * len(run_ids),
+            adverse_selection=(0,) * len(run_ids),
+            entry_monotonic_ns=entry,
+            exit_monotonic_ns=exit_value,
+            expected_run_ids=expected_run_ids,
+        ),
+    )
+    trace.validate()
+    population = Round74AIQualificationPopulation(
+        parent_tuning_subpartition_sha256="3" * 64,
+        prior_run_ids=POLICY_RUNS,
+        prior_slot_ordinals=tuple(range(594, 600)),
+        run_ids=expected_run_ids,
+        slot_ordinals=tuple(range(600, 603)),
+        eligible_anchor_ns=(900_000_000_000,) * len(expected_run_ids),
+    )
+    population.validate()
+    multipliers = (5_000, 0, 0, 10_000, 10_000, 10_000)
+    reviews = []
+    executions = []
+    for index, (run_id, symbol, payoff, multiplier) in enumerate(
+        zip(run_ids, symbols, position_payoffs, multipliers, strict=True)
+    ):
+        review = replace(
+            _review(index, multiplier),
+            run_id=run_id,
+            symbol=symbol,
+        )
+        review.validate()
+        reviews.append(review)
+        execution = _execution(review, index)
+        if execution.status == "executed":
+            scale = multiplier / 10_000.0
+            execution = replace(
+                execution,
+                position_net_payoff_bps=payoff,
+                capital_scaled_net_payoff_bps=payoff * scale,
+                position_maximum_adverse_excursion_bps=1.0,
+                capital_scaled_maximum_adverse_excursion_bps=scale,
+            )
+        execution.validate()
+        executions.append(execution)
+
+    report = evaluate_round74_ai_overlay_development(
+        _selection(),
+        tuple(reviews),
+        tuple(executions),
+        qualification_population=population,
+        qualification_trace=trace,
+        qualification_candidate_sha256=("a" * 64,),
+    )
+
+    assert report.ai_metrics.total_net_bps > trace.metrics.total_net_bps
+    assert all(float(value["delta_net_bps"]) >= 0.0 for value in report.paired_runs)
+    assert all(
+        float(value["delta_net_bps"]) >= 0.0 for value in report.paired_symbol_horizons
+    )
+    harmed = [
+        value
+        for value in report.paired_run_symbol_horizons
+        if float(value["delta_net_bps"]) < 0.0
+    ]
+    assert len(harmed) == 1
+    assert (harmed[0]["run_id"], harmed[0]["symbol"]) == (
+        expected_run_ids[0],
+        "BTCUSDT",
+    )
+    assert not report.development_gate_passed
+    assert report.gate_reasons == ("paired_run_symbol_horizon_noninferiority_not_met",)
+    corrupted = tuple(dict(value) for value in report.paired_run_symbol_horizons)
+    corrupted[0]["paired_observations"] = 2
+    with pytest.raises(ValueError, match="report differs"):
+        replace(report, paired_run_symbol_horizons=corrupted).validate()
+    with pytest.raises(ValueError, match="report differs"):
+        replace(
+            report,
+            development_gate_passed=True,
+            gate_reasons=(),
+        ).validate()
 
 
 def test_all_veto_overlay_fails_closed_without_dropping_pairs() -> None:

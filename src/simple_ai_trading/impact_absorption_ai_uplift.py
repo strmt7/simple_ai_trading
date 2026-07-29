@@ -44,7 +44,7 @@ from .impact_absorption_event_targets import (
 from .storage import write_json_atomic
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v13"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v14"
 ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION = (
     "round-074-ai-qualification-population-v1"
 )
@@ -698,6 +698,7 @@ def _scaled_metrics(
     tuple[float, ...],
     tuple[Mapping[str, object], ...],
     tuple[Mapping[str, object], ...],
+    tuple[Mapping[str, object], ...],
 ]:
     baseline = np.asarray(trace.net_payoff_bps, dtype=np.float64)
     scaled = np.asarray(
@@ -769,6 +770,29 @@ def _scaled_metrics(
                 }
             )
     paired_symbol_horizons = tuple(grouped_values)
+    run_symbol_horizon_values: list[Mapping[str, object]] = []
+    run_ids = np.asarray(trace.run_id, dtype=object)
+    for run_id in trace.expected_run_ids:
+        for symbol in ROUND74_EVENT_SYMBOLS:
+            for horizon in (30, 300):
+                mask = (run_ids == run_id) & (symbols == symbol) & (horizons == horizon)
+                observations = int(mask.sum())
+                if observations == 0:
+                    continue
+                baseline_value = float(baseline[mask].sum())
+                ai_value = float(scaled[mask].sum())
+                run_symbol_horizon_values.append(
+                    {
+                        "run_id": run_id,
+                        "symbol": symbol,
+                        "horizon_seconds": horizon,
+                        "paired_observations": observations,
+                        "baseline_net_bps": baseline_value,
+                        "ai_net_bps": ai_value,
+                        "delta_net_bps": ai_value - baseline_value,
+                    }
+                )
+    paired_run_symbol_horizons = tuple(run_symbol_horizon_values)
     actual_entries = tuple(
         execution.actual_entry_monotonic_ns
         if execution.actual_entry_monotonic_ns is not None
@@ -863,7 +887,54 @@ def _scaled_metrics(
         tuple(float(value) for value in scaled_mae),
         paired_runs,
         paired_symbol_horizons,
+        paired_run_symbol_horizons,
     )
+
+
+def _development_gate_reasons(
+    *,
+    profile: str,
+    metrics: Round74AIOverlayMetrics,
+    baseline_trace: Round74ActionTrace,
+    paired_runs: Sequence[Mapping[str, object]],
+    paired_symbol_horizons: Sequence[Mapping[str, object]],
+    paired_run_symbol_horizons: Sequence[Mapping[str, object]],
+) -> tuple[str, ...]:
+    action_profile = round74_action_profile(profile)
+    reasons: list[str] = []
+    if metrics.runtime_success_rate < ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE:
+        reasons.append("runtime_success_rate_not_met")
+    if (
+        metrics.retained_trade_ratio
+        < ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO[action_profile.profile]
+    ):
+        reasons.append("retained_trade_ratio_not_met")
+    minimum_retained_trades = math.ceil(
+        action_profile.minimum_trades
+        * ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO[action_profile.profile]
+    )
+    if metrics.retained_trades < minimum_retained_trades:
+        reasons.append("minimum_retained_trades_not_met")
+    if metrics.distinct_retained_symbols != len(ROUND74_EVENT_SYMBOLS):
+        reasons.append("retained_asset_diversification_not_met")
+    if (
+        metrics.maximum_retained_symbol_share
+        > action_profile.maximum_symbol_trade_share
+    ):
+        reasons.append("retained_symbol_concentration_not_met")
+    if metrics.total_net_bps <= baseline_trace.metrics.total_net_bps:
+        reasons.append("positive_paired_after_cost_uplift_not_met")
+    if any(float(value["delta_net_bps"]) < -1e-12 for value in paired_runs):
+        reasons.append("paired_run_noninferiority_not_met")
+    if any(float(value["delta_net_bps"]) < -1e-12 for value in paired_symbol_horizons):
+        reasons.append("paired_symbol_horizon_noninferiority_not_met")
+    if any(
+        float(value["delta_net_bps"]) < -1e-12 for value in paired_run_symbol_horizons
+    ):
+        reasons.append("paired_run_symbol_horizon_noninferiority_not_met")
+    if metrics.maximum_drawdown_bps > baseline_trace.metrics.maximum_drawdown_bps:
+        reasons.append("maximum_drawdown_noninferiority_not_met")
+    return tuple(reasons)
 
 
 @dataclass(frozen=True)
@@ -1027,6 +1098,7 @@ class Round74AIUpliftDevelopmentReport:
     ai_scaled_maximum_adverse_excursion_bps: tuple[float, ...]
     paired_runs: tuple[Mapping[str, object], ...]
     paired_symbol_horizons: tuple[Mapping[str, object], ...]
+    paired_run_symbol_horizons: tuple[Mapping[str, object], ...]
     ai_metrics: Round74AIOverlayMetrics
     development_gate_passed: bool
     gate_reasons: tuple[str, ...]
@@ -1134,6 +1206,85 @@ class Round74AIUpliftDevelopmentReport:
                 )
             )
         )
+        paired_cell_keys: list[tuple[str, str, int]] = []
+        paired_cell_observations = 0
+        paired_cells_valid = True
+        for raw in self.paired_run_symbol_horizons:
+            if set(raw) != {
+                "run_id",
+                "symbol",
+                "horizon_seconds",
+                "paired_observations",
+                "baseline_net_bps",
+                "ai_net_bps",
+                "delta_net_bps",
+            }:
+                paired_cells_valid = False
+                continue
+            try:
+                run_id = str(raw["run_id"])
+                symbol = str(raw["symbol"])
+                horizon = int(raw["horizon_seconds"])
+                observations = int(raw["paired_observations"])
+                baseline_value = float(raw["baseline_net_bps"])
+                ai_value = float(raw["ai_net_bps"])
+                delta = float(raw["delta_net_bps"])
+            except (TypeError, ValueError, OverflowError):
+                paired_cells_valid = False
+                continue
+            paired_cell_keys.append((run_id, symbol, horizon))
+            paired_cell_observations += observations
+            if (
+                not isinstance(raw["run_id"], str)
+                or run_id not in self.baseline_trace.expected_run_ids
+                or not isinstance(raw["symbol"], str)
+                or symbol not in ROUND74_EVENT_SYMBOLS
+                or not isinstance(raw["horizon_seconds"], int)
+                or isinstance(raw["horizon_seconds"], bool)
+                or horizon not in (30, 300)
+                or not isinstance(raw["paired_observations"], int)
+                or isinstance(raw["paired_observations"], bool)
+                or observations <= 0
+                or not all(
+                    math.isfinite(value) for value in (baseline_value, ai_value, delta)
+                )
+                or not math.isclose(
+                    delta,
+                    ai_value - baseline_value,
+                    rel_tol=1e-12,
+                    abs_tol=1e-12,
+                )
+            ):
+                paired_cells_valid = False
+        expected_cell_keys = tuple(
+            (run_id, symbol, horizon)
+            for run_id in self.baseline_trace.expected_run_ids
+            for symbol in ROUND74_EVENT_SYMBOLS
+            for horizon in (30, 300)
+            if any(
+                observed_run == run_id
+                and observed_symbol == symbol
+                and observed_horizon == horizon
+                for observed_run, observed_symbol, observed_horizon in zip(
+                    self.baseline_trace.run_id,
+                    self.baseline_trace.symbol,
+                    self.baseline_trace.horizon_seconds,
+                    strict=True,
+                )
+            )
+        )
+        expected_reasons = (
+            _development_gate_reasons(
+                profile=self.profile,
+                metrics=self.ai_metrics,
+                baseline_trace=self.baseline_trace,
+                paired_runs=self.paired_runs,
+                paired_symbol_horizons=self.paired_symbol_horizons,
+                paired_run_symbol_horizons=self.paired_run_symbol_horizons,
+            )
+            if paired_valid and paired_groups_valid and paired_cells_valid
+            else ()
+        )
         if (
             self.schema_version != ROUND74_AI_UPLIFT_SCHEMA_VERSION
             or self.profile not in ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO
@@ -1171,11 +1322,32 @@ class Round74AIUpliftDevelopmentReport:
             or not paired_groups_valid
             or tuple(paired_group_keys) != expected_group_keys
             or paired_group_observations != self.baseline_trace.metrics.trades
+            or not paired_cells_valid
+            or tuple(paired_cell_keys) != expected_cell_keys
+            or paired_cell_observations != self.baseline_trace.metrics.trades
             or not np.isfinite(scaled).all()
             or not np.isfinite(scaled_mae).all()
             or np.any(scaled_mae < 0.0)
             or not math.isclose(
                 float(scaled.sum()),
+                self.ai_metrics.total_net_bps,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                sum(
+                    float(value["baseline_net_bps"])
+                    for value in self.paired_run_symbol_horizons
+                ),
+                self.baseline_trace.metrics.total_net_bps,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                sum(
+                    float(value["ai_net_bps"])
+                    for value in self.paired_run_symbol_horizons
+                ),
                 self.ai_metrics.total_net_bps,
                 rel_tol=1e-12,
                 abs_tol=1e-12,
@@ -1211,7 +1383,8 @@ class Round74AIUpliftDevelopmentReport:
             )
             or self.ai_metrics.baseline_trades != self.baseline_trace.metrics.trades
             or not isinstance(self.development_gate_passed, bool)
-            or self.development_gate_passed == bool(self.gate_reasons)
+            or self.gate_reasons != expected_reasons
+            or self.development_gate_passed != (not expected_reasons)
             or any(
                 not isinstance(value, bool)
                 for value in (
@@ -1263,6 +1436,9 @@ class Round74AIUpliftDevelopmentReport:
             "paired_runs": [dict(value) for value in self.paired_runs],
             "paired_symbol_horizons": [
                 dict(value) for value in self.paired_symbol_horizons
+            ],
+            "paired_run_symbol_horizons": [
+                dict(value) for value in self.paired_run_symbol_horizons
             ],
             "ai_metrics": self.ai_metrics.as_dict(),
             "development_gate_passed": self.development_gate_passed,
@@ -1343,6 +1519,7 @@ class Round74AIUpliftDevelopmentReport:
             "ai_scaled_maximum_adverse_excursion_bps",
             "paired_runs",
             "paired_symbol_horizons",
+            "paired_run_symbol_horizons",
             "gate_reasons",
         )
         if (
@@ -1387,6 +1564,9 @@ class Round74AIUpliftDevelopmentReport:
                 paired_runs=tuple(dict(item) for item in payload["paired_runs"]),
                 paired_symbol_horizons=tuple(
                     dict(item) for item in payload["paired_symbol_horizons"]
+                ),
+                paired_run_symbol_horizons=tuple(
+                    dict(item) for item in payload["paired_run_symbol_horizons"]
                 ),
                 ai_metrics=Round74AIOverlayMetrics.from_dict(ai_metrics),
                 development_gate_passed=payload["development_gate_passed"],
@@ -1777,38 +1957,23 @@ def evaluate_round74_ai_overlay_development(
             )
         ):
             raise ValueError("Round 74 AI paired action identity differs")
-    metrics, scaled, scaled_mae, paired_runs, paired_symbol_horizons = _scaled_metrics(
-        trace,
-        review_rows,
-        execution_rows,
-    )
+    (
+        metrics,
+        scaled,
+        scaled_mae,
+        paired_runs,
+        paired_symbol_horizons,
+        paired_run_symbol_horizons,
+    ) = _scaled_metrics(trace, review_rows, execution_rows)
     profile = round74_action_profile(action_selection.profile)
-    reasons: list[str] = []
-    if metrics.runtime_success_rate < ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE:
-        reasons.append("runtime_success_rate_not_met")
-    if (
-        metrics.retained_trade_ratio
-        < ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO[profile.profile]
-    ):
-        reasons.append("retained_trade_ratio_not_met")
-    minimum_retained_trades = math.ceil(
-        profile.minimum_trades
-        * ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO[profile.profile]
+    reasons = _development_gate_reasons(
+        profile=profile.profile,
+        metrics=metrics,
+        baseline_trace=trace,
+        paired_runs=paired_runs,
+        paired_symbol_horizons=paired_symbol_horizons,
+        paired_run_symbol_horizons=paired_run_symbol_horizons,
     )
-    if metrics.retained_trades < minimum_retained_trades:
-        reasons.append("minimum_retained_trades_not_met")
-    if metrics.distinct_retained_symbols != len(ROUND74_EVENT_SYMBOLS):
-        reasons.append("retained_asset_diversification_not_met")
-    if metrics.maximum_retained_symbol_share > profile.maximum_symbol_trade_share:
-        reasons.append("retained_symbol_concentration_not_met")
-    if metrics.total_net_bps <= trace.metrics.total_net_bps:
-        reasons.append("positive_paired_after_cost_uplift_not_met")
-    if any(float(value["delta_net_bps"]) < -1e-12 for value in paired_runs):
-        reasons.append("paired_run_noninferiority_not_met")
-    if any(float(value["delta_net_bps"]) < -1e-12 for value in paired_symbol_horizons):
-        reasons.append("paired_symbol_horizon_noninferiority_not_met")
-    if metrics.maximum_drawdown_bps > trace.metrics.maximum_drawdown_bps:
-        reasons.append("maximum_drawdown_noninferiority_not_met")
     result = Round74AIUpliftDevelopmentReport(
         profile=profile.profile,
         action_selection_sha256=action_selection.selection_sha256,
@@ -1826,9 +1991,10 @@ def evaluate_round74_ai_overlay_development(
         ai_scaled_maximum_adverse_excursion_bps=scaled_mae,
         paired_runs=paired_runs,
         paired_symbol_horizons=paired_symbol_horizons,
+        paired_run_symbol_horizons=paired_run_symbol_horizons,
         ai_metrics=metrics,
         development_gate_passed=not reasons,
-        gate_reasons=tuple(reasons),
+        gate_reasons=reasons,
     )
     result.validate()
     return result

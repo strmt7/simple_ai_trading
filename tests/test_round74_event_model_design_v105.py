@@ -5,21 +5,6 @@ import json
 from pathlib import Path
 import subprocess  # nosec B404
 
-from simple_ai_trading.impact_absorption_ai_uplift import (
-    ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION,
-    ROUND74_AI_UPLIFT_SCHEMA_VERSION,
-)
-from simple_ai_trading.round74_ai_qualification_operator import (
-    ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION,
-)
-from simple_ai_trading.round74_segmented_development_operator import (
-    ROUND74_SEGMENTED_QUALIFIED_DEVELOPMENT_SCHEMA_VERSION,
-)
-from simple_ai_trading.round74_segmented_development_runtime import (
-    ROUND74_SEGMENTED_DEVELOPMENT_RUN_SCHEMA_VERSION,
-)
-
-
 ROOT = Path(__file__).resolve().parents[1]
 DESIGN = (
     ROOT
@@ -98,14 +83,14 @@ def test_round74_v105_rejects_stale_queue_work_without_financial_claims() -> Non
     assert delta["candidate_models_are_treated_as_concurrent_ensemble"] is False
     assert schemas == {
         "ai_review_panel": "round-074-ai-review-panel-v14",
-        "ai_uplift_development": ROUND74_AI_UPLIFT_SCHEMA_VERSION,
-        "ai_pretest_qualification": (ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION),
-        "ai_qualification_operator": (ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION),
+        "ai_uplift_development": "round-074-ai-uplift-development-v13",
+        "ai_pretest_qualification": "round-074-ai-pretest-qualification-v3",
+        "ai_qualification_operator": "round-074-ai-qualification-operator-v3",
         "sealed_evaluation": "round-074-sealed-evaluation-v18",
         "segmented_qualified_development": (
-            ROUND74_SEGMENTED_QUALIFIED_DEVELOPMENT_SCHEMA_VERSION
+            "round-074-segmented-qualified-development-v3"
         ),
-        "segmented_development_run": (ROUND74_SEGMENTED_DEVELOPMENT_RUN_SCHEMA_VERSION),
+        "segmented_development_run": "round-074-segmented-development-run-v3",
     }
     assert verification["focused_tests_passed"] == 158
     assert verification["representative_ai_reviews_executed"] is False

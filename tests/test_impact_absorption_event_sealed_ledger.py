@@ -1247,6 +1247,10 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert (
         sum(value.paired_observations for value in overlay.paired_symbol_horizons) == 24
     )
+    assert (
+        sum(value.paired_observations for value in overlay.paired_run_symbol_horizons)
+        == 24
+    )
     assert overlay.strategy_metrics.total_net_bps == pytest.approx(23.0 / 3.0)
     assert (
         "positive_paired_delta_familywise_confidence_lower_bound_not_met"
@@ -1497,6 +1501,7 @@ def test_sealed_ai_overlay_rejects_aggregate_gain_that_harms_subgroups() -> None
     assert not overlay.uplift_gate_passed
     assert "paired_run_noninferiority_not_met" in overlay.gate_reasons
     assert "paired_symbol_horizon_noninferiority_not_met" in overlay.gate_reasons
+    assert "paired_run_symbol_horizon_noninferiority_not_met" in overlay.gate_reasons
     assert sum(value.delta_net_bps < 0.0 for value in overlay.paired_runs) == 8
     sol = next(
         value for value in overlay.paired_symbol_horizons if value.symbol == "SOLUSDT"
@@ -1516,6 +1521,108 @@ def test_sealed_ai_overlay_rejects_aggregate_gain_that_harms_subgroups() -> None
             overlay,
             paired_runs=(corrupted, *overlay.paired_runs[1:]),
         ).validate()
+
+
+def test_sealed_ai_overlay_rejects_harm_hidden_by_both_aggregate_panels() -> None:
+    expanded_runs = tuple(
+        run_id for run_id in TEST_RUNS for _symbol in ROUND74_EVENT_SYMBOLS
+    )
+    batch = _test_batch(runs=expanded_runs)
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    candidates = derive_round74_action_candidates(
+        _model_output(batch.rows),
+        build_round74_action_inference_context(batch),
+        calibration,
+        pretest_policy_sha256=selection.pretest_policy_sha256,
+        profile=selection.profile,
+    )
+    trace = sealed_subject._simulate_round74_action_trace_batches(
+        (batch,),
+        (candidates,),
+        threshold_score=float(selection.selected_threshold_score or 0.0),
+        expected_run_ids=TEST_RUNS,
+        required_role="test",
+        expected_run_count=24,
+    )
+    manifest = "c" * 64
+    reviews = _reviews(
+        batch,
+        calibration,
+        selection,
+        manifest=manifest,
+    )
+    executions = []
+    for index, execution in enumerate(
+        _execution_replays(
+            reviews,
+            partition_sha256=batch.partition_sha256,
+        )
+    ):
+        position_net_bps = 0.3 if index == 0 else 3.0
+        updated = replace(
+            execution,
+            source_capture_report_sha256="d" * 64,
+            position_net_payoff_bps=position_net_bps,
+            capital_scaled_net_payoff_bps=position_net_bps,
+        )
+        updated.validate()
+        executions.append(updated)
+
+    overlay = sealed_subject._ai_overlay(
+        trace,
+        reviews,
+        tuple(executions),
+        manifest=manifest,
+        expected_partition_sha256=batch.partition_sha256,
+        profile=selection.profile,
+        seed=sealed_subject.ROUND74_SEALED_BOOTSTRAP_SEED,
+    )
+
+    assert overlay.strategy_metrics.financial_gate_passed
+    assert overlay.strategy_metrics.total_net_bps > trace.metrics.total_net_bps
+    assert all(value.delta_net_bps >= 0.0 for value in overlay.paired_runs)
+    assert all(value.delta_net_bps >= 0.0 for value in overlay.paired_symbol_horizons)
+    harmed = [
+        value
+        for value in overlay.paired_run_symbol_horizons
+        if value.delta_net_bps < 0.0
+    ]
+    assert len(harmed) == 1
+    assert (harmed[0].run_id, harmed[0].symbol, harmed[0].horizon_seconds) == (
+        TEST_RUNS[0],
+        "BTCUSDT",
+        30,
+    )
+    assert not overlay.uplift_gate_passed
+    assert "paired_run_noninferiority_not_met" not in overlay.gate_reasons
+    assert "paired_symbol_horizon_noninferiority_not_met" not in overlay.gate_reasons
+    assert "paired_run_symbol_horizon_noninferiority_not_met" in overlay.gate_reasons
+    corrupted = replace(
+        overlay.paired_run_symbol_horizons[0],
+        paired_observations=2,
+    )
+    with pytest.raises(ValueError, match="sealed AI overlay differs"):
+        replace(
+            overlay,
+            paired_run_symbol_horizons=(
+                corrupted,
+                *overlay.paired_run_symbol_horizons[1:],
+            ),
+        ).validate()
+    with pytest.raises(ValueError, match="sealed AI baseline pairing differs"):
+        replace(
+            overlay,
+            uplift_gate_passed=True,
+            gate_reasons=(),
+        ).validate_against_baseline(
+            trace,
+            profile=selection.profile,
+        )
 
 
 def test_sealed_evaluator_rejects_incomplete_ai_family_before_reservation(
