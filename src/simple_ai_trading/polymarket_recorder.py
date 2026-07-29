@@ -161,7 +161,7 @@ def _round14_binance_spot_websocket(assets: Sequence[str]) -> str:
         for asset in assets
         for stream in (
             f"{asset.lower()}usdt@trade",
-            f"{asset.lower()}usdt@depth@100ms",
+            f"{asset.lower()}usdt@ticker",
         )
     ]
     return BINANCE_SPOT_STREAM_BASE + "/".join(streams)
@@ -172,10 +172,8 @@ def _round14_binance_futures_websocket(assets: Sequence[str]) -> str:
         stream
         for asset in assets
         for stream in (
-            f"{asset.lower()}usdt@aggTrade",
-            f"{asset.lower()}usdt@bookTicker",
-            f"{asset.lower()}usdt@depth@100ms",
-            f"{asset.lower()}usdt@markPrice@1s",
+            f"{asset.lower()}usdt@trade",
+            f"{asset.lower()}usdt@depth5@100ms",
         )
     ]
     return BINANCE_FUTURES_STREAM_BASE + "/".join(streams)
