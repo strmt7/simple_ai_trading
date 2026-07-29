@@ -5,9 +5,6 @@ import json
 from pathlib import Path
 import subprocess  # nosec B404
 
-from simple_ai_trading.impact_absorption_ai_review_preparation import (
-    ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION,
     ROUND74_AI_UPLIFT_SCHEMA_VERSION,
@@ -103,7 +100,7 @@ def test_round74_v105_rejects_stale_queue_work_without_financial_claims() -> Non
     assert delta["candidate_models_are_independent_overlay_candidates"] is True
     assert delta["candidate_models_are_treated_as_concurrent_ensemble"] is False
     assert schemas == {
-        "ai_review_panel": ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
+        "ai_review_panel": "round-074-ai-review-panel-v14",
         "ai_uplift_development": ROUND74_AI_UPLIFT_SCHEMA_VERSION,
         "ai_pretest_qualification": (ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION),
         "ai_qualification_operator": (ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION),

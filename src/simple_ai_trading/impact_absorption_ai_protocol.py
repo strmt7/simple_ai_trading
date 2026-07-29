@@ -28,8 +28,8 @@ from .impact_absorption_event_scaling import ROUND74_EVENT_BINARY_FEATURE_COUNT
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
 ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v5"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
-ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v7"
-ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION = "round-074-ai-system-prompt-v1"
+ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v8"
+ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION = "round-074-ai-system-prompt-v2"
 ROUND74_AI_TEMPORAL_BLOCK_COUNT = 4
 ROUND74_AI_TEMPORAL_BLOCK_EVENTS = 16
 ROUND74_AI_TEMPORAL_FEATURE_NAMES = (
@@ -581,6 +581,41 @@ class Round74AIReviewRequest:
             ],
             "payoff_quantile_levels": list(ROUND74_EVENT_PAYOFF_QUANTILES),
             "forecast_value_units": "basis_points",
+            "forecast_contract": {
+                "payoff_quantity": "capital_scaled_net_payoff_bps",
+                "payoff_execution_components": [
+                    "latency_scenario_applied_to_entry_and_exit",
+                    "executable_l2_book_walk_at_entry_and_exit",
+                    "round_trip_taker_commission",
+                    "symbol_specific_round_trip_residual_slippage",
+                ],
+                "capital_scale": (
+                    "entry_quote_notional_divided_by_reference_quote_notional"
+                ),
+                "costs_already_deducted": True,
+                "costs_must_not_be_deducted_again": True,
+                "maximum_adverse_excursion_quantity": (
+                    "capital_scaled_maximum_adverse_excursion_bps"
+                ),
+                "maximum_adverse_excursion_path_basis": (
+                    "minimum_net_payoff_after_executable_entry"
+                ),
+            },
+            "probability_contract": {
+                "positive_payoff_probability": (
+                    "calibrated_probability_capital_scaled_net_payoff_is_positive"
+                ),
+                "adverse_selection_probability": (
+                    "calibrated_probability_latency_adjusted_midpoint_payoff_is_negative"
+                ),
+                "regime_unpredictability_probability": (
+                    "calibrated_expected_path_unpredictability_score_not_binary_event_probability"
+                ),
+                "regime_unpredictability_score_bounds": {
+                    "zero": "directional_path",
+                    "one": "path_variation_with_little_net_directional_displacement",
+                },
+            },
             "payoff_quantiles_bps": [
                 _rounded(value, 6) for value in self.payoff_quantiles_bps
             ],
@@ -719,8 +754,23 @@ def build_round74_ai_review_prompt(
         "dimensionless training-scaler normalized statistics, even when a "
         "feature name describes an underlying basis-point or quantity measure. "
         "Only forecast and adverse-excursion arrays are in basis points. "
+        "Payoff quantiles are calibrated forecasts of capital-scaled net "
+        "payoff, not gross return. The target already incorporates the "
+        "symbol-specific latency scenario, executable L2 entry and exit book "
+        "walks, round-trip taker commission, and symbol-specific round-trip "
+        "residual slippage, then scales position basis points by entry quote "
+        "notional divided by reference quote notional. Never subtract those "
+        "costs again. Adverse-excursion quantiles are calibrated forecasts of "
+        "capital-scaled maximum adverse excursion from the executable entry "
+        "on the same net-payoff path. regime_unpredictability_probability is "
+        "a calibrated expected path-unpredictability score from zero "
+        "(directional) to one (variation with little net directional "
+        "displacement), not the probability of a named binary event. "
         "Recent causal blocks are ordered oldest to newest and contain no "
-        "future observations. "
+        "future observations. Never invent a missing premise or fill one from "
+        "background knowledge. If the supplied numeric packet cannot justify "
+        "a risk determination without an unstated premise, abstain with "
+        "forecast_uncertainty or model_inconsistency. "
         "Assess only the "
         "causal numeric packet. You may preserve, reduce, veto, or abstain. "
         "Never infer an identity or date, choose a side, increase size, set "
