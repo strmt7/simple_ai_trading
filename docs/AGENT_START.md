@@ -247,17 +247,14 @@ extends the established parser with independently registered commands.
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.
-- Polymarket Round 13 is frozen but has not started. It is a one-use prospective
-  24-hour confirmation of the unchanged Round 11 calibration, with label-free
-  treatment/control decisions, full displayed-depth FOK simulation, explicit
-  worst-price limits, seven execution stresses, and conjunctive activity,
-  uncertainty, drawdown, and exposure gates. Its current V2 FOK BUY model first
-  requires the live CLOB protocol version, then uses exact quote cents and walks
-  share-denominated asks. The amount and signed shares both satisfy the recorded
-  numeric minimum because official public material does not specify that field's
-  BUY unit; signed-minimum, decision-book-modeled, and post-latency-modeled
-  quantities remain separate evidence. Model selection and scored utility use
-  only the signed minimum, never unobservable price-improvement shares.
+- Polymarket Round 13 failed before outcome access. Its one-use prospective
+  capture stopped after `1921.322` of the required `86400` seconds with
+  `1281245` persisted source messages and `4` stream gaps. The terminal
+  integrity audit was incomplete, normalized event materialization never
+  started, and no labels, model scores, or outcome endpoints were opened. It is
+  neither model nor performance evidence and can never acquire paper or live
+  authority. Any successor must use a new preregistered contract and untouched
+  capture; never resume, pool, or reinterpret the failed Round 13 prefix.
   Round 12 is invalidated before
   outcome access and is neither model nor performance evidence. Round 11 remains
   the latest scored result and is rejected. It reused the real
