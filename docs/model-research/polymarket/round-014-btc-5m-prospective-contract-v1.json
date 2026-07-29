@@ -1,0 +1,369 @@
+{
+  "schema_version": "polymarket-round14-btc-5m-prospective-contract-v1",
+  "round": 14,
+  "status": "preregistered_not_started",
+  "scope": {
+    "venue": "polymarket",
+    "protocol_version": 2,
+    "asset": "BTC",
+    "market_variant": "fiveminute",
+    "environment": "research",
+    "binance_boundary": "Public BTCUSDT spot and USD-M futures observations are optional exogenous features only. No Binance credentials, orders, balances, positions, capital, PnL, risk state, or execution authority may enter this program.",
+    "independence": "The Polymarket recorder, model, ledger, wallet, risk limits, execution, settlement, pause, and stop lifecycle are independent from every Binance trading workflow."
+  },
+  "predecessor": {
+    "round13_status": "failed_before_outcome_access",
+    "reuse_allowed": false,
+    "pooling_allowed": false,
+    "reason": "Round 13 stopped before its required 86400-second capture, recorded stream gaps, and never completed terminal integrity audit or opened outcomes.",
+    "round11_status": "rejected",
+    "round11_reason": "Its point estimate was positive but drawdown and lower bootstrap utility failed, and most apparent uplift came from market-prior recalibration."
+  },
+  "hypotheses": {
+    "endpoint": "A causal model combining the exact Chainlink opening displacement, time remaining, realized volatility, Polymarket prior, and CLOB state improves calibrated BTC 5-minute endpoint probabilities over both the raw market prior and a target-only structural endpoint model.",
+    "price_discovery": "Timestamp-valid Binance BTCUSDT spot and USD-M futures state may improve endpoint or executable action value after controlling for Polymarket and Chainlink state; it is retained only if its untouched-test contribution is positive after costs and uncertainty.",
+    "dynamic_execution": "A policy trained on executable open, hold, owned-lot close, and complement-lock actions can outperform forced hold-to-resolution without increasing tail loss.",
+    "ai": "A local multi-billion-parameter finance-capable model may veto or reduce risk during anomalous regimes, but is retained only if same-decision matched evaluation improves after-cost utility and proper scores without worsening drawdown or latency stress.",
+    "falsification": "Any source-integrity, chronology, identity, leakage, predictive, calibration, action-count, cost, drawdown, latency, depth, ownership, lifecycle, or uncertainty gate failure rejects the affected candidate. No threshold may be weakened after test access."
+  },
+  "resolution_target": {
+    "rule": "Up wins only when the exact Chainlink BTC/USD closing value is greater than or equal to the exact opening value for the same five-minute event; otherwise Down wins.",
+    "primary_endpoint": "https://polymarket.com/api/crypto/crypto-price",
+    "primary_parameters": [
+      "symbol=BTC",
+      "variant=fiveminute",
+      "eventStartTime=exact ISO-8601 event start",
+      "endDate=exact ISO-8601 event end"
+    ],
+    "primary_response_fields": [
+      "openPrice",
+      "closePrice",
+      "timestamp",
+      "completed",
+      "incomplete",
+      "cached"
+    ],
+    "endpoint_status": "first_party_frontend_endpoint_not_publicly_documented",
+    "endpoint_drift_policy": "Strict schema, identity, interval, completion, finite-number, size, and duplicate-key validation. Any drift or incomplete response blocks labeling and promotion.",
+    "independent_reconstruction": "Reconstruct opening and closing values from exact-precision Polymarket RTDS Chainlink btc/usd observations with source and receipt times. Endpoint and reconstruction must agree under the frozen boundary rule or the market is excluded and investigated.",
+    "future_data_rule": "Closing values, resolution, future books, fills, PnL, and terminal status are inaccessible to feature generation, fitting-row selection, policy selection, and inference."
+  },
+  "prospective_capture": {
+    "duration_seconds": 2592000,
+    "calendar_days": 30,
+    "decision_cadence_ms": 250,
+    "capture_unit_minutes": 30,
+    "event_duration_seconds": 300,
+    "minimum_complete_markets": 7000,
+    "minimum_untouched_test_markets": 1800,
+    "minimum_test_calendar_days": 7,
+    "sources": [
+      "Polymarket Gamma BTC 5-minute market discovery",
+      "Polymarket CLOB protocol and market metadata",
+      "Polymarket CLOB market WebSocket exact L2 events",
+      "Polymarket CLOB REST book snapshots for independent reconciliation",
+      "Polymarket RTDS Chainlink btc/usd exact-precision observations",
+      "Polymarket first-party crypto-price endpoint after claim opening",
+      "Binance public BTCUSDT spot trade and event-timed depth streams",
+      "Binance public BTCUSDT USD-M futures aggregate-trade, bookTicker, mark-price, and event-timed depth streams",
+      "Polygon CTF Exchange V2 OrderFilled logs only when aggressor direction or executed flow is used"
+    ],
+    "storage": "One dedicated DuckDB evidence database containing bounded zstd-compressed immutable raw frames, source metadata, hash chains, segment journals, exact replay tables, and compact derived rows. No duplicate normalized live projection is persisted.",
+    "segment_policy": "Every capture unit is an independent transport epoch with its own terminal journal and exact-wire audit. Features, rolling state, labels, and actions never cross a gap, reconnect, failed unit, or role boundary.",
+    "source_time_policy": "Use source timestamps when the source supplies them and retain monotonic plus UTC receipt clocks. Binance spot bookTicker has no source event time and is excluded from causal latency features unless joined to an event-timed source without inventing a timestamp.",
+    "admission": "A market is admissible only when identity, exact opening, complete target tail, CLOB sequence, source freshness, fee, tick, minimum size, token/outcome mapping, and independent replay all pass. Exclusion never becomes a zero-return action.",
+    "resource_policy": "Bound queues, frame size, memory, database growth, and writer shutdown. Emit durable progress at least every 30 seconds. No capture process may block risk or execution loops."
+  },
+  "partition": {
+    "method": "contiguous_event_start_time",
+    "train_days": 14,
+    "train_tune_embargo_seconds": 3600,
+    "tune_days": 7,
+    "tune_test_embargo_seconds": 3600,
+    "test_days_minimum": 7,
+    "test_access": "one_use_after_immutable_pretest_manifest",
+    "purge": "Purge every row whose maximum one-hour causal lookback or action horizon touches another role.",
+    "insufficient_power": "Extend prospective collection under a new predeclared extension before test access; never lower market, class, action, or calendar coverage gates."
+  },
+  "causal_features": {
+    "target_state": [
+      "exact Chainlink current/open log displacement",
+      "Chainlink returns over 0.25, 1, 5, 15, 30, 60, and 120 seconds",
+      "event-time realized variance and bipower variation",
+      "jump score and observation staleness",
+      "time remaining and time-of-event interactions"
+    ],
+    "polymarket_state": [
+      "raw Up and Down executable market priors",
+      "top-20 L2 spread, depth, imbalance, microprice, slope, convexity, and gaps",
+      "causal add, cancel, and depletion flow by level and side",
+      "cross-outcome complement parity and executable locked-payout residual",
+      "source age, update intensity, tick size, minimum size, fee curve, and order delay"
+    ],
+    "optional_binance_state": [
+      "spot and futures event-timed microprice and spread",
+      "spot and futures returns and realized variance on the same causal horizons",
+      "spot-futures basis, lead-lag residuals, and cross-feed time skew",
+      "aggregate-trade signed flow using exchange-provided maker flag",
+      "mark-price divergence and depth imbalance"
+    ],
+    "forbidden": [
+      "future Chainlink values",
+      "future Polymarket books or trades",
+      "resolution or closePrice",
+      "future Binance events",
+      "inferred public-feed Polymarket aggressor direction",
+      "account, wallet, order, position, capital, or PnL state from Binance",
+      "post-test feature, model, threshold, or policy selection"
+    ]
+  },
+  "model_candidates": {
+    "controls": [
+      "raw_executable_polymarket_prior",
+      "chainlink_structural_endpoint_probability",
+      "polymarket_prior_monotone_calibration"
+    ],
+    "endpoint_models": [
+      "elastic_net_logistic_residual",
+      "shallow_monotone_lightgbm_residual",
+      "causal_multiscale_tcn_endpoint"
+    ],
+    "action_models": [
+      "distributional_executable_action_value_lightgbm",
+      "causal_multitask_tcn_action_value"
+    ],
+    "candidate_layers": [
+      "chainlink_only",
+      "chainlink_plus_polymarket",
+      "chainlink_plus_polymarket_plus_binance_spot",
+      "chainlink_plus_polymarket_plus_binance_spot_and_futures"
+    ],
+    "calibration": "Fit isotonic or logistic calibration on tune only; select one method by tune log loss before test access.",
+    "complexity": "Use shallow bounded models, target-blind scaling, explicit regularization, early stopping on tune only, monotonic constraints where financially justified, and no unrestricted hyperparameter search.",
+    "backend": "Use the repository compute resolver. LightGBM may use an explicitly validated OpenCL GPU; tensor models may use CUDA, ROCm, XPU, MPS, or DirectML. CPU is a supported fallback. Backend changes do not change data, split, targets, policy, or gates."
+  },
+  "ai_review": {
+    "default_enabled_in_product": true,
+    "research_authority": "veto_or_reduce_only",
+    "direct_entry_authority": false,
+    "candidate_models": [
+      "Fino1-8B",
+      "Qwen3-8B"
+    ],
+    "cadence_seconds": 5,
+    "inputs": "A bounded, label-free, hash-bound numeric regime summary with no outcome, future, account, order, wallet, or PnL fields.",
+    "outputs": [
+      "preserve",
+      "reduce",
+      "abstain"
+    ],
+    "residency": "When GPU is required, exact model digest and post-inference provider telemetry must prove at least 99% reported model bytes in VRAM. CPU mode disables AI.",
+    "latency": "Queue and inference delay are included in executable replay. Late, malformed, uncertain, unavailable, or unverified responses abstain.",
+    "admission": "Retain AI only if at least 30 non-tied same-decision matched outcomes show positive paired lower-confidence after-cost uplift over the selected non-AI policy, no proper-score degradation, no drawdown increase, and every deployment latency stress passes."
+  },
+  "actions": {
+    "states": [
+      "flat",
+      "long_up_owned",
+      "long_down_owned",
+      "complement_locked_owned",
+      "unknown_blocked"
+    ],
+    "choices": [
+      "abstain",
+      "buy_up_fok",
+      "buy_down_fok",
+      "hold_owned",
+      "sell_owned_fok",
+      "buy_complement_fok_when_worst_case_payout_is_locked_after_all_costs"
+    ],
+    "entry": "Walk only the observed delayed ask ladder. Quantity uses the profile risk budget, six-decimal share quantum, venue minimum, available displayed capacity, and fee-inclusive worst loss.",
+    "exit": "Sell only confirmed, unreserved, parent-bound bot-owned lots against the observed delayed bid ladder. Unknown state blocks new exposure but never blocks deterministic recovery or a proven safe close.",
+    "hedge": "A complement purchase is allowed only when the exact combined owned shares guarantee a nonnegative worst-case payout after both entry costs, all fees, quantity mismatch, and latency/depth stress. It may reduce risk but never justify larger initial exposure.",
+    "position_rule": "At most one directional parent lot and one complement hedge per event. No averaging down, martingale, leverage, borrowed capital, cross-event collateral assumption, or forced activity.",
+    "decision_frequency": "Evaluate every 250 ms while sources are fresh, but trade only when a frozen after-cost lower-confidence action edge and every risk gate pass."
+  },
+  "risk_profiles": {
+    "default": "conservative",
+    "reinvestment_default": false,
+    "conservative": {
+      "maximum_event_loss_capital_fraction": "0.001",
+      "maximum_daily_loss_capital_fraction": "0.005",
+      "maximum_drawdown_capital_fraction": "0.02",
+      "uncertainty_action": "abstain",
+      "cooldown_minutes_after_loss_cluster": 30
+    },
+    "regular": {
+      "maximum_event_loss_capital_fraction": "0.002",
+      "maximum_daily_loss_capital_fraction": "0.01",
+      "maximum_drawdown_capital_fraction": "0.04",
+      "uncertainty_action": "reduce_or_abstain",
+      "cooldown_minutes_after_loss_cluster": 15
+    },
+    "aggressive": {
+      "maximum_event_loss_capital_fraction": "0.0035",
+      "maximum_daily_loss_capital_fraction": "0.015",
+      "maximum_drawdown_capital_fraction": "0.06",
+      "uncertainty_action": "reduce_or_abstain",
+      "cooldown_minutes_after_loss_cluster": 5
+    },
+    "global": "No profile may bypass source, ownership, reconciliation, unknown-state, fee, depth, latency, daily-loss, drawdown, geoblock, funding, or promotion gates. A profile changes ceilings only and cannot manufacture edge."
+  },
+  "execution_scenarios": {
+    "primary": {
+      "submission_latency_ms": 500,
+      "adverse_ticks": 0,
+      "displayed_depth_fraction": "1",
+      "fee_multiplier": "1"
+    },
+    "mandatory_stress": [
+      {
+        "name": "latency_250ms",
+        "submission_latency_ms": 250,
+        "adverse_ticks": 0,
+        "displayed_depth_fraction": "1",
+        "fee_multiplier": "1"
+      },
+      {
+        "name": "latency_750ms",
+        "submission_latency_ms": 750,
+        "adverse_ticks": 0,
+        "displayed_depth_fraction": "1",
+        "fee_multiplier": "1"
+      },
+      {
+        "name": "latency_1000ms",
+        "submission_latency_ms": 1000,
+        "adverse_ticks": 0,
+        "displayed_depth_fraction": "1",
+        "fee_multiplier": "1"
+      },
+      {
+        "name": "half_depth",
+        "submission_latency_ms": 500,
+        "adverse_ticks": 0,
+        "displayed_depth_fraction": "0.5",
+        "fee_multiplier": "1"
+      },
+      {
+        "name": "quarter_depth",
+        "submission_latency_ms": 500,
+        "adverse_ticks": 0,
+        "displayed_depth_fraction": "0.25",
+        "fee_multiplier": "1"
+      },
+      {
+        "name": "one_tick_adverse",
+        "submission_latency_ms": 500,
+        "adverse_ticks": 1,
+        "displayed_depth_fraction": "1",
+        "fee_multiplier": "1"
+      },
+      {
+        "name": "combined",
+        "submission_latency_ms": 1000,
+        "adverse_ticks": 2,
+        "displayed_depth_fraction": "0.5",
+        "fee_multiplier": "2"
+      }
+    ],
+    "fill_rule": "Every entry and exit rewalks the exact delayed displayed L2 book. No midpoint, last-price, hidden-liquidity, queue-priority, price-improvement, or stale-book credit.",
+    "unknown_rule": "Any post-submit state that cannot be proven rejected, cancelled, or filled is charged maximum frozen loss and blocks new exposure."
+  },
+  "evaluation": {
+    "predictive": [
+      "log loss",
+      "Brier score",
+      "calibration intercept and slope",
+      "reliability curve",
+      "directional accuracy",
+      "balanced accuracy",
+      "Matthews correlation coefficient",
+      "precision and recall by outcome",
+      "paired differences against every control"
+    ],
+    "financial": [
+      "net quote PnL after all modeled fees",
+      "return on fixed initial capital",
+      "maximum drawdown on fixed initial capital",
+      "profit factor",
+      "expected shortfall at 95% and 99%",
+      "median and mean action utility",
+      "win rate",
+      "turnover",
+      "time in market",
+      "fill, no-fill, unknown, open, close, hedge, and abstain counts",
+      "per-day and time-remaining performance"
+    ],
+    "uncertainty": "Use event-group moving-block bootstrap with at least 10000 deterministic samples and report 95% confidence intervals. Daily loss and drawdown are pathwise, not inferred from trade summaries.",
+    "minimum_power": {
+      "resolved_test_markets": 1800,
+      "non_tied_endpoint_predictions": 300,
+      "executed_test_actions": 300,
+      "executed_test_calendar_days": 7,
+      "both_outcomes": true
+    },
+    "conjunctive_promotion_gates": [
+      "all source, identity, chronology, causal replay, partition, and one-use test audits pass",
+      "endpoint proper scores strictly beat raw market prior and structural control with positive paired lower-confidence uplift",
+      "balanced accuracy lower confidence exceeds 0.5 and is not worse than the strongest control",
+      "selected policy has positive net PnL, mean action utility, median daily PnL, and lower-confidence mean event utility after costs",
+      "selected policy strictly beats raw-prior and structural policies after costs",
+      "profit factor lower confidence exceeds 1",
+      "maximum drawdown and daily loss remain within the selected profile limits",
+      "zero selected unknown states and zero ownership or reconciliation violations",
+      "minimum statistical power is met without forced trades",
+      "primary and every mandatory deployment stress remain positive",
+      "authenticated exact-order lifecycle, owned-balance reconciliation, stop, settlement, and redemption gates pass separately"
+    ],
+    "reporting": "Publish canonical JSON and CSV authority first, then regenerate only the latest iteration charts from those values. Preserve one compact cross-iteration progress table and never infer values from images."
+  },
+  "promotion": {
+    "paper_authority": false,
+    "live_authority": false,
+    "profitability_claim": false,
+    "ai_edge_claim": false,
+    "automatic_promotion": false,
+    "required_schema": "polymarket-live-promotion-v1",
+    "policy": "A separate short-lived, hash-bound promotion artifact may be created only after all evaluation and authenticated lifecycle gates pass. This contract can never grant authority."
+  },
+  "research_basis": [
+    {
+      "source": "https://docs.polymarket.com/market-data/websocket/rtds",
+      "use": "Polymarket documents separate real-time Binance and Chainlink crypto feeds with source timestamps."
+    },
+    {
+      "source": "https://docs.polymarket.com/market-data/websocket/market-channel",
+      "use": "The public market channel supplies L2 books, price changes, tick changes, and market lifecycle events."
+    },
+    {
+      "source": "https://docs.polymarket.com/api-reference/markets/get-clob-market-info",
+      "use": "Current per-market token mappings, minimum size, tick, order-delay, and fee-curve parameters are queried rather than assumed."
+    },
+    {
+      "source": "https://docs.polymarket.com/trading/fees",
+      "use": "Crypto taker fees are evaluated at match price using the current per-market curve."
+    },
+    {
+      "source": "https://docs.polymarket.com/trading/orders/create",
+      "use": "FOK is all-or-nothing and its price is a worst-price limit; BUY amount and SELL shares use different semantics."
+    },
+    {
+      "source": "https://developers.binance.com/en/docs/binance-spot-api-docs/web-socket-streams",
+      "use": "Event-timed trade and depth streams are distinguished from spot bookTicker, which lacks an event timestamp."
+    },
+    {
+      "source": "https://arxiv.org/abs/2604.24366",
+      "use": "Public Polymarket feed trade-direction inference is unreliable; on-chain OrderFilled is required when aggressor direction is used, and depth decays near resolution."
+    },
+    {
+      "source": "https://arxiv.org/abs/2506.08718",
+      "use": "Centralized venues and futures may lead price discovery, but high-volatility lead-lag behavior is mixed, so Binance contribution must be tested rather than assumed."
+    }
+  ],
+  "freshness": {
+    "researched_at_utc": "2026-07-29T00:00:00Z",
+    "runtime_revalidation": "Protocol version, geoblock, market identity, token/outcome mapping, tick, minimum size, order delay, fee details, endpoint schema, clock skew, rate limits, and source freshness are revalidated at runtime."
+  },
+  "contract_sha256": "6de688db746004359defbc90a3aa7e9616b6122d3a9a0ee0a504efc56455ad55"
+}

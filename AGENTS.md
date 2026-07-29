@@ -1,25 +1,21 @@
 # AGENTS
 
-Read `docs/AGENT_START.md` first. It is the compact task router and source of
-current trading-research truth. Hash-bound evidence and executable contracts
-override prose if they disagree.
+Read `docs/AGENT_START.md` first. Hash-bound evidence and executable contracts
+override prose.
 
 ## Hard Rules
 
-- Work in this session only. Never spawn, delegate to, or use another agent or
-  subagent for exploration, coding, review, or testing.
+- Work in this session only; never use another agent or subagent.
 - AI Git history must use `AI agent <>` for author and committer. Commit with
   `git -c user.name='AI agent' -c user.email= commit ...`. Never use a human,
-  host, placeholder, vendor, model, tool, CI, previous-commit, global-config,
-  or noreply identity. Read `docs/AI_COMMIT_IDENTITY.md` before creating or
-  auditing history.
+  host, vendor, tool, CI, global-config, or noreply identity. Read
+  `docs/AI_COMMIT_IDENTITY.md` before creating or auditing history.
 - Binance scope is BTC, ETH, and SOL on testnet/Demo or paper only.
   Polymarket research covers BTC/ETH/SOL; its independent live-capable boundary
-  is BTC-only and disabled by default. No model or release has live-money
-  authority.
-- Conservative is the default. Leverage is a ceiling, never evidence of edge.
-  Do not claim profitability, production readiness, ROI, or drawdown without
-  reproducible source-bound, after-cost evidence.
+  is BTC-only and disabled by default. No live-money authority exists.
+- Conservative is default. Leverage is a ceiling, never edge. Profitability,
+  readiness, ROI, and drawdown claims require reproducible source-bound,
+  after-cost evidence.
 - Risk, ownership, reconciliation, Stop, and close controls are deterministic.
   AI may only veto or reduce risk after matched uplift evidence and may never
   override a safety gate or block a close.
@@ -44,10 +40,8 @@ override prose if they disagree.
 
 Apply the pinned Karpathy baseline from
 `multica-ai/andrej-karpathy-skills@2c606141936f1eeef17fa3043a72095b4765b9c2`:
-think before coding, state material uncertainty, prefer the smallest
-maintainable change, avoid speculative abstraction, preserve local contracts,
-and finish with reproducible verification. Do not load upstream `EXAMPLES.md`
-by default.
+think first, state material uncertainty, keep changes small, preserve local
+contracts, and verify reproducibly. Do not load upstream `EXAMPLES.md`.
 
 1. Inspect `git status`.
 2. Read one nearest source file, its matching test, and the relevant local
