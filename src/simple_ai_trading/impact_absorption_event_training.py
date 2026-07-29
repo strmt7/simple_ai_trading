@@ -80,8 +80,8 @@ from .round74_segmented_model_operator import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v30"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v29"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v31"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v30"
 ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION = (
     "round-074-event-selection-protocol-v4"
 )
@@ -342,6 +342,9 @@ class Round74EventTrainingConfig:
             "tuning_order": "chronological_no_shuffle",
             "checkpoint_policy": "best_state_in_memory_only",
             "loss_weights": dict(ROUND74_EVENT_TRAINING_LOSS_WEIGHTS),
+            "gradient_health_metrics": (
+                "preclip_norm_minimum_mean_maximum_zero_fraction_and_clip_fraction"
+            ),
         }
 
 
@@ -2030,6 +2033,11 @@ def _train_peer(
         model.train()
         optimization_totals = _empty_metric_sums()
         per_run_totals = tuple(_empty_metric_sums() for _batch in training_batches)
+        gradient_norm_sum = 0.0
+        gradient_norm_minimum = math.inf
+        gradient_norm_maximum = 0.0
+        zero_gradient_steps = 0
+        clipped_gradient_steps = 0
         run_count = len(training_batches)
         if config.execution_mode == "segmented_cohort":
             selections = _eligible_target_minibatch_schedule(
@@ -2076,8 +2084,22 @@ def _train_peer(
                 max_norm=config.gradient_clip_norm,
                 foreach=False,
             )
-            if not math.isfinite(float(gradient_norm.detach().cpu())):
+            gradient_norm_value = float(gradient_norm.detach().cpu())
+            if not math.isfinite(gradient_norm_value):
                 raise RuntimeError("Round 74 model gradient norm is nonfinite")
+            gradient_norm_sum += gradient_norm_value
+            gradient_norm_minimum = min(
+                gradient_norm_minimum,
+                gradient_norm_value,
+            )
+            gradient_norm_maximum = max(
+                gradient_norm_maximum,
+                gradient_norm_value,
+            )
+            zero_gradient_steps += int(gradient_norm_value == 0.0)
+            clipped_gradient_steps += int(
+                gradient_norm_value > config.gradient_clip_norm
+            )
             optimizer.step()
             optimizer_steps = 1
             contribution_counts = tuple(
@@ -2139,8 +2161,22 @@ def _train_peer(
                     max_norm=config.gradient_clip_norm,
                     foreach=False,
                 )
-                if not math.isfinite(float(gradient_norm.detach().cpu())):
+                gradient_norm_value = float(gradient_norm.detach().cpu())
+                if not math.isfinite(gradient_norm_value):
                     raise RuntimeError("Round 74 model gradient norm is nonfinite")
+                gradient_norm_sum += gradient_norm_value
+                gradient_norm_minimum = min(
+                    gradient_norm_minimum,
+                    gradient_norm_value,
+                )
+                gradient_norm_maximum = max(
+                    gradient_norm_maximum,
+                    gradient_norm_value,
+                )
+                zero_gradient_steps += int(gradient_norm_value == 0.0)
+                clipped_gradient_steps += int(
+                    gradient_norm_value > config.gradient_clip_norm
+                )
                 optimizer.step()
         if not _parameters_are_finite(model):
             raise RuntimeError("Round 74 model parameters are nonfinite")
@@ -2156,6 +2192,20 @@ def _train_peer(
                 "worst_run_loss": max(optimization_run_losses),
                 "run_count": float(run_count),
                 "optimizer_steps": float(optimizer_steps),
+                "preclip_gradient_norm_minimum": gradient_norm_minimum,
+                "preclip_gradient_norm_mean": (
+                    gradient_norm_sum / float(optimizer_steps)
+                ),
+                "preclip_gradient_norm_maximum": gradient_norm_maximum,
+                "zero_gradient_steps": float(zero_gradient_steps),
+                "zero_gradient_fraction": (
+                    float(zero_gradient_steps) / float(optimizer_steps)
+                ),
+                "clipped_gradient_steps": float(clipped_gradient_steps),
+                "gradient_clip_fraction": (
+                    float(clipped_gradient_steps) / float(optimizer_steps)
+                ),
+                "gradient_clip_norm_limit": float(config.gradient_clip_norm),
                 "run_contributions_per_optimizer_step": (
                     float(run_count)
                     if config.execution_mode != "segmented_cohort"
@@ -2171,6 +2221,14 @@ def _train_peer(
                 ),
             }
         )
+        if (
+            not 0 <= zero_gradient_steps <= optimizer_steps
+            or not 0 <= clipped_gradient_steps <= optimizer_steps
+            or not math.isfinite(gradient_norm_minimum)
+            or gradient_norm_minimum < 0.0
+            or gradient_norm_minimum > gradient_norm_maximum
+        ):
+            raise RuntimeError("Round 74 gradient health metrics differ")
         if not all(math.isfinite(value) for value in optimization_metrics.values()):
             raise RuntimeError("Round 74 run-balanced optimization is nonfinite")
         early_stopping_metrics, _early_stopping_run_losses = _evaluate_model(
