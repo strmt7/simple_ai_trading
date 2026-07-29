@@ -169,6 +169,46 @@ def round74_default_ai_review_model_panel() -> tuple[
     return panel
 
 
+def round74_ai_review_challenger_model_panel() -> tuple[
+    Round74AIReviewModelBinding,
+    ...,
+]:
+    """Return research-only challengers excluded from AI qualification."""
+
+    panel = (
+        Round74AIReviewModelBinding(
+            model_name="fin-r1:8b",
+            manifest=Round74AIModelManifest(
+                model_id="SUFE-AIFLM-Lab/Fin-R1",
+                model_revision="026768c4a015b591b54b240743edeac1de0970fa",
+                model_artifact_sha256=(
+                    "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377"
+                ),
+                model_artifact_kind="ollama_manifest",
+                parameter_count=7_620_000_000,
+                quantization="q6_k",
+                runtime_backend="llama.cpp-vulkan",
+                runtime_version="0.32.4",
+                license_id="Apache-2.0",
+                model_card_url="https://huggingface.co/SUFE-AIFLM-Lab/Fin-R1",
+                minimum_vram_bytes=8 * 1024**3,
+                finance_specialized=True,
+            ),
+            runtime=Round74AIRuntimeConfig(model_name="fin-r1:8b"),
+            role="finance_primary",
+        ),
+    )
+    for value in panel:
+        value.validate()
+    default_manifests = {
+        value.manifest.manifest_sha256
+        for value in round74_default_ai_review_model_panel()
+    }
+    if any(value.manifest.manifest_sha256 in default_manifests for value in panel):
+        raise ValueError("Round 74 AI challenger duplicates qualification model")
+    return panel
+
+
 @dataclass(frozen=True)
 class Round74TargetFreeReviewRow:
     """One model candidate that must be reviewed before target scoring."""
@@ -775,5 +815,6 @@ __all__ = [
     "Round74PreparedSealedAIReviewProvider",
     "Round74TargetFreeReviewRow",
     "prepare_round74_target_free_ai_reviews",
+    "round74_ai_review_challenger_model_panel",
     "round74_default_ai_review_model_panel",
 ]
