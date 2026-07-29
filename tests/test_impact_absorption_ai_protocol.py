@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import hashlib
 import json
 
 import pytest
@@ -82,6 +83,12 @@ def _request() -> Round74AIReviewRequest:
         neither_positive_payoff_probability=0.20,
         adverse_selection_probability=0.27,
         regime_unpredictability_probability=0.18,
+        epistemic_peer_count=3,
+        payoff_quantile_peer_standard_deviation_rms_bps=1.25,
+        maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps=2.5,
+        positive_payoff_probability_peer_standard_deviation=0.03,
+        adverse_selection_probability_peer_standard_deviation=0.04,
+        regime_unpredictability_probability_peer_standard_deviation=0.05,
     )
 
 
@@ -197,6 +204,26 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
         "neither_side_positive": 0.2,
         "proposed_minus_opposing_margin": 0.42,
     }
+    assert payload["epistemic_disagreement_contract"] == {
+        "available": True,
+        "peer_count": 3,
+        "values_are_cross_peer_population_standard_deviations": True,
+        "quantile_vector_reduction": (
+            "root_mean_square_across_five_quantile_levels"
+        ),
+        "payoff_and_adverse_excursion_units": "basis_points",
+        "probability_units": "absolute_probability",
+        "realized_targets_used": False,
+        "larger_value_means_more_model_disagreement": True,
+        "zero_peers_means_diagnostics_unavailable": True,
+    }
+    assert payload["epistemic_peer_disagreement"] == {
+        "payoff_quantile_standard_deviation_rms_bps": 1.25,
+        "maximum_adverse_excursion_quantile_standard_deviation_rms_bps": 2.5,
+        "positive_payoff_probability_standard_deviation": 0.03,
+        "adverse_selection_probability_standard_deviation": 0.04,
+        "regime_unpredictability_probability_standard_deviation": 0.05,
+    }
     assert payload["horizon_seconds"] == 30
     assert "asset_identity_0" in payload["standardized_feature_summary"]
     assert payload["summary_value_order"][-1] == ("recent_16_minus_prior_16_mean")
@@ -228,6 +255,8 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "not the probability of a named binary event" in system
     assert "one mutually exclusive distribution" in system
     assert "never permits switching to the opposing side" in system
+    assert "Epistemic peer-disagreement values" in system
+    assert "Larger values indicate more disagreement" in system
     assert "Never invent a missing premise" in system
     assert "abstain with forecast_uncertainty or model_inconsistency" in system
     assert "contain no future observations" in system
@@ -235,6 +264,33 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "never combine allow_unchanged with a risk reason" in system
     assert "increase size" in system
     assert "propose an order" in system
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "asset_slot",
+        "epistemic_peer_count",
+        "payoff_quantile_peer_standard_deviation_rms_bps",
+    ),
+)
+def test_ai_request_rejects_rehashed_boolean_numeric_fields(field: str) -> None:
+    payload = _request().as_dict()
+    payload[field] = True
+    unsigned = dict(payload)
+    unsigned.pop("request_sha256")
+    payload["request_sha256"] = hashlib.sha256(
+        json.dumps(
+            unsigned,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+
+    with pytest.raises(ValueError, match="Round 74 AI review request"):
+        Round74AIReviewRequest.from_dict(payload)
 
 
 def test_ai_risk_profile_is_hash_bound_and_changes_only_review_tolerance() -> None:
@@ -264,6 +320,15 @@ def test_ai_risk_profile_is_hash_bound_and_changes_only_review_tolerance() -> No
         {"positive_payoff_probability": float("nan")},
         {"opposing_positive_payoff_probability": 0.40},
         {"neither_positive_payoff_probability": -0.01},
+        {"epistemic_peer_count": True},
+        {"epistemic_peer_count": 1},
+        {
+            "positive_payoff_probability_peer_standard_deviation": 0.51,
+        },
+        {
+            "epistemic_peer_count": 0,
+            "payoff_quantile_peer_standard_deviation_rms_bps": 1.0,
+        },
         {"feature_recent_block_means": ((0.0,),)},
         {"payoff_quantiles_bps": (-5.0, 0.0, -1.0, 4.0, 7.0)},
         {

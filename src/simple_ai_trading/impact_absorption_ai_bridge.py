@@ -27,7 +27,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v6"
+ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v7"
 ROUND74_AI_RECENT_BLOCK_EVENTS = 16
 _ASSET_FEATURE_INDICES = tuple(
     ROUND74_EVENT_FEATURE_NAMES.index(name)
@@ -233,6 +233,65 @@ def build_round74_ai_review_request(
         1.0 - positive[row_index, horizon_index].sum(),
         "neither positive-payoff probability",
     )
+    diagnostics = model_output.epistemic_diagnostics
+    if diagnostics is None:
+        peer_count = 0
+        epistemic_values = (0.0, 0.0, 0.0, 0.0, 0.0)
+    else:
+        diagnostics.validate(batch_size)
+        peer_count = diagnostics.peer_count
+        epistemic_values = (
+            float(
+                diagnostics.payoff_quantile_standard_deviation_bps[
+                    row_index,
+                    horizon_index,
+                    side_index,
+                ]
+                .square()
+                .mean()
+                .sqrt()
+                .detach()
+                .item()
+            ),
+            float(
+                diagnostics.maximum_adverse_excursion_quantile_standard_deviation_bps[
+                    row_index,
+                    horizon_index,
+                    side_index,
+                ]
+                .square()
+                .mean()
+                .sqrt()
+                .detach()
+                .item()
+            ),
+            float(
+                diagnostics.positive_payoff_probability_standard_deviation[
+                    row_index,
+                    horizon_index,
+                    side_index,
+                ]
+                .detach()
+                .item()
+            ),
+            float(
+                diagnostics.adverse_selection_probability_standard_deviation[
+                    row_index,
+                    horizon_index,
+                    side_index,
+                ]
+                .detach()
+                .item()
+            ),
+            float(
+                diagnostics.regime_unpredictability_probability_standard_deviation[
+                    row_index,
+                    horizon_index,
+                ]
+                .detach()
+                .item()
+            ),
+        )
     request = Round74AIReviewRequest(
         pretest_policy_sha256=pretest_policy_sha256,
         probability_calibration_sha256=(probability_calibration.calibration_sha256),
@@ -269,6 +328,16 @@ def build_round74_ai_review_request(
                 horizon_index,
             ],
             "regime-unpredictability probability",
+        ),
+        epistemic_peer_count=peer_count,
+        payoff_quantile_peer_standard_deviation_rms_bps=epistemic_values[0],
+        maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps=(
+            epistemic_values[1]
+        ),
+        positive_payoff_probability_peer_standard_deviation=epistemic_values[2],
+        adverse_selection_probability_peer_standard_deviation=epistemic_values[3],
+        regime_unpredictability_probability_peer_standard_deviation=(
+            epistemic_values[4]
         ),
     )
     request.validate()

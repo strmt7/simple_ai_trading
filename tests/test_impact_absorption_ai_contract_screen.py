@@ -92,6 +92,11 @@ def test_round74_ai_contract_cases_are_frozen_anonymized_and_non_market() -> Non
         payload = request.prompt_payload()
         encoded = json.dumps(payload)
         assert payload["binary_feature_count"] == ROUND74_EVENT_BINARY_FEATURE_COUNT
+        assert payload["epistemic_disagreement_contract"]["available"] is True
+        assert payload["epistemic_disagreement_contract"]["peer_count"] == 3
+        assert payload["epistemic_disagreement_contract"][
+            "realized_targets_used"
+        ] is False
         assert "BTCUSDT" not in encoded
         assert "ETHUSDT" not in encoded
         assert "SOLUSDT" not in encoded

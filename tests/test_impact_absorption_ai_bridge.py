@@ -19,6 +19,7 @@ from simple_ai_trading.impact_absorption_event_calibration import (
     Round74TemperatureFit,
 )
 from simple_ai_trading.impact_absorption_event_model import (
+    Round74EventEpistemicDiagnostics,
     Round74EventModelOutput,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
@@ -84,6 +85,34 @@ def _output() -> Round74EventModelOutput:
             (batch, horizons),
             -2.0,
             dtype=torch.float32,
+        ),
+        epistemic_diagnostics=Round74EventEpistemicDiagnostics(
+            peer_count=3,
+            payoff_quantile_standard_deviation_bps=torch.full(
+                (batch, horizons, sides, quantiles),
+                1.5,
+                dtype=torch.float32,
+            ),
+            maximum_adverse_excursion_quantile_standard_deviation_bps=torch.full(
+                (batch, horizons, sides, quantiles),
+                2.5,
+                dtype=torch.float32,
+            ),
+            positive_payoff_probability_standard_deviation=torch.full(
+                (batch, horizons, sides),
+                0.03,
+                dtype=torch.float32,
+            ),
+            adverse_selection_probability_standard_deviation=torch.full(
+                (batch, horizons, sides),
+                0.04,
+                dtype=torch.float32,
+            ),
+            regime_unpredictability_probability_standard_deviation=torch.full(
+                (batch, horizons),
+                0.05,
+                dtype=torch.float32,
+            ),
         ),
     )
 
@@ -208,6 +237,21 @@ def test_bridge_builds_target_free_request_from_causal_prediction() -> None:
     assert request.positive_payoff_probability == 0.5
     assert request.opposing_positive_payoff_probability == 0.5
     assert request.neither_positive_payoff_probability == 0.0
+    assert request.epistemic_peer_count == 3
+    assert request.payoff_quantile_peer_standard_deviation_rms_bps == 1.5
+    assert (
+        request.maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps
+        == 2.5
+    )
+    assert request.positive_payoff_probability_peer_standard_deviation == (
+        pytest.approx(0.03)
+    )
+    assert request.adverse_selection_probability_peer_standard_deviation == (
+        pytest.approx(0.04)
+    )
+    assert request.regime_unpredictability_probability_peer_standard_deviation == (
+        pytest.approx(0.05)
+    )
     assert (
         request.positive_payoff_probability
         + request.opposing_positive_payoff_probability

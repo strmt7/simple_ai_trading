@@ -47,18 +47,18 @@ def _source_sha256_at(commit: str, relative_path: str) -> str:
 
 
 def test_preflight_schema_tracks_current_ai_contract() -> None:
-    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v8"
+    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v9"
     assert PUBLISHER.ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION == (
-        "round-074-ai-review-request-v6"
+        "round-074-ai-review-request-v7"
     )
     assert PUBLISHER.ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION == (
-        "round-074-ai-prompt-payload-v9"
+        "round-074-ai-prompt-payload-v10"
     )
     assert PUBLISHER.ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION == (
         "round-074-ai-system-prompt-v3"
     )
     assert PUBLISHER.ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION == (
-        "round-074-ai-review-panel-v16"
+        "round-074-ai-review-panel-v17"
     )
 
 
@@ -67,6 +67,11 @@ def test_synthetic_request_exercises_profile_and_temporal_path() -> None:
     request.validate()
 
     assert request.risk_profile == "conservative"
+    assert request.epistemic_peer_count == 3
+    assert (
+        request.regime_unpredictability_probability_peer_standard_deviation
+        == 0.24
+    )
     assert request.feature_last[0] == 1.0
     assert request.feature_last[5:8] == (1.0, 0.0, 0.0)
     assert sum(request.feature_mean[:5]) == 1.0
