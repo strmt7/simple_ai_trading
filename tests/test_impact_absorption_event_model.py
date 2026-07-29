@@ -101,6 +101,48 @@ def test_round74_model_output_rejects_path_risk_horizon_regression() -> None:
         ).validate(1)
 
 
+def test_round74_path_risk_rearrangement_preserves_all_horizon_gradients() -> None:
+    model = Round74EventPoolingLinear()
+    adverse_head = model.heads.maximum_adverse_excursion
+    with torch.no_grad():
+        adverse_head.weight.zero_()
+        adverse_bias = adverse_head.bias.reshape(
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            len(ROUND74_EVENT_PAYOFF_SIDES),
+            len(ROUND74_EVENT_PAYOFF_QUANTILES),
+        )
+        for horizon_index in range(len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)):
+            adverse_bias[horizon_index, ...] = float(
+                len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS) - horizon_index
+            )
+
+    output = model(_inputs(batch_size=1))
+    differences = (
+        output.maximum_adverse_excursion_quantiles_bps[:, 1:, ...]
+        - output.maximum_adverse_excursion_quantiles_bps[:, :-1, ...]
+    )
+    assert bool((differences > 0.0).all())
+
+    for output_horizon, raw_horizon in enumerate(
+        reversed(range(len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)))
+    ):
+        model.zero_grad(set_to_none=True)
+        output = model(_inputs(batch_size=1))
+        output.maximum_adverse_excursion_quantiles_bps[
+            :, output_horizon, ...
+        ].sum().backward()
+        gradient = adverse_head.bias.grad.detach().reshape(
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            len(ROUND74_EVENT_PAYOFF_SIDES),
+            len(ROUND74_EVENT_PAYOFF_QUANTILES),
+        )
+        for horizon_index in range(len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)):
+            if horizon_index == raw_horizon:
+                assert bool((gradient[horizon_index, ...] > 0.0).all())
+            else:
+                assert bool((gradient[horizon_index, ...] == 0.0).all())
+
+
 def test_round74_candidate_complexity_order_is_strict() -> None:
     parameter_counts = {
         candidate_id: sum(

@@ -32,7 +32,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v9"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v10"
 ROUND74_EVENT_MODEL_CANDIDATES = (
     "event_pooling_linear",
     "event_pooling_mlp",
@@ -192,14 +192,17 @@ class _Round74DistributionalHeads(nn.Module):
             ),
             dim=3,
         )
-        monotone_horizons = [adverse_quantiles[:, 0, ...]]
-        for horizon_index in range(1, adverse_quantiles.shape[1]):
-            monotone_horizons.append(
-                torch.maximum(
-                    monotone_horizons[-1],
-                    adverse_quantiles[:, horizon_index, ...],
-                )
-            )
+        if adverse_quantiles.shape[1] != len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS):
+            raise RuntimeError("Round 74 adverse-excursion horizon count differs")
+        # Rearrangement keeps every raw horizon in the backward pass when
+        # independently predicted adverse-excursion surfaces cross.
+        monotone_horizons = list(torch.unbind(adverse_quantiles, dim=1))
+        for upper_index in range(1, len(monotone_horizons)):
+            for horizon_index in range(upper_index, 0, -1):
+                left = monotone_horizons[horizon_index - 1]
+                right = monotone_horizons[horizon_index]
+                monotone_horizons[horizon_index - 1] = torch.minimum(left, right)
+                monotone_horizons[horizon_index] = torch.maximum(left, right)
         expected_sides = (
             encoded.shape[0],
             len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
