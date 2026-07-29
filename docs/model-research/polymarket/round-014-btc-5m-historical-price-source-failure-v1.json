@@ -1,0 +1,81 @@
+{
+  "schema_version": "polymarket-round14-historical-price-source-failure-v1",
+  "created_at_utc": "2026-07-29T16:22:00Z",
+  "contract_sha256": "1905e2e036794e61178b79b2b768250d9430516319f3e15dc6d559418c916da6",
+  "status": "permanently_rejected_before_model_or_bulk_target_access",
+  "source": {
+    "batch_price_history": "https://clob.polymarket.com/batch-prices-history",
+    "single_price_history": "https://clob.polymarket.com/prices-history",
+    "market_trades": "https://data-api.polymarket.com/trades"
+  },
+  "observations": {
+    "identity_collection": {
+      "days": [
+        "2026-03-20",
+        "2026-04-20",
+        "2026-05-01",
+        "2026-06-22"
+      ],
+      "markets_per_day": 288,
+      "total_markets": 1152,
+      "eligible_after_precontract_probe_exclusions": 1150
+    },
+    "batch_history": {
+      "successful_request_token_count": 20,
+      "successful_request_window_seconds": 3000,
+      "returned_point_count": 590,
+      "next_request_completed": false,
+      "store_state_after_process_exit": "identities_complete",
+      "durably_stored_batch_count": 1,
+      "durably_stored_point_count": 590
+    },
+    "same_token_same_window_probe": {
+      "batch_status": 200,
+      "batch_elapsed_seconds": 20.219,
+      "batch_point_count": 0,
+      "single_status": 200,
+      "single_elapsed_seconds": 20.035,
+      "single_point_count": 5
+    },
+    "market_trade_probe": [
+      {
+        "period": "2026-03-20",
+        "row_count": 0,
+        "note": "No public trade rows were returned despite nonempty official price history."
+      },
+      {
+        "period": "2026-06-22",
+        "row_count": 6202,
+        "response_bytes": 4634978
+      },
+      {
+        "period": "2026-06-22",
+        "row_count": 10000,
+        "response_bytes": 7442194,
+        "note": "The response hit the documented page limit."
+      },
+      {
+        "period": "2026-06-22",
+        "row_count": 5859,
+        "response_bytes": 4390669
+      }
+    ]
+  },
+  "decision": {
+    "reason": "The batch endpoint was inconsistent with the single endpoint and the market-trade endpoint was either absent or too large for an efficient bounded historical control. Continuing would consume excessive network, memory, SSD, and elapsed time without producing executable book evidence.",
+    "price_history_reuse": false,
+    "trade_history_reuse": false,
+    "model_reuse": false,
+    "target_reuse": false,
+    "profitability_claim": false,
+    "trading_authority": false
+  },
+  "access": {
+    "bulk_terminal_targets_accessed": false,
+    "model_fit": false,
+    "model_scores_accessed": false,
+    "test_targets_accessed": false,
+    "excluded_precontract_probe_outcomes_remain_excluded": true
+  },
+  "failure_sha256": "bfe673d000f4d1b3fe60d8b54da76eef1555256aefd0607ce90afb5869b6a477"
+}
