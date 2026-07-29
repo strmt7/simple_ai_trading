@@ -1099,6 +1099,65 @@ class HistoricalScreenStore:
             ],
         )
 
+    def complete_identity_days(self) -> Mapping[str, int]:
+        if self.state != "initialized":
+            raise ValueError("historical identity checkpoint phase is closed")
+        terminal_days = {
+            str(row[0])
+            for row in self._connection.execute(
+                """
+                SELECT DISTINCT day
+                FROM feature.gamma_page_receipt
+                WHERE next_cursor_sha256 = ?
+                """,
+                ["0" * 64],
+            ).fetchall()
+        }
+        counts = dict.fromkeys(self.contract.eligible_days, 0)
+        for market in self.markets(include_excluded=True):
+            day = (
+                datetime.fromtimestamp(
+                    market.event_start_ms / 1_000,
+                    tz=UTC,
+                )
+                .date()
+                .isoformat()
+            )
+            if day in counts:
+                counts[day] += 1
+        return {
+            day: count
+            for day, count in counts.items()
+            if day in terminal_days
+            and count == self.contract.required_market_count_per_day
+        }
+
+    def reset_incomplete_identity_day(self, day: str) -> None:
+        if self.read_only or self.state != "initialized":
+            raise ValueError("historical identity checkpoint phase is closed")
+        start, end = _day_bounds(day)
+        if day not in self.contract.eligible_days:
+            raise ValueError("historical identity checkpoint day is outside scope")
+        if day in self.complete_identity_days():
+            raise ValueError("complete historical identity day cannot be reset")
+        self._connection.execute("BEGIN TRANSACTION")
+        try:
+            self._connection.execute(
+                """
+                DELETE FROM feature.market_identity
+                WHERE event_start_ms >= ? AND event_start_ms < ?
+                """,
+                [start, end],
+            )
+            self._connection.execute(
+                "DELETE FROM feature.gamma_page_receipt WHERE day = ?",
+                [day],
+            )
+            self._connection.execute("COMMIT")
+        except BaseException:
+            self._connection.execute("ROLLBACK")
+            raise
+
     def markets(
         self,
         *,
@@ -1421,7 +1480,45 @@ def collect_historical_market_identities(
     counts: dict[str, int] = {}
     seen_conditions: set[str] = set()
     seen_slugs: set[str] = set()
+    completed_days = store.complete_identity_days()
+    stored_by_day: dict[str, list[HistoricalBtcMarket]] = {
+        day: [] for day in completed_days
+    }
+    for stored in store.markets(include_excluded=True):
+        stored_day = (
+            datetime.fromtimestamp(
+                stored.event_start_ms / 1_000,
+                tz=UTC,
+            )
+            .date()
+            .isoformat()
+        )
+        if stored_day in stored_by_day:
+            stored_by_day[stored_day].append(stored)
     for day in store.contract.eligible_days:
+        if day in completed_days:
+            reused = stored_by_day[day]
+            for market in reused:
+                if (
+                    market.condition_id in seen_conditions
+                    or market.slug in seen_slugs
+                ):
+                    raise ValueError(
+                        "historical identity checkpoint contains duplicates"
+                    )
+                seen_conditions.add(market.condition_id)
+                seen_slugs.add(market.slug)
+            counts[day] = len(reused)
+            if progress:
+                progress(
+                    "historical_identity_day_reused",
+                    {
+                        "day": day,
+                        "day_admitted": len(reused),
+                    },
+                )
+            continue
+        store.reset_incomplete_identity_day(day)
         start, end = _day_bounds(day)
         cursor = ""
         seen_cursors: set[str] = set()

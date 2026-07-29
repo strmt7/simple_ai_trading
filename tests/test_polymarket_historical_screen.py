@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 from copy import deepcopy
+from dataclasses import replace
 from datetime import UTC, datetime
 import hashlib
 import json
@@ -199,6 +200,42 @@ def test_target_free_identity_parser_omits_terminal_outcome() -> None:
     assert "outcomePrices" not in market.identity_payload_json
     assert '"winner"' not in market.identity_payload_json
     assert market.excluded is False
+
+
+def test_identity_checkpoint_reuses_only_terminal_complete_days(
+    tmp_path: Path,
+) -> None:
+    base = load_historical_screen_contract(CONTRACT_PATH)
+    contract = replace(
+        base,
+        eligible_days=("2026-03-20",),
+        roles={"2026-03-20": "train"},
+        required_market_count_per_day=1,
+    )
+    market = parse_historical_btc_event(
+        _event(),
+        contract=contract,
+        observed_at_ms=END_MS + 1_000,
+    )
+    page = _public({"events": [], "next_cursor": ""})
+    with HistoricalScreenStore(
+        tmp_path / "checkpoint.duckdb",
+        contract=contract,
+    ) as store:
+        store.upsert_market(market)
+        assert store.complete_identity_days() == {}
+        store.record_gamma_page(
+            page=page,
+            day="2026-03-20",
+            page_index=1,
+            next_cursor="",
+            event_count=1,
+            admitted_count=1,
+        )
+
+        assert store.complete_identity_days() == {"2026-03-20": 1}
+        with pytest.raises(ValueError, match="complete historical identity day"):
+            store.reset_incomplete_identity_day("2026-03-20")
 
 
 @pytest.mark.parametrize(
