@@ -79,6 +79,7 @@ class PolymarketShadowMarketState:
             len(self.clob_market_info_sha256) != 64
             or int(self.general_order_delay_seconds) < 0
             or int(self.observed_at_ms) <= 0
+            or type(self.taker_order_delay_enabled) is not bool
         ):
             raise ValueError("Polymarket shadow market metadata is invalid")
 
@@ -121,12 +122,15 @@ class PolymarketShadowFillQuote:
 class PolymarketShadowOpportunity:
     status: str
     reason: str
+    gamma_market_id: str
     condition_id: str
     slug: str
+    gamma_payload_sha256: str
     event_start_ms: int
     event_end_ms: int
     decision_time_ms: int
     observed_at_ms: int
+    quote_observation_latency_ms: int
     probability_up: str
     selected_outcome: str
     expected_terminal_value_per_share: str
@@ -138,7 +142,12 @@ class PolymarketShadowOpportunity:
     model_pretest_sha256: str
     model_evaluation_sha256: str
     clob_market_info_sha256: str
+    tick_size: str
+    minimum_order_size: str
+    fee_rate: str
+    fee_exponent: int
     general_order_delay_seconds: int
+    taker_order_delay_enabled: bool
     artifact_sha256: str
     trading_authority: bool = False
     proposal_authority: bool = False
@@ -157,6 +166,24 @@ class PolymarketShadowOpportunity:
             or self.execution_or_profitability_claim
         ):
             raise ValueError("Polymarket shadow opportunity cannot grant authority")
+        if (
+            not self.gamma_market_id
+            or len(self.gamma_payload_sha256) != 64
+            or not 0 <= int(self.quote_observation_latency_ms) <= 30_000
+            or int(self.fee_exponent) <= 0
+            or int(self.general_order_delay_seconds) < 0
+            or type(self.taker_order_delay_enabled) is not bool
+        ):
+            raise ValueError("Polymarket shadow opportunity metadata is invalid")
+        tick = _decimal(self.tick_size, name="tick size", positive=True)
+        minimum = _decimal(
+            self.minimum_order_size,
+            name="minimum order size",
+            positive=True,
+        )
+        fee_rate = _decimal(self.fee_rate, name="fee rate")
+        if tick >= 1 or minimum <= 0 or not Decimal("0") <= fee_rate <= Decimal("1"):
+            raise ValueError("Polymarket shadow opportunity economics are invalid")
         payload = self.asdict()
         claimed = payload.pop("artifact_sha256")
         if claimed != _canonical_sha256(payload):
@@ -167,12 +194,15 @@ class PolymarketShadowOpportunity:
             "schema_version": "polymarket-btc-shadow-opportunity-v1",
             "status": self.status,
             "reason": self.reason,
+            "gamma_market_id": self.gamma_market_id,
             "condition_id": self.condition_id,
             "slug": self.slug,
+            "gamma_payload_sha256": self.gamma_payload_sha256,
             "event_start_ms": self.event_start_ms,
             "event_end_ms": self.event_end_ms,
             "decision_time_ms": self.decision_time_ms,
             "observed_at_ms": self.observed_at_ms,
+            "quote_observation_latency_ms": self.quote_observation_latency_ms,
             "probability_up": self.probability_up,
             "selected_outcome": self.selected_outcome,
             "expected_terminal_value_per_share": (
@@ -186,7 +216,12 @@ class PolymarketShadowOpportunity:
             "model_pretest_sha256": self.model_pretest_sha256,
             "model_evaluation_sha256": self.model_evaluation_sha256,
             "clob_market_info_sha256": self.clob_market_info_sha256,
+            "tick_size": self.tick_size,
+            "minimum_order_size": self.minimum_order_size,
+            "fee_rate": self.fee_rate,
+            "fee_exponent": self.fee_exponent,
             "general_order_delay_seconds": self.general_order_delay_seconds,
+            "taker_order_delay_enabled": self.taker_order_delay_enabled,
             "artifact_sha256": self.artifact_sha256,
             "trading_authority": self.trading_authority,
             "proposal_authority": self.proposal_authority,
@@ -397,12 +432,17 @@ def evaluate_shadow_settlement_opportunity(
         "schema_version": "polymarket-btc-shadow-opportunity-v1",
         "status": status,
         "reason": ",".join(reasons),
+        "gamma_market_id": market.market_id,
         "condition_id": market.condition_id,
         "slug": market.slug,
+        "gamma_payload_sha256": market.gamma_payload_sha256,
         "event_start_ms": market.event_start_ms,
         "event_end_ms": market.end_ms,
         "decision_time_ms": prediction.decision_time_ms,
         "observed_at_ms": state.observed_at_ms,
+        "quote_observation_latency_ms": (
+            state.observed_at_ms - prediction.decision_time_ms
+        ),
         "probability_up": _decimal_text(probability_up),
         "selected_outcome": outcome,
         "expected_terminal_value_per_share": _decimal_text(edge),
@@ -414,7 +454,12 @@ def evaluate_shadow_settlement_opportunity(
         "model_pretest_sha256": prediction.pretest_artifact_sha256,
         "model_evaluation_sha256": prediction.evaluation_artifact_sha256,
         "clob_market_info_sha256": state.clob_market_info_sha256,
+        "tick_size": _decimal_text(market.tick_size),
+        "minimum_order_size": _decimal_text(market.minimum_order_size),
+        "fee_rate": _decimal_text(market.fee_schedule.rate),
+        "fee_exponent": market.fee_schedule.exponent,
         "general_order_delay_seconds": state.general_order_delay_seconds,
+        "taker_order_delay_enabled": state.taker_order_delay_enabled,
         "trading_authority": False,
         "proposal_authority": False,
         "execution_or_profitability_claim": False,
@@ -423,12 +468,17 @@ def evaluate_shadow_settlement_opportunity(
     return PolymarketShadowOpportunity(
         status=status,
         reason=str(body["reason"]),
+        gamma_market_id=market.market_id,
         condition_id=market.condition_id,
         slug=market.slug,
+        gamma_payload_sha256=market.gamma_payload_sha256,
         event_start_ms=market.event_start_ms,
         event_end_ms=market.end_ms,
         decision_time_ms=prediction.decision_time_ms,
         observed_at_ms=state.observed_at_ms,
+        quote_observation_latency_ms=(
+            state.observed_at_ms - prediction.decision_time_ms
+        ),
         probability_up=str(body["probability_up"]),
         selected_outcome=outcome,
         expected_terminal_value_per_share=str(
@@ -444,7 +494,12 @@ def evaluate_shadow_settlement_opportunity(
         model_pretest_sha256=prediction.pretest_artifact_sha256,
         model_evaluation_sha256=prediction.evaluation_artifact_sha256,
         clob_market_info_sha256=state.clob_market_info_sha256,
+        tick_size=_decimal_text(market.tick_size),
+        minimum_order_size=_decimal_text(market.minimum_order_size),
+        fee_rate=_decimal_text(market.fee_schedule.rate),
+        fee_exponent=market.fee_schedule.exponent,
         general_order_delay_seconds=state.general_order_delay_seconds,
+        taker_order_delay_enabled=state.taker_order_delay_enabled,
         artifact_sha256=artifact_sha,
     )
 
