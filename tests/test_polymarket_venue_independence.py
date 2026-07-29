@@ -46,6 +46,8 @@ LIVE_BOUNDARY_IMPORTS = {
             "polymarket_historical_shadow",
             "polymarket_round16",
             "polymarket_round16_dataset",
+            "polymarket_round16_evaluation",
+            "polymarket_round16_model",
         }
     ),
 }

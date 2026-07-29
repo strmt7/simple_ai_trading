@@ -4,6 +4,13 @@
 
 ![Held-out predictive metrics](charts/round14-held-out-metrics.svg)
 
+Round 14's subsequent one-hour, after-cost BTC five-minute shadow **failed**:
+12 events produced `-9.87720` quote net PnL, `0.455725` profit factor, and
+`11.69847` maximum drawdown. This rejects the model for paper or live
+promotion. The canonical
+[economic evaluation](../evidence/round-014-btc-5m-shadow-hour-evaluation-v1.json)
+overrides the earlier predictive-only result below.
+
 Round 14 tested a frozen BTC five-minute direction model on all 287 eligible
 conditions from 2026-06-22 UTC. The shallow Binance-flow LightGBM challenger
 recorded log loss `0.644667` versus
@@ -17,6 +24,13 @@ paired 95% block-bootstrap improvement interval was
 This is **predictive evidence only**. Polymarket spread, queue position, fills,
 latency, fees, settlement, redemption, inventory risk, and PnL were not tested,
 so it is not a profitability or execution claim.
+
+Round 16 is a separate, preregistered BTC fifteen-minute comparison. Its
+historical/live one-second feature transform is bit-identical, but no model
+result exists yet. Before held-out access, its pretest artifact must freeze
+train-only feature-support bounds and label-blind tune-only settlement-anomaly
+thresholds. A future prospective scorer can activate only from caller-pinned
+artifacts that pass every predictive gate; it has no execution authority.
 
 ## Audit
 

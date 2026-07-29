@@ -179,6 +179,12 @@
     "abnormal_terminal_spot_flow_action": "abstain",
     "abnormal_terminal_spot_perpetual_disagreement_action": "abstain",
     "threshold_selection_partition": "tune_only",
+    "threshold_selection_labels_used": false,
+    "threshold_quantile": "0.995",
+    "threshold_quantile_method": "linear",
+    "spot_flow_threshold": "99.5th percentile of terminal_spot_log_quote_rate_ratio_30s_to_prior_120s on all tune rows",
+    "spot_perpetual_disagreement_threshold": "99.5th percentile of the absolute terminal_spot_perpetual_signed_aggressive_share_difference_30s on all tune rows",
+    "held_out_threshold_retuning_allowed": false,
     "held_out_reporting": [
       "all decision offsets",
       "last 180 seconds",
@@ -186,6 +192,15 @@
       "last 60 seconds"
     ],
     "live_authority_from_this_contract": false
+  },
+  "prospective_feature_support_controls": {
+    "statistics_partition": "train_only",
+    "labels_used": false,
+    "training_range_action": "abstain when more than four features are outside their observed training range",
+    "extreme_outlier_action": "abstain when any feature exceeds the outer five-IQR fence expanded to contain the observed training range",
+    "held_out_threshold_retuning_allowed": false,
+    "held_out_reporting_changes_predictive_metrics": false,
+    "paper_or_live_authority": false
   },
   "partition": {
     "method": "chronological_whole_UTC_days",
@@ -275,5 +290,5 @@
   "round16_terminal_targets_consulted_before_freeze": false,
   "round16_model_scores_consulted_before_freeze": false,
   "profitability_claim": false,
-  "contract_sha256": "96c56d1ce835dd193d2852f75acc45edf533e1c4c6cef0e145c628a1a2b700f9"
+  "contract_sha256": "ba4a0fdd8b24baaa82fd1b4c6085b1a4907e910f4ebcefac00f2e92fb95d1996"
 }

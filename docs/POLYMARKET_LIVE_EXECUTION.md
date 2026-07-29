@@ -108,6 +108,13 @@ flowchart LR
   halfway through assembly. Automated parity tests prove that the live
   five-minute and fifteen-minute vectors are bit-identical to their historical
   builders. This feature path has no order or promotion authority.
+- The fifteen-minute scorer additionally requires caller-pinned pretest and
+  evaluation digests, exact candidate and implementation hashes, and all nine
+  held-out predictive gates. It abstains outside train-only feature support or
+  above label-blind tune-only settlement-anomaly thresholds. Held-out support
+  and settlement abstention rates are reported without filtering the
+  predictive metrics. A passing score remains telemetry only and must enter a
+  separate prospective after-cost campaign before promotion.
 - Foreign orders, positions, or authenticated stream events fail closed and
   are never modified.
 - The installed CLI and native Windows app consume one generated command

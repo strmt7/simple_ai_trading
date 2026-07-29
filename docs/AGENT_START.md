@@ -304,9 +304,11 @@ extends the established parser with independently registered commands.
   facts without duplicating them, but has separate Polymarket identities,
   targets, pretest, and holdout. No eligible Round 16 identity or terminal
   target was accessed before contract
-  `96c56d1ce835dd193d2852f75acc45edf533e1c4c6cef0e145c628a1a2b700f9`
-  was frozen. Neither horizon may be pooled, selected, or promoted without its
-  own prediction and prospective after-cost gates.
+  `ba4a0fdd8b24baaa82fd1b4c6085b1a4907e910f4ebcefac00f2e92fb95d1996`
+  was frozen. It binds label-blind tune-only settlement-anomaly thresholds
+  and train-only feature-support abstention before held-out access. Neither
+  horizon may be pooled, selected, or promoted without its own prediction and
+  prospective after-cost gates.
 - Every Polymarket lane is execution-independent from Binance. Binance may
   supply optional public BTCUSDT predictor observations, but no Binance
   credential, account, balance, order, fill, position, capital, PnL, risk, or

@@ -18,6 +18,8 @@ from .polymarket_round16_model import (
     Round16ModelPanel,
     load_round16_model_panel,
     predict_round16_candidate,
+    round16_feature_support_admission,
+    round16_settlement_admission_mask,
 )
 
 
@@ -130,6 +132,70 @@ def _verify_candidate(candidate: Mapping[str, object]) -> None:
     claimed = str(body.pop("artifact_sha256", ""))
     if len(claimed) != 64 or _canonical_sha256(body) != claimed:
         raise ValueError("Round 16 candidate artifact integrity failed")
+
+
+def _settlement_screen_report(
+    panel: Round16ModelPanel,
+    pretest: Mapping[str, object],
+) -> Mapping[str, object]:
+    controls = pretest.get("settlement_manipulation_controls")
+    if not isinstance(controls, Mapping):
+        raise ValueError("Round 16 settlement screen is missing")
+    admitted = round16_settlement_admission_mask(panel.features, controls)
+    remaining_ms = panel.event_start_ms + 900_000 - panel.decision_time_ms
+
+    def coverage(selected: np.ndarray) -> Mapping[str, int]:
+        rows = int(np.count_nonzero(selected))
+        admitted_rows = int(np.count_nonzero(admitted & selected))
+        return {
+            "rows": rows,
+            "admitted_rows": admitted_rows,
+            "abstained_rows": rows - admitted_rows,
+        }
+
+    all_rows = np.ones(len(panel.labels), dtype=np.bool_)
+    return {
+        "action": "abstain",
+        "threshold_partition": "tune",
+        "labels_used_to_select_thresholds": False,
+        "all_decisions": coverage(all_rows),
+        "last_180_seconds": coverage(remaining_ms <= 180_000),
+        "last_120_seconds": coverage(remaining_ms <= 120_000),
+        "last_60_seconds": coverage(remaining_ms <= 60_000),
+        "changes_predictive_metrics": False,
+        "paper_authority": False,
+        "live_authority": False,
+    }
+
+
+def _feature_support_report(
+    panel: Round16ModelPanel,
+    pretest: Mapping[str, object],
+) -> Mapping[str, object]:
+    support = pretest.get("feature_support")
+    if not isinstance(support, Mapping):
+        raise ValueError("Round 16 feature-support screen is missing")
+    admitted, outside, extreme = round16_feature_support_admission(
+        panel.features,
+        support,
+    )
+    return {
+        "action": "abstain",
+        "bounds_partition": "train",
+        "labels_used_to_select_bounds": False,
+        "rows": len(panel.labels),
+        "admitted_rows": int(np.count_nonzero(admitted)),
+        "abstained_rows": int(np.count_nonzero(~admitted)),
+        "maximum_outside_training_range_observed": int(
+            np.max(outside, initial=0)
+        ),
+        "maximum_extreme_outliers_observed": int(
+            np.max(extreme, initial=0)
+        ),
+        "changes_predictive_metrics": False,
+        "paper_authority": False,
+        "live_authority": False,
+    }
 
 
 def evaluate_round16_panel(
@@ -261,6 +327,11 @@ def evaluate_round16_panel(
             - float(challenger["brier_score"]) / float(control["brier_score"]),
         },
         "paired_condition_block_bootstrap": bootstrap,
+        "settlement_manipulation_screen": _settlement_screen_report(
+            panel,
+            pretest,
+        ),
+        "feature_support_screen": _feature_support_report(panel, pretest),
         "gates": gates,
         "accepted_predictive_edge": accepted,
         "failure_action": (
