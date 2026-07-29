@@ -1,0 +1,155 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v113",
+  "created_at_utc": "2026-07-29T03:02:20Z",
+  "implementation_git_commit": "47e3d309decf44c37489e64cd2ad031ad8b25888",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v112.json",
+    "file_sha256": "d46845b887377b7ff4d2b7aec18523b5452d8f5735d9e808f44428362abc1511",
+    "design_sha256": "dadfda1f0afbb7643bc8cc0e8b90067bd18e60a23e84301b597883bc1dc78ea8",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "ai_uplift": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+      "sha256": "eb1f462f8c6590b0584af1edc0465d2a71f4eee147a67934bdd407e1487d2396"
+    },
+    "sealed_evaluation": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "7cc920fb002c8f02e80fb42a1988d99eab322caea93c257f3edaaed34a6438fc"
+    },
+    "ai_uplift_test": {
+      "path": "tests/test_impact_absorption_ai_uplift.py",
+      "sha256": "85a94a3a9a2b3b2e0c33db66224335f95769687295d863fd5e4d457b37982bbb"
+    },
+    "sealed_evaluation_test": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "6a9ec204dce0a7b498768042c8b9aa4044fe13eb04870df7a703eebf9daaaaf0"
+    },
+    "historical_local_ai_contract_test": {
+      "path": "tests/test_round74_local_ai_design.py",
+      "sha256": "6524ae29d0da7a25af52a58490262f84945431915daa70a3a71020fc7eb18aa7"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://www.federalreserve.gov/bankinforeg/srletters/sr1107a1.pdf",
+      "finding": "Model validation should use multiple tests, analyze performance and limitations under actual and stressed conditions, and apply effective challenge rather than infer validity from favorable aggregate outcomes.",
+      "implementation_consequence": "The local-AI overlay must preserve after-cost uplift and path-risk noninferiority on the same exact-replay population."
+    },
+    {
+      "source": "https://www.bis.org/basel_framework/chapter/MAR/99.htm?inforce=20191215&published=20191215&tldate=20170929",
+      "finding": "Disaggregated backtesting helps locate sub-portfolio problems hidden by aggregate trading outcomes.",
+      "implementation_consequence": "Capital-scaled adverse excursion is now paired at capture-run, symbol, and forecast-horizon resolution."
+    },
+    {
+      "source": "https://airc.nist.gov/airmf-resources/playbook/measure/",
+      "finding": "NIST recommends measurements beyond averages to find costly pockets of failure, with segment metrics, thresholds, and documented monitoring.",
+      "implementation_consequence": "Every observed fine-grained cell carries digest-bound baseline, AI, and delta adverse-excursion evidence and canonical gate recomputation."
+    }
+  ],
+  "declared_delta": {
+    "ai_role": "veto_or_reduce_only",
+    "development_report_schema_version": "round-074-ai-uplift-development-v15",
+    "sealed_evaluation_schema_version": "round-074-sealed-evaluation-v23",
+    "paired_dimensions": [
+      "capture_run",
+      "symbol",
+      "forecast_horizon_seconds"
+    ],
+    "new_paired_measure": "aggregate_capital_scaled_maximum_adverse_excursion_bps",
+    "aggregate_measure_definition": "arithmetic_sum_of_paired_trade_maximum_adverse_excursion_bps_within_each_cell",
+    "adverse_excursion_delta_definition": "ai_minus_baseline",
+    "adverse_excursion_noninferiority_threshold_bps": 0.0,
+    "positive_delta_may_be_offset_by_other_cells": false,
+    "panel_observation_count_reconciles_to_baseline_trace": true,
+    "panel_baseline_adverse_excursion_sum_reconciles_to_baseline_trace": true,
+    "panel_ai_adverse_excursion_sum_reconciles_to_exact_replay": true,
+    "global_maximum_drawdown_noninferiority_gate_retained": true,
+    "after_cost_pnl_noninferiority_gates_retained": true,
+    "development_gate_reasons_recomputed_from_evidence": true,
+    "sealed_gate_reasons_recomputed_from_evidence": true,
+    "stored_gate_flags_trusted_without_semantic_recalculation": false,
+    "historical_v47_contract_frozen_to_literal_version": true,
+    "historical_artifact_compared_to_moving_runtime_version": false,
+    "model_parameters_changed": false,
+    "training_objective_changed": false,
+    "forward_passes_added": 0,
+    "backward_passes_added": 0,
+    "market_data_reads_added": 0,
+    "ai_model_calls_added": 0,
+    "action_thresholds_changed": false,
+    "execution_replay_algorithm_changed": false,
+    "compute_backend_changed": false,
+    "campaign_source_files_changed": false,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "ai_uplift_development": "round-074-ai-uplift-development-v15",
+    "sealed_evaluation": "round-074-sealed-evaluation-v23",
+    "ai_pretest_qualification": "round-074-ai-pretest-qualification-v3",
+    "ai_qualification_operator": "round-074-ai-qualification-operator-v3",
+    "event_model": "round-074-event-payoff-model-v9",
+    "event_training": "round-074-event-training-v33",
+    "event_pretest_policy": "round-074-event-pretest-policy-v32"
+  },
+  "verification": {
+    "unique_tests_passed": 184,
+    "focused_ai_and_sealed_tests_passed": 40,
+    "additional_compatibility_tests_passed": 144,
+    "new_development_path_risk_counterexample_rejected": true,
+    "new_sealed_path_risk_counterexample_rejected": true,
+    "after_cost_pnl_gates_pass_in_path_risk_counterexamples": true,
+    "global_drawdown_gate_passes_in_path_risk_counterexamples": true,
+    "fine_grained_adverse_excursion_gate_is_decisive": true,
+    "stored_cell_evidence_tampering_rejected": true,
+    "historical_v47_contract_frozen_to_literal": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "directml_preflight_executed_for_this_delta": false,
+    "representative_training_performed": false,
+    "representative_ai_reviews_executed": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "status_observed_at_utc": "2026-07-29T03:02:20Z",
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs_before_slot_045": 35,
+    "latest_independently_adjudicated_slot_before_slot_045": 41,
+    "slot_045_status_at_observation": "running",
+    "slot_045_process_count_at_observation": 4,
+    "slot_045_result_read": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_or_wal_hashed_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "path_risk_safeguard_proven_on_synthetic_counterexamples": true,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "quantile_accuracy_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "fd9bc60bf4aa038a21562ac6ac7ff72b93941bf66553ca5ccb03f6fd46c262fb"
+}
