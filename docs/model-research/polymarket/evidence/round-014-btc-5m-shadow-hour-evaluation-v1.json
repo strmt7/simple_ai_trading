@@ -1,0 +1,385 @@
+{
+  "artifact_sha256": "23797c254f7b8f81ddafe4116f90979140d8e9d4cf7fd755dba2620d5946e283",
+  "claim_gate": {
+    "minimum_events": 50,
+    "minimum_events_passed": false,
+    "profitability_claim": false,
+    "trading_authority": false
+  },
+  "condition_balanced_prediction_metrics": {
+    "directional_accuracy": 0.6205357142857143,
+    "mean_brier_score": 0.22564317326057257,
+    "mean_log_loss": 0.6443589462915121
+  },
+  "events": [
+    {
+      "candidate_opportunity_count": 7,
+      "clob_payload_sha256": "34b5a2a5b8b0d363b0741afe846f35b1338e277035b8713f3ffb4812738295be",
+      "condition_id": "0xc85505ba14b2776755ab3c5baca2a41f544cf0a0788f8d34eb6896275eca7924",
+      "event_end_ms": 1785350700000,
+      "event_start_ms": 1785350400000,
+      "gamma_market_id": "3176774",
+      "gamma_payload_sha256": "4d168677a46e64acf8676a4e241b3fd55f1a5f397feadad64642678f60806cfb",
+      "observed_prediction_rows": 8,
+      "opportunity_count": 7,
+      "prediction_metrics": {
+        "directional_accuracy": 0.75,
+        "mean_brier_score": 0.14355052419279993,
+        "mean_log_loss": 0.4566576573734766,
+        "rows": 8
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "1.62146",
+        "decision_time_ms": 1785350430000,
+        "opportunity_artifact_sha256": "5ca7b6ba1aba4a416221b7945b0665a76e8835e32416089d0f4bd3eec83f1ecb",
+        "selected_outcome": "Up",
+        "selected_outcome_won": true
+      },
+      "winner": "Up"
+    },
+    {
+      "candidate_opportunity_count": 6,
+      "clob_payload_sha256": "dd78a3f54ef9ce9cf7163bf899e8eedfea2707c82b6ecf58f1fd769c4619fe76",
+      "condition_id": "0xbb92cc0262410c0302c6cfab4654539c1e964474c3c8e5745968def8320a5766",
+      "event_end_ms": 1785351000000,
+      "event_start_ms": 1785350700000,
+      "gamma_market_id": "3176785",
+      "gamma_payload_sha256": "b46dc5e917251684e3c8c5f86dfbad817f762f243a54ccf810a3e3f10e7320e6",
+      "observed_prediction_rows": 8,
+      "opportunity_count": 8,
+      "prediction_metrics": {
+        "directional_accuracy": 0.5,
+        "mean_brier_score": 0.25609996486561426,
+        "mean_log_loss": 0.7067443617763499,
+        "rows": 8
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "-3.32963",
+        "decision_time_ms": 1785350760000,
+        "opportunity_artifact_sha256": "d84054c38105a75cec6b4ef8afc75f180f91550df0558176f6090fee97cf88b2",
+        "selected_outcome": "Down",
+        "selected_outcome_won": false
+      },
+      "winner": "Up"
+    },
+    {
+      "candidate_opportunity_count": 8,
+      "clob_payload_sha256": "90c3b885f0816e80cd3872d385f56585eabc410f9c8c2a9233cddb4187bee6dc",
+      "condition_id": "0x4af2ff3d6a4eff9dfd49bdefffb39f39cb3ccecbb4407451ed2e2259ff90d0a1",
+      "event_end_ms": 1785351300000,
+      "event_start_ms": 1785351000000,
+      "gamma_market_id": "3176796",
+      "gamma_payload_sha256": "59340c92c2673edd7c0271b56a745b4363a19e1207c5fca5ddbc4dd9136250ef",
+      "observed_prediction_rows": 8,
+      "opportunity_count": 8,
+      "prediction_metrics": {
+        "directional_accuracy": 0.75,
+        "mean_brier_score": 0.17186233003875448,
+        "mean_log_loss": 0.5214419982470668,
+        "rows": 8
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "3.52944",
+        "decision_time_ms": 1785351030000,
+        "opportunity_artifact_sha256": "f33ecdec86008700d9a7eea0daa5cec251305f595c30f1c9ae6cd5f9729d78b5",
+        "selected_outcome": "Up",
+        "selected_outcome_won": true
+      },
+      "winner": "Up"
+    },
+    {
+      "candidate_opportunity_count": 5,
+      "clob_payload_sha256": "43d974495e36a1414ad266b6ef35d66f9eb13915d7149d0ffa4ec4023cd66f3a",
+      "condition_id": "0x8e3887cec295808cf88f840a6c2e282f15649f4527088d1916233b68ca022a70",
+      "event_end_ms": 1785351600000,
+      "event_start_ms": 1785351300000,
+      "gamma_market_id": "3178415",
+      "gamma_payload_sha256": "721fd376e33a271dc1f19c90c04af39b41485bedf3499c13938994f922b3d506",
+      "observed_prediction_rows": 8,
+      "opportunity_count": 6,
+      "prediction_metrics": {
+        "directional_accuracy": 0.75,
+        "mean_brier_score": 0.20401750095520746,
+        "mean_log_loss": 0.5967705330305454,
+        "rows": 8
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "-1.10807",
+        "decision_time_ms": 1785351360000,
+        "opportunity_artifact_sha256": "5ae2175300a2e726898b5b21ce2e1bb363b68097293e8b832a6e36e1b84c7ccf",
+        "selected_outcome": "Up",
+        "selected_outcome_won": false
+      },
+      "winner": "Down"
+    },
+    {
+      "candidate_opportunity_count": 6,
+      "clob_payload_sha256": "ee74f2556e6acd6eafe0bd6422e19cc851f93120ec854698c79e20391d1b168f",
+      "condition_id": "0xd89556a0a87ed2d1caf71cfd093b8c5e2399bc08bd6b6cedebdfdb2c08e62fb3",
+      "event_end_ms": 1785351900000,
+      "event_start_ms": 1785351600000,
+      "gamma_market_id": "3179504",
+      "gamma_payload_sha256": "4e54c096adb64353868cd612839c231857c2ead570da8ee228c2b722aee8909d",
+      "observed_prediction_rows": 8,
+      "opportunity_count": 8,
+      "prediction_metrics": {
+        "directional_accuracy": 0.5,
+        "mean_brier_score": 0.2979072160773394,
+        "mean_log_loss": 0.8054466285916104,
+        "rows": 8
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "-2.28624",
+        "decision_time_ms": 1785351630000,
+        "opportunity_artifact_sha256": "1d166337fc95e0632dfb7cf505628c293f0687073032df9e6bdc131bee45efbc",
+        "selected_outcome": "Up",
+        "selected_outcome_won": false
+      },
+      "winner": "Down"
+    },
+    {
+      "candidate_opportunity_count": 4,
+      "clob_payload_sha256": "f8aa17e4bdb6e92db9d5a3cdf44ce0d30dfc1700bd3a1475538febb2fb5a8bbe",
+      "condition_id": "0xb7fb1f63d2dd6d0d9ed48f9d5992ea1a92d6870f47985d08a5929c136b85660e",
+      "event_end_ms": 1785352200000,
+      "event_start_ms": 1785351900000,
+      "gamma_market_id": "3180515",
+      "gamma_payload_sha256": "2561af565785f72e94d73440a237de658cc03888aafa18d59cf6536964a12195",
+      "observed_prediction_rows": 8,
+      "opportunity_count": 5,
+      "prediction_metrics": {
+        "directional_accuracy": 0.875,
+        "mean_brier_score": 0.12980018554761147,
+        "mean_log_loss": 0.4379640883361503,
+        "rows": 8
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "-1.52207",
+        "decision_time_ms": 1785351960000,
+        "opportunity_artifact_sha256": "21c2d43929a844cf2a0a24c3da259dc2f806a7f4018f33dc7cbffae237a8279b",
+        "selected_outcome": "Up",
+        "selected_outcome_won": false
+      },
+      "winner": "Down"
+    },
+    {
+      "candidate_opportunity_count": 5,
+      "clob_payload_sha256": "51c2c74779cea24e865d9889fba406e5d9ed0bddb8dd8a7242cb150e92089e8d",
+      "condition_id": "0x4dbd19d7195ca383eb66419a9ff07a6e0a8f5d34ad78255a3b16541461aab678",
+      "event_end_ms": 1785352500000,
+      "event_start_ms": 1785352200000,
+      "gamma_market_id": "3181681",
+      "gamma_payload_sha256": "0f58ba5a077cf29bcac883db98f034f166d7a3d98763ec07caceda6b2dee3141",
+      "observed_prediction_rows": 7,
+      "opportunity_count": 6,
+      "prediction_metrics": {
+        "directional_accuracy": 0.5714285714285714,
+        "mean_brier_score": 0.22626858162531108,
+        "mean_log_loss": 0.6342686374851423,
+        "rows": 7
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "-2.58750",
+        "decision_time_ms": 1785352230000,
+        "opportunity_artifact_sha256": "e690124c6ae67bec195db8389c4e8969514e7c369a9641f528c6f9e9338e6c80",
+        "selected_outcome": "Down",
+        "selected_outcome_won": false
+      },
+      "winner": "Up"
+    },
+    {
+      "candidate_opportunity_count": 7,
+      "clob_payload_sha256": "024be8d8236b2de7da98aad403f54c37d1ea1659ad146ada0fa1d8b73acc62c8",
+      "condition_id": "0x007977d5b6fed9d56905bb71223d9fc6e057ee4476eb47bb544b319269ce8b48",
+      "event_end_ms": 1785352800000,
+      "event_start_ms": 1785352500000,
+      "gamma_market_id": "3182737",
+      "gamma_payload_sha256": "82512802095805fbdb43b5df91504672272005b2fd4d6247491d99bfdb76cdc2",
+      "observed_prediction_rows": 8,
+      "opportunity_count": 8,
+      "prediction_metrics": {
+        "directional_accuracy": 0.5,
+        "mean_brier_score": 0.2699173538424998,
+        "mean_log_loss": 0.7501614033538155,
+        "rows": 8
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "3.11936",
+        "decision_time_ms": 1785352530000,
+        "opportunity_artifact_sha256": "00d8d773dafc826104b40b93f3ca464b1263e8dc76245d5ac406dcef5c772718",
+        "selected_outcome": "Down",
+        "selected_outcome_won": true
+      },
+      "winner": "Down"
+    },
+    {
+      "candidate_opportunity_count": 6,
+      "clob_payload_sha256": "800e2afc6c248723390d456f87cce3121bba4629c6a766f80e30ae58c99498a0",
+      "condition_id": "0x6b4438273122702b65d8a35236c677a354e9ef1045826c6b054bb2f370749729",
+      "event_end_ms": 1785353100000,
+      "event_start_ms": 1785352800000,
+      "gamma_market_id": "3183557",
+      "gamma_payload_sha256": "e9e68dc2b7cb8101e7864c13ebe77471ecca1576f186a1f368d4d49c5972ed8e",
+      "observed_prediction_rows": 8,
+      "opportunity_count": 7,
+      "prediction_metrics": {
+        "directional_accuracy": 0.625,
+        "mean_brier_score": 0.15429649507921694,
+        "mean_log_loss": 0.48720959321286944,
+        "rows": 8
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "-1.16006",
+        "decision_time_ms": 1785352860000,
+        "opportunity_artifact_sha256": "749dd6a214ebb54e026eeee72dac68cb6ec0d619cf977b9e8537b6723bb2e9c9",
+        "selected_outcome": "Up",
+        "selected_outcome_won": false
+      },
+      "winner": "Down"
+    },
+    {
+      "candidate_opportunity_count": 3,
+      "clob_payload_sha256": "702297c66b6705b7163495fd4b4635eabfa2fdc4790fc846335364807c6720d8",
+      "condition_id": "0x326356266b587737a26ccc42aac15993be2dd14942ef5b75a2c6881658804061",
+      "event_end_ms": 1785353400000,
+      "event_start_ms": 1785353100000,
+      "gamma_market_id": "3184773",
+      "gamma_payload_sha256": "b68d96540f3deb02d3eed0f89b2773f5c822a194ac3bf34aa325b74fddc1b7e0",
+      "observed_prediction_rows": 7,
+      "opportunity_count": 5,
+      "prediction_metrics": {
+        "directional_accuracy": 1.0,
+        "mean_brier_score": 0.12988394139580803,
+        "mean_log_loss": 0.4374909519100539,
+        "rows": 7
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "-0.68959",
+        "decision_time_ms": 1785353190000,
+        "opportunity_artifact_sha256": "3b96bf3bbf3e4658ae96f738dafbdacac95c8db236515388fca439fba8d69e8e",
+        "selected_outcome": "Up",
+        "selected_outcome_won": false
+      },
+      "winner": "Down"
+    },
+    {
+      "candidate_opportunity_count": 6,
+      "clob_payload_sha256": "70090fabbed2adfd86cda30fa18f8736a2cb56c1f0b7fff43b24511bd34bbfce",
+      "condition_id": "0x205ba88c382333798f21bdfc864384288643c2dd48a3f02367c57266b85327a6",
+      "event_end_ms": 1785353700000,
+      "event_start_ms": 1785353400000,
+      "gamma_market_id": "3186442",
+      "gamma_payload_sha256": "877aff1715d70e215f74738c1897828f0fcfb34b64b237e1e49bc8cfeb8df2e7",
+      "observed_prediction_rows": 8,
+      "opportunity_count": 8,
+      "prediction_metrics": {
+        "directional_accuracy": 0.625,
+        "mean_brier_score": 0.2751695324979598,
+        "mean_log_loss": 0.765718086120791,
+        "rows": 8
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "-3.32963",
+        "decision_time_ms": 1785353430000,
+        "opportunity_artifact_sha256": "22f4bfde224de843daeae1809a4ab4c82f6b803c40c518f93b167e2eff71d648",
+        "selected_outcome": "Up",
+        "selected_outcome_won": false
+      },
+      "winner": "Down"
+    },
+    {
+      "candidate_opportunity_count": 2,
+      "clob_payload_sha256": "b50f8473bdf1d53896571176d9f807896c4b8290a928ac3605482ef28d51553b",
+      "condition_id": "0x4d6fea3621deec3543650ec443d1568544af0e1f4ee750af642f206f22ecd63e",
+      "event_end_ms": 1785354000000,
+      "event_start_ms": 1785353700000,
+      "gamma_market_id": "3187309",
+      "gamma_payload_sha256": "10d963dab0e815830d3725cea00aff0c04abcec7a093a548505f7163f3120a66",
+      "observed_prediction_rows": 5,
+      "opportunity_count": 5,
+      "prediction_metrics": {
+        "directional_accuracy": 0.0,
+        "mean_brier_score": 0.44894445300874786,
+        "mean_log_loss": 1.1324334160602745,
+        "rows": 5
+      },
+      "selected_entry": {
+        "counterfactual_net_pnl_quote": "-2.13467",
+        "decision_time_ms": 1785353730000,
+        "opportunity_artifact_sha256": "f0f21678348720af775829cd9b082f819e2f53b1eb7e8ec97131ef81602a677f",
+        "selected_outcome": "Up",
+        "selected_outcome_won": false
+      },
+      "winner": "Down"
+    }
+  ],
+  "first_candidate_counterfactual": {
+    "displayed_depth_fill_counterfactual_only": true,
+    "gross_loss_quote": "18.14746",
+    "gross_profit_quote": "8.27026",
+    "maximum_drawdown_quote": "11.69847",
+    "net_pnl_quote": "-9.87720",
+    "profit_factor": 0.4557254844479613,
+    "real_fills_observed": 0,
+    "real_orders_submitted": 0,
+    "selected_events": 12,
+    "win_rate": 0.25,
+    "winning_events": 3
+  },
+  "implementation_sha256": {
+    "campaign_evaluation": "e2aec2422108d21676209242ab5a124421d5d2fccfef63b35fdf8bde177d3024",
+    "settlement": "2051e8a0d9d0dfe904de554ad7eb031450b5f927d1df533348bfbcea7e029960"
+  },
+  "policy_sha256": "84222f6e7d3d8679ffba16188cfd755eb74d2fc4c45c08afdb9688171e55776b",
+  "population": {
+    "eligible_event_start_ms": 1785350400000,
+    "expected_run_end_ms": 1785353861587,
+    "observed_prediction_rows": 91,
+    "opportunity_errors": 10,
+    "resolved_events": 12
+  },
+  "profitability_claim": false,
+  "schema_version": "polymarket-btc-shadow-hour-evaluation-v1",
+  "source_commit": "08ee218ed3287167d0ee9131877d63ad457b4f53",
+  "source_log_sha256": "88f531e7e351de6f8d61e1e96c40c36755ef2cfe72dcd6e74ee70501f48ba52d",
+  "terminal_feed_health": {
+    "current_epochs": {
+      "perpetual": 1,
+      "spot": 1
+    },
+    "ingested_counts": {
+      "perpetual": 138531,
+      "spot": 81050
+    },
+    "last_errors": {
+      "perpetual": "",
+      "spot": ""
+    },
+    "last_event_time_ms": {
+      "perpetual": 1785353862254,
+      "spot": 1785353862230
+    },
+    "last_received_at_ms": {
+      "perpetual": 1785353862719,
+      "spot": 1785353862691
+    },
+    "queue_capacity": 32768,
+    "queue_high_watermark": 393,
+    "queue_size": 0,
+    "received_counts": {
+      "perpetual": 138531,
+      "spot": 81050
+    },
+    "reconnect_counts": {
+      "perpetual": 0,
+      "spot": 0
+    },
+    "running": false,
+    "stale_epoch_discard_counts": {
+      "perpetual": 0,
+      "spot": 0
+    },
+    "trading_authority": false
+  },
+  "trading_authority": false
+}
