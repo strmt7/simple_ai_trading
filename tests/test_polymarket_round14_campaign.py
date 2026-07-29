@@ -134,3 +134,33 @@ def test_transport_completion_cannot_claim_model_eligibility(
     assert result["model_data_eligible"] is False
     assert result["profitability_claim"] is False
     assert result["live_trading_authority"] is False
+
+
+def test_live_qualification_artifact_is_hash_bound_and_non_promotional() -> None:
+    path = (
+        Path(__file__).parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-014-btc-5m-live-qualification-v1.json"
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    claimed = payload.pop("artifact_sha256")
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+
+    assert hashlib.sha256(encoded).hexdigest() == claimed
+    assert payload["status"] == "qualification_passed"
+    assert payload["capture"]["stream_gap_count"] == 0
+    assert payload["causal_replay"]["resolution_count"] == 0
+    assert payload["storage"]["source_database_published"] is False
+    assert payload["storage"]["reproducible_from_repository_alone"] is False
+    assert payload["scope"]["model_data_eligible"] is False
+    assert payload["scope"]["profitability_claim"] is False
+    assert payload["scope"]["paper_trading_authority"] is False
+    assert payload["scope"]["live_trading_authority"] is False
