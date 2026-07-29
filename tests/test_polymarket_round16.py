@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 from datetime import UTC, datetime
+import hashlib
 import json
 from pathlib import Path
 
@@ -19,6 +21,11 @@ from simple_ai_trading.polymarket_round16 import (
     load_round16_historical_contract,
     parse_round16_historical_btc_event,
 )
+from simple_ai_trading.polymarket_historical_screen import (
+    HistoricalScreenStore,
+    PublicPayload,
+)
+from simple_ai_trading.polymarket_round16_targets import _record_resolution
 
 
 ROOT = Path(__file__).parents[1]
@@ -115,6 +122,22 @@ class _Session:
     def get(self, url: str, *, params: object, timeout: float) -> _Response:
         self.calls.append((url, params, timeout))
         return _Response(self.payload)
+
+
+def _public(value: object, *, observed_at_ms: int = END_MS + 1) -> PublicPayload:
+    canonical = json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+    return PublicPayload(
+        value=value,
+        canonical_json=canonical,
+        sha256=hashlib.sha256(canonical.encode("ascii")).hexdigest(),
+        observed_at_ms=observed_at_ms,
+    )
 
 
 def test_round16_contract_loader_is_exact_and_has_no_authority() -> None:
@@ -283,3 +306,73 @@ def test_round16_dataset_source_has_no_polymarket_target_inputs() -> None:
         "polymarket_prior",
     ):
         assert forbidden not in source
+
+
+def test_round16_resolution_is_unavailable_before_feature_freeze(
+    tmp_path: Path,
+) -> None:
+    contract = load_round16_historical_contract(CONTRACT_PATH)
+    market = parse_round16_historical_btc_event(
+        _event(),
+        contract=contract,
+        observed_at_ms=END_MS + 1,
+    )
+    gamma_value = _event()["markets"][0]
+    assert isinstance(gamma_value, dict)
+    gamma = _public(gamma_value)
+    clob = _public(
+        {
+            "condition_id": CONDITION,
+            "market_slug": SLUG,
+            "closed": True,
+            "active": False,
+            "accepting_orders": False,
+            "tokens": [
+                {
+                    "token_id": UP_TOKEN,
+                    "outcome": "Up",
+                    "winner": True,
+                    "price": 1,
+                },
+                {
+                    "token_id": DOWN_TOKEN,
+                    "outcome": "Down",
+                    "winner": False,
+                    "price": 0,
+                },
+            ],
+        }
+    )
+    with HistoricalScreenStore(
+        tmp_path / "round16.duckdb",
+        contract=contract.historical,
+    ) as store:
+        with pytest.raises(ValueError, match="not authorized"):
+            _record_resolution(
+                store,
+                contract,
+                market,
+                gamma=gamma,
+                clob=clob,
+            )
+        store.transition("initialized", "identities_complete")
+        store.transition("identities_complete", "features_complete")
+
+        assert (
+            _record_resolution(
+                store,
+                contract,
+                market,
+                gamma=gamma,
+                clob=clob,
+            )
+            == "Up"
+        )
+        with pytest.raises(ValueError, match="not authorized"):
+            _record_resolution(
+                store,
+                contract,
+                replace(market, role="test"),
+                gamma=gamma,
+                clob=clob,
+            )
