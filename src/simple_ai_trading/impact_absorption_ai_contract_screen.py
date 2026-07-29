@@ -21,8 +21,8 @@ from .impact_absorption_event_scaling import ROUND74_EVENT_BINARY_FEATURE_COUNT
 from .impact_absorption_event_sequence import ROUND74_EVENT_FEATURE_NAMES
 
 
-ROUND74_AI_CONTRACT_SCREEN_SCHEMA_VERSION = "round-074-ai-contract-screen-v2"
-ROUND74_AI_CONTRACT_CASE_SCHEMA_VERSION = "round-074-ai-contract-case-v2"
+ROUND74_AI_CONTRACT_SCREEN_SCHEMA_VERSION = "round-074-ai-contract-screen-v3"
+ROUND74_AI_CONTRACT_CASE_SCHEMA_VERSION = "round-074-ai-contract-case-v3"
 ROUND74_AI_CONTRACT_CASE_IDS = (
     "benign_mirror_long",
     "benign_mirror_short",
@@ -56,6 +56,12 @@ _REQUEST_TEMPLATE_KEYS = frozenset(
         "neither_positive_payoff_probability",
         "adverse_selection_probability",
         "regime_unpredictability_probability",
+        "epistemic_peer_count",
+        "payoff_quantile_peer_standard_deviation_rms_bps",
+        "maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps",
+        "positive_payoff_probability_peer_standard_deviation",
+        "adverse_selection_probability_peer_standard_deviation",
+        "regime_unpredictability_probability_peer_standard_deviation",
     }
 )
 _DIRECTIONAL_FEATURES = (
@@ -189,6 +195,32 @@ class Round74AIContractCase:
             regime_unpredictability_probability=float(
                 payload["regime_unpredictability_probability"]
             ),
+            epistemic_peer_count=int(payload["epistemic_peer_count"]),
+            payoff_quantile_peer_standard_deviation_rms_bps=float(
+                payload[
+                    "payoff_quantile_peer_standard_deviation_rms_bps"
+                ]
+            ),
+            maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps=float(
+                payload[
+                    "maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps"
+                ]
+            ),
+            positive_payoff_probability_peer_standard_deviation=float(
+                payload[
+                    "positive_payoff_probability_peer_standard_deviation"
+                ]
+            ),
+            adverse_selection_probability_peer_standard_deviation=float(
+                payload[
+                    "adverse_selection_probability_peer_standard_deviation"
+                ]
+            ),
+            regime_unpredictability_probability_peer_standard_deviation=float(
+                payload[
+                    "regime_unpredictability_probability_peer_standard_deviation"
+                ]
+            ),
         )
         selected.validate()
         return selected
@@ -283,6 +315,12 @@ def _template(
     depth: tuple[float, float, float, float] = (0.1, 0.2, 0.3, 0.4),
     feature_overrides: Mapping[str, float] | None = None,
     risk_profile: str = "conservative",
+    epistemic_peer_count: int = 3,
+    payoff_peer_standard_deviation_rms_bps: float = 0.25,
+    adverse_excursion_peer_standard_deviation_rms_bps: float = 0.35,
+    positive_probability_peer_standard_deviation: float = 0.02,
+    adverse_probability_peer_standard_deviation: float = 0.02,
+    unpredictable_probability_peer_standard_deviation: float = 0.02,
 ) -> dict[str, object]:
     sign = 1.0 if side == "long" else -1.0
     last, mean, standard_deviation, recent_change = _base_summary(asset_slot=0)
@@ -321,6 +359,22 @@ def _template(
         ),
         "adverse_selection_probability": adverse_probability,
         "regime_unpredictability_probability": unpredictable_probability,
+        "epistemic_peer_count": epistemic_peer_count,
+        "payoff_quantile_peer_standard_deviation_rms_bps": (
+            payoff_peer_standard_deviation_rms_bps
+        ),
+        "maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps": (
+            adverse_excursion_peer_standard_deviation_rms_bps
+        ),
+        "positive_payoff_probability_peer_standard_deviation": (
+            positive_probability_peer_standard_deviation
+        ),
+        "adverse_selection_probability_peer_standard_deviation": (
+            adverse_probability_peer_standard_deviation
+        ),
+        "regime_unpredictability_probability_peer_standard_deviation": (
+            unpredictable_probability_peer_standard_deviation
+        ),
     }
 
 
@@ -344,6 +398,11 @@ def round74_ai_contract_cases() -> tuple[Round74AIContractCase, ...]:
         "volatility": (1.0, 2.0, 3.5, 4.5),
         "flow": (2.0, -2.5, 3.0, -3.5),
         "depth": (-1.5, 2.0, -2.5, 3.0),
+        "payoff_peer_standard_deviation_rms_bps": 4.5,
+        "adverse_excursion_peer_standard_deviation_rms_bps": 6.0,
+        "positive_probability_peer_standard_deviation": 0.22,
+        "adverse_probability_peer_standard_deviation": 0.20,
+        "unpredictable_probability_peer_standard_deviation": 0.24,
     }
     directional_ambiguity = {
         "payoff": (-3.0, -0.5, 2.5, 5.0, 9.0),
@@ -354,6 +413,11 @@ def round74_ai_contract_cases() -> tuple[Round74AIContractCase, ...]:
         "unpredictable_probability": 0.31,
         "flow": (0.8, -0.7, 0.6, -0.5),
         "depth": (-0.5, 0.6, -0.7, 0.8),
+        "payoff_peer_standard_deviation_rms_bps": 2.5,
+        "adverse_excursion_peer_standard_deviation_rms_bps": 3.0,
+        "positive_probability_peer_standard_deviation": 0.18,
+        "adverse_probability_peer_standard_deviation": 0.12,
+        "unpredictable_probability_peer_standard_deviation": 0.14,
     }
     cases = (
         Round74AIContractCase(
@@ -433,6 +497,11 @@ def round74_ai_contract_cases() -> tuple[Round74AIContractCase, ...]:
                     "log1p_bid_depth_quote_20": -4.0,
                     "log1p_ask_depth_quote_20": -4.0,
                 },
+                payoff_peer_standard_deviation_rms_bps=1.5,
+                adverse_excursion_peer_standard_deviation_rms_bps=2.0,
+                positive_probability_peer_standard_deviation=0.08,
+                adverse_probability_peer_standard_deviation=0.12,
+                unpredictable_probability_peer_standard_deviation=0.07,
             ),
         ),
         Round74AIContractCase(
@@ -452,6 +521,11 @@ def round74_ai_contract_cases() -> tuple[Round74AIContractCase, ...]:
                 unpredictable_probability=0.28,
                 flow=(1.0, 1.5, 2.0, -2.5),
                 depth=(0.5, 0.0, -1.0, -2.0),
+                payoff_peer_standard_deviation_rms_bps=3.0,
+                adverse_excursion_peer_standard_deviation_rms_bps=5.0,
+                positive_probability_peer_standard_deviation=0.20,
+                adverse_probability_peer_standard_deviation=0.24,
+                unpredictable_probability_peer_standard_deviation=0.10,
             ),
         ),
         Round74AIContractCase(
@@ -473,6 +547,11 @@ def round74_ai_contract_cases() -> tuple[Round74AIContractCase, ...]:
                     "log1p_ms_since_aggregate_trade": 5.0,
                     "log1p_ms_since_mark_price": 5.0,
                 },
+                payoff_peer_standard_deviation_rms_bps=2.0,
+                adverse_excursion_peer_standard_deviation_rms_bps=3.0,
+                positive_probability_peer_standard_deviation=0.16,
+                adverse_probability_peer_standard_deviation=0.14,
+                unpredictable_probability_peer_standard_deviation=0.18,
             ),
         ),
         Round74AIContractCase(
@@ -492,6 +571,11 @@ def round74_ai_contract_cases() -> tuple[Round74AIContractCase, ...]:
                 unpredictable_probability=0.12,
                 flow=(0.2, -0.2, 0.2, -0.2),
                 depth=(-0.2, 0.2, -0.2, 0.2),
+                payoff_peer_standard_deviation_rms_bps=6.0,
+                adverse_excursion_peer_standard_deviation_rms_bps=4.0,
+                positive_probability_peer_standard_deviation=0.28,
+                adverse_probability_peer_standard_deviation=0.08,
+                unpredictable_probability_peer_standard_deviation=0.10,
             ),
         ),
     )

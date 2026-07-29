@@ -42,7 +42,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
 from simple_ai_trading.storage import write_bytes_atomic  # noqa: E402
 
 
-SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v8"
+SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v9"
 OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
 MAXIMUM_RESPONSE_BYTES = 1_000_000
 UNLOAD_TIMEOUT_SECONDS = 10.0
@@ -257,6 +257,12 @@ def _synthetic_request() -> Round74AIReviewRequest:
         neither_positive_payoff_probability=0.20,
         adverse_selection_probability=0.85,
         regime_unpredictability_probability=0.90,
+        epistemic_peer_count=3,
+        payoff_quantile_peer_standard_deviation_rms_bps=1.5,
+        maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps=2.0,
+        positive_payoff_probability_peer_standard_deviation=0.18,
+        adverse_selection_probability_peer_standard_deviation=0.21,
+        regime_unpredictability_probability_peer_standard_deviation=0.24,
     )
     request.validate()
     return request

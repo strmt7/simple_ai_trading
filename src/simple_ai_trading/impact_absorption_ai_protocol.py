@@ -26,9 +26,9 @@ from .impact_absorption_event_scaling import ROUND74_EVENT_BINARY_FEATURE_COUNT
 
 
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
-ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v6"
+ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v7"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
-ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v9"
+ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v10"
 ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION = "round-074-ai-system-prompt-v3"
 ROUND74_AI_TEMPORAL_BLOCK_COUNT = 4
 ROUND74_AI_TEMPORAL_BLOCK_EVENTS = 16
@@ -317,6 +317,14 @@ class Round74AIReviewRequest:
     neither_positive_payoff_probability: float
     adverse_selection_probability: float
     regime_unpredictability_probability: float
+    epistemic_peer_count: int = 0
+    payoff_quantile_peer_standard_deviation_rms_bps: float = 0.0
+    maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps: float = (
+        0.0
+    )
+    positive_payoff_probability_peer_standard_deviation: float = 0.0
+    adverse_selection_probability_peer_standard_deviation: float = 0.0
+    regime_unpredictability_probability_peer_standard_deviation: float = 0.0
     schema_version: str = ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -377,6 +385,13 @@ class Round74AIReviewRequest:
             + self.opposing_positive_payoff_probability
             + self.neither_positive_payoff_probability
         )
+        epistemic_values = (
+            self.payoff_quantile_peer_standard_deviation_rms_bps,
+            self.maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps,
+            self.positive_payoff_probability_peer_standard_deviation,
+            self.adverse_selection_probability_peer_standard_deviation,
+            self.regime_unpredictability_probability_peer_standard_deviation,
+        )
         if (
             self.schema_version != ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
             or self.risk_profile not in ROUND74_ACTION_PROFILES
@@ -398,6 +413,25 @@ class Round74AIReviewRequest:
             or isinstance(self.proposed_risk_size_bps, bool)
             or not isinstance(self.proposed_risk_size_bps, int)
             or not 1 <= self.proposed_risk_size_bps <= 10_000
+            or isinstance(self.epistemic_peer_count, bool)
+            or not isinstance(self.epistemic_peer_count, int)
+            or not (
+                self.epistemic_peer_count == 0
+                or 2 <= self.epistemic_peer_count <= 32
+            )
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                or float(value) < 0.0
+                or float(value) > _MAXIMUM_ABSOLUTE_INPUT
+                for value in epistemic_values
+            )
+            or any(float(value) > 0.5 + 1e-12 for value in epistemic_values[2:])
+            or (
+                self.epistemic_peer_count == 0
+                and any(float(value) != 0.0 for value in epistemic_values)
+            )
             or any(
                 isinstance(value, bool)
                 or not isinstance(value, (int, float))
@@ -473,6 +507,22 @@ class Round74AIReviewRequest:
             "regime_unpredictability_probability": (
                 self.regime_unpredictability_probability
             ),
+            "epistemic_peer_count": self.epistemic_peer_count,
+            "payoff_quantile_peer_standard_deviation_rms_bps": (
+                self.payoff_quantile_peer_standard_deviation_rms_bps
+            ),
+            "maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps": (
+                self.maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps
+            ),
+            "positive_payoff_probability_peer_standard_deviation": (
+                self.positive_payoff_probability_peer_standard_deviation
+            ),
+            "adverse_selection_probability_peer_standard_deviation": (
+                self.adverse_selection_probability_peer_standard_deviation
+            ),
+            "regime_unpredictability_probability_peer_standard_deviation": (
+                self.regime_unpredictability_probability_peer_standard_deviation
+            ),
             "absolute_date_exposed_to_ai": False,
             "real_symbol_exposed_to_ai": False,
             "future_outcome_exposed_to_ai": False,
@@ -490,6 +540,70 @@ class Round74AIReviewRequest:
         claimed = str(payload.pop("request_sha256", ""))
         if claimed != _canonical_sha256(payload):
             raise ValueError("Round 74 AI review request digest differs")
+        integer_fields = (
+            "asset_slot",
+            "horizon_seconds",
+            "requested_wall_ns",
+            "expires_wall_ns",
+            "proposed_risk_size_bps",
+            "epistemic_peer_count",
+        )
+        number_fields = (
+            "positive_payoff_probability",
+            "opposing_positive_payoff_probability",
+            "neither_positive_payoff_probability",
+            "adverse_selection_probability",
+            "regime_unpredictability_probability",
+            "payoff_quantile_peer_standard_deviation_rms_bps",
+            "maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps",
+            "positive_payoff_probability_peer_standard_deviation",
+            "adverse_selection_probability_peer_standard_deviation",
+            "regime_unpredictability_probability_peer_standard_deviation",
+        )
+        sequence_fields = (
+            "feature_last",
+            "feature_mean",
+            "feature_standard_deviation",
+            "feature_recent_change",
+            "payoff_quantiles_bps",
+            "maximum_adverse_excursion_quantiles_bps",
+        )
+        try:
+            if any(
+                isinstance(payload[name], bool)
+                or not isinstance(payload[name], int)
+                for name in integer_fields
+            ):
+                raise ValueError("Round 74 AI review request integer differs")
+            if any(
+                isinstance(payload[name], bool)
+                or not isinstance(payload[name], (int, float))
+                for name in number_fields
+            ):
+                raise ValueError("Round 74 AI review request number differs")
+            for name in sequence_fields:
+                items = payload[name]
+                if not isinstance(items, list) or any(
+                    isinstance(item, bool)
+                    or not isinstance(item, (int, float))
+                    for item in items
+                ):
+                    raise ValueError(
+                        "Round 74 AI review request sequence differs"
+                    )
+            blocks = payload["feature_recent_block_means"]
+            if not isinstance(blocks, list) or any(
+                not isinstance(row, list)
+                or any(
+                    isinstance(item, bool)
+                    or not isinstance(item, (int, float))
+                    for item in row
+                )
+                for row in blocks
+            ):
+                raise ValueError("Round 74 AI review request blocks differ")
+        except KeyError as exc:
+            raise ValueError("Round 74 AI review request payload differs") from exc
         try:
             selected = cls(
                 pretest_policy_sha256=str(payload["pretest_policy_sha256"]),
@@ -540,6 +654,32 @@ class Round74AIReviewRequest:
                 ),
                 regime_unpredictability_probability=float(
                     payload["regime_unpredictability_probability"]
+                ),
+                epistemic_peer_count=int(payload["epistemic_peer_count"]),
+                payoff_quantile_peer_standard_deviation_rms_bps=float(
+                    payload[
+                        "payoff_quantile_peer_standard_deviation_rms_bps"
+                    ]
+                ),
+                maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps=float(
+                    payload[
+                        "maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps"
+                    ]
+                ),
+                positive_payoff_probability_peer_standard_deviation=float(
+                    payload[
+                        "positive_payoff_probability_peer_standard_deviation"
+                    ]
+                ),
+                adverse_selection_probability_peer_standard_deviation=float(
+                    payload[
+                        "adverse_selection_probability_peer_standard_deviation"
+                    ]
+                ),
+                regime_unpredictability_probability_peer_standard_deviation=float(
+                    payload[
+                        "regime_unpredictability_probability_peer_standard_deviation"
+                    ]
                 ),
                 schema_version=str(payload["schema_version"]),
             )
@@ -682,6 +822,43 @@ class Round74AIReviewRequest:
                 self.regime_unpredictability_probability,
                 8,
             ),
+            "epistemic_disagreement_contract": {
+                "available": self.epistemic_peer_count > 0,
+                "peer_count": self.epistemic_peer_count,
+                "values_are_cross_peer_population_standard_deviations": True,
+                "quantile_vector_reduction": (
+                    "root_mean_square_across_five_quantile_levels"
+                ),
+                "payoff_and_adverse_excursion_units": "basis_points",
+                "probability_units": "absolute_probability",
+                "realized_targets_used": False,
+                "larger_value_means_more_model_disagreement": True,
+                "zero_peers_means_diagnostics_unavailable": True,
+            },
+            "epistemic_peer_disagreement": {
+                "payoff_quantile_standard_deviation_rms_bps": _rounded(
+                    self.payoff_quantile_peer_standard_deviation_rms_bps,
+                    8,
+                ),
+                "maximum_adverse_excursion_quantile_standard_deviation_rms_bps": (
+                    _rounded(
+                        self.maximum_adverse_excursion_quantile_peer_standard_deviation_rms_bps,
+                        8,
+                    )
+                ),
+                "positive_payoff_probability_standard_deviation": _rounded(
+                    self.positive_payoff_probability_peer_standard_deviation,
+                    8,
+                ),
+                "adverse_selection_probability_standard_deviation": _rounded(
+                    self.adverse_selection_probability_peer_standard_deviation,
+                    8,
+                ),
+                "regime_unpredictability_probability_standard_deviation": _rounded(
+                    self.regime_unpredictability_probability_peer_standard_deviation,
+                    8,
+                ),
+            },
         }
         payload["prompt_payload_sha256"] = _canonical_sha256(payload)
         return payload
@@ -819,7 +996,12 @@ def build_round74_ai_review_prompt(
         "being profitable after costs. Use the supplied directional margin "
         "to assess ambiguity; substantial opposing mass or a small margin "
         "may justify reducing, vetoing, or abstaining, but never permits "
-        "switching to the opposing side. "
+        "switching to the opposing side. Epistemic peer-disagreement values "
+        "are cross-peer population standard deviations; the two quantile "
+        "values are root-mean-square summaries across the five quantile "
+        "levels. Larger values indicate more disagreement between independently "
+        "trained peers, not larger expected payoff. Zero peers means these "
+        "diagnostics are unavailable and must not be invented. "
         "Recent causal blocks are ordered oldest to newest and contain no "
         "future observations. Never invent a missing premise or fill one from "
         "background knowledge. If the supplied numeric packet cannot justify "
