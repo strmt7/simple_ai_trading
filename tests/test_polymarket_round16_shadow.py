@@ -338,6 +338,12 @@ def test_round16_verified_predictor_requires_pinned_passing_evidence(
 
     assert predictor.trading_authority is False
     assert predictor.pretest_envelope_sha256 == pretest_sha
+    assert predictor.pretest_file_sha256 == hashlib.sha256(
+        pretest.read_bytes()
+    ).hexdigest()
+    assert predictor.evaluation_file_sha256 == hashlib.sha256(
+        evaluation.read_bytes()
+    ).hexdigest()
     assert 0.0 < predictor.predict_up_probability(
         np.zeros(len(ROUND16_FEATURE_NAMES), dtype=np.float32)
     ) < 1.0
