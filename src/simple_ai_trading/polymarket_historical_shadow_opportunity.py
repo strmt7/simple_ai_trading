@@ -141,6 +141,9 @@ class PolymarketShadowOpportunity:
     model_candidate_id: str
     model_pretest_sha256: str
     model_evaluation_sha256: str
+    model_support_profile_sha256: str
+    outside_training_range_count: int
+    extreme_outlier_count: int
     clob_market_info_sha256: str
     tick_size: str
     minimum_order_size: str
@@ -215,6 +218,13 @@ class PolymarketShadowOpportunity:
             "model_candidate_id": self.model_candidate_id,
             "model_pretest_sha256": self.model_pretest_sha256,
             "model_evaluation_sha256": self.model_evaluation_sha256,
+            "model_support_profile_sha256": (
+                self.model_support_profile_sha256
+            ),
+            "outside_training_range_count": (
+                self.outside_training_range_count
+            ),
+            "extreme_outlier_count": self.extreme_outlier_count,
             "clob_market_info_sha256": self.clob_market_info_sha256,
             "tick_size": self.tick_size,
             "minimum_order_size": self.minimum_order_size,
@@ -453,6 +463,11 @@ def evaluate_shadow_settlement_opportunity(
         "model_candidate_id": prediction.candidate_id,
         "model_pretest_sha256": prediction.pretest_artifact_sha256,
         "model_evaluation_sha256": prediction.evaluation_artifact_sha256,
+        "model_support_profile_sha256": prediction.support_profile_sha256,
+        "outside_training_range_count": (
+            prediction.outside_training_range_count
+        ),
+        "extreme_outlier_count": prediction.extreme_outlier_count,
         "clob_market_info_sha256": state.clob_market_info_sha256,
         "tick_size": _decimal_text(market.tick_size),
         "minimum_order_size": _decimal_text(market.minimum_order_size),
@@ -493,6 +508,11 @@ def evaluate_shadow_settlement_opportunity(
         model_candidate_id=prediction.candidate_id,
         model_pretest_sha256=prediction.pretest_artifact_sha256,
         model_evaluation_sha256=prediction.evaluation_artifact_sha256,
+        model_support_profile_sha256=prediction.support_profile_sha256,
+        outside_training_range_count=(
+            prediction.outside_training_range_count
+        ),
+        extreme_outlier_count=prediction.extreme_outlier_count,
         clob_market_info_sha256=state.clob_market_info_sha256,
         tick_size=_decimal_text(market.tick_size),
         minimum_order_size=_decimal_text(market.minimum_order_size),

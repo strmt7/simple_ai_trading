@@ -62,6 +62,7 @@ def _arguments() -> argparse.Namespace:
     )
     parser.add_argument("--pretest", type=Path, required=True)
     parser.add_argument("--evaluation", type=Path, required=True)
+    parser.add_argument("--support", type=Path, required=True)
     parser.add_argument(
         "--duration-seconds",
         type=float,
@@ -91,6 +92,7 @@ async def _run(args: argparse.Namespace) -> None:
     predictor = load_verified_historical_shadow_predictor(
         pretest_path=args.pretest,
         evaluation_path=args.evaluation,
+        support_path=args.support,
     )
     flow = PolymarketBtcFlowBuffer()
     feed = PolymarketHistoricalShadowFeed(flow=flow)
@@ -113,6 +115,9 @@ async def _run(args: argparse.Namespace) -> None:
             "dataset_sha256": predictor.dataset_sha256,
             "pretest_artifact_sha256": predictor.pretest_artifact_sha256,
             "evaluation_artifact_sha256": predictor.evaluation_artifact_sha256,
+            "support_profile_sha256": (
+                predictor.support_profile.artifact_sha256
+            ),
         },
     )
     try:

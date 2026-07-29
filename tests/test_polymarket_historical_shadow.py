@@ -37,6 +37,13 @@ EVALUATION = (
     / "polymarket"
     / "round-014-btc-5m-historical-evaluation-v1.json"
 )
+SUPPORT = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-014-btc-5m-historical-feature-support-v1.json"
+)
 EVENT_START_MS = 1_782_086_700_000
 
 
@@ -162,6 +169,7 @@ def test_verified_shadow_predictor_scores_without_authority() -> None:
     predictor = load_verified_historical_shadow_predictor(
         pretest_path=PRETEST,
         evaluation_path=EVALUATION,
+        support_path=SUPPORT,
     )
     assert predictor.candidate_id == "lgbm-depth2-leaves3"
     assert predictor.trading_authority is False
@@ -175,6 +183,19 @@ def test_shadow_scorer_observes_causal_flow_and_never_grants_authority() -> None
     predictor = load_verified_historical_shadow_predictor(
         pretest_path=PRETEST,
         evaluation_path=EVALUATION,
+        support_path=SUPPORT,
+    )
+    broad_lower = np.full(len(FEATURE_NAMES), -1e100, dtype=np.float64)
+    broad_upper = np.full(len(FEATURE_NAMES), 1e100, dtype=np.float64)
+    predictor = replace(
+        predictor,
+        support_profile=replace(
+            predictor.support_profile,
+            minimum=broad_lower,
+            maximum=broad_upper,
+            outer_lower=broad_lower,
+            outer_upper=broad_upper,
+        ),
     )
     scorer = PolymarketHistoricalShadowScorer(
         predictor=predictor,
@@ -192,6 +213,29 @@ def test_shadow_scorer_observes_causal_flow_and_never_grants_authority() -> None
     assert 0.0 < decision.probability_up < 1.0
     assert decision.trading_authority is False
     assert decision.grants_execution_authority is False
+
+
+def test_real_train_support_abstains_on_synthetic_out_of_distribution_flow() -> None:
+    predictor = load_verified_historical_shadow_predictor(
+        pretest_path=PRETEST,
+        evaluation_path=EVALUATION,
+        support_path=SUPPORT,
+    )
+    decision_time = EVENT_START_MS + 30_000
+    decision = PolymarketHistoricalShadowScorer(
+        predictor=predictor,
+        flow=_populated_flow(),
+    ).evaluate(
+        event_start_ms=EVENT_START_MS,
+        decision_time_ms=decision_time,
+        observed_at_ms=decision_time + 100,
+    )
+    assert decision.status == "abstain"
+    assert decision.reason == "feature_support_out_of_distribution"
+    assert decision.support_profile_sha256 == (
+        predictor.support_profile.artifact_sha256
+    )
+    assert decision.extreme_outlier_count > 0
 
 
 def test_live_flow_vector_is_bit_identical_to_frozen_historical_builder() -> None:
@@ -238,6 +282,7 @@ def test_missing_or_stale_data_abstains_instead_of_predicting() -> None:
     predictor = load_verified_historical_shadow_predictor(
         pretest_path=PRETEST,
         evaluation_path=EVALUATION,
+        support_path=SUPPORT,
     )
     scorer = PolymarketHistoricalShadowScorer(
         predictor=predictor,
@@ -272,6 +317,7 @@ def test_artifact_tampering_is_rejected(tmp_path: Path) -> None:
         load_verified_historical_shadow_predictor(
             pretest_path=tampered,
             evaluation_path=EVALUATION,
+            support_path=SUPPORT,
         )
 
 
