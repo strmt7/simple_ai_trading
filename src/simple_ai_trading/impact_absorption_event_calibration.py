@@ -24,7 +24,7 @@ from .impact_absorption_event_sequence import (
 
 
 ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION = "round-074-tuning-subpartition-v1"
-ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION = "round-074-temperature-calibration-v5"
+ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION = "round-074-temperature-calibration-v6"
 ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION = (
     "round-074-temperature-calibration-v2"
 )
@@ -33,6 +33,9 @@ ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION = (
 )
 ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION = (
     "round-074-temperature-calibration-v4"
+)
+ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION = (
+    "round-074-temperature-calibration-v5"
 )
 ROUND74_RISK_QUANTILE_CALIBRATION_SCHEMA_VERSION = (
     "round-074-risk-quantile-calibration-v2"
@@ -1144,6 +1147,7 @@ class Round74ProbabilityCalibration:
             self.schema_version
             not in {
                 ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+                ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION,
                 ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION,
                 ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
                 ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION,
@@ -1156,28 +1160,37 @@ class Round74ProbabilityCalibration:
                 and self.optimization_population != "capture_run"
             )
             or (
-                self.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
-                and self.risk_quantiles is None
-            )
-            or (
                 self.schema_version
-                == ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION
+                in {
+                    ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION,
+                    ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION,
+                }
                 and self.risk_quantiles is None
             )
             or (
                 self.schema_version
                 not in {
                     ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+                    ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION,
                     ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION,
                 }
                 and self.risk_quantiles is not None
             )
             or (
                 self.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+                and (self.risk_quantiles is None) != (self.quantile_baseline is None)
+            )
+            or (
+                self.schema_version
+                == ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION
                 and self.quantile_baseline is None
             )
             or (
-                self.schema_version != ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+                self.schema_version
+                not in {
+                    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+                    ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION,
+                }
                 and self.quantile_baseline is not None
             )
             or not self.backend_kind.strip()
@@ -1288,9 +1301,24 @@ class Round74ProbabilityCalibration:
             "candidate_temperature_minimum": (ROUND74_TEMPERATURE_MINIMUM),
             "candidate_temperature_maximum": (ROUND74_TEMPERATURE_MAXIMUM),
             "selection_objective": (
+                (
+                    "equal_run_weight_head_specific_proper_log_loss_on_"
+                    "calibration_runs_only"
+                )
+                if self.optimization_population == "capture_run"
+                else (
+                    "eligible_target_weight_head_specific_proper_log_loss_on_"
+                    "calibration_runs_only"
+                )
+            )
+            if self.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+            else (
                 "equal_run_weight_binary_cross_entropy_on_calibration_runs_only"
                 if self.optimization_population == "capture_run"
-                else "eligible_target_weight_binary_cross_entropy_on_calibration_runs_only"
+                else (
+                    "eligible_target_weight_binary_cross_entropy_on_"
+                    "calibration_runs_only"
+                )
             ),
             "pooled_metrics_are_diagnostic_only": (
                 self.optimization_population == "capture_run"
@@ -1301,14 +1329,29 @@ class Round74ProbabilityCalibration:
         if self.schema_version != ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION:
             payload["optimization_population"] = self.optimization_population
         if self.schema_version in {
-            ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+            ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION,
             ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION,
-        }:
+        } or (
+            self.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+            and self.risk_quantiles is not None
+        ):
             assert self.risk_quantiles is not None
             payload["risk_quantiles"] = self.risk_quantiles.as_dict()
-        if self.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION:
+        if self.schema_version in {
+            ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION,
+        } or (
+            self.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+            and self.quantile_baseline is not None
+        ):
             assert self.quantile_baseline is not None
             payload["quantile_baseline"] = self.quantile_baseline.as_dict()
+        if self.schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION:
+            payload["positive_payoff_selection_objective"] = (
+                "joint_three_outcome_log_loss_with_one_sided_marginal_censoring"
+            )
+            payload["positive_payoff_brier_and_ece_scope"] = (
+                "eligible_directional_marginals_diagnostic_only"
+            )
         if include_sha256:
             payload["calibration_sha256"] = _canonical_sha256(payload)
         return payload
@@ -1325,10 +1368,18 @@ class Round74ProbabilityCalibration:
         schema_version = payload.get("schema_version")
         legacy = schema_version == ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION
         current = schema_version == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+        marginal_prior = (
+            schema_version
+            == ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION
+        )
         risk_prior = (
             schema_version == ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION
         )
-        has_risk = current or risk_prior
+        current_has_risk = current and (
+            "risk_quantiles" in payload or "quantile_baseline" in payload
+        )
+        has_risk = current_has_risk or marginal_prior or risk_prior
+        has_baseline = current_has_risk or marginal_prior
         expected_keys = {
             "schema_version",
             "pretest_policy_sha256",
@@ -1355,6 +1406,11 @@ class Round74ProbabilityCalibration:
         if has_risk:
             expected_keys.add("risk_quantiles")
         if current:
+            expected_keys.add("positive_payoff_selection_objective")
+            expected_keys.add("positive_payoff_brier_and_ece_scope")
+            if current_has_risk:
+                expected_keys.add("quantile_baseline")
+        elif marginal_prior:
             expected_keys.add("quantile_baseline")
         if set(payload) != expected_keys:
             raise ValueError("Round 74 probability calibration payload differs")
@@ -1371,7 +1427,17 @@ class Round74ProbabilityCalibration:
             or any(not isinstance(item, str) for item in run_ids)
             or any(not isinstance(item, Mapping) for item in nested)
             or (has_risk and not isinstance(risk_quantiles, Mapping))
-            or (current and not isinstance(quantile_baseline, Mapping))
+            or (has_baseline and not isinstance(quantile_baseline, Mapping))
+            or (
+                current
+                and payload.get("positive_payoff_selection_objective")
+                != ("joint_three_outcome_log_loss_with_one_sided_marginal_censoring")
+            )
+            or (
+                current
+                and payload.get("positive_payoff_brier_and_ece_scope")
+                != "eligible_directional_marginals_diagnostic_only"
+            )
         ):
             raise ValueError("Round 74 probability calibration types differ")
         try:
@@ -1396,7 +1462,7 @@ class Round74ProbabilityCalibration:
                 ),
                 quantile_baseline=(
                     Round74NoInformationQuantileBaseline.from_dict(quantile_baseline)
-                    if current and isinstance(quantile_baseline, Mapping)
+                    if has_baseline and isinstance(quantile_baseline, Mapping)
                     else None
                 ),
                 optimization_population=(
@@ -1997,6 +2063,210 @@ def _fit_temperature(
     return fit
 
 
+def _positive_log_loss_for_temperatures(
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    eligibility: torch.Tensor,
+    temperatures: torch.Tensor,
+) -> torch.Tensor:
+    """Score coherent positive-payoff outcomes for each candidate temperature."""
+
+    temperature_shape = (int(temperatures.numel()),) + (1,) * logits.ndim
+    scaled = logits.unsqueeze(0) / temperatures.reshape(temperature_shape)
+    expanded_labels = labels.unsqueeze(0)
+    expanded_eligibility = eligibility.unsqueeze(0)
+    side_count = eligibility.sum(dim=-1)
+    jointly_eligible = (side_count == 2.0).to(logits.dtype)
+    singly_eligible = (side_count == 1.0).to(logits.dtype).unsqueeze(-1)
+    positive_probabilities = torch.sigmoid(scaled)
+    neither_probability = 1.0 - positive_probabilities.sum(dim=-1)
+    outcome_probabilities = torch.cat(
+        (neither_probability.unsqueeze(-1), positive_probabilities),
+        dim=-1,
+    ).clamp_min(torch.finfo(positive_probabilities.dtype).tiny)
+    joint_positive_targets = labels * jointly_eligible.unsqueeze(-1)
+    outcome_targets = torch.cat(
+        (
+            (jointly_eligible - joint_positive_targets.sum(dim=-1)).unsqueeze(-1),
+            joint_positive_targets,
+        ),
+        dim=-1,
+    ).unsqueeze(0)
+    joint_log_loss = -(outcome_targets * torch.log(outcome_probabilities)).sum(dim=-1)
+    marginal_log_loss = F.softplus(scaled) - expanded_labels * scaled
+    action_weight = eligibility.sum()
+    reduce_dimensions = tuple(range(1, scaled.ndim))
+    return (
+        (2.0 * joint_log_loss * jointly_eligible.unsqueeze(0)).sum(
+            dim=reduce_dimensions[:-1]
+        )
+        + (marginal_log_loss * expanded_eligibility * singly_eligible.unsqueeze(0)).sum(
+            dim=reduce_dimensions
+        )
+    ) / action_weight
+
+
+def _fit_positive_temperature(
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    eligibility: torch.Tensor,
+    *,
+    row_run_ids: tuple[str, ...],
+    expected_run_ids: tuple[str, ...],
+    optimization_population: str,
+) -> Round74TemperatureFit:
+    """Fit one temperature on the same joint score used for model promotion."""
+
+    selected_logits, selected_labels, _binary_run_panels = _validate_binary_panel(
+        logits,
+        labels,
+        eligibility,
+        row_run_ids=row_run_ids,
+        expected_run_ids=expected_run_ids,
+        label="positive-payoff",
+    )
+    detached = tuple(
+        value.detach().to(dtype=torch.float32)
+        for value in (logits, labels, eligibility)
+    )
+    panel_logits, panel_labels, panel_eligibility = detached
+    run_panels: list[tuple[torch.Tensor, torch.Tensor, torch.Tensor]] = []
+    run_counts: list[int] = []
+    for run_id in expected_run_ids:
+        row_mask = torch.tensor(
+            tuple(observed_run_id == run_id for observed_run_id in row_run_ids),
+            dtype=torch.bool,
+            device=logits.device,
+        )
+        run_panel = tuple(value[row_mask] for value in detached)
+        run_count = int(run_panel[2].sum().item())
+        if run_count < 1:
+            raise ValueError("Round 74 positive-payoff calibration run support differs")
+        run_panels.append(run_panel)
+        run_counts.append(run_count)
+    log_temperatures = torch.linspace(
+        math.log(ROUND74_TEMPERATURE_MINIMUM),
+        math.log(ROUND74_TEMPERATURE_MAXIMUM),
+        ROUND74_TEMPERATURE_CANDIDATE_COUNT,
+        dtype=panel_logits.dtype,
+        device=panel_logits.device,
+    )
+    temperatures = torch.exp(log_temperatures)
+    candidate_losses: list[torch.Tensor] = []
+    for chunk in temperatures.split(16):
+        if optimization_population == "capture_run":
+            candidate_losses.append(
+                torch.stack(
+                    tuple(
+                        _positive_log_loss_for_temperatures(
+                            run_logits,
+                            run_labels,
+                            run_eligibility,
+                            chunk,
+                        )
+                        for run_logits, run_labels, run_eligibility in run_panels
+                    ),
+                    dim=1,
+                ).mean(dim=1)
+            )
+        elif optimization_population == "eligible_target":
+            candidate_losses.append(
+                _positive_log_loss_for_temperatures(
+                    panel_logits,
+                    panel_labels,
+                    panel_eligibility,
+                    chunk,
+                )
+            )
+        else:
+            raise ValueError("Round 74 calibration optimization population differs")
+    candidate_loss = torch.cat(candidate_losses)
+    selected_index = int(torch.argmin(candidate_loss).item())
+    temperature = min(
+        ROUND74_TEMPERATURE_MAXIMUM,
+        max(
+            ROUND74_TEMPERATURE_MINIMUM,
+            float(temperatures[selected_index].item()),
+        ),
+    )
+    unit_temperature = torch.ones(
+        1,
+        dtype=panel_logits.dtype,
+        device=panel_logits.device,
+    )
+    selected_temperature = torch.tensor(
+        (temperature,),
+        dtype=panel_logits.dtype,
+        device=panel_logits.device,
+    )
+    uncalibrated_run_nll = tuple(
+        _positive_log_loss_for_temperatures(
+            run_logits,
+            run_labels,
+            run_eligibility,
+            unit_temperature,
+        )[0]
+        for run_logits, run_labels, run_eligibility in run_panels
+    )
+    calibrated_run_nll = tuple(
+        _positive_log_loss_for_temperatures(
+            run_logits,
+            run_labels,
+            run_eligibility,
+            selected_temperature,
+        )[0]
+        for run_logits, run_labels, run_eligibility in run_panels
+    )
+    uncalibrated_probability = torch.sigmoid(selected_logits)
+    calibrated_probability = torch.sigmoid(selected_logits / temperature)
+    fit = Round74TemperatureFit(
+        temperature=temperature,
+        eligible_observations=int(selected_labels.numel()),
+        positive_observations=int((selected_labels == 1.0).sum().item()),
+        calibration_runs=len(run_panels),
+        minimum_run_observations=min(run_counts),
+        maximum_run_observations=max(run_counts),
+        uncalibrated_run_balanced_nll=float(
+            torch.stack(uncalibrated_run_nll).mean().item()
+        ),
+        calibrated_run_balanced_nll=float(
+            torch.stack(calibrated_run_nll).mean().item()
+        ),
+        uncalibrated_nll=float(
+            _positive_log_loss_for_temperatures(
+                panel_logits,
+                panel_labels,
+                panel_eligibility,
+                unit_temperature,
+            )[0].item()
+        ),
+        calibrated_nll=float(
+            _positive_log_loss_for_temperatures(
+                panel_logits,
+                panel_labels,
+                panel_eligibility,
+                selected_temperature,
+            )[0].item()
+        ),
+        uncalibrated_brier=float(
+            torch.mean((uncalibrated_probability - selected_labels) ** 2).item()
+        ),
+        calibrated_brier=float(
+            torch.mean((calibrated_probability - selected_labels) ** 2).item()
+        ),
+        uncalibrated_ece=_expected_calibration_error(
+            uncalibrated_probability,
+            selected_labels,
+        ),
+        calibrated_ece=_expected_calibration_error(
+            calibrated_probability,
+            selected_labels,
+        ),
+    )
+    fit.validate()
+    return fit
+
+
 def _update_tensor_digest(
     digest: object,
     value: torch.Tensor,
@@ -2097,14 +2367,6 @@ def fit_round74_probability_calibration(
         or regime_unpredictability_logits.shape[0] != rows
     ):
         raise ValueError("Round 74 calibration run panel differs")
-    positive_logits, positive_labels, positive_run_panels = _validate_binary_panel(
-        positive_payoff_logits,
-        positive_payoff_labels,
-        action_eligibility,
-        row_run_ids=selected_row_run_ids,
-        expected_run_ids=expected_runs,
-        label="positive-payoff",
-    )
     adverse_logits, adverse_labels, adverse_run_panels = _validate_binary_panel(
         adverse_selection_logits,
         adverse_selection_labels,
@@ -2122,17 +2384,13 @@ def fit_round74_probability_calibration(
         label="regime-unpredictability",
     )
     devices = {
-        positive_logits.device,
+        positive_payoff_logits.device,
         adverse_logits.device,
         regime_logits.device,
     }
     if len(devices) != 1:
         raise ValueError("Round 74 calibration devices differ")
-    schema_version = (
-        ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
-        if risk_requested
-        else ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION
-    )
+    schema_version = ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
     identity = {
         "schema_version": schema_version,
         "pretest_policy_sha256": pretest_policy_sha256,
@@ -2197,10 +2455,12 @@ def fit_round74_probability_calibration(
         calibration_data_sha256=digest.hexdigest(),
         calibration_run_ids=expected_runs,
         calibration_row_run_ids_sha256=_canonical_sha256(list(selected_row_run_ids)),
-        positive_payoff=_fit_temperature(
-            positive_logits,
-            positive_labels,
-            positive_run_panels,
+        positive_payoff=_fit_positive_temperature(
+            positive_payoff_logits,
+            positive_payoff_labels,
+            action_eligibility,
+            row_run_ids=selected_row_run_ids,
+            expected_run_ids=expected_runs,
             optimization_population=selected_population,
         ),
         adverse_selection=_fit_temperature(
@@ -2270,6 +2530,7 @@ __all__ = [
     "ROUND74_RISK_QUANTILE_CALIBRATION_SCHEMA_VERSION",
     "ROUND74_RISK_QUANTILE_CALIBRATION_PRIOR_SCHEMA_VERSION",
     "ROUND74_TEMPERATURE_CALIBRATION_LEGACY_SCHEMA_VERSION",
+    "ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION",
     "ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION",
     "ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION",
     "ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION",
