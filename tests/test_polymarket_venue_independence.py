@@ -83,7 +83,7 @@ def test_public_binance_advisor_has_no_execution_surface() -> None:
         and not node.name.startswith("_")
     }
 
-    assert public_methods == {"evaluate", "handle_message", "run", "snapshot"}
+    assert public_methods == {"evaluate", "run", "snapshot"}
     assert not public_methods & {
         "buy",
         "cancel",

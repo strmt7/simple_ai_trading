@@ -156,12 +156,12 @@ def test_provider_abstains_until_both_public_feeds_are_fresh() -> None:
 
 def test_provider_builds_quality_gated_preserve_and_rejects_regression() -> None:
     provider = BinanceBtcPublicSignalProvider()
-    provider.handle_message(
+    provider._handle_message(
         "BINANCE_SPOT",
         _spot(),
         received_at_ms=NOW_MS,
     )
-    provider.handle_message(
+    provider._handle_message(
         "BINANCE_USD_M_FUTURES",
         _futures(),
         received_at_ms=NOW_MS,
@@ -178,7 +178,7 @@ def test_provider_builds_quality_gated_preserve_and_rejects_regression() -> None
     assert snapshot.spot_connected is True
     assert snapshot.futures_connected is True
     with pytest.raises(ValueError, match="regressed"):
-        provider.handle_message(
+        provider._handle_message(
             "BINANCE_USD_M_FUTURES",
             _futures(),
             received_at_ms=NOW_MS + 1,
@@ -187,12 +187,12 @@ def test_provider_builds_quality_gated_preserve_and_rejects_regression() -> None
 
 def test_provider_can_only_reduce_when_public_spread_is_wide() -> None:
     provider = BinanceBtcPublicSignalProvider()
-    provider.handle_message(
+    provider._handle_message(
         "BINANCE_SPOT",
         _spot(bid="99.9", ask="100.1"),
         received_at_ms=NOW_MS,
     )
-    provider.handle_message(
+    provider._handle_message(
         "BINANCE_USD_M_FUTURES",
         _futures(bid="99.9", ask="100.1", update_id=124),
         received_at_ms=NOW_MS,
