@@ -1,13 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import importlib.util
+import json
+import math
+import subprocess
+import sys
 
 import pytest
 import torch
 
 from simple_ai_trading.impact_absorption_event_calibration import (
     ROUND74_RISK_QUANTILE_CALIBRATION_PRIOR_SCHEMA_VERSION,
+    ROUND74_TEMPERATURE_CANDIDATE_COUNT,
+    ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION,
     ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+    ROUND74_TEMPERATURE_MAXIMUM,
+    ROUND74_TEMPERATURE_MINIMUM,
     ROUND74_TUNING_CALIBRATION_RUNS,
     ROUND74_TUNING_MODEL_SELECTION_RUNS,
     ROUND74_TUNING_POLICY_SELECTION_RUNS,
@@ -201,6 +210,185 @@ def test_temperature_calibration_is_deterministic_and_hash_bound() -> None:
     assert payload["sealed_test_accessed"] is False
     assert payload["calibration_implies_financial_edge"] is False
     assert payload["candidate_temperature_count"] == 257
+    assert payload["positive_payoff_selection_objective"] == (
+        "joint_three_outcome_log_loss_with_one_sided_marginal_censoring"
+    )
+    assert payload["positive_payoff_brier_and_ece_scope"] == (
+        "eligible_directional_marginals_diagnostic_only"
+    )
+    assert "risk_quantiles" not in payload
+    assert "quantile_baseline" not in payload
+
+
+def test_positive_temperature_optimizes_joint_not_flattened_marginal_loss() -> None:
+    subpartition = _tuning_subpartition()
+    expected_runs = subpartition.calibration_run_ids
+    logits = torch.tensor(
+        [
+            [-1.0719022750854492, -1.6070798635482788],
+            [-1.3404170274734497, -1.1718443632125854],
+            [-5.052493095397949, -1.2678277492523193],
+            [0.21298450231552124, -1.4919648170471191],
+            [-1.6290926933288574, -0.35802242159843445],
+            [-2.9277045726776123, -0.5313313007354736],
+        ],
+        dtype=torch.float32,
+    )
+    labels = torch.tensor(
+        [
+            [1.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [1.0, 0.0],
+        ],
+        dtype=torch.float32,
+    )
+    eligibility = torch.ones_like(logits)
+    calibration = fit_round74_probability_calibration(
+        positive_payoff_logits=logits,
+        positive_payoff_labels=labels,
+        adverse_selection_logits=-logits,
+        adverse_selection_labels=1.0 - labels,
+        action_eligibility=eligibility,
+        regime_unpredictability_logits=logits,
+        regime_unpredictability_labels=labels,
+        regime_eligibility=eligibility,
+        row_run_ids=expected_runs,
+        tuning_subpartition=subpartition,
+        pretest_policy_sha256="1" * 64,
+        calibration_source_sha256="3" * 64,
+        backend_kind="cpu",
+        backend_device="test",
+    )
+
+    temperatures = torch.exp(
+        torch.linspace(
+            math.log(ROUND74_TEMPERATURE_MINIMUM),
+            math.log(ROUND74_TEMPERATURE_MAXIMUM),
+            ROUND74_TEMPERATURE_CANDIDATE_COUNT,
+        )
+    )
+    scaled = logits.unsqueeze(0) / temperatures[:, None, None]
+    positive = torch.sigmoid(scaled)
+    outcomes = torch.cat(
+        ((1.0 - positive.sum(dim=2)).unsqueeze(2), positive),
+        dim=2,
+    ).clamp_min(torch.finfo(positive.dtype).tiny)
+    outcome_targets = torch.cat(
+        ((1.0 - labels.sum(dim=1)).unsqueeze(1), labels),
+        dim=1,
+    )
+    categorical = -(outcome_targets.unsqueeze(0) * torch.log(outcomes)).sum(dim=2)
+    categorical_index = int(categorical.mean(dim=1).argmin())
+    marginal = torch.nn.functional.softplus(scaled) - labels.unsqueeze(0) * scaled
+    marginal_index = int(marginal.mean(dim=(1, 2)).argmin())
+
+    assert categorical_index != marginal_index
+    assert calibration.positive_payoff.temperature == float(
+        temperatures[categorical_index]
+    )
+    assert calibration.positive_payoff.temperature != float(
+        temperatures[marginal_index]
+    )
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("torch_directml") is None,
+    reason="torch-directml is not installed",
+)
+def test_joint_positive_temperature_stays_on_directml() -> None:
+    script = """
+import json
+import warnings
+
+import torch
+import torch_directml
+
+from simple_ai_trading.impact_absorption_event_calibration import (
+    Round74TuningSubpartition,
+    fit_round74_probability_calibration,
+)
+
+runs = tuple(f"{index:032x}" for index in range(1, 25))
+subpartition = Round74TuningSubpartition(
+    parent_partition_sha256="f" * 64,
+    model_selection_run_ids=runs[:12],
+    calibration_run_ids=runs[12:18],
+    policy_selection_run_ids=runs[18:],
+)
+device = torch_directml.device()
+logits = torch.tensor(
+    [
+        [-1.0719023, -1.6070799],
+        [-1.3404170, -1.1718444],
+        [-5.0524930, -1.2678277],
+        [0.2129845, -1.4919648],
+        [-1.6290927, -0.3580224],
+        [-2.9277046, -0.5313313],
+    ],
+    device=device,
+)
+labels = torch.tensor(
+    [[1.0, 0.0], [0.0, 0.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [1.0, 0.0]],
+    device=device,
+)
+eligibility = torch.ones_like(logits)
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    calibration = fit_round74_probability_calibration(
+        positive_payoff_logits=logits,
+        positive_payoff_labels=labels,
+        adverse_selection_logits=-logits,
+        adverse_selection_labels=1.0 - labels,
+        action_eligibility=eligibility,
+        regime_unpredictability_logits=logits,
+        regime_unpredictability_labels=labels,
+        regime_eligibility=eligibility,
+        row_run_ids=subpartition.calibration_run_ids,
+        tuning_subpartition=subpartition,
+        pretest_policy_sha256="1" * 64,
+        calibration_source_sha256="3" * 64,
+        backend_kind="directml",
+        backend_device=str(device),
+    )
+fallback = [
+    str(item.message)
+    for item in caught
+    if "fall back to run on the CPU" in str(item.message)
+    or "not currently supported on the DML backend" in str(item.message)
+]
+print(
+    json.dumps(
+        {
+            "device": str(device),
+            "fallback": fallback,
+            "schema": calibration.schema_version,
+            "temperature": calibration.positive_payoff.temperature,
+            "warnings": len(caught),
+        },
+        sort_keys=True,
+    )
+)
+"""
+    completed = subprocess.run(  # nosec B603
+        [sys.executable, "-c", script],
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=60,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    evidence = json.loads(completed.stdout)
+    assert evidence == {
+        "device": "privateuseone:0",
+        "fallback": [],
+        "schema": ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+        "temperature": 4.368684768676758,
+        "warnings": 0,
+    }
 
 
 def test_temperature_selection_is_invariant_to_busy_run_duplication() -> None:
@@ -787,6 +975,19 @@ def test_composite_calibration_hash_binds_risk_targets_and_offsets() -> None:
         == calibration.quantile_baseline
     )
     assert Round74ProbabilityCalibration.from_dict(calibration.as_dict()) == calibration
+
+    marginal_prior = replace(
+        calibration,
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_MARGINAL_PRIOR_SCHEMA_VERSION,
+    )
+    marginal_prior_payload = marginal_prior.as_dict()
+    assert marginal_prior_payload["selection_objective"] == (
+        "eligible_target_weight_binary_cross_entropy_on_calibration_runs_only"
+    )
+    assert (
+        Round74ProbabilityCalibration.from_dict(marginal_prior_payload)
+        == marginal_prior
+    )
 
     malformed = calibration.quantile_baseline.as_dict()
     malformed["eligible_observations"][0][0][0] = True
