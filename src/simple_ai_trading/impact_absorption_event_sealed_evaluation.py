@@ -78,7 +78,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v22"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v23"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v3"
 )
@@ -1788,12 +1788,18 @@ class Round74SealedPairedRunSymbolHorizonDelta:
     baseline_net_bps: float
     ai_net_bps: float
     delta_net_bps: float
+    baseline_aggregate_adverse_excursion_bps: float
+    ai_aggregate_adverse_excursion_bps: float
+    delta_aggregate_adverse_excursion_bps: float
 
     def validate(self) -> None:
         values = (
             self.baseline_net_bps,
             self.ai_net_bps,
             self.delta_net_bps,
+            self.baseline_aggregate_adverse_excursion_bps,
+            self.ai_aggregate_adverse_excursion_bps,
+            self.delta_aggregate_adverse_excursion_bps,
         )
         if (
             _RUN_ID.fullmatch(self.run_id) is None
@@ -1805,9 +1811,18 @@ class Round74SealedPairedRunSymbolHorizonDelta:
             or not isinstance(self.paired_observations, int)
             or self.paired_observations <= 0
             or any(not math.isfinite(float(value)) for value in values)
+            or self.baseline_aggregate_adverse_excursion_bps < 0.0
+            or self.ai_aggregate_adverse_excursion_bps < 0.0
             or not math.isclose(
                 self.delta_net_bps,
                 self.ai_net_bps - self.baseline_net_bps,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                self.delta_aggregate_adverse_excursion_bps,
+                self.ai_aggregate_adverse_excursion_bps
+                - self.baseline_aggregate_adverse_excursion_bps,
                 rel_tol=1e-12,
                 abs_tol=1e-12,
             )
@@ -1857,6 +1872,13 @@ def _sealed_ai_overlay_gate_reasons(
         reasons.append("paired_symbol_horizon_noninferiority_not_met")
     if any(value.delta_net_bps < -1e-12 for value in paired_run_symbol_horizons):
         reasons.append("paired_run_symbol_horizon_noninferiority_not_met")
+    if any(
+        value.delta_aggregate_adverse_excursion_bps > 1e-12
+        for value in paired_run_symbol_horizons
+    ):
+        reasons.append(
+            "paired_run_symbol_horizon_adverse_excursion_noninferiority_not_met"
+        )
     if strategy.maximum_drawdown_bps > baseline_trace.metrics.maximum_drawdown_bps:
         reasons.append("maximum_drawdown_noninferiority_not_met")
     return tuple(reasons)
@@ -1927,6 +1949,10 @@ class Round74SealedAIOverlay:
         )
         paired_cell_ai = math.fsum(
             value.ai_net_bps for value in self.paired_run_symbol_horizons
+        )
+        paired_cell_ai_mae = math.fsum(
+            value.ai_aggregate_adverse_excursion_bps
+            for value in self.paired_run_symbol_horizons
         )
         if (
             _SHA256.fullmatch(self.model_manifest_sha256) is None
@@ -2012,6 +2038,13 @@ class Round74SealedAIOverlay:
             or not math.isclose(
                 paired_cell_ai,
                 self.strategy_metrics.total_net_bps,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                paired_cell_ai_mae,
+                self.strategy_metrics.mean_maximum_adverse_excursion_bps
+                * self.strategy_metrics.executed_trades,
                 rel_tol=1e-12,
                 abs_tol=1e-12,
             )
@@ -2119,6 +2152,25 @@ class Round74SealedAIOverlay:
                     value.baseline_net_bps for value in self.paired_run_symbol_horizons
                 ),
                 trace.metrics.total_net_bps,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                math.fsum(
+                    value.baseline_aggregate_adverse_excursion_bps
+                    for value in self.paired_run_symbol_horizons
+                ),
+                math.fsum(trace.maximum_adverse_excursion_bps),
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                math.fsum(
+                    value.ai_aggregate_adverse_excursion_bps
+                    for value in self.paired_run_symbol_horizons
+                ),
+                self.strategy_metrics.mean_maximum_adverse_excursion_bps
+                * self.strategy_metrics.executed_trades,
                 rel_tol=1e-12,
                 abs_tol=1e-12,
             )
@@ -3309,6 +3361,7 @@ def _validate_ai_execution_replays(
 def _paired_ai_delta_panels(
     trace: Round74ActionTrace,
     exact_values: np.ndarray,
+    exact_adverse_excursion_values: np.ndarray,
 ) -> tuple[
     tuple[Round74SealedPairedRunDelta, ...],
     tuple[Round74SealedPairedSymbolHorizonDelta, ...],
@@ -3316,10 +3369,19 @@ def _paired_ai_delta_panels(
 ]:
     baseline = np.asarray(trace.net_payoff_bps, dtype=np.float64)
     exact = np.asarray(exact_values, dtype=np.float64)
+    baseline_mae = np.asarray(
+        trace.maximum_adverse_excursion_bps,
+        dtype=np.float64,
+    )
+    exact_mae = np.asarray(exact_adverse_excursion_values, dtype=np.float64)
     if (
         baseline.shape != (trace.metrics.trades,)
         or exact.shape != baseline.shape
+        or baseline_mae.shape != baseline.shape
+        or exact_mae.shape != baseline.shape
         or not np.isfinite(exact).all()
+        or not np.isfinite(exact_mae).all()
+        or np.any(exact_mae < 0.0)
     ):
         raise ValueError("Round 74 sealed paired AI values differ")
     run_baseline = {run_id: 0.0 for run_id in trace.expected_run_ids}
@@ -3376,6 +3438,8 @@ def _paired_ai_delta_panels(
                     continue
                 baseline_value = float(baseline[mask].sum())
                 ai_value = float(exact[mask].sum())
+                baseline_mae_value = float(baseline_mae[mask].sum())
+                ai_mae_value = float(exact_mae[mask].sum())
                 paired_run_symbol_horizons.append(
                     Round74SealedPairedRunSymbolHorizonDelta(
                         run_id=run_id,
@@ -3385,6 +3449,11 @@ def _paired_ai_delta_panels(
                         baseline_net_bps=baseline_value,
                         ai_net_bps=ai_value,
                         delta_net_bps=ai_value - baseline_value,
+                        baseline_aggregate_adverse_excursion_bps=baseline_mae_value,
+                        ai_aggregate_adverse_excursion_bps=ai_mae_value,
+                        delta_aggregate_adverse_excursion_bps=(
+                            ai_mae_value - baseline_mae_value
+                        ),
                     )
                 )
     for value in (
@@ -3500,11 +3569,23 @@ def _ai_overlay(
         ],
         dtype=np.float64,
     )
+    exact_adverse_excursion_values = np.asarray(
+        [
+            trace.position_capital_fraction
+            * value.capital_scaled_maximum_adverse_excursion_bps
+            for value in executions
+        ],
+        dtype=np.float64,
+    )
     (
         paired_runs,
         paired_symbol_horizons,
         paired_run_symbol_horizons,
-    ) = _paired_ai_delta_panels(trace, exact_values)
+    ) = _paired_ai_delta_panels(
+        trace,
+        exact_values,
+        exact_adverse_excursion_values,
+    )
     delta = exact_values - baseline_values
     delta_bootstrap = _run_bootstrap(
         trace.run_id,

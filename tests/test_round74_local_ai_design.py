@@ -20,9 +20,6 @@ from simple_ai_trading.impact_absorption_ai_review_preparation import (
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION,
 )
-from simple_ai_trading.impact_absorption_ai_execution_replay import (
-    ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_ai_worker import (
     ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION,
     ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION,
@@ -1108,7 +1105,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "round-074-ai-uplift-development-v7"
     )
     assert source["execution_replay_plan_schema_version"] == (
-        ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
+        "round-074-ai-execution-replay-plan-v1"
     )
     assert source["execution_replay_evidence_schema_version"] == (
         ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION

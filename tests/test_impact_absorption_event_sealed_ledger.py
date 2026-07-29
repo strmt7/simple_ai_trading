@@ -1625,6 +1625,106 @@ def test_sealed_ai_overlay_rejects_harm_hidden_by_both_aggregate_panels() -> Non
         )
 
 
+def test_sealed_ai_overlay_rejects_cell_adverse_excursion_deterioration() -> None:
+    expanded_runs = tuple(
+        run_id for run_id in TEST_RUNS for _symbol in ROUND74_EVENT_SYMBOLS
+    )
+    batch = _test_batch(runs=expanded_runs)
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    candidates = derive_round74_action_candidates(
+        _model_output(batch.rows),
+        build_round74_action_inference_context(batch),
+        calibration,
+        pretest_policy_sha256=selection.pretest_policy_sha256,
+        profile=selection.profile,
+    )
+    trace = sealed_subject._simulate_round74_action_trace_batches(
+        (batch,),
+        (candidates,),
+        threshold_score=float(selection.selected_threshold_score or 0.0),
+        expected_run_ids=TEST_RUNS,
+        required_role="test",
+        expected_run_count=24,
+    )
+    manifest = "c" * 64
+    reviews = _reviews(
+        batch,
+        calibration,
+        selection,
+        manifest=manifest,
+    )
+    executions = []
+    for index, execution in enumerate(
+        _execution_replays(
+            reviews,
+            partition_sha256=batch.partition_sha256,
+        )
+    ):
+        adverse_excursion = 1.2 if index == 0 else (0.0 if index in {1, 2} else 1.0)
+        updated = replace(
+            execution,
+            source_capture_report_sha256="d" * 64,
+            position_net_payoff_bps=3.0,
+            capital_scaled_net_payoff_bps=3.0,
+            position_maximum_adverse_excursion_bps=adverse_excursion,
+            capital_scaled_maximum_adverse_excursion_bps=adverse_excursion,
+        )
+        updated.validate()
+        executions.append(updated)
+
+    overlay = sealed_subject._ai_overlay(
+        trace,
+        reviews,
+        tuple(executions),
+        manifest=manifest,
+        expected_partition_sha256=batch.partition_sha256,
+        profile=selection.profile,
+        seed=sealed_subject.ROUND74_SEALED_BOOTSTRAP_SEED,
+    )
+
+    assert overlay.strategy_metrics.financial_gate_passed
+    assert overlay.strategy_metrics.total_net_bps > trace.metrics.total_net_bps
+    assert (
+        overlay.strategy_metrics.maximum_drawdown_bps
+        <= trace.metrics.maximum_drawdown_bps
+    )
+    assert all(
+        value.delta_net_bps >= 0.0 for value in overlay.paired_run_symbol_horizons
+    )
+    harmed = [
+        value
+        for value in overlay.paired_run_symbol_horizons
+        if value.delta_aggregate_adverse_excursion_bps > 0.0
+    ]
+    assert len(harmed) == 1
+    assert (harmed[0].run_id, harmed[0].symbol, harmed[0].horizon_seconds) == (
+        TEST_RUNS[0],
+        "BTCUSDT",
+        30,
+    )
+    assert not overlay.uplift_gate_passed
+    assert overlay.gate_reasons == (
+        "paired_run_symbol_horizon_adverse_excursion_noninferiority_not_met",
+    )
+    corrupted = replace(
+        overlay.paired_run_symbol_horizons[0],
+        ai_aggregate_adverse_excursion_bps=0.0,
+    )
+    with pytest.raises(ValueError, match="paired run-symbol-horizon delta differs"):
+        replace(
+            overlay,
+            paired_run_symbol_horizons=(
+                corrupted,
+                *overlay.paired_run_symbol_horizons[1:],
+            ),
+        ).validate()
+
+
 def test_sealed_evaluator_rejects_incomplete_ai_family_before_reservation(
     tmp_path: Path,
 ) -> None:
