@@ -1,0 +1,101 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v124",
+  "artifact_kind": "epistemic_exact_replay_evidence_persistence",
+  "created_utc": "2026-07-29T06:22:05.625994Z",
+  "supersedes_artifact_sha256": "762f2defdf84bac99b958b9afb031e1bd937724406c311f54aca502b1ba818b5",
+  "implementation_git_commit": "cf6120245a102f061284acb66dc8d5566911869a",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "epistemic_action_policy": {
+      "path": "src/simple_ai_trading/impact_absorption_event_epistemic_policy.py",
+      "sha256": "6c18ebbe99ce7a65599d53b63d3ab5cc0b21c6345e9a4100cad49071b36bdd60"
+    },
+    "action_policy_test": {
+      "path": "tests/test_impact_absorption_event_action_policy.py",
+      "sha256": "dc89b63b225ac43ee451ea1957a917203c198872002960853af469b5698d2c97"
+    },
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v123.json",
+      "sha256": "0d175526c9c7883c9d7f4283f56c34dddb7aa0a734ecbebb0760150527da8bed"
+    }
+  },
+  "declared_delta": {
+    "summary": "Make v123 exact-replay challenge evidence strictly reloadable and independently revalidate all nested provenance, objective, count, and authority invariants.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "probability_calibration_changed": false,
+    "baseline_policy_selection_changed": false,
+    "runtime_filter_changed": false,
+    "replay_evaluation_changed": false,
+    "evidence_persistence_added": true,
+    "automatic_policy_effect_enabled": false,
+    "sealed_test_access_changed": false
+  },
+  "persistence_contract": {
+    "canonical_json_sha256_required": true,
+    "duplicate_or_unknown_fields_rejected": true,
+    "nested_filter_identity_revalidated": true,
+    "nested_application_identities_revalidated": true,
+    "nested_trace_and_metrics_revalidated": true,
+    "application_model_output_order_bound_to_filter": true,
+    "boolean_as_integer_rejected": true,
+    "nonfinite_number_rejected": true,
+    "evaluation_contract_must_match_exactly": true,
+    "profile_objective_recomputed_from_persisted_metrics": true,
+    "recomputed_objectives_must_match_persisted_values": true,
+    "trade_identity_accounting_revalidated": true,
+    "authority_flags_must_be_exact_false_booleans": true
+  },
+  "implementation_status": {
+    "challenge_roundtrip_implemented": true,
+    "tampered_payload_rejected": true,
+    "nested_provenance_revalidated": true,
+    "objective_recomputation_implemented": true,
+    "development_coordinator_integration_completed": false,
+    "representative_epistemic_ordering_evaluated": false,
+    "representative_exact_replay_challenge_evaluated": false,
+    "automatic_policy_use_enabled": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_observation": {
+    "slot_ordinal": 53,
+    "role": "training",
+    "phase": "running",
+    "elapsed_seconds_observed": 930.265,
+    "wal_growth_bytes_observed": 18344091,
+    "reconnect_or_capture_error_observed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "verification": {
+    "complete_action_policy_tests_passed": 19,
+    "focused_epistemic_tests_passed": 2,
+    "roundtrip_positive_control_passed": true,
+    "rehashed_boolean_as_integer_negative_control_passed": true,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "representative_policy_selection_evaluation_run": false,
+    "representative_market_backtest_run": false,
+    "sealed_test_accessed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "uncertainty_ordering_established_on_representative_data": false,
+    "filter_thresholds_fitted_on_representative_data": false,
+    "replacement_trade_effects_measured_on_representative_data": false,
+    "runtime_filter_improves_after_cost_net_return_established": false,
+    "runtime_filter_reduces_drawdown_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "ai_uplift_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "22c721db57b783d45f9bfee4c548d46c8f2676203b48aafc0f270b8d9cb46606"
+}
