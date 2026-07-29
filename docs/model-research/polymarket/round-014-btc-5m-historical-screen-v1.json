@@ -1,0 +1,206 @@
+{
+  "schema_version": "polymarket-round14-btc-5m-historical-screen-v1",
+  "round": 14,
+  "created_at_utc": "2026-07-29T16:00:28Z",
+  "status": "preregistered_before_bulk_target_access",
+  "scope": {
+    "venue": "polymarket",
+    "asset": "BTC",
+    "market_variant": "fiveminute",
+    "purpose": "bounded_historical_predictive_screening",
+    "development_only": true,
+    "independence": "This is an independent Polymarket model-development lane. Binance public BTCUSDT observations are optional read-only exogenous features only. Binance credentials, accounts, orders, balances, positions, capital, PnL, risk state, and execution authority are forbidden.",
+    "authority": {
+      "paper_trading": false,
+      "live_trading": false,
+      "promotion": false
+    },
+    "claims_forbidden": [
+      "executable profitability",
+      "live profitability",
+      "fill probability",
+      "latency advantage",
+      "market impact",
+      "live readiness"
+    ]
+  },
+  "source_contract": {
+    "polymarket_series_id": 10684,
+    "gamma_endpoint": "https://gamma-api.polymarket.com/events/keyset",
+    "gamma_pagination": {
+      "closed": true,
+      "order": "endDate",
+      "ascending": true,
+      "requested_limit": 500,
+      "observed_effective_limit": 100,
+      "cursor": "opaque_next_cursor_only"
+    },
+    "clob_terminal_endpoint": "https://clob.polymarket.com/markets/{condition_id}",
+    "clob_price_history_endpoint": "https://clob.polymarket.com/batch-prices-history",
+    "clob_price_history_fidelity_minutes": 1,
+    "clob_price_history_maximum_markets_per_request": 20,
+    "binance_source": "existing_audited_current_spot_perpetual_flow_1s",
+    "binance_symbol": "BTCUSDT",
+    "binance_availability_rule": "A completed second becomes available only at second_ms plus 1000 milliseconds.",
+    "raw_binance_copy_allowed": false,
+    "eligible_days": [
+      "2026-03-20",
+      "2026-04-20",
+      "2026-05-01",
+      "2026-06-22"
+    ],
+    "minimum_condition_start_offset_ms": 30000,
+    "maximum_condition_end_offset_ms": 2000,
+    "decision_cadence_ms": 30000,
+    "required_flow_second_coverage_fraction": "1.0",
+    "required_market_duration_ms": 300000,
+    "required_resolution_source": "https://data.chain.link/streams/btc-usd"
+  },
+  "target_contract": {
+    "label": "Up when official terminal CLOB and Gamma evidence both identify the Up token as the unique winner; Down when both identify Down.",
+    "joint_terminal_crosscheck_required": true,
+    "gamma_terminal_prices_required": [
+      "0",
+      "1"
+    ],
+    "future_target_access": "Targets are stored separately and may be joined only after the feature rows and their hashes are materialized.",
+    "first_party_crypto_price_limit": "The first-party historical Chainlink endpoint reports a 30-day maximum and therefore cannot label these historical dates.",
+    "excluded_precontract_probes": [
+      "btc-updown-5m-1766031900",
+      "btc-updown-5m-1766038500",
+      "btc-updown-5m-1769069400",
+      "btc-updown-5m-1770253200",
+      "btc-updown-5m-1773972000",
+      "btc-updown-5m-1782086400"
+    ]
+  },
+  "causal_feature_contract": {
+    "decision_offsets_seconds": [
+      30,
+      60,
+      90,
+      120,
+      150,
+      180,
+      210,
+      240
+    ],
+    "return_horizons_seconds": [
+      1,
+      5,
+      15,
+      30,
+      60
+    ],
+    "flow_windows_seconds": [
+      1,
+      5,
+      15,
+      30
+    ],
+    "binance_features": [
+      "spot and perpetual log returns",
+      "spot and perpetual realized variance",
+      "spot and perpetual quote volume",
+      "spot and perpetual signed aggressive quote share",
+      "spot and perpetual aggregate-trade intensity",
+      "spot and perpetual constituent-trade intensity",
+      "spot and perpetual maximum aggregate quote",
+      "spot and perpetual quote concentration",
+      "spot-perpetual basis level and change",
+      "spot-perpetual return disagreement",
+      "last-trade age",
+      "UTC hour and day phase",
+      "event elapsed and remaining fractions"
+    ],
+    "polymarket_features": [
+      "latest historical Up-token price at or before the decision",
+      "age of the latest historical price observation",
+      "price change from the first in-event observation"
+    ],
+    "historical_price_limit": "The official endpoint is minute-fidelity and trade-price based. It is an informational control, not an executable quote, spread, depth, fill, or latency observation.",
+    "forbidden": [
+      "future Binance seconds",
+      "future Polymarket prices",
+      "Gamma outcome prices",
+      "CLOB winner flags",
+      "resolution",
+      "closePrice",
+      "fills",
+      "PnL",
+      "account state",
+      "wallet state",
+      "orders",
+      "positions"
+    ]
+  },
+  "partition": {
+    "method": "whole_UTC_days_with_no_cross_day_rows",
+    "train_days": [
+      "2026-03-20",
+      "2026-04-20"
+    ],
+    "tune_days": [
+      "2026-05-01"
+    ],
+    "test_days": [
+      "2026-06-22"
+    ],
+    "test_access": "one_use_after_immutable_pretest_model_and_policy_manifest",
+    "insufficient_power": "Reject or extend under a new preregistered contract. Never relax gates after test access."
+  },
+  "candidate_contract": {
+    "controls": [
+      "constant_training_prevalence",
+      "historical_polymarket_price",
+      "historical_polymarket_logistic_calibration"
+    ],
+    "challengers": [
+      "regularized_binance_logistic",
+      "regularized_polymarket_plus_binance_logistic",
+      "shallow_monotone_polymarket_plus_binance_lightgbm"
+    ],
+    "selection_metric": "tune_log_loss",
+    "secondary_metrics": [
+      "Brier score",
+      "balanced accuracy",
+      "accuracy",
+      "calibration intercept",
+      "calibration slope",
+      "expected calibration error"
+    ],
+    "search": "A fixed bounded regularization and tree-complexity grid only. No test-driven changes.",
+    "ai": "No language model is screened on this historical lane because reproducible point-in-time text inputs do not exist. AI remains veto-or-reduce only in the prospective lane."
+  },
+  "test_gates": {
+    "minimum_terminal_conditions": 250,
+    "minimum_outcomes_per_class": 50,
+    "minimum_decision_rows": 1500,
+    "maximum_missing_polymarket_control_fraction": "0.35",
+    "challenger_log_loss_skill_over_best_control_strictly_positive": true,
+    "challenger_brier_skill_over_best_control_strictly_positive": true,
+    "challenger_balanced_accuracy_not_lower_than_best_control": true,
+    "paired_condition_block_bootstrap_repetitions": 2000,
+    "paired_log_loss_improvement_lower_bound_strictly_positive": true,
+    "calibration_slope_range": [
+      "0.75",
+      "1.25"
+    ],
+    "expected_calibration_error_maximum": "0.05",
+    "binance_ablation_test_log_loss_contribution_strictly_positive": true,
+    "failure_action": "reject_candidate_without_trading_or_profitability_claim"
+  },
+  "resource_contract": {
+    "network": "Use bounded retries, Retry-After, request-size limits, cursor checkpoints, and no authenticated endpoint.",
+    "rate": "At most five requests per second per public origin with no burst above five.",
+    "storage": "Store canonical source payloads and hashes once, store compact derived rows, and never duplicate local Binance raw data.",
+    "memory": "Stream one UTC day at a time; no full-history raw payload accumulation.",
+    "database": "Use one compact DuckDB historical-screen database with explicit transactions, append-safe checkpoints, and zstd-compressible canonical JSON.",
+    "ssd": "Disable unnecessary raw archive retention, avoid temporary materializations, and checkpoint only after durable batches."
+  },
+  "excluded_probe_outcomes_consulted_before_freeze": true,
+  "bulk_labels_consulted_before_freeze": false,
+  "model_scores_consulted_before_freeze": false,
+  "profitability_claim": false,
+  "contract_sha256": "1905e2e036794e61178b79b2b768250d9430516319f3e15dc6d559418c916da6"
+}
