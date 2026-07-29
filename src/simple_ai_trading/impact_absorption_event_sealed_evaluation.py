@@ -10,7 +10,7 @@ retain, reduce, or veto those same observations.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 import math
@@ -44,6 +44,10 @@ from .impact_absorption_event_action_policy import (
     derive_round74_action_candidates,
     round74_action_profile,
 )
+from .impact_absorption_event_action_configuration import (
+    Round74FinalActionConfiguration,
+    apply_round74_final_action_configuration,
+)
 from .impact_absorption_event_calibration import (
     Round74ProbabilityCalibration,
     apply_round74_probability_calibration,
@@ -61,6 +65,9 @@ from .impact_absorption_event_financial_metrics import (
 from .impact_absorption_event_model import (
     Round74EventEpistemicDiagnostics,
     Round74EventModelOutput,
+)
+from .impact_absorption_event_epistemic_policy import (
+    Round74EpistemicActionFilterApplication,
 )
 from .impact_absorption_event_sealed_ledger import (
     ROUND74_SEALED_OPTIMIZATION_POPULATIONS,
@@ -81,7 +88,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v23"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v24"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v3"
 )
@@ -2256,6 +2263,13 @@ class Round74SealedEvaluationReport:
     pretest_model_sha256: str
     probability_calibration_sha256: str
     action_selection_sha256: str
+    final_action_configuration_sha256: str
+    final_action_configuration_mode: str
+    epistemic_action_filter_sha256: str | None
+    epistemic_action_filter_applications: tuple[
+        Round74EpistemicActionFilterApplication,
+        ...,
+    ]
     ai_pretest_qualification_sha256: str
     profile: str
     optimization_population: str
@@ -2290,6 +2304,8 @@ class Round74SealedEvaluationReport:
                 self.baseline_trace,
                 profile=self.profile,
             )
+        for application in self.epistemic_action_filter_applications:
+            application.validate()
         digests = (
             self.reserved_claim_sha256,
             self.reservation_id,
@@ -2299,11 +2315,13 @@ class Round74SealedEvaluationReport:
             self.pretest_model_sha256,
             self.probability_calibration_sha256,
             self.action_selection_sha256,
+            self.final_action_configuration_sha256,
             self.ai_pretest_qualification_sha256,
             *self.test_batch_sha256,
             *self.model_output_sha256,
             *self.candidate_sha256,
         )
+        filter_enabled = self.final_action_configuration_mode == "epistemic_filter"
         passed = _qualified_configurations(
             self.predictive_gate,
             self.baseline_metrics,
@@ -2317,6 +2335,44 @@ class Round74SealedEvaluationReport:
         if (
             self.schema_version != ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
             or any(_SHA256.fullmatch(value) is None for value in digests)
+            or not isinstance(self.final_action_configuration_mode, str)
+            or self.final_action_configuration_mode
+            not in ("baseline", "epistemic_filter")
+            or (
+                self.epistemic_action_filter_sha256 is not None
+                and not isinstance(self.epistemic_action_filter_sha256, str)
+            )
+            or (
+                filter_enabled
+                and (
+                    self.epistemic_action_filter_sha256 is None
+                    or _SHA256.fullmatch(self.epistemic_action_filter_sha256) is None
+                    or len(self.epistemic_action_filter_applications)
+                    != len(self.candidate_sha256)
+                    or tuple(
+                        value.filtered_candidate_sha256
+                        for value in self.epistemic_action_filter_applications
+                    )
+                    != self.candidate_sha256
+                    or tuple(
+                        value.source_model_output_sha256
+                        for value in self.epistemic_action_filter_applications
+                    )
+                    != self.model_output_sha256
+                    or any(
+                        value.filter_sha256
+                        != self.epistemic_action_filter_sha256
+                        for value in self.epistemic_action_filter_applications
+                    )
+                )
+            )
+            or (
+                not filter_enabled
+                and (
+                    self.epistemic_action_filter_sha256 is not None
+                    or self.epistemic_action_filter_applications
+                )
+            )
             or not self.test_batch_sha256
             or len(self.ai_overlays) != ROUND74_SEALED_AI_MODEL_COUNT
             or len({value.model_manifest_sha256 for value in self.ai_overlays})
@@ -2379,6 +2435,17 @@ class Round74SealedEvaluationReport:
             "pretest_model_sha256": self.pretest_model_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "action_selection_sha256": self.action_selection_sha256,
+            "final_action_configuration_sha256": (
+                self.final_action_configuration_sha256
+            ),
+            "final_action_configuration_mode": self.final_action_configuration_mode,
+            "epistemic_action_filter_sha256": (
+                self.epistemic_action_filter_sha256
+            ),
+            "epistemic_action_filter_applications": [
+                value.as_dict()
+                for value in self.epistemic_action_filter_applications
+            ],
             "ai_pretest_qualification_sha256": (self.ai_pretest_qualification_sha256),
             "profile": self.profile,
             "optimization_population": self.optimization_population,
@@ -2426,6 +2493,8 @@ class Round74SealedEvaluationOutcome:
             or self.finalized_claim.test_access_sha256 != self.report.test_access_sha256
             or self.finalized_claim.optimization_population
             != self.report.optimization_population
+            or self.finalized_claim.final_action_configuration_sha256
+            != self.report.final_action_configuration_sha256
         ):
             raise ValueError("Round 74 sealed evaluation outcome differs")
 
@@ -3693,7 +3762,7 @@ def _evaluate_reserved(
     *,
     ledger: Round74SealedEvaluationLedger,
     test_batches: tuple[Round74EventTrainingBatch, ...],
-    action_selection: Round74ActionPolicySelection,
+    final_action_configuration: Round74FinalActionConfiguration,
     probability_calibration: Round74ProbabilityCalibration,
     pretest_policy_path: Path,
     ai_review_provider: Round74SealedAIReviewProvider,
@@ -3701,6 +3770,8 @@ def _evaluate_reserved(
     compute_backend: str,
     inference_minibatch_rows: int,
 ) -> Round74SealedEvaluationReport:
+    final_action_configuration.validate()
+    action_selection = final_action_configuration.action_selection
     if not ledger.claim_matches(claim, required_status="reserved"):
         raise ValueError("Round 74 sealed reservation is not live")
     policy_run_counts = {
@@ -3708,6 +3779,8 @@ def _evaluate_reserved(
     }
     if (
         tuple(batch.batch_sha256 for batch in test_batches) != claim.batch_sha256
+        or final_action_configuration.configuration_sha256
+        != claim.final_action_configuration_sha256
         or action_selection.selection_sha256 != claim.action_selection_sha256
         or action_selection.profile != claim.profile
         or action_selection.selected_threshold_score is None
@@ -3730,6 +3803,13 @@ def _evaluate_reserved(
     )
     candidates = inference.candidates
     contexts = inference.contexts
+    candidates, filter_applications = apply_round74_final_action_configuration(
+        candidates,
+        inference.model_outputs,
+        final_action_configuration,
+    )
+    inference = replace(inference, candidates=candidates)
+    inference.validate()
     threshold = action_selection.selected_threshold_score
     assert threshold is not None
     target_free_rows = _target_free_review_rows(
@@ -3826,6 +3906,14 @@ def _evaluate_reserved(
         pretest_model_sha256=inference.pretest_model_sha256,
         probability_calibration_sha256=(probability_calibration.calibration_sha256),
         action_selection_sha256=action_selection.selection_sha256,
+        final_action_configuration_sha256=(
+            final_action_configuration.configuration_sha256
+        ),
+        final_action_configuration_mode=final_action_configuration.mode,
+        epistemic_action_filter_sha256=(
+            final_action_configuration.action_filter_sha256
+        ),
+        epistemic_action_filter_applications=filter_applications,
         ai_pretest_qualification_sha256=(claim.ai_pretest_qualification_sha256),
         profile=action_selection.profile,
         optimization_population=claim.optimization_population,
@@ -3856,7 +3944,7 @@ def evaluate_round74_sealed_once(
     test_identity: Round74SealedDatasetIdentity,
     *,
     test_batch_loader: Round74SealedTestBatchLoader,
-    action_selection: Round74ActionPolicySelection,
+    final_action_configuration: Round74FinalActionConfiguration,
     probability_calibration: Round74ProbabilityCalibration,
     pretest_policy_path: str | Path,
     ai_pretest_qualification: Round74AIPretestQualificationPanel,
@@ -3868,6 +3956,8 @@ def evaluate_round74_sealed_once(
 ) -> Round74SealedEvaluationOutcome:
     """Reserve metadata, load targets, replay AI, and finalize exactly once."""
 
+    final_action_configuration.validate()
+    action_selection = final_action_configuration.action_selection
     ai_pretest_qualification.validate()
     manifests = ai_pretest_qualification.model_manifest_sha256
     if (
@@ -3884,6 +3974,8 @@ def evaluate_round74_sealed_once(
     if (
         ai_pretest_qualification.action_selection_sha256
         != action_selection.selection_sha256
+        or ai_pretest_qualification.final_action_configuration_sha256
+        != final_action_configuration.configuration_sha256
         or ai_pretest_qualification.pretest_policy_sha256
         != action_selection.pretest_policy_sha256
         or ai_pretest_qualification.probability_calibration_sha256
@@ -3893,7 +3985,7 @@ def evaluate_round74_sealed_once(
         raise ValueError("Round 74 sealed AI pretest qualification identity differs")
     claim = ledger.reserve_identity(
         test_identity=test_identity,
-        action_selection=action_selection,
+        final_action_configuration=final_action_configuration,
         ai_pretest_qualification=ai_pretest_qualification,
     )
     try:
@@ -3920,7 +4012,7 @@ def evaluate_round74_sealed_once(
             claim,
             ledger=ledger,
             test_batches=batches,
-            action_selection=action_selection,
+            final_action_configuration=final_action_configuration,
             probability_calibration=probability_calibration,
             pretest_policy_path=Path(pretest_policy_path),
             ai_review_provider=ai_review_provider,

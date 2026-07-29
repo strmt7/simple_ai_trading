@@ -41,6 +41,10 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     Round74ActionTraceMetrics,
     round74_action_profile,
 )
+from simple_ai_trading.impact_absorption_event_action_configuration import (
+    Round74FinalActionConfiguration,
+    _build_round74_final_action_configuration,
+)
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
 )
@@ -134,9 +138,20 @@ def _selection() -> Round74ActionPolicySelection:
         selected_threshold_score=1.0,
         evaluations=evaluations,
         rejection_reasons=(),
+        execution_outcome_panel_sha256="d" * 64,
     )
     result.validate()
     return result
+
+
+def _configuration(
+    action_selection: Round74ActionPolicySelection | None = None,
+) -> Round74FinalActionConfiguration:
+    return _build_round74_final_action_configuration(
+        development_bundle_sha256="f" * 64,
+        action_selection=action_selection or _selection(),
+        epistemic_action_challenge=None,
+    )
 
 
 def _qualification_population() -> Round74AIQualificationPopulation:
@@ -158,7 +173,7 @@ def _evaluate(
     executions: tuple[Round74AIExecutionReplayEvidence, ...],
 ) -> Round74AIUpliftDevelopmentReport:
     return evaluate_round74_ai_overlay_development(
-        action_selection,
+        _configuration(action_selection),
         reviews,
         executions,
         qualification_population=_qualification_population(),
@@ -456,6 +471,12 @@ def test_ai_pretest_qualification_binds_two_passing_development_reports(
 
     assert qualification.qualification_passed
     assert qualification.model_manifest_sha256 == ("6" * 64, "7" * 64)
+    assert qualification.final_action_configuration_sha256 == (
+        first.final_action_configuration_sha256
+    )
+    assert first.final_action_configuration_mode == "baseline"
+    assert first.epistemic_action_filter_sha256 is None
+    assert first.epistemic_action_filter_application_sha256 == ()
     assert qualification.gate_reasons == ()
     assert not qualification.sealed_test_accessed
     assert not qualification.model_selection_performed
@@ -569,7 +590,7 @@ def test_ai_development_rejects_policy_selection_run_reuse() -> None:
 
     with pytest.raises(ValueError, match="qualification population identity differs"):
         evaluate_round74_ai_overlay_development(
-            _selection(),
+            _configuration(),
             reviews,
             _executions(reviews),
             qualification_population=overlapping_population,
@@ -684,7 +705,7 @@ def test_run_and_symbol_aggregates_cannot_hide_one_harmed_cell() -> None:
         executions.append(execution)
 
     report = evaluate_round74_ai_overlay_development(
-        _selection(),
+        _configuration(),
         tuple(reviews),
         tuple(executions),
         qualification_population=population,

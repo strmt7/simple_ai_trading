@@ -11,11 +11,15 @@ from typing import TYPE_CHECKING
 
 from .impact_absorption_event_action_policy import (
     ROUND74_ACTION_PROFILES,
+    Round74ActionCandidateBatch,
     Round74ActionPolicySelection,
 )
 from .impact_absorption_event_epistemic_policy import (
+    Round74EpistemicActionFilterApplication,
     Round74EpistemicActionReplayChallenge,
+    apply_round74_epistemic_action_filter,
 )
+from .impact_absorption_event_model import Round74EventModelOutput
 
 if TYPE_CHECKING:
     from .round74_event_development_operator import Round74DevelopmentPolicyBundle
@@ -340,9 +344,58 @@ def select_round74_final_action_configuration(
     )
 
 
+def apply_round74_final_action_configuration(
+    candidates: tuple[Round74ActionCandidateBatch, ...],
+    model_outputs: tuple[Round74EventModelOutput, ...],
+    configuration: Round74FinalActionConfiguration,
+) -> tuple[
+    tuple[Round74ActionCandidateBatch, ...],
+    tuple[Round74EpistemicActionFilterApplication, ...],
+]:
+    """Apply only the frozen target-free candidate filter, when selected."""
+
+    configuration.validate()
+    selected_candidates = tuple(candidates)
+    selected_outputs = tuple(model_outputs)
+    if (
+        not selected_candidates
+        or len(selected_candidates) != len(selected_outputs)
+        or any(
+            not hasattr(candidate, "validate")
+            or not hasattr(candidate, "profile")
+            or candidate.profile != configuration.profile
+            for candidate in selected_candidates
+        )
+    ):
+        raise ValueError("Round 74 final action candidate panel differs")
+    if configuration.mode == "baseline":
+        return selected_candidates, ()
+    challenge = configuration.epistemic_action_challenge
+    if challenge is None:
+        raise ValueError("Round 74 final action filter is missing")
+    filtered: list[Round74ActionCandidateBatch] = []
+    applications: list[Round74EpistemicActionFilterApplication] = []
+    for candidate, output in zip(
+        selected_candidates,
+        selected_outputs,
+        strict=True,
+    ):
+        candidate.validate()
+        output.validate(candidate.rows)
+        filtered_candidate, application = apply_round74_epistemic_action_filter(
+            candidate,
+            output,
+            challenge.action_filter,
+        )
+        filtered.append(filtered_candidate)
+        applications.append(application)
+    return tuple(filtered), tuple(applications)
+
+
 __all__ = [
     "ROUND74_FINAL_ACTION_CONFIGURATION_MODES",
     "ROUND74_FINAL_ACTION_CONFIGURATION_SCHEMA_VERSION",
     "Round74FinalActionConfiguration",
+    "apply_round74_final_action_configuration",
     "select_round74_final_action_configuration",
 ]

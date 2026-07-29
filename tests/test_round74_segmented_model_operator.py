@@ -997,11 +997,30 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
         "Round74AIQualificationStoreExecutionReplayProvider",
         replay_provider,
     )
+    monkeypatch.setattr(
+        development_subject,
+        "select_round74_final_action_configuration",
+        lambda selected_bundle, *, profile: SimpleNamespace(
+            profile=profile,
+            action_selection=next(
+                policy
+                for policy in selected_bundle.action_policies
+                if policy.profile == profile
+            ),
+            configuration_sha256=(
+                f"{('conservative', 'regular', 'aggressive').index(profile) + 40:064x}"
+            ),
+            mode="baseline",
+            development_bundle_sha256="8" * 64,
+        ),
+    )
 
     def qualify(_roles: object, **kwargs: object) -> object:
         qualification_calls.append(kwargs)
-        selected = kwargs["action_selection"]
+        configuration = kwargs["final_action_configuration"]
+        selected = configuration.action_selection
         return SimpleNamespace(
+            final_action_configuration=configuration,
             inference=SimpleNamespace(
                 action_selection_sha256=selected.selection_sha256,
             ),
@@ -1009,6 +1028,9 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
                 profile=selected.profile,
                 qualification_sha256=f"{len(qualification_calls) + 30:064x}",
                 qualification_passed=True,
+                final_action_configuration_sha256=(
+                    configuration.configuration_sha256
+                ),
             ),
             validate=lambda: None,
         )

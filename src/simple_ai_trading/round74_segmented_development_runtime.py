@@ -13,6 +13,9 @@ from .impact_absorption_ai_execution_replay import (
     Round74AIQualificationStoreExecutionReplayProvider,
 )
 from .impact_absorption_event_action_policy import ROUND74_ACTION_PROFILES
+from .impact_absorption_event_action_configuration import (
+    select_round74_final_action_configuration,
+)
 from .impact_absorption_ai_uplift import (
     ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
 )
@@ -45,7 +48,7 @@ from .round74_segmented_model_operator import (
 
 
 ROUND74_SEGMENTED_DEVELOPMENT_RUN_SCHEMA_VERSION = (
-    "round-074-segmented-development-run-v3"
+    "round-074-segmented-development-run-v4"
 )
 ROUND74_SEGMENTED_DEVELOPMENT_DATABASE_RELATIVE_PATH = Path(
     "data/round74-segmented-event-cohort-v3.duckdb"
@@ -210,6 +213,13 @@ def _run_development(
         for profile in ROUND74_ACTION_PROFILES
         if action_policies[profile].accepted
     )
+    final_action_configurations = {
+        profile: select_round74_final_action_configuration(
+            policy.bundle,
+            profile=profile,
+        )
+        for profile in accepted_profiles
+    }
     replay_provider = Round74AIQualificationStoreExecutionReplayProvider(
         store=store,
         partition=partition,
@@ -244,7 +254,7 @@ def _run_development(
         result = run_round74_ai_pretest_qualification(
             qualification_batches,
             qualification_population=population,
-            action_selection=action_policies[profile],
+            final_action_configuration=final_action_configurations[profile],
             probability_calibration=policy.bundle.probability_calibration,
             pretest_policy_path=policy.pretest_policy.policy_path,
             execution_replay_provider=replay_provider,
@@ -262,6 +272,12 @@ def _run_development(
             profile=profile,
             qualification_sha256=result.qualification.qualification_sha256,
             qualification_passed=result.qualification.qualification_passed,
+            final_action_configuration_sha256=(
+                final_action_configurations[profile].configuration_sha256
+            ),
+            final_action_configuration_mode=(
+                final_action_configurations[profile].mode
+            ),
         )
     qualified = Round74SegmentedQualifiedDevelopment(
         preparation_sha256=preparation_sha256,
@@ -398,6 +414,16 @@ def run_round74_segmented_development(
                     False
                     if qualification is None
                     else qualification.qualification.qualification_passed
+                ),
+                "final_action_configuration_sha256": (
+                    None
+                    if qualification is None
+                    else qualification.final_action_configuration.configuration_sha256
+                ),
+                "final_action_configuration_mode": (
+                    None
+                    if qualification is None
+                    else qualification.final_action_configuration.mode
                 ),
                 "development_gate_passed": (
                     selected.accepted

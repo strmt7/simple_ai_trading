@@ -51,6 +51,10 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     derive_round74_action_candidates,
     round74_action_profile,
 )
+from simple_ai_trading.impact_absorption_event_action_configuration import (
+    Round74FinalActionConfiguration,
+    _build_round74_final_action_configuration,
+)
 from simple_ai_trading.impact_absorption_event_calibration import (
     ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     Round74NoInformationQuantileBaseline,
@@ -258,10 +262,21 @@ def _selection(
         selected_threshold_score=1.0,
         evaluations=evaluations,
         rejection_reasons=(),
+        execution_outcome_panel_sha256="d" * 64,
         optimization_population=optimization_population,
     )
     result.validate()
     return result
+
+
+def _configuration(
+    selection: Round74ActionPolicySelection,
+) -> Round74FinalActionConfiguration:
+    return _build_round74_final_action_configuration(
+        development_bundle_sha256="f" * 64,
+        action_selection=selection,
+        epistemic_action_challenge=None,
+    )
 
 
 def _calibration() -> Round74ProbabilityCalibration:
@@ -635,7 +650,7 @@ def _ai_pretest_qualification(
             execution.validate()
             executions.append(execution)
         report = evaluate_round74_ai_overlay_development(
-            selection,
+            _configuration(selection),
             tuple(reviews),
             tuple(executions),
             qualification_population=qualification_population,
@@ -787,7 +802,7 @@ def test_reservation_consumes_test_access_before_evaluation(
     qualification = _ai_pretest_qualification(selection)
     claim = ledger.reserve(
         test_batches=(_test_batch(),),
-        action_selection=selection,
+        final_action_configuration=_configuration(selection),
         ai_pretest_qualification=qualification,
     )
 
@@ -795,6 +810,9 @@ def test_reservation_consumes_test_access_before_evaluation(
     assert claim.rows == 24
     assert claim.test_run_ids == TEST_RUNS
     assert claim.ai_manifest_sha256 == ("a" * 64, "b" * 64)
+    assert claim.final_action_configuration_sha256 == (
+        _configuration(selection).configuration_sha256
+    )
     assert ledger.claim_matches(claim, required_status="reserved")
     assert len(claim.claim_sha256) == 64
     assert Round74SealedEvaluationClaim.from_mapping(claim.as_dict()) == claim
@@ -802,7 +820,7 @@ def test_reservation_consumes_test_access_before_evaluation(
     with pytest.raises(Round74SealedReuseError, match="already reserved"):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             ai_pretest_qualification=qualification,
         )
 
@@ -832,7 +850,7 @@ def test_segmented_reservation_and_bootstrap_keep_every_test_segment(
 
     claim = ledger.reserve_identity(
         test_identity=identity,
-        action_selection=selection,
+        final_action_configuration=_configuration(selection),
         ai_pretest_qualification=_ai_pretest_qualification(selection),
     )
     bootstrap = sealed_subject._run_bootstrap(
@@ -974,14 +992,17 @@ def test_v1_ledger_migrates_only_to_legacy_capture_population(
     assert "test_population_sha256" in columns
     assert "ai_pretest_qualification_sha256" in columns
     assert "ai_pretest_qualification_required" in columns
+    assert "final_action_configuration_sha256" in columns
     assert schema is not None
-    assert schema[0] == "round-074-sealed-ledger-v3"
+    assert schema[0] == "round-074-sealed-ledger-v4"
     assert migrated_population is not None
     assert migrated_population[0] == "capture_run"
     assert len(migrated_population[1]) == 64
     migrated_claim = ledger.claim("1" * 64)
     assert migrated_claim.ai_pretest_qualification_sha256 == ""
     assert not migrated_claim.ai_pretest_qualification_required
+    assert migrated_claim.final_action_configuration_sha256 == ""
+    assert not ledger.claim_matches(migrated_claim, required_status="reserved")
 
 
 def test_completed_or_failed_reservation_cannot_be_reset_or_finalized_twice(
@@ -992,7 +1013,7 @@ def test_completed_or_failed_reservation_cannot_be_reset_or_finalized_twice(
     qualification = _ai_pretest_qualification(selection)
     claim = ledger.reserve(
         test_batches=(_test_batch(),),
-        action_selection=selection,
+        final_action_configuration=_configuration(selection),
         ai_pretest_qualification=qualification,
     )
     completed = ledger.finalize(
@@ -1012,7 +1033,7 @@ def test_completed_or_failed_reservation_cannot_be_reset_or_finalized_twice(
     with pytest.raises(Round74SealedReuseError):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             ai_pretest_qualification=qualification,
         )
 
@@ -1025,7 +1046,7 @@ def test_evaluation_error_is_durable_and_still_consumes_test(
     qualification = _ai_pretest_qualification(selection)
     claim = ledger.reserve(
         test_batches=(_test_batch(),),
-        action_selection=selection,
+        final_action_configuration=_configuration(selection),
         ai_pretest_qualification=qualification,
     )
     failed = ledger.finalize(
@@ -1041,7 +1062,7 @@ def test_evaluation_error_is_durable_and_still_consumes_test(
     with pytest.raises(Round74SealedReuseError):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             ai_pretest_qualification=qualification,
         )
 
@@ -1073,7 +1094,7 @@ def test_sealed_evaluator_finalizes_failure_after_reservation(
         evaluate_round74_sealed_once(
             identity,
             test_batch_loader=load_after_reservation,
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             probability_calibration=calibration,
             pretest_policy_path=tmp_path / "missing-policy.json",
             ai_pretest_qualification=qualification,
@@ -1093,7 +1114,7 @@ def test_sealed_evaluator_finalizes_failure_after_reservation(
     with pytest.raises(Round74SealedReuseError, match="status=failed"):
         ledger.reserve(
             test_batches=(batch,),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             ai_pretest_qualification=qualification,
         )
 
@@ -1195,7 +1216,7 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     outcome = evaluate_round74_sealed_once(
         build_round74_sealed_dataset_identity((batch,)),
         test_batch_loader=load_test_batches,
-        action_selection=selection,
+        final_action_configuration=_configuration(selection),
         probability_calibration=calibration,
         pretest_policy_path=tmp_path / "policy.json",
         ai_pretest_qualification=_ai_pretest_qualification(
@@ -1214,6 +1235,12 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert outcome.report.qualified_configuration == ()
     assert outcome.report.baseline_metrics.executed_trades == 24
     assert outcome.report.baseline_metrics.financial_gate_passed
+    assert outcome.report.final_action_configuration_sha256 == (
+        outcome.finalized_claim.final_action_configuration_sha256
+    )
+    assert outcome.report.final_action_configuration_mode == "baseline"
+    assert outcome.report.epistemic_action_filter_sha256 is None
+    assert outcome.report.epistemic_action_filter_applications == ()
     assert not outcome.report.predictive_gate.gate_passed
     assert (
         "positive_payoff:non_single_class_evidence_missing"
@@ -1749,7 +1776,7 @@ def test_sealed_evaluator_rejects_incomplete_ai_family_before_reservation(
         evaluate_round74_sealed_once(
             build_round74_sealed_dataset_identity((batch,)),
             test_batch_loader=lambda **_kwargs: (batch,),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             probability_calibration=_calibration(),
             pretest_policy_path=tmp_path / "policy.json",
             ai_pretest_qualification=incomplete,
@@ -1996,7 +2023,7 @@ def test_prepared_review_provider_binds_reserved_claim_and_model_panel(
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
     claim = ledger.reserve(
         test_batches=(batch,),
-        action_selection=selection,
+        final_action_configuration=_configuration(selection),
         ai_pretest_qualification=qualification,
     )
     progress: list[Mapping[str, object]] = []
@@ -2053,7 +2080,7 @@ def test_store_replay_provider_reconciles_each_run_and_restores_order(
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
     claim = ledger.reserve(
         test_batches=(batch,),
-        action_selection=selection,
+        final_action_configuration=_configuration(selection),
         ai_pretest_qualification=_ai_pretest_qualification(
             selection,
             manifests=manifests,
@@ -2152,7 +2179,7 @@ def test_development_data_is_rejected_before_ledger_creation(
     with pytest.raises(ValueError, match="rejects development data"):
         ledger.reserve(
             test_batches=(_test_batch(role="tuning"),),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             ai_pretest_qualification=_ai_pretest_qualification(selection),
         )
 
@@ -2171,7 +2198,7 @@ def test_ai_qualification_cannot_reuse_sealed_or_other_tuning_population(
     with pytest.raises(ValueError, match="reused test runs"):
         ledger.reserve(
             test_batches=(_test_batch(runs=population.run_ids),),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             ai_pretest_qualification=qualification,
         )
 
@@ -2190,7 +2217,7 @@ def test_ai_qualification_cannot_reuse_sealed_or_other_tuning_population(
     with pytest.raises(ValueError, match="qualification identity differs"):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             ai_pretest_qualification=wrong_qualification,
         )
 
@@ -2228,18 +2255,18 @@ def test_tampered_claim_or_duplicate_manifest_panel_is_rejected(
     with pytest.raises(ValueError, match="pretest qualification differs"):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             ai_pretest_qualification=duplicate,
         )
     with pytest.raises(ValueError, match="pretest qualification differs"):
         ledger.reserve(
             test_batches=(_test_batch(),),
-            action_selection=selection,
+            final_action_configuration=_configuration(selection),
             ai_pretest_qualification=oversized,
         )
     claim = ledger.reserve(
         test_batches=(_test_batch(),),
-        action_selection=selection,
+        final_action_configuration=_configuration(selection),
         ai_pretest_qualification=qualification,
     )
     tampered = replace(claim, dataset_sha256="f" * 64)
@@ -2383,7 +2410,7 @@ def test_ai_qualification_operator_uses_disjoint_tuning_scope(
     result = qualification_subject.run_round74_ai_pretest_qualification(
         batches,
         qualification_population=population,
-        action_selection=selection,
+        final_action_configuration=_configuration(selection),
         probability_calibration=calibration,
         pretest_policy_path=tmp_path / "not-read-by-injected-inference.json",
         execution_replay_provider=replay_provider,
@@ -2395,6 +2422,13 @@ def test_ai_qualification_operator_uses_disjoint_tuning_scope(
 
     assert output_path.is_file()
     assert result.inference.data_scope == "ai_qualification_tuning"
+    assert result.final_action_configuration.configuration_sha256 == (
+        _configuration(selection).configuration_sha256
+    )
+    assert result.epistemic_action_filter_applications == ()
+    assert result.qualification.final_action_configuration_sha256 == (
+        result.final_action_configuration.configuration_sha256
+    )
     assert result.baseline_trace.expected_run_ids == TEST_RUNS
     assert result.baseline_trace.metrics.trades > len(TEST_RUNS)
     assert result.baseline_trace.run_id[:2] == (TEST_RUNS[0], TEST_RUNS[0])
@@ -2529,7 +2563,7 @@ def test_prepared_ai_qualification_wrapper_forwards_only_fourth_subrole(
     result = qualification_subject.run_round74_prepared_ai_pretest_qualification(
         roles,
         qualification_population=population,
-        action_selection=_selection(),
+        final_action_configuration=_configuration(_selection()),
         probability_calibration=_calibration(),
         pretest_policy_path="policy.json",
         execution_replay_provider=lambda **_kwargs: {},
