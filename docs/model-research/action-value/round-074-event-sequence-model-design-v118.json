@@ -1,0 +1,157 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v118",
+  "created_at_utc": "2026-07-29T04:04:56Z",
+  "implementation_git_commit": "ac805e2a3888abceb5e052af51f574770d9dd586",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v117.json",
+    "file_sha256": "aa1fb83675a06c5130eb941c33293f51c39c0982e7ec453a2e4cacc491952258",
+    "design_sha256": "04662cdf3e465654a52660de78d559246f314ff3a5e4bbfcae46488f3543fb58",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_calibration": {
+      "path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+      "sha256": "7a375fa730a194eafe2ec52fa6d9abdf4f666e6242f53469b495e796af396348"
+    },
+    "event_calibration_test": {
+      "path": "tests/test_impact_absorption_event_calibration.py",
+      "sha256": "5c974426b34b8b9cf3c0392d35950d4765ed17b90c6b3e3e9f0145d340da5831"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://proceedings.mlr.press/v70/guo17a.html",
+      "finding": "Temperature scaling fits a single scalar on held-out validation data by minimizing negative log likelihood while leaving model ranking unchanged.",
+      "implementation_consequence": "The positive-payoff head retains one deterministic scalar temperature selected only on disjoint calibration runs."
+    },
+    {
+      "source": "https://jmlr.org/papers/v17/14-294.html",
+      "finding": "A multiclass proper composite loss scores a coherent probability-simplex prediction against the observed class.",
+      "implementation_consequence": "Fully observed neither, long-positive, and short-positive outcomes select temperature with the same three-outcome log score used by v117 training and promotion."
+    },
+    {
+      "source": "https://scikit-learn.org/stable/modules/calibration.html",
+      "finding": "Calibration must be fitted on data independent of model fitting, and multiclass calibration is evaluated on class probabilities that sum to one.",
+      "implementation_consequence": "Chronological calibration-run separation remains mandatory and jointly observed payoff probabilities are scored as one normalized outcome distribution."
+    }
+  ],
+  "calibration_contract": {
+    "schema_version": "round-074-temperature-calibration-v6",
+    "read_compatible_prior_schema_version": "round-074-temperature-calibration-v5",
+    "candidate_temperature_count": 257,
+    "candidate_temperature_minimum": 0.05,
+    "candidate_temperature_maximum": 20.0,
+    "candidate_spacing": "uniform_in_log_temperature",
+    "fully_observed_selection_score": "joint_three_outcome_log_loss",
+    "fully_observed_outcomes": [
+      "neither_direction_positive_after_cost",
+      "long_positive_after_cost",
+      "short_positive_after_cost"
+    ],
+    "singly_observed_selection_score": "eligible_directional_marginal_binary_log_loss",
+    "unobserved_direction_target_synthesized": false,
+    "jointly_eligible_side_equivalent_weight": 2,
+    "singly_eligible_side_equivalent_weight": 1,
+    "normalizer": "total_eligible_directional_targets",
+    "capture_run_population_weighting": "equal_weight_per_chronological_capture_run",
+    "eligible_target_population_weighting": "equal_weight_per_eligible_directional_target",
+    "brier_and_ece_scope": "eligible_directional_marginals_diagnostic_only",
+    "calibration_data_reused_for_model_fitting": false,
+    "sealed_test_accessed": false
+  },
+  "declared_delta": {
+    "previous_positive_temperature_selection_score": "flattened_directional_binary_cross_entropy",
+    "new_positive_temperature_selection_score": "joint_three_outcome_log_loss_with_one_sided_marginal_censoring",
+    "temperature_calibration_schema_version": "round-074-temperature-calibration-v6",
+    "v5_artifact_read_compatibility_preserved": true,
+    "adverse_selection_calibration_changed": false,
+    "regime_unpredictability_calibration_changed": false,
+    "risk_quantile_calibration_changed": false,
+    "quantile_baseline_changed": false,
+    "event_model_changed": false,
+    "event_training_changed": false,
+    "action_policy_changed": false,
+    "candidate_registry_changed": false,
+    "target_definition_changed": false,
+    "feature_definition_changed": false,
+    "model_parameters_changed": false,
+    "market_data_reads_added": 0,
+    "ai_model_calls_added": 0,
+    "campaign_source_files_changed_on_main": false,
+    "trading_authority": false
+  },
+  "directml_preflight": {
+    "executed": true,
+    "target_source": "synthetic_calibration_panel_only",
+    "backend_kind": "directml",
+    "backend_device": "privateuseone:0",
+    "backend_vendor": "AMD Radeon RX 9070 XT",
+    "backend_accelerated": true,
+    "torch_version": "2.4.1+cpu",
+    "selected_temperature": 4.368684768676758,
+    "cpu_fallback_warning_count": 0,
+    "warning_count": 0,
+    "calibration_schema_version": "round-074-temperature-calibration-v6",
+    "financial_edge_tested": false,
+    "profitability_claim": false
+  },
+  "verification": {
+    "unique_tests_passed": 179,
+    "calibration_tests_passed": 18,
+    "affected_consumer_and_v105_through_v117_design_tests_passed": 159,
+    "v118_design_tests_passed": 2,
+    "joint_objective_selects_independently_computed_categorical_optimum": true,
+    "joint_objective_differs_from_old_marginal_optimum_on_fixed_case": true,
+    "v5_structural_round_trip_passed": true,
+    "directml_calibration_preflight_passed": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "status_observed_at_utc": "2026-07-29T04:03:31Z",
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 38,
+    "latest_independently_adjudicated_slot": 47,
+    "latest_adjudication_sha256": "f8ff9cf29c1dd0a6a754df3eceb9e35b2eef76477aa58a47baff40f9753e8298",
+    "latest_capture_report_sha256": "7a4a0bdea5e075e40d6a8919190631daccb7f548f9c66ace019afab3cbb25ac3",
+    "slot_047_reconnect_count": 0,
+    "slot_047_status": "admitted_training",
+    "slot_048_status_at_observation": "running",
+    "slot_048_process_count_at_observation": 4,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_or_wal_hashed_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "objective_difference_verified_only_on_synthetic_calibration_panels": true,
+    "representative_training_data_complete": false,
+    "model_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "ai_model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "f1ce5faf06ada1fa04b4e63850635c1ac5ef1b17f18c79d21c46a570db64b739"
+}
