@@ -1,0 +1,263 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v121",
+  "created_at_utc": "2026-07-29T05:39:00Z",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v120.json",
+    "file_sha256": "02398369b3f9581f2416de8a235c31f721b291d40207b303ad68f1416008d8ea",
+    "design_sha256": "ee41f427b0714275173ca0fdc720e4fdf7db496928d44ff3b9f9a30fc4a1c7af",
+    "unchanged_except_declared_delta": true
+  },
+  "implementation_git_commit": "0b11caef05b431a9ca464cd659e42a62647f382a",
+  "declared_delta": {
+    "summary": "Measure whether three-peer ensemble disagreement orders calibrated policy-selection error before uncertainty may challenge any trading policy.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "calibration_changed": false,
+    "candidate_eligibility_changed": false,
+    "candidate_ranking_changed": false,
+    "position_size_changed": false,
+    "leverage_changed": false,
+    "ai_prompt_changed": false,
+    "execution_changed": false,
+    "sealed_test_access_changed": false,
+    "development_bundle_evidence_added": true
+  },
+  "source_binding": {
+    "epistemic_evaluation": {
+      "path": "src/simple_ai_trading/impact_absorption_event_epistemic_evaluation.py",
+      "sha256": "dd8029438b6e0e50285ff015093c74c7bfefe563bba1232c136f39fbd5e862f2",
+      "schema_version": "round-074-epistemic-risk-coverage-v1"
+    },
+    "development_operator": {
+      "path": "src/simple_ai_trading/round74_event_development_operator.py",
+      "sha256": "b867e982bacb7ace2262cf7458397292990e7a42afd13d4cfe798fadef3355b2",
+      "operator_schema_version": "round-074-development-policy-operator-v5",
+      "bundle_schema_version": "round-074-development-policy-bundle-v6"
+    },
+    "epistemic_evaluation_tests": {
+      "path": "tests/test_impact_absorption_event_epistemic_evaluation.py",
+      "sha256": "17d17318aed0de0de3ecadfdc2eca88616829345aa0dafc68f2248465cd49ac5"
+    },
+    "development_operator_tests": {
+      "path": "tests/test_round74_event_development_operator.py",
+      "sha256": "338ed148f26e8deb6311b136d553d65388df65b87148b2d512ef0e28ad2b4ce1"
+    }
+  },
+  "research_basis": [
+    {
+      "title": "An Empirical Analysis of Calibration and Selective Prediction in Multimodal Clinical Condition Classification",
+      "url": "https://proceedings.mlr.press/v333/lopez26a.html",
+      "design_consequence": "Aggregate metrics cannot promote uncertainty use because class-dependent miscalibration can reverse selective-prediction behavior."
+    },
+    {
+      "title": "Overcoming Common Flaws in the Evaluation of Selective Classification Systems",
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2024/hash/047c84ec50bd8ea29349b996fc64af4b-Abstract-Conference.html",
+      "design_consequence": "Both selective-risk AURC and generalized-risk AUGRC are reported because they answer different deployment questions and can rank confidence scores differently."
+    },
+    {
+      "title": "A Novel Characterization of the Population Area Under the Risk Coverage Curve and Rates of Finite Sample Estimators",
+      "url": "https://arxiv.org/abs/2410.15361",
+      "design_consequence": "Exact empirical AURC is retained, but promotion also requires capture-run-level dependence-aware uncertainty ordering rather than row-count pseudoreplication."
+    },
+    {
+      "title": "Selective Omniprediction and Fair Abstention",
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2025/hash/3826a7e2a07ee41ca42eaf57ed337df4-Abstract-Conference.html",
+      "design_consequence": "Conditional groups are first-class evidence and aggregate-only promotion is prohibited."
+    },
+    {
+      "title": "Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles",
+      "url": "https://arxiv.org/abs/1612.01474",
+      "design_consequence": "Existing independently initialized peers provide disagreement telemetry without another model forward pass."
+    }
+  ],
+  "epistemic_risk_coverage_contract": {
+    "status": "implemented_waiting_for_representative_policy_selection_runs",
+    "required_source_role": "disjoint_tuning_policy_selection_runs",
+    "expected_capture_runs": 6,
+    "sealed_test_runs_permitted": 0,
+    "production_peer_count": 3,
+    "uncertainty_metrics": [
+      {
+        "metric_id": "payoff_quantile_peer_dispersion",
+        "score": "root_mean_square_population_standard_deviation_across_five_payoff_quantiles_bps",
+        "loss": "mean_pinball_loss_bps",
+        "outcome_classes": [
+          "non_positive_payoff",
+          "positive_payoff"
+        ]
+      },
+      {
+        "metric_id": "adverse_excursion_quantile_peer_dispersion",
+        "score": "root_mean_square_population_standard_deviation_across_five_adverse_excursion_quantiles_bps",
+        "loss": "mean_pinball_loss_bps",
+        "outcome_classes": [
+          "not_adverse_selection",
+          "adverse_selection"
+        ]
+      },
+      {
+        "metric_id": "positive_payoff_probability_peer_dispersion",
+        "score": "population_standard_deviation_of_uncalibrated_peer_probabilities",
+        "loss": "calibrated_probability_brier_loss",
+        "outcome_classes": [
+          "non_positive_payoff",
+          "positive_payoff"
+        ]
+      },
+      {
+        "metric_id": "adverse_selection_probability_peer_dispersion",
+        "score": "population_standard_deviation_of_uncalibrated_peer_probabilities",
+        "loss": "calibrated_probability_brier_loss",
+        "outcome_classes": [
+          "not_adverse_selection",
+          "adverse_selection"
+        ]
+      },
+      {
+        "metric_id": "regime_unpredictability_probability_peer_dispersion",
+        "score": "population_standard_deviation_of_uncalibrated_peer_probabilities",
+        "loss": "calibrated_soft_target_brier_loss",
+        "outcome_classes": [
+          "lower_path_unpredictability",
+          "higher_path_unpredictability"
+        ],
+        "class_boundary": 0.5,
+        "class_boundary_meaning": "realized directional displacement is respectively greater than or at most half of total midpoint variation"
+      }
+    ],
+    "probability_score_calibration_boundary": "Peer probability dispersion remains a raw rank score; errors are measured against frozen calibrated mixture probabilities. No unsupported attempt is made to reconstruct temperature-scaled peer variance from an aggregate standard deviation.",
+    "tie_handling": "Equal uncertainty values are accepted or rejected only as a whole block; row order can never split a tie.",
+    "exact_metrics": [
+      "area_under_selective_risk_coverage_curve",
+      "area_under_generalized_risk_coverage_curve",
+      "spearman_uncertainty_loss_rank_correlation",
+      "run_mean_aurc_improvement_over_no_information",
+      "fixed_risk_coverage"
+    ],
+    "plot_coverage_targets": [
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.95,
+      1.0
+    ],
+    "fixed_risk_ratios_to_full_coverage_loss": [
+      0.5,
+      0.75,
+      0.9,
+      1.0
+    ],
+    "required_group_axes": [
+      "symbol",
+      "horizon_seconds",
+      "side",
+      "outcome_class"
+    ],
+    "regime_side_axis_value": "shared",
+    "aggregate_metric_count": 5,
+    "conditional_metric_count": 216,
+    "total_metric_count": 221,
+    "minimum_rows_per_conditional_stratum": 256,
+    "minimum_capture_runs_per_stratum": 6,
+    "bootstrap_method": "deterministic_moving_block_bootstrap_over_chronological_capture_run_improvements",
+    "bootstrap_samples": 10000,
+    "familywise_confidence": 0.95,
+    "bonferroni_per_aggregate_metric_confidence": 0.99,
+    "aggregate_ordering_requirement": "lower_confidence_bound_of_run_mean_aurc_improvement_strictly_positive_and_spearman_correlation_strictly_positive_for_all_five_metrics",
+    "conditional_ordering_requirement": "same_strict_requirement_for_every_required_symbol_horizon_side_outcome_class_stratum",
+    "aggregate_only_promotion_permitted": false,
+    "missing_stratum_policy": "fail_closed",
+    "one_or_two_peer_policy": "not_eligible_for_policy_challenge",
+    "automatic_policy_gate_enabled": false,
+    "policy_challenge_is_not_policy_promotion": true
+  },
+  "development_integration": {
+    "evaluation_runs_after_frozen_calibration": true,
+    "evaluation_reuses_existing_policy_selection_model_outputs": true,
+    "additional_model_forward_passes": 0,
+    "development_bundle_persists_full_report": true,
+    "report_binds_ordered_run_ids": true,
+    "report_binds_ordered_batch_sha256": true,
+    "report_binds_ordered_model_output_sha256": true,
+    "report_binds_probability_calibration_sha256": true,
+    "report_binds_tuning_subpartition_sha256": true,
+    "report_binds_exact_curve_sha256_per_metric": true,
+    "report_json_rejects_nonfinite_numbers": true,
+    "report_json_rejects_boolean_integer_substitution": true,
+    "analysis_backend": "cpu_post_hoc",
+    "analysis_backend_rationale": "Exact sorting, tie grouping, and bootstrap evaluation are outside the latency-sensitive inference path; GPU model inference remains unchanged and the evaluator performs no disk spill.",
+    "candidate_derivation_reads_report": false,
+    "action_policy_selection_reads_report": false,
+    "ai_review_reads_report": false,
+    "execution_reads_report": false
+  },
+  "verification": {
+    "focused_tests_passed": 20,
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "canonical_report_round_trip_tested": true,
+    "equal_uncertainty_tie_block_tested": true,
+    "complete_conditional_strata_positive_control_tested": true,
+    "missing_outcome_class_fail_closed_tested": true,
+    "boolean_integer_substitution_rejected": true,
+    "development_coordinator_real_three_peer_integration_tested": true,
+    "development_runtime_regression_tested": true,
+    "segmented_development_runtime_regression_tested": true,
+    "representation_comparison_regression_tested": true,
+    "representative_policy_selection_evaluation_run": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_observation": {
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "admitted_slots_confirmed": 41,
+    "planned_slots": 720,
+    "latest_admitted_slot": 51,
+    "latest_run_id": "03e4bcff80a147ccbe421364e177b814",
+    "latest_role": "training",
+    "latest_observation_count": 819226,
+    "latest_message_count": 819312,
+    "latest_token_count": 814744,
+    "latest_usable_duration_ns": 1200211771900,
+    "latest_eligible_anchor_duration_ns": 889711771900,
+    "latest_reconnect_count": 0,
+    "latest_watchdog_breaches": 0,
+    "latest_credentials_used": false,
+    "latest_orders_submitted": false,
+    "representative_training_started": false,
+    "policy_selection_started": false
+  },
+  "evidence_boundary": {
+    "epistemic_evaluator_implemented": true,
+    "epistemic_evaluator_integrated": true,
+    "representative_epistemic_risk_coverage_evaluated": false,
+    "policy_challenge_eligible": false,
+    "uncertainty_policy_use_enabled": false,
+    "representative_training_completed": false,
+    "sealed_test_accessed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "a2411838831f722370f4a608e974d74881f79956f100d17e23f209c3cc3f4abc"
+}
