@@ -67,6 +67,10 @@ class PolymarketAutonomousDecision:
         hashes = tuple(item.proposal_sha256 for item in proposals)
         if len(set(hashes)) != len(hashes):
             raise ValueError("decision contains duplicate Polymarket proposals")
+        if self.close_owned_exposure and proposals:
+            raise ValueError(
+                "decision cannot open and close Polymarket exposure together"
+            )
         reasons = tuple(str(item or "").strip() for item in self.reasons)
         if any(not item or len(item) > 160 for item in reasons):
             raise ValueError("decision reason is invalid")
@@ -389,10 +393,12 @@ class PolymarketAutonomousSupervisor:
         *,
         observed_at_ms: int,
     ) -> None:
-        if self._shutdown_requested.is_set() or self._paused:
+        if self._shutdown_requested.is_set():
             return
         if decision.close_owned_exposure and self._owned_market_ids():
             await self._close_owned()
+        if self._paused:
+            return
         for proposal in decision.proposals:
             if self._shutdown_requested.is_set() or self._paused:
                 return
@@ -435,10 +441,10 @@ class PolymarketAutonomousSupervisor:
                 active = await self._discover_and_subscribe(observed_at_ms=now)
                 market = active[0]
                 owned = self._owned_market_ids()
-                forced_exit = bool(owned) and (
+                entry_window_closed = (
                     market.end_ms - now <= self.forced_exit_seconds * 1_000
                 )
-                if self._shutdown_requested.is_set() or forced_exit:
+                if self._shutdown_requested.is_set() or entry_window_closed:
                     if owned and await self._close_owned():
                         self._stop_completed = self._shutdown_requested.is_set()
                     if self._shutdown_requested.is_set() and not self._owned_market_ids():
