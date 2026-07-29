@@ -185,7 +185,7 @@ def _run(repository: Path) -> dict[str, object]:
         backend = policy["backend"]
         optimization_population = policy["optimization_population"]
         result: dict[str, object] = {
-            "schema_version": "round-074-event-training-preflight-run-v8",
+            "schema_version": "round-074-event-training-preflight-run-v9",
             "execution_git_commit": _git_commit(repository),
             "backend": {
                 key: backend[key]

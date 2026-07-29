@@ -119,7 +119,10 @@ def _batch(
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
     )
     payoff = generator.normal(size=action_shape).astype(np.float32)
-    adverse_excursion = np.abs(generator.normal(size=action_shape)).astype(np.float32)
+    adverse_excursion = np.maximum.accumulate(
+        np.abs(generator.normal(size=action_shape)),
+        axis=1,
+    ).astype(np.float32)
     adverse = generator.integers(0, 2, size=action_shape).astype(np.float32)
     unpredictable = generator.integers(
         0,

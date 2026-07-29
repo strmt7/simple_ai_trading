@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import subprocess  # nosec B404
 
 from simple_ai_trading.impact_absorption_ai_review_preparation import (
     ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
@@ -51,6 +52,23 @@ def _file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _source_sha256_candidates_at(commit: str, relative_path: str) -> set[str]:
+    completed = subprocess.run(  # nosec B603
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    # This historical design bound the Windows worktree bytes before source
+    # hash normalization was added to later artifacts.
+    payload = completed.stdout.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return {
+        hashlib.sha256(payload).hexdigest(),
+        hashlib.sha256(payload.replace(b"\n", b"\r\n")).hexdigest(),
+    }
+
+
 def test_round74_v105_binds_deadline_aware_ai_queue_implementation() -> None:
     design = json.loads(DESIGN.read_text(encoding="ascii"))
     claimed = design.pop("design_sha256")
@@ -63,8 +81,12 @@ def test_round74_v105_binds_deadline_aware_ai_queue_implementation() -> None:
         base["design_sha256"]
         == json.loads(base_path.read_text(encoding="ascii"))["design_sha256"]
     )
+    implementation_commit = design["implementation_git_commit"]
     for source in design["source_binding"].values():
-        assert source["sha256"] == _file_sha256(ROOT / source["path"])
+        assert source["sha256"] in _source_sha256_candidates_at(
+            implementation_commit,
+            source["path"],
+        )
 
 
 def test_round74_v105_rejects_stale_queue_work_without_financial_claims() -> None:

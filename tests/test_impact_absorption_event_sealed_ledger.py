@@ -309,7 +309,15 @@ def _model_output(rows: int) -> Round74EventModelOutput:
     regime = torch.full((rows, horizons), -2.0, dtype=torch.float32)
     horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(30)
     payoff[:, horizon_index, 0, :] = torch.tensor((2.0, 4.0, 8.0, 10.0, 12.0))
-    mae[:, horizon_index, 0, :] = torch.tensor((0.2, 0.4, 0.8, 1.2, 2.0))
+    selected_mae = torch.tensor((0.2, 0.4, 0.8, 1.2, 2.0))
+    mae[:, :horizon_index, 0, :] = torch.minimum(
+        mae[:, :horizon_index, 0, :],
+        selected_mae,
+    )
+    mae[:, horizon_index:, 0, :] = torch.maximum(
+        mae[:, horizon_index:, 0, :],
+        selected_mae,
+    )
     positive[:, horizon_index, 0] = 2.0
     adverse[:, horizon_index, 0] = -2.0
     result = Round74EventModelOutput(
