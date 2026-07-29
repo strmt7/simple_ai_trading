@@ -25,6 +25,13 @@ CONTRACT_PATH = (
     / "polymarket"
     / "round-014-btc-5m-historical-screen-v2.json"
 )
+ROUND15_CONTRACT_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-015-btc-5m-historical-screen-v1.json"
+)
 START_MS = int(datetime(2026, 3, 20, 12, 0, tzinfo=UTC).timestamp() * 1_000)
 END_MS = START_MS + 300_000
 SLUG = f"btc-updown-5m-{START_MS // 1_000}"
@@ -133,6 +140,42 @@ def test_contract_hash_and_authority_boundary_are_frozen() -> None:
         "2026-06-22",
     )
     assert contract.role_for_day("2026-06-22") == "test"
+
+
+def test_round15_contract_excludes_every_previously_observed_target_day() -> None:
+    contract = load_historical_screen_contract(ROUND15_CONTRACT_PATH)
+
+    assert contract.contract_sha256 == (
+        "34b67d3a4dcc034523795882f68170c4140ef135a49bcd5eae34b888fcc5d10d"
+    )
+    assert len(contract.eligible_days) == 150
+    assert contract.eligible_days[0] == "2026-02-12"
+    assert contract.eligible_days[-1] == "2026-07-15"
+    assert {
+        "2026-03-20",
+        "2026-04-20",
+        "2026-05-01",
+        "2026-06-22",
+    }.isdisjoint(contract.eligible_days)
+    assert sum(
+        contract.role_for_day(day) == "train"
+        for day in contract.eligible_days
+    ) == 106
+    assert sum(
+        contract.role_for_day(day) == "tune"
+        for day in contract.eligible_days
+    ) == 29
+    assert sum(
+        contract.role_for_day(day) == "test"
+        for day in contract.eligible_days
+    ) == 15
+    assert contract.source_inventory_sha256 == (
+        "f68c0dc7709c98f342d04bacbd1b120c87ee07712ab0aeedbb3e1915cb8e77e2"
+    )
+    assert contract.source_research_round == 15
+    assert contract.required_source_symbol_count == 1
+    assert contract.required_flow_rows_per_day == 86_400
+    assert contract.required_market_count_per_day == 288
 
 
 def test_target_free_identity_parser_omits_terminal_outcome() -> None:
