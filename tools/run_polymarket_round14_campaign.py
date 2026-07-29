@@ -8,7 +8,12 @@ import json
 from pathlib import Path
 import sys
 
-from simple_ai_trading.polymarket_round14_campaign import (
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+_SOURCE_ROOT = _REPOSITORY_ROOT / "src"
+if str(_SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SOURCE_ROOT))
+
+from simple_ai_trading.polymarket_round14_campaign import (  # noqa: E402
     PolymarketRound14CampaignConfig,
     inspect_round14_campaign,
     run_round14_campaign,
