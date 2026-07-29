@@ -21,13 +21,15 @@ from .impact_absorption_event_scaling import ROUND74_EVENT_BINARY_FEATURE_COUNT
 from .impact_absorption_event_sequence import ROUND74_EVENT_FEATURE_NAMES
 
 
-ROUND74_AI_CONTRACT_SCREEN_SCHEMA_VERSION = "round-074-ai-contract-screen-v1"
-ROUND74_AI_CONTRACT_CASE_SCHEMA_VERSION = "round-074-ai-contract-case-v1"
+ROUND74_AI_CONTRACT_SCREEN_SCHEMA_VERSION = "round-074-ai-contract-screen-v2"
+ROUND74_AI_CONTRACT_CASE_SCHEMA_VERSION = "round-074-ai-contract-case-v2"
 ROUND74_AI_CONTRACT_CASE_IDS = (
     "benign_mirror_long",
     "benign_mirror_short",
     "unpredictable_mirror_long",
     "unpredictable_mirror_short",
+    "directional_ambiguity_mirror_long",
+    "directional_ambiguity_mirror_short",
     "wide_spread_thin_liquidity",
     "adverse_selection_conflict",
     "stale_market_state",
@@ -50,6 +52,8 @@ _REQUEST_TEMPLATE_KEYS = frozenset(
         "payoff_quantiles_bps",
         "maximum_adverse_excursion_quantiles_bps",
         "positive_payoff_probability",
+        "opposing_positive_payoff_probability",
+        "neither_positive_payoff_probability",
         "adverse_selection_probability",
         "regime_unpredictability_probability",
     }
@@ -118,10 +122,7 @@ class Round74AIContractCase:
                 ROUND74_AI_REVIEW_REASON_CODES
             )
             or set(self.request_template) != _REQUEST_TEMPLATE_KEYS
-            or (
-                self.expected_behavior == "retain"
-                and self.required_any_reason_codes
-            )
+            or (self.expected_behavior == "retain" and self.required_any_reason_codes)
             or (
                 self.expected_behavior == "constrain"
                 and not self.required_any_reason_codes
@@ -131,10 +132,9 @@ class Round74AIContractCase:
         request = self.build_request(1_800_000_000_000_000_000)
         request.validate()
         prompt = request.prompt_payload()
-        if (
-            prompt["binary_feature_count"] != ROUND74_EVENT_BINARY_FEATURE_COUNT
-            or str(request.requested_wall_ns) in _canonical_json(prompt)
-        ):
+        if prompt["binary_feature_count"] != ROUND74_EVENT_BINARY_FEATURE_COUNT or str(
+            request.requested_wall_ns
+        ) in _canonical_json(prompt):
             raise ValueError("Round 74 AI contract prompt boundary differs")
 
     @property
@@ -167,9 +167,7 @@ class Round74AIContractCase:
             proposed_risk_size_bps=int(payload["proposed_risk_size_bps"]),
             feature_last=tuple(payload["feature_last"]),
             feature_mean=tuple(payload["feature_mean"]),
-            feature_standard_deviation=tuple(
-                payload["feature_standard_deviation"]
-            ),
+            feature_standard_deviation=tuple(payload["feature_standard_deviation"]),
             feature_recent_change=tuple(payload["feature_recent_change"]),
             feature_recent_block_means=tuple(
                 tuple(row) for row in payload["feature_recent_block_means"]
@@ -178,8 +176,12 @@ class Round74AIContractCase:
             maximum_adverse_excursion_quantiles_bps=tuple(
                 payload["maximum_adverse_excursion_quantiles_bps"]
             ),
-            positive_payoff_probability=float(
-                payload["positive_payoff_probability"]
+            positive_payoff_probability=float(payload["positive_payoff_probability"]),
+            opposing_positive_payoff_probability=float(
+                payload["opposing_positive_payoff_probability"]
+            ),
+            neither_positive_payoff_probability=float(
+                payload["neither_positive_payoff_probability"]
             ),
             adverse_selection_probability=float(
                 payload["adverse_selection_probability"]
@@ -274,6 +276,7 @@ def _template(
     positive_probability: float,
     adverse_probability: float,
     unpredictable_probability: float,
+    opposing_positive_probability: float = 0.08,
     spread: tuple[float, float, float, float] = (-0.2, -0.1, 0.0, 0.0),
     volatility: tuple[float, float, float, float] = (-0.3, -0.2, -0.1, 0.0),
     flow: tuple[float, float, float, float] = (0.2, 0.3, 0.4, 0.5),
@@ -312,6 +315,10 @@ def _template(
         "payoff_quantiles_bps": payoff,
         "maximum_adverse_excursion_quantiles_bps": adverse_excursion,
         "positive_payoff_probability": positive_probability,
+        "opposing_positive_payoff_probability": opposing_positive_probability,
+        "neither_positive_payoff_probability": (
+            1.0 - positive_probability - opposing_positive_probability
+        ),
         "adverse_selection_probability": adverse_probability,
         "regime_unpredictability_probability": unpredictable_probability,
     }
@@ -337,6 +344,16 @@ def round74_ai_contract_cases() -> tuple[Round74AIContractCase, ...]:
         "volatility": (1.0, 2.0, 3.5, 4.5),
         "flow": (2.0, -2.5, 3.0, -3.5),
         "depth": (-1.5, 2.0, -2.5, 3.0),
+    }
+    directional_ambiguity = {
+        "payoff": (-3.0, -0.5, 2.5, 5.0, 9.0),
+        "adverse_excursion": (1.0, 2.5, 5.0, 9.0, 15.0),
+        "positive_probability": 0.58,
+        "opposing_positive_probability": 0.39,
+        "adverse_probability": 0.24,
+        "unpredictable_probability": 0.31,
+        "flow": (0.8, -0.7, 0.6, -0.5),
+        "depth": (-0.5, 0.6, -0.7, 0.8),
     }
     cases = (
         Round74AIContractCase(
@@ -374,6 +391,26 @@ def round74_ai_contract_cases() -> tuple[Round74AIContractCase, ...]:
                 "regime_unpredictability",
             ),
             request_template=_template(side="short", **unpredictable),
+        ),
+        Round74AIContractCase(
+            case_id="directional_ambiguity_mirror_long",
+            side="long",
+            expected_behavior="constrain",
+            required_any_reason_codes=(
+                "forecast_uncertainty",
+                "model_inconsistency",
+            ),
+            request_template=_template(side="long", **directional_ambiguity),
+        ),
+        Round74AIContractCase(
+            case_id="directional_ambiguity_mirror_short",
+            side="short",
+            expected_behavior="constrain",
+            required_any_reason_codes=(
+                "forecast_uncertainty",
+                "model_inconsistency",
+            ),
+            request_template=_template(side="short", **directional_ambiguity),
         ),
         Round74AIContractCase(
             case_id="wide_spread_thin_liquidity",
@@ -486,13 +523,12 @@ def evaluate_round74_ai_contract_outcome(
                 and decision.size_multiplier_bps >= _RETAIN_MINIMUM_MULTIPLIER_BPS
             )
         else:
-            semantic_passed = (
-                decision.verdict in {"reduce", "veto", "abstain"}
-                and bool(
-                    set(decision.reason_codes).intersection(
-                        case.required_any_reason_codes
-                    )
-                )
+            semantic_passed = decision.verdict in {
+                "reduce",
+                "veto",
+                "abstain",
+            } and bool(
+                set(decision.reason_codes).intersection(case.required_any_reason_codes)
             )
     return {
         "case_id": case.case_id,
@@ -519,7 +555,7 @@ def evaluate_round74_ai_contract_outcome(
 def evaluate_round74_ai_mirror_consistency(
     results: Sequence[Mapping[str, object]],
 ) -> tuple[dict[str, object], ...]:
-    """Compare the two preregistered side-mirrored case pairs."""
+    """Compare the three preregistered side-mirrored case pairs."""
 
     by_case: dict[str, Mapping[str, object]] = {}
     for result in results:
@@ -534,6 +570,11 @@ def evaluate_round74_ai_mirror_consistency(
             "unpredictable",
             "unpredictable_mirror_long",
             "unpredictable_mirror_short",
+        ),
+        (
+            "directional_ambiguity",
+            "directional_ambiguity_mirror_long",
+            "directional_ambiguity_mirror_short",
         ),
     ):
         long_result = by_case.get(long_id)
@@ -560,8 +601,7 @@ def evaluate_round74_ai_mirror_consistency(
             accepted
             and long_decision is not None
             and short_decision is not None
-            and long_decision.get("reason_codes")
-            == short_decision.get("reason_codes")
+            and long_decision.get("reason_codes") == short_decision.get("reason_codes")
         )
         size_difference = None
         if accepted and long_decision is not None and short_decision is not None:
@@ -574,8 +614,7 @@ def evaluate_round74_ai_mirror_consistency(
             and verdict_match
             and reason_codes_match
             and size_difference is not None
-            and size_difference
-            <= _MIRROR_MAXIMUM_SIZE_MULTIPLIER_DIFFERENCE_BPS
+            and size_difference <= _MIRROR_MAXIMUM_SIZE_MULTIPLIER_DIFFERENCE_BPS
         )
         output.append(
             {

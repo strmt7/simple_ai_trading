@@ -42,7 +42,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
 from simple_ai_trading.storage import write_bytes_atomic  # noqa: E402
 
 
-SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v7"
+SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v8"
 OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
 MAXIMUM_RESPONSE_BYTES = 1_000_000
 UNLOAD_TIMEOUT_SECONDS = 10.0
@@ -204,14 +204,15 @@ def _synthetic_request() -> Round74AIReviewRequest:
     feature_count = len(ROUND74_EVENT_FEATURE_NAMES)
     event_fractions = (0.40, 0.20, 0.30, 0.09, 0.01)
     feature_last = tuple(
-        1.0 if index in (0, 5) else 0.0
-        for index in range(feature_count)
+        1.0 if index in (0, 5) else 0.0 for index in range(feature_count)
     )
     feature_mean = tuple(
         (
             event_fractions[index]
             if index < len(event_fractions)
-            else 1.0 if index == 5 else 0.0
+            else 1.0
+            if index == 5
+            else 0.0
         )
         for index in range(feature_count)
     )
@@ -219,7 +220,9 @@ def _synthetic_request() -> Round74AIReviewRequest:
         (
             (event_fractions[index] * (1.0 - event_fractions[index])) ** 0.5
             if index < len(event_fractions)
-            else 0.0 if index < 8 else 1.0
+            else 0.0
+            if index < 8
+            else 1.0
         )
         for index in range(feature_count)
     )
@@ -242,11 +245,7 @@ def _synthetic_request() -> Round74AIReviewRequest:
         feature_recent_change=(0.0,) * feature_count,
         feature_recent_block_means=tuple(
             tuple(
-                (
-                    0.25 * (block_index + 1)
-                    if feature_index in (0, 9, 10, 13)
-                    else 0.0
-                )
+                (0.25 * (block_index + 1) if feature_index in (0, 9, 10, 13) else 0.0)
                 for feature_index in range(len(ROUND74_AI_TEMPORAL_FEATURE_NAMES))
             )
             for block_index in range(ROUND74_AI_TEMPORAL_BLOCK_COUNT)
@@ -254,6 +253,8 @@ def _synthetic_request() -> Round74AIReviewRequest:
         payoff_quantiles_bps=(-2.0, -1.0, 0.0, 1.0, 2.0),
         maximum_adverse_excursion_quantiles_bps=(1.0, 2.0, 3.0, 4.0, 5.0),
         positive_payoff_probability=0.70,
+        opposing_positive_payoff_probability=0.10,
+        neither_positive_payoff_probability=0.20,
         adverse_selection_probability=0.85,
         regime_unpredictability_probability=0.90,
     )
@@ -418,15 +419,9 @@ def _run(repository: Path) -> dict[str, object]:
         },
         "input_contract": {
             "source": "deterministic constructed high-risk numeric packet",
-            "review_request_schema_version": (
-                ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
-            ),
-            "prompt_payload_schema_version": (
-                ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION
-            ),
-            "system_prompt_schema_version": (
-                ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION
-            ),
+            "review_request_schema_version": (ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION),
+            "prompt_payload_schema_version": (ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION),
+            "system_prompt_schema_version": (ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION),
             "review_panel_schema_version": ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
             "risk_profile": "conservative",
             "temporal_block_count": ROUND74_AI_TEMPORAL_BLOCK_COUNT,

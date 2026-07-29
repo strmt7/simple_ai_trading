@@ -40,7 +40,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v15"
+ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v16"
 ROUND74_AI_REVIEW_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_UNIT_RISK_BPS = 10_000
 

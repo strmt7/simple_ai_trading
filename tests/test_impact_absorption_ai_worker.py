@@ -81,6 +81,8 @@ def _request() -> Round74AIReviewRequest:
             8.0,
         ),
         positive_payoff_probability=0.61,
+        opposing_positive_payoff_probability=0.19,
+        neither_positive_payoff_probability=0.20,
         adverse_selection_probability=0.27,
         regime_unpredictability_probability=0.18,
     )
