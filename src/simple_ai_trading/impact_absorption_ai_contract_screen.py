@@ -325,7 +325,7 @@ def _template(
 
 
 def round74_ai_contract_cases() -> tuple[Round74AIContractCase, ...]:
-    """Return the frozen eight-case non-market semantic screen."""
+    """Return the frozen ten-case non-market semantic screen."""
 
     benign = {
         "payoff": (0.5, 1.5, 3.0, 5.0, 8.0),
