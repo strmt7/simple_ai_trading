@@ -1455,6 +1455,25 @@ def test_replay_reconstructs_depth_tick_resolution_and_post_latency_state(
     assert replay.resolutions[0].source == "clob_gamma_crosscheck"
 
 
+def test_replay_can_exclude_all_resolution_evidence(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "target-free-replay.duckdb") as store:
+        _finish_replay_store(store, "target-free-run")
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="target-free-run",
+            include_resolutions=False,
+        )
+        with pytest.raises(ValueError, match="must be a boolean"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="target-free-run",
+                include_resolutions=0,  # type: ignore[arg-type]
+            )
+
+    assert replay.books
+    assert replay.resolutions == ()
+
+
 def test_replay_accepts_only_matching_persisted_continuity_proof(
     tmp_path,
     monkeypatch,

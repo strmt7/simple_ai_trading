@@ -181,6 +181,16 @@ def test_round14_snapshot_rejects_target_or_future_book() -> None:
         build_round14_snapshot_features(_snapshot(up_book=future))
 
 
+def test_round14_snapshot_rejects_future_observed_reference() -> None:
+    reference = replace(
+        _snapshot().reference,
+        observed_at_ms=DECISION_MS + 1,
+    )
+
+    with pytest.raises(ValueError, match="future"):
+        build_round14_snapshot_features(_snapshot(reference=reference))
+
+
 def test_round14_snapshot_rejects_stale_external_features() -> None:
     stale = PolymarketBtcReferenceFeatures(
         observed_at_ms=DECISION_MS - 1_501,
