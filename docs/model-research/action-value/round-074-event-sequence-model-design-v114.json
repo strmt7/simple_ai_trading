@@ -1,0 +1,160 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v114",
+  "created_at_utc": "2026-07-29T03:10:55Z",
+  "implementation_git_commit": "a57eca491de57f41ef9337628854ebbbd2463595",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v113.json",
+    "file_sha256": "eb895da7f926812127241e94776e5d8cacb81aa1d7a7189064f320a612d3e52c",
+    "design_sha256": "fd9bc60bf4aa038a21562ac6ac7ff72b93941bf66553ca5ccb03f6fd46c262fb",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "d2f7e11c57883d0d2d7e54303fe787f50da0ca56eeb27c18225325438c7c15c1"
+    },
+    "event_model_test": {
+      "path": "tests/test_impact_absorption_event_model.py",
+      "sha256": "8eaaade189230e82499c72d9365007e3e6a421b0484caf01931a1a02a0aa8d89"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://arxiv.org/abs/0704.3649",
+      "finding": "Chernozhukov, Fernandez-Val, and Galichon monotonize crossing estimates by sorting or rearrangement; rearrangement preserves the estimated values instead of flattening crossed regions through one-sided projection.",
+      "implementation_consequence": "The four independently predicted adverse-excursion horizon surfaces are elementwise rearranged rather than cumulatively clamped."
+    },
+    {
+      "source": "https://www.jmlr.org/papers/v25/22-0488.html",
+      "finding": "Non-crossing conditional quantiles are a formal modeling constraint, and constrained neural estimators can enforce it while retaining a joint quantile objective.",
+      "implementation_consequence": "Within-horizon quantile order and across-horizon path-risk order remain hard output invariants."
+    },
+    {
+      "source": "https://link.springer.com/article/10.1007/s00477-018-1573-6",
+      "finding": "Non-negativity and monotonicity constraints can encode process knowledge and prevent physically invalid neural quantile surfaces.",
+      "implementation_consequence": "Maximum adverse excursion remains nonnegative, non-crossing across quantiles, and nondecreasing across nested 1s, 5s, 30s, and 300s horizons."
+    }
+  ],
+  "financial_constraint": {
+    "quantity": "maximum_adverse_excursion_from_the_same_executable_entry",
+    "horizons_seconds": [
+      1,
+      5,
+      30,
+      300
+    ],
+    "pathwise_order": "mae_1s_less_than_or_equal_to_mae_5s_less_than_or_equal_to_mae_30s_less_than_or_equal_to_mae_300s",
+    "conditional_quantile_order_follows_pathwise_order": true,
+    "gross_or_midprice_proxy_used": false
+  },
+  "declared_delta": {
+    "event_model_schema_version": "round-074-event-payoff-model-v10",
+    "previous_projection": "one_sided_cumulative_maximum",
+    "previous_projection_failure": "a_crossed_lower_raw_horizon_surface_was_absent_from_all_outputs_and_received_zero_gradient",
+    "new_projection": "elementwise_monotone_rearrangement_by_minimum_maximum_insertion_network",
+    "raw_horizon_surface_multiset_preserved": true,
+    "raw_horizon_surface_may_be_discarded": false,
+    "output_horizon_order_exact": true,
+    "output_quantile_order_exact": true,
+    "output_nonnegative": true,
+    "compare_swap_count_for_four_horizons": 6,
+    "parameter_counts_changed": false,
+    "candidate_registry_changed": false,
+    "training_objective_changed": false,
+    "target_definition_changed": false,
+    "feature_definition_changed": false,
+    "action_policy_changed": false,
+    "execution_replay_changed": false,
+    "forward_passes_added": 0,
+    "backward_passes_added": 0,
+    "market_data_reads_added": 0,
+    "ai_model_calls_added": 0,
+    "campaign_source_files_changed": false,
+    "trading_authority": false
+  },
+  "candidate_parameter_counts": {
+    "event_pooling_linear": 22600,
+    "event_pooling_mlp": 43684,
+    "causal_event_tcn": 131108,
+    "causal_event_attention": 154180
+  },
+  "directml_preflight": {
+    "executed": true,
+    "target_source": "synthetic_preflight_only",
+    "backend_kind": "directml",
+    "backend_vendor": "AMD Radeon RX 9070 XT",
+    "backend_accelerated": true,
+    "cpu_fallback_warning_count": 0,
+    "warning_count": 0,
+    "all_four_candidates_completed_forward_backward_and_parameter_update": true,
+    "financial_edge_tested": false,
+    "profitability_claim": false
+  },
+  "schema_contract": {
+    "event_model": "round-074-event-payoff-model-v10",
+    "event_training": "round-074-event-training-v33",
+    "event_pretest_policy": "round-074-event-pretest-policy-v32",
+    "ai_uplift_development": "round-074-ai-uplift-development-v15",
+    "sealed_evaluation": "round-074-sealed-evaluation-v23"
+  },
+  "verification": {
+    "unique_tests_passed": 130,
+    "event_model_tests_passed": 24,
+    "training_operator_and_contract_tests_passed": 63,
+    "preflight_publisher_and_design_compatibility_tests_passed": 43,
+    "crossed_horizon_surfaces_strictly_reordered": true,
+    "each_rearranged_horizon_has_exactly_one_live_raw_gradient_source": true,
+    "all_candidate_outputs_finite_nonnegative_and_monotone": true,
+    "directml_forward_backward_preflight_passed": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "status_observed_at_utc": "2026-07-29T03:10:29Z",
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 36,
+    "latest_independently_adjudicated_slot": 45,
+    "slot_045_status": "admitted_training",
+    "slot_045_observation_count": 786005,
+    "slot_045_message_count": 786091,
+    "slot_045_usable_duration_ns": 1200124836000,
+    "slot_045_reconnect_count": 0,
+    "slot_046_status_at_observation": "running",
+    "slot_046_process_count_at_observation": 4,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_or_wal_hashed_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "optimization_defect_reproduced_and_blocked_by_synthetic_test": true,
+    "representative_training_data_complete": false,
+    "model_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "quantile_accuracy_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "7093b8e1599a9babf8b53a3d811a7d7b162151251ae62659be7f996511f76120"
+}
