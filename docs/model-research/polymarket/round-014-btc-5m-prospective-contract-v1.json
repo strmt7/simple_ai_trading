@@ -64,13 +64,13 @@
       "Polymarket CLOB REST book snapshots for independent reconciliation",
       "Polymarket RTDS Chainlink btc/usd exact-precision observations",
       "Polymarket first-party crypto-price endpoint after claim opening",
-      "Binance public BTCUSDT spot trade and event-timed depth streams",
-      "Binance public BTCUSDT USD-M futures aggregate-trade, bookTicker, mark-price, and event-timed depth streams",
+      "Binance public BTCUSDT spot real-time trade and one-second event-timed ticker streams",
+      "Binance public BTCUSDT USD-M futures real-time trade and event-timed top-five depth streams at 100 ms",
       "Polygon CTF Exchange V2 OrderFilled logs only when aggressor direction or executed flow is used"
     ],
     "storage": "One dedicated DuckDB evidence database containing bounded zstd-compressed immutable raw frames, source metadata, hash chains, segment journals, exact replay tables, and compact derived rows. No duplicate normalized live projection is persisted.",
     "segment_policy": "Every capture unit is an independent transport epoch with its own terminal journal and exact-wire audit. Features, rolling state, labels, and actions never cross a gap, reconnect, failed unit, or role boundary.",
-    "source_time_policy": "Use source timestamps when the source supplies them and retain monotonic plus UTC receipt clocks. Binance spot bookTicker has no source event time and is excluded from causal latency features unless joined to an event-timed source without inventing a timestamp.",
+    "source_time_policy": "Use source timestamps when the source supplies them and retain monotonic plus UTC receipt clocks. Persist only live-validated event-timed Binance channels; never substitute receipt time for a missing source timestamp.",
     "admission": "A market is admissible only when identity, exact opening, complete target tail, CLOB sequence, source freshness, fee, tick, minimum size, token/outcome mapping, and independent replay all pass. Exclusion never becomes a zero-return action.",
     "resource_policy": "Bound queues, frame size, memory, database growth, and writer shutdown. Emit durable progress at least every 30 seconds. No capture process may block risk or execution loops."
   },
@@ -101,11 +101,10 @@
       "source age, update intensity, tick size, minimum size, fee curve, and order delay"
     ],
     "optional_binance_state": [
-      "spot and futures event-timed microprice and spread",
-      "spot and futures returns and realized variance on the same causal horizons",
+      "spot event-timed ticker spread plus real-time trade returns and realized variance",
+      "futures event-timed top-five spread, imbalance, trade returns, and realized variance",
       "spot-futures basis, lead-lag residuals, and cross-feed time skew",
-      "aggregate-trade signed flow using exchange-provided maker flag",
-      "mark-price divergence and depth imbalance"
+      "signed trade flow using the exchange-provided maker flag"
     ],
     "forbidden": [
       "future Chainlink values",
@@ -349,8 +348,12 @@
       "use": "FOK is all-or-nothing and its price is a worst-price limit; BUY amount and SELL shares use different semantics."
     },
     {
-      "source": "https://developers.binance.com/en/docs/binance-spot-api-docs/web-socket-streams",
-      "use": "Event-timed trade and depth streams are distinguished from spot bookTicker, which lacks an event timestamp."
+      "source": "https://developers.binance.com/zh-CN/docs/products/spot/testnet/web-socket-streams",
+      "use": "Official stream contracts distinguish event-timed trades and tickers from untimed spot bookTicker and partial-depth payloads."
+    },
+    {
+      "source": "https://github.com/binance/binance-futures-connector-python/blob/main/binance/websocket/um_futures/websocket_client.py",
+      "use": "The official USD-M connector documents stream identities, speeds, and payload families; every requested production channel is additionally fail-closed revalidated on the live public wire before capture."
     },
     {
       "source": "https://arxiv.org/abs/2604.24366",
@@ -365,5 +368,5 @@
     "researched_at_utc": "2026-07-29T00:00:00Z",
     "runtime_revalidation": "Protocol version, geoblock, market identity, token/outcome mapping, tick, minimum size, order delay, fee details, endpoint schema, clock skew, rate limits, and source freshness are revalidated at runtime."
   },
-  "contract_sha256": "6de688db746004359defbc90a3aa7e9616b6122d3a9a0ee0a504efc56455ad55"
+  "contract_sha256": "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b"
 }

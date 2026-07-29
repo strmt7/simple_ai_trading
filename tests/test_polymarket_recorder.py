@@ -1345,7 +1345,7 @@ def test_binance_stream_uses_one_named_lane_without_redundant_client_pings(
     assert "protocol_ping_interval" not in captured
 
 
-def test_btc_scoped_recorder_uses_event_timed_spot_and_futures_lanes(
+def test_btc_scoped_recorder_uses_live_validated_bounded_binance_lanes(
     tmp_path,
     monkeypatch,
 ) -> None:
@@ -1367,14 +1367,17 @@ def test_btc_scoped_recorder_uses_event_timed_spot_and_futures_lanes(
     assert spot["stream"] == "binance_spot"
     assert spot["lane"] == "binance:spot:btc"
     assert "btcusdt@trade" in str(spot["url"])
-    assert "btcusdt@depth@100ms" in str(spot["url"])
+    assert "btcusdt@ticker" in str(spot["url"])
+    assert "btcusdt@depth" not in str(spot["url"])
     assert "bookTicker" not in str(spot["url"])
     assert "ethusdt" not in str(spot["url"])
     assert futures["stream"] == "binance_futures"
     assert futures["lane"] == "binance:futures:btc"
-    assert "btcusdt@aggTrade" in str(futures["url"])
-    assert "btcusdt@bookTicker" in str(futures["url"])
-    assert "btcusdt@markPrice@1s" in str(futures["url"])
+    assert "btcusdt@trade" in str(futures["url"])
+    assert "btcusdt@depth5@100ms" in str(futures["url"])
+    assert "aggTrade" not in str(futures["url"])
+    assert "bookTicker" not in str(futures["url"])
+    assert "markPrice" not in str(futures["url"])
     assert "ethusdt" not in str(futures["url"])
 
 
