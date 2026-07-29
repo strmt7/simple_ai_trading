@@ -6,9 +6,12 @@ import json
 from pathlib import Path
 
 import numpy as np
+import duckdb
 
 from simple_ai_trading.polymarket_historical_dataset import (
     FEATURE_NAMES,
+    HistoricalFeatureRow,
+    _insert_feature_rows,
     build_historical_feature_row,
 )
 from simple_ai_trading.polymarket_historical_screen import (
@@ -163,3 +166,52 @@ def test_dataset_module_cannot_read_polymarket_prices_or_targets() -> None:
         "polymarket_prior",
     ):
         assert forbidden not in source
+
+
+def test_feature_rows_use_vectorized_numpy_insert() -> None:
+    connection = duckdb.connect(":memory:")
+    connection.execute("CREATE SCHEMA feature")
+    connection.execute(
+        """
+        CREATE TABLE feature.causal_row (
+            condition_id VARCHAR,
+            role VARCHAR,
+            event_start_ms BIGINT,
+            decision_time_ms BIGINT,
+            decision_offset_seconds INTEGER,
+            feature_values FLOAT[],
+            feature_vector_sha256 VARCHAR,
+            row_sha256 VARCHAR
+        )
+        """
+    )
+    rows = tuple(
+        HistoricalFeatureRow(
+            condition_id=f"condition-{index}",
+            role="train",
+            event_start_ms=index * 1_000,
+            decision_time_ms=index * 1_000 + 30_000,
+            decision_offset_seconds=30,
+            feature_values=np.full(
+                len(FEATURE_NAMES),
+                float(index),
+                dtype=np.float32,
+            ),
+            feature_vector_sha256=f"{index:064x}",
+            row_sha256=f"{index + 1:064x}",
+        )
+        for index in range(513)
+    )
+    events: list[tuple[str, dict[str, object]]] = []
+
+    _insert_feature_rows(
+        connection,
+        rows,
+        progress=lambda event, values: events.append((event, dict(values))),
+    )
+
+    assert connection.execute(
+        "SELECT count(*), count(DISTINCT condition_id) FROM feature.causal_row"
+    ).fetchone() == (513, 513)
+    assert [values["rows_written"] for _, values in events] == [0, 513]
+    connection.close()
