@@ -1,0 +1,142 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v123",
+  "artifact_kind": "epistemic_exact_replay_challenge_evidence",
+  "created_utc": "2026-07-29T06:12:59.443484Z",
+  "supersedes_artifact_sha256": "c49ae4d5deb11814e50f473f558cb9dceb5e1c9aaefd36c7c92d357419284e49",
+  "implementation_git_commit": "340e4d61b02c74a208944fe45446d87c547afda1",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "action_policy": {
+      "path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+      "sha256": "21b93aec0fc1ed5621eee04a704048899a71ac8d5672cabcdaa4adf3e222eb10"
+    },
+    "epistemic_action_policy": {
+      "path": "src/simple_ai_trading/impact_absorption_event_epistemic_policy.py",
+      "sha256": "263708925e17bfcc33375d93b5b5686cad37e1e35180381264942f26b52eebb9"
+    },
+    "action_policy_test": {
+      "path": "tests/test_impact_absorption_event_action_policy.py",
+      "sha256": "1caab0496981d0c9de8602b7efd2a09253a7e221d69f1afa66d9e958c116c93a"
+    },
+    "epistemic_evaluation_test": {
+      "path": "tests/test_impact_absorption_event_epistemic_evaluation.py",
+      "sha256": "ab1402eb24cdf3f6d7188d7852ed80835e8fd8149ed1f1e547451aab4e56f126"
+    },
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v122.json",
+      "sha256": "ef5ce7d9ec1f77d1d77d1292fda4cebdd673d63112c5e272ab9141a7a96c5e2d"
+    }
+  },
+  "declared_delta": {
+    "summary": "Evaluate one v122 uncertainty filter at the accepted baseline quality threshold using the same exact delayed-L2 execution panel and explicitly measure replacement trades.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "probability_calibration_changed": false,
+    "baseline_policy_selection_changed": false,
+    "runtime_filter_changed": false,
+    "replay_only_challenge_evaluator_added": true,
+    "public_ordering_report_gate_added": true,
+    "automatic_policy_effect_enabled": false,
+    "sealed_test_access_changed": false
+  },
+  "replay_contract": {
+    "requires_v121_policy_challenge_eligible": true,
+    "risk_coverage_report_digest_must_match_filter": true,
+    "source_run_batch_model_and_calibration_digests_must_match": true,
+    "baseline_policy_must_be_accepted": true,
+    "baseline_quality_threshold_held_fixed": true,
+    "baseline_trace_recomputed_before_comparison": true,
+    "recomputed_baseline_must_equal_persisted_baseline_trace": true,
+    "same_exact_delayed_l2_execution_panel_used": true,
+    "candidate_derivation_target_free": true,
+    "replacement_trade_identity": [
+      "run_id",
+      "feature_row_sha256",
+      "horizon_seconds",
+      "side"
+    ],
+    "retained_removed_and_replacement_trades_recorded": true,
+    "challenger_profile_gates_reapplied": true,
+    "application_and_challenge_evidence_hash_bound": true
+  },
+  "tuning_challenge_gate": {
+    "challenger_profile_gates_all_pass": true,
+    "challenger_objective_strictly_exceeds_baseline": true,
+    "challenger_total_net_bps_not_below_baseline": true,
+    "challenger_maximum_drawdown_bps_not_above_baseline": true,
+    "challenger_maximum_concurrent_adverse_excursion_bps_not_above_baseline": true,
+    "challenger_adverse_selection_rate_not_above_baseline": true,
+    "passing_tuning_gate_enables_automatic_policy_use": false,
+    "passing_tuning_gate_skips_sealed_evaluation": false
+  },
+  "synthetic_controls": {
+    "positive_control": {
+      "high_uncertainty_early_trade_after_cost_result": "loss",
+      "replacement_trade_after_cost_result": "gain",
+      "removed_trade_count": 1,
+      "replacement_trade_count": 1,
+      "challenger_total_net_bps_improved": true,
+      "tuning_challenge_eligible": true
+    },
+    "negative_control": {
+      "high_uncertainty_early_trade_after_cost_result": "gain",
+      "replacement_trade_after_cost_result": "loss",
+      "removed_trade_count": 1,
+      "replacement_trade_count": 1,
+      "challenger_total_net_bps_improved": false,
+      "tuning_challenge_eligible": false
+    },
+    "synthetic_controls_are_market_edge_evidence": false
+  },
+  "implementation_status": {
+    "exact_replay_challenge_evaluator_implemented": true,
+    "baseline_replay_identity_check_implemented": true,
+    "replacement_trade_measurement_implemented": true,
+    "positive_and_negative_controls_passed": true,
+    "public_ordering_gate_binding_tested": true,
+    "development_coordinator_integration_completed": false,
+    "representative_epistemic_ordering_evaluated": false,
+    "representative_exact_replay_challenge_evaluated": false,
+    "automatic_policy_use_enabled": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_observation": {
+    "slot_ordinal": 53,
+    "role": "training",
+    "phase": "running",
+    "elapsed_seconds_observed": 420.125,
+    "wal_growth_bytes_observed": 8443399,
+    "reconnect_or_capture_error_observed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "verification": {
+    "complete_affected_test_modules_passed": 23,
+    "focused_exact_replay_tests_passed": 1,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "representative_policy_selection_evaluation_run": false,
+    "representative_market_backtest_run": false,
+    "sealed_test_accessed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "uncertainty_ordering_established_on_representative_data": false,
+    "filter_thresholds_fitted_on_representative_data": false,
+    "replacement_trade_effects_measured_on_representative_data": false,
+    "runtime_filter_improves_after_cost_net_return_established": false,
+    "runtime_filter_reduces_drawdown_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "ai_uplift_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "762f2defdf84bac99b958b9afb031e1bd937724406c311f54aca502b1ba818b5"
+}
