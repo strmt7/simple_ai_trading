@@ -98,17 +98,13 @@ def _book_features(book: PaperBookSnapshot) -> tuple[float, ...]:
     best_ask = _finite(asks[0].price, name="best ask")
     bid_quantity = _finite(bids[0].quantity, name="best bid quantity")
     ask_quantity = _finite(asks[0].quantity, name="best ask quantity")
-    if (
-        not 0 < best_bid < best_ask < 1
-        or bid_quantity <= 0
-        or ask_quantity <= 0
-    ):
+    if not 0 < best_bid < best_ask < 1 or bid_quantity <= 0 or ask_quantity <= 0:
         raise ValueError("Round 14 CLOB top of book is invalid")
     midpoint = (best_bid + best_ask) / 2
     spread = best_ask - best_bid
-    microprice = (
-        best_ask * bid_quantity + best_bid * ask_quantity
-    ) / (bid_quantity + ask_quantity)
+    microprice = (best_ask * bid_quantity + best_bid * ask_quantity) / (
+        bid_quantity + ask_quantity
+    )
     imbalance = (bid_quantity - ask_quantity) / (bid_quantity + ask_quantity)
 
     def depth(levels: tuple[object, ...], count: int) -> float:
@@ -237,8 +233,11 @@ def build_round14_snapshot_features(
         or reference.end_ms != snapshot.event_end_ms
         or reference.completed
         or reference.close_price is not None
+        or reference.observed_at_ms > snapshot.decision_time_ms
     ):
-        raise ValueError("Round 14 feature input contains a target or wrong reference")
+        raise ValueError(
+            "Round 14 feature input contains a target, future, or wrong reference"
+        )
     if (
         tick.source_time_ms < snapshot.event_start_ms
         or tick.source_time_ms > snapshot.decision_time_ms + 250

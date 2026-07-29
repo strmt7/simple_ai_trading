@@ -1,0 +1,62 @@
+{
+  "binance_layer": {
+    "maximum_consecutive_missing_ms": 3000,
+    "maximum_event_skew_ms": 1000,
+    "maximum_receipt_age_ms": 1500,
+    "maximum_receive_skew_ms": 1000,
+    "maximum_source_age_ms": 1500,
+    "minimum_row_coverage_fraction": "0.90",
+    "required_streams": [
+      "binance_futures",
+      "binance_spot"
+    ],
+    "return_horizon_ms": 1000,
+    "zero_trade_sentinel_policy": "discard_and_count_only_price_0_quantity_0_order_type_NA_status_1"
+  },
+  "campaign_plan_sha256": "c19ef7733efb86202742f045a45b3d92e8e17bb922c3c5f780240243889609b5",
+  "condition_admission": {
+    "decision_cadence_ms": 250,
+    "decision_end_offset_ms": 2000,
+    "decision_start_offset_ms": 30000,
+    "exact_chainlink_open_maximum_receipt_delay_ms": 5000,
+    "maximum_chainlink_source_age_ms": 3500,
+    "maximum_consecutive_missing_ms": 3000,
+    "maximum_receipt_age_ms": 1500,
+    "maximum_source_future_ms": 250,
+    "minimum_row_coverage_fraction": "0.90",
+    "required_core_streams": [
+      "clob_market",
+      "polymarket_rtds"
+    ]
+  },
+  "contract_sha256": "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b",
+  "created_at_utc": "2026-07-29T15:30:00Z",
+  "eligibility": {
+    "allow_condition_local_recovery_from_degraded_runs": true,
+    "allow_qualification_capture_for_diagnostics_only": true,
+    "purpose": "prospective",
+    "required_asset": "BTC",
+    "required_event_duration_ms": 300000,
+    "required_manifest_model_data_eligible": true,
+    "required_terminal_run_statuses": [
+      "complete",
+      "degraded"
+    ]
+  },
+  "future_data_policy": {
+    "feature_replay_include_resolutions": false,
+    "feature_rows_may_read_close_price": false,
+    "feature_rows_may_read_events_after_decision": false,
+    "feature_rows_may_read_labels": false,
+    "label_acquisition_is_separate": true,
+    "resolution_tables_may_be_read": false
+  },
+  "outcomes_consulted": false,
+  "labels_consulted": false,
+  "model_scores_consulted": false,
+  "paper_trading_authority": false,
+  "live_trading_authority": false,
+  "profitability_claim": false,
+  "schema_version": "polymarket-round14-admission-spec-v1",
+  "spec_sha256": "17dfe1081ddb661c151c36dd0b9d53d1b749ec8d69e6665d7e2fe63f3527153f"
+}

@@ -277,8 +277,13 @@ extends the established parser with independently registered commands.
   `c19ef773...`. No prospective condition has been admitted and no label, fit,
   backtest, PnL, AI uplift, paper authority, or live authority exists. Read
   `round-014-btc-5m-prospective-contract-v1.json`, the campaign plan, and the
-  live qualification artifact; never weaken their split, source, power, cost,
-  latency, depth, uncertainty, or promotion gates.
+  live qualification artifact. Outcome-blind condition admission is frozen by
+  `round-014-btc-5m-admission-spec-v1.json` (`17dfe108...`) and implemented in
+  `polymarket_round14_dataset.py`; replay must use
+  `include_resolutions=False`. The 60-second qualification correctly admits
+  zero rows because it cannot cover a complete decision window. Never weaken
+  the split, source, coverage, gap, power, cost, latency, depth, uncertainty, or
+  promotion gates.
 - Captures `eae374e2662c440fb93970d5710937b1`,
   `3a67757c7f174df4b62f2722ea9211cb`, and
   `b8a270da20fe4116a01a4626607e42da` are permanently development-only. The

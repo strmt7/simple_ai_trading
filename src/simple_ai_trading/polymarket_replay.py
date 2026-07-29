@@ -425,6 +425,7 @@ class PolymarketEvidenceReplay:
         *,
         run_id: str | None = None,
         allow_segmented_gaps: bool = False,
+        include_resolutions: bool = True,
         book_sample_interval_ms: int = 0,
         condition_ids: Sequence[str] | None = None,
         continuity_report_sha256: str = "",
@@ -432,6 +433,8 @@ class PolymarketEvidenceReplay:
         materialized_minimum_depth_levels: int = 0,
         cap_materialized_depth_to_minimum_order_size: bool = False,
     ) -> "PolymarketEvidenceReplay":
+        if not isinstance(include_resolutions, bool):
+            raise ValueError("include_resolutions must be a boolean")
         sample_interval_ms = int(book_sample_interval_ms)
         if sample_interval_ms < 0 or sample_interval_ms > 5_000:
             raise ValueError("book_sample_interval_ms must lie in [0, 5000]")
@@ -612,18 +615,22 @@ class PolymarketEvidenceReplay:
             selected,
             markets,
             events,
+            include_resolutions=include_resolutions,
             book_sample_interval_ms=sample_interval_ms,
             materialized_minimum_depth_levels=minimum_depth_levels,
             cap_materialized_depth_to_minimum_order_size=(
                 cap_materialized_depth_to_minimum_order_size
             ),
         )
-        resolutions = cls._merge_external_resolutions(
-            store,
-            selected,
-            resolutions,
-            condition_ids=selected_conditions,
-        )
+        if include_resolutions:
+            resolutions = cls._merge_external_resolutions(
+                store,
+                selected,
+                resolutions,
+                condition_ids=selected_conditions,
+            )
+        elif resolutions:
+            raise ValueError("target-free Polymarket replay materialized a resolution")
         diagnostics = PolymarketReplayDiagnostics(
             schema_version=POLYMARKET_REPLAY_DIAGNOSTICS_SCHEMA_VERSION,
             continuity_mode=continuity_mode,
@@ -686,7 +693,12 @@ class PolymarketEvidenceReplay:
         ).fetchall()
         if rows and not allow_segmented_gaps:
             raise ValueError("Polymarket replay refuses runs with stream gaps")
-        segmentable_streams = {"clob_market", "binance_spot", "polymarket_rtds"}
+        segmentable_streams = {
+            "binance_futures",
+            "binance_spot",
+            "clob_market",
+            "polymarket_rtds",
+        }
         lane_summaries = store.raw_message_lane_summaries(
             run_id,
             streams=tuple(sorted(segmentable_streams)),
@@ -1286,6 +1298,7 @@ class PolymarketEvidenceReplay:
         markets: tuple[PolymarketFiveMinuteMarket, ...],
         events: Iterable[_EventRow],
         *,
+        include_resolutions: bool,
         book_sample_interval_ms: int,
         materialized_minimum_depth_levels: int,
         cap_materialized_depth_to_minimum_order_size: bool,
@@ -1545,7 +1558,10 @@ class PolymarketEvidenceReplay:
                 delta_history.pop(str(row.event.get("asset_id") or row.asset_id), None)
             elif event_type == "market_resolved":
                 flush(condition)
-                resolutions.append(cls._resolution(run_id, row, market_by_condition))
+                if include_resolutions:
+                    resolutions.append(
+                        cls._resolution(run_id, row, market_by_condition)
+                    )
             elif event_type not in _KNOWN_NO_BOOK_CHANGE_EVENTS:
                 raise ValueError(f"unsupported CLOB replay event type: {event_type}")
         for condition in tuple(pending):
