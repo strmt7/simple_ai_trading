@@ -1,0 +1,301 @@
+{
+  "artifact_sha256": "3a9dc8f00f3ae55a5055efbd11a0371eed2a2cba1519bcb9e0d83bc7375978dd",
+  "conclusion": {
+    "execution_or_profitability_claim": false,
+    "interpretation": "The gate is retained only as a rare out-of-distribution abstention; admitted-row metrics do not establish improved predictive performance.",
+    "predictive_improvement_claim": false,
+    "trading_authority": false
+  },
+  "contract_sha256": "086365c0488ac404124ac1a9ff14f7a96784576b53baeeed1b725e9b8999fb79",
+  "dataset_sha256": "f00f64cca78beeead476ed6bde90555af13ece79c189104b0f27b898827fefb2",
+  "historical_evaluation_artifact_sha256": "f69d20389edc1d9da4fc5fb811b8618b472521abf98d4ca1215e80c79e926950",
+  "implementation_sha256": {
+    "dataset": "062a648a84138424dc10a0fa3e4807d1a204724eb6737249ad8950c9ff56dccf",
+    "evaluation": "5d274c1423f2e1720de2851a902f0bfc9f0511c1f69ed7dfbcd4532440ab31a6",
+    "model": "f1485af8a6eece82b814e99ea46a6b480cfd97626d2fa26d3f283e2c6424e5ef",
+    "support": "969c688014a82cdd7e2dfbdc9a0b28900fb379f0c1d712702e38c0efc5255832"
+  },
+  "policy": {
+    "gate_changed_after_evaluation": false,
+    "safety_abstention_only": true,
+    "support_frozen_before_test_access": true,
+    "test_driven_gate_changes_allowed": false
+  },
+  "pretest_artifact_sha256": "211d7e418135d8d57e27d832d24647d8c13930ed31d710de5a89193023565a94",
+  "profitability_claim": false,
+  "roles": {
+    "test": {
+      "abstained_rows": 6,
+      "abstention_causes": {
+        "both": 1,
+        "extreme_outer_fence": 5,
+        "outside_training_range_limit": 2
+      },
+      "admitted_minus_all_metric_delta": {
+        "accuracy": -0.0005807200929152101,
+        "balanced_accuracy": -0.0007116091793513135,
+        "brier_score": 0.00048044864934806975,
+        "calibration_intercept": 0.0020077606936462766,
+        "calibration_slope": -0.010884855296658835,
+        "expected_calibration_error": 8.623582817273573e-05,
+        "log_loss": 0.0010738385524539096
+      },
+      "admitted_rows": 2290,
+      "challenger_metrics_admitted_rows": {
+        "accuracy": 0.6244192799070848,
+        "balanced_accuracy": 0.6200728482986546,
+        "brier_score": 0.22711385335405318,
+        "calibration_intercept": -0.14200152540507338,
+        "calibration_slope": 0.9303573090703294,
+        "expected_calibration_error": 0.0392361710080718,
+        "log_loss": 0.6457406507326351
+      },
+      "challenger_metrics_all_rows": {
+        "accuracy": 0.625,
+        "balanced_accuracy": 0.6207844574780059,
+        "brier_score": 0.2266334047047051,
+        "calibration_intercept": -0.14400928609871966,
+        "calibration_slope": 0.9412421643669883,
+        "expected_calibration_error": 0.039149935179899065,
+        "log_loss": 0.6446668121801812
+      },
+      "conditions": 287,
+      "conditions_with_all_rows_admitted": 282,
+      "conditions_with_any_admitted_row": 287,
+      "decision_offset_seconds": {
+        "120": {
+          "abstained": 0,
+          "admitted": 287,
+          "total": 287
+        },
+        "150": {
+          "abstained": 1,
+          "admitted": 286,
+          "total": 287
+        },
+        "180": {
+          "abstained": 0,
+          "admitted": 287,
+          "total": 287
+        },
+        "210": {
+          "abstained": 0,
+          "admitted": 287,
+          "total": 287
+        },
+        "240": {
+          "abstained": 1,
+          "admitted": 286,
+          "total": 287
+        },
+        "30": {
+          "abstained": 1,
+          "admitted": 286,
+          "total": 287
+        },
+        "60": {
+          "abstained": 0,
+          "admitted": 287,
+          "total": 287
+        },
+        "90": {
+          "abstained": 3,
+          "admitted": 284,
+          "total": 287
+        }
+      },
+      "extreme_outer_fence_feature_counts": {
+        "perpetual_last_trade_age_seconds": 2,
+        "perpetual_log_return_15s": 1,
+        "perpetual_log_return_5s": 1,
+        "perpetual_realized_variance_15s": 2,
+        "spot_log_return_15s": 1,
+        "spot_log_return_5s": 1,
+        "spot_realized_variance_15s": 2
+      },
+      "outside_training_range_feature_counts": {
+        "perpetual_aggregate_quote_concentration_15s": 3,
+        "perpetual_aggregate_quote_concentration_30s": 2,
+        "perpetual_last_trade_age_seconds": 2,
+        "perpetual_log_aggregate_count_15s": 2,
+        "perpetual_log_aggregate_count_1s": 1,
+        "perpetual_log_aggregate_count_30s": 15,
+        "perpetual_log_constituent_trade_count_15s": 1,
+        "perpetual_log_constituent_trade_count_1s": 1,
+        "perpetual_log_constituent_trade_count_30s": 11,
+        "perpetual_log_maximum_aggregate_quote_15s": 1,
+        "perpetual_log_maximum_aggregate_quote_30s": 2,
+        "perpetual_log_maximum_aggregate_quote_5s": 5,
+        "perpetual_log_quote_volume_15s": 2,
+        "perpetual_log_quote_volume_1s": 1,
+        "perpetual_log_quote_volume_30s": 2,
+        "perpetual_log_quote_volume_5s": 1,
+        "perpetual_log_return_15s": 1,
+        "perpetual_log_return_5s": 1,
+        "perpetual_realized_variance_15s": 2,
+        "perpetual_signed_aggressive_quote_share_15s": 4,
+        "spot_log_aggregate_count_15s": 1,
+        "spot_log_aggregate_count_30s": 1,
+        "spot_log_constituent_trade_count_15s": 1,
+        "spot_log_maximum_aggregate_quote_30s": 3,
+        "spot_log_quote_volume_30s": 10,
+        "spot_log_return_15s": 1,
+        "spot_log_return_5s": 1,
+        "spot_minus_perpetual_log_return_15s": 3,
+        "spot_minus_perpetual_log_return_5s": 2,
+        "spot_minus_perpetual_log_return_60s": 1,
+        "spot_perpetual_basis_bps": 24,
+        "spot_perpetual_basis_change_15s_bps": 3,
+        "spot_perpetual_basis_change_5s_bps": 2,
+        "spot_perpetual_basis_change_60s_bps": 1,
+        "spot_realized_variance_15s": 2
+      },
+      "role": "test",
+      "row_coverage": 0.9973867595818815,
+      "rows": 2296
+    },
+    "tune": {
+      "abstained_rows": 9,
+      "abstention_causes": {
+        "both": 2,
+        "extreme_outer_fence": 7,
+        "outside_training_range_limit": 4
+      },
+      "admitted_minus_all_metric_delta": {
+        "accuracy": 0.0003733200597313413,
+        "balanced_accuracy": 0.0003625903873645253,
+        "brier_score": 3.824120209233728e-05,
+        "calibration_intercept": 0.0021409697629467856,
+        "calibration_slope": 0.002602671119507294,
+        "expected_calibration_error": 0.00026672236567735173,
+        "log_loss": 7.947139374275825e-05
+      },
+      "admitted_rows": 2287,
+      "challenger_metrics_admitted_rows": {
+        "accuracy": 0.6144848183175711,
+        "balanced_accuracy": 0.6132943158318414,
+        "brier_score": 0.23153892814618748,
+        "calibration_intercept": 0.002140954288588314,
+        "calibration_slope": 1.0026023924361325,
+        "expected_calibration_error": 0.011461812519924019,
+        "log_loss": 0.6549695908634138
+      },
+      "challenger_metrics_all_rows": {
+        "accuracy": 0.6141114982578397,
+        "balanced_accuracy": 0.6129317254444768,
+        "brier_score": 0.23150068694409515,
+        "calibration_intercept": -1.547435847175717e-08,
+        "calibration_slope": 0.9999997213166252,
+        "expected_calibration_error": 0.011195090154246667,
+        "log_loss": 0.654890119469671
+      },
+      "conditions": 287,
+      "conditions_with_all_rows_admitted": 278,
+      "conditions_with_any_admitted_row": 287,
+      "decision_offset_seconds": {
+        "120": {
+          "abstained": 0,
+          "admitted": 287,
+          "total": 287
+        },
+        "150": {
+          "abstained": 0,
+          "admitted": 287,
+          "total": 287
+        },
+        "180": {
+          "abstained": 0,
+          "admitted": 287,
+          "total": 287
+        },
+        "210": {
+          "abstained": 3,
+          "admitted": 284,
+          "total": 287
+        },
+        "240": {
+          "abstained": 0,
+          "admitted": 287,
+          "total": 287
+        },
+        "30": {
+          "abstained": 2,
+          "admitted": 285,
+          "total": 287
+        },
+        "60": {
+          "abstained": 2,
+          "admitted": 285,
+          "total": 287
+        },
+        "90": {
+          "abstained": 2,
+          "admitted": 285,
+          "total": 287
+        }
+      },
+      "extreme_outer_fence_feature_counts": {
+        "perpetual_last_trade_age_seconds": 1,
+        "perpetual_log_return_15s": 1,
+        "spot_aggregate_quote_concentration_15s": 1,
+        "spot_aggregate_quote_concentration_30s": 3,
+        "spot_log_return_15s": 1,
+        "spot_minus_perpetual_log_return_1s": 1
+      },
+      "outside_training_range_feature_counts": {
+        "perpetual_aggregate_quote_concentration_15s": 2,
+        "perpetual_aggregate_quote_concentration_5s": 1,
+        "perpetual_last_trade_age_seconds": 1,
+        "perpetual_log_aggregate_count_15s": 2,
+        "perpetual_log_aggregate_count_1s": 2,
+        "perpetual_log_aggregate_count_30s": 7,
+        "perpetual_log_aggregate_count_5s": 3,
+        "perpetual_log_constituent_trade_count_15s": 2,
+        "perpetual_log_constituent_trade_count_1s": 2,
+        "perpetual_log_constituent_trade_count_30s": 6,
+        "perpetual_log_constituent_trade_count_5s": 2,
+        "perpetual_log_maximum_aggregate_quote_5s": 2,
+        "perpetual_log_quote_volume_15s": 2,
+        "perpetual_log_quote_volume_1s": 2,
+        "perpetual_log_quote_volume_30s": 2,
+        "perpetual_log_quote_volume_5s": 1,
+        "perpetual_log_return_15s": 1,
+        "perpetual_realized_variance_60s": 10,
+        "perpetual_signed_aggressive_quote_share_15s": 2,
+        "spot_aggregate_quote_concentration_15s": 1,
+        "spot_aggregate_quote_concentration_30s": 4,
+        "spot_log_aggregate_count_15s": 1,
+        "spot_log_aggregate_count_1s": 2,
+        "spot_log_aggregate_count_5s": 1,
+        "spot_log_constituent_trade_count_15s": 1,
+        "spot_log_constituent_trade_count_1s": 1,
+        "spot_log_constituent_trade_count_5s": 1,
+        "spot_log_maximum_aggregate_quote_1s": 1,
+        "spot_log_maximum_aggregate_quote_30s": 4,
+        "spot_log_maximum_aggregate_quote_5s": 2,
+        "spot_log_quote_volume_15s": 1,
+        "spot_log_quote_volume_1s": 1,
+        "spot_log_quote_volume_30s": 7,
+        "spot_log_return_15s": 1,
+        "spot_minus_perpetual_log_return_15s": 1,
+        "spot_minus_perpetual_log_return_1s": 1,
+        "spot_minus_perpetual_log_return_30s": 1,
+        "spot_minus_perpetual_log_return_5s": 2,
+        "spot_perpetual_basis_bps": 3,
+        "spot_perpetual_basis_change_15s_bps": 1,
+        "spot_perpetual_basis_change_30s_bps": 1,
+        "spot_perpetual_basis_change_5s_bps": 2,
+        "spot_realized_variance_30s": 7,
+        "spot_realized_variance_60s": 17,
+        "spot_signed_aggressive_quote_share_30s": 2
+      },
+      "role": "tune",
+      "row_coverage": 0.9960801393728222,
+      "rows": 2296
+    }
+  },
+  "schema_version": "polymarket-historical-btc-feature-support-evaluation-v1",
+  "source_commit": "f8fcbfffc67337f18989ebc6db7c469f703465a8",
+  "support_profile_sha256": "44b20e5384b1441a790c437ff0321542c38a2e3a7c2b73f857082e645a43e597",
+  "trading_authority": false
+}
