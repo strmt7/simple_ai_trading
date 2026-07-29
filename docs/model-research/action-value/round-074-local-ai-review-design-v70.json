@@ -1,0 +1,150 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v70",
+  "artifact_kind": "finance_ai_candidate_registry_integration_evidence",
+  "created_utc": "2026-07-29T05:48:17.319811Z",
+  "supersedes_artifact_sha256": "5373fe559c56f9f68cfe5dba7d1b22286f9a7dad84a5d71fed828ed8e96eab78",
+  "implementation_git_commit": "9a8dd9586145844aeba3f90ac219642669ea956a",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "candidate_registry": {
+      "path": "src/simple_ai_trading/ai_model_benchmark.py",
+      "sha256": "1a1c296ee9e8f9d2c28eea555d0c9dae0aa91666ebb9dcd1631cd66ba3cb6a71"
+    },
+    "candidate_registry_tests": {
+      "path": "tests/test_ai_runtime_and_parity.py",
+      "sha256": "3e286741c464f91db8d253037725918abafd2ba2cccb77b96f5beb768b6c622f"
+    },
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-local-ai-review-design-v69.json",
+      "sha256": "99a4fd6481ab342ab3f8e16c44d916c925051797b5cd325c1154e76ab17f7e98"
+    },
+    "latest_blocked_preload_evidence": {
+      "path": "docs/ai/risk-review/latest/round74-fin-r1-v120-preload-blocked.json",
+      "sha256": "d8a4386d2260dcf6de4ae0ad7619599b28a4cee72c30d34df3c3236625ffb4e4"
+    }
+  },
+  "research_candidate": {
+    "model_id": "OpenDataArena/ODA-Fin-RL-8B",
+    "upstream_revision": "948c22ea48f9bf93e5747f4211657fcad9cb0295",
+    "parameter_count": 8190735360,
+    "license_id": "Apache-2.0",
+    "base_model": "Qwen/Qwen3-8B",
+    "reported_training": {
+      "supervised_cot_samples": 318000,
+      "reinforcement_learning_samples": 12000,
+      "reinforcement_learning_method": "GRPO",
+      "reported_finance_benchmark_count": 9,
+      "reported_average_score_percent": 74.6,
+      "reported_results_independently_reproduced_here": false
+    },
+    "local_quantized_artifact": {
+      "repository": "alexsabaka/ODA-Fin-RL-8B-GGUF",
+      "repository_revision": "fb986718fcec8c8c559f0ebd5d50e6cf9f4ac67f",
+      "filename": "ODA-Fin-RL-8B.Q4_K_M.gguf",
+      "quantization": "Q4_K_M",
+      "size_bytes": 5027784512,
+      "lfs_sha256": "d40d1dd4105be8d85cbb444cb58e92c4882623f0baa4dea5d296745d6bc13861",
+      "publisher_is_upstream_model_author": false,
+      "downloaded": false,
+      "digest_verified_locally": false
+    },
+    "external_finance_benchmark_claim_is_trading_evidence": false,
+    "external_finance_benchmark_claim_is_risk_review_evidence": false,
+    "external_bf16_results_transfer_to_q4_k_m_without_measurement": false,
+    "installed_on_host": false,
+    "round74_contract_screen_completed": false,
+    "round74_representative_market_uplift_completed": false,
+    "operational_candidate": false,
+    "status": "research_challenger_only"
+  },
+  "registry_contract": {
+    "registered_in_executable_catalog": true,
+    "priority_order_is_descending_and_unique": true,
+    "research_only_metadata_is_serialized": true,
+    "implicit_default_selection_permitted": false,
+    "explicit_benchmark_selection_permitted_after_preflight": true,
+    "exact_artifact_revision_and_digest_required": true,
+    "minimum_free_system_ram_gib": 16.0,
+    "minimum_free_vram_gib": 8.0,
+    "full_gpu_residency_required_when_gpu_mode_is_selected": true,
+    "ten_case_adversarial_contract_screen_required": true,
+    "representative_paired_after_cost_ai_vs_ml_uplift_required": true,
+    "language_model_may_create_or_reverse_trade_side": false,
+    "language_model_may_increase_risk_or_leverage": false,
+    "language_model_may_submit_cancel_or_close_orders": false,
+    "language_model_role": "veto_or_reduce_only"
+  },
+  "host_observation": {
+    "observed_utc": "2026-07-29T05:45:00Z",
+    "round74_segmented_capture_slot": 52,
+    "capture_phase": "running",
+    "capture_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "capture_database_or_wal_opened_for_this_delta": false,
+    "free_system_ram_gib": 14.25,
+    "minimum_free_system_ram_gib": 16.0,
+    "oda_download_started": false,
+    "oda_model_loaded": false,
+    "oda_screen_started": false,
+    "download_deferred_for_active_capture": true,
+    "screen_deferred_for_failed_ram_precondition": true,
+    "blocked_preload_evidence_model": "fin-r1:8b",
+    "fin_r1_preload_failure_is_an_oda_result": false
+  },
+  "verification": {
+    "focused_registry_contract_tests_passed": 2,
+    "connected_ai_runtime_and_evidence_tests_passed": 40,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "upstream_metadata_retrieved_from_hugging_face_api": true,
+    "quantized_artifact_metadata_retrieved_from_hugging_face_api": true,
+    "model_downloaded": false,
+    "local_multibillion_parameter_inference_performed": false,
+    "representative_market_ai_evaluation_performed": false,
+    "sealed_test_accessed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "research_sources": [
+    {
+      "title": "Unlocking Data Value in Finance: A Study on Distillation and Difficulty-Aware Training",
+      "url": "https://arxiv.org/abs/2603.07223",
+      "accessed_utc": "2026-07-29",
+      "used_for": "candidate architecture, training, and reported benchmark scope"
+    },
+    {
+      "title": "ODA-Fin-RL-8B model card",
+      "url": "https://huggingface.co/OpenDataArena/ODA-Fin-RL-8B",
+      "accessed_utc": "2026-07-29",
+      "used_for": "upstream revision, model size, license, and training metadata"
+    },
+    {
+      "title": "ODA-Fin-RL-8B-GGUF artifact repository",
+      "url": "https://huggingface.co/alexsabaka/ODA-Fin-RL-8B-GGUF",
+      "accessed_utc": "2026-07-29",
+      "used_for": "third-party quantized artifact revision, filename, size, and LFS digest"
+    },
+    {
+      "title": "FinTradeBench: A Financial Reasoning Benchmark for LLMs",
+      "url": "https://arxiv.org/abs/2603.19225",
+      "accessed_utc": "2026-07-29",
+      "used_for": "caution that financial QA and retrieval performance do not establish numerical time-series trading competence"
+    }
+  ],
+  "evidence_boundary": {
+    "model_behavior_improved_established": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "probability_calibration_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "drawdown_claim": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "b90804ba140acef5fe0822898f3af7e4e53c55034d3bfe0f47d50df640066be0"
+}
