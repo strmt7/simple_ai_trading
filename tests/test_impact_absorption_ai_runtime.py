@@ -809,6 +809,45 @@ def test_declared_model_batch_preload_is_provenance_bound_and_gpu_verified() -> 
     ]
 
 
+def test_declared_model_batch_preload_reports_capability_failure_detail() -> None:
+    posted = False
+
+    def post(*_args: object, **_kwargs: object) -> object:
+        nonlocal posted
+        posted = True
+        return {}
+
+    capability = AICapabilityReport(
+        **{
+            **_capability().asdict(),
+            "ok": False,
+            "free_ram_gb": 12.4,
+            "messages": ("free system RAM 12.4 GiB is below required 16.0 GiB",),
+        }
+    )
+    with pytest.raises(
+        ValueError,
+        match=(
+            "preload capability gate failed: "
+            "free system RAM 12.4 GiB is below required 16.0 GiB"
+        ),
+    ):
+        preload_round74_ai_model(
+            Round74AIRuntimeConfig(model_name="fino1:8b"),
+            _manifest(),
+            capability_detector=lambda _config: capability,
+            provenance_resolver=lambda *_args: (MODEL_DIGEST, METADATA_DIGEST),
+            residency_inspector=lambda *_args, **_kwargs: _unloaded_residency(
+                "",
+                "fino1:8b",
+                1.0,
+            ),
+            provider_poster=post,
+        )
+
+    assert posted is False
+
+
 def test_declared_model_batch_preload_reuses_exact_gpu_residency() -> None:
     loaded = OllamaResidencyReport(
         requested_model="fino1:8b",

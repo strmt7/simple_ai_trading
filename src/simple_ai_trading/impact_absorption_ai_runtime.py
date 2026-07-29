@@ -546,9 +546,7 @@ class Round74AIWorkerSession:
                 != ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION
             ):
                 self._discard(terminate=True)
-                raise RuntimeError(
-                    "Round 74 AI worker session response fields differ"
-                )
+                raise RuntimeError("Round 74 AI worker session response fields differ")
             if response.get("status") == "error":
                 error_class = response.get("error_class")
                 self._discard(terminate=True)
@@ -724,10 +722,7 @@ def preload_round74_ai_model(
         config.model_name,
         min(timeout, 3.0),
     )
-    if (
-        digest != manifest.model_artifact_sha256
-        or not _is_sha256(metadata_sha256)
-    ):
+    if digest != manifest.model_artifact_sha256 or not _is_sha256(metadata_sha256):
         raise ValueError("Round 74 AI preload provenance differs")
     inspection_timeout = min(timeout, 2.0)
     current = residency_inspector(
@@ -754,7 +749,8 @@ def preload_round74_ai_model(
         exact_model_already_fully_gpu_resident=False,
     )
     if not capability.ok or capability_messages:
-        raise ValueError("Round 74 AI preload capability gate failed")
+        detail = "; ".join(capability_messages) or "unspecified capability failure"
+        raise ValueError(f"Round 74 AI preload capability gate failed: {detail}")
     response = provider_poster(
         f"{config.endpoint}/api/generate",
         {
