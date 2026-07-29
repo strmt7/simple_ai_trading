@@ -7,6 +7,13 @@ import sys
 
 import pytest
 
+from simple_ai_trading.polymarket_historical_screen import (
+    HistoricalScreenStore,
+)
+from simple_ai_trading.polymarket_round16 import (
+    load_round16_historical_contract,
+)
+
 
 ROOT = Path(__file__).parents[1]
 TOOL_PATH = ROOT / "tools" / "run_polymarket_round16_screen.py"
@@ -38,6 +45,13 @@ def test_round16_status_is_machine_readable_and_target_blind(
 ) -> None:
     tool = _tool()
     database = tmp_path / "round16.duckdb"
+    contract = load_round16_historical_contract(CONTRACT_PATH)
+    with HistoricalScreenStore(
+        database,
+        contract=contract.historical,
+    ):
+        pass
+    modified_before = database.stat().st_mtime_ns
     monkeypatch.setattr(
         sys,
         "argv",
@@ -75,6 +89,7 @@ def test_round16_status_is_machine_readable_and_target_blind(
         }
     ]
     assert lines[0]["database_bytes"] > 0
+    assert database.stat().st_mtime_ns == modified_before
 
 
 def test_round16_test_access_requires_explicit_acknowledgement(
