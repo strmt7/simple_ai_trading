@@ -95,3 +95,21 @@ def test_capture_frame_selective_decode_preserves_original_record_location() -> 
     )
 
     assert decoded == (located[0],)
+
+
+def test_capture_frame_round_trip_supports_binance_futures_lane() -> None:
+    record = CaptureFrameRecord(
+        **{
+            **_record().__dict__,
+            "stream": "binance_futures",
+            "connection_id": "binance:futures:btc:connection",
+        }
+    )
+
+    frame, located = encode_capture_frame((record,))
+
+    assert decode_capture_frame(frame, expected_message_count=1) == located
+    assert scan_capture_frame_receipts(
+        frame,
+        expected_message_count=1,
+    ).stream_counts == {"binance_futures": 1}

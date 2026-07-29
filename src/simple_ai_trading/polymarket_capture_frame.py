@@ -21,6 +21,7 @@ _STREAM_TO_CODE = {
     "polymarket_rtds": 2,
     "binance_spot": 3,
     "clob_rest_book": 4,
+    "binance_futures": 5,
 }
 _CODE_TO_STREAM = {code: stream for stream, code in _STREAM_TO_CODE.items()}
 _MAX_SIGNED_64 = (1 << 63) - 1
