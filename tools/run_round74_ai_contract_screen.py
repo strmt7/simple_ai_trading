@@ -63,7 +63,7 @@ def main() -> int:
         )
     }
     if arguments.model_name not in bindings:
-        raise ValueError("model name is not in the frozen default panel")
+        raise ValueError("model name is not in the frozen screen panel")
     binding = bindings[arguments.model_name]
     cases = round74_ai_contract_cases()
     started_wall_ns = time.time_ns()
