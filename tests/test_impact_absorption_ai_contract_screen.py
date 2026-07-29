@@ -102,7 +102,7 @@ def test_round74_ai_contract_cases_are_frozen_anonymized_and_non_market() -> Non
             case.request_template["risk_profile"] = "aggressive"
 
 
-def test_round74_fin_r1_is_pinned_as_screen_only_challenger() -> None:
+def test_round74_finance_models_are_pinned_as_screen_only_challengers() -> None:
     default_panel = round74_default_ai_review_model_panel()
     challengers = round74_ai_review_challenger_model_panel()
 
@@ -110,17 +110,31 @@ def test_round74_fin_r1_is_pinned_as_screen_only_challenger() -> None:
         "fino1:8b",
         "qwen3:8b",
     )
-    assert tuple(value.model_name for value in challengers) == ("fin-r1:8b",)
-    challenger = challengers[0]
-    assert challenger.manifest.model_id == "SUFE-AIFLM-Lab/Fin-R1"
-    assert challenger.manifest.model_revision == (
+    assert tuple(value.model_name for value in challengers) == (
+        "fin-r1:8b",
+        "oda-fin-rl:8b",
+    )
+    fin_r1, oda = challengers
+    assert fin_r1.manifest.model_id == "SUFE-AIFLM-Lab/Fin-R1"
+    assert fin_r1.manifest.model_revision == (
         "026768c4a015b591b54b240743edeac1de0970fa"
     )
-    assert challenger.manifest.model_artifact_sha256 == (
+    assert fin_r1.manifest.model_artifact_sha256 == (
         "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377"
     )
-    assert challenger.manifest.parameter_count == 7_620_000_000
-    assert challenger.manifest.quantization == "q6_k"
+    assert fin_r1.manifest.parameter_count == 7_620_000_000
+    assert fin_r1.manifest.quantization == "q6_k"
+    assert oda.manifest.model_id == "OpenDataArena/ODA-Fin-RL-8B"
+    assert oda.manifest.model_revision == (
+        "948c22ea48f9bf93e5747f4211657fcad9cb0295"
+    )
+    assert oda.manifest.model_artifact_sha256 == (
+        "d40d1dd4105be8d85cbb444cb58e92c4882623f0baa4dea5d296745d6bc13861"
+    )
+    assert oda.manifest.model_artifact_kind == "gguf"
+    assert oda.manifest.parameter_count == 8_190_735_360
+    assert oda.manifest.quantization == "q4_k_m"
+    assert all(value.manifest.finance_specialized for value in challengers)
     assert {value.manifest.manifest_sha256 for value in default_panel}.isdisjoint(
         value.manifest.manifest_sha256 for value in challengers
     )

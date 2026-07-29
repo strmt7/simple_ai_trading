@@ -197,6 +197,27 @@ def round74_ai_review_challenger_model_panel() -> tuple[
             runtime=Round74AIRuntimeConfig(model_name="fin-r1:8b"),
             role="finance_primary",
         ),
+        Round74AIReviewModelBinding(
+            model_name="oda-fin-rl:8b",
+            manifest=Round74AIModelManifest(
+                model_id="OpenDataArena/ODA-Fin-RL-8B",
+                model_revision="948c22ea48f9bf93e5747f4211657fcad9cb0295",
+                model_artifact_sha256=(
+                    "d40d1dd4105be8d85cbb444cb58e92c4882623f0baa4dea5d296745d6bc13861"
+                ),
+                model_artifact_kind="gguf",
+                parameter_count=8_190_735_360,
+                quantization="q4_k_m",
+                runtime_backend="llama.cpp-vulkan",
+                runtime_version="0.32.4",
+                license_id="Apache-2.0",
+                model_card_url="https://huggingface.co/OpenDataArena/ODA-Fin-RL-8B",
+                minimum_vram_bytes=8 * 1024**3,
+                finance_specialized=True,
+            ),
+            runtime=Round74AIRuntimeConfig(model_name="oda-fin-rl:8b"),
+            role="finance_primary",
+        ),
     )
     for value in panel:
         value.validate()
@@ -206,6 +227,11 @@ def round74_ai_review_challenger_model_panel() -> tuple[
     }
     if any(value.manifest.manifest_sha256 in default_manifests for value in panel):
         raise ValueError("Round 74 AI challenger duplicates qualification model")
+    if (
+        len({value.manifest.manifest_sha256 for value in panel}) != len(panel)
+        or any(not value.manifest.finance_specialized for value in panel)
+    ):
+        raise ValueError("Round 74 AI challenger panel differs")
     return panel
 
 
