@@ -157,6 +157,25 @@ def _day_bounds(day: str) -> tuple[int, int]:
     )
 
 
+def _day_interval(value: object, *, name: str) -> tuple[str, ...]:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{name} must be an object")
+    first = str(value.get("first_day") or "")
+    last = str(value.get("last_day") or "")
+    first_start, _ = _day_bounds(first)
+    last_start, _ = _day_bounds(last)
+    if last_start < first_start:
+        raise ValueError(f"{name} ends before it starts")
+    count = (last_start - first_start) // 86_400_000 + 1
+    if int(value.get("day_count", 0)) != count:
+        raise ValueError(f"{name} day count differs")
+    start = datetime.fromtimestamp(first_start / 1_000, tz=UTC)
+    return tuple(
+        (start + timedelta(days=index)).date().isoformat()
+        for index in range(count)
+    )
+
+
 def _iso_seconds(timestamp_ms: int) -> str:
     return (
         datetime.fromtimestamp(timestamp_ms / 1_000, tz=UTC)
@@ -177,6 +196,11 @@ class HistoricalScreenContract:
     decision_offsets_seconds: tuple[int, ...]
     return_horizons_seconds: tuple[int, ...]
     flow_windows_seconds: tuple[int, ...]
+    source_inventory_sha256: str | None
+    source_research_round: int | None
+    required_source_symbol_count: int
+    required_flow_rows_per_day: int
+    required_market_count_per_day: int
 
     def role_for_day(self, day: str) -> str:
         try:
@@ -196,9 +220,11 @@ def load_historical_screen_contract(
     claimed = str(payload.pop("contract_sha256", "")).strip().lower()
     if _SHA256.fullmatch(claimed) is None or _canonical_sha256(payload) != claimed:
         raise ValueError("historical screen contract SHA-256 differs")
-    if payload.get("schema_version") != (
-        "polymarket-round14-btc-5m-historical-screen-v2"
-    ):
+    schema_version = str(payload.get("schema_version") or "")
+    if schema_version not in {
+        "polymarket-round14-btc-5m-historical-screen-v2",
+        "polymarket-round15-btc-5m-historical-screen-v1",
+    }:
         raise ValueError("historical screen contract schema differs")
     scope = payload.get("scope")
     source = payload.get("source_contract")
@@ -211,28 +237,96 @@ def load_historical_screen_contract(
     ):
         raise ValueError("historical screen contract sections are missing")
     authority = scope.get("authority")
+    expected_authority = {
+        "paper_trading": False,
+        "live_trading": False,
+        "promotion": False,
+    }
     if (
         scope.get("venue") != "polymarket"
         or scope.get("asset") != "BTC"
         or scope.get("market_variant") != "fiveminute"
         or scope.get("development_only") is not True
         or not isinstance(authority, Mapping)
-        or any(authority.get(key) is not False for key in authority)
+        or dict(authority) != expected_authority
         or payload.get("profitability_claim") is not False
     ):
         raise ValueError("historical screen authority boundary differs")
-    days = tuple(str(value) for value in source.get("eligible_days", ()))
-    train = tuple(str(value) for value in partition.get("train_days", ()))
-    tune = tuple(str(value) for value in partition.get("tune_days", ()))
-    test = tuple(str(value) for value in partition.get("test_days", ()))
-    if (
-        days != ("2026-03-20", "2026-04-20", "2026-05-01", "2026-06-22")
-        or train != days[:2]
-        or tune != days[2:3]
-        or test != days[3:]
-        or len(set(days)) != len(days)
-    ):
-        raise ValueError("historical screen day partition differs")
+    if schema_version == "polymarket-round14-btc-5m-historical-screen-v2":
+        days = tuple(str(value) for value in source.get("eligible_days", ()))
+        train = tuple(str(value) for value in partition.get("train_days", ()))
+        tune = tuple(str(value) for value in partition.get("tune_days", ()))
+        test = tuple(str(value) for value in partition.get("test_days", ()))
+        if (
+            days
+            != ("2026-03-20", "2026-04-20", "2026-05-01", "2026-06-22")
+            or train != days[:2]
+            or tune != days[2:3]
+            or test != days[3:]
+        ):
+            raise ValueError("historical screen day partition differs")
+        source_inventory_sha256 = None
+        source_research_round = None
+        required_source_symbol_count = 3
+    else:
+        inventory_days = _day_interval(
+            source.get("eligible_interval"),
+            name="historical source interval",
+        )
+        excluded_days = tuple(
+            str(value)
+            for value in source.get("excluded_precontract_target_days", ())
+        )
+        excluded_day_set = frozenset(excluded_days)
+        train_interval = _day_interval(
+            partition.get("train_interval"),
+            name="historical train interval",
+        )
+        tune_interval = _day_interval(
+            partition.get("tune_interval"),
+            name="historical tune interval",
+        )
+        test_interval = _day_interval(
+            partition.get("test_interval"),
+            name="historical test interval",
+        )
+        days = tuple(day for day in inventory_days if day not in excluded_day_set)
+        train = tuple(day for day in train_interval if day not in excluded_day_set)
+        tune = tuple(day for day in tune_interval if day not in excluded_day_set)
+        test = tuple(day for day in test_interval if day not in excluded_day_set)
+        source_inventory_sha256 = str(
+            source.get("binance_inventory_sha256") or ""
+        ).lower()
+        source_research_round = int(source.get("binance_research_round", 0))
+        required_source_symbol_count = int(
+            source.get("required_source_symbol_count", 0)
+        )
+        model_day_counts = partition.get("model_day_counts_after_exclusion")
+        if (
+            tuple((*train, *tune, *test)) != days
+            or inventory_days[0] != "2026-02-12"
+            or inventory_days[-1] != "2026-07-15"
+            or len(inventory_days) != 154
+            or excluded_days
+            != ("2026-03-20", "2026-04-20", "2026-05-01", "2026-06-22")
+            or len(excluded_day_set) != len(excluded_days)
+            or not excluded_day_set.issubset(inventory_days)
+            or len(days) != 150
+            or int(source.get("model_eligible_day_count", 0)) != len(days)
+            or train[-1] != "2026-05-31"
+            or tune[0] != "2026-06-01"
+            or tune[-1] != "2026-06-30"
+            or test[0] != "2026-07-01"
+            or not isinstance(model_day_counts, Mapping)
+            or dict(model_day_counts)
+            != {"train": len(train), "tune": len(tune), "test": len(test)}
+            or _SHA256.fullmatch(source_inventory_sha256) is None
+            or source_research_round != 15
+            or required_source_symbol_count != 1
+        ):
+            raise ValueError("historical screen day or source partition differs")
+    if len(set(days)) != len(days):
+        raise ValueError("historical screen days are not unique")
     for day in days:
         _day_bounds(day)
     roles = {
@@ -248,15 +342,23 @@ def load_historical_screen_contract(
     )
     returns = tuple(int(value) for value in causal.get("return_horizons_seconds", ()))
     windows = tuple(int(value) for value in causal.get("flow_windows_seconds", ()))
+    required_rows_per_symbol = int(
+        source.get("required_flow_rows_per_symbol_day", 0)
+    )
+    required_market_count = int(source.get("required_market_count_per_day", 0))
+    expected_binance_source = (
+        "existing_audited_current_spot_perpetual_flow_1s"
+        if schema_version == "polymarket-round14-btc-5m-historical-screen-v2"
+        else "frozen_round15_btc_spot_perpetual_flow_1s"
+    )
     if (
         str(source.get("polymarket_series_id")) != _SERIES_ID
         or source.get("historical_polymarket_price_or_trade_features") is not False
-        or source.get("binance_source")
-        != "existing_audited_current_spot_perpetual_flow_1s"
+        or source.get("binance_source") != expected_binance_source
         or source.get("binance_symbol") != "BTCUSDT"
         or source.get("raw_binance_copy_allowed") is not False
-        or int(source.get("required_flow_rows_per_symbol_day", 0)) != 86_400
-        or int(source.get("required_market_count_per_day", 0)) != 288
+        or required_rows_per_symbol != 86_400
+        or required_market_count != 288
         or decisions != (30, 60, 90, 120, 150, 180, 210, 240)
         or returns != (1, 5, 15, 30, 60)
         or windows != (1, 5, 15, 30)
@@ -275,6 +377,13 @@ def load_historical_screen_contract(
         decision_offsets_seconds=decisions,
         return_horizons_seconds=returns,
         flow_windows_seconds=windows,
+        source_inventory_sha256=source_inventory_sha256,
+        source_research_round=source_research_round,
+        required_source_symbol_count=required_source_symbol_count,
+        required_flow_rows_per_day=(
+            required_rows_per_symbol * required_source_symbol_count
+        ),
+        required_market_count_per_day=required_market_count,
     )
 
 
@@ -1307,7 +1416,10 @@ def collect_historical_market_identities(
             if page_index >= 20:
                 raise ValueError("historical Gamma day exceeded the page bound")
         counts[day] = admitted
-    if any(value != 288 for value in counts.values()):
+    if any(
+        value != store.contract.required_market_count_per_day
+        for value in counts.values()
+    ):
         raise ValueError("historical Gamma day market count differs")
     store.transition("initialized", "identities_complete")
     return counts

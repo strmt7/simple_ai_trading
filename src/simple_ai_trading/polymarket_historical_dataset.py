@@ -16,6 +16,7 @@ import numpy as np
 
 from .polymarket_historical_screen import (
     HistoricalBtcMarket,
+    HistoricalScreenContract,
     HistoricalScreenStore,
 )
 
@@ -340,41 +341,61 @@ def build_historical_feature_row(
 
 def _source_manifest(
     connection: duckdb.DuckDBPyConnection,
-    days: Sequence[str],
+    contract: HistoricalScreenContract,
 ) -> tuple[str, str]:
+    days = contract.eligible_days
     placeholders = ",".join("?" for _ in days)
+    inventory_filter = ""
+    parameters: list[object] = list(days)
+    if contract.source_inventory_sha256 is not None:
+        inventory_filter = " AND inventory_sha256 = ?"
+        parameters.append(contract.source_inventory_sha256)
     rows = connection.execute(
         f"""
         SELECT period, day_id, inventory_sha256, source_contract_sha256,
-               combined_flow_sha256, flow_rows, symbol_count, status, is_current
+               combined_flow_sha256, source_count, symbol_count,
+               seconds_per_symbol, flow_rows, status, is_current, research_round
         FROM spot_perpetual_flow_day_manifest
-        WHERE period IN ({placeholders}) AND is_current
+        WHERE period IN ({placeholders}) AND is_current{inventory_filter}
         ORDER BY period
         """,
-        list(days),
+        parameters,
     ).fetchall()
     if len(rows) != len(days) or tuple(str(row[0]) for row in rows) != tuple(days):
         raise ValueError("historical Binance source manifests are incomplete")
     payload = []
     for row in rows:
         if (
-            int(row[5]) != 259_200
-            or int(row[6]) != 3
-            or str(row[7]) != "complete"
-            or row[8] is not True
+            int(row[5]) != contract.required_source_symbol_count * 2
+            or int(row[6]) != contract.required_source_symbol_count
+            or int(row[7]) != 86_400
+            or int(row[8]) != contract.required_flow_rows_per_day
+            or str(row[9]) != "complete"
+            or row[10] is not True
+            or (
+                contract.source_research_round is not None
+                and int(row[11]) != contract.source_research_round
+            )
         ):
             raise ValueError("historical Binance source manifest failed")
-        payload.append(
-            {
-                "period": str(row[0]),
-                "day_id": str(row[1]),
-                "inventory_sha256": str(row[2]),
-                "source_contract_sha256": str(row[3]),
-                "combined_flow_sha256": str(row[4]),
-                "flow_rows": int(row[5]),
-                "symbol_count": int(row[6]),
-            }
-        )
+        item = {
+            "period": str(row[0]),
+            "day_id": str(row[1]),
+            "inventory_sha256": str(row[2]),
+            "source_contract_sha256": str(row[3]),
+            "combined_flow_sha256": str(row[4]),
+            "flow_rows": int(row[8]),
+            "symbol_count": int(row[6]),
+        }
+        if contract.source_inventory_sha256 is not None:
+            item.update(
+                {
+                    "source_count": int(row[5]),
+                    "seconds_per_symbol": int(row[7]),
+                    "research_round": int(row[11]),
+                }
+            )
+        payload.append(item)
     canonical = _canonical_json(payload)
     return canonical, hashlib.sha256(canonical.encode("ascii")).hexdigest()
 
@@ -495,7 +516,7 @@ def materialize_historical_causal_features(
     try:
         source_manifest_json, source_manifest_sha = _source_manifest(
             source,
-            store.contract.eligible_days,
+            store.contract,
         )
         markets = store.markets()
         by_day: dict[str, list[HistoricalBtcMarket]] = {

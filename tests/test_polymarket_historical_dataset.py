@@ -7,11 +7,13 @@ from pathlib import Path
 
 import numpy as np
 import duckdb
+import pytest
 
 from simple_ai_trading.polymarket_historical_dataset import (
     FEATURE_NAMES,
     HistoricalFeatureRow,
     _insert_feature_rows,
+    _source_manifest,
     build_historical_feature_row,
 )
 from simple_ai_trading.polymarket_historical_screen import (
@@ -27,6 +29,13 @@ CONTRACT_PATH = (
     / "model-research"
     / "polymarket"
     / "round-014-btc-5m-historical-screen-v2.json"
+)
+ROUND15_CONTRACT_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-015-btc-5m-historical-screen-v1.json"
 )
 DAY_START_MS = int(datetime(2026, 3, 20, tzinfo=UTC).timestamp() * 1_000)
 EVENT_START_MS = DAY_START_MS + 60_000
@@ -166,6 +175,71 @@ def test_dataset_module_cannot_read_polymarket_prices_or_targets() -> None:
         "polymarket_prior",
     ):
         assert forbidden not in source
+
+
+def test_round15_source_manifest_is_bound_to_btc_inventory_and_round() -> None:
+    contract = load_historical_screen_contract(ROUND15_CONTRACT_PATH)
+    connection = duckdb.connect(":memory:")
+    connection.execute(
+        """
+        CREATE TABLE spot_perpetual_flow_day_manifest (
+            period VARCHAR,
+            day_id VARCHAR,
+            inventory_sha256 VARCHAR,
+            source_contract_sha256 VARCHAR,
+            combined_flow_sha256 VARCHAR,
+            source_count INTEGER,
+            symbol_count INTEGER,
+            seconds_per_symbol INTEGER,
+            flow_rows INTEGER,
+            status VARCHAR,
+            is_current BOOLEAN,
+            research_round INTEGER
+        )
+        """
+    )
+    rows = [
+        (
+            day,
+            f"day-{index}",
+            contract.source_inventory_sha256,
+            "a" * 64,
+            "b" * 64,
+            2,
+            1,
+            86_400,
+            86_400,
+            "complete",
+            True,
+            15,
+        )
+        for index, day in enumerate(contract.eligible_days)
+    ]
+    connection.executemany(
+        "INSERT INTO spot_perpetual_flow_day_manifest VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        rows,
+    )
+
+    manifest_json, manifest_sha = _source_manifest(connection, contract)
+    manifest = json.loads(manifest_json)
+
+    assert len(manifest) == 150
+    assert manifest[0]["period"] == "2026-02-12"
+    assert manifest[-1]["period"] == "2026-07-15"
+    assert manifest[0]["inventory_sha256"] == contract.source_inventory_sha256
+    assert manifest[0]["research_round"] == 15
+    assert len(manifest_sha) == 64
+
+    connection.execute(
+        """
+        UPDATE spot_perpetual_flow_day_manifest
+        SET research_round = 14
+        WHERE period = ?
+        """,
+        [contract.eligible_days[-1]],
+    )
+    with pytest.raises(ValueError, match="source manifest failed"):
+        _source_manifest(connection, contract)
 
 
 def test_feature_rows_use_vectorized_numpy_insert() -> None:
