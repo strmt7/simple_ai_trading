@@ -408,6 +408,7 @@ def _row_output(
     output: Round74EventModelOutput,
     row_index: int,
 ) -> Round74EventModelOutput:
+    diagnostics = output.epistemic_diagnostics
     result = Round74EventModelOutput(
         payoff_quantiles_bps=output.payoff_quantiles_bps[row_index : row_index + 1],
         maximum_adverse_excursion_quantiles_bps=(
@@ -420,6 +421,11 @@ def _row_output(
         regime_unpredictability_logits=output.regime_unpredictability_logits[
             row_index : row_index + 1
         ],
+        epistemic_diagnostics=(
+            None
+            if diagnostics is None
+            else diagnostics.select_rows(slice(row_index, row_index + 1))
+        ),
     )
     result.validate(1)
     return result

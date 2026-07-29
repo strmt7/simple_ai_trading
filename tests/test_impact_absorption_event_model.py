@@ -23,6 +23,7 @@ from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
     ROUND74_EVENT_TCN_RECEPTIVE_FIELD,
     Round74CausalEventAttention,
     Round74CausalEventTCN,
+    Round74EventEpistemicDiagnostics,
     Round74EventPoolingLinear,
     Round74EventPoolingMLP,
     Round74StateConditionedFlow,
@@ -54,6 +55,69 @@ def _inputs(batch_size: int = 3, sequence_length: int = 32) -> torch.Tensor:
             values[batch_index, event_index, event_index % 5] = 1.0
             values[batch_index, event_index, 5 + batch_index % 3] = 1.0
     return values
+
+
+def test_round74_epistemic_diagnostics_are_losslessly_row_addressable() -> None:
+    action_shape = (
+        3,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
+    quantile_shape = (*action_shape, len(ROUND74_EVENT_PAYOFF_QUANTILES))
+    quantiles = torch.arange(
+        int(torch.tensor(quantile_shape).prod()),
+        dtype=torch.float32,
+    ).reshape(quantile_shape)
+    sides = torch.arange(
+        int(torch.tensor(action_shape).prod()),
+        dtype=torch.float32,
+    ).reshape(action_shape)
+    horizons = torch.arange(
+        action_shape[0] * action_shape[1],
+        dtype=torch.float32,
+    ).reshape(action_shape[:2])
+    diagnostics = Round74EventEpistemicDiagnostics(
+        peer_count=3,
+        payoff_quantile_standard_deviation_bps=quantiles,
+        maximum_adverse_excursion_quantile_standard_deviation_bps=quantiles + 1.0,
+        positive_payoff_probability_standard_deviation=sides / 100.0,
+        adverse_selection_probability_standard_deviation=sides / 50.0,
+        regime_unpredictability_probability_standard_deviation=horizons / 25.0,
+    )
+
+    diagnostics.validate(3)
+    first = diagnostics.select_rows(slice(0, 1))
+    remaining = diagnostics.select_rows(slice(1, 3))
+    reconstructed = Round74EventEpistemicDiagnostics.concatenate(
+        (first.cpu(), remaining.cpu())
+    )
+
+    assert reconstructed.peer_count == 3
+    torch.testing.assert_close(
+        reconstructed.payoff_quantile_standard_deviation_bps,
+        diagnostics.payoff_quantile_standard_deviation_bps,
+    )
+    torch.testing.assert_close(
+        reconstructed.maximum_adverse_excursion_quantile_standard_deviation_bps,
+        diagnostics.maximum_adverse_excursion_quantile_standard_deviation_bps,
+    )
+    torch.testing.assert_close(
+        reconstructed.positive_payoff_probability_standard_deviation,
+        diagnostics.positive_payoff_probability_standard_deviation,
+    )
+    torch.testing.assert_close(
+        reconstructed.adverse_selection_probability_standard_deviation,
+        diagnostics.adverse_selection_probability_standard_deviation,
+    )
+    torch.testing.assert_close(
+        reconstructed.regime_unpredictability_probability_standard_deviation,
+        diagnostics.regime_unpredictability_probability_standard_deviation,
+    )
+    with pytest.raises(ValueError, match="epistemic diagnostics differ"):
+        replace(
+            diagnostics,
+            positive_payoff_probability_standard_deviation=-sides,
+        ).validate(3)
 
 
 def _coherent_payoff_targets(
@@ -693,7 +757,11 @@ values = torch.randn(
 with warnings.catch_warnings(record=True) as caught:
     warnings.simplefilter("always")
     output = model(values)
-    loss = sum(getattr(output, name).mean() for name in vars(output))
+    loss = sum(
+        value.mean()
+        for value in vars(output).values()
+        if isinstance(value, torch.Tensor)
+    )
     loss.backward()
 gate_parameters = tuple(model.state_to_flow_gate.parameters())
 messages = [str(item.message) for item in caught]
@@ -739,3 +807,92 @@ print(
     assert evidence["gate_gradients_nonzero"] is True
     assert evidence["warning_messages"] == []
     assert evidence["cpu_fallback_warning_count"] == 0
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("torch_directml") is None,
+    reason="torch-directml is not installed",
+)
+def test_round74_ensemble_epistemic_diagnostics_stay_on_directml() -> None:
+    script = """
+import json
+import warnings
+
+import torch
+
+from simple_ai_trading.compute import (
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+)
+from simple_ai_trading.impact_absorption_event_training import (
+    Round74EventEnsemble,
+)
+
+backend = require_backend(resolve_backend("directml"))
+device = torch_device_for_backend(backend)
+torch.manual_seed(74120)
+model = Round74EventEnsemble("event_pooling_linear", 3).to(device).eval()
+values = torch.randn(
+    4,
+    8,
+    len(ROUND74_EVENT_FEATURE_NAMES),
+    device=device,
+)
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    with torch.no_grad():
+        output = model(values)
+    output.validate(4)
+    diagnostics = output.epistemic_diagnostics
+    assert diagnostics is not None
+    tensors = (
+        diagnostics.payoff_quantile_standard_deviation_bps,
+        diagnostics.maximum_adverse_excursion_quantile_standard_deviation_bps,
+        diagnostics.positive_payoff_probability_standard_deviation,
+        diagnostics.adverse_selection_probability_standard_deviation,
+        diagnostics.regime_unpredictability_probability_standard_deviation,
+    )
+    finite = all(
+        bool(torch.isfinite(value).all().detach().cpu()) for value in tensors
+    )
+messages = [str(item.message) for item in caught]
+print(
+    json.dumps(
+        {
+            "backend_kind": backend.kind,
+            "device": str(device),
+            "peer_count": diagnostics.peer_count,
+            "finite": finite,
+            "warning_messages": messages,
+            "cpu_fallback_warning_count": sum(
+                "fall back to run on the CPU" in message
+                or "not currently supported on the DML backend" in message
+                for message in messages
+            ),
+        },
+        sort_keys=True,
+    )
+)
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=60,
+    )
+    assert completed.returncode == 0, completed.stderr
+    evidence = json.loads(completed.stdout)
+
+    assert evidence == {
+        "backend_kind": "directml",
+        "cpu_fallback_warning_count": 0,
+        "device": "privateuseone:0",
+        "finite": True,
+        "peer_count": 3,
+        "warning_messages": [],
+    }
