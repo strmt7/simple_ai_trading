@@ -30,6 +30,7 @@ from simple_ai_trading.impact_absorption_event_epistemic_policy import (
     ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS,
     Round74EpistemicActionFilter,
     Round74EpistemicActionFilterApplication,
+    _evaluate_round74_epistemic_action_replay_challenge,
     apply_round74_epistemic_action_filter,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
@@ -747,6 +748,219 @@ def test_epistemic_runtime_filter_only_removes_and_zeroes_candidates() -> None:
     assert application.trading_authority is False
     payload = json.loads(json.dumps(application.as_dict()))
     assert Round74EpistemicActionFilterApplication.from_dict(payload) == application
+
+
+def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
+    combined = _batch(payoff_sign=1.0)
+    batches = _run_batch_panel(combined)
+
+    def output_with_diagnostics(
+        rows: int,
+        *,
+        high_first_payoff_dispersion: bool,
+    ) -> Round74EventModelOutput:
+        base = _output(rows)
+        equal_payoff = base.payoff_quantiles_bps.clone()
+        equal_mae = base.maximum_adverse_excursion_quantiles_bps.clone()
+        for horizon in (30, 300):
+            horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(horizon)
+            equal_payoff[:, horizon_index, 0, :] = torch.tensor(
+                (2.0, 4.0, 8.0, 10.0, 12.0)
+            )
+            equal_mae[:, horizon_index, 0, :] = torch.tensor(
+                (0.2, 0.4, 0.8, 1.2, 2.0)
+            )
+        base = replace(
+            base,
+            payoff_quantiles_bps=equal_payoff,
+            maximum_adverse_excursion_quantiles_bps=equal_mae,
+        )
+        base.validate(rows)
+        payoff = torch.full_like(base.payoff_quantiles_bps, 0.01)
+        if high_first_payoff_dispersion:
+            horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(30)
+            payoff[0, horizon_index, 0, :] = 0.10
+        result = replace(
+            base,
+            epistemic_diagnostics=Round74EventEpistemicDiagnostics(
+                peer_count=3,
+                payoff_quantile_standard_deviation_bps=payoff,
+                maximum_adverse_excursion_quantile_standard_deviation_bps=(
+                    torch.full_like(
+                        base.maximum_adverse_excursion_quantiles_bps,
+                        0.01,
+                    )
+                ),
+                positive_payoff_probability_standard_deviation=torch.full_like(
+                    base.positive_payoff_logits,
+                    0.01,
+                ),
+                adverse_selection_probability_standard_deviation=torch.full_like(
+                    base.adverse_selection_logits,
+                    0.01,
+                ),
+                regime_unpredictability_probability_standard_deviation=(
+                    torch.full_like(base.regime_unpredictability_logits, 0.01)
+                ),
+            ),
+        )
+        result.validate(rows)
+        return result
+
+    outputs = tuple(
+        output_with_diagnostics(
+            batch.rows,
+            high_first_payoff_dispersion=index == 0,
+        )
+        for index, batch in enumerate(batches)
+    )
+    calibration = _calibration()
+    candidates = tuple(
+        derive_round74_action_candidates(
+            output,
+            build_round74_action_inference_context(batch),
+            calibration,
+            pretest_policy_sha256=POLICY_SHA256,
+            profile="conservative",
+        )
+        for batch, output in zip(batches, outputs, strict=True)
+    )
+    all_negative = _execution_panel(batches, candidates)
+    positive_rows = []
+    for row_index, row in enumerate(all_negative.rows):
+        outcomes = []
+        for outcome in row.outcomes:
+            if row_index == 0:
+                selected = outcome
+            else:
+                selected = replace(
+                    outcome,
+                    midpoint_payoff_bps=5.0,
+                    gross_payoff_bps=4.0,
+                    net_payoff_bps=2.0,
+                    capital_scaled_net_payoff_bps=2.0,
+                    positive_net_payoff=True,
+                    maximum_favorable_excursion_bps=5.0,
+                    adverse_selection=False,
+                )
+                selected.validate()
+            outcomes.append(selected)
+        positive_rows.append(replace(row, outcomes=tuple(outcomes)))
+    execution_panel = replace(all_negative, rows=tuple(positive_rows))
+    execution_panel.validate()
+    baseline = select_round74_action_policy_batches(
+        batches,
+        candidates,
+        _subpartition(),
+        execution_panel=execution_panel,
+    )
+    assert baseline.accepted
+    action_shape = (
+        len(ROUND74_EVENT_SYMBOLS),
+        len(ROUND74_ACTION_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+        len(ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS) - 1,
+    )
+    regime_shape = action_shape[:2]
+    action_filter = Round74EpistemicActionFilter(
+        profile="conservative",
+        risk_coverage_report_sha256="e" * 64,
+        tuning_subpartition_sha256=calibration.tuning_subpartition_sha256,
+        probability_calibration_sha256=calibration.calibration_sha256,
+        source_run_ids=_subpartition().policy_selection_run_ids,
+        source_batch_sha256=tuple(batch.batch_sha256 for batch in batches),
+        source_model_output_sha256=tuple(
+            candidate.model_output_sha256 for candidate in candidates
+        ),
+        peer_count=3,
+        total_rejection_budget=0.25,
+        component_tail_budget=0.05,
+        component_quantile=0.95,
+        action_thresholds=_readonly(
+            np.full(action_shape, 0.05, dtype=np.float64)
+        ),
+        regime_thresholds=_readonly(
+            np.full(regime_shape, 0.05, dtype=np.float64)
+        ),
+        action_fit_rows=_readonly(
+            np.full(action_shape[:3], 300, dtype=np.int64)
+        ),
+        regime_fit_rows=_readonly(
+            np.full(regime_shape, 300, dtype=np.int64)
+        ),
+    )
+
+    challenge = _evaluate_round74_epistemic_action_replay_challenge(  # noqa: SLF001
+        batches,
+        outputs,
+        candidates,
+        action_filter=action_filter,
+        baseline_policy=baseline,
+        execution_panel=execution_panel,
+    )
+
+    assert challenge.removed_trade_count == 1
+    assert challenge.replacement_trade_count == 1
+    assert challenge.retained_trade_count == baseline.evaluations[0].trace.metrics.trades - 1
+    assert challenge.challenger_trade_count == challenge.baseline_trade_count
+    assert challenge.challenger_trace.metrics.total_net_bps > (
+        challenge.baseline_metrics.total_net_bps
+    )
+    assert challenge.challenger_objective_bps > challenge.baseline_objective_bps
+    assert challenge.tuning_challenge_eligible is True
+    assert challenge.automatic_policy_use_enabled is False
+    assert challenge.sealed_test_accessed is False
+    assert challenge.trading_authority is False
+    assert challenge.profitability_claim is False
+    assert len(challenge.challenge_sha256) == 64
+    contract = challenge.as_dict()["evaluation_contract"]
+    assert contract["baseline_quality_threshold_held_fixed"] is True
+    assert contract["exact_delayed_l2_execution_panel_used"] is True
+    assert contract["replacement_trades_measured"] is True
+
+    harmful_rows = []
+    for row_index, row in enumerate(all_negative.rows):
+        outcomes = []
+        for outcome in row.outcomes:
+            if row_index == 3:
+                selected = outcome
+            else:
+                selected = replace(
+                    outcome,
+                    midpoint_payoff_bps=5.0,
+                    gross_payoff_bps=4.0,
+                    net_payoff_bps=2.0,
+                    capital_scaled_net_payoff_bps=2.0,
+                    positive_net_payoff=True,
+                    maximum_favorable_excursion_bps=5.0,
+                    adverse_selection=False,
+                )
+                selected.validate()
+            outcomes.append(selected)
+        harmful_rows.append(replace(row, outcomes=tuple(outcomes)))
+    harmful_panel = replace(all_negative, rows=tuple(harmful_rows))
+    harmful_panel.validate()
+    harmful_baseline = select_round74_action_policy_batches(
+        batches,
+        candidates,
+        _subpartition(),
+        execution_panel=harmful_panel,
+    )
+    assert harmful_baseline.accepted
+    harmful = _evaluate_round74_epistemic_action_replay_challenge(  # noqa: SLF001
+        batches,
+        outputs,
+        candidates,
+        action_filter=action_filter,
+        baseline_policy=harmful_baseline,
+        execution_panel=harmful_panel,
+    )
+    assert harmful.removed_trade_count == 1
+    assert harmful.replacement_trade_count == 1
+    assert harmful.challenger_trace.metrics.total_net_bps < (
+        harmful.baseline_metrics.total_net_bps
+    )
+    assert harmful.tuning_challenge_eligible is False
 
 
 def test_risk_tail_calibration_can_fail_closed_before_candidate_selection() -> None:

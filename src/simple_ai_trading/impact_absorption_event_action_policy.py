@@ -1991,6 +1991,17 @@ def _trace_gate_reasons(
     return tuple(reasons)
 
 
+def round74_action_trace_gate_reasons(
+    trace: Round74ActionTrace,
+    *,
+    profile: str,
+) -> tuple[str, ...]:
+    """Apply the frozen profile gates to one exact replay trace."""
+
+    trace.validate()
+    return _trace_gate_reasons(trace, round74_action_profile(profile))
+
+
 @dataclass(frozen=True)
 class Round74ActionThresholdEvaluation:
     quantile: float
@@ -2441,6 +2452,24 @@ def _action_selection_objective(
     )
 
 
+def round74_action_selection_objective(
+    metrics: Round74ActionTraceMetrics,
+    *,
+    profile: str,
+    optimization_population: str,
+    expected_run_count: int,
+) -> tuple[float, str]:
+    """Evaluate the frozen profile objective without selecting a threshold."""
+
+    metrics.validate()
+    return _action_selection_objective(
+        metrics,
+        round74_action_profile(profile),
+        optimization_population=optimization_population,
+        expected_run_count=expected_run_count,
+    )
+
+
 def select_round74_action_policy_batches(
     batches: Sequence[Round74EventTrainingBatch],
     candidate_batches: Sequence[Round74ActionCandidateBatch],
@@ -2653,6 +2682,8 @@ __all__ = [
     "derive_round74_action_candidates",
     "round74_action_profile",
     "round74_action_model_output_sha256",
+    "round74_action_selection_objective",
+    "round74_action_trace_gate_reasons",
     "select_round74_action_policy",
     "select_round74_action_policy_batches",
     "simulate_round74_action_trace",
