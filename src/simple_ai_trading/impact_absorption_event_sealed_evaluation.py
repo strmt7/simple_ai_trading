@@ -78,7 +78,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v18"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v19"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v3"
 )
@@ -95,6 +95,11 @@ ROUND74_SEALED_FAMILYWISE_ALPHA = 0.05
 ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT = 3
 ROUND74_SEALED_AI_MODEL_COUNT = 2
 ROUND74_SEALED_AI_REVIEW_HORIZONS_SECONDS = (30, 300)
+ROUND74_SEALED_PREDICTIVE_TASKS = (
+    "positive_payoff",
+    "adverse_selection",
+    "regime_unpredictability",
+)
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
@@ -372,6 +377,173 @@ class Round74SealedPredictiveDiagnostics:
         }
 
 
+def _predictive_brier_gate_reasons(
+    *,
+    observations: int,
+    evaluable_slices: int,
+    capture_runs: int,
+    covered_capture_runs: int,
+    no_information_brier_score: float,
+    brier_skill_score: float,
+    familywise_lower_mean_run_brier_improvement: float,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if observations < 1 or evaluable_slices < 1:
+        reasons.append("non_single_class_evidence_missing")
+    if capture_runs < 2 or covered_capture_runs != capture_runs:
+        reasons.append("capture_run_coverage_incomplete")
+    if no_information_brier_score <= 0.0:
+        reasons.append("no_information_brier_not_positive")
+    if brier_skill_score <= 0.0:
+        reasons.append("positive_brier_skill_not_met")
+    if familywise_lower_mean_run_brier_improvement <= 0.0:
+        reasons.append("positive_familywise_run_brier_improvement_lower_bound_not_met")
+    return tuple(reasons)
+
+
+@dataclass(frozen=True)
+class Round74PredictiveBrierSkill:
+    """Proper-score evidence against a slice-specific prevalence forecast."""
+
+    task: str
+    observations: int
+    evaluable_slices: int
+    capture_runs: int
+    covered_capture_runs: int
+    model_brier_score: float
+    no_information_brier_score: float
+    brier_skill_score: float
+    mean_run_brier_improvement: float
+    familywise_lower_mean_run_brier_improvement: float
+    mean_block_length_runs: int
+    restart_probability: float
+    gate_passed: bool
+    gate_reasons: tuple[str, ...]
+
+    def validate(self) -> None:
+        integers = (
+            self.observations,
+            self.evaluable_slices,
+            self.capture_runs,
+            self.covered_capture_runs,
+            self.mean_block_length_runs,
+        )
+        finite = (
+            self.model_brier_score,
+            self.no_information_brier_score,
+            self.brier_skill_score,
+            self.mean_run_brier_improvement,
+            self.familywise_lower_mean_run_brier_improvement,
+            self.restart_probability,
+        )
+        expected_reasons = _predictive_brier_gate_reasons(
+            observations=self.observations,
+            evaluable_slices=self.evaluable_slices,
+            capture_runs=self.capture_runs,
+            covered_capture_runs=self.covered_capture_runs,
+            no_information_brier_score=self.no_information_brier_score,
+            brier_skill_score=self.brier_skill_score,
+            familywise_lower_mean_run_brier_improvement=(
+                self.familywise_lower_mean_run_brier_improvement
+            ),
+        )
+        if (
+            self.task not in ROUND74_SEALED_PREDICTIVE_TASKS
+            or any(
+                isinstance(value, bool) or not isinstance(value, int)
+                for value in integers
+            )
+            or any(value < 0 for value in integers)
+            or self.covered_capture_runs > self.capture_runs
+            or any(not math.isfinite(float(value)) for value in finite)
+            or not 0.0 <= self.model_brier_score <= 1.0
+            or not 0.0 <= self.no_information_brier_score <= 1.0
+            or self.brier_skill_score > 1.0
+            or (
+                self.capture_runs >= 2
+                and not 2 <= self.mean_block_length_runs <= self.capture_runs
+            )
+            or (self.capture_runs < 2 and self.mean_block_length_runs != 0)
+            or (
+                self.mean_block_length_runs > 0
+                and not math.isclose(
+                    self.restart_probability,
+                    1.0 / self.mean_block_length_runs,
+                    rel_tol=0.0,
+                    abs_tol=1e-15,
+                )
+            )
+            or (self.mean_block_length_runs == 0 and self.restart_probability != 0.0)
+            or self.gate_reasons != expected_reasons
+            or self.gate_passed != (not expected_reasons)
+        ):
+            raise ValueError("Round 74 sealed predictive Brier skill differs")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "task": self.task,
+            "observations": self.observations,
+            "evaluable_slices": self.evaluable_slices,
+            "capture_runs": self.capture_runs,
+            "covered_capture_runs": self.covered_capture_runs,
+            "model_brier_score": self.model_brier_score,
+            "no_information_brier_score": self.no_information_brier_score,
+            "brier_skill_score": self.brier_skill_score,
+            "mean_run_brier_improvement": self.mean_run_brier_improvement,
+            "familywise_alpha": (
+                ROUND74_SEALED_FAMILYWISE_ALPHA / len(ROUND74_SEALED_PREDICTIVE_TASKS)
+            ),
+            "familywise_lower_mean_run_brier_improvement": (
+                self.familywise_lower_mean_run_brier_improvement
+            ),
+            "mean_block_length_runs": self.mean_block_length_runs,
+            "restart_probability": self.restart_probability,
+            "gate_passed": self.gate_passed,
+            "gate_reasons": list(self.gate_reasons),
+        }
+
+
+@dataclass(frozen=True)
+class Round74SealedPredictiveGate:
+    """Independent predictive-validity gate for every modeled binary task."""
+
+    task_skills: tuple[Round74PredictiveBrierSkill, ...]
+    gate_passed: bool
+    gate_reasons: tuple[str, ...]
+    scope: str = "all_non_single_class_test_slices_before_action_threshold"
+
+    def validate(self) -> None:
+        for value in self.task_skills:
+            value.validate()
+        expected_tasks = tuple(value.task for value in self.task_skills)
+        expected_reasons = tuple(
+            f"{value.task}:{reason}"
+            for value in self.task_skills
+            for reason in value.gate_reasons
+        )
+        if (
+            expected_tasks != ROUND74_SEALED_PREDICTIVE_TASKS
+            or self.scope != "all_non_single_class_test_slices_before_action_threshold"
+            or self.gate_reasons != expected_reasons
+            or self.gate_passed != (not expected_reasons)
+        ):
+            raise ValueError("Round 74 sealed predictive gate differs")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "scope": self.scope,
+            "task_skills": [value.as_dict() for value in self.task_skills],
+            "gate_passed": self.gate_passed,
+            "gate_reasons": list(self.gate_reasons),
+            "test_labels_used_for_threshold_selection": False,
+            "no_information_baseline": (
+                "within_slice_test_prevalence_as_a_conservative_scoring_benchmark"
+            ),
+        }
+
+
 class _BinaryAccumulator:
     def __init__(self) -> None:
         self.count = 0
@@ -390,26 +562,49 @@ class _BinaryAccumulator:
             ROUND74_SEALED_ECE_BINS,
             dtype=np.float64,
         )
+        self.run_count: dict[str, int] = {}
+        self.run_positive: dict[str, int] = {}
+        self.run_brier_sum: dict[str, float] = {}
 
-    def update(self, target: np.ndarray, probability: np.ndarray) -> None:
+    def update(
+        self,
+        target: np.ndarray,
+        probability: np.ndarray,
+        *,
+        run_ids: Sequence[str],
+    ) -> None:
         truth = np.asarray(target, dtype=np.bool_)
         estimate = np.asarray(probability, dtype=np.float64)
+        selected_run_ids = np.asarray(run_ids, dtype=object)
         if (
             truth.ndim != 1
             or estimate.shape != truth.shape
+            or selected_run_ids.shape != truth.shape
             or not estimate.size
             or not np.isfinite(estimate).all()
             or np.any((estimate < 0.0) | (estimate > 1.0))
+            or any(_RUN_ID.fullmatch(str(value)) is None for value in selected_run_ids)
         ):
             raise ValueError("Round 74 sealed binary update differs")
         predicted = estimate >= 0.5
+        squared_error = np.square(estimate - truth.astype(float))
         self.count += int(truth.size)
         self.positive += int(truth.sum())
-        self.brier_sum += float(np.square(estimate - truth.astype(float)).sum())
+        self.brier_sum += float(squared_error.sum())
         self.tp += int(np.sum(predicted & truth))
         self.tn += int(np.sum(~predicted & ~truth))
         self.fp += int(np.sum(predicted & ~truth))
         self.fn += int(np.sum(~predicted & truth))
+        for run_id in dict.fromkeys(str(value) for value in selected_run_ids):
+            run_mask = selected_run_ids == run_id
+            self.run_count[run_id] = self.run_count.get(run_id, 0) + int(run_mask.sum())
+            self.run_positive[run_id] = self.run_positive.get(run_id, 0) + int(
+                truth[run_mask].sum()
+            )
+            self.run_brier_sum[run_id] = self.run_brier_sum.get(
+                run_id,
+                0.0,
+            ) + float(squared_error[run_mask].sum())
         bins = np.minimum(
             (estimate * ROUND74_SEALED_ECE_BINS).astype(np.int64),
             ROUND74_SEALED_ECE_BINS - 1,
@@ -547,11 +742,20 @@ class _ActionAccumulator:
         positive_probability: np.ndarray,
         adverse_target: np.ndarray,
         adverse_probability: np.ndarray,
+        run_ids: Sequence[str],
     ) -> None:
         self.payoff.update(payoff_target, payoff_forecast)
         self.mae.update(mae_target, mae_forecast)
-        self.positive.update(payoff_target > 0.0, positive_probability)
-        self.adverse.update(adverse_target > 0.5, adverse_probability)
+        self.positive.update(
+            payoff_target > 0.0,
+            positive_probability,
+            run_ids=run_ids,
+        )
+        self.adverse.update(
+            adverse_target > 0.5,
+            adverse_probability,
+            run_ids=run_ids,
+        )
 
     def result(
         self,
@@ -573,6 +777,98 @@ class _ActionAccumulator:
         )
         result.validate()
         return result
+
+
+def _build_predictive_brier_skill(
+    task: str,
+    accumulators: Sequence[_BinaryAccumulator],
+    *,
+    expected_run_ids: tuple[str, ...],
+    seed: int,
+) -> Round74PredictiveBrierSkill:
+    if (
+        task not in ROUND74_SEALED_PREDICTIVE_TASKS
+        or len(expected_run_ids) < 2
+        or len(set(expected_run_ids)) != len(expected_run_ids)
+        or any(_RUN_ID.fullmatch(value) is None for value in expected_run_ids)
+    ):
+        raise ValueError("Round 74 sealed predictive skill population differs")
+    selected = tuple(
+        accumulator
+        for accumulator in accumulators
+        if 0 < accumulator.positive < accumulator.count
+    )
+    run_index = {run_id: index for index, run_id in enumerate(expected_run_ids)}
+    run_count = np.zeros(len(expected_run_ids), dtype=np.int64)
+    run_model_sse = np.zeros(len(expected_run_ids), dtype=np.float64)
+    run_baseline_sse = np.zeros(len(expected_run_ids), dtype=np.float64)
+    for accumulator in selected:
+        prevalence = accumulator.positive / accumulator.count
+        if any(run_id not in run_index for run_id in accumulator.run_count):
+            raise ValueError("Round 74 sealed predictive skill run differs")
+        for run_id, count in accumulator.run_count.items():
+            index = run_index[run_id]
+            positive = accumulator.run_positive[run_id]
+            run_count[index] += count
+            run_model_sse[index] += accumulator.run_brier_sum[run_id]
+            run_baseline_sse[index] += (
+                positive * (1.0 - prevalence) ** 2 + (count - positive) * prevalence**2
+            )
+    observations = int(run_count.sum())
+    model_sse = float(run_model_sse.sum())
+    baseline_sse = float(run_baseline_sse.sum())
+    model_brier = model_sse / observations if observations else 0.0
+    no_information_brier = baseline_sse / observations if observations else 0.0
+    brier_skill = (
+        1.0 - model_brier / no_information_brier if no_information_brier > 0.0 else 0.0
+    )
+    run_improvement = np.divide(
+        run_baseline_sse - run_model_sse,
+        run_count,
+        out=np.zeros_like(run_model_sse),
+        where=run_count > 0,
+    )
+    mean_block_length = _stationary_bootstrap_mean_block_length(len(expected_run_ids))
+    sampled = _stationary_bootstrap_means(
+        run_improvement,
+        draws=ROUND74_SEALED_BOOTSTRAP_DRAWS,
+        seed=seed,
+        mean_block_length=mean_block_length,
+    )
+    lower = float(
+        np.quantile(
+            sampled,
+            ROUND74_SEALED_FAMILYWISE_ALPHA / len(ROUND74_SEALED_PREDICTIVE_TASKS),
+        )
+    )
+    covered_runs = int(np.count_nonzero(run_count))
+    reasons = _predictive_brier_gate_reasons(
+        observations=observations,
+        evaluable_slices=len(selected),
+        capture_runs=len(expected_run_ids),
+        covered_capture_runs=covered_runs,
+        no_information_brier_score=no_information_brier,
+        brier_skill_score=brier_skill,
+        familywise_lower_mean_run_brier_improvement=lower,
+    )
+    result = Round74PredictiveBrierSkill(
+        task=task,
+        observations=observations,
+        evaluable_slices=len(selected),
+        capture_runs=len(expected_run_ids),
+        covered_capture_runs=covered_runs,
+        model_brier_score=model_brier,
+        no_information_brier_score=no_information_brier,
+        brier_skill_score=brier_skill,
+        mean_run_brier_improvement=float(run_improvement.mean()),
+        familywise_lower_mean_run_brier_improvement=lower,
+        mean_block_length_runs=mean_block_length,
+        restart_probability=1.0 / mean_block_length,
+        gate_passed=not reasons,
+        gate_reasons=reasons,
+    )
+    result.validate()
+    return result
 
 
 class _PredictiveAccumulator:
@@ -609,6 +905,7 @@ class _PredictiveAccumulator:
         adverse_probability = _tensor_array(adverse)
         unpredictable_probability = _tensor_array(unpredictable)
         symbols = np.asarray(batch.symbol, dtype=object)
+        run_ids = np.asarray(batch.run_id, dtype=object)
         for horizon_index, horizon in enumerate(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS):
             regime_eligible = (
                 batch.regime_unpredictability_eligibility[:, horizon_index] == 1.0
@@ -632,6 +929,7 @@ class _PredictiveAccumulator:
                             selected_regime,
                             horizon_index,
                         ],
+                        run_ids=run_ids[selected_regime],
                     )
                     self.eligible_regime_targets += int(selected_regime.sum())
                 for side_index, side in enumerate(ROUND74_EVENT_PAYOFF_SIDES):
@@ -717,11 +1015,16 @@ class _PredictiveAccumulator:
                                 horizon_index,
                                 side_index,
                             ],
+                            run_ids=run_ids[mask],
                         )
                         self.eligible_action_targets += int(mask.sum())
 
-    def result(self) -> Round74SealedPredictiveDiagnostics:
-        result = Round74SealedPredictiveDiagnostics(
+    def result(
+        self,
+        *,
+        expected_run_ids: tuple[str, ...],
+    ) -> tuple[Round74SealedPredictiveDiagnostics, Round74SealedPredictiveGate]:
+        diagnostics = Round74SealedPredictiveDiagnostics(
             action_slices=tuple(
                 self.action[key].result(
                     symbol=key[0],
@@ -742,8 +1045,40 @@ class _PredictiveAccumulator:
             eligible_action_targets=self.eligible_action_targets,
             eligible_regime_targets=self.eligible_regime_targets,
         )
-        result.validate()
-        return result
+        diagnostics.validate()
+        action_accumulators = tuple(self.action.values())
+        task_skills = (
+            _build_predictive_brier_skill(
+                "positive_payoff",
+                tuple(value.positive for value in action_accumulators),
+                expected_run_ids=expected_run_ids,
+                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 101,
+            ),
+            _build_predictive_brier_skill(
+                "adverse_selection",
+                tuple(value.adverse for value in action_accumulators),
+                expected_run_ids=expected_run_ids,
+                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 102,
+            ),
+            _build_predictive_brier_skill(
+                "regime_unpredictability",
+                tuple(self.regime.values()),
+                expected_run_ids=expected_run_ids,
+                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 103,
+            ),
+        )
+        gate_reasons = tuple(
+            f"{value.task}:{reason}"
+            for value in task_skills
+            for reason in value.gate_reasons
+        )
+        gate = Round74SealedPredictiveGate(
+            task_skills=task_skills,
+            gate_passed=not gate_reasons,
+            gate_reasons=gate_reasons,
+        )
+        gate.validate()
+        return diagnostics, gate
 
 
 @dataclass(frozen=True)
@@ -1240,6 +1575,26 @@ class Round74SealedAIOverlay:
         }
 
 
+def _qualified_configurations(
+    predictive_gate: Round74SealedPredictiveGate,
+    baseline_metrics: Round74SealedStrategyMetrics,
+    ai_overlays: Sequence[Round74SealedAIOverlay],
+) -> tuple[str, ...]:
+    predictive_gate.validate()
+    baseline_metrics.validate()
+    if not predictive_gate.gate_passed:
+        return ()
+    result: list[str] = []
+    if baseline_metrics.financial_gate_passed:
+        result.append("ml_baseline")
+    result.extend(
+        f"ai:{value.model_manifest_sha256}"
+        for value in ai_overlays
+        if value.uplift_gate_passed
+    )
+    return tuple(result)
+
+
 @dataclass(frozen=True)
 class Round74SealedEvaluationReport:
     reserved_claim_sha256: str
@@ -1261,6 +1616,7 @@ class Round74SealedEvaluationReport:
     inference_backend_vendor: str
     inference_warning_count: int
     predictive_diagnostics: Round74SealedPredictiveDiagnostics
+    predictive_gate: Round74SealedPredictiveGate
     baseline_trace: Round74ActionTrace
     baseline_metrics: Round74SealedStrategyMetrics
     ai_overlays: tuple[Round74SealedAIOverlay, ...]
@@ -1275,6 +1631,7 @@ class Round74SealedEvaluationReport:
 
     def validate(self) -> None:
         self.predictive_diagnostics.validate()
+        self.predictive_gate.validate()
         self.baseline_trace.validate()
         self.baseline_metrics.validate()
         for value in self.ai_overlays:
@@ -1293,21 +1650,10 @@ class Round74SealedEvaluationReport:
             *self.model_output_sha256,
             *self.candidate_sha256,
         )
-        passed = tuple(
-            (
-                "ml_baseline",
-                *(
-                    f"ai:{value.model_manifest_sha256}"
-                    for value in self.ai_overlays
-                    if value.uplift_gate_passed
-                ),
-            )
-            if self.baseline_metrics.financial_gate_passed
-            else tuple(
-                f"ai:{value.model_manifest_sha256}"
-                for value in self.ai_overlays
-                if value.uplift_gate_passed
-            )
+        passed = _qualified_configurations(
+            self.predictive_gate,
+            self.baseline_metrics,
+            self.ai_overlays,
         )
         expected_outcome = (
             "candidate_passed_predeclared_gates"
@@ -1392,6 +1738,7 @@ class Round74SealedEvaluationReport:
                 "warning_count": self.inference_warning_count,
             },
             "predictive_diagnostics": self.predictive_diagnostics.as_dict(),
+            "predictive_gate": self.predictive_gate.as_dict(),
             "baseline_trace": self.baseline_trace.as_dict(),
             "baseline_metrics": self.baseline_metrics.as_dict(),
             "ai_overlays": [value.as_dict() for value in self.ai_overlays],
@@ -2207,6 +2554,7 @@ def _derive_test_candidates(
 ) -> tuple[
     Round74TargetFreeCandidateInference,
     Round74SealedPredictiveDiagnostics,
+    Round74SealedPredictiveGate,
 ]:
     contexts = tuple(build_round74_action_inference_context(batch) for batch in batches)
     inference = infer_round74_target_free_candidates(
@@ -2220,7 +2568,10 @@ def _derive_test_candidates(
     predictive = _PredictiveAccumulator()
     for batch, output in zip(batches, inference.model_outputs, strict=True):
         predictive.update(batch, output, probability_calibration)
-    return inference, predictive.result()
+    diagnostics, gate = predictive.result(
+        expected_run_ids=inference.expected_run_ids,
+    )
+    return inference, diagnostics, gate
 
 
 def _target_free_review_rows(
@@ -2646,7 +2997,7 @@ def _evaluate_reserved(
     ):
         raise ValueError("Round 74 sealed reserved input identity differs")
     policy_selection_runs = next(iter(policy_run_counts))
-    inference, predictive = _derive_test_candidates(
+    inference, predictive, predictive_gate = _derive_test_candidates(
         test_batches,
         action_selection=action_selection,
         probability_calibration=probability_calibration,
@@ -2738,21 +3089,10 @@ def _evaluate_reserved(
         )
         for index, manifest in enumerate(sorted(reviews))
     )
-    qualified = tuple(
-        (
-            "ml_baseline",
-            *(
-                f"ai:{value.model_manifest_sha256}"
-                for value in overlays
-                if value.uplift_gate_passed
-            ),
-        )
-        if baseline.financial_gate_passed
-        else tuple(
-            f"ai:{value.model_manifest_sha256}"
-            for value in overlays
-            if value.uplift_gate_passed
-        )
+    qualified = _qualified_configurations(
+        predictive_gate,
+        baseline,
+        overlays,
     )
     report = Round74SealedEvaluationReport(
         reserved_claim_sha256=claim.claim_sha256,
@@ -2774,6 +3114,7 @@ def _evaluate_reserved(
         inference_backend_vendor=inference.inference_backend_vendor,
         inference_warning_count=inference.inference_warning_count,
         predictive_diagnostics=predictive,
+        predictive_gate=predictive_gate,
         baseline_trace=trace,
         baseline_metrics=baseline,
         ai_overlays=overlays,
