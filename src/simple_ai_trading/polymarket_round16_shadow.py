@@ -39,6 +39,7 @@ _MAX_ARTIFACT_BYTES = 4 * 1024 * 1024
 _REQUIRED_EVALUATION_GATES = frozenset(
     {
         "minimum_terminal_conditions",
+        "complete_utc_test_days",
         "minimum_outcomes_per_class",
         "minimum_decision_rows",
         "challenger_log_loss_skill_positive",

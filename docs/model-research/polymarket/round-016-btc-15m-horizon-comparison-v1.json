@@ -246,12 +246,14 @@
   },
   "test_gates": {
     "minimum_terminal_conditions": 1200,
+    "minimum_complete_utc_test_days": 15,
     "minimum_outcomes_per_class": 400,
     "minimum_decision_rows": 10000,
     "challenger_log_loss_skill_over_best_control_strictly_positive": true,
     "challenger_brier_skill_over_best_control_strictly_positive": true,
     "challenger_balanced_accuracy_not_lower_than_best_control": true,
-    "paired_condition_block_bootstrap_repetitions": 10000,
+    "paired_utc_day_bootstrap_repetitions": 10000,
+    "paired_utc_day_bootstrap_resampling_unit": "whole_UTC_day",
     "paired_log_loss_improvement_lower_bound_strictly_positive": true,
     "calibration_slope_range": [
       "0.85",
@@ -290,5 +292,5 @@
   "round16_terminal_targets_consulted_before_freeze": false,
   "round16_model_scores_consulted_before_freeze": false,
   "profitability_claim": false,
-  "contract_sha256": "ba4a0fdd8b24baaa82fd1b4c6085b1a4907e910f4ebcefac00f2e92fb95d1996"
+  "contract_sha256": "fa119c3f110c4a13345341ab26cb87010788cb2e92b85a23647714d3aede163d"
 }

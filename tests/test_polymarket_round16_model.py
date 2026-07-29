@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -38,7 +39,13 @@ CONTRACT_PATH = (
 )
 
 
-def _panel(*, role: str, condition_count: int, seed: int) -> Round16ModelPanel:
+def _panel(
+    *,
+    role: str,
+    condition_count: int,
+    seed: int,
+    first_event_start_ms: int = 1_700_000_000_000,
+) -> Round16ModelPanel:
     rng = np.random.default_rng(seed)
     condition_signal = rng.normal(size=condition_count)
     labels_by_condition = (condition_signal > 0).astype(np.float64)
@@ -57,7 +64,7 @@ def _panel(*, role: str, condition_count: int, seed: int) -> Round16ModelPanel:
     features[:, 0] += np.repeat(condition_signal, 14).astype(np.float32)
     offsets = np.tile(np.arange(1, 15, dtype=np.int64), condition_count)
     event_start = np.repeat(
-        np.arange(condition_count, dtype=np.int64) * 900_000 + 1_700_000_000_000,
+        np.arange(condition_count, dtype=np.int64) * 900_000 + first_event_start_ms,
         14,
     )
     return Round16ModelPanel(
@@ -203,11 +210,21 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority(
     assert stored["artifact_sha256"] == artifact["artifact_sha256"]
     assert stored_sha == envelope_sha
 
-    test = _panel(role="test", condition_count=1_200, seed=16017)
+    test = _panel(
+        role="test",
+        condition_count=1_440,
+        seed=16017,
+        first_event_start_ms=int(
+            datetime(2026, 7, 1, tzinfo=UTC).timestamp() * 1_000
+        ),
+    )
     evaluation = evaluate_round16_panel(test, artifact, contract)
 
-    assert evaluation["test"]["conditions"] == 1_200
-    assert evaluation["test"]["decision_rows"] == 16_800
+    assert evaluation["test"]["conditions"] == 1_440
+    assert evaluation["test"]["decision_rows"] == 20_160
+    assert len(evaluation["test"]["complete_utc_days"]) == 15
+    assert evaluation["test"]["unexpected_utc_days"] == []
+    assert set(evaluation["test"]["conditions_by_utc_day"].values()) == {96}
     assert evaluation["scope"]["predictive_screen_only"] is True
     assert evaluation["scope"]["execution_or_profitability_claim"] is False
     assert evaluation["paper_authority"] is False
@@ -216,14 +233,14 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority(
     settlement = evaluation["settlement_manipulation_screen"]
     assert settlement["threshold_partition"] == "tune"
     assert settlement["changes_predictive_metrics"] is False
-    assert settlement["all_decisions"]["rows"] == 16_800
-    assert settlement["last_180_seconds"]["rows"] == 3_600
-    assert settlement["last_120_seconds"]["rows"] == 2_400
-    assert settlement["last_60_seconds"]["rows"] == 1_200
+    assert settlement["all_decisions"]["rows"] == 20_160
+    assert settlement["last_180_seconds"]["rows"] == 4_320
+    assert settlement["last_120_seconds"]["rows"] == 2_880
+    assert settlement["last_60_seconds"]["rows"] == 1_440
     assert (
         settlement["all_decisions"]["admitted_rows"]
         + settlement["all_decisions"]["abstained_rows"]
-        == 16_800
+        == 20_160
     )
     support_screen = evaluation["feature_support_screen"]
     assert support_screen["bounds_partition"] == "train"
@@ -231,10 +248,11 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority(
     assert (
         support_screen["admitted_rows"]
         + support_screen["abstained_rows"]
-        == 16_800
+        == 20_160
     )
     assert set(evaluation["gates"]) == {
         "minimum_terminal_conditions",
+        "complete_utc_test_days",
         "minimum_outcomes_per_class",
         "minimum_decision_rows",
         "challenger_log_loss_skill_positive",
@@ -244,6 +262,30 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority(
         "calibration_slope_in_range",
         "expected_calibration_error_at_most_contract_maximum",
     }
+    assert evaluation["paired_utc_day_bootstrap"]["day_count"] == 15
+    assert (
+        evaluation["paired_utc_day_bootstrap"]["resampling_unit"]
+        == "whole_UTC_day"
+    )
+
+    moved_event_start = test.event_start_ms.copy()
+    moved_decision_time = test.decision_time_ms.copy()
+    first_condition = test.condition_ids == test.condition_ids[0]
+    moved_event_start[first_condition] -= 900_000
+    moved_decision_time[first_condition] -= 900_000
+    incomplete = Round16ModelPanel(
+        condition_ids=test.condition_ids,
+        roles=test.roles,
+        event_start_ms=moved_event_start,
+        decision_time_ms=moved_decision_time,
+        features=test.features,
+        labels=test.labels,
+        dataset_sha256=test.dataset_sha256,
+    )
+    incomplete_evaluation = evaluate_round16_panel(incomplete, artifact, contract)
+    assert incomplete_evaluation["gates"]["complete_utc_test_days"] is False
+    assert incomplete_evaluation["test"]["complete_utc_days"][0] == "2026-07-02"
+    assert incomplete_evaluation["test"]["unexpected_utc_days"] == ["2026-06-30"]
 
 
 def test_round16_panel_requires_fourteen_decisions_per_condition() -> None:

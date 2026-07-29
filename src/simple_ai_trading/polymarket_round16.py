@@ -36,6 +36,7 @@ ROUND16_MARKET_SCHEMA_VERSION = "polymarket-round16-btc-15m-market-v1"
 ROUND16_SERIES_ID = "10192"
 ROUND16_DURATION_MS = 900_000
 ROUND16_MARKETS_PER_DAY = 96
+ROUND16_TEST_DAYS = 15
 ROUND16_DECISION_OFFSETS_SECONDS = tuple(range(60, 841, 60))
 ROUND16_RETURN_HORIZONS_SECONDS = (1, 5, 15, 30, 60, 120)
 ROUND16_FLOW_WINDOWS_SECONDS = (1, 5, 15, 30, 60, 120)
@@ -271,7 +272,7 @@ def load_round16_historical_contract(
         or eligible_days[-1] != "2026-07-15"
         or len(train) != 109
         or len(tune) != 30
-        or len(test) != 15
+        or len(test) != ROUND16_TEST_DAYS
         or str(source.get("polymarket_series_id")) != ROUND16_SERIES_ID
         or source.get("historical_polymarket_price_or_trade_features") is not False
         or source.get("binance_source")
@@ -292,10 +293,14 @@ def load_round16_historical_contract(
         or windows != ROUND16_FLOW_WINDOWS_SECONDS
         or slope != ("0.85", "1.15")
         or int(gates.get("minimum_terminal_conditions", 0)) != 1_200
+        or int(gates.get("minimum_complete_utc_test_days", 0))
+        != ROUND16_TEST_DAYS
         or int(gates.get("minimum_outcomes_per_class", 0)) != 400
         or int(gates.get("minimum_decision_rows", 0)) != 10_000
-        or int(gates.get("paired_condition_block_bootstrap_repetitions", 0))
+        or int(gates.get("paired_utc_day_bootstrap_repetitions", 0))
         != 10_000
+        or gates.get("paired_utc_day_bootstrap_resampling_unit")
+        != "whole_UTC_day"
         or gates.get("expected_calibration_error_maximum") != "0.03"
     ):
         raise ValueError("Round 16 source, split, feature, or gate contract differs")
@@ -727,6 +732,7 @@ __all__ = [
     "ROUND16_MARKETS_PER_DAY",
     "ROUND16_RETURN_HORIZONS_SECONDS",
     "ROUND16_SERIES_ID",
+    "ROUND16_TEST_DAYS",
     "Round16HistoricalContract",
     "Round16HistoricalPublicClient",
     "collect_round16_market_identities",

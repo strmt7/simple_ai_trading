@@ -20,6 +20,9 @@ from simple_ai_trading.polymarket_round16_dataset import (
     ROUND16_FEATURE_NAMES,
     build_round16_feature_row,
 )
+from simple_ai_trading.polymarket_round16_evaluation import (
+    ROUND16_EVALUATION_SCHEMA_VERSION,
+)
 from simple_ai_trading.polymarket_round16_model import (
     Round16ModelPanel,
     build_round16_pretest_artifact,
@@ -277,6 +280,7 @@ def _verified_artifacts(tmp_path: Path) -> tuple[Path, Path, str, str]:
     pretest_envelope = _canonical_sha256(pretest)
     gates = {
         "minimum_terminal_conditions": True,
+        "complete_utc_test_days": True,
         "minimum_outcomes_per_class": True,
         "minimum_decision_rows": True,
         "challenger_log_loss_skill_positive": True,
@@ -287,7 +291,7 @@ def _verified_artifacts(tmp_path: Path) -> tuple[Path, Path, str, str]:
         "expected_calibration_error_at_most_contract_maximum": True,
     }
     evaluation_body = {
-        "schema_version": "polymarket-round16-btc-15m-evaluation-v1",
+        "schema_version": ROUND16_EVALUATION_SCHEMA_VERSION,
         "contract_sha256": contract.contract_sha256,
         "dataset_sha256": train.dataset_sha256,
         "pretest_artifact_sha256": pretest_envelope,

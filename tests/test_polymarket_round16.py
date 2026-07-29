@@ -144,7 +144,7 @@ def test_round16_contract_loader_is_exact_and_has_no_authority() -> None:
     contract = load_round16_historical_contract(CONTRACT_PATH)
 
     assert contract.contract_sha256 == (
-        "ba4a0fdd8b24baaa82fd1b4c6085b1a4907e910f4ebcefac00f2e92fb95d1996"
+        "fa119c3f110c4a13345341ab26cb87010788cb2e92b85a23647714d3aede163d"
     )
     assert contract.duration_ms == 900_000
     assert contract.historical.series_id == "10192"
