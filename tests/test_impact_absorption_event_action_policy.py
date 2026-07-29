@@ -30,6 +30,7 @@ from simple_ai_trading.impact_absorption_event_epistemic_policy import (
     ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS,
     Round74EpistemicActionFilter,
     Round74EpistemicActionFilterApplication,
+    Round74EpistemicActionReplayChallenge,
     _evaluate_round74_epistemic_action_replay_challenge,
     apply_round74_epistemic_action_filter,
 )
@@ -662,14 +663,10 @@ def test_epistemic_runtime_filter_only_removes_and_zeroes_candidates() -> None:
         epistemic_diagnostics=Round74EventEpistemicDiagnostics(
             peer_count=3,
             payoff_quantile_standard_deviation_bps=payoff_dispersion,
-            maximum_adverse_excursion_quantile_standard_deviation_bps=(
-                mae_dispersion
-            ),
+            maximum_adverse_excursion_quantile_standard_deviation_bps=(mae_dispersion),
             positive_payoff_probability_standard_deviation=positive_dispersion,
             adverse_selection_probability_standard_deviation=adverse_dispersion,
-            regime_unpredictability_probability_standard_deviation=(
-                regime_dispersion
-            ),
+            regime_unpredictability_probability_standard_deviation=(regime_dispersion),
         ),
     )
     output.validate(batch.rows)
@@ -696,25 +693,15 @@ def test_epistemic_runtime_filter_only_removes_and_zeroes_candidates() -> None:
         probability_calibration_sha256=calibration.calibration_sha256,
         source_run_ids=runs,
         source_batch_sha256=tuple(f"{index + 1:064x}" for index in range(6)),
-        source_model_output_sha256=tuple(
-            f"{index + 101:064x}" for index in range(6)
-        ),
+        source_model_output_sha256=tuple(f"{index + 101:064x}" for index in range(6)),
         peer_count=3,
         total_rejection_budget=0.25,
         component_tail_budget=0.05,
         component_quantile=0.95,
-        action_thresholds=_readonly(
-            np.full(action_shape, 0.05, dtype=np.float64)
-        ),
-        regime_thresholds=_readonly(
-            np.full(regime_shape, 0.05, dtype=np.float64)
-        ),
-        action_fit_rows=_readonly(
-            np.full(action_shape[:3], 300, dtype=np.int64)
-        ),
-        regime_fit_rows=_readonly(
-            np.full(regime_shape, 300, dtype=np.int64)
-        ),
+        action_thresholds=_readonly(np.full(action_shape, 0.05, dtype=np.float64)),
+        regime_thresholds=_readonly(np.full(regime_shape, 0.05, dtype=np.float64)),
+        action_fit_rows=_readonly(np.full(action_shape[:3], 300, dtype=np.int64)),
+        regime_fit_rows=_readonly(np.full(regime_shape, 300, dtype=np.int64)),
     )
 
     filtered, application = apply_round74_epistemic_action_filter(
@@ -767,9 +754,7 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
             equal_payoff[:, horizon_index, 0, :] = torch.tensor(
                 (2.0, 4.0, 8.0, 10.0, 12.0)
             )
-            equal_mae[:, horizon_index, 0, :] = torch.tensor(
-                (0.2, 0.4, 0.8, 1.2, 2.0)
-            )
+            equal_mae[:, horizon_index, 0, :] = torch.tensor((0.2, 0.4, 0.8, 1.2, 2.0))
         base = replace(
             base,
             payoff_quantiles_bps=equal_payoff,
@@ -876,18 +861,10 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
         total_rejection_budget=0.25,
         component_tail_budget=0.05,
         component_quantile=0.95,
-        action_thresholds=_readonly(
-            np.full(action_shape, 0.05, dtype=np.float64)
-        ),
-        regime_thresholds=_readonly(
-            np.full(regime_shape, 0.05, dtype=np.float64)
-        ),
-        action_fit_rows=_readonly(
-            np.full(action_shape[:3], 300, dtype=np.int64)
-        ),
-        regime_fit_rows=_readonly(
-            np.full(regime_shape, 300, dtype=np.int64)
-        ),
+        action_thresholds=_readonly(np.full(action_shape, 0.05, dtype=np.float64)),
+        regime_thresholds=_readonly(np.full(regime_shape, 0.05, dtype=np.float64)),
+        action_fit_rows=_readonly(np.full(action_shape[:3], 300, dtype=np.int64)),
+        regime_fit_rows=_readonly(np.full(regime_shape, 300, dtype=np.int64)),
     )
 
     challenge = _evaluate_round74_epistemic_action_replay_challenge(  # noqa: SLF001
@@ -901,7 +878,10 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
 
     assert challenge.removed_trade_count == 1
     assert challenge.replacement_trade_count == 1
-    assert challenge.retained_trade_count == baseline.evaluations[0].trace.metrics.trades - 1
+    assert (
+        challenge.retained_trade_count
+        == baseline.evaluations[0].trace.metrics.trades - 1
+    )
     assert challenge.challenger_trade_count == challenge.baseline_trade_count
     assert challenge.challenger_trace.metrics.total_net_bps > (
         challenge.baseline_metrics.total_net_bps
@@ -917,6 +897,26 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
     assert contract["baseline_quality_threshold_held_fixed"] is True
     assert contract["exact_delayed_l2_execution_panel_used"] is True
     assert contract["replacement_trades_measured"] is True
+    payload = json.loads(json.dumps(challenge.as_dict()))
+    restored = Round74EpistemicActionReplayChallenge.from_dict(payload)
+    assert restored.challenge_sha256 == challenge.challenge_sha256
+    assert restored.as_dict() == payload
+
+    invalid_count = json.loads(json.dumps(payload))
+    invalid_count["baseline_trade_count"] = True
+    unsigned = dict(invalid_count)
+    unsigned.pop("challenge_sha256")
+    invalid_count["challenge_sha256"] = hashlib.sha256(
+        json.dumps(
+            unsigned,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(ValueError, match="integer differs"):
+        Round74EpistemicActionReplayChallenge.from_dict(invalid_count)
 
     harmful_rows = []
     for row_index, row in enumerate(all_negative.rows):
