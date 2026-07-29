@@ -690,6 +690,54 @@ def test_run_and_symbol_aggregates_cannot_hide_one_harmed_cell() -> None:
         ).validate()
 
 
+def test_cell_profit_cannot_hide_worse_capital_scaled_adverse_excursion() -> None:
+    reviews = tuple(
+        _review(index, 0 if payoff < 0.0 else 10_000)
+        for index, payoff in enumerate(PAYOFFS)
+    )
+    executions = list(_executions(reviews))
+    executions[0] = replace(
+        executions[0],
+        position_maximum_adverse_excursion_bps=1.5,
+        capital_scaled_maximum_adverse_excursion_bps=1.5,
+    )
+    executions[0].validate()
+
+    report = _evaluate(
+        _selection(),
+        reviews,
+        tuple(executions),
+    )
+
+    assert report.ai_metrics.total_net_bps > report.baseline_trace.metrics.total_net_bps
+    assert (
+        report.ai_metrics.maximum_drawdown_bps
+        <= report.baseline_trace.metrics.maximum_drawdown_bps
+    )
+    assert all(
+        float(value["delta_net_bps"]) >= 0.0
+        for value in report.paired_run_symbol_horizons
+    )
+    harmed = [
+        value
+        for value in report.paired_run_symbol_horizons
+        if float(value["delta_aggregate_adverse_excursion_bps"]) > 0.0
+    ]
+    assert len(harmed) == 1
+    assert (
+        harmed[0]["run_id"],
+        harmed[0]["symbol"],
+        harmed[0]["horizon_seconds"],
+    ) == (RUNS[0], "BTCUSDT", 30)
+    assert report.gate_reasons == (
+        "paired_run_symbol_horizon_adverse_excursion_noninferiority_not_met",
+    )
+    corrupted = tuple(dict(value) for value in report.paired_run_symbol_horizons)
+    corrupted[0]["ai_aggregate_adverse_excursion_bps"] = 0.0
+    with pytest.raises(ValueError, match="report differs"):
+        replace(report, paired_run_symbol_horizons=corrupted).validate()
+
+
 def test_all_veto_overlay_fails_closed_without_dropping_pairs() -> None:
     reviews = tuple(_review(index, 0) for index in range(6))
     report = _evaluate(

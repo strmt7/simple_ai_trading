@@ -44,7 +44,7 @@ from .impact_absorption_event_targets import (
 from .storage import write_json_atomic
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v14"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v15"
 ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION = (
     "round-074-ai-qualification-population-v1"
 )
@@ -701,6 +701,10 @@ def _scaled_metrics(
     tuple[Mapping[str, object], ...],
 ]:
     baseline = np.asarray(trace.net_payoff_bps, dtype=np.float64)
+    baseline_mae = np.asarray(
+        trace.maximum_adverse_excursion_bps,
+        dtype=np.float64,
+    )
     scaled = np.asarray(
         [
             trace.position_capital_fraction * value.capital_scaled_net_payoff_bps
@@ -781,6 +785,8 @@ def _scaled_metrics(
                     continue
                 baseline_value = float(baseline[mask].sum())
                 ai_value = float(scaled[mask].sum())
+                baseline_mae_value = float(baseline_mae[mask].sum())
+                ai_mae_value = float(scaled_mae[mask].sum())
                 run_symbol_horizon_values.append(
                     {
                         "run_id": run_id,
@@ -790,6 +796,13 @@ def _scaled_metrics(
                         "baseline_net_bps": baseline_value,
                         "ai_net_bps": ai_value,
                         "delta_net_bps": ai_value - baseline_value,
+                        "baseline_aggregate_adverse_excursion_bps": (
+                            baseline_mae_value
+                        ),
+                        "ai_aggregate_adverse_excursion_bps": ai_mae_value,
+                        "delta_aggregate_adverse_excursion_bps": (
+                            ai_mae_value - baseline_mae_value
+                        ),
                     }
                 )
     paired_run_symbol_horizons = tuple(run_symbol_horizon_values)
@@ -932,6 +945,13 @@ def _development_gate_reasons(
         float(value["delta_net_bps"]) < -1e-12 for value in paired_run_symbol_horizons
     ):
         reasons.append("paired_run_symbol_horizon_noninferiority_not_met")
+    if any(
+        float(value["delta_aggregate_adverse_excursion_bps"]) > 1e-12
+        for value in paired_run_symbol_horizons
+    ):
+        reasons.append(
+            "paired_run_symbol_horizon_adverse_excursion_noninferiority_not_met"
+        )
     if metrics.maximum_drawdown_bps > baseline_trace.metrics.maximum_drawdown_bps:
         reasons.append("maximum_drawdown_noninferiority_not_met")
     return tuple(reasons)
@@ -1218,6 +1238,9 @@ class Round74AIUpliftDevelopmentReport:
                 "baseline_net_bps",
                 "ai_net_bps",
                 "delta_net_bps",
+                "baseline_aggregate_adverse_excursion_bps",
+                "ai_aggregate_adverse_excursion_bps",
+                "delta_aggregate_adverse_excursion_bps",
             }:
                 paired_cells_valid = False
                 continue
@@ -1229,6 +1252,11 @@ class Round74AIUpliftDevelopmentReport:
                 baseline_value = float(raw["baseline_net_bps"])
                 ai_value = float(raw["ai_net_bps"])
                 delta = float(raw["delta_net_bps"])
+                baseline_mae_value = float(
+                    raw["baseline_aggregate_adverse_excursion_bps"]
+                )
+                ai_mae_value = float(raw["ai_aggregate_adverse_excursion_bps"])
+                delta_mae = float(raw["delta_aggregate_adverse_excursion_bps"])
             except (TypeError, ValueError, OverflowError):
                 paired_cells_valid = False
                 continue
@@ -1246,11 +1274,27 @@ class Round74AIUpliftDevelopmentReport:
                 or isinstance(raw["paired_observations"], bool)
                 or observations <= 0
                 or not all(
-                    math.isfinite(value) for value in (baseline_value, ai_value, delta)
+                    math.isfinite(value)
+                    for value in (
+                        baseline_value,
+                        ai_value,
+                        delta,
+                        baseline_mae_value,
+                        ai_mae_value,
+                        delta_mae,
+                    )
                 )
+                or baseline_mae_value < 0.0
+                or ai_mae_value < 0.0
                 or not math.isclose(
                     delta,
                     ai_value - baseline_value,
+                    rel_tol=1e-12,
+                    abs_tol=1e-12,
+                )
+                or not math.isclose(
+                    delta_mae,
+                    ai_mae_value - baseline_mae_value,
                     rel_tol=1e-12,
                     abs_tol=1e-12,
                 )
@@ -1349,6 +1393,24 @@ class Round74AIUpliftDevelopmentReport:
                     for value in self.paired_run_symbol_horizons
                 ),
                 self.ai_metrics.total_net_bps,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                sum(
+                    float(value["baseline_aggregate_adverse_excursion_bps"])
+                    for value in self.paired_run_symbol_horizons
+                ),
+                sum(self.baseline_trace.maximum_adverse_excursion_bps),
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                sum(
+                    float(value["ai_aggregate_adverse_excursion_bps"])
+                    for value in self.paired_run_symbol_horizons
+                ),
+                float(scaled_mae.sum()),
                 rel_tol=1e-12,
                 abs_tol=1e-12,
             )
