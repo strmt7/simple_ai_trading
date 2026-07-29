@@ -1,0 +1,54 @@
+{
+  "schema_version": "polymarket-btc-shadow-hour-policy-v1",
+  "created_at_ms": 1785350324963,
+  "eligible_event_start_ms": 1785350400000,
+  "expected_run_end_ms": 1785353861587,
+  "scope": {
+    "venue": "polymarket",
+    "asset": "BTC",
+    "market_variant": "fiveminute",
+    "source_log_basename": "simple-ai-trading-polymarket-hour-1785350261587.jsonl",
+    "public_data_only": true,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "model_identity": {
+    "candidate_id": "lgbm-depth2-leaves3",
+    "dataset_sha256": "f00f64cca78beeead476ed6bde90555af13ece79c189104b0f27b898827fefb2",
+    "pretest_artifact_sha256": "211d7e418135d8d57e27d832d24647d8c13930ed31d710de5a89193023565a94",
+    "evaluation_artifact_sha256": "f69d20389edc1d9da4fc5fb811b8618b472521abf98d4ca1215e80c79e926950",
+    "support_profile_sha256": "44b20e5384b1441a790c437ff0321542c38a2e3a7c2b73f857082e645a43e597"
+  },
+  "selection_policy": {
+    "unit": "five_minute_event",
+    "maximum_selected_entries_per_event": 1,
+    "selection": "first_chronological_status_candidate",
+    "later_candidates_after_first_selection_ignored": true,
+    "abstained_opportunities_are_not_entries": true,
+    "quantity": "venue_minimum_order_size",
+    "minimum_after_cost_edge_per_share": "0.01",
+    "threshold_changes_after_freeze_allowed": false,
+    "outcomes_or_future_books_consulted": false
+  },
+  "settlement_policy": {
+    "gamma_and_clob_terminal_identity_required": true,
+    "gamma_and_clob_winner_agreement_required": true,
+    "unresolved_or_disagreeing_events": "block_finalization",
+    "displayed_depth_fill_is_counterfactual_only": true,
+    "real_fill_claim_allowed": false
+  },
+  "reporting_policy": {
+    "report_every_observed_prediction": true,
+    "report_every_opportunity_status": true,
+    "report_selected_event_count": true,
+    "report_win_rate": true,
+    "report_log_loss_and_brier_score": true,
+    "report_counterfactual_net_quote_pnl": true,
+    "report_pathwise_maximum_drawdown": true,
+    "minimum_events_for_profitability_claim": 50,
+    "profitability_claim_for_this_run_allowed": false
+  },
+  "trading_authority": false,
+  "profitability_claim": false,
+  "policy_sha256": "84222f6e7d3d8679ffba16188cfd755eb74d2fc4c45c08afdb9688171e55776b"
+}
