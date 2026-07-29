@@ -82,6 +82,8 @@ class PolymarketAutonomousDecision:
 class PolymarketAutonomousRuntimeSnapshot:
     venue: str
     symbol: str
+    market_variant: str
+    horizon_minutes: int
     paused: bool
     stop_requested: bool
     stop_completed: bool
@@ -199,6 +201,12 @@ class PolymarketAutonomousSupervisor:
         return PolymarketAutonomousRuntimeSnapshot(
             venue="polymarket",
             symbol="BTC",
+            market_variant=self.promotion.promotion.market_variant,
+            horizon_minutes=(
+                5
+                if self.promotion.promotion.market_variant == "fiveminute"
+                else 15
+            ),
             paused=self._paused,
             stop_requested=self._shutdown_requested.is_set(),
             stop_completed=self._stop_completed,
@@ -230,15 +238,31 @@ class PolymarketAutonomousSupervisor:
         *,
         observed_at_ms: int,
     ) -> tuple[PolymarketFiveMinuteMarket, ...]:
-        markets = await asyncio.to_thread(
-            self.public_client.discover_five_minute_markets,
-            now_ms=observed_at_ms,
-            include_next=True,
-            require_all_assets=True,
-            assets=("BTC",),
-        )
+        market_variant = self.promotion.promotion.market_variant
+        if market_variant == "fiveminute":
+            markets = await asyncio.to_thread(
+                self.public_client.discover_five_minute_markets,
+                now_ms=observed_at_ms,
+                include_next=True,
+                require_all_assets=True,
+                assets=("BTC",),
+            )
+            expected_horizon = 5
+        elif market_variant == "fifteenminute":
+            markets = await asyncio.to_thread(
+                self.public_client.discover_fifteen_minute_markets,
+                now_ms=observed_at_ms,
+                include_next=True,
+                require_market=True,
+            )
+            expected_horizon = 15
+        else:
+            raise PolymarketLiveBlocked(
+                "Polymarket promotion market variant is unsupported"
+            )
         if any(
-            market.asset != "BTC" or market.horizon_minutes != 5
+            market.asset != "BTC"
+            or market.horizon_minutes != expected_horizon
             for market in markets
         ):
             raise PolymarketLiveBlocked(

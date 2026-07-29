@@ -77,13 +77,16 @@ flowchart LR
   new exposure.
 - Independent user-stream and REST loops. Stream freshness is mandatory for
   opens; a fresh ownership reconciliation can still permit an owned close.
-- A separate autonomous supervisor discovers the current and next BTC
-  five-minute conditions, rotates authenticated user-stream subscriptions,
-  isolates bounded model work from reconciliation and settlement, and submits
-  only hash-bound proposals from an evidence-verified promotion. Pause blocks
-  new proposals while safety loops continue. Stop blocks new proposals and
-  retries exact bot-owned cancellation and closing until no owned order or
-  position remains; an incomplete close is never reported as stopped.
+- A separate autonomous supervisor discovers only the current and next BTC
+  horizon named by an evidence-verified five-minute or fifteen-minute
+  promotion. The horizon is bound into both the promotion and every proposal,
+  so a model cannot cross from one market variant into the other. The
+  supervisor rotates authenticated user-stream subscriptions, isolates bounded
+  model work from reconciliation and settlement, and submits only hash-bound
+  proposals. Pause blocks new proposals while safety loops continue. Stop
+  blocks new proposals and retries exact bot-owned cancellation and closing
+  until no owned order or position remains; an incomplete close is never
+  reported as stopped.
 - The optional external BTC signal is a read-only callback. It receives no
   wallet, venue, coordinator, ledger, credential, balance, position, or order
   object and can only preserve, reduce, or veto a promoted Polymarket proposal.
@@ -106,12 +109,13 @@ flowchart LR
   exact owned-position Stop, and explicitly confirmed redemption.
 - Local status does not create a missing ledger. Supervision opens no exposure;
   it runs only the independent authenticated safety and recovery loops.
-- The current execution proposal contract is five-minute-only. Round 16
-  preregisters a separate fifteen-minute comparison after July 2026 research
-  reported settlement manipulation in five-minute BTC contracts. The proposal
-  contract may be generalized only after the fifteen-minute prediction and
-  prospective after-cost gates pass; the venue boundary itself remains
-  Polymarket-only.
+- The execution proposal and promotion firewall support either BTC five-minute
+  or BTC fifteen-minute contracts. They never pool or switch horizons
+  automatically. Round 16 preregisters the fifteen-minute comparison after
+  July 2026 research reported settlement manipulation in five-minute BTC
+  contracts. Each horizon still needs its own predictive, prospective
+  after-cost, lifecycle, and risk evidence before a promotion can name it; the
+  venue boundary remains Polymarket-only.
 
 ## Still Closed
 
@@ -123,7 +127,7 @@ flowchart LR
   no production decision provider is selected because the current model failed
   its one-hour after-cost shadow. Exposing an operator Start control before a
   model promotion would create a nonfunctional or unsafe command, so Start
-  remains closed.
+  remains closed for both horizons.
 
 These gaps block release authority. A public API check or offline signature is
 not an authenticated order, cancellation, fill, or redemption test.

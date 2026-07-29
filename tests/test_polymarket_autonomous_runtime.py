@@ -15,6 +15,7 @@ import pytest
 import simple_ai_trading.polymarket_autonomous_runtime as runtime_module
 from simple_ai_trading.polymarket import (
     PolymarketFeeSchedule,
+    PolymarketFifteenMinuteMarket,
     PolymarketFiveMinuteMarket,
 )
 from simple_ai_trading.polymarket_autonomous import (
@@ -77,7 +78,11 @@ def _file_sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _promotion(root: Path) -> VerifiedPolymarketLivePromotion:
+def _promotion(
+    root: Path,
+    *,
+    market_variant: str = "fiveminute",
+) -> VerifiedPolymarketLivePromotion:
     root.mkdir(parents=True, exist_ok=True)
     evidence = {}
     for name in ("model", "evaluation", "implementation"):
@@ -93,7 +98,7 @@ def _promotion(root: Path) -> VerifiedPolymarketLivePromotion:
         "venue": "polymarket",
         "protocol_version": 2,
         "asset": "BTC",
-        "market_variant": "fiveminute",
+        "market_variant": market_variant,
         "environment": "live",
         "bot_id": "simple-ai-trading-polymarket-btc",
         "model_artifact": evidence["model"],
@@ -122,15 +127,25 @@ def _market(
     *,
     condition_id: str = MARKET_ID,
     start_ms: int = EVENT_START_MS,
+    horizon_minutes: int = 5,
 ) -> PolymarketFiveMinuteMarket:
-    return PolymarketFiveMinuteMarket(
+    market_type = (
+        PolymarketFiveMinuteMarket
+        if horizon_minutes == 5
+        else PolymarketFifteenMinuteMarket
+    )
+    return market_type(
         asset="BTC",
         market_id="123",
         condition_id=condition_id,
-        slug=f"btc-updown-5m-{start_ms // 1000}",
+        slug=(
+            f"btc-updown-5m-{start_ms // 1000}"
+            if horizon_minutes == 5
+            else f"btc-updown-15m-{start_ms // 1000}"
+        ),
         question="Bitcoin Up or Down",
         event_start_ms=start_ms,
-        end_ms=start_ms + 300_000,
+        end_ms=start_ms + horizon_minutes * 60_000,
         up_token_id=TOKEN_ID,
         down_token_id=DOWN_TOKEN_ID,
         tick_size=Decimal("0.01"),
@@ -153,6 +168,9 @@ def _market(
 def _proposal(
     promotion: VerifiedPolymarketLivePromotion,
 ) -> PolymarketAutonomousOpenProposal:
+    horizon_minutes = (
+        5 if promotion.promotion.market_variant == "fiveminute" else 15
+    )
     return PolymarketAutonomousOpenProposal(
         proposal_id="runtime-test-proposal",
         input_sha256="5" * 64,
@@ -161,12 +179,12 @@ def _proposal(
         market_id=MARKET_ID,
         token_id=TOKEN_ID,
         symbol="BTC",
-        market_variant="fiveminute",
+        market_variant=promotion.promotion.market_variant,
         outcome="Up",
         selected_outcome_probability=Decimal("0.7"),
         requested_quantity=Decimal("5"),
         event_start_time_ms=EVENT_START_MS,
-        event_end_time_ms=EVENT_END_MS,
+        event_end_time_ms=EVENT_START_MS + horizon_minutes * 60_000,
         decision_time_ms=NOW_MS - 100,
         expires_at_ms=NOW_MS + 900,
     )
@@ -201,8 +219,12 @@ def _supervisor(
     provider: object,
     external: object | None = None,
     markets: tuple[PolymarketFiveMinuteMarket, ...] | None = None,
+    market_variant: str = "fiveminute",
 ) -> PolymarketAutonomousSupervisor:
-    promotion = _promotion(tmp_path / "promotion")
+    promotion = _promotion(
+        tmp_path / "promotion",
+        market_variant=market_variant,
+    )
     ledger = PolymarketLiveOrderLedger(tmp_path / "ledger.sqlite3")
     guard = SimpleNamespace(mark_stopped=lambda: None)
     coordinator = SimpleNamespace(
@@ -224,7 +246,8 @@ def _supervisor(
         ),
     )
     client = SimpleNamespace(
-        discover_five_minute_markets=lambda **_kwargs: selected
+        discover_five_minute_markets=lambda **_kwargs: selected,
+        discover_fifteen_minute_markets=lambda **_kwargs: selected,
     )
     return PolymarketAutonomousSupervisor(
         public_client=client,  # type: ignore[arg-type]
@@ -294,6 +317,36 @@ def test_discovery_subscribes_current_next_and_owned_market(
         assert supervisor.snapshot().binance_execution_connected is False
 
     asyncio.run(run())
+
+
+def test_verified_fifteen_minute_promotion_selects_only_fifteen_minute_discovery(
+    tmp_path: Path,
+) -> None:
+    current = _market(horizon_minutes=15)
+    following = _market(
+        condition_id=NEXT_MARKET_ID,
+        start_ms=EVENT_START_MS + 900_000,
+        horizon_minutes=15,
+    )
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+        markets=(current, following),
+        market_variant="fifteenminute",
+    )
+
+    async def run() -> None:
+        active = await supervisor._discover_and_subscribe(
+            observed_at_ms=NOW_MS,
+        )
+        assert active == (current,)
+
+    asyncio.run(run())
+
+    snapshot = supervisor.snapshot()
+    assert snapshot.market_variant == "fifteenminute"
+    assert snapshot.horizon_minutes == 15
+    assert snapshot.discovered_market_ids == (MARKET_ID, NEXT_MARKET_ID)
 
 
 def test_pause_or_stop_prevents_a_late_model_submission(

@@ -50,7 +50,12 @@ def _file_sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _payload(root: Path, *, live: bool = True) -> dict[str, object]:
+def _payload(
+    root: Path,
+    *,
+    live: bool = True,
+    market_variant: str = "fiveminute",
+) -> dict[str, object]:
     files = {
         "model.json": b'{"model":"frozen"}\n',
         "evaluation.json": b'{"evaluation":"passed"}\n',
@@ -67,7 +72,7 @@ def _payload(root: Path, *, live: bool = True) -> dict[str, object]:
         "venue": "polymarket",
         "protocol_version": 2,
         "asset": "BTC",
-        "market_variant": "fiveminute",
+        "market_variant": market_variant,
         "environment": "live",
         "bot_id": "simple-ai-trading-polymarket-btc",
         "model_artifact": {
@@ -106,6 +111,7 @@ def test_live_promotion_is_hash_and_evidence_bound(tmp_path: Path) -> None:
     promotion = verified.promotion
 
     assert promotion.live_authority is True
+    assert promotion.market_variant == "fiveminute"
     assert promotion.model_artifact.sha256 == _file_sha(tmp_path / "model.json")
     assert all(promotion.gates.values())
     assert verified.model_artifact_path == (tmp_path / "model.json").resolve()
@@ -120,6 +126,7 @@ def test_unverified_promotion_cannot_construct_verified_capability() -> None:
         expires_at_ms=NOW_MS + 1_000,
         source_commit="b" * 40,
         bot_id="simple-ai-trading-polymarket-btc",
+        market_variant="fiveminute",
         model_artifact=evidence,
         evaluation_report=evidence,
         implementation_manifest=evidence,
@@ -215,3 +222,16 @@ def test_live_promotion_rejects_duplicate_json_keys(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="duplicate keys"):
         load_polymarket_live_promotion(path, evidence_root=tmp_path)
+
+
+def test_live_promotion_accepts_only_five_or_fifteen_minute_scope(
+    tmp_path: Path,
+) -> None:
+    promotion = validate_polymarket_live_promotion(
+        _payload(tmp_path, market_variant="fifteenminute")
+    )
+    assert promotion.market_variant == "fifteenminute"
+
+    payload = _payload(tmp_path, market_variant="hourly")
+    with pytest.raises(ValueError, match="scope is invalid"):
+        validate_polymarket_live_promotion(payload)
