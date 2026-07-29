@@ -25,6 +25,11 @@ from simple_ai_trading.polymarket_historical_shadow import (  # noqa: E402
 from simple_ai_trading.polymarket_historical_shadow_feed import (  # noqa: E402
     PolymarketHistoricalShadowFeed,
 )
+from simple_ai_trading.polymarket_historical_shadow_opportunity import (  # noqa: E402
+    evaluate_shadow_settlement_opportunity,
+    fetch_current_btc_shadow_market_state,
+)
+from simple_ai_trading.polymarket import PolymarketPublicClient  # noqa: E402
 
 
 _OFFSETS_MS = frozenset(
@@ -68,6 +73,12 @@ def _arguments() -> argparse.Namespace:
         type=float,
         default=10.0,
     )
+    parser.add_argument(
+        "--no-polymarket-opportunity",
+        action="store_false",
+        dest="polymarket_opportunity",
+        help="Disable public Polymarket after-cost shadow screening.",
+    )
     values = parser.parse_args()
     if values.duration_seconds < 0.0:
         parser.error("--duration-seconds cannot be negative")
@@ -84,6 +95,11 @@ async def _run(args: argparse.Namespace) -> None:
     flow = PolymarketBtcFlowBuffer()
     feed = PolymarketHistoricalShadowFeed(flow=flow)
     scorer = PolymarketHistoricalShadowScorer(predictor=predictor, flow=flow)
+    public_client = (
+        PolymarketPublicClient(timeout_seconds=3.0)
+        if args.polymarket_opportunity
+        else None
+    )
     stop = asyncio.Event()
     feed_task = asyncio.create_task(feed.run(stop), name="polymarket-shadow-feed")
     await asyncio.sleep(0)
@@ -121,6 +137,29 @@ async def _run(args: argparse.Namespace) -> None:
                         observed_at_ms=now_ms,
                     )
                     _emit("prediction", asdict(decision))
+                    if decision.status == "observed" and public_client is not None:
+                        try:
+                            market_state = await asyncio.wait_for(
+                                asyncio.to_thread(
+                                    fetch_current_btc_shadow_market_state,
+                                    public_client,
+                                    now_ms=now_ms,
+                                ),
+                                timeout=8.0,
+                            )
+                            opportunity = evaluate_shadow_settlement_opportunity(
+                                decision,
+                                market_state,
+                            )
+                            _emit("opportunity", opportunity.asdict())
+                        except Exception as exc:
+                            _emit(
+                                "opportunity_error",
+                                {
+                                    "error_type": type(exc).__name__,
+                                    "message": str(exc)[:500],
+                                },
+                            )
                     scored.add(identity)
             current = time.monotonic()
             if current >= next_status:
