@@ -13,6 +13,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+from threading import RLock
 from typing import Mapping
 
 import numpy as np
@@ -251,10 +252,12 @@ class PolymarketBtcFlowBuffer:
             market: None for market in _MARKETS
         }
         self._faults: set[str] = set()
+        self._lock = RLock()
 
     @property
     def faults(self) -> tuple[str, ...]:
-        return tuple(sorted(self._faults))
+        with self._lock:
+            return tuple(sorted(self._faults))
 
     def reset_market(self, market: str) -> None:
         """Discard one feed epoch so reconnect gaps require a full warmup."""
@@ -262,52 +265,64 @@ class PolymarketBtcFlowBuffer:
         normalized = str(market or "").strip().lower()
         if normalized not in _MARKETS:
             raise ValueError("shadow flow market is invalid")
-        self._events[normalized].clear()
-        self._identities[normalized].clear()
-        self._last[normalized] = None
-        prefix = f"{normalized}_"
-        self._faults = {
-            fault for fault in self._faults if not fault.startswith(prefix)
-        }
+        with self._lock:
+            self._events[normalized].clear()
+            self._identities[normalized].clear()
+            self._last[normalized] = None
+            prefix = f"{normalized}_"
+            self._faults = {
+                fault for fault in self._faults if not fault.startswith(prefix)
+            }
 
     def ingest(self, observation: BtcAggregateTradeObservation) -> bool:
         if not isinstance(observation, BtcAggregateTradeObservation):
             raise TypeError("observation must be BtcAggregateTradeObservation")
-        market = observation.market
-        identity = observation.identity()
-        prior_identity = self._identities[market].get(observation.aggregate_trade_id)
-        if prior_identity is not None:
-            if prior_identity != identity:
-                self._faults.add(f"{market}_duplicate_identity_mismatch")
+        with self._lock:
+            market = observation.market
+            identity = observation.identity()
+            prior_identity = self._identities[market].get(
+                observation.aggregate_trade_id
+            )
+            if prior_identity is not None:
+                if prior_identity != identity:
+                    self._faults.add(f"{market}_duplicate_identity_mismatch")
+                    raise PolymarketShadowDataUnavailable(
+                        f"{market}_duplicate_identity_mismatch"
+                    )
+                return False
+            previous = self._last[market]
+            if previous is not None and (
+                observation.aggregate_trade_id <= previous.aggregate_trade_id
+                or observation.event_time_ms < previous.event_time_ms
+                or observation.received_at_ms < previous.received_at_ms
+                or observation.first_trade_id <= previous.last_trade_id
+            ):
+                self._faults.add(f"{market}_stream_regression")
                 raise PolymarketShadowDataUnavailable(
-                    f"{market}_duplicate_identity_mismatch"
+                    f"{market}_stream_regression"
                 )
-            return False
-        previous = self._last[market]
-        if previous is not None and (
-            observation.aggregate_trade_id <= previous.aggregate_trade_id
-            or observation.event_time_ms < previous.event_time_ms
-            or observation.received_at_ms < previous.received_at_ms
-            or observation.first_trade_id <= previous.last_trade_id
-        ):
-            self._faults.add(f"{market}_stream_regression")
-            raise PolymarketShadowDataUnavailable(f"{market}_stream_regression")
-        events = self._events[market]
-        events.append(observation)
-        self._identities[market][observation.aggregate_trade_id] = identity
-        self._last[market] = observation
-        cutoff = observation.event_time_ms - self.retention_seconds * 1_000
-        while events and events[0].event_time_ms < cutoff:
-            removed = events.popleft()
-            self._identities[market].pop(removed.aggregate_trade_id, None)
-        return True
+            events = self._events[market]
+            events.append(observation)
+            self._identities[market][observation.aggregate_trade_id] = identity
+            self._last[market] = observation
+            cutoff = observation.event_time_ms - self.retention_seconds * 1_000
+            while events and events[0].event_time_ms < cutoff:
+                removed = events.popleft()
+                self._identities[market].pop(removed.aggregate_trade_id, None)
+            return True
 
     def _market_flow(
         self,
         *,
         market: str,
         decision_time_ms: int,
+        second_count: int = 61,
     ) -> Mapping[str, np.ndarray]:
+        count = int(second_count)
+        if not 2 <= count <= self.retention_seconds:
+            raise ValueError(
+                "shadow flow second count exceeds bounded retention"
+            )
         causal = tuple(
             observation
             for observation in self._events[market]
@@ -325,7 +340,7 @@ class PolymarketBtcFlowBuffer:
         ):
             raise PolymarketShadowDataUnavailable(f"{market}_flow_stale")
 
-        start_ms = decision_time_ms - 61_000
+        start_ms = decision_time_ms - count * 1_000
         prior = next(
             (
                 observation
@@ -337,20 +352,20 @@ class PolymarketBtcFlowBuffer:
         if prior is None:
             raise PolymarketShadowDataUnavailable(f"{market}_lookback_incomplete")
 
-        close = np.full(61, np.nan, dtype=np.float64)
-        quote_volume = np.zeros(61, dtype=np.float64)
-        buy_quote = np.zeros(61, dtype=np.float64)
-        sell_quote = np.zeros(61, dtype=np.float64)
-        aggregate_count = np.zeros(61, dtype=np.float64)
-        constituent_count = np.zeros(61, dtype=np.float64)
-        maximum_quote = np.zeros(61, dtype=np.float64)
-        squared_quote = np.zeros(61, dtype=np.float64)
-        last_trade_age = np.zeros(61, dtype=np.float64)
+        close = np.full(count, np.nan, dtype=np.float64)
+        quote_volume = np.zeros(count, dtype=np.float64)
+        buy_quote = np.zeros(count, dtype=np.float64)
+        sell_quote = np.zeros(count, dtype=np.float64)
+        aggregate_count = np.zeros(count, dtype=np.float64)
+        constituent_count = np.zeros(count, dtype=np.float64)
+        maximum_quote = np.zeros(count, dtype=np.float64)
+        squared_quote = np.zeros(count, dtype=np.float64)
+        last_trade_age = np.zeros(count, dtype=np.float64)
         for observation in causal:
             if observation.event_time_ms < start_ms:
                 continue
             index = (observation.event_time_ms - start_ms) // 1_000
-            if not 0 <= index < 61:
+            if not 0 <= index < count:
                 continue
             quote = observation.quote_notional
             close[index] = observation.price
@@ -367,7 +382,7 @@ class PolymarketBtcFlowBuffer:
         last_close = prior.price
         prior_second_ms = prior.event_time_ms // 1_000 * 1_000
         age = max(1, (start_ms - prior_second_ms) // 1_000)
-        for index in range(61):
+        for index in range(count):
             if aggregate_count[index] > 0:
                 last_close = float(close[index])
                 age = 0
@@ -391,6 +406,45 @@ class PolymarketBtcFlowBuffer:
             f"{market}_last_trade_age_seconds": last_trade_age,
         }
 
+    def causal_flow_snapshot(
+        self,
+        *,
+        decision_time_ms: int,
+        observed_at_ms: int,
+        second_count: int,
+    ) -> Mapping[str, np.ndarray]:
+        """Return one immutable, cross-feed causal snapshot for model scoring."""
+
+        decision_time = int(decision_time_ms)
+        observed_at = int(observed_at_ms)
+        count = int(second_count)
+        if observed_at < decision_time:
+            raise PolymarketShadowDataUnavailable("decision_not_reached")
+        if observed_at - decision_time > self.maximum_decision_delay_ms:
+            raise PolymarketShadowDataUnavailable("decision_stale")
+        with self._lock:
+            if self._faults:
+                raise PolymarketShadowDataUnavailable("stream_fault_latched")
+            values: dict[str, np.ndarray] = {
+                "second_ms": (
+                    decision_time
+                    - count * 1_000
+                    + np.arange(count, dtype=np.int64) * 1_000
+                )
+            }
+            for market in _MARKETS:
+                values.update(
+                    self._market_flow(
+                        market=market,
+                        decision_time_ms=decision_time,
+                        second_count=count,
+                    )
+                )
+            return {
+                name: np.asarray(array).copy()
+                for name, array in values.items()
+            }
+
     def feature_vector(
         self,
         *,
@@ -412,17 +466,14 @@ class PolymarketBtcFlowBuffer:
             raise PolymarketShadowDataUnavailable("decision_not_reached")
         if observed_at - decision_time > self.maximum_decision_delay_ms:
             raise PolymarketShadowDataUnavailable("decision_stale")
-        if self._faults:
-            raise PolymarketShadowDataUnavailable("stream_fault_latched")
-
-        values: dict[str, np.ndarray] = {}
-        for market in _MARKETS:
-            values.update(
-                self._market_flow(
-                    market=market,
-                    decision_time_ms=decision_time,
-                )
+        values = dict(
+            self.causal_flow_snapshot(
+                decision_time_ms=decision_time,
+                observed_at_ms=observed_at,
+                second_count=61,
             )
+        )
+        for market in _MARKETS:
             values[f"{market}_log_return"] = _log_returns(
                 values[f"{market}_close"]
             )
