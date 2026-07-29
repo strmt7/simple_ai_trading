@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import ast
+import asyncio
+import builtins
 from decimal import Decimal
 import inspect
 import json
@@ -211,3 +213,32 @@ def test_provider_can_only_reduce_when_public_spread_is_wide() -> None:
     assert decision.action == "reduce"
     assert decision.maximum_size_multiplier == Decimal("0.5")
     assert decision.grants_execution_authority is False
+
+
+def test_missing_websocket_dependency_is_observable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = BinanceBtcPublicSignalProvider()
+    original_import = builtins.__import__
+
+    def rejected_import(
+        name: str,
+        *args: object,
+        **kwargs: object,
+    ) -> object:
+        if name == "websockets":
+            raise ImportError("test")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", rejected_import)
+
+    async def run() -> None:
+        stop = asyncio.Event()
+        stop.set()
+        await provider._feed("BINANCE_SPOT", "wss://example.invalid", stop)
+
+    asyncio.run(run())
+
+    snapshot = provider.snapshot(observed_at_ms=NOW_MS)
+    assert snapshot.spot_connected is False
+    assert snapshot.spot_fault == "dependency_unavailable"

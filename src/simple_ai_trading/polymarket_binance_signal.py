@@ -200,10 +200,10 @@ class BinanceBtcPublicSignalProvider:
     ) -> None:
         try:
             import websockets
-        except ImportError as exc:
-            raise RuntimeError(
-                "Binance public signal requires websockets"
-            ) from exc
+        except ImportError:
+            self._note_disconnected(source, "dependency_unavailable")
+            await stop.wait()
+            return
         delay_seconds = 0.5
         while not stop.is_set():
             try:
