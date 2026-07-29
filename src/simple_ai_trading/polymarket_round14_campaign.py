@@ -349,7 +349,13 @@ def _write_slot_result(
     observed_at_ms: int,
     details: Mapping[str, object],
 ) -> dict[str, object]:
-    if status not in {"complete", "failed", "missed", "resource_blocked"}:
+    if status not in {
+        "complete",
+        "degraded",
+        "failed",
+        "missed",
+        "resource_blocked",
+    }:
         raise ValueError("Round 14 campaign slot status is invalid")
     payload: dict[str, object] = {
         "schema_version": POLYMARKET_ROUND14_CAMPAIGN_SLOT_RESULT_SCHEMA_VERSION,
@@ -358,7 +364,8 @@ def _write_slot_result(
         "scheduled_start_ms": int(scheduled_start_ms),
         "observed_at_ms": int(observed_at_ms),
         "status": status,
-        "model_data_eligible": status == "complete",
+        "condition_level_admission_required": status in {"complete", "degraded"},
+        "model_data_eligible": False,
         "profitability_claim": False,
         "paper_trading_authority": False,
         "live_trading_authority": False,
@@ -524,7 +531,11 @@ async def _capture_slot(
             progress_interval_seconds=30,
             preregistration_manifest_factory=manifest_factory,
         )
-        status = "complete" if report.status == "complete" else "failed"
+        status = (
+            report.status
+            if report.status in {"complete", "degraded"}
+            else "failed"
+        )
         details: dict[str, object] = {
             "run_id": report.run_id,
             "recorder_status": report.status,

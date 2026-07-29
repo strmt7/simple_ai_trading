@@ -113,3 +113,24 @@ def test_campaign_inspection_is_truthful_and_resource_gated(
     assert result["resource_block"] == "minimum_free_space_not_met"
     assert result["profitability_claim"] is False
     assert result["live_trading_authority"] is False
+
+
+def test_transport_completion_cannot_claim_model_eligibility(
+    tmp_path: Path,
+) -> None:
+    plan = validate_round14_campaign_plan(_plan())
+
+    result = campaign_module._write_slot_result(
+        tmp_path,
+        plan=plan,
+        slot_index=0,
+        scheduled_start_ms=START_MS,
+        status="complete",
+        observed_at_ms=START_MS + 1,
+        details={"recorder_status": "complete"},
+    )
+
+    assert result["condition_level_admission_required"] is True
+    assert result["model_data_eligible"] is False
+    assert result["profitability_claim"] is False
+    assert result["live_trading_authority"] is False
