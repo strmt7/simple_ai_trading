@@ -1,0 +1,226 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v115",
+  "created_at_utc": "2026-07-29T03:32:55Z",
+  "implementation_git_commit": "c53f0a2ef229048f6a7152d6a367ca9b07f8a610",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v114.json",
+    "file_sha256": "8e12ad38221c75402e9adba7fa0942c6e2ab7dc448cb76d6a7e6e2f86c56909e",
+    "design_sha256": "7093b8e1599a9babf8b53a3d811a7d7b162151251ae62659be7f996511f76120",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "6a7f583d596c16b9da48bb0ef7353cf5025ca76ff50e00c5579fa7378c5f0a4b"
+    },
+    "event_dataset": {
+      "path": "src/simple_ai_trading/impact_absorption_event_dataset.py",
+      "sha256": "e4789e19f30a3a95781104db7de3901a57c46e5b1e21a3f05523a39a408f41de"
+    },
+    "event_training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "c84302beeca56da6b87348bcbe5854791a1b4ee4a6b504b7bcbd2dfa388b955e"
+    },
+    "event_calibration": {
+      "path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+      "sha256": "1e4d695fa28237205bb72efb5c94ab02842763a780096b217514f11dd1881d25"
+    },
+    "event_model_test": {
+      "path": "tests/test_impact_absorption_event_model.py",
+      "sha256": "67f9c71dee3d4968c03d6b0ec63b712781863fdeae5826c216fded050bce5e66"
+    },
+    "event_dataset_test": {
+      "path": "tests/test_impact_absorption_event_dataset.py",
+      "sha256": "cfc365ccce4b77240fccbae07d6fc9b3c9652710e5e1a770c6e9a15627b95c57"
+    },
+    "event_training_test": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "d40c85580bf64da2fbbfb8258a5e4ba9f4353dd5e5210825e2524d3d26ffeac9"
+    },
+    "event_calibration_test": {
+      "path": "tests/test_impact_absorption_event_calibration.py",
+      "sha256": "3c9d0e5d55b519466ca29211f91dbf305c43491e3d287ded0bc7084fed3b00d1"
+    },
+    "action_policy_test": {
+      "path": "tests/test_impact_absorption_event_action_policy.py",
+      "sha256": "8d9bfdf542209f6f1da5f52f4ca4a98eecebe2a0679783f42869b1867373fb40"
+    },
+    "development_operator_test": {
+      "path": "tests/test_round74_event_development_operator.py",
+      "sha256": "119c4ddd40ac3640e6695e21209d4cc9dfe5b98c4b14a972cd37eb9aa2811af3"
+    },
+    "sealed_ledger_test": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "7d0c73fc2730c9b9f2b6eefbdfe1353cb9c2607c8a55d81771aaf4c907aa3aec"
+    },
+    "online_latency_test": {
+      "path": "tests/test_round74_online_decision_latency.py",
+      "sha256": "123c287b832e00ee4956b8bace51d82a735a200881b2d99787c628e2d0526069"
+    },
+    "v111_compatibility_test": {
+      "path": "tests/test_round74_event_model_design_v111.py",
+      "sha256": "96768259ad7f42c9d94e4887330f6653b5ad6643bd1182d6fce5e9b09e67c8b6"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://doi.org/10.1198/016214506000001437",
+      "finding": "Strictly proper scoring rules assess probabilistic forecasts by making the true predictive distribution optimal in expectation.",
+      "implementation_consequence": "The existing eligible-target binary log scores remain attached to the two identifiable directional marginals; the model geometry now constrains those marginals to one feasible three-outcome distribution."
+    },
+    {
+      "source": "https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html",
+      "finding": "Categorical probabilities form a normalized class distribution, unlike unrelated independent class probabilities.",
+      "implementation_consequence": "Two raw side scores are interpreted as the long and short coordinates of softmax over neither, long, and short while preserving the existing two-marginal output API."
+    },
+    {
+      "source": "https://doi.org/10.1080/07350015.1995.10524599",
+      "finding": "Predictive accuracy comparisons require out-of-sample loss evidence rather than architecture-level assertions.",
+      "implementation_consequence": "The coherent head receives no promotion, accuracy, or edge claim before the frozen tuning and sealed-test protocol is executed."
+    },
+    {
+      "source": "https://onlinelibrary.wiley.com/doi/abs/10.3982/ecta5771",
+      "finding": "Multiple-model comparison needs explicit control of data-snooping uncertainty.",
+      "implementation_consequence": "Candidate selection and AI uplift remain bound to the predeclared multi-model promotion gates; this structural correction does not bypass them."
+    }
+  ],
+  "financial_constraint": {
+    "outcomes_per_anchor_horizon": [
+      "neither_direction_has_positive_after_cost_payoff",
+      "long_has_positive_after_cost_payoff",
+      "short_has_positive_after_cost_payoff"
+    ],
+    "target_basis": "same_timestamp_executable_entry_and_exit_with_positive_round_trip_costs",
+    "long_net_payoff_bps": "directional_move_bps_minus_round_trip_cost_bps",
+    "short_net_payoff_bps": "negative_directional_move_bps_minus_round_trip_cost_bps",
+    "jointly_eligible_long_and_short_can_both_be_positive": false,
+    "required_probability_invariant": "p_long_positive_plus_p_short_positive_less_than_or_equal_to_one",
+    "gross_or_midprice_proxy_used": false
+  },
+  "declared_delta": {
+    "event_model_schema_version": "round-074-event-payoff-model-v11",
+    "event_dataset_schema_version": "round-074-event-dataset-v12",
+    "event_training_schema_version": "round-074-event-training-v34",
+    "event_pretest_policy_schema_version": "round-074-event-pretest-policy-v33",
+    "previous_probability_head": "independent_long_and_short_sigmoids",
+    "previous_failure": "independent_marginals_could_assign_total_positive_payoff_probability_greater_than_one",
+    "new_probability_head": "three_outcome_softmax_equivalent_exposed_as_two_marginal_logits",
+    "raw_score_coordinates": [
+      "neither_fixed_at_zero",
+      "long_raw_score",
+      "short_raw_score"
+    ],
+    "long_marginal_logit": "long_raw_minus_softplus_short_raw",
+    "short_marginal_logit": "short_raw_minus_softplus_long_raw",
+    "directional_competition_has_cross_side_gradient": true,
+    "positive_probability_sum_bounded_by_one": true,
+    "common_positive_temperature_preserves_probability_simplex": true,
+    "dataset_rejects_jointly_eligible_double_positive_targets": true,
+    "loss_rejects_jointly_eligible_double_positive_targets": true,
+    "calibration_fit_rejects_incoherent_logits_or_labels": true,
+    "calibration_apply_rejects_incoherent_logits": true,
+    "parameter_counts_changed": false,
+    "candidate_registry_changed": false,
+    "training_loss_family_changed": false,
+    "target_definition_changed": false,
+    "feature_definition_changed": false,
+    "action_policy_changed": false,
+    "execution_replay_changed": false,
+    "forward_passes_added": 0,
+    "backward_passes_added": 0,
+    "market_data_reads_added": 0,
+    "ai_model_calls_added": 0,
+    "campaign_source_files_changed_on_main": false,
+    "trading_authority": false
+  },
+  "candidate_parameter_counts": {
+    "event_pooling_linear": 22600,
+    "event_pooling_mlp": 43684,
+    "causal_event_tcn": 131108,
+    "causal_event_attention": 154180
+  },
+  "directml_preflight": {
+    "executed": true,
+    "target_source": "synthetic_preflight_only",
+    "backend_kind": "directml",
+    "backend_device": "privateuseone:0",
+    "backend_vendor": "AMD Radeon RX 9070 XT",
+    "backend_accelerated": true,
+    "torch_version": "2.4.1+cpu",
+    "cpu_fallback_warning_count": 0,
+    "warning_count": 0,
+    "all_four_candidates_completed_forward_backward_and_parameter_update": true,
+    "financial_edge_tested": false,
+    "profitability_claim": false
+  },
+  "schema_contract": {
+    "event_model": "round-074-event-payoff-model-v11",
+    "event_dataset": "round-074-event-dataset-v12",
+    "event_training": "round-074-event-training-v34",
+    "event_pretest_policy": "round-074-event-pretest-policy-v33",
+    "ai_uplift_development": "round-074-ai-uplift-development-v15",
+    "sealed_evaluation": "round-074-sealed-evaluation-v23"
+  },
+  "verification": {
+    "unique_tests_passed": 181,
+    "touched_behavioral_surface_tests_passed": 131,
+    "operator_contract_and_v105_through_v114_compatibility_tests_passed": 50,
+    "coherent_probability_sum_verified_for_all_candidates": true,
+    "cross_side_competition_gradient_verified": true,
+    "incoherent_target_and_inference_inputs_rejected": true,
+    "ensemble_probability_averaging_preserves_simplex": true,
+    "directml_forward_backward_preflight_passed": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "status_observed_at_utc": "2026-07-29T03:32:08Z",
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 37,
+    "latest_independently_adjudicated_slot": 46,
+    "slot_046_status": "admitted_training",
+    "slot_046_run_id": "14de75175e0544df9eedeb70cee8a597",
+    "slot_046_result_sha256": "00acaee681bd23b9f38079d295e2e94c05475e371316943f60f66f4f7cb70347",
+    "slot_046_adjudication_sha256": "f24b6ab549584aec48be51559cdf82bdc65b493e899a795384bc8e1197b74086",
+    "slot_046_observation_count": 799963,
+    "slot_046_message_count": 800049,
+    "slot_046_usable_duration_ns": 1200253736200,
+    "slot_046_reconnect_count": 0,
+    "slot_047_status_at_observation": "not_yet_scheduled",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_or_wal_hashed_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "invalid_probability_geometry_reproduced_and_blocked_by_synthetic_test": true,
+    "representative_training_data_complete": false,
+    "model_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "quantile_accuracy_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "1f7e51c6f48344507e139c6e52517ddceb429208d54470f5a06e4f98e1308dc2"
+}
