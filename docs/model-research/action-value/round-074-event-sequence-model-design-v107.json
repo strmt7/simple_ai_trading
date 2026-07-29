@@ -1,0 +1,185 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v107",
+  "created_at_utc": "2026-07-29T00:35:24Z",
+  "implementation_git_commit": "db7a18a4493a143052ba29a7812eb78e314e9eee",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v106.json",
+    "file_sha256": "deab25cf4fa74bcd546ba5e2ec4463093fd916be548921f500c38ced1a5b5943",
+    "design_sha256": "e237ecbe4b73450d0f2704484650723b99a55e068e65d8e640bbd72da234eb4a",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_dataset": {
+      "path": "src/simple_ai_trading/impact_absorption_event_dataset.py",
+      "sha256": "bcd42a9c86736089b8f2b062f8774770bb3cf16b2bd4056bf6b8ea1e6cd5469a"
+    },
+    "event_model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "dae7a1bb2d95c2e9f2cb07c3561cd0f2045b48b0372de5dcb7bb7c421eb47ce1"
+    },
+    "event_training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "2ab97d57990ed5aa77b9a16d52d019762a2e1332514e176a18639c5e65e50967"
+    },
+    "preflight_runner": {
+      "path": "tools/run_round74_event_training_preflight.py",
+      "sha256": "5357dc11cd1bfd64b0ce151f0cfe69b099759c39437a2c9156b63becc12473d3"
+    },
+    "preflight_publisher": {
+      "path": "tools/publish_round74_event_training_preflight.py",
+      "sha256": "908f877ad336699af0b76d8fc03bc3dcc7910770d265a73c85842f3c512c27df"
+    },
+    "event_dataset_test": {
+      "path": "tests/test_impact_absorption_event_dataset.py",
+      "sha256": "0512e83832e3100466a00b26384b2e74f8cb61a75c48fa4445910b83110eedd9"
+    },
+    "event_model_test": {
+      "path": "tests/test_impact_absorption_event_model.py",
+      "sha256": "399fd5d8dbd02e5d141cf0f03bf31c1a8af3ade4deb4986a8958620936844661"
+    },
+    "event_training_test": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "5d68bedcaf58bf5b1d48c873af4db9971d7cdfec6065ef6ba94c790df5b154d0"
+    },
+    "action_policy_test": {
+      "path": "tests/test_impact_absorption_event_action_policy.py",
+      "sha256": "3b985d733e877986e60beb76da3d05d72027eed197c246dba732128833f6ad62"
+    },
+    "sealed_ledger_test": {
+      "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+      "sha256": "4f6da383a4f64cd79f337f5d05159e54015c73983a3c8cfbfa97fbc2a8f83b54"
+    },
+    "historical_design_v105_test": {
+      "path": "tests/test_round74_event_model_design_v105.py",
+      "sha256": "e67bf2fa56cce768e8ff5bd3c66e9fa0c32e99343cf8895161fb37ab30604b18"
+    },
+    "historical_design_v106_test": {
+      "path": "tests/test_round74_event_model_design_v106.py",
+      "sha256": "969a47ef2038a54a51393a42545aa1d2e37c0dfeecb1922df1d5ff5f7389d420"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "mathematical consequence of the source-bound Round 74 target definition",
+      "finding": "For one fixed entry and side, maximum adverse excursion, maximum favorable excursion, and maximum spread over a nested path cannot decrease as the observation horizon expands; minimum exit-side capacity cannot increase.",
+      "implementation_consequence": "Eligible source labels that violate nested path extrema are rejected before training."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v151/brando22a.html",
+      "finding": "Independent quantile-loss minimization does not guarantee a valid monotone quantile function, and monotonicity can be enforced by model construction.",
+      "implementation_consequence": "The existing within-horizon non-crossing quantile construction remains mandatory, and path-risk coherence is now also enforced across ordered horizons."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v258/peng25a.html",
+      "finding": "Distributional regression can be formulated to avoid quantile crossing inherently rather than relying on post-hoc visual interpretation.",
+      "implementation_consequence": "Invalid path-risk distributions fail structurally instead of being tolerated as a reporting anomaly."
+    },
+    {
+      "source": "https://docs.pytorch.org/docs/stable/generated/torch.maximum.html",
+      "finding": "torch.maximum computes the elementwise maximum of two tensors.",
+      "implementation_consequence": "Three elementwise running-maximum operations impose exact horizon coherence without new parameters or a CPU-only operator."
+    }
+  ],
+  "declared_delta": {
+    "ordered_payoff_horizons_seconds": [
+      1,
+      5,
+      30,
+      300
+    ],
+    "maximum_adverse_excursion_is_nested_path_maximum": true,
+    "model_mae_quantiles_nondecreasing_across_quantiles": true,
+    "model_mae_quantiles_nondecreasing_across_horizons": true,
+    "horizon_projection": "elementwise_running_maximum_after_within_horizon_quantile_construction",
+    "horizon_projection_maximum_operations": 3,
+    "horizon_projection_additional_parameters": 0,
+    "horizon_projection_applied_during_training_and_inference": true,
+    "horizon_projection_directml_forward_backward_supported": true,
+    "payoff_quantiles_forced_monotone_across_horizons": false,
+    "payoff_horizon_nonmonotonicity_reason": "terminal after-cost payoff can reverse sign or magnitude as holding time expands",
+    "labeled_window_entry_identity_equal_across_eligible_horizons": true,
+    "labeled_window_exit_time_nondecreasing_across_eligible_horizons": true,
+    "labeled_window_mae_nondecreasing_across_eligible_horizons": true,
+    "labeled_window_mfe_nondecreasing_across_eligible_horizons": true,
+    "labeled_window_maximum_spread_nondecreasing_across_eligible_horizons": true,
+    "labeled_window_minimum_exit_capacity_nonincreasing_across_eligible_horizons": true,
+    "training_batch_entry_identity_equal_across_jointly_eligible_horizons": true,
+    "training_batch_exit_time_nondecreasing_across_jointly_eligible_horizons": true,
+    "training_batch_mae_nondecreasing_across_jointly_eligible_horizons": true,
+    "fixed_auxiliary_loss_weights_changed": false,
+    "proper_scoring_losses_changed": false,
+    "target_loss_scaling_changed": false,
+    "candidate_parameter_counts_changed": false,
+    "dominated_raw_horizon_head_gradient_effect_evaluated": false,
+    "horizon_projection_calibration_effect_evaluated": false,
+    "representative_evidence_required_before_interpreting_projection_effect": true,
+    "trading_authority": false
+  },
+  "schema_contract": {
+    "event_dataset": "round-074-event-dataset-v11",
+    "event_model": "round-074-event-payoff-model-v9",
+    "event_training": "round-074-event-training-v32",
+    "event_pretest_policy": "round-074-event-pretest-policy-v31",
+    "event_training_preflight_run": "round-074-event-training-preflight-run-v9",
+    "event_training_directml_preflight_evidence": "round-074-event-training-directml-preflight-evidence-v21"
+  },
+  "verification": {
+    "focused_tests_passed": 160,
+    "focused_test_files": 15,
+    "real_replay_generated_path_extrema_monotonicity_tested": true,
+    "regressed_labeled_window_rejected": true,
+    "regressed_training_batch_rejected": true,
+    "regressed_model_output_rejected": true,
+    "all_four_candidates_emit_horizon_coherent_mae": true,
+    "directml_model_preflight_executed": true,
+    "directml_candidate_count": 4,
+    "directml_backend_vendor": "AMD Radeon RX 9070 XT",
+    "directml_warning_count": 0,
+    "directml_cpu_fallback_warning_count": 0,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "python_compileall_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "probability_or_quantile_calibration_evaluated": false,
+    "sealed_test_accessed": false,
+    "campaign_database_opened": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 32,
+    "quarantined_slot_017_counted_as_admitted": false,
+    "slot_039_state_at_document_time": "running",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "path_risk_coherence_proven": true,
+    "path_risk_accuracy_evaluated": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "fa1464ebf283f3aead349bcac2656713ecced82326eea0fde5f4ffe97c1b695c"
+}
