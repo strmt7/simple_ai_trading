@@ -30,6 +30,10 @@ override prose if they disagree.
   secrets, tokens, signed requests, or unredacted secret fields.
 - Preserve testnet, dry-run, diversification, liquidity gating, and the app's
   `20x` leverage cap unless a stricter frozen contract applies.
+- The installed CLI and native app both invoke `simple_ai_trading.entrypoint`.
+  Register independent command extensions there and keep
+  `command_contract.py` on the same parser; do not create frontend-only
+  Polymarket controls.
 - No network calls in tests unless explicitly stubbed. Do not hard-code host
   capabilities; detect and record effective backends and fallbacks.
 

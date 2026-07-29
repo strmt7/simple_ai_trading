@@ -785,6 +785,9 @@ def test_windows_workflow_taxonomy_is_complete_unique_and_model_first() -> None:
         "polymarket-verify",
         "polymarket-publish",
     ]
+    assert [item.name for item in workflow if item.group == "Polymarket live"] == [
+        "polymarket-live",
+    ]
     assert [item.name for item in workflow if item.group == "AI validation"] == [
         "ai-benchmark",
         "ai-forecast-benchmark",
@@ -922,6 +925,7 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "kApiBudgetRefreshMs = 90000" in source
     assert 'L"api-budget --compact"' in source
     assert "SIMPLE_AI_TRADING_REPO_ROOT" in source
+    assert "-m simple_ai_trading.entrypoint" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND" in source
@@ -976,6 +980,7 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     assert "dry-run: simple-ai-trading autonomous stop" in smoke
     assert "dry-run: simple-ai-trading polymarket-model --enable-ai" in smoke
     assert "dry-run: simple-ai-trading polymarket-model --disable-ai" in smoke
+    assert "dry-run: simple-ai-trading polymarket-live" in smoke
     assert "Cancelled configuration was followed by autonomous start" in smoke
     assert "Stop + Close" in smoke
     assert "Testnet live" in smoke

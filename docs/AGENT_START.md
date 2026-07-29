@@ -50,6 +50,9 @@ agents to canonical evidence without replacing that evidence.
 The native app verifies the backend's `ui_contract` SHA-256 before any ordinary
 workflow. A mismatch blocks Start and expert commands but never Pause or Stop.
 After parser or taxonomy changes, regenerate the header through the native build.
+The installed CLI and native app invoke `simple_ai_trading.entrypoint`; it
+extends the established parser with independently registered commands.
+`command_contract.py` must inspect that same entry point.
 
 ## Model research state
 

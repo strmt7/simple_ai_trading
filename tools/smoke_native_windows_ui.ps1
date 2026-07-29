@@ -188,6 +188,12 @@ try {
         if ($count -le 0) { throw "Page $page has no generated command entries" }
     }
 
+    Select-Page $window $pageList 1
+    $tradingCombo = Get-Control $window $CommandComboId
+    Select-Combo $window $tradingCombo $CommandComboId "Polymarket live / polymarket-live"
+    Click-Control (Get-Control $window $RunId)
+    Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-live" 5000
+
     Select-Page $window $pageList 2
     $researchCombo = Get-Control $window $CommandComboId
     foreach ($modelCommand in @(
