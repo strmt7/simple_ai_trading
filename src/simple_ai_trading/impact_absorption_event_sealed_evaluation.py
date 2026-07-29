@@ -78,7 +78,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v21"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v22"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v3"
 )
@@ -1780,6 +1780,89 @@ class Round74SealedPairedSymbolHorizonDelta:
 
 
 @dataclass(frozen=True)
+class Round74SealedPairedRunSymbolHorizonDelta:
+    run_id: str
+    symbol: str
+    horizon_seconds: int
+    paired_observations: int
+    baseline_net_bps: float
+    ai_net_bps: float
+    delta_net_bps: float
+
+    def validate(self) -> None:
+        values = (
+            self.baseline_net_bps,
+            self.ai_net_bps,
+            self.delta_net_bps,
+        )
+        if (
+            _RUN_ID.fullmatch(self.run_id) is None
+            or self.symbol not in ROUND74_EVENT_SYMBOLS
+            or isinstance(self.horizon_seconds, bool)
+            or not isinstance(self.horizon_seconds, int)
+            or self.horizon_seconds not in ROUND74_SEALED_AI_REVIEW_HORIZONS_SECONDS
+            or isinstance(self.paired_observations, bool)
+            or not isinstance(self.paired_observations, int)
+            or self.paired_observations <= 0
+            or any(not math.isfinite(float(value)) for value in values)
+            or not math.isclose(
+                self.delta_net_bps,
+                self.ai_net_bps - self.baseline_net_bps,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+        ):
+            raise ValueError("Round 74 sealed paired run-symbol-horizon delta differs")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return dict(self.__dict__)
+
+
+def _sealed_ai_overlay_gate_reasons(
+    *,
+    strategy: Round74SealedStrategyMetrics,
+    baseline_trace: Round74ActionTrace,
+    paired_delta_bootstrap: Round74RunBlockBootstrap,
+    runtime_success_rate: float,
+    retained_trade_ratio: float,
+    paired_runs: Sequence[Round74SealedPairedRunDelta],
+    paired_symbol_horizons: Sequence[Round74SealedPairedSymbolHorizonDelta],
+    paired_run_symbol_horizons: Sequence[Round74SealedPairedRunSymbolHorizonDelta],
+    profile: str,
+) -> tuple[str, ...]:
+    minimum_retained = {
+        "conservative": 0.60,
+        "regular": 0.50,
+        "aggressive": 0.40,
+    }
+    if profile not in minimum_retained:
+        raise ValueError("Round 74 sealed AI profile differs")
+    reasons: list[str] = []
+    if not strategy.financial_gate_passed:
+        reasons.extend(f"financial:{value}" for value in strategy.gate_reasons)
+    if runtime_success_rate < 0.99:
+        reasons.append("runtime_success_rate_not_met")
+    if retained_trade_ratio < minimum_retained[profile]:
+        reasons.append("retained_trade_ratio_not_met")
+    if strategy.total_net_bps <= baseline_trace.metrics.total_net_bps:
+        reasons.append("positive_paired_after_cost_uplift_not_met")
+    if paired_delta_bootstrap.two_ai_model_bonferroni_lower_mean_run_net_bps <= 0.0:
+        reasons.append(
+            "positive_paired_delta_familywise_confidence_lower_bound_not_met"
+        )
+    if any(value.delta_net_bps < -1e-12 for value in paired_runs):
+        reasons.append("paired_run_noninferiority_not_met")
+    if any(value.delta_net_bps < -1e-12 for value in paired_symbol_horizons):
+        reasons.append("paired_symbol_horizon_noninferiority_not_met")
+    if any(value.delta_net_bps < -1e-12 for value in paired_run_symbol_horizons):
+        reasons.append("paired_run_symbol_horizon_noninferiority_not_met")
+    if strategy.maximum_drawdown_bps > baseline_trace.metrics.maximum_drawdown_bps:
+        reasons.append("maximum_drawdown_noninferiority_not_met")
+    return tuple(reasons)
+
+
+@dataclass(frozen=True)
 class Round74SealedAIOverlay:
     model_manifest_sha256: str
     review_sha256: tuple[str, ...]
@@ -1804,6 +1887,10 @@ class Round74SealedAIOverlay:
         Round74SealedPairedSymbolHorizonDelta,
         ...,
     ]
+    paired_run_symbol_horizons: tuple[
+        Round74SealedPairedRunSymbolHorizonDelta,
+        ...,
+    ]
     uplift_gate_passed: bool
     gate_reasons: tuple[str, ...]
 
@@ -1814,10 +1901,16 @@ class Round74SealedAIOverlay:
             value.validate()
         for value in self.paired_symbol_horizons:
             value.validate()
+        for value in self.paired_run_symbol_horizons:
+            value.validate()
         run_ids = tuple(value.run_id for value in self.paired_runs)
         symbol_horizon_keys = tuple(
             (value.symbol, value.horizon_seconds)
             for value in self.paired_symbol_horizons
+        )
+        run_symbol_horizon_keys = tuple(
+            (value.run_id, value.symbol, value.horizon_seconds)
+            for value in self.paired_run_symbol_horizons
         )
         paired_run_baseline = math.fsum(
             value.baseline_net_bps for value in self.paired_runs
@@ -1828,6 +1921,12 @@ class Round74SealedAIOverlay:
         )
         paired_group_ai = math.fsum(
             value.ai_net_bps for value in self.paired_symbol_horizons
+        )
+        paired_cell_baseline = math.fsum(
+            value.baseline_net_bps for value in self.paired_run_symbol_horizons
+        )
+        paired_cell_ai = math.fsum(
+            value.ai_net_bps for value in self.paired_run_symbol_horizons
         )
         if (
             _SHA256.fullmatch(self.model_manifest_sha256) is None
@@ -1876,9 +1975,15 @@ class Round74SealedAIOverlay:
             != self.paired_delta_bootstrap.blocks
             or not self.paired_symbol_horizons
             or len(set(symbol_horizon_keys)) != len(symbol_horizon_keys)
+            or not self.paired_run_symbol_horizons
+            or len(set(run_symbol_horizon_keys)) != len(run_symbol_horizon_keys)
             or sum(value.paired_observations for value in self.paired_runs)
             != self.strategy_metrics.paired_observations
             or sum(value.paired_observations for value in self.paired_symbol_horizons)
+            != self.strategy_metrics.paired_observations
+            or sum(
+                value.paired_observations for value in self.paired_run_symbol_horizons
+            )
             != self.strategy_metrics.paired_observations
             or not math.isclose(
                 paired_run_baseline,
@@ -1894,6 +1999,18 @@ class Round74SealedAIOverlay:
             )
             or not math.isclose(
                 paired_group_ai,
+                self.strategy_metrics.total_net_bps,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                paired_run_baseline,
+                paired_cell_baseline,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                paired_cell_ai,
                 self.strategy_metrics.total_net_bps,
                 rel_tol=1e-12,
                 abs_tol=1e-12,
@@ -1922,7 +2039,12 @@ class Round74SealedAIOverlay:
         ):
             raise ValueError("Round 74 sealed AI overlay differs")
 
-    def validate_against_baseline(self, trace: Round74ActionTrace) -> None:
+    def validate_against_baseline(
+        self,
+        trace: Round74ActionTrace,
+        *,
+        profile: str,
+    ) -> None:
         self.validate()
         trace.validate()
         expected_group_keys = tuple(
@@ -1938,6 +2060,34 @@ class Round74SealedAIOverlay:
                 )
             )
         )
+        expected_cell_keys = tuple(
+            (run_id, symbol, horizon)
+            for run_id in trace.expected_run_ids
+            for symbol in ROUND74_EVENT_SYMBOLS
+            for horizon in ROUND74_SEALED_AI_REVIEW_HORIZONS_SECONDS
+            if any(
+                observed_run == run_id
+                and observed_symbol == symbol
+                and observed_horizon == horizon
+                for observed_run, observed_symbol, observed_horizon in zip(
+                    trace.run_id,
+                    trace.symbol,
+                    trace.horizon_seconds,
+                    strict=True,
+                )
+            )
+        )
+        expected_reasons = _sealed_ai_overlay_gate_reasons(
+            strategy=self.strategy_metrics,
+            baseline_trace=trace,
+            paired_delta_bootstrap=self.paired_delta_bootstrap,
+            runtime_success_rate=self.runtime_success_rate,
+            retained_trade_ratio=self.retained_trade_ratio,
+            paired_runs=self.paired_runs,
+            paired_symbol_horizons=self.paired_symbol_horizons,
+            paired_run_symbol_horizons=self.paired_run_symbol_horizons,
+            profile=profile,
+        )
         if (
             tuple(value.run_id for value in self.paired_runs) != trace.expected_run_ids
             or tuple(
@@ -1945,6 +2095,11 @@ class Round74SealedAIOverlay:
                 for value in self.paired_symbol_horizons
             )
             != expected_group_keys
+            or tuple(
+                (value.run_id, value.symbol, value.horizon_seconds)
+                for value in self.paired_run_symbol_horizons
+            )
+            != expected_cell_keys
             or not math.isclose(
                 math.fsum(value.baseline_net_bps for value in self.paired_runs),
                 trace.metrics.total_net_bps,
@@ -1959,6 +2114,16 @@ class Round74SealedAIOverlay:
                 rel_tol=1e-12,
                 abs_tol=1e-12,
             )
+            or not math.isclose(
+                math.fsum(
+                    value.baseline_net_bps for value in self.paired_run_symbol_horizons
+                ),
+                trace.metrics.total_net_bps,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or self.gate_reasons != expected_reasons
+            or self.uplift_gate_passed != (not expected_reasons)
         ):
             raise ValueError("Round 74 sealed AI baseline pairing differs")
 
@@ -1989,6 +2154,9 @@ class Round74SealedAIOverlay:
             "paired_runs": [value.as_dict() for value in self.paired_runs],
             "paired_symbol_horizons": [
                 value.as_dict() for value in self.paired_symbol_horizons
+            ],
+            "paired_run_symbol_horizons": [
+                value.as_dict() for value in self.paired_run_symbol_horizons
             ],
             "uplift_gate_passed": self.uplift_gate_passed,
             "gate_reasons": list(self.gate_reasons),
@@ -2063,7 +2231,10 @@ class Round74SealedEvaluationReport:
         self.baseline_trace.validate()
         self.baseline_metrics.validate()
         for value in self.ai_overlays:
-            value.validate_against_baseline(self.baseline_trace)
+            value.validate_against_baseline(
+                self.baseline_trace,
+                profile=self.profile,
+            )
         digests = (
             self.reserved_claim_sha256,
             self.reservation_id,
@@ -3141,6 +3312,7 @@ def _paired_ai_delta_panels(
 ) -> tuple[
     tuple[Round74SealedPairedRunDelta, ...],
     tuple[Round74SealedPairedSymbolHorizonDelta, ...],
+    tuple[Round74SealedPairedRunSymbolHorizonDelta, ...],
 ]:
     baseline = np.asarray(trace.net_payoff_bps, dtype=np.float64)
     exact = np.asarray(exact_values, dtype=np.float64)
@@ -3193,9 +3365,39 @@ def _paired_ai_delta_panels(
                     delta_net_bps=ai_value - baseline_value,
                 )
             )
-    for value in (*paired_runs, *paired_symbol_horizons):
+    run_ids = np.asarray(trace.run_id, dtype=object)
+    paired_run_symbol_horizons: list[Round74SealedPairedRunSymbolHorizonDelta] = []
+    for run_id in trace.expected_run_ids:
+        for symbol in ROUND74_EVENT_SYMBOLS:
+            for horizon in ROUND74_SEALED_AI_REVIEW_HORIZONS_SECONDS:
+                mask = (run_ids == run_id) & (symbols == symbol) & (horizons == horizon)
+                observations = int(mask.sum())
+                if observations == 0:
+                    continue
+                baseline_value = float(baseline[mask].sum())
+                ai_value = float(exact[mask].sum())
+                paired_run_symbol_horizons.append(
+                    Round74SealedPairedRunSymbolHorizonDelta(
+                        run_id=run_id,
+                        symbol=symbol,
+                        horizon_seconds=horizon,
+                        paired_observations=observations,
+                        baseline_net_bps=baseline_value,
+                        ai_net_bps=ai_value,
+                        delta_net_bps=ai_value - baseline_value,
+                    )
+                )
+    for value in (
+        *paired_runs,
+        *paired_symbol_horizons,
+        *paired_run_symbol_horizons,
+    ):
         value.validate()
-    return paired_runs, tuple(paired_symbol_horizons)
+    return (
+        paired_runs,
+        tuple(paired_symbol_horizons),
+        tuple(paired_run_symbol_horizons),
+    )
 
 
 def _ai_overlay(
@@ -3298,10 +3500,11 @@ def _ai_overlay(
         ],
         dtype=np.float64,
     )
-    paired_runs, paired_symbol_horizons = _paired_ai_delta_panels(
-        trace,
-        exact_values,
-    )
+    (
+        paired_runs,
+        paired_symbol_horizons,
+        paired_run_symbol_horizons,
+    ) = _paired_ai_delta_panels(trace, exact_values)
     delta = exact_values - baseline_values
     delta_bootstrap = _run_bootstrap(
         trace.run_id,
@@ -3327,31 +3530,18 @@ def _ai_overlay(
         value.status == "executed" and value.applied_size_multiplier_bps < 10_000
         for value in executions
     )
-    reasons: list[str] = []
-    if not strategy.financial_gate_passed:
-        reasons.extend(f"financial:{value}" for value in strategy.gate_reasons)
-    if runtime_success_rate < 0.99:
-        reasons.append("runtime_success_rate_not_met")
     retained_ratio = retained / trace.metrics.trades if trace.metrics.trades else 0.0
-    minimum_retained = {
-        "conservative": 0.60,
-        "regular": 0.50,
-        "aggressive": 0.40,
-    }[profile]
-    if retained_ratio < minimum_retained:
-        reasons.append("retained_trade_ratio_not_met")
-    if strategy.total_net_bps <= trace.metrics.total_net_bps:
-        reasons.append("positive_paired_after_cost_uplift_not_met")
-    if delta_bootstrap.two_ai_model_bonferroni_lower_mean_run_net_bps <= 0.0:
-        reasons.append(
-            "positive_paired_delta_familywise_confidence_lower_bound_not_met"
-        )
-    if any(value.delta_net_bps < -1e-12 for value in paired_runs):
-        reasons.append("paired_run_noninferiority_not_met")
-    if any(value.delta_net_bps < -1e-12 for value in paired_symbol_horizons):
-        reasons.append("paired_symbol_horizon_noninferiority_not_met")
-    if strategy.maximum_drawdown_bps > trace.metrics.maximum_drawdown_bps:
-        reasons.append("maximum_drawdown_noninferiority_not_met")
+    reasons = _sealed_ai_overlay_gate_reasons(
+        strategy=strategy,
+        baseline_trace=trace,
+        paired_delta_bootstrap=delta_bootstrap,
+        runtime_success_rate=runtime_success_rate,
+        retained_trade_ratio=retained_ratio,
+        paired_runs=paired_runs,
+        paired_symbol_horizons=paired_symbol_horizons,
+        paired_run_symbol_horizons=paired_run_symbol_horizons,
+        profile=profile,
+    )
     result = Round74SealedAIOverlay(
         model_manifest_sha256=manifest,
         review_sha256=tuple(value.review_sha256 for value in all_reviews),
@@ -3386,10 +3576,11 @@ def _ai_overlay(
         paired_delta_bootstrap=delta_bootstrap,
         paired_runs=paired_runs,
         paired_symbol_horizons=paired_symbol_horizons,
+        paired_run_symbol_horizons=paired_run_symbol_horizons,
         uplift_gate_passed=not reasons,
-        gate_reasons=tuple(reasons),
+        gate_reasons=reasons,
     )
-    result.validate()
+    result.validate_against_baseline(trace, profile=profile)
     return result
 
 
@@ -3685,6 +3876,7 @@ __all__ = [
     "Round74SealedEvaluationOutcome",
     "Round74SealedEvaluationReport",
     "Round74SealedPairedRunDelta",
+    "Round74SealedPairedRunSymbolHorizonDelta",
     "Round74SealedPairedSymbolHorizonDelta",
     "Round74SealedPredictiveDiagnostics",
     "Round74SealedStrategyMetrics",
