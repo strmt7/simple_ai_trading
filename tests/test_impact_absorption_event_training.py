@@ -1157,6 +1157,40 @@ def test_round74_ensemble_averages_probabilities_not_logits() -> None:
         torch.sigmoid(output.regime_unpredictability_logits),
         torch.full_like(output.regime_unpredictability_logits, 0.7),
     )
+    diagnostics = output.epistemic_diagnostics
+    assert diagnostics is not None
+    assert diagnostics.peer_count == 2
+    torch.testing.assert_close(
+        diagnostics.payoff_quantile_standard_deviation_bps,
+        torch.zeros_like(diagnostics.payoff_quantile_standard_deviation_bps),
+    )
+    torch.testing.assert_close(
+        diagnostics.maximum_adverse_excursion_quantile_standard_deviation_bps,
+        torch.zeros_like(
+            diagnostics.maximum_adverse_excursion_quantile_standard_deviation_bps
+        ),
+    )
+    torch.testing.assert_close(
+        diagnostics.positive_payoff_probability_standard_deviation,
+        torch.full_like(
+            diagnostics.positive_payoff_probability_standard_deviation,
+            0.1,
+        ),
+    )
+    torch.testing.assert_close(
+        diagnostics.adverse_selection_probability_standard_deviation,
+        torch.full_like(
+            diagnostics.adverse_selection_probability_standard_deviation,
+            0.2,
+        ),
+    )
+    torch.testing.assert_close(
+        diagnostics.regime_unpredictability_probability_standard_deviation,
+        torch.full_like(
+            diagnostics.regime_unpredictability_probability_standard_deviation,
+            0.2,
+        ),
+    )
     mean_logit = (
         torch.logit(torch.tensor(0.5 / 2.0)) + torch.logit(torch.tensor(0.9 / 2.0))
     ) / 2.0
@@ -1176,9 +1210,10 @@ def test_round74_clock_neutral_view_masks_only_exchange_clock_features() -> None
         dtype=torch.float32,
     ).reshape(2, 3, len(ROUND74_EVENT_FEATURE_NAMES))
 
-    ensemble(values)
+    output = ensemble(values)
 
     assert peer.last_values is not None
+    assert output.epistemic_diagnostics is None
     expected = values.clone()
     expected[:, :, list(ROUND74_EVENT_CLOCK_FEATURE_INDICES)] = 0.0
     torch.testing.assert_close(peer.last_values, expected)

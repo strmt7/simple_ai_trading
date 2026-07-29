@@ -55,7 +55,7 @@ from .impact_absorption_event_targets import (
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v5"
 ROUND74_ACTION_EXECUTION_PANEL_SCHEMA_VERSION = "round-074-action-execution-panel-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v13"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v14"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
@@ -116,7 +116,8 @@ def _tensor_array(value: torch.Tensor) -> np.ndarray:
 
 
 def _model_output_sha256(output: Round74EventModelOutput) -> str:
-    digest = hashlib.sha256(b"round-074-model-output-v1")
+    output.validate(int(output.payoff_quantiles_bps.shape[0]))
+    digest = hashlib.sha256(b"round-074-model-output-v2")
     for value in (
         output.payoff_quantiles_bps,
         output.maximum_adverse_excursion_quantiles_bps,
@@ -125,6 +126,20 @@ def _model_output_sha256(output: Round74EventModelOutput) -> str:
         output.regime_unpredictability_logits,
     ):
         _update_array_digest(digest, _tensor_array(value))
+    diagnostics = output.epistemic_diagnostics
+    if diagnostics is None:
+        digest.update(b"\x00")
+    else:
+        digest.update(b"\x01")
+        digest.update(int(diagnostics.peer_count).to_bytes(4, "little", signed=False))
+        for value in (
+            diagnostics.payoff_quantile_standard_deviation_bps,
+            diagnostics.maximum_adverse_excursion_quantile_standard_deviation_bps,
+            diagnostics.positive_payoff_probability_standard_deviation,
+            diagnostics.adverse_selection_probability_standard_deviation,
+            diagnostics.regime_unpredictability_probability_standard_deviation,
+        ):
+            _update_array_digest(digest, _tensor_array(value))
     return digest.hexdigest()
 
 

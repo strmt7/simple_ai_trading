@@ -35,7 +35,10 @@ from .impact_absorption_event_dataset import (
     Round74EventRunPartition,
     Round74EventTrainingBatch,
 )
-from .impact_absorption_event_model import Round74EventModelOutput
+from .impact_absorption_event_model import (
+    Round74EventEpistemicDiagnostics,
+    Round74EventModelOutput,
+)
 from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
@@ -160,6 +163,11 @@ def _concatenate_outputs(
     def concatenate(name: str) -> torch.Tensor:
         return torch.cat(tuple(getattr(value, name) for value in selected), dim=0)
 
+    epistemic = tuple(value.epistemic_diagnostics for value in selected)
+    if any(value is None for value in epistemic) != all(
+        value is None for value in epistemic
+    ):
+        raise ValueError("Round 74 development epistemic output panel differs")
     result = Round74EventModelOutput(
         payoff_quantiles_bps=concatenate("payoff_quantiles_bps"),
         maximum_adverse_excursion_quantiles_bps=concatenate(
@@ -168,6 +176,13 @@ def _concatenate_outputs(
         positive_payoff_logits=concatenate("positive_payoff_logits"),
         adverse_selection_logits=concatenate("adverse_selection_logits"),
         regime_unpredictability_logits=concatenate("regime_unpredictability_logits"),
+        epistemic_diagnostics=(
+            None
+            if epistemic[0] is None
+            else Round74EventEpistemicDiagnostics.concatenate(
+                tuple(value for value in epistemic if value is not None)
+            )
+        ),
     )
     result.validate(int(result.payoff_quantiles_bps.shape[0]))
     return result

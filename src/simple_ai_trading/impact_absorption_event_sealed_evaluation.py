@@ -58,7 +58,10 @@ from .impact_absorption_event_financial_metrics import (
     round74_maximum_concurrent_adverse_excursion_bps,
     round74_maximum_realized_drawdown_bps,
 )
-from .impact_absorption_event_model import Round74EventModelOutput
+from .impact_absorption_event_model import (
+    Round74EventEpistemicDiagnostics,
+    Round74EventModelOutput,
+)
 from .impact_absorption_event_sealed_ledger import (
     ROUND74_SEALED_OPTIMIZATION_POPULATIONS,
     Round74SealedDatasetIdentity,
@@ -2831,6 +2834,11 @@ def _cpu_output(output: Round74EventModelOutput) -> Round74EventModelOutput:
         regime_unpredictability_logits=(
             output.regime_unpredictability_logits.detach().cpu()
         ),
+        epistemic_diagnostics=(
+            None
+            if output.epistemic_diagnostics is None
+            else output.epistemic_diagnostics.cpu()
+        ),
     )
     selected.validate(int(selected.payoff_quantiles_bps.shape[0]))
     return selected
@@ -2844,6 +2852,11 @@ def _concat_outputs(
     selected = tuple(outputs)
     if not selected:
         raise ValueError("Round 74 sealed model output is missing")
+    epistemic = tuple(value.epistemic_diagnostics for value in selected)
+    if any(value is None for value in epistemic) != all(
+        value is None for value in epistemic
+    ):
+        raise ValueError("Round 74 sealed epistemic output panel differs")
     result = Round74EventModelOutput(
         payoff_quantiles_bps=torch.cat(
             tuple(value.payoff_quantiles_bps for value in selected),
@@ -2864,6 +2877,13 @@ def _concat_outputs(
         regime_unpredictability_logits=torch.cat(
             tuple(value.regime_unpredictability_logits for value in selected),
             dim=0,
+        ),
+        epistemic_diagnostics=(
+            None
+            if epistemic[0] is None
+            else Round74EventEpistemicDiagnostics.concatenate(
+                tuple(value for value in epistemic if value is not None)
+            )
         ),
     )
     result.validate(rows)
@@ -3134,7 +3154,10 @@ def infer_round74_target_free_candidates(
         model.eval()
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            with torch.inference_mode():
+            # DirectML cannot slice some inference tensors because their
+            # version counter is disabled. no_grad preserves evaluation
+            # semantics without triggering that provider failure.
+            with torch.no_grad():
                 for context in selected_contexts:
                     outputs: list[Round74EventModelOutput] = []
                     for start in range(0, context.rows, minibatch_rows):

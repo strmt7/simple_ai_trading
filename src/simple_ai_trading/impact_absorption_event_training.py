@@ -46,6 +46,7 @@ from .impact_absorption_event_features import (
 from .impact_absorption_event_model import (
     ROUND74_EVENT_MODEL_CANDIDATES,
     ROUND74_EVENT_MODEL_SCHEMA_VERSION,
+    Round74EventEpistemicDiagnostics,
     Round74EventModelOutput,
     _round74_event_model_loss_from_validated_inputs,
     build_round74_event_model,
@@ -80,8 +81,8 @@ from .round74_segmented_model_operator import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v35"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v34"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v36"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v35"
 ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION = (
     "round-074-event-selection-protocol-v4"
 )
@@ -1026,18 +1027,33 @@ class Round74EventEnsemble(nn.Module):
     def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
         outputs = tuple(peer(values) for peer in self.peers)
 
-        def tensor_mean(name: str) -> torch.Tensor:
+        def tensor_stack(name: str) -> torch.Tensor:
             return torch.stack(
                 tuple(getattr(output, name) for output in outputs),
                 dim=0,
-            ).mean(dim=0)
-
-        def predictive_mixture_logit(name: str) -> torch.Tensor:
-            peer_logits = torch.stack(
-                tuple(getattr(output, name) for output in outputs),
-                dim=0,
             )
-            probability = torch.sigmoid(peer_logits).mean(dim=0)
+
+        def population_standard_deviation(
+            stacked: torch.Tensor,
+            mean: torch.Tensor,
+        ) -> torch.Tensor:
+            variance = ((stacked - mean.unsqueeze(0)) ** 2).mean(dim=0)
+            return torch.sqrt(torch.clamp_min(variance, 0.0))
+
+        payoff = tensor_stack("payoff_quantiles_bps")
+        payoff_mean = payoff.mean(dim=0)
+        adverse_excursion = tensor_stack("maximum_adverse_excursion_quantiles_bps")
+        adverse_excursion_mean = adverse_excursion.mean(dim=0)
+        positive_probability = torch.sigmoid(tensor_stack("positive_payoff_logits"))
+        positive_probability_mean = positive_probability.mean(dim=0)
+        adverse_probability = torch.sigmoid(tensor_stack("adverse_selection_logits"))
+        adverse_probability_mean = adverse_probability.mean(dim=0)
+        unpredictability_probability = torch.sigmoid(
+            tensor_stack("regime_unpredictability_logits")
+        )
+        unpredictability_probability_mean = unpredictability_probability.mean(dim=0)
+
+        def predictive_mixture_logit(probability: torch.Tensor) -> torch.Tensor:
             epsilon = torch.finfo(probability.dtype).eps
             bounded = torch.clamp(
                 probability,
@@ -1047,16 +1063,46 @@ class Round74EventEnsemble(nn.Module):
             return torch.log(bounded / (1.0 - bounded))
 
         output = Round74EventModelOutput(
-            payoff_quantiles_bps=tensor_mean("payoff_quantiles_bps"),
-            maximum_adverse_excursion_quantiles_bps=tensor_mean(
-                "maximum_adverse_excursion_quantiles_bps"
-            ),
-            positive_payoff_logits=predictive_mixture_logit("positive_payoff_logits"),
-            adverse_selection_logits=predictive_mixture_logit(
-                "adverse_selection_logits"
-            ),
+            payoff_quantiles_bps=payoff_mean,
+            maximum_adverse_excursion_quantiles_bps=adverse_excursion_mean,
+            positive_payoff_logits=predictive_mixture_logit(positive_probability_mean),
+            adverse_selection_logits=predictive_mixture_logit(adverse_probability_mean),
             regime_unpredictability_logits=predictive_mixture_logit(
-                "regime_unpredictability_logits"
+                unpredictability_probability_mean
+            ),
+            epistemic_diagnostics=(
+                Round74EventEpistemicDiagnostics(
+                    peer_count=len(outputs),
+                    payoff_quantile_standard_deviation_bps=(
+                        population_standard_deviation(payoff, payoff_mean)
+                    ),
+                    maximum_adverse_excursion_quantile_standard_deviation_bps=(
+                        population_standard_deviation(
+                            adverse_excursion,
+                            adverse_excursion_mean,
+                        )
+                    ),
+                    positive_payoff_probability_standard_deviation=(
+                        population_standard_deviation(
+                            positive_probability,
+                            positive_probability_mean,
+                        )
+                    ),
+                    adverse_selection_probability_standard_deviation=(
+                        population_standard_deviation(
+                            adverse_probability,
+                            adverse_probability_mean,
+                        )
+                    ),
+                    regime_unpredictability_probability_standard_deviation=(
+                        population_standard_deviation(
+                            unpredictability_probability,
+                            unpredictability_probability_mean,
+                        )
+                    ),
+                )
+                if len(outputs) >= 2
+                else None
             ),
         )
         output.validate(int(values.shape[0]))
@@ -1466,6 +1512,7 @@ def _slice_model_output(
 ) -> Round74EventModelOutput:
     if start < 0 or stop <= start:
         raise ValueError("Round 74 model-output slice differs")
+    diagnostics = output.epistemic_diagnostics
     return Round74EventModelOutput(
         payoff_quantiles_bps=output.payoff_quantiles_bps[start:stop],
         maximum_adverse_excursion_quantiles_bps=(
@@ -1475,6 +1522,9 @@ def _slice_model_output(
         adverse_selection_logits=output.adverse_selection_logits[start:stop],
         regime_unpredictability_logits=(
             output.regime_unpredictability_logits[start:stop]
+        ),
+        epistemic_diagnostics=(
+            None if diagnostics is None else diagnostics.select_rows(slice(start, stop))
         ),
     )
 
@@ -1775,6 +1825,7 @@ def _index_model_output(
     output: Round74EventModelOutput,
     indices: torch.Tensor,
 ) -> Round74EventModelOutput:
+    diagnostics = output.epistemic_diagnostics
     selected = Round74EventModelOutput(
         payoff_quantiles_bps=output.payoff_quantiles_bps.index_select(0, indices),
         maximum_adverse_excursion_quantiles_bps=(
@@ -1787,6 +1838,9 @@ def _index_model_output(
         ),
         regime_unpredictability_logits=(
             output.regime_unpredictability_logits.index_select(0, indices)
+        ),
+        epistemic_diagnostics=(
+            None if diagnostics is None else diagnostics.select_rows(indices)
         ),
     )
     selected.validate(int(indices.numel()))

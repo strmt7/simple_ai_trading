@@ -32,7 +32,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v12"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v13"
 ROUND74_EVENT_MODEL_CANDIDATES = (
     "event_pooling_linear",
     "event_pooling_mlp",
@@ -52,6 +52,132 @@ ROUND74_EVENT_ATTENTION_EXPANSION = 2
 
 
 @dataclass(frozen=True)
+class Round74EventEpistemicDiagnostics:
+    """Population dispersion across independently initialized ensemble peers."""
+
+    peer_count: int
+    payoff_quantile_standard_deviation_bps: torch.Tensor
+    maximum_adverse_excursion_quantile_standard_deviation_bps: torch.Tensor
+    positive_payoff_probability_standard_deviation: torch.Tensor
+    adverse_selection_probability_standard_deviation: torch.Tensor
+    regime_unpredictability_probability_standard_deviation: torch.Tensor
+
+    def validate(self, batch_size: int) -> None:
+        expected_quantiles = (
+            int(batch_size),
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            len(ROUND74_EVENT_PAYOFF_SIDES),
+            len(ROUND74_EVENT_PAYOFF_QUANTILES),
+        )
+        expected_sides = expected_quantiles[:3]
+        expected_horizons = expected_quantiles[:2]
+        tensors = (
+            self.payoff_quantile_standard_deviation_bps,
+            self.maximum_adverse_excursion_quantile_standard_deviation_bps,
+            self.positive_payoff_probability_standard_deviation,
+            self.adverse_selection_probability_standard_deviation,
+            self.regime_unpredictability_probability_standard_deviation,
+        )
+        probability_tensors = tensors[2:]
+        if (
+            isinstance(self.peer_count, bool)
+            or self.peer_count < 2
+            or tensors[0].shape != expected_quantiles
+            or tensors[1].shape != expected_quantiles
+            or tensors[2].shape != expected_sides
+            or tensors[3].shape != expected_sides
+            or tensors[4].shape != expected_horizons
+            or not all(bool(torch.isfinite(value).all()) for value in tensors)
+            or any(bool((value < 0.0).any()) for value in tensors)
+            or any(bool((value > 0.5 + 1e-6).any()) for value in probability_tensors)
+        ):
+            raise ValueError("Round 74 epistemic diagnostics differ")
+
+    def select_rows(
+        self,
+        selection: slice | torch.Tensor,
+    ) -> Round74EventEpistemicDiagnostics:
+        selected = Round74EventEpistemicDiagnostics(
+            peer_count=self.peer_count,
+            payoff_quantile_standard_deviation_bps=(
+                self.payoff_quantile_standard_deviation_bps[selection]
+            ),
+            maximum_adverse_excursion_quantile_standard_deviation_bps=(
+                self.maximum_adverse_excursion_quantile_standard_deviation_bps[
+                    selection
+                ]
+            ),
+            positive_payoff_probability_standard_deviation=(
+                self.positive_payoff_probability_standard_deviation[selection]
+            ),
+            adverse_selection_probability_standard_deviation=(
+                self.adverse_selection_probability_standard_deviation[selection]
+            ),
+            regime_unpredictability_probability_standard_deviation=(
+                self.regime_unpredictability_probability_standard_deviation[selection]
+            ),
+        )
+        selected.validate(int(selected.payoff_quantile_standard_deviation_bps.shape[0]))
+        return selected
+
+    def cpu(self) -> Round74EventEpistemicDiagnostics:
+        selected = Round74EventEpistemicDiagnostics(
+            peer_count=self.peer_count,
+            payoff_quantile_standard_deviation_bps=(
+                self.payoff_quantile_standard_deviation_bps.detach().cpu()
+            ),
+            maximum_adverse_excursion_quantile_standard_deviation_bps=(
+                self.maximum_adverse_excursion_quantile_standard_deviation_bps.detach().cpu()
+            ),
+            positive_payoff_probability_standard_deviation=(
+                self.positive_payoff_probability_standard_deviation.detach().cpu()
+            ),
+            adverse_selection_probability_standard_deviation=(
+                self.adverse_selection_probability_standard_deviation.detach().cpu()
+            ),
+            regime_unpredictability_probability_standard_deviation=(
+                self.regime_unpredictability_probability_standard_deviation.detach().cpu()
+            ),
+        )
+        selected.validate(int(selected.payoff_quantile_standard_deviation_bps.shape[0]))
+        return selected
+
+    @classmethod
+    def concatenate(
+        cls,
+        values: tuple[Round74EventEpistemicDiagnostics, ...],
+    ) -> Round74EventEpistemicDiagnostics:
+        if not values or len({value.peer_count for value in values}) != 1:
+            raise ValueError("Round 74 epistemic diagnostic panel differs")
+        for value in values:
+            value.validate(int(value.payoff_quantile_standard_deviation_bps.shape[0]))
+
+        def concatenate(name: str) -> torch.Tensor:
+            return torch.cat(tuple(getattr(value, name) for value in values), dim=0)
+
+        selected = cls(
+            peer_count=values[0].peer_count,
+            payoff_quantile_standard_deviation_bps=concatenate(
+                "payoff_quantile_standard_deviation_bps"
+            ),
+            maximum_adverse_excursion_quantile_standard_deviation_bps=concatenate(
+                "maximum_adverse_excursion_quantile_standard_deviation_bps"
+            ),
+            positive_payoff_probability_standard_deviation=concatenate(
+                "positive_payoff_probability_standard_deviation"
+            ),
+            adverse_selection_probability_standard_deviation=concatenate(
+                "adverse_selection_probability_standard_deviation"
+            ),
+            regime_unpredictability_probability_standard_deviation=concatenate(
+                "regime_unpredictability_probability_standard_deviation"
+            ),
+        )
+        selected.validate(int(selected.payoff_quantile_standard_deviation_bps.shape[0]))
+        return selected
+
+
+@dataclass(frozen=True)
 class Round74EventModelOutput:
     """Multi-horizon distributions and path-risk heads for both trade sides."""
 
@@ -60,6 +186,7 @@ class Round74EventModelOutput:
     positive_payoff_logits: torch.Tensor
     adverse_selection_logits: torch.Tensor
     regime_unpredictability_logits: torch.Tensor
+    epistemic_diagnostics: Round74EventEpistemicDiagnostics | None = None
 
     def validate(self, batch_size: int) -> None:
         expected_quantiles = (
@@ -120,6 +247,39 @@ class Round74EventModelOutput:
             raise ValueError(
                 "Round 74 positive-payoff probabilities leave the outcome simplex"
             )
+        if self.epistemic_diagnostics is not None:
+            diagnostics = self.epistemic_diagnostics
+            diagnostics.validate(batch_size)
+            diagnostic_pairs = (
+                (
+                    diagnostics.payoff_quantile_standard_deviation_bps,
+                    self.payoff_quantiles_bps,
+                ),
+                (
+                    diagnostics.maximum_adverse_excursion_quantile_standard_deviation_bps,
+                    self.maximum_adverse_excursion_quantiles_bps,
+                ),
+                (
+                    diagnostics.positive_payoff_probability_standard_deviation,
+                    self.positive_payoff_logits,
+                ),
+                (
+                    diagnostics.adverse_selection_probability_standard_deviation,
+                    self.adverse_selection_logits,
+                ),
+                (
+                    diagnostics.regime_unpredictability_probability_standard_deviation,
+                    self.regime_unpredictability_logits,
+                ),
+            )
+            if any(
+                diagnostic.dtype != prediction.dtype
+                or diagnostic.device != prediction.device
+                for diagnostic, prediction in diagnostic_pairs
+            ):
+                raise ValueError(
+                    "Round 74 epistemic diagnostic tensor identity differs"
+                )
 
 
 class _Round74DistributionalHeads(nn.Module):
@@ -1155,6 +1315,7 @@ __all__ = [
     "ROUND74_EVENT_TCN_RECEPTIVE_FIELD",
     "Round74CausalEventAttention",
     "Round74CausalEventTCN",
+    "Round74EventEpistemicDiagnostics",
     "Round74EventModelOutput",
     "Round74EventPoolingLinear",
     "Round74EventPoolingMLP",
