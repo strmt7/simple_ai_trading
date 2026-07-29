@@ -32,7 +32,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v10"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v11"
 ROUND74_EVENT_MODEL_CANDIDATES = (
     "event_pooling_linear",
     "event_pooling_mlp",
@@ -114,6 +114,12 @@ class Round74EventModelOutput:
             raise ValueError("Round 74 adverse excursion regresses across horizons")
         if bool((self.maximum_adverse_excursion_quantiles_bps < 0.0).any()):
             raise ValueError("Round 74 adverse excursion is negative")
+        # For two Bernoulli marginals, p(long) + p(short) <= 1 exactly when
+        # their logits sum to at most zero.
+        if bool((self.positive_payoff_logits.sum(dim=2) > 1e-6).any()):
+            raise ValueError(
+                "Round 74 positive-payoff probabilities leave the outcome simplex"
+            )
 
 
 class _Round74DistributionalHeads(nn.Module):
@@ -208,6 +214,17 @@ class _Round74DistributionalHeads(nn.Module):
             len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
             len(ROUND74_EVENT_PAYOFF_SIDES),
         )
+        raw_positive = self.positive(encoded).reshape(expected_sides)
+        long_raw = raw_positive[:, :, 0]
+        short_raw = raw_positive[:, :, 1]
+        # These are the marginal logits of softmax([neither=0, long, short]).
+        positive_logits = torch.stack(
+            (
+                long_raw - F.softplus(short_raw),
+                short_raw - F.softplus(long_raw),
+            ),
+            dim=2,
+        )
         output = Round74EventModelOutput(
             payoff_quantiles_bps=torch.stack(
                 (q10, q25, median, q75, q90),
@@ -217,7 +234,7 @@ class _Round74DistributionalHeads(nn.Module):
                 monotone_horizons,
                 dim=1,
             ),
-            positive_payoff_logits=self.positive(encoded).reshape(expected_sides),
+            positive_payoff_logits=positive_logits,
             adverse_selection_logits=self.adverse(encoded).reshape(expected_sides),
             regime_unpredictability_logits=self.unpredictability(encoded),
         )
@@ -786,6 +803,17 @@ def _round74_event_model_loss_impl(
             ).any()
         ):
             raise ValueError("Round 74 event-model eligibility is not binary")
+        if bool(
+            (
+                (action_eligibility[:, :, 0] == 1.0)
+                & (action_eligibility[:, :, 1] == 1.0)
+                & (net_payoff_bps[:, :, 0] > 0.0)
+                & (net_payoff_bps[:, :, 1] > 0.0)
+            ).any()
+        ):
+            raise ValueError(
+                "Round 74 positive-payoff targets leave the outcome simplex"
+            )
     action_weight = action_eligibility.sum()
     regime_weight = regime_unpredictability_eligibility.sum()
     if not inputs_validated and (
@@ -974,8 +1002,19 @@ def round74_event_model_preflight(
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
         len(ROUND74_EVENT_PAYOFF_SIDES),
     )
+    directional_move = generator.normal(size=action_shape[:-1]).astype(np.float32)
+    round_trip_cost = (
+        np.abs(generator.normal(size=action_shape[:-1])).astype(np.float32) * 0.05
+        + 0.01
+    )
     payoff = torch.from_numpy(
-        generator.normal(size=action_shape).astype(np.float32)
+        np.stack(
+            (
+                directional_move - round_trip_cost,
+                -directional_move - round_trip_cost,
+            ),
+            axis=2,
+        ).astype(np.float32)
     ).to(device)
     maximum_adverse_excursion = torch.from_numpy(
         np.abs(generator.normal(size=action_shape)).astype(np.float32)

@@ -56,6 +56,22 @@ def _inputs(batch_size: int = 3, sequence_length: int = 32) -> torch.Tensor:
     return values
 
 
+def _coherent_payoff_targets(
+    action_shape: tuple[int, int, int],
+    *,
+    generator: torch.Generator,
+) -> torch.Tensor:
+    directional_move = torch.randn(action_shape[:-1], generator=generator)
+    round_trip_cost = torch.rand(action_shape[:-1], generator=generator) * 0.05 + 0.01
+    return torch.stack(
+        (
+            directional_move - round_trip_cost,
+            -directional_move - round_trip_cost,
+        ),
+        dim=2,
+    )
+
+
 @pytest.mark.parametrize(
     "model",
     (
@@ -87,6 +103,47 @@ def test_round74_candidate_outputs_are_finite_and_monotone(model: object) -> Non
     )
     assert bool((horizon_differences >= 0.0).all())
     assert bool((output.maximum_adverse_excursion_quantiles_bps >= 0.0).all())
+    positive_probability = torch.sigmoid(output.positive_payoff_logits)
+    assert bool((positive_probability.sum(dim=2) <= 1.0 + 1e-6).all())
+
+
+def test_round74_positive_payoff_head_is_mutually_exclusive_and_competitive() -> None:
+    model = Round74EventPoolingLinear()
+    positive_head = model.heads.positive
+    with torch.no_grad():
+        positive_head.weight.zero_()
+        positive_head.bias.fill_(20.0)
+
+    output = model(_inputs(batch_size=1))
+    probabilities = torch.sigmoid(output.positive_payoff_logits)
+
+    assert bool((probabilities.sum(dim=2) <= 1.0 + 1e-6).all())
+    torch.testing.assert_close(
+        probabilities[:, :, 0],
+        probabilities[:, :, 1],
+        rtol=0.0,
+        atol=1e-6,
+    )
+
+    model.zero_grad(set_to_none=True)
+    output = model(_inputs(batch_size=1))
+    output.positive_payoff_logits[:, :, 0].sum().backward()
+    gradient = positive_head.bias.grad.detach().reshape(
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
+    assert bool((gradient[:, 0] > 0.0).all())
+    assert bool((gradient[:, 1] < 0.0).all())
+
+
+def test_round74_model_output_rejects_incoherent_positive_probabilities() -> None:
+    output = Round74EventPoolingLinear()(_inputs(batch_size=1))
+
+    with pytest.raises(ValueError, match="outcome simplex"):
+        replace(
+            output,
+            positive_payoff_logits=torch.ones_like(output.positive_payoff_logits),
+        ).validate(1)
 
 
 def test_round74_model_output_rejects_path_risk_horizon_regression() -> None:
@@ -288,7 +345,7 @@ def test_round74_loss_is_finite_and_backpropagates() -> None:
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
         len(ROUND74_EVENT_PAYOFF_SIDES),
     )
-    payoff = torch.randn(action_shape, generator=generator)
+    payoff = _coherent_payoff_targets(action_shape, generator=generator)
     maximum_adverse_excursion = torch.rand(
         action_shape,
         generator=generator,
@@ -340,7 +397,10 @@ def test_round74_loss_scales_only_distributional_components() -> None:
         len(ROUND74_EVENT_PAYOFF_SIDES),
     )
     targets = {
-        "net_payoff_bps": torch.randn(action_shape, generator=generator),
+        "net_payoff_bps": _coherent_payoff_targets(
+            action_shape,
+            generator=generator,
+        ),
         "maximum_adverse_excursion_bps": torch.rand(
             action_shape,
             generator=generator,
@@ -446,6 +506,17 @@ def test_round74_loss_excludes_censored_actions_and_rejects_empty_batches() -> N
             adverse_selection=adverse,
             regime_unpredictable=unpredictable,
             action_eligibility=fractional,
+        )
+    mutually_positive = payoff.clone()
+    mutually_positive[0, 1, :] = 1.0
+    with pytest.raises(ValueError, match="outcome simplex"):
+        round74_event_model_loss(
+            output,
+            net_payoff_bps=mutually_positive,
+            maximum_adverse_excursion_bps=maximum_adverse_excursion,
+            adverse_selection=adverse,
+            regime_unpredictable=unpredictable,
+            action_eligibility=eligibility,
         )
 
 

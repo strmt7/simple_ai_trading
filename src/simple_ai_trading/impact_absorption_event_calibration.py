@@ -2063,6 +2063,21 @@ def fit_round74_probability_calibration(
         or regime_unpredictability_logits.ndim < 1
     ):
         raise ValueError("Round 74 calibration run panel differs")
+    if (
+        positive_payoff_logits.shape[-1] != len(ROUND74_EVENT_PAYOFF_SIDES)
+        or positive_payoff_labels.shape != positive_payoff_logits.shape
+        or action_eligibility.shape != positive_payoff_logits.shape
+        or bool((positive_payoff_logits.sum(dim=-1) > 1e-6).any())
+        or bool(
+            (
+                (action_eligibility[..., 0] == 1.0)
+                & (action_eligibility[..., 1] == 1.0)
+                & (positive_payoff_labels[..., 0] == 1.0)
+                & (positive_payoff_labels[..., 1] == 1.0)
+            ).any()
+        )
+    ):
+        raise ValueError("Round 74 positive-payoff outcome simplex differs")
     rows = int(positive_payoff_logits.shape[0])
     if (
         len(selected_row_run_ids) != rows
@@ -2230,6 +2245,9 @@ def apply_round74_probability_calibration(
         any(not value.is_floating_point() for value in tensors)
         or any(not bool(torch.isfinite(value).all()) for value in tensors)
         or len({value.device for value in tensors}) != 1
+        or positive_payoff_logits.ndim < 1
+        or positive_payoff_logits.shape[-1] != len(ROUND74_EVENT_PAYOFF_SIDES)
+        or bool((positive_payoff_logits.sum(dim=-1) > 1e-6).any())
     ):
         raise ValueError("Round 74 calibration inference input differs")
     return (

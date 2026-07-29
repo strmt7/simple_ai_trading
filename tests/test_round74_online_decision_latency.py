@@ -135,6 +135,9 @@ def _context(scaler: Round74EventFeatureScaler):
         dtype=np.float32,
     )
     features[:, :, 0] = 1.0
+    payoff = np.empty(action_shape, dtype=np.float32)
+    payoff[:, :, 0] = 1.0
+    payoff[:, :, 1] = -1.5
     batch = Round74EventTrainingBatch(
         role="tuning",
         partition_sha256="9" * 64,
@@ -159,7 +162,7 @@ def _context(scaler: Round74EventFeatureScaler):
         actual_exit_monotonic_ns=_readonly(
             np.full(action_shape, 31_100_000_000, dtype=np.int64)
         ),
-        net_payoff_bps=_readonly(np.ones(action_shape, dtype=np.float32)),
+        net_payoff_bps=_readonly(payoff),
         maximum_adverse_excursion_bps=_readonly(
             np.ones(action_shape, dtype=np.float32)
         ),

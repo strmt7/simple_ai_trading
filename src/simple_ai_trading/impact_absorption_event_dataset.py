@@ -35,7 +35,7 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v11"
+ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v12"
 ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v5"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_WINDOW_REPRESENTATIONS = ("per_symbol", "global_cross_asset")
@@ -654,6 +654,18 @@ class Round74EventTrainingBatch:
             )
         ):
             raise ValueError("Round 74 event training batch targets differ")
+        jointly_eligible_sides = (action_mask[:, :, 0] == 1.0) & (
+            action_mask[:, :, 1] == 1.0
+        )
+        if np.any(
+            jointly_eligible_sides
+            & (self.net_payoff_bps[:, :, 0] > 0.0)
+            & (self.net_payoff_bps[:, :, 1] > 0.0)
+        ):
+            raise ValueError(
+                "Round 74 long and short positive-payoff targets are not "
+                "mutually exclusive"
+            )
         for lower_horizon in range(len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS) - 1):
             for upper_horizon in range(
                 lower_horizon + 1,

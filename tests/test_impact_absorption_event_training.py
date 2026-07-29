@@ -118,7 +118,18 @@ def _batch(
         rows,
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
     )
-    payoff = generator.normal(size=action_shape).astype(np.float32)
+    directional_move = generator.normal(size=action_shape[:-1]).astype(np.float32)
+    round_trip_cost = (
+        np.abs(generator.normal(size=action_shape[:-1])).astype(np.float32) * 0.05
+        + 0.01
+    )
+    payoff = np.stack(
+        (
+            directional_move - round_trip_cost,
+            -directional_move - round_trip_cost,
+        ),
+        axis=2,
+    ).astype(np.float32)
     adverse_excursion = np.maximum.accumulate(
         np.abs(generator.normal(size=action_shape)),
         axis=1,
@@ -245,7 +256,7 @@ def test_causal_next_event_pretraining_is_training_only_and_purged() -> None:
     )
     split = build_round74_event_pretraining_split((training,), config=config)
     changed_targets = training.net_payoff_bps.copy()
-    changed_targets[training.action_eligibility == 1.0] += 1000.0
+    changed_targets[training.action_eligibility == 1.0] *= 1000.0
     target_changed_training = replace(
         training,
         net_payoff_bps=_readonly(changed_targets),
@@ -1103,12 +1114,13 @@ class _FixedClassificationPeer(torch.nn.Module):
             len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
         )
         logit = torch.logit(torch.tensor(self.probability))
+        positive_logit = torch.logit(torch.tensor(self.probability / 2.0))
         quantiles = torch.arange(5, dtype=values.dtype).reshape(1, 1, 1, 5)
         quantiles = quantiles.expand(*action_shape, 5)
         return Round74EventModelOutput(
             payoff_quantiles_bps=quantiles,
             maximum_adverse_excursion_quantiles_bps=quantiles,
-            positive_payoff_logits=logit.expand(action_shape),
+            positive_payoff_logits=positive_logit.expand(action_shape),
             adverse_selection_logits=logit.expand(action_shape),
             regime_unpredictability_logits=logit.expand(regime_shape),
         )
@@ -1132,21 +1144,23 @@ def test_round74_ensemble_averages_probabilities_not_logits() -> None:
 
     output = ensemble(torch.zeros(3, 2, len(ROUND74_EVENT_FEATURE_NAMES)))
 
-    expected = torch.full_like(output.positive_payoff_logits, 0.7)
+    expected_positive = torch.full_like(output.positive_payoff_logits, 0.35)
     torch.testing.assert_close(
         torch.sigmoid(output.positive_payoff_logits),
-        expected,
+        expected_positive,
     )
     torch.testing.assert_close(
         torch.sigmoid(output.adverse_selection_logits),
-        expected,
+        torch.full_like(output.adverse_selection_logits, 0.7),
     )
     torch.testing.assert_close(
         torch.sigmoid(output.regime_unpredictability_logits),
         torch.full_like(output.regime_unpredictability_logits, 0.7),
     )
-    mean_logit = (torch.logit(torch.tensor(0.5)) + torch.logit(torch.tensor(0.9))) / 2.0
-    assert not torch.allclose(torch.sigmoid(mean_logit), torch.tensor(0.7))
+    mean_logit = (
+        torch.logit(torch.tensor(0.5 / 2.0)) + torch.logit(torch.tensor(0.9 / 2.0))
+    ) / 2.0
+    assert not torch.allclose(torch.sigmoid(mean_logit), torch.tensor(0.35))
 
 
 def test_round74_clock_neutral_view_masks_only_exchange_clock_features() -> None:

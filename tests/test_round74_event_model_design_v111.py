@@ -6,9 +6,7 @@ from pathlib import Path
 import subprocess  # nosec B404
 
 from simple_ai_trading.impact_absorption_event_training import (
-    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
     ROUND74_EVENT_PROMOTION_TASK_METRICS,
-    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
 
 
@@ -74,10 +72,8 @@ def test_round74_v111_blocks_hidden_task_loss_without_claiming_edge() -> None:
     schemas = design["schema_contract"]
     verification = design["verification"]
 
-    assert schemas["event_training"] == ROUND74_EVENT_TRAINING_SCHEMA_VERSION
-    assert (
-        schemas["event_pretest_policy"] == ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
-    )
+    assert schemas["event_training"] == "round-074-event-training-v33"
+    assert schemas["event_pretest_policy"] == "round-074-event-pretest-policy-v32"
     assert tuple(delta["promotion_tasks"]) == tuple(
         task_name for task_name, _metric_name in ROUND74_EVENT_PROMOTION_TASK_METRICS
     )

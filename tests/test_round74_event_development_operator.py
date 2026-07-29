@@ -55,7 +55,9 @@ def _real_batch(identity: int, start_wall_ns: int) -> Round74EventTrainingBatch:
     adverse_selection = np.empty(action_shape, dtype=np.float32)
     regime = np.empty(regime_shape, dtype=np.float32)
     for row in range(rows):
-        payoff[row] = 2.0 if row % 2 else -2.0
+        directional_move = 2.0 if row % 2 else -2.0
+        payoff[row, :, 0] = directional_move - 0.25
+        payoff[row, :, 1] = -directional_move - 0.25
         adverse_selection[row] = float(row % 2)
         regime[row] = float((row + 1) % 2)
     times = np.arange(rows, dtype=np.int64) * 1_000_000_000

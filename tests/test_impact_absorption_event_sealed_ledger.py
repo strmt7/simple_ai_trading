@@ -144,6 +144,9 @@ def _test_batch(
         ] = 1.0
     entry = np.full(action_shape, 10, dtype=np.int64)
     exit_value = np.full(action_shape, 20, dtype=np.int64)
+    payoff = np.empty(action_shape, dtype=np.float32)
+    payoff[:, :, 0] = 1.0
+    payoff[:, :, 1] = -1.5
     result = Round74EventTrainingBatch(
         role=role,
         partition_sha256="1" * 64,
@@ -164,7 +167,7 @@ def _test_batch(
         feature_values=_readonly(features),
         actual_entry_monotonic_ns=_readonly(entry),
         actual_exit_monotonic_ns=_readonly(exit_value),
-        net_payoff_bps=_readonly(np.ones(action_shape, dtype=np.float32)),
+        net_payoff_bps=_readonly(payoff),
         maximum_adverse_excursion_bps=_readonly(
             np.ones(action_shape, dtype=np.float32)
         ),
@@ -1293,11 +1296,12 @@ def test_predictive_gate_requires_familywise_skill_for_every_forecast_task() -> 
     payoff_sign = np.where(positive_truth, 1.0, -1.0).astype(np.float32)
     action_shape = (rows, horizon_count, side_count)
     regime_shape = (rows, horizon_count)
+    target_payoff = np.empty(action_shape, dtype=np.float32)
+    target_payoff[:, :, 0] = payoff_sign[:, None]
+    target_payoff[:, :, 1] = -payoff_sign[:, None] - 0.25
     batch = replace(
         batch,
-        net_payoff_bps=_readonly(
-            np.broadcast_to(payoff_sign[:, None, None], action_shape).copy()
-        ),
+        net_payoff_bps=_readonly(target_payoff),
         adverse_selection=_readonly(
             np.broadcast_to(
                 adverse_truth.astype(np.float32)[:, None, None],
@@ -1316,10 +1320,14 @@ def test_predictive_gate_requires_familywise_skill_for_every_forecast_task() -> 
         (-0.50, -0.25, 0.0, 0.25, 0.50),
         dtype=np.float32,
     )
-    payoff = np.broadcast_to(
-        payoff_sign[:, None, None, None] + payoff_offsets,
+    payoff = np.empty(
         (rows, horizon_count, side_count, quantile_count),
-    ).copy()
+        dtype=np.float32,
+    )
+    payoff[:, :, 0, :] = payoff_sign[:, None, None] + payoff_offsets[None, None, :]
+    payoff[:, :, 1, :] = (
+        -payoff_sign[:, None, None] - 0.25 + payoff_offsets[None, None, :]
+    )
     mae_quantiles = np.asarray(
         (0.20, 0.40, 0.60, 0.80, 1.00),
         dtype=np.float32,
@@ -1328,10 +1336,9 @@ def test_predictive_gate_requires_familywise_skill_for_every_forecast_task() -> 
         mae_quantiles,
         (rows, horizon_count, side_count, quantile_count),
     ).copy()
-    positive_logits = np.broadcast_to(
-        np.where(positive_truth, 4.0, -4.0)[:, None, None],
-        action_shape,
-    ).copy()
+    positive_logits = np.empty(action_shape, dtype=np.float32)
+    positive_logits[:, :, 0] = np.where(positive_truth, 4.0, -4.0)[:, None]
+    positive_logits[:, :, 1] = np.where(positive_truth, -4.0, 4.0)[:, None]
     adverse_logits = np.broadcast_to(
         np.where(adverse_truth, 4.0, -4.0)[:, None, None],
         action_shape,
