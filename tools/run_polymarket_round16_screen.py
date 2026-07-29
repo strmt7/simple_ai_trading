@@ -313,6 +313,7 @@ def main(
     with HistoricalScreenStore(
         args.database,
         contract=contract.historical,
+        read_only=args.phase in {"status", "export"},
     ) as store:
         _emit("round16_status", _status(store))
         if args.phase == "status":
