@@ -1,0 +1,116 @@
+{
+  "artifact_sha256": "1ce279889552b761d34c6840d409f0f6c1f07ab6b4e9667fa6d54783eb49222a",
+  "capture": {
+    "asset_count": 1,
+    "condition_count": 2,
+    "duration_seconds": 63.872,
+    "ended_at_ms": 1785338130487,
+    "integrity_errors": [],
+    "market_snapshot_count": 2,
+    "normalized_event_count": 44123,
+    "raw_message_count": 44127,
+    "recorder_errors": [],
+    "started_at_ms": 1785338066615,
+    "status": "complete",
+    "stream_counts": {
+      "binance_futures": 3766,
+      "binance_spot": 3463,
+      "clob_market": 36780,
+      "clob_rest_book": 2,
+      "polymarket_rtds": 116
+    },
+    "stream_gap_count": 0
+  },
+  "causal_replay": {
+    "book_sample_interval_ms": 250,
+    "book_state_transition_count": 44794,
+    "continuity_mode": "strict",
+    "discarded_uncorroborated_best_count": 0,
+    "elapsed_seconds": 12.702,
+    "event_scope_sha256": "333eb076d823f0ff1f0e13dd68131b721d28ebb12aa131a6f25c3f7c71981e55",
+    "late_event_count": 276,
+    "market_count": 2,
+    "materialization_policy_sha256": "c587e10cb4ba0b6894d533babd55e67963d66cd185223fc41f804ef8f6f58e39",
+    "materialized_book_count": 678,
+    "materialized_minimum_depth_levels": 20,
+    "maximum_availability_delay_ns": 16000036,
+    "maximum_source_regression_ms": 1,
+    "resolution_count": 0,
+    "state_reset_count": 1,
+    "stream_gap_count": 0,
+    "suppressed_book_count": 44116,
+    "total_clob_event_count": 36779
+  },
+  "event_type_counts": {
+    "binance_futures:depthUpdate": 544,
+    "binance_futures:trade": 3222,
+    "binance_spot:24hrTicker": 58,
+    "binance_spot:trade": 3405,
+    "polymarket_rtds:crypto_prices:subscribe": 1,
+    "polymarket_rtds:crypto_prices:update": 57,
+    "polymarket_rtds:crypto_prices_chainlink:subscribe": 1,
+    "polymarket_rtds:crypto_prices_chainlink:update": 55
+  },
+  "limitations": [
+    "The source DuckDB is local ignored evidence and is not distributed in Git; the compact artifact alone cannot reproduce raw-message checks.",
+    "This qualification tests public wire coverage, bounded storage, overlap safety, and causal replay only.",
+    "No completed target, fit, prediction, trade, fill, PnL, ROI, drawdown, AI uplift, paper authority, or live authority exists."
+  ],
+  "qualification_gates": {
+    "all_required_streams_present": true,
+    "chainlink_updates_present": true,
+    "complete_terminal_report": true,
+    "expected_binance_channel_types_present": true,
+    "qualification_passed": true,
+    "strict_causal_l2_replay_completed": true,
+    "zero_integrity_errors": true,
+    "zero_recorder_errors": true,
+    "zero_stream_gaps": true,
+    "zero_uncorroborated_best_states": true
+  },
+  "qualified_at_ms": 1785338130487,
+  "rejected_attempt": {
+    "model_data_eligible": false,
+    "reason": "clob_market_connection_closed_without_close_frame",
+    "run_id": "e649c25dc51f46a583b0502fb263fc96",
+    "run_report_sha256": "89c26773778189de09c6bde8529351b4cb8c9fa4d38057818bdab497922088c0",
+    "status": "degraded",
+    "stream_gap_count": 1
+  },
+  "schema_version": "polymarket-round14-btc-5m-live-qualification-v1",
+  "scope": {
+    "asset": "BTC",
+    "labels_consulted": false,
+    "live_trading_authority": false,
+    "market_variant": "fiveminute",
+    "model_data_eligible": false,
+    "model_scores_consulted": false,
+    "outcomes_consulted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "purpose": "public_wire_storage_and_causal_replay_qualification",
+    "venue": "polymarket"
+  },
+  "source_binding": {
+    "campaign_plan_sha256": "c19ef7733efb86202742f045a45b3d92e8e17bb922c3c5f780240243889609b5",
+    "contract_sha256": "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b",
+    "evidence_manifest_sha256": "9771b482d46c4271e854d1ae8b967d80e63da3d6e9f44223d679b9cdf9d3be3c",
+    "preregistration_manifest_sha256": "6e6b1f35f6ffd5f565a63e9294a0ddce1ab67d133d374e9b66434c558c691c88",
+    "repository_commit": "f2da0796d13ad0bfe0ff700f041421ec5dcc9209",
+    "repository_tree": "b379be65cda4b5e8f906d34dd8d39c6ef731ba12",
+    "run_id": "56c0e76f470f4633a165466b38279231",
+    "run_report_sha256": "81e8109563644b6ef2e04377de47726ace5f34e69a7ab848e133018347632d2d"
+  },
+  "status": "qualification_passed",
+  "storage": {
+    "chunk_count": 122,
+    "compressed_bytes": 2876817,
+    "compression_ratio": 10.411726,
+    "database_bytes": 6828032,
+    "database_repository_path": "data/polymarket-round14-qualification-v3.duckdb",
+    "reproducible_from_repository_alone": false,
+    "source_database_published": false,
+    "uncompressed_bytes": 29952630,
+    "wal_present_after_close": false
+  }
+}

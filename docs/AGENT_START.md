@@ -270,13 +270,15 @@ extends the established parser with independently registered commands.
   Round 12 invalidation, and Round 11 report. Round 10 rejected the one-second scalp on negative action scores;
   Round 9 remains the immutable unknown-state admission failure.
 - Polymarket Round 14 is the only open BTC five-minute successor design. Its
-  hash-bound 30-day prospective contract and target-free 50-feature snapshot
-  layer are implemented, but capture has not started and no labels, fit,
-  backtest, PnL, AI uplift, paper authority, or live authority exists. It uses
-  exact Chainlink resolution, dynamic owned open/hold/close/complement actions,
-  and optional read-only Binance BTC spot/futures features. Read
-  `round-014-btc-5m-prospective-contract-v1.json`; never weaken its split,
-  source, power, cost, latency, depth, uncertainty, or promotion gates.
+  public-wire, compressed-storage, overlap, and strict causal-replay
+  qualification passed on commit `f2da0796`; that 60-second run is permanently
+  non-model evidence. The immutable 30-day campaign is scheduled from
+  2026-07-29 17:00 UTC through 2026-08-28 17:00 UTC under plan
+  `c19ef773...`. No prospective condition has been admitted and no label, fit,
+  backtest, PnL, AI uplift, paper authority, or live authority exists. Read
+  `round-014-btc-5m-prospective-contract-v1.json`, the campaign plan, and the
+  live qualification artifact; never weaken their split, source, power, cost,
+  latency, depth, uncertainty, or promotion gates.
 - Captures `eae374e2662c440fb93970d5710937b1`,
   `3a67757c7f174df4b62f2722ea9211cb`, and
   `b8a270da20fe4116a01a4626607e42da` are permanently development-only. The
