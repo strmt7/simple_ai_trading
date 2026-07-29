@@ -80,8 +80,8 @@ from .round74_segmented_model_operator import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v34"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v33"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v35"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v34"
 ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION = (
     "round-074-event-selection-protocol-v4"
 )
@@ -106,7 +106,7 @@ ROUND74_EVENT_PROMOTION_TASK_METRICS = (
         "maximum_adverse_excursion_quantiles",
         "maximum_adverse_excursion_pinball",
     ),
-    ("positive_payoff", "positive_bce"),
+    ("positive_payoff", "positive_log_loss"),
     ("adverse_selection", "adverse_bce"),
     ("regime_unpredictability", "unpredictability_bce"),
 )
@@ -1335,7 +1335,7 @@ def _eligible_target_weighted_group_loss(
             + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["maximum_adverse_excursion"]
             * components["maximum_adverse_excursion_pinball"]
             + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["positive_payoff"]
-            * components["positive_bce"]
+            * components["positive_log_loss"]
             + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["adverse_selection"]
             * components["adverse_bce"]
         )
@@ -1589,7 +1589,7 @@ def _empty_metric_sums() -> dict[str, float]:
     return {
         "payoff_pinball": 0.0,
         "maximum_adverse_excursion_pinball": 0.0,
-        "positive_bce": 0.0,
+        "positive_log_loss": 0.0,
         "adverse_bce": 0.0,
         "unpredictability_bce": 0.0,
         "action_weight": 0.0,
@@ -1615,7 +1615,7 @@ def _accumulate_metrics(
     for name in (
         "payoff_pinball",
         "maximum_adverse_excursion_pinball",
-        "positive_bce",
+        "positive_log_loss",
         "adverse_bce",
     ):
         totals[name] += scalar(name) * action_weight
@@ -1632,7 +1632,7 @@ def _accumulate_group_metrics(
     names = (
         "payoff_pinball",
         "maximum_adverse_excursion_pinball",
-        "positive_bce",
+        "positive_log_loss",
         "adverse_bce",
         "unpredictability_bce",
     )
@@ -1680,7 +1680,7 @@ def _finalize_metrics(totals: Mapping[str, float]) -> dict[str, float]:
         for name in (
             "payoff_pinball",
             "maximum_adverse_excursion_pinball",
-            "positive_bce",
+            "positive_log_loss",
             "adverse_bce",
         )
     }
@@ -1692,7 +1692,7 @@ def _finalize_metrics(totals: Mapping[str, float]) -> dict[str, float]:
         + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["maximum_adverse_excursion"]
         * metrics["maximum_adverse_excursion_pinball"]
         + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["positive_payoff"]
-        * metrics["positive_bce"]
+        * metrics["positive_log_loss"]
         + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["adverse_selection"]
         * metrics["adverse_bce"]
         + ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["regime_unpredictability"]
@@ -3024,7 +3024,7 @@ def _validated_candidate_fit_report(
     expected_metric_names = {
         "payoff_pinball",
         "maximum_adverse_excursion_pinball",
-        "positive_bce",
+        "positive_log_loss",
         "adverse_bce",
         "unpredictability_bce",
         "loss",

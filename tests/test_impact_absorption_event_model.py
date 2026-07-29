@@ -376,7 +376,7 @@ def test_round74_loss_is_finite_and_backpropagates() -> None:
     assert set(components) == {
         "payoff_pinball",
         "maximum_adverse_excursion_pinball",
-        "positive_bce",
+        "positive_log_loss",
         "adverse_bce",
         "unpredictability_bce",
     }
@@ -437,7 +437,7 @@ def test_round74_loss_scales_only_distributional_components() -> None:
         scaled["maximum_adverse_excursion_pinball"],
         unit["maximum_adverse_excursion_pinball"] / 5.0,
     )
-    for name in ("positive_bce", "adverse_bce", "unpredictability_bce"):
+    for name in ("positive_log_loss", "adverse_bce", "unpredictability_bce"):
         torch.testing.assert_close(scaled[name], unit[name])
     with pytest.raises(ValueError, match="not positive"):
         round74_event_model_loss(
@@ -445,6 +445,54 @@ def test_round74_loss_scales_only_distributional_components() -> None:
             **targets,
             payoff_loss_scale_bps=torch.zeros(action_shape),
         )
+
+
+def test_round74_positive_payoff_uses_joint_and_censored_proper_scores() -> None:
+    output = Round74EventPoolingLinear()(_inputs(batch_size=1))
+    action_shape = (
+        1,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
+    probabilities = torch.tensor((0.6, 0.2), dtype=torch.float32)
+    output = replace(
+        output,
+        positive_payoff_logits=torch.logit(probabilities)
+        .reshape(1, 1, 2)
+        .expand(action_shape),
+    )
+    payoff = torch.empty(action_shape)
+    payoff[:, :, 0] = 1.0
+    payoff[:, :, 1] = -1.0
+    targets = {
+        "net_payoff_bps": payoff,
+        "maximum_adverse_excursion_bps": torch.ones(action_shape),
+        "adverse_selection": torch.zeros(action_shape),
+        "regime_unpredictable": torch.zeros(
+            1,
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        ),
+    }
+
+    _joint_loss, joint = round74_event_model_loss(output, **targets)
+    neither_targets = dict(targets)
+    neither_targets["net_payoff_bps"] = -torch.ones(action_shape)
+    _neither_loss, neither = round74_event_model_loss(output, **neither_targets)
+    one_sided = torch.zeros(action_shape)
+    one_sided[:, :, 0] = 1.0
+    _censored_loss, censored = round74_event_model_loss(
+        output,
+        **targets,
+        action_eligibility=one_sided,
+    )
+
+    expected = -torch.log(torch.tensor(0.6))
+    torch.testing.assert_close(joint["positive_log_loss"], expected)
+    torch.testing.assert_close(
+        neither["positive_log_loss"],
+        -torch.log(torch.tensor(0.2)),
+    )
+    torch.testing.assert_close(censored["positive_log_loss"], expected)
 
 
 def test_round74_loss_excludes_censored_actions_and_rejects_empty_batches() -> None:
