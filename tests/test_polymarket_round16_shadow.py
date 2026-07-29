@@ -412,6 +412,8 @@ def test_round16_shadow_scorer_abstains_without_execution_authority() -> None:
         candidate_id="fixture",
         pretest_envelope_sha256="1" * 64,
         evaluation_envelope_sha256="2" * 64,
+        pretest_file_sha256="4" * 64,
+        evaluation_file_sha256="5" * 64,
         dataset_sha256="3" * 64,
         feature_support=broad_support,
         settlement_controls=settlement,
@@ -429,6 +431,7 @@ def test_round16_shadow_scorer_abstains_without_execution_authority() -> None:
 
     assert decision.status == "abstain"
     assert decision.reason == "settlement_manipulation_anomaly"
+    assert len(decision.input_sha256) == 64
     assert decision.trading_authority is False
     assert decision.grants_execution_authority is False
     assert width == 116
