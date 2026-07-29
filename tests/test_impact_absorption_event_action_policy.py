@@ -25,7 +25,7 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     _equal_run_score_threshold,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
-    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+    ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION,
     ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     Round74ProbabilityCalibration,
     Round74RiskQuantileCalibration,
@@ -634,7 +634,7 @@ def test_risk_tail_calibration_can_fail_closed_before_candidate_selection() -> N
     calibration = replace(
         _calibration(),
         risk_quantiles=_risk_quantile_calibration(),
-        schema_version=ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_RISK_PRIOR_SCHEMA_VERSION,
     )
 
     candidates = derive_round74_action_candidates(

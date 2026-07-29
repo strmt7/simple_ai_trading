@@ -52,8 +52,10 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     round74_action_profile,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
-    ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
+    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+    Round74NoInformationQuantileBaseline,
     Round74ProbabilityCalibration,
+    Round74RiskQuantileCalibration,
     Round74TemperatureFit,
 )
 from simple_ai_trading.impact_absorption_event_dataset import (
@@ -260,6 +262,9 @@ def _selection(
 
 
 def _calibration() -> Round74ProbabilityCalibration:
+    horizons = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    sides = len(ROUND74_EVENT_PAYOFF_SIDES)
+    quantiles = len(ROUND74_EVENT_PAYOFF_QUANTILES)
     fit = Round74TemperatureFit(
         temperature=1.0,
         eligible_observations=10,
@@ -276,6 +281,61 @@ def _calibration() -> Round74ProbabilityCalibration:
         uncalibrated_ece=0.1,
         calibrated_ece=0.1,
     )
+    zero_lower = tuple(
+        tuple((0.0, 0.0) for _side in range(sides)) for _horizon in range(horizons)
+    )
+    full_lower_coverage = tuple(
+        tuple((1.0, 1.0) for _side in range(sides)) for _horizon in range(horizons)
+    )
+    zero_matrix = tuple(
+        tuple(0.0 for _side in range(sides)) for _horizon in range(horizons)
+    )
+    full_coverage = tuple(
+        tuple(1.0 for _side in range(sides)) for _horizon in range(horizons)
+    )
+    observation_matrix = tuple(
+        tuple(6 for _side in range(sides)) for _horizon in range(horizons)
+    )
+    risk_quantiles = Round74RiskQuantileCalibration(
+        payoff_lower_offsets_bps=zero_lower,
+        mae_upper_offsets_bps=zero_matrix,
+        eligible_observations=observation_matrix,
+        payoff_lower_empirical_coverage_before=full_lower_coverage,
+        payoff_lower_empirical_coverage_after=full_lower_coverage,
+        mae_upper_empirical_coverage_before=full_coverage,
+        mae_upper_empirical_coverage_after=full_coverage,
+        calibration_runs=6,
+        optimization_population="capture_run",
+    )
+    payoff_baseline = tuple(
+        tuple(
+            tuple(
+                tuple(0.0 for _quantile in range(quantiles)) for _side in range(sides)
+            )
+            for _horizon in range(horizons)
+        )
+        for _symbol in ROUND74_EVENT_SYMBOLS
+    )
+    mae_baseline = tuple(
+        tuple(
+            tuple(
+                tuple(4.0 for _quantile in range(quantiles)) for _side in range(sides)
+            )
+            for _horizon in range(horizons)
+        )
+        for _symbol in ROUND74_EVENT_SYMBOLS
+    )
+    baseline_observations = tuple(
+        tuple(tuple(6 for _side in range(sides)) for _horizon in range(horizons))
+        for _symbol in ROUND74_EVENT_SYMBOLS
+    )
+    quantile_baseline = Round74NoInformationQuantileBaseline(
+        payoff_quantiles_bps=payoff_baseline,
+        maximum_adverse_excursion_quantiles_bps=mae_baseline,
+        eligible_observations=baseline_observations,
+        calibration_runs=6,
+        optimization_population="capture_run",
+    )
     result = Round74ProbabilityCalibration(
         pretest_policy_sha256="5" * 64,
         tuning_subpartition_sha256="7" * 64,
@@ -288,7 +348,9 @@ def _calibration() -> Round74ProbabilityCalibration:
         regime_unpredictability=fit,
         backend_kind="cpu",
         backend_device="test",
-        schema_version=ROUND74_TEMPERATURE_CALIBRATION_PRIOR_SCHEMA_VERSION,
+        risk_quantiles=risk_quantiles,
+        quantile_baseline=quantile_baseline,
+        schema_version=ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     )
     result.validate()
     return result
@@ -1212,7 +1274,7 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert not instructions[0].action_latency_eligible
 
 
-def test_predictive_gate_requires_familywise_skill_for_every_binary_task() -> None:
+def test_predictive_gate_requires_familywise_skill_for_every_forecast_task() -> None:
     batch = _test_batch()
     rows = batch.rows
     horizon_count = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
@@ -1291,15 +1353,24 @@ def test_predictive_gate_requires_familywise_skill_for_every_binary_task() -> No
         "positive_payoff",
         "adverse_selection",
         "regime_unpredictability",
+        "net_payoff_quantiles",
+        "maximum_adverse_excursion_quantiles",
     )
     assert all(value.gate_passed for value in gate.task_skills)
     assert all(
         value.covered_capture_runs == len(TEST_RUNS) for value in gate.task_skills
     )
-    assert all(value.brier_skill_score > 0.0 for value in gate.task_skills)
+    binary_skills = gate.task_skills[:3]
+    quantile_skills = gate.task_skills[3:]
+    assert all(value.brier_skill_score > 0.0 for value in binary_skills)
     assert all(
         value.familywise_lower_mean_run_brier_improvement > 0.0
-        for value in gate.task_skills
+        for value in binary_skills
+    )
+    assert all(value.pinball_skill_score > 0.0 for value in quantile_skills)
+    assert all(
+        value.familywise_lower_mean_run_pinball_improvement_bps > 0.0
+        for value in quantile_skills
     )
     unskilled_output = replace(
         output,
@@ -1956,7 +2027,21 @@ def test_ai_qualification_operator_uses_disjoint_tuning_scope(
     )
     for batch in batches:
         batch.validate()
-    calibration = replace(_calibration(), optimization_population="eligible_target")
+    base_calibration = _calibration()
+    assert base_calibration.risk_quantiles is not None
+    assert base_calibration.quantile_baseline is not None
+    calibration = replace(
+        base_calibration,
+        risk_quantiles=replace(
+            base_calibration.risk_quantiles,
+            optimization_population="eligible_target",
+        ),
+        quantile_baseline=replace(
+            base_calibration.quantile_baseline,
+            optimization_population="eligible_target",
+        ),
+        optimization_population="eligible_target",
+    )
     calibration.validate()
     selection = replace(
         _selection(optimization_population="eligible_target"),

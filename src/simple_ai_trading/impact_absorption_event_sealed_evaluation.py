@@ -78,7 +78,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v19"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v20"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v3"
 )
@@ -95,10 +95,18 @@ ROUND74_SEALED_FAMILYWISE_ALPHA = 0.05
 ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT = 3
 ROUND74_SEALED_AI_MODEL_COUNT = 2
 ROUND74_SEALED_AI_REVIEW_HORIZONS_SECONDS = (30, 300)
-ROUND74_SEALED_PREDICTIVE_TASKS = (
+ROUND74_SEALED_BINARY_PREDICTIVE_TASKS = (
     "positive_payoff",
     "adverse_selection",
     "regime_unpredictability",
+)
+ROUND74_SEALED_QUANTILE_PREDICTIVE_TASKS = (
+    "net_payoff_quantiles",
+    "maximum_adverse_excursion_quantiles",
+)
+ROUND74_SEALED_PREDICTIVE_TASKS = (
+    *ROUND74_SEALED_BINARY_PREDICTIVE_TASKS,
+    *ROUND74_SEALED_QUANTILE_PREDICTIVE_TASKS,
 )
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -218,6 +226,8 @@ class Round74BinaryForecastMetrics:
 class Round74QuantileForecastMetrics:
     observations: int
     mean_pinball_loss_bps: float
+    no_information_mean_pinball_loss_bps: float
+    pinball_skill_score: float
     empirical_coverage: tuple[float, ...]
 
     def validate(self) -> None:
@@ -225,7 +235,15 @@ class Round74QuantileForecastMetrics:
             isinstance(self.observations, bool)
             or self.observations < 1
             or not math.isfinite(float(self.mean_pinball_loss_bps))
+            or not math.isfinite(float(self.no_information_mean_pinball_loss_bps))
+            or not math.isfinite(float(self.pinball_skill_score))
             or self.mean_pinball_loss_bps < 0.0
+            or self.no_information_mean_pinball_loss_bps < 0.0
+            or self.pinball_skill_score > 1.0
+            or (
+                self.no_information_mean_pinball_loss_bps == 0.0
+                and self.pinball_skill_score != 0.0
+            )
             or len(self.empirical_coverage) != len(ROUND74_EVENT_PAYOFF_QUANTILES)
             or any(
                 not math.isfinite(float(value)) or not 0.0 <= value <= 1.0
@@ -240,6 +258,10 @@ class Round74QuantileForecastMetrics:
             "observations": self.observations,
             "quantiles": list(ROUND74_EVENT_PAYOFF_QUANTILES),
             "mean_pinball_loss_bps": self.mean_pinball_loss_bps,
+            "no_information_mean_pinball_loss_bps": (
+                self.no_information_mean_pinball_loss_bps
+            ),
+            "pinball_skill_score": self.pinball_skill_score,
             "empirical_coverage": list(self.empirical_coverage),
         }
 
@@ -448,7 +470,7 @@ class Round74PredictiveBrierSkill:
             ),
         )
         if (
-            self.task not in ROUND74_SEALED_PREDICTIVE_TASKS
+            self.task not in ROUND74_SEALED_BINARY_PREDICTIVE_TASKS
             or any(
                 isinstance(value, bool) or not isinstance(value, int)
                 for value in integers
@@ -504,14 +526,150 @@ class Round74PredictiveBrierSkill:
         }
 
 
-@dataclass(frozen=True)
-class Round74SealedPredictiveGate:
-    """Independent predictive-validity gate for every modeled binary task."""
+def _predictive_quantile_gate_reasons(
+    *,
+    observations: int,
+    evaluable_slices: int,
+    capture_runs: int,
+    covered_capture_runs: int,
+    no_information_mean_pinball_loss_bps: float,
+    pinball_skill_score: float,
+    familywise_lower_mean_run_pinball_improvement_bps: float,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if observations < 1 or evaluable_slices < 1:
+        reasons.append("quantile_evidence_missing")
+    if capture_runs < 2 or covered_capture_runs != capture_runs:
+        reasons.append("capture_run_coverage_incomplete")
+    if no_information_mean_pinball_loss_bps <= 0.0:
+        reasons.append("no_information_pinball_loss_not_positive")
+    if pinball_skill_score <= 0.0:
+        reasons.append("positive_pinball_skill_not_met")
+    if familywise_lower_mean_run_pinball_improvement_bps <= 0.0:
+        reasons.append(
+            "positive_familywise_run_pinball_improvement_lower_bound_not_met"
+        )
+    return tuple(reasons)
 
-    task_skills: tuple[Round74PredictiveBrierSkill, ...]
+
+@dataclass(frozen=True)
+class Round74PredictiveQuantileSkill:
+    """Pinball skill against a calibration-only unconditional distribution."""
+
+    task: str
+    observations: int
+    evaluable_slices: int
+    capture_runs: int
+    covered_capture_runs: int
+    model_mean_pinball_loss_bps: float
+    no_information_mean_pinball_loss_bps: float
+    pinball_skill_score: float
+    mean_run_pinball_improvement_bps: float
+    familywise_lower_mean_run_pinball_improvement_bps: float
+    mean_block_length_runs: int
+    restart_probability: float
     gate_passed: bool
     gate_reasons: tuple[str, ...]
-    scope: str = "all_non_single_class_test_slices_before_action_threshold"
+
+    def validate(self) -> None:
+        integers = (
+            self.observations,
+            self.evaluable_slices,
+            self.capture_runs,
+            self.covered_capture_runs,
+            self.mean_block_length_runs,
+        )
+        finite = (
+            self.model_mean_pinball_loss_bps,
+            self.no_information_mean_pinball_loss_bps,
+            self.pinball_skill_score,
+            self.mean_run_pinball_improvement_bps,
+            self.familywise_lower_mean_run_pinball_improvement_bps,
+            self.restart_probability,
+        )
+        expected_reasons = _predictive_quantile_gate_reasons(
+            observations=self.observations,
+            evaluable_slices=self.evaluable_slices,
+            capture_runs=self.capture_runs,
+            covered_capture_runs=self.covered_capture_runs,
+            no_information_mean_pinball_loss_bps=(
+                self.no_information_mean_pinball_loss_bps
+            ),
+            pinball_skill_score=self.pinball_skill_score,
+            familywise_lower_mean_run_pinball_improvement_bps=(
+                self.familywise_lower_mean_run_pinball_improvement_bps
+            ),
+        )
+        if (
+            self.task not in ROUND74_SEALED_QUANTILE_PREDICTIVE_TASKS
+            or any(
+                isinstance(value, bool) or not isinstance(value, int)
+                for value in integers
+            )
+            or any(value < 0 for value in integers)
+            or self.covered_capture_runs > self.capture_runs
+            or any(not math.isfinite(float(value)) for value in finite)
+            or self.model_mean_pinball_loss_bps < 0.0
+            or self.no_information_mean_pinball_loss_bps < 0.0
+            or self.pinball_skill_score > 1.0
+            or (
+                self.capture_runs >= 2
+                and not 2 <= self.mean_block_length_runs <= self.capture_runs
+            )
+            or (self.capture_runs < 2 and self.mean_block_length_runs != 0)
+            or (
+                self.mean_block_length_runs > 0
+                and not math.isclose(
+                    self.restart_probability,
+                    1.0 / self.mean_block_length_runs,
+                    rel_tol=0.0,
+                    abs_tol=1e-15,
+                )
+            )
+            or (self.mean_block_length_runs == 0 and self.restart_probability != 0.0)
+            or self.gate_reasons != expected_reasons
+            or self.gate_passed != (not expected_reasons)
+        ):
+            raise ValueError("Round 74 sealed predictive quantile skill differs")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "task": self.task,
+            "observations": self.observations,
+            "evaluable_slices": self.evaluable_slices,
+            "capture_runs": self.capture_runs,
+            "covered_capture_runs": self.covered_capture_runs,
+            "model_mean_pinball_loss_bps": self.model_mean_pinball_loss_bps,
+            "no_information_mean_pinball_loss_bps": (
+                self.no_information_mean_pinball_loss_bps
+            ),
+            "pinball_skill_score": self.pinball_skill_score,
+            "mean_run_pinball_improvement_bps": (self.mean_run_pinball_improvement_bps),
+            "familywise_alpha": (
+                ROUND74_SEALED_FAMILYWISE_ALPHA / len(ROUND74_SEALED_PREDICTIVE_TASKS)
+            ),
+            "familywise_lower_mean_run_pinball_improvement_bps": (
+                self.familywise_lower_mean_run_pinball_improvement_bps
+            ),
+            "mean_block_length_runs": self.mean_block_length_runs,
+            "restart_probability": self.restart_probability,
+            "gate_passed": self.gate_passed,
+            "gate_reasons": list(self.gate_reasons),
+        }
+
+
+@dataclass(frozen=True)
+class Round74SealedPredictiveGate:
+    """Independent predictive-validity gate for every modeled forecast task."""
+
+    task_skills: tuple[
+        Round74PredictiveBrierSkill | Round74PredictiveQuantileSkill,
+        ...,
+    ]
+    gate_passed: bool
+    gate_reasons: tuple[str, ...]
+    scope: str = "all_evaluable_test_slices_before_action_threshold"
 
     def validate(self) -> None:
         for value in self.task_skills:
@@ -524,7 +682,7 @@ class Round74SealedPredictiveGate:
         )
         if (
             expected_tasks != ROUND74_SEALED_PREDICTIVE_TASKS
-            or self.scope != "all_non_single_class_test_slices_before_action_threshold"
+            or self.scope != "all_evaluable_test_slices_before_action_threshold"
             or self.gate_reasons != expected_reasons
             or self.gate_passed != (not expected_reasons)
         ):
@@ -538,9 +696,14 @@ class Round74SealedPredictiveGate:
             "gate_passed": self.gate_passed,
             "gate_reasons": list(self.gate_reasons),
             "test_labels_used_for_threshold_selection": False,
-            "no_information_baseline": (
+            "binary_no_information_baseline": (
                 "within_slice_test_prevalence_as_a_conservative_scoring_benchmark"
             ),
+            "quantile_no_information_baseline": (
+                "fixed_symbol_horizon_side_empirical_quantiles_from_disjoint_"
+                "calibration_runs"
+            ),
+            "test_labels_used_for_quantile_baseline_fit": False,
         }
 
 
@@ -680,22 +843,40 @@ class _QuantileAccumulator:
     def __init__(self) -> None:
         self.count = 0
         self.pinball_sum = 0.0
+        self.no_information_pinball_sum = 0.0
         self.coverage = np.zeros(
             len(ROUND74_EVENT_PAYOFF_QUANTILES),
             dtype=np.int64,
         )
+        self.run_count: dict[str, int] = {}
+        self.run_pinball_sum: dict[str, float] = {}
+        self.run_no_information_pinball_sum: dict[str, float] = {}
 
-    def update(self, target: np.ndarray, forecast: np.ndarray) -> None:
+    def update(
+        self,
+        target: np.ndarray,
+        forecast: np.ndarray,
+        *,
+        no_information_forecast: np.ndarray,
+        run_ids: Sequence[str],
+    ) -> None:
         truth = np.asarray(target, dtype=np.float64)
         estimate = np.asarray(forecast, dtype=np.float64)
+        baseline = np.asarray(no_information_forecast, dtype=np.float64)
+        selected_run_ids = np.asarray(run_ids, dtype=object)
         expected_shape = (truth.size, len(ROUND74_EVENT_PAYOFF_QUANTILES))
         if (
             truth.ndim != 1
             or not truth.size
             or estimate.shape != expected_shape
+            or baseline.shape != (len(ROUND74_EVENT_PAYOFF_QUANTILES),)
+            or selected_run_ids.shape != truth.shape
             or not np.isfinite(truth).all()
             or not np.isfinite(estimate).all()
+            or not np.isfinite(baseline).all()
             or np.any(np.diff(estimate, axis=1) < 0.0)
+            or np.any(np.diff(baseline) < 0.0)
+            or any(_RUN_ID.fullmatch(str(value)) is None for value in selected_run_ids)
         ):
             raise ValueError("Round 74 sealed quantile update differs")
         quantiles = np.asarray(
@@ -703,19 +884,48 @@ class _QuantileAccumulator:
             dtype=np.float64,
         )
         error = truth[:, None] - estimate
-        self.pinball_sum += float(
-            np.maximum(quantiles * error, (quantiles - 1.0) * error).sum()
+        pinball = np.maximum(
+            quantiles * error,
+            (quantiles - 1.0) * error,
         )
+        baseline_error = truth[:, None] - baseline
+        baseline_pinball = np.maximum(
+            quantiles * baseline_error,
+            (quantiles - 1.0) * baseline_error,
+        )
+        row_pinball = pinball.mean(axis=1)
+        row_baseline_pinball = baseline_pinball.mean(axis=1)
+        self.pinball_sum += float(pinball.sum())
+        self.no_information_pinball_sum += float(baseline_pinball.sum())
         self.coverage += np.sum(truth[:, None] <= estimate, axis=0)
         self.count += int(truth.size)
+        for run_id in dict.fromkeys(str(value) for value in selected_run_ids):
+            run_mask = selected_run_ids == run_id
+            self.run_count[run_id] = self.run_count.get(run_id, 0) + int(run_mask.sum())
+            self.run_pinball_sum[run_id] = self.run_pinball_sum.get(
+                run_id,
+                0.0,
+            ) + float(row_pinball[run_mask].sum())
+            self.run_no_information_pinball_sum[run_id] = (
+                self.run_no_information_pinball_sum.get(run_id, 0.0)
+                + float(row_baseline_pinball[run_mask].sum())
+            )
 
     def result(self) -> Round74QuantileForecastMetrics:
         if self.count < 1:
             raise ValueError("Round 74 sealed quantile accumulator is empty")
+        model_loss = self.pinball_sum / self.count / len(ROUND74_EVENT_PAYOFF_QUANTILES)
+        baseline_loss = (
+            self.no_information_pinball_sum
+            / self.count
+            / len(ROUND74_EVENT_PAYOFF_QUANTILES)
+        )
         result = Round74QuantileForecastMetrics(
             observations=self.count,
-            mean_pinball_loss_bps=(
-                self.pinball_sum / self.count / len(ROUND74_EVENT_PAYOFF_QUANTILES)
+            mean_pinball_loss_bps=model_loss,
+            no_information_mean_pinball_loss_bps=baseline_loss,
+            pinball_skill_score=(
+                1.0 - model_loss / baseline_loss if baseline_loss > 0.0 else 0.0
             ),
             empirical_coverage=tuple(
                 float(value / self.count) for value in self.coverage
@@ -737,15 +947,27 @@ class _ActionAccumulator:
         *,
         payoff_target: np.ndarray,
         payoff_forecast: np.ndarray,
+        payoff_no_information_forecast: np.ndarray,
         mae_target: np.ndarray,
         mae_forecast: np.ndarray,
+        mae_no_information_forecast: np.ndarray,
         positive_probability: np.ndarray,
         adverse_target: np.ndarray,
         adverse_probability: np.ndarray,
         run_ids: Sequence[str],
     ) -> None:
-        self.payoff.update(payoff_target, payoff_forecast)
-        self.mae.update(mae_target, mae_forecast)
+        self.payoff.update(
+            payoff_target,
+            payoff_forecast,
+            no_information_forecast=payoff_no_information_forecast,
+            run_ids=run_ids,
+        )
+        self.mae.update(
+            mae_target,
+            mae_forecast,
+            no_information_forecast=mae_no_information_forecast,
+            run_ids=run_ids,
+        )
         self.positive.update(
             payoff_target > 0.0,
             positive_probability,
@@ -787,7 +1009,7 @@ def _build_predictive_brier_skill(
     seed: int,
 ) -> Round74PredictiveBrierSkill:
     if (
-        task not in ROUND74_SEALED_PREDICTIVE_TASKS
+        task not in ROUND74_SEALED_BINARY_PREDICTIVE_TASKS
         or len(expected_run_ids) < 2
         or len(set(expected_run_ids)) != len(expected_run_ids)
         or any(_RUN_ID.fullmatch(value) is None for value in expected_run_ids)
@@ -871,6 +1093,90 @@ def _build_predictive_brier_skill(
     return result
 
 
+def _build_predictive_quantile_skill(
+    task: str,
+    accumulators: Sequence[_QuantileAccumulator],
+    *,
+    expected_run_ids: tuple[str, ...],
+    seed: int,
+) -> Round74PredictiveQuantileSkill:
+    if (
+        task not in ROUND74_SEALED_QUANTILE_PREDICTIVE_TASKS
+        or len(expected_run_ids) < 2
+        or len(set(expected_run_ids)) != len(expected_run_ids)
+        or any(_RUN_ID.fullmatch(value) is None for value in expected_run_ids)
+    ):
+        raise ValueError("Round 74 sealed predictive quantile population differs")
+    selected = tuple(accumulator for accumulator in accumulators if accumulator.count)
+    run_index = {run_id: index for index, run_id in enumerate(expected_run_ids)}
+    run_count = np.zeros(len(expected_run_ids), dtype=np.int64)
+    run_model_loss = np.zeros(len(expected_run_ids), dtype=np.float64)
+    run_baseline_loss = np.zeros(len(expected_run_ids), dtype=np.float64)
+    for accumulator in selected:
+        if any(run_id not in run_index for run_id in accumulator.run_count):
+            raise ValueError("Round 74 sealed predictive quantile run differs")
+        for run_id, count in accumulator.run_count.items():
+            index = run_index[run_id]
+            run_count[index] += count
+            run_model_loss[index] += accumulator.run_pinball_sum[run_id]
+            run_baseline_loss[index] += accumulator.run_no_information_pinball_sum[
+                run_id
+            ]
+    observations = int(run_count.sum())
+    model_loss = float(run_model_loss.sum()) / observations if observations else 0.0
+    baseline_loss = (
+        float(run_baseline_loss.sum()) / observations if observations else 0.0
+    )
+    pinball_skill = 1.0 - model_loss / baseline_loss if baseline_loss > 0.0 else 0.0
+    run_improvement = np.divide(
+        run_baseline_loss - run_model_loss,
+        run_count,
+        out=np.zeros_like(run_model_loss),
+        where=run_count > 0,
+    )
+    mean_block_length = _stationary_bootstrap_mean_block_length(len(expected_run_ids))
+    sampled = _stationary_bootstrap_means(
+        run_improvement,
+        draws=ROUND74_SEALED_BOOTSTRAP_DRAWS,
+        seed=seed,
+        mean_block_length=mean_block_length,
+    )
+    lower = float(
+        np.quantile(
+            sampled,
+            ROUND74_SEALED_FAMILYWISE_ALPHA / len(ROUND74_SEALED_PREDICTIVE_TASKS),
+        )
+    )
+    covered_runs = int(np.count_nonzero(run_count))
+    reasons = _predictive_quantile_gate_reasons(
+        observations=observations,
+        evaluable_slices=len(selected),
+        capture_runs=len(expected_run_ids),
+        covered_capture_runs=covered_runs,
+        no_information_mean_pinball_loss_bps=baseline_loss,
+        pinball_skill_score=pinball_skill,
+        familywise_lower_mean_run_pinball_improvement_bps=lower,
+    )
+    result = Round74PredictiveQuantileSkill(
+        task=task,
+        observations=observations,
+        evaluable_slices=len(selected),
+        capture_runs=len(expected_run_ids),
+        covered_capture_runs=covered_runs,
+        model_mean_pinball_loss_bps=model_loss,
+        no_information_mean_pinball_loss_bps=baseline_loss,
+        pinball_skill_score=pinball_skill,
+        mean_run_pinball_improvement_bps=float(run_improvement.mean()),
+        familywise_lower_mean_run_pinball_improvement_bps=lower,
+        mean_block_length_runs=mean_block_length,
+        restart_probability=1.0 / mean_block_length,
+        gate_passed=not reasons,
+        gate_reasons=reasons,
+    )
+    result.validate()
+    return result
+
+
 class _PredictiveAccumulator:
     def __init__(self) -> None:
         self.action: dict[tuple[str, int, str, str], _ActionAccumulator] = {}
@@ -885,6 +1191,11 @@ class _PredictiveAccumulator:
         calibration: Round74ProbabilityCalibration,
     ) -> None:
         output.validate(batch.rows)
+        calibration.validate()
+        if calibration.quantile_baseline is None:
+            raise ValueError(
+                "Round 74 sealed no-information quantile baseline is missing"
+            )
         positive, adverse, unpredictable = apply_round74_probability_calibration(
             calibration,
             positive_payoff_logits=output.positive_payoff_logits,
@@ -904,13 +1215,21 @@ class _PredictiveAccumulator:
         positive_probability = _tensor_array(positive)
         adverse_probability = _tensor_array(adverse)
         unpredictable_probability = _tensor_array(unpredictable)
+        payoff_no_information = np.asarray(
+            calibration.quantile_baseline.payoff_quantiles_bps,
+            dtype=np.float64,
+        )
+        mae_no_information = np.asarray(
+            calibration.quantile_baseline.maximum_adverse_excursion_quantiles_bps,
+            dtype=np.float64,
+        )
         symbols = np.asarray(batch.symbol, dtype=object)
         run_ids = np.asarray(batch.run_id, dtype=object)
         for horizon_index, horizon in enumerate(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS):
             regime_eligible = (
                 batch.regime_unpredictability_eligibility[:, horizon_index] == 1.0
             )
-            for symbol in ROUND74_EVENT_SYMBOLS:
+            for symbol_index, symbol in enumerate(ROUND74_EVENT_SYMBOLS):
                 symbol_mask = symbols == symbol
                 selected_regime = symbol_mask & regime_eligible
                 if np.any(selected_regime):
@@ -989,6 +1308,13 @@ class _PredictiveAccumulator:
                                 side_index,
                                 :,
                             ],
+                            payoff_no_information_forecast=(
+                                payoff_no_information[
+                                    symbol_index,
+                                    horizon_index,
+                                    side_index,
+                                ]
+                            ),
                             mae_target=batch.maximum_adverse_excursion_bps[
                                 mask,
                                 horizon_index,
@@ -999,6 +1325,11 @@ class _PredictiveAccumulator:
                                 horizon_index,
                                 side_index,
                                 :,
+                            ],
+                            mae_no_information_forecast=mae_no_information[
+                                symbol_index,
+                                horizon_index,
+                                side_index,
                             ],
                             positive_probability=positive_probability[
                                 mask,
@@ -1065,6 +1396,18 @@ class _PredictiveAccumulator:
                 tuple(self.regime.values()),
                 expected_run_ids=expected_run_ids,
                 seed=ROUND74_SEALED_BOOTSTRAP_SEED + 103,
+            ),
+            _build_predictive_quantile_skill(
+                "net_payoff_quantiles",
+                tuple(value.payoff for value in action_accumulators),
+                expected_run_ids=expected_run_ids,
+                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 104,
+            ),
+            _build_predictive_quantile_skill(
+                "maximum_adverse_excursion_quantiles",
+                tuple(value.mae for value in action_accumulators),
+                expected_run_ids=expected_run_ids,
+                seed=ROUND74_SEALED_BOOTSTRAP_SEED + 105,
             ),
         )
         gate_reasons = tuple(
