@@ -77,6 +77,18 @@ flowchart LR
   new exposure.
 - Independent user-stream and REST loops. Stream freshness is mandatory for
   opens; a fresh ownership reconciliation can still permit an owned close.
+- A separate autonomous supervisor discovers the current and next BTC
+  five-minute conditions, rotates authenticated user-stream subscriptions,
+  isolates bounded model work from reconciliation and settlement, and submits
+  only hash-bound proposals from an evidence-verified promotion. Pause blocks
+  new proposals while safety loops continue. Stop blocks new proposals and
+  retries exact bot-owned cancellation and closing until no owned order or
+  position remains; an incomplete close is never reported as stopped.
+- The optional external BTC signal is a read-only callback. It receives no
+  wallet, venue, coordinator, ledger, credential, balance, position, or order
+  object and can only preserve, reduce, or veto a promoted Polymarket proposal.
+  Failure or timeout vetoes the proposal. The runtime imports no Binance
+  execution module and reports that no Binance execution connection exists.
 - Foreign orders, positions, or authenticated stream events fail closed and
   are never modified.
 - The installed CLI and native Windows app consume one generated command
@@ -99,10 +111,11 @@ flowchart LR
 - No account credentials are available for an authenticated host test.
 - No autonomous Polymarket decision policy has live-order authority. The
   operator command therefore cannot open exposure.
-- The CLI has promotion-gated one-order submission primitives and independent
-  safety supervision, but not yet the complete autonomous
-  discovery-to-inference-to-execution loop. Calling the boundary
-  "live-capable" does not mean that loop is complete.
+- The autonomous runtime and promotion-gated order path are implemented, but
+  no production decision provider is selected because the current model failed
+  its one-hour after-cost shadow. Exposing an operator Start control before a
+  model promotion would create a nonfunctional or unsafe command, so Start
+  remains closed.
 
 These gaps block release authority. A public API check or offline signature is
 not an authenticated order, cancellation, fill, or redemption test.
@@ -127,7 +140,9 @@ ledger, command contract, output, or documentation.
 ## Current Public Host Evidence
 
 On 2026-07-29, a fresh production read probe returned CLOB protocol V2 and a
-non-blocked CH/ZH geoblock result from this host. The documented
+non-blocked CH/ZH geoblock result from this host. A later probe dynamically
+discovered exact current and next BTC five-minute and fifteen-minute
+conditions, each with two outcome tokens. The documented
 `polygon.drpc.org` endpoint returned Polygon chain ID 137. Two current BTC
 five-minute markets matched Gamma and CLOB identity, token, tick-size,
 minimum-size, fee, and payload-hash checks; all four token books passed strict
