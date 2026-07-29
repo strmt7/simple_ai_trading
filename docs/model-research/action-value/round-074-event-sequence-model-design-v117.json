@@ -1,0 +1,183 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v117",
+  "created_at_utc": "2026-07-29T03:50:59Z",
+  "implementation_git_commit": "4b557a262331e7f7b14a33baa82089955edc87e2",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v116.json",
+    "file_sha256": "9112cc3486aa30a3f53207606d804b7d9e7271547b4282b76d1a3d9069d3ddd3",
+    "design_sha256": "d4837051e962097dad803342ebdebf07977faa8121b5523bfac74e08e12d977e",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "c698f70cf993828a83fd98a405f92d7aecf1ce86eb42cd2fd59150411ba7cd45"
+    },
+    "event_training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "3702db72157cd7b64045afede7172a00203df85545002980b4d37c0158699ba1"
+    },
+    "event_model_test": {
+      "path": "tests/test_impact_absorption_event_model.py",
+      "sha256": "15d4761d43bfc280bfac6631cce5387664f7d6addb30d6fd24377d7a77a4df87"
+    },
+    "event_training_test": {
+      "path": "tests/test_impact_absorption_event_training.py",
+      "sha256": "61cb635e1b7f46c8bf950471bf1cb6d4377df5d80f34a00e4113357eccd1a222"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://doi.org/10.1198/016214506000001437",
+      "finding": "A strictly proper score is optimized in expectation by the true predictive distribution.",
+      "implementation_consequence": "Fully observed neither, long-positive, and short-positive outcomes use their exact categorical log score."
+    },
+    {
+      "source": "https://jmlr.org/papers/v17/14-294.html",
+      "finding": "Proper composite multiclass losses pair a probability-simplex prediction with a link while retaining probability-estimation consistency.",
+      "implementation_consequence": "The v115 simplex-valued head is trained as one three-outcome distribution wherever both directional outcomes are observed."
+    },
+    {
+      "source": "https://www.jmlr.org/papers/v11/reid10a.html",
+      "finding": "Binary composite losses remain appropriate for estimating one observed event probability.",
+      "implementation_consequence": "If target construction censors one trade direction, only the eligible directional marginal receives a binary log score; no target is invented for the unavailable side."
+    },
+    {
+      "source": "https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html",
+      "finding": "Categorical cross entropy represents mutually exclusive class-index or class-probability targets.",
+      "implementation_consequence": "The loss explicitly builds the neither, long, and short probability vector and one-hot target instead of summing two negative Bernoulli terms for a fully observed categorical event."
+    }
+  ],
+  "loss_contract": {
+    "fully_observed_outcomes": [
+      "neither_direction_positive_after_cost",
+      "long_positive_after_cost",
+      "short_positive_after_cost"
+    ],
+    "probabilities": {
+      "p_long": "sigmoid_long_marginal_logit",
+      "p_short": "sigmoid_short_marginal_logit",
+      "p_neither": "one_minus_p_long_minus_p_short"
+    },
+    "jointly_eligible_score": "negative_log_probability_of_observed_three_outcome_class",
+    "singly_eligible_score": "binary_log_score_of_only_observed_directional_marginal",
+    "joint_target_invented_for_censored_side": false,
+    "jointly_eligible_side_equivalent_weight": 2,
+    "singly_eligible_side_equivalent_weight": 1,
+    "normalizer": "total_eligible_directional_targets",
+    "optimizer_component_name": "positive_log_loss",
+    "training_and_promotion_metric_identical": true
+  },
+  "declared_delta": {
+    "event_model_schema_version": "round-074-event-payoff-model-v12",
+    "event_training_schema_version": "round-074-event-training-v35",
+    "event_pretest_policy_schema_version": "round-074-event-pretest-policy-v34",
+    "previous_joint_score": "sum_of_two_marginal_binary_log_scores",
+    "previous_metric_name": "positive_bce",
+    "new_joint_score": "exact_three_outcome_categorical_log_score",
+    "new_metric_name": "positive_log_loss",
+    "one_sided_censoring_score": "eligible_marginal_binary_log_score",
+    "neither_outcome_scored_directly": true,
+    "unavailable_direction_target_synthesized": false,
+    "eligible_direction_weighting_changed": false,
+    "parameter_counts_changed": false,
+    "candidate_registry_changed": false,
+    "target_definition_changed": false,
+    "feature_definition_changed": false,
+    "calibration_changed": false,
+    "action_policy_changed": false,
+    "execution_replay_changed": false,
+    "forward_passes_added": 0,
+    "backward_passes_added": 0,
+    "market_data_reads_added": 0,
+    "ai_model_calls_added": 0,
+    "campaign_source_files_changed_on_main": false,
+    "trading_authority": false
+  },
+  "candidate_parameter_counts": {
+    "event_pooling_linear": 22600,
+    "event_pooling_mlp": 43684,
+    "causal_event_tcn": 131108,
+    "causal_event_attention": 154180
+  },
+  "directml_preflight": {
+    "executed": true,
+    "target_source": "synthetic_preflight_only",
+    "backend_kind": "directml",
+    "backend_device": "privateuseone:0",
+    "backend_vendor": "AMD Radeon RX 9070 XT",
+    "backend_accelerated": true,
+    "torch_version": "2.4.1+cpu",
+    "cpu_fallback_warning_count": 0,
+    "warning_count": 0,
+    "all_four_candidates_completed_forward_backward_and_parameter_update": true,
+    "positive_component_name": "positive_log_loss",
+    "financial_edge_tested": false,
+    "profitability_claim": false
+  },
+  "schema_contract": {
+    "event_model": "round-074-event-payoff-model-v12",
+    "event_dataset": "round-074-event-dataset-v12",
+    "event_training": "round-074-event-training-v35",
+    "event_pretest_policy": "round-074-event-pretest-policy-v34",
+    "ai_uplift_development": "round-074-ai-uplift-development-v16",
+    "ai_pretest_qualification": "round-074-ai-pretest-qualification-v4",
+    "sealed_evaluation": "round-074-sealed-evaluation-v23"
+  },
+  "verification": {
+    "unique_tests_passed": 184,
+    "model_and_training_tests_passed": 60,
+    "sealed_operator_contract_and_v105_through_v116_design_tests_passed": 79,
+    "calibration_action_policy_development_runtime_and_latency_tests_passed": 45,
+    "joint_long_score_matches_negative_log_p_long": true,
+    "joint_neither_score_matches_negative_log_p_neither": true,
+    "censored_long_score_matches_negative_log_p_long": true,
+    "masked_categorical_targets_zero_for_censored_rows": true,
+    "directml_forward_backward_preflight_passed": true,
+    "ruff_lint_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_suite_executed": false,
+    "representative_training_performed": false,
+    "sealed_test_accessed": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "campaign_isolation": {
+    "status_observed_at_utc": "2026-07-29T03:50:59Z",
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_epochs": 37,
+    "latest_independently_adjudicated_slot": 46,
+    "slot_047_status_at_observation": "running",
+    "slot_047_process_count_at_observation": 4,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_database_or_wal_hashed_by_model_work": false,
+    "campaign_source_files_changed_on_main": false,
+    "development_worktree_changes_affect_active_campaign": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "old_and_new_score_difference_verified_by_synthetic_probability_cases": true,
+    "representative_training_data_complete": false,
+    "model_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated_on_representative_data": false,
+    "probability_calibration_evaluated_on_representative_data": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "ai_model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "04662cdf3e465654a52660de78d559246f314ff3a5e4bbfcae46488f3543fb58"
+}
