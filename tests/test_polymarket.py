@@ -236,6 +236,25 @@ def test_discovery_batches_all_assets_and_never_uses_precompiled_market_ids() ->
     assert ("closed", "false") in params
 
 
+def test_discovery_can_request_only_btc_without_precompiled_market_ids() -> None:
+    session = _Session([_market("BTC")])
+    client = PolymarketPublicClient(session=session, timeout_seconds=3)
+
+    markets = client.discover_five_minute_markets(
+        now_ms=EPOCH * 1_000 + 30_000,
+        include_next=True,
+        assets=("BTC",),
+    )
+
+    assert [market.asset for market in markets] == ["BTC"]
+    _url, params, _timeout = session.calls[0]
+    slugs = [value for key, value in params if key == "slug"]
+    assert slugs == [
+        f"btc-updown-5m-{EPOCH}",
+        f"btc-updown-5m-{EPOCH + 300}",
+    ]
+
+
 def test_public_client_uses_official_full_market_resolution_endpoints() -> None:
     condition_id = "0x" + "7" * 64
     version_url = f"{CLOB_BASE_URL}/version"

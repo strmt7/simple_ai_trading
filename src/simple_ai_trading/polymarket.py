@@ -483,15 +483,27 @@ class PolymarketPublicClient:
         now_ms: int,
         include_next: bool = True,
         require_all_assets: bool = True,
+        assets: Sequence[str] | None = None,
     ) -> tuple[PolymarketFiveMinuteMarket, ...]:
         now = int(now_ms)
         if now < 0:
             raise ValueError("now_ms must be non-negative")
+        selected_assets = (
+            SUPPORTED_POLYMARKET_ASSETS
+            if assets is None
+            else tuple(str(asset or "").strip().upper() for asset in assets)
+        )
+        if (
+            not selected_assets
+            or len(set(selected_assets)) != len(selected_assets)
+            or any(asset not in SUPPORTED_POLYMARKET_ASSETS for asset in selected_assets)
+        ):
+            raise ValueError("Polymarket discovery assets are invalid")
         base_epoch = now // 300_000 * 300
         epochs = (base_epoch, base_epoch + 300) if include_next else (base_epoch,)
         slugs = [
             f"{asset.lower()}-updown-5m-{epoch}"
-            for asset in SUPPORTED_POLYMARKET_ASSETS
+            for asset in selected_assets
             for epoch in epochs
         ]
         params = [("slug", slug) for slug in slugs]
@@ -515,7 +527,7 @@ class PolymarketPublicClient:
             raise ValueError("Gamma returned duplicate or unrequested markets")
         if require_all_assets:
             assets = {market.asset for market in markets if market.end_ms > now}
-            missing = sorted(set(SUPPORTED_POLYMARKET_ASSETS) - assets)
+            missing = sorted(set(selected_assets) - assets)
             if missing:
                 raise ValueError(
                     f"active five-minute markets missing for: {','.join(missing)}"

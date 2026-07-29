@@ -286,6 +286,97 @@ def test_evidence_store_round_trip_has_complete_coverage_and_event_indexes(
     ]
 
 
+def test_evidence_store_honors_preregistered_btc_futures_scope(tmp_path) -> None:
+    run_id = "btc-futures-scope"
+    manifest: dict[str, object] = {
+        "schema_version": "test-btc-futures-capture-v1",
+        "run_id": run_id,
+        "created_at_ms": EPOCH * 1_000,
+        "required_assets": ["BTC"],
+        "required_streams": [
+            "binance_futures",
+            "binance_spot",
+            "clob_market",
+            "polymarket_rtds",
+        ],
+    }
+    manifest["manifest_sha256"] = _sha(_canonical(manifest))
+    with PolymarketEvidenceStore(tmp_path / "btc-futures.duckdb") as store:
+        store.start_run(
+            run_id,
+            EPOCH * 1_000,
+            preregistration_manifest=manifest,
+        )
+        store.record_market_evidence(run_id, _evidence("BTC"))
+        store.append_messages(
+            run_id,
+            [
+                _message(
+                    "clob_market",
+                    {
+                        "event_type": "book",
+                        "market": "0x" + "7" * 64,
+                        "asset_id": "7" * 40,
+                        "timestamp": EPOCH * 1_000,
+                    },
+                ),
+                _message(
+                    "polymarket_rtds",
+                    {
+                        "topic": "crypto_prices_chainlink",
+                        "type": "update",
+                        "timestamp": EPOCH * 1_000,
+                        "payload": {
+                            "symbol": "btc/usd",
+                            "timestamp": EPOCH * 1_000,
+                            "value": "64000",
+                        },
+                    },
+                ),
+                _message(
+                    "binance_spot",
+                    {
+                        "stream": "btcusdt@trade",
+                        "data": {
+                            "e": "trade",
+                            "E": EPOCH * 1_000,
+                            "T": EPOCH * 1_000 - 1,
+                        },
+                    },
+                ),
+                _message(
+                    "binance_futures",
+                    {
+                        "stream": "btcusdt@aggTrade",
+                        "data": {
+                            "e": "aggTrade",
+                            "E": EPOCH * 1_000,
+                            "T": EPOCH * 1_000 - 1,
+                        },
+                    },
+                ),
+            ],
+        )
+        report = store.finish_run(
+            run_id,
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(tmp_path / "btc-futures.duckdb"),
+            errors=(),
+        )
+        events = tuple(store.iter_public_events(run_id))
+
+    assert report.status == "complete"
+    assert report.assets == ("BTC",)
+    assert report.stream_counts["binance_futures"] == 1
+    assert any(
+        event.stream == "binance_futures"
+        and event.event_type == "aggTrade"
+        and event.symbol == "BTC"
+        for event in events
+    )
+
+
 def test_storage_v4_terminal_report_binds_the_ordered_chunk_manifest(tmp_path) -> None:
     database = tmp_path / "terminal-manifest.duckdb"
     with PolymarketEvidenceStore(database) as store:
@@ -1252,6 +1343,39 @@ def test_binance_stream_uses_one_named_lane_without_redundant_client_pings(
     assert captured["lane"] == "binance:combined:btc-eth-sol"
     assert captured["heartbeat"] is None
     assert "protocol_ping_interval" not in captured
+
+
+def test_btc_scoped_recorder_uses_event_timed_spot_and_futures_lanes(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    recorder = PolymarketPublicRecorder(
+        tmp_path / "btc-lanes.duckdb",
+        assets=("BTC",),
+        include_binance_futures=True,
+    )
+    captured: list[dict[str, object]] = []
+
+    async def _capture_simple_stream(**options: object) -> None:
+        captured.append(dict(options))
+
+    monkeypatch.setattr(recorder, "_simple_stream", _capture_simple_stream)
+    asyncio.run(recorder._binance_stream(asyncio.Queue(), asyncio.Event()))
+    asyncio.run(recorder._binance_futures_stream(asyncio.Queue(), asyncio.Event()))
+
+    spot, futures = captured
+    assert spot["stream"] == "binance_spot"
+    assert spot["lane"] == "binance:spot:btc"
+    assert "btcusdt@trade" in str(spot["url"])
+    assert "btcusdt@depth@100ms" in str(spot["url"])
+    assert "bookTicker" not in str(spot["url"])
+    assert "ethusdt" not in str(spot["url"])
+    assert futures["stream"] == "binance_futures"
+    assert futures["lane"] == "binance:futures:btc"
+    assert "btcusdt@aggTrade" in str(futures["url"])
+    assert "btcusdt@bookTicker" in str(futures["url"])
+    assert "btcusdt@markPrice@1s" in str(futures["url"])
+    assert "ethusdt" not in str(futures["url"])
 
 
 def test_every_recorder_output_type_has_a_bounded_queue_deadline(

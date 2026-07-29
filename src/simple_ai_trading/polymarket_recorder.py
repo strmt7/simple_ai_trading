@@ -26,6 +26,7 @@ from .duckdb_batch import insert_rows_columnar
 from .paper_execution import PaperOrderJournal
 from .polymarket import (
     POLYMARKET_MARKET_SCHEMA_VERSION,
+    SUPPORTED_POLYMARKET_ASSETS,
     PolymarketFiveMinuteMarket,
     PolymarketPublicClient,
     validate_clob_market_info,
@@ -70,8 +71,16 @@ BINANCE_SPOT_WEBSOCKET = (
     "ethusdt@bookTicker/ethusdt@trade/"
     "solusdt@bookTicker/solusdt@trade"
 )
+BINANCE_SPOT_STREAM_BASE = "wss://stream.binance.com:9443/stream?streams="
+BINANCE_FUTURES_STREAM_BASE = "wss://fstream.binance.com/stream?streams="
 _STREAMS = frozenset(
-    {"clob_market", "polymarket_rtds", "binance_spot", "clob_rest_book"}
+    {
+        "clob_market",
+        "polymarket_rtds",
+        "binance_spot",
+        "binance_futures",
+        "clob_rest_book",
+    }
 )
 _MAX_RAW_MESSAGE_BYTES = 8 * 1024 * 1024
 _MAX_RAW_CHUNK_BYTES = 64 * 1024 * 1024
@@ -144,6 +153,32 @@ _CONDITION_MANIFEST_INSERT_SQL = (
     + ") SELECT "
     + ", ".join("unnest(?)" for _column in _CONDITION_MANIFEST_COLUMNS)
 )
+
+
+def _round14_binance_spot_websocket(assets: Sequence[str]) -> str:
+    streams = [
+        stream
+        for asset in assets
+        for stream in (
+            f"{asset.lower()}usdt@trade",
+            f"{asset.lower()}usdt@depth@100ms",
+        )
+    ]
+    return BINANCE_SPOT_STREAM_BASE + "/".join(streams)
+
+
+def _round14_binance_futures_websocket(assets: Sequence[str]) -> str:
+    streams = [
+        stream
+        for asset in assets
+        for stream in (
+            f"{asset.lower()}usdt@aggTrade",
+            f"{asset.lower()}usdt@bookTicker",
+            f"{asset.lower()}usdt@depth@100ms",
+            f"{asset.lower()}usdt@markPrice@1s",
+        )
+    ]
+    return BINANCE_FUTURES_STREAM_BASE + "/".join(streams)
 
 _LEGACY_RAW_MESSAGE_INSERT_SQL = """
     INSERT INTO polymarket_raw_message (
@@ -4578,6 +4613,51 @@ class PolymarketEvidenceStore:
         )
         return gap_id
 
+    def _coverage_requirements(
+        self,
+        run_id: str,
+    ) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        row = self.connect().execute(
+            """
+            SELECT manifest_json
+            FROM polymarket_preregistration_manifest
+            WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchone()
+        default_assets = tuple(SUPPORTED_POLYMARKET_ASSETS)
+        default_streams = ("binance_spot", "clob_market", "polymarket_rtds")
+        if row is None:
+            return default_assets, default_streams
+        payload = _strict_json_loads(str(row[0]))
+        if not isinstance(payload, Mapping):
+            raise ValueError("Polymarket preregistration manifest is not an object")
+        has_assets = "required_assets" in payload
+        has_streams = "required_streams" in payload
+        if not has_assets and not has_streams:
+            return default_assets, default_streams
+        raw_assets = payload.get("required_assets")
+        raw_streams = payload.get("required_streams")
+        if (
+            not isinstance(raw_assets, list)
+            or not isinstance(raw_streams, list)
+            or any(type(value) is not str for value in (*raw_assets, *raw_streams))
+        ):
+            raise ValueError("Polymarket preregistration capture scope is invalid")
+        assets = tuple(str(value).strip().upper() for value in raw_assets)
+        streams = tuple(str(value).strip() for value in raw_streams)
+        if (
+            not assets
+            or len(set(assets)) != len(assets)
+            or any(asset not in SUPPORTED_POLYMARKET_ASSETS for asset in assets)
+            or not streams
+            or len(set(streams)) != len(streams)
+            or any(stream not in _STREAMS for stream in streams)
+            or "clob_rest_book" in streams
+        ):
+            raise ValueError("Polymarket preregistration capture scope is invalid")
+        return assets, streams
+
     def finish_run(
         self,
         run_id: str,
@@ -4706,14 +4786,15 @@ class PolymarketEvidenceStore:
                 progress=progress,
                 progress_interval_seconds=progress_interval_seconds,
             )
-        required_streams = {"clob_market", "polymarket_rtds", "binance_spot"}
+        required_assets, required_stream_names = self._coverage_requirements(run_id)
+        required_streams = set(required_stream_names)
         coverage_errors: list[str] = []
         missing_streams = sorted(required_streams - set(stream_counts))
         if missing_streams:
             coverage_errors.append(f"missing_streams:{','.join(missing_streams)}")
-        if assets != ("BTC", "ETH", "SOL"):
+        if assets != tuple(sorted(required_assets)):
             coverage_errors.append(f"asset_coverage:{','.join(assets)}")
-        if market_count < 3:
+        if market_count < len(required_assets):
             coverage_errors.append(f"insufficient_market_snapshots:{market_count}")
         if raw_count < 1:
             coverage_errors.append("no_public_messages")
@@ -6171,7 +6252,7 @@ def _event_index(
             )
             source_time_ms = _safe_int(payload.get("timestamp"))
         event_type = f"{topic}:{message_type}".strip(":") or "unknown"
-    elif stream == "binance_spot":
+    elif stream in {"binance_spot", "binance_futures"}:
         stream_name = str(event.get("stream") or "").lower()
         symbol = stream_name.split("@")[0].removesuffix("usdt").upper()
         payload = event.get("data")
@@ -6237,6 +6318,8 @@ class PolymarketPublicRecorder:
         discovery_interval_seconds: int = 60,
         memory_limit: str = "4GB",
         database_threads: int = 2,
+        assets: Sequence[str] = SUPPORTED_POLYMARKET_ASSETS,
+        include_binance_futures: bool = False,
     ) -> None:
         self.database = Path(database)
         self.client = client or PolymarketPublicClient()
@@ -6255,6 +6338,30 @@ class PolymarketPublicRecorder:
         self.database_threads = int(database_threads)
         if self.database_threads < 1 or self.database_threads > 8:
             raise ValueError("database_threads must lie in [1, 8]")
+        selected_assets = tuple(str(asset or "").strip().upper() for asset in assets)
+        if (
+            not selected_assets
+            or len(set(selected_assets)) != len(selected_assets)
+            or any(
+                asset not in SUPPORTED_POLYMARKET_ASSETS
+                for asset in selected_assets
+            )
+        ):
+            raise ValueError("recorder assets are invalid")
+        if type(include_binance_futures) is not bool:
+            raise ValueError("include_binance_futures must be boolean")
+        self.assets = selected_assets
+        self.include_binance_futures = include_binance_futures
+        self.required_streams = (
+            "binance_futures",
+            "binance_spot",
+            "clob_market",
+            "polymarket_rtds",
+        ) if include_binance_futures else (
+            "binance_spot",
+            "clob_market",
+            "polymarket_rtds",
+        )
         self.registry = _MarketRegistry()
         self.errors: list[str] = []
         self._written_message_count = 0
@@ -6392,6 +6499,28 @@ class PolymarketPublicRecorder:
                 raise ValueError(
                     "preregistration capture duration differs from recorder duration"
                 )
+            scoped_capture = (
+                self.assets != SUPPORTED_POLYMARKET_ASSETS
+                or self.include_binance_futures
+            )
+            if scoped_capture and preregistration_manifest is None:
+                raise ValueError(
+                    "scoped Polymarket capture requires a preregistration manifest"
+                )
+            if preregistration_manifest is not None and (
+                "required_assets" in preregistration_manifest
+                or "required_streams" in preregistration_manifest
+                or scoped_capture
+            ):
+                if (
+                    preregistration_manifest.get("required_assets")
+                    != list(self.assets)
+                    or preregistration_manifest.get("required_streams")
+                    != list(self.required_streams)
+                ):
+                    raise ValueError(
+                        "preregistration capture scope differs from recorder"
+                    )
             started_monotonic = time.monotonic()
             store.start_run(
                 run_id,
@@ -6459,6 +6588,16 @@ class PolymarketPublicRecorder:
                             )
                         ),
                     ]
+                    if self.include_binance_futures:
+                        producers.append(
+                            asyncio.create_task(
+                                self._supervise(
+                                    "binance_futures",
+                                    self._binance_futures_stream(output, stop),
+                                    stop,
+                                )
+                            )
+                        )
                     stopped = asyncio.create_task(stop.wait())
                     done, _ = await asyncio.wait(
                         {stopped, writer},
@@ -6644,11 +6783,16 @@ class PolymarketPublicRecorder:
         *,
         now_ms: int,
     ) -> None:
+        discovery_arguments: dict[str, object] = {
+            "now_ms": now_ms,
+            "include_next": True,
+            "require_all_assets": True,
+        }
+        if self.assets != SUPPORTED_POLYMARKET_ASSETS:
+            discovery_arguments["assets"] = self.assets
         markets = await asyncio.to_thread(
             self.client.discover_five_minute_markets,
-            now_ms=now_ms,
-            include_next=True,
-            require_all_assets=True,
+            **discovery_arguments,
         )
         new_markets = self.registry.update(markets, now_ms=now_ms)
         for market in new_markets:
@@ -6966,7 +7110,7 @@ class PolymarketPublicRecorder:
     ) -> None:
         # The live endpoint's filter behavior differs from the current web docs.
         # Keep this wire contract aligned with the bounded probe artifact.
-        assets = ("btc", "eth", "sol")
+        assets = tuple(asset.lower() for asset in self.assets)
         subscriptions = (
             *(
                 (
@@ -7031,10 +7175,37 @@ class PolymarketPublicRecorder:
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
         stop: asyncio.Event,
     ) -> None:
+        default_scope = self.assets == SUPPORTED_POLYMARKET_ASSETS
         await self._simple_stream(
             stream="binance_spot",
-            lane="binance:combined:btc-eth-sol",
-            url=BINANCE_SPOT_WEBSOCKET,
+            lane=(
+                "binance:combined:btc-eth-sol"
+                if default_scope
+                else "binance:spot:"
+                + "-".join(asset.lower() for asset in self.assets)
+            ),
+            url=(
+                BINANCE_SPOT_WEBSOCKET
+                if default_scope
+                else _round14_binance_spot_websocket(self.assets)
+            ),
+            subscription=None,
+            heartbeat=None,
+            heartbeat_seconds=20.0,
+            output=output,
+            stop=stop,
+        )
+
+    async def _binance_futures_stream(
+        self,
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
+        stop: asyncio.Event,
+    ) -> None:
+        await self._simple_stream(
+            stream="binance_futures",
+            lane="binance:futures:"
+            + "-".join(asset.lower() for asset in self.assets),
+            url=_round14_binance_futures_websocket(self.assets),
             subscription=None,
             heartbeat=None,
             heartbeat_seconds=20.0,
