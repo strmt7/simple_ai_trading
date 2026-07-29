@@ -11,6 +11,7 @@ from simple_ai_trading.polymarket import (
     GAMMA_MARKETS_URL,
     POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION,
     PolymarketPublicClient,
+    parse_polymarket_fifteen_minute_market,
     parse_polymarket_five_minute_market,
     validate_clob_order_book,
     validate_clob_market_info,
@@ -18,6 +19,7 @@ from simple_ai_trading.polymarket import (
 
 
 EPOCH = 1_784_058_600
+EPOCH_15 = EPOCH - 300
 
 
 def _market(asset: str = "BTC", *, epoch: int = EPOCH) -> dict[str, object]:
@@ -51,6 +53,14 @@ def _market(asset: str = "BTC", *, epoch: int = EPOCH) -> dict[str, object]:
     }
 
 
+def _fifteen_minute_market(*, epoch: int = EPOCH_15) -> dict[str, object]:
+    payload = _market("BTC", epoch=epoch)
+    payload["slug"] = f"btc-updown-15m-{epoch}"
+    payload["eventStartTime"] = "2026-07-14T19:45:00Z"
+    payload["endDate"] = "2026-07-14T20:00:00Z"
+    return payload
+
+
 def test_market_parser_requires_exact_five_minute_chainlink_contract() -> None:
     market = parse_polymarket_five_minute_market(_market())
 
@@ -63,6 +73,29 @@ def test_market_parser_requires_exact_five_minute_chainlink_contract() -> None:
     assert market.fee_schedule.fee_model()(
         Decimal("0.5"), Decimal("100"), "taker"
     ) == Decimal("1.75000")
+
+
+def test_fifteen_minute_parser_is_separately_typed_and_exact() -> None:
+    market = parse_polymarket_fifteen_minute_market(_fifteen_minute_market())
+
+    assert market.asset == "BTC"
+    assert market.event_start_ms == EPOCH_15 * 1_000
+    assert market.end_ms - market.event_start_ms == 900_000
+    assert market.horizon_minutes == 15
+    assert market.asdict()["schema_version"] == "polymarket-crypto-15m-market-v1"
+    assert market.asdict()["horizon_minutes"] == 15
+
+
+def test_fifteen_minute_parser_rejects_wrong_horizon_and_asset() -> None:
+    wrong_duration = _fifteen_minute_market()
+    wrong_duration["endDate"] = "2026-07-14T19:50:00Z"
+    with pytest.raises(ValueError, match="fifteen-minute event window"):
+        parse_polymarket_fifteen_minute_market(wrong_duration)
+
+    wrong_asset = _fifteen_minute_market()
+    wrong_asset["slug"] = f"eth-updown-15m-{EPOCH_15}"
+    with pytest.raises(ValueError, match="supported BTC fifteen-minute"):
+        parse_polymarket_fifteen_minute_market(wrong_asset)
 
 
 def test_market_parser_applies_recorded_v2_fee_exponent_exactly() -> None:
@@ -252,6 +285,24 @@ def test_discovery_can_request_only_btc_without_precompiled_market_ids() -> None
     assert slugs == [
         f"btc-updown-5m-{EPOCH}",
         f"btc-updown-5m-{EPOCH + 300}",
+    ]
+
+
+def test_fifteen_minute_discovery_uses_utc_epochs_not_market_ids() -> None:
+    session = _Session([_fifteen_minute_market()])
+    client = PolymarketPublicClient(session=session, timeout_seconds=3)
+
+    markets = client.discover_fifteen_minute_markets(
+        now_ms=EPOCH_15 * 1_000 + 30_000,
+        include_next=True,
+    )
+
+    assert [market.asset for market in markets] == ["BTC"]
+    _url, params, _timeout = session.calls[0]
+    slugs = [value for key, value in params if key == "slug"]
+    assert slugs == [
+        f"btc-updown-15m-{EPOCH_15}",
+        f"btc-updown-15m-{EPOCH_15 + 900}",
     ]
 
 
