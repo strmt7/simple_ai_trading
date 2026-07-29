@@ -29,6 +29,10 @@ from .polymarket_historical_model import (
     PRETEST_SCHEMA_VERSION,
     predict_historical_candidate,
 )
+from .polymarket_historical_support import (
+    HistoricalFeatureSupportProfile,
+    load_historical_feature_support,
+)
 
 
 _MAX_ARTIFACT_BYTES = 256 * 1024
@@ -460,10 +464,20 @@ class VerifiedHistoricalShadowPredictor:
     pretest_artifact_sha256: str
     evaluation_artifact_sha256: str
     dataset_sha256: str
+    support_profile: HistoricalFeatureSupportProfile
     trading_authority: bool = False
 
     def __post_init__(self) -> None:
-        if self.trading_authority:
+        if (
+            self.trading_authority
+            or not isinstance(
+                self.support_profile,
+                HistoricalFeatureSupportProfile,
+            )
+            or self.support_profile.pretest_artifact_sha256
+            != self.pretest_artifact_sha256
+            or self.support_profile.dataset_sha256 != self.dataset_sha256
+        ):
             raise ValueError("historical shadow predictor cannot have trading authority")
 
     def predict_up_probability(self, features: np.ndarray) -> float:
@@ -489,6 +503,9 @@ class PolymarketHistoricalShadowDecision:
     candidate_id: str
     pretest_artifact_sha256: str
     evaluation_artifact_sha256: str
+    support_profile_sha256: str = ""
+    outside_training_range_count: int = 0
+    extreme_outlier_count: int = 0
     trading_authority: bool = False
     grants_execution_authority: bool = False
 
@@ -504,6 +521,15 @@ class PolymarketHistoricalShadowDecision:
             raise ValueError("abstained historical shadow decision is malformed")
         if self.trading_authority or self.grants_execution_authority:
             raise ValueError("historical shadow decision cannot grant authority")
+        if (
+            self.outside_training_range_count < 0
+            or self.extreme_outlier_count < 0
+            or (
+                self.support_profile_sha256
+                and len(self.support_profile_sha256) != 64
+            )
+        ):
+            raise ValueError("historical shadow support evidence is invalid")
 
 
 class PolymarketHistoricalShadowScorer:
@@ -548,6 +574,29 @@ class PolymarketHistoricalShadowScorer:
                 evaluation_artifact_sha256=(
                     self.predictor.evaluation_artifact_sha256
                 ),
+                support_profile_sha256=(
+                    self.predictor.support_profile.artifact_sha256
+                ),
+            )
+        support = self.predictor.support_profile.assess(features)
+        if support.status == "abstain":
+            return PolymarketHistoricalShadowDecision(
+                status="abstain",
+                reason="feature_support_out_of_distribution",
+                event_start_ms=int(event_start_ms),
+                decision_time_ms=int(decision_time_ms),
+                observed_at_ms=int(observed_at_ms),
+                probability_up=None,
+                candidate_id=self.predictor.candidate_id,
+                pretest_artifact_sha256=self.predictor.pretest_artifact_sha256,
+                evaluation_artifact_sha256=(
+                    self.predictor.evaluation_artifact_sha256
+                ),
+                support_profile_sha256=support.profile_sha256,
+                outside_training_range_count=(
+                    support.outside_training_range_count
+                ),
+                extreme_outlier_count=support.extreme_outlier_count,
             )
         return PolymarketHistoricalShadowDecision(
             status="observed",
@@ -559,6 +608,11 @@ class PolymarketHistoricalShadowScorer:
             candidate_id=self.predictor.candidate_id,
             pretest_artifact_sha256=self.predictor.pretest_artifact_sha256,
             evaluation_artifact_sha256=self.predictor.evaluation_artifact_sha256,
+            support_profile_sha256=support.profile_sha256,
+            outside_training_range_count=(
+                support.outside_training_range_count
+            ),
+            extreme_outlier_count=support.extreme_outlier_count,
         )
 
 
@@ -566,6 +620,7 @@ def load_verified_historical_shadow_predictor(
     *,
     pretest_path: str | Path,
     evaluation_path: str | Path,
+    support_path: str | Path,
 ) -> VerifiedHistoricalShadowPredictor:
     pretest = _load_strict_json(Path(pretest_path), name="historical pretest")
     evaluation = _load_strict_json(
@@ -643,12 +698,19 @@ def load_verified_historical_shadow_predictor(
         != model.get("model_sha256")
     ):
         raise ValueError("historical shadow challenger model differs")
+    dataset_sha = str(pretest["dataset_sha256"])
+    support = load_historical_feature_support(
+        support_path,
+        expected_pretest_artifact_sha256=pretest_sha,
+        expected_dataset_sha256=dataset_sha,
+    )
     return VerifiedHistoricalShadowPredictor(
         candidate=dict(challenger),
         candidate_id=challenger_id,
         pretest_artifact_sha256=pretest_sha,
         evaluation_artifact_sha256=evaluation_sha,
-        dataset_sha256=str(pretest["dataset_sha256"]),
+        dataset_sha256=dataset_sha,
+        support_profile=support,
     )
 
 
