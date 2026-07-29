@@ -7,6 +7,7 @@ import pytest
 
 from simple_ai_trading.polymarket_historical_shadow_settlement import (
     settle_shadow_opportunity,
+    validate_shadow_official_resolution,
 )
 
 
@@ -168,3 +169,20 @@ def test_unsettled_gamma_is_rejected() -> None:
             source_log_sha256="9" * 64,
             source_commit="8" * 40,
         )
+
+
+def test_abstained_opportunity_can_supply_resolution_identity() -> None:
+    opportunity = _opportunity()
+    opportunity["status"] = "abstain"
+    opportunity["reason"] = "after_cost_edge_below_threshold"
+    opportunity.pop("artifact_sha256")
+    opportunity["artifact_sha256"] = _canonical_sha(opportunity)
+    resolution = validate_shadow_official_resolution(
+        opportunity,
+        gamma_market=_gamma(),
+        clob_market=_clob(),
+        resolution_observed_at_ms=1_301_000,
+    )
+    assert resolution["winner"] == "Up"
+    assert resolution["sources_agree"] is True
+    assert resolution["trading_authority"] is False

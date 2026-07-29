@@ -96,16 +96,20 @@ def _verify_opportunity(
     claimed = str(opportunity.pop("artifact_sha256", "")).lower()
     if len(claimed) != 64 or _canonical_sha256(opportunity) != claimed:
         raise ValueError("Polymarket shadow opportunity integrity failed")
+    status = opportunity.get("status")
+    reason = opportunity.get("reason")
     if (
         opportunity.get("schema_version")
         != "polymarket-btc-shadow-opportunity-v1"
-        or opportunity.get("status") != "candidate"
-        or opportunity.get("reason") != ""
+        or status not in {"candidate", "abstain"}
+        or not isinstance(reason, str)
+        or (status == "candidate" and reason != "")
+        or (status == "abstain" and reason == "")
         or opportunity.get("trading_authority") is not False
         or opportunity.get("proposal_authority") is not False
         or opportunity.get("execution_or_profitability_claim") is not False
     ):
-        raise ValueError("Polymarket shadow opportunity is not settleable")
+        raise ValueError("Polymarket shadow opportunity is not verifiable")
     return value, claimed
 
 
@@ -201,6 +205,35 @@ def _clob_winner(
     return winners[0]
 
 
+def validate_shadow_official_resolution(
+    opportunity: Mapping[str, object],
+    *,
+    gamma_market: Mapping[str, object],
+    clob_market: Mapping[str, object],
+    resolution_observed_at_ms: int,
+) -> Mapping[str, object]:
+    """Require matching terminal winner and identity from both public APIs."""
+
+    verified, opportunity_sha = _verify_opportunity(opportunity)
+    observed_at = int(resolution_observed_at_ms)
+    if observed_at < int(verified["event_end_ms"]):
+        raise ValueError("Polymarket resolution was observed before market end")
+    gamma_winner = _gamma_winner(gamma_market, verified)
+    clob_winner = _clob_winner(clob_market, verified)
+    if gamma_winner != clob_winner:
+        raise ValueError("Gamma and CLOB terminal outcomes disagree")
+    return {
+        "winner": gamma_winner,
+        "opportunity_artifact_sha256": opportunity_sha,
+        "gamma_payload_sha256": _canonical_sha256(gamma_market),
+        "clob_payload_sha256": _canonical_sha256(clob_market),
+        "resolution_observed_at_ms": observed_at,
+        "sources_agree": True,
+        "trading_authority": False,
+        "profitability_claim": False,
+    }
+
+
 def settle_shadow_opportunity(
     opportunity: Mapping[str, object],
     *,
@@ -213,14 +246,16 @@ def settle_shadow_opportunity(
     """Create no-authority shadow evidence from matching terminal sources."""
 
     verified, opportunity_sha = _verify_opportunity(opportunity)
-    observed_at = int(resolution_observed_at_ms)
-    if observed_at < int(verified["event_end_ms"]):
-        raise ValueError("Polymarket resolution was observed before market end")
-    gamma_winner = _gamma_winner(gamma_market, verified)
-    clob_winner = _clob_winner(clob_market, verified)
-    if gamma_winner != clob_winner:
-        raise ValueError("Gamma and CLOB terminal outcomes disagree")
-    winner = gamma_winner
+    if verified.get("status") != "candidate":
+        raise ValueError("Polymarket shadow opportunity is not settleable")
+    resolution = validate_shadow_official_resolution(
+        verified,
+        gamma_market=gamma_market,
+        clob_market=clob_market,
+        resolution_observed_at_ms=resolution_observed_at_ms,
+    )
+    observed_at = int(resolution["resolution_observed_at_ms"])
+    winner = str(resolution["winner"])
     selected = str(verified["selected_outcome"])
     if selected not in {"Up", "Down"}:
         raise ValueError("Polymarket shadow selected outcome differs")
@@ -291,8 +326,8 @@ def settle_shadow_opportunity(
         },
         "official_resolution": {
             "winner": winner,
-            "gamma_payload_sha256": _canonical_sha256(gamma_market),
-            "clob_payload_sha256": _canonical_sha256(clob_market),
+            "gamma_payload_sha256": resolution["gamma_payload_sha256"],
+            "clob_payload_sha256": resolution["clob_payload_sha256"],
             "gamma_closed": True,
             "clob_closed": True,
             "sources_agree": True,
@@ -337,4 +372,5 @@ def settle_shadow_opportunity(
 __all__ = [
     "SHADOW_SETTLEMENT_SCHEMA_VERSION",
     "settle_shadow_opportunity",
+    "validate_shadow_official_resolution",
 ]
