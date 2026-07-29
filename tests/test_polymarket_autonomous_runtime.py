@@ -262,6 +262,11 @@ def test_decision_rejects_duplicate_proposals(tmp_path: Path) -> None:
     proposal = _proposal(_promotion(tmp_path))
     with pytest.raises(ValueError, match="duplicate"):
         PolymarketAutonomousDecision(proposals=(proposal, proposal))
+    with pytest.raises(ValueError, match="open and close"):
+        PolymarketAutonomousDecision(
+            proposals=(proposal,),
+            close_owned_exposure=True,
+        )
 
 
 def test_discovery_subscribes_current_next_and_owned_market(
@@ -328,6 +333,32 @@ def test_pause_or_stop_prevents_a_late_model_submission(
     asyncio.run(run())
 
     assert submitted is False
+
+
+def test_pause_still_allows_a_model_requested_close(tmp_path: Path) -> None:
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+    )
+    closed = False
+    supervisor._owned_market_ids = lambda: {MARKET_ID}  # type: ignore[method-assign]
+
+    async def close_owned() -> bool:
+        nonlocal closed
+        closed = True
+        return True
+
+    supervisor._close_owned = close_owned  # type: ignore[method-assign]
+    supervisor.pause()
+    asyncio.run(
+        supervisor._apply_decision(
+            PolymarketAutonomousDecision(close_owned_exposure=True),
+            _market(),
+            observed_at_ms=NOW_MS,
+        )
+    )
+
+    assert closed is True
 
 
 def test_timed_out_model_is_not_started_twice(tmp_path: Path) -> None:
@@ -485,6 +516,30 @@ def test_stop_retries_until_owned_exposure_is_closed(tmp_path: Path) -> None:
 
     assert attempts == 2
     assert supervisor.snapshot().stop_completed is True
+
+
+def test_forced_exit_window_never_opens_new_exposure(tmp_path: Path) -> None:
+    calls = 0
+
+    class Provider:
+        def decide(self, **_kwargs: object) -> PolymarketAutonomousDecision:
+            nonlocal calls
+            calls += 1
+            return PolymarketAutonomousDecision()
+
+    supervisor = _supervisor(tmp_path, provider=Provider())
+    supervisor._clock_ms = lambda: EVENT_END_MS - 10_000
+
+    async def run() -> None:
+        services_stop = asyncio.Event()
+        task = asyncio.create_task(supervisor._model_loop(services_stop))
+        await asyncio.sleep(0.05)
+        services_stop.set()
+        await task
+
+    asyncio.run(run())
+
+    assert calls == 0
 
 
 def test_run_with_pre_requested_stop_never_invokes_model(tmp_path: Path) -> None:
