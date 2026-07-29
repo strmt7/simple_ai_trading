@@ -1,58 +1,61 @@
 # Polymarket 5-minute paper trading
 
-**Status:** the prospective public-data recorder, fail-closed level-2 replay,
-causal feature materializer, shared paper execution contract, manual
-evidence-bound open/close actions, cross-checked official resolution settlement,
-durable operator Pause/Resume, fail-closed Stop, and independent source
-reconstruction before CLI/app result publication are implemented. A frozen,
-source-verified held-out model or AI policy can now run once through that same
-owned paper lifecycle. A preregistered causal FOK retry challenger is executable
-and source-verifiable as research. Its causal-settlement contract locks entry
-capital until official resolution is locally available and caps aggregate open
-risk across unresolved markets. Hash-bound label-free scoring inputs are also
-implemented, so unresolved feature rows can be scored without outcome or
-settlement fields. Neither challenger has paper-policy authority. Continuous
-strategy coordination remains incomplete.
-No authenticated order placement, wallet, private key, live-money claim, or
-profitability claim is implemented or authorized.
+**Status:** the public-data recorder, fail-closed level-2 replay, causal feature
+materializer, paper order lifecycle, official-resolution settlement,
+Pause/Resume, and Stop are implemented. The separate BTC-only live-capable
+boundary is documented in
+[Independent Polymarket Execution](POLYMARKET_LIVE_EXECUTION.md). No model has
+passed its prospective after-cost promotion gates, so no paper or live model
+authority exists.
 
-The Polymarket lane targets only BTC, ETH, and SOL 5-minute Up/Down markets.
-It reuses the Binance paper-trading lifecycle and risk core. Venue-specific
-code may translate market data, binary tokens, fees, fills, and settlement; it
-may not fork ownership, reconciliation, outage recovery, or stop semantics.
+Polymarket owns its wallet, credentials, capital, orders, fills, positions,
+PnL, risk ledger, reconciliation, Stop, and settlement state. It has no Binance
+account or execution connection. The code may reuse pure deterministic
+validation and risk utilities, but never Binance clients, balances, orders,
+positions, credentials, or mutable runtime state. Optional public BTCUSDT spot
+and perpetual observations are predictor inputs only; disabling them leaves
+the complete Polymarket venue lifecycle intact.
+
+Paper research covers BTC, ETH, and SOL five-minute markets. The independent
+live-capable path is BTC-only and promotion-gated for one exact five-minute or
+fifteen-minute horizon.
 
 The lifecycle, risk, and outage sections below are the required parity contract.
-The current executable subset is the public recorder, strict replay by default,
-explicit segmented reconnect replay, manual aggressive FAK/FOK paper open/close,
-journal reconciliation, official-resolution settlement, a reconciled Stop
-operation, promotion-gated historical model replay, and a causal terminal-zero-fill
-retry research treatment. Passive queue replay, empirical latency calibration,
-continuous strategy/AI decisions, and independent live liveness loops remain
-incomplete and must not be represented as available.
+The paper subset includes strict replay, segmented reconnect replay, aggressive
+FAK/FOK paper open/close, journal reconciliation, official settlement, and
+reconciled Stop. The live boundary adds exact-ID authenticated ownership,
+independent user-stream/reconciliation/settlement loops, and a promotion-gated
+autonomous supervisor. No production decision provider is selected because
+the current model failed its economic shadow.
 
 ```mermaid
 flowchart LR
-  B["Binance direct stream"] --> R["Timestamped recorder"]
-  C["Polymarket RTDS: Binance + Chainlink"] --> R
-  O["Polymarket CLOB order book"] --> R
-  G["Gamma market metadata"] --> R
+  B["Optional public BTC price discovery"] --> F["Causal predictor features"]
+  O["Polymarket CLOB order book"] --> R["Timestamped recorder"]
+  G["Polymarket market and resolution metadata"] --> R
+  U["Polymarket user/order evidence"] --> K["Venue-isolated risk and ownership"]
   R --> D["Append-only DuckDB evidence"]
-  D --> F["Causal feature dataset"]
+  D --> F
   F --> M["Probability and execution models"]
-  M --> K["Shared deterministic risk coordinator"]
-  K --> P["Shared paper order lifecycle"]
+  M --> K
+  K --> P["Polymarket order lifecycle"]
   P --> X["Polymarket fill and settlement adapter"]
 ```
 
 ## Current sealed experiment
 
-Round 13 is frozen but has not started. It consumes one fresh 86,400-second
-BTC/ETH/SOL capture exactly once. Every treatment and raw-market-prior control
-decision is persisted before official outcomes can be queried. Entry simulation
-uses the first same-segment post-latency book, the full displayed ask ladder,
-the recorded tick and fee schedule, an exact quote-cent BUY amount, and a
-tick-aligned FOK worst-price limit. The live CLOB protocol must report V2. Official
-public material does not specify whether `min_order_size` is a quote or share unit
+Round 13 failed before outcome access after stream gaps and an incomplete
+integrity audit; it can never be resumed or scored. Round 14 passed its
+predictive screen but failed its one-hour after-cost shadow. Round 15 is the
+preregistered expanded BTC five-minute historical screen. Round 16 is a
+separate preregistered BTC fifteen-minute comparison; neither has a result or
+authority yet.
+
+Entry simulation uses the first same-segment post-latency book, the full
+displayed ask ladder, the recorded tick and fee schedule, an exact quote-cent
+BUY amount, and a tick-aligned FOK worst-price limit. The live CLOB protocol
+must report V2. Official public material does not specify whether
+`min_order_size` is a quote or share unit
 for this asymmetric BUY, so both the quote amount and signed minimum shares must
 meet its recorded numeric value. The amount is walked through share-denominated
 asks; signed-minimum, decision-book-modeled, and post-latency-modeled share
