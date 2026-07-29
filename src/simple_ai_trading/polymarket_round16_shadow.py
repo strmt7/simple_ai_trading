@@ -173,6 +173,8 @@ class VerifiedRound16ShadowPredictor:
     candidate_id: str
     pretest_envelope_sha256: str
     evaluation_envelope_sha256: str
+    pretest_file_sha256: str
+    evaluation_file_sha256: str
     dataset_sha256: str
     feature_support: Mapping[str, object]
     settlement_controls: Mapping[str, object]
@@ -186,6 +188,8 @@ class VerifiedRound16ShadowPredictor:
             self.evaluation_envelope_sha256,
             name="Round 16 evaluation envelope",
         )
+        _sha(self.pretest_file_sha256, name="Round 16 pretest file")
+        _sha(self.evaluation_file_sha256, name="Round 16 evaluation file")
         _sha(self.dataset_sha256, name="Round 16 dataset")
 
     def predict_up_probability(self, features: np.ndarray) -> float:
@@ -216,6 +220,7 @@ class PolymarketRound16ShadowDecision:
     candidate_id: str
     pretest_envelope_sha256: str
     evaluation_envelope_sha256: str
+    input_sha256: str = ""
     outside_training_range_count: int = 0
     extreme_outlier_count: int = 0
     trading_authority: bool = False
@@ -229,10 +234,13 @@ class PolymarketRound16ShadowDecision:
                 self.reason
                 or self.probability_up is None
                 or not 0.0 < self.probability_up < 1.0
+                or len(self.input_sha256) != 64
             ):
                 raise ValueError("Round 16 observed decision is invalid")
         elif self.probability_up is not None or not self.reason:
             raise ValueError("Round 16 abstention is invalid")
+        if self.input_sha256:
+            _sha(self.input_sha256, name="Round 16 shadow input")
         if self.trading_authority or self.grants_execution_authority:
             raise ValueError("Round 16 shadow decision cannot grant authority")
         if (
@@ -267,6 +275,7 @@ class PolymarketRound16ShadowScorer:
         decision_time_ms: int,
         observed_at_ms: int,
         probability_up: float | None = None,
+        input_sha256: str = "",
         outside: int = 0,
         extreme: int = 0,
     ) -> PolymarketRound16ShadowDecision:
@@ -284,6 +293,7 @@ class PolymarketRound16ShadowScorer:
             evaluation_envelope_sha256=(
                 self.predictor.evaluation_envelope_sha256
             ),
+            input_sha256=input_sha256,
             outside_training_range_count=outside,
             extreme_outlier_count=extreme,
         )
@@ -309,6 +319,24 @@ class PolymarketRound16ShadowScorer:
                 decision_time_ms=decision_time_ms,
                 observed_at_ms=observed_at_ms,
             )
+        input_body = {
+            "schema_version": "polymarket-round16-live-input-v1",
+            "event_start_ms": int(event_start_ms),
+            "decision_time_ms": int(decision_time_ms),
+            "feature_names_sha256": _canonical_sha256(
+                ROUND16_FEATURE_NAMES
+            ),
+            "feature_values_little_endian_float32_sha256": hashlib.sha256(
+                np.asarray(features, dtype="<f4").tobytes(order="C")
+            ).hexdigest(),
+            "pretest_envelope_sha256": (
+                self.predictor.pretest_envelope_sha256
+            ),
+            "evaluation_envelope_sha256": (
+                self.predictor.evaluation_envelope_sha256
+            ),
+        }
+        input_sha256 = _canonical_sha256(input_body)
         support, outside, extreme = round16_feature_support_admission(
             features.reshape(1, -1),
             self.predictor.feature_support,
@@ -320,6 +348,7 @@ class PolymarketRound16ShadowScorer:
                 event_start_ms=event_start_ms,
                 decision_time_ms=decision_time_ms,
                 observed_at_ms=observed_at_ms,
+                input_sha256=input_sha256,
                 outside=int(outside[0]),
                 extreme=int(extreme[0]),
             )
@@ -334,6 +363,7 @@ class PolymarketRound16ShadowScorer:
                 event_start_ms=event_start_ms,
                 decision_time_ms=decision_time_ms,
                 observed_at_ms=observed_at_ms,
+                input_sha256=input_sha256,
                 outside=int(outside[0]),
                 extreme=int(extreme[0]),
             )
@@ -344,6 +374,7 @@ class PolymarketRound16ShadowScorer:
             decision_time_ms=decision_time_ms,
             observed_at_ms=observed_at_ms,
             probability_up=self.predictor.predict_up_probability(features),
+            input_sha256=input_sha256,
             outside=int(outside[0]),
             extreme=int(extreme[0]),
         )
@@ -508,6 +539,8 @@ def load_verified_round16_shadow_predictor(
         candidate_id=challenger_id,
         pretest_envelope_sha256=pretest_envelope,
         evaluation_envelope_sha256=evaluation_envelope,
+        pretest_file_sha256=_file_sha256(Path(pretest_path)),
+        evaluation_file_sha256=_file_sha256(Path(evaluation_path)),
         dataset_sha256=dataset_sha,
         feature_support=dict(feature_support),
         settlement_controls=dict(settlement_controls),
