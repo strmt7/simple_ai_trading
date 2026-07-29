@@ -1238,6 +1238,14 @@ def test_round74_state_views_mask_the_fixed_order_flow_panel() -> None:
     ) == set(ROUND74_EVENT_FEATURE_NAMES)
 
 
+def _task_group_losses(
+    groups: dict[str, float],
+    *,
+    task_name: str = "net_payoff_quantiles",
+) -> dict[str, float]:
+    return {f"{key}:{task_name}": value for key, value in groups.items()}
+
+
 def test_round74_feature_view_gate_is_complete_and_subgroup_noninferior() -> None:
     neutral = (1.0,) * 12
     full = (0.9,) * 12
@@ -1253,6 +1261,8 @@ def test_round74_feature_view_gate_is_complete_and_subgroup_noninferior() -> Non
         full,
         incumbent_group_losses=groups,
         challenger_group_losses={key: 0.9 for key in groups},
+        incumbent_task_group_losses=_task_group_losses(groups),
+        challenger_task_group_losses=_task_group_losses({key: 0.9 for key in groups}),
         minimum_mean_loss_improvement=1e-5,
         required_paired_run_count=12,
     )
@@ -1263,6 +1273,8 @@ def test_round74_feature_view_gate_is_complete_and_subgroup_noninferior() -> Non
         full[:-1],
         incumbent_group_losses=groups,
         challenger_group_losses={key: 0.9 for key in groups},
+        incumbent_task_group_losses=_task_group_losses(groups),
+        challenger_task_group_losses=_task_group_losses({key: 0.9 for key in groups}),
         minimum_mean_loss_improvement=1e-5,
         required_paired_run_count=12,
     )
@@ -1277,6 +1289,14 @@ def test_round74_feature_view_gate_is_complete_and_subgroup_noninferior() -> Non
             "run:ETHUSDT:5": 0.9,
             "run:SOLUSDT:30": 1.1,
         },
+        incumbent_task_group_losses=_task_group_losses(groups),
+        challenger_task_group_losses=_task_group_losses(
+            {
+                "run:BTCUSDT:1": 0.9,
+                "run:ETHUSDT:5": 0.9,
+                "run:SOLUSDT:30": 1.1,
+            }
+        ),
         minimum_mean_loss_improvement=1e-5,
         required_paired_run_count=12,
     )
@@ -1316,6 +1336,7 @@ def _interaction_fit(
         ensemble_metrics={"loss": sum(losses) / len(losses)},
         ensemble_run_losses=losses,
         ensemble_group_losses=group_losses,
+        ensemble_task_group_losses=_task_group_losses(group_losses),
         ensemble_prediction_sha256="a" * 64,
         parameter_count_per_peer=(130_114 if state_conditioned_flow else 129_060),
     )
@@ -1365,6 +1386,8 @@ def test_round74_feature_view_gate_rejects_non_broad_or_one_run_driven_gain() ->
         (0.9,) * 5 + (0.999999,) * 7,
         incumbent_group_losses=groups,
         challenger_group_losses={key: 0.9 for key in groups},
+        incumbent_task_group_losses=_task_group_losses(groups),
+        challenger_task_group_losses=_task_group_losses({key: 0.9 for key in groups}),
         minimum_mean_loss_improvement=1e-5,
         required_paired_run_count=12,
     )
@@ -1375,6 +1398,8 @@ def test_round74_feature_view_gate_rejects_non_broad_or_one_run_driven_gain() ->
         (0.0,) + (0.999989,) * 7 + (1.0,) * 4,
         incumbent_group_losses=groups,
         challenger_group_losses={key: 0.9 for key in groups},
+        incumbent_task_group_losses=_task_group_losses(groups),
+        challenger_task_group_losses=_task_group_losses({key: 0.9 for key in groups}),
         minimum_mean_loss_improvement=1e-5,
         required_paired_run_count=12,
     )
@@ -1560,6 +1585,79 @@ def test_round74_complexity_gate_rejects_hidden_symbol_horizon_degradation() -> 
     assert first["worst_run_symbol_horizon_group"] == hidden_failure
     assert first["maximum_paired_group_loss_degradation"] == pytest.approx(0.2)
     assert first["all_paired_run_symbol_horizon_groups_noninferior"] is False
+    assert first["promoted"] is False
+
+
+def test_round74_complexity_gate_rejects_hidden_forecast_task_degradation() -> None:
+    candidate_ids = ROUND74_EVENT_MODEL_CANDIDATES
+    parameter_counts = {
+        "event_pooling_linear": 13_000,
+        "event_pooling_mlp": 31_396,
+        "causal_event_tcn": 129_060,
+        "causal_event_attention": 151_876,
+    }
+    run_losses = {
+        "event_pooling_linear": (1.0,) * 12,
+        "event_pooling_mlp": (0.9,) * 12,
+        "causal_event_tcn": (1.0,) * 12,
+        "causal_event_attention": (1.0,) * 12,
+    }
+    group_keys = tuple(
+        f"{run_id:032x}:{symbol}:{horizon}"
+        for run_id in range(12)
+        for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+        for horizon in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS
+    )
+    task_names = (
+        "net_payoff_quantiles",
+        "maximum_adverse_excursion_quantiles",
+        "positive_payoff",
+        "adverse_selection",
+        "regime_unpredictability",
+    )
+    baseline_groups = {key: 1.0 for key in group_keys}
+    improved_groups = {key: 0.9 for key in group_keys}
+    baseline_tasks = {
+        f"{key}:{task_name}": 1.0 for key in group_keys for task_name in task_names
+    }
+    improved_tasks = {
+        f"{key}:{task_name}": 0.8 for key in group_keys for task_name in task_names
+    }
+    hidden_failure = next(
+        key
+        for key in improved_tasks
+        if ":SOLUSDT:" in key and key.endswith(":net_payoff_quantiles")
+    )
+    improved_tasks[hidden_failure] = 1.1
+
+    winner, reports = _complexity_gated_candidate_id(
+        candidate_ids,
+        run_losses,
+        parameter_counts,
+        minimum_mean_loss_improvement=1e-5,
+        candidate_group_losses={
+            "event_pooling_linear": baseline_groups,
+            "event_pooling_mlp": improved_groups,
+            "causal_event_tcn": baseline_groups,
+            "causal_event_attention": baseline_groups,
+        },
+        candidate_task_group_losses={
+            "event_pooling_linear": baseline_tasks,
+            "event_pooling_mlp": improved_tasks,
+            "causal_event_tcn": baseline_tasks,
+            "causal_event_attention": baseline_tasks,
+        },
+    )
+
+    assert winner == "event_pooling_linear"
+    first = reports[0]
+    assert first["all_paired_runs_noninferior"] is True
+    assert first["all_paired_run_symbol_horizon_groups_noninferior"] is True
+    assert first["task_subgroup_gate_applied"] is True
+    assert first["paired_run_symbol_horizon_task_count"] == len(baseline_tasks)
+    assert first["worst_run_symbol_horizon_task"] == hidden_failure
+    assert first["maximum_paired_task_group_loss_degradation"] == pytest.approx(0.1)
+    assert first["all_paired_run_symbol_horizon_tasks_noninferior"] is False
     assert first["promoted"] is False
 
 
