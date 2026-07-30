@@ -1,9 +1,9 @@
 {
   "schema_version": "polymarket-public-predictor-live-probe-v1",
-  "observed_at_utc": "2026-07-29T22:25:47.0490000Z",
-  "observed_at_ms": 1785363947049,
-  "source_commit": "9e1299c969853a6a3787b2a4c710b438aa7a233b",
-  "duration_seconds": 6,
+  "observed_at_utc": "2026-07-30T02:14:23.992000Z",
+  "observed_at_ms": 1785377663992,
+  "source_commit": "5cbc4a45bc2af8b03028a680af395134390cc876",
+  "duration_seconds": 8,
   "scope": {
     "asset": "BTC",
     "binance_symbol": "BTCUSDT",
@@ -13,11 +13,11 @@
     "orders_submitted": 0
   },
   "aggregate_trade_feed": {
-    "spot_received": 28,
-    "spot_ingested": 28,
-    "perpetual_received": 20,
-    "perpetual_ingested": 19,
-    "queue_size_at_snapshot": 1,
+    "spot_received": 80,
+    "spot_ingested": 80,
+    "perpetual_received": 153,
+    "perpetual_ingested": 153,
+    "queue_size_at_snapshot": 0,
     "spot_reconnects": 0,
     "perpetual_reconnects": 0,
     "spot_last_error": "",
@@ -27,8 +27,8 @@
   "book_advisory_feed": {
     "spot_connected": true,
     "perpetual_connected": true,
-    "spot_receipt_age_ms": 481,
-    "perpetual_receipt_age_ms": 88,
+    "spot_receipt_age_ms": 308,
+    "perpetual_receipt_age_ms": 0,
     "spot_fault": "",
     "perpetual_fault": "",
     "credentials_used": false,
