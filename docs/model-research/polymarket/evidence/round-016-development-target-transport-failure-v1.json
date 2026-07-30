@@ -1,0 +1,74 @@
+{
+  "schema_version": "polymarket-round16-development-target-transport-failure-v1",
+  "created_at_utc": "2026-07-30T07:36:17.207Z",
+  "status": "development_target_pass_invalidated_before_any_model_fit_or_test_target_access",
+  "source_commit": "75199b39981311afc6e14f9514d273b0e4b3f26d",
+  "contract_sha256": "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67",
+  "dataset_sha256": "4bd4ebbbffeffa3443211919ae2ffd86fff732d2f5b51f84ddaa4df5738dca82",
+  "failed_database": {
+    "bytes": 295972864,
+    "sha256": "809aabdb0364ae56629c3f767f53e74564aa5fcecfa45e488a5c5b09d3bdb1d9",
+    "state": "features_complete"
+  },
+  "partial_development_targets": {
+    "total": 12000,
+    "train_down": 5172,
+    "train_up": 5292,
+    "tune_down": 800,
+    "tune_up": 736,
+    "test": 0
+  },
+  "sealed_artifacts": {
+    "pretest_manifest_count": 0,
+    "evaluation_manifest_count": 0,
+    "model_fit_started": false,
+    "model_scores_accessed": false,
+    "test_targets_accessed": false
+  },
+  "failure": {
+    "phase": "development-targets",
+    "first_uncommitted_batch_start_condition_index": 12001,
+    "exception": "ValueError: Round 16 Gamma market batch coverage differs",
+    "cause": "Gamma list and keyset endpoints omitted one requested market ID while the official exact-ID endpoint returned it.",
+    "omitted_market": {
+      "event_start_ms": 1781727300000,
+      "market_id": "2570741",
+      "condition_id": "0x1a9fd9c9fadb7334ea06e87abeb7cc1011be9a161d41837e6bcc96ba00abef30",
+      "slug": "btc-updown-15m-1781727300",
+      "role": "tune",
+      "gamma_exact_payload_sha256": "522fe2520926e7bb5054ad90721ef9eb4c03b18fa824f917cb0019a935b2160f",
+      "clob_exact_payload_sha256": "dc29c34dad1d453b540e16d5bc5eb20bc4b6bff0639d00e158cec2f17a2d40f3",
+      "official_crosscheck_winner": "Up"
+    }
+  },
+  "failed_target_implementation": {
+    "schema_version": "polymarket-round16-target-implementation-v1",
+    "manifest_sha256": "859b29f4aadc920effb5d42692378d478af229a52335486b4c616f9d5b28e4ce",
+    "implementation_sha256": {
+      "resolution_validator": "d6e40e9561b16ec51ce4eb7819daa61682c6c13907a454778c16684a4003fb8e",
+      "round16_public_client": "06847f4f6f19c8837b9fa1e9dac7c83e201d872c57f697ba8159731acee8c9e2",
+      "round16_targets": "e40389b3e9398f5a18c4075f2e3fcfe3e076c7f4ea1d77f05b70f5d667d1f9bb",
+      "shared_public_client": "9aff8a4e6d2c2aefb8510e4cf5a1bbeb70902f3220495ea712e1fe5e7f2a3e1e"
+    }
+  },
+  "failure_log": {
+    "file_name": "round16-development-targets-20260730-084657.stdout.jsonl",
+    "bytes": 1623899,
+    "sha256": "f743ab9953c6f97b5f61c218ef959d5d834e70f561564050323d87f0ed70b5f4",
+    "stderr_bytes": 1092,
+    "stderr_sha256": "e9339ac86627feb41a024ab08e351fb0fe3769ba1593f030bbd2f577641ff89a"
+  },
+  "required_repair": {
+    "action": "Invalidate every v1 development target and recollect train and tune from zero under a newly frozen target implementation manifest.",
+    "allowed_change": "For IDs omitted from one bounded Gamma batch, fetch only the missing IDs from the official exact-ID market endpoint.",
+    "unchanged_requirements": [
+      "No condition may be omitted or reassigned.",
+      "Gamma and CLOB terminal results must still agree.",
+      "Exact responses must pass the same strict identity and terminal validators.",
+      "No test target may be requested before the immutable pretest artifact exists.",
+      "No development target from implementation v1 may be used for model fitting."
+    ]
+  },
+  "profitability_claim": false,
+  "promotion_allowed": false
+}
