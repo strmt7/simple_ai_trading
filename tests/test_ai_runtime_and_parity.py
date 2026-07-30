@@ -596,9 +596,7 @@ def test_finance_ai_candidate_registry_includes_local_and_finance_specialists() 
     assert oda.upstream_revision == "948c22ea48f9bf93e5747f4211657fcad9cb0295"
     assert oda.license_id == "Apache-2.0"
     assert oda.runtime_artifact == "alexsabaka/ODA-Fin-RL-8B-GGUF"
-    assert oda.runtime_artifact_revision == (
-        "fb986718fcec8c8c559f0ebd5d50e6cf9f4ac67f"
-    )
+    assert oda.runtime_artifact_revision == ("fb986718fcec8c8c559f0ebd5d50e6cf9f4ac67f")
     assert oda.runtime_artifact_filename == "ODA-Fin-RL-8B.Q4_K_M.gguf"
     assert oda.runtime_artifact_sha256 == (
         "d40d1dd4105be8d85cbb444cb58e92c4882623f0baa4dea5d296745d6bc13861"
@@ -881,7 +879,7 @@ def test_generated_native_contract_matches_cli() -> None:
         '{L"--report", L"report", L"", L"", '
         'L"screening report path; repeat for every declared trial", '
         'L"1", true, true, true}'
-        ) in text
+    ) in text
 
     native_source = (
         windows_app._repo_root() / "native" / "windows" / "src" / "main.cpp"
@@ -890,7 +888,10 @@ def test_generated_native_contract_matches_cli() -> None:
     assert 'ai_state = ai_model_state + L" / hybrid blocked"' in native_source
     assert 'ai_state = ai_model_state + L" / GPU"' in native_source
     assert "std::array<std::wstring, 4> states" in native_source
-    assert "environment_state, bot_state, command_contract_state, ai_state" in native_source
+    assert (
+        "environment_state, bot_state, command_contract_state, ai_state"
+        in native_source
+    )
     confirmation = next(
         spec for spec in command_specs() if spec.name == "tape-depth-confirm"
     )
@@ -916,7 +917,8 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert 'L"Stop + Close"' in source
     assert 'L"Paper"' in source
     assert 'L"Testnet live"' in source
-    assert 'run_control_sequence({L"autonomous stop"})' in source
+    assert 'L"autonomous stop"' in source
+    assert 'L"polymarket-live --action stop"' in source
     assert 'run_control_sequence({L"autonomous stop", L"close all"})' not in source
     assert "status_bar_" in source
     assert "kStatusBarId = 111" in source
@@ -961,6 +963,15 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "repo_root()" in source
     assert "SIMPLE_AI_TRADING_GUI_SMOKE" in source
     assert 'preview += L" (repeatable)";' in source
+
+
+def test_native_build_fails_closed_on_command_generation_error() -> None:
+    source = (
+        windows_app._repo_root() / "tools" / "build_native_windows.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert '".venv\\Scripts\\python.exe"' in source
+    assert "Native command-contract generation failed" in source
 
 
 def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:

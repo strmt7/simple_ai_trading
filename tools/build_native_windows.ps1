@@ -20,6 +20,9 @@ if (-not (Test-Path -LiteralPath $VcVars)) { throw "vcvars64.bat not found at $V
 
 $Python = Join-Path $Repo ".venv311\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $Python)) {
+    $Python = Join-Path $Repo ".venv\Scripts\python.exe"
+}
+if (-not (Test-Path -LiteralPath $Python)) {
     $PythonCommand = Get-Command python -ErrorAction SilentlyContinue
     if ($PythonCommand) {
         $Python = $PythonCommand.Source
@@ -36,6 +39,9 @@ if ((Split-Path -Leaf $Python) -ieq "py.exe") {
     & $Python -3.11 "$Repo\tools\generate_windows_contract.py"
 } else {
     & $Python "$Repo\tools\generate_windows_contract.py"
+}
+if ($LASTEXITCODE -ne 0) {
+    throw "Native command-contract generation failed with exit code $LASTEXITCODE"
 }
 
 $BuildDir = Join-Path $Repo "build\windows"

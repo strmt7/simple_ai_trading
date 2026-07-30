@@ -1270,7 +1270,11 @@ class MainWindow {
                 bot_state_ = L"Stop requested";
             }
             InvalidateRect(hwnd_, nullptr, FALSE);
-            run_control_sequence({L"autonomous stop"});
+            run_control_sequence(
+                {
+                    L"autonomous stop",
+                    L"polymarket-live --action stop",
+                });
             return;
         case kAiPreflightId:
             {

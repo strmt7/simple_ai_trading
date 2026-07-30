@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import nullcontext
 from dataclasses import dataclass
 from decimal import Decimal
 import json
 import re
 from threading import RLock
 import time
-from typing import Callable, Mapping, Sequence
+from typing import Callable, ContextManager, Mapping, Protocol, Sequence
 
 from .polymarket_live import (
     PolymarketLiveBlocked,
@@ -22,10 +23,16 @@ from .polymarket_live import (
 from .polymarket_live_v2 import PolymarketLiveCredentials
 
 
-POLYMARKET_USER_STREAM_URL = (
-    "wss://ws-subscriptions-clob.polymarket.com/ws/user"
-)
+POLYMARKET_USER_STREAM_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/user"
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
+
+
+class PolymarketOpeningInterlock(Protocol):
+    """Durable authority checked again across the final order dispatch."""
+
+    def assert_opening_allowed(self) -> None: ...
+
+    def submission_guard(self) -> ContextManager[None]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,18 +56,16 @@ class PolymarketLiveRuntimeGuard:
         maximum_stream_age_ms: int = 15_000,
         maximum_reconciliation_age_ms: int = 30_000,
         monotonic_ns: Callable[[], int] = time.monotonic_ns,
+        opening_interlock: PolymarketOpeningInterlock | None = None,
     ) -> None:
         self.maximum_stream_age_ms = int(maximum_stream_age_ms)
-        self.maximum_reconciliation_age_ms = int(
-            maximum_reconciliation_age_ms
-        )
+        self.maximum_reconciliation_age_ms = int(maximum_reconciliation_age_ms)
         if not 1_000 <= self.maximum_stream_age_ms <= 120_000:
             raise ValueError("maximum_stream_age_ms must lie in [1000, 120000]")
         if not 1_000 <= self.maximum_reconciliation_age_ms <= 300_000:
-            raise ValueError(
-                "maximum_reconciliation_age_ms must lie in [1000, 300000]"
-            )
+            raise ValueError("maximum_reconciliation_age_ms must lie in [1000, 300000]")
         self._monotonic_ns = monotonic_ns
+        self._opening_interlock = opening_interlock
         self._lock = RLock()
         self._stream_connected = False
         self._last_stream_ns: int | None = None
@@ -165,6 +170,8 @@ class PolymarketLiveRuntimeGuard:
                     "Polymarket reconciliation does not permit closing"
                 )
             return
+        if self._opening_interlock is not None:
+            self._opening_interlock.assert_opening_allowed()
         if (
             not state.stream_connected
             or state.stream_age_ms is None
@@ -175,6 +182,15 @@ class PolymarketLiveRuntimeGuard:
             raise PolymarketLiveBlocked(
                 "Polymarket reconciliation does not permit new exposure"
             )
+
+    def submission_guard(
+        self,
+        *,
+        closing_only: bool,
+    ) -> ContextManager[None]:
+        if closing_only or self._opening_interlock is None:
+            return nullcontext()
+        return self._opening_interlock.submission_guard()
 
 
 def _mapping(value: object, *, name: str) -> Mapping[str, object]:
@@ -203,9 +219,7 @@ class PolymarketUserStreamConsumer:
         self.runtime_guard = runtime_guard
 
     def _owned_records(self) -> dict[str, PolymarketLiveOrderRecord]:
-        return {
-            record.expected_order_id: record for record in self.ledger.records()
-        }
+        return {record.expected_order_id: record for record in self.ledger.records()}
 
     def _handle_order(self, payload: Mapping[str, object]) -> None:
         order_id = str(payload.get("id") or "").strip().lower()
@@ -487,9 +501,7 @@ class PolymarketAuthenticatedUserStream:
                 added = tuple(sorted(desired - active))
                 removed = tuple(sorted(active - desired))
                 if added:
-                    await websocket.send(
-                        self._subscription_update("subscribe", added)
-                    )
+                    await websocket.send(self._subscription_update("subscribe", added))
                     active.update(added)
                 if removed:
                     await websocket.send(
@@ -575,9 +587,7 @@ class PolymarketReconciliationService:
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                self.runtime_guard.note_reconciliation_failure(
-                    exc.__class__.__name__
-                )
+                self.runtime_guard.note_reconciliation_failure(exc.__class__.__name__)
             try:
                 await asyncio.wait_for(
                     stop.wait(),

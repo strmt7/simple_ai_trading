@@ -27,6 +27,7 @@ from simple_ai_trading.polymarket_live import (
 )
 from simple_ai_trading.polymarket_live_runtime import PolymarketRuntimeSnapshot
 from simple_ai_trading.polymarket_live_v2 import OfficialPolymarketV2Venue
+from simple_ai_trading.polymarket_runtime_control import PolymarketRuntimeControl
 
 
 def _args(*values: str) -> argparse.Namespace:
@@ -81,6 +82,7 @@ def test_installed_cli_native_app_and_contract_share_entrypoint() -> None:
         == "simple_ai_trading.entrypoint:main"
     )
     assert "-m simple_ai_trading.entrypoint" in native
+    assert 'L"polymarket-live --action stop"' in native
     assert "from .entrypoint import _build_parser" in contract
 
 
@@ -601,6 +603,27 @@ def test_stop_command_dispatches_bounded_owned_close(
     assert called["coordinator"] is coordinator
     assert called["timeout_seconds"] == 12
     assert json.loads(capsys.readouterr().out)["completed"] is True
+
+
+def test_stop_latch_survives_missing_live_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "live.sqlite3"
+    control = PolymarketRuntimeControl(path)
+    control.acquire(owner_process_id=101)
+
+    def fail_credentials():
+        raise ValueError("missing Polymarket live environment variables")
+
+    monkeypatch.setattr(live_cli, "_credentials_and_venue", fail_credentials)
+
+    result = live_cli.command_polymarket_live(
+        _args("--action", "stop", "--ledger", str(path), "--json")
+    )
+
+    assert result == 2
+    assert control.snapshot().state == "stop_requested"
 
 
 def test_redeem_requires_confirmation_before_settlement_client_creation(
@@ -1124,9 +1147,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
 
     class PublicClient:
         def __init__(self) -> None:
-            self.session = SimpleNamespace(
-                close=lambda: events.append("public-close")
-            )
+            self.session = SimpleNamespace(close=lambda: events.append("public-close"))
 
     class Feed:
         trading_authority = False
@@ -1152,7 +1173,11 @@ def test_autonomous_assembles_independent_promoted_runtime(
 
     globals_flow = flow
     guard = object()
-    ledger = SimpleNamespace(records=lambda: ())
+    ledger = SimpleNamespace(
+        path=tmp_path / "live.sqlite3",
+        records=lambda: (),
+        owned_inventory=lambda: (),
+    )
     clean = _reconciliation()
 
     class Coordinator:
@@ -1176,7 +1201,9 @@ def test_autonomous_assembles_independent_promoted_runtime(
             return clean
 
     class Stream:
-        def __init__(self, credentials: object, consumer: object, *, markets: tuple[str, ...]):
+        def __init__(
+            self, credentials: object, consumer: object, *, markets: tuple[str, ...]
+        ):
             assert credentials is credentials_object
             assert consumer.ledger is ledger
             assert consumer.runtime_guard is guard
@@ -1196,9 +1223,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
             self.coordinator = coordinator
             self.runtime_guard = runtime_guard
 
-    settlement_venue = SimpleNamespace(
-        close=lambda: events.append("settlement-close")
-    )
+    settlement_venue = SimpleNamespace(close=lambda: events.append("settlement-close"))
     snapshot = PolymarketAutonomousRuntimeSnapshot(
         venue="polymarket",
         symbol="BTC",
@@ -1266,9 +1291,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
     monkeypatch.setattr(
         live_cli,
         "PolymarketRound16LiveFeatureBuilder",
-        lambda selected_flow: (
-            "builder" if selected_flow is flow else pytest.fail()
-        ),
+        lambda selected_flow: "builder" if selected_flow is flow else pytest.fail(),
     )
     monkeypatch.setattr(
         live_cli,
@@ -1290,6 +1313,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
         lambda **kwargs: (
             guard
             if kwargs["maximum_reconciliation_age_ms"] == 21_000
+            and kwargs["opening_interlock"].lease_id
             else pytest.fail()
         ),
     )
@@ -1350,6 +1374,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
     )
 
     assert captured["decision_data_service"].trading_authority is False
+    assert captured["durable_control_service"].trading_authority is False
     assert captured["external_signal_provider"] is None
     assert captured["stop_timeout_seconds"] == 19
     assert payload["opened_exposure"] is True

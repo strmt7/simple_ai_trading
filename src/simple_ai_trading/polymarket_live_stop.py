@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import asdict
 from decimal import Decimal
 import time
@@ -12,6 +13,7 @@ from .polymarket_live import (
     PolymarketLiveCoordinator,
     PolymarketLiveOrderLedger,
 )
+from .polymarket_runtime_control import PolymarketRuntimeControl
 
 Clock = Callable[[], float]
 Sleeper = Callable[[float], None]
@@ -44,21 +46,15 @@ def _owned_inventory_payload(
     ]
 
 
-def stop_owned_polymarket_exposure(
+def _stop_owned_polymarket_exposure_unlocked(
     *,
     coordinator: PolymarketLiveCoordinator,
     ledger: PolymarketLiveOrderLedger,
-    timeout_seconds: float,
+    started: float,
+    deadline: float,
     monotonic: Clock = time.monotonic,
     sleep: Sleeper = time.sleep,
 ) -> tuple[dict[str, object], int]:
-    """Cancel owned orders and sell confirmed owned lots within a hard deadline."""
-
-    timeout = float(timeout_seconds)
-    if not 1 <= timeout <= 300:
-        raise ValueError("stop-timeout-seconds must lie in [1, 300]")
-    started = monotonic()
-    deadline = started + timeout
     initial_inventory = ledger.owned_inventory()
     initial_quantity = sum(
         (item.quantity for item in initial_inventory),
@@ -122,6 +118,37 @@ def stop_owned_polymarket_exposure(
         },
         0 if completed else 2,
     )
+
+
+def stop_owned_polymarket_exposure(
+    *,
+    coordinator: PolymarketLiveCoordinator,
+    ledger: PolymarketLiveOrderLedger,
+    timeout_seconds: float,
+    monotonic: Clock = time.monotonic,
+    sleep: Sleeper = time.sleep,
+) -> tuple[dict[str, object], int]:
+    """Serialize, cancel, and close only exact bot-owned Polymarket exposure."""
+
+    timeout = float(timeout_seconds)
+    if not 1 <= timeout <= 300:
+        raise ValueError("stop-timeout-seconds must lie in [1, 300]")
+    started = monotonic()
+    path = getattr(ledger, "path", None)
+    guard = (
+        PolymarketRuntimeControl(path).close_guard(timeout_seconds=timeout)
+        if path is not None
+        else nullcontext()
+    )
+    with guard:
+        return _stop_owned_polymarket_exposure_unlocked(
+            coordinator=coordinator,
+            ledger=ledger,
+            started=started,
+            deadline=started + timeout,
+            monotonic=monotonic,
+            sleep=sleep,
+        )
 
 
 __all__ = ["stop_owned_polymarket_exposure"]

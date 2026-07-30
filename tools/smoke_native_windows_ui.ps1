@@ -159,13 +159,16 @@ try {
     } "pause control completion" 3000
     Click-Control (Get-Control $window $StopId)
     Assert-OutputContains $output "simple-ai-trading autonomous stop" 3000
+    Assert-OutputContains $output "simple-ai-trading polymarket-live --action stop" 3000
     Wait-Until {
         $text = Get-ControlText $output
         $start = $text.IndexOf("> simple-ai-trading autonomous start --objective regular --live")
         $pause = $text.IndexOf("> simple-ai-trading autonomous pause", $start + 1)
         $stop = $text.IndexOf("> simple-ai-trading autonomous stop", $start + 1)
+        $polymarketStop = $text.IndexOf("> simple-ai-trading polymarket-live --action stop", $stop + 1)
         $startResult = $text.IndexOf("dry-run: simple-ai-trading autonomous start --objective regular --live", $start + 1)
-        $start -ge 0 -and $pause -gt $start -and $stop -gt $pause -and $startResult -gt $stop
+        $start -ge 0 -and $pause -gt $start -and $stop -gt $pause -and
+        $polymarketStop -gt $stop -and $startResult -gt $polymarketStop
     } "independent pause/stop completion before blocking start returns" 7000
     if ((Get-ControlText $output).Contains("simple-ai-trading close all")) {
         throw "Stop control invoked unsafe ledger-only close all"
@@ -263,6 +266,7 @@ try {
     Assert-OutputContains $output "> simple-ai-trading ai --enable" 5000
     Click-Control (Get-Control $window $StopId)
     Assert-OutputContains $output "dry-run: simple-ai-trading autonomous stop" 5000
+    Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-live --action stop" 5000
     Assert-OutputContains $output "Workflow cancelled by a safety control" 5000
     if ((Get-ControlText $output).Contains("> simple-ai-trading autonomous start")) {
         throw "Cancelled configuration was followed by autonomous start"
@@ -285,6 +289,7 @@ try {
     }
     Click-Control (Get-Control $window $StopId)
     Assert-OutputContains $output "dry-run: simple-ai-trading autonomous stop" 5000
+    Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-live --action stop" 5000
     Stop-Process -Id $process.Id -Force
     $process = $null
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256 -ErrorAction SilentlyContinue

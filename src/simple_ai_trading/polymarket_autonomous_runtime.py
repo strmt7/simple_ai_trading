@@ -59,6 +59,19 @@ class PolymarketDecisionDataService(Protocol):
     async def run(self, stop: asyncio.Event) -> None: ...
 
 
+class PolymarketDurableControlService(Protocol):
+    """Persistent single-writer and Stop supervision with no order authority."""
+
+    trading_authority: bool
+
+    async def run(
+        self,
+        stop: asyncio.Event,
+        *,
+        request_stop: Callable[[], None],
+    ) -> None: ...
+
+
 @dataclass(frozen=True, slots=True)
 class PolymarketAutonomousDecision:
     proposals: tuple[PolymarketAutonomousOpenProposal, ...] = ()
@@ -68,8 +81,7 @@ class PolymarketAutonomousDecision:
     def __post_init__(self) -> None:
         proposals = tuple(self.proposals)
         if any(
-            not isinstance(item, PolymarketAutonomousOpenProposal)
-            for item in proposals
+            not isinstance(item, PolymarketAutonomousOpenProposal) for item in proposals
         ):
             raise TypeError("decision proposals must be Polymarket proposals")
         hashes = tuple(item.proposal_sha256 for item in proposals)
@@ -123,6 +135,7 @@ class PolymarketAutonomousSupervisor:
         decision_provider: PolymarketAutonomousDecisionProvider,
         settlement: PolymarketSettlementService | None = None,
         decision_data_service: PolymarketDecisionDataService | None = None,
+        durable_control_service: PolymarketDurableControlService | None = None,
         external_signal_provider: PolymarketExternalSignalProvider | None = None,
         decision_interval_seconds: float = 1.0,
         decision_timeout_seconds: float = 3.0,
@@ -165,6 +178,13 @@ class PolymarketAutonomousSupervisor:
                 )
             if not callable(getattr(decision_data_service, "run", None)):
                 raise TypeError("predictor-data service must expose an async run loop")
+        if durable_control_service is not None:
+            if getattr(durable_control_service, "trading_authority", None) is not False:
+                raise PolymarketLiveBlocked(
+                    "Polymarket durable control service must have no trading authority"
+                )
+            if not callable(getattr(durable_control_service, "run", None)):
+                raise TypeError("durable control service must expose an async run loop")
         self.public_client = public_client
         self.coordinator = coordinator
         self.ledger = ledger
@@ -175,6 +195,7 @@ class PolymarketAutonomousSupervisor:
         self.decision_provider = decision_provider
         self.settlement = settlement
         self.decision_data_service = decision_data_service
+        self.durable_control_service = durable_control_service
         self.external_signal_provider = external_signal_provider
         self.decision_interval_seconds = interval
         self.decision_timeout_seconds = timeout
@@ -193,10 +214,13 @@ class PolymarketAutonomousSupervisor:
         self._last_fault = ""
         self._consumed_proposals: set[str] = set()
         self._pending_decision: asyncio.Task[PolymarketAutonomousDecision] | None = None
-        self._pending_signal: tuple[
-            str,
-            asyncio.Task[PolymarketExternalSignalDecision],
-        ] | None = None
+        self._pending_signal: (
+            tuple[
+                str,
+                asyncio.Task[PolymarketExternalSignalDecision],
+            ]
+            | None
+        ) = None
 
     def pause(self) -> None:
         """Block model decisions while reconciliation and close loops continue."""
@@ -220,9 +244,7 @@ class PolymarketAutonomousSupervisor:
             symbol="BTC",
             market_variant=self.promotion.promotion.market_variant,
             horizon_minutes=(
-                5
-                if self.promotion.promotion.market_variant == "fiveminute"
-                else 15
+                5 if self.promotion.promotion.market_variant == "fiveminute" else 15
             ),
             paused=self._paused,
             stop_requested=self._shutdown_requested.is_set(),
@@ -278,8 +300,7 @@ class PolymarketAutonomousSupervisor:
                 "Polymarket promotion market variant is unsupported"
             )
         if any(
-            market.asset != "BTC"
-            or market.horizon_minutes != expected_horizon
+            market.asset != "BTC" or market.horizon_minutes != expected_horizon
             for market in markets
         ):
             raise PolymarketLiveBlocked(
@@ -311,9 +332,7 @@ class PolymarketAutonomousSupervisor:
         proposal: PolymarketAutonomousOpenProposal,
         market: PolymarketFiveMinuteMarket,
     ) -> None:
-        token = (
-            market.up_token_id if proposal.outcome == "Up" else market.down_token_id
-        )
+        token = market.up_token_id if proposal.outcome == "Up" else market.down_token_id
         if (
             proposal.market_id != market.condition_id
             or proposal.token_id != token
@@ -394,9 +413,7 @@ class PolymarketAutonomousSupervisor:
                 "external BTC price discovery is unavailable"
             ) from exc
         except Exception as exc:
-            self._last_fault = (
-                f"external_signal_failure:{exc.__class__.__name__}"
-            )
+            self._last_fault = f"external_signal_failure:{exc.__class__.__name__}"
             raise PolymarketLiveBlocked(
                 "external BTC price discovery is unavailable"
             ) from exc
@@ -488,7 +505,10 @@ class PolymarketAutonomousSupervisor:
                 if self._shutdown_requested.is_set() or entry_window_closed:
                     if owned and await self._close_owned():
                         self._stop_completed = self._shutdown_requested.is_set()
-                    if self._shutdown_requested.is_set() and not self._owned_market_ids():
+                    if (
+                        self._shutdown_requested.is_set()
+                        and not self._owned_market_ids()
+                    ):
                         self._stop_completed = True
                         services_stop.set()
                         break
@@ -541,6 +561,13 @@ class PolymarketAutonomousSupervisor:
             tasks["predictor_market_data"] = asyncio.create_task(
                 self.decision_data_service.run(services_stop)
             )
+        if self.durable_control_service is not None:
+            tasks["durable_runtime_control"] = asyncio.create_task(
+                self.durable_control_service.run(
+                    services_stop,
+                    request_stop=self.request_stop,
+                )
+            )
         external_run = getattr(self.external_signal_provider, "run", None)
         if callable(external_run):
             tasks["external_public_signal"] = asyncio.create_task(
@@ -548,6 +575,7 @@ class PolymarketAutonomousSupervisor:
             )
         timer: asyncio.Task[None] | None = None
         if duration:
+
             async def request_stop_after_duration() -> None:
                 await asyncio.sleep(duration)
                 self.request_stop()
@@ -558,14 +586,10 @@ class PolymarketAutonomousSupervisor:
         try:
             # Give safety services one scheduling turn before model decisions.
             await asyncio.sleep(0)
-            early = {
-                name: task for name, task in tasks.items() if task.done()
-            }
+            early = {name: task for name, task in tasks.items() if task.done()}
             if early:
                 name, task = next(iter(early.items()))
-                exception = (
-                    task.exception() if not task.cancelled() else None
-                )
+                exception = task.exception() if not task.cancelled() else None
                 detail = (
                     exception.__class__.__name__
                     if exception is not None
@@ -576,9 +600,7 @@ class PolymarketAutonomousSupervisor:
                 self.request_stop()
                 critical_error = RuntimeError(critical_fault)
             else:
-                tasks["model"] = asyncio.create_task(
-                    self._model_loop(services_stop)
-                )
+                tasks["model"] = asyncio.create_task(self._model_loop(services_stop))
                 done, _ = await asyncio.wait(
                     set(tasks.values()),
                     return_when=asyncio.FIRST_COMPLETED,
@@ -588,18 +610,14 @@ class PolymarketAutonomousSupervisor:
                     failed_task = next(iter(done))
                     name = by_task[failed_task]
                     exception = (
-                        failed_task.exception()
-                        if not failed_task.cancelled()
-                        else None
+                        failed_task.exception() if not failed_task.cancelled() else None
                     )
                     detail = (
                         exception.__class__.__name__
                         if exception is not None
                         else "returned"
                     )
-                    critical_fault = (
-                        f"critical_service_exit:{name}:{detail}"
-                    )
+                    critical_fault = f"critical_service_exit:{name}:{detail}"
                     self._last_fault = critical_fault
                     self.request_stop()
                     critical_error = RuntimeError(critical_fault)
@@ -627,5 +645,6 @@ __all__ = [
     "PolymarketAutonomousRuntimeSnapshot",
     "PolymarketAutonomousSupervisor",
     "PolymarketDecisionDataService",
+    "PolymarketDurableControlService",
     "PolymarketExternalSignalProvider",
 ]
