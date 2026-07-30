@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from simple_ai_trading.polymarket import (
@@ -225,6 +226,7 @@ def test_round17_cohort_manifest_and_panel_are_target_separated() -> None:
     assert panel.role == "train"
     assert panel.dataset_sha256 == targets.development_dataset_sha256
     assert panel.target_manifest_sha256 == targets.target_manifest_sha256
+    assert panel.features.dtype == np.float32
     assert set(panel.labels) == {0.0, 1.0}
 
     with pytest.raises(ValueError, match="role differs"):

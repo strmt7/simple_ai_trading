@@ -6,6 +6,7 @@ import json
 import numpy as np
 import pytest
 
+import simple_ai_trading.polymarket_round17_model as round17_model
 from simple_ai_trading.polymarket_round17_features import (
     POLYMARKET_ROUND17_FEATURE_NAMES,
 )
@@ -39,6 +40,7 @@ def _panel(
     *,
     first_event_start_ms: int,
     condition_count: int,
+    feature_dtype: type[np.float32] | type[np.float64] = np.float64,
 ) -> Round17DevelopmentPanel:
     condition_ids: list[str] = []
     event_starts: list[int] = []
@@ -55,7 +57,7 @@ def _panel(
         label = float(condition_index % 2)
         condition = "0x" + _sha256([role, condition_index])
         for row_index, offset in enumerate((30_000, 60_000, 90_000)):
-            row = np.zeros(len(POLYMARKET_ROUND17_FEATURE_NAMES), dtype=np.float64)
+            row = np.zeros(len(POLYMARKET_ROUND17_FEATURE_NAMES), dtype=feature_dtype)
             row[structural_index] = 0.5
             row[prior_index] = 0.5
             row[signal_index] = (2.0 if label else -2.0) + row_index * 0.01
@@ -69,7 +71,7 @@ def _panel(
         condition_ids=np.asarray(condition_ids, dtype=object),
         event_start_ms=np.asarray(event_starts, dtype=np.int64),
         decision_time_ms=np.asarray(decisions, dtype=np.int64),
-        features=np.asarray(features, dtype=np.float64),
+        features=np.asarray(features, dtype=feature_dtype),
         labels=np.asarray(labels, dtype=np.float64),
         dataset_sha256=DATASET_SHA256,
         target_manifest_sha256=TARGET_MANIFEST_SHA256,
@@ -97,8 +99,23 @@ def _development_panels() -> tuple[
     return train, calibration, selection
 
 
-def test_round17_pretest_is_test_blind_hash_bound_and_identifiable() -> None:
+def test_round17_pretest_is_test_blind_hash_bound_and_identifiable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     train, calibration, selection = _development_panels()
+    transform_calls = 0
+    original_transform = round17_model._feature_transform
+
+    def tracked_transform(
+        panel: Round17DevelopmentPanel,
+        feature_indices: tuple[int, ...],
+        condition_weights: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        nonlocal transform_calls
+        transform_calls += 1
+        return original_transform(panel, feature_indices, condition_weights)
+
+    monkeypatch.setattr(round17_model, "_feature_transform", tracked_transform)
 
     artifact = fit_round17_development_pretest(
         train,
@@ -116,6 +133,7 @@ def test_round17_pretest_is_test_blind_hash_bound_and_identifiable() -> None:
     assert verified["live_trading_authority"] is False
     assert verified["compute"]["lightgbm_backend_kind"] == "cpu"
     assert verified["development_accepted"] is True
+    assert transform_calls == 3
     selection_metrics = verified["candidate_ledger"][0]["selection"]
     assert {
         "condition_balanced_brier",
@@ -182,3 +200,92 @@ def test_round17_pretest_rejects_short_embargo() -> None:
             selection,
             compute_backend="cpu",
         )
+
+
+def test_round17_panel_preserves_float32_feature_storage() -> None:
+    panel = _panel(
+        "train",
+        first_event_start_ms=START_MS,
+        condition_count=4,
+        feature_dtype=np.float32,
+    )
+
+    validated = panel.validate()
+
+    assert validated.features is panel.features
+    assert validated.features.dtype == np.float32
+
+
+def test_round17_panel_rejects_integer_feature_storage() -> None:
+    panel = _panel(
+        "train",
+        first_event_start_ms=START_MS,
+        condition_count=4,
+    )
+    invalid = Round17DevelopmentPanel(
+        role=panel.role,
+        condition_ids=panel.condition_ids,
+        event_start_ms=panel.event_start_ms,
+        decision_time_ms=panel.decision_time_ms,
+        features=panel.features.astype(np.int64),
+        labels=panel.labels,
+        dataset_sha256=panel.dataset_sha256,
+        target_manifest_sha256=panel.target_manifest_sha256,
+    )
+
+    with pytest.raises(ValueError, match="floating-point array is invalid"):
+        invalid.validate()
+
+
+def test_round17_panel_rejects_noncontiguous_condition_rows() -> None:
+    panel = _panel(
+        "train",
+        first_event_start_ms=START_MS,
+        condition_count=4,
+    )
+    condition_ids = panel.condition_ids.copy()
+    condition_ids[-3:] = condition_ids[:3]
+    invalid = Round17DevelopmentPanel(
+        role=panel.role,
+        condition_ids=condition_ids,
+        event_start_ms=panel.event_start_ms,
+        decision_time_ms=panel.decision_time_ms,
+        features=panel.features,
+        labels=panel.labels,
+        dataset_sha256=panel.dataset_sha256,
+        target_manifest_sha256=panel.target_manifest_sha256,
+    )
+
+    with pytest.raises(ValueError, match="not contiguous"):
+        invalid.validate()
+
+
+def test_round17_float32_predictions_match_float64() -> None:
+    train, calibration, selection = _development_panels()
+    artifact = fit_round17_development_pretest(
+        train,
+        calibration,
+        selection,
+        compute_backend="cpu",
+    )
+    selected = artifact["selected_candidate"]
+    float32_selection = Round17DevelopmentPanel(
+        role=selection.role,
+        condition_ids=selection.condition_ids,
+        event_start_ms=selection.event_start_ms,
+        decision_time_ms=selection.decision_time_ms,
+        features=selection.features.astype(np.float32),
+        labels=selection.labels,
+        dataset_sha256=selection.dataset_sha256,
+        target_manifest_sha256=selection.target_manifest_sha256,
+    ).validate()
+
+    float64_prediction = predict_round17_candidate(selected, selection)
+    float32_prediction = predict_round17_candidate(selected, float32_selection)
+
+    np.testing.assert_allclose(
+        float32_prediction,
+        float64_prediction,
+        rtol=1e-6,
+        atol=1e-7,
+    )
