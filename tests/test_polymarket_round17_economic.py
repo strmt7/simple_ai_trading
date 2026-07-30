@@ -68,6 +68,16 @@ def test_round17_economic_contract_is_frozen_before_campaign_access() -> None:
     assert contract["minimum_edge_grid_quote_per_share"] == [
         format(value, "f") for value in POLYMARKET_ROUND17_ECONOMIC_THRESHOLDS
     ]
+    assert contract["execution_lifecycle"]["future_book_selection_prohibited"] is True
+    assert (
+        contract["execution_lifecycle"][
+            "midpoint_or_hidden_liquidity_credit_prohibited"
+        ]
+        is True
+    )
+    assert (
+        contract["execution_lifecycle"]["retry_interval_after_known_no_fill_ms"] == 1000
+    )
     assert contract["authority"] == {
         "test_features_accessed": False,
         "test_targets_accessed": False,

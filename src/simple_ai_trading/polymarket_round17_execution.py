@@ -35,6 +35,7 @@ POLYMARKET_ROUND17_EXECUTION_SCHEMA_VERSION = (
     "polymarket-round17-btc-5m-execution-decision-v1"
 )
 POLYMARKET_ROUND17_MAXIMUM_EXECUTION_OBSERVATION_DELAY_MS = 500
+POLYMARKET_ROUND17_MAXIMUM_CREATION_BOOK_AGE_MS = 500
 POLYMARKET_ROUND17_MINIMUM_REMAINING_MARKET_TIME_MS = 30_000
 POLYMARKET_ROUND17_SHARE_QUANTUM = Decimal("0.000001")
 _NUMERIC_GUARD = Decimal("0.000000000001")
@@ -201,15 +202,13 @@ class Round17EntryCandidate:
     probability_evidence_sha256: str
     probability: Decimal
     probability_lower_bound: Decimal
+    limit_price: Decimal
     quantity: Decimal
-    average_fill_price: Decimal
-    fee_quote: Decimal
-    total_cost_quote: Decimal
+    maximum_entry_loss_quote: Decimal
     lower_bound_edge_quote: Decimal
     lower_bound_edge_quote_per_share: Decimal
-    execution: PaperExecutionResult
-    source_book_sha256: str
-    transformed_book_sha256: str
+    creation_book_sha256: str
+    transformed_creation_book_sha256: str
 
     def validated(self) -> "Round17EntryCandidate":
         if (
@@ -224,10 +223,9 @@ class Round17EntryCandidate:
         numeric = (
             self.probability,
             self.probability_lower_bound,
+            self.limit_price,
             self.quantity,
-            self.average_fill_price,
-            self.fee_quote,
-            self.total_cost_quote,
+            self.maximum_entry_loss_quote,
             self.lower_bound_edge_quote,
             self.lower_bound_edge_quote_per_share,
         )
@@ -235,28 +233,21 @@ class Round17EntryCandidate:
             any(not item.is_finite() for item in numeric)
             or not Decimal("0") < self.probability < Decimal("1")
             or not Decimal("0") < self.probability_lower_bound < Decimal("1")
+            or not Decimal("0") < self.limit_price < Decimal("1")
             or self.quantity <= 0
-            or self.average_fill_price <= 0
-            or self.fee_quote < 0
-            or self.total_cost_quote
-            != self.average_fill_price * self.quantity + self.fee_quote
+            or self.maximum_entry_loss_quote <= 0
             or self.lower_bound_edge_quote
-            != self.probability_lower_bound * self.quantity - self.total_cost_quote
+            != self.probability_lower_bound * self.quantity
+            - self.maximum_entry_loss_quote
             or self.lower_bound_edge_quote_per_share
             != self.lower_bound_edge_quote / self.quantity
-            or self.execution.state != "FILLED"
-            or self.execution.filled_quantity != self.quantity
-            or self.execution.remaining_quantity != 0
-            or self.execution.average_fill_price != self.average_fill_price
-            or self.execution.fee_quote != self.fee_quote
-            or self.execution.source_payload_sha256 != self.transformed_book_sha256
             or any(
                 len(value) != 64
                 or any(character not in "0123456789abcdef" for character in value)
                 for value in (
                     self.probability_evidence_sha256,
-                    self.source_book_sha256,
-                    self.transformed_book_sha256,
+                    self.creation_book_sha256,
+                    self.transformed_creation_book_sha256,
                 )
             )
         ):
@@ -266,6 +257,9 @@ class Round17EntryCandidate:
 
 @dataclass(frozen=True, slots=True)
 class Round17EntryDecision:
+    condition_id: str
+    decision_time_ms: int
+    probability_evidence_sha256: str
     action: str
     reason: str
     profile: str
@@ -281,6 +275,9 @@ class Round17EntryDecision:
         return {
             "schema_version": POLYMARKET_ROUND17_EXECUTION_SCHEMA_VERSION,
             "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
+            "condition_id": self.condition_id,
+            "decision_time_ms": self.decision_time_ms,
+            "probability_evidence_sha256": self.probability_evidence_sha256,
             "action": self.action,
             "reason": self.reason,
             "profile": self.profile,
@@ -312,13 +309,12 @@ class Round17EntryDecision:
                         candidate.probability_lower_bound,
                         "f",
                     ),
+                    "limit_price": format(candidate.limit_price, "f"),
                     "quantity": format(candidate.quantity, "f"),
-                    "average_fill_price": format(
-                        candidate.average_fill_price,
+                    "maximum_entry_loss_quote": format(
+                        candidate.maximum_entry_loss_quote,
                         "f",
                     ),
-                    "fee_quote": format(candidate.fee_quote, "f"),
-                    "total_cost_quote": format(candidate.total_cost_quote, "f"),
                     "lower_bound_edge_quote": format(
                         candidate.lower_bound_edge_quote,
                         "f",
@@ -327,8 +323,10 @@ class Round17EntryDecision:
                         candidate.lower_bound_edge_quote_per_share,
                         "f",
                     ),
-                    "source_book_sha256": candidate.source_book_sha256,
-                    "transformed_book_sha256": candidate.transformed_book_sha256,
+                    "creation_book_sha256": candidate.creation_book_sha256,
+                    "transformed_creation_book_sha256": (
+                        candidate.transformed_creation_book_sha256
+                    ),
                 }
             ),
             "forced_activity": False,
@@ -340,7 +338,14 @@ class Round17EntryDecision:
     def validated(self) -> "Round17EntryDecision":
         actions = {"abstain", "buy_up_fok", "buy_down_fok"}
         if (
-            self.action not in actions
+            not self.condition_id
+            or self.decision_time_ms <= 0
+            or len(self.probability_evidence_sha256) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.probability_evidence_sha256
+            )
+            or self.action not in actions
             or not self.reason
             or self.risk_capital_quote <= 0
             or self.maximum_event_loss_quote <= 0
@@ -350,7 +355,7 @@ class Round17EntryDecision:
             or (
                 self.candidate is not None
                 and (
-                    self.candidate.validated().total_cost_quote
+                    self.candidate.validated().maximum_entry_loss_quote
                     > self.maximum_event_loss_quote
                     or self.action != f"buy_{self.candidate.outcome.lower()}_fok"
                     or self.candidate.lower_bound_edge_quote_per_share + _NUMERIC_GUARD
@@ -360,6 +365,126 @@ class Round17EntryDecision:
             or self.decision_sha256 != _canonical_sha256(self.identity_payload())
         ):
             raise ValueError("Round 17 entry decision is invalid")
+        return self
+
+
+@dataclass(frozen=True, slots=True)
+class Round17EntryObservation:
+    decision_sha256: str
+    state: str
+    outcome: str
+    maximum_entry_loss_quote: Decimal
+    actual_entry_cost_quote: Decimal | None
+    conservative_utility_quote: Decimal
+    execution: PaperExecutionResult | None
+    execution_book_sha256: str
+    transformed_execution_book_sha256: str
+    observation_sha256: str = ""
+
+    def identity_payload(self) -> dict[str, object]:
+        result = self.execution
+        return {
+            "schema_version": "polymarket-round17-entry-observation-v1",
+            "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
+            "decision_sha256": self.decision_sha256,
+            "state": self.state,
+            "outcome": self.outcome,
+            "maximum_entry_loss_quote": format(
+                self.maximum_entry_loss_quote,
+                "f",
+            ),
+            "actual_entry_cost_quote": (
+                None
+                if self.actual_entry_cost_quote is None
+                else format(self.actual_entry_cost_quote, "f")
+            ),
+            "conservative_utility_quote": format(
+                self.conservative_utility_quote,
+                "f",
+            ),
+            "execution_book_sha256": self.execution_book_sha256,
+            "transformed_execution_book_sha256": (
+                self.transformed_execution_book_sha256
+            ),
+            "execution": (
+                None
+                if result is None
+                else {
+                    "state": result.state,
+                    "filled_quantity": format(result.filled_quantity, "f"),
+                    "remaining_quantity": format(result.remaining_quantity, "f"),
+                    "average_fill_price": format(result.average_fill_price, "f"),
+                    "fee_quote": format(result.fee_quote, "f"),
+                    "reason": result.reason,
+                    "source_payload_sha256": result.source_payload_sha256,
+                    "fills": [
+                        {
+                            "price": format(fill.price, "f"),
+                            "quantity": format(fill.quantity, "f"),
+                            "fee_quote": format(fill.fee_quote, "f"),
+                            "liquidity_role": fill.liquidity_role,
+                        }
+                        for fill in result.fills
+                    ],
+                }
+            ),
+        }
+
+    def validated(self) -> "Round17EntryObservation":
+        states = {"filled", "known_no_fill", "unknown_after_submit"}
+        actual = self.actual_entry_cost_quote
+        result = self.execution
+        if (
+            len(self.decision_sha256) != 64
+            or self.state not in states
+            or self.outcome not in _OUTCOMES
+            or self.maximum_entry_loss_quote <= 0
+            or (actual is not None and (not actual.is_finite() or actual <= 0))
+            or not self.conservative_utility_quote.is_finite()
+            or any(
+                value
+                and (
+                    len(value) != 64
+                    or any(character not in "0123456789abcdef" for character in value)
+                )
+                for value in (
+                    self.execution_book_sha256,
+                    self.transformed_execution_book_sha256,
+                )
+            )
+            or (
+                self.state == "filled"
+                and (
+                    result is None
+                    or result.state != "FILLED"
+                    or actual
+                    != result.average_fill_price * result.filled_quantity
+                    + result.fee_quote
+                    or actual > self.maximum_entry_loss_quote
+                    or self.conservative_utility_quote != -actual
+                    or result.source_payload_sha256
+                    != self.transformed_execution_book_sha256
+                )
+            )
+            or (
+                self.state == "known_no_fill"
+                and (
+                    result is None
+                    or result.state != "CANCELLED"
+                    or actual is not None
+                    or self.conservative_utility_quote != 0
+                )
+            )
+            or (
+                self.state == "unknown_after_submit"
+                and (
+                    actual is not None
+                    or self.conservative_utility_quote != -self.maximum_entry_loss_quote
+                )
+            )
+            or self.observation_sha256 != _canonical_sha256(self.identity_payload())
+        ):
+            raise ValueError("Round 17 entry observation is invalid")
         return self
 
 
@@ -391,12 +516,234 @@ class Round17OwnedLot:
 
 
 @dataclass(frozen=True, slots=True)
+class Round17OwnedClosePlan:
+    lot: Round17OwnedLot
+    decision_time_ms: int
+    scenario: str
+    limit_price: Decimal
+    maximum_exit_fee_quote: Decimal
+    minimum_exit_proceeds_quote: Decimal
+    creation_book_sha256: str
+    transformed_creation_book_sha256: str
+    plan_sha256: str = ""
+
+    def identity_payload(self) -> dict[str, object]:
+        owned = self.lot.validated()
+        return {
+            "schema_version": "polymarket-round17-owned-close-plan-v1",
+            "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
+            "owner": owned.owner,
+            "parent_intent_id": owned.parent_intent_id,
+            "market_id": owned.market_id,
+            "token_id": owned.token_id,
+            "outcome": owned.outcome,
+            "quantity": format(owned.quantity, "f"),
+            "entry_cost_quote": format(owned.entry_cost_quote, "f"),
+            "decision_time_ms": self.decision_time_ms,
+            "scenario": self.scenario,
+            "limit_price": format(self.limit_price, "f"),
+            "maximum_exit_fee_quote": format(
+                self.maximum_exit_fee_quote,
+                "f",
+            ),
+            "minimum_exit_proceeds_quote": format(
+                self.minimum_exit_proceeds_quote,
+                "f",
+            ),
+            "creation_book_sha256": self.creation_book_sha256,
+            "transformed_creation_book_sha256": (self.transformed_creation_book_sha256),
+            "closing_only": True,
+        }
+
+    def validated(self) -> "Round17OwnedClosePlan":
+        self.lot.validated()
+        if (
+            self.decision_time_ms <= 0
+            or not self.scenario
+            or not Decimal("0") < self.limit_price < Decimal("1")
+            or self.maximum_exit_fee_quote < 0
+            or self.minimum_exit_proceeds_quote
+            != self.limit_price * self.lot.quantity - self.maximum_exit_fee_quote
+            or self.minimum_exit_proceeds_quote < 0
+            or any(
+                len(value) != 64
+                or any(character not in "0123456789abcdef" for character in value)
+                for value in (
+                    self.creation_book_sha256,
+                    self.transformed_creation_book_sha256,
+                )
+            )
+            or self.plan_sha256 != _canonical_sha256(self.identity_payload())
+        ):
+            raise ValueError("Round 17 owned close plan is invalid")
+        return self
+
+
+@dataclass(frozen=True, slots=True)
 class Round17ComplementLock:
     allowed: bool
     guaranteed_payout_quote: Decimal
     combined_cost_quote: Decimal
     guaranteed_net_quote: Decimal
     reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class Round17ComplementPlan:
+    lot: Round17OwnedLot
+    decision_time_ms: int
+    scenario: str
+    complement_outcome: str
+    complement_token_id: str
+    limit_price: Decimal
+    quantity: Decimal
+    maximum_complement_cost_quote: Decimal
+    guaranteed_net_quote_lower_bound: Decimal
+    creation_book_sha256: str
+    transformed_creation_book_sha256: str
+    plan_sha256: str = ""
+
+    def identity_payload(self) -> dict[str, object]:
+        owned = self.lot.validated()
+        return {
+            "schema_version": "polymarket-round17-complement-plan-v1",
+            "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
+            "owner": owned.owner,
+            "parent_intent_id": owned.parent_intent_id,
+            "market_id": owned.market_id,
+            "owned_token_id": owned.token_id,
+            "owned_outcome": owned.outcome,
+            "owned_quantity": format(owned.quantity, "f"),
+            "owned_entry_cost_quote": format(owned.entry_cost_quote, "f"),
+            "decision_time_ms": self.decision_time_ms,
+            "scenario": self.scenario,
+            "complement_outcome": self.complement_outcome,
+            "complement_token_id": self.complement_token_id,
+            "limit_price": format(self.limit_price, "f"),
+            "quantity": format(self.quantity, "f"),
+            "maximum_complement_cost_quote": format(
+                self.maximum_complement_cost_quote,
+                "f",
+            ),
+            "guaranteed_net_quote_lower_bound": format(
+                self.guaranteed_net_quote_lower_bound,
+                "f",
+            ),
+            "creation_book_sha256": self.creation_book_sha256,
+            "transformed_creation_book_sha256": (self.transformed_creation_book_sha256),
+            "risk_reduction_only": True,
+        }
+
+    def validated(self) -> "Round17ComplementPlan":
+        owned = self.lot.validated()
+        if (
+            self.decision_time_ms <= 0
+            or not self.scenario
+            or self.complement_outcome not in _OUTCOMES
+            or self.complement_outcome == owned.outcome
+            or not self.complement_token_id
+            or not Decimal("0") < self.limit_price < Decimal("1")
+            or self.quantity != owned.quantity
+            or self.maximum_complement_cost_quote <= 0
+            or self.guaranteed_net_quote_lower_bound
+            != self.quantity
+            - owned.entry_cost_quote
+            - self.maximum_complement_cost_quote
+            or self.guaranteed_net_quote_lower_bound < 0
+            or any(
+                len(value) != 64
+                or any(character not in "0123456789abcdef" for character in value)
+                for value in (
+                    self.creation_book_sha256,
+                    self.transformed_creation_book_sha256,
+                )
+            )
+            or self.plan_sha256 != _canonical_sha256(self.identity_payload())
+        ):
+            raise ValueError("Round 17 complement plan is invalid")
+        return self
+
+
+@dataclass(frozen=True, slots=True)
+class Round17ComplementObservation:
+    plan_sha256: str
+    state: str
+    complement_cost_quote: Decimal | None
+    guaranteed_net_quote: Decimal | None
+    conservative_utility_quote: Decimal
+    execution: PaperExecutionResult | None
+    execution_book_sha256: str
+    transformed_execution_book_sha256: str
+    observation_sha256: str = ""
+
+    def identity_payload(self) -> dict[str, object]:
+        result = self.execution
+        return {
+            "schema_version": "polymarket-round17-complement-observation-v1",
+            "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
+            "plan_sha256": self.plan_sha256,
+            "state": self.state,
+            "complement_cost_quote": (
+                None
+                if self.complement_cost_quote is None
+                else format(self.complement_cost_quote, "f")
+            ),
+            "guaranteed_net_quote": (
+                None
+                if self.guaranteed_net_quote is None
+                else format(self.guaranteed_net_quote, "f")
+            ),
+            "conservative_utility_quote": format(
+                self.conservative_utility_quote,
+                "f",
+            ),
+            "execution_book_sha256": self.execution_book_sha256,
+            "transformed_execution_book_sha256": (
+                self.transformed_execution_book_sha256
+            ),
+            "execution": (
+                None
+                if result is None
+                else {
+                    "state": result.state,
+                    "filled_quantity": format(result.filled_quantity, "f"),
+                    "remaining_quantity": format(result.remaining_quantity, "f"),
+                    "average_fill_price": format(result.average_fill_price, "f"),
+                    "fee_quote": format(result.fee_quote, "f"),
+                    "reason": result.reason,
+                    "source_payload_sha256": result.source_payload_sha256,
+                }
+            ),
+        }
+
+    def validated(self) -> "Round17ComplementObservation":
+        if (
+            len(self.plan_sha256) != 64
+            or self.state not in {"locked", "known_no_fill", "unknown_after_submit"}
+            or not self.conservative_utility_quote.is_finite()
+            or (
+                self.state == "locked"
+                and (
+                    self.execution is None
+                    or self.execution.state != "FILLED"
+                    or self.complement_cost_quote is None
+                    or self.guaranteed_net_quote is None
+                    or self.guaranteed_net_quote < 0
+                    or self.conservative_utility_quote != self.guaranteed_net_quote
+                )
+            )
+            or (
+                self.state != "locked"
+                and (
+                    self.complement_cost_quote is not None
+                    or self.guaranteed_net_quote is not None
+                    or self.conservative_utility_quote != 0
+                )
+            )
+            or self.observation_sha256 != _canonical_sha256(self.identity_payload())
+        ):
+            raise ValueError("Round 17 complement observation is invalid")
+        return self
 
 
 def _transformed_book(
@@ -463,6 +810,18 @@ def _transformed_book(
     ).validated()
 
 
+def _maximum_taker_fee_bound(
+    fee_model: PolymarketFeeModel,
+    quantity: Decimal,
+    *,
+    level_count: int,
+) -> Decimal:
+    maximum = fee_model(Decimal("0.5"), quantity, "taker")
+    if maximum > 0:
+        maximum += Decimal(max(0, level_count - 1)) * Decimal("0.00001")
+    return maximum
+
+
 def _execution_book(
     market: PolymarketFiveMinuteMarket,
     book: PaperBookSnapshot,
@@ -494,6 +853,36 @@ def _execution_book(
     )
 
 
+def _creation_book(
+    market: PolymarketFiveMinuteMarket,
+    book: PaperBookSnapshot,
+    scenario: PolymarketRound14ExecutionScenario,
+    *,
+    decision_time_ms: int,
+    outcome: str,
+    side: str,
+) -> PaperBookSnapshot:
+    token_id = market.up_token_id if outcome == "Up" else market.down_token_id
+    source = book.validated()
+    age = decision_time_ms - source.received_wall_ms
+    if (
+        market.asset != "BTC"
+        or market.horizon_minutes != 5
+        or source.venue != "polymarket"
+        or source.market_id != market.condition_id
+        or source.asset_id != token_id
+        or age < 0
+        or age > POLYMARKET_ROUND17_MAXIMUM_CREATION_BOOK_AGE_MS
+    ):
+        raise ValueError("Round 17 creation Polymarket book is invalid")
+    return _transformed_book(
+        source,
+        scenario=scenario,
+        tick_size=market.tick_size,
+        side=side,
+    )
+
+
 def _entry_candidate(
     market: PolymarketFiveMinuteMarket,
     book: PaperBookSnapshot,
@@ -507,7 +896,7 @@ def _entry_candidate(
 ) -> Round17EntryCandidate | None:
     probability = envelope.selected_probability(outcome)
     lower_probability = envelope.selected_lower_bound(outcome)
-    transformed = _execution_book(
+    transformed = _creation_book(
         market,
         book,
         scenario,
@@ -546,61 +935,29 @@ def _entry_candidate(
 
     upper_units = int(maximum_quantity / POLYMARKET_ROUND17_SHARE_QUANTUM)
     lower_units = int(minimum_quantity / POLYMARKET_ROUND17_SHARE_QUANTUM)
-    selected_result: PaperExecutionResult | None = None
     selected_quantity = Decimal("0")
+    selected_maximum_loss = Decimal("0")
     while lower_units <= upper_units:
         units = (lower_units + upper_units) // 2
         quantity = Decimal(units) * POLYMARKET_ROUND17_SHARE_QUANTUM
-        intent = PaperOrderIntent(
-            intent_id=(
-                "round17-entry-"
-                + _canonical_sha256(
-                    {
-                        "condition_id": market.condition_id,
-                        "outcome": outcome,
-                        "decision_time_ms": decision_time_ms,
-                        "scenario": scenario.name,
-                        "quantity": format(quantity, "f"),
-                    }
-                )[:32]
-            ),
-            venue="polymarket",
-            market_id=market.condition_id,
-            asset_id=(market.up_token_id if outcome == "Up" else market.down_token_id),
-            symbol="BTC",
-            outcome=outcome,
-            side="BUY",
-            order_type="FOK",
-            limit_price=limit,
-            quantity=quantity,
-            created_at_ms=decision_time_ms,
-            expires_at_ms=market.end_ms,
+        maximum_fee = _maximum_taker_fee_bound(
+            fee_model,
+            quantity,
+            level_count=len(eligible),
         )
-        result = simulate_aggressive_order(
-            intent,
-            transformed,
-            execution_time_ms=transformed.received_wall_ms,
-            submission_latency_ms=scenario.submission_latency_ms,
-            maximum_book_age_ms=0,
-            fee=fee_model,
-        )
-        cost = result.average_fill_price * result.filled_quantity + result.fee_quote
-        if result.state == "FILLED" and cost <= risk_budget:
-            selected_result = result
+        maximum_loss = limit * quantity + maximum_fee
+        if maximum_loss <= risk_budget:
             selected_quantity = quantity
+            selected_maximum_loss = maximum_loss
             lower_units = units + 1
         else:
             upper_units = units - 1
-    if selected_result is None:
+    if selected_quantity <= 0:
         return None
 
-    cost = (
-        selected_result.average_fill_price * selected_result.filled_quantity
-        + selected_result.fee_quote
-    )
-    edge = lower_probability * selected_quantity - cost
+    edge = lower_probability * selected_quantity - selected_maximum_loss
     edge_per_share = edge / selected_quantity
-    if cost > risk_budget or edge_per_share + _NUMERIC_GUARD < minimum_edge_per_share:
+    if edge_per_share + _NUMERIC_GUARD < minimum_edge_per_share:
         return None
     return Round17EntryCandidate(
         market_id=market.condition_id,
@@ -612,15 +969,112 @@ def _entry_candidate(
         probability_evidence_sha256=envelope.evidence_sha256,
         probability=probability,
         probability_lower_bound=lower_probability,
+        limit_price=limit,
         quantity=selected_quantity,
-        average_fill_price=selected_result.average_fill_price,
-        fee_quote=selected_result.fee_quote,
-        total_cost_quote=cost,
+        maximum_entry_loss_quote=selected_maximum_loss,
         lower_bound_edge_quote=edge,
         lower_bound_edge_quote_per_share=edge_per_share,
-        execution=selected_result,
-        source_book_sha256=book.source_payload_sha256,
-        transformed_book_sha256=transformed.source_payload_sha256,
+        creation_book_sha256=book.source_payload_sha256,
+        transformed_creation_book_sha256=transformed.source_payload_sha256,
+    ).validated()
+
+
+def observe_round17_entry(
+    decision: Round17EntryDecision,
+    market: PolymarketFiveMinuteMarket,
+    book: PaperBookSnapshot | None,
+    program: PolymarketRound14Program,
+) -> Round17EntryObservation:
+    """Observe one already-selected FOK without using the delayed book to select it."""
+
+    selected = decision.validated()
+    candidate = selected.candidate
+    if candidate is None:
+        raise ValueError("Round 17 cannot observe an abstention as a submission")
+    scenario = _scenario(program, selected.scenario)
+    result: PaperExecutionResult | None = None
+    source_sha = ""
+    transformed_sha = ""
+    actual_cost: Decimal | None = None
+    state = "unknown_after_submit"
+    if book is not None:
+        source_sha = str(book.source_payload_sha256)
+        try:
+            transformed = _execution_book(
+                market,
+                book,
+                scenario,
+                decision_time_ms=selected.decision_time_ms,
+                outcome=candidate.outcome,
+                side="BUY",
+            )
+            transformed_sha = transformed.source_payload_sha256
+            intent = PaperOrderIntent(
+                intent_id="round17-entry-" + selected.decision_sha256[:32],
+                venue="polymarket",
+                market_id=market.condition_id,
+                asset_id=candidate.token_id,
+                symbol="BTC",
+                outcome=candidate.outcome,
+                side="BUY",
+                order_type="FOK",
+                limit_price=candidate.limit_price,
+                quantity=candidate.quantity,
+                created_at_ms=selected.decision_time_ms,
+                expires_at_ms=market.end_ms,
+            )
+            fee_model = PolymarketFeeModel(
+                enabled=market.fee_schedule.enabled,
+                rate=market.fee_schedule.rate * scenario.fee_multiplier,
+                exponent=market.fee_schedule.exponent,
+                taker_only=True,
+            )
+            result = simulate_aggressive_order(
+                intent,
+                transformed,
+                execution_time_ms=transformed.received_wall_ms,
+                submission_latency_ms=scenario.submission_latency_ms,
+                maximum_book_age_ms=0,
+                fee=fee_model,
+            )
+            if result.state == "FILLED":
+                actual_cost = (
+                    result.average_fill_price * result.filled_quantity
+                    + result.fee_quote
+                )
+                if actual_cost > candidate.maximum_entry_loss_quote:
+                    raise RuntimeError(
+                        "Round 17 realized entry exceeded its frozen loss bound"
+                    )
+                state = "filled"
+            elif result.state == "CANCELLED":
+                state = "known_no_fill"
+        except (TypeError, ValueError):
+            result = None
+            transformed_sha = ""
+    utility = (
+        -actual_cost
+        if state == "filled" and actual_cost is not None
+        else (
+            Decimal("0")
+            if state == "known_no_fill"
+            else -candidate.maximum_entry_loss_quote
+        )
+    )
+    provisional = Round17EntryObservation(
+        decision_sha256=selected.decision_sha256,
+        state=state,
+        outcome=candidate.outcome,
+        maximum_entry_loss_quote=candidate.maximum_entry_loss_quote,
+        actual_entry_cost_quote=actual_cost,
+        conservative_utility_quote=utility,
+        execution=result,
+        execution_book_sha256=source_sha,
+        transformed_execution_book_sha256=transformed_sha,
+    )
+    return replace(
+        provisional,
+        observation_sha256=_canonical_sha256(provisional.identity_payload()),
     ).validated()
 
 
@@ -718,6 +1172,9 @@ def select_round17_entry(
 
     action = "abstain" if candidate is None else f"buy_{candidate.outcome.lower()}_fok"
     provisional = Round17EntryDecision(
+        condition_id=market.condition_id,
+        decision_time_ms=decision_time_ms,
+        probability_evidence_sha256=selected_envelope.evidence_sha256,
         action=action,
         reason=reason,
         profile=profile.name,
@@ -733,7 +1190,7 @@ def select_round17_entry(
     ).validated()
 
 
-def simulate_round17_owned_close(
+def plan_round17_owned_close(
     market: PolymarketFiveMinuteMarket,
     lot: Round17OwnedLot,
     book: PaperBookSnapshot,
@@ -741,8 +1198,8 @@ def simulate_round17_owned_close(
     *,
     decision_time_ms: int,
     scenario_name: str,
-) -> PaperExecutionResult:
-    """Simulate a close for one exact parent-bound bot-owned lot."""
+) -> Round17OwnedClosePlan | None:
+    """Create one owned-only close plan from a causal creation book."""
 
     owned = lot.validated()
     scenario = _scenario(program, scenario_name)
@@ -755,7 +1212,7 @@ def simulate_round17_owned_close(
         or not market.event_start_ms <= decision_time_ms < market.end_ms
     ):
         raise ValueError("Round 17 owned lot does not match the Polymarket market")
-    transformed = _execution_book(
+    transformed = _creation_book(
         market,
         book,
         scenario,
@@ -763,7 +1220,56 @@ def simulate_round17_owned_close(
         outcome=owned.outcome,
         side="SELL",
     )
-    if not transformed.bids:
+    cumulative = Decimal("0")
+    limit: Decimal | None = None
+    level_count = 0
+    for level in transformed.bids:
+        cumulative += level.quantity
+        limit = level.price
+        level_count += 1
+        if cumulative >= owned.quantity:
+            break
+    if limit is None or cumulative < owned.quantity:
+        return None
+    fee_model = PolymarketFeeModel(
+        enabled=market.fee_schedule.enabled,
+        rate=market.fee_schedule.rate * scenario.fee_multiplier,
+        exponent=market.fee_schedule.exponent,
+        taker_only=True,
+    )
+    maximum_exit_fee = _maximum_taker_fee_bound(
+        fee_model,
+        owned.quantity,
+        level_count=level_count,
+    )
+    provisional = Round17OwnedClosePlan(
+        lot=owned,
+        decision_time_ms=decision_time_ms,
+        scenario=scenario.name,
+        limit_price=limit,
+        maximum_exit_fee_quote=maximum_exit_fee,
+        minimum_exit_proceeds_quote=(limit * owned.quantity - maximum_exit_fee),
+        creation_book_sha256=book.source_payload_sha256,
+        transformed_creation_book_sha256=transformed.source_payload_sha256,
+    )
+    return replace(
+        provisional,
+        plan_sha256=_canonical_sha256(provisional.identity_payload()),
+    ).validated()
+
+
+def observe_round17_owned_close(
+    plan: Round17OwnedClosePlan,
+    market: PolymarketFiveMinuteMarket,
+    book: PaperBookSnapshot | None,
+    program: PolymarketRound14Program,
+) -> PaperExecutionResult:
+    """Apply one fixed owned-close plan to a delayed execution book."""
+
+    selected = plan.validated()
+    owned = selected.lot
+    scenario = _scenario(program, selected.scenario)
+    if book is None:
         return PaperExecutionResult(
             state="CLOSE_PENDING",
             filled_quantity=Decimal("0"),
@@ -771,17 +1277,35 @@ def simulate_round17_owned_close(
             average_fill_price=Decimal("0"),
             fee_quote=Decimal("0"),
             fills=(),
-            reason="no_stressed_displayed_bid_for_owned_close",
-            source_payload_sha256=transformed.source_payload_sha256,
+            reason="missing_delayed_book_for_owned_close",
+            source_payload_sha256=selected.transformed_creation_book_sha256,
+        )
+    try:
+        transformed = _execution_book(
+            market,
+            book,
+            scenario,
+            decision_time_ms=selected.decision_time_ms,
+            outcome=owned.outcome,
+            side="SELL",
+        )
+    except (TypeError, ValueError):
+        return PaperExecutionResult(
+            state="CLOSE_PENDING",
+            filled_quantity=Decimal("0"),
+            remaining_quantity=owned.quantity,
+            average_fill_price=Decimal("0"),
+            fee_quote=Decimal("0"),
+            fills=(),
+            reason="invalid_delayed_book_for_owned_close",
+            source_payload_sha256=selected.transformed_creation_book_sha256,
         )
     intent = PaperOrderIntent(
         intent_id=(
             "round17-close-"
             + _canonical_sha256(
                 {
-                    "parent_intent_id": owned.parent_intent_id,
-                    "decision_time_ms": decision_time_ms,
-                    "scenario": scenario.name,
+                    "plan_sha256": selected.plan_sha256,
                 }
             )[:32]
         ),
@@ -792,9 +1316,9 @@ def simulate_round17_owned_close(
         outcome=owned.outcome,
         side="SELL",
         order_type="FOK",
-        limit_price=transformed.bids[-1].price,
+        limit_price=selected.limit_price,
         quantity=owned.quantity,
-        created_at_ms=decision_time_ms,
+        created_at_ms=selected.decision_time_ms,
         expires_at_ms=market.end_ms,
         parent_inventory_id=owned.parent_intent_id,
     )
@@ -814,6 +1338,180 @@ def simulate_round17_owned_close(
         owned_quantity=owned.quantity,
         closing_position=True,
     )
+
+
+def plan_round17_complement_lock(
+    market: PolymarketFiveMinuteMarket,
+    lot: Round17OwnedLot,
+    book: PaperBookSnapshot,
+    program: PolymarketRound14Program,
+    *,
+    decision_time_ms: int,
+    scenario_name: str,
+) -> Round17ComplementPlan | None:
+    """Plan a complement only when its creation-book bound locks nonnegative PnL."""
+
+    owned = lot.validated()
+    scenario = _scenario(program, scenario_name)
+    if (
+        owned.market_id != market.condition_id
+        or not market.event_start_ms <= decision_time_ms < market.end_ms
+    ):
+        raise ValueError("Round 17 complement lot does not match the market")
+    complement_outcome = "Down" if owned.outcome == "Up" else "Up"
+    complement_token = (
+        market.down_token_id if complement_outcome == "Down" else market.up_token_id
+    )
+    transformed = _creation_book(
+        market,
+        book,
+        scenario,
+        decision_time_ms=decision_time_ms,
+        outcome=complement_outcome,
+        side="BUY",
+    )
+    cumulative = Decimal("0")
+    limit: Decimal | None = None
+    level_count = 0
+    for level in transformed.asks:
+        cumulative += level.quantity
+        limit = level.price
+        level_count += 1
+        if cumulative >= owned.quantity:
+            break
+    if limit is None or cumulative < owned.quantity:
+        return None
+    fee_model = PolymarketFeeModel(
+        enabled=market.fee_schedule.enabled,
+        rate=market.fee_schedule.rate * scenario.fee_multiplier,
+        exponent=market.fee_schedule.exponent,
+        taker_only=True,
+    )
+    maximum_cost = limit * owned.quantity + _maximum_taker_fee_bound(
+        fee_model,
+        owned.quantity,
+        level_count=level_count,
+    )
+    guaranteed = owned.quantity - owned.entry_cost_quote - maximum_cost
+    if guaranteed < 0:
+        return None
+    provisional = Round17ComplementPlan(
+        lot=owned,
+        decision_time_ms=decision_time_ms,
+        scenario=scenario.name,
+        complement_outcome=complement_outcome,
+        complement_token_id=complement_token,
+        limit_price=limit,
+        quantity=owned.quantity,
+        maximum_complement_cost_quote=maximum_cost,
+        guaranteed_net_quote_lower_bound=guaranteed,
+        creation_book_sha256=book.source_payload_sha256,
+        transformed_creation_book_sha256=transformed.source_payload_sha256,
+    )
+    return replace(
+        provisional,
+        plan_sha256=_canonical_sha256(provisional.identity_payload()),
+    ).validated()
+
+
+def observe_round17_complement_lock(
+    plan: Round17ComplementPlan,
+    market: PolymarketFiveMinuteMarket,
+    book: PaperBookSnapshot | None,
+    program: PolymarketRound14Program,
+) -> Round17ComplementObservation:
+    """Apply a fixed safe-complement plan to one delayed Polymarket book."""
+
+    selected = plan.validated()
+    scenario = _scenario(program, selected.scenario)
+    result: PaperExecutionResult | None = None
+    source_sha = ""
+    transformed_sha = ""
+    complement_cost: Decimal | None = None
+    guaranteed_net: Decimal | None = None
+    state = "unknown_after_submit"
+    if book is not None:
+        source_sha = str(book.source_payload_sha256)
+        try:
+            transformed = _execution_book(
+                market,
+                book,
+                scenario,
+                decision_time_ms=selected.decision_time_ms,
+                outcome=selected.complement_outcome,
+                side="BUY",
+            )
+            transformed_sha = transformed.source_payload_sha256
+            intent = PaperOrderIntent(
+                intent_id="round17-complement-" + selected.plan_sha256[:32],
+                venue="polymarket",
+                market_id=market.condition_id,
+                asset_id=selected.complement_token_id,
+                symbol="BTC",
+                outcome=selected.complement_outcome,
+                side="BUY",
+                order_type="FOK",
+                limit_price=selected.limit_price,
+                quantity=selected.quantity,
+                created_at_ms=selected.decision_time_ms,
+                expires_at_ms=market.end_ms,
+                parent_inventory_id=selected.lot.parent_intent_id,
+            )
+            fee_model = PolymarketFeeModel(
+                enabled=market.fee_schedule.enabled,
+                rate=market.fee_schedule.rate * scenario.fee_multiplier,
+                exponent=market.fee_schedule.exponent,
+                taker_only=True,
+            )
+            result = simulate_aggressive_order(
+                intent,
+                transformed,
+                execution_time_ms=transformed.received_wall_ms,
+                submission_latency_ms=scenario.submission_latency_ms,
+                maximum_book_age_ms=0,
+                fee=fee_model,
+            )
+            if result.state == "FILLED":
+                observed_cost = (
+                    result.average_fill_price * result.filled_quantity
+                    + result.fee_quote
+                )
+                lock = evaluate_round17_complement_lock(
+                    selected.lot,
+                    complement_quantity=result.filled_quantity,
+                    complement_cost_quote=observed_cost,
+                )
+                if (
+                    observed_cost > selected.maximum_complement_cost_quote
+                    or not lock.allowed
+                ):
+                    raise RuntimeError(
+                        "Round 17 complement violated its frozen lock bound"
+                    )
+                state = "locked"
+                complement_cost = observed_cost
+                guaranteed_net = lock.guaranteed_net_quote
+            elif result.state == "CANCELLED":
+                state = "known_no_fill"
+        except (TypeError, ValueError):
+            result = None
+            transformed_sha = ""
+    provisional = Round17ComplementObservation(
+        plan_sha256=selected.plan_sha256,
+        state=state,
+        complement_cost_quote=complement_cost,
+        guaranteed_net_quote=guaranteed_net,
+        conservative_utility_quote=(
+            guaranteed_net if guaranteed_net is not None else Decimal("0")
+        ),
+        execution=result,
+        execution_book_sha256=source_sha,
+        transformed_execution_book_sha256=transformed_sha,
+    )
+    return replace(
+        provisional,
+        observation_sha256=_canonical_sha256(provisional.identity_payload()),
+    ).validated()
 
 
 def evaluate_round17_complement_lock(
@@ -849,11 +1547,19 @@ def evaluate_round17_complement_lock(
 __all__ = [
     "POLYMARKET_ROUND17_EXECUTION_SCHEMA_VERSION",
     "Round17ComplementLock",
+    "Round17ComplementObservation",
+    "Round17ComplementPlan",
     "Round17EntryCandidate",
     "Round17EntryDecision",
+    "Round17EntryObservation",
+    "Round17OwnedClosePlan",
     "Round17OwnedLot",
     "Round17ProbabilityEnvelope",
     "evaluate_round17_complement_lock",
+    "observe_round17_complement_lock",
+    "observe_round17_entry",
+    "observe_round17_owned_close",
+    "plan_round17_complement_lock",
+    "plan_round17_owned_close",
     "select_round17_entry",
-    "simulate_round17_owned_close",
 ]
