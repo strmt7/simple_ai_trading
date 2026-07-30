@@ -59,7 +59,7 @@ from .polymarket_round17_resolution import (
 )
 from .polymarket_round17_uncertainty import (
     Round17CalibratedEnvelope,
-    apply_round17_probability_calibration_rows,
+    Round17ProbabilityCalibrationSession,
 )
 from .storage import write_bytes_atomic
 
@@ -1391,6 +1391,14 @@ def run_round17_one_use_evaluation(
             test_access_sha256=access_sha256,
         )
         candidate_session = accumulator.sessions["candidate"]
+        calibration_session = Round17ProbabilityCalibrationSession(
+            calibration,  # type: ignore[arg-type]
+            model_pretest,  # type: ignore[arg-type]
+            dataset_sha256=target.test_dataset_sha256,
+            source_role="test",
+            test_access_sha256=access_sha256,
+            inference_session=candidate_session,
+        )
         resolution_by_condition = {
             item.condition_id: item for item in acquisition.observations
         }
@@ -1399,15 +1407,9 @@ def run_round17_one_use_evaluation(
             iter_round17_campaign_test_conditions(selected.campaign, access),
             start=1,
         ):
-            calibrated = apply_round17_probability_calibration_rows(
-                calibration,  # type: ignore[arg-type]
-                model_pretest,  # type: ignore[arg-type]
+            calibrated = calibration_session.apply_rows(
                 materialized.dataset.rows,
-                dataset_sha256=target.test_dataset_sha256,
                 event_start_ms=materialized.market.event_start_ms,
-                source_role="test",
-                test_access_sha256=access_sha256,
-                inference_session=candidate_session,
             )
             probabilities = tuple(
                 build_round17_calibrated_decision_probability(row, envelope)
