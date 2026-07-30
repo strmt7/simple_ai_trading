@@ -249,14 +249,14 @@ def evaluate_round16_panel(
     ):
         raise ValueError("Round 16 pretest binding differs")
     candidates_value = pretest.get("candidates")
-    if not isinstance(candidates_value, list) or len(candidates_value) != 4:
+    if not isinstance(candidates_value, list) or len(candidates_value) != 5:
         raise ValueError("Round 16 pretest candidates differ")
     candidates = tuple(
         dict(candidate)
         for candidate in candidates_value
         if isinstance(candidate, Mapping)
     )
-    if len(candidates) != 4:
+    if len(candidates) != 5:
         raise ValueError("Round 16 candidate payload is malformed")
     metrics: dict[str, Mapping[str, float]] = {}
     predictions: dict[str, np.ndarray] = {}

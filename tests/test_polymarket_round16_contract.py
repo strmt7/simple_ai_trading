@@ -10,7 +10,7 @@ CONTRACT = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-016-btc-15m-horizon-comparison-v1.json"
+    / "round-016-btc-15m-horizon-comparison-v2.json"
 )
 
 
@@ -65,3 +65,17 @@ def test_round16_contract_is_hash_bound_and_execution_independent() -> None:
         "automatic_live_promotion_allowed"
     ] is False
     assert payload["profitability_claim"] is False
+    assert payload["predecessors"]["round16_v1_contract_sha256"] == (
+        "a9491716ee8d2d52c20e0b3172ad7ace3d7c3da72c80e3d06cafea1a65ef9903"
+    )
+    assert payload["candidate_contract"]["controls"] == [
+        "constant_training_prevalence",
+        "regularized_calendar_logistic",
+        "regularized_digital_moneyness_logistic",
+    ]
+    assert payload["candidate_contract"]["digital_moneyness_control"]["features"] == [
+        "spot_event_to_date_log_moneyness",
+        "spot_volatility_scaled_digital_moneyness",
+        "perpetual_event_to_date_log_moneyness",
+        "perpetual_volatility_scaled_digital_moneyness",
+    ]

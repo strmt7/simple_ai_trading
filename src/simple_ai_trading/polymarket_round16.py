@@ -30,7 +30,7 @@ from .polymarket_historical_screen import (
 
 
 ROUND16_CONTRACT_SCHEMA_VERSION = (
-    "polymarket-round16-btc-15m-horizon-comparison-v1"
+    "polymarket-round16-btc-15m-horizon-comparison-v2"
 )
 ROUND16_MARKET_SCHEMA_VERSION = "polymarket-round16-btc-15m-market-v1"
 ROUND16_SERIES_ID = "10192"

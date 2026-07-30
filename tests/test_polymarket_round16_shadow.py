@@ -42,7 +42,7 @@ CONTRACT_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-016-btc-15m-horizon-comparison-v1.json"
+    / "round-016-btc-15m-horizon-comparison-v2.json"
 )
 EVENT_START_MS = 1_800_000_000_000
 DECISION_TIME_MS = EVENT_START_MS + 60_000

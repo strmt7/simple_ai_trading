@@ -35,7 +35,7 @@ CONTRACT_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-016-btc-15m-horizon-comparison-v1.json"
+    / "round-016-btc-15m-horizon-comparison-v2.json"
 )
 
 
@@ -99,7 +99,7 @@ def test_round16_candidate_screen_is_bounded_and_reproducible() -> None:
         compute_backend="cpu",
     )
 
-    assert len(candidates) == 4
+    assert len(candidates) == 5
     assert {candidate["kind"] for candidate in candidates} == {
         "control",
         "challenger",
@@ -107,6 +107,7 @@ def test_round16_candidate_screen_is_bounded_and_reproducible() -> None:
     assert {candidate["family"] for candidate in candidates} == {
         "training_prevalence",
         "calendar_ridge_logistic",
+        "digital_moneyness_ridge_logistic",
         "binance_ridge_logistic",
         "binance_shallow_lightgbm",
     }
