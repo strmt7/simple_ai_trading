@@ -1,0 +1,103 @@
+{
+  "schema_version": "polymarket-round20-independent-redundant-corpus-contract-v1",
+  "round": 20,
+  "status": "preregistered_before_successor_capture",
+  "parent": {
+    "round19_contract_sha256": "f412e449ba6716459444f07b9d18b98195e106d3322511b21ee78c7fe808ed5b",
+    "round19_result_sha256": "61a7a6fe2cebd3ddc8ba6d4f59c52d6c19b91fe895353fda1bb066e86ecbc5be",
+    "round19_qualified": true
+  },
+  "venue_independence": {
+    "execution_venue": "polymarket",
+    "required_public_sources": [
+      "polymarket_gamma",
+      "polymarket_clob_a",
+      "polymarket_clob_b",
+      "polymarket_rtds_chainlink"
+    ],
+    "optional_predictor_sources": [
+      "binance_spot_public",
+      "binance_usdm_public"
+    ],
+    "binance_role": "optional_read_only_predictor",
+    "binance_credentials_allowed": false,
+    "binance_order_endpoints_allowed": false,
+    "binance_unavailability_blocks_polymarket_core": false,
+    "missing_optional_features": "explicitly_missing_never_imputed"
+  },
+  "scope": {
+    "asset": "BTC",
+    "market_horizon_seconds": 300,
+    "decision_cadence_ms": 250,
+    "current_and_next_market_only": true
+  },
+  "capture": {
+    "calendar_days": 30,
+    "capture_unit_seconds": 1200,
+    "total_capture_units": 2160,
+    "maximum_concurrent_units": 1,
+    "discovery_interval_seconds": 30,
+    "progress_interval_seconds": 30,
+    "outcomes_access_during_capture": false,
+    "model_access_during_capture": false
+  },
+  "redundant_clob_transport": {
+    "lane_ids": [
+      "clob-a",
+      "clob-b"
+    ],
+    "heartbeat_seconds": 10,
+    "fresh_event_seconds": 10,
+    "subscribe_additions_before_removals": true,
+    "preserve_exact_receipts_from_both_lanes": true,
+    "semantic_digest": "sha256_canonical_json_event",
+    "duplicate_pairing": "fifo_by_digest_within_window",
+    "pairing_window_ms": 2000,
+    "unmatched_receipts_preserved": true,
+    "synthetic_source_sequence_allowed": false
+  },
+  "storage": {
+    "database": "duckdb",
+    "schema": "polymarket-evidence-storage-v4",
+    "compression": "zstd-level-1-exact-frames",
+    "writer_count": 1,
+    "database_threads": 2,
+    "memory_limit": "1GB",
+    "queue_capacity": 100000,
+    "raw_receipts_are_authority": true,
+    "derived_union_is_rebuildable": true,
+    "terminal_manifest_required": true
+  },
+  "condition_admission": {
+    "maximum_joint_unhealthy_ms": 2000,
+    "minimum_lane_coverage_fraction": 0.9,
+    "minimum_shared_fraction": 0.9,
+    "maximum_json_parse_errors": 0,
+    "maximum_writer_errors": 0,
+    "exact_frame_audit_required": true,
+    "both_token_books_required": true,
+    "chainlink_open_and_close_required": true,
+    "joint_gap_rejects_affected_condition_only": true,
+    "single_lane_gap_never_silently_reclassified": true,
+    "optional_predictor_coverage_required": false
+  },
+  "labels_and_roles": {
+    "official_resolution_only": true,
+    "whole_condition_role_assignment": true,
+    "role_assignment_frozen_before_resolution_access": true,
+    "train_calendar_days": 18,
+    "tune_calendar_days": 5,
+    "sealed_test_calendar_days": 7,
+    "purge_seconds_between_roles": 1800,
+    "future_books_in_inference": false,
+    "future_reference_prices_in_inference": false
+  },
+  "authority": {
+    "model_data_eligible": false,
+    "model_selected": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "contract_sha256": "90e837edc9bb8071f966f9d27335983e24c6060c4ba0d36fc3d2060913c421ad"
+}
