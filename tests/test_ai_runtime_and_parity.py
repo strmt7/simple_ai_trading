@@ -934,6 +934,10 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256" in source
     assert "struct CommandResult" in source
+    assert "CREATE_NO_WINDOW" in source
+    assert "STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW" in source
+    assert "kMaximumCommandOutputBytes" in source
+    assert "_wpopen" not in source
     assert "workflow_generation_.fetch_add(1)" in source
     assert "std::atomic_uint32_t active_workers_{0}" in source
     assert "std::atomic_bool close_requested_{false}" in source
