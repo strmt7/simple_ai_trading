@@ -36,6 +36,9 @@ from simple_ai_trading.polymarket_round17_one_use import (
     Round17OneUseClaimStore,
     Round17TestAccessClaim,
 )
+from simple_ai_trading.polymarket_round17_publication import (
+    publish_round17_one_use_result,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -159,13 +162,28 @@ def _terminal_result(
         "condition_balanced_brier": 0.2,
         "final_condition_balanced_accuracy": 0.7,
     }
+    aggregate_metric_row = {
+        "condition_balanced_log_loss": 0.4,
+        "condition_balanced_brier": 0.2,
+        "condition_weighted_balanced_accuracy": 0.7,
+        "condition_weighted_matthews_correlation": 0.4,
+        "calibration_intercept": 0.0,
+        "calibration_slope": 1.0,
+        "expected_calibration_error": 0.05,
+    }
     endpoint: dict[str, object] = {
         "claim_sha256": claim.claim_sha256,
         "test_access_sha256": test_access_sha256,
         "test_target_manifest_sha256": "e" * 64,
         "condition_count": 1,
         "calendar_day_count": 1,
+        "selected_candidate_id": "round17-test-candidate",
         "control_ids": list(POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS),
+        "candidate_metrics": dict(aggregate_metric_row),
+        "control_metrics": {
+            control_id: dict(aggregate_metric_row)
+            for control_id in POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS
+        },
         "daily_metrics": [
             {
                 "day_start_ms": day_start_ms,
@@ -184,8 +202,18 @@ def _terminal_result(
     scenario_metric = {
         "condition_count": 1,
         "calendar_day_count": 1,
+        "executed_action_count": 1,
+        "win_count": 1,
+        "win_rate": 1.0,
         "risk_capital_quote": "10000",
         "net_pnl_quote": "1",
+        "mean_event_utility_quote": "1",
+        "median_daily_pnl_quote": "1",
+        "profit_factor": None,
+        "profit_factor_unbounded_without_observed_loss": True,
+        "maximum_drawdown_fraction": "0",
+        "worst_daily_loss_fraction": "0",
+        "daily_block_bootstrap_mean_event_utility_lower_95": 1.0,
         "daily_pnl_series": [
             {
                 "day_start_ms": day_start_ms,
@@ -421,6 +449,38 @@ def test_round17_terminal_result_rejects_rehashed_daily_metric_drift(
 
     with pytest.raises(ValueError, match="terminal one-use evidence differs"):
         validate_round17_one_use_result(tampered)
+
+
+def test_round17_terminal_publication_is_data_backed_and_immutable(
+    tmp_path: Path,
+) -> None:
+    result = _terminal_result(_claim())
+    output = tmp_path / "round17-publication"
+
+    publication = publish_round17_one_use_result(result, output)
+
+    assert publication["result_sha256"] == result["result_sha256"]
+    assert publication["profitability_claim"] is False
+    assert len(publication["artifacts"]) == 12
+    assert (output / "publication-manifest.json").is_file()
+    assert "2027-01-16" in (output / "endpoint-daily-log-loss.svg").read_text(
+        encoding="ascii"
+    )
+    scenario_rows = (
+        (output / "economic-scenarios.csv").read_text(encoding="ascii").splitlines()
+    )
+    assert len(scenario_rows) == 25
+    assert publish_round17_one_use_result(result, output) == publication
+
+    (output / "endpoint-summary.csv").write_text(
+        "tampered\n",
+        encoding="ascii",
+    )
+    with pytest.raises(
+        ValueError,
+        match="sealed publication artifact differs",
+    ):
+        publish_round17_one_use_result(result, output)
 
 
 def test_round17_completed_claim_is_republished_without_campaign_access(
