@@ -20,6 +20,7 @@ from simple_ai_trading.polymarket_round16 import (
     ROUND16_DECISION_OFFSETS_SECONDS,
     ROUND16_MARKETS_PER_DAY,
     Round16HistoricalPublicClient,
+    collect_round16_market_identities,
     load_round16_historical_contract,
     parse_round16_historical_btc_event,
 )
@@ -87,6 +88,45 @@ def _event() -> dict[str, object]:
         "markets": [market],
         "resolution": "Up",
     }
+
+
+def _event_at(start_ms: int, index: int) -> dict[str, object]:
+    event = deepcopy(_event())
+    slug = f"btc-updown-15m-{start_ms // 1_000}"
+    end_ms = start_ms + 900_000
+    market = event["markets"][0]
+    assert isinstance(market, dict)
+    event.update(
+        {
+            "id": str(7_000_000 + index),
+            "ticker": slug,
+            "slug": slug,
+        }
+    )
+    market.update(
+        {
+            "id": str(2_000_000 + index),
+            "conditionId": f"0x{index + 1:064x}",
+            "slug": slug,
+            "eventStartTime": (
+                datetime.fromtimestamp(start_ms / 1_000, tz=UTC)
+                .isoformat()
+                .replace("+00:00", "Z")
+            ),
+            "endDate": (
+                datetime.fromtimestamp(end_ms / 1_000, tz=UTC)
+                .isoformat()
+                .replace("+00:00", "Z")
+            ),
+            "clobTokenIds": json.dumps(
+                [
+                    str(10**39 + index * 2),
+                    str(10**39 + index * 2 + 1),
+                ]
+            ),
+        }
+    )
+    return event
 
 
 def _flow() -> dict[str, np.ndarray]:
@@ -207,6 +247,96 @@ def test_round16_client_strips_targets_before_identity_storage() -> None:
     _url, params, _timeout = session.calls[0]
     assert ("series_id", "10192") in params
     assert ("end_date_max", "2026-03-21T00:15:00Z") in params
+
+
+def test_round16_exact_slug_client_strips_terminal_targets() -> None:
+    session = _Session(_event())
+    client = Round16HistoricalPublicClient(
+        session=session,
+        clock_ms=lambda: END_MS + 1,
+    )
+
+    event = client.event_identity_by_slug(SLUG)
+
+    assert "outcomePrices" not in event.canonical_json
+    assert '"winner"' not in event.canonical_json
+    assert '"resolution"' not in event.canonical_json
+    url, params, _timeout = session.calls[0]
+    assert url.endswith(f"/events/slug/{SLUG}")
+    assert params is None
+
+
+def test_round16_identity_collection_repairs_bounded_keyset_omission(
+    tmp_path: Path,
+) -> None:
+    loaded = load_round16_historical_contract(CONTRACT_PATH)
+    day = "2026-03-20"
+    day_start_ms = int(datetime(2026, 3, 20, tzinfo=UTC).timestamp() * 1_000)
+    historical = replace(
+        loaded.historical,
+        eligible_days=(day,),
+        roles={day: "train"},
+    )
+    contract = replace(loaded, historical=historical)
+    events = tuple(
+        _event_at(day_start_ms + index * 900_000, index)
+        for index in range(ROUND16_MARKETS_PER_DAY)
+    )
+    missing_index = 81
+
+    class IdentityClient:
+        def __init__(self) -> None:
+            self.exact_slugs: list[str] = []
+
+        def events_page(
+            self,
+            *,
+            contract: object,
+            day: str,
+            after_cursor: str = "",
+        ) -> PublicPayload:
+            assert not after_cursor
+            return _public(
+                {
+                    "events": [
+                        event
+                        for index, event in enumerate(events)
+                        if index != missing_index
+                    ],
+                    "next_cursor": "",
+                },
+                observed_at_ms=day_start_ms + 86_400_000 + 1,
+            )
+
+        def event_identity_by_slug(self, slug: str) -> PublicPayload:
+            self.exact_slugs.append(slug)
+            return _public(
+                events[missing_index],
+                observed_at_ms=day_start_ms + 86_400_000 + 1,
+            )
+
+    client = IdentityClient()
+    with HistoricalScreenStore(
+        tmp_path / "identity-repair.duckdb",
+        contract=historical,
+    ) as store:
+        counts = collect_round16_market_identities(
+            store,
+            contract,
+            client,  # type: ignore[arg-type]
+        )
+        identities = store.markets(include_excluded=True)
+
+        assert counts == {day: ROUND16_MARKETS_PER_DAY}
+        assert store.state == "identities_complete"
+        assert len(identities) == ROUND16_MARKETS_PER_DAY
+        assert client.exact_slugs == [
+            f"btc-updown-15m-{(day_start_ms + missing_index * 900_000) // 1_000}"
+        ]
+        assert all(
+            "outcomePrices" not in row.identity_payload_json for row in identities
+        )
+        assert all('"winner"' not in row.identity_payload_json for row in identities)
 
 
 def test_round16_gamma_target_batch_requires_exact_coverage() -> None:

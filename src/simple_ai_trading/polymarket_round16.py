@@ -40,6 +40,8 @@ ROUND16_DECISION_OFFSETS_SECONDS = tuple(range(60, 841, 60))
 ROUND16_RETURN_HORIZONS_SECONDS = (1, 5, 15, 30, 60, 120)
 ROUND16_FLOW_WINDOWS_SECONDS = (1, 5, 15, 30, 60, 120)
 ROUND16_RESOLUTION_SOURCE = "https://data.chain.link/streams/btc-usd"
+ROUND16_MAX_IDENTITY_REPAIRS_PER_DAY = 4
+_GAMMA_EVENT_BY_SLUG_URL = "https://gamma-api.polymarket.com/events/slug"
 _SLUG = re.compile(r"^btc-updown-15m-([0-9]{10})$")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _TOKEN_ID = re.compile(r"^[0-9]{20,80}$")
@@ -569,6 +571,55 @@ class Round16HistoricalPublicClient(PolymarketHistoricalPublicClient):
             raise ValueError("Round 16 Gamma market batch coverage differs")
         return output
 
+    def event_identity_by_slug(self, slug: str) -> PublicPayload:
+        """Fetch one exact event and discard terminal fields immediately."""
+
+        selected = str(slug or "").strip().lower()
+        if _SLUG.fullmatch(selected) is None:
+            raise ValueError("Round 16 exact Gamma event slug is invalid")
+        raw = self._get(f"{_GAMMA_EVENT_BY_SLUG_URL}/{selected}")
+        if not isinstance(raw.value, Mapping):
+            raise ValueError("Round 16 exact Gamma event is not an object")
+        sanitized = _sanitize_identity_event(raw.value)
+        if sanitized["slug"] != selected:
+            raise ValueError("Round 16 exact Gamma event identity differs")
+        canonical = _canonical_json(sanitized)
+        return PublicPayload(
+            value=sanitized,
+            canonical_json=canonical,
+            sha256=hashlib.sha256(canonical.encode("ascii")).hexdigest(),
+            observed_at_ms=raw.observed_at_ms,
+        )
+
+
+def _sanitize_identity_event(
+    event_value: Mapping[str, object],
+) -> dict[str, object]:
+    event = dict(event_value)
+    markets = event.get("markets")
+    if not isinstance(markets, list):
+        raise ValueError("Round 16 Gamma event markets are malformed")
+    sanitized_markets: list[dict[str, object]] = []
+    for market_value in markets:
+        if not isinstance(market_value, Mapping):
+            raise ValueError("Round 16 Gamma market is malformed")
+        sanitized_markets.append(
+            {key: market_value.get(key) for key in _IDENTITY_FIELDS}
+        )
+    series = event.get("series")
+    if not isinstance(series, list):
+        raise ValueError("Round 16 Gamma event series are malformed")
+    return {
+        "id": event.get("id"),
+        "ticker": event.get("ticker"),
+        "slug": event.get("slug"),
+        "closed": event.get("closed"),
+        "series": [
+            {"id": item.get("id")} for item in series if isinstance(item, Mapping)
+        ],
+        "markets": sanitized_markets,
+    }
+
 
 def _sanitize_identity_page(page: PublicPayload) -> PublicPayload:
     """Create the only page shape allowed to cross the target-blind boundary."""
@@ -583,34 +634,7 @@ def _sanitize_identity_page(page: PublicPayload) -> PublicPayload:
     for event_value in events:
         if not isinstance(event_value, Mapping):
             raise ValueError("Round 16 Gamma keyset event is malformed")
-        event = dict(event_value)
-        markets = event.get("markets")
-        if not isinstance(markets, list):
-            raise ValueError("Round 16 Gamma event markets are malformed")
-        sanitized_markets: list[dict[str, object]] = []
-        for market_value in markets:
-            if not isinstance(market_value, Mapping):
-                raise ValueError("Round 16 Gamma market is malformed")
-            sanitized_markets.append(
-                {key: market_value.get(key) for key in _IDENTITY_FIELDS}
-            )
-        series = event.get("series")
-        if not isinstance(series, list):
-            raise ValueError("Round 16 Gamma event series are malformed")
-        sanitized_events.append(
-            {
-                "id": event.get("id"),
-                "ticker": event.get("ticker"),
-                "slug": event.get("slug"),
-                "closed": event.get("closed"),
-                "series": [
-                    {"id": item.get("id")}
-                    for item in series
-                    if isinstance(item, Mapping)
-                ],
-                "markets": sanitized_markets,
-            }
-        )
+        sanitized_events.append(_sanitize_identity_event(event_value))
     sanitized: dict[str, object] = {
         "events": sanitized_events,
         "next_cursor": value.get("next_cursor"),
@@ -697,6 +721,7 @@ def collect_round16_market_identities(
         seen_cursors: set[str] = set()
         page_index = 0
         admitted = 0
+        day_slugs: set[str] = set()
         while True:
             page_index += 1
             page = client.events_page(
@@ -722,6 +747,7 @@ def collect_round16_market_identities(
                     raise ValueError("Round 16 Gamma returned a duplicate market")
                 seen_conditions.add(market.condition_id)
                 seen_slugs.add(market.slug)
+                day_slugs.add(market.slug)
                 store.upsert_market(market)
                 admitted += 1
                 page_admitted += 1
@@ -753,6 +779,57 @@ def collect_round16_market_identities(
             cursor = next_cursor
             if page_index >= 20:
                 raise ValueError("Round 16 day exceeded the page bound")
+        expected_slugs = tuple(
+            f"btc-updown-15m-{(start + index * contract.duration_ms) // 1_000}"
+            for index in range(ROUND16_MARKETS_PER_DAY)
+        )
+        expected_slug_set = set(expected_slugs)
+        if day_slugs - expected_slug_set:
+            raise ValueError("Round 16 Gamma returned an off-grid market")
+        missing_slugs = tuple(slug for slug in expected_slugs if slug not in day_slugs)
+        if len(missing_slugs) > ROUND16_MAX_IDENTITY_REPAIRS_PER_DAY:
+            raise ValueError(
+                "Round 16 Gamma day exceeded the exact-identity repair bound"
+            )
+        for slug in missing_slugs:
+            exact = client.event_identity_by_slug(slug)
+            if not isinstance(exact.value, Mapping):
+                raise ValueError("Round 16 exact Gamma event is malformed")
+            market = parse_round16_historical_btc_event(
+                exact.value,
+                contract=contract,
+                observed_at_ms=exact.observed_at_ms,
+            )
+            if (
+                market.slug != slug
+                or market.condition_id in seen_conditions
+                or market.slug in seen_slugs
+            ):
+                raise ValueError("Round 16 exact Gamma event identity differs")
+            seen_conditions.add(market.condition_id)
+            seen_slugs.add(market.slug)
+            day_slugs.add(market.slug)
+            store.upsert_market(market)
+            admitted += 1
+            page_index += 1
+            store.record_gamma_page(
+                page=exact,
+                day=day,
+                page_index=page_index,
+                next_cursor="",
+                event_count=1,
+                admitted_count=1,
+            )
+            if progress:
+                progress(
+                    "round16_identity_exact_repair",
+                    {
+                        "day": day,
+                        "slug": slug,
+                        "page_index": page_index,
+                        "day_admitted": admitted,
+                    },
+                )
         counts[day] = admitted
     if any(value != ROUND16_MARKETS_PER_DAY for value in counts.values()):
         raise ValueError("Round 16 Gamma daily market count differs")
