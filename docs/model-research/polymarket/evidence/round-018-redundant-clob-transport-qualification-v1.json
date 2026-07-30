@@ -1,0 +1,138 @@
+{
+  "binance_credentials_used": false,
+  "binance_execution_connected": false,
+  "contract_sha256": "ed2420fec365944784cb7b8c5b8e012f0fbdf4e329e376fb61e3880467599b4a",
+  "duration_seconds": 600.031,
+  "ended_at_ms": 1785449027277,
+  "gates": {
+    "condition_count_in_range": true,
+    "duration_complete": true,
+    "memory_bound_preserved": true,
+    "minimum_connected_fraction_each_lane": true,
+    "minimum_counted_overlap": true,
+    "minimum_event_coverage_each_lane": true,
+    "minimum_events_each_lane": true,
+    "simultaneous_unhealthy_within_limit": false,
+    "token_count_in_range": true,
+    "zero_internal_errors": true,
+    "zero_json_parse_errors": true
+  },
+  "internal_errors": [],
+  "lanes": [
+    {
+      "connected_fraction": 0.9977351170189398,
+      "connected_seconds": 598.6719999999914,
+      "connection_count": 2,
+      "event_type_counts": {
+        "best_bid_ask": 6830,
+        "book": 5442,
+        "last_trade_price": 2589,
+        "market_resolved": 2,
+        "new_market": 222,
+        "price_change": 142209,
+        "tick_size_change": 4
+      },
+      "frame_count": 157355,
+      "json_parse_error_count": 0,
+      "lane_id": "clob-a",
+      "market_event_count": 157298,
+      "memory_bound_exceeded": false,
+      "pong_count": 59,
+      "reconnect_count": 1,
+      "transport_gap_count": 1,
+      "transport_gap_reasons": {
+        "ConnectionClosedError:no close frame received or sent": 1
+      },
+      "unique_event_digest_count": 157248
+    },
+    {
+      "connected_fraction": 0.9977351170189398,
+      "connected_seconds": 598.6719999999914,
+      "connection_count": 2,
+      "event_type_counts": {
+        "best_bid_ask": 6830,
+        "book": 5442,
+        "last_trade_price": 2588,
+        "market_resolved": 2,
+        "new_market": 222,
+        "price_change": 142209,
+        "tick_size_change": 4
+      },
+      "frame_count": 157354,
+      "json_parse_error_count": 0,
+      "lane_id": "clob-b",
+      "market_event_count": 157297,
+      "memory_bound_exceeded": false,
+      "pong_count": 59,
+      "reconnect_count": 1,
+      "transport_gap_count": 1,
+      "transport_gap_reasons": {
+        "ConnectionClosedError:no close frame received or sent": 1
+      },
+      "unique_event_digest_count": 157247
+    }
+  ],
+  "live_trading_authority": false,
+  "market_identities": [
+    {
+      "asset": "BTC",
+      "condition_id": "0xc689f116c88816062acf85ec0785a0163b9abb1278c1e10ff5224e49cf2e75b7",
+      "end_ms": 1785448500000,
+      "event_start_ms": 1785448200000,
+      "identity_sha256": "b814e15e86e9032e852b3d93cda589c01a3fd3d43c8bd4ceb8c4dc21978f179a",
+      "market_id": "3211491",
+      "slug": "btc-updown-5m-1785448200",
+      "token_ids": [
+        "70766198206524866328858576130242225757895419743575770934977749988066327396918",
+        "16907353703608126574834915476064834597936412218800370095190065558121457203087"
+      ]
+    },
+    {
+      "asset": "BTC",
+      "condition_id": "0x5a944f4eb1a9a5b1e90d6f8ed921d85485c6e0672e0dfe0849b5f00331060985",
+      "end_ms": 1785448800000,
+      "event_start_ms": 1785448500000,
+      "identity_sha256": "d4582f9d13abb77dfa01f2e7840ed1f7a568cefae70490e1ed71a7cae99ac5f5",
+      "market_id": "3211759",
+      "slug": "btc-updown-5m-1785448500",
+      "token_ids": [
+        "18090200156607052100889234865218093857402869791718650793043411765179648789627",
+        "2075233807928934794156049895835270328054955350908420323883226686053618221469"
+      ]
+    }
+  ],
+  "market_identity_manifest_sha256": "6356599e81aea7f50e151f32b0030bb438852d7fc4687a00c536d37350cf246c",
+  "model_data_eligible": false,
+  "monitor": {
+    "monitor_interval_seconds": 0.1,
+    "observed_seconds_after_warmup": 589.9059999999881,
+    "sample_count_after_warmup": 5950,
+    "simultaneous_unhealthy_seconds": 84.69999999999946,
+    "warmup_seconds": 10.0
+  },
+  "paper_trading_authority": false,
+  "profitability_claim": false,
+  "qualified": false,
+  "redundancy": {
+    "counted_overlap_fraction": 0.9999682136045772,
+    "lane_event_coverage_fraction": {
+      "clob-a": 0.9999872854418309,
+      "clob-b": 0.9999809281627463
+    },
+    "receipt_difference_ms": {
+      "maximum": 782.0,
+      "median": 0.0,
+      "p95": 125.0
+    },
+    "shared_counted_event_count": 157295,
+    "shared_unique_event_digest_count": 157245,
+    "union_counted_event_count": 157300,
+    "union_unique_event_digest_count": 157250
+  },
+  "result_sha256": "92690ab99e92955b17a26d60f1053d09c4dc59be17a020be0a42436e65b5fada",
+  "schema_version": "polymarket-round18-redundant-clob-transport-result-v1",
+  "started_at_ms": 1785448427246,
+  "subscription_asset_ids_sha256": "f1a57ebb0f2c0469be64ad405d0a3209f1a5356ed66093f20a0fd1f636381689",
+  "transport_disconnect_reclassified_as_complete": false,
+  "venue_source_completeness_proven": false
+}
