@@ -159,6 +159,14 @@ class _PublicClient(PolymarketPublicClient):
         }
 
 
+class _TransientPublicClient(_PublicClient):
+    def order_book(self, token_id: str) -> dict[str, object]:
+        if self.calls == 0:
+            self.calls += 1
+            raise TimeoutError("transient public book timeout")
+        return super().order_book(token_id)
+
+
 class _Scorer(PolymarketRound16ShadowScorer):
     def __init__(
         self,
@@ -170,9 +178,7 @@ class _Scorer(PolymarketRound16ShadowScorer):
             "Predictor",
             (),
             {
-                "pretest_file_sha256": (
-                    promotion.promotion.model_artifact.sha256
-                ),
+                "pretest_file_sha256": (promotion.promotion.model_artifact.sha256),
                 "evaluation_file_sha256": (
                     promotion.promotion.evaluation_report.sha256
                 ),
@@ -224,13 +230,35 @@ def test_promoted_round16_provider_builds_one_polymarket_only_proposal(
     assert proposal.token_id == UP_TOKEN
     assert proposal.outcome == "Up"
     assert proposal.market_variant == "fifteenminute"
-    assert proposal.model_artifact_sha256 == (
-        promotion.promotion.model_artifact.sha256
-    )
+    assert proposal.model_artifact_sha256 == (promotion.promotion.model_artifact.sha256)
     assert len(proposal.input_sha256) == 64
     assert second.proposals == ()
     assert second.reasons == ("model_timestamp_already_consumed",)
     assert client.calls == 1
+
+
+def test_round16_provider_retries_timestamp_after_preproposal_failure(
+    tmp_path: Path,
+) -> None:
+    promotion = _promotion(tmp_path)
+    client = _TransientPublicClient()
+    provider = PolymarketRound16PromotedDecisionProvider(
+        public_client=client,
+        scorer=_Scorer(promotion=promotion, probability_up=0.7),
+        promotion=promotion,
+        requested_quantity=Decimal("5"),
+        clock_ms=lambda: NOW_MS,
+        monotonic_ns=lambda: 1,
+    )
+
+    with pytest.raises(TimeoutError, match="transient public book timeout"):
+        provider.decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    recovered = provider.decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    duplicate = provider.decide(markets=(_market(),), observed_at_ms=NOW_MS)
+
+    assert len(recovered.proposals) == 1
+    assert duplicate.reasons == ("model_timestamp_already_consumed",)
+    assert client.calls == 2
 
 
 def test_round16_provider_rejects_edge_and_evidence_drift(

@@ -86,10 +86,8 @@ class PolymarketRound16PromotedDecisionProvider:
                 "Round 16 decisions require a fifteen-minute promotion"
             )
         if (
-            policy.model_artifact.sha256
-            != predictor.pretest_file_sha256
-            or policy.evaluation_report.sha256
-            != predictor.evaluation_file_sha256
+            policy.model_artifact.sha256 != predictor.pretest_file_sha256
+            or policy.evaluation_report.sha256 != predictor.evaluation_file_sha256
         ):
             raise PolymarketLiveBlocked(
                 "Round 16 predictor files differ from promotion evidence"
@@ -123,64 +121,35 @@ class PolymarketRound16PromotedDecisionProvider:
     def _no_proposal(reason: str) -> PolymarketAutonomousDecision:
         return PolymarketAutonomousDecision(reasons=(reason,))
 
-    def decide(
+    def _decide_at_timestamp(
         self,
+        market: PolymarketFiveMinuteMarket,
         *,
-        markets: tuple[PolymarketFiveMinuteMarket, ...],
+        decision_time_ms: int,
         observed_at_ms: int,
     ) -> PolymarketAutonomousDecision:
-        now = int(observed_at_ms)
-        self.promotion.assert_live_authority(observed_at_ms=now)
-        if len(markets) != 1:
-            raise PolymarketLiveBlocked(
-                "Round 16 decision requires one active Polymarket market"
-            )
-        market = markets[0]
-        if market.asset != "BTC" or market.horizon_minutes != 15:
-            raise PolymarketLiveBlocked(
-                "Round 16 decision market identity differs"
-            )
-        decision_time = self._scheduled_decision(
-            market,
-            observed_at_ms=now,
-        )
-        if decision_time is None:
-            return self._no_proposal("no_scheduled_model_timestamp")
-        key = (market.condition_id, decision_time)
-        with self._lock:
-            if key in self._consumed:
-                return self._no_proposal("model_timestamp_already_consumed")
-            self._consumed.add(key)
         shadow = self.scorer.evaluate(
             event_start_ms=market.event_start_ms,
-            decision_time_ms=decision_time,
-            observed_at_ms=now,
+            decision_time_ms=decision_time_ms,
+            observed_at_ms=observed_at_ms,
         )
         if shadow.status != "observed" or shadow.probability_up is None:
             return self._no_proposal(f"model_abstained:{shadow.reason}")
         if shadow.probability_up >= 0.5:
             outcome = "Up"
             token_id = market.up_token_id
-            selected_probability = Decimal(
-                format(shadow.probability_up, ".17g")
-            )
+            selected_probability = Decimal(format(shadow.probability_up, ".17g"))
         else:
             outcome = "Down"
             token_id = market.down_token_id
-            selected_probability = Decimal(
-                format(1.0 - shadow.probability_up, ".17g")
-            )
+            selected_probability = Decimal(format(1.0 - shadow.probability_up, ".17g"))
         requested_at_ms = int(self._clock_ms())
-        if requested_at_ms < now:
-            raise PolymarketLiveBlocked(
-                "Round 16 decision clock regressed"
-            )
+        if requested_at_ms < observed_at_ms:
+            raise PolymarketLiveBlocked("Round 16 decision clock regressed")
         book_payload = self.public_client.order_book(token_id)
         received_at_ms = int(self._clock_ms())
         if received_at_ms < requested_at_ms:
-            raise PolymarketLiveBlocked(
-                "Round 16 book receipt clock regressed"
-            )
+            raise PolymarketLiveBlocked("Round 16 book receipt clock regressed")
         book = validate_clob_order_book(
             market,
             token_id,
@@ -218,19 +187,12 @@ class PolymarketRound16PromotedDecisionProvider:
             self.requested_quantity,
             "taker",
         )
-        edge = (
-            selected_probability
-            - worst_price
-            - worst_fee / self.requested_quantity
-        )
-        if (
-            edge
-            < self.promotion.promotion.minimum_expected_edge_quote_per_share
-        ):
+        edge = selected_probability - worst_price - worst_fee / self.requested_quantity
+        if edge < self.promotion.promotion.minimum_expected_edge_quote_per_share:
             return self._no_proposal("insufficient_after_cost_edge")
         expires_at_ms = min(
             market.end_ms,
-            decision_time + maximum_age,
+            decision_time_ms + maximum_age,
             self.promotion.promotion.expires_at_ms,
         )
         if received_at_ms >= expires_at_ms:
@@ -251,19 +213,17 @@ class PolymarketRound16PromotedDecisionProvider:
                     self.requested_quantity,
                     "f",
                 ),
-                "decision_time_ms": decision_time,
+                "decision_time_ms": decision_time_ms,
                 "book_requested_at_ms": requested_at_ms,
                 "book_received_at_ms": received_at_ms,
             }
         )
         proposal = PolymarketAutonomousOpenProposal(
             proposal_id=(
-                "round16-" + market.condition_id[2:18] + f"-{decision_time}"
+                "round16-" + market.condition_id[2:18] + f"-{decision_time_ms}"
             ),
             input_sha256=input_sha,
-            model_artifact_sha256=(
-                self.promotion.promotion.model_artifact.sha256
-            ),
+            model_artifact_sha256=(self.promotion.promotion.model_artifact.sha256),
             promotion_sha256=self.promotion.promotion.promotion_sha256,
             market_id=market.condition_id,
             token_id=token_id,
@@ -274,10 +234,47 @@ class PolymarketRound16PromotedDecisionProvider:
             requested_quantity=self.requested_quantity,
             event_start_time_ms=market.event_start_ms,
             event_end_time_ms=market.end_ms,
-            decision_time_ms=decision_time,
+            decision_time_ms=decision_time_ms,
             expires_at_ms=expires_at_ms,
         )
         return PolymarketAutonomousDecision(proposals=(proposal,))
+
+    def decide(
+        self,
+        *,
+        markets: tuple[PolymarketFiveMinuteMarket, ...],
+        observed_at_ms: int,
+    ) -> PolymarketAutonomousDecision:
+        now = int(observed_at_ms)
+        self.promotion.assert_live_authority(observed_at_ms=now)
+        if len(markets) != 1:
+            raise PolymarketLiveBlocked(
+                "Round 16 decision requires one active Polymarket market"
+            )
+        market = markets[0]
+        if market.asset != "BTC" or market.horizon_minutes != 15:
+            raise PolymarketLiveBlocked("Round 16 decision market identity differs")
+        decision_time = self._scheduled_decision(
+            market,
+            observed_at_ms=now,
+        )
+        if decision_time is None:
+            return self._no_proposal("no_scheduled_model_timestamp")
+        key = (market.condition_id, decision_time)
+        with self._lock:
+            if key in self._consumed:
+                return self._no_proposal("model_timestamp_already_consumed")
+            self._consumed.add(key)
+        try:
+            return self._decide_at_timestamp(
+                market,
+                decision_time_ms=decision_time,
+                observed_at_ms=now,
+            )
+        except BaseException:
+            with self._lock:
+                self._consumed.discard(key)
+            raise
 
 
 __all__ = ["PolymarketRound16PromotedDecisionProvider"]

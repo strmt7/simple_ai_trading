@@ -136,12 +136,15 @@ flowchart LR
   separate prospective after-cost campaign before promotion.
 - The concrete fifteen-minute decision provider can be constructed only when
   the promotion's raw model and evaluation file hashes equal the verified
-  scorer files. It consumes each scheduled model timestamp once, reads only
-  the selected Polymarket token book, validates exact market/token identity and
-  source freshness, walks displayed asks for the full requested quantity,
-  applies the recorded Polymarket fee curve, and emits a proposal only above
-  the promoted after-cost edge floor. The execution coordinator independently
-  requotes and rechecks every condition before submission.
+  scorer files. It reserves each scheduled model timestamp while evaluating
+  it, consumes the timestamp after any normal model or no-trade decision, and
+  releases it only when a pre-proposal exception allows a bounded retry inside
+  the original prediction lifetime. It reads only the selected Polymarket
+  token book, validates exact market/token identity and source freshness,
+  walks displayed asks for the full requested quantity, applies the recorded
+  Polymarket fee curve, and emits a proposal only above the promoted after-cost
+  edge floor. The execution coordinator independently requotes and rechecks
+  every condition before submission.
 - Foreign orders, positions, or authenticated stream events fail closed and
   are never modified.
 - The installed CLI and native Windows app consume one generated command
