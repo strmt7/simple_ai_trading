@@ -61,6 +61,9 @@
     "settlement_manipulation_paper": "https://arxiv.org/abs/2606.31675",
     "paper_version_observed": "2026-07-02",
     "paper_finding": "The paper reports settlement-time spot-flow spikes and reversals in Polymarket BTC five-minute contracts and reports that manipulation is largely absent in fifteen-minute contracts.",
+    "market_rule_source": "https://polymarket.com/event/btc-updown-15m-1767139200/btc-updown-15m-1767139200",
+    "market_rule": "Up resolves when the ending Chainlink BTC/USD value is greater than or equal to the beginning value.",
+    "digital_moneyness_basis": "https://doi.org/10.1016/j.econlet.2016.10.001",
     "polymarket_market_stream": "https://docs.polymarket.com/market-data/realtime-data",
     "bitcoin_price_discovery_paper": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4983566",
     "current_series_probe": {
@@ -141,6 +144,8 @@
     ],
     "binance_features": [
       "spot and perpetual log returns",
+      "spot and perpetual event-to-date log moneyness",
+      "spot and perpetual volatility-scaled digital moneyness",
       "spot and perpetual realized variance",
       "spot and perpetual quote volume",
       "spot and perpetual signed aggressive quote share",
@@ -292,5 +297,5 @@
   "round16_terminal_targets_consulted_before_freeze": false,
   "round16_model_scores_consulted_before_freeze": false,
   "profitability_claim": false,
-  "contract_sha256": "fa119c3f110c4a13345341ab26cb87010788cb2e92b85a23647714d3aede163d"
+  "contract_sha256": "a9491716ee8d2d52c20e0b3172ad7ace3d7c3da72c80e3d06cafea1a65ef9903"
 }
