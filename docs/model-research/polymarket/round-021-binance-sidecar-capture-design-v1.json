@@ -1,0 +1,87 @@
+{
+  "schema_version": "polymarket-round21-binance-sidecar-capture-design-v1",
+  "round": 21,
+  "status": "preregistered_before_optional_sidecar_capture",
+  "parent_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+  "parent_round20_plan_sha256": "2c1d87577de566bd4934c9678bcbded5bf156b671a413b83fa6d463372db1d71",
+  "scope": {
+    "purpose": "round21_optional_predictor_sidecar",
+    "asset": "BTC",
+    "required_assets": [],
+    "required_streams": [
+      "binance_futures",
+      "binance_spot"
+    ],
+    "spot_streams": [
+      "btcusdt@bookTicker",
+      "btcusdt@trade"
+    ],
+    "usdm_streams": [
+      "btcusdt@bookTicker",
+      "btcusdt@trade"
+    ],
+    "credentials": false,
+    "account_state": false,
+    "order_endpoints": false,
+    "execution": false
+  },
+  "independence": {
+    "process": "separate_from_round20_polymarket_capture",
+    "database": "separate_from_round20_polymarket_capture",
+    "queue": "separate_from_round20_polymarket_capture",
+    "writer": "separate_from_round20_polymarket_capture",
+    "failure_blocks_polymarket_capture": false,
+    "failure_blocks_polymarket_model": false,
+    "failure_blocks_polymarket_risk_close_stop_or_recovery": false,
+    "coverage_changes_core_condition_admission": false,
+    "missingness": "explicit_and_never_future_filled"
+  },
+  "capture": {
+    "scheduled_end_ms": 1788046800000,
+    "start": "first_clean_attested_launch_after_implementation",
+    "maximum_duration_seconds": 2592000,
+    "progress_interval_seconds": 30,
+    "outcomes_access": false,
+    "model_access": false
+  },
+  "storage": {
+    "database": "duckdb",
+    "schema": "polymarket-evidence-storage-v4",
+    "compression": "zstd-level-1-exact-frames",
+    "writer_count": 1,
+    "database_threads": 1,
+    "memory_limit": "512MB",
+    "queue_capacity": 50000,
+    "database_and_wal_cap_bytes": 68719476736,
+    "minimum_free_bytes": 274877906944,
+    "terminal_exact_frame_audit": true
+  },
+  "reconnect": {
+    "connection_duration_limit_expected": true,
+    "bounded_backoff_seconds": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      30
+    ],
+    "every_gap_persisted": true,
+    "source_sequence_synthetic": false,
+    "receipt_time_authority": "local_monotonic_and_utc"
+  },
+  "admission": {
+    "core_candidate_requires_sidecar": false,
+    "optional_candidate_rows": "exact_matched_core_decisions_with_causally_available_receipts",
+    "optional_outage_or_gap": "explicit_missingness",
+    "optional_candidate_may_expand_core_population": false,
+    "optional_candidate_may_change_role_assignment": false
+  },
+  "authority": {
+    "model_data_eligible": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "c802b13e169f868c7a37619669cdc957862a1cb58c6d3299c0aae63ff0d86d4a"
+}

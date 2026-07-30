@@ -74,6 +74,12 @@ BINANCE_SPOT_WEBSOCKET = (
 )
 BINANCE_SPOT_STREAM_BASE = "wss://stream.binance.com:9443/stream?streams="
 BINANCE_FUTURES_STREAM_BASE = "wss://fstream.binance.com/stream?streams="
+ROUND21_BINANCE_SPOT_WEBSOCKET = (
+    BINANCE_SPOT_STREAM_BASE + "btcusdt@bookTicker/btcusdt@trade"
+)
+ROUND21_BINANCE_FUTURES_WEBSOCKET = (
+    BINANCE_FUTURES_STREAM_BASE + "btcusdt@bookTicker/btcusdt@trade"
+)
 _STREAMS = frozenset(
     {
         "clob_market",
@@ -4716,8 +4722,19 @@ class PolymarketEvidenceStore:
             raise ValueError("Polymarket preregistration capture scope is invalid")
         assets = tuple(str(value).strip().upper() for value in raw_assets)
         streams = tuple(str(value).strip() for value in raw_streams)
-        if (
+        source_only_sidecar = (
             not assets
+            and streams == ("binance_futures", "binance_spot")
+            and payload.get("purpose") == "round21_optional_predictor_sidecar"
+            and payload.get("binance_credentials_used") is False
+            and payload.get("binance_execution_connected") is False
+            and payload.get("model_data_eligible") is False
+            and payload.get("profitability_claim") is False
+            and payload.get("paper_trading_authority") is False
+            and payload.get("live_trading_authority") is False
+        )
+        if (
+            (not assets and not source_only_sidecar)
             or len(set(assets)) != len(assets)
             or any(asset not in SUPPORTED_POLYMARKET_ASSETS for asset in assets)
             or not streams
@@ -6393,6 +6410,8 @@ class PolymarketPublicRecorder:
         include_binance_spot: bool = True,
         include_rtds_binance: bool = True,
         clob_lane_ids: Sequence[str] = ("clob",),
+        include_polymarket_core: bool = True,
+        binance_book_ticker_profile: bool = False,
     ) -> None:
         self.database = Path(database)
         self.client = client or PolymarketPublicClient()
@@ -6425,6 +6444,8 @@ class PolymarketPublicRecorder:
             type(include_binance_futures) is not bool
             or type(include_binance_spot) is not bool
             or type(include_rtds_binance) is not bool
+            or type(include_polymarket_core) is not bool
+            or type(binance_book_ticker_profile) is not bool
         ):
             raise ValueError("recorder source selectors must be boolean")
         selected_clob_lanes = tuple(
@@ -6443,18 +6464,45 @@ class PolymarketPublicRecorder:
         self.include_binance_futures = include_binance_futures
         self.include_binance_spot = include_binance_spot
         self.include_rtds_binance = include_rtds_binance
+        self.include_polymarket_core = include_polymarket_core
+        self.binance_book_ticker_profile = binance_book_ticker_profile
         self.clob_lane_ids = selected_clob_lanes
+        if not include_polymarket_core and (
+            selected_assets != ("BTC",)
+            or not include_binance_spot
+            or not include_binance_futures
+            or include_rtds_binance
+            or selected_clob_lanes != ("clob",)
+            or not binance_book_ticker_profile
+        ):
+            raise ValueError(
+                "source-only recorder requires the frozen BTC Binance sidecar scope"
+            )
+        if binance_book_ticker_profile and (
+            selected_assets != ("BTC",)
+            or not include_binance_spot
+            or not include_binance_futures
+        ):
+            raise ValueError(
+                "Binance book-ticker profile requires BTC spot and futures"
+            )
+        self.required_assets = selected_assets if include_polymarket_core else ()
         self.rtds_topics = (
-            ("crypto_prices", "crypto_prices_chainlink")
-            if include_rtds_binance
-            else ("crypto_prices_chainlink",)
+            (
+                ("crypto_prices", "crypto_prices_chainlink")
+                if include_rtds_binance
+                else ("crypto_prices_chainlink",)
+            )
+            if include_polymarket_core
+            else ()
         )
         required_streams: list[str] = []
         if include_binance_futures:
             required_streams.append("binance_futures")
         if include_binance_spot:
             required_streams.append("binance_spot")
-        required_streams.extend(("clob_market", "polymarket_rtds"))
+        if include_polymarket_core:
+            required_streams.extend(("clob_market", "polymarket_rtds"))
         self.required_streams = tuple(required_streams)
         self.registry = _MarketRegistry()
         self.errors: list[str] = []
@@ -6603,6 +6651,8 @@ class PolymarketPublicRecorder:
                 or not self.include_binance_spot
                 or not self.include_rtds_binance
                 or self.clob_lane_ids != ("clob",)
+                or not self.include_polymarket_core
+                or self.binance_book_ticker_profile
             )
             if scoped_capture and preregistration_manifest is None:
                 raise ValueError(
@@ -6615,7 +6665,7 @@ class PolymarketPublicRecorder:
             ):
                 if (
                     preregistration_manifest.get("required_assets")
-                    != list(self.assets)
+                    != list(self.required_assets)
                     or preregistration_manifest.get("required_streams")
                     != list(self.required_streams)
                 ):
@@ -6626,10 +6676,16 @@ class PolymarketPublicRecorder:
                 preregistration_manifest is not None
                 and (
                     "required_clob_lanes" in preregistration_manifest
-                    or self.clob_lane_ids != ("clob",)
+                    or (
+                        self.include_polymarket_core
+                        and self.clob_lane_ids != ("clob",)
+                    )
                 )
-                and preregistration_manifest.get("required_clob_lanes")
-                != list(self.clob_lane_ids)
+                and (
+                    not self.include_polymarket_core
+                    or preregistration_manifest.get("required_clob_lanes")
+                    != list(self.clob_lane_ids)
+                )
             ):
                 raise ValueError(
                     "preregistration CLOB lanes differ from recorder"
@@ -6638,10 +6694,16 @@ class PolymarketPublicRecorder:
                 preregistration_manifest is not None
                 and (
                     "required_rtds_topics" in preregistration_manifest
-                    or not self.include_rtds_binance
+                    or (
+                        self.include_polymarket_core
+                        and not self.include_rtds_binance
+                    )
                 )
-                and preregistration_manifest.get("required_rtds_topics")
-                != list(self.rtds_topics)
+                and (
+                    not self.include_polymarket_core
+                    or preregistration_manifest.get("required_rtds_topics")
+                    != list(self.rtds_topics)
+                )
             ):
                 raise ValueError(
                     "preregistration RTDS topics differ from recorder"
@@ -6679,36 +6741,45 @@ class PolymarketPublicRecorder:
             )
             producers: list[asyncio.Task[None]] = []
             try:
-                try:
-                    await asyncio.wait_for(
-                        self._discover(run_id, output, now_ms=started),
-                        timeout=min(30.0, float(duration)),
-                    )
-                except Exception as exc:
-                    self.errors.append(
-                        f"initial_discovery:{exc.__class__.__name__}:{exc}"
-                    )
-                    stop.set()
+                if self.include_polymarket_core:
+                    try:
+                        await asyncio.wait_for(
+                            self._discover(run_id, output, now_ms=started),
+                            timeout=min(30.0, float(duration)),
+                        )
+                    except Exception as exc:
+                        self.errors.append(
+                            f"initial_discovery:{exc.__class__.__name__}:{exc}"
+                        )
+                        stop.set()
                 if not stop.is_set():
-                    producers = [
-                        asyncio.create_task(
-                            self._supervise(
-                                "discovery",
-                                self._discovery_loop(run_id, output, stop),
-                                stop,
+                    producers = []
+                    if self.include_polymarket_core:
+                        producers.extend(
+                            (
+                                asyncio.create_task(
+                                    self._supervise(
+                                        "discovery",
+                                        self._discovery_loop(run_id, output, stop),
+                                        stop,
+                                    )
+                                ),
+                                asyncio.create_task(
+                                    self._supervise(
+                                        "clob_market",
+                                        self._clob_stream(output, stop),
+                                        stop,
+                                    )
+                                ),
+                                asyncio.create_task(
+                                    self._supervise(
+                                        "polymarket_rtds",
+                                        self._rtds_stream(output, stop),
+                                        stop,
+                                    )
+                                ),
                             )
-                        ),
-                        asyncio.create_task(
-                            self._supervise(
-                                "clob_market", self._clob_stream(output, stop), stop
-                            )
-                        ),
-                        asyncio.create_task(
-                            self._supervise(
-                                "polymarket_rtds", self._rtds_stream(output, stop), stop
-                            )
-                        ),
-                    ]
+                        )
                     if self.include_binance_spot:
                         producers.append(
                             asyncio.create_task(
@@ -7356,9 +7427,13 @@ class PolymarketPublicRecorder:
                 + "-".join(asset.lower() for asset in self.assets)
             ),
             url=(
-                BINANCE_SPOT_WEBSOCKET
-                if default_scope
-                else _round14_binance_spot_websocket(self.assets)
+                ROUND21_BINANCE_SPOT_WEBSOCKET
+                if self.binance_book_ticker_profile
+                else (
+                    BINANCE_SPOT_WEBSOCKET
+                    if default_scope
+                    else _round14_binance_spot_websocket(self.assets)
+                )
             ),
             subscription=None,
             heartbeat=None,
@@ -7376,7 +7451,11 @@ class PolymarketPublicRecorder:
             stream="binance_futures",
             lane="binance:futures:"
             + "-".join(asset.lower() for asset in self.assets),
-            url=_round14_binance_futures_websocket(self.assets),
+            url=(
+                ROUND21_BINANCE_FUTURES_WEBSOCKET
+                if self.binance_book_ticker_profile
+                else _round14_binance_futures_websocket(self.assets)
+            ),
             subscription=None,
             heartbeat=None,
             heartbeat_seconds=20.0,
