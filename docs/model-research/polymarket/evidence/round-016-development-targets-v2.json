@@ -1,0 +1,83 @@
+{
+  "schema_version": "polymarket-round16-development-targets-v2",
+  "created_at_utc": "2026-07-30T08:29:53.971Z",
+  "status": "development_targets_complete_before_any_model_fit_or_test_target_access",
+  "source_commit": "c3d83d2938f183251c9766bc4f6303888f3854cf",
+  "contract_sha256": "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67",
+  "dataset_sha256": "4bd4ebbbffeffa3443211919ae2ffd86fff732d2f5b51f84ddaa4df5738dca82",
+  "database": {
+    "bytes": 306458624,
+    "sha256": "07057447cbf6296e5ae446a3e2a47ae83552da31e65eec888e3aa366a6af8f10",
+    "state": "development_targets_complete"
+  },
+  "target_implementation": {
+    "schema_version": "polymarket-round16-target-implementation-v2",
+    "manifest_sha256": "3d2bd2d9cb49c57f1e2ca9970040aa562decd0f4c1f55f39f1b9aa3575970954",
+    "implementation_sha256": {
+      "resolution_validator": "d6e40e9561b16ec51ce4eb7819daa61682c6c13907a454778c16684a4003fb8e",
+      "round16_public_client": "cb21a59b5bb9108988d44fa12b87d07690e22b8505d50dcc13bd74f9bb3d77e6",
+      "round16_targets": "c6ae8d9780cfab8866a4fe6cab2ae35d052fcabd94deb447cdc0b24bf8f86650",
+      "shared_public_client": "9aff8a4e6d2c2aefb8510e4cf5a1bbeb70902f3220495ea712e1fe5e7f2a3e1e"
+    }
+  },
+  "development_targets": {
+    "total": 13344,
+    "train": {
+      "total": 10464,
+      "down": 5172,
+      "up": 5292
+    },
+    "tune": {
+      "total": 2880,
+      "down": 1503,
+      "up": 1377
+    }
+  },
+  "sealed_state": {
+    "test_target_count": 0,
+    "pretest_manifest_count": 0,
+    "evaluation_manifest_count": 0,
+    "model_fit_started": false,
+    "model_scores_accessed": false,
+    "test_targets_accessed": false
+  },
+  "transport_repair_verification": {
+    "market_id": "2570741",
+    "condition_id": "0x1a9fd9c9fadb7334ea06e87abeb7cc1011be9a161d41837e6bcc96ba00abef30",
+    "slug": "btc-updown-15m-1781727300",
+    "role": "tune",
+    "winning_outcome": "Up",
+    "gamma_payload_sha256": "522fe2520926e7bb5054ad90721ef9eb4c03b18fa824f917cb0019a935b2160f",
+    "clob_payload_sha256": "dc29c34dad1d453b540e16d5bc5eb20bc4b6bff0639d00e158cec2f17a2d40f3",
+    "evidence_sha256": "4d6d90f4e906ee7ca847dcdc11ab391880106c8dca80370074489c1dda9b6357",
+    "collection_continued_through_condition_index": 13344
+  },
+  "independent_audit": {
+    "rows_checked": 13344,
+    "market_count": 13344,
+    "condition_coverage_exact": true,
+    "invalid_row_count": 0,
+    "gamma_payload_hashes_valid": true,
+    "clob_payload_hashes_valid": true,
+    "evidence_hashes_valid": true,
+    "gamma_clob_terminal_winners_agree": true,
+    "stored_manifest_canonical": true,
+    "stored_manifest_sha256_valid": true,
+    "current_manifest_matches_stored": true,
+    "elapsed_seconds": 1.767
+  },
+  "collection_log": {
+    "file_name": "round16-development-targets-v2-20260730-094038.stdout.jsonl",
+    "bytes": 1806840,
+    "sha256": "25c93ad40cd6170d71f4d4a8205b7ea94686ebf0d22036181309a6c5fbe426f1",
+    "stderr_bytes": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "claims": {
+    "predictive_edge": false,
+    "profitability": false,
+    "trading_authority": false,
+    "promotion_allowed": false
+  },
+  "artifact_sha256": "979526560a40509b847fae8c4475abfd100a0f3530540a358a9eae63593525d3"
+}
