@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 import hashlib
@@ -31,6 +32,7 @@ from .polymarket_round17_cohort import (
     load_round17_cohort_plan,
 )
 from .polymarket_round17_dataset import (
+    POLYMARKET_ROUND17_MAXIMUM_LOOKBACK_MS,
     PolymarketRound17ConditionDataset,
     materialize_round17_condition_rows,
 )
@@ -470,17 +472,29 @@ def iter_round17_campaign_development_conditions(
             admission_by_condition = {
                 item.condition_id: item for item in context.dataset.admissions
             }
+            mutable_rows = {condition_id: [] for condition_id in admission_by_condition}
+            for row in context.dataset.rows:
+                selected_rows = mutable_rows.get(row.condition_id)
+                if selected_rows is not None:
+                    selected_rows.append(row)
             rows_by_condition = {
-                condition_id: tuple(
-                    row
-                    for row in context.dataset.rows
-                    if row.condition_id == condition_id
-                )
-                for condition_id in admission_by_condition
+                condition_id: tuple(rows) for condition_id, rows in mutable_rows.items()
             }
             market_by_condition = {
                 market.condition_id: market for market in context.markets
             }
+            mutable_books = {condition_id: [] for condition_id in market_by_condition}
+            for book in context.replay.books:
+                selected_books = mutable_books.get(book.market.condition_id)
+                if selected_books is not None:
+                    selected_books.append(book)
+            books_by_condition = {
+                condition_id: tuple(books)
+                for condition_id, books in mutable_books.items()
+            }
+            event_receipts = tuple(
+                event.received_wall_ms for event in context.feature_events
+            )
             for condition_id in sorted(
                 market_by_condition,
                 key=lambda value: (
@@ -492,17 +506,21 @@ def iter_round17_campaign_development_conditions(
                 if not admission.core_eligible:
                     continue
                 market = market_by_condition[condition_id]
-                books = tuple(
-                    book
-                    for book in context.replay.books
-                    if book.market.condition_id == condition_id
+                base_rows = rows_by_condition[condition_id]
+                event_start = bisect_left(
+                    event_receipts,
+                    market.event_start_ms - POLYMARKET_ROUND17_MAXIMUM_LOOKBACK_MS,
+                )
+                event_end = bisect_right(
+                    event_receipts,
+                    base_rows[-1].decision_time_ms,
                 )
                 dataset = materialize_round17_condition_rows(
                     market=market,
                     admission=admission,
-                    base_rows=rows_by_condition[condition_id],
-                    events=context.feature_events,
-                    books=books,
+                    base_rows=base_rows,
+                    events=context.feature_events[event_start:event_end],
+                    books=books_by_condition[condition_id],
                 )
                 cohort_condition = build_round17_cohort_condition(
                     readiness.cohort_plan,
