@@ -567,9 +567,32 @@ class Round16HistoricalPublicClient(PolymarketHistoricalPublicClient):
                 sha256=hashlib.sha256(canonical.encode("ascii")).hexdigest(),
                 observed_at_ms=page.observed_at_ms,
             )
+        for market_id in selected:
+            if market_id not in output:
+                output[market_id] = self.gamma_market_by_id(market_id)
         if set(output) != set(selected):
             raise ValueError("Round 16 Gamma market batch coverage differs")
         return output
+
+    def gamma_market_by_id(self, market_id: str) -> PublicPayload:
+        """Fetch one exact terminal market omitted by Gamma's list index."""
+
+        selected = str(market_id or "").strip()
+        if not selected.isdigit() or len(selected) > 20:
+            raise ValueError("Round 16 exact Gamma market ID is invalid")
+        raw = self._get(f"{GAMMA_MARKETS_URL}/{selected}")
+        if not isinstance(raw.value, Mapping):
+            raise ValueError("Round 16 exact Gamma market is not an object")
+        market = dict(raw.value)
+        if str(market.get("id") or "").strip() != selected:
+            raise ValueError("Round 16 exact Gamma market identity differs")
+        canonical = _canonical_json(market)
+        return PublicPayload(
+            value=market,
+            canonical_json=canonical,
+            sha256=hashlib.sha256(canonical.encode("ascii")).hexdigest(),
+            observed_at_ms=raw.observed_at_ms,
+        )
 
     def event_identity_by_slug(self, slug: str) -> PublicPayload:
         """Fetch one exact event and discard terminal fields immediately."""

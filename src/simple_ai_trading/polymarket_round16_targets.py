@@ -28,7 +28,7 @@ from .polymarket_round16 import (
 
 ROUND16_RESOLUTION_SCHEMA_VERSION = "polymarket-round16-btc-15m-resolution-v1"
 ROUND16_TARGET_IMPLEMENTATION_SCHEMA_VERSION = (
-    "polymarket-round16-target-implementation-v1"
+    "polymarket-round16-target-implementation-v2"
 )
 ROUND16_GAMMA_TARGET_BATCH_SIZE = 100
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
