@@ -47,6 +47,11 @@ POLYMARKET_ROUND17_CAMPAIGN_OPERATOR_SCHEMA_VERSION = (
 POLYMARKET_ROUND17_CAMPAIGN_DEVELOPMENT_INDEX_SCHEMA_VERSION = (
     "polymarket-round17-btc-5m-campaign-development-index-v1"
 )
+POLYMARKET_ROUND17_CAMPAIGN_TEST_INDEX_SCHEMA_VERSION = (
+    "polymarket-round17-btc-5m-campaign-test-index-v1"
+)
+POLYMARKET_ROUND17_TEST_FIRST_SLOT = 1012
+POLYMARKET_ROUND17_TEST_LAST_SLOT = 1439
 _DEVELOPMENT_ROLES = frozenset(
     {
         "train",
@@ -403,7 +408,34 @@ class Round17DevelopmentConditionMaterialization:
     cohort_condition: Round17CohortCondition
 
 
-def _development_role(
+Round17TestConditionMaterialization = Round17DevelopmentConditionMaterialization
+
+
+@dataclass(frozen=True, slots=True)
+class Round17CampaignTestAccess:
+    claim_sha256: str
+    test_access_sha256: str
+    readiness_sha256: str
+    first_slot: int = POLYMARKET_ROUND17_TEST_FIRST_SLOT
+    last_slot: int = POLYMARKET_ROUND17_TEST_LAST_SLOT
+
+    def validated(self, cohort: Round17CohortPlan) -> Round17CampaignTestAccess:
+        test_roles = tuple(role for role in cohort.roles if role.name == "test")
+        if (
+            _SHA256.fullmatch(self.claim_sha256) is None
+            or _SHA256.fullmatch(self.test_access_sha256) is None
+            or _SHA256.fullmatch(self.readiness_sha256) is None
+            or len(test_roles) != 1
+            or test_roles[0].first_slot != self.first_slot
+            or test_roles[0].last_slot != self.last_slot
+            or self.first_slot != POLYMARKET_ROUND17_TEST_FIRST_SLOT
+            or self.last_slot != POLYMARKET_ROUND17_TEST_LAST_SLOT
+        ):
+            raise ValueError("Round 17 campaign test access differs")
+        return self
+
+
+def _condition_role(
     cohort: Round17CohortPlan,
     *,
     event_start_ms: int,
@@ -418,11 +450,26 @@ def _development_role(
         or (event_start_ms - campaign_start_ms) // 1_800_000 != source_slot_index
     ):
         return None
-    role = cohort.role_for_condition(
+    return cohort.role_for_condition(
         event_start_ms=event_start_ms,
         event_end_ms=event_end_ms,
         source_slot_index=source_slot_index,
     ).name
+
+
+def _development_role(
+    cohort: Round17CohortPlan,
+    *,
+    event_start_ms: int,
+    event_end_ms: int,
+    source_slot_index: int,
+) -> str | None:
+    role = _condition_role(
+        cohort,
+        event_start_ms=event_start_ms,
+        event_end_ms=event_end_ms,
+        source_slot_index=source_slot_index,
+    )
     return role if role in _DEVELOPMENT_ROLES else None
 
 
@@ -439,6 +486,36 @@ def _iter_round17_campaign_development_conditions(
     config: Round17CampaignOperatorConfig,
     readiness: Round17CampaignReadiness,
 ) -> Iterator[Round17DevelopmentConditionMaterialization]:
+    yield from _iter_round17_campaign_conditions(
+        config,
+        readiness,
+        allowed_roles=_DEVELOPMENT_ROLES,
+    )
+
+
+def iter_round17_campaign_test_conditions(
+    config: Round17CampaignOperatorConfig,
+    access: Round17CampaignTestAccess,
+) -> Iterator[Round17TestConditionMaterialization]:
+    """Read reserved test conditions only after a persisted one-use access claim."""
+
+    readiness = inspect_round17_campaign_readiness(config)
+    selected_access = access.validated(readiness.cohort_plan)
+    if selected_access.readiness_sha256 != readiness.readiness_sha256:
+        raise ValueError("Round 17 campaign readiness changed after test claim")
+    yield from _iter_round17_campaign_conditions(
+        config,
+        readiness,
+        allowed_roles=frozenset({"test"}),
+    )
+
+
+def _iter_round17_campaign_conditions(
+    config: Round17CampaignOperatorConfig,
+    readiness: Round17CampaignReadiness,
+    *,
+    allowed_roles: frozenset[str],
+) -> Iterator[Round17DevelopmentConditionMaterialization]:
     if not readiness.ready:
         failed = ",".join(
             name for name, passed in readiness.gates.items() if not passed
@@ -449,7 +526,7 @@ def _iter_round17_campaign_development_conditions(
         for source in readiness.slot_sources
         if any(
             role.first_slot <= source.slot_index <= role.last_slot
-            and role.name in _DEVELOPMENT_ROLES
+            and role.name in allowed_roles
             for role in readiness.cohort_plan.roles
         )
     )
@@ -467,13 +544,13 @@ def _iter_round17_campaign_development_conditions(
             scoped_markets = tuple(
                 market
                 for market in markets
-                if _development_role(
+                if _condition_role(
                     readiness.cohort_plan,
                     event_start_ms=market.event_start_ms,
                     event_end_ms=market.end_ms,
                     source_slot_index=source.slot_index,
                 )
-                is not None
+                in allowed_roles
             )
             if not scoped_markets:
                 continue
@@ -685,15 +762,153 @@ def materialize_round17_campaign_development_index(
     ).validated(readiness.cohort_plan)
 
 
+@dataclass(frozen=True, slots=True)
+class Round17CampaignTestIndex:
+    readiness_sha256: str
+    claim_sha256: str
+    test_access_sha256: str
+    cohort_manifest: Round17CohortManifest
+    markets: tuple[PolymarketFiveMinuteMarket, ...]
+    index_sha256: str = ""
+
+    def identity_payload(self) -> dict[str, object]:
+        return {
+            "schema_version": POLYMARKET_ROUND17_CAMPAIGN_TEST_INDEX_SCHEMA_VERSION,
+            "readiness_sha256": self.readiness_sha256,
+            "claim_sha256": self.claim_sha256,
+            "test_access_sha256": self.test_access_sha256,
+            "cohort_manifest_sha256": self.cohort_manifest.manifest_sha256,
+            "markets": [market.asdict() for market in self.markets],
+            "labels_consulted": False,
+            "outcomes_consulted": False,
+            "model_scores_consulted": False,
+            "test_features_accessed": True,
+            "test_targets_accessed": False,
+            "profitability_claim": False,
+            "paper_trading_authority": False,
+            "live_trading_authority": False,
+        }
+
+    def asdict(self) -> dict[str, object]:
+        return {**self.identity_payload(), "index_sha256": self.index_sha256}
+
+    def market_mapping(self) -> Mapping[str, PolymarketFiveMinuteMarket]:
+        return {market.condition_id: market for market in self.markets}
+
+    def validated(
+        self,
+        plan: Round17CohortPlan,
+        access: Round17CampaignTestAccess,
+    ) -> Round17CampaignTestIndex:
+        selected_access = access.validated(plan)
+        cohort = self.cohort_manifest.validated(plan)
+        references = {item.condition_id: item for item in cohort.conditions}
+        markets = self.market_mapping()
+        if (
+            self.readiness_sha256 != selected_access.readiness_sha256
+            or self.claim_sha256 != selected_access.claim_sha256
+            or self.test_access_sha256 != selected_access.test_access_sha256
+            or any(item.role != "test" for item in cohort.conditions)
+            or set(markets) != set(references)
+            or len(markets) != len(self.markets)
+            or self.markets
+            != tuple(
+                sorted(
+                    self.markets,
+                    key=lambda market: (
+                        market.event_start_ms,
+                        market.condition_id,
+                    ),
+                )
+            )
+            or any(
+                market.asset != "BTC"
+                or market.event_start_ms
+                != references[market.condition_id].event_start_ms
+                or market.end_ms != references[market.condition_id].event_end_ms
+                for market in self.markets
+            )
+            or _SHA256.fullmatch(self.index_sha256) is None
+            or self.index_sha256 != _canonical_sha256(self.identity_payload())
+        ):
+            raise ValueError("Round 17 campaign test index integrity differs")
+        return self
+
+
+def materialize_round17_campaign_test_index(
+    config: Round17CampaignOperatorConfig,
+    access: Round17CampaignTestAccess,
+    *,
+    progress: Callable[[Mapping[str, object]], None] | None = None,
+) -> Round17CampaignTestIndex:
+    """Consume the access-bound test features into a label-free index."""
+
+    readiness = inspect_round17_campaign_readiness(config)
+    selected_access = access.validated(readiness.cohort_plan)
+    if (
+        not readiness.ready
+        or selected_access.readiness_sha256 != readiness.readiness_sha256
+    ):
+        raise RuntimeError("Round 17 test index campaign is not claim-bound terminal")
+    conditions: list[Round17CohortCondition] = []
+    markets: list[PolymarketFiveMinuteMarket] = []
+    count = 0
+    for count, materialized in enumerate(
+        iter_round17_campaign_test_conditions(config, selected_access),
+        start=1,
+    ):
+        conditions.append(materialized.cohort_condition)
+        markets.append(materialized.market)
+        if progress is not None and (count == 1 or count % 25 == 0):
+            progress(
+                {
+                    "phase": "test_index",
+                    "completed_conditions": count,
+                    "last_source_slot_index": materialized.source.slot_index,
+                    "last_event_start_ms": materialized.market.event_start_ms,
+                }
+            )
+    if progress is not None:
+        progress({"phase": "test_index_complete", "completed_conditions": count})
+    cohort = build_round17_cohort_manifest(readiness.cohort_plan, conditions)
+    provisional = Round17CampaignTestIndex(
+        readiness_sha256=readiness.readiness_sha256,
+        claim_sha256=selected_access.claim_sha256,
+        test_access_sha256=selected_access.test_access_sha256,
+        cohort_manifest=cohort,
+        markets=tuple(
+            sorted(
+                markets,
+                key=lambda market: (
+                    market.event_start_ms,
+                    market.condition_id,
+                ),
+            )
+        ),
+    )
+    return replace(
+        provisional,
+        index_sha256=_canonical_sha256(provisional.identity_payload()),
+    ).validated(readiness.cohort_plan, selected_access)
+
+
 __all__ = [
     "POLYMARKET_ROUND17_CAMPAIGN_DEVELOPMENT_INDEX_SCHEMA_VERSION",
     "POLYMARKET_ROUND17_CAMPAIGN_OPERATOR_SCHEMA_VERSION",
+    "POLYMARKET_ROUND17_CAMPAIGN_TEST_INDEX_SCHEMA_VERSION",
+    "POLYMARKET_ROUND17_TEST_FIRST_SLOT",
+    "POLYMARKET_ROUND17_TEST_LAST_SLOT",
     "Round17CampaignDevelopmentIndex",
     "Round17CampaignOperatorConfig",
     "Round17CampaignReadiness",
     "Round17CampaignSlotSource",
+    "Round17CampaignTestAccess",
+    "Round17CampaignTestIndex",
     "Round17DevelopmentConditionMaterialization",
+    "Round17TestConditionMaterialization",
     "inspect_round17_campaign_readiness",
     "iter_round17_campaign_development_conditions",
+    "iter_round17_campaign_test_conditions",
     "materialize_round17_campaign_development_index",
+    "materialize_round17_campaign_test_index",
 ]

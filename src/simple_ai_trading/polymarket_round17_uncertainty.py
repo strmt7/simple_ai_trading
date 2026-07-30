@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
+import re
 from typing import Mapping
 
 import numpy as np
@@ -17,6 +18,7 @@ from .polymarket_round17_features import (
     PolymarketRound17FeatureRow,
 )
 from .polymarket_round17_model import (
+    Round17CandidateInferenceSession,
     Round17DevelopmentPanel,
     predict_round17_candidate,
     predict_round17_feature_rows,
@@ -36,6 +38,7 @@ POLYMARKET_ROUND17_CALIBRATION_MINIMUM_CONDITIONS_PER_BIN = 30
 POLYMARKET_ROUND17_CALIBRATION_MINIMUM_TOTAL_CONDITIONS = 100
 _PROBABILITY_FLOOR = 1e-6
 _EMBARGO_MS = 3_600_000
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COHORT_PLAN_SHA256 = "37fede4da0d6c504bce7cb763b9bd49032e0252a8cede045f29f05acff67fc00"
 
 
@@ -488,6 +491,7 @@ class Round17CalibratedEnvelope:
     decision_time_ms: int
     feature_input_sha256: str
     feature_values_sha256: str
+    test_access_sha256: str | None = None
 
 
 def apply_round17_probability_calibration(
@@ -516,6 +520,9 @@ def apply_round17_probability_calibration_rows(
     *,
     dataset_sha256: str,
     event_start_ms: int,
+    source_role: str = "tune_economic",
+    test_access_sha256: str | None = None,
+    inference_session: Round17CandidateInferenceSession | None = None,
 ) -> tuple[Round17CalibratedEnvelope, ...]:
     """Apply one validated model and calibration to an exact condition batch."""
 
@@ -531,9 +538,26 @@ def apply_round17_probability_calibration_rows(
     ):
         raise ValueError("Round 17 economic inference partition differs")
     condition_ids = {row.condition_id for row in selected_rows}
+    selected_source_role = str(source_role or "").strip()
+    selected_test_access = (
+        None
+        if test_access_sha256 is None
+        else str(test_access_sha256).strip().lower()
+    )
+    source_binding_valid = (
+        selected_source_role == "tune_economic"
+        and str(dataset_sha256) == artifact["dataset_sha256"]
+        and selected_test_access is None
+    ) or (
+        selected_source_role == "test"
+        and _SHA256.fullmatch(str(dataset_sha256)) is not None
+        and str(dataset_sha256) != artifact["dataset_sha256"]
+        and selected_test_access is not None
+        and _SHA256.fullmatch(selected_test_access) is not None
+    )
     if (
         len(condition_ids) != 1
-        or str(dataset_sha256) != artifact["dataset_sha256"]
+        or not source_binding_valid
         or event_start <= 0
         or event_start % 300_000
         or any(
@@ -547,7 +571,16 @@ def apply_round17_probability_calibration_rows(
     candidate = parent["selected_candidate"]
     if not isinstance(candidate, Mapping):
         raise ValueError("Round 17 selected model identity differs")
-    raw_predictions = predict_round17_feature_rows(candidate, selected_rows)
+    if inference_session is not None and (
+        not isinstance(inference_session, Round17CandidateInferenceSession)
+        or inference_session.candidate_sha256 != _canonical_sha256(candidate)
+    ):
+        raise ValueError("Round 17 inference session parent differs")
+    raw_predictions = (
+        predict_round17_feature_rows(candidate, selected_rows)
+        if inference_session is None
+        else inference_session.predict_rows(selected_rows)
+    )
     if np.any(~np.isfinite(raw_predictions)) or np.any(
         (raw_predictions <= 0.0) | (raw_predictions >= 1.0)
     ):
@@ -592,7 +625,8 @@ def apply_round17_probability_calibration_rows(
             "calibration_sha256": artifact["calibration_sha256"],
             "model_pretest_sha256": str(parent["pretest_sha256"]),
             "dataset_sha256": str(dataset_sha256),
-            "source_role": "tune_economic",
+            "source_role": selected_source_role,
+            "test_access_sha256": selected_test_access,
             "event_start_ms": event_start,
             "condition_id": row.condition_id,
             "decision_time_ms": row.decision_time_ms,
@@ -622,12 +656,13 @@ def apply_round17_probability_calibration_rows(
                 calibration_sha256=str(artifact["calibration_sha256"]),
                 model_pretest_sha256=str(parent["pretest_sha256"]),
                 dataset_sha256=str(dataset_sha256),
-                source_role="tune_economic",
+                source_role=selected_source_role,
                 event_start_ms=event_start,
                 condition_id=row.condition_id,
                 decision_time_ms=row.decision_time_ms,
                 feature_input_sha256=row.input_sha256,
                 feature_values_sha256=row.values_sha256,
+                test_access_sha256=selected_test_access,
             )
         )
     return tuple(output)

@@ -55,6 +55,7 @@ _DEVELOPMENT_ROLES = (
     "tune_uncertainty",
     "tune_economic",
 )
+_MODELED_ROLES = (*_DEVELOPMENT_ROLES, "test")
 _ROLE_WINDOWS = (
     ("train", 0, 671),
     ("train_tune_embargo", 672, 673),
@@ -316,7 +317,7 @@ class Round17CohortCondition:
             _RUN_ID.fullmatch(self.source_run_id) is None
             or _CONDITION_ID.fullmatch(self.condition_id) is None
             or self.role != role.name
-            or self.role not in _DEVELOPMENT_ROLES
+            or self.role not in _MODELED_ROLES
             or _SHA256.fullmatch(self.admission_sha256) is None
             or _SHA256.fullmatch(self.condition_dataset_sha256) is None
             or self.feature_row_count < 1
@@ -341,8 +342,8 @@ def build_round17_cohort_condition(
         event_end_ms=selected.event_end_ms,
         source_slot_index=source_slot_index,
     )
-    if role.name not in _DEVELOPMENT_ROLES:
-        raise ValueError("Round 17 condition is reserved outside development")
+    if role.name not in _MODELED_ROLES:
+        raise ValueError("Round 17 condition is outside modeled roles")
     provisional = Round17CohortCondition(
         source_run_id=selected.run_id,
         source_slot_index=int(source_slot_index),
@@ -370,6 +371,9 @@ class Round17CohortManifest:
     manifest_sha256: str = ""
 
     def identity_payload(self) -> dict[str, object]:
+        test_features_accessed = any(
+            item.role == "test" for item in self.conditions
+        )
         return {
             "schema_version": POLYMARKET_ROUND17_COHORT_MANIFEST_SCHEMA_VERSION,
             "plan_sha256": self.plan_sha256,
@@ -389,7 +393,7 @@ class Round17CohortManifest:
             "outcomes_consulted": False,
             "model_scores_consulted": False,
             "execution_scores_consulted": False,
-            "test_features_accessed": False,
+            "test_features_accessed": test_features_accessed,
             "profitability_claim": False,
             "paper_trading_authority": False,
             "live_trading_authority": False,

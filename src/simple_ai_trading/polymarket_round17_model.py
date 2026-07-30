@@ -31,6 +31,7 @@ _PANEL_ROLES = (
     *_MODEL_ROLES,
     "tune_uncertainty",
     "tune_economic",
+    "test",
 )
 _PROBABILITY_FLOOR = 1e-6
 _EMBARGO_MS = 3_600_000
@@ -802,6 +803,7 @@ def _raw_model_prediction_from_features(
     features: np.ndarray,
     *,
     features_validated: bool = False,
+    compiled_booster: lgb.Booster | None = None,
 ) -> np.ndarray:
     selected = _float_array(features, dimensions=2)
     if selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES) or (
@@ -851,7 +853,11 @@ def _raw_model_prediction_from_features(
             matrix_dtype=np.float32,
             features_validated=True,
         )
-        booster = lgb.Booster(model_str=str(model["model_string"]))
+        booster = (
+            compiled_booster
+            if compiled_booster is not None
+            else lgb.Booster(model_str=str(model["model_string"]))
+        )
         residual = np.asarray(
             booster.predict(
                 matrix,
@@ -904,6 +910,63 @@ def predict_round17_feature_rows(
     if not isinstance(calibration, Mapping):
         raise ValueError("Round 17 candidate calibration is invalid")
     return _apply_platt(raw, calibration)
+
+
+class Round17CandidateInferenceSession:
+    """Compile one immutable candidate once for repeated condition inference."""
+
+    def __init__(self, candidate: Mapping[str, object]) -> None:
+        self.candidate = dict(candidate)
+        self.candidate_sha256 = _canonical_sha256(self.candidate)
+        family = str(self.candidate.get("family") or "")
+        self.booster = (
+            lgb.Booster(model_str=str(self.candidate["model_string"]))
+            if family == "lightgbm_residual"
+            else None
+        )
+        if family not in {
+            "training_prevalence",
+            "structural_control",
+            "market_prior_control",
+            "logistic_residual",
+            "lightgbm_residual",
+        }:
+            raise ValueError("Round 17 inference session candidate differs")
+
+    def predict_rows(
+        self,
+        rows: Sequence[PolymarketRound17FeatureRow],
+    ) -> np.ndarray:
+        selected = tuple(rows)
+        if not selected or any(
+            not isinstance(row, PolymarketRound17FeatureRow) for row in selected
+        ):
+            raise TypeError("Round 17 inference session rows differ")
+        features = np.asarray([row.values for row in selected], dtype=np.float64)
+        raw = _raw_model_prediction_from_features(
+            self.candidate,
+            features,
+            compiled_booster=self.booster,
+        )
+        calibration = self.candidate.get("calibration")
+        if calibration is None:
+            return raw
+        if not isinstance(calibration, Mapping):
+            raise ValueError("Round 17 inference session calibration differs")
+        return _apply_platt(raw, calibration)
+
+
+def score_round17_predictions(
+    panel: Round17DevelopmentPanel,
+    predictions: np.ndarray,
+) -> dict[str, float | int]:
+    """Score a frozen prediction vector without fitting or changing the model."""
+
+    selected = panel.validate()
+    probability = np.asarray(predictions, dtype=np.float64)
+    if probability.shape != selected.labels.shape:
+        raise ValueError("Round 17 prediction vector shape differs")
+    return _condition_metrics(selected, probability)
 
 
 def _panel_boundaries(
@@ -1041,28 +1104,28 @@ def _control_models(
     train: Round17DevelopmentPanel,
     train_weights: np.ndarray,
 ) -> tuple[dict[str, object], ...]:
-    prevalence = float(np.sum(train_weights * train.labels))
-    market_prior = {
+    del train_weights
+    raw_market_prior = {
         "family": "market_prior_control",
-        "candidate_id": "round17-market-prior-control",
+        "candidate_id": "round17-market-prior-raw-control",
     }
-    market_raw = _raw_model_prediction(market_prior, train)
-    market_prior["calibration"] = _fit_platt(
+    calibrated_market_prior = dict(raw_market_prior)
+    calibrated_market_prior["candidate_id"] = (
+        "round17-market-prior-calibrated-control"
+    )
+    market_raw = _raw_model_prediction(raw_market_prior, train)
+    calibrated_market_prior["calibration"] = _fit_platt(
         train.labels,
         market_raw,
         train.condition_ids,
     )
     return (
-        {
-            "family": "training_prevalence",
-            "candidate_id": "round17-training-prevalence-control",
-            "probability_up": prevalence,
-        },
+        raw_market_prior,
         {
             "family": "structural_control",
             "candidate_id": "round17-chainlink-structural-control",
         },
-        market_prior,
+        calibrated_market_prior,
     )
 
 
@@ -1468,8 +1531,10 @@ def validate_round17_pretest_artifact(
 __all__ = [
     "POLYMARKET_ROUND17_PRETEST_SCHEMA_VERSION",
     "Round17DevelopmentPanel",
+    "Round17CandidateInferenceSession",
     "fit_round17_development_pretest",
     "predict_round17_candidate",
     "predict_round17_feature_rows",
+    "score_round17_predictions",
     "validate_round17_pretest_artifact",
 ]

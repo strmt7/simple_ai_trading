@@ -294,12 +294,14 @@ def test_round17_cohort_plan_is_self_hashed_and_assigns_fixed_roles() -> None:
             event_end_ms=START_MS + 300_000,
             source_slot_index=1,
         )
-    with pytest.raises(ValueError, match="reserved outside development"):
-        build_round17_cohort_condition(
-            plan,
-            _dataset(9, event_start_ms=test_start),
-            source_slot_index=1012,
-        )
+    test_condition = build_round17_cohort_condition(
+        plan,
+        _dataset(9, event_start_ms=test_start),
+        source_slot_index=1012,
+    )
+    assert test_condition.role == "test"
+    test_manifest = build_round17_cohort_manifest(plan, (test_condition,))
+    assert test_manifest.identity_payload()["test_features_accessed"] is True
 
 
 def test_round17_development_resolution_contract_is_frozen_before_outcomes() -> None:

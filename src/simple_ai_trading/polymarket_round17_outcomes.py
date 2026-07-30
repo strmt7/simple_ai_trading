@@ -61,6 +61,7 @@ _SCENARIOS = (
     "combined",
 )
 _PROFILES = ("conservative", "regular", "aggressive")
+_SOURCE_PARTITIONS = frozenset({"tune_economic", "test"})
 _NUMERIC_GUARD = Decimal("0.000000000001")
 
 
@@ -100,11 +101,13 @@ class Round17DecisionProbability:
     calibration_support_condition_count: int
     envelope: Round17ProbabilityEnvelope
     prediction_sha256: str
+    source_partition: str = "tune_economic"
+    test_access_sha256: str | None = None
 
     def identity_payload(self) -> dict[str, object]:
         selected = self.envelope.validated()
         return {
-            "schema_version": "polymarket-round17-decision-probability-v1",
+            "schema_version": "polymarket-round17-decision-probability-v2",
             "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
             "condition_id": self.condition_id,
             "decision_time_ms": self.decision_time_ms,
@@ -116,6 +119,8 @@ class Round17DecisionProbability:
             "calibration_support_condition_count": (
                 self.calibration_support_condition_count
             ),
+            "source_partition": self.source_partition,
+            "test_access_sha256": self.test_access_sha256,
             "probability_up": format(selected.probability_up, "f"),
             "lower_up": format(selected.lower_up, "f"),
             "upper_up": format(selected.upper_up, "f"),
@@ -142,6 +147,18 @@ class Round17DecisionProbability:
                 self.calibration_supported
                 and self.calibration_support_condition_count < 1
             )
+            or self.source_partition not in _SOURCE_PARTITIONS
+            or (
+                self.source_partition == "tune_economic"
+                and self.test_access_sha256 is not None
+            )
+            or (
+                self.source_partition == "test"
+                and (
+                    self.test_access_sha256 is None
+                    or _SHA256.fullmatch(self.test_access_sha256) is None
+                )
+            )
             or self.envelope.evidence_sha256 != self.prediction_sha256
             or self.prediction_sha256 != _canonical_sha256(self.identity_payload())
         ):
@@ -159,6 +176,8 @@ def build_round17_decision_probability(
     calibration_sha256: str,
     calibration_supported: bool,
     calibration_support_condition_count: int,
+    source_partition: str = "tune_economic",
+    test_access_sha256: str | None = None,
 ) -> Round17DecisionProbability:
     if not isinstance(row, PolymarketRound17FeatureRow):
         raise TypeError("Round 17 probability source row type differs")
@@ -169,7 +188,7 @@ def build_round17_decision_probability(
         evidence_sha256="0" * 64,
     )
     payload = {
-        "schema_version": "polymarket-round17-decision-probability-v1",
+        "schema_version": "polymarket-round17-decision-probability-v2",
         "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
         "condition_id": row.condition_id,
         "decision_time_ms": row.decision_time_ms,
@@ -179,6 +198,8 @@ def build_round17_decision_probability(
         "calibration_sha256": str(calibration_sha256),
         "calibration_supported": bool(calibration_supported),
         "calibration_support_condition_count": int(calibration_support_condition_count),
+        "source_partition": str(source_partition),
+        "test_access_sha256": test_access_sha256,
         "probability_up": format(provisional_envelope.probability_up, "f"),
         "lower_up": format(provisional_envelope.lower_up, "f"),
         "upper_up": format(provisional_envelope.upper_up, "f"),
@@ -200,6 +221,8 @@ def build_round17_decision_probability(
             evidence_sha256=digest,
         ),
         prediction_sha256=digest,
+        source_partition=str(source_partition),
+        test_access_sha256=test_access_sha256,
     ).validated()
 
 
@@ -210,7 +233,7 @@ def build_round17_calibrated_decision_probability(
     if not isinstance(calibrated, Round17CalibratedEnvelope):
         raise TypeError("Round 17 calibrated envelope type differs")
     if (
-        calibrated.source_role != "tune_economic"
+        calibrated.source_role not in _SOURCE_PARTITIONS
         or calibrated.condition_id != row.condition_id
         or calibrated.decision_time_ms != row.decision_time_ms
         or calibrated.feature_input_sha256 != row.input_sha256
@@ -227,6 +250,8 @@ def build_round17_calibrated_decision_probability(
         calibration_sha256=calibrated.calibration_sha256,
         calibration_supported=calibrated.supported,
         calibration_support_condition_count=(calibrated.support_condition_count),
+        source_partition=calibrated.source_role,
+        test_access_sha256=calibrated.test_access_sha256,
     )
 
 
@@ -590,6 +615,8 @@ def _no_entry_outcomes(
     threshold: Decimal,
     capital: Decimal,
     evidence_sha256: str,
+    paths: Sequence[str],
+    source_partition: str,
 ) -> tuple[Round17ConditionEconomicOutcome, ...]:
     return tuple(
         build_round17_condition_economic_outcome(
@@ -608,8 +635,9 @@ def _no_entry_outcomes(
             ownership_violation=False,
             decision_sha256=evidence_sha256,
             source_evidence_sha256=evidence_sha256,
+            source_partition=source_partition,
         )
-        for path in POLYMARKET_ROUND17_ECONOMIC_PATHS
+        for path in paths
     )
 
 
@@ -622,13 +650,38 @@ def materialize_round17_condition_economic_outcomes(
     resolution: PolymarketResolutionEvidence,
     program: PolymarketRound14Program,
     risk_capital_quote: Decimal,
+    source_partition: str = "tune_economic",
+    selected_policy_by_profile: Mapping[str, tuple[str, Decimal]] | None = None,
 ) -> tuple[Round17ConditionEconomicOutcome, ...]:
     """Build all frozen policy cells while retaining only one condition in memory."""
 
     source = dataset.validated()
     capital = _decimal(risk_capital_quote, name="risk capital")
+    partition = str(source_partition or "").strip()
+    if selected_policy_by_profile is None:
+        selected_policies = {
+            profile: (
+                POLYMARKET_ROUND17_ECONOMIC_PATHS,
+                POLYMARKET_ROUND17_ECONOMIC_THRESHOLDS,
+            )
+            for profile in _PROFILES
+        }
+    else:
+        if set(selected_policy_by_profile) != set(_PROFILES):
+            raise ValueError("Round 17 selected economic policy profiles differ")
+        selected_policies = {}
+        for profile in _PROFILES:
+            path, threshold = selected_policy_by_profile[profile]
+            selected_threshold = _decimal(threshold, name="minimum edge")
+            if (
+                path not in POLYMARKET_ROUND17_ECONOMIC_PATHS
+                or selected_threshold not in POLYMARKET_ROUND17_ECONOMIC_THRESHOLDS
+            ):
+                raise ValueError("Round 17 selected economic policy differs")
+            selected_policies[profile] = ((path,), (selected_threshold,))
     if (
         capital <= 0
+        or partition not in _SOURCE_PARTITIONS
         or market.condition_id != source.condition_id
         or market.event_start_ms != source.event_start_ms
         or market.end_ms != source.event_end_ms
@@ -651,13 +704,19 @@ def materialize_round17_condition_economic_outcomes(
         )
         or len({item.model_pretest_sha256 for item in probability_rows}) != 1
         or len({item.calibration_sha256 for item in probability_rows}) != 1
+        or {item.source_partition for item in probability_rows} != {partition}
+        or (
+            partition == "test"
+            and len({item.test_access_sha256 for item in probability_rows}) != 1
+        )
     ):
         raise ValueError("Round 17 probability panel differs from feature rows")
     index = _BookIndex(market, books, run_id=source.run_id)
     outputs: list[Round17ConditionEconomicOutcome] = []
 
     for profile in _PROFILES:
-        for threshold in POLYMARKET_ROUND17_ECONOMIC_THRESHOLDS:
+        selected_paths, selected_thresholds = selected_policies[profile]
+        for threshold in selected_thresholds:
             for scenario_name in _SCENARIOS:
                 scenario = next(
                     item for item in program.scenarios if item.name == scenario_name
@@ -760,6 +819,8 @@ def materialize_round17_condition_economic_outcomes(
                             threshold=threshold,
                             capital=capital,
                             evidence_sha256=evidence,
+                            paths=selected_paths,
+                            source_partition=partition,
                         )
                     )
                     continue
@@ -767,7 +828,7 @@ def materialize_round17_condition_economic_outcomes(
                 candidate = selected_decision.candidate
                 assert candidate is not None
                 if selected_entry.state == "unknown_after_submit":
-                    for path in POLYMARKET_ROUND17_ECONOMIC_PATHS:
+                    for path in selected_paths:
                         evidence = _source_evidence_sha256(
                             path=path,
                             decision=selected_decision,
@@ -794,6 +855,7 @@ def materialize_round17_condition_economic_outcomes(
                                 ownership_violation=False,
                                 decision_sha256=(selected_decision.decision_sha256),
                                 source_evidence_sha256=evidence,
+                                source_partition=partition,
                             )
                         )
                     continue
@@ -840,6 +902,8 @@ def materialize_round17_condition_economic_outcomes(
                     lifecycle,
                     extra,
                 ) in path_values.items():
+                    if path not in selected_paths:
+                        continue
                     evidence = _source_evidence_sha256(
                         path=path,
                         decision=selected_decision,
@@ -864,13 +928,15 @@ def materialize_round17_condition_economic_outcomes(
                             ownership_violation=False,
                             decision_sha256=selected_decision.decision_sha256,
                             source_evidence_sha256=evidence,
+                            source_partition=partition,
                         )
                     )
 
     expected_count = (
-        len(POLYMARKET_ROUND17_ECONOMIC_PATHS)
-        * len(_PROFILES)
-        * len(POLYMARKET_ROUND17_ECONOMIC_THRESHOLDS)
+        sum(
+            len(paths) * len(thresholds)
+            for paths, thresholds in selected_policies.values()
+        )
         * len(_SCENARIOS)
     )
     if len(outputs) != expected_count:
