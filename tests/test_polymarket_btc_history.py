@@ -17,10 +17,12 @@ from simple_ai_trading.polymarket_btc_history import (
 )
 from tools.ingest_polymarket_btc_history import (
     DEFAULT_STATUS_OUTPUT,
+    _select_ingestion_batch,
     _status_artifact,
     _validate_status_destination,
     _write_status_artifact,
 )
+from simple_ai_trading.spot_perpetual_corpus import FrozenFlowDay
 
 
 ROOT = Path(__file__).parents[1]
@@ -31,6 +33,93 @@ INGESTION_STATUS = (
     / "polymarket"
     / "round-015-btc-5m-history-ingestion-status.json"
 )
+
+
+def _day(period: str, compressed_bytes: int) -> FrozenFlowDay:
+    return FrozenFlowDay(
+        month=period[:7],
+        period=period,
+        selection_digest="0" * 64,
+        compressed_bytes=compressed_bytes,
+        archives=(),
+    )
+
+
+def test_history_batch_respects_frozen_compressed_byte_budget() -> None:
+    days = (
+        _day("2026-02-12", 40),
+        _day("2026-02-13", 60),
+        _day("2026-02-14", 1),
+    )
+
+    selected, planned_bytes = _select_ingestion_batch(
+        days,
+        completed_periods=frozenset(),
+        maximum_days=0,
+        maximum_compressed_bytes=100,
+    )
+
+    assert tuple(day.period for day in selected) == (
+        "2026-02-12",
+        "2026-02-13",
+    )
+    assert planned_bytes == 100
+
+
+def test_history_batch_excludes_completed_days_from_limits() -> None:
+    days = (
+        _day("2026-02-12", 90),
+        _day("2026-02-13", 40),
+        _day("2026-02-14", 50),
+        _day("2026-02-15", 20),
+    )
+
+    selected, planned_bytes = _select_ingestion_batch(
+        days,
+        completed_periods=frozenset({"2026-02-12"}),
+        maximum_days=2,
+        maximum_compressed_bytes=100,
+    )
+
+    assert tuple(day.period for day in selected) == (
+        "2026-02-13",
+        "2026-02-14",
+    )
+    assert planned_bytes == 90
+
+
+def test_history_batch_allows_one_oversized_day_for_progress() -> None:
+    days = (
+        _day("2026-02-12", 101),
+        _day("2026-02-13", 1),
+    )
+
+    selected, planned_bytes = _select_ingestion_batch(
+        days,
+        completed_periods=frozenset(),
+        maximum_days=0,
+        maximum_compressed_bytes=100,
+    )
+
+    assert tuple(day.period for day in selected) == ("2026-02-12",)
+    assert planned_bytes == 101
+
+
+def test_history_batch_zero_limits_selects_every_pending_day() -> None:
+    days = (
+        _day("2026-02-12", 40),
+        _day("2026-02-13", 60),
+    )
+
+    selected, planned_bytes = _select_ingestion_batch(
+        days,
+        completed_periods=frozenset({"2026-02-12"}),
+        maximum_days=0,
+        maximum_compressed_bytes=0,
+    )
+
+    assert tuple(day.period for day in selected) == ("2026-02-13",)
+    assert planned_bytes == 60
 
 
 def _item(market_type: str, period: str, index: int) -> ArchiveListingItem:
@@ -119,9 +208,9 @@ def test_tracked_ingestion_status_is_integral_and_non_authoritative() -> None:
     ).encode("ascii")
 
     assert hashlib.sha256(canonical).hexdigest() == claimed
-    assert status["completed_days"] + status["remaining_days"] == status[
-        "expected_days"
-    ]
+    assert (
+        status["completed_days"] + status["remaining_days"] == status["expected_days"]
+    )
     assert status["flow_rows"] == status["completed_days"] * 86_400
     assert status["archive_cache_files"] == 0
     assert status["raw_archive_retained"] is False
@@ -333,9 +422,7 @@ def test_ingestion_status_publisher_rejects_inconsistent_evidence(
                 )
             )
         with pytest.raises(ValueError, match="does not reach status end"):
-            build(
-                status={**base_status, "last_completed_day": "2026-02-14"}
-            )
+            build(status={**base_status, "last_completed_day": "2026-02-14"})
         with pytest.raises(ValueError, match="must remain inside"):
             build(inventory=tmp_path / "outside-inventory.json")
 
