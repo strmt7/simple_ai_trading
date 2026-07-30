@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 import hashlib
 import json
@@ -16,6 +16,7 @@ from .polymarket_replay import PolymarketResolutionEvidence
 from .polymarket_round17_dataset import PolymarketRound17ConditionDataset
 from .polymarket_round17_features import (
     POLYMARKET_ROUND17_CONTRACT_SHA256,
+    POLYMARKET_ROUND17_FEATURE_NAMES,
     POLYMARKET_ROUND17_FEATURE_NAMES_SHA256,
 )
 from .polymarket_round17_model import Round17DevelopmentPanel
@@ -752,6 +753,107 @@ def build_round17_development_panel(
     ).validate()
 
 
+@dataclass(slots=True)
+class _Round17PanelBuffer:
+    condition_ids: np.ndarray
+    event_starts: np.ndarray
+    decision_times: np.ndarray
+    features: np.ndarray
+    targets: np.ndarray
+    cursor: int = 0
+
+
+def build_round17_development_panels_streaming(
+    plan: Round17CohortPlan,
+    manifest: Round17CohortManifest,
+    target_manifest: Round17DevelopmentTargetManifest,
+    datasets: Iterable[PolymarketRound17ConditionDataset],
+) -> Mapping[str, Round17DevelopmentPanel]:
+    """Build all populated development roles in one bounded, test-blind pass."""
+
+    verified_manifest = manifest.validated(plan)
+    verified_targets = target_manifest.validated(plan, verified_manifest)
+    references = verified_manifest.conditions
+    reference_by_condition = {item.condition_id: item for item in references}
+    label_by_condition = {item.condition_id: item for item in verified_targets.labels}
+    if set(reference_by_condition) != set(label_by_condition):
+        raise ValueError("Round 17 streaming panel identities differ")
+    row_counts = {
+        role: sum(item.feature_row_count for item in references if item.role == role)
+        for role in _DEVELOPMENT_ROLES
+    }
+    buffers = {
+        role: _Round17PanelBuffer(
+            condition_ids=np.empty(rows, dtype=object),
+            event_starts=np.empty(rows, dtype=np.int64),
+            decision_times=np.empty(rows, dtype=np.int64),
+            features=np.empty(
+                (rows, len(POLYMARKET_ROUND17_FEATURE_NAMES)),
+                dtype=np.float32,
+            ),
+            targets=np.empty(rows, dtype=np.float64),
+        )
+        for role, rows in row_counts.items()
+        if rows
+    }
+    consumed = 0
+    for source in datasets:
+        if not isinstance(source, PolymarketRound17ConditionDataset):
+            raise TypeError("Round 17 streaming panel dataset type differs")
+        dataset = source.validated()
+        if consumed >= len(references):
+            raise ValueError("Round 17 streaming panel has extra conditions")
+        reference = references[consumed]
+        if dataset.condition_id != reference.condition_id:
+            raise ValueError("Round 17 streaming panel condition order differs")
+        label = label_by_condition[reference.condition_id]
+        if (
+            dataset.run_id != reference.source_run_id
+            or dataset.event_start_ms != reference.event_start_ms
+            or dataset.event_end_ms != reference.event_end_ms
+            or dataset.admission_sha256 != reference.admission_sha256
+            or dataset.dataset_sha256 != reference.condition_dataset_sha256
+            or len(dataset.rows) != reference.feature_row_count
+            or label.source_run_id != reference.source_run_id
+            or label.event_start_ms != reference.event_start_ms
+        ):
+            raise ValueError("Round 17 streaming panel evidence differs")
+        buffer = buffers[reference.role]
+        start = buffer.cursor
+        end = start + reference.feature_row_count
+        buffer.condition_ids[start:end] = reference.condition_id
+        buffer.event_starts[start:end] = reference.event_start_ms
+        buffer.decision_times[start:end] = np.fromiter(
+            (row.decision_time_ms for row in dataset.rows),
+            dtype=np.int64,
+            count=reference.feature_row_count,
+        )
+        buffer.features[start:end] = np.asarray(
+            tuple(row.values for row in dataset.rows),
+            dtype=np.float32,
+        )
+        buffer.targets[start:end] = label.target_up
+        buffer.cursor = end
+        consumed += 1
+    if consumed != len(references) or any(
+        buffer.cursor != row_counts[role] for role, buffer in buffers.items()
+    ):
+        raise ValueError("Round 17 streaming panel conditions are incomplete")
+    return {
+        role: Round17DevelopmentPanel(
+            role=role,
+            condition_ids=buffer.condition_ids,
+            event_start_ms=buffer.event_starts,
+            decision_time_ms=buffer.decision_times,
+            features=buffer.features,
+            labels=buffer.targets,
+            dataset_sha256=verified_targets.development_dataset_sha256,
+            target_manifest_sha256=verified_targets.target_manifest_sha256,
+        ).validate()
+        for role, buffer in buffers.items()
+    }
+
+
 __all__ = [
     "POLYMARKET_ROUND17_COHORT_MANIFEST_SCHEMA_VERSION",
     "POLYMARKET_ROUND17_COHORT_PLAN_SCHEMA_VERSION",
@@ -768,6 +870,7 @@ __all__ = [
     "build_round17_cohort_manifest",
     "build_round17_condition_label",
     "build_round17_development_panel",
+    "build_round17_development_panels_streaming",
     "build_round17_development_target_manifest",
     "load_round17_cohort_plan",
     "validate_round17_cohort_plan",

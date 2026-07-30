@@ -20,6 +20,7 @@ from simple_ai_trading.polymarket_round17_cohort import (
     build_round17_cohort_manifest,
     build_round17_condition_label,
     build_round17_development_panel,
+    build_round17_development_panels_streaming,
     build_round17_development_target_manifest,
     load_round17_cohort_plan,
     validate_round17_cohort_plan,
@@ -228,6 +229,16 @@ def test_round17_cohort_manifest_and_panel_are_target_separated() -> None:
     assert panel.target_manifest_sha256 == targets.target_manifest_sha256
     assert panel.features.dtype == np.float32
     assert set(panel.labels) == {0.0, 1.0}
+    panels = build_round17_development_panels_streaming(
+        plan,
+        manifest,
+        targets,
+        iter((down, up)),
+    )
+    assert tuple(panels) == ("train",)
+    assert panels["train"].features.dtype == np.float32
+    np.testing.assert_array_equal(panels["train"].features, panel.features)
+    np.testing.assert_array_equal(panels["train"].labels, panel.labels)
 
     with pytest.raises(ValueError, match="role differs"):
         build_round17_development_panel(
@@ -236,6 +247,34 @@ def test_round17_cohort_manifest_and_panel_are_target_separated() -> None:
             targets,
             role="test",
             datasets=(down, up),
+        )
+    with pytest.raises(ValueError, match="condition order differs"):
+        build_round17_development_panels_streaming(
+            plan,
+            manifest,
+            targets,
+            iter((up, down)),
+        )
+    with pytest.raises(ValueError, match="conditions are incomplete"):
+        build_round17_development_panels_streaming(
+            plan,
+            manifest,
+            targets,
+            iter((down,)),
+        )
+    with pytest.raises(ValueError, match="extra conditions"):
+        build_round17_development_panels_streaming(
+            plan,
+            manifest,
+            targets,
+            iter((down, up, down)),
+        )
+    with pytest.raises(TypeError, match="dataset type differs"):
+        build_round17_development_panels_streaming(
+            plan,
+            manifest,
+            targets,
+            iter((object(),)),  # type: ignore[arg-type]
         )
 
 

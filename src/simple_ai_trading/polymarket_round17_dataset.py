@@ -33,7 +33,7 @@ POLYMARKET_ROUND17_CONDITION_DATASET_SCHEMA_VERSION = (
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _CONNECTION_ID = re.compile(r"^[A-Za-z0-9:._-]{1,160}$")
-_MAXIMUM_LOOKBACK_MS = 120_000
+POLYMARKET_ROUND17_MAXIMUM_LOOKBACK_MS = 120_000
 _BINANCE_STREAM_MARKET = {
     "binance_spot": ("spot", "BINANCE_SPOT"),
     "binance_futures": ("perpetual", "BINANCE_USD_M_FUTURES"),
@@ -389,7 +389,9 @@ def materialize_round17_condition_rows(
     book_rows = tuple(books)
     if tuple(sorted(book_rows, key=_book_order)) != book_rows:
         raise ValueError("Round 17 books are not in receipt order")
-    minimum_receipt = selected_market.event_start_ms - _MAXIMUM_LOOKBACK_MS
+    minimum_receipt = (
+        selected_market.event_start_ms - POLYMARKET_ROUND17_MAXIMUM_LOOKBACK_MS
+    )
     maximum_receipt = rows[-1].decision_time_ms
 
     chainlink: list[PolymarketRound17ChainlinkObservation] = []
@@ -543,6 +545,7 @@ def materialize_round17_condition_rows(
 
 
 __all__ = [
+    "POLYMARKET_ROUND17_MAXIMUM_LOOKBACK_MS",
     "POLYMARKET_ROUND17_CONDITION_DATASET_SCHEMA_VERSION",
     "PolymarketRound17ChainlinkObservation",
     "PolymarketRound17ConditionDataset",
