@@ -1,0 +1,183 @@
+{
+  "schema_version": "polymarket-round17-btc-5m-causal-flow-model-v2",
+  "round": 17,
+  "status": "preregistered_before_active_campaign_outcome_or_model_score_access",
+  "created_at_ms": 1785403867910,
+  "scope": {
+    "venue": "polymarket",
+    "protocol_version": 2,
+    "asset": "BTC",
+    "market_variant": "fiveminute",
+    "target": "official Polymarket BTC five-minute Up or Down settlement",
+    "independence": "Polymarket owns discovery, market data, wallet, orders, positions, risk, PnL, settlement, pause, stop, and recovery. Binance has no credentials or execution path in this program.",
+    "optional_external_input": "Credential-free public BTCUSDT spot and USD-M futures observations may only improve, reduce, or veto a Polymarket decision."
+  },
+  "parent_evidence": {
+    "superseded_round17_v1_contract_sha256": "3e9e79b7fef4ddd4bb4a9346c2797f7ce4de636e9f29814cc043c9050299d59e",
+    "supersession_reason": "Implementation review found that the immutable Round 14 campaign records Binance raw trade streams, not aggregate-trade streams. V2 corrects the data identity and feature terminology before active campaign outcomes or model scores are accessed.",
+    "superseded_contract_outcomes_consulted": false,
+    "superseded_contract_model_scores_consulted": false,
+    "round14_contract_sha256": "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b",
+    "round14_campaign_plan_sha256": "c19ef7733efb86202742f045a45b3d92e8e17bb922c3c5f780240243889609b5",
+    "round14_capture_policy": "Use the existing immutable 30-day campaign. Do not duplicate or mutate its raw capture.",
+    "active_campaign_outcomes_consulted": false,
+    "active_campaign_model_scores_consulted": false,
+    "prior_round14_qualification_status": "rejected and excluded from the active campaign",
+    "round16_status": "rejected",
+    "round16_reason": "The held-out challenger improved log loss and Brier score but failed the frozen balanced-accuracy non-inferiority gate.",
+    "round16_test_reuse": false,
+    "pre_contract_live_probes_in_model_data": false
+  },
+  "feature_contract": {
+    "base_feature_names_sha256": "d53259507f8a47c28beb9280e061d7bab93c0683a62d760b1b31e26570446d40",
+    "decision_cadence_ms": 250,
+    "maximum_lookback_ms": 120000,
+    "chainlink_windows_ms": [
+      250,
+      1000,
+      5000,
+      15000,
+      30000,
+      60000,
+      120000
+    ],
+    "binance_windows_ms": [
+      250,
+      1000,
+      5000,
+      15000,
+      30000
+    ],
+    "polymarket_book_windows_ms": [
+      250,
+      1000,
+      5000,
+      15000
+    ],
+    "chainlink_features_per_window": [
+      "log_return",
+      "realized_variance",
+      "bipower_variation",
+      "jump_fraction",
+      "tick_count"
+    ],
+    "binance_features_per_market_per_window": [
+      "log_return",
+      "realized_variance",
+      "signed_quote_imbalance",
+      "log1p_quote_notional",
+      "trade_count"
+    ],
+    "binance_trade_input": {
+      "campaign_stream": "btcusdt@trade",
+      "event_type": "trade",
+      "identity": "venue plus BTCUSDT plus connection ID plus trade ID plus immutable source-event SHA-256",
+      "direction": "buyer_is_maker maps quote notional negative; otherwise positive",
+      "aggregate_trade_substitution_permitted": false,
+      "credentials_or_private_state_permitted": false,
+      "live_parity": "The Round 17 live predictor must consume the same public raw-trade schema. An aggregate-trade feed cannot silently replace it."
+    },
+    "polymarket_features_per_outcome_per_window": [
+      "top_of_book_order_flow_imbalance",
+      "mean_top_imbalance",
+      "microprice_log_return",
+      "level_quantity_flow_pressure",
+      "log1p_gross_level_quantity_change",
+      "book_update_count"
+    ],
+    "cross_market_features": [
+      "spot_minus_futures_log_return_by_window"
+    ],
+    "causal_clock": "Availability is determined only by local monotonic and UTC receipt time. Source time is retained for latency and drift checks but never moves an observation earlier than receipt.",
+    "gap_policy": "No feature crosses a connection epoch, recorded gap, failed slot, market boundary, or partition boundary.",
+    "polymarket_trade_direction": "Forbidden from the public feed. Directional executed flow requires exact on-chain CLOB V2 OrderFilled evidence joined by immutable identifiers.",
+    "normalization": "Fit center, scale, clipping, and missingness policy on train only. Preserve missingness as explicit state; do not impute future or cross-gap values.",
+    "forbidden": [
+      "future source or receipt events",
+      "terminal outcome or close price",
+      "future books, fills, or PnL",
+      "feed-inferred Polymarket aggressor direction",
+      "Binance credentials, account, order, position, balance, capital, risk, or PnL state"
+    ]
+  },
+  "model_contract": {
+    "controls": [
+      "raw executable Polymarket prior",
+      "Chainlink structural endpoint probability",
+      "train-fitted monotone calibration of the Polymarket prior"
+    ],
+    "candidate_layers": [
+      "Chainlink plus Polymarket CLOB",
+      "Chainlink plus Polymarket CLOB plus Binance spot",
+      "Chainlink plus Polymarket CLOB plus Binance spot and futures"
+    ],
+    "candidates": [
+      "regularized logistic residual on structural log odds",
+      "shallow LightGBM residual on structural log odds",
+      "small causal temporal convolution only after a simpler candidate passes development stability gates"
+    ],
+    "primary_endpoint_objective": "condition-equal weighted binary log loss",
+    "secondary_endpoint_objectives": [
+      "Brier score",
+      "calibration intercept and slope",
+      "expected calibration error",
+      "balanced accuracy",
+      "Matthews correlation coefficient"
+    ],
+    "economic_objective": "after-fee lower-confidence action utility using delayed executable CLOB depth, not classification accuracy",
+    "selection": "Use train and tune only, with contiguous event groups and purge. Search a bounded frozen grid. Prefer the simplest candidate within one standard error of the best tune objective.",
+    "ai_boundary": "AI is a separately evaluated preserve, reduce, or abstain layer. It cannot open exposure or increase size and is retained only after positive same-decision paired after-cost uplift."
+  },
+  "partition": {
+    "source": "Round 14 prospective campaign",
+    "method": "contiguous event start time",
+    "train_days": 14,
+    "train_tune_embargo_seconds": 3600,
+    "tune_days": 7,
+    "tune_test_embargo_seconds": 3600,
+    "test_days_minimum": 7,
+    "test_access": "one use after immutable pretest model, threshold, cost, latency, and feature manifests",
+    "insufficient_power": "Extend collection under a new predeclared contract before test access. Never lower coverage or outcome gates."
+  },
+  "promotion_gates": {
+    "minimum_resolved_test_markets": 1800,
+    "minimum_test_calendar_days": 7,
+    "minimum_non_tied_endpoint_predictions": 300,
+    "minimum_executed_test_actions": 300,
+    "proper_score_requirement": "Strictly improve log loss and Brier score over every control with positive event-block paired lower 95 percent bounds.",
+    "classification_requirement": "Balanced accuracy lower confidence exceeds 0.5 and is not lower than the strongest control.",
+    "economic_requirement": "Net PnL, mean event utility, median daily PnL, and the lower 95 percent bound of mean event utility are positive after all frozen costs.",
+    "stress_requirement": "Every frozen latency, depth, adverse-tick, and fee stress remains positive.",
+    "risk_requirement": "Profile drawdown and daily-loss ceilings pass pathwise with zero ownership, reconciliation, unknown-state, or lifecycle violations.",
+    "forced_activity": false,
+    "automatic_promotion": false
+  },
+  "execution_contract": {
+    "market_data": "Polymarket CLOB V2 market WebSocket plus bounded REST reconciliation",
+    "orders": "Polymarket CLOB V2 only",
+    "ownership": "Only exact ledger-owned parent-bound lots may be sold, hedged, settled, or redeemed.",
+    "dedicated_wallet_required_for_live": true,
+    "heartbeat": "Authenticated Polymarket heartbeat is mandatory; missed heartbeat cancels resting orders.",
+    "stop": "Cancel bot orders, reconcile exact remote state, close or lock only ledger-owned exposure when executable, and keep retrying after connectivity returns.",
+    "unknown_state": "Block new exposure. Reconcile before any recovery action.",
+    "binance_execution_connected": false
+  },
+  "authority": {
+    "training_authority": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "profitability_claim": false,
+    "ai_edge_claim": false
+  },
+  "research_basis": [
+    "https://arxiv.org/abs/2604.24366",
+    "https://arxiv.org/abs/2506.05764",
+    "https://arxiv.org/abs/2606.04217",
+    "https://docs.polymarket.com/market-data/websocket/overview",
+    "https://docs.polymarket.com/trading/orders/create",
+    "https://docs.polymarket.com/api-reference/rate-limits",
+    "https://developers.binance.com/en/docs/products/spot/testnet/web-socket-streams",
+    "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Aggregate-Trade-Streams"
+  ],
+  "contract_sha256": "f9cbe114959fce14ea3292b3fc65de68b6a86b157c2402eeeefca2a95a808b44"
+}
