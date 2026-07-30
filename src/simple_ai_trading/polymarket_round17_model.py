@@ -34,6 +34,7 @@ _PANEL_ROLES = (
 )
 _PROBABILITY_FLOOR = 1e-6
 _EMBARGO_MS = 3_600_000
+_COHORT_PLAN_SHA256 = "37fede4da0d6c504bce7cb763b9bd49032e0252a8cede045f29f05acff67fc00"
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _LOGISTIC_L2_GRID = (0.01, 0.1, 1.0)
 _LIGHTGBM_GRID = (
@@ -80,7 +81,9 @@ class Round17DevelopmentPanel:
     features: np.ndarray
     labels: np.ndarray
     dataset_sha256: str
+    target_manifest_sha256: str
     feature_names_sha256: str = POLYMARKET_ROUND17_FEATURE_NAMES_SHA256
+    cohort_plan_sha256: str = _COHORT_PLAN_SHA256
 
     def validate(self) -> Round17DevelopmentPanel:
         role = str(self.role or "").strip()
@@ -104,7 +107,13 @@ class Round17DevelopmentPanel:
                 character not in "0123456789abcdef"
                 for character in str(self.dataset_sha256)
             )
+            or len(str(self.target_manifest_sha256)) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in str(self.target_manifest_sha256)
+            )
             or self.feature_names_sha256 != POLYMARKET_ROUND17_FEATURE_NAMES_SHA256
+            or self.cohort_plan_sha256 != _COHORT_PLAN_SHA256
             or np.any(event_starts <= 0)
             or np.any(event_starts % 300_000)
             or np.any(decisions < event_starts)
@@ -695,6 +704,8 @@ def _panel_boundaries(
         raise ValueError("Round 17 development panel roles differ")
     if len({panel.dataset_sha256 for panel in panels}) != 1:
         raise ValueError("Round 17 development dataset identities differ")
+    if len({panel.target_manifest_sha256 for panel in panels}) != 1:
+        raise ValueError("Round 17 development target identities differ")
     condition_sets = [set(panel.condition_ids.tolist()) for panel in panels]
     if any(
         left & right
@@ -713,6 +724,8 @@ def _panel_boundaries(
         raise ValueError("Round 17 development embargo is too short")
     return {
         "dataset_sha256": train.dataset_sha256,
+        "target_manifest_sha256": train.target_manifest_sha256,
+        "cohort_plan_sha256": train.cohort_plan_sha256,
         "roles": {
             panel.role: {
                 "row_count": len(panel.labels),
@@ -738,10 +751,16 @@ def _valid_pretest_boundaries(value: object) -> bool:
     if not isinstance(value, Mapping):
         return False
     dataset_sha256 = str(value.get("dataset_sha256") or "")
+    target_manifest_sha256 = str(value.get("target_manifest_sha256") or "")
     roles = value.get("roles")
     if (
         len(dataset_sha256) != 64
         or any(character not in "0123456789abcdef" for character in dataset_sha256)
+        or len(target_manifest_sha256) != 64
+        or any(
+            character not in "0123456789abcdef" for character in target_manifest_sha256
+        )
+        or value.get("cohort_plan_sha256") != _COHORT_PLAN_SHA256
         or not isinstance(roles, Mapping)
         or tuple(roles) != _MODEL_ROLES
         or value.get("test_role_accessed") is not False

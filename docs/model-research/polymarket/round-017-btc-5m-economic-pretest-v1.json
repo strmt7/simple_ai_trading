@@ -4,6 +4,7 @@
   "status": "preregistered_before_active_campaign_outcome_or_model_score_access",
   "parent": {
     "round17_causal_model_contract_sha256": "f9cbe114959fce14ea3292b3fc65de68b6a86b157c2402eeeefca2a95a808b44",
+    "round17_cohort_plan_sha256": "37fede4da0d6c504bce7cb763b9bd49032e0252a8cede045f29f05acff67fc00",
     "round14_risk_contract_sha256": "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b",
     "round14_campaign_plan_sha256": "c19ef7733efb86202742f045a45b3d92e8e17bb922c3c5f780240243889609b5",
     "active_campaign_outcomes_consulted": false,
@@ -35,7 +36,8 @@
     "probability_calibration_frozen_before_tune_economic": true,
     "economic_policy_frozen_before_test": true,
     "test_may_be_accessed_once": true,
-    "failed_test_may_not_return_to_development": true
+    "failed_test_may_not_return_to_development": true,
+    "development_manifests_may_not_contain_test_features_or_targets": true
   },
   "probability_uncertainty": {
     "source_partition": "tune_uncertainty",
@@ -51,6 +53,7 @@
     "unsupported_probability_region_action": "abstain",
     "caller_supplied_probability_prohibited": true,
     "selected_model_artifact_required": true,
+    "development_target_manifest_required": true,
     "feature_row_hash_binding_required": true
   },
   "action_paths": [
@@ -203,5 +206,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "contract_sha256": "4a05f8b1bd289c8d4383790f0be4ef3011bf3e80083bee0ea3ce977a2a3b0148"
+  "contract_sha256": "25addfca065eb8bcdb52dc433b0b64cba0ffaa032443f5025e120aec6b22bba7"
 }

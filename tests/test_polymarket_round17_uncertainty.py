@@ -25,6 +25,7 @@ from simple_ai_trading.polymarket_round17_uncertainty import (
 
 START_MS = 1_800_057_600_000
 DATASET_SHA256 = "d" * 64
+TARGET_MANIFEST_SHA256 = "e" * 64
 
 
 def _sha256(value: object) -> str:
@@ -84,6 +85,7 @@ def _panel(
         features=np.asarray(features, dtype=np.float64),
         labels=np.asarray(labels, dtype=np.float64),
         dataset_sha256=DATASET_SHA256,
+        target_manifest_sha256=TARGET_MANIFEST_SHA256,
     ).validate()
 
 
@@ -158,6 +160,7 @@ def test_round17_probability_calibration_is_blocked_hash_bound_and_test_blind(
     assert verified["condition_count"] == 120
     assert verified["model_pretest_sha256"] == pretest["pretest_sha256"]
     assert verified["model_development_accepted"] is True
+    assert verified["target_manifest_sha256"] == TARGET_MANIFEST_SHA256
     assert verified["bootstrap"]["unit"] == "condition"
     assert verified["test_features_accessed"] is False
     assert verified["test_targets_accessed"] is False

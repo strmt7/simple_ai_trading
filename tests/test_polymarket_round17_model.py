@@ -19,6 +19,7 @@ from simple_ai_trading.polymarket_round17_model import (
 
 START_MS = 1_800_000_000_000
 DATASET_SHA256 = "d" * 64
+TARGET_MANIFEST_SHA256 = "e" * 64
 
 
 def _sha256(value: object) -> str:
@@ -71,6 +72,7 @@ def _panel(
         features=np.asarray(features, dtype=np.float64),
         labels=np.asarray(labels, dtype=np.float64),
         dataset_sha256=DATASET_SHA256,
+        target_manifest_sha256=TARGET_MANIFEST_SHA256,
     ).validate()
 
 
@@ -170,6 +172,7 @@ def test_round17_pretest_rejects_short_embargo() -> None:
         features=calibration.features,
         labels=calibration.labels,
         dataset_sha256=calibration.dataset_sha256,
+        target_manifest_sha256=calibration.target_manifest_sha256,
     ).validate()
 
     with pytest.raises(ValueError, match="embargo is too short"):

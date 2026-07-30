@@ -1,0 +1,139 @@
+{
+  "schema_version": "polymarket-round17-btc-5m-cohort-plan-v1",
+  "round": 17,
+  "status": "preregistered_before_active_campaign_outcome_or_model_score_access",
+  "parents": {
+    "round14_capture_contract_sha256": "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b",
+    "round14_campaign_plan_sha256": "c19ef7733efb86202742f045a45b3d92e8e17bb922c3c5f780240243889609b5",
+    "round17_causal_model_contract_sha256": "f9cbe114959fce14ea3292b3fc65de68b6a86b157c2402eeeefca2a95a808b44",
+    "active_campaign_outcomes_consulted": false,
+    "active_campaign_model_scores_consulted": false,
+    "active_campaign_execution_scores_consulted": false
+  },
+  "campaign": {
+    "scheduled_start_ms": 1785344400000,
+    "scheduled_end_ms": 1787936400000,
+    "slot_duration_ms": 1800000,
+    "total_slots": 1440,
+    "event_duration_ms": 300000
+  },
+  "roles": [
+    {
+      "name": "train",
+      "first_slot": 0,
+      "last_slot": 671,
+      "slot_count": 672,
+      "start_ms": 1785344400000,
+      "end_ms_exclusive": 1786554000000
+    },
+    {
+      "name": "train_tune_embargo",
+      "first_slot": 672,
+      "last_slot": 673,
+      "slot_count": 2,
+      "start_ms": 1786554000000,
+      "end_ms_exclusive": 1786557600000
+    },
+    {
+      "name": "tune_calibration",
+      "first_slot": 674,
+      "last_slot": 745,
+      "slot_count": 72,
+      "start_ms": 1786557600000,
+      "end_ms_exclusive": 1786687200000
+    },
+    {
+      "name": "calibration_selection_embargo",
+      "first_slot": 746,
+      "last_slot": 747,
+      "slot_count": 2,
+      "start_ms": 1786687200000,
+      "end_ms_exclusive": 1786690800000
+    },
+    {
+      "name": "tune_selection",
+      "first_slot": 748,
+      "last_slot": 819,
+      "slot_count": 72,
+      "start_ms": 1786690800000,
+      "end_ms_exclusive": 1786820400000
+    },
+    {
+      "name": "selection_uncertainty_embargo",
+      "first_slot": 820,
+      "last_slot": 821,
+      "slot_count": 2,
+      "start_ms": 1786820400000,
+      "end_ms_exclusive": 1786824000000
+    },
+    {
+      "name": "tune_uncertainty",
+      "first_slot": 822,
+      "last_slot": 893,
+      "slot_count": 72,
+      "start_ms": 1786824000000,
+      "end_ms_exclusive": 1786953600000
+    },
+    {
+      "name": "uncertainty_economic_embargo",
+      "first_slot": 894,
+      "last_slot": 895,
+      "slot_count": 2,
+      "start_ms": 1786953600000,
+      "end_ms_exclusive": 1786957200000
+    },
+    {
+      "name": "tune_economic",
+      "first_slot": 896,
+      "last_slot": 1009,
+      "slot_count": 114,
+      "start_ms": 1786957200000,
+      "end_ms_exclusive": 1787162400000
+    },
+    {
+      "name": "tune_test_embargo",
+      "first_slot": 1010,
+      "last_slot": 1011,
+      "slot_count": 2,
+      "start_ms": 1787162400000,
+      "end_ms_exclusive": 1787166000000
+    },
+    {
+      "name": "test",
+      "first_slot": 1012,
+      "last_slot": 1439,
+      "slot_count": 428,
+      "start_ms": 1787166000000,
+      "end_ms_exclusive": 1787936400000
+    }
+  ],
+  "assignment": {
+    "method": "condition_event_start_to_containing_campaign_slot",
+    "source_capture_slot_must_equal_event_containing_slot": true,
+    "accepted_conditions_only": true,
+    "admission_is_target_free": true,
+    "conditions_in_embargo_roles_are_excluded": true,
+    "development_manifest_may_contain_test_conditions": false,
+    "development_target_manifest_may_contain_test_labels": false,
+    "missing_or_excluded_conditions_are_never_backfilled_from_another_role": true,
+    "data_dependent_role_assignment": false,
+    "role_reassignment_after_model_or_outcome_access": false
+  },
+  "test_policy": {
+    "minimum_calendar_days": 7,
+    "minimum_slot_count": 336,
+    "actual_reserved_slot_count": 428,
+    "access": "one_use_after_immutable_model_probability_and_economic_artifacts",
+    "failed_test_returns_to_development": false
+  },
+  "authority": {
+    "labels_consulted": false,
+    "outcomes_consulted": false,
+    "model_scores_consulted": false,
+    "execution_scores_consulted": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "plan_sha256": "37fede4da0d6c504bce7cb763b9bd49032e0252a8cede045f29f05acff67fc00"
+}
