@@ -87,6 +87,17 @@ POLYMARKET_ROUND17_ENDPOINT_MINIMUM_NON_TIED_FINAL_PREDICTIONS = 300
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _DAY_MS = 86_400_000
 _PROBABILITY_FLOOR = 1e-6
+_PROFILES = ("conservative", "regular", "aggressive")
+_SCENARIOS = (
+    "primary",
+    "latency_250ms",
+    "latency_750ms",
+    "latency_1000ms",
+    "half_depth",
+    "quarter_depth",
+    "one_tick_adverse",
+    "combined",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,9 +113,7 @@ class Round17TestTargetManifest:
     def identity_payload(self) -> dict[str, object]:
         return {
             "schema_version": POLYMARKET_ROUND17_TEST_TARGET_MANIFEST_SCHEMA_VERSION,
-            "evaluation_contract_sha256": (
-                POLYMARKET_ROUND17_ONE_USE_CONTRACT_SHA256
-            ),
+            "evaluation_contract_sha256": (POLYMARKET_ROUND17_ONE_USE_CONTRACT_SHA256),
             "plan_sha256": self.plan_sha256,
             "claim_sha256": self.claim_sha256,
             "test_access_sha256": self.test_access_sha256,
@@ -167,13 +176,11 @@ class Round17TestTargetManifest:
             or set(references) != {item.condition_id for item in self.labels}
             or any(
                 label.source_run_id != references[label.condition_id].source_run_id
-                or label.event_start_ms
-                != references[label.condition_id].event_start_ms
+                or label.event_start_ms != references[label.condition_id].event_start_ms
                 for label in self.labels
             )
             or self.test_dataset_sha256 != expected_dataset
-            or self.target_manifest_sha256
-            != _canonical_sha256(self.identity_payload())
+            or self.target_manifest_sha256 != _canonical_sha256(self.identity_payload())
         ):
             raise ValueError("Round 17 test target manifest integrity differs")
         return self
@@ -241,9 +248,7 @@ def _condition_groups(
         raise ValueError("Round 17 endpoint condition identities differ")
     boundaries = np.flatnonzero(selected[1:] != selected[:-1]) + 1
     starts = np.concatenate((np.asarray([0], dtype=np.int64), boundaries))
-    ends = np.concatenate(
-        (boundaries, np.asarray([len(selected)], dtype=np.int64))
-    )
+    ends = np.concatenate((boundaries, np.asarray([len(selected)], dtype=np.int64)))
     groups = tuple(
         (str(selected[start]), int(start), int(end))
         for start, end in zip(starts, ends, strict=True)
@@ -274,12 +279,7 @@ def _condition_vectors(
         labels = panel.labels[start:end]
         values = probability[start:end]
         log_loss[index] = float(
-            np.mean(
-                -(
-                    labels * np.log(values)
-                    + (1.0 - labels) * np.log1p(-values)
-                )
-            )
+            np.mean(-(labels * np.log(values) + (1.0 - labels) * np.log1p(-values)))
         )
         brier[index] = float(np.mean(np.square(values - labels)))
         final_probability[index] = values[-1]
@@ -330,10 +330,7 @@ def _weighted_prediction_metrics(
         residual = predicted - target
         return (
             float(
-                np.sum(
-                    selected_weights
-                    * (np.logaddexp(0.0, linear) - target * linear)
-                )
+                np.sum(selected_weights * (np.logaddexp(0.0, linear) - target * linear))
             ),
             np.asarray(
                 [
@@ -398,9 +395,7 @@ def _weighted_prediction_metrics(
         observed_mean = float(
             np.sum(selected_weights[selected] * target[selected]) / bin_weight
         )
-        expected_calibration_error += bin_weight * abs(
-            predicted_mean - observed_mean
-        )
+        expected_calibration_error += bin_weight * abs(predicted_mean - observed_mean)
     losses = np.asarray(condition_losses, dtype=np.float64)
     return {
         "condition_count": len(losses),
@@ -555,8 +550,7 @@ def _validated_endpoint_parent(
         or parents["model_pretest_sha256"] != selected_claim.model_pretest_sha256
         or parents["probability_calibration_sha256"]
         != selected_claim.probability_calibration_sha256
-        or parents["economic_pretest_sha256"]
-        != selected_claim.economic_pretest_sha256
+        or parents["economic_pretest_sha256"] != selected_claim.economic_pretest_sha256
     ):
         raise ValueError("Round 17 endpoint holdout parent differs")
     return result, artifacts
@@ -585,9 +579,8 @@ def _endpoint_models(
         for item in control_records
         if isinstance(item, Mapping)
     }
-    if (
-        tuple(control_models) != POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS
-        or any(not isinstance(model, Mapping) for model in control_models.values())
+    if tuple(control_models) != POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS or any(
+        not isinstance(model, Mapping) for model in control_models.values()
     ):
         raise ValueError("Round 17 endpoint controls differ")
     return selected_candidate, control_models, model_pretest
@@ -611,13 +604,68 @@ def _build_endpoint_holdout_payload(
     control_metrics: Mapping[str, Mapping[str, object]],
 ) -> dict[str, object]:
     calendar_days = len(set(int(value) // _DAY_MS for value in event_starts))
+    event_days = np.asarray(event_starts, dtype=np.int64) // _DAY_MS
+    candidate_final = np.asarray(
+        candidate_vectors["final_probability"],
+        dtype=np.float64,
+    )
+    candidate_losses = np.asarray(candidate_vectors["log_loss"], dtype=np.float64)
+    candidate_brier = np.asarray(candidate_vectors["brier"], dtype=np.float64)
+    daily_metrics: list[dict[str, object]] = []
+    for day in sorted(set(event_days.tolist())):
+        selected_day = event_days == day
+        daily_metrics.append(
+            {
+                "day_start_ms": int(day) * _DAY_MS,
+                "condition_count": int(np.count_nonzero(selected_day)),
+                "candidate": {
+                    "condition_balanced_log_loss": float(
+                        np.mean(candidate_losses[selected_day])
+                    ),
+                    "condition_balanced_brier": float(
+                        np.mean(candidate_brier[selected_day])
+                    ),
+                    "final_condition_balanced_accuracy": _balanced_accuracy(
+                        labels[selected_day],
+                        candidate_final[selected_day],
+                    ),
+                },
+                "controls": {
+                    control_id: {
+                        "condition_balanced_log_loss": float(
+                            np.mean(
+                                np.asarray(
+                                    control["log_loss"],
+                                    dtype=np.float64,
+                                )[selected_day]
+                            )
+                        ),
+                        "condition_balanced_brier": float(
+                            np.mean(
+                                np.asarray(
+                                    control["brier"],
+                                    dtype=np.float64,
+                                )[selected_day]
+                            )
+                        ),
+                        "final_condition_balanced_accuracy": (
+                            _balanced_accuracy(
+                                labels[selected_day],
+                                np.asarray(
+                                    control["final_probability"],
+                                    dtype=np.float64,
+                                )[selected_day],
+                            )
+                        ),
+                    }
+                    for control_id, control in control_vectors.items()
+                },
+            }
+        )
     bootstrap = _bootstrap_endpoint(candidate_vectors, control_vectors)
     strongest_control_id = str(model_pretest.get("strongest_control_id") or "")
     lower = bootstrap["control_improvement_lower_95"]
-    if (
-        strongest_control_id not in control_metrics
-        or not isinstance(lower, Mapping)
-    ):
+    if strongest_control_id not in control_metrics or not isinstance(lower, Mapping):
         raise ValueError("Round 17 strongest endpoint control differs")
     non_tied = int(
         np.count_nonzero(
@@ -640,8 +688,7 @@ def _build_endpoint_holdout_payload(
         ),
         "both_outcomes": set(labels.tolist()) == {0.0, 1.0},
         "minimum_non_tied_final_condition_predictions": (
-            non_tied
-            >= POLYMARKET_ROUND17_ENDPOINT_MINIMUM_NON_TIED_FINAL_PREDICTIONS
+            non_tied >= POLYMARKET_ROUND17_ENDPOINT_MINIMUM_NON_TIED_FINAL_PREDICTIONS
         ),
         "log_loss_strictly_below_every_control": all(
             float(candidate_metrics["condition_balanced_log_loss"])
@@ -673,9 +720,7 @@ def _build_endpoint_holdout_payload(
     }
     payload: dict[str, object] = {
         "schema_version": POLYMARKET_ROUND17_ENDPOINT_HOLDOUT_SCHEMA_VERSION,
-        "evaluation_contract_sha256": (
-            POLYMARKET_ROUND17_ONE_USE_CONTRACT_SHA256
-        ),
+        "evaluation_contract_sha256": (POLYMARKET_ROUND17_ONE_USE_CONTRACT_SHA256),
         "claim_sha256": claim.claim_sha256,
         "test_access_sha256": access,
         "development_result_sha256": result["result_sha256"],
@@ -695,9 +740,9 @@ def _build_endpoint_holdout_payload(
         "control_ids": list(POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS),
         "candidate_metrics": dict(candidate_metrics),
         "control_metrics": {
-            control_id: dict(metrics)
-            for control_id, metrics in control_metrics.items()
+            control_id: dict(metrics) for control_id, metrics in control_metrics.items()
         },
+        "daily_metrics": daily_metrics,
         "paired_bootstrap": bootstrap,
         "gates": gates,
         "endpoint_accepted": all(gates.values()),
@@ -983,10 +1028,7 @@ class Round17EndpointHoldoutAccumulator:
                 [
                     float(
                         np.mean(
-                            -(
-                                label * np.log(batch)
-                                + (1.0 - label) * np.log1p(-batch)
-                            )
+                            -(label * np.log(batch) + (1.0 - label) * np.log1p(-batch))
                         )
                     )
                     for batch, label in zip(
@@ -1085,9 +1127,7 @@ def build_round17_one_use_result(
     )
     payload: dict[str, object] = {
         "schema_version": POLYMARKET_ROUND17_FINAL_RESULT_SCHEMA_VERSION,
-        "evaluation_contract_sha256": (
-            POLYMARKET_ROUND17_ONE_USE_CONTRACT_SHA256
-        ),
+        "evaluation_contract_sha256": (POLYMARKET_ROUND17_ONE_USE_CONTRACT_SHA256),
         "claim_sha256": selected_claim.claim_sha256,
         "test_access_sha256": access,
         "test_index_sha256": test_index,
@@ -1118,7 +1158,304 @@ def build_round17_one_use_result(
         "binance_execution_connected": False,
     }
     payload["result_sha256"] = _canonical_sha256(payload)
-    return payload
+    return validate_round17_one_use_result(payload)
+
+
+def _valid_daily_endpoint_metrics(
+    value: object,
+    *,
+    condition_count: int,
+    calendar_day_count: int,
+) -> tuple[int, ...] | None:
+    if not isinstance(value, list) or len(value) != calendar_day_count:
+        return None
+    expected_controls = set(POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS)
+    prior_day = -1
+    observed_conditions = 0
+    observed_days: list[int] = []
+    for item in value:
+        if not isinstance(item, Mapping):
+            return None
+        day = item.get("day_start_ms")
+        count = item.get("condition_count")
+        candidate = item.get("candidate")
+        controls = item.get("controls")
+        if (
+            set(item) != {"day_start_ms", "condition_count", "candidate", "controls"}
+            or isinstance(day, bool)
+            or not isinstance(day, int)
+            or day <= prior_day
+            or day % _DAY_MS
+            or isinstance(count, bool)
+            or not isinstance(count, int)
+            or count < 1
+            or not isinstance(candidate, Mapping)
+            or not isinstance(controls, Mapping)
+            or set(controls) != expected_controls
+        ):
+            return None
+        metric_rows = (candidate, *controls.values())
+        if any(
+            not isinstance(metrics, Mapping)
+            or set(metrics)
+            != {
+                "condition_balanced_log_loss",
+                "condition_balanced_brier",
+                "final_condition_balanced_accuracy",
+            }
+            or any(
+                isinstance(metric, bool)
+                or not isinstance(metric, (int, float))
+                or not math.isfinite(float(metric))
+                for metric in metrics.values()
+            )
+            or not 0.0 <= float(metrics["condition_balanced_brier"]) <= 1.0
+            or not 0.0 <= float(metrics["final_condition_balanced_accuracy"]) <= 1.0
+            or float(metrics["condition_balanced_log_loss"]) < 0.0
+            for metrics in metric_rows
+        ):
+            return None
+        prior_day = day
+        observed_conditions += count
+        observed_days.append(day)
+    if observed_conditions != condition_count:
+        return None
+    return tuple(observed_days)
+
+
+def _valid_daily_economic_metrics(
+    value: object,
+    *,
+    condition_count: int,
+    expected_days: tuple[int, ...],
+    risk_capital_quote: object,
+    net_pnl_quote: object,
+) -> bool:
+    if (
+        not isinstance(value, list)
+        or len(value) != len(expected_days)
+        or len(value) > condition_count
+    ):
+        return False
+    try:
+        capital = Decimal(str(risk_capital_quote))
+        claimed_net = Decimal(str(net_pnl_quote))
+    except (ArithmeticError, TypeError, ValueError):
+        return False
+    if not capital.is_finite() or capital <= 0 or not claimed_net.is_finite():
+        return False
+    running_equity = capital
+    observed_net = Decimal("0")
+    for expected_day, item in zip(expected_days, value, strict=True):
+        if not isinstance(item, Mapping):
+            return False
+        day = item.get("day_start_ms")
+        if (
+            set(item) != {"day_start_ms", "net_pnl_quote", "ending_equity_quote"}
+            or isinstance(day, bool)
+            or not isinstance(day, int)
+            or day != expected_day
+        ):
+            return False
+        try:
+            pnl = Decimal(str(item.get("net_pnl_quote")))
+            equity = Decimal(str(item.get("ending_equity_quote")))
+        except (ArithmeticError, TypeError, ValueError):
+            return False
+        running_equity += pnl
+        observed_net += pnl
+        if (
+            not pnl.is_finite()
+            or not equity.is_finite()
+            or equity < 0
+            or equity != running_equity
+        ):
+            return False
+    return observed_net == claimed_net
+
+
+def validate_round17_one_use_result(
+    value: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate the terminal result and all graph-authoritative nested evidence."""
+
+    payload = dict(value)
+    claimed = str(payload.pop("result_sha256", "")).strip().lower()
+    endpoint = payload.get("endpoint_holdout")
+    economic = payload.get("economic_holdout")
+    expected_keys = {
+        "schema_version",
+        "evaluation_contract_sha256",
+        "claim_sha256",
+        "test_access_sha256",
+        "test_index_sha256",
+        "test_resolution_acquisition_sha256",
+        "test_target_manifest_sha256",
+        "endpoint_holdout_sha256",
+        "economic_holdout_sha256",
+        "endpoint_holdout",
+        "economic_holdout",
+        "status",
+        "heldout_accepted",
+        "test_access_consumed",
+        "test_features_accessed",
+        "test_targets_accessed",
+        "test_execution_accessed",
+        "return_to_development",
+        "automatic_promotion",
+        "profitability_claim",
+        "paper_trading_authority",
+        "live_trading_authority",
+        "binance_credentials_used",
+        "binance_execution_connected",
+    }
+    if (
+        claimed != _canonical_sha256(payload)
+        or set(payload) != expected_keys
+        or payload.get("schema_version")
+        != POLYMARKET_ROUND17_FINAL_RESULT_SCHEMA_VERSION
+        or payload.get("evaluation_contract_sha256")
+        != POLYMARKET_ROUND17_ONE_USE_CONTRACT_SHA256
+        or any(
+            _SHA256.fullmatch(str(payload.get(name) or "")) is None
+            for name in (
+                "claim_sha256",
+                "test_access_sha256",
+                "test_index_sha256",
+                "test_resolution_acquisition_sha256",
+                "test_target_manifest_sha256",
+                "endpoint_holdout_sha256",
+                "economic_holdout_sha256",
+            )
+        )
+        or not isinstance(endpoint, Mapping)
+        or not isinstance(economic, Mapping)
+        or payload.get("status") not in {"heldout_accepted", "heldout_rejected"}
+        or any(
+            payload.get(name) is not expected
+            for name, expected in (
+                ("test_access_consumed", True),
+                ("test_features_accessed", True),
+                ("test_targets_accessed", True),
+                ("test_execution_accessed", True),
+                ("return_to_development", False),
+                ("automatic_promotion", False),
+                ("profitability_claim", False),
+                ("paper_trading_authority", False),
+                ("live_trading_authority", False),
+                ("binance_credentials_used", False),
+                ("binance_execution_connected", False),
+            )
+        )
+    ):
+        raise ValueError("Round 17 terminal one-use result differs")
+    endpoint_body = dict(endpoint)
+    endpoint_claimed = str(endpoint_body.pop("endpoint_holdout_sha256", "")).lower()
+    economic_body = dict(economic)
+    economic_claimed = str(economic_body.pop("economic_holdout_sha256", "")).lower()
+    endpoint_gates = endpoint.get("gates")
+    endpoint_condition_count = endpoint.get("condition_count")
+    endpoint_calendar_days = endpoint.get("calendar_day_count")
+    profile_gates = economic.get("profile_gates")
+    scenario_metrics = economic.get("scenario_metrics")
+    scenario_gates = economic.get("scenario_gates")
+    endpoint_days = (
+        _valid_daily_endpoint_metrics(
+            endpoint.get("daily_metrics"),
+            condition_count=endpoint_condition_count,
+            calendar_day_count=endpoint_calendar_days,
+        )
+        if (
+            isinstance(endpoint_condition_count, int)
+            and not isinstance(endpoint_condition_count, bool)
+            and endpoint_condition_count > 0
+            and isinstance(endpoint_calendar_days, int)
+            and not isinstance(endpoint_calendar_days, bool)
+            and endpoint_calendar_days > 0
+        )
+        else None
+    )
+    endpoint_accepted = (
+        isinstance(endpoint_gates, Mapping)
+        and endpoint_gates
+        and all(value is True for value in endpoint_gates.values())
+    )
+    valid_scenario_gates = (
+        isinstance(scenario_gates, Mapping)
+        and set(scenario_gates) == set(_PROFILES)
+        and all(
+            isinstance(gates, Mapping)
+            and set(gates) == set(_SCENARIOS)
+            and all(isinstance(gate, bool) for gate in gates.values())
+            for gates in scenario_gates.values()
+        )
+    )
+    expected_profile_gates = (
+        {
+            profile: all(
+                scenario_gates[profile][scenario] is True  # type: ignore[index]
+                for scenario in _SCENARIOS
+            )
+            for profile in _PROFILES
+        }
+        if valid_scenario_gates
+        else None
+    )
+    economic_accepted = (
+        isinstance(profile_gates, Mapping)
+        and set(profile_gates) == set(_PROFILES)
+        and profile_gates == expected_profile_gates
+        and all(value is True for value in profile_gates.values())
+    )
+    accepted = bool(endpoint_accepted and economic_accepted)
+    if (
+        endpoint_claimed != payload["endpoint_holdout_sha256"]
+        or endpoint_claimed != _canonical_sha256(endpoint_body)
+        or economic_claimed != payload["economic_holdout_sha256"]
+        or economic_claimed != _canonical_sha256(economic_body)
+        or endpoint.get("claim_sha256") != payload["claim_sha256"]
+        or endpoint.get("test_access_sha256") != payload["test_access_sha256"]
+        or endpoint.get("test_target_manifest_sha256")
+        != payload["test_target_manifest_sha256"]
+        or endpoint.get("control_ids") != list(POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS)
+        or endpoint.get("endpoint_accepted") is not endpoint_accepted
+        or economic.get("test_access_sha256") != payload["test_access_sha256"]
+        or economic.get("economic_accepted") is not economic_accepted
+        or not valid_scenario_gates
+        or isinstance(endpoint_condition_count, bool)
+        or not isinstance(endpoint_condition_count, int)
+        or endpoint_condition_count < 1
+        or isinstance(endpoint_calendar_days, bool)
+        or not isinstance(endpoint_calendar_days, int)
+        or endpoint_calendar_days < 1
+        or endpoint_days is None
+        or economic.get("condition_count") != endpoint_condition_count
+        or not isinstance(scenario_metrics, Mapping)
+        or set(scenario_metrics) != set(_PROFILES)
+        or any(
+            not isinstance(metrics_by_scenario, Mapping)
+            or set(metrics_by_scenario) != set(_SCENARIOS)
+            or any(
+                not isinstance(metrics, Mapping)
+                or metrics.get("condition_count") != endpoint_condition_count
+                or metrics.get("calendar_day_count") != endpoint_calendar_days
+                or not _valid_daily_economic_metrics(
+                    metrics.get("daily_pnl_series"),
+                    condition_count=endpoint_condition_count,
+                    expected_days=endpoint_days,
+                    risk_capital_quote=metrics.get("risk_capital_quote"),
+                    net_pnl_quote=metrics.get("net_pnl_quote"),
+                )
+                for metrics in metrics_by_scenario.values()
+            )
+            for metrics_by_scenario in scenario_metrics.values()
+        )
+        or payload.get("heldout_accepted") is not accepted
+        or payload.get("status")
+        != ("heldout_accepted" if accepted else "heldout_rejected")
+    ):
+        raise ValueError("Round 17 terminal one-use evidence differs")
+    return {**payload, "result_sha256": claimed}
 
 
 def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -1246,11 +1583,10 @@ def run_round17_one_use_evaluation(
             if persisted["status"] == "completed":
                 result = persisted["result"]
                 if not isinstance(result, Mapping):
-                    raise ValueError(
-                        "Round 17 completed one-use result is unavailable"
-                    )
-                _write_durable_json(selected.output_path, result)
-                return dict(result)
+                    raise ValueError("Round 17 completed one-use result is unavailable")
+                verified = validate_round17_one_use_result(result)
+                _write_durable_json(selected.output_path, verified)
+                return verified
             if persisted["status"] == "failed":
                 raise RuntimeError("Round 17 one-use evaluation is terminally failed")
     development_result = validate_round17_development_result(
@@ -1273,8 +1609,9 @@ def run_round17_one_use_evaluation(
             result = snapshot["result"]
             if not isinstance(result, Mapping):
                 raise ValueError("Round 17 completed one-use result is unavailable")
-            _write_durable_json(selected.output_path, result)
-            return dict(result)
+            verified = validate_round17_one_use_result(result)
+            _write_durable_json(selected.output_path, verified)
+            return verified
         if snapshot["status"] == "failed":
             raise RuntimeError("Round 17 one-use evaluation is terminally failed")
         access_sha256 = store.consume_test_access(claim)
@@ -1299,16 +1636,14 @@ def run_round17_one_use_evaluation(
         existing_resolution: Round17TestResolutionAcquisition | None = None
         cohort_plan = load_round17_cohort_plan(selected.campaign.cohort_plan_path)
         if selected.resolution_checkpoint_path.is_file():
-            existing_resolution = (
-                round17_test_resolution_acquisition_from_mapping(
-                    _load_json_object(
-                        selected.resolution_checkpoint_path,
-                        label="Round 17 test resolution checkpoint",
-                    ),
-                    plan=cohort_plan,
-                    cohort=test_index.cohort_manifest,
-                    markets=test_index.market_mapping(),
-                )
+            existing_resolution = round17_test_resolution_acquisition_from_mapping(
+                _load_json_object(
+                    selected.resolution_checkpoint_path,
+                    label="Round 17 test resolution checkpoint",
+                ),
+                plan=cohort_plan,
+                cohort=test_index.cohort_manifest,
+                markets=test_index.market_mapping(),
             )
         acquisition = acquire_round17_test_resolutions(
             cohort_plan,
@@ -1336,9 +1671,7 @@ def run_round17_one_use_evaluation(
                 "claim_sha256": claim.claim_sha256,
                 "test_access_sha256": access_sha256,
                 "test_index_sha256": test_index.index_sha256,
-                "test_resolution_acquisition_sha256": (
-                    acquisition.acquisition_sha256
-                ),
+                "test_resolution_acquisition_sha256": (acquisition.acquisition_sha256),
                 "pending_condition_count": len(acquisition.pending_condition_ids),
                 "return_to_development": False,
                 "automatic_promotion": False,
@@ -1463,6 +1796,7 @@ def run_round17_one_use_evaluation(
         )
         with Round17OneUseClaimStore(selected.claim_store_path) as store:
             completed = store.complete(claim, result)
+        completed = validate_round17_one_use_result(completed)
         _write_durable_json(selected.output_path, completed)
         _emit(
             progress,
@@ -1491,4 +1825,5 @@ __all__ = [
     "build_round17_one_use_result",
     "evaluate_round17_endpoint_holdout",
     "run_round17_one_use_evaluation",
+    "validate_round17_one_use_result",
 ]

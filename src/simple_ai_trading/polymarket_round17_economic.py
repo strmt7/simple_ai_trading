@@ -380,6 +380,18 @@ def _replay_policy(
 
     net = sum(utilities, Decimal("0"))
     daily_values = tuple(daily_pnl[day] for day in sorted(daily_pnl))
+    running_equity = capital
+    daily_pnl_series: list[dict[str, object]] = []
+    for day in sorted(daily_pnl):
+        value = daily_pnl[day]
+        running_equity += value
+        daily_pnl_series.append(
+            {
+                "day_start_ms": day * _DAY_MS,
+                "net_pnl_quote": _decimal_text(value),
+                "ending_equity_quote": _decimal_text(running_equity),
+            }
+        )
     mean_utility = net / Decimal(len(utilities))
     profit_factor = None if gross_loss == 0 else gross_profit / gross_loss
     worst_daily_loss = max(
@@ -408,6 +420,7 @@ def _replay_policy(
         "maximum_drawdown_fraction": _decimal_text(maximum_drawdown),
         "worst_daily_loss_fraction": _decimal_text(worst_daily_loss / capital),
         "maximum_observed_loss_quote": _decimal_text(maximum_observed_loss),
+        "daily_pnl_series": daily_pnl_series,
         "daily_block_bootstrap_mean_event_utility_lower_95": (
             _daily_block_lower_95(event_starts, utilities)
         ),
@@ -428,9 +441,7 @@ def _scenario_passes(
     profile_name: str,
     minimum_conditions: int = POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_CONDITIONS,
     minimum_actions: int = POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_ACTIONS,
-    minimum_calendar_days: int = (
-        POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_CALENDAR_DAYS
-    ),
+    minimum_calendar_days: int = (POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_CALENDAR_DAYS),
 ) -> bool:
     profile = _profile(program, profile_name)
     profit_factor = metrics["profit_factor"]
@@ -440,12 +451,9 @@ def _scenario_passes(
         else Decimal(str(profit_factor)) > Decimal("1")
     )
     return bool(
-        int(metrics["condition_count"])
-        >= minimum_conditions
-        and int(metrics["calendar_day_count"])
-        >= minimum_calendar_days
-        and int(metrics["executed_action_count"])
-        >= minimum_actions
+        int(metrics["condition_count"]) >= minimum_conditions
+        and int(metrics["calendar_day_count"]) >= minimum_calendar_days
+        and int(metrics["executed_action_count"]) >= minimum_actions
         and Decimal(str(metrics["net_pnl_quote"])) > 0
         and Decimal(str(metrics["mean_event_utility_quote"])) > 0
         and Decimal(str(metrics["median_daily_pnl_quote"])) > 0
@@ -838,9 +846,7 @@ def evaluate_round17_economic_holdout(
         ):
             raise ValueError("Round 17 economic holdout policy drifted")
         grouped.setdefault((item.risk_profile, item.scenario), []).append(item)
-    expected = {
-        (profile, scenario) for profile in _PROFILES for scenario in _SCENARIOS
-    }
+    expected = {(profile, scenario) for profile in _PROFILES for scenario in _SCENARIOS}
     if set(grouped) != expected:
         raise ValueError("Round 17 economic holdout scenario grid is incomplete")
     reference: tuple[tuple[str, int], ...] | None = None
