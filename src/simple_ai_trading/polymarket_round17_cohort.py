@@ -532,6 +532,25 @@ def build_round17_condition_label(
     resolution: PolymarketResolutionEvidence,
 ) -> Round17ConditionLabel:
     selected = dataset.validated()
+    return _build_round17_condition_label(
+        source_run_id=selected.run_id,
+        condition_id=selected.condition_id,
+        event_start_ms=selected.event_start_ms,
+        event_end_ms=selected.event_end_ms,
+        market=market,
+        resolution=resolution,
+    )
+
+
+def _build_round17_condition_label(
+    *,
+    source_run_id: str,
+    condition_id: str,
+    event_start_ms: int,
+    event_end_ms: int,
+    market: PolymarketFiveMinuteMarket,
+    resolution: PolymarketResolutionEvidence,
+) -> Round17ConditionLabel:
     if not isinstance(market, PolymarketFiveMinuteMarket):
         raise TypeError("Round 17 label market type differs")
     if not isinstance(resolution, PolymarketResolutionEvidence):
@@ -545,21 +564,21 @@ def build_round17_condition_label(
     )
     if (
         market.asset != "BTC"
-        or market.condition_id != selected.condition_id
-        or market.event_start_ms != selected.event_start_ms
-        or market.end_ms != selected.event_end_ms
-        or resolution.run_id != selected.run_id
-        or resolution.condition_id != selected.condition_id
+        or market.condition_id != condition_id
+        or market.event_start_ms != event_start_ms
+        or market.end_ms != event_end_ms
+        or resolution.run_id != source_run_id
+        or resolution.condition_id != condition_id
         or resolution.winning_outcome not in {"Up", "Down"}
         or resolution.winning_asset_id != expected_winner
-        or resolution.resolved_at_ms < selected.event_end_ms
-        or resolution.received_wall_ms < selected.event_end_ms
+        or resolution.resolved_at_ms < event_end_ms
+        or resolution.received_wall_ms < event_end_ms
     ):
         raise ValueError("Round 17 resolution evidence identity differs")
     provisional = Round17ConditionLabel(
-        source_run_id=selected.run_id,
-        condition_id=selected.condition_id,
-        event_start_ms=selected.event_start_ms,
+        source_run_id=source_run_id,
+        condition_id=condition_id,
+        event_start_ms=event_start_ms,
         resolved_at_ms=resolution.resolved_at_ms,
         winning_outcome=resolution.winning_outcome,
         source=resolution.source,
@@ -569,6 +588,25 @@ def build_round17_condition_label(
         provisional,
         label_sha256=_canonical_sha256(provisional.identity_payload()),
     ).validated()
+
+
+def build_round17_cohort_condition_label(
+    plan: Round17CohortPlan,
+    reference: Round17CohortCondition,
+    market: PolymarketFiveMinuteMarket,
+    resolution: PolymarketResolutionEvidence,
+) -> Round17ConditionLabel:
+    """Build a label from a frozen development reference without feature retention."""
+
+    selected = reference.validated(plan)
+    return _build_round17_condition_label(
+        source_run_id=selected.source_run_id,
+        condition_id=selected.condition_id,
+        event_start_ms=selected.event_start_ms,
+        event_end_ms=selected.event_end_ms,
+        market=market,
+        resolution=resolution,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -869,6 +907,7 @@ __all__ = [
     "build_round17_cohort_condition",
     "build_round17_cohort_manifest",
     "build_round17_condition_label",
+    "build_round17_cohort_condition_label",
     "build_round17_development_panel",
     "build_round17_development_panels_streaming",
     "build_round17_development_target_manifest",

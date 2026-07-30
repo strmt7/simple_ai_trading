@@ -12,6 +12,7 @@ from simple_ai_trading.polymarket_round17_campaign_operator import (
     Round17CampaignOperatorConfig,
     inspect_round17_campaign_readiness,
     iter_round17_campaign_development_conditions,
+    materialize_round17_campaign_development_index,
 )
 
 
@@ -131,6 +132,8 @@ def test_round17_campaign_readiness_never_opens_partial_database(
     assert readiness.gates["wal_absent"] is True
     with pytest.raises(RuntimeError, match="not terminal"):
         tuple(iter_round17_campaign_development_conditions(config))
+    with pytest.raises(RuntimeError, match="not terminal"):
+        materialize_round17_campaign_development_index(config)
 
 
 def test_round17_campaign_readiness_is_hash_bound(tmp_path: Path) -> None:
