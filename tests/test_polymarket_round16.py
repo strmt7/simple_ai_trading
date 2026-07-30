@@ -6,10 +6,12 @@ from datetime import UTC, datetime
 import hashlib
 import json
 from pathlib import Path
+from typing import Mapping
 
 import numpy as np
 import pytest
 
+import simple_ai_trading.polymarket_round16_targets as round16_targets
 from simple_ai_trading.polymarket_round16_dataset import (
     ROUND16_FEATURE_NAMES,
     build_round16_feature_row,
@@ -25,7 +27,12 @@ from simple_ai_trading.polymarket_historical_screen import (
     HistoricalScreenStore,
     PublicPayload,
 )
-from simple_ai_trading.polymarket_round16_targets import _record_resolution
+from simple_ai_trading.polymarket_round16_targets import (
+    _record_resolution,
+    collect_round16_development_targets,
+    record_round16_target_implementation,
+    verify_round16_target_implementation,
+)
 
 
 ROOT = Path(__file__).parents[1]
@@ -151,8 +158,7 @@ def test_round16_contract_loader_is_exact_and_has_no_authority() -> None:
     assert len(contract.historical.eligible_days) == 154
     assert contract.historical.required_market_count_per_day == ROUND16_MARKETS_PER_DAY
     assert (
-        contract.historical.decision_offsets_seconds
-        == ROUND16_DECISION_OFFSETS_SECONDS
+        contract.historical.decision_offsets_seconds == ROUND16_DECISION_OFFSETS_SECONDS
     )
     assert contract.historical.excluded_slugs == frozenset()
 
@@ -203,6 +209,145 @@ def test_round16_client_strips_targets_before_identity_storage() -> None:
     assert ("end_date_max", "2026-03-21T00:15:00Z") in params
 
 
+def test_round16_gamma_target_batch_requires_exact_coverage() -> None:
+    market = _event()["markets"][0]
+    assert isinstance(market, dict)
+    session = _Session({"markets": [market], "next_cursor": ""})
+    client = Round16HistoricalPublicClient(
+        session=session,
+        clock_ms=lambda: END_MS + 1,
+    )
+
+    batch = client.gamma_markets(("1234567",))
+
+    assert tuple(batch) == ("1234567",)
+    assert batch["1234567"].value == market
+    url, params, _timeout = session.calls[0]
+    assert url.endswith("/markets/keyset")
+    assert ("id", "1234567") in params
+    assert ("closed", "true") in params
+    assert ("limit", "1") in params
+
+    missing = Round16HistoricalPublicClient(
+        session=_Session({"markets": [], "next_cursor": ""}),
+    )
+    with pytest.raises(ValueError, match="coverage differs"):
+        missing.gamma_markets(("1234567",))
+
+
+def test_round16_target_implementation_manifest_fails_closed_on_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contract = load_round16_historical_contract(CONTRACT_PATH)
+    with HistoricalScreenStore(
+        tmp_path / "target-manifest.duckdb",
+        contract=contract.historical,
+    ) as store:
+        with pytest.raises(ValueError, match="manifest is missing"):
+            verify_round16_target_implementation(store)
+        assert (
+            store.connect()
+            .execute(
+                """
+                SELECT count(*)
+                FROM information_schema.tables
+                WHERE table_schema = 'target'
+                  AND table_name = 'round16_resolution_manifest'
+                """
+            )
+            .fetchone()[0]
+            == 0
+        )
+        recorded = record_round16_target_implementation(store)
+        assert verify_round16_target_implementation(store) == recorded
+        changed = dict(recorded)
+        changed["manifest_sha256"] = "f" * 64
+        monkeypatch.setattr(
+            round16_targets,
+            "round16_target_implementation_manifest",
+            lambda: changed,
+        )
+        with pytest.raises(ValueError, match="changed after label access"):
+            verify_round16_target_implementation(store)
+
+
+def test_round16_target_collection_batches_gamma_and_crosschecks_clob(
+    tmp_path: Path,
+) -> None:
+    contract = load_round16_historical_contract(CONTRACT_PATH)
+    market = parse_round16_historical_btc_event(
+        _event(),
+        contract=contract,
+        observed_at_ms=END_MS + 1,
+    )
+    gamma_value = _event()["markets"][0]
+    assert isinstance(gamma_value, dict)
+    clob_value = {
+        "condition_id": CONDITION,
+        "market_slug": SLUG,
+        "closed": True,
+        "active": False,
+        "accepting_orders": False,
+        "tokens": [
+            {
+                "token_id": UP_TOKEN,
+                "outcome": "Up",
+                "winner": True,
+                "price": 1,
+            },
+            {
+                "token_id": DOWN_TOKEN,
+                "outcome": "Down",
+                "winner": False,
+                "price": 0,
+            },
+        ],
+    }
+
+    class TargetClient:
+        def __init__(self) -> None:
+            self.gamma_calls: list[tuple[str, ...]] = []
+            self.clob_calls: list[str] = []
+
+        def gamma_markets(
+            self,
+            market_ids: tuple[str, ...],
+        ) -> Mapping[str, PublicPayload]:
+            self.gamma_calls.append(market_ids)
+            return {market.market_id: _public(gamma_value)}
+
+        def clob_market(self, condition_id: str) -> PublicPayload:
+            self.clob_calls.append(condition_id)
+            return _public(clob_value)
+
+    client = TargetClient()
+    with HistoricalScreenStore(
+        tmp_path / "target-collection.duckdb",
+        contract=contract.historical,
+    ) as store:
+        store.upsert_market(market)
+        store.transition("initialized", "identities_complete")
+        store.transition("identities_complete", "features_complete")
+
+        counts = collect_round16_development_targets(
+            store,
+            contract,
+            client,  # type: ignore[arg-type]
+        )
+
+        assert counts == {"Up": 1, "Down": 0}
+        assert store.state == "development_targets_complete"
+        assert client.gamma_calls == [("1234567",)]
+        assert client.clob_calls == [CONDITION]
+        assert (
+            store.connect()
+            .execute("SELECT count(*) FROM target.round16_resolution_manifest")
+            .fetchone()[0]
+            == 1
+        )
+
+
 def test_round16_parser_rejects_horizon_drift() -> None:
     contract = load_round16_historical_contract(CONTRACT_PATH)
     event = deepcopy(_event())
@@ -248,9 +393,7 @@ def test_round16_feature_row_is_causal_and_finite() -> None:
     assert np.all(np.isfinite(first.feature_values))
     np.testing.assert_array_equal(first.feature_values, second.feature_values)
     assert first.row_sha256 == second.row_sha256
-    spot_moneyness = ROUND16_FEATURE_NAMES.index(
-        "spot_event_to_date_log_moneyness"
-    )
+    spot_moneyness = ROUND16_FEATURE_NAMES.index("spot_event_to_date_log_moneyness")
     spot_scaled_moneyness = ROUND16_FEATURE_NAMES.index(
         "spot_volatility_scaled_digital_moneyness"
     )
@@ -276,12 +419,8 @@ def test_round16_terminal_controls_use_only_observed_flow() -> None:
     changed = deepcopy(flow)
     last_completed = (START_MS - day_start_ms) // 1_000 + 179
     changed["spot_quote_volume"][last_completed - 29 : last_completed + 1] *= 4
-    changed["spot_aggressive_buy_quote"][
-        last_completed - 29 : last_completed + 1
-    ] *= 4
-    changed["spot_aggressive_sell_quote"][
-        last_completed - 29 : last_completed + 1
-    ] *= 4
+    changed["spot_aggressive_buy_quote"][last_completed - 29 : last_completed + 1] *= 4
+    changed["spot_aggressive_sell_quote"][last_completed - 29 : last_completed + 1] *= 4
     shifted = build_round16_feature_row(
         market,
         flow_start_ms=day_start_ms,
@@ -293,17 +432,14 @@ def test_round16_terminal_controls_use_only_observed_flow() -> None:
     terminal_index = ROUND16_FEATURE_NAMES.index(
         "terminal_spot_log_quote_rate_ratio_30s_to_prior_120s"
     )
-    assert shifted.feature_values[terminal_index] > baseline.feature_values[
-        terminal_index
-    ]
+    assert (
+        shifted.feature_values[terminal_index] > baseline.feature_values[terminal_index]
+    )
 
 
 def test_round16_dataset_source_has_no_polymarket_target_inputs() -> None:
     source = (
-        ROOT
-        / "src"
-        / "simple_ai_trading"
-        / "polymarket_round16_dataset.py"
+        ROOT / "src" / "simple_ai_trading" / "polymarket_round16_dataset.py"
     ).read_text(encoding="utf-8")
 
     for forbidden in (

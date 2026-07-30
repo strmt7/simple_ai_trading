@@ -30,6 +30,10 @@ from .polymarket_round16_dataset import (
     ROUND16_DATASET_SCHEMA_VERSION,
     ROUND16_FEATURE_NAMES,
 )
+from .polymarket_round16_targets import (
+    round16_target_implementation_manifest,
+    verify_round16_target_implementation,
+)
 
 
 ROUND16_PRETEST_SCHEMA_VERSION = "polymarket-round16-btc-15m-pretest-v2"
@@ -936,6 +940,9 @@ def build_round16_pretest_artifact(
         "shared_model_primitives": _file_sha256(
             source_root / "polymarket_historical_model.py"
         ),
+        "round16_target_manifest": str(
+            round16_target_implementation_manifest()["manifest_sha256"]
+        ),
     }
     body: dict[str, object] = {
         "schema_version": ROUND16_PRETEST_SCHEMA_VERSION,
@@ -998,6 +1005,13 @@ def record_round16_pretest_artifact(
         or value.get("profitability_claim") is not False
     ):
         raise ValueError("Round 16 pretest artifact integrity differs")
+    implementation = value.get("implementation_sha256")
+    if not isinstance(implementation, Mapping):
+        raise ValueError("Round 16 pretest implementation manifest is missing")
+    verify_round16_target_implementation(
+        store,
+        expected_sha256=str(implementation.get("round16_target_manifest") or ""),
+    )
     full_artifact = {**value, "artifact_sha256": claimed}
     dataset = (
         store.connect()

@@ -14,11 +14,12 @@ import hashlib
 import json
 from pathlib import Path
 import re
-from typing import Mapping
+from typing import Mapping, Sequence
 
 from .polymarket import PolymarketFeeSchedule
 from .polymarket_historical_screen import (
     GAMMA_EVENTS_KEYSET_URL,
+    GAMMA_MARKETS_URL,
     HistoricalBtcMarket,
     HistoricalScreenContract,
     HistoricalScreenStore,
@@ -29,9 +30,7 @@ from .polymarket_historical_screen import (
 )
 
 
-ROUND16_CONTRACT_SCHEMA_VERSION = (
-    "polymarket-round16-btc-15m-horizon-comparison-v2"
-)
+ROUND16_CONTRACT_SCHEMA_VERSION = "polymarket-round16-btc-15m-horizon-comparison-v2"
 ROUND16_MARKET_SCHEMA_VERSION = "polymarket-round16-btc-15m-market-v1"
 ROUND16_SERIES_ID = "10192"
 ROUND16_DURATION_MS = 900_000
@@ -176,8 +175,7 @@ def _day_interval(value: object, *, name: str) -> tuple[str, ...]:
         raise ValueError(f"{name} day count differs")
     first_day = datetime.fromtimestamp(first_ms / 1_000, tz=UTC)
     return tuple(
-        (first_day + timedelta(days=index)).date().isoformat()
-        for index in range(count)
+        (first_day + timedelta(days=index)).date().isoformat() for index in range(count)
     )
 
 
@@ -259,9 +257,7 @@ def load_round16_historical_contract(
     decisions = tuple(
         int(value) for value in causal.get("decision_offsets_seconds", ())
     )
-    returns = tuple(
-        int(value) for value in causal.get("return_horizons_seconds", ())
-    )
+    returns = tuple(int(value) for value in causal.get("return_horizons_seconds", ()))
     windows = tuple(int(value) for value in causal.get("flow_windows_seconds", ()))
     inventory_sha = str(source.get("binance_inventory_sha256") or "").lower()
     slope = tuple(gates.get("calibration_slope_range", ()))
@@ -275,8 +271,7 @@ def load_round16_historical_contract(
         or len(test) != ROUND16_TEST_DAYS
         or str(source.get("polymarket_series_id")) != ROUND16_SERIES_ID
         or source.get("historical_polymarket_price_or_trade_features") is not False
-        or source.get("binance_source")
-        != "frozen_round15_btc_spot_perpetual_flow_1s"
+        or source.get("binance_source") != "frozen_round15_btc_spot_perpetual_flow_1s"
         or source.get("binance_symbol") != "BTCUSDT"
         or source.get("shared_flow_database")
         != "data/polymarket-btc-flow-history-v1.duckdb"
@@ -293,14 +288,11 @@ def load_round16_historical_contract(
         or windows != ROUND16_FLOW_WINDOWS_SECONDS
         or slope != ("0.85", "1.15")
         or int(gates.get("minimum_terminal_conditions", 0)) != 1_200
-        or int(gates.get("minimum_complete_utc_test_days", 0))
-        != ROUND16_TEST_DAYS
+        or int(gates.get("minimum_complete_utc_test_days", 0)) != ROUND16_TEST_DAYS
         or int(gates.get("minimum_outcomes_per_class", 0)) != 400
         or int(gates.get("minimum_decision_rows", 0)) != 10_000
-        or int(gates.get("paired_utc_day_bootstrap_repetitions", 0))
-        != 10_000
-        or gates.get("paired_utc_day_bootstrap_resampling_unit")
-        != "whole_UTC_day"
+        or int(gates.get("paired_utc_day_bootstrap_repetitions", 0)) != 10_000
+        or gates.get("paired_utc_day_bootstrap_resampling_unit") != "whole_UTC_day"
         or gates.get("expected_calibration_error_maximum") != "0.03"
     ):
         raise ValueError("Round 16 source, split, feature, or gate contract differs")
@@ -379,10 +371,7 @@ def parse_round16_historical_btc_event(
         raise ValueError("Round 16 Gamma market slug differs")
     start = _utc_ms(raw.get("eventStartTime"), name="eventStartTime")
     end = _utc_ms(raw.get("endDate"), name="endDate")
-    if (
-        start != int(match.group(1)) * 1_000
-        or end - start != contract.duration_ms
-    ):
+    if start != int(match.group(1)) * 1_000 or end - start != contract.duration_ms:
         raise ValueError("Round 16 Gamma market window differs")
     day = datetime.fromtimestamp(start / 1_000, tz=UTC).date().isoformat()
     role = contract.historical.role_for_day(day)
@@ -532,6 +521,53 @@ class Round16HistoricalPublicClient(PolymarketHistoricalPublicClient):
             params.append(("after_cursor", cursor))
         raw = self._get(GAMMA_EVENTS_KEYSET_URL, params=params)
         return _sanitize_identity_page(raw)
+
+    def gamma_markets(
+        self,
+        market_ids: Sequence[str],
+    ) -> Mapping[str, PublicPayload]:
+        """Fetch an exact bounded terminal-market batch from Gamma."""
+
+        selected = tuple(str(value or "").strip() for value in market_ids)
+        if (
+            not selected
+            or len(selected) > 100
+            or len(selected) != len(set(selected))
+            or any(not value.isdigit() or len(value) > 20 for value in selected)
+        ):
+            raise ValueError("Round 16 Gamma market batch is invalid")
+        page = self._get(
+            f"{GAMMA_MARKETS_URL}/keyset",
+            params=[
+                *(("id", value) for value in selected),
+                ("closed", "true"),
+                ("limit", str(len(selected))),
+            ],
+        )
+        value = page.value
+        if not isinstance(value, Mapping):
+            raise ValueError("Round 16 Gamma market batch is not an object")
+        markets = value.get("markets")
+        if not isinstance(markets, list):
+            raise ValueError("Round 16 Gamma market batch is malformed")
+        output: dict[str, PublicPayload] = {}
+        for raw_market in markets:
+            if not isinstance(raw_market, Mapping):
+                raise ValueError("Round 16 Gamma market entry is malformed")
+            market = dict(raw_market)
+            market_id = str(market.get("id") or "").strip()
+            if market_id not in selected or market_id in output:
+                raise ValueError("Round 16 Gamma market batch identity differs")
+            canonical = _canonical_json(market)
+            output[market_id] = PublicPayload(
+                value=market,
+                canonical_json=canonical,
+                sha256=hashlib.sha256(canonical.encode("ascii")).hexdigest(),
+                observed_at_ms=page.observed_at_ms,
+            )
+        if set(output) != set(selected):
+            raise ValueError("Round 16 Gamma market batch coverage differs")
+        return output
 
 
 def _sanitize_identity_page(page: PublicPayload) -> PublicPayload:
