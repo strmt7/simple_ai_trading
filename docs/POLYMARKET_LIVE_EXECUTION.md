@@ -223,10 +223,10 @@ token preserved the requested 5 shares at 0.50 and derived the expected V2
 order hash. No order, approval, wallet deployment, or transaction was
 submitted.
 
-A separate six-second public predictor probe connected both credential-free
+A separate eight-second public predictor probe connected both credential-free
 Binance BTC aggregate-trade streams and both bid/ask advisory streams. It
-ingested 28 Spot and 19 USD-M aggregate messages with zero reconnects or wire
-errors; the final advisory receipt ages were 481 ms and 88 ms. Both services
+ingested 80 Spot and 153 USD-M aggregate messages with zero reconnects or wire
+errors; the final advisory receipt ages were 308 ms and 0 ms. Both services
 shut down cleanly and reported no credentials or execution authority. The
 exact [machine-readable probe](model-research/polymarket/latest/public-predictor-live-probe.json)
 explicitly records that the short transport check did not complete model
@@ -236,6 +236,7 @@ warmup and proves neither predictive nor financial edge.
 
 - [CLOB V2 migration](https://docs.polymarket.com/v2-migration)
 - [Order lifecycle](https://docs.polymarket.com/concepts/order-lifecycle)
+- [Market WebSocket channel](https://docs.polymarket.com/market-data/websocket/market-channel)
 - [Get one authenticated order](https://docs.polymarket.com/api-reference/trade/get-single-order-by-id)
 - [Get the current order book](https://docs.polymarket.com/api-reference/market-data/get-order-book)
 - [Order placement](https://docs.polymarket.com/trading/place-orders)
@@ -247,5 +248,9 @@ warmup and proves neither predictive nor financial edge.
 - [Geographic restrictions](https://docs.polymarket.com/api-reference/geoblock)
 - [Rate limits](https://docs.polymarket.com/api-reference/rate-limits)
 - [Settlement Manipulation in Prediction Markets](https://arxiv.org/abs/2606.31675)
+- [Polymarket order-book microstructure](https://arxiv.org/abs/2604.24366)
+- [Five-minute probability calibration](https://ssrn.com/abstract=6863546)
+- [Fixed-resolution binary labels versus triple barriers](https://ssrn.com/abstract=6519542)
+- [Quarter-hour crypto-futures predictability](https://arxiv.org/abs/2607.09426)
 - [Binance Spot WebSocket streams](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams)
 - [Binance USD-M individual book ticker](https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/Individual-Symbol-Book-Ticker-Streams)
