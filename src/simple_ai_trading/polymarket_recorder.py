@@ -2605,6 +2605,77 @@ class PolymarketEvidenceStore:
                 if requested_streams is None or message.stream in requested_streams:
                     yield stored
 
+    def iter_terminal_capture_messages(
+        self,
+        run_id: str,
+        *,
+        streams: tuple[str, ...] | None = None,
+    ) -> Iterator[RawStreamMessage]:
+        """Yield exact terminal v4 receipts while rechecking every selected frame."""
+
+        selected = str(run_id or "").strip()
+        row = self.connect().execute(
+            """
+            SELECT status, report_json, report_sha256
+            FROM polymarket_recorder_run WHERE run_id = ?
+            """,
+            [selected],
+        ).fetchone()
+        if row is None or str(row[0]) not in {"complete", "degraded"}:
+            raise ValueError("terminal Polymarket capture is unavailable")
+        try:
+            report = _strict_json_loads(str(row[1]))
+        except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
+            raise ValueError("terminal Polymarket report is invalid") from exc
+        if not isinstance(report, Mapping):
+            raise ValueError("terminal Polymarket report is invalid")
+        unhashed = dict(report)
+        embedded_sha256 = str(unhashed.pop("report_sha256", ""))
+        if (
+            not hmac.compare_digest(_canonical_sha256(unhashed), str(row[2]))
+            or not hmac.compare_digest(embedded_sha256, str(row[2]))
+            or report.get("run_id") != selected
+            or report.get("status") != str(row[0])
+            or report.get("integrity_errors") != []
+        ):
+            raise ValueError("terminal Polymarket report differs")
+        yield from (
+            stored.message
+            for stored in self._iter_capture_messages(
+                selected,
+                streams=streams,
+            )
+        )
+
+    def iter_terminal_stream_gaps(self, run_id: str) -> Iterator[StreamGap]:
+        """Yield the immutable gap ledger for one terminal capture."""
+
+        selected = str(run_id or "").strip()
+        row = self.connect().execute(
+            "SELECT status FROM polymarket_recorder_run WHERE run_id = ?",
+            [selected],
+        ).fetchone()
+        if row is None or str(row[0]) not in {"complete", "degraded"}:
+            raise ValueError("terminal Polymarket capture is unavailable")
+        cursor = self.connect().execute(
+            """
+            SELECT stream, connection_id, opened_at_ms, reason,
+                   last_sequence_number
+            FROM polymarket_stream_gap
+            WHERE run_id = ? ORDER BY opened_at_ms, gap_id
+            """,
+            [selected],
+        )
+        while rows := cursor.fetchmany(_INTEGRITY_FETCH_SIZE):
+            for stream, connection, opened, reason, sequence in rows:
+                yield StreamGap(
+                    stream=str(stream),
+                    connection_id=str(connection),
+                    opened_at_ms=int(opened),
+                    reason=str(reason),
+                    last_sequence_number=int(sequence),
+                ).validated()
+
     @staticmethod
     def _chunk_receipt_index_row_payload(
         *,
@@ -6318,6 +6389,9 @@ class PolymarketPublicRecorder:
         database_threads: int = 2,
         assets: Sequence[str] = SUPPORTED_POLYMARKET_ASSETS,
         include_binance_futures: bool = False,
+        include_binance_spot: bool = True,
+        include_rtds_binance: bool = True,
+        clob_lane_ids: Sequence[str] = ("clob",),
     ) -> None:
         self.database = Path(database)
         self.client = client or PolymarketPublicClient()
@@ -6346,20 +6420,41 @@ class PolymarketPublicRecorder:
             )
         ):
             raise ValueError("recorder assets are invalid")
-        if type(include_binance_futures) is not bool:
-            raise ValueError("include_binance_futures must be boolean")
+        if (
+            type(include_binance_futures) is not bool
+            or type(include_binance_spot) is not bool
+            or type(include_rtds_binance) is not bool
+        ):
+            raise ValueError("recorder source selectors must be boolean")
+        selected_clob_lanes = tuple(
+            str(lane or "").strip().lower() for lane in clob_lane_ids
+        )
+        if (
+            not 1 <= len(selected_clob_lanes) <= 2
+            or len(set(selected_clob_lanes)) != len(selected_clob_lanes)
+            or any(
+                re.fullmatch(r"[a-z][a-z0-9-]{0,31}", lane) is None
+                for lane in selected_clob_lanes
+            )
+        ):
+            raise ValueError("recorder CLOB lanes are invalid")
         self.assets = selected_assets
         self.include_binance_futures = include_binance_futures
-        self.required_streams = (
-            "binance_futures",
-            "binance_spot",
-            "clob_market",
-            "polymarket_rtds",
-        ) if include_binance_futures else (
-            "binance_spot",
-            "clob_market",
-            "polymarket_rtds",
+        self.include_binance_spot = include_binance_spot
+        self.include_rtds_binance = include_rtds_binance
+        self.clob_lane_ids = selected_clob_lanes
+        self.rtds_topics = (
+            ("crypto_prices", "crypto_prices_chainlink")
+            if include_rtds_binance
+            else ("crypto_prices_chainlink",)
         )
+        required_streams: list[str] = []
+        if include_binance_futures:
+            required_streams.append("binance_futures")
+        if include_binance_spot:
+            required_streams.append("binance_spot")
+        required_streams.extend(("clob_market", "polymarket_rtds"))
+        self.required_streams = tuple(required_streams)
         self.registry = _MarketRegistry()
         self.errors: list[str] = []
         self._written_message_count = 0
@@ -6500,6 +6595,9 @@ class PolymarketPublicRecorder:
             scoped_capture = (
                 self.assets != SUPPORTED_POLYMARKET_ASSETS
                 or self.include_binance_futures
+                or not self.include_binance_spot
+                or not self.include_rtds_binance
+                or self.clob_lane_ids != ("clob",)
             )
             if scoped_capture and preregistration_manifest is None:
                 raise ValueError(
@@ -6519,6 +6617,30 @@ class PolymarketPublicRecorder:
                     raise ValueError(
                         "preregistration capture scope differs from recorder"
                     )
+            if (
+                preregistration_manifest is not None
+                and (
+                    "required_clob_lanes" in preregistration_manifest
+                    or self.clob_lane_ids != ("clob",)
+                )
+                and preregistration_manifest.get("required_clob_lanes")
+                != list(self.clob_lane_ids)
+            ):
+                raise ValueError(
+                    "preregistration CLOB lanes differ from recorder"
+                )
+            if (
+                preregistration_manifest is not None
+                and (
+                    "required_rtds_topics" in preregistration_manifest
+                    or not self.include_rtds_binance
+                )
+                and preregistration_manifest.get("required_rtds_topics")
+                != list(self.rtds_topics)
+            ):
+                raise ValueError(
+                    "preregistration RTDS topics differ from recorder"
+                )
             started_monotonic = time.monotonic()
             store.start_run(
                 run_id,
@@ -6580,12 +6702,17 @@ class PolymarketPublicRecorder:
                                 "polymarket_rtds", self._rtds_stream(output, stop), stop
                             )
                         ),
-                        asyncio.create_task(
-                            self._supervise(
-                                "binance_spot", self._binance_stream(output, stop), stop
-                            )
-                        ),
                     ]
+                    if self.include_binance_spot:
+                        producers.append(
+                            asyncio.create_task(
+                                self._supervise(
+                                    "binance_spot",
+                                    self._binance_stream(output, stop),
+                                    stop,
+                                )
+                            )
+                        )
                     if self.include_binance_futures:
                         producers.append(
                             asyncio.create_task(
@@ -6975,9 +7102,33 @@ class PolymarketPublicRecorder:
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
         stop: asyncio.Event,
     ) -> None:
+        if len(self.clob_lane_ids) == 1:
+            await self._clob_lane(
+                lane=self.clob_lane_ids[0],
+                output=output,
+                stop=stop,
+            )
+            return
+        async with asyncio.TaskGroup() as task_group:
+            for lane in self.clob_lane_ids:
+                task_group.create_task(
+                    self._clob_lane(
+                        lane=lane,
+                        output=output,
+                        stop=stop,
+                    )
+                )
+
+    async def _clob_lane(
+        self,
+        *,
+        lane: str,
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
+        stop: asyncio.Event,
+    ) -> None:
         backoff = 1.0
         while not stop.is_set():
-            connection_id = f"clob:{uuid.uuid4().hex}"
+            connection_id = f"{lane}:{uuid.uuid4().hex}"
             sequence = 0
             connected_at = 0.0
             try:
@@ -7129,6 +7280,7 @@ class PolymarketPublicRecorder:
                     ),
                 )
                 for asset in assets
+                if self.include_rtds_binance
             ),
             *(
                 (
