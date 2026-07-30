@@ -286,6 +286,54 @@ def test_evidence_store_round_trip_has_complete_coverage_and_event_indexes(
     ]
 
 
+def test_terminal_capture_replay_exposes_exact_receipts_and_gap_ledger(
+    tmp_path,
+) -> None:
+    database = tmp_path / "terminal-replay.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, "terminal-replay")
+        store.record_gap(
+            "terminal-replay",
+            StreamGap(
+                stream="clob_market",
+                connection_id="clob-a:" + "a" * 32,
+                opened_at_ms=EPOCH * 1_000 + 2_000,
+                reason="fixture_disconnect",
+                last_sequence_number=1,
+            ),
+        )
+        report = store.finish_run(
+            "terminal-replay",
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=(),
+        )
+        receipts = tuple(
+            store.iter_terminal_capture_messages(
+                "terminal-replay",
+                streams=("clob_market",),
+            )
+        )
+        gaps = tuple(store.iter_terminal_stream_gaps("terminal-replay"))
+
+    assert report.status == "degraded"
+    assert len(receipts) == 1
+    assert receipts[0].raw_text == _canonical(
+        [
+            {
+                "event_type": "book",
+                "market": "0x" + "7" * 64,
+                "asset_id": "7" * 40,
+                "timestamp": EPOCH * 1_000,
+            }
+        ]
+    )
+    assert len(gaps) == 1
+    assert gaps[0].connection_id == "clob-a:" + "a" * 32
+    assert gaps[0].reason == "fixture_disconnect"
+
+
 def test_evidence_store_honors_preregistered_btc_futures_scope(tmp_path) -> None:
     run_id = "btc-futures-scope"
     manifest: dict[str, object] = {
