@@ -863,7 +863,27 @@ def build_round16_pretest_artifact(
     challengers = [
         candidate for candidate in candidates if candidate.get("kind") == "challenger"
     ]
-    if len(controls) != 3 or len(challengers) != 2:
+    control_families = {
+        str(candidate.get("family") or "") for candidate in controls
+    }
+    challenger_families = {
+        str(candidate.get("family") or "") for candidate in challengers
+    }
+    if (
+        len(controls) != 3
+        or len(challengers) != 2
+        or control_families
+        != {
+            "training_prevalence",
+            "calendar_ridge_logistic",
+            "digital_moneyness_ridge_logistic",
+        }
+        or challenger_families
+        != {
+            "binance_ridge_logistic",
+            "binance_shallow_lightgbm",
+        }
+    ):
         raise ValueError("Round 16 pretest candidate families differ")
     best_control = min(
         controls,
