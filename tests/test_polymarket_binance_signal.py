@@ -11,6 +11,7 @@ import pytest
 
 import simple_ai_trading.polymarket_binance_signal as signal_module
 from simple_ai_trading.polymarket_binance_signal import (
+    BINANCE_FUTURES_BTC_BOOK_TICKER_URL,
     BinanceBtcPublicSignalProvider,
     parse_binance_btc_public_tick,
 )
@@ -91,6 +92,13 @@ def test_public_signal_module_imports_no_execution_or_credentials() -> None:
     assert "submit" not in source.lower()
 
 
+def test_futures_book_ticker_uses_current_public_market_data_path() -> None:
+    assert BINANCE_FUTURES_BTC_BOOK_TICKER_URL == (
+        "wss://fstream.binance.com/public/ws/btcusdt@bookTicker"
+    )
+    assert "/private/" not in BINANCE_FUTURES_BTC_BOOK_TICKER_URL
+
+
 def test_parse_documented_spot_and_futures_payloads() -> None:
     spot = parse_binance_btc_public_tick(
         "BINANCE_SPOT",
@@ -134,8 +142,10 @@ def test_parser_rejects_wrong_or_unsafe_payloads(
     payload: str,
     error: str,
 ) -> None:
-    sequence = None if source.endswith("FUTURES") else (
-        None if error == "ticker payload" else 1
+    sequence = (
+        None
+        if source.endswith("FUTURES")
+        else (None if error == "ticker payload" else 1)
     )
     with pytest.raises(ValueError, match=error):
         parse_binance_btc_public_tick(
