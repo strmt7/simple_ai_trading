@@ -20,8 +20,12 @@ from simple_ai_trading.polymarket_round17_execution import (
     Round17OwnedLot,
     Round17ProbabilityEnvelope,
     evaluate_round17_complement_lock,
+    observe_round17_complement_lock,
+    observe_round17_entry,
+    observe_round17_owned_close,
+    plan_round17_complement_lock,
+    plan_round17_owned_close,
     select_round17_entry,
-    simulate_round17_owned_close,
 )
 
 
@@ -77,10 +81,11 @@ def _book(
     quantity: str = "100",
     connected: bool = True,
     gap_free: bool = True,
+    received_at_ms: int | None = None,
 ) -> PaperBookSnapshot:
     market = _market()
     token_id = market.up_token_id if outcome == "Up" else market.down_token_id
-    received = DECISION_MS + 500
+    received = DECISION_MS - 100 if received_at_ms is None else received_at_ms
     return PaperBookSnapshot(
         venue="polymarket",
         market_id=market.condition_id,
@@ -127,12 +132,31 @@ def test_round17_selects_only_positive_delayed_after_cost_polymarket_entry() -> 
 
     assert decision.action == "buy_up_fok"
     assert decision.candidate is not None
-    assert decision.candidate.total_cost_quote <= Decimal("1")
+    assert decision.candidate.maximum_entry_loss_quote <= Decimal("1")
     assert decision.candidate.probability_lower_bound == Decimal("0.65")
     assert decision.candidate.lower_bound_edge_quote_per_share >= Decimal("0.02")
+    assert decision.condition_id == _market().condition_id
+    assert decision.decision_time_ms == DECISION_MS
+    assert decision.probability_evidence_sha256 == _envelope().evidence_sha256
     assert decision.identity_payload()["binance_credentials_used"] is False
     assert decision.identity_payload()["binance_execution_connected"] is False
     assert decision.identity_payload()["trading_authority"] is False
+    observed = observe_round17_entry(
+        decision,
+        _market(),
+        _book(
+            "Up",
+            bid="0.44",
+            ask="0.45",
+            received_at_ms=DECISION_MS + 500,
+        ),
+        program,
+    )
+    assert observed.state == "filled"
+    assert observed.actual_entry_cost_quote is not None
+    assert (
+        observed.actual_entry_cost_quote <= decision.candidate.maximum_entry_loss_quote
+    )
 
 
 def test_round17_abstains_without_edge_or_reconciliation() -> None:
@@ -221,7 +245,7 @@ def test_round17_close_requires_exact_bot_owned_parent_lot() -> None:
         entry_cost_quote=Decimal("0.45"),
     )
 
-    result = simulate_round17_owned_close(
+    plan = plan_round17_owned_close(
         _market(),
         lot,
         _book("Up", bid="0.60", ask="0.61"),
@@ -229,11 +253,23 @@ def test_round17_close_requires_exact_bot_owned_parent_lot() -> None:
         decision_time_ms=DECISION_MS,
         scenario_name="primary",
     )
+    assert plan is not None
+    result = observe_round17_owned_close(
+        plan,
+        _market(),
+        _book(
+            "Up",
+            bid="0.60",
+            ask="0.61",
+            received_at_ms=DECISION_MS + 500,
+        ),
+        program,
+    )
 
     assert result.state == "FILLED"
     assert result.filled_quantity == lot.quantity
     with pytest.raises(ValueError, match="exact bot-owned lot"):
-        simulate_round17_owned_close(
+        plan_round17_owned_close(
             _market(),
             Round17OwnedLot(
                 owner="foreign-user",
@@ -277,3 +313,67 @@ def test_round17_complement_requires_nonnegative_worst_case_lock() -> None:
     assert locked.guaranteed_net_quote == Decimal("0.10")
     assert unsafe.allowed is False
     assert unsafe.guaranteed_net_quote == Decimal("-0.10")
+    program = load_round14_contract(CONTRACT_PATH)
+    plan = plan_round17_complement_lock(
+        _market(),
+        lot,
+        _book("Down", bid="0.49", ask="0.50"),
+        program,
+        decision_time_ms=DECISION_MS,
+        scenario_name="primary",
+    )
+    assert plan is not None
+    observed = observe_round17_complement_lock(
+        plan,
+        _market(),
+        _book(
+            "Down",
+            bid="0.49",
+            ask="0.50",
+            received_at_ms=DECISION_MS + 500,
+        ),
+        program,
+    )
+    assert observed.state == "locked"
+    assert observed.guaranteed_net_quote == Decimal("0.20")
+    assert (
+        plan_round17_complement_lock(
+            _market(),
+            lot,
+            _book("Down", bid="0.64", ask="0.65"),
+            program,
+            decision_time_ms=DECISION_MS,
+            scenario_name="primary",
+        )
+        is None
+    )
+
+
+def test_round17_missing_post_submit_book_is_charged_as_unknown() -> None:
+    program = load_round14_contract(CONTRACT_PATH)
+    decision = select_round17_entry(
+        _market(),
+        {
+            "Up": _book("Up", bid="0.44", ask="0.45"),
+            "Down": _book("Down", bid="0.53", ask="0.54"),
+        },
+        _envelope(),
+        program,
+        decision_time_ms=DECISION_MS,
+        risk_profile="conservative",
+        scenario_name="primary",
+        risk_capital_quote=Decimal("1000"),
+        minimum_expected_edge_quote_per_share=Decimal("0.02"),
+        reconciliation_ok=True,
+        existing_owned_exposure=False,
+    )
+
+    observed = observe_round17_entry(decision, _market(), None, program)
+
+    assert decision.candidate is not None
+    assert observed.state == "unknown_after_submit"
+    assert observed.actual_entry_cost_quote is None
+    assert (
+        observed.conservative_utility_quote
+        == -decision.candidate.maximum_entry_loss_quote
+    )

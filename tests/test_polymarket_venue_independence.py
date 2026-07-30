@@ -77,6 +77,18 @@ LIVE_BOUNDARY_IMPORTS = {
             "polymarket_round17_features",
         }
     ),
+    "polymarket_round17_outcomes.py": frozenset(
+        {
+            "paper_execution",
+            "polymarket",
+            "polymarket_replay",
+            "polymarket_round14_contract",
+            "polymarket_round17_dataset",
+            "polymarket_round17_economic",
+            "polymarket_round17_execution",
+            "polymarket_round17_features",
+        }
+    ),
 }
 
 

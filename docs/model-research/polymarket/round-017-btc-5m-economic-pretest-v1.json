@@ -125,6 +125,20 @@
       "fee_multiplier": "2"
     }
   ],
+  "execution_lifecycle": {
+    "decision_cadence_ms": 250,
+    "maximum_creation_book_age_ms": 500,
+    "maximum_post_target_observation_delay_ms": 500,
+    "retry_interval_after_known_no_fill_ms": 1000,
+    "minimum_hold_before_exit_or_complement_ms": 1000,
+    "entry_rule": "Freeze the FOK limit, quantity, fee bound, and maximum loss from the latest healthy paired Polymarket creation books received at or before the decision. Apply that immutable intent to the first same-segment book observed at or after the submission-latency target.",
+    "entry_unknown_rule": "A missing, invalid, cross-segment, or unprovable post-submit state is charged the full frozen maximum entry loss and blocks the condition.",
+    "intrawindow_exit_trigger": "For an exact parent-bound owned lot, plan a FOK sell from a causal creation book only when fee-bounded minimum executable proceeds exceed the model lower-confidence settlement value. Apply the fixed close intent to a separate delayed same-segment book.",
+    "complement_trigger": "Plan an exact-quantity complement FOK only when the creation-book limit plus the maximum fee bound guarantees nonnegative combined payout after the original entry cost. Apply the fixed complement intent to a separate delayed same-segment book.",
+    "terminal_fallback": "If no proven owned close or safe complement fills, value the exact owned lot at the official Polymarket settlement outcome.",
+    "future_book_selection_prohibited": true,
+    "midpoint_or_hidden_liquidity_credit_prohibited": true
+  },
   "development_gates": {
     "minimum_conditions": 100,
     "minimum_calendar_days": 3,
@@ -155,5 +169,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "contract_sha256": "2867014d3cbd77d21d25901e3558b5165c635f4ccdb13053dfca7e81f2ff3a7c"
+  "contract_sha256": "216aaa1dda6abb8b3b74363f2ebcebace0b6b1938ead29166972b4d95a635eb3"
 }
