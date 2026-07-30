@@ -1,42 +1,42 @@
 {
   "schema_version": "polymarket-btc-flow-history-ingestion-status-v1",
-  "generated_at_utc": "2026-07-30T02:53:43Z",
+  "generated_at_utc": "2026-07-30T03:18:29Z",
   "inventory_path": "docs/model-research/polymarket/round-015-btc-5m-full-history-inventory-v1.json",
   "inventory_sha256": "f68c0dc7709c98f342d04bacbd1b120c87ee07712ab0aeedbb3e1915cb8e77e2",
   "local_database_path": "data/polymarket-btc-flow-history-v1.duckdb",
   "local_database_tracked": false,
-  "database_bytes": 840183808,
+  "database_bytes": 880816128,
   "expected_days": 154,
-  "completed_days": 87,
-  "remaining_days": 67,
-  "flow_rows": 7516800,
-  "compressed_source_bytes": 3236579594,
+  "completed_days": 90,
+  "remaining_days": 64,
+  "flow_rows": 7776000,
+  "compressed_source_bytes": 3304287330,
   "first_completed_day": "2026-02-12",
-  "last_completed_day": "2026-05-09",
+  "last_completed_day": "2026-05-12",
   "raw_archive_retained": false,
   "archive_cache_files": 0,
   "status_probe_changed_database_mtime": false,
   "latest_batch": [
     {
-      "period": "2026-05-07",
+      "period": "2026-05-10",
       "source_count": 2,
       "flow_rows": 86400,
-      "compressed_bytes": 27466532,
-      "combined_flow_sha256": "db37a76bcda0a644593688f23b8e2ef57807e4ff97b630b1503b0b8d5e2868a3"
+      "compressed_bytes": 19240469,
+      "combined_flow_sha256": "fce8d5a70a9e37997f370f6f4cd1fe2ba15effec42b96f947d9fe3cefa159bde"
     },
     {
-      "period": "2026-05-08",
+      "period": "2026-05-11",
       "source_count": 2,
       "flow_rows": 86400,
-      "compressed_bytes": 23552947,
-      "combined_flow_sha256": "aad124ff56b7d3cf26ec1a133636c000330e085b89500e8240b9914ba40c431c"
+      "compressed_bytes": 25832782,
+      "combined_flow_sha256": "31c57661ed5d06a9f742fe8086f456d8a1b4a6aa425b45dd88349863b7dd552d"
     },
     {
-      "period": "2026-05-09",
+      "period": "2026-05-12",
       "source_count": 2,
       "flow_rows": 86400,
-      "compressed_bytes": 11698421,
-      "combined_flow_sha256": "47d8b2c60a8e8619f2da1468fb4a0b2ae527e56dd578bb524144d5a92ba15afa"
+      "compressed_bytes": 22634485,
+      "combined_flow_sha256": "fff54369182764dab31464b959090f56638d1c44400d289cdc88890c1bea0196"
     }
   ],
   "stderr_bytes": 0,
@@ -46,5 +46,5 @@
   "profitability_claim": false,
   "paper_authority": false,
   "live_authority": false,
-  "artifact_sha256": "81648139a765c199ca1e3943e36c90b223de08152c694bd709b21aaf335a18ae"
+  "artifact_sha256": "e60157c31b7879f33f9b92c8a637eeec9c9f5f338688aca9ec0160c07e6efeec"
 }
