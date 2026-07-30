@@ -16,10 +16,12 @@ import numpy as np
 from .polymarket_historical_dataset import (
     HistoricalDatasetManifest,
     HistoricalFeatureRow,
+    _SOURCE_COLUMNS,
     _identity_digest,
-    _load_flow_day,
     _log_returns,
+    _plain_array,
     _source_manifest,
+    _validate_flow,
 )
 from .polymarket_historical_screen import HistoricalBtcMarket, HistoricalScreenStore
 from .polymarket_round16 import (
@@ -34,6 +36,7 @@ from .polymarket_round16 import (
 ROUND16_DATASET_SCHEMA_VERSION = "polymarket-round16-btc-15m-dataset-v1"
 _MARKETS = ("spot", "perpetual")
 _SOURCE_BOUNDARY_CENSORED_CONDITIONS = 1
+ROUND16_MAXIMUM_CAUSAL_CLOSE_CARRY_SECONDS = 2
 
 
 def _canonical_json(value: object) -> str:
@@ -134,15 +137,11 @@ def _market_vector(
         quote = float(np.sum(values[f"{market}_quote_volume"][section]))
         buy = float(np.sum(values[f"{market}_aggressive_buy_quote"][section]))
         sell = float(np.sum(values[f"{market}_aggressive_sell_quote"][section]))
-        aggregate_count = float(
-            np.sum(values[f"{market}_aggregate_count"][section])
-        )
+        aggregate_count = float(np.sum(values[f"{market}_aggregate_count"][section]))
         constituent_count = float(
             np.sum(values[f"{market}_constituent_trade_count"][section])
         )
-        maximum = float(
-            np.max(values[f"{market}_maximum_aggregate_quote"][section])
-        )
+        maximum = float(np.max(values[f"{market}_maximum_aggregate_quote"][section]))
         squared = float(
             np.sum(values[f"{market}_squared_aggregate_quote_sum"][section])
         )
@@ -384,6 +383,92 @@ def _combine_flow_days(
     return combined
 
 
+def _repair_round16_leading_close_gaps(
+    values: dict[str, np.ndarray],
+    *,
+    close_masks: Mapping[str, np.ndarray],
+    prior: Mapping[str, np.ndarray] | None,
+) -> Mapping[str, int]:
+    """Carry only an observed prior close across a bounded UTC boundary gap."""
+
+    carry_seconds: dict[str, int] = {}
+    sentinel = float(np.iinfo(np.uint32).max)
+    for market in _MARKETS:
+        close_name = f"{market}_close"
+        age_name = f"{market}_last_trade_age_seconds"
+        close = np.asarray(values[close_name], dtype=np.float64)
+        age = np.asarray(values[age_name], dtype=np.float64)
+        mask = np.asarray(close_masks[market], dtype=np.bool_)
+        if close.ndim != 1 or age.shape != close.shape or mask.shape != close.shape:
+            raise ValueError("Round 16 source-boundary carry dimensions differ")
+        missing = np.flatnonzero(mask)
+        count = len(missing)
+        if count:
+            if (
+                count > ROUND16_MAXIMUM_CAUSAL_CLOSE_CARRY_SECONDS
+                or not np.array_equal(missing, np.arange(count))
+                or prior is None
+            ):
+                raise ValueError("Round 16 close gap exceeds the causal carry policy")
+            prior_close = float(prior[close_name][-1])
+            prior_age = float(prior[age_name][-1])
+            if (
+                not math.isfinite(prior_close)
+                or prior_close <= 0.0
+                or not math.isfinite(prior_age)
+                or prior_age < 0.0
+                or prior_age != math.floor(prior_age)
+                or np.any(age[:count] != sentinel)
+            ):
+                raise ValueError("Round 16 causal carry source is invalid")
+            close = close.copy()
+            age = age.copy()
+            close[:count] = prior_close
+            age[:count] = prior_age + np.arange(1, count + 1, dtype=np.float64)
+            values[close_name] = close
+            values[age_name] = age
+        if np.any(mask[count:]) or np.any(np.asarray(values[age_name]) == sentinel):
+            raise ValueError("Round 16 source contains an unresolved close gap")
+        carry_seconds[market] = count
+    return carry_seconds
+
+
+def _load_round16_flow_day(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    day_start_ms: int,
+    prior: Mapping[str, np.ndarray] | None,
+) -> tuple[Mapping[str, np.ndarray], Mapping[str, int]]:
+    result = connection.execute(
+        f"""
+        SELECT {",".join(_SOURCE_COLUMNS)}
+        FROM current_spot_perpetual_flow_1s
+        WHERE symbol = 'BTCUSDT'
+          AND second_ms >= ?
+          AND second_ms < ?
+        ORDER BY second_ms
+        """,
+        [day_start_ms, day_start_ms + 86_400_000],
+    ).fetchnumpy()
+    values: dict[str, np.ndarray] = {}
+    close_masks: dict[str, np.ndarray] = {}
+    for name in _SOURCE_COLUMNS:
+        raw = result[name]
+        dtype = np.dtype(np.int64) if name == "second_ms" else np.dtype(np.float64)
+        if name in {"spot_close", "perpetual_close"}:
+            market = name.removesuffix("_close")
+            close_masks[market] = np.ma.getmaskarray(raw)
+            raw = raw.data if isinstance(raw, np.ma.MaskedArray) else raw
+        values[name] = _plain_array(raw, name=name, dtype=dtype)
+    carry_seconds = _repair_round16_leading_close_gaps(
+        values,
+        close_masks=close_masks,
+        prior=prior,
+    )
+    _validate_flow(values, day_start_ms=day_start_ms)
+    return values, carry_seconds
+
+
 ProgressCallback = Callable[[str, Mapping[str, object]], None]
 
 
@@ -503,6 +588,8 @@ def materialize_round16_causal_features(
         role_counts = {"train": 0, "tune": 0, "test": 0}
         prior_flow: Mapping[str, np.ndarray] | None = None
         prior_day_start_ms: int | None = None
+        source_carry_seconds = dict.fromkeys(_MARKETS, 0)
+        source_carry_days: list[Mapping[str, object]] = []
         for day_index, day in enumerate(
             contract.historical.eligible_days,
             start=1,
@@ -510,7 +597,20 @@ def materialize_round16_causal_features(
             day_start_ms = int(
                 datetime.fromisoformat(day).replace(tzinfo=UTC).timestamp() * 1_000
             )
-            current_flow = _load_flow_day(source, day_start_ms=day_start_ms)
+            current_flow, carry_seconds = _load_round16_flow_day(
+                source,
+                day_start_ms=day_start_ms,
+                prior=prior_flow,
+            )
+            for market, count in carry_seconds.items():
+                source_carry_seconds[market] += count
+            if any(carry_seconds.values()):
+                source_carry_days.append(
+                    {
+                        "day": day,
+                        "seconds": dict(carry_seconds),
+                    }
+                )
             combined_flow = _combine_flow_days(prior_flow, current_flow)
             flow_start_ms = (
                 prior_day_start_ms if prior_flow is not None else day_start_ms
@@ -553,6 +653,7 @@ def materialize_round16_causal_features(
                         "day_count": len(contract.historical.eligible_days),
                         "condition_count": day_conditions,
                         "row_count": day_rows,
+                        "causal_close_carry_seconds": dict(carry_seconds),
                     },
                 )
             prior_flow = current_flow
@@ -560,7 +661,8 @@ def materialize_round16_causal_features(
     finally:
         source.close()
     expected_conditions = (
-        len(contract.historical.eligible_days) * contract.historical.required_market_count_per_day
+        len(contract.historical.eligible_days)
+        * contract.historical.required_market_count_per_day
         - _SOURCE_BOUNDARY_CENSORED_CONDITIONS
     )
     expected_rows = expected_conditions * len(ROUND16_DECISION_OFFSETS_SECONDS)
@@ -592,9 +694,17 @@ def materialize_round16_causal_features(
         "row_count": len(rows),
         "condition_count": len(condition_ids),
         "role_counts": role_counts,
-        "source_boundary_censored_conditions": (
-            _SOURCE_BOUNDARY_CENSORED_CONDITIONS
-        ),
+        "source_boundary_censored_conditions": (_SOURCE_BOUNDARY_CENSORED_CONDITIONS),
+        "causal_source_boundary_carry": {
+            "policy": "actual_prior_close_only",
+            "maximum_seconds_per_market_per_day": (
+                ROUND16_MAXIMUM_CAUSAL_CLOSE_CARRY_SECONDS
+            ),
+            "last_trade_age_policy": "advance_from_actual_prior_observation",
+            "total_seconds": source_carry_seconds,
+            "affected_days": source_carry_days,
+            "labels_used": False,
+        },
         "row_chain_sha256": row_chain,
     }
     dataset_sha = _canonical_sha256(dataset_body)
@@ -668,6 +778,7 @@ __all__ = [
     "ROUND16_CALENDAR_FEATURE_NAMES",
     "ROUND16_DATASET_SCHEMA_VERSION",
     "ROUND16_FEATURE_NAMES",
+    "ROUND16_MAXIMUM_CAUSAL_CLOSE_CARRY_SECONDS",
     "build_round16_feature_row",
     "build_round16_feature_vector",
     "materialize_round16_causal_features",

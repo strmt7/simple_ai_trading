@@ -14,6 +14,7 @@ import pytest
 import simple_ai_trading.polymarket_round16_targets as round16_targets
 from simple_ai_trading.polymarket_round16_dataset import (
     ROUND16_FEATURE_NAMES,
+    _repair_round16_leading_close_gaps,
     build_round16_feature_row,
 )
 from simple_ai_trading.polymarket_round16 import (
@@ -218,6 +219,80 @@ def test_round16_identity_parser_never_serializes_terminal_targets() -> None:
     assert "outcomePrices" not in market.identity_payload_json
     assert '"winner"' not in market.identity_payload_json
     assert '"resolution"' not in market.identity_payload_json
+
+
+def test_round16_causal_boundary_carry_uses_only_prior_observations() -> None:
+    sentinel = float(np.iinfo(np.uint32).max)
+    values = {
+        "spot_close": np.asarray([99.0, 100.0, 101.0]),
+        "spot_last_trade_age_seconds": np.asarray([0.0, 0.0, 0.0]),
+        "perpetual_close": np.asarray([0.0, 0.0, 102.0]),
+        "perpetual_last_trade_age_seconds": np.asarray([sentinel, sentinel, 0.0]),
+    }
+    prior = {
+        "spot_close": np.asarray([98.0]),
+        "spot_last_trade_age_seconds": np.asarray([0.0]),
+        "perpetual_close": np.asarray([101.5]),
+        "perpetual_last_trade_age_seconds": np.asarray([3.0]),
+    }
+
+    carry = _repair_round16_leading_close_gaps(
+        values,
+        close_masks={
+            "spot": np.asarray([False, False, False]),
+            "perpetual": np.asarray([True, True, False]),
+        },
+        prior=prior,
+    )
+
+    assert carry == {"spot": 0, "perpetual": 2}
+    assert values["perpetual_close"].tolist() == [101.5, 101.5, 102.0]
+    assert values["perpetual_last_trade_age_seconds"].tolist() == [
+        4.0,
+        5.0,
+        0.0,
+    ]
+
+
+@pytest.mark.parametrize(
+    ("mask", "prior"),
+    (
+        (np.asarray([True, False, True]), {"provided": True}),
+        (np.asarray([True, True, True]), {"provided": True}),
+        (np.asarray([True, False, False]), None),
+    ),
+)
+def test_round16_causal_boundary_carry_rejects_unbounded_or_noncausal_gaps(
+    mask: np.ndarray,
+    prior: Mapping[str, object] | None,
+) -> None:
+    sentinel = float(np.iinfo(np.uint32).max)
+    values = {
+        "spot_close": np.asarray([99.0, 100.0, 101.0]),
+        "spot_last_trade_age_seconds": np.asarray([0.0, 0.0, 0.0]),
+        "perpetual_close": np.asarray([0.0, 102.0, 103.0]),
+        "perpetual_last_trade_age_seconds": np.asarray([sentinel, 0.0, 0.0]),
+    }
+    prior_values = (
+        {
+            "spot_close": np.asarray([98.0]),
+            "spot_last_trade_age_seconds": np.asarray([0.0]),
+            "perpetual_close": np.asarray([101.5]),
+            "perpetual_last_trade_age_seconds": np.asarray([0.0]),
+        }
+        if prior is not None
+        else None
+    )
+
+    with pytest.raises(ValueError, match="causal carry policy"):
+        _repair_round16_leading_close_gaps(
+            values,
+            close_masks={
+                "spot": np.asarray([False, False, False]),
+                "perpetual": mask,
+            },
+            prior=prior_values,
+        )
 
 
 def test_round16_client_strips_targets_before_identity_storage() -> None:
