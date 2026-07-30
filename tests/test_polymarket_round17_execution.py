@@ -83,7 +83,7 @@ def _book(
     received = DECISION_MS + 500
     return PaperBookSnapshot(
         venue="polymarket",
-        market_id=market.market_id,
+        market_id=market.condition_id,
         asset_id=token_id,
         bids=(BookLevel(Decimal(bid), Decimal(quantity)),),
         asks=(BookLevel(Decimal(ask), Decimal(quantity)),),
@@ -214,7 +214,7 @@ def test_round17_close_requires_exact_bot_owned_parent_lot() -> None:
     lot = Round17OwnedLot(
         owner=BOT_OWNER,
         parent_intent_id="round17-parent-00000001",
-        market_id=_market().market_id,
+        market_id=_market().condition_id,
         token_id=_market().up_token_id,
         outcome="Up",
         quantity=Decimal("1.000000"),
@@ -255,7 +255,7 @@ def test_round17_complement_requires_nonnegative_worst_case_lock() -> None:
     lot = Round17OwnedLot(
         owner=BOT_OWNER,
         parent_intent_id="round17-parent-00000001",
-        market_id=_market().market_id,
+        market_id=_market().condition_id,
         token_id=_market().up_token_id,
         outcome="Up",
         quantity=Decimal("2.000000"),
