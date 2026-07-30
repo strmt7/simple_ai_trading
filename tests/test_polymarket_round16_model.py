@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import simple_ai_trading.polymarket_round16_model as round16_model
 from simple_ai_trading.polymarket_round16 import (
     load_round16_historical_contract,
 )
@@ -118,6 +119,111 @@ def test_round16_candidate_screen_is_bounded_and_reproducible() -> None:
         body = dict(candidate)
         claimed = body.pop("artifact_sha256")
         assert _canonical_sha256(body) == claimed
+    prevalence = next(
+        candidate
+        for candidate in candidates
+        if candidate["family"] == "training_prevalence"
+    )
+    assert prevalence["model"]["probability"] == pytest.approx(
+        float(np.mean(train.labels))
+    )
+    assert prevalence["calibration"] == {
+        "type": "identity",
+        "retained": False,
+        "intercept": 0.0,
+        "slope": 1.0,
+        "tune_log_loss_before": prevalence["raw_tune_log_loss"],
+        "tune_log_loss_after": prevalence["raw_tune_log_loss"],
+        "reason": "preserve_train_only_prevalence_control",
+    }
+
+
+def test_round16_ridge_grid_selects_final_calibrated_loss(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    condition_ids = np.repeat(
+        np.asarray(["0x" + "1" * 64, "0x" + "2" * 64], dtype=object),
+        14,
+    )
+    labels = np.repeat(np.asarray([0.0, 1.0]), 14)
+    features = np.zeros((28, len(ROUND16_FEATURE_NAMES)), dtype=np.float32)
+    features[:14, 0] = -1.0
+    features[14:, 0] = 1.0
+
+    def panel(role: str) -> Round16ModelPanel:
+        event_start = np.repeat(
+            np.asarray([1_700_000_000_000, 1_700_000_900_000]),
+            14,
+        )
+        return Round16ModelPanel(
+            condition_ids=condition_ids,
+            roles=np.full(28, role, dtype=object),
+            event_start_ms=event_start,
+            decision_time_ms=event_start
+            + np.tile(
+                np.arange(1, 15, dtype=np.int64) * 60_000,
+                2,
+            ),
+            features=features,
+            labels=labels,
+            dataset_sha256="a" * 64,
+        )
+
+    def fake_fit(
+        _matrix: np.ndarray,
+        _labels: np.ndarray,
+        _weights: np.ndarray,
+        *,
+        l2: float,
+    ) -> tuple[float, np.ndarray]:
+        coefficient = -4.0 if l2 == 0.1 else 0.0
+        return 0.0, np.asarray([coefficient], dtype=np.float64)
+
+    def fake_calibration(
+        truth: np.ndarray,
+        probability: np.ndarray,
+        weights: np.ndarray,
+    ) -> dict[str, object]:
+        before = round16_model._log_loss(truth, probability, weights)
+        if float(np.ptp(probability)) <= 0.1:
+            return {
+                "type": "platt_logistic",
+                "retained": False,
+                "intercept": 0.0,
+                "slope": 1.0,
+                "tune_log_loss_before": before,
+                "tune_log_loss_after": before,
+            }
+        after = round16_model._log_loss(
+            truth,
+            1.0 - probability,
+            weights,
+        )
+        return {
+            "type": "platt_logistic",
+            "retained": True,
+            "intercept": 0.0,
+            "slope": -1.0,
+            "tune_log_loss_before": before,
+            "tune_log_loss_after": after,
+        }
+
+    monkeypatch.setattr(round16_model, "ROUND16_RIDGE_L2_GRID", (0.01, 0.1))
+    monkeypatch.setattr(round16_model, "_fit_logistic_parameters", fake_fit)
+    monkeypatch.setattr(round16_model, "_fit_platt_calibration", fake_calibration)
+
+    candidate = round16_model._fit_ridge_candidate(
+        panel("train"),
+        panel("tune"),
+        family="binance_ridge_logistic",
+        feature_indices=np.asarray([0], dtype=np.int64),
+    )
+
+    assert candidate["candidate_id"] == "binance_ridge_logistic-l2-0.1"
+    assert candidate["calibration"]["retained"] is True
+    assert (
+        candidate["tune_condition_balanced_log_loss"] < candidate["raw_tune_log_loss"]
+    )
 
 
 def test_round16_pretest_artifact_has_no_test_or_trading_authority(
@@ -215,9 +321,7 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority(
         role="test",
         condition_count=1_440,
         seed=16017,
-        first_event_start_ms=int(
-            datetime(2026, 7, 1, tzinfo=UTC).timestamp() * 1_000
-        ),
+        first_event_start_ms=int(datetime(2026, 7, 1, tzinfo=UTC).timestamp() * 1_000),
     )
     evaluation = evaluate_round16_panel(test, artifact, contract)
 
@@ -246,11 +350,7 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority(
     support_screen = evaluation["feature_support_screen"]
     assert support_screen["bounds_partition"] == "train"
     assert support_screen["changes_predictive_metrics"] is False
-    assert (
-        support_screen["admitted_rows"]
-        + support_screen["abstained_rows"]
-        == 20_160
-    )
+    assert support_screen["admitted_rows"] + support_screen["abstained_rows"] == 20_160
     assert set(evaluation["gates"]) == {
         "minimum_terminal_conditions",
         "complete_utc_test_days",
@@ -264,10 +364,7 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority(
         "expected_calibration_error_at_most_contract_maximum",
     }
     assert evaluation["paired_utc_day_bootstrap"]["day_count"] == 15
-    assert (
-        evaluation["paired_utc_day_bootstrap"]["resampling_unit"]
-        == "whole_UTC_day"
-    )
+    assert evaluation["paired_utc_day_bootstrap"]["resampling_unit"] == "whole_UTC_day"
 
     moved_event_start = test.event_start_ms.copy()
     moved_decision_time = test.decision_time_ms.copy()
@@ -341,9 +438,7 @@ def test_round16_settlement_screen_is_label_blind_and_abstains_on_anomalies() ->
     disagreement_index = ROUND16_FEATURE_NAMES.index(
         ROUND16_SETTLEMENT_DISAGREEMENT_FEATURE
     )
-    matrix[1, quote_index] = (
-        float(controls["quote_upper_threshold"]) + 1.0
-    )
+    matrix[1, quote_index] = float(controls["quote_upper_threshold"]) + 1.0
     matrix[1, disagreement_index] = (
         float(controls["disagreement_absolute_threshold"]) + 1.0
     )
@@ -366,11 +461,9 @@ def test_round16_feature_support_is_train_only_and_fails_closed() -> None:
     outside = inside.copy()
     outside[0, :5] = 1e20
 
-    admitted, outside_count, extreme_count = (
-        round16_feature_support_admission(
-            np.concatenate((inside, outside), axis=0),
-            support,
-        )
+    admitted, outside_count, extreme_count = round16_feature_support_admission(
+        np.concatenate((inside, outside), axis=0),
+        support,
     )
 
     assert admitted.tolist() == [True, False]

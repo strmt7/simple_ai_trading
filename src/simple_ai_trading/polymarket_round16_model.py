@@ -189,9 +189,14 @@ def load_round16_model_panel(
         or any(role not in {"train", "tune", "test"} for role in selected_roles)
     ):
         raise ValueError("Round 16 panel roles are invalid")
-    if "test" in selected_roles and store.state not in {"targets_complete", "evaluated"}:
+    if "test" in selected_roles and store.state not in {
+        "targets_complete",
+        "evaluated",
+    }:
         raise ValueError("Round 16 test panel is unavailable before one-use access")
-    if any(role in {"train", "tune"} for role in selected_roles) and store.state not in {
+    if any(
+        role in {"train", "tune"} for role in selected_roles
+    ) and store.state not in {
         "development_targets_complete",
         "pretest_complete",
         "targets_complete",
@@ -235,6 +240,16 @@ def load_round16_model_panel(
     return panel
 
 
+def _candidate_selection_key(
+    candidate: Mapping[str, object],
+) -> tuple[float, str]:
+    loss = float(candidate["tune_condition_balanced_log_loss"])
+    candidate_id = str(candidate["candidate_id"])
+    if not math.isfinite(loss) or not candidate_id:
+        raise ValueError("Round 16 candidate selection metric is invalid")
+    return loss, candidate_id
+
+
 def _fit_ridge_candidate(
     train: Round16ModelPanel,
     tune: Round16ModelPanel,
@@ -265,33 +280,35 @@ def _fit_ridge_candidate(
         )
         prediction = expit(intercept + tune_standard @ coefficient)
         loss = _log_loss(tune.labels, prediction, tune_weights)
-        candidate = {
-            "family": family,
-            "kind": (
-                "control"
-                if family
-                in {
-                    "calendar_ridge_logistic",
-                    "digital_moneyness_ridge_logistic",
-                }
-                else "challenger"
-            ),
-            "candidate_id": f"{family}-l2-{format(l2, 'g')}",
-            "feature_indices": feature_indices.tolist(),
-            "model": {
-                "type": "ridge_logistic",
-                "l2": l2,
-                "mean": mean.tolist(),
-                "scale": scale.tolist(),
-                "intercept": intercept,
-                "coefficient": coefficient.tolist(),
+        candidate = _finalize_candidate(
+            {
+                "family": family,
+                "kind": (
+                    "control"
+                    if family
+                    in {
+                        "calendar_ridge_logistic",
+                        "digital_moneyness_ridge_logistic",
+                    }
+                    else "challenger"
+                ),
+                "candidate_id": f"{family}-l2-{format(l2, 'g')}",
+                "feature_indices": feature_indices.tolist(),
+                "model": {
+                    "type": "ridge_logistic",
+                    "l2": l2,
+                    "mean": mean.tolist(),
+                    "scale": scale.tolist(),
+                    "intercept": intercept,
+                    "coefficient": coefficient.tolist(),
+                },
+                "raw_tune_log_loss": loss,
             },
-            "raw_tune_log_loss": loss,
-        }
-        if best is None or (loss, str(candidate["candidate_id"])) < (
-            float(best["raw_tune_log_loss"]),
-            str(best["candidate_id"]),
-        ):
+            tune,
+        )
+        if best is None or _candidate_selection_key(
+            candidate
+        ) < _candidate_selection_key(best):
             best = candidate
     if best is None:
         raise RuntimeError("Round 16 ridge candidate selection failed")
@@ -384,31 +401,34 @@ def _fit_lightgbm_candidate(
         )
         if reload_difference > 1e-12:
             raise RuntimeError("Round 16 LightGBM serialization identity failed")
-        candidate = {
-            "family": "binance_shallow_lightgbm",
-            "kind": "challenger",
-            "candidate_id": str(frozen["candidate"]),
-            "feature_indices": list(range(len(ROUND16_FEATURE_NAMES))),
-            "model": {
-                "type": "lightgbm",
-                "parameters": dict(frozen),
-                "best_iteration": best_iteration,
-                "model_string": model_string,
-                "model_sha256": hashlib.sha256(
-                    model_string.encode("utf-8")
-                ).hexdigest(),
-                "reload_max_absolute_difference": reload_difference,
-                "lightgbm_version": str(lgb.__version__),
-                "backend_requested": compute_backend,
-                "backend_kind": backend_kind,
-                "backend_device": backend_device,
+        candidate = _finalize_candidate(
+            {
+                "family": "binance_shallow_lightgbm",
+                "kind": "challenger",
+                "candidate_id": str(frozen["candidate"]),
+                "feature_indices": list(range(len(ROUND16_FEATURE_NAMES))),
+                "model": {
+                    "type": "lightgbm",
+                    "parameters": dict(frozen),
+                    "best_iteration": best_iteration,
+                    "model_string": model_string,
+                    "model_sha256": hashlib.sha256(
+                        model_string.encode("utf-8")
+                    ).hexdigest(),
+                    "reload_max_absolute_difference": reload_difference,
+                    "lightgbm_version": str(lgb.__version__),
+                    "backend_requested": compute_backend,
+                    "backend_kind": backend_kind,
+                    "backend_device": backend_device,
+                },
+                "raw_tune_log_loss": loss,
             },
-            "raw_tune_log_loss": loss,
-        }
-        if best is None or (loss, str(candidate["candidate_id"])) < (
-            float(best["raw_tune_log_loss"]),
-            str(best["candidate_id"]),
-        ):
+            tune,
+        )
+        calibrated_loss = float(candidate["tune_condition_balanced_log_loss"])
+        if best is None or _candidate_selection_key(
+            candidate
+        ) < _candidate_selection_key(best):
             best = candidate
         if progress:
             progress(
@@ -416,7 +436,9 @@ def _fit_lightgbm_candidate(
                 {
                     "candidate": frozen["candidate"],
                     "best_iteration": best_iteration,
-                    "tune_log_loss": loss,
+                    "tune_log_loss": calibrated_loss,
+                    "raw_tune_log_loss": loss,
+                    "calibrated_tune_log_loss": calibrated_loss,
                 },
             )
     if best is None:
@@ -479,16 +501,29 @@ def _finalize_candidate(
 ) -> Mapping[str, object]:
     body = dict(candidate)
     raw = _probability(_raw_prediction(body, tune.features))
-    body["calibration"] = _fit_platt_calibration(
-        tune.labels,
-        raw,
-        _condition_weights(tune.condition_ids),
-    )
+    weights = _condition_weights(tune.condition_ids)
+    raw_loss = _log_loss(tune.labels, raw, weights)
+    if body.get("family") == "training_prevalence":
+        body["calibration"] = {
+            "type": "identity",
+            "retained": False,
+            "intercept": 0.0,
+            "slope": 1.0,
+            "tune_log_loss_before": raw_loss,
+            "tune_log_loss_after": raw_loss,
+            "reason": "preserve_train_only_prevalence_control",
+        }
+    else:
+        body["calibration"] = _fit_platt_calibration(
+            tune.labels,
+            raw,
+            weights,
+        )
     calibrated = predict_round16_candidate(body, tune.features)
     body["tune_condition_balanced_log_loss"] = _log_loss(
         tune.labels,
         calibrated,
-        _condition_weights(tune.condition_ids),
+        weights,
     )
     body["feature_names_sha256"] = _canonical_sha256(ROUND16_FEATURE_NAMES)
     body["dataset_sha256"] = tune.dataset_sha256
@@ -501,9 +536,7 @@ def freeze_round16_settlement_controls(
     """Freeze label-blind anomaly thresholds from the tune partition only."""
 
     tune.validate(expected_roles=("tune",))
-    quote_index = ROUND16_FEATURE_NAMES.index(
-        ROUND16_SETTLEMENT_QUOTE_FEATURE
-    )
+    quote_index = ROUND16_FEATURE_NAMES.index(ROUND16_SETTLEMENT_QUOTE_FEATURE)
     disagreement_index = ROUND16_FEATURE_NAMES.index(
         ROUND16_SETTLEMENT_DISAGREEMENT_FEATURE
     )
@@ -604,9 +637,7 @@ def freeze_round16_feature_support(
             "maximum_outside_training_range": (
                 ROUND16_SUPPORT_MAXIMUM_OUTSIDE_TRAINING_RANGE
             ),
-            "maximum_extreme_outliers": (
-                ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS
-            ),
+            "maximum_extreme_outliers": (ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS),
             "outer_iqr_multiplier": format(
                 ROUND16_SUPPORT_OUTER_IQR_MULTIPLIER,
                 ".17g",
@@ -632,8 +663,7 @@ def round16_feature_support_admission(
         matrix.ndim != 2
         or matrix.shape[1] != len(ROUND16_FEATURE_NAMES)
         or np.any(~np.isfinite(matrix))
-        or support.get("schema_version")
-        != "polymarket-round16-feature-support-v1"
+        or support.get("schema_version") != "polymarket-round16-feature-support-v1"
         or support.get("partition") != "train"
         or support.get("labels_used") is not False
         or support.get("feature_names_sha256")
@@ -648,9 +678,7 @@ def round16_feature_support_admission(
             "maximum_outside_training_range": (
                 ROUND16_SUPPORT_MAXIMUM_OUTSIDE_TRAINING_RANGE
             ),
-            "maximum_extreme_outliers": (
-                ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS
-            ),
+            "maximum_extreme_outliers": (ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS),
             "outer_iqr_multiplier": format(
                 ROUND16_SUPPORT_OUTER_IQR_MULTIPLIER,
                 ".17g",
@@ -694,9 +722,9 @@ def round16_feature_support_admission(
         axis=1,
         dtype=np.int64,
     )
-    admitted = (
-        outside <= ROUND16_SUPPORT_MAXIMUM_OUTSIDE_TRAINING_RANGE
-    ) & (extreme <= ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS)
+    admitted = (outside <= ROUND16_SUPPORT_MAXIMUM_OUTSIDE_TRAINING_RANGE) & (
+        extreme <= ROUND16_SUPPORT_MAXIMUM_EXTREME_OUTLIERS
+    )
     return np.asarray(admitted, dtype=np.bool_), outside, extreme
 
 
@@ -725,17 +753,12 @@ def round16_settlement_admission_mask(
         matrix.ndim != 2
         or matrix.shape[1] != len(ROUND16_FEATURE_NAMES)
         or np.any(~np.isfinite(matrix))
-        or any(
-            controls.get(key) != value
-            for key, value in expected.items()
-        )
+        or any(controls.get(key) != value for key, value in expected.items())
     ):
         raise ValueError("Round 16 settlement screen identity differs")
     try:
         quote_threshold = float(controls["quote_upper_threshold"])
-        disagreement_threshold = float(
-            controls["disagreement_absolute_threshold"]
-        )
+        disagreement_threshold = float(controls["disagreement_absolute_threshold"])
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("Round 16 settlement thresholds are malformed") from exc
     if (
@@ -744,18 +767,13 @@ def round16_settlement_admission_mask(
         or disagreement_threshold < 0.0
     ):
         raise ValueError("Round 16 settlement thresholds are invalid")
-    quote_index = ROUND16_FEATURE_NAMES.index(
-        ROUND16_SETTLEMENT_QUOTE_FEATURE
-    )
+    quote_index = ROUND16_FEATURE_NAMES.index(ROUND16_SETTLEMENT_QUOTE_FEATURE)
     disagreement_index = ROUND16_FEATURE_NAMES.index(
         ROUND16_SETTLEMENT_DISAGREEMENT_FEATURE
     )
     return np.asarray(
         (matrix[:, quote_index] <= quote_threshold)
-        & (
-            np.abs(matrix[:, disagreement_index])
-            <= disagreement_threshold
-        ),
+        & (np.abs(matrix[:, disagreement_index]) <= disagreement_threshold),
         dtype=np.bool_,
     )
 
@@ -774,24 +792,28 @@ def fit_round16_pretest_candidates(
     train_weights = _condition_weights(train.condition_ids)
     prevalence = float(np.average(train.labels, weights=train_weights))
     candidates: list[Mapping[str, object]] = [
-        {
-            "family": "training_prevalence",
-            "kind": "control",
-            "candidate_id": "round16-training-prevalence",
-            "feature_indices": [],
-            "model": {"type": "constant", "probability": prevalence},
-            "raw_tune_log_loss": _log_loss(
-                tune.labels,
-                np.full(len(tune.labels), prevalence, dtype=np.float64),
-                _condition_weights(tune.condition_ids),
-            ),
-        }
+        _finalize_candidate(
+            {
+                "family": "training_prevalence",
+                "kind": "control",
+                "candidate_id": "round16-training-prevalence",
+                "feature_indices": [],
+                "model": {"type": "constant", "probability": prevalence},
+                "raw_tune_log_loss": _log_loss(
+                    tune.labels,
+                    np.full(
+                        len(tune.labels),
+                        prevalence,
+                        dtype=np.float64,
+                    ),
+                    _condition_weights(tune.condition_ids),
+                ),
+            },
+            tune,
+        )
     ]
     calendar_indices = np.asarray(
-        [
-            ROUND16_FEATURE_NAMES.index(name)
-            for name in ROUND16_CALENDAR_FEATURE_NAMES
-        ],
+        [ROUND16_FEATURE_NAMES.index(name) for name in ROUND16_CALENDAR_FEATURE_NAMES],
         dtype=np.int64,
     )
     digital_moneyness_indices = np.asarray(
@@ -832,7 +854,7 @@ def fit_round16_pretest_candidates(
             ),
         )
     )
-    return tuple(_finalize_candidate(candidate, tune) for candidate in candidates)
+    return tuple(candidates)
 
 
 def build_round16_pretest_artifact(
@@ -851,7 +873,10 @@ def build_round16_pretest_artifact(
     if (
         train.dataset_sha256 != tune.dataset_sha256
         or not candidates
-        or any(candidate.get("dataset_sha256") != train.dataset_sha256 for candidate in candidates)
+        or any(
+            candidate.get("dataset_sha256") != train.dataset_sha256
+            for candidate in candidates
+        )
     ):
         raise ValueError("Round 16 pretest candidate binding differs")
     for candidate in candidates:
@@ -859,13 +884,13 @@ def build_round16_pretest_artifact(
         claimed = str(candidate_body.pop("artifact_sha256", ""))
         if len(claimed) != 64 or _canonical_sha256(candidate_body) != claimed:
             raise ValueError("Round 16 candidate artifact integrity failed")
-    controls = [candidate for candidate in candidates if candidate.get("kind") == "control"]
+    controls = [
+        candidate for candidate in candidates if candidate.get("kind") == "control"
+    ]
     challengers = [
         candidate for candidate in candidates if candidate.get("kind") == "challenger"
     ]
-    control_families = {
-        str(candidate.get("family") or "") for candidate in controls
-    }
+    control_families = {str(candidate.get("family") or "") for candidate in controls}
     challenger_families = {
         str(candidate.get("family") or "") for candidate in challengers
     }
@@ -902,16 +927,12 @@ def build_round16_pretest_artifact(
     source_root = Path(__file__).parent
     implementation = {
         "round16_model": _file_sha256(Path(__file__)),
-        "round16_dataset": _file_sha256(
-            source_root / "polymarket_round16_dataset.py"
-        ),
+        "round16_dataset": _file_sha256(source_root / "polymarket_round16_dataset.py"),
         "round16_identity": _file_sha256(source_root / "polymarket_round16.py"),
         "round16_evaluation": _file_sha256(
             source_root / "polymarket_round16_evaluation.py"
         ),
-        "lightgbm_backend": _file_sha256(
-            source_root / "lightgbm_backend.py"
-        ),
+        "lightgbm_backend": _file_sha256(source_root / "lightgbm_backend.py"),
         "shared_model_primitives": _file_sha256(
             source_root / "polymarket_historical_model.py"
         ),
@@ -943,9 +964,7 @@ def build_round16_pretest_artifact(
         "selected_best_challenger": str(best_challenger["candidate_id"]),
         "selection_metric": "condition_balanced_tune_log_loss",
         "feature_support": freeze_round16_feature_support(train),
-        "settlement_manipulation_controls": (
-            freeze_round16_settlement_controls(tune)
-        ),
+        "settlement_manipulation_controls": (freeze_round16_settlement_controls(tune)),
         "implementation_sha256": implementation,
         "test_targets_accessed": False,
         "paper_authority": False,
@@ -980,13 +999,17 @@ def record_round16_pretest_artifact(
     ):
         raise ValueError("Round 16 pretest artifact integrity differs")
     full_artifact = {**value, "artifact_sha256": claimed}
-    dataset = store.connect().execute(
-        """
+    dataset = (
+        store.connect()
+        .execute(
+            """
         SELECT dataset_sha256
         FROM feature.round16_dataset_manifest
         WHERE singleton
         """
-    ).fetchone()
+        )
+        .fetchone()
+    )
     test_count = int(
         store.connect()
         .execute(
