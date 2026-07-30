@@ -234,6 +234,9 @@ def _predictions(dataset: PolymarketRound17ConditionDataset):
             lower_up=Decimal("0.85"),
             upper_up=Decimal("0.95"),
             model_pretest_sha256="a" * 64,
+            calibration_sha256="c" * 64,
+            calibration_supported=True,
+            calibration_support_condition_count=100,
         ),
         build_round17_decision_probability(
             dataset.rows[1],
@@ -241,6 +244,9 @@ def _predictions(dataset: PolymarketRound17ConditionDataset):
             lower_up=Decimal("0.15"),
             upper_up=Decimal("0.25"),
             model_pretest_sha256="a" * 64,
+            calibration_sha256="c" * 64,
+            calibration_supported=True,
+            calibration_support_condition_count=100,
         ),
     )
 
@@ -306,6 +312,9 @@ def test_round17_decision_probability_binds_model_feature_and_envelope() -> None
         lower_up=Decimal("0.7"),
         upper_up=Decimal("0.9"),
         model_pretest_sha256="b" * 64,
+        calibration_sha256="c" * 64,
+        calibration_supported=True,
+        calibration_support_condition_count=100,
     )
 
     assert prediction.envelope.evidence_sha256 == prediction.prediction_sha256
