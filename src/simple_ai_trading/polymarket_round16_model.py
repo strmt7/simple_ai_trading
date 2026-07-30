@@ -32,9 +32,15 @@ from .polymarket_round16_dataset import (
 )
 
 
-ROUND16_PRETEST_SCHEMA_VERSION = "polymarket-round16-btc-15m-pretest-v1"
+ROUND16_PRETEST_SCHEMA_VERSION = "polymarket-round16-btc-15m-pretest-v2"
 ROUND16_MODEL_SEED = 16_015
 ROUND16_RIDGE_L2_GRID = (0.01, 0.1, 1.0, 10.0)
+ROUND16_DIGITAL_MONEYNESS_FEATURE_NAMES = (
+    "spot_event_to_date_log_moneyness",
+    "spot_volatility_scaled_digital_moneyness",
+    "perpetual_event_to_date_log_moneyness",
+    "perpetual_volatility_scaled_digital_moneyness",
+)
 ROUND16_SETTLEMENT_ANOMALY_QUANTILE = 0.995
 ROUND16_SETTLEMENT_QUOTE_FEATURE = (
     "terminal_spot_log_quote_rate_ratio_30s_to_prior_120s"
@@ -261,7 +267,15 @@ def _fit_ridge_candidate(
         loss = _log_loss(tune.labels, prediction, tune_weights)
         candidate = {
             "family": family,
-            "kind": "control" if family == "calendar_ridge_logistic" else "challenger",
+            "kind": (
+                "control"
+                if family
+                in {
+                    "calendar_ridge_logistic",
+                    "digital_moneyness_ridge_logistic",
+                }
+                else "challenger"
+            ),
             "candidate_id": f"{family}-l2-{format(l2, 'g')}",
             "feature_indices": feature_indices.tolist(),
             "model": {
@@ -780,6 +794,13 @@ def fit_round16_pretest_candidates(
         ],
         dtype=np.int64,
     )
+    digital_moneyness_indices = np.asarray(
+        [
+            ROUND16_FEATURE_NAMES.index(name)
+            for name in ROUND16_DIGITAL_MONEYNESS_FEATURE_NAMES
+        ],
+        dtype=np.int64,
+    )
     candidates.extend(
         (
             _fit_ridge_candidate(
@@ -787,6 +808,12 @@ def fit_round16_pretest_candidates(
                 tune,
                 family="calendar_ridge_logistic",
                 feature_indices=calendar_indices,
+            ),
+            _fit_ridge_candidate(
+                train,
+                tune,
+                family="digital_moneyness_ridge_logistic",
+                feature_indices=digital_moneyness_indices,
             ),
             _fit_ridge_candidate(
                 train,
@@ -836,7 +863,7 @@ def build_round16_pretest_artifact(
     challengers = [
         candidate for candidate in candidates if candidate.get("kind") == "challenger"
     ]
-    if len(controls) != 2 or len(challengers) != 2:
+    if len(controls) != 3 or len(challengers) != 2:
         raise ValueError("Round 16 pretest candidate families differ")
     best_control = min(
         controls,
@@ -997,6 +1024,7 @@ def record_round16_pretest_artifact(
 
 
 __all__ = [
+    "ROUND16_DIGITAL_MONEYNESS_FEATURE_NAMES",
     "ROUND16_MODEL_SEED",
     "ROUND16_PRETEST_SCHEMA_VERSION",
     "ROUND16_RIDGE_L2_GRID",

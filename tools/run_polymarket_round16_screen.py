@@ -45,7 +45,7 @@ DEFAULT_CONTRACT = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-016-btc-15m-horizon-comparison-v1.json"
+    / "round-016-btc-15m-horizon-comparison-v2.json"
 )
 DEFAULT_DATABASE = (
     ROOT / "data" / "polymarket-round16-btc-15m-screen-v1.duckdb"
@@ -56,7 +56,7 @@ DEFAULT_FLOW_DATABASE = (
 DEFAULT_ARTIFACT_DIRECTORY = ROOT / "data" / "round16-shadow-artifacts"
 _SOURCE_PATHS = (
     "docs/model-research/polymarket/"
-    "round-016-btc-15m-horizon-comparison-v1.json",
+    "round-016-btc-15m-horizon-comparison-v2.json",
     "src/simple_ai_trading/lightgbm_backend.py",
     "src/simple_ai_trading/polymarket_historical_model.py",
     "src/simple_ai_trading/polymarket_round16.py",

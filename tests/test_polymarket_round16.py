@@ -34,7 +34,7 @@ CONTRACT_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-016-btc-15m-horizon-comparison-v1.json"
+    / "round-016-btc-15m-horizon-comparison-v2.json"
 )
 START_MS = int(datetime(2026, 3, 20, 12, 0, tzinfo=UTC).timestamp() * 1_000)
 END_MS = START_MS + 900_000
@@ -144,7 +144,7 @@ def test_round16_contract_loader_is_exact_and_has_no_authority() -> None:
     contract = load_round16_historical_contract(CONTRACT_PATH)
 
     assert contract.contract_sha256 == (
-        "a9491716ee8d2d52c20e0b3172ad7ace3d7c3da72c80e3d06cafea1a65ef9903"
+        "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67"
     )
     assert contract.duration_ms == 900_000
     assert contract.historical.series_id == "10192"

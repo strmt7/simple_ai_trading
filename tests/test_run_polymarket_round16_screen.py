@@ -22,7 +22,7 @@ CONTRACT_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-016-btc-15m-horizon-comparison-v1.json"
+    / "round-016-btc-15m-horizon-comparison-v2.json"
 )
 
 
@@ -75,7 +75,7 @@ def test_round16_status_is_machine_readable_and_target_blind(
     assert lines == [
         {
             "contract_sha256": (
-                "ba4a0fdd8b24baaa82fd1b4c6085b1a4907e910f4ebcefac00f2e92fb95d1996"
+                "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67"
             ),
             "database_bytes": lines[0]["database_bytes"],
             "development_target_count": 0,

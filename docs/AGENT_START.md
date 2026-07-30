@@ -304,8 +304,10 @@ extends the established parser with independently registered commands.
   facts without duplicating them, but has separate Polymarket identities,
   targets, pretest, and holdout. No eligible Round 16 identity or terminal
   target was accessed before contract
-  `a9491716ee8d2d52c20e0b3172ad7ace3d7c3da72c80e3d06cafea1a65ef9903`
-  was frozen. It binds label-blind tune-only settlement-anomaly thresholds
+  `6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67`
+  was frozen. This v2 contract preserves v1 as an immutable predecessor and
+  adds a moneyness-only financial control before any target access. It binds
+  label-blind tune-only settlement-anomaly thresholds
   and train-only feature-support abstention before held-out access. Neither
   horizon may be pooled, selected, or promoted without its own prediction and
   prospective after-cost gates.

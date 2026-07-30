@@ -475,7 +475,7 @@ def load_verified_round16_shadow_predictor(
     ):
         raise ValueError("Round 16 predictive gates are not satisfied")
     candidates = pretest.get("candidates")
-    if not isinstance(candidates, list) or len(candidates) != 4:
+    if not isinstance(candidates, list) or len(candidates) != 5:
         raise ValueError("Round 16 candidates are malformed")
     candidate_ids: list[str] = []
     for value in candidates:
@@ -496,7 +496,7 @@ def load_verified_round16_shadow_predictor(
         ):
             raise ValueError("Round 16 candidate differs")
         candidate_ids.append(candidate_id)
-    if len(set(candidate_ids)) != 4:
+    if len(set(candidate_ids)) != 5:
         raise ValueError("Round 16 candidate identities differ")
     matches = [
         candidate
