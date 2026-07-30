@@ -1,42 +1,42 @@
 {
   "schema_version": "polymarket-btc-flow-history-ingestion-status-v1",
-  "generated_at_utc": "2026-07-30T05:01:16Z",
+  "generated_at_utc": "2026-07-30T05:13:57Z",
   "inventory_path": "docs/model-research/polymarket/round-015-btc-5m-full-history-inventory-v1.json",
   "inventory_sha256": "f68c0dc7709c98f342d04bacbd1b120c87ee07712ab0aeedbb3e1915cb8e77e2",
   "local_database_path": "data/polymarket-btc-flow-history-v1.duckdb",
   "local_database_tracked": false,
   "database_bytes": 1101803520,
   "expected_days": 154,
-  "completed_days": 114,
-  "remaining_days": 40,
-  "flow_rows": 9849600,
-  "compressed_source_bytes": 4106626511,
+  "completed_days": 116,
+  "remaining_days": 38,
+  "flow_rows": 10022400,
+  "compressed_source_bytes": 4200228603,
   "first_completed_day": "2026-02-12",
-  "last_completed_day": "2026-06-05",
+  "last_completed_day": "2026-06-07",
   "raw_archive_retained": false,
   "archive_cache_files": 0,
   "status_probe_changed_database_mtime": false,
   "latest_batch": [
-    {
-      "period": "2026-06-03",
-      "source_count": 2,
-      "flow_rows": 86400,
-      "compressed_bytes": 58768250,
-      "combined_flow_sha256": "c692e79243353db36bbef51d9762fe58b737862727f9e6b724e53e1f0aac7e43"
-    },
-    {
-      "period": "2026-06-04",
-      "source_count": 2,
-      "flow_rows": 86400,
-      "compressed_bytes": 92838884,
-      "combined_flow_sha256": "91a200dddf45873f74110f7e372d59bdb46054ac5df43a527a582d38cf7df319"
-    },
     {
       "period": "2026-06-05",
       "source_count": 2,
       "flow_rows": 86400,
       "compressed_bytes": 113345553,
       "combined_flow_sha256": "bfae0cd86268411789206f3145a9958030c1d885603aa3bba41536b3c615b617"
+    },
+    {
+      "period": "2026-06-06",
+      "source_count": 2,
+      "flow_rows": 86400,
+      "compressed_bytes": 47368484,
+      "combined_flow_sha256": "78b4707883ba195401bb852aad5b45bbd8f8c8907da43e5c3a2df1d02a2c4367"
+    },
+    {
+      "period": "2026-06-07",
+      "source_count": 2,
+      "flow_rows": 86400,
+      "compressed_bytes": 46233608,
+      "combined_flow_sha256": "bf23f555e3d64b0195ae1aeea6f850bcadccf76a133a226287755f651669e428"
     }
   ],
   "stderr_bytes": 0,
@@ -46,5 +46,5 @@
   "profitability_claim": false,
   "paper_authority": false,
   "live_authority": false,
-  "artifact_sha256": "3f6764b703c5d161ba0bc4e0804a93de3e76e65e0602e260bcb8050301790977"
+  "artifact_sha256": "d355db52cf64301c1e3014881cdbf177526d8cf21d6af0601a563aae37118b65"
 }
