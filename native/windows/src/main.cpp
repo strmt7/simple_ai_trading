@@ -2145,8 +2145,8 @@ class MainWindow {
         }
         if (!root.empty()) {
             std::array<std::filesystem::path, 2> candidates{
-                root / L".venv311" / L"Scripts" / L"python.exe",
                 root / L".venv" / L"Scripts" / L"python.exe",
+                root / L".venv311" / L"Scripts" / L"python.exe",
             };
             for (const auto& candidate : candidates) {
                 if (std::filesystem::exists(candidate)) {

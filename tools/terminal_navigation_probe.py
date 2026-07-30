@@ -335,10 +335,11 @@ def probe(argv: list[str], cwd: Path, *, rows: int = 36, cols: int = 120) -> Non
 
 def _default_command(repo: Path) -> list[str]:
     if os.name == "nt":
-        exe = repo / ".venv311" / "Scripts" / "simple-ai-trading.exe"
-        if exe.exists():
-            return [str(exe), "menu"]
-    return [sys.executable, "-m", "simple_ai_trading.cli", "menu"]
+        for environment in (".venv", ".venv311"):
+            exe = repo / environment / "Scripts" / "simple-ai-trading.exe"
+            if exe.exists():
+                return [str(exe), "menu"]
+    return [sys.executable, "-m", "simple_ai_trading.entrypoint", "menu"]
 
 
 def main(argv: list[str] | None = None) -> int:
