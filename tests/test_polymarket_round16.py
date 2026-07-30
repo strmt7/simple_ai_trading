@@ -144,7 +144,7 @@ def test_round16_contract_loader_is_exact_and_has_no_authority() -> None:
     contract = load_round16_historical_contract(CONTRACT_PATH)
 
     assert contract.contract_sha256 == (
-        "fa119c3f110c4a13345341ab26cb87010788cb2e92b85a23647714d3aede163d"
+        "a9491716ee8d2d52c20e0b3172ad7ace3d7c3da72c80e3d06cafea1a65ef9903"
     )
     assert contract.duration_ms == 900_000
     assert contract.historical.series_id == "10192"
@@ -248,6 +248,14 @@ def test_round16_feature_row_is_causal_and_finite() -> None:
     assert np.all(np.isfinite(first.feature_values))
     np.testing.assert_array_equal(first.feature_values, second.feature_values)
     assert first.row_sha256 == second.row_sha256
+    spot_moneyness = ROUND16_FEATURE_NAMES.index(
+        "spot_event_to_date_log_moneyness"
+    )
+    spot_scaled_moneyness = ROUND16_FEATURE_NAMES.index(
+        "spot_volatility_scaled_digital_moneyness"
+    )
+    assert first.feature_values[spot_moneyness] == pytest.approx(60e-7)
+    assert first.feature_values[spot_scaled_moneyness] > 0
 
 
 def test_round16_terminal_controls_use_only_observed_flow() -> None:

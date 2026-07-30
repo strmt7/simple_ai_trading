@@ -73,6 +73,13 @@ def round16_feature_names() -> tuple[str, ...]:
                 )
             )
         names.append(f"{market}_last_trade_age_seconds")
+    for market in _MARKETS:
+        names.extend(
+            (
+                f"{market}_event_to_date_log_moneyness",
+                f"{market}_volatility_scaled_digital_moneyness",
+            )
+        )
     names.append("spot_perpetual_basis_bps")
     names.extend(
         f"spot_perpetual_basis_change_{horizon}s_bps"
@@ -150,6 +157,34 @@ def _market_vector(
             )
         )
     output.append(float(values[f"{market}_last_trade_age_seconds"][end_index]))
+    return output
+
+
+def _event_moneyness_vector(
+    values: Mapping[str, np.ndarray],
+    *,
+    event_index: int,
+    end_index: int,
+    remaining_seconds: float,
+) -> list[float]:
+    if event_index < 1 or remaining_seconds <= 0:
+        raise ValueError("Round 16 event moneyness lacks a causal opening")
+    output: list[float] = []
+    for market in _MARKETS:
+        close = values[f"{market}_close"]
+        log_return = values[f"{market}_log_return"]
+        log_moneyness = math.log(close[end_index] / close[event_index - 1])
+        trailing = log_return[end_index - 119 : end_index + 1]
+        variance_rate = float(np.mean(np.square(trailing)))
+        forecast_standard_deviation = math.sqrt(
+            max(variance_rate * remaining_seconds, 1e-16)
+        )
+        output.extend(
+            (
+                log_moneyness,
+                log_moneyness / forecast_standard_deviation,
+            )
+        )
     return output
 
 
@@ -231,6 +266,7 @@ def build_round16_feature_vector(
     end_index = int(event_index + offset - 1)
     if (
         start_remainder != 0
+        or event_index < 1
         or end_index < 149
         or end_index >= len(flow["second_ms"])
         or int(flow["second_ms"][end_index]) + 1_000 > decision_time
@@ -244,6 +280,15 @@ def build_round16_feature_vector(
     vector: list[float] = []
     for name in _MARKETS:
         vector.extend(_market_vector(values, market=name, end_index=end_index))
+    remaining_seconds = (event_end - decision_time) / 1_000.0
+    vector.extend(
+        _event_moneyness_vector(
+            values,
+            event_index=int(event_index),
+            end_index=end_index,
+            remaining_seconds=remaining_seconds,
+        )
+    )
     spot = values["spot_close"]
     perpetual = values["perpetual_close"]
     basis = np.log(perpetual / spot) * 10_000.0

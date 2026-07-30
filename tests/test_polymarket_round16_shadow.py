@@ -82,9 +82,9 @@ def _flow_and_history() -> tuple[
     PolymarketBtcFlowBuffer,
     dict[str, np.ndarray],
 ]:
-    flow = PolymarketBtcFlowBuffer(retention_seconds=300)
-    day_start_ms = EVENT_START_MS - 300_000
-    row_count = 600
+    flow = PolymarketBtcFlowBuffer(retention_seconds=1_200)
+    day_start_ms = EVENT_START_MS - 1_000_000
+    row_count = 2_000
     history: dict[str, np.ndarray] = {
         "second_ms": day_start_ms
         + np.arange(row_count, dtype=np.int64) * 1_000,
@@ -109,7 +109,7 @@ def _flow_and_history() -> tuple[
                 row_count,
                 dtype=np.float64,
             )
-    for index, second in enumerate(range(-151, 61), start=1):
+    for index, second in enumerate(range(-901, 61), start=1):
         for market, offset in (("spot", 0), ("perpetual", 10_000)):
             observation = _observation(
                 market,
@@ -169,7 +169,7 @@ def test_round16_live_vector_is_bit_identical_to_historical_builder() -> None:
             identity_payload_sha256="2" * 64,
             role="test",
         ),
-        flow_start_ms=EVENT_START_MS - 300_000,
+        flow_start_ms=EVENT_START_MS - 1_000_000,
         decision_offset_seconds=60,
         flow=history,
     ).feature_values
@@ -444,4 +444,4 @@ def test_round16_shadow_scorer_abstains_without_execution_authority() -> None:
     assert len(decision.input_sha256) == 64
     assert decision.trading_authority is False
     assert decision.grants_execution_authority is False
-    assert width == 116
+    assert width == 120
