@@ -159,6 +159,9 @@ def test_parser_rejects_wrong_or_unsafe_payloads(
 def test_provider_abstains_until_both_public_feeds_are_fresh() -> None:
     provider = BinanceBtcPublicSignalProvider()
 
+    assert provider.trading_authority is False
+    assert provider.credentials_used is False
+    assert provider.execution_connected is False
     missing = provider.evaluate(
         proposal=_proposal(),
         observed_at_ms=NOW_MS,

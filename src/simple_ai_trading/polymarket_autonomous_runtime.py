@@ -43,6 +43,10 @@ class PolymarketAutonomousDecisionProvider(Protocol):
 class PolymarketExternalSignalProvider(Protocol):
     """Optional read-only evidence; implementations cannot access order methods."""
 
+    trading_authority: bool
+    credentials_used: bool
+    execution_connected: bool
+
     def evaluate(
         self,
         *,
@@ -185,6 +189,17 @@ class PolymarketAutonomousSupervisor:
                 )
             if not callable(getattr(durable_control_service, "run", None)):
                 raise TypeError("durable control service must expose an async run loop")
+        if external_signal_provider is not None and any(
+            getattr(external_signal_provider, name, None) is not False
+            for name in (
+                "trading_authority",
+                "credentials_used",
+                "execution_connected",
+            )
+        ):
+            raise PolymarketLiveBlocked(
+                "external Polymarket signal provider must be public and read-only"
+            )
         self.public_client = public_client
         self.coordinator = coordinator
         self.ledger = ledger

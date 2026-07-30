@@ -110,6 +110,10 @@ class BinanceBtcSignalSnapshot:
 class BinanceBtcPublicSignalProvider:
     """Maintain two public BTC feeds and expose a fail-closed advisory decision."""
 
+    trading_authority = False
+    credentials_used = False
+    execution_connected = False
+
     def __init__(
         self,
         *,
