@@ -78,7 +78,10 @@ def _observation(
     )
 
 
-def _flow_and_history() -> tuple[
+def _flow_and_history(
+    *,
+    last_second: int = 60,
+) -> tuple[
     PolymarketBtcFlowBuffer,
     dict[str, np.ndarray],
 ]:
@@ -109,7 +112,7 @@ def _flow_and_history() -> tuple[
                 row_count,
                 dtype=np.float64,
             )
-    for index, second in enumerate(range(-901, 61), start=1):
+    for index, second in enumerate(range(-901, last_second + 1), start=1):
         for market, offset in (("spot", 0), ("perpetual", 10_000)):
             observation = _observation(
                 market,
@@ -176,6 +179,34 @@ def test_round16_live_vector_is_bit_identical_to_historical_builder() -> None:
 
     assert live.dtype == np.float32
     assert np.array_equal(live, historical)
+
+
+def test_round16_latest_decision_preserves_opening_price_parity() -> None:
+    flow, history = _flow_and_history(last_second=840)
+    decision_time_ms = EVENT_START_MS + 840_000
+    live = PolymarketRound16LiveFeatureBuilder(flow).feature_vector(
+        event_start_ms=EVENT_START_MS,
+        decision_time_ms=decision_time_ms,
+        observed_at_ms=decision_time_ms + 100,
+    )
+    historical = build_round16_feature_row(
+        SimpleNamespace(
+            event_start_ms=EVENT_START_MS,
+            end_ms=EVENT_START_MS + 900_000,
+            condition_id="0x" + "1" * 64,
+            identity_payload_sha256="2" * 64,
+            role="test",
+        ),
+        flow_start_ms=EVENT_START_MS - 1_000_000,
+        decision_offset_seconds=840,
+        flow=history,
+    ).feature_values
+
+    assert np.array_equal(live, historical)
+    spot_moneyness = ROUND16_FEATURE_NAMES.index(
+        "spot_event_to_date_log_moneyness"
+    )
+    assert live[spot_moneyness] > 0
 
 
 def test_round16_live_builder_fails_closed_after_feed_epoch_reset() -> None:
