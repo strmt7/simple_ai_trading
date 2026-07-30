@@ -1,0 +1,44 @@
+{
+  "accepted_predictive_edge": false,
+  "artifact_sha256": "ed25457fa530260be852ccacf8a426e4d7dbbbf748c2898ecffe9c9401a0dc1a",
+  "contract_sha256": "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67",
+  "dataset_sha256": "4bd4ebbbffeffa3443211919ae2ffd86fff732d2f5b51f84ddaa4df5738dca82",
+  "evaluation_artifact_sha256": "0112fa15df87f9de4e2f2d09133a25c688aba247856c9e5a38844d8decda5287",
+  "outputs": {
+    "round16-calibration-bins.csv": {
+      "bytes": 1814,
+      "sha256": "292affc3ddf8f13cb3ba63d9b933a69921c0ab3511403efae543f05d9e48b332"
+    },
+    "round16-calibration.png": {
+      "bytes": 96082,
+      "sha256": "63c8d9f0e52ae6265a8eb366ad4647d0b3fabf7d35e354f59bc59f883df2da88"
+    },
+    "round16-candidate-metrics.csv": {
+      "bytes": 876,
+      "sha256": "a2e3959ebae92ed67b4209c2dce7ea6031d6392ea3c26ca2344fb7b56f6cca7a"
+    },
+    "round16-daily-logloss-uplift.png": {
+      "bytes": 103494,
+      "sha256": "a3f65f64303521719d54f6c1e89ef5fc80b559ff9abba45aa3eaba5904e32a50"
+    },
+    "round16-daily-logloss.csv": {
+      "bytes": 1276,
+      "sha256": "4a7e2cbfca8bcc1d145e49377531ae57c23f303a65b1751412318335f2d135fd"
+    },
+    "round16-heldout-metrics.png": {
+      "bytes": 149291,
+      "sha256": "bdf43b9c38471ac9b60e4bb5063f2b3373feb923ac708e679ed47164a254f61b"
+    },
+    "round16-resolution-audit.json": {
+      "bytes": 666,
+      "sha256": "3615043e4c8ddde461fba0c7bf49023fc15858b8c30e605470bcb915ca736f95"
+    }
+  },
+  "pretest_artifact_sha256": "f86208d7cb9de132f966d9179906c2b0637d3a9979a16203dc4f51fa669cdda9",
+  "schema_version": "polymarket-round16-evaluation-report-manifest-v1",
+  "source_files": {
+    "docs/model-research/polymarket/evidence/round-016-evaluation-v2/round16-evaluation.json": "6ed81547286bf63be3402a02750c8f3225c7621055f23592740ad31e94c12e7a",
+    "docs/model-research/polymarket/evidence/round-016-evaluation-v2/round16-shadow-pins.json": "7379c53921cec22af7896cac739879f6c358fea7feb8a782ed3edaf2e0bf53d8",
+    "docs/model-research/polymarket/evidence/round-016-pretest-v2.json": "b08b3558a19beadeb4aa920552ac63d9b25a85b310a14352d12d08e1a4a9709d"
+  }
+}
