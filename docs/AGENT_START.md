@@ -297,6 +297,10 @@ extends the established parser with independently registered commands.
   never use the failed one-hour shadow to choose an offset. Round 15 is
   predictive research only and cannot establish execution, fill, latency, PnL,
   or live authority.
+  Keep the actual fixed-resolution binary settlement label; do not substitute
+  a continuous-market triple-barrier target. A 2026 nine-fold walk-forward
+  BTC five-minute study found that relabeling systematically degraded the
+  settlement target rather than improving it.
   `tools/ingest_polymarket_btc_history.py run` atomically republishes the
   self-hashed, non-authoritative ingestion status after closing the database;
   `publish-status` reconstructs it read-only after an interrupted publication.
