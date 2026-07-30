@@ -1,0 +1,87 @@
+{
+  "binance_credentials_used": false,
+  "binance_execution_connected": false,
+  "capture_manifest_sha256": "fcd901a52c50b16f638e700ba5a1c235b79e2afe0f81e4235d7b7d872b2cfe9d",
+  "database_bytes": 84946944,
+  "decoded_clob_receipts": 955092,
+  "duration_seconds": 1200.255,
+  "emitted_union_events": 478260,
+  "ended_at_ms": 1785452840115,
+  "gates": {
+    "both_clob_lanes_connected": true,
+    "both_clob_lanes_observed": true,
+    "chainlink_rtds_observed": true,
+    "duration_complete": true,
+    "exact_clob_receipt_count_reconciled": true,
+    "joint_unhealthy_within_limit": true,
+    "minimum_lane_coverage": true,
+    "minimum_shared_fraction": true,
+    "multiple_market_conditions_observed": true,
+    "terminal_status_usable": true,
+    "union_count_reconciled": true,
+    "union_pending_bound_preserved": true,
+    "zero_integrity_errors": true,
+    "zero_recorder_errors": true
+  },
+  "integrity_errors": [],
+  "joint_unhealthy_ms": 0,
+  "lane_connection_counts": {
+    "clob-a": 1,
+    "clob-b": 2
+  },
+  "lane_gap_counts": {
+    "clob-a": 0,
+    "clob-b": 1
+  },
+  "live_trading_authority": false,
+  "market_condition_count": 6,
+  "model_data_eligible": false,
+  "paper_trading_authority": false,
+  "parent_round19_result_sha256": "61a7a6fe2cebd3ddc8ba6d4f59c52d6c19b91fe895353fda1bb066e86ecbc5be",
+  "profitability_claim": false,
+  "qualified": true,
+  "recorder_errors": [],
+  "recorder_report_sha256": "4960a71860af9222f6d29391e40e2ee5ac17a3cb5dcae0599ec8181ab1ecec01",
+  "recorder_status": "degraded",
+  "reported_clob_receipts": 955092,
+  "result_sha256": "5260a5b6c11e8acfb1343d25c593a1af21d3a239e6cf81d1430296f4a63ee05d",
+  "round20_contract_sha256": "90e837edc9bb8071f966f9d27335983e24c6060c4ba0d36fc3d2060913c421ad",
+  "rtds_chainlink_receipts": 1162,
+  "run_id": "24b63badff2c48f3958f538a2532fd36",
+  "schema_version": "polymarket-round20-capture-qualification-v1",
+  "started_at_ms": 1785451639860,
+  "union_audit": {
+    "audit_sha256": "6b613a06cfd0529fa5950159babc5b314c0b77a3a622d8390eceaf72b2ff8f5d",
+    "event_type_counts": {
+      "best_bid_ask": 16086,
+      "book": 12764,
+      "last_trade_price": 6187,
+      "market_resolved": 3,
+      "new_market": 1276,
+      "price_change": 441932,
+      "tick_size_change": 12
+    },
+    "lane_coverage_fraction": {
+      "clob-a": 0.9999832726968595,
+      "clob-b": 0.9965688119432945
+    },
+    "lane_event_counts": {
+      "clob-a": 478252,
+      "clob-b": 476619
+    },
+    "maximum_pending_events_observed": 1661,
+    "pairing_window_ms": 2000,
+    "receipt_difference_ms": {
+      "maximum": 485.0,
+      "median": 0.0,
+      "p95": 47.0
+    },
+    "schema_version": "polymarket-redundant-union-audit-v1",
+    "shared_event_count": 476611,
+    "shared_fraction": 0.9965520846401539,
+    "single_lane_event_count": 1649,
+    "terminal_pending_event_count": 0,
+    "union_event_count": 478260
+  },
+  "union_event_chain_sha256": "d90b6735c2464abeb91758525b6f9f601b6130be9826e5ddd07dc10e3f4f4ca7"
+}
