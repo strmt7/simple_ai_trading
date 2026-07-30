@@ -289,6 +289,34 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority(
     assert incomplete_evaluation["test"]["unexpected_utc_days"] == ["2026-06-30"]
 
 
+def test_round16_pretest_rejects_family_substitution() -> None:
+    contract = load_round16_historical_contract(CONTRACT_PATH)
+    train = _panel(role="train", condition_count=80, seed=16015)
+    tune = _panel(role="tune", condition_count=40, seed=16016)
+    candidates = list(
+        fit_round16_pretest_candidates(
+            train,
+            tune,
+            compute_backend="cpu",
+        )
+    )
+    substituted = dict(candidates[0])
+    substituted["family"] = "unregistered_control"
+    substituted_body = dict(substituted)
+    substituted_body.pop("artifact_sha256")
+    substituted["artifact_sha256"] = _canonical_sha256(substituted_body)
+    candidates[0] = substituted
+
+    with pytest.raises(ValueError, match="candidate families differ"):
+        build_round16_pretest_artifact(
+            train,
+            tune,
+            candidates,
+            contract=contract,
+            source_commit="b" * 40,
+        )
+
+
 def test_round16_panel_requires_fourteen_decisions_per_condition() -> None:
     panel = _panel(role="train", condition_count=4, seed=16015)
     invalid = Round16ModelPanel(
