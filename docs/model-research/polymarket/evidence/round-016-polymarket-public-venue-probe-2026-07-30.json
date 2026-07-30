@@ -1,0 +1,62 @@
+{
+  "schema_version": "polymarket-round16-public-venue-probe-v1",
+  "observed_at_ms": 1785381909264,
+  "source_commit": "1a0b021e266cff58afd735120d53546fcbeeb016",
+  "official_sources": {
+    "fees": "https://docs.polymarket.com/trading/fees",
+    "market_websocket": "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "orderbook": "https://docs.polymarket.com/trading/orderbook"
+  },
+  "request_latency_ms": {
+    "discover_fifteen_minute": 241.753,
+    "protocol_version": 249.864,
+    "clob_market_info": 41.788,
+    "up_order_book": 50.505,
+    "down_order_book": 51.782
+  },
+  "market": {
+    "asset": "BTC",
+    "horizon_minutes": 15,
+    "condition_id": "0x39505036fdd2937d9acb163edcfa202260c2098e4c598f5d9574792fcba66639",
+    "event_start_ms": 1785381300000,
+    "event_end_ms": 1785382200000,
+    "protocol_version": 2,
+    "fees_enabled": true,
+    "fee_rate": "0.07",
+    "fee_exponent": 1,
+    "taker_only": true,
+    "taker_order_delay_enabled": true,
+    "general_order_delay_seconds": 0,
+    "minimum_order_age_seconds": 0
+  },
+  "books": [
+    {
+      "outcome": "Up",
+      "bid_levels": 73,
+      "ask_levels": 26,
+      "best_bid": "0.73",
+      "best_ask": "0.74",
+      "source_time_ms": 1785381909196
+    },
+    {
+      "outcome": "Down",
+      "bid_levels": 26,
+      "ask_levels": 73,
+      "best_bid": "0.26",
+      "best_ask": "0.27",
+      "source_time_ms": 1785381909305
+    }
+  ],
+  "interpretation": {
+    "public_rest_role": "discovery_reconciliation_and_fallback",
+    "low_latency_primary_role": "public_clob_market_websocket",
+    "authenticated_user_channel_required_for_order_and_fill_lifecycle": true
+  },
+  "credentials_used": false,
+  "orders_submitted": false,
+  "model_quality_claim": false,
+  "profitability_or_edge_claim": false,
+  "paper_authority": false,
+  "live_authority": false,
+  "artifact_sha256": "8da18bdc9463b88e3a3eb3d0d6d07e118160ba53f46fad1e5a8b9624f3ad276d"
+}
