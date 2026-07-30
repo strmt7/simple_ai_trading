@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import hashlib
 import json
 from pathlib import Path
 
@@ -13,6 +14,16 @@ from simple_ai_trading.binance_archive import (
 from simple_ai_trading.polymarket_btc_history import (
     build_polymarket_btc_history_inventory,
     load_polymarket_btc_history_contract,
+)
+
+
+ROOT = Path(__file__).parents[1]
+INGESTION_STATUS = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-015-btc-5m-history-ingestion-status.json"
 )
 
 
@@ -88,3 +99,29 @@ def test_btc_history_inventory_rejects_any_missing_official_day() -> None:
             last_day="2026-02-13",
             observed_at_utc="2026-02-14T00:00:00Z",
         )
+
+
+def test_tracked_ingestion_status_is_integral_and_non_authoritative() -> None:
+    status = json.loads(INGESTION_STATUS.read_text(encoding="utf-8"))
+    claimed = status.pop("artifact_sha256")
+    canonical = json.dumps(
+        status,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+
+    assert hashlib.sha256(canonical).hexdigest() == claimed
+    assert status["completed_days"] + status["remaining_days"] == status[
+        "expected_days"
+    ]
+    assert status["flow_rows"] == status["completed_days"] * 86_400
+    assert status["archive_cache_files"] == 0
+    assert status["raw_archive_retained"] is False
+    assert status["dataset_frozen"] is False
+    assert status["model_training_started"] is False
+    assert status["test_targets_accessed"] is False
+    assert status["profitability_claim"] is False
+    assert status["paper_authority"] is False
+    assert status["live_authority"] is False
