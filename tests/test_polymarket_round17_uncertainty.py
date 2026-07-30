@@ -17,6 +17,7 @@ from simple_ai_trading.polymarket_round17_model import (
     fit_round17_development_pretest,
 )
 from simple_ai_trading.polymarket_round17_uncertainty import (
+    Round17ProbabilityCalibrationSession,
     apply_round17_probability_calibration,
     apply_round17_probability_calibration_rows,
     fit_round17_probability_calibration,
@@ -235,6 +236,49 @@ def test_round17_calibration_abstains_outside_supported_probability_regions(
     assert unsupported.support_condition_count == 0
     assert unsupported.envelope.lower_up == Decimal("0.000001")
     assert unsupported.envelope.upper_up == Decimal("0.999999")
+
+
+def test_round17_calibration_session_reuses_frozen_parents(
+    round17_calibration: tuple[
+        dict[str, object],
+        Round17DevelopmentPanel,
+        dict[str, object],
+    ],
+) -> None:
+    pretest, uncertainty_panel, artifact = round17_calibration
+    event_start = int(np.max(uncertainty_panel.event_start_ms)) + 3_900_000
+    first = _row(
+        _feature_values(1.0, 0),
+        event_start_ms=event_start,
+        identity="session-first",
+    )
+    second = _row(
+        _feature_values(0.0, 1),
+        event_start_ms=event_start + 300_000,
+        identity="session-second",
+    )
+    session = Round17ProbabilityCalibrationSession(
+        artifact,
+        pretest,
+        dataset_sha256=DATASET_SHA256,
+    )
+
+    first_result = session.apply_rows((first,), event_start_ms=event_start)
+    second_result = session.apply_rows(
+        (second,),
+        event_start_ms=event_start + 300_000,
+    )
+
+    assert first_result == apply_round17_probability_calibration_rows(
+        artifact,
+        pretest,
+        (first,),
+        dataset_sha256=DATASET_SHA256,
+        event_start_ms=event_start,
+    )
+    assert second_result[0].condition_id == second.condition_id
+    assert session.grid.flags.writeable is False
+    assert session.support_values.flags.writeable is False
 
 
 def test_round17_probability_calibration_rejects_rehashed_authority_drift(
