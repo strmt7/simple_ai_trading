@@ -22,6 +22,7 @@ from simple_ai_trading.polymarket_round17_evaluation import (
     build_round17_one_use_result,
     evaluate_round17_endpoint_holdout,
     run_round17_one_use_evaluation,
+    validate_round17_one_use_result,
 )
 from simple_ai_trading.polymarket_round17_campaign_operator import (
     Round17CampaignOperatorConfig,
@@ -145,6 +146,107 @@ def _development_result() -> dict[str, object]:
     }
 
 
+def _terminal_result(
+    claim: Round17TestAccessClaim,
+    *,
+    test_access_sha256: str = "d" * 64,
+    endpoint_accepted: bool = True,
+    economic_accepted: bool = False,
+) -> dict[str, object]:
+    day_start_ms = 1_800_057_600_000 // 86_400_000 * 86_400_000
+    metric_row = {
+        "condition_balanced_log_loss": 0.4,
+        "condition_balanced_brier": 0.2,
+        "final_condition_balanced_accuracy": 0.7,
+    }
+    endpoint: dict[str, object] = {
+        "claim_sha256": claim.claim_sha256,
+        "test_access_sha256": test_access_sha256,
+        "test_target_manifest_sha256": "e" * 64,
+        "condition_count": 1,
+        "calendar_day_count": 1,
+        "control_ids": list(POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS),
+        "daily_metrics": [
+            {
+                "day_start_ms": day_start_ms,
+                "condition_count": 1,
+                "candidate": dict(metric_row),
+                "controls": {
+                    control_id: dict(metric_row)
+                    for control_id in POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS
+                },
+            }
+        ],
+        "gates": {"predictive_gate": endpoint_accepted},
+        "endpoint_accepted": endpoint_accepted,
+    }
+    endpoint["endpoint_holdout_sha256"] = _sha256(endpoint)
+    scenario_metric = {
+        "condition_count": 1,
+        "calendar_day_count": 1,
+        "risk_capital_quote": "10000",
+        "net_pnl_quote": "1",
+        "daily_pnl_series": [
+            {
+                "day_start_ms": day_start_ms,
+                "net_pnl_quote": "1",
+                "ending_equity_quote": "10001",
+            }
+        ],
+    }
+    economic_holdout: dict[str, object] = {
+        "test_access_sha256": test_access_sha256,
+        "condition_count": 1,
+        "scenario_metrics": {
+            profile: {
+                scenario: json.loads(json.dumps(scenario_metric))
+                for scenario in (
+                    "primary",
+                    "latency_250ms",
+                    "latency_750ms",
+                    "latency_1000ms",
+                    "half_depth",
+                    "quarter_depth",
+                    "one_tick_adverse",
+                    "combined",
+                )
+            }
+            for profile in ("conservative", "regular", "aggressive")
+        },
+        "scenario_gates": {
+            profile: {
+                scenario: economic_accepted
+                for scenario in (
+                    "primary",
+                    "latency_250ms",
+                    "latency_750ms",
+                    "latency_1000ms",
+                    "half_depth",
+                    "quarter_depth",
+                    "one_tick_adverse",
+                    "combined",
+                )
+            }
+            for profile in ("conservative", "regular", "aggressive")
+        },
+        "profile_gates": {
+            profile: economic_accepted
+            for profile in ("conservative", "regular", "aggressive")
+        },
+        "economic_accepted": economic_accepted,
+    }
+    economic_holdout["economic_holdout_sha256"] = _sha256(economic_holdout)
+    return build_round17_one_use_result(
+        claim=claim,
+        test_access_sha256=test_access_sha256,
+        test_index_sha256="f" * 64,
+        test_resolution_acquisition_sha256="1" * 64,
+        test_target_manifest_sha256="e" * 64,
+        endpoint_holdout=endpoint,
+        economic_holdout=economic_holdout,
+    )
+
+
 def test_round17_endpoint_holdout_applies_every_frozen_gate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -178,6 +280,7 @@ def test_round17_endpoint_holdout_applies_every_frozen_gate(
     assert result["endpoint_accepted"] is True
     assert result["condition_count"] == 1_800
     assert result["calendar_day_count"] >= 7
+    assert len(result["daily_metrics"]) == result["calendar_day_count"]
     assert result["gates"] == {name: True for name in result["gates"]}
     assert result["automatic_promotion"] is False
     assert result["profitability_claim"] is False
@@ -250,39 +353,74 @@ def test_round17_economic_holdout_replays_only_selected_policy(
 
     assert result["economic_accepted"] is True
     assert all(result["profile_gates"].values())
+    primary = result["scenario_metrics"]["conservative"]["primary"]
+    assert primary["daily_pnl_series"] == [
+        {
+            "day_start_ms": 1_800_057_600_000 // 86_400_000 * 86_400_000,
+            "net_pnl_quote": "2",
+            "ending_equity_quote": "10002",
+        }
+    ]
     assert result["policy_refit"] is False
     assert result["test_execution_accessed"] is True
 
 
 def test_round17_final_result_never_promotes_or_returns_to_development() -> None:
-    claim = _claim()
-    endpoint: dict[str, object] = {
-        "claim_sha256": claim.claim_sha256,
-        "test_access_sha256": "d" * 64,
-        "test_target_manifest_sha256": "e" * 64,
-        "endpoint_accepted": True,
-    }
-    endpoint["endpoint_holdout_sha256"] = _sha256(endpoint)
-    economic_holdout: dict[str, object] = {
-        "test_access_sha256": "d" * 64,
-        "economic_accepted": False,
-    }
-    economic_holdout["economic_holdout_sha256"] = _sha256(economic_holdout)
-
-    result = build_round17_one_use_result(
-        claim=claim,
-        test_access_sha256="d" * 64,
-        test_index_sha256="f" * 64,
-        test_resolution_acquisition_sha256="1" * 64,
-        test_target_manifest_sha256="e" * 64,
-        endpoint_holdout=endpoint,
-        economic_holdout=economic_holdout,
-    )
+    result = _terminal_result(_claim())
 
     assert result["status"] == "heldout_rejected"
     assert result["return_to_development"] is False
     assert result["automatic_promotion"] is False
     assert result["live_trading_authority"] is False
+
+
+@pytest.mark.parametrize(
+    ("path", "replacement"),
+    [
+        (
+            (
+                "endpoint_holdout",
+                "daily_metrics",
+                0,
+                "candidate",
+                "condition_balanced_brier",
+            ),
+            1.1,
+        ),
+        (
+            (
+                "economic_holdout",
+                "scenario_metrics",
+                "conservative",
+                "primary",
+                "daily_pnl_series",
+                0,
+                "ending_equity_quote",
+            ),
+            "10002",
+        ),
+    ],
+)
+def test_round17_terminal_result_rejects_rehashed_daily_metric_drift(
+    path: tuple[object, ...],
+    replacement: object,
+) -> None:
+    tampered = json.loads(json.dumps(_terminal_result(_claim())))
+    current: object = tampered
+    for key in path[:-1]:
+        current = current[key]  # type: ignore[index]
+    current[path[-1]] = replacement  # type: ignore[index]
+    section_name = str(path[0])
+    section = tampered[section_name]
+    section_hash_name = f"{section_name.removesuffix('_holdout')}_holdout_sha256"
+    section.pop(section_hash_name)
+    section[section_hash_name] = _sha256(section)
+    tampered[section_hash_name] = section[section_hash_name]
+    tampered.pop("result_sha256")
+    tampered["result_sha256"] = _sha256(tampered)
+
+    with pytest.raises(ValueError, match="terminal one-use evidence differs"):
+        validate_round17_one_use_result(tampered)
 
 
 def test_round17_completed_claim_is_republished_without_campaign_access(
@@ -294,20 +432,7 @@ def test_round17_completed_claim_is_republished_without_campaign_access(
     with Round17OneUseClaimStore(store_path) as store:
         store.open_claim(claim)
         access = store.consume_test_access(claim)
-        persisted: dict[str, object] = {
-            "schema_version": "completed-test-v1",
-            "status": "heldout_rejected",
-            "claim_sha256": claim.claim_sha256,
-            "test_access_sha256": access,
-            "test_access_consumed": True,
-            "automatic_promotion": False,
-            "profitability_claim": False,
-            "paper_trading_authority": False,
-            "live_trading_authority": False,
-            "binance_credentials_used": False,
-            "binance_execution_connected": False,
-        }
-        persisted["result_sha256"] = _sha256(persisted)
+        persisted = _terminal_result(claim, test_access_sha256=access)
         store.complete(claim, persisted)
     files = [tmp_path / f"input-{index}.json" for index in range(6)]
     for path in files:
