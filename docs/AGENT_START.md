@@ -297,6 +297,9 @@ extends the established parser with independently registered commands.
   never use the failed one-hour shadow to choose an offset. Round 15 is
   predictive research only and cannot establish execution, fill, latency, PnL,
   or live authority.
+  `tools/ingest_polymarket_btc_history.py run` atomically republishes the
+  self-hashed, non-authoritative ingestion status after closing the database;
+  `publish-status` reconstructs it read-only after an interrupted publication.
 - Polymarket Round 16 is a separately preregistered BTC fifteen-minute horizon
   comparison motivated by `arXiv:2606.31675`, which reports settlement-time
   manipulation in five-minute BTC contracts and substantially less in
