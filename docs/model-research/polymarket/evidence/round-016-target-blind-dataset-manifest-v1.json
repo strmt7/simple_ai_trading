@@ -1,0 +1,162 @@
+{
+  "schema_version": "polymarket-round16-target-blind-dataset-evidence-v1",
+  "generated_at_utc": "2026-07-30T06:45:32Z",
+  "contract_sha256": "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67",
+  "source_commit": "06d443a7dd002d6569df6fe8df1879670c99b155",
+  "dataset_manifest": {
+    "binance_source_manifest_sha256": "b66d5f40680fc54f772904130c237a4d0eecce54c8289bdee83844a98159eb86",
+    "causal_source_boundary_carry": {
+      "affected_days": [
+        {
+          "day": "2026-03-03",
+          "seconds": {
+            "perpetual": 2,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-03-08",
+          "seconds": {
+            "perpetual": 2,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-04-04",
+          "seconds": {
+            "perpetual": 1,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-04-05",
+          "seconds": {
+            "perpetual": 2,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-04-13",
+          "seconds": {
+            "perpetual": 1,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-05-02",
+          "seconds": {
+            "perpetual": 2,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-05-09",
+          "seconds": {
+            "perpetual": 1,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-05-10",
+          "seconds": {
+            "perpetual": 2,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-05-12",
+          "seconds": {
+            "perpetual": 1,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-05-13",
+          "seconds": {
+            "perpetual": 2,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-05-16",
+          "seconds": {
+            "perpetual": 2,
+            "spot": 0
+          }
+        },
+        {
+          "day": "2026-05-17",
+          "seconds": {
+            "perpetual": 1,
+            "spot": 0
+          }
+        }
+      ],
+      "labels_used": false,
+      "last_trade_age_policy": "advance_from_actual_prior_observation",
+      "maximum_seconds_per_market_per_day": 2,
+      "policy": "actual_prior_close_only",
+      "total_seconds": {
+        "perpetual": 19,
+        "spot": 0
+      }
+    },
+    "condition_count": 14783,
+    "contract_sha256": "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67",
+    "feature_names_sha256": "667de1fb0d924ee04bc142a046304128593698bce02304c1c8a7a168289858d8",
+    "implementation_sha256": {
+      "round16_dataset": "a33bdd8e5f5d4159a6b14818ec08c43ed037fac2b2d3b4987cd5adfd95494c60",
+      "shared_dataset_primitives": "739adb9c5b019c73254b419531a930a8a89d5842d9b3dca789992aeee06f1064",
+      "shared_store": "9aff8a4e6d2c2aefb8510e4cf5a1bbeb70902f3220495ea712e1fe5e7f2a3e1e"
+    },
+    "market_identity_sha256": "a0838440bd2fc1e4aad4531207881110ebb5a04f59a78f05fd230149f38f4d45",
+    "materializer_sha256": "a55373c0ad35683a06046401ea9892d5ef9f10d49366d4d0f812c4b7626c582d",
+    "role_counts": {
+      "test": 1440,
+      "train": 10463,
+      "tune": 2880
+    },
+    "row_chain_sha256": "c29441547de903f3f4f293c8408ca9fa54952cb8dd4e96f7f41fd586e2074b4d",
+    "row_count": 206962,
+    "schema_version": "polymarket-round16-btc-15m-dataset-v1",
+    "source_boundary_censored_conditions": 1
+  },
+  "validation": {
+    "screen_state": "features_complete",
+    "manifest_hash_valid": true,
+    "dataset_sha256": "4bd4ebbbffeffa3443211919ae2ffd86fff732d2f5b51f84ddaa4df5738dca82",
+    "row_count": 206962,
+    "condition_count": 14783,
+    "unique_condition_decision_keys": 206962,
+    "feature_dimension_minimum": 120,
+    "feature_dimension_maximum": 120,
+    "null_feature_vectors": 0,
+    "role_coverage": {
+      "test": {
+        "rows": 20160,
+        "conditions": 1440
+      },
+      "train": {
+        "rows": 146482,
+        "conditions": 10463
+      },
+      "tune": {
+        "rows": 40320,
+        "conditions": 2880
+      }
+    },
+    "development_target_count": 0,
+    "test_target_count": 0,
+    "pretest_manifest_count": 0,
+    "database_bytes_at_validation": 141832192
+  },
+  "claims": {
+    "target_blind": true,
+    "test_targets_accessed": false,
+    "predictive_edge": false,
+    "profitability": false,
+    "paper_authority": false,
+    "live_authority": false
+  },
+  "artifact_sha256": "ac2259466d8af1a54f39cc8d152565238a2e361f265958223e19f459a57bae1a"
+}
