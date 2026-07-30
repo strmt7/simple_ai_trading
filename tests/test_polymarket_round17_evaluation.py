@@ -18,8 +18,13 @@ from simple_ai_trading.polymarket_round17_economic import (
 )
 from simple_ai_trading.polymarket_round17_evaluation import (
     POLYMARKET_ROUND17_ENDPOINT_CONTROL_IDS,
+    Round17OneUseEvaluationConfig,
     build_round17_one_use_result,
     evaluate_round17_endpoint_holdout,
+    run_round17_one_use_evaluation,
+)
+from simple_ai_trading.polymarket_round17_campaign_operator import (
+    Round17CampaignOperatorConfig,
 )
 from simple_ai_trading.polymarket_round17_features import (
     POLYMARKET_ROUND17_FEATURE_NAMES,
@@ -27,6 +32,7 @@ from simple_ai_trading.polymarket_round17_features import (
 from simple_ai_trading.polymarket_round17_model import Round17DevelopmentPanel
 from simple_ai_trading.polymarket_round17_one_use import (
     POLYMARKET_ROUND17_TEST_START_MS,
+    Round17OneUseClaimStore,
     Round17TestAccessClaim,
 )
 
@@ -277,3 +283,64 @@ def test_round17_final_result_never_promotes_or_returns_to_development() -> None
     assert result["return_to_development"] is False
     assert result["automatic_promotion"] is False
     assert result["live_trading_authority"] is False
+
+
+def test_round17_completed_claim_is_republished_without_campaign_access(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    claim = _claim()
+    store_path = tmp_path / "one-use.sqlite3"
+    with Round17OneUseClaimStore(store_path) as store:
+        store.open_claim(claim)
+        access = store.consume_test_access(claim)
+        persisted: dict[str, object] = {
+            "schema_version": "completed-test-v1",
+            "status": "heldout_rejected",
+            "claim_sha256": claim.claim_sha256,
+            "test_access_sha256": access,
+            "test_access_consumed": True,
+            "automatic_promotion": False,
+            "profitability_claim": False,
+            "paper_trading_authority": False,
+            "live_trading_authority": False,
+            "binance_credentials_used": False,
+            "binance_execution_connected": False,
+        }
+        persisted["result_sha256"] = _sha256(persisted)
+        store.complete(claim, persisted)
+    files = [tmp_path / f"input-{index}.json" for index in range(6)]
+    for path in files:
+        path.write_text("{}", encoding="utf-8")
+    campaign = Round17CampaignOperatorConfig(
+        campaign_plan_path=files[0],
+        cohort_plan_path=files[1],
+        admission_spec_path=files[2],
+        database_path=tmp_path / "never-open.duckdb",
+        state_root=tmp_path / "never-open-state",
+    )
+    output = tmp_path / "republished.json"
+    config = Round17OneUseEvaluationConfig(
+        repository=tmp_path,
+        repository_commit_sha="f" * 40,
+        contract_path=files[3],
+        development_result_path=files[4],
+        risk_contract_path=files[5],
+        claim_store_path=store_path,
+        resolution_checkpoint_path=tmp_path / "resolution.json",
+        output_path=output,
+        campaign=campaign,
+    )
+    monkeypatch.setattr(
+        evaluation,
+        "stage_round17_one_use_claim",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("completed claim attempted to restage")
+        ),
+    )
+
+    result = run_round17_one_use_evaluation(config)
+
+    assert result == persisted
+    assert json.loads(output.read_text(encoding="ascii")) == persisted
+    assert not campaign.database_path.exists()
