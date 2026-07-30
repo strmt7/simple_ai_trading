@@ -1,0 +1,87 @@
+{
+  "schema_version": "polymarket-round18-redundant-clob-transport-qualification-v1",
+  "round": 18,
+  "status": "preregistered_before_qualification_feed_access",
+  "motivation": {
+    "source": "read_only_round14_campaign_journals",
+    "terminal_slot_count_observed": 57,
+    "degraded_slot_count_observed": 55,
+    "failed_slot_count_observed": 1,
+    "complete_slot_count_observed": 1,
+    "dominant_failure": "clob_abnormal_tcp_loss_without_websocket_close_frame",
+    "existing_campaign_or_gate_modified": false
+  },
+  "scope": {
+    "venue": "polymarket",
+    "asset": "BTC",
+    "market_horizon_minutes": 5,
+    "public_data_only": true,
+    "current_and_next_market_discovery": true,
+    "outcome_endpoint_access": false,
+    "label_access": false,
+    "model_score_access": false,
+    "order_submission": false,
+    "credentials_used": false
+  },
+  "transport": {
+    "endpoint": "wss://ws-subscriptions-clob.polymarket.com/ws/market",
+    "lane_count": 2,
+    "independent_websocket_connections": true,
+    "identical_sorted_asset_id_subscription": true,
+    "custom_feature_enabled": true,
+    "text_heartbeat": "PING",
+    "heartbeat_interval_seconds": 10,
+    "protocol_ping_interval": null,
+    "compression": null,
+    "maximum_message_bytes": 524288,
+    "maximum_websocket_queue_frames": 2048,
+    "reconnect_backoff_seconds": [
+      1,
+      2,
+      4,
+      8,
+      10
+    ],
+    "transport_disconnect_is_never_reclassified_as_complete": true
+  },
+  "qualification": {
+    "duration_seconds": 600,
+    "warmup_seconds": 10,
+    "progress_interval_seconds": 30,
+    "fresh_market_event_seconds": 10,
+    "monitor_interval_milliseconds": 100,
+    "minimum_market_events_per_lane": 25000,
+    "minimum_connected_fraction_per_lane": 0.95,
+    "minimum_event_coverage_fraction_per_lane": 0.9,
+    "minimum_counted_overlap_fraction": 0.9,
+    "maximum_simultaneous_unhealthy_seconds": 2,
+    "maximum_json_parse_errors": 0,
+    "maximum_unique_event_digests_per_lane": 1000000,
+    "condition_count_range": [
+      1,
+      2
+    ],
+    "token_count_range": [
+      2,
+      4
+    ],
+    "all_gates_required": true
+  },
+  "interpretation": {
+    "qualification_can_support_successor_capture_design": true,
+    "qualification_proves_venue_source_completeness": false,
+    "same_provider_and_host_path_are_correlated": true,
+    "dual_lane_union_may_not_repair_simultaneous_provider_loss": true,
+    "failed_qualification_may_not_be_tuned_or_reinterpreted": true,
+    "new_contract_required_after_failure": true
+  },
+  "authority": {
+    "model_data_eligible": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "binance_credentials_used": false,
+    "binance_execution_connected": false
+  },
+  "contract_sha256": "ed2420fec365944784cb7b8c5b8e012f0fbdf4e329e376fb61e3880467599b4a"
+}
