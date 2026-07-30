@@ -1,0 +1,15 @@
+{
+  "artifact_sha256": "79129e03edf6a4b9693449112d69d4f84066775ca3e718dbe945a41b9ec768e7",
+  "condition_count": 1440,
+  "contract_sha256": "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67",
+  "identity_evidence_sha256": "d0b98d40532547a8e1c8e5d39099f2c70f0a58c74ea8ee8d387b7e8dd9aad503",
+  "invalid_rows": 0,
+  "outcomes": {
+    "Down": 720,
+    "Up": 720
+  },
+  "resolution_evidence_sha256": "5f4bc524b49365271f0a8824bc019be79b8471c9ac3d485d1002e5126087aad4",
+  "role": "test",
+  "schema_version": "polymarket-round16-test-resolution-audit-v1",
+  "target_implementation_sha256": "3d2bd2d9cb49c57f1e2ca9970040aa562decd0f4c1f55f39f1b9aa3575970954"
+}

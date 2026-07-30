@@ -1,0 +1,194 @@
+{
+  "accepted_predictive_edge": false,
+  "artifact_sha256": "0112fa15df87f9de4e2f2d09133a25c688aba247856c9e5a38844d8decda5287",
+  "best_challenger_id": "round16-lgbm-depth4-leaves15",
+  "best_control_id": "digital_moneyness_ridge_logistic-l2-0.01",
+  "candidate_metrics": {
+    "binance_ridge_logistic-l2-0.01": {
+      "accuracy": 0.7679563492063493,
+      "balanced_accuracy": 0.7679563492063493,
+      "brier_score": 0.15380627050247234,
+      "calibration_intercept": 0.07192088488258061,
+      "calibration_slope": 1.0482982546070507,
+      "expected_calibration_error": 0.010761917863347873,
+      "log_loss": 0.4641146348027049
+    },
+    "calendar_ridge_logistic-l2-0.01": {
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "brier_score": 0.25050234109338465,
+      "calibration_intercept": -2.0391634352483012,
+      "calibration_slope": -23.289810681548143,
+      "expected_calibration_error": 0.021874991827998735,
+      "log_loss": 0.694152879099577
+    },
+    "digital_moneyness_ridge_logistic-l2-0.01": {
+      "accuracy": 0.7682043650793651,
+      "balanced_accuracy": 0.7682043650793651,
+      "brier_score": 0.15482219149935197,
+      "calibration_intercept": 0.06424628617122231,
+      "calibration_slope": 1.0978840016686493,
+      "expected_calibration_error": 0.016645756566074733,
+      "log_loss": 0.46691077732010544
+    },
+    "round16-lgbm-depth4-leaves15": {
+      "accuracy": 0.7679563492063493,
+      "balanced_accuracy": 0.7679563492063493,
+      "brier_score": 0.1533263809853,
+      "calibration_intercept": 0.079966056918803,
+      "calibration_slope": 1.0221909071977273,
+      "expected_calibration_error": 0.013197723117038661,
+      "log_loss": 0.4600258133504872
+    },
+    "round16-training-prevalence": {
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "brier_score": 0.250032338619828,
+      "calibration_intercept": 0.0,
+      "calibration_slope": 0.0,
+      "expected_calibration_error": 0.005686705533785696,
+      "log_loss": 0.6932118619831076
+    }
+  },
+  "challenger_skill": {
+    "brier": 0.009661473588288838,
+    "log_loss": 0.014745780787360219
+  },
+  "contract_sha256": "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67",
+  "dataset_sha256": "4bd4ebbbffeffa3443211919ae2ffd86fff732d2f5b51f84ddaa4df5738dca82",
+  "failure_action": "reject_candidate_without_trading_or_profitability_claim",
+  "feature_support_screen": {
+    "abstained_rows": 5,
+    "action": "abstain",
+    "admitted_rows": 20155,
+    "bounds_partition": "train",
+    "changes_predictive_metrics": false,
+    "labels_used_to_select_bounds": false,
+    "live_authority": false,
+    "maximum_extreme_outliers_observed": 2,
+    "maximum_outside_training_range_observed": 5,
+    "paper_authority": false,
+    "rows": 20160
+  },
+  "gates": {
+    "calibration_slope_in_range": true,
+    "challenger_balanced_accuracy_not_lower": false,
+    "challenger_brier_skill_positive": true,
+    "challenger_log_loss_skill_positive": true,
+    "complete_utc_test_days": true,
+    "expected_calibration_error_at_most_contract_maximum": true,
+    "minimum_decision_rows": true,
+    "minimum_outcomes_per_class": true,
+    "minimum_terminal_conditions": true,
+    "paired_log_loss_improvement_lower_positive": true
+  },
+  "live_authority": false,
+  "paired_utc_day_bootstrap": {
+    "day_count": 15,
+    "lower_95": 0.0026762533833448892,
+    "median": 0.006761305980360474,
+    "repetitions": 10000,
+    "resampling_unit": "whole_UTC_day",
+    "upper_95": 0.011541751798301839,
+    "within_day_aggregation": "equal_weight_condition_mean"
+  },
+  "paper_authority": false,
+  "pretest_artifact_sha256": "ff7fea5a4fa3cd716821f62e8908f66b1aef74fe61f09813931fab70963956b4",
+  "profitability_claim": false,
+  "schema_version": "polymarket-round16-btc-15m-evaluation-v2",
+  "scope": {
+    "asset": "BTC",
+    "execution_or_profitability_claim": false,
+    "market_variant": "fifteenminute",
+    "predictive_screen_only": true,
+    "venue": "polymarket"
+  },
+  "settlement_manipulation_screen": {
+    "action": "abstain",
+    "all_decisions": {
+      "abstained_rows": 289,
+      "admitted_rows": 19871,
+      "rows": 20160
+    },
+    "changes_predictive_metrics": false,
+    "labels_used_to_select_thresholds": false,
+    "last_120_seconds": {
+      "abstained_rows": 46,
+      "admitted_rows": 2834,
+      "rows": 2880
+    },
+    "last_180_seconds": {
+      "abstained_rows": 51,
+      "admitted_rows": 4269,
+      "rows": 4320
+    },
+    "last_60_seconds": {
+      "abstained_rows": 25,
+      "admitted_rows": 1415,
+      "rows": 1440
+    },
+    "live_authority": false,
+    "paper_authority": false,
+    "threshold_partition": "tune"
+  },
+  "test": {
+    "complete_utc_days": [
+      "2026-07-01",
+      "2026-07-02",
+      "2026-07-03",
+      "2026-07-04",
+      "2026-07-05",
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15"
+    ],
+    "conditions": 1440,
+    "conditions_by_utc_day": {
+      "2026-07-01": 96,
+      "2026-07-02": 96,
+      "2026-07-03": 96,
+      "2026-07-04": 96,
+      "2026-07-05": 96,
+      "2026-07-06": 96,
+      "2026-07-07": 96,
+      "2026-07-08": 96,
+      "2026-07-09": 96,
+      "2026-07-10": 96,
+      "2026-07-11": 96,
+      "2026-07-12": 96,
+      "2026-07-13": 96,
+      "2026-07-14": 96,
+      "2026-07-15": 96
+    },
+    "decision_rows": 20160,
+    "down_conditions": 720,
+    "expected_utc_days": [
+      "2026-07-01",
+      "2026-07-02",
+      "2026-07-03",
+      "2026-07-04",
+      "2026-07-05",
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+      "2026-07-12",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15"
+    ],
+    "first_event_start_ms": 1782864000000,
+    "last_event_start_ms": 1784159100000,
+    "unexpected_utc_days": [],
+    "up_conditions": 720
+  }
+}

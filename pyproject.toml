@@ -39,6 +39,9 @@ terminal-test = [
 microstructure = [
     "hftbacktest==2.4.4",
 ]
+reporting = [
+    "matplotlib==3.11.1",
+]
 polymarket-live = [
     "polymarket-client==0.2.0",
     "py-clob-client-v2==1.1.0",
