@@ -18,6 +18,7 @@ from simple_ai_trading.polymarket_round17_model import (
 )
 from simple_ai_trading.polymarket_round17_uncertainty import (
     apply_round17_probability_calibration,
+    apply_round17_probability_calibration_rows,
     fit_round17_probability_calibration,
     validate_round17_probability_calibration,
 )
@@ -94,11 +95,14 @@ def _row(
     *,
     event_start_ms: int,
     identity: str,
+    condition_identity: str | None = None,
+    offset_ms: int = 60_000,
 ) -> PolymarketRound17FeatureRow:
     selected = tuple(float(value) for value in values)
     return PolymarketRound17FeatureRow(
-        condition_id="0x" + _sha256(["economic", identity]),
-        decision_time_ms=event_start_ms + 60_000,
+        condition_id="0x"
+        + _sha256(["economic", condition_identity or identity]),
+        decision_time_ms=event_start_ms + offset_ms,
         admission_sha256="b" * 64,
         causal_segment_sha256="c" * 64,
         feature_names_sha256=POLYMARKET_ROUND17_FEATURE_NAMES_SHA256,
@@ -206,8 +210,24 @@ def test_round17_calibration_abstains_outside_supported_probability_regions(
         dataset_sha256=DATASET_SHA256,
         event_start_ms=event_start + 300_000,
     )
+    second_supported_row = _row(
+        _feature_values(1.0, 1),
+        event_start_ms=event_start,
+        identity="supported-second",
+        condition_identity="supported",
+        offset_ms=120_000,
+    )
+    supported_batch = apply_round17_probability_calibration_rows(
+        artifact,
+        pretest,
+        (supported_row, second_supported_row),
+        dataset_sha256=DATASET_SHA256,
+        event_start_ms=event_start,
+    )
 
     assert supported.supported is True
+    assert supported_batch[0] == supported
+    assert len(supported_batch) == 2
     assert supported.support_condition_count >= 30
     assert supported.envelope.lower_up <= supported.envelope.probability_up
     assert supported.envelope.probability_up <= supported.envelope.upper_up

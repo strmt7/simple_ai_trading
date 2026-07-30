@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from simple_ai_trading import polymarket_round17_development_operator as development
 from simple_ai_trading.polymarket import (
     PolymarketFeeSchedule,
     PolymarketFiveMinuteMarket,
@@ -16,6 +17,7 @@ from simple_ai_trading.polymarket import (
 from simple_ai_trading.polymarket_replay import PolymarketResolutionEvidence
 from simple_ai_trading.polymarket_round17_cohort import (
     POLYMARKET_ROUND17_COHORT_PLAN_SHA256,
+    Round17DevelopmentPanelAssembler,
     build_round17_cohort_condition,
     build_round17_cohort_condition_label,
     build_round17_cohort_manifest,
@@ -25,6 +27,12 @@ from simple_ai_trading.polymarket_round17_cohort import (
     build_round17_development_target_manifest,
     load_round17_cohort_plan,
     validate_round17_cohort_plan,
+)
+from simple_ai_trading.polymarket_round17_campaign_operator import (
+    Round17CampaignDevelopmentIndex,
+)
+from simple_ai_trading.polymarket_round17_development_operator import (
+    validate_round17_development_result,
 )
 from simple_ai_trading.polymarket_round17_dataset import (
     PolymarketRound17ConditionDataset,
@@ -357,6 +365,20 @@ def test_round17_cohort_manifest_and_panel_are_target_separated() -> None:
     assert panels["train"].features.dtype == np.float32
     np.testing.assert_array_equal(panels["train"].features, panel.features)
     np.testing.assert_array_equal(panels["train"].labels, panel.labels)
+    staged = Round17DevelopmentPanelAssembler(
+        plan,
+        manifest,
+        targets,
+        roles=("train",),
+    )
+    staged.append(down)
+    staged.append(up)
+    staged_panels = staged.finish()
+    np.testing.assert_array_equal(staged_panels["train"].features, panel.features)
+    with pytest.raises(RuntimeError, match="assembler is finished"):
+        staged.append(down)
+    with pytest.raises(RuntimeError, match="assembler is finished"):
+        staged.finish()
 
     with pytest.raises(ValueError, match="role differs"):
         build_round17_development_panel(
@@ -394,6 +416,13 @@ def test_round17_cohort_manifest_and_panel_are_target_separated() -> None:
             targets,
             iter((object(),)),  # type: ignore[arg-type]
         )
+    with pytest.raises(ValueError, match="roles are invalid"):
+        Round17DevelopmentPanelAssembler(
+            plan,
+            manifest,
+            targets,
+            roles=("tune_selection", "train"),
+        )
 
 
 def test_round17_official_resolution_acquisition_is_development_only() -> None:
@@ -410,6 +439,7 @@ def test_round17_official_resolution_acquisition_is_development_only() -> None:
         up.condition_id: _market(up),
     }
     client = _ResolutionClient(markets)
+    progress: list[dict[str, object]] = []
 
     acquisition = acquire_round17_development_resolutions(
         plan,
@@ -418,6 +448,7 @@ def test_round17_official_resolution_acquisition_is_development_only() -> None:
         client=client,  # type: ignore[arg-type]
         wall_clock_ms=lambda: up.event_end_ms + 1,
         monotonic_clock_ns=lambda: 123,
+        progress=lambda item: progress.append(dict(item)),
     )
     labels = acquisition.labels(plan, cohort, markets)
 
@@ -427,6 +458,13 @@ def test_round17_official_resolution_acquisition_is_development_only() -> None:
     assert acquisition.clob_market_request_count == 2
     assert len(client.gamma_calls) == 1
     assert set(client.clob_calls) == set(markets)
+    assert [item["phase"] for item in progress] == [
+        "resolution_gamma",
+        "resolution_clob",
+        "resolution_clob",
+    ]
+    assert progress[-1]["completed_conditions"] == 2
+    assert progress[-1]["resolved_conditions"] == 2
     assert {item.winning_outcome for item in labels} == {"Up", "Down"}
     target_manifest = build_round17_development_target_manifest(
         plan,
@@ -470,6 +508,34 @@ def test_round17_official_resolution_acquisition_blocks_pending_and_early() -> N
 
     assert acquisition.complete is False
     assert acquisition.pending_condition_ids == (up.condition_id,)
+    provisional_index = Round17CampaignDevelopmentIndex(
+        readiness_sha256="a" * 64,
+        cohort_manifest=cohort,
+        markets=tuple(sorted(markets.values(), key=lambda item: item.event_start_ms)),
+    )
+    index = replace(
+        provisional_index,
+        index_sha256=_sha256(provisional_index.identity_payload()),
+    ).validated(plan)
+    development_result = development._result_payload(
+        status="resolution_incomplete",
+        risk_contract_sha256=(
+            "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b"
+        ),
+        index=index,
+        resolutions=acquisition,
+        target=None,
+        model_pretest=None,
+        calibration=None,
+        economic_pretest=None,
+    )
+    development_result["result_sha256"] = _sha256(development_result)
+    validated_result = validate_round17_development_result(development_result)
+
+    assert validated_result["status"] == "resolution_incomplete"
+    assert validated_result["polymarket_execution_independent"] is True
+    assert validated_result["binance_credentials_used"] is False
+    assert validated_result["live_trading_authority"] is False
     with pytest.raises(RuntimeError, match="resolutions are incomplete"):
         acquisition.labels(plan, cohort, markets)
     with pytest.raises(RuntimeError, match="have not all ended"):

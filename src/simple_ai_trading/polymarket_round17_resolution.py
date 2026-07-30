@@ -340,6 +340,7 @@ def acquire_round17_development_resolutions(
     client: PolymarketPublicClient | None = None,
     wall_clock_ms: Callable[[], int] | None = None,
     monotonic_clock_ns: Callable[[], int] | None = None,
+    progress: Callable[[Mapping[str, object]], None] | None = None,
 ) -> Round17DevelopmentResolutionAcquisition:
     """Acquire only frozen development outcomes from official public endpoints."""
 
@@ -370,9 +371,17 @@ def acquire_round17_development_resolutions(
             raise ValueError("Round 17 Gamma batch coverage differs")
         gamma_by_market_id.update(gamma)
         gamma_batch_count += 1
+        if progress is not None:
+            progress(
+                {
+                    "phase": "resolution_gamma",
+                    "completed_batches": gamma_batch_count,
+                    "total_batches": math.ceil(len(references) / _GAMMA_BATCH_SIZE),
+                }
+            )
     observations: list[Round17ResolutionObservation] = []
     pending: list[str] = []
-    for reference in references:
+    for count, reference in enumerate(references, start=1):
         market = selected_markets[reference.condition_id]
         clob = public.clob_market(reference.condition_id)
         observed_wall_ms = int(wall())
@@ -389,6 +398,19 @@ def acquire_round17_development_resolutions(
             pending.append(reference.condition_id)
         else:
             observations.append(observation.validated(plan, reference, market))
+        if progress is not None and (
+            count == 1 or count % 25 == 0 or count == len(references)
+        ):
+            progress(
+                {
+                    "phase": "resolution_clob",
+                    "completed_conditions": count,
+                    "total_conditions": len(references),
+                    "resolved_conditions": len(observations),
+                    "pending_conditions": len(pending),
+                    "last_event_start_ms": reference.event_start_ms,
+                }
+            )
     provisional = Round17DevelopmentResolutionAcquisition(
         cohort_manifest_sha256=selected_cohort.manifest_sha256,
         observations=tuple(sorted(observations, key=lambda item: item.condition_id)),

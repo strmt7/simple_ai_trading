@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 import hashlib
 import json
@@ -499,27 +500,57 @@ def apply_round17_probability_calibration(
 ) -> Round17CalibratedEnvelope:
     """Apply the frozen calibration band to one exact feature-row prediction."""
 
+    return apply_round17_probability_calibration_rows(
+        calibration,
+        model_pretest,
+        (row,),
+        dataset_sha256=dataset_sha256,
+        event_start_ms=event_start_ms,
+    )[0]
+
+
+def apply_round17_probability_calibration_rows(
+    calibration: Mapping[str, object],
+    model_pretest: Mapping[str, object],
+    rows: Sequence[PolymarketRound17FeatureRow],
+    *,
+    dataset_sha256: str,
+    event_start_ms: int,
+) -> tuple[Round17CalibratedEnvelope, ...]:
+    """Apply one validated model and calibration to an exact condition batch."""
+
     artifact = validate_round17_probability_calibration(
         calibration,
         model_pretest=model_pretest,
     )
     parent = validate_round17_pretest_artifact(model_pretest)
     event_start = int(event_start_ms)
+    selected_rows = tuple(rows)
+    if not selected_rows or any(
+        not isinstance(row, PolymarketRound17FeatureRow) for row in selected_rows
+    ):
+        raise ValueError("Round 17 economic inference partition differs")
+    condition_ids = {row.condition_id for row in selected_rows}
     if (
-        not isinstance(row, PolymarketRound17FeatureRow)
+        len(condition_ids) != 1
         or str(dataset_sha256) != artifact["dataset_sha256"]
         or event_start <= 0
         or event_start % 300_000
-        or not event_start <= row.decision_time_ms < event_start + 300_000
-        or row.condition_id in artifact["condition_ids"]
+        or any(
+            not event_start <= row.decision_time_ms < event_start + 300_000
+            for row in selected_rows
+        )
+        or next(iter(condition_ids)) in artifact["condition_ids"]
         or event_start - (int(artifact["last_event_start_ms"]) + 300_000) < _EMBARGO_MS
     ):
         raise ValueError("Round 17 economic inference partition differs")
     candidate = parent["selected_candidate"]
     if not isinstance(candidate, Mapping):
         raise ValueError("Round 17 selected model identity differs")
-    raw = float(predict_round17_feature_rows(candidate, (row,))[0])
-    if not math.isfinite(raw) or not 0.0 < raw < 1.0:
+    raw_predictions = predict_round17_feature_rows(candidate, selected_rows)
+    if np.any(~np.isfinite(raw_predictions)) or np.any(
+        (raw_predictions <= 0.0) | (raw_predictions >= 1.0)
+    ):
         raise ValueError("Round 17 raw probability differs")
     grid = np.asarray(artifact["grid_probability_up"], dtype=np.float64)
     point_values = np.asarray(
@@ -538,66 +569,75 @@ def apply_round17_probability_calibration(
         artifact["condition_support_by_bin"],
         dtype=np.int64,
     )
-    right = min(len(grid) - 1, int(np.searchsorted(grid, raw, side="left")))
-    left = max(0, right - 1 if grid[right] > raw else right)
-    support = int(min(support_values[left], support_values[right]))
-    supported = support >= POLYMARKET_ROUND17_CALIBRATION_MINIMUM_CONDITIONS_PER_BIN
-    point = float(np.interp(raw, grid, point_values))
-    if supported:
-        lower = min(point, float(np.interp(raw, grid, lower_values)))
-        upper = max(point, float(np.interp(raw, grid, upper_values)))
-    else:
-        lower = _PROBABILITY_FLOOR
-        upper = 1.0 - _PROBABILITY_FLOOR
-    point = min(upper, max(lower, point))
-    evidence = {
-        "schema_version": "polymarket-round17-calibrated-envelope-v1",
-        "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
-        "calibration_sha256": artifact["calibration_sha256"],
-        "model_pretest_sha256": str(parent["pretest_sha256"]),
-        "dataset_sha256": str(dataset_sha256),
-        "source_role": "tune_economic",
-        "event_start_ms": event_start,
-        "condition_id": row.condition_id,
-        "decision_time_ms": row.decision_time_ms,
-        "feature_input_sha256": row.input_sha256,
-        "feature_values_sha256": row.values_sha256,
-        "raw_probability_up": format(raw, ".17g"),
-        "calibrated_probability_up": format(point, ".17g"),
-        "lower_probability_up": format(lower, ".17g"),
-        "upper_probability_up": format(upper, ".17g"),
-        "support_condition_count": support,
-        "supported": supported,
-        "unsupported_action": None if supported else "abstain",
-    }
-    digest = _canonical_sha256(evidence)
-    envelope = Round17ProbabilityEnvelope(
-        probability_up=point,
-        lower_up=lower,
-        upper_up=upper,
-        evidence_sha256=digest,
-    ).validated()
-    return Round17CalibratedEnvelope(
-        envelope=envelope,
-        raw_probability_up=raw,
-        support_condition_count=support,
-        supported=supported,
-        calibration_sha256=str(artifact["calibration_sha256"]),
-        model_pretest_sha256=str(parent["pretest_sha256"]),
-        dataset_sha256=str(dataset_sha256),
-        source_role="tune_economic",
-        event_start_ms=event_start,
-        condition_id=row.condition_id,
-        decision_time_ms=row.decision_time_ms,
-        feature_input_sha256=row.input_sha256,
-        feature_values_sha256=row.values_sha256,
-    )
+    output: list[Round17CalibratedEnvelope] = []
+    for row, raw_value in zip(selected_rows, raw_predictions, strict=True):
+        raw = float(raw_value)
+        right = min(len(grid) - 1, int(np.searchsorted(grid, raw, side="left")))
+        left = max(0, right - 1 if grid[right] > raw else right)
+        support = int(min(support_values[left], support_values[right]))
+        supported = (
+            support >= POLYMARKET_ROUND17_CALIBRATION_MINIMUM_CONDITIONS_PER_BIN
+        )
+        point = float(np.interp(raw, grid, point_values))
+        if supported:
+            lower = min(point, float(np.interp(raw, grid, lower_values)))
+            upper = max(point, float(np.interp(raw, grid, upper_values)))
+        else:
+            lower = _PROBABILITY_FLOOR
+            upper = 1.0 - _PROBABILITY_FLOOR
+        point = min(upper, max(lower, point))
+        evidence = {
+            "schema_version": "polymarket-round17-calibrated-envelope-v1",
+            "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
+            "calibration_sha256": artifact["calibration_sha256"],
+            "model_pretest_sha256": str(parent["pretest_sha256"]),
+            "dataset_sha256": str(dataset_sha256),
+            "source_role": "tune_economic",
+            "event_start_ms": event_start,
+            "condition_id": row.condition_id,
+            "decision_time_ms": row.decision_time_ms,
+            "feature_input_sha256": row.input_sha256,
+            "feature_values_sha256": row.values_sha256,
+            "raw_probability_up": format(raw, ".17g"),
+            "calibrated_probability_up": format(point, ".17g"),
+            "lower_probability_up": format(lower, ".17g"),
+            "upper_probability_up": format(upper, ".17g"),
+            "support_condition_count": support,
+            "supported": supported,
+            "unsupported_action": None if supported else "abstain",
+        }
+        digest = _canonical_sha256(evidence)
+        envelope = Round17ProbabilityEnvelope(
+            probability_up=point,
+            lower_up=lower,
+            upper_up=upper,
+            evidence_sha256=digest,
+        ).validated()
+        output.append(
+            Round17CalibratedEnvelope(
+                envelope=envelope,
+                raw_probability_up=raw,
+                support_condition_count=support,
+                supported=supported,
+                calibration_sha256=str(artifact["calibration_sha256"]),
+                model_pretest_sha256=str(parent["pretest_sha256"]),
+                dataset_sha256=str(dataset_sha256),
+                source_role="tune_economic",
+                event_start_ms=event_start,
+                condition_id=row.condition_id,
+                decision_time_ms=row.decision_time_ms,
+                feature_input_sha256=row.input_sha256,
+                feature_values_sha256=row.values_sha256,
+            )
+        )
+    return tuple(output)
 
 
 __all__ = [
     "POLYMARKET_ROUND17_UNCERTAINTY_SCHEMA_VERSION",
     "Round17CalibratedEnvelope",
     "apply_round17_probability_calibration",
+    "apply_round17_probability_calibration_rows",
     "fit_round17_probability_calibration",
     "validate_round17_probability_calibration",
 ]
