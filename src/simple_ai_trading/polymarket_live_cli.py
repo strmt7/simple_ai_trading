@@ -49,6 +49,11 @@ from .polymarket_round16_shadow import (
     PolymarketRound16ShadowScorer,
     load_verified_round16_shadow_predictor,
 )
+from .polymarket_runtime_control import (
+    PolymarketRuntimeControl,
+    PolymarketRuntimeControlService,
+    PolymarketRuntimeLeaseInterlock,
+)
 
 
 DEFAULT_POLYMARKET_LIVE_LEDGER = Path("data/polymarket/live-ownership.sqlite3")
@@ -197,6 +202,7 @@ def _local_status(path: Path) -> dict[str, object]:
             "reason": "authenticated_preflight_required",
         }
     ledger = PolymarketLiveOrderLedger(path)
+    runtime_control = PolymarketRuntimeControl(path).snapshot()
     records = ledger.records()
     inventory = ledger.owned_inventory()
     redemptions = ledger.redemption_records()
@@ -219,6 +225,7 @@ def _local_status(path: Path) -> dict[str, object]:
             "f",
         ),
         "unresolved_redemption_count": len(unresolved),
+        "runtime_control": runtime_control.asdict(),
         "can_open": False,
         "reason": "authenticated_preflight_and_promoted_model_required",
     }
@@ -387,9 +394,7 @@ async def _supervise(
 def _required_autonomous_argument(value: object, *, name: str) -> str:
     selected = str(value or "").strip()
     if not selected:
-        raise PolymarketLiveBlocked(
-            f"autonomous Polymarket mode requires --{name}"
-        )
+        raise PolymarketLiveBlocked(f"autonomous Polymarket mode requires --{name}")
     return selected
 
 
@@ -454,10 +459,14 @@ async def _autonomous(
         expected_pretest_envelope_sha256=pretest_sha,
         expected_evaluation_envelope_sha256=evaluation_sha,
     )
-    public_client = PolymarketPublicClient()
+    runtime_control = PolymarketRuntimeControl(ledger.path)
+    runtime_lease = runtime_control.acquire()
+    runtime_released = False
+    public_client: PolymarketPublicClient | None = None
     settlement_venue: OfficialPolymarketUnifiedRedemptionVenue | None = None
     started = time.monotonic()
     try:
+        public_client = PolymarketPublicClient()
         flow = PolymarketBtcFlowBuffer(retention_seconds=1_200)
         predictor_feed = PolymarketHistoricalShadowFeed(flow=flow)
         scorer = PolymarketRound16ShadowScorer(
@@ -472,6 +481,10 @@ async def _autonomous(
         )
         guard = PolymarketLiveRuntimeGuard(
             maximum_reconciliation_age_ms=max(5_000, int(interval * 3_000)),
+            opening_interlock=PolymarketRuntimeLeaseInterlock(
+                control=runtime_control,
+                lease_id=runtime_lease,
+            ),
         )
         coordinator = PolymarketLiveCoordinator(
             venue,
@@ -484,12 +497,7 @@ async def _autonomous(
             credentials,
             consumer,
             markets=tuple(
-                sorted(
-                    {
-                        record.intent.market_id
-                        for record in ledger.records()
-                    }
-                )
+                sorted({record.intent.market_id for record in ledger.records()})
             ),
         )
         reconciliation = PolymarketReconciliationService(
@@ -509,9 +517,7 @@ async def _autonomous(
             interval_seconds=max(5.0, interval),
         )
         external_signal = (
-            BinanceBtcPublicSignalProvider()
-            if binance_bbo_safeguard
-            else None
+            BinanceBtcPublicSignalProvider() if binance_bbo_safeguard else None
         )
         supervisor = PolymarketAutonomousSupervisor(
             public_client=public_client,
@@ -524,17 +530,29 @@ async def _autonomous(
             decision_provider=decision_provider,
             settlement=settlement,
             decision_data_service=predictor_feed,
+            durable_control_service=PolymarketRuntimeControlService(
+                runtime_control,
+                lease_id=runtime_lease,
+            ),
             external_signal_provider=external_signal,
             stop_timeout_seconds=stop_timeout,
         )
         await supervisor.run(duration_seconds=duration)
         final = await asyncio.to_thread(coordinator.reconcile)
         snapshot = supervisor.snapshot()
+        if ledger.owned_inventory():
+            runtime_control.request_stop(reason="autonomous_exit_with_owned_exposure")
+            raise PolymarketLiveBlocked(
+                "Polymarket autonomous runtime retained owned exposure at exit"
+            )
+        runtime_control.release(
+            runtime_lease,
+            reason="autonomous_stop_completed",
+        )
+        runtime_released = True
         feed_health = predictor_feed.health()
         bbo_snapshot = (
-            None
-            if external_signal is None
-            else asdict(external_signal.snapshot())
+            None if external_signal is None else asdict(external_signal.snapshot())
         )
         return {
             "schema_version": "polymarket-live-autonomous-v1",
@@ -551,12 +569,27 @@ async def _autonomous(
             "binance_bbo_safeguard": bbo_snapshot,
             "binance_credentials_used": False,
             "binance_execution_connected": False,
+            "runtime_control": runtime_control.snapshot().asdict(),
             "opened_exposure": snapshot.submitted_opens > 0,
         }
     finally:
+        if not runtime_released:
+            try:
+                if ledger.owned_inventory():
+                    runtime_control.request_stop(
+                        reason="autonomous_exit_with_owned_exposure"
+                    )
+                else:
+                    runtime_control.release(
+                        runtime_lease,
+                        reason="autonomous_process_exit",
+                    )
+            except Exception:
+                pass
         if settlement_venue is not None:
             settlement_venue.close()
-        public_client.session.close()
+        if public_client is not None:
+            public_client.session.close()
 
 
 def _render(payload: Mapping[str, object], *, as_json: bool) -> None:
@@ -590,6 +623,9 @@ def command_polymarket_live(args: argparse.Namespace) -> int:
             _render(payload, as_json=bool(args.json))
             return 0
 
+        runtime_control = PolymarketRuntimeControl(ledger_path)
+        if action == "stop":
+            runtime_control.request_stop(reason="operator_stop")
         credentials, venue = _credentials_and_venue()
         ledger = PolymarketLiveOrderLedger(ledger_path)
         risk_limits = _risk_limits(args.risk_level)
@@ -644,6 +680,22 @@ def command_polymarket_live(args: argparse.Namespace) -> int:
                     ledger=ledger,
                     timeout_seconds=args.stop_timeout_seconds,
                 )
+                if bool(payload.get("completed")):
+                    runtime_control.wait_until_stopped(
+                        timeout_seconds=min(
+                            3.0,
+                            float(args.stop_timeout_seconds),
+                        ),
+                    )
+                    runtime_control.complete_stale_stop(
+                        exposure_closed=not bool(ledger.owned_inventory()),
+                    )
+                control_snapshot = runtime_control.snapshot()
+                payload["runtime_control"] = control_snapshot.asdict()
+                if control_snapshot.state != "stopped":
+                    payload["completed"] = False
+                    payload["reason"] = "autonomous_runtime_stop_pending"
+                    status = 2
             elif action in {"recover-redemptions", "redeem"}:
                 if action == "redeem" and not bool(args.confirm_redemption):
                     raise PolymarketLiveBlocked(
@@ -715,9 +767,7 @@ def command_polymarket_live(args: argparse.Namespace) -> int:
                         evidence_root=args.evidence_root,
                         round16_contract=args.round16_contract,
                         pretest_envelope_sha256=args.pretest_envelope_sha256,
-                        evaluation_envelope_sha256=(
-                            args.evaluation_envelope_sha256
-                        ),
+                        evaluation_envelope_sha256=(args.evaluation_envelope_sha256),
                         requested_quantity=args.requested_quantity,
                         binance_bbo_safeguard=not bool(
                             args.disable_binance_bbo_safeguard

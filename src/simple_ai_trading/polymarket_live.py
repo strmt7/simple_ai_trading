@@ -7,6 +7,7 @@ recovery remain entirely owned by this subsystem.
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 import hashlib
@@ -15,7 +16,7 @@ from pathlib import Path
 import re
 import sqlite3
 import time
-from typing import Mapping, Protocol, Sequence
+from typing import ContextManager, Mapping, Protocol, Sequence
 
 
 POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION = "polymarket-live-ledger-v1"
@@ -706,6 +707,12 @@ class PolymarketRuntimeAuthority(Protocol):
     def note_reconciliation_failure(self, failure_code: str) -> None: ...
 
     def assert_submission_allowed(self, *, closing_only: bool) -> None: ...
+
+    def submission_guard(
+        self,
+        *,
+        closing_only: bool,
+    ) -> ContextManager[None]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -2619,16 +2626,32 @@ class PolymarketLiveCoordinator:
             tick_size=tick,
             neg_risk=bool(neg_risk),
         )
-        now = int(time.time() * 1_000)
-        self.ledger.reserve(prepared, observed_at_ms=now)
-        self.ledger.transition(
-            intent.intent_id,
-            expected_states=("prepared",),
-            state="submitting",
-            observed_at_ms=now,
-        )
+        submission_guard = nullcontext()
+        if self.runtime_authority is not None:
+            guard_factory = getattr(
+                self.runtime_authority,
+                "submission_guard",
+                None,
+            )
+            if callable(guard_factory):
+                submission_guard = guard_factory(closing_only=intent.closing_only)
+        dispatch_started = False
         try:
-            response = self.venue.submit_order(prepared)
+            with submission_guard:
+                if self.runtime_authority is not None:
+                    self.runtime_authority.assert_submission_allowed(
+                        closing_only=intent.closing_only
+                    )
+                now = int(time.time() * 1_000)
+                self.ledger.reserve(prepared, observed_at_ms=now)
+                self.ledger.transition(
+                    intent.intent_id,
+                    expected_states=("prepared",),
+                    state="submitting",
+                    observed_at_ms=now,
+                )
+                dispatch_started = True
+                response = self.venue.submit_order(prepared)
         except PolymarketVenueRejected as exc:
             current = self.ledger.record(intent.intent_id)
             if current.state != "submitting":
@@ -2653,6 +2676,8 @@ class PolymarketLiveCoordinator:
             )
             return self.ledger.record(intent.intent_id)
         except Exception as exc:
+            if not dispatch_started:
+                raise
             current = self.ledger.record(intent.intent_id)
             if current.state in {
                 "live",

@@ -65,6 +65,16 @@ flowchart LR
   zero bot-owned open orders. Stale books, insufficient depth, sub-minimum
   dust, ambiguity, or timeout return a nonzero incomplete result with the exact
   remaining inventory.
+- A hash-verified runtime-control record permits one autonomous process. Stop
+  is persisted before credential or network access, polled without a
+  write-heavy heartbeat, and ordered against the final order dispatch through
+  a cross-process lock. A request already in flight is reconciled and closed;
+  no later opening can pass the latch. Competing Stop callers serialize the
+  complete ownership-only close routine, preventing duplicate close
+  reservations. Crashed leases remain fail-closed until Stop proves zero owned
+  exposure and the heartbeat is stale.
+- The Windows `Stop + Close` control invokes Binance and Polymarket shutdown
+  independently and attempts both even if either command fails.
 - Hash-bound, numbered redemption attempts. Exact confirmed local inventory
   must equal the dedicated wallet snapshot; every account order must be closed
   and every token for the condition must be redeemable.

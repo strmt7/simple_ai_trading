@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import sqlite3
+from threading import Event, Thread
 import time
 from typing import Callable, Sequence
 
@@ -38,6 +39,10 @@ from simple_ai_trading.polymarket_live_runtime import (
     PolymarketUserStreamConsumer,
 )
 from simple_ai_trading.polymarket_live_v2 import PolymarketLiveCredentials
+from simple_ai_trading.polymarket_runtime_control import (
+    PolymarketRuntimeControl,
+    PolymarketRuntimeLeaseInterlock,
+)
 
 
 NOW_MS = int(time.time() * 1_000)
@@ -1774,6 +1779,64 @@ def test_coordinator_runtime_authority_blocks_network_submission_until_live(
 
     assert record.state == "live"
     assert venue.submit_calls == 1
+
+
+def test_durable_stop_is_ordered_after_final_network_dispatch(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "live.sqlite3"
+    ledger = PolymarketLiveOrderLedger(path)
+    venue = FakeVenue()
+    control = PolymarketRuntimeControl(path)
+    lease = control.acquire(owner_process_id=101)
+    guard = PolymarketLiveRuntimeGuard(
+        opening_interlock=PolymarketRuntimeLeaseInterlock(control, lease)
+    )
+    coordinator = PolymarketLiveCoordinator(
+        venue,
+        ledger,
+        risk_limits=RISK_LIMITS,
+        runtime_authority=guard,
+    )
+    guard.note_stream_liveness()
+    coordinator.preflight()
+    stop_started = Event()
+    stop_finished = Event()
+    stopper: Thread | None = None
+
+    def request_stop() -> None:
+        stop_started.set()
+        control.request_stop(reason="operator_stop")
+        stop_finished.set()
+
+    def before_submit(_prepared: PolymarketPreparedOrder) -> None:
+        nonlocal stopper
+        stopper = Thread(target=request_stop)
+        stopper.start()
+        assert stop_started.wait(timeout=5)
+        assert not stop_finished.wait(timeout=0.1)
+
+    venue.before_submit = before_submit
+    record = coordinator.submit(
+        _intent(),
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+    )
+    assert stopper is not None
+    stopper.join(timeout=5)
+
+    assert record.state == "live"
+    assert not stopper.is_alive()
+    assert stop_finished.is_set()
+    assert control.snapshot().state == "stop_requested"
+    calls = venue.submit_calls
+    with pytest.raises(PolymarketLiveBlocked, match="does not permit"):
+        coordinator.submit(
+            _intent(seed=2),
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+    assert venue.submit_calls == calls
 
 
 def test_user_stream_applies_only_exact_owned_order_and_fill_events(
