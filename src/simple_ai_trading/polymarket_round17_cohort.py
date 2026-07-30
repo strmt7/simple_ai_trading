@@ -745,7 +745,7 @@ def build_round17_development_panel(
         condition_ids=np.asarray(condition_ids, dtype=object),
         event_start_ms=np.asarray(event_starts, dtype=np.int64),
         decision_time_ms=np.asarray(decision_times, dtype=np.int64),
-        features=np.asarray(features, dtype=np.float64),
+        features=np.asarray(features, dtype=np.float32),
         labels=np.asarray(targets, dtype=np.float64),
         dataset_sha256=verified_targets.development_dataset_sha256,
         target_manifest_sha256=verified_targets.target_manifest_sha256,

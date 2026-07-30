@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 import math
@@ -49,6 +49,7 @@ _LIGHTGBM_GRID = (
         "min_data_in_leaf": 40,
     },
 )
+_VALIDATION_CHUNK_ROWS = 65_536
 
 
 def _canonical_json(value: object) -> str:
@@ -72,6 +73,62 @@ def _probability(values: np.ndarray) -> np.ndarray:
     return np.clip(selected, _PROBABILITY_FLOOR, 1.0 - _PROBABILITY_FLOOR)
 
 
+def _float_array(value: object, *, dimensions: int) -> np.ndarray:
+    selected = np.asarray(value)
+    if (
+        selected.ndim != dimensions
+        or selected.dtype.kind != "f"
+        or selected.dtype.itemsize not in (4, 8)
+    ):
+        raise ValueError("Round 17 floating-point array is invalid")
+    return selected
+
+
+def _all_finite_in_chunks(values: np.ndarray) -> bool:
+    rows = len(values)
+    return all(
+        bool(np.all(np.isfinite(values[start : start + _VALIDATION_CHUNK_ROWS])))
+        for start in range(0, rows, _VALIDATION_CHUNK_ROWS)
+    )
+
+
+def _condition_groups(
+    condition_ids: np.ndarray,
+) -> tuple[tuple[str, int, int], ...]:
+    if condition_ids.ndim != 1 or len(condition_ids) < 1:
+        raise ValueError("Round 17 condition identities are invalid")
+    boundaries = np.flatnonzero(condition_ids[1:] != condition_ids[:-1]) + 1
+    starts = np.concatenate((np.asarray([0], dtype=np.int64), boundaries))
+    ends = np.concatenate(
+        (boundaries, np.asarray([len(condition_ids)], dtype=np.int64))
+    )
+    groups = tuple(
+        (str(condition_ids[start]), int(start), int(end))
+        for start, end in zip(starts, ends, strict=True)
+    )
+    if len({condition for condition, _start, _end in groups}) != len(groups):
+        raise ValueError("Round 17 condition identities are not contiguous")
+    return groups
+
+
+def _chronological_in_chunks(
+    event_starts: np.ndarray,
+    decisions: np.ndarray,
+) -> bool:
+    for start in range(0, len(event_starts) - 1, _VALIDATION_CHUNK_ROWS):
+        stop = min(len(event_starts) - 1, start + _VALIDATION_CHUNK_ROWS)
+        left_events = event_starts[start:stop]
+        right_events = event_starts[start + 1 : stop + 1]
+        if np.any(right_events < left_events):
+            return False
+        same_event = right_events == left_events
+        if np.any(
+            same_event & (decisions[start + 1 : stop + 1] < decisions[start:stop])
+        ):
+            return False
+    return True
+
+
 @dataclass(frozen=True, slots=True)
 class Round17DevelopmentPanel:
     role: str
@@ -90,8 +147,8 @@ class Round17DevelopmentPanel:
         condition_ids = np.asarray(self.condition_ids, dtype=object)
         event_starts = np.asarray(self.event_start_ms, dtype=np.int64)
         decisions = np.asarray(self.decision_time_ms, dtype=np.int64)
-        features = np.asarray(self.features, dtype=np.float64)
-        labels = np.asarray(self.labels, dtype=np.float64)
+        features = _float_array(self.features, dimensions=2)
+        labels = _float_array(self.labels, dimensions=1)
         rows = len(labels)
         if (
             role not in _PANEL_ROLES
@@ -100,8 +157,7 @@ class Round17DevelopmentPanel:
             or event_starts.shape != (rows,)
             or decisions.shape != (rows,)
             or features.shape != (rows, len(POLYMARKET_ROUND17_FEATURE_NAMES))
-            or not np.all(np.isfinite(features))
-            or not np.all(np.isin(labels, (0.0, 1.0)))
+            or not _all_finite_in_chunks(features)
             or len(str(self.dataset_sha256)) != 64
             or any(
                 character not in "0123456789abcdef"
@@ -114,41 +170,62 @@ class Round17DevelopmentPanel:
             )
             or self.feature_names_sha256 != POLYMARKET_ROUND17_FEATURE_NAMES_SHA256
             or self.cohort_plan_sha256 != _COHORT_PLAN_SHA256
-            or np.any(event_starts <= 0)
-            or np.any(event_starts % 300_000)
-            or np.any(decisions < event_starts)
-            or np.any(decisions >= event_starts + 300_000)
-            or np.any((decisions - event_starts) % 250)
-            or any(
-                _CONDITION_ID.fullmatch(str(value or "").strip()) is None
-                for value in condition_ids
-            )
-            or len(np.unique(labels)) != 2
         ):
             raise ValueError("Round 17 development panel is invalid")
-        ordered = np.lexsort((decisions, event_starts))
-        if not np.array_equal(ordered, np.arange(rows)):
-            raise ValueError("Round 17 development panel is not chronological")
-        for condition in np.unique(condition_ids):
-            selected = np.flatnonzero(condition_ids == condition)
+        seen_labels: set[float] = set()
+        for start in range(0, rows, _VALIDATION_CHUNK_ROWS):
+            stop = min(rows, start + _VALIDATION_CHUNK_ROWS)
+            event_chunk = event_starts[start:stop]
+            decision_chunk = decisions[start:stop]
+            label_chunk = labels[start:stop]
             if (
-                len(np.unique(event_starts[selected])) != 1
-                or len(np.unique(labels[selected])) != 1
+                np.any(event_chunk <= 0)
+                or np.any(event_chunk % 300_000)
+                or np.any(decision_chunk < event_chunk)
+                or np.any(decision_chunk >= event_chunk + 300_000)
+                or np.any((decision_chunk - event_chunk) % 250)
+                or not np.all(np.isin(label_chunk, (0.0, 1.0)))
+            ):
+                raise ValueError("Round 17 development panel is invalid")
+            if np.any(label_chunk == 0.0):
+                seen_labels.add(0.0)
+            if np.any(label_chunk == 1.0):
+                seen_labels.add(1.0)
+        if seen_labels != {0.0, 1.0}:
+            raise ValueError("Round 17 development panel is invalid")
+        if not _chronological_in_chunks(event_starts, decisions):
+            raise ValueError("Round 17 development panel is not chronological")
+        groups = _condition_groups(condition_ids)
+        for condition, start, end in groups:
+            if (
+                _CONDITION_ID.fullmatch(condition.strip()) is None
+                or event_starts[start] != event_starts[end - 1]
+                or not np.all(labels[start:end] == labels[start])
             ):
                 raise ValueError("Round 17 condition target identity differs")
-        return self
+        return replace(
+            self,
+            role=role,
+            condition_ids=condition_ids,
+            event_start_ms=event_starts,
+            decision_time_ms=decisions,
+            features=features,
+            labels=labels,
+        )
 
 
 def _condition_weights(condition_ids: np.ndarray) -> np.ndarray:
     selected = np.asarray(condition_ids, dtype=object)
-    weights = np.zeros(len(selected), dtype=np.float64)
-    for condition in np.unique(selected):
-        indices = np.flatnonzero(selected == condition)
-        weights[indices] = 1.0 / len(indices)
-    total = float(np.sum(weights))
-    if total <= 0.0:
-        raise ValueError("Round 17 condition weights are empty")
-    return weights / total
+    groups = _condition_groups(selected)
+    weights = np.empty(len(selected), dtype=np.float64)
+    condition_weight = 1.0 / len(groups)
+    for _condition, start, end in groups:
+        weights[start:end] = condition_weight / (end - start)
+    total = float(np.sum(weights, dtype=np.float64))
+    if not math.isfinite(total) or total <= 0.0:
+        raise ValueError("Round 17 condition weights are invalid")
+    weights /= total
+    return weights
 
 
 def _weighted_log_loss(
@@ -173,13 +250,17 @@ def _condition_losses(
     predictions: np.ndarray,
 ) -> tuple[np.ndarray, tuple[str, ...]]:
     probability = _probability(predictions)
-    conditions = tuple(str(value) for value in np.unique(panel.condition_ids))
+    groups = _condition_groups(panel.condition_ids)
+    conditions = tuple(condition for condition, _start, _end in groups)
     losses: list[float] = []
-    for condition in conditions:
-        indices = np.flatnonzero(panel.condition_ids == condition)
-        weights = np.full(len(indices), 1.0 / len(indices), dtype=np.float64)
+    for _condition, start, end in groups:
+        weights = np.full(end - start, 1.0 / (end - start), dtype=np.float64)
         losses.append(
-            _weighted_log_loss(panel.labels[indices], probability[indices], weights)
+            _weighted_log_loss(
+                panel.labels[start:end],
+                probability[start:end],
+                weights,
+            )
         )
     return np.asarray(losses, dtype=np.float64), conditions
 
@@ -349,53 +430,117 @@ def _feature_layers() -> dict[str, tuple[int, ...]]:
     }
 
 
-def _weighted_quantile(
+def _weighted_quantiles(
     values: np.ndarray,
     weights: np.ndarray,
-    quantile: float,
-) -> float:
+    quantiles: Sequence[float],
+) -> tuple[float, ...]:
     order = np.argsort(values, kind="stable")
-    ordered_values = np.asarray(values, dtype=np.float64)[order]
+    ordered_values = np.asarray(values)[order]
     ordered_weights = np.asarray(weights, dtype=np.float64)[order]
     cumulative = np.cumsum(ordered_weights)
-    threshold = float(quantile) * float(cumulative[-1])
-    index = min(
-        len(ordered_values) - 1,
-        int(np.searchsorted(cumulative, threshold, side="left")),
+    total = float(cumulative[-1])
+    return tuple(
+        float(
+            ordered_values[
+                min(
+                    len(ordered_values) - 1,
+                    int(
+                        np.searchsorted(
+                            cumulative,
+                            float(quantile) * total,
+                            side="left",
+                        )
+                    ),
+                )
+            ]
+        )
+        for quantile in quantiles
     )
-    return float(ordered_values[index])
 
 
 def _feature_transform(
     panel: Round17DevelopmentPanel,
     feature_indices: Sequence[int],
+    condition_weights: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    matrix = panel.features[:, feature_indices]
-    weights = _condition_weights(panel.condition_ids)
-    lower = np.asarray(
-        [
-            _weighted_quantile(matrix[:, index], weights, 0.001)
-            for index in range(matrix.shape[1])
-        ],
-        dtype=np.float64,
+    weights = np.asarray(condition_weights, dtype=np.float64)
+    if weights.shape != (len(panel.labels),):
+        raise ValueError("Round 17 condition weights are invalid")
+    weight_total = float(np.sum(weights, dtype=np.float64))
+    if not math.isfinite(weight_total) or weight_total <= 0.0:
+        raise ValueError("Round 17 condition weights are invalid")
+    selected_indices = tuple(int(index) for index in feature_indices)
+    lower = np.empty(len(selected_indices), dtype=np.float64)
+    upper = np.empty(len(selected_indices), dtype=np.float64)
+    mean = np.empty(len(selected_indices), dtype=np.float64)
+    scale = np.empty(len(selected_indices), dtype=np.float64)
+    for output_index, feature_index in enumerate(selected_indices):
+        column = panel.features[:, feature_index]
+        lower[output_index], upper[output_index] = _weighted_quantiles(
+            column,
+            weights,
+            (0.001, 0.999),
+        )
+        clipped = np.clip(
+            np.asarray(column, dtype=np.float64),
+            lower[output_index],
+            upper[output_index],
+        )
+        mean[output_index] = np.sum(weights * clipped, dtype=np.float64) / weight_total
+        centered = clipped - mean[output_index]
+        variance = (
+            np.sum(weights * np.square(centered), dtype=np.float64) / weight_total
+        )
+        scale[output_index] = math.sqrt(max(float(variance), 1e-12))
+    return lower, upper, mean, scale
+
+
+def _clipped_feature_matrix(
+    features: np.ndarray,
+    indices: tuple[int, ...],
+    lower: np.ndarray,
+    upper: np.ndarray,
+    *,
+    matrix_dtype: type[np.float32] | type[np.float64],
+    features_validated: bool = False,
+) -> np.ndarray:
+    selected = _float_array(features, dimensions=2)
+    if selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES) or (
+        not features_validated and not _all_finite_in_chunks(selected)
+    ):
+        raise ValueError("Round 17 inference features are invalid")
+    typed_lower = np.asarray(lower, dtype=matrix_dtype)
+    typed_upper = np.asarray(upper, dtype=matrix_dtype)
+    matrix = np.asarray(
+        selected[:, indices],
+        dtype=matrix_dtype,
+        order="C",
     )
-    upper = np.asarray(
-        [
-            _weighted_quantile(matrix[:, index], weights, 0.999)
-            for index in range(matrix.shape[1])
-        ],
-        dtype=np.float64,
-    )
-    clipped = np.clip(matrix, lower, upper)
-    mean = np.average(clipped, axis=0, weights=weights)
-    variance = np.average(np.square(clipped - mean), axis=0, weights=weights)
-    scale = np.sqrt(np.maximum(variance, 1e-12))
-    return (
-        lower,
-        upper,
-        np.asarray(mean, dtype=np.float64),
-        np.asarray(scale, dtype=np.float64),
-    )
+    np.clip(matrix, typed_lower, typed_upper, out=matrix)
+    return matrix
+
+
+def _normalize_feature_matrix_in_place(
+    matrix: np.ndarray,
+    mean: np.ndarray,
+    scale: np.ndarray,
+) -> np.ndarray:
+    if matrix.dtype != np.float32 or not matrix.flags.c_contiguous:
+        raise ValueError("Round 17 feature matrix storage is invalid")
+    typed_mean = np.asarray(mean, dtype=np.float32)
+    typed_scale = np.asarray(scale, dtype=np.float32)
+    if (
+        typed_mean.shape != (matrix.shape[1],)
+        or typed_scale.shape != (matrix.shape[1],)
+        or np.any(typed_scale <= 0.0)
+        or not np.all(np.isfinite(typed_mean))
+        or not np.all(np.isfinite(typed_scale))
+    ):
+        raise ValueError("Round 17 feature normalization is invalid")
+    np.subtract(matrix, typed_mean, out=matrix)
+    np.divide(matrix, typed_scale, out=matrix)
+    return matrix
 
 
 def _model_matrix(
@@ -408,6 +553,9 @@ def _model_matrix(
 def _model_matrix_from_features(
     model: Mapping[str, object],
     features: np.ndarray,
+    *,
+    matrix_dtype: type[np.float32] | type[np.float64] = np.float64,
+    features_validated: bool = False,
 ) -> tuple[np.ndarray, tuple[int, ...]]:
     indices = tuple(
         int(value)
@@ -423,27 +571,32 @@ def _model_matrix_from_features(
         or not np.all(np.isfinite(upper))
     ):
         raise ValueError("Round 17 train-fitted feature support is invalid")
-    selected = np.asarray(features, dtype=np.float64)
-    if (
-        selected.ndim != 2
-        or selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES)
-        or not np.all(np.isfinite(selected))
-    ):
-        raise ValueError("Round 17 inference features are invalid")
-    return np.clip(selected[:, indices], lower, upper), indices
+    return (
+        _clipped_feature_matrix(
+            features,
+            indices,
+            lower,
+            upper,
+            matrix_dtype=matrix_dtype,
+            features_validated=features_validated,
+        ),
+        indices,
+    )
 
 
 def _structural_logit(panel: Round17DevelopmentPanel) -> np.ndarray:
-    return _structural_logit_from_features(panel.features)
+    return _structural_logit_from_features(panel.features, features_validated=True)
 
 
-def _structural_logit_from_features(features: np.ndarray) -> np.ndarray:
+def _structural_logit_from_features(
+    features: np.ndarray,
+    *,
+    features_validated: bool = False,
+) -> np.ndarray:
     index = POLYMARKET_ROUND17_FEATURE_NAMES.index("structural_probability_up")
-    selected = np.asarray(features, dtype=np.float64)
-    if (
-        selected.ndim != 2
-        or selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES)
-        or not np.all(np.isfinite(selected))
+    selected = _float_array(features, dimensions=2)
+    if selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES) or (
+        not features_validated and not _all_finite_in_chunks(selected)
     ):
         raise ValueError("Round 17 inference features are invalid")
     return logit(_probability(selected[:, index]))
@@ -454,12 +607,23 @@ def _fit_logistic_residual(
     feature_indices: tuple[int, ...],
     *,
     l2: float,
+    transform: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+    normalized_train_matrix: np.ndarray,
+    train_weights: np.ndarray,
 ) -> dict[str, object]:
-    lower, upper, mean, scale = _feature_transform(train, feature_indices)
-    matrix = (np.clip(train.features[:, feature_indices], lower, upper) - mean) / scale
+    lower, upper, mean, scale = transform
+    matrix = normalized_train_matrix
+    if (
+        matrix.dtype != np.float32
+        or matrix.shape != (len(train.labels), len(feature_indices))
+        or not matrix.flags.c_contiguous
+    ):
+        raise ValueError("Round 17 normalized training matrix is invalid")
     offset = _structural_logit(train)
-    weights = _condition_weights(train.condition_ids)
-    target = train.labels
+    weights = np.asarray(train_weights, dtype=np.float64)
+    if weights.shape != (len(train.labels),):
+        raise ValueError("Round 17 logistic training weights are invalid")
+    target = np.asarray(train.labels, dtype=np.float64)
 
     def objective(parameters: np.ndarray) -> tuple[float, np.ndarray]:
         intercept = float(parameters[0])
@@ -468,13 +632,17 @@ def _fit_logistic_residual(
         prediction = expit(linear)
         residual = prediction - target
         penalty = 0.5 * float(l2) * float(coefficient @ coefficient)
-        loss = float(
-            np.sum(weights * (np.logaddexp(0.0, linear) - target * linear)) + penalty
-        )
+        per_row_loss = np.logaddexp(0.0, linear) - target * linear
+        loss = float(np.sum(weights * per_row_loss, dtype=np.float64) + penalty)
+        weighted_residual = weights * residual
         gradient = np.concatenate(
             (
-                np.asarray([np.sum(weights * residual)], dtype=np.float64),
-                matrix.T @ (weights * residual) + float(l2) * coefficient,
+                np.asarray(
+                    [np.sum(weighted_residual, dtype=np.float64)],
+                    dtype=np.float64,
+                ),
+                np.asarray(matrix.T @ weighted_residual, dtype=np.float64)
+                + float(l2) * coefficient,
             )
         )
         return loss, gradient
@@ -488,7 +656,9 @@ def _fit_logistic_residual(
         options={"maxiter": 512, "ftol": 1e-11, "gtol": 1e-8},
     )
     if not result.success or not np.all(np.isfinite(result.x)):
-        raise RuntimeError("Round 17 residual logistic fit failed")
+        raise RuntimeError(
+            f"Round 17 residual logistic fit failed: {str(result.message).strip()}"
+        )
     return {
         "family": "logistic_residual",
         "l2": float(l2),
@@ -510,21 +680,33 @@ def _fit_lightgbm_residual(
     calibration: Round17DevelopmentPanel,
     feature_indices: tuple[int, ...],
     *,
+    transform: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+    train_matrix: np.ndarray,
+    calibration_matrix: np.ndarray,
+    train_weights: np.ndarray,
+    calibration_weights: np.ndarray,
     configuration: Mapping[str, int],
     backend_parameters: Mapping[str, object],
     backend_kind: str,
     backend_device: str,
     seed: int,
 ) -> dict[str, object]:
-    lower, upper, _mean, _scale = _feature_transform(train, feature_indices)
-    train_matrix = np.clip(train.features[:, feature_indices], lower, upper)
-    calibration_matrix = np.clip(
-        calibration.features[:, feature_indices],
-        lower,
-        upper,
-    )
-    train_weights = _condition_weights(train.condition_ids)
-    calibration_weights = _condition_weights(calibration.condition_ids)
+    lower, upper, _mean, _scale = transform
+    if (
+        train_matrix.dtype != np.float32
+        or calibration_matrix.dtype != np.float32
+        or train_matrix.shape != (len(train.labels), len(feature_indices))
+        or calibration_matrix.shape != (len(calibration.labels), len(feature_indices))
+        or not train_matrix.flags.c_contiguous
+        or not calibration_matrix.flags.c_contiguous
+    ):
+        raise ValueError("Round 17 LightGBM training matrices are invalid")
+    train_weights = np.asarray(train_weights, dtype=np.float64)
+    calibration_weights = np.asarray(calibration_weights, dtype=np.float64)
+    if train_weights.shape != (len(train.labels),) or calibration_weights.shape != (
+        len(calibration.labels),
+    ):
+        raise ValueError("Round 17 LightGBM training weights are invalid")
     train_offset = _structural_logit(train)
     calibration_offset = _structural_logit(calibration)
     train_set = lgb.Dataset(
@@ -608,18 +790,22 @@ def _raw_model_prediction(
     model: Mapping[str, object],
     panel: Round17DevelopmentPanel,
 ) -> np.ndarray:
-    return _raw_model_prediction_from_features(model, panel.features)
+    return _raw_model_prediction_from_features(
+        model,
+        panel.features,
+        features_validated=True,
+    )
 
 
 def _raw_model_prediction_from_features(
     model: Mapping[str, object],
     features: np.ndarray,
+    *,
+    features_validated: bool = False,
 ) -> np.ndarray:
-    selected = np.asarray(features, dtype=np.float64)
-    if (
-        selected.ndim != 2
-        or selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES)
-        or not np.all(np.isfinite(selected))
+    selected = _float_array(features, dimensions=2)
+    if selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES) or (
+        not features_validated and not _all_finite_in_chunks(selected)
     ):
         raise ValueError("Round 17 inference features are invalid")
     family = str(model.get("family") or "")
@@ -630,23 +816,41 @@ def _raw_model_prediction_from_features(
             dtype=np.float64,
         )
     if family == "structural_control":
-        return _probability(expit(_structural_logit_from_features(selected)))
+        return _probability(
+            expit(
+                _structural_logit_from_features(
+                    selected,
+                    features_validated=True,
+                )
+            )
+        )
     if family == "market_prior_control":
         index = POLYMARKET_ROUND17_FEATURE_NAMES.index("normalized_market_prior_up")
         return _probability(selected[:, index])
-    matrix, _indices = _model_matrix_from_features(model, selected)
     if family == "logistic_residual":
+        matrix, _indices = _model_matrix_from_features(
+            model,
+            selected,
+            matrix_dtype=np.float32,
+            features_validated=True,
+        )
         mean = np.asarray(model["mean"], dtype=np.float64)
         scale = np.asarray(model["scale"], dtype=np.float64)
-        coefficient = np.asarray(model["coefficient"], dtype=np.float64)
-        matrix = (matrix - mean) / scale
+        coefficient = np.asarray(model["coefficient"], dtype=np.float32)
+        matrix = _normalize_feature_matrix_in_place(matrix, mean, scale)
         linear = (
-            _structural_logit_from_features(selected)
+            _structural_logit_from_features(selected, features_validated=True)
             + float(model["intercept"])
-            + matrix @ coefficient
+            + np.asarray(matrix @ coefficient, dtype=np.float64)
         )
         return _probability(expit(linear))
     if family == "lightgbm_residual":
+        matrix, _indices = _model_matrix_from_features(
+            model,
+            selected,
+            matrix_dtype=np.float32,
+            features_validated=True,
+        )
         booster = lgb.Booster(model_str=str(model["model_string"]))
         residual = np.asarray(
             booster.predict(
@@ -655,7 +859,15 @@ def _raw_model_prediction_from_features(
             ),
             dtype=np.float64,
         )
-        return _probability(expit(_structural_logit_from_features(selected) + residual))
+        return _probability(
+            expit(
+                _structural_logit_from_features(
+                    selected,
+                    features_validated=True,
+                )
+                + residual
+            )
+        )
     raise ValueError("Round 17 candidate family is invalid")
 
 
@@ -699,14 +911,21 @@ def _panel_boundaries(
     calibration: Round17DevelopmentPanel,
     selection: Round17DevelopmentPanel,
 ) -> dict[str, object]:
-    panels = (train.validate(), calibration.validate(), selection.validate())
+    panels = (train, calibration, selection)
     if tuple(panel.role for panel in panels) != _MODEL_ROLES:
         raise ValueError("Round 17 development panel roles differ")
     if len({panel.dataset_sha256 for panel in panels}) != 1:
         raise ValueError("Round 17 development dataset identities differ")
     if len({panel.target_manifest_sha256 for panel in panels}) != 1:
         raise ValueError("Round 17 development target identities differ")
-    condition_sets = [set(panel.condition_ids.tolist()) for panel in panels]
+    grouped_conditions = [
+        tuple(
+            condition
+            for condition, _start, _end in _condition_groups(panel.condition_ids)
+        )
+        for panel in panels
+    ]
+    condition_sets = [set(conditions) for conditions in grouped_conditions]
     if any(
         left & right
         for index, left in enumerate(condition_sets)
@@ -729,17 +948,13 @@ def _panel_boundaries(
         "roles": {
             panel.role: {
                 "row_count": len(panel.labels),
-                "condition_count": len(np.unique(panel.condition_ids)),
+                "condition_count": len(conditions),
                 "first_event_start_ms": int(np.min(panel.event_start_ms)),
                 "last_event_start_ms": int(np.max(panel.event_start_ms)),
-                "condition_ids": sorted(
-                    str(value) for value in np.unique(panel.condition_ids)
-                ),
-                "condition_ids_sha256": _canonical_sha256(
-                    sorted(str(value) for value in np.unique(panel.condition_ids))
-                ),
+                "condition_ids": sorted(conditions),
+                "condition_ids_sha256": _canonical_sha256(sorted(conditions)),
             }
-            for panel in panels
+            for panel, conditions in zip(panels, grouped_conditions, strict=True)
         },
         "train_tune_calibration_embargo_ms": calibration_start - train_end,
         "tune_internal_embargo_ms": selection_start - calibration_end,
@@ -824,9 +1039,9 @@ def _valid_pretest_boundaries(value: object) -> bool:
 
 def _control_models(
     train: Round17DevelopmentPanel,
+    train_weights: np.ndarray,
 ) -> tuple[dict[str, object], ...]:
-    weights = _condition_weights(train.condition_ids)
-    prevalence = float(np.sum(weights * train.labels))
+    prevalence = float(np.sum(train_weights * train.labels))
     market_prior = {
         "family": "market_prior_control",
         "candidate_id": "round17-market-prior-control",
@@ -898,8 +1113,13 @@ def fit_round17_development_pretest(
 ) -> dict[str, object]:
     """Fit bounded candidates without accepting or loading a test panel."""
 
+    train = train.validate()
+    tune_calibration = tune_calibration.validate()
+    tune_selection = tune_selection.validate()
     boundaries = _panel_boundaries(train, tune_calibration, tune_selection)
-    controls = _control_models(train)
+    train_weights = _condition_weights(train.condition_ids)
+    calibration_weights = _condition_weights(tune_calibration.condition_ids)
+    controls = _control_models(train, train_weights)
     control_records: list[dict[str, object]] = []
     control_predictions: dict[str, np.ndarray] = {}
     for control in controls:
@@ -931,12 +1151,68 @@ def fit_round17_development_pretest(
     fitted: list[dict[str, object]] = []
     records: list[dict[str, object]] = []
     for layer, feature_indices in _feature_layers().items():
-        for l2 in _LOGISTIC_L2_GRID:
-            model = _fit_logistic_residual(
-                train,
-                feature_indices,
-                l2=l2,
+        transform = _feature_transform(train, feature_indices, train_weights)
+        lower, upper, mean, scale = transform
+        train_matrix = _clipped_feature_matrix(
+            train.features,
+            feature_indices,
+            lower,
+            upper,
+            matrix_dtype=np.float32,
+            features_validated=True,
+        )
+        calibration_matrix = _clipped_feature_matrix(
+            tune_calibration.features,
+            feature_indices,
+            lower,
+            upper,
+            matrix_dtype=np.float32,
+            features_validated=True,
+        )
+        lightgbm_models: list[tuple[Mapping[str, int], dict[str, object]]] = []
+        for configuration in _LIGHTGBM_GRID:
+            lightgbm_models.append(
+                (
+                    configuration,
+                    _fit_lightgbm_residual(
+                        train,
+                        tune_calibration,
+                        feature_indices,
+                        transform=transform,
+                        train_matrix=train_matrix,
+                        calibration_matrix=calibration_matrix,
+                        train_weights=train_weights,
+                        calibration_weights=calibration_weights,
+                        configuration=configuration,
+                        backend_parameters=backend_parameters,
+                        backend_kind=backend_kind,
+                        backend_device=backend_device,
+                        seed=seed,
+                    ),
+                )
             )
+        del calibration_matrix
+        normalized_train_matrix = _normalize_feature_matrix_in_place(
+            train_matrix,
+            mean,
+            scale,
+        )
+        logistic_models = [
+            (
+                l2,
+                _fit_logistic_residual(
+                    train,
+                    feature_indices,
+                    l2=l2,
+                    transform=transform,
+                    normalized_train_matrix=normalized_train_matrix,
+                    train_weights=train_weights,
+                ),
+            )
+            for l2 in _LOGISTIC_L2_GRID
+        ]
+        del normalized_train_matrix
+        for l2, model in logistic_models:
             candidate, record = _candidate_record(
                 model,
                 tune_calibration,
@@ -947,17 +1223,7 @@ def fit_round17_development_pretest(
             )
             fitted.append(candidate)
             records.append(record)
-        for configuration in _LIGHTGBM_GRID:
-            model = _fit_lightgbm_residual(
-                train,
-                tune_calibration,
-                feature_indices,
-                configuration=configuration,
-                backend_parameters=backend_parameters,
-                backend_kind=backend_kind,
-                backend_device=backend_device,
-                seed=seed,
-            )
+        for configuration, model in lightgbm_models:
             candidate, record = _candidate_record(
                 model,
                 tune_calibration,
