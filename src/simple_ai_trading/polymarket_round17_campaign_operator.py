@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from bisect import bisect_left, bisect_right
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, replace
 import hashlib
 import json
@@ -12,7 +12,7 @@ import re
 
 from .polymarket import PolymarketFiveMinuteMarket
 from .polymarket_recorder import PolymarketEvidenceStore
-from .polymarket_replay import PolymarketEvidenceReplay
+from .polymarket_replay import PolymarketEvidenceReplay, PolymarketRecordedBook
 from .polymarket_round14_campaign import (
     POLYMARKET_ROUND14_CAMPAIGN_SLOT_RESULT_SCHEMA_VERSION,
     POLYMARKET_ROUND14_CAMPAIGN_STATE_SCHEMA_VERSION,
@@ -399,6 +399,7 @@ class Round17DevelopmentConditionMaterialization:
     source: Round17CampaignSlotSource
     market: PolymarketFiveMinuteMarket
     dataset: PolymarketRound17ConditionDataset
+    books: tuple[PolymarketRecordedBook, ...]
     cohort_condition: Round17CohortCondition
 
 
@@ -545,6 +546,7 @@ def _iter_round17_campaign_development_conditions(
                     source=source,
                     market=market,
                     dataset=dataset,
+                    books=books_by_condition[condition_id],
                     cohort_condition=cohort_condition,
                 )
 
@@ -620,6 +622,8 @@ class Round17CampaignDevelopmentIndex:
 
 def materialize_round17_campaign_development_index(
     config: Round17CampaignOperatorConfig,
+    *,
+    progress: Callable[[Mapping[str, object]], None] | None = None,
 ) -> Round17CampaignDevelopmentIndex:
     """Build a label-free development index while discarding condition matrices."""
 
@@ -631,12 +635,32 @@ def materialize_round17_campaign_development_index(
         raise RuntimeError(f"Round 17 campaign is not terminal: {failed}")
     conditions: list[Round17CohortCondition] = []
     markets: list[PolymarketFiveMinuteMarket] = []
-    for materialized in _iter_round17_campaign_development_conditions(
-        config,
-        readiness,
+    count = 0
+    for count, materialized in enumerate(
+        _iter_round17_campaign_development_conditions(
+            config,
+            readiness,
+        ),
+        start=1,
     ):
         conditions.append(materialized.cohort_condition)
         markets.append(materialized.market)
+        if progress is not None and (count == 1 or count % 25 == 0):
+            progress(
+                {
+                    "phase": "development_index",
+                    "completed_conditions": count,
+                    "last_source_slot_index": materialized.source.slot_index,
+                    "last_event_start_ms": materialized.market.event_start_ms,
+                }
+            )
+    if progress is not None:
+        progress(
+            {
+                "phase": "development_index_complete",
+                "completed_conditions": count,
+            }
+        )
     cohort = build_round17_cohort_manifest(
         readiness.cohort_plan,
         conditions,

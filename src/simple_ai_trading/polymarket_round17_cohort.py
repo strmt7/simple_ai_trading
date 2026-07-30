@@ -801,50 +801,80 @@ class _Round17PanelBuffer:
     cursor: int = 0
 
 
-def build_round17_development_panels_streaming(
-    plan: Round17CohortPlan,
-    manifest: Round17CohortManifest,
-    target_manifest: Round17DevelopmentTargetManifest,
-    datasets: Iterable[PolymarketRound17ConditionDataset],
-) -> Mapping[str, Round17DevelopmentPanel]:
-    """Build all populated development roles in one bounded, test-blind pass."""
+class Round17DevelopmentPanelAssembler:
+    """Preallocate selected roles and consume each condition exactly once."""
 
-    verified_manifest = manifest.validated(plan)
-    verified_targets = target_manifest.validated(plan, verified_manifest)
-    references = verified_manifest.conditions
-    reference_by_condition = {item.condition_id: item for item in references}
-    label_by_condition = {item.condition_id: item for item in verified_targets.labels}
-    if set(reference_by_condition) != set(label_by_condition):
-        raise ValueError("Round 17 streaming panel identities differ")
-    row_counts = {
-        role: sum(item.feature_row_count for item in references if item.role == role)
-        for role in _DEVELOPMENT_ROLES
-    }
-    buffers = {
-        role: _Round17PanelBuffer(
-            condition_ids=np.empty(rows, dtype=object),
-            event_starts=np.empty(rows, dtype=np.int64),
-            decision_times=np.empty(rows, dtype=np.int64),
-            features=np.empty(
-                (rows, len(POLYMARKET_ROUND17_FEATURE_NAMES)),
-                dtype=np.float32,
-            ),
-            targets=np.empty(rows, dtype=np.float64),
+    def __init__(
+        self,
+        plan: Round17CohortPlan,
+        manifest: Round17CohortManifest,
+        target_manifest: Round17DevelopmentTargetManifest,
+        *,
+        roles: Sequence[str] = _DEVELOPMENT_ROLES,
+    ) -> None:
+        self.plan = plan
+        self.manifest = manifest.validated(plan)
+        self.target_manifest = target_manifest.validated(plan, self.manifest)
+        self.roles = tuple(str(role or "").strip() for role in roles)
+        if (
+            not self.roles
+            or len(set(self.roles)) != len(self.roles)
+            or any(role not in _DEVELOPMENT_ROLES for role in self.roles)
+            or self.roles
+            != tuple(role for role in _DEVELOPMENT_ROLES if role in self.roles)
+        ):
+            raise ValueError("Round 17 streaming panel roles are invalid")
+        self.references = tuple(
+            item for item in self.manifest.conditions if item.role in self.roles
         )
-        for role, rows in row_counts.items()
-        if rows
-    }
-    consumed = 0
-    for source in datasets:
+        reference_ids = {item.condition_id for item in self.references}
+        self.label_by_condition = {
+            item.condition_id: item
+            for item in self.target_manifest.labels
+            if item.condition_id in reference_ids
+        }
+        if (
+            not self.references
+            or set(self.label_by_condition) != reference_ids
+        ):
+            raise ValueError("Round 17 streaming panel identities differ")
+        self.row_counts = {
+            role: sum(
+                item.feature_row_count
+                for item in self.references
+                if item.role == role
+            )
+            for role in self.roles
+        }
+        self.buffers = {
+            role: _Round17PanelBuffer(
+                condition_ids=np.empty(rows, dtype=object),
+                event_starts=np.empty(rows, dtype=np.int64),
+                decision_times=np.empty(rows, dtype=np.int64),
+                features=np.empty(
+                    (rows, len(POLYMARKET_ROUND17_FEATURE_NAMES)),
+                    dtype=np.float32,
+                ),
+                targets=np.empty(rows, dtype=np.float64),
+            )
+            for role, rows in self.row_counts.items()
+            if rows
+        }
+        self.consumed = 0
+        self.finished = False
+
+    def append(self, source: PolymarketRound17ConditionDataset) -> None:
+        if self.finished:
+            raise RuntimeError("Round 17 streaming panel assembler is finished")
         if not isinstance(source, PolymarketRound17ConditionDataset):
             raise TypeError("Round 17 streaming panel dataset type differs")
         dataset = source.validated()
-        if consumed >= len(references):
+        if self.consumed >= len(self.references):
             raise ValueError("Round 17 streaming panel has extra conditions")
-        reference = references[consumed]
+        reference = self.references[self.consumed]
         if dataset.condition_id != reference.condition_id:
             raise ValueError("Round 17 streaming panel condition order differs")
-        label = label_by_condition[reference.condition_id]
+        label = self.label_by_condition[reference.condition_id]
         if (
             dataset.run_id != reference.source_run_id
             or dataset.event_start_ms != reference.event_start_ms
@@ -856,7 +886,7 @@ def build_round17_development_panels_streaming(
             or label.event_start_ms != reference.event_start_ms
         ):
             raise ValueError("Round 17 streaming panel evidence differs")
-        buffer = buffers[reference.role]
+        buffer = self.buffers[reference.role]
         start = buffer.cursor
         end = start + reference.feature_row_count
         buffer.condition_ids[start:end] = reference.condition_id
@@ -872,24 +902,50 @@ def build_round17_development_panels_streaming(
         )
         buffer.targets[start:end] = label.target_up
         buffer.cursor = end
-        consumed += 1
-    if consumed != len(references) or any(
-        buffer.cursor != row_counts[role] for role, buffer in buffers.items()
-    ):
-        raise ValueError("Round 17 streaming panel conditions are incomplete")
-    return {
-        role: Round17DevelopmentPanel(
-            role=role,
-            condition_ids=buffer.condition_ids,
-            event_start_ms=buffer.event_starts,
-            decision_time_ms=buffer.decision_times,
-            features=buffer.features,
-            labels=buffer.targets,
-            dataset_sha256=verified_targets.development_dataset_sha256,
-            target_manifest_sha256=verified_targets.target_manifest_sha256,
-        ).validate()
-        for role, buffer in buffers.items()
-    }
+        self.consumed += 1
+
+    def finish(self) -> Mapping[str, Round17DevelopmentPanel]:
+        if self.finished:
+            raise RuntimeError("Round 17 streaming panel assembler is finished")
+        if self.consumed != len(self.references) or any(
+            buffer.cursor != self.row_counts[role]
+            for role, buffer in self.buffers.items()
+        ):
+            raise ValueError("Round 17 streaming panel conditions are incomplete")
+        self.finished = True
+        panels = {
+            role: Round17DevelopmentPanel(
+                role=role,
+                condition_ids=buffer.condition_ids,
+                event_start_ms=buffer.event_starts,
+                decision_time_ms=buffer.decision_times,
+                features=buffer.features,
+                labels=buffer.targets,
+                dataset_sha256=self.target_manifest.development_dataset_sha256,
+                target_manifest_sha256=self.target_manifest.target_manifest_sha256,
+            ).validate()
+            for role, buffer in self.buffers.items()
+        }
+        self.buffers = {}
+        return panels
+
+
+def build_round17_development_panels_streaming(
+    plan: Round17CohortPlan,
+    manifest: Round17CohortManifest,
+    target_manifest: Round17DevelopmentTargetManifest,
+    datasets: Iterable[PolymarketRound17ConditionDataset],
+) -> Mapping[str, Round17DevelopmentPanel]:
+    """Build all populated development roles in one bounded, test-blind pass."""
+
+    assembler = Round17DevelopmentPanelAssembler(
+        plan,
+        manifest,
+        target_manifest,
+    )
+    for source in datasets:
+        assembler.append(source)
+    return assembler.finish()
 
 
 __all__ = [
@@ -904,6 +960,7 @@ __all__ = [
     "Round17CohortRoleWindow",
     "Round17ConditionLabel",
     "Round17DevelopmentTargetManifest",
+    "Round17DevelopmentPanelAssembler",
     "build_round17_cohort_condition",
     "build_round17_cohort_manifest",
     "build_round17_condition_label",
