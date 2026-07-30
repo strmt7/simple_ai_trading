@@ -19,9 +19,7 @@ from .paper_execution import BookLevel, PaperBookSnapshot, PolymarketFeeModel
 
 
 POLYMARKET_MARKET_SCHEMA_VERSION = "polymarket-crypto-5m-market-v1"
-POLYMARKET_FIFTEEN_MINUTE_MARKET_SCHEMA_VERSION = (
-    "polymarket-crypto-15m-market-v1"
-)
+POLYMARKET_FIFTEEN_MINUTE_MARKET_SCHEMA_VERSION = "polymarket-crypto-15m-market-v1"
 # Polymarket identifies this independently from the general ``seconds_delay``
 # field. See the official 2026-06-05 CLOB maintenance record.
 POLYMARKET_TAKER_ORDER_DELAY_MS = 250
@@ -601,9 +599,7 @@ class PolymarketPublicClient:
         now = int(now_ms)
         if now < 0:
             raise ValueError("now_ms must be non-negative")
-        selected = tuple(
-            str(asset or "").strip().upper() for asset in selected_assets
-        )
+        selected = tuple(str(asset or "").strip().upper() for asset in selected_assets)
         if (
             not selected
             or len(set(selected)) != len(selected)
@@ -629,11 +625,7 @@ class PolymarketPublicClient:
             raise ValueError("Gamma market response must be a list")
         markets = tuple(
             sorted(
-                (
-                    parser(row)
-                    for row in response
-                    if isinstance(row, Mapping)
-                ),
+                (parser(row) for row in response if isinstance(row, Mapping)),
                 key=lambda item: (item.event_start_ms, item.asset),
             )
         )
@@ -703,6 +695,50 @@ class PolymarketPublicClient:
         if not isinstance(response, Mapping):
             raise ValueError("Gamma market response must be an object")
         return response
+
+    def gamma_markets(
+        self,
+        market_ids: Sequence[str],
+    ) -> Mapping[str, Mapping[str, object]]:
+        """Fetch up to 100 exact Gamma markets with bounded batch fallback."""
+
+        selected = tuple(str(value or "").strip() for value in market_ids)
+        if (
+            not selected
+            or len(selected) > 100
+            or len(selected) != len(set(selected))
+            or any(not value.isdigit() or len(value) > 20 for value in selected)
+        ):
+            raise ValueError("Gamma market batch is invalid")
+        response = self._get_json(
+            f"{GAMMA_MARKETS_URL}/keyset",
+            params=[
+                *(("id", value) for value in selected),
+                ("closed", "true"),
+                ("limit", str(len(selected))),
+            ],
+        )
+        if not isinstance(response, Mapping):
+            raise ValueError("Gamma market batch response must be an object")
+        markets = response.get("markets")
+        if not isinstance(markets, list):
+            raise ValueError("Gamma market batch response is malformed")
+        output: dict[str, Mapping[str, object]] = {}
+        for raw_market in markets:
+            if not isinstance(raw_market, Mapping):
+                raise ValueError("Gamma market batch entry is malformed")
+            market = dict(raw_market)
+            market_id = str(market.get("id") or "").strip()
+            if market_id not in selected or market_id in output:
+                raise ValueError("Gamma market batch identity differs")
+            output[market_id] = market
+        for market_id in selected:
+            if market_id not in output:
+                exact = dict(self.gamma_market(market_id))
+                if str(exact.get("id") or "").strip() != market_id:
+                    raise ValueError("exact Gamma market identity differs")
+                output[market_id] = exact
+        return {market_id: output[market_id] for market_id in selected}
 
     def fee_rate(self, token_id: str) -> Mapping[str, object]:
         token = str(token_id or "").strip()

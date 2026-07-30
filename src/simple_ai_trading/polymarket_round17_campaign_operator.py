@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from bisect import bisect_left, bisect_right
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 from pathlib import Path
 import re
 
+from .polymarket import PolymarketFiveMinuteMarket
 from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_replay import PolymarketEvidenceReplay
 from .polymarket_round14_campaign import (
@@ -27,8 +28,10 @@ from .polymarket_round17_cohort import (
     POLYMARKET_ROUND17_CAMPAIGN_PLAN_SHA256,
     POLYMARKET_ROUND17_CAPTURE_CONTRACT_SHA256,
     Round17CohortCondition,
+    Round17CohortManifest,
     Round17CohortPlan,
     build_round17_cohort_condition,
+    build_round17_cohort_manifest,
     load_round17_cohort_plan,
 )
 from .polymarket_round17_dataset import (
@@ -40,6 +43,9 @@ from .polymarket_round17_dataset import (
 
 POLYMARKET_ROUND17_CAMPAIGN_OPERATOR_SCHEMA_VERSION = (
     "polymarket-round17-btc-5m-campaign-operator-v1"
+)
+POLYMARKET_ROUND17_CAMPAIGN_DEVELOPMENT_INDEX_SCHEMA_VERSION = (
+    "polymarket-round17-btc-5m-campaign-development-index-v1"
 )
 _DEVELOPMENT_ROLES = frozenset(
     {
@@ -391,6 +397,7 @@ def inspect_round17_campaign_readiness(
 @dataclass(frozen=True, slots=True)
 class Round17DevelopmentConditionMaterialization:
     source: Round17CampaignSlotSource
+    market: PolymarketFiveMinuteMarket
     dataset: PolymarketRound17ConditionDataset
     cohort_condition: Round17CohortCondition
 
@@ -424,6 +431,13 @@ def iter_round17_campaign_development_conditions(
     """Read each terminal development run once; never inspect reserved test slots."""
 
     readiness = inspect_round17_campaign_readiness(config)
+    yield from _iter_round17_campaign_development_conditions(config, readiness)
+
+
+def _iter_round17_campaign_development_conditions(
+    config: Round17CampaignOperatorConfig,
+    readiness: Round17CampaignReadiness,
+) -> Iterator[Round17DevelopmentConditionMaterialization]:
     if not readiness.ready:
         failed = ",".join(
             name for name, passed in readiness.gates.items() if not passed
@@ -529,17 +543,133 @@ def iter_round17_campaign_development_conditions(
                 )
                 yield Round17DevelopmentConditionMaterialization(
                     source=source,
+                    market=market,
                     dataset=dataset,
                     cohort_condition=cohort_condition,
                 )
 
 
+@dataclass(frozen=True, slots=True)
+class Round17CampaignDevelopmentIndex:
+    readiness_sha256: str
+    cohort_manifest: Round17CohortManifest
+    markets: tuple[PolymarketFiveMinuteMarket, ...]
+    index_sha256: str = ""
+
+    def identity_payload(self) -> dict[str, object]:
+        return {
+            "schema_version": (
+                POLYMARKET_ROUND17_CAMPAIGN_DEVELOPMENT_INDEX_SCHEMA_VERSION
+            ),
+            "readiness_sha256": self.readiness_sha256,
+            "cohort_manifest_sha256": self.cohort_manifest.manifest_sha256,
+            "markets": [market.asdict() for market in self.markets],
+            "labels_consulted": False,
+            "outcomes_consulted": False,
+            "model_scores_consulted": False,
+            "test_features_accessed": False,
+            "test_targets_accessed": False,
+            "profitability_claim": False,
+            "paper_trading_authority": False,
+            "live_trading_authority": False,
+        }
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            **self.identity_payload(),
+            "index_sha256": self.index_sha256,
+        }
+
+    def market_mapping(self) -> Mapping[str, PolymarketFiveMinuteMarket]:
+        return {market.condition_id: market for market in self.markets}
+
+    def validated(
+        self,
+        plan: Round17CohortPlan,
+    ) -> Round17CampaignDevelopmentIndex:
+        cohort = self.cohort_manifest.validated(plan)
+        references = {item.condition_id: item for item in cohort.conditions}
+        markets = self.market_mapping()
+        if (
+            _SHA256.fullmatch(self.readiness_sha256) is None
+            or set(markets) != set(references)
+            or len(markets) != len(self.markets)
+            or self.markets
+            != tuple(
+                sorted(
+                    self.markets,
+                    key=lambda market: (
+                        market.event_start_ms,
+                        market.condition_id,
+                    ),
+                )
+            )
+            or any(
+                market.asset != "BTC"
+                or market.event_start_ms
+                != references[market.condition_id].event_start_ms
+                or market.end_ms != references[market.condition_id].event_end_ms
+                for market in self.markets
+            )
+            or _SHA256.fullmatch(self.index_sha256) is None
+            or self.index_sha256 != _canonical_sha256(self.identity_payload())
+        ):
+            raise ValueError("Round 17 campaign development index integrity differs")
+        return self
+
+
+def materialize_round17_campaign_development_index(
+    config: Round17CampaignOperatorConfig,
+) -> Round17CampaignDevelopmentIndex:
+    """Build a label-free development index while discarding condition matrices."""
+
+    readiness = inspect_round17_campaign_readiness(config)
+    if not readiness.ready:
+        failed = ",".join(
+            name for name, passed in readiness.gates.items() if not passed
+        )
+        raise RuntimeError(f"Round 17 campaign is not terminal: {failed}")
+    conditions: list[Round17CohortCondition] = []
+    markets: list[PolymarketFiveMinuteMarket] = []
+    for materialized in _iter_round17_campaign_development_conditions(
+        config,
+        readiness,
+    ):
+        conditions.append(materialized.cohort_condition)
+        markets.append(materialized.market)
+    cohort = build_round17_cohort_manifest(
+        readiness.cohort_plan,
+        conditions,
+    )
+    ordered_markets = tuple(
+        sorted(
+            markets,
+            key=lambda market: (
+                market.event_start_ms,
+                market.condition_id,
+            ),
+        )
+    )
+    provisional = Round17CampaignDevelopmentIndex(
+        readiness_sha256=readiness.readiness_sha256,
+        cohort_manifest=cohort,
+        markets=ordered_markets,
+    )
+    return replace(
+        provisional,
+        index_sha256=_canonical_sha256(provisional.identity_payload()),
+    ).validated(readiness.cohort_plan)
+
+
 __all__ = [
+    "POLYMARKET_ROUND17_CAMPAIGN_DEVELOPMENT_INDEX_SCHEMA_VERSION",
     "POLYMARKET_ROUND17_CAMPAIGN_OPERATOR_SCHEMA_VERSION",
+    "Round17CampaignDevelopmentIndex",
     "Round17CampaignOperatorConfig",
     "Round17CampaignReadiness",
     "Round17CampaignSlotSource",
     "Round17DevelopmentConditionMaterialization",
     "inspect_round17_campaign_readiness",
     "iter_round17_campaign_development_conditions",
+    "materialize_round17_campaign_development_index",
 ]

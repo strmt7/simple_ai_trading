@@ -1,0 +1,97 @@
+{
+  "schema_version": "polymarket-round17-btc-5m-development-resolution-contract-v1",
+  "round": 17,
+  "status": "preregistered_before_active_campaign_outcome_or_model_score_access",
+  "created_at_ms": 1785411955701,
+  "parents": {
+    "causal_model_contract_sha256": "f9cbe114959fce14ea3292b3fc65de68b6a86b157c2402eeeefca2a95a808b44",
+    "campaign_plan_sha256": "c19ef7733efb86202742f045a45b3d92e8e17bb922c3c5f780240243889609b5",
+    "capture_contract_sha256": "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b",
+    "admission_spec_sha256": "17dfe1081ddb661c151c36dd0b9d53d1b749ec8d69e6665d7e2fe63f3527153f",
+    "cohort_plan_sha256": "37fede4da0d6c504bce7cb763b9bd49032e0252a8cede045f29f05acff67fc00"
+  },
+  "scope": {
+    "venue": "polymarket",
+    "asset": "BTC",
+    "horizon_minutes": 5,
+    "roles": [
+      "train",
+      "tune_calibration",
+      "tune_selection",
+      "tune_uncertainty",
+      "tune_economic"
+    ],
+    "test_conditions_permitted": false,
+    "capture_database_mutation_permitted": false
+  },
+  "sources": {
+    "clob": {
+      "base_url": "https://clob.polymarket.com",
+      "endpoint": "/markets/{condition_id}",
+      "protocol_version_required": 2,
+      "request_mode": "one exact condition per request"
+    },
+    "gamma": {
+      "base_url": "https://gamma-api.polymarket.com",
+      "batch_endpoint": "/markets/keyset",
+      "exact_fallback_endpoint": "/markets/{market_id}",
+      "batch_size_maximum": 100,
+      "filters": {
+        "closed": true,
+        "id": "exact recorded market IDs"
+      }
+    }
+  },
+  "admission": {
+    "campaign_must_be_terminal": true,
+    "cohort_manifest_must_be_label_free_and_hash_valid": true,
+    "market_identity_must_match_recorded_condition_market_tokens_slug_and_resolution_source": true,
+    "query_only_condition_ids_in_frozen_development_cohort": true,
+    "all_development_markets_must_have_ended_before_first_query": true
+  },
+  "resolution": {
+    "clob_closed_required": true,
+    "gamma_closed_required": true,
+    "accepting_orders_must_be_false": true,
+    "exactly_one_clob_winner_required": true,
+    "clob_terminal_prices_required": [
+      "0",
+      "1"
+    ],
+    "gamma_terminal_prices_required": [
+      "0",
+      "1"
+    ],
+    "clob_gamma_winner_agreement_required": true,
+    "pending_or_conflicting_condition_policy": "fail_closed_no_target_manifest",
+    "winning_outcomes": [
+      "Up",
+      "Down"
+    ]
+  },
+  "evidence": {
+    "store_canonical_clob_payload": true,
+    "store_canonical_gamma_payload": true,
+    "bind_source_payload_sha256": true,
+    "bind_recorded_market_identity_sha256": true,
+    "bind_cohort_manifest_sha256": true,
+    "atomic_artifact_required_before_target_manifest": true,
+    "revalidate_sources_when_loading": true
+  },
+  "forbidden": {
+    "test_features_accessed": false,
+    "test_targets_accessed": false,
+    "model_scores_accessed": false,
+    "execution_scores_accessed": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "binance_credentials_or_execution": false
+  },
+  "research_sources": [
+    "https://docs.polymarket.com/api-reference/markets/list-markets-keyset-pagination",
+    "https://docs.polymarket.com/trading/clients/public",
+    "https://docs.polymarket.com/api-reference/rate-limits"
+  ],
+  "contract_sha256": "790f7af066b6e86a5c0f2fbe97e488ca275ed21a6c39d64574709cc8c95a124f"
+}

@@ -328,6 +328,82 @@ def test_public_client_uses_official_full_market_resolution_endpoints() -> None:
     assert session.calls[-1][0] == gamma_url
 
 
+def test_public_client_batches_gamma_markets_with_exact_fallback() -> None:
+    batch_url = f"{GAMMA_MARKETS_URL}/keyset"
+    exact_url = f"{GAMMA_MARKETS_URL}/1002"
+    session = _RoutingSession(
+        {
+            batch_url: {"markets": [{"id": "1001"}], "next_cursor": ""},
+            exact_url: {"id": "1002"},
+        }
+    )
+    client = PolymarketPublicClient(session=session, timeout_seconds=3)
+
+    markets = client.gamma_markets(("1001", "1002"))
+
+    assert tuple(markets) == ("1001", "1002")
+    assert markets["1002"] == {"id": "1002"}
+    _url, params, _timeout = session.calls[0]
+    assert ("id", "1001") in params
+    assert ("id", "1002") in params
+    assert ("closed", "true") in params
+    assert ("limit", "2") in params
+
+
+@pytest.mark.parametrize(
+    "market_ids",
+    [
+        (),
+        ("1001", "1001"),
+        ("not-numeric",),
+        tuple(str(index) for index in range(101)),
+    ],
+)
+def test_public_client_rejects_invalid_gamma_batches(
+    market_ids: tuple[str, ...],
+) -> None:
+    client = PolymarketPublicClient(session=_RoutingSession({}), timeout_seconds=3)
+
+    with pytest.raises(ValueError, match="batch is invalid"):
+        client.gamma_markets(market_ids)
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        ([], "must be an object"),
+        ({}, "is malformed"),
+        ({"markets": [None]}, "entry is malformed"),
+        ({"markets": [{"id": "9999"}]}, "identity differs"),
+    ],
+)
+def test_public_client_rejects_malformed_gamma_batch_responses(
+    payload: object,
+    message: str,
+) -> None:
+    client = PolymarketPublicClient(session=_Session(payload), timeout_seconds=3)
+
+    with pytest.raises(ValueError, match=message):
+        client.gamma_markets(("1001",))
+
+
+def test_public_client_rejects_mismatched_exact_gamma_fallback() -> None:
+    batch_url = f"{GAMMA_MARKETS_URL}/keyset"
+    exact_url = f"{GAMMA_MARKETS_URL}/1001"
+    client = PolymarketPublicClient(
+        session=_RoutingSession(
+            {
+                batch_url: {"markets": [], "next_cursor": ""},
+                exact_url: {"id": "9999"},
+            }
+        ),
+        timeout_seconds=3,
+    )
+
+    with pytest.raises(ValueError, match="exact Gamma market identity differs"):
+        client.gamma_markets(("1001",))
+
+
 @pytest.mark.parametrize("payload", [{"version": 1}, {"version": "2"}, {}, []])
 def test_public_client_fails_closed_on_unknown_clob_protocol(payload: object) -> None:
     version_url = f"{CLOB_BASE_URL}/version"

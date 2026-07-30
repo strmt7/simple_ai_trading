@@ -81,12 +81,21 @@ LIVE_BOUNDARY_IMPORTS = {
     ),
     "polymarket_round17_campaign_operator.py": frozenset(
         {
+            "polymarket",
             "polymarket_recorder",
             "polymarket_replay",
             "polymarket_round14_campaign",
             "polymarket_round14_dataset",
             "polymarket_round17_cohort",
             "polymarket_round17_dataset",
+        }
+    ),
+    "polymarket_round17_resolution.py": frozenset(
+        {
+            "polymarket",
+            "polymarket_replay",
+            "polymarket_resolution",
+            "polymarket_round17_cohort",
         }
     ),
     "polymarket_round17_economic.py": frozenset(
