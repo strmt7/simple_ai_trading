@@ -89,6 +89,16 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
 
 
+def _event_order(event: DecodedPublicEvent) -> tuple[int, int, str, int, int]:
+    return (
+        int(event.received_wall_ms),
+        int(event.received_monotonic_ns),
+        str(event.connection_id),
+        int(event.sequence_number),
+        int(event.sub_index),
+    )
+
+
 def _source_sha256(filename: str) -> str:
     try:
         payload = Path(__file__).with_name(filename).read_bytes()
@@ -499,6 +509,36 @@ class PolymarketRound14LabelFreeDataset:
 
 
 @dataclass(frozen=True, slots=True)
+class PolymarketRound14LabelFreeMaterialization:
+    dataset: PolymarketRound14LabelFreeDataset
+    markets: tuple[PolymarketFiveMinuteMarket, ...]
+    replay: PolymarketEvidenceReplay
+    feature_events: tuple[DecodedPublicEvent, ...]
+
+    def validated(self) -> "PolymarketRound14LabelFreeMaterialization":
+        selected = self.dataset.validated()
+        condition_ids = {item.condition_id for item in selected.admissions}
+        if (
+            self.replay.run_id != selected.run_id
+            or self.replay.resolutions
+            or not self.markets
+            or {item.condition_id for item in self.markets} != condition_ids
+            or tuple(
+                sorted(
+                    self.markets,
+                    key=lambda item: (item.event_start_ms, item.condition_id),
+                )
+            )
+            != self.markets
+            or any(event.run_id != selected.run_id for event in self.feature_events)
+            or tuple(sorted(self.feature_events, key=_event_order))
+            != self.feature_events
+        ):
+            raise ValueError("Round 14 reusable materialization context differs")
+        return self
+
+
+@dataclass(frozen=True, slots=True)
 class _Bbo:
     source: str
     event_time_ms: int
@@ -889,9 +929,9 @@ def _finalize_admission(
 
 def _build_condition(
     *,
-    store: PolymarketEvidenceStore,
     run_id: str,
     market: PolymarketFiveMinuteMarket,
+    feature_events: Sequence[DecodedPublicEvent],
     replay_books: Mapping[str, tuple[PolymarketRecordedBook, ...]],
     gap_rows: Sequence[Sequence[object]],
     global_reasons: Sequence[str],
@@ -928,17 +968,11 @@ def _build_condition(
         )
     )
     events = tuple(
-        store.iter_public_events(
-            run_id,
-            streams=_FEATURE_SOURCE_STREAMS,
-            ordered=True,
-            verified_source=True,
-            minimum_received_wall_ms=max(
-                0,
-                market.event_start_ms - 180_000,
-            ),
-            maximum_received_wall_ms=decision_end,
-        )
+        event
+        for event in feature_events
+        if max(0, market.event_start_ms - 180_000)
+        <= event.received_wall_ms
+        <= decision_end
     )
     sources = _parse_condition_sources(events)
     reasons.extend(sources.core_errors)
@@ -1126,14 +1160,15 @@ def _build_condition(
     return _finalize_admission(provisional), tuple(rows)
 
 
-def materialize_round14_label_free_run(
+def materialize_round14_label_free_run_context(
     store: PolymarketEvidenceStore,
     *,
     run_id: str,
     spec: PolymarketRound14AdmissionSpec,
     diagnostic_only: bool = False,
-) -> PolymarketRound14LabelFreeDataset:
-    """Build target-free rows from one immutable terminal capture unit."""
+    condition_ids: Sequence[str] | None = None,
+) -> PolymarketRound14LabelFreeMaterialization:
+    """Build one reusable target-free context from a terminal capture unit."""
 
     spec = spec.validated()
     selected = str(run_id or "").strip()
@@ -1227,7 +1262,22 @@ def materialize_round14_label_free_run(
             + ",".join(sorted(set(global_reasons)))
         )
 
-    markets = PolymarketEvidenceReplay.load_markets(store, run_id=selected)
+    selected_conditions = (
+        None
+        if condition_ids is None
+        else tuple(
+            sorted({str(value or "").strip().lower() for value in condition_ids})
+        )
+    )
+    if selected_conditions is not None and (
+        not selected_conditions or any(not value for value in selected_conditions)
+    ):
+        raise ValueError("Round 14 materialization condition scope is invalid")
+    markets = PolymarketEvidenceReplay.load_markets(
+        store,
+        run_id=selected,
+        condition_ids=selected_conditions,
+    )
     cutoffs = {
         market.condition_id: market.end_ms - spec.decision_end_offset_ms
         for market in markets
@@ -1243,6 +1293,21 @@ def materialize_round14_label_free_run(
     )
     if replay.resolutions:
         raise ValueError("Round 14 target-free replay exposed resolutions")
+    feature_events = tuple(
+        store.iter_public_events(
+            selected,
+            streams=_FEATURE_SOURCE_STREAMS,
+            ordered=True,
+            verified_source=True,
+            minimum_received_wall_ms=max(
+                0,
+                min(market.event_start_ms for market in markets) - 180_000,
+            ),
+            maximum_received_wall_ms=max(
+                market.end_ms - spec.decision_end_offset_ms for market in markets
+            ),
+        )
+    )
     replay_books: dict[str, tuple[PolymarketRecordedBook, ...]] = {}
     for token_id in {token_id for market in markets for token_id in market.token_ids}:
         replay_books[token_id] = tuple(
@@ -1271,9 +1336,9 @@ def materialize_round14_label_free_run(
         markets, key=lambda item: (item.event_start_ms, item.condition_id)
     ):
         admission, condition_rows = _build_condition(
-            store=store,
             run_id=selected,
             market=market,
+            feature_events=feature_events,
             replay_books=replay_books,
             gap_rows=gap_rows,
             global_reasons=normalized_global_reasons,
@@ -1298,10 +1363,35 @@ def materialize_round14_label_free_run(
         rows=ordered_rows,
         dataset_sha256="0" * 64,
     )
-    return replace(
+    dataset = replace(
         provisional,
         dataset_sha256=_canonical_sha256(provisional.identity_payload()),
     ).validated()
+    return PolymarketRound14LabelFreeMaterialization(
+        dataset=dataset,
+        markets=tuple(
+            sorted(markets, key=lambda item: (item.event_start_ms, item.condition_id))
+        ),
+        replay=replay,
+        feature_events=feature_events,
+    ).validated()
+
+
+def materialize_round14_label_free_run(
+    store: PolymarketEvidenceStore,
+    *,
+    run_id: str,
+    spec: PolymarketRound14AdmissionSpec,
+    diagnostic_only: bool = False,
+) -> PolymarketRound14LabelFreeDataset:
+    """Build target-free rows from one immutable terminal capture unit."""
+
+    return materialize_round14_label_free_run_context(
+        store,
+        run_id=run_id,
+        spec=spec,
+        diagnostic_only=diagnostic_only,
+    ).dataset
 
 
 __all__ = [
@@ -1311,7 +1401,9 @@ __all__ = [
     "PolymarketRound14AdmissionSpec",
     "PolymarketRound14ConditionAdmission",
     "PolymarketRound14LabelFreeDataset",
+    "PolymarketRound14LabelFreeMaterialization",
     "load_round14_admission_spec",
     "materialize_round14_label_free_run",
+    "materialize_round14_label_free_run_context",
     "validate_round14_admission_spec",
 ]
