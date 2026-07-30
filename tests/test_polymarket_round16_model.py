@@ -28,6 +28,9 @@ from simple_ai_trading.polymarket_round16_model import (
     round16_feature_support_admission,
     round16_settlement_admission_mask,
 )
+from simple_ai_trading.polymarket_round16_targets import (
+    record_round16_target_implementation,
+)
 
 
 ROOT = Path(__file__).parents[1]
@@ -305,6 +308,7 @@ def test_round16_pretest_artifact_has_no_test_or_trading_authority(
                 tampered_artifact,
             )
 
+        record_round16_target_implementation(store)
         envelope_sha = record_round16_pretest_artifact(
             store,
             contract,
