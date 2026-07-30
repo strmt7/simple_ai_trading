@@ -51,6 +51,7 @@ POLYMARKET_RECORDER_PROGRESS_SCHEMA_VERSION = "polymarket-recorder-progress-v1"
 POLYMARKET_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v4"
 POLYMARKET_CAPTURE_MANIFEST_SCHEMA_VERSION = "polymarket-capture-manifest-v1"
 POLYMARKET_TERMINAL_RECOVERY_SCHEMA_VERSION = "polymarket-terminal-audit-recovery-v1"
+POLYMARKET_MAXIMUM_CAPTURE_DURATION_SECONDS = 30 * 86_400
 _RAW_RECONSTRUCTED_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v3"
 _INDEXED_COMPACT_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v2"
 _LEGACY_STORAGE_SCHEMA_VERSION = "polymarket-public-evidence-v1"
@@ -6545,13 +6546,17 @@ class PolymarketPublicRecorder:
         duration_seconds: int,
         progress: Callable[[str, Mapping[str, object]], None] | None = None,
         progress_interval_seconds: int = 30,
+        stop_requested: Callable[[], str | None] | None = None,
         preregistration_manifest_factory: (
             Callable[[str, int], Mapping[str, object]] | None
         ) = None,
     ) -> RecorderReport:
         duration = int(duration_seconds)
-        if duration < 5 or duration > 86_400:
-            raise ValueError("duration_seconds must lie in [5, 86400]")
+        if duration < 5 or duration > POLYMARKET_MAXIMUM_CAPTURE_DURATION_SECONDS:
+            raise ValueError(
+                "duration_seconds must lie in "
+                f"[5, {POLYMARKET_MAXIMUM_CAPTURE_DURATION_SECONDS}]"
+            )
         progress_interval = int(progress_interval_seconds)
         if progress_interval < 5 or progress_interval > 300:
             raise ValueError("progress_interval_seconds must lie in [5, 300]")
@@ -6666,9 +6671,10 @@ class PolymarketPublicRecorder:
                         started_at_ms=started,
                         duration_seconds=duration,
                         interval_seconds=progress_interval,
+                        stop_requested=stop_requested,
                     )
                 )
-                if progress is not None
+                if progress is not None or stop_requested is not None
                 else None
             )
             producers: list[asyncio.Task[None]] = []
@@ -6864,7 +6870,7 @@ class PolymarketPublicRecorder:
 
     async def _progress_loop(
         self,
-        progress: Callable[[str, Mapping[str, object]], None],
+        progress: Callable[[str, Mapping[str, object]], None] | None,
         stop: asyncio.Event,
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
         *,
@@ -6872,20 +6878,35 @@ class PolymarketPublicRecorder:
         started_at_ms: int,
         duration_seconds: int,
         interval_seconds: int,
+        stop_requested: Callable[[], str | None] | None = None,
     ) -> None:
         while not stop.is_set():
+            if stop_requested is not None:
+                try:
+                    reason = str(stop_requested() or "").strip()
+                except Exception as exc:
+                    self.errors.append(
+                        f"external_stop_check:{exc.__class__.__name__}:{exc}"
+                    )
+                    stop.set()
+                    return
+                if reason:
+                    self.errors.append(f"external_stop:{reason[:500]}")
+                    stop.set()
+                    return
             try:
                 await asyncio.wait_for(stop.wait(), timeout=int(interval_seconds))
                 return
             except TimeoutError:
-                self._notify_progress(
-                    progress,
-                    "capturing",
-                    run_id=run_id,
-                    started_at_ms=started_at_ms,
-                    duration_seconds=duration_seconds,
-                    queue_size=output.qsize(),
-                )
+                if progress is not None:
+                    self._notify_progress(
+                        progress,
+                        "capturing",
+                        run_id=run_id,
+                        started_at_ms=started_at_ms,
+                        duration_seconds=duration_seconds,
+                        queue_size=output.qsize(),
+                    )
 
     async def _supervise(
         self,

@@ -1,0 +1,66 @@
+{
+  "schema_version": "polymarket-round20-continuous-campaign-design-v1",
+  "round": 20,
+  "status": "preregistered_after_transport_qualification_before_corpus_capture",
+  "parent": {
+    "round20_contract_sha256": "90e837edc9bb8071f966f9d27335983e24c6060c4ba0d36fc3d2060913c421ad",
+    "round20_qualification_result_sha256": "5260a5b6c11e8acfb1343d25c593a1af21d3a239e6cf81d1430296f4a63ee05d",
+    "round20_qualification_passed": true
+  },
+  "capture_topology": {
+    "calendar_days": 30,
+    "logical_unit_seconds": 1200,
+    "logical_unit_count": 2160,
+    "planned_transport_restarts": false,
+    "maximum_concurrent_capture_segments": 1,
+    "segment_boundary": "campaign_start_campaign_end_or_unexpected_interruption",
+    "restart_after_interruption": "new_attested_segment_with_gap_preserved",
+    "logical_units_are_transport_restarts": false
+  },
+  "required_sources": {
+    "polymarket_gamma": true,
+    "polymarket_clob_a": true,
+    "polymarket_clob_b": true,
+    "polymarket_rtds_chainlink": true,
+    "binance_required": false,
+    "binance_captured_by_core_campaign": false,
+    "binance_credentials_allowed": false,
+    "binance_execution_allowed": false
+  },
+  "storage": {
+    "database": "single_duckdb_database",
+    "writer_count": 1,
+    "memory_limit": "1GB",
+    "database_threads": 2,
+    "queue_capacity": 100000,
+    "database_cap_bytes": 412316860416,
+    "minimum_free_bytes": 274877906944,
+    "exact_raw_receipts_are_authority": true,
+    "terminal_exact_audit_after_capture": true
+  },
+  "admission": {
+    "transport_completion_is_model_eligibility": false,
+    "whole_campaign_failure_on_one_lane_gap": false,
+    "affected_condition_rejected_on_joint_gap": true,
+    "single_lane_gap_preserved": true,
+    "condition_admission_requires_rebuilt_redundant_union": true,
+    "outcome_access_during_capture": false,
+    "model_access_during_capture": false
+  },
+  "recovery": {
+    "single_process_lock": true,
+    "orphaned_running_segment_terminalized_as_failed": true,
+    "unknown_terminal_state_blocks_new_segment": true,
+    "bounded_backoff_after_failure": true,
+    "progress_heartbeat_seconds": 30,
+    "repository_and_plan_attested_per_segment": true
+  },
+  "authority": {
+    "model_data_eligible": false,
+    "model_selected": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "1616da48a7a63477e03328f6a1c032b611981a58f2d0c801f06f95462471757f"
+}
