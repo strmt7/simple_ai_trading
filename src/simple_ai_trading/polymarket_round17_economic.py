@@ -18,13 +18,17 @@ from .polymarket_round17_execution import (
     POLYMARKET_ROUND17_EXECUTION_SCHEMA_VERSION,
 )
 from .polymarket_round17_features import POLYMARKET_ROUND17_CONTRACT_SHA256
+from .polymarket_round17_model import validate_round17_pretest_artifact
+from .polymarket_round17_uncertainty import (
+    validate_round17_probability_calibration,
+)
 
 
 POLYMARKET_ROUND17_ECONOMIC_SCHEMA_VERSION = (
     "polymarket-round17-btc-5m-economic-pretest-v1"
 )
 POLYMARKET_ROUND17_ECONOMIC_CONTRACT_SHA256 = (
-    "216aaa1dda6abb8b3b74363f2ebcebace0b6b1938ead29166972b4d95a635eb3"
+    "4a05f8b1bd289c8d4383790f0be4ef3011bf3e80083bee0ea3ce977a2a3b0148"
 )
 POLYMARKET_ROUND17_ECONOMIC_THRESHOLDS = (
     Decimal("0.005"),
@@ -50,6 +54,7 @@ _PROFILES = ("conservative", "regular", "aggressive")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _DAY_MS = 86_400_000
+_EMBARGO_MS = 3_600_000
 _ROUND14_CONTRACT_SHA256 = (
     "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b"
 )
@@ -453,13 +458,20 @@ def fit_round17_economic_pretest(
     outcomes: Sequence[Round17ConditionEconomicOutcome],
     program: PolymarketRound14Program,
     *,
-    model_pretest_sha256: str,
+    model_pretest: Mapping[str, object],
+    probability_calibration: Mapping[str, object],
+    dataset_sha256: str,
 ) -> dict[str, object]:
     """Select tune-only economic policies without accepting test-role input."""
 
     _validate_program(program)
-    if _SHA256.fullmatch(str(model_pretest_sha256)) is None:
-        raise ValueError("Round 17 model pretest identity is invalid")
+    model_parent = validate_round17_pretest_artifact(model_pretest)
+    calibration_parent = validate_round17_probability_calibration(
+        probability_calibration,
+        model_pretest=model_parent,
+    )
+    if str(dataset_sha256) != calibration_parent["dataset_sha256"]:
+        raise ValueError("Round 17 economic dataset identity differs")
     values = tuple(item.validated() for item in outcomes)
     if not values:
         raise ValueError("Round 17 economic outcomes are empty")
@@ -497,6 +509,21 @@ def fit_round17_economic_pretest(
             reference_conditions = identity
         elif identity != reference_conditions:
             raise ValueError("Round 17 economic policy condition panels differ")
+    if reference_conditions is None:
+        raise ValueError("Round 17 economic policy condition panel is empty")
+    condition_ids = [
+        condition_id for condition_id, _event_start in reference_conditions
+    ]
+    event_starts = [event_start for _condition_id, event_start in reference_conditions]
+    first_event_start_ms = min(event_starts)
+    last_event_start_ms = max(event_starts)
+    parent_last_event_start_ms = int(calibration_parent["last_event_start_ms"])
+    embargo_ms = first_event_start_ms - (parent_last_event_start_ms + 300_000)
+    if (
+        set(condition_ids).intersection(calibration_parent["condition_ids"])
+        or embargo_ms < _EMBARGO_MS
+    ):
+        raise ValueError("Round 17 economic partition leaks probability calibration")
 
     candidate_ledger: list[dict[str, object]] = []
     selected: dict[str, dict[str, object]] = {}
@@ -567,9 +594,20 @@ def fit_round17_economic_pretest(
         "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
         "economic_contract_sha256": (POLYMARKET_ROUND17_ECONOMIC_CONTRACT_SHA256),
         "round14_risk_contract_sha256": program.contract_sha256,
-        "model_pretest_sha256": model_pretest_sha256,
+        "model_pretest_sha256": model_parent["pretest_sha256"],
+        "probability_calibration_sha256": (calibration_parent["calibration_sha256"]),
+        "dataset_sha256": str(dataset_sha256),
         "source_partition": _SOURCE_PARTITION,
-        "condition_count": len(reference_conditions or ()),
+        "condition_count": len(reference_conditions),
+        "condition_ids": condition_ids,
+        "condition_ids_sha256": _canonical_sha256(condition_ids),
+        "first_event_start_ms": first_event_start_ms,
+        "last_event_start_ms": last_event_start_ms,
+        "partition_parent": {
+            "source_role": "tune_uncertainty",
+            "last_event_start_ms": parent_last_event_start_ms,
+            "embargo_ms": embargo_ms,
+        },
         "paths": list(POLYMARKET_ROUND17_ECONOMIC_PATHS),
         "risk_profiles": list(_PROFILES),
         "scenarios": list(_SCENARIOS),
@@ -605,12 +643,30 @@ def fit_round17_economic_pretest(
 
 def validate_round17_economic_pretest(
     value: Mapping[str, object],
+    *,
+    model_pretest: Mapping[str, object] | None = None,
+    probability_calibration: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     payload = dict(value)
     claimed = str(payload.pop("economic_pretest_sha256", "")).strip().lower()
     ledger = payload.get("candidate_ledger")
     selected = payload.get("selected_by_profile")
     accepted = payload.get("development_accepted")
+    condition_ids = payload.get("condition_ids")
+    condition_count = payload.get("condition_count")
+    first_event_start_ms = payload.get("first_event_start_ms")
+    last_event_start_ms = payload.get("last_event_start_ms")
+    partition_parent = payload.get("partition_parent")
+    parent_last_event_start_ms = (
+        partition_parent.get("last_event_start_ms")
+        if isinstance(partition_parent, Mapping)
+        else None
+    )
+    embargo_ms = (
+        partition_parent.get("embargo_ms")
+        if isinstance(partition_parent, Mapping)
+        else None
+    )
     if (
         claimed != _canonical_sha256(payload)
         or payload.get("schema_version") != POLYMARKET_ROUND17_ECONOMIC_SCHEMA_VERSION
@@ -619,7 +675,39 @@ def validate_round17_economic_pretest(
         != POLYMARKET_ROUND17_ECONOMIC_CONTRACT_SHA256
         or payload.get("round14_risk_contract_sha256") != _ROUND14_CONTRACT_SHA256
         or _SHA256.fullmatch(str(payload.get("model_pretest_sha256") or "")) is None
+        or _SHA256.fullmatch(str(payload.get("probability_calibration_sha256") or ""))
+        is None
+        or _SHA256.fullmatch(str(payload.get("dataset_sha256") or "")) is None
         or payload.get("source_partition") != _SOURCE_PARTITION
+        or not isinstance(condition_ids, list)
+        or not condition_ids
+        or condition_ids != sorted(condition_ids)
+        or len(condition_ids) != len(set(condition_ids))
+        or any(
+            not isinstance(condition_id, str)
+            or _CONDITION_ID.fullmatch(condition_id) is None
+            for condition_id in condition_ids
+        )
+        or condition_count != len(condition_ids)
+        or payload.get("condition_ids_sha256") != _canonical_sha256(condition_ids)
+        or isinstance(first_event_start_ms, bool)
+        or not isinstance(first_event_start_ms, int)
+        or isinstance(last_event_start_ms, bool)
+        or not isinstance(last_event_start_ms, int)
+        or first_event_start_ms <= 0
+        or first_event_start_ms % 300_000
+        or last_event_start_ms < first_event_start_ms
+        or last_event_start_ms % 300_000
+        or not isinstance(partition_parent, Mapping)
+        or partition_parent.get("source_role") != "tune_uncertainty"
+        or isinstance(parent_last_event_start_ms, bool)
+        or not isinstance(parent_last_event_start_ms, int)
+        or parent_last_event_start_ms <= 0
+        or parent_last_event_start_ms % 300_000
+        or isinstance(embargo_ms, bool)
+        or not isinstance(embargo_ms, int)
+        or embargo_ms != first_event_start_ms - (parent_last_event_start_ms + 300_000)
+        or embargo_ms < _EMBARGO_MS
         or payload.get("paths") != list(POLYMARKET_ROUND17_ECONOMIC_PATHS)
         or payload.get("risk_profiles") != list(_PROFILES)
         or payload.get("scenarios") != list(_SCENARIOS)
@@ -662,6 +750,23 @@ def validate_round17_economic_pretest(
         )
     ):
         raise ValueError("Round 17 economic pretest integrity differs")
+    if (model_pretest is None) is not (probability_calibration is None):
+        raise ValueError("Round 17 economic pretest parents must be supplied together")
+    if model_pretest is not None and probability_calibration is not None:
+        model_parent = validate_round17_pretest_artifact(model_pretest)
+        calibration_parent = validate_round17_probability_calibration(
+            probability_calibration,
+            model_pretest=model_parent,
+        )
+        if (
+            payload["model_pretest_sha256"] != model_parent["pretest_sha256"]
+            or payload["probability_calibration_sha256"]
+            != calibration_parent["calibration_sha256"]
+            or payload["dataset_sha256"] != calibration_parent["dataset_sha256"]
+            or parent_last_event_start_ms != calibration_parent["last_event_start_ms"]
+            or set(condition_ids).intersection(calibration_parent["condition_ids"])
+        ):
+            raise ValueError("Round 17 economic pretest parent differs")
     return {**payload, "economic_pretest_sha256": claimed}
 
 

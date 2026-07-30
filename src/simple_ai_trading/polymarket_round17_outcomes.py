@@ -39,6 +39,7 @@ from .polymarket_round17_features import (
     POLYMARKET_ROUND17_CONTRACT_SHA256,
     PolymarketRound17FeatureRow,
 )
+from .polymarket_round17_uncertainty import Round17CalibratedEnvelope
 
 
 POLYMARKET_ROUND17_OUTCOME_MATERIALIZATION_SCHEMA_VERSION = (
@@ -94,6 +95,9 @@ class Round17DecisionProbability:
     feature_input_sha256: str
     feature_values_sha256: str
     model_pretest_sha256: str
+    calibration_sha256: str
+    calibration_supported: bool
+    calibration_support_condition_count: int
     envelope: Round17ProbabilityEnvelope
     prediction_sha256: str
 
@@ -107,6 +111,11 @@ class Round17DecisionProbability:
             "feature_input_sha256": self.feature_input_sha256,
             "feature_values_sha256": self.feature_values_sha256,
             "model_pretest_sha256": self.model_pretest_sha256,
+            "calibration_sha256": self.calibration_sha256,
+            "calibration_supported": self.calibration_supported,
+            "calibration_support_condition_count": (
+                self.calibration_support_condition_count
+            ),
             "probability_up": format(selected.probability_up, "f"),
             "lower_up": format(selected.lower_up, "f"),
             "upper_up": format(selected.upper_up, "f"),
@@ -123,8 +132,15 @@ class Round17DecisionProbability:
                     self.feature_input_sha256,
                     self.feature_values_sha256,
                     self.model_pretest_sha256,
+                    self.calibration_sha256,
                     self.prediction_sha256,
                 )
+            )
+            or type(self.calibration_supported) is not bool
+            or self.calibration_support_condition_count < 0
+            or (
+                self.calibration_supported
+                and self.calibration_support_condition_count < 1
             )
             or self.envelope.evidence_sha256 != self.prediction_sha256
             or self.prediction_sha256 != _canonical_sha256(self.identity_payload())
@@ -140,6 +156,9 @@ def build_round17_decision_probability(
     lower_up: Decimal,
     upper_up: Decimal,
     model_pretest_sha256: str,
+    calibration_sha256: str,
+    calibration_supported: bool,
+    calibration_support_condition_count: int,
 ) -> Round17DecisionProbability:
     if not isinstance(row, PolymarketRound17FeatureRow):
         raise TypeError("Round 17 probability source row type differs")
@@ -157,6 +176,9 @@ def build_round17_decision_probability(
         "feature_input_sha256": row.input_sha256,
         "feature_values_sha256": row.values_sha256,
         "model_pretest_sha256": str(model_pretest_sha256),
+        "calibration_sha256": str(calibration_sha256),
+        "calibration_supported": bool(calibration_supported),
+        "calibration_support_condition_count": int(calibration_support_condition_count),
         "probability_up": format(provisional_envelope.probability_up, "f"),
         "lower_up": format(provisional_envelope.lower_up, "f"),
         "upper_up": format(provisional_envelope.upper_up, "f"),
@@ -168,6 +190,9 @@ def build_round17_decision_probability(
         feature_input_sha256=row.input_sha256,
         feature_values_sha256=row.values_sha256,
         model_pretest_sha256=str(model_pretest_sha256),
+        calibration_sha256=str(calibration_sha256),
+        calibration_supported=bool(calibration_supported),
+        calibration_support_condition_count=int(calibration_support_condition_count),
         envelope=Round17ProbabilityEnvelope(
             probability_up=provisional_envelope.probability_up,
             lower_up=provisional_envelope.lower_up,
@@ -176,6 +201,33 @@ def build_round17_decision_probability(
         ),
         prediction_sha256=digest,
     ).validated()
+
+
+def build_round17_calibrated_decision_probability(
+    row: PolymarketRound17FeatureRow,
+    calibrated: Round17CalibratedEnvelope,
+) -> Round17DecisionProbability:
+    if not isinstance(calibrated, Round17CalibratedEnvelope):
+        raise TypeError("Round 17 calibrated envelope type differs")
+    if (
+        calibrated.source_role != "tune_economic"
+        or calibrated.condition_id != row.condition_id
+        or calibrated.decision_time_ms != row.decision_time_ms
+        or calibrated.feature_input_sha256 != row.input_sha256
+        or calibrated.feature_values_sha256 != row.values_sha256
+    ):
+        raise ValueError("Round 17 calibrated feature evidence differs")
+    envelope = calibrated.envelope.validated()
+    return build_round17_decision_probability(
+        row,
+        probability_up=envelope.probability_up,
+        lower_up=envelope.lower_up,
+        upper_up=envelope.upper_up,
+        model_pretest_sha256=calibrated.model_pretest_sha256,
+        calibration_sha256=calibrated.calibration_sha256,
+        calibration_supported=calibrated.supported,
+        calibration_support_condition_count=(calibrated.support_condition_count),
+    )
 
 
 class _BookIndex:
@@ -598,6 +650,7 @@ def materialize_round17_condition_economic_outcomes(
             for item, row in zip(probability_rows, source.rows, strict=True)
         )
         or len({item.model_pretest_sha256 for item in probability_rows}) != 1
+        or len({item.calibration_sha256 for item in probability_rows}) != 1
     ):
         raise ValueError("Round 17 probability panel differs from feature rows")
     index = _BookIndex(market, books, run_id=source.run_id)
@@ -828,6 +881,7 @@ def materialize_round17_condition_economic_outcomes(
 __all__ = [
     "POLYMARKET_ROUND17_OUTCOME_MATERIALIZATION_SCHEMA_VERSION",
     "Round17DecisionProbability",
+    "build_round17_calibrated_decision_probability",
     "build_round17_decision_probability",
     "materialize_round17_condition_economic_outcomes",
 ]

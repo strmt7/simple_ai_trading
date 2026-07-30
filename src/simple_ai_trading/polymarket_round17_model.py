@@ -19,13 +19,19 @@ from .polymarket_round17_features import (
     POLYMARKET_ROUND17_CONTRACT_SHA256,
     POLYMARKET_ROUND17_FEATURE_NAMES,
     POLYMARKET_ROUND17_FEATURE_NAMES_SHA256,
+    PolymarketRound17FeatureRow,
 )
 
 
 POLYMARKET_ROUND17_PRETEST_SCHEMA_VERSION = (
     "polymarket-round17-btc-5m-development-pretest-v1"
 )
-_ROLES = ("train", "tune_calibration", "tune_selection")
+_MODEL_ROLES = ("train", "tune_calibration", "tune_selection")
+_PANEL_ROLES = (
+    *_MODEL_ROLES,
+    "tune_uncertainty",
+    "tune_economic",
+)
 _PROBABILITY_FLOOR = 1e-6
 _EMBARGO_MS = 3_600_000
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
@@ -85,7 +91,7 @@ class Round17DevelopmentPanel:
         labels = np.asarray(self.labels, dtype=np.float64)
         rows = len(labels)
         if (
-            role not in _ROLES
+            role not in _PANEL_ROLES
             or rows < 1
             or condition_ids.shape != (rows,)
             or event_starts.shape != (rows,)
@@ -387,6 +393,13 @@ def _model_matrix(
     model: Mapping[str, object],
     panel: Round17DevelopmentPanel,
 ) -> tuple[np.ndarray, tuple[int, ...]]:
+    return _model_matrix_from_features(model, panel.features)
+
+
+def _model_matrix_from_features(
+    model: Mapping[str, object],
+    features: np.ndarray,
+) -> tuple[np.ndarray, tuple[int, ...]]:
     indices = tuple(
         int(value)
         for value in model["feature_indices"]  # type: ignore[index]
@@ -401,12 +414,30 @@ def _model_matrix(
         or not np.all(np.isfinite(upper))
     ):
         raise ValueError("Round 17 train-fitted feature support is invalid")
-    return np.clip(panel.features[:, indices], lower, upper), indices
+    selected = np.asarray(features, dtype=np.float64)
+    if (
+        selected.ndim != 2
+        or selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES)
+        or not np.all(np.isfinite(selected))
+    ):
+        raise ValueError("Round 17 inference features are invalid")
+    return np.clip(selected[:, indices], lower, upper), indices
 
 
 def _structural_logit(panel: Round17DevelopmentPanel) -> np.ndarray:
+    return _structural_logit_from_features(panel.features)
+
+
+def _structural_logit_from_features(features: np.ndarray) -> np.ndarray:
     index = POLYMARKET_ROUND17_FEATURE_NAMES.index("structural_probability_up")
-    return logit(_probability(panel.features[:, index]))
+    selected = np.asarray(features, dtype=np.float64)
+    if (
+        selected.ndim != 2
+        or selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES)
+        or not np.all(np.isfinite(selected))
+    ):
+        raise ValueError("Round 17 inference features are invalid")
+    return logit(_probability(selected[:, index]))
 
 
 def _fit_logistic_residual(
@@ -568,26 +599,42 @@ def _raw_model_prediction(
     model: Mapping[str, object],
     panel: Round17DevelopmentPanel,
 ) -> np.ndarray:
+    return _raw_model_prediction_from_features(model, panel.features)
+
+
+def _raw_model_prediction_from_features(
+    model: Mapping[str, object],
+    features: np.ndarray,
+) -> np.ndarray:
+    selected = np.asarray(features, dtype=np.float64)
+    if (
+        selected.ndim != 2
+        or selected.shape[1] != len(POLYMARKET_ROUND17_FEATURE_NAMES)
+        or not np.all(np.isfinite(selected))
+    ):
+        raise ValueError("Round 17 inference features are invalid")
     family = str(model.get("family") or "")
     if family == "training_prevalence":
         return np.full(
-            len(panel.labels),
+            len(selected),
             float(model["probability_up"]),
             dtype=np.float64,
         )
     if family == "structural_control":
-        return _probability(expit(_structural_logit(panel)))
+        return _probability(expit(_structural_logit_from_features(selected)))
     if family == "market_prior_control":
         index = POLYMARKET_ROUND17_FEATURE_NAMES.index("normalized_market_prior_up")
-        return _probability(panel.features[:, index])
-    matrix, _indices = _model_matrix(model, panel)
+        return _probability(selected[:, index])
+    matrix, _indices = _model_matrix_from_features(model, selected)
     if family == "logistic_residual":
         mean = np.asarray(model["mean"], dtype=np.float64)
         scale = np.asarray(model["scale"], dtype=np.float64)
         coefficient = np.asarray(model["coefficient"], dtype=np.float64)
         matrix = (matrix - mean) / scale
         linear = (
-            _structural_logit(panel) + float(model["intercept"]) + matrix @ coefficient
+            _structural_logit_from_features(selected)
+            + float(model["intercept"])
+            + matrix @ coefficient
         )
         return _probability(expit(linear))
     if family == "lightgbm_residual":
@@ -599,7 +646,7 @@ def _raw_model_prediction(
             ),
             dtype=np.float64,
         )
-        return _probability(expit(_structural_logit(panel) + residual))
+        return _probability(expit(_structural_logit_from_features(selected) + residual))
     raise ValueError("Round 17 candidate family is invalid")
 
 
@@ -617,13 +664,34 @@ def predict_round17_candidate(
     return _apply_platt(raw, calibration)
 
 
+def predict_round17_feature_rows(
+    candidate: Mapping[str, object],
+    rows: Sequence[PolymarketRound17FeatureRow],
+) -> np.ndarray:
+    """Predict exact hash-validated feature rows without accepting target data."""
+
+    selected = tuple(rows)
+    if not selected or any(
+        not isinstance(row, PolymarketRound17FeatureRow) for row in selected
+    ):
+        raise TypeError("Round 17 inference rows differ")
+    features = np.asarray([row.values for row in selected], dtype=np.float64)
+    raw = _raw_model_prediction_from_features(candidate, features)
+    calibration = candidate.get("calibration")
+    if calibration is None:
+        return raw
+    if not isinstance(calibration, Mapping):
+        raise ValueError("Round 17 candidate calibration is invalid")
+    return _apply_platt(raw, calibration)
+
+
 def _panel_boundaries(
     train: Round17DevelopmentPanel,
     calibration: Round17DevelopmentPanel,
     selection: Round17DevelopmentPanel,
 ) -> dict[str, object]:
     panels = (train.validate(), calibration.validate(), selection.validate())
-    if tuple(panel.role for panel in panels) != _ROLES:
+    if tuple(panel.role for panel in panels) != _MODEL_ROLES:
         raise ValueError("Round 17 development panel roles differ")
     if len({panel.dataset_sha256 for panel in panels}) != 1:
         raise ValueError("Round 17 development dataset identities differ")
@@ -651,6 +719,12 @@ def _panel_boundaries(
                 "condition_count": len(np.unique(panel.condition_ids)),
                 "first_event_start_ms": int(np.min(panel.event_start_ms)),
                 "last_event_start_ms": int(np.max(panel.event_start_ms)),
+                "condition_ids": sorted(
+                    str(value) for value in np.unique(panel.condition_ids)
+                ),
+                "condition_ids_sha256": _canonical_sha256(
+                    sorted(str(value) for value in np.unique(panel.condition_ids))
+                ),
             }
             for panel in panels
         },
@@ -658,6 +732,75 @@ def _panel_boundaries(
         "tune_internal_embargo_ms": selection_start - calibration_end,
         "test_role_accessed": False,
     }
+
+
+def _valid_pretest_boundaries(value: object) -> bool:
+    if not isinstance(value, Mapping):
+        return False
+    dataset_sha256 = str(value.get("dataset_sha256") or "")
+    roles = value.get("roles")
+    if (
+        len(dataset_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in dataset_sha256)
+        or not isinstance(roles, Mapping)
+        or tuple(roles) != _MODEL_ROLES
+        or value.get("test_role_accessed") is not False
+    ):
+        return False
+    condition_sets: list[set[str]] = []
+    boundaries: list[tuple[int, int]] = []
+    for role in _MODEL_ROLES:
+        selected = roles.get(role)
+        if not isinstance(selected, Mapping):
+            return False
+        condition_ids = selected.get("condition_ids")
+        if (
+            not isinstance(condition_ids, list)
+            or not condition_ids
+            or condition_ids != sorted(condition_ids)
+            or len(condition_ids) != len(set(condition_ids))
+            or any(
+                not isinstance(condition_id, str)
+                or _CONDITION_ID.fullmatch(condition_id) is None
+                for condition_id in condition_ids
+            )
+            or selected.get("condition_count") != len(condition_ids)
+            or selected.get("condition_ids_sha256") != _canonical_sha256(condition_ids)
+        ):
+            return False
+        row_count = selected.get("row_count")
+        first = selected.get("first_event_start_ms")
+        last = selected.get("last_event_start_ms")
+        if (
+            isinstance(row_count, bool)
+            or not isinstance(row_count, int)
+            or row_count < len(condition_ids)
+            or isinstance(first, bool)
+            or not isinstance(first, int)
+            or isinstance(last, bool)
+            or not isinstance(last, int)
+            or first <= 0
+            or first % 300_000
+            or last < first
+            or last % 300_000
+        ):
+            return False
+        condition_sets.append(set(condition_ids))
+        boundaries.append((first, last))
+    if any(
+        left & right
+        for index, left in enumerate(condition_sets)
+        for right in condition_sets[index + 1 :]
+    ):
+        return False
+    train_calibration_embargo = boundaries[1][0] - (boundaries[0][1] + 300_000)
+    calibration_selection_embargo = boundaries[2][0] - (boundaries[1][1] + 300_000)
+    return (
+        value.get("train_tune_calibration_embargo_ms") == train_calibration_embargo
+        and value.get("tune_internal_embargo_ms") == calibration_selection_embargo
+        and train_calibration_embargo >= _EMBARGO_MS
+        and calibration_selection_embargo >= _EMBARGO_MS
+    )
 
 
 def _control_models(
@@ -985,6 +1128,7 @@ def validate_round17_pretest_artifact(
         or payload.get("contract_sha256") != POLYMARKET_ROUND17_CONTRACT_SHA256
         or payload.get("feature_names_sha256")
         != POLYMARKET_ROUND17_FEATURE_NAMES_SHA256
+        or not _valid_pretest_boundaries(payload.get("dataset_and_partition"))
         or not isinstance(candidate_ledger, list)
         or len(candidate_ledger) != 15
         or len(candidate_ids) != 15
@@ -1041,5 +1185,6 @@ __all__ = [
     "Round17DevelopmentPanel",
     "fit_round17_development_pretest",
     "predict_round17_candidate",
+    "predict_round17_feature_rows",
     "validate_round17_pretest_artifact",
 ]

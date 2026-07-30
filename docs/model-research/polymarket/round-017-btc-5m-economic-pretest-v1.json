@@ -19,6 +19,40 @@
     "independence": "Polymarket owns market identity, books, fees, wallet, orders, positions, risk, PnL, settlement, stop, and recovery. Binance has no credential, account, order, balance, position, capital, PnL, risk, or execution role.",
     "optional_binance_input": "Credential-free public BTC spot and futures observations may already be present in the hash-bound probability evidence. They may preserve, reduce, or veto a Polymarket action only."
   },
+  "partition_protocol": {
+    "chronology": [
+      "train",
+      "tune_calibration",
+      "tune_selection",
+      "tune_uncertainty",
+      "tune_economic",
+      "test"
+    ],
+    "embargo_ms_between_adjacent_roles": 3600000,
+    "event_duration_ms": 300000,
+    "condition_ids_disjoint_across_roles": true,
+    "model_selection_frozen_before_tune_uncertainty": true,
+    "probability_calibration_frozen_before_tune_economic": true,
+    "economic_policy_frozen_before_test": true,
+    "test_may_be_accessed_once": true,
+    "failed_test_may_not_return_to_development": true
+  },
+  "probability_uncertainty": {
+    "source_partition": "tune_uncertainty",
+    "method": "condition-block bootstrap of condition-equal-weighted 50-bin isotonic calibration",
+    "bin_count": 50,
+    "bootstrap_unit": "condition",
+    "bootstrap_samples": 500,
+    "bootstrap_seed": 117017,
+    "lower_quantile": "0.05",
+    "upper_quantile": "0.95",
+    "minimum_total_conditions": 100,
+    "minimum_conditions_per_interpolated_bin": 30,
+    "unsupported_probability_region_action": "abstain",
+    "caller_supplied_probability_prohibited": true,
+    "selected_model_artifact_required": true,
+    "feature_row_hash_binding_required": true
+  },
   "action_paths": [
     {
       "name": "settlement_directional",
@@ -169,5 +203,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "contract_sha256": "216aaa1dda6abb8b3b74363f2ebcebace0b6b1938ead29166972b4d95a635eb3"
+  "contract_sha256": "4a05f8b1bd289c8d4383790f0be4ef3011bf3e80083bee0ea3ce977a2a3b0148"
 }
