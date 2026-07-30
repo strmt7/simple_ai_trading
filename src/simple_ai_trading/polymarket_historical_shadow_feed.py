@@ -196,6 +196,8 @@ class _QueuedMessage:
 class PolymarketHistoricalShadowFeed:
     """Reconnect public feeds while isolating each incomplete feed epoch."""
 
+    trading_authority = False
+
     def __init__(
         self,
         *,

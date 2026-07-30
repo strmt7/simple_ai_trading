@@ -13,7 +13,10 @@ them to estimate BTC direction, and a separate safety overlay may preserve,
 reduce, or veto its proposal. They cannot authenticate, fund, place, cancel,
 settle, or reconcile an order, grant trading authority, or increase an approved
 size. Disabling the Binance predictor leaves the Polymarket market, wallet,
-order, ownership, risk, stop, and settlement system intact.
+order, ownership, risk, stop, and settlement system intact. The current Round
+16 model requires those public observations and therefore abstains if that
+predictor feed is disabled or incomplete; this is a model dependency, not a
+shared venue or execution dependency.
 
 ```mermaid
 flowchart LR
@@ -87,12 +90,12 @@ flowchart LR
   blocks new proposals and retries exact bot-owned cancellation and closing
   until no owned order or position remains; an incomplete close is never
   reported as stopped.
-- Every user-stream, reconciliation, settlement, model, and enabled public
-  signal task is supervised as critical. Safety services receive one scheduling
-  turn before model decisions begin. An unexpected task exception or return
-  immediately latches Stop, prevents further model work, closes only exact
-  bot-owned exposure, awaits all service shutdowns, and surfaces the named
-  failure after cleanup.
+- Every user-stream, reconciliation, settlement, predictor-data, model, and
+  enabled public-signal task is supervised as critical. Safety services receive
+  one scheduling turn before model decisions begin. An unexpected task
+  exception or return immediately latches Stop, prevents further model work,
+  closes only exact bot-owned exposure, awaits all service shutdowns, and
+  surfaces the named failure after cleanup.
 - The optional external BTC signal is a read-only callback. It receives no
   wallet, venue, coordinator, ledger, credential, balance, position, or order
   object and can only preserve, reduce, or veto a promoted Polymarket proposal.
@@ -134,10 +137,16 @@ flowchart LR
 - The installed CLI and native Windows app consume one generated command
   contract. `polymarket-live` exposes credential-free local status,
   authenticated preflight and reconciliation, foreground user-stream and
-  settlement supervision, exact owned-order cancellation, redemption recovery,
-  exact owned-position Stop, and explicitly confirmed redemption.
+  settlement supervision, promotion-gated autonomous operation, exact
+  owned-order cancellation, redemption recovery, exact owned-position Stop,
+  and explicitly confirmed redemption.
 - Local status does not create a missing ledger. Supervision opens no exposure;
   it runs only the independent authenticated safety and recovery loops.
+- Autonomous operation requires an unexpired live-authority promotion, exact
+  promotion-bound files, caller-pinned canonical pretest and evaluation
+  digests, and the frozen Round 16 contract. The predictor-data service is
+  explicitly non-authoritative and is supervised independently from model,
+  reconciliation, stream, settlement, and execution loops.
 - The execution proposal and promotion firewall support either BTC five-minute
   or BTC fifteen-minute contracts. They never pool or switch horizons
   automatically. Round 16 preregisters the fifteen-minute comparison after
@@ -151,12 +160,11 @@ flowchart LR
 - No Polymarket model has passed prospective, after-cost promotion gates.
 - No account credentials are available for an authenticated host test.
 - No autonomous Polymarket decision policy has live-order authority. The
-  operator command therefore cannot open exposure.
-- The autonomous runtime and promotion-gated order path are implemented, but
-  no production decision provider is selected because the current model failed
-  its one-hour after-cost shadow. Exposing an operator Start control before a
-  model promotion would create a nonfunctional or unsafe command, so Start
-  remains closed for both horizons.
+  autonomous action therefore fails closed before opening exposure.
+- The Round 16 fifteen-minute decision provider and operator assembly are
+  implemented, but no accepted model, prospective after-cost evaluation,
+  implementation manifest, or live-authority promotion exists. The earlier
+  five-minute first-candidate policy remains rejected.
 
 These gaps block release authority. A public API check or offline signature is
 not an authenticated order, cancellation, fill, or redemption test.
@@ -167,6 +175,11 @@ not an authenticated order, cancellation, fill, or redemption test.
 simple-ai-trading polymarket-live --action status
 simple-ai-trading polymarket-live --action preflight --json
 simple-ai-trading polymarket-live --action supervise
+simple-ai-trading polymarket-live --action autonomous `
+  --promotion <promotion.json> `
+  --evidence-root <evidence-directory> `
+  --pretest-envelope-sha256 <sha256> `
+  --evaluation-envelope-sha256 <sha256>
 simple-ai-trading polymarket-live --action cancel-owned
 simple-ai-trading polymarket-live --action stop --stop-timeout-seconds 30
 simple-ai-trading polymarket-live --action recover-redemptions
@@ -176,7 +189,8 @@ simple-ai-trading polymarket-live --action recover-redemptions
 off unless `--automatic-redemption` is set. Smart-wallet settlement also
 requires exactly one complete relayer or builder credential set. Credentials
 come only from process environment variables and are never stored in the
-ledger, command contract, output, or documentation.
+ledger, command contract, output, or documentation. The autonomous example is
+not runnable with repository artifacts today because no promotion exists.
 
 ## Current Public Host Evidence
 

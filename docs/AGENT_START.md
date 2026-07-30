@@ -316,6 +316,11 @@ extends the established parser with independently registered commands.
   credential, account, balance, order, fill, position, capital, PnL, risk, or
   execution state may enter the Polymarket wallet, ownership ledger,
   reconciliation, stop, or settlement boundary.
+- `polymarket-live --action autonomous` assembles the Round 16 predictor,
+  independent public predictor feed, Polymarket user stream, reconciliation,
+  Stop, and settlement loops only after exact promotion and envelope pins. No
+  qualifying evidence or live-authority promotion exists, so the action is
+  implemented but currently fails closed before opening exposure.
 - Captures `eae374e2662c440fb93970d5710937b1`,
   `3a67757c7f174df4b62f2722ea9211cb`, and
   `b8a270da20fe4116a01a4626607e42da` are permanently development-only. The
