@@ -414,7 +414,7 @@ def test_round16_identity_collection_repairs_bounded_keyset_omission(
         assert all('"winner"' not in row.identity_payload_json for row in identities)
 
 
-def test_round16_gamma_target_batch_requires_exact_coverage() -> None:
+def test_round16_gamma_target_batch_repairs_exact_coverage() -> None:
     market = _event()["markets"][0]
     assert isinstance(market, dict)
     session = _Session({"markets": [market], "next_cursor": ""})
@@ -433,11 +433,34 @@ def test_round16_gamma_target_batch_requires_exact_coverage() -> None:
     assert ("closed", "true") in params
     assert ("limit", "1") in params
 
+    class MissingThenExactSession:
+        def __init__(self, exact: object) -> None:
+            self.exact = exact
+            self.calls: list[tuple[str, object, float]] = []
+
+        def get(self, url: str, *, params: object, timeout: float) -> _Response:
+            self.calls.append((url, params, timeout))
+            if url.endswith("/markets/keyset"):
+                return _Response({"markets": [], "next_cursor": ""})
+            return _Response(self.exact)
+
+    fallback_session = MissingThenExactSession(market)
     missing = Round16HistoricalPublicClient(
-        session=_Session({"markets": [], "next_cursor": ""}),
+        session=fallback_session,  # type: ignore[arg-type]
     )
-    with pytest.raises(ValueError, match="coverage differs"):
-        missing.gamma_markets(("1234567",))
+    repaired = missing.gamma_markets(("1234567",))
+
+    assert repaired["1234567"].value == market
+    assert len(fallback_session.calls) == 2
+    assert fallback_session.calls[1][0].endswith("/markets/1234567")
+    assert fallback_session.calls[1][1] is None
+
+    mismatch = MissingThenExactSession({**market, "id": "7654321"})
+    invalid = Round16HistoricalPublicClient(
+        session=mismatch,  # type: ignore[arg-type]
+    )
+    with pytest.raises(ValueError, match="exact Gamma market identity differs"):
+        invalid.gamma_markets(("1234567",))
 
 
 def test_round16_target_implementation_manifest_fails_closed_on_drift(
