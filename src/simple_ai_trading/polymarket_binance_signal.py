@@ -18,11 +18,9 @@ from .polymarket_external_signal import (
 )
 
 
-BINANCE_SPOT_BTC_TICKER_URL = (
-    "wss://data-stream.binance.vision/ws/btcusdt@ticker"
-)
+BINANCE_SPOT_BTC_TICKER_URL = "wss://data-stream.binance.vision/ws/btcusdt@ticker"
 BINANCE_FUTURES_BTC_BOOK_TICKER_URL = (
-    "wss://fstream.binance.com/ws/btcusdt@bookTicker"
+    "wss://fstream.binance.com/public/ws/btcusdt@bookTicker"
 )
 
 
@@ -303,9 +301,7 @@ class BinanceBtcPublicSignalProvider:
         return BinanceBtcSignalSnapshot(
             spot_connected=connected["BINANCE_SPOT"],
             futures_connected=connected["BINANCE_USD_M_FUTURES"],
-            spot_age_ms=(
-                None if spot is None else max(0, now - spot.received_at_ms)
-            ),
+            spot_age_ms=(None if spot is None else max(0, now - spot.received_at_ms)),
             futures_age_ms=(
                 None if futures is None else max(0, now - futures.received_at_ms)
             ),

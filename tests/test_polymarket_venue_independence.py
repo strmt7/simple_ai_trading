@@ -10,10 +10,10 @@ LIVE_BOUNDARY_IMPORTS = {
     "polymarket_live_v2.py": frozenset(
         {"paper_execution", "polymarket", "polymarket_live"}
     ),
-    "polymarket_live_runtime.py": frozenset(
-        {"polymarket_live", "polymarket_live_v2"}
+    "polymarket_live_runtime.py": frozenset({"polymarket_live", "polymarket_live_v2"}),
+    "polymarket_live_stop.py": frozenset(
+        {"polymarket_live", "polymarket_runtime_control"}
     ),
-    "polymarket_live_stop.py": frozenset({"polymarket_live"}),
     "polymarket_live_settlement.py": frozenset(
         {"polymarket_live", "polymarket_live_v2"}
     ),
@@ -76,8 +76,7 @@ def _local_imports(path: Path) -> frozenset[str]:
 
 def test_live_polymarket_local_import_graph_is_explicitly_isolated() -> None:
     observed = {
-        name: _local_imports(SOURCE_ROOT / name)
-        for name in LIVE_BOUNDARY_IMPORTS
+        name: _local_imports(SOURCE_ROOT / name) for name in LIVE_BOUNDARY_IMPORTS
     }
 
     assert observed == LIVE_BOUNDARY_IMPORTS
