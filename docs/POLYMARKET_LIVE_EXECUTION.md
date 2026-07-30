@@ -153,6 +153,10 @@ flowchart LR
   settlement supervision, promotion-gated autonomous operation, exact
   owned-order cancellation, redemption recovery, exact owned-position Stop,
   and explicitly confirmed redemption.
+- Native builds prefer the current `.venv`, then the legacy `.venv311`, and
+  fail unless the selected environment's installed console metadata, imported
+  source checkout, actual launcher help, and generated parser all resolve
+  `simple_ai_trading.entrypoint:main` with `polymarket-live` registered.
 - Local status does not create a missing ledger. Supervision opens no exposure;
   it runs only the independent authenticated safety and recovery loops.
 - Autonomous operation requires an unexpired live-authority promotion, exact

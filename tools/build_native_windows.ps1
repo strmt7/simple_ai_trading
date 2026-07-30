@@ -18,9 +18,9 @@ if (-not (Test-Path -LiteralPath $CMake)) { throw "CMake not found at $CMake" }
 if (-not (Test-Path -LiteralPath $Ninja)) { throw "Ninja not found at $Ninja" }
 if (-not (Test-Path -LiteralPath $VcVars)) { throw "vcvars64.bat not found at $VcVars" }
 
-$Python = Join-Path $Repo ".venv311\Scripts\python.exe"
+$Python = Join-Path $Repo ".venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $Python)) {
-    $Python = Join-Path $Repo ".venv\Scripts\python.exe"
+    $Python = Join-Path $Repo ".venv311\Scripts\python.exe"
 }
 if (-not (Test-Path -LiteralPath $Python)) {
     $PythonCommand = Get-Command python -ErrorAction SilentlyContinue
@@ -33,6 +33,15 @@ if (-not (Test-Path -LiteralPath $Python)) {
         }
         $Python = $PyCommand.Source
     }
+}
+
+if ((Split-Path -Leaf $Python) -ieq "py.exe") {
+    & $Python -3.11 "$Repo\tools\verify_runtime_entrypoint.py" --repository $Repo
+} else {
+    & $Python "$Repo\tools\verify_runtime_entrypoint.py" --repository $Repo
+}
+if ($LASTEXITCODE -ne 0) {
+    throw "Runtime entry-point verification failed with exit code $LASTEXITCODE"
 }
 
 if ((Split-Path -Leaf $Python) -ieq "py.exe") {

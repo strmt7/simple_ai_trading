@@ -959,6 +959,7 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "Pause and Stop remain available" in source
     assert "remaining safety controls will still be attempted" in source
     assert 'root / L".venv" / L"Scripts" / L"python.exe"' in source
+    assert source.index('root / L".venv"') < source.index('root / L".venv311"')
     assert "runtime_summary()" in source
     assert "repo_root()" in source
     assert "SIMPLE_AI_TRADING_GUI_SMOKE" in source
@@ -971,6 +972,11 @@ def test_native_build_fails_closed_on_command_generation_error() -> None:
     ).read_text(encoding="utf-8")
 
     assert '".venv\\Scripts\\python.exe"' in source
+    assert source.index('".venv\\Scripts\\python.exe"') < source.index(
+        '".venv311\\Scripts\\python.exe"'
+    )
+    assert "tools\\verify_runtime_entrypoint.py" in source
+    assert "Runtime entry-point verification failed" in source
     assert "Native command-contract generation failed" in source
 
 
