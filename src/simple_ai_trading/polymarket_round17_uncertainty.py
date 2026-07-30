@@ -35,6 +35,7 @@ POLYMARKET_ROUND17_CALIBRATION_MINIMUM_CONDITIONS_PER_BIN = 30
 POLYMARKET_ROUND17_CALIBRATION_MINIMUM_TOTAL_CONDITIONS = 100
 _PROBABILITY_FLOOR = 1e-6
 _EMBARGO_MS = 3_600_000
+_COHORT_PLAN_SHA256 = "37fede4da0d6c504bce7cb763b9bd49032e0252a8cede045f29f05acff67fc00"
 
 
 def _canonical_sha256(value: object) -> str:
@@ -162,6 +163,8 @@ def fit_round17_probability_calibration(
     embargo_ms = first_event_start_ms - (last_selection_start_ms + 300_000)
     if (
         selected.dataset_sha256 != partition["dataset_sha256"]
+        or selected.target_manifest_sha256 != partition["target_manifest_sha256"]
+        or selected.cohort_plan_sha256 != partition["cohort_plan_sha256"]
         or parent_conditions.intersection(conditions)
         or embargo_ms < _EMBARGO_MS
     ):
@@ -251,6 +254,8 @@ def fit_round17_probability_calibration(
         "candidate_id": str(candidate.get("candidate_id") or ""),
         "model_development_accepted": True,
         "dataset_sha256": selected.dataset_sha256,
+        "target_manifest_sha256": selected.target_manifest_sha256,
+        "cohort_plan_sha256": selected.cohort_plan_sha256,
         "source_role": selected.role,
         "row_count": len(selected.labels),
         "condition_count": len(conditions),
@@ -333,6 +338,7 @@ def validate_round17_probability_calibration(
         else None
     )
     model_pretest_sha256 = str(payload.get("model_pretest_sha256") or "")
+    target_manifest_sha256 = str(payload.get("target_manifest_sha256") or "")
     metrics = payload.get("development_metrics")
     if (
         claimed != _canonical_sha256(payload)
@@ -346,6 +352,11 @@ def validate_round17_probability_calibration(
             character not in "0123456789abcdef" for character in model_pretest_sha256
         )
         or not str(payload.get("candidate_id") or "")
+        or payload.get("cohort_plan_sha256") != _COHORT_PLAN_SHA256
+        or len(target_manifest_sha256) != 64
+        or any(
+            character not in "0123456789abcdef" for character in target_manifest_sha256
+        )
         or not isinstance(condition_ids, list)
         or not condition_ids
         or condition_ids != sorted(condition_ids)
@@ -448,6 +459,8 @@ def validate_round17_probability_calibration(
             or parent["selected_candidate_id"] != payload["candidate_id"]
             or not isinstance(parent_partition, Mapping)
             or parent_partition["dataset_sha256"] != payload["dataset_sha256"]
+            or parent_partition["target_manifest_sha256"] != target_manifest_sha256
+            or parent_partition["cohort_plan_sha256"] != _COHORT_PLAN_SHA256
             or not isinstance(selection, Mapping)
             or selection["last_event_start_ms"] != parent_last_event_start_ms
             or any(

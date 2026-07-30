@@ -28,7 +28,7 @@ POLYMARKET_ROUND17_ECONOMIC_SCHEMA_VERSION = (
     "polymarket-round17-btc-5m-economic-pretest-v1"
 )
 POLYMARKET_ROUND17_ECONOMIC_CONTRACT_SHA256 = (
-    "4a05f8b1bd289c8d4383790f0be4ef3011bf3e80083bee0ea3ce977a2a3b0148"
+    "25addfca065eb8bcdb52dc433b0b64cba0ffaa032443f5025e120aec6b22bba7"
 )
 POLYMARKET_ROUND17_ECONOMIC_THRESHOLDS = (
     Decimal("0.005"),
@@ -55,6 +55,7 @@ _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _DAY_MS = 86_400_000
 _EMBARGO_MS = 3_600_000
+_COHORT_PLAN_SHA256 = "37fede4da0d6c504bce7cb763b9bd49032e0252a8cede045f29f05acff67fc00"
 _ROUND14_CONTRACT_SHA256 = (
     "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b"
 )
@@ -597,6 +598,8 @@ def fit_round17_economic_pretest(
         "model_pretest_sha256": model_parent["pretest_sha256"],
         "probability_calibration_sha256": (calibration_parent["calibration_sha256"]),
         "dataset_sha256": str(dataset_sha256),
+        "target_manifest_sha256": calibration_parent["target_manifest_sha256"],
+        "cohort_plan_sha256": calibration_parent["cohort_plan_sha256"],
         "source_partition": _SOURCE_PARTITION,
         "condition_count": len(reference_conditions),
         "condition_ids": condition_ids,
@@ -678,6 +681,8 @@ def validate_round17_economic_pretest(
         or _SHA256.fullmatch(str(payload.get("probability_calibration_sha256") or ""))
         is None
         or _SHA256.fullmatch(str(payload.get("dataset_sha256") or "")) is None
+        or _SHA256.fullmatch(str(payload.get("target_manifest_sha256") or "")) is None
+        or payload.get("cohort_plan_sha256") != _COHORT_PLAN_SHA256
         or payload.get("source_partition") != _SOURCE_PARTITION
         or not isinstance(condition_ids, list)
         or not condition_ids
@@ -763,6 +768,9 @@ def validate_round17_economic_pretest(
             or payload["probability_calibration_sha256"]
             != calibration_parent["calibration_sha256"]
             or payload["dataset_sha256"] != calibration_parent["dataset_sha256"]
+            or payload["target_manifest_sha256"]
+            != calibration_parent["target_manifest_sha256"]
+            or calibration_parent["cohort_plan_sha256"] != _COHORT_PLAN_SHA256
             or parent_last_event_start_ms != calibration_parent["last_event_start_ms"]
             or set(condition_ids).intersection(calibration_parent["condition_ids"])
         ):

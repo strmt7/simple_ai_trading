@@ -41,6 +41,7 @@ CONTRACT_PATH = (
 START_MS = 1_800_057_600_000
 PARENT_START_MS = START_MS - 72_000_000
 DATASET_SHA256 = "d" * 64
+TARGET_MANIFEST_SHA256 = "e" * 64
 ECONOMIC_CONTRACT_PATH = (
     ROOT
     / "docs"
@@ -100,6 +101,7 @@ def _panel(
         features=np.asarray(features, dtype=np.float64),
         labels=np.asarray(labels, dtype=np.float64),
         dataset_sha256=DATASET_SHA256,
+        target_manifest_sha256=TARGET_MANIFEST_SHA256,
     ).validate()
 
 
@@ -149,6 +151,9 @@ def test_round17_economic_contract_is_frozen_before_campaign_access() -> None:
     assert contract["parent"]["active_campaign_outcomes_consulted"] is False
     assert contract["parent"]["active_campaign_model_scores_consulted"] is False
     assert contract["parent"]["active_campaign_execution_scores_consulted"] is False
+    assert contract["parent"]["round17_cohort_plan_sha256"] == (
+        "37fede4da0d6c504bce7cb763b9bd49032e0252a8cede045f29f05acff67fc00"
+    )
     assert contract["partition_protocol"] == {
         "chronology": [
             "train",
@@ -166,6 +171,7 @@ def test_round17_economic_contract_is_frozen_before_campaign_access() -> None:
         "economic_policy_frozen_before_test": True,
         "test_may_be_accessed_once": True,
         "failed_test_may_not_return_to_development": True,
+        "development_manifests_may_not_contain_test_features_or_targets": True,
     }
     assert contract["probability_uncertainty"] == {
         "source_partition": "tune_uncertainty",
@@ -184,6 +190,7 @@ def test_round17_economic_contract_is_frozen_before_campaign_access() -> None:
         "unsupported_probability_region_action": "abstain",
         "caller_supplied_probability_prohibited": True,
         "selected_model_artifact_required": True,
+        "development_target_manifest_required": True,
         "feature_row_hash_binding_required": True,
     }
     assert [item["name"] for item in contract["action_paths"]] == list(
@@ -297,6 +304,7 @@ def test_round17_economic_pretest_is_complete_test_blind_and_hash_bound(
     assert verified["live_trading_authority"] is False
     assert verified["binance_credentials_used"] is False
     assert verified["binance_execution_connected"] is False
+    assert verified["target_manifest_sha256"] == TARGET_MANIFEST_SHA256
 
 
 def test_round17_economic_pretest_rejects_unprofitable_development_paths(
