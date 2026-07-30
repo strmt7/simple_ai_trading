@@ -24,6 +24,7 @@ from simple_ai_trading.polymarket_btc_history import (  # noqa: E402
     load_polymarket_btc_history_contract,
 )
 from simple_ai_trading.spot_perpetual_corpus import (  # noqa: E402
+    FrozenFlowDay,
     SpotPerpetualCorpusStore,
 )
 
@@ -72,6 +73,15 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--cache-root", type=Path, default=DEFAULT_CACHE)
     parser.add_argument("--maximum-days", type=int, default=0)
     parser.add_argument(
+        "--maximum-compressed-bytes",
+        type=int,
+        default=0,
+        help=(
+            "preflight batch cap from the frozen inventory; the first pending "
+            "day is allowed to exceed the cap so one-day progress remains possible"
+        ),
+    )
+    parser.add_argument(
         "--period",
         default="",
         help="ingest exactly one frozen YYYY-MM-DD period",
@@ -83,6 +93,8 @@ def _arguments() -> argparse.Namespace:
     values = parser.parse_args()
     if values.maximum_days < 0:
         parser.error("--maximum-days cannot be negative")
+    if values.maximum_compressed_bytes < 0:
+        parser.error("--maximum-compressed-bytes cannot be negative")
     if values.period and values.maximum_days:
         parser.error("--period and --maximum-days are mutually exclusive")
     return values
@@ -94,8 +106,10 @@ def _status(
     expected_days: int,
     inventory_sha256: str,
 ) -> dict[str, object]:
-    row = store.connect().execute(
-        """
+    row = (
+        store.connect()
+        .execute(
+            """
         SELECT count(*)::UBIGINT,
                coalesce(sum(flow_rows), 0)::UBIGINT,
                coalesce(sum(compressed_bytes), 0)::UBIGINT,
@@ -105,8 +119,10 @@ def _status(
         WHERE research_round = ? AND inventory_sha256 = ?
           AND status = 'complete' AND is_current
         """,
-        [POLYMARKET_BTC_HISTORY_RESEARCH_ROUND, inventory_sha256],
-    ).fetchone()
+            [POLYMARKET_BTC_HISTORY_RESEARCH_ROUND, inventory_sha256],
+        )
+        .fetchone()
+    )
     completed = int(row[0])
     return {
         "expected_days": expected_days,
@@ -120,13 +136,62 @@ def _status(
     }
 
 
+def _completed_periods(
+    store: SpotPerpetualCorpusStore,
+    *,
+    inventory_sha256: str,
+) -> frozenset[str]:
+    rows = (
+        store.connect()
+        .execute(
+            """
+        SELECT period
+        FROM spot_perpetual_flow_day_manifest
+        WHERE research_round = ? AND inventory_sha256 = ?
+          AND status = 'complete' AND is_current
+        """,
+            [POLYMARKET_BTC_HISTORY_RESEARCH_ROUND, inventory_sha256],
+        )
+        .fetchall()
+    )
+    return frozenset(str(row[0]) for row in rows)
+
+
+def _select_ingestion_batch(
+    days: tuple[FrozenFlowDay, ...],
+    *,
+    completed_periods: frozenset[str],
+    maximum_days: int,
+    maximum_compressed_bytes: int,
+) -> tuple[tuple[FrozenFlowDay, ...], int]:
+    selected: list[FrozenFlowDay] = []
+    planned_bytes = 0
+    for day in days:
+        if day.period in completed_periods:
+            continue
+        if maximum_days and len(selected) >= maximum_days:
+            break
+        next_bytes = planned_bytes + day.compressed_bytes
+        if (
+            selected
+            and maximum_compressed_bytes
+            and next_bytes > maximum_compressed_bytes
+        ):
+            break
+        selected.append(day)
+        planned_bytes = next_bytes
+    return tuple(selected), planned_bytes
+
+
 def _latest_batch(
     store: SpotPerpetualCorpusStore,
     *,
     inventory_sha256: str,
 ) -> tuple[dict[str, object], ...]:
-    rows = store.connect().execute(
-        """
+    rows = (
+        store.connect()
+        .execute(
+            """
         SELECT period, source_count, flow_rows, compressed_bytes,
                combined_flow_sha256
         FROM spot_perpetual_flow_day_manifest
@@ -135,8 +200,10 @@ def _latest_batch(
         ORDER BY period DESC
         LIMIT 3
         """,
-        [POLYMARKET_BTC_HISTORY_RESEARCH_ROUND, inventory_sha256],
-    ).fetchall()
+            [POLYMARKET_BTC_HISTORY_RESEARCH_ROUND, inventory_sha256],
+        )
+        .fetchall()
+    )
     return tuple(
         {
             "period": str(row[0]),
@@ -188,9 +255,7 @@ def _status_artifact(
         raise ValueError("BTC history status row arithmetic differs")
     expected_latest = min(3, completed)
     if len(latest_batch) != expected_latest:
-        raise ValueError(
-            "BTC history latest batch count differs from completed days"
-        )
+        raise ValueError("BTC history latest batch count differs from completed days")
     periods = tuple(str(item["period"]) for item in latest_batch)
     if periods != tuple(sorted(periods)) or len(periods) != len(set(periods)):
         raise ValueError("BTC history latest batch chronology differs")
@@ -252,16 +317,17 @@ def _write_status_artifact(path: Path, artifact: dict[str, object]) -> None:
     if path.is_symlink():
         raise ValueError("BTC history status output cannot be a symlink")
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(
-        artifact,
-        ensure_ascii=True,
-        indent=2,
-        sort_keys=False,
-        allow_nan=False,
-    ) + "\n"
-    temporary = path.with_name(
-        f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp"
+    payload = (
+        json.dumps(
+            artifact,
+            ensure_ascii=True,
+            indent=2,
+            sort_keys=False,
+            allow_nan=False,
+        )
+        + "\n"
     )
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
     try:
         with temporary.open("x", encoding="utf-8", newline="\n") as handle:
             handle.write(payload)
@@ -281,12 +347,9 @@ def _validate_status_destination(
 ) -> None:
     if output.resolve() != DEFAULT_STATUS_OUTPUT.resolve():
         return
-    actual = tuple(
-        path.resolve() for path in (inventory, database, cache_root)
-    )
+    actual = tuple(path.resolve() for path in (inventory, database, cache_root))
     expected = tuple(
-        path.resolve()
-        for path in (DEFAULT_INVENTORY, DEFAULT_DATABASE, DEFAULT_CACHE)
+        path.resolve() for path in (DEFAULT_INVENTORY, DEFAULT_DATABASE, DEFAULT_CACHE)
     )
     if actual != expected:
         raise ValueError(
@@ -364,9 +427,23 @@ def main() -> int:
             )
 
         if args.phase == "run":
+            selected_days, planned_bytes = _select_ingestion_batch(
+                selected_days,
+                completed_periods=_completed_periods(
+                    store,
+                    inventory_sha256=contract.inventory_sha256,
+                ),
+                maximum_days=args.maximum_days,
+                maximum_compressed_bytes=args.maximum_compressed_bytes,
+            )
+            _emit(
+                "history_batch_selected",
+                maximum_compressed_bytes=args.maximum_compressed_bytes,
+                maximum_days=args.maximum_days,
+                planned_compressed_bytes=planned_bytes,
+                selected_days=len(selected_days),
+            )
             for day in selected_days:
-                if args.maximum_days and processed >= args.maximum_days:
-                    break
                 active_period = day.period
                 inventory_index = contract.days.index(day)
                 result = store.ingest_day(
@@ -405,10 +482,7 @@ def main() -> int:
         args.phase == "publish-status" or processed > 0
     ):
         generated_at = (
-            datetime.now(UTC)
-            .replace(microsecond=0)
-            .isoformat()
-            .replace("+00:00", "Z")
+            datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
         )
         artifact = _status_artifact(
             status=publication_status,
