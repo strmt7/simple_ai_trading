@@ -50,6 +50,7 @@ POLYMARKET_ROUND17_BOOTSTRAP_SAMPLES = 2_000
 POLYMARKET_ROUND17_BOOTSTRAP_SEED = 17_017
 _PRIMARY_SCENARIO = "primary"
 _SOURCE_PARTITION = "tune_economic"
+_SOURCE_PARTITIONS = frozenset({_SOURCE_PARTITION, "test"})
 _PROFILES = ("conservative", "regular", "aggressive")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -167,7 +168,7 @@ class Round17ConditionEconomicOutcome:
 
     def identity_payload(self) -> dict[str, object]:
         return {
-            "schema_version": "polymarket-round17-condition-economic-outcome-v1",
+            "schema_version": "polymarket-round17-condition-economic-outcome-v2",
             "execution_schema_version": (POLYMARKET_ROUND17_EXECUTION_SCHEMA_VERSION),
             "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
             "source_partition": self.source_partition,
@@ -199,7 +200,7 @@ class Round17ConditionEconomicOutcome:
         pnl = _decimal(self.realized_net_quote, name="realized net")
         maximum_loss = _decimal(self.maximum_loss_quote, name="maximum loss")
         if (
-            self.source_partition != _SOURCE_PARTITION
+            self.source_partition not in _SOURCE_PARTITIONS
             or _CONDITION_ID.fullmatch(self.condition_id) is None
             or self.event_start_ms <= 0
             or self.event_start_ms % 300_000
@@ -247,9 +248,10 @@ def build_round17_condition_economic_outcome(
     ownership_violation: bool,
     decision_sha256: str,
     source_evidence_sha256: str,
+    source_partition: str = _SOURCE_PARTITION,
 ) -> Round17ConditionEconomicOutcome:
     provisional = Round17ConditionEconomicOutcome(
-        source_partition=_SOURCE_PARTITION,
+        source_partition=str(source_partition),
         condition_id=condition_id,
         event_start_ms=event_start_ms,
         path=path,
@@ -424,6 +426,11 @@ def _scenario_passes(
     program: PolymarketRound14Program,
     *,
     profile_name: str,
+    minimum_conditions: int = POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_CONDITIONS,
+    minimum_actions: int = POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_ACTIONS,
+    minimum_calendar_days: int = (
+        POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_CALENDAR_DAYS
+    ),
 ) -> bool:
     profile = _profile(program, profile_name)
     profit_factor = metrics["profit_factor"]
@@ -434,11 +441,11 @@ def _scenario_passes(
     )
     return bool(
         int(metrics["condition_count"])
-        >= POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_CONDITIONS
+        >= minimum_conditions
         and int(metrics["calendar_day_count"])
-        >= POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_CALENDAR_DAYS
+        >= minimum_calendar_days
         and int(metrics["executed_action_count"])
-        >= POLYMARKET_ROUND17_DEVELOPMENT_MINIMUM_ACTIONS
+        >= minimum_actions
         and Decimal(str(metrics["net_pnl_quote"])) > 0
         and Decimal(str(metrics["mean_event_utility_quote"])) > 0
         and Decimal(str(metrics["median_daily_pnl_quote"])) > 0
@@ -778,6 +785,139 @@ def validate_round17_economic_pretest(
     return {**payload, "economic_pretest_sha256": claimed}
 
 
+def evaluate_round17_economic_holdout(
+    outcomes: Sequence[Round17ConditionEconomicOutcome],
+    program: PolymarketRound14Program,
+    *,
+    economic_pretest: Mapping[str, object],
+    model_pretest: Mapping[str, object],
+    probability_calibration: Mapping[str, object],
+    test_access_sha256: str,
+    minimum_conditions: int = 1_800,
+    minimum_actions: int = 300,
+    minimum_calendar_days: int = 7,
+) -> dict[str, object]:
+    """Replay only immutable development-selected policies on the test partition."""
+
+    _validate_program(program)
+    parent = validate_round17_economic_pretest(
+        economic_pretest,
+        model_pretest=model_pretest,
+        probability_calibration=probability_calibration,
+    )
+    access = str(test_access_sha256 or "").strip().lower()
+    if (
+        parent["development_accepted"] is not True
+        or _SHA256.fullmatch(access) is None
+        or isinstance(minimum_conditions, bool)
+        or int(minimum_conditions) < 1
+        or isinstance(minimum_actions, bool)
+        or int(minimum_actions) < 1
+        or isinstance(minimum_calendar_days, bool)
+        or int(minimum_calendar_days) < 1
+    ):
+        raise ValueError("Round 17 economic holdout parent differs")
+    selected = parent["selected_by_profile"]
+    if not isinstance(selected, Mapping) or set(selected) != set(_PROFILES):
+        raise ValueError("Round 17 selected economic policies differ")
+    values = tuple(item.validated() for item in outcomes)
+    if (
+        not values
+        or any(item.source_partition != "test" for item in values)
+        or len({item.risk_capital_quote for item in values}) != 1
+    ):
+        raise ValueError("Round 17 economic holdout outcomes differ")
+    grouped: dict[tuple[str, str], list[Round17ConditionEconomicOutcome]] = {}
+    for item in values:
+        policy = selected.get(item.risk_profile)
+        if (
+            not isinstance(policy, Mapping)
+            or item.path != policy.get("path")
+            or format(item.minimum_edge_quote_per_share, "f")
+            != policy.get("minimum_edge_quote_per_share")
+        ):
+            raise ValueError("Round 17 economic holdout policy drifted")
+        grouped.setdefault((item.risk_profile, item.scenario), []).append(item)
+    expected = {
+        (profile, scenario) for profile in _PROFILES for scenario in _SCENARIOS
+    }
+    if set(grouped) != expected:
+        raise ValueError("Round 17 economic holdout scenario grid is incomplete")
+    reference: tuple[tuple[str, int], ...] | None = None
+    scenario_metrics: dict[str, dict[str, object]] = {}
+    scenario_gates: dict[str, dict[str, bool]] = {}
+    for profile in _PROFILES:
+        scenario_metrics[profile] = {}
+        scenario_gates[profile] = {}
+        for scenario in _SCENARIOS:
+            rows = grouped[(profile, scenario)]
+            identities = tuple(
+                sorted((item.condition_id, item.event_start_ms) for item in rows)
+            )
+            if len(identities) != len(set(identities)):
+                raise ValueError("Round 17 economic holdout conditions are duplicated")
+            if reference is None:
+                reference = identities
+            elif identities != reference:
+                raise ValueError("Round 17 economic holdout panels differ")
+            metrics = _replay_policy(rows, program)
+            scenario_metrics[profile][scenario] = metrics
+            scenario_gates[profile][scenario] = _scenario_passes(
+                metrics,
+                program,
+                profile_name=profile,
+                minimum_conditions=int(minimum_conditions),
+                minimum_actions=int(minimum_actions),
+                minimum_calendar_days=int(minimum_calendar_days),
+            )
+    if reference is None:
+        raise ValueError("Round 17 economic holdout panel is empty")
+    profile_gates = {
+        profile: all(scenario_gates[profile].values()) for profile in _PROFILES
+    }
+    payload: dict[str, object] = {
+        "schema_version": "polymarket-round17-btc-5m-economic-holdout-v1",
+        "contract_sha256": POLYMARKET_ROUND17_CONTRACT_SHA256,
+        "economic_pretest_sha256": parent["economic_pretest_sha256"],
+        "test_access_sha256": access,
+        "condition_count": len(reference),
+        "condition_ids_sha256": _canonical_sha256(
+            [condition_id for condition_id, _event_start_ms in reference]
+        ),
+        "first_event_start_ms": min(event_start for _, event_start in reference),
+        "last_event_start_ms": max(event_start for _, event_start in reference),
+        "minimum_conditions": int(minimum_conditions),
+        "minimum_actions_per_profile_per_scenario": int(minimum_actions),
+        "minimum_calendar_days": int(minimum_calendar_days),
+        "selected_by_profile": {
+            profile: {
+                "candidate_id": selected[profile]["candidate_id"],  # type: ignore[index]
+                "path": selected[profile]["path"],  # type: ignore[index]
+                "minimum_edge_quote_per_share": selected[profile][  # type: ignore[index]
+                    "minimum_edge_quote_per_share"
+                ],
+            }
+            for profile in _PROFILES
+        },
+        "scenario_metrics": scenario_metrics,
+        "scenario_gates": scenario_gates,
+        "profile_gates": profile_gates,
+        "economic_accepted": all(profile_gates.values()),
+        "test_execution_accessed": True,
+        "threshold_refit": False,
+        "policy_refit": False,
+        "forced_activity": False,
+        "automatic_promotion": False,
+        "profitability_claim": False,
+        "paper_trading_authority": False,
+        "live_trading_authority": False,
+        "binance_credentials_used": False,
+        "binance_execution_connected": False,
+    }
+    payload["economic_holdout_sha256"] = _canonical_sha256(payload)
+    return payload
+
+
 __all__ = [
     "POLYMARKET_ROUND17_ECONOMIC_PATHS",
     "POLYMARKET_ROUND17_ECONOMIC_SCHEMA_VERSION",
@@ -785,6 +925,7 @@ __all__ = [
     "POLYMARKET_ROUND17_ECONOMIC_THRESHOLDS",
     "Round17ConditionEconomicOutcome",
     "build_round17_condition_economic_outcome",
+    "evaluate_round17_economic_holdout",
     "fit_round17_economic_pretest",
     "validate_round17_economic_pretest",
 ]

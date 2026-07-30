@@ -1,0 +1,119 @@
+{
+  "schema_version": "polymarket-round17-btc-5m-one-use-evaluation-contract-v1",
+  "round": 17,
+  "status": "preregistered_before_test_feature_or_outcome_access",
+  "parents": {
+    "causal_model_contract_sha256": "f9cbe114959fce14ea3292b3fc65de68b6a86b157c2402eeeefca2a95a808b44",
+    "cohort_plan_sha256": "37fede4da0d6c504bce7cb763b9bd49032e0252a8cede045f29f05acff67fc00",
+    "economic_contract_sha256": "25addfca065eb8bcdb52dc433b0b64cba0ffaa032443f5025e120aec6b22bba7",
+    "round14_risk_contract_sha256": "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b",
+    "round14_campaign_plan_sha256": "c19ef7733efb86202742f045a45b3d92e8e17bb922c3c5f780240243889609b5",
+    "required_development_status": "development_accepted"
+  },
+  "claim": {
+    "singleton": true,
+    "persist_before_test_materialization": true,
+    "persist_before_test_resolution_requests": true,
+    "bind_development_result_sha256": true,
+    "bind_repository_commit": true,
+    "bind_implementation_manifest": true,
+    "bind_terminal_campaign_readiness": true,
+    "complete_result_is_idempotently_readable": true,
+    "deterministic_failure_is_terminal": true,
+    "network_failure_or_pending_resolution": "resume_exact_claim_only",
+    "failed_test_returns_to_development": false
+  },
+  "test_partition": {
+    "role": "test",
+    "first_slot": 1012,
+    "last_slot": 1439,
+    "reserved_slot_count": 428,
+    "start_ms": 1787166000000,
+    "end_ms_exclusive": 1787936400000,
+    "minimum_resolved_conditions": 1800,
+    "minimum_calendar_days": 7,
+    "both_outcomes_required": true,
+    "development_condition_overlap": false,
+    "role_reassignment": false,
+    "backfill": false
+  },
+  "endpoint_evaluation": {
+    "unit": "condition_equal_weighted_causal_decision_rows",
+    "controls": [
+      "round17-market-prior-raw-control",
+      "round17-chainlink-structural-control",
+      "round17-market-prior-calibrated-control"
+    ],
+    "primary_metrics": [
+      "binary_log_loss",
+      "brier_score"
+    ],
+    "secondary_metrics": [
+      "calibration_intercept",
+      "calibration_slope",
+      "expected_calibration_error",
+      "balanced_accuracy",
+      "matthews_correlation_coefficient"
+    ],
+    "paired_bootstrap_unit": "condition",
+    "paired_bootstrap_samples": 2000,
+    "paired_bootstrap_seed": 17017,
+    "lower_quantile": "0.025",
+    "minimum_non_tied_final_condition_predictions": 300,
+    "model_log_loss_strictly_below_every_control": true,
+    "model_brier_strictly_below_every_control": true,
+    "paired_log_loss_improvement_lower_95_positive_for_every_control": true,
+    "paired_brier_improvement_lower_95_positive_for_every_control": true,
+    "balanced_accuracy_lower_95_above_random": true,
+    "balanced_accuracy_difference_lower_95_not_below_strongest_control": true
+  },
+  "economic_evaluation": {
+    "policy_source": "immutable development economic pretest selected_by_profile",
+    "refit": false,
+    "threshold_change": false,
+    "path_change": false,
+    "risk_change": false,
+    "scenario_change": false,
+    "minimum_executed_actions_per_profile_per_scenario": 300,
+    "required_for_every_profile_and_scenario": [
+      "net_pnl_quote_positive",
+      "mean_event_utility_quote_positive",
+      "median_daily_pnl_quote_positive",
+      "daily_block_bootstrap_mean_event_utility_lower_95_positive",
+      "profit_factor_above_one",
+      "drawdown_within_profile_limit",
+      "worst_daily_loss_within_profile_limit",
+      "zero_unknown_states",
+      "zero_lifecycle_violations",
+      "zero_ownership_violations",
+      "zero_event_loss_limit_violations"
+    ],
+    "forced_activity": false
+  },
+  "implementation_manifest_paths": [
+    "docs/model-research/polymarket/round-017-btc-5m-one-use-evaluation-contract-v1.json",
+    "src/simple_ai_trading/polymarket_round17_campaign_operator.py",
+    "src/simple_ai_trading/polymarket_round17_cohort.py",
+    "src/simple_ai_trading/polymarket_round17_dataset.py",
+    "src/simple_ai_trading/polymarket_round17_development_operator.py",
+    "src/simple_ai_trading/polymarket_round17_economic.py",
+    "src/simple_ai_trading/polymarket_round17_evaluation.py",
+    "src/simple_ai_trading/polymarket_round17_execution.py",
+    "src/simple_ai_trading/polymarket_round17_features.py",
+    "src/simple_ai_trading/polymarket_round17_model.py",
+    "src/simple_ai_trading/polymarket_round17_outcomes.py",
+    "src/simple_ai_trading/polymarket_round17_resolution.py",
+    "src/simple_ai_trading/polymarket_round17_uncertainty.py",
+    "src/simple_ai_trading/polymarket_round17_one_use.py",
+    "tools/run_round17_polymarket_one_use.py"
+  ],
+  "authority": {
+    "automatic_promotion": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "binance_credentials_used": false,
+    "binance_execution_connected": false
+  },
+  "contract_sha256": "e7e4471cd71882beee8837ac6251e52d407c5be57f716d703a816f70b9abf5dd"
+}
