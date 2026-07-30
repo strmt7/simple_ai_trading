@@ -1,0 +1,159 @@
+{
+  "schema_version": "polymarket-round17-btc-5m-economic-pretest-contract-v1",
+  "round": 17,
+  "status": "preregistered_before_active_campaign_outcome_or_model_score_access",
+  "parent": {
+    "round17_causal_model_contract_sha256": "f9cbe114959fce14ea3292b3fc65de68b6a86b157c2402eeeefca2a95a808b44",
+    "round14_risk_contract_sha256": "60cde01112a749a9971447368b3a5d73b203d095e62a974327004c16cb021f1b",
+    "round14_campaign_plan_sha256": "c19ef7733efb86202742f045a45b3d92e8e17bb922c3c5f780240243889609b5",
+    "active_campaign_outcomes_consulted": false,
+    "active_campaign_model_scores_consulted": false,
+    "active_campaign_execution_scores_consulted": false
+  },
+  "scope": {
+    "venue": "polymarket",
+    "protocol_version": 2,
+    "asset": "BTC",
+    "market_variant": "fiveminute",
+    "source_partition": "tune_economic",
+    "independence": "Polymarket owns market identity, books, fees, wallet, orders, positions, risk, PnL, settlement, stop, and recovery. Binance has no credential, account, order, balance, position, capital, PnL, risk, or execution role.",
+    "optional_binance_input": "Credential-free public BTC spot and futures observations may already be present in the hash-bound probability evidence. They may preserve, reduce, or veto a Polymarket action only."
+  },
+  "action_paths": [
+    {
+      "name": "settlement_directional",
+      "rule": "At most one delayed Polymarket FOK directional entry per condition, held to official settlement unless a separately proven owned-only safety close is required."
+    },
+    {
+      "name": "intrawindow_owned_reprice",
+      "rule": "A delayed Polymarket FOK entry may be sold only from an exact parent-bound bot-owned lot using delayed displayed bids and exact fees. Missing or uncertain close state receives no proceeds credit."
+    },
+    {
+      "name": "complement_lock",
+      "rule": "A complement FOK purchase is eligible only when exact combined owned shares guarantee nonnegative worst-case payout after all costs, fees, latency, depth stress, and quantity mismatch."
+    }
+  ],
+  "minimum_edge_grid_quote_per_share": [
+    "0.005",
+    "0.01",
+    "0.02",
+    "0.03",
+    "0.05"
+  ],
+  "risk": {
+    "default_profile": "conservative",
+    "reinvestment": false,
+    "leverage": false,
+    "loss_cluster_size": 2,
+    "profiles": {
+      "conservative": {
+        "maximum_event_loss_capital_fraction": "0.001",
+        "maximum_daily_loss_capital_fraction": "0.005",
+        "maximum_drawdown_capital_fraction": "0.02",
+        "cooldown_minutes_after_loss_cluster": 30
+      },
+      "regular": {
+        "maximum_event_loss_capital_fraction": "0.002",
+        "maximum_daily_loss_capital_fraction": "0.01",
+        "maximum_drawdown_capital_fraction": "0.04",
+        "cooldown_minutes_after_loss_cluster": 15
+      },
+      "aggressive": {
+        "maximum_event_loss_capital_fraction": "0.0035",
+        "maximum_daily_loss_capital_fraction": "0.015",
+        "maximum_drawdown_capital_fraction": "0.06",
+        "cooldown_minutes_after_loss_cluster": 5
+      }
+    },
+    "global": "No profile may bypass source health, exact costs, delayed depth, ownership, reconciliation, unknown-state, daily-loss, drawdown, cooldown, or promotion gates."
+  },
+  "execution_scenarios": [
+    {
+      "name": "primary",
+      "submission_latency_ms": 500,
+      "adverse_ticks": 0,
+      "displayed_depth_fraction": "1",
+      "fee_multiplier": "1"
+    },
+    {
+      "name": "latency_250ms",
+      "submission_latency_ms": 250,
+      "adverse_ticks": 0,
+      "displayed_depth_fraction": "1",
+      "fee_multiplier": "1"
+    },
+    {
+      "name": "latency_750ms",
+      "submission_latency_ms": 750,
+      "adverse_ticks": 0,
+      "displayed_depth_fraction": "1",
+      "fee_multiplier": "1"
+    },
+    {
+      "name": "latency_1000ms",
+      "submission_latency_ms": 1000,
+      "adverse_ticks": 0,
+      "displayed_depth_fraction": "1",
+      "fee_multiplier": "1"
+    },
+    {
+      "name": "half_depth",
+      "submission_latency_ms": 500,
+      "adverse_ticks": 0,
+      "displayed_depth_fraction": "0.5",
+      "fee_multiplier": "1"
+    },
+    {
+      "name": "quarter_depth",
+      "submission_latency_ms": 500,
+      "adverse_ticks": 0,
+      "displayed_depth_fraction": "0.25",
+      "fee_multiplier": "1"
+    },
+    {
+      "name": "one_tick_adverse",
+      "submission_latency_ms": 500,
+      "adverse_ticks": 1,
+      "displayed_depth_fraction": "1",
+      "fee_multiplier": "1"
+    },
+    {
+      "name": "combined",
+      "submission_latency_ms": 1000,
+      "adverse_ticks": 2,
+      "displayed_depth_fraction": "0.5",
+      "fee_multiplier": "2"
+    }
+  ],
+  "development_gates": {
+    "minimum_conditions": 100,
+    "minimum_calendar_days": 3,
+    "minimum_executed_actions_per_scenario": 30,
+    "net_pnl_quote_positive": true,
+    "mean_event_utility_quote_positive": true,
+    "median_daily_pnl_quote_positive": true,
+    "daily_block_bootstrap_mean_event_utility_lower_95_positive": true,
+    "profit_factor_above_one": true,
+    "profile_drawdown_and_daily_loss_limits_pathwise": true,
+    "unknown_state_count": 0,
+    "lifecycle_violation_count": 0,
+    "ownership_violation_count": 0,
+    "event_loss_limit_violation_count": 0,
+    "all_execution_scenarios_must_pass": true
+  },
+  "selection": {
+    "primary": "Maximize the worst-scenario daily-block lower-95 mean event utility.",
+    "secondary": "Then prefer higher primary net PnL, lower drawdown, a higher edge floor, and the simpler action path.",
+    "forced_activity": false,
+    "automatic_promotion": false
+  },
+  "authority": {
+    "test_features_accessed": false,
+    "test_targets_accessed": false,
+    "test_execution_accessed": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "contract_sha256": "2867014d3cbd77d21d25901e3558b5165c635f4ccdb13053dfca7e81f2ff3a7c"
+}
