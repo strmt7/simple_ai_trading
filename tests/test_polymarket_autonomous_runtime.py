@@ -453,6 +453,10 @@ def test_external_failure_vetoes_without_calling_executor(
     proposal = _proposal(promotion)
 
     class External:
+        trading_authority = False
+        credentials_used = False
+        execution_connected = False
+
         def evaluate(self, **_kwargs: object) -> PolymarketExternalSignalDecision:
             raise RuntimeError("public feed unavailable")
 
@@ -505,7 +509,12 @@ def test_optional_external_signal_can_only_reduce_submission(
             receive_time_skew_ms=0,
         ),
     )
-    external = SimpleNamespace(evaluate=lambda **_kwargs: signal)
+    external = SimpleNamespace(
+        trading_authority=False,
+        credentials_used=False,
+        execution_connected=False,
+        evaluate=lambda **_kwargs: signal,
+    )
     supervisor = _supervisor(
         tmp_path / "runtime",
         provider=SimpleNamespace(decide=lambda **_kwargs: None),
@@ -622,6 +631,10 @@ def test_run_starts_optional_public_signal_service(tmp_path: Path) -> None:
     started = False
 
     class External:
+        trading_authority = False
+        credentials_used = False
+        execution_connected = False
+
         def evaluate(self, **_kwargs: object) -> PolymarketExternalSignalDecision:
             raise AssertionError("no proposal should be evaluated")
 
@@ -639,6 +652,24 @@ def test_run_starts_optional_public_signal_service(tmp_path: Path) -> None:
     asyncio.run(supervisor.run())
 
     assert started is True
+
+
+def test_runtime_rejects_external_provider_with_exchange_authority(
+    tmp_path: Path,
+) -> None:
+    external = SimpleNamespace(
+        trading_authority=True,
+        credentials_used=False,
+        execution_connected=False,
+        evaluate=lambda **_kwargs: None,
+    )
+
+    with pytest.raises(PolymarketLiveBlocked, match="public and read-only"):
+        _supervisor(
+            tmp_path,
+            provider=SimpleNamespace(decide=lambda **_kwargs: None),
+            external=external,
+        )
 
 
 def test_run_supervises_non_authoritative_predictor_data_service(
