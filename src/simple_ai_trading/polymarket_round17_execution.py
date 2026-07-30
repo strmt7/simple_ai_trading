@@ -479,7 +479,7 @@ def _execution_book(
         market.asset != "BTC"
         or market.horizon_minutes != 5
         or source.venue != "polymarket"
-        or source.market_id != market.market_id
+        or source.market_id != market.condition_id
         or source.asset_id != token_id
         or source.received_wall_ms < target
         or source.received_wall_ms
@@ -565,7 +565,7 @@ def _entry_candidate(
                 )[:32]
             ),
             venue="polymarket",
-            market_id=market.market_id,
+            market_id=market.condition_id,
             asset_id=(market.up_token_id if outcome == "Up" else market.down_token_id),
             symbol="BTC",
             outcome=outcome,
@@ -603,7 +603,7 @@ def _entry_candidate(
     if cost > risk_budget or edge_per_share + _NUMERIC_GUARD < minimum_edge_per_share:
         return None
     return Round17EntryCandidate(
-        market_id=market.market_id,
+        market_id=market.condition_id,
         condition_id=market.condition_id,
         decision_time_ms=decision_time_ms,
         scenario=scenario.name,
@@ -750,7 +750,7 @@ def simulate_round17_owned_close(
         market.up_token_id if owned.outcome == "Up" else market.down_token_id
     )
     if (
-        owned.market_id != market.market_id
+        owned.market_id != market.condition_id
         or owned.token_id != expected_token
         or not market.event_start_ms <= decision_time_ms < market.end_ms
     ):
@@ -786,7 +786,7 @@ def simulate_round17_owned_close(
             )[:32]
         ),
         venue="polymarket",
-        market_id=market.market_id,
+        market_id=market.condition_id,
         asset_id=owned.token_id,
         symbol="BTC",
         outcome=owned.outcome,
