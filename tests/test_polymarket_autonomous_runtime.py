@@ -30,7 +30,10 @@ from simple_ai_trading.polymarket_external_signal import (
     PolymarketBtcReferenceFeatures,
     PolymarketExternalSignalDecision,
 )
-from simple_ai_trading.polymarket_live import PolymarketLiveOrderLedger
+from simple_ai_trading.polymarket_live import (
+    PolymarketLiveBlocked,
+    PolymarketLiveOrderLedger,
+)
 from simple_ai_trading.polymarket_live_promotion import (
     VerifiedPolymarketLivePromotion,
     load_polymarket_live_promotion,
@@ -218,6 +221,7 @@ def _supervisor(
     *,
     provider: object,
     external: object | None = None,
+    decision_data: object | None = None,
     markets: tuple[PolymarketFiveMinuteMarket, ...] | None = None,
     market_variant: str = "fiveminute",
 ) -> PolymarketAutonomousSupervisor:
@@ -258,6 +262,7 @@ def _supervisor(
         reconciliation=reconciliation,  # type: ignore[arg-type]
         promotion=promotion,
         decision_provider=provider,  # type: ignore[arg-type]
+        decision_data_service=decision_data,  # type: ignore[arg-type]
         external_signal_provider=external,  # type: ignore[arg-type]
         decision_interval_seconds=0.25,
         decision_timeout_seconds=0.1,
@@ -634,6 +639,85 @@ def test_run_starts_optional_public_signal_service(tmp_path: Path) -> None:
     asyncio.run(supervisor.run())
 
     assert started is True
+
+
+def test_run_supervises_non_authoritative_predictor_data_service(
+    tmp_path: Path,
+) -> None:
+    started = False
+    stopped = False
+
+    class PredictorData:
+        trading_authority = False
+
+        async def run(self, stop: asyncio.Event) -> None:
+            nonlocal started, stopped
+            started = True
+            await stop.wait()
+            stopped = True
+
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+        decision_data=PredictorData(),
+    )
+    supervisor.request_stop()
+    asyncio.run(supervisor.run())
+
+    assert started is True
+    assert stopped is True
+    assert supervisor.snapshot().binance_execution_connected is False
+
+
+def test_predictor_data_service_with_authority_is_rejected(
+    tmp_path: Path,
+) -> None:
+    class PredictorData:
+        trading_authority = True
+
+        async def run(self, stop: asyncio.Event) -> None:
+            await stop.wait()
+
+    with pytest.raises(PolymarketLiveBlocked, match="no trading authority"):
+        _supervisor(
+            tmp_path,
+            provider=SimpleNamespace(decide=lambda **_kwargs: None),
+            decision_data=PredictorData(),
+        )
+
+
+def test_unexpected_predictor_data_exit_stops_before_model_decision(
+    tmp_path: Path,
+) -> None:
+    calls = 0
+
+    class Provider:
+        def decide(self, **_kwargs: object) -> PolymarketAutonomousDecision:
+            nonlocal calls
+            calls += 1
+            return PolymarketAutonomousDecision()
+
+    class PredictorData:
+        trading_authority = False
+
+        async def run(self, _stop: asyncio.Event) -> None:
+            raise ConnectionError("predictor feed failed")
+
+    supervisor = _supervisor(
+        tmp_path,
+        provider=Provider(),
+        decision_data=PredictorData(),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="critical_service_exit:predictor_market_data:ConnectionError",
+    ):
+        asyncio.run(supervisor.run())
+
+    assert calls == 0
+    assert supervisor.snapshot().stop_requested is True
+    assert supervisor.snapshot().stop_completed is True
 
 
 def test_unexpected_safety_service_exit_stops_before_model_decision(

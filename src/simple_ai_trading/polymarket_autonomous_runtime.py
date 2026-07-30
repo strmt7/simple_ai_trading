@@ -51,6 +51,14 @@ class PolymarketExternalSignalProvider(Protocol):
     ) -> PolymarketExternalSignalDecision: ...
 
 
+class PolymarketDecisionDataService(Protocol):
+    """Independent predictor-data loop with no trading authority."""
+
+    trading_authority: bool
+
+    async def run(self, stop: asyncio.Event) -> None: ...
+
+
 @dataclass(frozen=True, slots=True)
 class PolymarketAutonomousDecision:
     proposals: tuple[PolymarketAutonomousOpenProposal, ...] = ()
@@ -114,6 +122,7 @@ class PolymarketAutonomousSupervisor:
         promotion: VerifiedPolymarketLivePromotion,
         decision_provider: PolymarketAutonomousDecisionProvider,
         settlement: PolymarketSettlementService | None = None,
+        decision_data_service: PolymarketDecisionDataService | None = None,
         external_signal_provider: PolymarketExternalSignalProvider | None = None,
         decision_interval_seconds: float = 1.0,
         decision_timeout_seconds: float = 3.0,
@@ -149,6 +158,13 @@ class PolymarketAutonomousSupervisor:
             raise ValueError("user stream and supervisor ledgers differ")
         if user_stream.consumer.runtime_guard is not runtime_guard:
             raise ValueError("user stream and supervisor runtime guards differ")
+        if decision_data_service is not None:
+            if getattr(decision_data_service, "trading_authority", None) is not False:
+                raise PolymarketLiveBlocked(
+                    "Polymarket predictor-data service must have no trading authority"
+                )
+            if not callable(getattr(decision_data_service, "run", None)):
+                raise TypeError("predictor-data service must expose an async run loop")
         self.public_client = public_client
         self.coordinator = coordinator
         self.ledger = ledger
@@ -158,6 +174,7 @@ class PolymarketAutonomousSupervisor:
         self.promotion = promotion
         self.decision_provider = decision_provider
         self.settlement = settlement
+        self.decision_data_service = decision_data_service
         self.external_signal_provider = external_signal_provider
         self.decision_interval_seconds = interval
         self.decision_timeout_seconds = timeout
@@ -520,6 +537,10 @@ class PolymarketAutonomousSupervisor:
             tasks["settlement"] = asyncio.create_task(
                 self.settlement.run(services_stop)
             )
+        if self.decision_data_service is not None:
+            tasks["predictor_market_data"] = asyncio.create_task(
+                self.decision_data_service.run(services_stop)
+            )
         external_run = getattr(self.external_signal_provider, "run", None)
         if callable(external_run):
             tasks["external_public_signal"] = asyncio.create_task(
@@ -605,5 +626,6 @@ __all__ = [
     "PolymarketAutonomousDecisionProvider",
     "PolymarketAutonomousRuntimeSnapshot",
     "PolymarketAutonomousSupervisor",
+    "PolymarketDecisionDataService",
     "PolymarketExternalSignalProvider",
 ]

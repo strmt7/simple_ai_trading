@@ -12,12 +12,18 @@ import sys
 import time
 from typing import Mapping
 
+from .polymarket import PolymarketPublicClient
+from .polymarket_autonomous_runtime import PolymarketAutonomousSupervisor
+from .polymarket_binance_signal import BinanceBtcPublicSignalProvider
+from .polymarket_historical_shadow import PolymarketBtcFlowBuffer
+from .polymarket_historical_shadow_feed import PolymarketHistoricalShadowFeed
 from .polymarket_live import (
     PolymarketLiveBlocked,
     PolymarketLiveCoordinator,
     PolymarketLiveOrderLedger,
     PolymarketLiveRiskLimits,
 )
+from .polymarket_live_promotion import load_polymarket_live_promotion
 from .polymarket_live_runtime import (
     PolymarketAuthenticatedUserStream,
     PolymarketLiveRuntimeGuard,
@@ -35,6 +41,14 @@ from .polymarket_live_v2 import (
     OfficialPolymarketV2Venue,
     PolymarketLiveCredentials,
 )
+from .polymarket_round16_decision import (
+    PolymarketRound16PromotedDecisionProvider,
+)
+from .polymarket_round16_shadow import (
+    PolymarketRound16LiveFeatureBuilder,
+    PolymarketRound16ShadowScorer,
+    load_verified_round16_shadow_predictor,
+)
 
 
 DEFAULT_POLYMARKET_LIVE_LEDGER = Path("data/polymarket/live-ownership.sqlite3")
@@ -43,6 +57,7 @@ _ACTIONS = (
     "preflight",
     "reconcile",
     "supervise",
+    "autonomous",
     "cancel-owned",
     "stop",
     "recover-redemptions",
@@ -64,7 +79,8 @@ def register_polymarket_live_command(
         description=(
             "Inspect or supervise the independent BTC Polymarket CLOB V2 boundary. "
             "It never shares Binance orders, balances, positions, or risk state. "
-            "No action opens exposure because no Polymarket model has live authority."
+            "Autonomous opening remains blocked unless an unexpired, hash-bound "
+            "promotion grants live authority."
         ),
     )
     parser.add_argument("--action", choices=_ACTIONS, default="status")
@@ -111,6 +127,48 @@ def register_polymarket_live_command(
         "--automatic-redemption",
         action="store_true",
         help="allow supervision to redeem proven resolved inventory one condition at a time",
+    )
+    parser.add_argument(
+        "--promotion",
+        default=None,
+        help="hash-bound live-promotion JSON required by autonomous mode",
+    )
+    parser.add_argument(
+        "--evidence-root",
+        default=None,
+        help="root containing the exact promotion-bound evidence files",
+    )
+    parser.add_argument(
+        "--round16-contract",
+        default=(
+            "docs/model-research/polymarket/"
+            "round-016-btc-15m-horizon-comparison-v2.json"
+        ),
+        help="frozen BTC fifteen-minute contract used by autonomous mode",
+    )
+    parser.add_argument(
+        "--pretest-envelope-sha256",
+        default=None,
+        help="operator-pinned canonical SHA-256 of the promoted pretest envelope",
+    )
+    parser.add_argument(
+        "--evaluation-envelope-sha256",
+        default=None,
+        help="operator-pinned canonical SHA-256 of the promoted evaluation envelope",
+    )
+    parser.add_argument(
+        "--requested-quantity",
+        type=Decimal,
+        default="5",
+        help="maximum requested outcome-token quantity before deterministic risk gates",
+    )
+    parser.add_argument(
+        "--disable-binance-bbo-safeguard",
+        action="store_true",
+        help=(
+            "disable the extra credential-free BTC BBO veto/reduction loop; "
+            "Round 16 predictor flow remains public and read-only"
+        ),
     )
     parser.add_argument("--json", action="store_true")
     parser.set_defaults(func=command_polymarket_live)
@@ -326,6 +384,181 @@ async def _supervise(
     }
 
 
+def _required_autonomous_argument(value: object, *, name: str) -> str:
+    selected = str(value or "").strip()
+    if not selected:
+        raise PolymarketLiveBlocked(
+            f"autonomous Polymarket mode requires --{name}"
+        )
+    return selected
+
+
+async def _autonomous(
+    *,
+    credentials: PolymarketLiveCredentials,
+    venue: OfficialPolymarketV2Venue,
+    ledger: PolymarketLiveOrderLedger,
+    risk_limits: PolymarketLiveRiskLimits,
+    duration_seconds: float,
+    reconciliation_seconds: float,
+    stop_timeout_seconds: float,
+    automatic_redemption: bool,
+    promotion_path: object,
+    evidence_root: object,
+    round16_contract: object,
+    pretest_envelope_sha256: object,
+    evaluation_envelope_sha256: object,
+    requested_quantity: Decimal,
+    binance_bbo_safeguard: bool,
+) -> dict[str, object]:
+    duration = float(duration_seconds)
+    interval = float(reconciliation_seconds)
+    stop_timeout = float(stop_timeout_seconds)
+    if not 0 <= duration <= 31_536_000:
+        raise ValueError("duration-seconds must lie in [0, 31536000]")
+    if not 1 <= interval <= 60:
+        raise ValueError("reconciliation-seconds must lie in [1, 60]")
+    if not 1 <= stop_timeout <= 300:
+        raise ValueError("stop-timeout-seconds must lie in [1, 300]")
+    selected_promotion = _required_autonomous_argument(
+        promotion_path,
+        name="promotion",
+    )
+    selected_root = _required_autonomous_argument(
+        evidence_root,
+        name="evidence-root",
+    )
+    selected_contract = _required_autonomous_argument(
+        round16_contract,
+        name="round16-contract",
+    )
+    pretest_sha = _required_autonomous_argument(
+        pretest_envelope_sha256,
+        name="pretest-envelope-sha256",
+    )
+    evaluation_sha = _required_autonomous_argument(
+        evaluation_envelope_sha256,
+        name="evaluation-envelope-sha256",
+    )
+    observed_at_ms = int(time.time() * 1_000)
+    promotion = load_polymarket_live_promotion(
+        selected_promotion,
+        evidence_root=selected_root,
+        require_live_authority=True,
+        observed_at_ms=observed_at_ms,
+    )
+    predictor = load_verified_round16_shadow_predictor(
+        contract_path=selected_contract,
+        pretest_path=promotion.model_artifact_path,
+        evaluation_path=promotion.evaluation_report_path,
+        expected_pretest_envelope_sha256=pretest_sha,
+        expected_evaluation_envelope_sha256=evaluation_sha,
+    )
+    public_client = PolymarketPublicClient()
+    settlement_venue: OfficialPolymarketUnifiedRedemptionVenue | None = None
+    started = time.monotonic()
+    try:
+        flow = PolymarketBtcFlowBuffer(retention_seconds=1_200)
+        predictor_feed = PolymarketHistoricalShadowFeed(flow=flow)
+        scorer = PolymarketRound16ShadowScorer(
+            predictor=predictor,
+            feature_builder=PolymarketRound16LiveFeatureBuilder(flow),
+        )
+        decision_provider = PolymarketRound16PromotedDecisionProvider(
+            public_client=public_client,
+            scorer=scorer,
+            promotion=promotion,
+            requested_quantity=requested_quantity,
+        )
+        guard = PolymarketLiveRuntimeGuard(
+            maximum_reconciliation_age_ms=max(5_000, int(interval * 3_000)),
+        )
+        coordinator = PolymarketLiveCoordinator(
+            venue,
+            ledger,
+            risk_limits=risk_limits,
+            runtime_authority=guard,
+        )
+        consumer = PolymarketUserStreamConsumer(ledger, guard)
+        user_stream = PolymarketAuthenticatedUserStream(
+            credentials,
+            consumer,
+            markets=tuple(
+                sorted(
+                    {
+                        record.intent.market_id
+                        for record in ledger.records()
+                    }
+                )
+            ),
+        )
+        reconciliation = PolymarketReconciliationService(
+            coordinator,
+            guard,
+            interval_seconds=interval,
+        )
+        redemption, settlement_venue = _settlement_coordinator(
+            credentials=credentials,
+            account=venue,
+            ledger=ledger,
+        )
+        settlement = PolymarketSettlementService(
+            redemption,
+            guard,
+            automatic_redemption_enabled=automatic_redemption,
+            interval_seconds=max(5.0, interval),
+        )
+        external_signal = (
+            BinanceBtcPublicSignalProvider()
+            if binance_bbo_safeguard
+            else None
+        )
+        supervisor = PolymarketAutonomousSupervisor(
+            public_client=public_client,
+            coordinator=coordinator,
+            ledger=ledger,
+            runtime_guard=guard,
+            user_stream=user_stream,
+            reconciliation=reconciliation,
+            promotion=promotion,
+            decision_provider=decision_provider,
+            settlement=settlement,
+            decision_data_service=predictor_feed,
+            external_signal_provider=external_signal,
+            stop_timeout_seconds=stop_timeout,
+        )
+        await supervisor.run(duration_seconds=duration)
+        final = await asyncio.to_thread(coordinator.reconcile)
+        snapshot = supervisor.snapshot()
+        feed_health = predictor_feed.health()
+        bbo_snapshot = (
+            None
+            if external_signal is None
+            else asdict(external_signal.snapshot())
+        )
+        return {
+            "schema_version": "polymarket-live-autonomous-v1",
+            "venue": "polymarket",
+            "symbol": "BTC",
+            "market_variant": snapshot.market_variant,
+            "elapsed_seconds": round(time.monotonic() - started, 3),
+            "promotion_sha256": promotion.promotion.promotion_sha256,
+            "model_artifact_sha256": promotion.promotion.model_artifact.sha256,
+            "automatic_redemption": automatic_redemption,
+            "reconciliation": _reconciliation_payload(final),
+            "runtime": asdict(snapshot),
+            "predictor_feed": asdict(feed_health),
+            "binance_bbo_safeguard": bbo_snapshot,
+            "binance_credentials_used": False,
+            "binance_execution_connected": False,
+            "opened_exposure": snapshot.submitted_opens > 0,
+        }
+    finally:
+        if settlement_venue is not None:
+            settlement_venue.close()
+        public_client.session.close()
+
+
 def _render(payload: Mapping[str, object], *, as_json: bool) -> None:
     if as_json:
         print(json.dumps(dict(payload), indent=2, sort_keys=True, default=str))
@@ -463,6 +696,32 @@ def command_polymarket_live(args: argparse.Namespace) -> int:
                         duration_seconds=args.duration_seconds,
                         reconciliation_seconds=args.reconciliation_seconds,
                         automatic_redemption=bool(args.automatic_redemption),
+                    )
+                )
+                payload["action"] = action
+                status = 0
+            elif action == "autonomous":
+                payload = asyncio.run(
+                    _autonomous(
+                        credentials=credentials,
+                        venue=venue,
+                        ledger=ledger,
+                        risk_limits=risk_limits,
+                        duration_seconds=args.duration_seconds,
+                        reconciliation_seconds=args.reconciliation_seconds,
+                        stop_timeout_seconds=args.stop_timeout_seconds,
+                        automatic_redemption=bool(args.automatic_redemption),
+                        promotion_path=args.promotion,
+                        evidence_root=args.evidence_root,
+                        round16_contract=args.round16_contract,
+                        pretest_envelope_sha256=args.pretest_envelope_sha256,
+                        evaluation_envelope_sha256=(
+                            args.evaluation_envelope_sha256
+                        ),
+                        requested_quantity=args.requested_quantity,
+                        binance_bbo_safeguard=not bool(
+                            args.disable_binance_bbo_safeguard
+                        ),
                     )
                 )
                 payload["action"] = action

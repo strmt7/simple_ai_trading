@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"cec47381471bfe981a12f49c2727de46c86463d4e85876673a6ea8ef8ad03646";
+inline constexpr const wchar_t* kCommandContractSha256 = L"135c2a9a57b24d491e070dc11bccd7d519bb8f856d023ffae96843910879797d";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -646,7 +646,7 @@ inline constexpr CommandOptionSpec kOptions_polymarket_features[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_polymarket_live[] = {
-    {L"--action", L"action", L"status, preflight, reconcile, supervise, cancel-owned, stop, recover-redemptions, redeem", L"status", L"", L"1", false, true, false},
+    {L"--action", L"action", L"status, preflight, reconcile, supervise, autonomous, cancel-owned, stop, recover-redemptions, redeem", L"status", L"", L"1", false, true, false},
     {L"--ledger", L"ledger", L"", L"data\\polymarket\\live-ownership.sqlite3", L"durable hash-bound Polymarket ownership ledger", L"1", false, true, false},
     {L"--risk-level", L"risk_level", L"conservative, regular, aggressive", L"conservative", L"hard Polymarket execution ceiling profile; conservative is default", L"1", false, true, false},
     {L"--duration-seconds", L"duration_seconds", L"", L"0.0", L"supervision duration; zero runs until interrupted", L"1", false, true, false},
@@ -655,6 +655,13 @@ inline constexpr CommandOptionSpec kOptions_polymarket_live[] = {
     {L"--condition-id", L"condition_id", L"", L"", L"optional exact condition ID for one redemption", L"1", false, true, false},
     {L"--confirm-redemption", L"confirm_redemption", L"", L"false", L"confirm one settlement transaction after a fresh read-only preflight", L"0", false, false, false},
     {L"--automatic-redemption", L"automatic_redemption", L"", L"false", L"allow supervision to redeem proven resolved inventory one condition at a time", L"0", false, false, false},
+    {L"--promotion", L"promotion", L"", L"", L"hash-bound live-promotion JSON required by autonomous mode", L"1", false, true, false},
+    {L"--evidence-root", L"evidence_root", L"", L"", L"root containing the exact promotion-bound evidence files", L"1", false, true, false},
+    {L"--round16-contract", L"round16_contract", L"", L"docs/model-research/polymarket/round-016-btc-15m-horizon-comparison-v2.json", L"frozen BTC fifteen-minute contract used by autonomous mode", L"1", false, true, false},
+    {L"--pretest-envelope-sha256", L"pretest_envelope_sha256", L"", L"", L"operator-pinned canonical SHA-256 of the promoted pretest envelope", L"1", false, true, false},
+    {L"--evaluation-envelope-sha256", L"evaluation_envelope_sha256", L"", L"", L"operator-pinned canonical SHA-256 of the promoted evaluation envelope", L"1", false, true, false},
+    {L"--requested-quantity", L"requested_quantity", L"", L"5", L"maximum requested outcome-token quantity before deterministic risk gates", L"1", false, true, false},
+    {L"--disable-binance-bbo-safeguard", L"disable_binance_bbo_safeguard", L"", L"false", L"disable the extra credential-free BTC BBO veto/reduction loop; Round 16 predictor flow remains public and read-only", L"0", false, false, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -1243,7 +1250,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-action-value", L"Build hash-bound BTC/ETH/SOL action-value evidence in resumable synchronized market batches. A sealed Round 13 run additionally materializes label-free treatment, control, and stress decisions before official outcomes can be requested.", kOptions_polymarket_action_value, 9},
     {L"polymarket-continuity", L"Evaluate recorder errors, stream gaps, connection segments, market snapshot timing, and fresh CLOB baselines without consulting outcomes, labels, utilities, or model scores.", kOptions_polymarket_continuity, 5},
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one validated prospective Polymarket recorder run. Strict gap-free replay is the default. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 9},
-    {L"polymarket-live", L"Inspect or supervise the independent BTC Polymarket CLOB V2 boundary. It never shares Binance orders, balances, positions, or risk state. No action opens exposure because no Polymarket model has live authority.", kOptions_polymarket_live, 10},
+    {L"polymarket-live", L"Inspect or supervise the independent BTC Polymarket CLOB V2 boundary. It never shares Binance orders, balances, positions, or risk state. Autonomous opening remains blocked unless an unexpired, hash-bound promotion grants live authority.", kOptions_polymarket_live, 17},
     {L"polymarket-mlp", L"Load one fully materialized, development-passed Round 9 ridge report; fit the preregistered condition-balanced MLP ensemble; open its test partition only after the validation gates pass; and persist weights, traces, predictions, actions, equity, and market PnL. This command grants no foundation-AI, trading, or profitability authority.", kOptions_polymarket_mlp, 6},
     {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 25},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 23},

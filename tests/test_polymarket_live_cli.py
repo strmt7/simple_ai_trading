@@ -12,6 +12,12 @@ import pytest
 
 from simple_ai_trading import entrypoint
 from simple_ai_trading import polymarket_live_cli as live_cli
+from simple_ai_trading.polymarket_autonomous_runtime import (
+    PolymarketAutonomousRuntimeSnapshot,
+)
+from simple_ai_trading.polymarket_historical_shadow_feed import (
+    PolymarketShadowFeedHealth,
+)
 from simple_ai_trading.polymarket_live import (
     PolymarketCancelResult,
     PolymarketLiveBlocked,
@@ -53,6 +59,10 @@ def test_entrypoint_registers_independent_polymarket_live_command() -> None:
     assert args.risk_level == "conservative"
     assert args.automatic_redemption is False
     assert args.stop_timeout_seconds == 30
+    assert args.promotion is None
+    assert args.evidence_root is None
+    assert args.requested_quantity == Decimal("5")
+    assert args.disable_binance_bbo_safeguard is False
     assert args.func is live_cli.command_polymarket_live
 
 
@@ -1063,6 +1073,348 @@ def test_supervise_command_dispatches_and_preserves_zero_exposure(
     payload = json.loads(capsys.readouterr().out)
     assert result == 0
     assert payload["action"] == "supervise"
+    assert payload["opened_exposure"] is False
+
+
+def test_autonomous_requires_explicit_hash_bound_evidence() -> None:
+    with pytest.raises(
+        PolymarketLiveBlocked,
+        match=r"requires --promotion",
+    ):
+        asyncio.run(
+            live_cli._autonomous(
+                credentials=SimpleNamespace(),
+                venue=SimpleNamespace(),
+                ledger=SimpleNamespace(),
+                risk_limits=live_cli._risk_limits("conservative"),
+                duration_seconds=1,
+                reconciliation_seconds=5,
+                stop_timeout_seconds=30,
+                automatic_redemption=False,
+                promotion_path=None,
+                evidence_root=None,
+                round16_contract="contract.json",
+                pretest_envelope_sha256=None,
+                evaluation_envelope_sha256=None,
+                requested_quantity=Decimal("5"),
+                binance_bbo_safeguard=True,
+            )
+        )
+
+
+def test_autonomous_assembles_independent_promoted_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    events: list[str] = []
+    model_path = tmp_path / "pretest.json"
+    evaluation_path = tmp_path / "evaluation.json"
+    promotion_policy = SimpleNamespace(
+        promotion_sha256="1" * 64,
+        model_artifact=SimpleNamespace(sha256="2" * 64),
+        market_variant="fifteenminute",
+    )
+    promotion = SimpleNamespace(
+        promotion=promotion_policy,
+        model_artifact_path=model_path,
+        evaluation_report_path=evaluation_path,
+    )
+    predictor = object()
+    flow = object()
+
+    class PublicClient:
+        def __init__(self) -> None:
+            self.session = SimpleNamespace(
+                close=lambda: events.append("public-close")
+            )
+
+    class Feed:
+        trading_authority = False
+
+        def __init__(self, *, flow: object) -> None:
+            assert flow is globals_flow
+
+        def health(self) -> PolymarketShadowFeedHealth:
+            return PolymarketShadowFeedHealth(
+                running=False,
+                queue_size=0,
+                queue_capacity=32_768,
+                queue_high_watermark=7,
+                received_counts={"spot": 10, "perpetual": 11},
+                ingested_counts={"spot": 10, "perpetual": 11},
+                reconnect_counts={"spot": 0, "perpetual": 0},
+                stale_epoch_discard_counts={"spot": 0, "perpetual": 0},
+                last_received_at_ms={"spot": 100, "perpetual": 101},
+                last_event_time_ms={"spot": 99, "perpetual": 100},
+                current_epochs={"spot": 1, "perpetual": 1},
+                last_errors={"spot": "", "perpetual": ""},
+            )
+
+    globals_flow = flow
+    guard = object()
+    ledger = SimpleNamespace(records=lambda: ())
+    clean = _reconciliation()
+
+    class Coordinator:
+        def __init__(
+            self,
+            venue: object,
+            selected_ledger: object,
+            *,
+            risk_limits: object,
+            runtime_authority: object,
+        ) -> None:
+            assert venue is venue_object
+            assert selected_ledger is ledger
+            assert risk_limits is limits
+            assert runtime_authority is guard
+            self.ledger = selected_ledger
+            self.runtime_authority = runtime_authority
+
+        def reconcile(self) -> PolymarketReconciliation:
+            events.append("reconcile")
+            return clean
+
+    class Stream:
+        def __init__(self, credentials: object, consumer: object, *, markets: tuple[str, ...]):
+            assert credentials is credentials_object
+            assert consumer.ledger is ledger
+            assert consumer.runtime_guard is guard
+            assert markets == ()
+            self.consumer = consumer
+            self.markets = ()
+
+    class Reconciliation:
+        def __init__(
+            self,
+            coordinator: object,
+            runtime_guard: object,
+            *,
+            interval_seconds: float,
+        ) -> None:
+            assert interval_seconds == 7
+            self.coordinator = coordinator
+            self.runtime_guard = runtime_guard
+
+    settlement_venue = SimpleNamespace(
+        close=lambda: events.append("settlement-close")
+    )
+    snapshot = PolymarketAutonomousRuntimeSnapshot(
+        venue="polymarket",
+        symbol="BTC",
+        market_variant="fifteenminute",
+        horizon_minutes=15,
+        paused=True,
+        stop_requested=True,
+        stop_completed=True,
+        discovered_market_ids=("0x" + "1" * 64,),
+        subscribed_market_ids=("0x" + "1" * 64,),
+        decisions=2,
+        submitted_opens=1,
+        blocked_opens=0,
+        requested_closes=1,
+        completed_closes=1,
+        last_fault="",
+        external_signal_enabled=False,
+        binance_execution_connected=False,
+    )
+    captured: dict[str, object] = {}
+
+    class Supervisor:
+        def __init__(self, **kwargs: object) -> None:
+            captured.update(kwargs)
+
+        async def run(self, *, duration_seconds: float) -> None:
+            assert duration_seconds == 3
+            events.append("run")
+
+        def snapshot(self) -> PolymarketAutonomousRuntimeSnapshot:
+            return snapshot
+
+    monkeypatch.setattr(
+        live_cli,
+        "load_polymarket_live_promotion",
+        lambda path, **kwargs: (
+            promotion
+            if path == "promotion.json"
+            and kwargs["evidence_root"] == str(tmp_path)
+            and kwargs["require_live_authority"] is True
+            else pytest.fail()
+        ),
+    )
+    monkeypatch.setattr(
+        live_cli,
+        "load_verified_round16_shadow_predictor",
+        lambda **kwargs: (
+            predictor
+            if kwargs["pretest_path"] == model_path
+            and kwargs["evaluation_path"] == evaluation_path
+            and kwargs["expected_pretest_envelope_sha256"] == "3" * 64
+            and kwargs["expected_evaluation_envelope_sha256"] == "4" * 64
+            else pytest.fail()
+        ),
+    )
+    monkeypatch.setattr(live_cli, "PolymarketPublicClient", PublicClient)
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketBtcFlowBuffer",
+        lambda *, retention_seconds: (
+            flow if retention_seconds == 1_200 else pytest.fail()
+        ),
+    )
+    monkeypatch.setattr(live_cli, "PolymarketHistoricalShadowFeed", Feed)
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketRound16LiveFeatureBuilder",
+        lambda selected_flow: (
+            "builder" if selected_flow is flow else pytest.fail()
+        ),
+    )
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketRound16ShadowScorer",
+        lambda **kwargs: (
+            "scorer"
+            if kwargs == {"predictor": predictor, "feature_builder": "builder"}
+            else pytest.fail()
+        ),
+    )
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketRound16PromotedDecisionProvider",
+        lambda **kwargs: "decision-provider",
+    )
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketLiveRuntimeGuard",
+        lambda **kwargs: (
+            guard
+            if kwargs["maximum_reconciliation_age_ms"] == 21_000
+            else pytest.fail()
+        ),
+    )
+    monkeypatch.setattr(live_cli, "PolymarketLiveCoordinator", Coordinator)
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketUserStreamConsumer",
+        lambda selected_ledger, selected_guard: SimpleNamespace(
+            ledger=selected_ledger,
+            runtime_guard=selected_guard,
+        ),
+    )
+    monkeypatch.setattr(live_cli, "PolymarketAuthenticatedUserStream", Stream)
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketReconciliationService",
+        Reconciliation,
+    )
+    monkeypatch.setattr(
+        live_cli,
+        "_settlement_coordinator",
+        lambda **_kwargs: ("redemption", settlement_venue),
+    )
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketSettlementService",
+        lambda *args, **kwargs: (
+            "settlement"
+            if args == ("redemption", guard)
+            and kwargs["automatic_redemption_enabled"] is True
+            and kwargs["interval_seconds"] == 7
+            else pytest.fail()
+        ),
+    )
+    monkeypatch.setattr(live_cli, "PolymarketAutonomousSupervisor", Supervisor)
+
+    credentials_object = SimpleNamespace()
+    venue_object = SimpleNamespace()
+    limits = live_cli._risk_limits("conservative")
+    payload = asyncio.run(
+        live_cli._autonomous(
+            credentials=credentials_object,
+            venue=venue_object,
+            ledger=ledger,
+            risk_limits=limits,
+            duration_seconds=3,
+            reconciliation_seconds=7,
+            stop_timeout_seconds=19,
+            automatic_redemption=True,
+            promotion_path="promotion.json",
+            evidence_root=str(tmp_path),
+            round16_contract="contract.json",
+            pretest_envelope_sha256="3" * 64,
+            evaluation_envelope_sha256="4" * 64,
+            requested_quantity=Decimal("5"),
+            binance_bbo_safeguard=False,
+        )
+    )
+
+    assert captured["decision_data_service"].trading_authority is False
+    assert captured["external_signal_provider"] is None
+    assert captured["stop_timeout_seconds"] == 19
+    assert payload["opened_exposure"] is True
+    assert payload["binance_credentials_used"] is False
+    assert payload["binance_execution_connected"] is False
+    assert events == [
+        "run",
+        "reconcile",
+        "settlement-close",
+        "public-close",
+    ]
+
+
+def test_autonomous_command_dispatches_explicit_operator_pins(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    venue = SimpleNamespace(close=lambda: None)
+    monkeypatch.setattr(
+        live_cli,
+        "_credentials_and_venue",
+        lambda: (SimpleNamespace(signature_type=0), venue),
+    )
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketLiveCoordinator",
+        lambda *_args, **_kwargs: SimpleNamespace(),
+    )
+
+    async def autonomous(**kwargs: object) -> dict[str, object]:
+        assert kwargs["promotion_path"] == "promotion.json"
+        assert kwargs["evidence_root"] == "evidence"
+        assert kwargs["requested_quantity"] == Decimal("6.5")
+        assert kwargs["binance_bbo_safeguard"] is False
+        return {
+            "schema_version": "polymarket-live-autonomous-v1",
+            "opened_exposure": False,
+        }
+
+    monkeypatch.setattr(live_cli, "_autonomous", autonomous)
+    result = live_cli.command_polymarket_live(
+        _args(
+            "--action",
+            "autonomous",
+            "--ledger",
+            str(tmp_path / "live.sqlite3"),
+            "--promotion",
+            "promotion.json",
+            "--evidence-root",
+            "evidence",
+            "--pretest-envelope-sha256",
+            "3" * 64,
+            "--evaluation-envelope-sha256",
+            "4" * 64,
+            "--requested-quantity",
+            "6.5",
+            "--disable-binance-bbo-safeguard",
+            "--json",
+        )
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert result == 0
+    assert payload["action"] == "autonomous"
     assert payload["opened_exposure"] is False
 
 
