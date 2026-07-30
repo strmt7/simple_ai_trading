@@ -1,0 +1,61 @@
+{
+  "schema_version": "polymarket-round16-host-accelerator-qualification-v1",
+  "observed_at_utc": "2026-07-30T03:22:40Z",
+  "source_commit": "5ff7788c5fa35f54d70898b33273592ccca769ae",
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10",
+    "torch": "2.4.1+cpu",
+    "torch_directml": "0.2.5.dev240914",
+    "lightgbm": "4.6.0"
+  },
+  "directml_tensor_probe": {
+    "requested_backend": "directml",
+    "resolved_device": "privateuseone:0",
+    "element_count": 1024,
+    "operation": "sum(square(arange(1024,float32)))",
+    "observed_value": 357389824.0,
+    "expected_value": 357389824.0,
+    "exact_match": true
+  },
+  "lightgbm_opencl_identity": [
+    {
+      "platform_id": 0,
+      "device_id": 0,
+      "platform_name": "AMD Accelerated Parallel Processing",
+      "platform_vendor": "Advanced Micro Devices, Inc.",
+      "platform_version": "OpenCL 2.1 AMD-APP (3679.0)",
+      "device_name": "gfx1201",
+      "board_name": "AMD Radeon RX 9070 XT",
+      "device_vendor": "Advanced Micro Devices, Inc.",
+      "device_version": "OpenCL 2.0 AMD-APP (3679.0)",
+      "driver_version": "3679.0 (PAL,LC)",
+      "global_memory_bytes": 17095983104,
+      "maximum_compute_units": 32,
+      "display_name": "AMD Radeon RX 9070 XT"
+    }
+  ],
+  "lightgbm_reproducibility_probe": {
+    "requested_backend": "directml",
+    "resolved_backend": "opencl",
+    "resolved_device": "opencl:0:0:AMD Radeon RX 9070 XT",
+    "seed": 16015,
+    "rows": 8192,
+    "features": 16,
+    "boosting_rounds": 32,
+    "model_sha256_run_1": "f072a18848849d892c30922cc559b37911a2e8c4f93267a082e528d3880b36bc",
+    "model_sha256_run_2": "f072a18848849d892c30922cc559b37911a2e8c4f93267a082e528d3880b36bc",
+    "model_sha256_equal": true,
+    "prediction_count": 512,
+    "prediction_exact": true,
+    "prediction_max_absolute_difference": 0.0,
+    "finite_predictions": true,
+    "gpu_use_dp": true
+  },
+  "qualification_passed": true,
+  "model_quality_claim": false,
+  "profitability_or_edge_claim": false,
+  "paper_authority": false,
+  "live_authority": false,
+  "artifact_sha256": "856a74c98d67115ef85a2a992e42598ca90e9a0e58788b59b76d063f18c62b7b"
+}
