@@ -1,0 +1,298 @@
+{
+  "schema_version": "polymarket-round21-independent-matched-edge-contract-v1",
+  "round": 21,
+  "status": "preregistered_during_target_blind_round20_capture_before_outcome_or_model_access",
+  "created_at_ms": 1785454503062,
+  "parents": {
+    "round20_contract_sha256": "90e837edc9bb8071f966f9d27335983e24c6060c4ba0d36fc3d2060913c421ad",
+    "round20_capture_qualification_result_sha256": "5260a5b6c11e8acfb1343d25c593a1af21d3a239e6cf81d1430296f4a63ee05d",
+    "round20_campaign_design_sha256": "1616da48a7a63477e03328f6a1c032b611981a58f2d0c801f06f95462471757f",
+    "round20_capture_is_target_blind": true,
+    "round20_capture_is_model_blind": true
+  },
+  "venue_independence": {
+    "execution_venue": "polymarket",
+    "core_required_sources": [
+      "polymarket_gamma",
+      "polymarket_clob_redundant_union",
+      "polymarket_rtds_chainlink"
+    ],
+    "optional_predictor_sources": [
+      "binance_spot_public",
+      "binance_usdm_public"
+    ],
+    "binance_process_and_storage": "independent_sidecar",
+    "binance_credentials_allowed": false,
+    "binance_account_or_order_state_allowed": false,
+    "binance_execution_allowed": false,
+    "binance_failure_blocks_core_capture": false,
+    "binance_failure_blocks_polymarket_risk_or_close": false,
+    "binance_failure_blocks_polymarket_stop_or_recovery": false,
+    "missing_optional_features": "explicit_missingness_without_imputation",
+    "matched_uplift_population": "identical_core_eligible_decisions_with_causally_available_optional_receipts"
+  },
+  "data_roles": {
+    "source": "round20_continuous_30_day_campaign",
+    "asset": "BTC",
+    "market_horizon_seconds": 300,
+    "decision_cadence_ms": 250,
+    "train_calendar_days": 18,
+    "tune_calendar_days": 5,
+    "sealed_test_calendar_days": 7,
+    "purge_seconds_between_roles": 1800,
+    "whole_condition_role_assignment": true,
+    "role_assignment_before_resolution_access": true,
+    "condition_equal_weighting": true,
+    "no_outcome_access_during_capture": true,
+    "no_model_access_during_capture": true,
+    "failed_or_joint_gap_conditions_excluded_only_by_frozen_transport_rules": true,
+    "optional_source_coverage_never_changes_core_condition_admission": true
+  },
+  "causal_features": {
+    "clock": "local_monotonic_and_utc_receipt_time",
+    "redundant_clob_receipt": "earliest_valid_lane_receipt_with_both_lane_provenance_retained",
+    "source_time_use": "latency_and_clock_drift_audit_only",
+    "core_layers": [
+      "chainlink_structural_state",
+      "polymarket_executable_prior",
+      "polymarket_multilevel_book_state",
+      "polymarket_causal_book_flow",
+      "time_to_resolution_and_dynamic_market_rules"
+    ],
+    "optional_binance_layers": [
+      "spot_trade_flow_and_top_of_book",
+      "usdm_trade_flow_and_top_of_book",
+      "spot_usdm_basis_and_price_discovery",
+      "cross_venue_receipt_time_lead_lag"
+    ],
+    "windows_ms": [
+      250,
+      1000,
+      5000,
+      15000,
+      30000,
+      60000,
+      120000
+    ],
+    "normalization": "train_only_robust_scale_and_explicit_missingness",
+    "gap_policy": "no_feature_crosses_connection_epoch_gap_condition_or_role_boundary",
+    "polymarket_public_trade_direction": "forbidden_as_ground_truth",
+    "trade_direction_enrichment": "post_capture_onchain_orderfilled_join_only",
+    "future_data_forbidden": [
+      "future_books",
+      "future_reference_prices",
+      "future_optional_predictor_receipts",
+      "future_fills_or_order_state",
+      "resolution_or_close_price",
+      "future_pnl"
+    ]
+  },
+  "prediction_tasks": {
+    "settlement_probability": {
+      "target": "official_polymarket_resolution",
+      "primary_scores": [
+        "condition_equal_binary_log_loss",
+        "condition_equal_brier_score"
+      ],
+      "calibration_scores": [
+        "calibration_intercept",
+        "calibration_slope",
+        "expected_calibration_error"
+      ],
+      "classification_diagnostics": [
+        "balanced_accuracy",
+        "matthews_correlation_coefficient"
+      ]
+    },
+    "aggressive_action_value": {
+      "states": [
+        "flat",
+        "owned_up",
+        "owned_down",
+        "complement_locked"
+      ],
+      "actions": [
+        "abstain",
+        "buy_up",
+        "buy_down",
+        "reduce_owned",
+        "lock_complement",
+        "exit_owned"
+      ],
+      "target": "realized_after_cost_utility_from_delayed_executable_books",
+      "multiple_actions_per_condition_allowed": true,
+      "one_active_transition_at_a_time": true,
+      "forced_activity": false
+    },
+    "passive_fill_survival": {
+      "status": "deferred_until_authoritative_shadow_order_labels_exist",
+      "right_censoring_required": true,
+      "queue_position_and_partial_fill_history_required": true,
+      "public_book_depletion_as_fill_truth": false,
+      "maker_fill_or_rebate_credit_before_qualification": false
+    }
+  },
+  "candidate_program": {
+    "controls": [
+      "executable_polymarket_mid_or_one_sided_prior",
+      "chainlink_diffusion_structural_probability",
+      "train_calibrated_polymarket_prior"
+    ],
+    "core_candidates": [
+      "regularized_logistic_residual_on_structural_log_odds",
+      "shallow_lightgbm_residual_on_structural_log_odds",
+      "compact_causal_tcn_only_after_simpler_candidate_passes_development_stability"
+    ],
+    "optional_candidates": [
+      "core_plus_binance_spot",
+      "core_plus_binance_spot_and_usdm"
+    ],
+    "selection": "bounded_train_and_tune_search_with_contiguous_condition_groups_and_one_standard_error_simplicity_rule",
+    "no_test_refit_or_threshold_change": true,
+    "complexity_is_not_a_promotion_criterion": true,
+    "accuracy_without_executable_after_cost_utility_is_rejected": true,
+    "profitability_target_used_for_parameter_selection": false
+  },
+  "execution_evaluation": {
+    "book_source": "future_observed_polymarket_redundant_union_after_frozen_submission_delay",
+    "submission_delay_ms": [
+      250,
+      500,
+      1000
+    ],
+    "displayed_depth_fraction": [
+      "1",
+      "0.5",
+      "0.25"
+    ],
+    "adverse_ticks": [
+      0,
+      1,
+      2
+    ],
+    "fees": "market_specific_dynamic_platform_fee_from_captured_market_rules",
+    "builder_fee": "actual_configured_fee_or_zero_never_negative",
+    "maker_rebate_credit": false,
+    "partial_fills": true,
+    "minimum_order_size_and_tick_changes": "causally_enforced",
+    "unknown_execution_state": "maximum_bound_loss_and_block_new_exposure",
+    "risk_profiles": {
+      "conservative": {
+        "default": true,
+        "maximum_event_loss_capital_fraction": "0.001",
+        "maximum_daily_loss_capital_fraction": "0.005",
+        "maximum_drawdown_capital_fraction": "0.02",
+        "loss_cluster_cooldown_minutes": 30
+      },
+      "regular": {
+        "default": false,
+        "maximum_event_loss_capital_fraction": "0.002",
+        "maximum_daily_loss_capital_fraction": "0.01",
+        "maximum_drawdown_capital_fraction": "0.04",
+        "loss_cluster_cooldown_minutes": 15
+      },
+      "aggressive": {
+        "default": false,
+        "maximum_event_loss_capital_fraction": "0.0035",
+        "maximum_daily_loss_capital_fraction": "0.015",
+        "maximum_drawdown_capital_fraction": "0.06",
+        "loss_cluster_cooldown_minutes": 5
+      }
+    },
+    "reinvestment": false,
+    "leverage": "not_applicable_to_polymarket_binary_tokens"
+  },
+  "ai_assist": {
+    "role": "slower_cadence_risk_regime_and_epistemic_veto",
+    "minimum_parameter_class": "multibillion",
+    "per_tick_direction_or_order_generation": false,
+    "allowed_actions": [
+      "preserve",
+      "reduce",
+      "abstain"
+    ],
+    "increase_risk_or_override_safety": false,
+    "block_close_stop_or_recovery": false,
+    "input": "hash_bound_causal_numeric_packet_without_secrets_or_future_state",
+    "matched_evaluation": "same_candidate_decisions_with_and_without_ai",
+    "minimum_matched_decisions": 300,
+    "minimum_non_tied_matched_actions": 30,
+    "promotion": "positive_paired_after_cost_utility_lower_95_with_no_worse_drawdown_or_tail_loss",
+    "unavailable_or_slow": "deterministic_model_and_risk_path_continues_without_ai"
+  },
+  "sealed_evaluation": {
+    "test_access": "one_use_after_immutable_model_feature_policy_cost_latency_and_ai_manifests",
+    "minimum_resolved_test_conditions": 1800,
+    "minimum_test_calendar_days": 7,
+    "minimum_executed_actions_per_profile_per_scenario": 300,
+    "paired_resampling_unit": "condition_with_day_level_sensitivity",
+    "paired_bootstrap_samples": 2000,
+    "lower_confidence_quantile": "0.025",
+    "predictive_gate": "log_loss_and_brier_strictly_better_than_every_control_with_positive_paired_lower_95",
+    "core_economic_gate": "positive_net_pnl_mean_event_utility_median_daily_pnl_profit_factor_above_one_and_positive_daily_block_bootstrap_lower_95_in_every_scenario",
+    "optional_binance_gate": "positive_incremental_after_cost_utility_lower_95_on_exact_matched_population_without_worse_drawdown_or_tail_loss",
+    "risk_gate": "all_profile_limits_pass_with_zero_unknown_ownership_reconciliation_or_lifecycle_violations",
+    "failed_gate": "reject_candidate_without_post_test_retuning"
+  },
+  "promotion": {
+    "automatic": false,
+    "paper_requires_sealed_predictive_and_economic_pass": true,
+    "live_requires_separate_prospective_shadow_and_execution_qualification": true,
+    "profitability_is_an_observed_result_not_a_guarantee_or_training_target": true
+  },
+  "research_basis": [
+    {
+      "url": "https://arxiv.org/abs/2604.24366",
+      "use": "onchain_orderfilled_trade_direction_and_public_feed_latency_tail"
+    },
+    {
+      "url": "https://arxiv.org/abs/2606.04217",
+      "use": "transaction_level_onchain_ground_truth"
+    },
+    {
+      "url": "https://arxiv.org/abs/2512.05734",
+      "use": "right_censored_fill_survival_and_queue_position"
+    },
+    {
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "complete_transaction_evaluation_over_forecast_accuracy"
+    },
+    {
+      "url": "https://arxiv.org/abs/2502.15757",
+      "use": "simple_model_control_and_transaction_cost_sensitivity"
+    },
+    {
+      "url": "https://arxiv.org/abs/2506.05764",
+      "use": "feature_quality_and_simple_crypto_lob_baselines"
+    },
+    {
+      "url": "https://arxiv.org/abs/2110.14914",
+      "use": "selective_classification_and_abstention"
+    },
+    {
+      "url": "https://docs.polymarket.com/market-data/realtime-data",
+      "use": "official_market_stream_and_rtds_contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/programs/builders/fees",
+      "use": "dynamic_platform_and_additive_builder_fee"
+    },
+    {
+      "url": "https://docs.polymarket.com/trading/realtime-order-updates",
+      "use": "authenticated_order_and_trade_lifecycle"
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/products/spot/testnet/web-socket-streams",
+      "use": "optional_public_spot_trade_and_book_ticker_wire contract"
+    }
+  ],
+  "authority": {
+    "model_data_eligible": false,
+    "model_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116"
+}
