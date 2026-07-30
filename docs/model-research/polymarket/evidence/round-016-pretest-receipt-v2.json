@@ -1,0 +1,50 @@
+{
+  "schema_version": "polymarket-round16-pretest-receipt-v2",
+  "created_at_utc": "2026-07-30T08:36:19.820Z",
+  "status": "immutable_pretest_published_before_one_use_test_access",
+  "source_commit": "570ba2a2a129665c3bd3def0519a32a486844acd",
+  "contract_sha256": "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67",
+  "dataset_sha256": "4bd4ebbbffeffa3443211919ae2ffd86fff732d2f5b51f84ddaa4df5738dca82",
+  "pretest": {
+    "path": "round-016-pretest-v2.json",
+    "bytes": 515118,
+    "file_sha256": "b08b3558a19beadeb4aa920552ac63d9b25a85b310a14352d12d08e1a4a9709d",
+    "artifact_sha256": "f86208d7cb9de132f966d9179906c2b0637d3a9979a16203dc4f51fa669cdda9",
+    "envelope_sha256": "ff7fea5a4fa3cd716821f62e8908f66b1aef74fe61f09813931fab70963956b4"
+  },
+  "selection": {
+    "metric": "condition_balanced_tune_log_loss",
+    "best_control": {
+      "candidate_id": "digital_moneyness_ridge_logistic-l2-0.01",
+      "log_loss": 0.4574390164710544
+    },
+    "best_challenger": {
+      "candidate_id": "round16-lgbm-depth4-leaves15",
+      "log_loss": 0.45092341187963125,
+      "backend_kind": "opencl",
+      "backend_device": "opencl:0:0:AMD Radeon RX 9070 XT",
+      "best_iteration": 256
+    },
+    "binance_ridge_log_loss": 0.45425149997885483,
+    "challenger_absolute_log_loss_improvement": 0.006515604591423141,
+    "challenger_relative_log_loss_improvement": 0.014243657311281037,
+    "binance_ridge_absolute_log_loss_improvement": 0.0031875164921995602,
+    "tree_over_binance_ridge_log_loss_improvement": 0.0033280880992235806
+  },
+  "sealed_state": {
+    "database_state": "pretest_complete",
+    "test_target_count": 0,
+    "test_targets_accessed": false,
+    "evaluation_manifest_count": 0,
+    "trading_authority": false
+  },
+  "interpretation": {
+    "development_predictive_signal": true,
+    "held_out_predictive_edge": false,
+    "after_cost_profitability": false,
+    "live_readiness": false,
+    "ai_evaluated": false,
+    "ai_reason": "No reproducible point-in-time text corpus exists for the historical lane; AI remains separately prospective and veto-or-reduce only."
+  },
+  "artifact_sha256": "76aa00b4a1f98f6a47f3deaec1556b27ddef95e58360e3b1ba96b14acb40cfdd"
+}
