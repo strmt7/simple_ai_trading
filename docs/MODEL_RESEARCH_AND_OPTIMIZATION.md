@@ -1632,8 +1632,12 @@ The Windows app follows the SuperZip design direction:
   of an alphabetical command wall.
 - Grouped operator workflows instead of an alphabetical command dump, while the
   CLI parity command picker still exposes every generated command.
-- Repo-aware command launching that resolves `.venv311` and sets `PYTHONPATH`
+- Repo-aware command launching that prefers `.venv`, retains `.venv311` as a
+  legacy fallback, verifies the installed entry point, and sets `PYTHONPATH`
   before running the Python CLI from a native app build.
+- Hidden child-process execution with combined stdout/stderr pipes, bounded
+  output retention, noninteractive stdin, and explicit exit-code propagation;
+  backend commands never open or steal focus with a terminal window.
 - Generated command contract from the Python CLI so the GUI command list cannot
   drift from CLI capabilities.
 - Explicit build, GUI smoke, screenshot capture, and automated

@@ -81,6 +81,49 @@ struct CommandResult {
     int exit_code = 2;
 };
 
+class OwnedHandle {
+  public:
+    OwnedHandle() = default;
+    explicit OwnedHandle(HANDLE handle) : handle_(handle) {}
+    ~OwnedHandle() { reset(); }
+
+    OwnedHandle(const OwnedHandle&) = delete;
+    OwnedHandle& operator=(const OwnedHandle&) = delete;
+
+    OwnedHandle(OwnedHandle&& other) noexcept : handle_(other.release()) {}
+    OwnedHandle& operator=(OwnedHandle&& other) noexcept {
+        if (this != &other) {
+            reset(other.release());
+        }
+        return *this;
+    }
+
+    HANDLE get() const { return handle_; }
+    bool valid() const {
+        return handle_ != nullptr && handle_ != INVALID_HANDLE_VALUE;
+    }
+    HANDLE release() {
+        HANDLE handle = handle_;
+        handle_ = nullptr;
+        return handle;
+    }
+    void reset(HANDLE handle = nullptr) {
+        if (valid()) {
+            CloseHandle(handle_);
+        }
+        handle_ = handle;
+    }
+
+  private:
+    HANDLE handle_{};
+};
+
+struct HiddenCommandResult {
+    std::wstring output;
+    int exit_code = 2;
+    bool launched = false;
+};
+
 class MainWindow {
   public:
     int run(HINSTANCE instance, int show) {
@@ -2029,19 +2072,13 @@ class MainWindow {
                 exit_code,
             };
         }
-        std::wstring command = shell_command_for_cli(args);
-        FILE* pipe = _wpopen(command.c_str(), L"r");
-        std::wstring captured;
-        if (!pipe) {
+        HiddenCommandResult result = run_hidden_command(shell_command_for_cli(args));
+        if (!result.launched) {
             return {L"Failed to launch command.\r\n\r\n(exit 2)\r\n", 2};
         }
-        std::array<wchar_t, 1024> buffer{};
-        while (fgetws(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) {
-            captured += buffer.data();
-        }
-        int exit_code = _pclose(pipe);
-        captured += L"\r\n(exit " + std::to_wstring(exit_code) + L")\r\n";
-        return {std::move(captured), exit_code};
+        result.output +=
+            L"\r\n(exit " + std::to_wstring(result.exit_code) + L")\r\n";
+        return {std::move(result.output), result.exit_code};
     }
 
     std::wstring execute_cli_first_line(const std::wstring& args) {
@@ -2057,18 +2094,169 @@ class MainWindow {
             }
             return L"API budget: dry-run";
         }
-        std::wstring command = shell_command_for_cli(args);
-        FILE* pipe = _wpopen(command.c_str(), L"r");
-        if (!pipe) {
+        HiddenCommandResult result = run_hidden_command(shell_command_for_cli(args));
+        if (!result.launched || result.exit_code != 0) {
             return L"";
         }
-        std::array<wchar_t, 2048> buffer{};
-        std::wstring first;
-        if (fgetws(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) {
-            first = trim(buffer.data());
+        const std::size_t newline = result.output.find_first_of(L"\r\n");
+        return trim(result.output.substr(0, newline));
+    }
+
+    static std::wstring decode_command_output(const std::string& bytes) {
+        if (bytes.empty()) {
+            return L"";
         }
-        _pclose(pipe);
-        return first;
+        int length = MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            bytes.data(),
+            static_cast<int>(bytes.size()),
+            nullptr,
+            0);
+        UINT code_page = CP_UTF8;
+        if (length <= 0) {
+            code_page = CP_ACP;
+            length = MultiByteToWideChar(
+                code_page,
+                0,
+                bytes.data(),
+                static_cast<int>(bytes.size()),
+                nullptr,
+                0);
+        }
+        if (length <= 0) {
+            return L"Command output could not be decoded.\r\n";
+        }
+        std::wstring decoded(static_cast<std::size_t>(length), L'\0');
+        MultiByteToWideChar(
+            code_page,
+            0,
+            bytes.data(),
+            static_cast<int>(bytes.size()),
+            decoded.data(),
+            length);
+        return decoded;
+    }
+
+    static HiddenCommandResult run_hidden_command(const std::wstring& command) {
+        SECURITY_ATTRIBUTES security{};
+        security.nLength = sizeof(security);
+        security.bInheritHandle = TRUE;
+
+        HANDLE raw_read = nullptr;
+        HANDLE raw_write = nullptr;
+        if (!CreatePipe(&raw_read, &raw_write, &security, 0)) {
+            return {};
+        }
+        OwnedHandle read_pipe(raw_read);
+        OwnedHandle write_pipe(raw_write);
+        if (!SetHandleInformation(read_pipe.get(), HANDLE_FLAG_INHERIT, 0)) {
+            return {};
+        }
+
+        OwnedHandle null_input(CreateFileW(
+            L"NUL",
+            GENERIC_READ,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            &security,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr));
+        if (!null_input.valid()) {
+            return {};
+        }
+
+        STARTUPINFOW startup{};
+        startup.cb = sizeof(startup);
+        startup.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+        startup.wShowWindow = SW_HIDE;
+        startup.hStdInput = null_input.get();
+        startup.hStdOutput = write_pipe.get();
+        startup.hStdError = write_pipe.get();
+
+        PROCESS_INFORMATION process_info{};
+        std::vector<wchar_t> mutable_command(command.begin(), command.end());
+        mutable_command.push_back(L'\0');
+        if (!CreateProcessW(
+                nullptr,
+                mutable_command.data(),
+                nullptr,
+                nullptr,
+                TRUE,
+                CREATE_NO_WINDOW,
+                nullptr,
+                nullptr,
+                &startup,
+                &process_info)) {
+            return {};
+        }
+        OwnedHandle process(process_info.hProcess);
+        OwnedHandle thread(process_info.hThread);
+        write_pipe.reset();
+        null_input.reset();
+
+        constexpr std::size_t kMaximumCommandOutputBytes = 1U << 20;
+        std::string bytes;
+        bytes.reserve(8192);
+        bool truncated = false;
+        DWORD read_error = ERROR_SUCCESS;
+        std::array<char, 4096> buffer{};
+        DWORD read = 0;
+        while (true) {
+            if (!ReadFile(
+                    read_pipe.get(),
+                    buffer.data(),
+                    static_cast<DWORD>(buffer.size()),
+                    &read,
+                    nullptr)) {
+                read_error = GetLastError();
+                break;
+            }
+            if (read == 0) {
+                break;
+            }
+            const std::size_t count = static_cast<std::size_t>(read);
+            if (count >= kMaximumCommandOutputBytes) {
+                bytes.assign(
+                    buffer.data() + count - kMaximumCommandOutputBytes,
+                    kMaximumCommandOutputBytes);
+                truncated = true;
+                continue;
+            }
+            if (bytes.size() + count > kMaximumCommandOutputBytes) {
+                bytes.erase(
+                    0,
+                    bytes.size() + count - kMaximumCommandOutputBytes);
+                truncated = true;
+            }
+            bytes.append(buffer.data(), count);
+        }
+        const DWORD wait_result = WaitForSingleObject(process.get(), INFINITE);
+        DWORD raw_exit_code = 2;
+        if (
+            wait_result != WAIT_OBJECT_0 ||
+            !GetExitCodeProcess(process.get(), &raw_exit_code) ||
+            raw_exit_code == STILL_ACTIVE) {
+            raw_exit_code = 2;
+        }
+
+        std::wstring output = decode_command_output(bytes);
+        if (read_error != ERROR_SUCCESS && read_error != ERROR_BROKEN_PIPE) {
+            output +=
+                L"\r\nBackend output capture failed (Win32 error " +
+                std::to_wstring(read_error) + L").\r\n";
+            raw_exit_code = 2;
+        }
+        if (truncated) {
+            output =
+                L"... command output truncated to the most recent 1 MiB ...\r\n" +
+                output;
+        }
+        return {
+            std::move(output),
+            static_cast<int>(raw_exit_code),
+            true,
+        };
     }
 
     static bool env_present(const wchar_t* name) {
