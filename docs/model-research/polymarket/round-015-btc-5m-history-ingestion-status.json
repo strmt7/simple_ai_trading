@@ -1,0 +1,50 @@
+{
+  "schema_version": "polymarket-btc-flow-history-ingestion-status-v1",
+  "generated_at_utc": "2026-07-30T00:23:48Z",
+  "inventory_path": "docs/model-research/polymarket/round-015-btc-5m-full-history-inventory-v1.json",
+  "inventory_sha256": "f68c0dc7709c98f342d04bacbd1b120c87ee07712ab0aeedbb3e1915cb8e77e2",
+  "local_database_path": "data/polymarket-btc-flow-history-v1.duckdb",
+  "local_database_tracked": false,
+  "database_bytes": 710160384,
+  "expected_days": 154,
+  "completed_days": 72,
+  "remaining_days": 82,
+  "flow_rows": 6220800,
+  "compressed_source_bytes": 2876520115,
+  "first_completed_day": "2026-02-12",
+  "last_completed_day": "2026-04-25",
+  "raw_archive_retained": false,
+  "archive_cache_files": 0,
+  "status_probe_changed_database_mtime": false,
+  "latest_batch": [
+    {
+      "period": "2026-04-21",
+      "source_count": 2,
+      "flow_rows": 86400,
+      "compressed_bytes": 35424401,
+      "combined_flow_sha256": "324de555a76d1eb63dd18c4ae3694e3283b781b67302b97e0833651f0111f2a3"
+    },
+    {
+      "period": "2026-04-22",
+      "source_count": 2,
+      "flow_rows": 86400,
+      "compressed_bytes": 37141425,
+      "combined_flow_sha256": "d2f25d4b1b45544bdd149bdef5e08f7206a3f0e45c4af2596d7112362b187d05"
+    },
+    {
+      "period": "2026-04-23",
+      "source_count": 2,
+      "flow_rows": 86400,
+      "compressed_bytes": 34879255,
+      "combined_flow_sha256": "f65cf359e29cfdf314fd86f136e6938e3e996ccb40e30521145dbe4f84e12edf"
+    }
+  ],
+  "stderr_bytes": 0,
+  "dataset_frozen": false,
+  "model_training_started": false,
+  "test_targets_accessed": false,
+  "profitability_claim": false,
+  "paper_authority": false,
+  "live_authority": false,
+  "artifact_sha256": "6c6444be0545daad69ddd854cd62f44ae6e8da96e74f641245412c65e57e2bde"
+}
