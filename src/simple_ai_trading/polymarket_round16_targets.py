@@ -332,19 +332,45 @@ def _collect_targets(
                     "market_count": len(batch),
                 },
             )
+        verified_payloads: list[
+            tuple[HistoricalBtcMarket, PublicPayload, PublicPayload]
+        ] = []
         for market in batch:
             gamma = gamma_by_market.get(market.market_id)
             if gamma is None:
                 raise ValueError("Round 16 Gamma target batch coverage differs")
             clob = client.clob_market(market.condition_id)
-            winner = _record_resolution(
-                store,
-                contract,
-                market,
-                gamma=gamma,
-                clob=clob,
-                implementation_sha256=target_implementation_sha,
+            verified_payloads.append((market, gamma, clob))
+        if progress:
+            progress(
+                "round16_target_clob_batch",
+                {
+                    "batch_index": first // ROUND16_GAMMA_TARGET_BATCH_SIZE + 1,
+                    "condition_count": len(verified_payloads),
+                },
             )
+        connection = store.connect()
+        connection.execute("BEGIN TRANSACTION")
+        try:
+            recorded = [
+                (
+                    market,
+                    _record_resolution(
+                        store,
+                        contract,
+                        market,
+                        gamma=gamma,
+                        clob=clob,
+                        implementation_sha256=target_implementation_sha,
+                    ),
+                )
+                for market, gamma, clob in verified_payloads
+            ]
+            connection.execute("COMMIT")
+        except BaseException:
+            connection.execute("ROLLBACK")
+            raise
+        for market, winner in recorded:
             counts[winner] += 1
             if progress:
                 progress(
