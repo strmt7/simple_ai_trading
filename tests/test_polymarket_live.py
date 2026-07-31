@@ -536,6 +536,63 @@ def test_cancellation_targets_only_exact_owned_open_order_ids(tmp_path: Path) ->
     assert ledger.record(intent.intent_id).state == "cancelled"
 
 
+def test_cancelled_partial_order_waits_for_exact_fill_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "partial-cancel.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    venue.open = (
+        _remote_order(
+            intent,
+            prepared.expected_order_id,
+            matched="0.4",
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    with pytest.raises(PolymarketLiveUnknownState, match="lack terminal"):
+        coordinator.cancel_owned_open_orders()
+
+    record = ledger.record(intent.intent_id)
+    assert record.state == "matched_pending"
+    assert record.matched_quantity == Decimal("0.4")
+    assert record.failure_code == "cancelled_order_awaiting_exact_fill_evidence"
+
+
+def test_cancelled_partial_order_can_close_after_exact_confirmed_fill(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "confirmed-partial-cancel.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    ledger.record_fill(
+        _fill(
+            intent,
+            prepared.expected_order_id,
+            quantity="0.4",
+            status="CONFIRMED",
+        )
+    )
+    venue.open = (
+        _remote_order(
+            intent,
+            prepared.expected_order_id,
+            matched="0.4",
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    result = coordinator.cancel_owned_open_orders()
+
+    assert result.cancelled_order_ids == (prepared.expected_order_id,)
+    record = ledger.record(intent.intent_id)
+    assert record.state == "filled"
+    assert record.matched_quantity == Decimal("0.4")
+
+
 @pytest.mark.parametrize(
     "result",
     [
