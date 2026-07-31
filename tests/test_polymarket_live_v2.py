@@ -375,7 +375,10 @@ def test_exact_order_lookup_parses_only_requested_owned_hashes() -> None:
             "id": order_id,
             "market": MARKET_ID,
             "asset_id": TOKEN_ID,
+            "maker_address": credentials.funder_address,
             "side": "BUY",
+            "order_type": "FAK",
+            "price": "0.50",
             "status": "ORDER_STATUS_CANCELED",
             "original_size": "5",
             "size_matched": "0",
@@ -387,6 +390,9 @@ def test_exact_order_lookup_parses_only_requested_owned_hashes() -> None:
     assert client.get_order_calls == [first, second]
     assert tuple(order.order_id for order in orders) == (first, second)
     assert all(order.status == "ORDER_STATUS_CANCELED" for order in orders)
+    assert all(order.maker_address == credentials.funder_address for order in orders)
+    assert all(order.price == Decimal("0.50") for order in orders)
+    assert all(order.order_type == "FAK" for order in orders)
 
 
 def test_exact_order_lookup_treats_only_authenticated_404_as_absent() -> None:
@@ -416,7 +422,10 @@ def test_exact_order_lookup_rejects_response_identity_mismatch() -> None:
         "id": "0x" + "3" * 64,
         "market": MARKET_ID,
         "asset_id": TOKEN_ID,
+        "maker_address": credentials.funder_address,
         "side": "BUY",
+        "order_type": "FAK",
+        "price": "0.50",
         "status": "ORDER_STATUS_LIVE",
         "original_size": "5",
         "size_matched": "0",
@@ -424,6 +433,28 @@ def test_exact_order_lookup_rejects_response_identity_mismatch() -> None:
     venue = OfficialPolymarketV2Venue(credentials, client=client)
 
     with pytest.raises(Exception, match="response ID differs"):
+        venue.orders_by_id((requested,))
+
+
+def test_exact_order_lookup_rejects_foreign_maker_address() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    requested = "0x" + "2" * 64
+    client.orders[requested] = {
+        "id": requested,
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "maker_address": "0x" + "f" * 40,
+        "side": "BUY",
+        "order_type": "FAK",
+        "price": "0.50",
+        "status": "ORDER_STATUS_LIVE",
+        "original_size": "5",
+        "size_matched": "0",
+    }
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    with pytest.raises(PolymarketLiveBlocked, match="maker differs"):
         venue.orders_by_id((requested,))
 
 

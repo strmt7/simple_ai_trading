@@ -184,6 +184,10 @@ class OfficialPolymarketV2Venue:
         self.maximum_response_bytes = 8 * 1024 * 1024
         self._client = client or self._build_client()
 
+    @property
+    def wallet_address(self) -> str:
+        return self.credentials.funder_address
+
     def _build_client(self) -> object:
         try:
             from py_clob_client_v2 import ApiCreds, ClobClient
@@ -277,18 +281,25 @@ class OfficialPolymarketV2Venue:
                 return bool(payload[key])
         raise ValueError("Polymarket closed-only response is invalid")
 
-    @staticmethod
-    def _remote_order(value: object) -> PolymarketRemoteOrder:
+    def _remote_order(self, value: object) -> PolymarketRemoteOrder:
         payload = _mapping(value, name="open order")
-        return PolymarketRemoteOrder(
+        order = PolymarketRemoteOrder(
             order_id=str(payload.get("id") or ""),
             market_id=str(payload.get("market") or ""),
             token_id=str(payload.get("asset_id") or ""),
+            maker_address=str(payload.get("maker_address") or ""),
             side=str(payload.get("side") or ""),
+            order_type=str(payload.get("order_type") or ""),
+            price=Decimal(str(payload.get("price"))),
             status=str(payload.get("status") or ""),
             original_quantity=Decimal(str(payload.get("original_size"))),
             matched_quantity=Decimal(str(payload.get("size_matched") or "0")),
         )
+        if order.maker_address != self.wallet_address:
+            raise PolymarketLiveBlocked(
+                "Polymarket order maker differs from configured dedicated wallet"
+            )
+        return order
 
     def open_orders(self) -> tuple[PolymarketRemoteOrder, ...]:
         rows = self._client.get_open_orders()
