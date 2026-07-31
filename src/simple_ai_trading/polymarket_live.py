@@ -1363,7 +1363,7 @@ class PolymarketLiveOrderLedger:
             connection.execute("BEGIN IMMEDIATE")
             order = connection.execute(
                 """
-                SELECT intent_id, market_id, token_id, side, quantity
+                SELECT intent_id, market_id, token_id, side, quantity, limit_price
                 FROM polymarket_live_orders WHERE expected_order_id = ?
                 """,
                 [fill.order_id],
@@ -1376,6 +1376,17 @@ class PolymarketLiveOrderLedger:
                 or str(order["side"]) != fill.side
             ):
                 raise PolymarketLiveBlocked("fill identity differs from owned order")
+            limit_price = _decimal(
+                order["limit_price"],
+                name="signed limit price",
+                positive=True,
+            )
+            violates_limit = (
+                fill.side == "BUY"
+                and fill.price > limit_price
+                or fill.side == "SELL"
+                and fill.price < limit_price
+            )
             payload = {
                 "trade_id": fill.trade_id,
                 "order_id": fill.order_id,
@@ -1416,6 +1427,10 @@ class PolymarketLiveOrderLedger:
                     != fill.price
                 ):
                     raise PolymarketLiveBlocked("existing fill economics differ")
+                if violates_limit:
+                    raise PolymarketLiveBlocked(
+                        "fill price violates the signed limit price"
+                    )
                 prior_status = str(existing["status"])
                 if prior_status in _FILL_TERMINAL_STATUSES:
                     if str(existing["fill_sha256"]) != digest:
@@ -1444,6 +1459,10 @@ class PolymarketLiveOrderLedger:
                     ],
                 )
             else:
+                if violates_limit:
+                    raise PolymarketLiveBlocked(
+                        "fill price violates the signed limit price"
+                    )
                 connection.execute(
                     """
                     INSERT INTO polymarket_live_fills (

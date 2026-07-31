@@ -389,6 +389,24 @@ def test_submission_reserves_expected_hash_before_network_and_stores_no_signatur
     assert b"signed-order-must-never-enter-the-ledger" not in database
 
 
+def test_fill_price_cannot_violate_signed_limit_economics(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "fill-limit.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+
+    with pytest.raises(PolymarketLiveBlocked, match="signed limit"):
+        ledger.record_fill(
+            _fill(
+                intent,
+                prepared.expected_order_id,
+                price="0.52",
+            )
+        )
+
+    assert ledger.order_fill_evidence(prepared.expected_order_id).quantity == 0
+
+
 def test_ambiguous_submission_is_never_retried_and_blocks_exposure(
     tmp_path: Path,
 ) -> None:
