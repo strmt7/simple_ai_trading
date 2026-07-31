@@ -38,13 +38,14 @@ $PageListId = 100
 $CommandComboId = 101
 $OutputEditId = 103
 $RunId = 104
-$StopId = 106
+$BinanceStopId = 106
 $PauseId = 107
 $ProfileId = 112
 $LeverageId = 113
 $AiId = 114
 $ReinvestId = 115
 $ModeId = 116
+$PolymarketStopId = 117
 $QuickBaseId = 200
 
 function Wait-Until([scriptblock]$Predicate, [string]$Description, [int]$TimeoutMs = 15000) {
@@ -91,6 +92,12 @@ function Click-Control([IntPtr]$Control) {
     [void][SatNativeUi]::SendMessage($Control, $BM_CLICK, [IntPtr]::Zero, [IntPtr]::Zero)
 }
 
+function Close-App([Diagnostics.Process]$Process, [IntPtr]$Window, [int]$TimeoutMs = 10000) {
+    if ($null -eq $Process -or $Process.HasExited) { return }
+    [void][SatNativeUi]::SendMessage($Window, $WM_CLOSE, [IntPtr]::Zero, [IntPtr]::Zero)
+    Wait-Until { $Process.Refresh(); $Process.HasExited } "native app graceful shutdown" $TimeoutMs
+}
+
 function Assert-Text([IntPtr]$Control, [string]$Expected, [string]$Name) {
     $actual = Get-ControlText $Control
     if ($actual -ne $Expected) { throw "$Name expected '$Expected', found '$actual'" }
@@ -133,7 +140,8 @@ try {
     Assert-Text $leverage "5x" "conservative leverage"
     Assert-Text $ai "AI on (gated)" "AI toggle"
     Assert-Text $reinvest "Reinvest off" "reinvestment toggle"
-    Assert-Text (Get-Control $window $StopId) "Stop + Close" "stop control"
+    Assert-Text (Get-Control $window $BinanceStopId) "Stop Binance" "Binance stop control"
+    Assert-Text (Get-Control $window $PolymarketStopId) "Stop Polymarket" "Polymarket stop control"
 
     Select-Combo $window $profile $ProfileId "Regular"
     Assert-Text $leverage "10x" "regular profile leverage"
@@ -157,7 +165,8 @@ try {
         $pauseResult = $text.IndexOf("dry-run: simple-ai-trading autonomous pause", $pause + 1)
         $pause -ge 0 -and $pauseResult -gt $pause
     } "pause control completion" 3000
-    Click-Control (Get-Control $window $StopId)
+    Click-Control (Get-Control $window $BinanceStopId)
+    Click-Control (Get-Control $window $PolymarketStopId)
     Assert-OutputContains $output "simple-ai-trading autonomous stop" 3000
     Assert-OutputContains $output "simple-ai-trading polymarket-live --action stop" 3000
     Wait-Until {
@@ -165,11 +174,16 @@ try {
         $start = $text.IndexOf("> simple-ai-trading autonomous start --objective regular --live")
         $pause = $text.IndexOf("> simple-ai-trading autonomous pause", $start + 1)
         $stop = $text.IndexOf("> simple-ai-trading autonomous stop", $start + 1)
-        $polymarketStop = $text.IndexOf("> simple-ai-trading polymarket-live --action stop", $stop + 1)
+        $polymarketStop = $text.IndexOf("> simple-ai-trading polymarket-live --action stop", $start + 1)
+        $stopResult = $text.IndexOf("dry-run: simple-ai-trading autonomous stop", $stop + 1)
+        $polymarketStopResult = $text.IndexOf(
+            "dry-run: simple-ai-trading polymarket-live --action stop",
+            $polymarketStop + 1)
         $startResult = $text.IndexOf("dry-run: simple-ai-trading autonomous start --objective regular --live", $start + 1)
         $start -ge 0 -and $pause -gt $start -and $stop -gt $pause -and
-        $polymarketStop -gt $stop -and $startResult -gt $polymarketStop
-    } "independent pause/stop completion before blocking start returns" 7000
+        $polymarketStop -gt $pause -and $stopResult -gt $stop -and
+        $polymarketStopResult -gt $polymarketStop -and $startResult -gt $pause
+    } "independent venue stop completion before blocking start returns" 7000
     if ((Get-ControlText $output).Contains("simple-ai-trading close all")) {
         throw "Stop control invoked unsafe ledger-only close all"
     }
@@ -233,7 +247,7 @@ try {
     Click-Control (Get-Control $window $RunId)
     Assert-OutputContains $output "dry-run: simple-ai-trading status" 5000
 
-    Stop-Process -Id $process.Id -Force
+    Close-App $process $window
     $process = $null
 
     $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS = "0"
@@ -251,7 +265,7 @@ try {
     if ((Get-ControlText $output).Contains("> simple-ai-trading autonomous start")) {
         throw "Failed configuration was followed by autonomous start"
     }
-    Stop-Process -Id $process.Id -Force
+    Close-App $process $window
     $process = $null
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND -ErrorAction SilentlyContinue
 
@@ -264,14 +278,15 @@ try {
     Wait-Until { (Get-ControlText (Get-Control $window $ProfileId)) -eq "Conservative" } "cancellation operator status" 10000
     Click-Control (Get-Control $window $RunId)
     Assert-OutputContains $output "> simple-ai-trading ai --enable" 5000
-    Click-Control (Get-Control $window $StopId)
+    Click-Control (Get-Control $window $BinanceStopId)
+    Click-Control (Get-Control $window $PolymarketStopId)
     Assert-OutputContains $output "dry-run: simple-ai-trading autonomous stop" 5000
     Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-live --action stop" 5000
     Assert-OutputContains $output "Workflow cancelled by a safety control" 5000
     if ((Get-ControlText $output).Contains("> simple-ai-trading autonomous start")) {
         throw "Cancelled configuration was followed by autonomous start"
     }
-    Stop-Process -Id $process.Id -Force
+    Close-App $process $window
     $process = $null
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND -ErrorAction SilentlyContinue
 
@@ -287,10 +302,11 @@ try {
     if ((Get-ControlText $output).Contains("> simple-ai-trading strategy")) {
         throw "Contract mismatch was followed by strategy mutation"
     }
-    Click-Control (Get-Control $window $StopId)
+    Click-Control (Get-Control $window $BinanceStopId)
+    Click-Control (Get-Control $window $PolymarketStopId)
     Assert-OutputContains $output "dry-run: simple-ai-trading autonomous stop" 5000
     Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-live --action stop" 5000
-    Stop-Process -Id $process.Id -Force
+    Close-App $process $window
     $process = $null
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256 -ErrorAction SilentlyContinue
 
@@ -327,13 +343,25 @@ try {
         if ($content -notmatch "compute=" -or $content -notmatch "\(exit 0\)") {
             throw "Real compute smoke did not finish successfully:`n$content"
         }
-        if ($process -ne $null -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+        if ($process -ne $null -and -not $process.HasExited) {
+            [void][SatNativeUi]::SendMessage(
+                $process.MainWindowHandle,
+                $WM_CLOSE,
+                [IntPtr]::Zero,
+                [IntPtr]::Zero)
+        }
         $process = $null
     }
 
     Write-Output "native Windows UI smoke passed"
 } finally {
-    if ($process -ne $null -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+    if ($process -ne $null -and -not $process.HasExited) {
+        [void][SatNativeUi]::SendMessage(
+            $process.MainWindowHandle,
+            $WM_CLOSE,
+            [IntPtr]::Zero,
+            [IntPtr]::Zero)
+    }
     if ($null -eq $oldRepoRoot) { Remove-Item Env:SIMPLE_AI_TRADING_REPO_ROOT -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_REPO_ROOT = $oldRepoRoot }
     if ($null -eq $oldDryRun) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN = $oldDryRun }
     if ($null -eq $oldDelay) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS = $oldDelay }

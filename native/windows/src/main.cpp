@@ -51,7 +51,7 @@ enum ControlId : int {
     kOutputEditId = 103,
     kRunSelectedId = 104,
     kSelectedHelpId = 105,
-    kStopAllId = 106,
+    kBinanceStopId = 106,
     kAiPreflightId = 107,
     kRiskReportId = 108,
     kModelLabId = 109,
@@ -62,6 +62,7 @@ enum ControlId : int {
     kAiToggleId = 114,
     kReinvestToggleId = 115,
     kModeComboId = 116,
+    kPolymarketStopId = 117,
     kQuickBaseId = 200,
 };
 
@@ -216,7 +217,8 @@ class MainWindow {
     HWND output_edit_{};
     HWND run_selected_{};
     HWND selected_help_{};
-    HWND stop_all_{};
+    HWND stop_binance_{};
+    HWND stop_polymarket_{};
     HWND ai_preflight_{};
     HWND risk_report_{};
     HWND model_lab_{};
@@ -245,7 +247,9 @@ class MainWindow {
     std::mutex api_budget_mutex_;
     std::mutex operator_status_mutex_;
     std::atomic_bool running_{false};
-    std::atomic_bool control_running_{false};
+    std::atomic_bool binance_control_running_{false};
+    std::atomic_bool polymarket_control_running_{false};
+    std::atomic_bool pause_control_running_{false};
     std::atomic_bool api_budget_running_{false};
     std::atomic_bool operator_status_running_{false};
     std::atomic_bool command_contract_synced_{false};
@@ -469,8 +473,8 @@ class MainWindow {
             title_,       subtitle_,      safety_,       page_title_,    page_summary_,  status_bar_,
             page_list_,   command_label_, command_combo_, args_label_,   args_edit_,     help_label_,
             quick_label_, tools_label_,   output_label_,
-            output_edit_, run_selected_, selected_help_, stop_all_,     ai_preflight_,
-            risk_report_, model_lab_,    backtest_chart_,
+            output_edit_, run_selected_, selected_help_, stop_binance_, stop_polymarket_,
+            ai_preflight_, risk_report_, model_lab_, backtest_chart_,
             profile_combo_, leverage_combo_, mode_combo_, ai_toggle_, reinvest_toggle_,
         };
         for (HWND button : quick_buttons_) {
@@ -502,7 +506,7 @@ class MainWindow {
         subtitle_ = create_control(L"STATIC", L"Day-trading workstation", SS_LEFT, 0);
         safety_ = create_control(
             L"STATIC",
-            L"Conservative default: 5x futures, spot stays 1x. Testnet first.\r\nProfit reinvestment is off. Stop + Close acts only on bot-owned positions.",
+            L"Conservative default: 5x futures, spot stays 1x. Testnet first.\r\nProfit reinvestment is off. Binance and Polymarket Stops are independent.",
             SS_LEFT | SS_NOPREFIX,
             0);
         page_title_ = create_control(L"STATIC", L"Home", SS_LEFT, 0);
@@ -527,7 +531,16 @@ class MainWindow {
             kOutputEditId);
         run_selected_ = create_control(L"BUTTON", L"Run Command", BS_OWNERDRAW | WS_TABSTOP, kRunSelectedId);
         selected_help_ = create_control(L"BUTTON", L"Command Help", BS_OWNERDRAW | WS_TABSTOP, kSelectedHelpId);
-        stop_all_ = create_control(L"BUTTON", L"Stop + Close", BS_OWNERDRAW | WS_TABSTOP, kStopAllId);
+        stop_binance_ = create_control(
+            L"BUTTON",
+            L"Stop Binance",
+            BS_OWNERDRAW | WS_TABSTOP,
+            kBinanceStopId);
+        stop_polymarket_ = create_control(
+            L"BUTTON",
+            L"Stop Polymarket",
+            BS_OWNERDRAW | WS_TABSTOP,
+            kPolymarketStopId);
         ai_preflight_ = create_control(L"BUTTON", L"Pause", BS_OWNERDRAW | WS_TABSTOP, kAiPreflightId);
         risk_report_ = create_control(L"BUTTON", L"Risk Review", BS_OWNERDRAW | WS_TABSTOP, kRiskReportId);
         model_lab_ = create_control(L"BUTTON", L"Positions", BS_OWNERDRAW | WS_TABSTOP, kModelLabId);
@@ -610,16 +623,32 @@ class MainWindow {
         MoveWindow(page_list_, scale(10), header_h + scale(18), sidebar - scale(20), footer_top - header_h - scale(36), TRUE);
         MoveWindow(status_bar_, scale(148), footer_top + scale(18), scale(190), scale(30), TRUE);
 
-        const int stop_w = scale(150);
-        const int pause_w = scale(100);
+        const int polymarket_stop_w = scale(164);
+        const int binance_stop_w = scale(142);
+        const int pause_w = scale(94);
         const int start_w = scale(112);
-        const int action_gap = scale(12);
-        const int stop_left = right - stop_w;
-        const int pause_left = stop_left - action_gap - pause_w;
+        const int action_gap = scale(10);
+        const int polymarket_stop_left = right - polymarket_stop_w;
+        const int binance_stop_left =
+            polymarket_stop_left - action_gap - binance_stop_w;
+        const int pause_left = binance_stop_left - action_gap - pause_w;
         const int start_left = pause_left - action_gap - start_w;
         MoveWindow(run_selected_, start_left, header_h + scale(18), start_w, scale(48), TRUE);
         MoveWindow(ai_preflight_, pause_left, header_h + scale(18), pause_w, scale(48), TRUE);
-        MoveWindow(stop_all_, stop_left, header_h + scale(18), stop_w, scale(48), TRUE);
+        MoveWindow(
+            stop_binance_,
+            binance_stop_left,
+            header_h + scale(18),
+            binance_stop_w,
+            scale(48),
+            TRUE);
+        MoveWindow(
+            stop_polymarket_,
+            polymarket_stop_left,
+            header_h + scale(18),
+            polymarket_stop_w,
+            scale(48),
+            TRUE);
 
         const int control_top = settings_top + scale(10);
         MoveWindow(mode_combo_, main_left + scale(42), control_top, scale(120), scale(220), TRUE);
@@ -636,13 +665,15 @@ class MainWindow {
         for (HWND button : quick_buttons_) {
             set_visible(button, false);
         }
-        for (HWND control : {title_, page_list_, run_selected_, ai_preflight_, stop_all_, status_bar_,
+        for (HWND control : {title_, page_list_, run_selected_, ai_preflight_, stop_binance_,
+                             stop_polymarket_, status_bar_,
                              profile_combo_, leverage_combo_, mode_combo_, ai_toggle_, reinvest_toggle_}) {
             set_visible(control, true);
         }
         SetWindowTextW(run_selected_, L"Start");
         SetWindowTextW(ai_preflight_, L"Pause");
-        SetWindowTextW(stop_all_, L"Stop + Close");
+        SetWindowTextW(stop_binance_, L"Stop Binance");
+        SetWindowTextW(stop_polymarket_, L"Stop Polymarket");
         (void)gap;
     }
 
@@ -656,7 +687,8 @@ class MainWindow {
         }
         for (HWND control : {title_, subtitle_, safety_, page_title_, page_summary_, page_list_, command_label_,
                              command_combo_, args_label_, args_edit_, help_label_, quick_label_, tools_label_,
-                             output_label_, output_edit_, run_selected_, selected_help_, stop_all_, ai_preflight_,
+                             output_label_, output_edit_, run_selected_, selected_help_, stop_binance_,
+                             stop_polymarket_, ai_preflight_,
                              risk_report_, model_lab_, backtest_chart_, status_bar_}) {
             set_visible(control, true);
         }
@@ -665,7 +697,8 @@ class MainWindow {
         }
         SetWindowTextW(run_selected_, L"Run Command");
         SetWindowTextW(ai_preflight_, L"Pause");
-        SetWindowTextW(stop_all_, L"Stop + Close");
+        SetWindowTextW(stop_binance_, L"Stop Binance");
+        SetWindowTextW(stop_polymarket_, L"Stop Polymarket");
         const int pad = scale(20);
         const int sidebar = scale(236);
         const int header_h = scale(86);
@@ -728,12 +761,13 @@ class MainWindow {
         MoveWindow(tools_label_, main_left, tools_label_top, main_width, scale(26), TRUE);
         const int tools_top = tools_label_top + scale(34);
         const int tool_gap = scale(12);
-        const int tool_w = (main_width - (tool_gap * 4)) / 5;
-        MoveWindow(stop_all_, main_left, tools_top, tool_w, scale(62), TRUE);
-        MoveWindow(ai_preflight_, main_left + (tool_w + tool_gap), tools_top, tool_w, scale(62), TRUE);
-        MoveWindow(backtest_chart_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
-        MoveWindow(model_lab_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
-        MoveWindow(risk_report_, main_left + (4 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
+        const int tool_w = (main_width - (tool_gap * 5)) / 6;
+        MoveWindow(stop_binance_, main_left, tools_top, tool_w, scale(62), TRUE);
+        MoveWindow(stop_polymarket_, main_left + (tool_w + tool_gap), tools_top, tool_w, scale(62), TRUE);
+        MoveWindow(ai_preflight_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
+        MoveWindow(backtest_chart_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
+        MoveWindow(model_lab_, main_left + (4 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
+        MoveWindow(risk_report_, main_left + (5 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
 
         const int output_top = tools_top + scale(116);
         MoveWindow(output_label_, main_left + scale(18), output_top - scale(34), main_width - scale(36), scale(28), TRUE);
@@ -761,8 +795,9 @@ class MainWindow {
         RECT logo{scale(24), scale(17), scale(47), scale(40)};
         draw_simple_icon(dc, logo, RGB(67, 214, 211), 2);
 
-        const int stop_left = right - scale(150);
-        const int pause_left = stop_left - scale(112);
+        const int polymarket_stop_left = right - scale(164);
+        const int binance_stop_left = polymarket_stop_left - scale(152);
+        const int pause_left = binance_stop_left - scale(104);
         const int start_left = pause_left - scale(124);
         RECT state_band{main_left, header_h + scale(18), start_left - scale(16), header_h + scale(66)};
         round_rect(dc, state_band, RGB(22, 31, 36), RGB(49, 65, 73), scale(4));
@@ -1127,13 +1162,19 @@ class MainWindow {
         const bool selected = (item->itemState & ODS_SELECTED) != 0;
         const bool disabled = (item->itemState & ODS_DISABLED) != 0;
         const bool focused = (item->itemState & ODS_FOCUS) != 0;
-        const bool danger = id == kStopAllId;
+        const bool danger = id == kBinanceStopId || id == kPolymarketStopId;
         const bool primary = id == kRunSelectedId;
         const bool toggle = id == kAiToggleId || id == kReinvestToggleId;
         const bool checked = id == kAiToggleId ? ai_enabled_ : (id == kReinvestToggleId ? reinvest_enabled_ : false);
         const bool workflow_card = id >= kQuickBaseId;
-        const bool safety_card = id == kStopAllId || id == kAiPreflightId || id == kRiskReportId || id == kModelLabId || id == kBacktestChartId;
-        const bool compact_overview_action = page_index_ == 0 && (primary || id == kStopAllId || id == kAiPreflightId);
+        const bool safety_card =
+            id == kBinanceStopId || id == kPolymarketStopId ||
+            id == kAiPreflightId || id == kRiskReportId ||
+            id == kModelLabId || id == kBacktestChartId;
+        const bool compact_overview_action =
+            page_index_ == 0 &&
+            (primary || id == kBinanceStopId ||
+             id == kPolymarketStopId || id == kAiPreflightId);
         COLORREF fill = danger ? RGB(57, 31, 36) : (primary ? RGB(29, 86, 80) : (checked ? RGB(24, 76, 72) : RGB(28, 36, 42)));
         if (selected) {
             fill = danger ? RGB(80, 38, 43) : (primary ? RGB(38, 103, 96) : RGB(36, 46, 53));
@@ -1307,17 +1348,27 @@ class MainWindow {
         case kSelectedHelpId:
             run_selected_help();
             return;
-        case kStopAllId:
+        case kBinanceStopId:
             {
                 std::lock_guard lock(operator_status_mutex_);
-                bot_state_ = L"Stop requested";
+                bot_state_ = L"Binance Stop requested";
             }
             InvalidateRect(hwnd_, nullptr, FALSE);
             run_control_sequence(
-                {
-                    L"autonomous stop",
-                    L"polymarket-live --action stop",
-                });
+                binance_control_running_,
+                L"Binance",
+                {L"autonomous stop"});
+            return;
+        case kPolymarketStopId:
+            {
+                std::lock_guard lock(operator_status_mutex_);
+                bot_state_ = L"Polymarket Stop requested";
+            }
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            run_control_sequence(
+                polymarket_control_running_,
+                L"Polymarket",
+                {L"polymarket-live --action stop"});
             return;
         case kAiPreflightId:
             {
@@ -1325,7 +1376,10 @@ class MainWindow {
                 bot_state_ = L"Pause requested";
             }
             InvalidateRect(hwnd_, nullptr, FALSE);
-            run_control_sequence({L"autonomous pause"});
+            run_control_sequence(
+                pause_control_running_,
+                L"Binance",
+                {L"autonomous pause"});
             return;
         case kRiskReportId:
             run_sequence({L"risk --paper"});
@@ -1715,7 +1769,7 @@ class MainWindow {
             workflow_generation_.fetch_add(1);
             if (active_workers_.load() > 0) {
                 append_output(
-                    L"\r\nExit pending: active work is finishing. Use Stop + Close for "
+                    L"\r\nExit pending: active work is finishing. Use the venue-specific Stop for "
                     L"an autonomous run; the app will not abandon an in-flight worker.\r\n");
             }
         }
@@ -1728,7 +1782,10 @@ class MainWindow {
         }
         if (
             active_workers_.load() != 0 || running_.load() ||
-            control_running_.load() || api_budget_running_.load() ||
+            binance_control_running_.load() ||
+            polymarket_control_running_.load() ||
+            pause_control_running_.load() ||
+            api_budget_running_.load() ||
             operator_status_running_.load()) {
             return;
         }
@@ -1792,25 +1849,30 @@ class MainWindow {
         });
     }
 
-    void run_control_sequence(std::vector<std::wstring> commands) {
+    void run_control_sequence(
+        std::atomic_bool& control_gate,
+        const std::wstring& venue,
+        std::vector<std::wstring> commands) {
         workflow_generation_.fetch_add(1);
         if (commands.empty()) {
             return;
         }
-        if (control_running_.exchange(true)) {
-            append_output(L"\r\nA safety control is already being processed.\r\n");
+        if (control_gate.exchange(true)) {
+            append_output(
+                L"\r\nA " + venue +
+                L" safety control is already being processed.\r\n");
             return;
         }
-        launch_worker(control_running_, WM_APP + 1, [this, commands = std::move(commands)] {
+        launch_worker(control_gate, WM_APP + 1, [this, commands = std::move(commands), venue] {
             for (const std::wstring& command : commands) {
                 append_output(L"\r\n> simple-ai-trading " + command + L"\r\n");
                 CommandResult result = execute_cli(command);
                 append_output(result.output);
                 if (result.exit_code != 0) {
                     append_output(
-                        L"\r\nSafety control failed (exit " +
+                        L"\r\n" + venue + L" safety control failed (exit " +
                         std::to_wstring(result.exit_code) +
-                        L"); remaining safety controls will still be attempted.\r\n");
+                        L").\r\n");
                 }
             }
             refresh_api_budget_async(true);

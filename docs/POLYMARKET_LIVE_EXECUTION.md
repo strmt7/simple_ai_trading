@@ -89,8 +89,9 @@ flowchart LR
   network access, or closing fails, the ownerless `stop_requested` state blocks
   every later autonomous lease; it clears only after a subsequent exact-owned
   recovery proves the ledger flat.
-- The Windows `Stop + Close` control invokes Binance and Polymarket shutdown
-  independently and attempts both even if either command fails.
+- The Windows `Stop Polymarket` control invokes only the Polymarket shutdown
+  path. `Stop Binance` is a separate control with a separate worker gate, so a
+  slow or failed Binance command cannot delay or suppress Polymarket Stop.
 - Hash-bound, numbered redemption attempts. Exact confirmed local inventory
   must equal the dedicated wallet snapshot; every account order must be closed
   and every token for the condition must be redeemable.
