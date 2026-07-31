@@ -281,6 +281,40 @@ class OfficialPolymarketV2Venue:
                 return bool(payload[key])
         raise ValueError("Polymarket closed-only response is invalid")
 
+    @staticmethod
+    def _fee_schedule(
+        market_info: Mapping[str, object],
+        *,
+        condition_id: str,
+    ) -> tuple[PolymarketFeeModel, Decimal, int]:
+        if str(market_info.get("c") or "").strip().lower() != condition_id:
+            raise PolymarketLiveBlocked("Polymarket market fee identity differs")
+        fee_details = _mapping(
+            market_info.get("fd"),
+            name="market fee details",
+        )
+        fee_rate = Decimal(str(fee_details.get("r")))
+        fee_exponent_raw = fee_details.get("e")
+        taker_only = fee_details.get("to")
+        if (
+            fee_rate < 0
+            or fee_rate > 1
+            or type(fee_exponent_raw) is not int
+            or fee_exponent_raw <= 0
+            or taker_only is not True
+        ):
+            raise ValueError("Polymarket fee parameters are invalid")
+        return (
+            PolymarketFeeModel(
+                enabled=fee_rate > 0,
+                rate=fee_rate,
+                exponent=fee_exponent_raw,
+                taker_only=True,
+            ),
+            fee_rate,
+            fee_exponent_raw,
+        )
+
     def _remote_order(self, value: object) -> PolymarketRemoteOrder:
         payload = _mapping(value, name="open order")
         order = PolymarketRemoteOrder(
@@ -423,26 +457,9 @@ class OfficialPolymarketV2Venue:
             raise PolymarketLiveBlocked(
                 "proposed Polymarket quantity is below the venue minimum"
             )
-        fee_details = _mapping(
-            market_info.get("fd"),
-            name="open market fee details",
-        )
-        fee_rate = Decimal(str(fee_details.get("r")))
-        fee_exponent_raw = fee_details.get("e")
-        taker_only = fee_details.get("to")
-        if (
-            fee_rate < 0
-            or fee_rate > 1
-            or type(fee_exponent_raw) is not int
-            or fee_exponent_raw <= 0
-            or taker_only is not True
-        ):
-            raise ValueError("Polymarket open fee parameters are invalid")
-        fee_model = PolymarketFeeModel(
-            enabled=fee_rate > 0,
-            rate=fee_rate,
-            exponent=fee_exponent_raw,
-            taker_only=True,
+        fee_model, fee_rate, fee_exponent = self._fee_schedule(
+            market_info,
+            condition_id=condition,
         )
 
         def levels(name: str, *, reverse: bool) -> tuple[tuple[Decimal, Decimal], ...]:
@@ -508,7 +525,7 @@ class OfficialPolymarketV2Venue:
             fee_quote=fee_quote,
             total_quote=notional + fee_quote,
             fee_rate=fee_rate,
-            fee_exponent=fee_exponent_raw,
+            fee_exponent=fee_exponent,
             tick_size=tick,
             minimum_order_size=minimum,
             neg_risk=neg_risk,
@@ -541,6 +558,10 @@ class OfficialPolymarketV2Venue:
             self._client.get_order_book(token),
             name="close order book",
         )
+        market_info = _mapping(
+            self._client.get_clob_market_info(condition),
+            name="close market info",
+        )
         observed_at_ms = int(time.time() * 1_000)
         if str(payload.get("market") or "").strip().lower() != condition:
             raise PolymarketLiveBlocked("Polymarket close book condition differs")
@@ -564,7 +585,14 @@ class OfficialPolymarketV2Venue:
             raise ValueError("Polymarket close book neg-risk flag is invalid")
         sdk_tick = Decimal(str(self._client.get_tick_size(token)))
         sdk_neg_risk = self._client.get_neg_risk(token)
-        if tick != sdk_tick or type(sdk_neg_risk) is not bool:
+        info_tick = Decimal(str(market_info.get("mts")))
+        info_minimum = Decimal(str(market_info.get("mos")))
+        if (
+            tick != sdk_tick
+            or tick != info_tick
+            or minimum != info_minimum
+            or type(sdk_neg_risk) is not bool
+        ):
             raise PolymarketLiveBlocked("Polymarket close execution parameters differ")
         if neg_risk is not sdk_neg_risk:
             raise PolymarketLiveBlocked("Polymarket close neg-risk parameters differ")
@@ -572,6 +600,10 @@ class OfficialPolymarketV2Venue:
             raise PolymarketLiveBlocked(
                 "bot-owned close quantity is below the venue minimum"
             )
+        fee_model, fee_rate, fee_exponent = self._fee_schedule(
+            market_info,
+            condition_id=condition,
+        )
 
         def levels(name: str, *, reverse: bool) -> tuple[tuple[Decimal, Decimal], ...]:
             raw_levels = payload.get(name)
@@ -597,19 +629,27 @@ class OfficialPolymarketV2Venue:
             raise PolymarketLiveBlocked("Polymarket close book is crossed or locked")
         remaining = requested_quantity
         limit_price: Decimal | None = None
+        notional = Decimal("0")
+        fee_quote = Decimal("0")
         for price, size in bids:
             consumed = min(size, remaining)
             if consumed:
                 remaining -= consumed
                 limit_price = price
+                notional += price * consumed
+                fee_quote += fee_model(price, consumed, "taker")
             if remaining <= 0:
                 break
         if remaining > 0 or limit_price is None:
             raise PolymarketLiveBlocked(
                 "displayed Polymarket bids cannot close the bot-owned lot"
             )
+        identity_payload = {
+            "book": dict(payload),
+            "market_info": dict(market_info),
+        }
         payload_json = json.dumps(
-            dict(payload),
+            identity_payload,
             ensure_ascii=True,
             separators=(",", ":"),
             sort_keys=True,
@@ -617,11 +657,17 @@ class OfficialPolymarketV2Venue:
         )
         if len(payload_json.encode("ascii")) > self.maximum_response_bytes:
             raise ValueError("Polymarket close book exceeded the bounded size")
+        average_price = notional / requested_quantity
         return PolymarketCloseQuote(
             market_id=condition,
             token_id=token,
             quantity=requested_quantity,
             limit_price=limit_price,
+            average_price=average_price,
+            fee_quote=fee_quote,
+            net_quote=notional - fee_quote,
+            fee_rate=fee_rate,
+            fee_exponent=fee_exponent,
             tick_size=tick,
             minimum_order_size=minimum,
             neg_risk=neg_risk,

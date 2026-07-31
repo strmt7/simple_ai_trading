@@ -490,6 +490,11 @@ class PolymarketCloseQuote:
     token_id: str
     quantity: Decimal
     limit_price: Decimal
+    average_price: Decimal
+    fee_quote: Decimal
+    net_quote: Decimal
+    fee_rate: Decimal
+    fee_exponent: int
     tick_size: Decimal
     minimum_order_size: Decimal
     neg_risk: bool
@@ -502,16 +507,46 @@ class PolymarketCloseQuote:
         object.__setattr__(self, "token_id", _token_id(self.token_id))
         quantity = _decimal(self.quantity, name="close quantity", positive=True)
         price = _decimal(self.limit_price, name="close limit price", positive=True)
+        average_price = _decimal(
+            self.average_price,
+            name="close average price",
+            positive=True,
+        )
+        fee_quote = _decimal(
+            self.fee_quote,
+            name="close fee quote",
+            nonnegative=True,
+        )
+        net_quote = _decimal(
+            self.net_quote,
+            name="close net quote",
+            positive=True,
+        )
+        fee_rate = _decimal(
+            self.fee_rate,
+            name="close fee rate",
+            nonnegative=True,
+        )
+        fee_exponent = int(self.fee_exponent)
         tick = _decimal(self.tick_size, name="close tick size", positive=True)
         minimum = _decimal(
             self.minimum_order_size,
             name="close minimum order size",
             positive=True,
         )
-        if price >= 1 or price % tick:
+        if (
+            price >= 1
+            or price % tick
+            or average_price >= 1
+            or average_price < price
+        ):
             raise ValueError("close limit price is invalid for the venue tick")
         if quantity < minimum:
             raise ValueError("close quantity is below the venue minimum")
+        if fee_rate > 1 or fee_exponent <= 0:
+            raise ValueError("close fee parameters are invalid")
+        if net_quote != average_price * quantity - fee_quote:
+            raise ValueError("close quote proceeds do not reconcile")
         source_time = int(self.source_time_ms)
         observed_at = int(self.observed_at_ms)
         if source_time <= 0 or observed_at <= 0:
@@ -521,6 +556,11 @@ class PolymarketCloseQuote:
             raise ValueError("close quote payload hash is invalid")
         object.__setattr__(self, "quantity", quantity)
         object.__setattr__(self, "limit_price", price)
+        object.__setattr__(self, "average_price", average_price)
+        object.__setattr__(self, "fee_quote", fee_quote)
+        object.__setattr__(self, "net_quote", net_quote)
+        object.__setattr__(self, "fee_rate", fee_rate)
+        object.__setattr__(self, "fee_exponent", fee_exponent)
         object.__setattr__(self, "tick_size", tick)
         object.__setattr__(self, "minimum_order_size", minimum)
         object.__setattr__(self, "source_time_ms", source_time)
@@ -2943,6 +2983,11 @@ class PolymarketLiveCoordinator:
                     "attempt": attempt,
                     "quantity": format(quantity, "f"),
                     "limit_price": format(quote.limit_price, "f"),
+                    "average_price": format(quote.average_price, "f"),
+                    "fee_quote": format(quote.fee_quote, "f"),
+                    "net_quote": format(quote.net_quote, "f"),
+                    "fee_rate": format(quote.fee_rate, "f"),
+                    "fee_exponent": quote.fee_exponent,
                     "book_payload_sha256": quote.book_payload_sha256,
                     "observed_at_ms": quote.observed_at_ms,
                 }
@@ -2958,7 +3003,7 @@ class PolymarketLiveCoordinator:
                 order_type="FAK",
                 limit_price=quote.limit_price,
                 quantity=quantity,
-                fee_reserve_quote=Decimal("0"),
+                fee_reserve_quote=quote.fee_quote,
                 created_at_ms=now,
                 expires_at_ms=now + 10_000,
                 parent_intent_id=lot.parent_intent_id,
