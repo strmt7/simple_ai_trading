@@ -20,6 +20,7 @@ from simple_ai_trading.polymarket_round21_model import (
     predict_round21_probability_batch,
     validate_round21_development_artifact,
 )
+from simple_ai_trading.polymarket_round21_policy import Round21ProbabilityEnvelope
 
 MODEL_DESIGN_PATH = (
     Path(__file__).resolve().parents[1]
@@ -368,6 +369,16 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     assert core_batch.row(int(core_batch.indices[0]))[0] == pytest.approx(
         core_batch.probability_up[0]
     )
+    row_index = int(core_batch.indices[0])
+    envelope = Round21ProbabilityEnvelope.from_probability_batch(
+        batch=core_batch,
+        panel=inference,
+        panel_row_index=row_index,
+    )
+    assert envelope.condition_id == str(inference.condition_ids[row_index])
+    assert envelope.decision_time_ms == int(inference.decision_time_ms[row_index])
+    assert envelope.source_probability_batch_sha256 == core_batch.prediction_sha256
+    assert envelope.feature_row_sha256 == inference.row_sha256(row_index)
     with pytest.raises(ValueError, match="probability batch is invalid"):
         replace(
             core_batch,

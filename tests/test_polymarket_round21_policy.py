@@ -39,7 +39,7 @@ POLICY_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-021-multi-action-policy-design-v2.json"
+    / "round-021-multi-action-policy-design-v3.json"
 )
 
 
@@ -332,6 +332,16 @@ def test_round21_loss_and_cooldown_gates_block_only_new_directional_risk() -> No
     assert cooldown.action == "abstain"
     assert cooldown.reason == "cooldown_gate_no_positive_reduction"
     assert reduction.action == "reduce_up"
+
+
+def test_round21_directional_size_cannot_overshoot_remaining_loss_headroom() -> None:
+    near_daily_limit = _select(daily_pnl="-49")
+    near_drawdown_limit = _select(drawdown="0.0199")
+
+    assert near_daily_limit.plan is not None
+    assert near_daily_limit.plan.maximum_loss_quote <= Decimal("1")
+    assert near_drawdown_limit.plan is not None
+    assert near_drawdown_limit.plan.maximum_loss_quote <= Decimal("1")
 
 
 def test_round21_reconciliation_transition_and_unknown_state_fail_closed() -> None:
