@@ -914,11 +914,29 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert 'L"Research"' in source
     assert 'L"System"' in source
     assert 'L"Settings"' in source
-    assert 'L"Stop + Close"' in source
+    assert 'L"Stop Binance"' in source
+    assert 'L"Stop Polymarket"' in source
     assert 'L"Paper"' in source
     assert 'L"Testnet live"' in source
     assert 'L"autonomous stop"' in source
     assert 'L"polymarket-live --action stop"' in source
+    assert "binance_control_running_" in source
+    assert "polymarket_control_running_" in source
+    assert "pause_control_running_" in source
+    binance_stop = source[
+        source.index("case kBinanceStopId:") : source.index(
+            "case kPolymarketStopId:"
+        )
+    ]
+    polymarket_stop = source[
+        source.index("case kPolymarketStopId:") : source.index(
+            "case kAiPreflightId:"
+        )
+    ]
+    assert 'L"autonomous stop"' in binance_stop
+    assert 'L"polymarket-live --action stop"' not in binance_stop
+    assert 'L"polymarket-live --action stop"' in polymarket_stop
+    assert 'L"autonomous stop"' not in polymarket_stop
     assert 'run_control_sequence({L"autonomous stop", L"close all"})' not in source
     assert "status_bar_" in source
     assert "kStatusBarId = 111" in source
@@ -961,7 +979,7 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert 'ai_state = L"AI shadow failed"' in source
     assert 'execute_cli_first_line(L"compute")' not in source
     assert "Pause and Stop remain available" in source
-    assert "remaining safety controls will still be attempted" in source
+    assert 'L" safety control failed (exit "' in source
     assert 'root / L".venv" / L"Scripts" / L"python.exe"' in source
     assert source.index('root / L".venv"') < source.index('root / L".venv311"')
     assert "runtime_summary()" in source
@@ -1003,10 +1021,11 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     assert "dry-run: simple-ai-trading polymarket-model --disable-ai" in smoke
     assert "dry-run: simple-ai-trading polymarket-live" in smoke
     assert "Cancelled configuration was followed by autonomous start" in smoke
-    assert "Stop + Close" in smoke
+    assert "Stop Binance" in smoke
+    assert "Stop Polymarket" in smoke
     assert "Testnet live" in smoke
     assert "operator controls reconciling to backend state" in smoke
-    assert "independent pause/stop" in smoke
+    assert "independent venue stop" in smoke
     assert "unsafe ledger-only close all" in smoke
     assert "graceful close abandoned an active worker" in smoke
     assert "SetProcessDPIAware" in capture

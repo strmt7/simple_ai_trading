@@ -38,6 +38,7 @@ public static class SatNativeLayoutAudit {
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Out) | Out-Null
 
 $WM_COMMAND = 0x0111
+$WM_CLOSE = 0x0010
 $WM_GETTEXT = 0x000D
 $WM_GETTEXTLENGTH = 0x000E
 $LB_GETCOUNT = 0x018B
@@ -50,7 +51,7 @@ $ArgsEditId = 102
 $OutputEditId = 103
 $RunId = 104
 $HelpId = 105
-$StopId = 106
+$BinanceStopId = 106
 $PauseId = 107
 $StatusId = 111
 $ProfileId = 112
@@ -58,6 +59,7 @@ $LeverageId = 113
 $AiId = 114
 $ReinvestId = 115
 $ModeId = 116
+$PolymarketStopId = 117
 
 function Assert-True([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
@@ -194,7 +196,8 @@ try {
     $page = Assert-Visible $window $PageListId "navigation" 180 250
     $start = Assert-Visible $window $RunId "start" 80 36
     $pause = Assert-Visible $window $PauseId "pause" 70 36
-    $stop = Assert-Visible $window $StopId "stop and close" 120 36
+    $binanceStop = Assert-Visible $window $BinanceStopId "Binance stop" 110 36
+    $polymarketStop = Assert-Visible $window $PolymarketStopId "Polymarket stop" 130 36
     $mode = Assert-Visible $window $ModeId "execution mode" 90 26
     $profile = Assert-Visible $window $ProfileId "risk profile" 120 26
     $leverage = Assert-Visible $window $LeverageId "leverage" 90 26
@@ -206,12 +209,14 @@ try {
     Assert-Hidden $window $ArgsEditId "expert flags on overview"
     Assert-Hidden $window $OutputEditId "activity log on overview"
     foreach ($item in @(
-        @{N="navigation";R=$page}, @{N="start";R=$start}, @{N="pause";R=$pause}, @{N="stop";R=$stop},
+        @{N="navigation";R=$page}, @{N="start";R=$start}, @{N="pause";R=$pause},
+        @{N="Binance stop";R=$binanceStop}, @{N="Polymarket stop";R=$polymarketStop},
         @{N="mode";R=$mode}, @{N="profile";R=$profile}, @{N="leverage";R=$leverage}, @{N="AI";R=$ai},
         @{N="reinvest";R=$reinvest}, @{N="API budget";R=$status}
     )) { Assert-Inside $item.N $item.R $windowRect }
     Assert-NoOverlap "start" $start "pause" $pause
-    Assert-NoOverlap "pause" $pause "stop" $stop
+    Assert-NoOverlap "pause" $pause "Binance stop" $binanceStop
+    Assert-NoOverlap "Binance stop" $binanceStop "Polymarket stop" $polymarketStop
     Assert-NoOverlap "mode" $mode "profile" $profile
     Assert-NoOverlap "profile" $profile "leverage" $leverage
     Assert-NoOverlap "leverage" $leverage "AI" $ai
@@ -219,7 +224,8 @@ try {
     Assert-True ($page.Right -lt $mode.Left) "navigation overlaps overview controls"
     Assert-True ($mode.Bottom -lt $status.Top) "overview settings overlap telemetry footer"
     Assert-True ((Get-ControlText (Get-Control $window $RunId "start")) -eq "Start") "overview start label is wrong"
-    Assert-True ((Get-ControlText (Get-Control $window $StopId "stop")) -eq "Stop + Close") "overview stop label is wrong"
+    Assert-True ((Get-ControlText (Get-Control $window $BinanceStopId "Binance stop")) -eq "Stop Binance") "overview Binance stop label is wrong"
+    Assert-True ((Get-ControlText (Get-Control $window $PolymarketStopId "Polymarket stop")) -eq "Stop Polymarket") "overview Polymarket stop label is wrong"
 
     $pageList = Get-Control $window $PageListId "navigation"
     $pageCount = [SatNativeLayoutAudit]::SendMessage($pageList, $LB_GETCOUNT, [IntPtr]::Zero, [IntPtr]::Zero).ToInt32()
@@ -237,7 +243,14 @@ try {
     Capture-Window $window $Out $windowRect
     Write-Output "native Windows layout audit passed: $Out ($($windowRect.Width)x$($windowRect.Height))"
 } finally {
-    if ($process -ne $null -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+    if ($process -ne $null -and -not $process.HasExited) {
+        [void][SatNativeLayoutAudit]::SendMessage(
+            $process.MainWindowHandle,
+            $WM_CLOSE,
+            [IntPtr]::Zero,
+            [IntPtr]::Zero)
+        Wait-Until { $process.Refresh(); $process.HasExited } "native app graceful shutdown" 10000
+    }
     if ($null -eq $oldRepoRoot) { Remove-Item Env:SIMPLE_AI_TRADING_REPO_ROOT -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_REPO_ROOT = $oldRepoRoot }
     if ($null -eq $oldDryRun) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN = $oldDryRun }
 }

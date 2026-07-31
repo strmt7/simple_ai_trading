@@ -39,10 +39,12 @@ public static class SatNativeCapture {
     [DllImport("user32.dll")] public static extern bool RedrawWindow(IntPtr hWnd, IntPtr updateRect, IntPtr updateRegion, uint flags);
     [DllImport("user32.dll")] public static extern bool UpdateWindow(IntPtr hWnd);
     [DllImport("dwmapi.dll")] public static extern int DwmFlush();
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 }
 "@
 
 [void][SatNativeCapture]::SetProcessDPIAware()
+$WM_CLOSE = 0x0010
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Out) | Out-Null
 
 function Wait-Until([scriptblock]$Predicate, [string]$Description, [int]$TimeoutMs = 15000) {
@@ -134,7 +136,12 @@ try {
     if ($graphics -ne $null) { $graphics.Dispose() }
     if ($bitmap -ne $null) { $bitmap.Dispose() }
     if ($process -ne $null -and -not $process.HasExited) {
-        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        [void][SatNativeCapture]::SendMessage(
+            $process.MainWindowHandle,
+            $WM_CLOSE,
+            [IntPtr]::Zero,
+            [IntPtr]::Zero)
+        Wait-Until { $process.Refresh(); $process.HasExited } "native app graceful shutdown" 10000
     }
     if ($null -eq $oldRepoRoot) { Remove-Item Env:SIMPLE_AI_TRADING_REPO_ROOT -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_REPO_ROOT = $oldRepoRoot }
     if ($null -eq $oldDryRun) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN = $oldDryRun }
