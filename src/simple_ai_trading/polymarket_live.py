@@ -27,6 +27,7 @@ _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _TOKEN_ID = re.compile(r"^[0-9]{20,80}$")
 _ORDER_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _BYTES32 = re.compile(r"^0x[0-9a-f]{64}$")
+_ADDRESS = re.compile(r"^0x[0-9a-f]{40}$")
 _ZERO_SHA256 = "0" * 64
 _POSITION_TOLERANCE = Decimal("0.000001")
 
@@ -313,7 +314,10 @@ class PolymarketRemoteOrder:
     order_id: str
     market_id: str
     token_id: str
+    maker_address: str
     side: str
+    order_type: str
+    price: Decimal
     status: str
     original_quantity: Decimal
     matched_quantity: Decimal
@@ -322,10 +326,22 @@ class PolymarketRemoteOrder:
         object.__setattr__(self, "order_id", _order_id(self.order_id))
         object.__setattr__(self, "market_id", _condition_id(self.market_id))
         object.__setattr__(self, "token_id", _token_id(self.token_id))
+        maker_address = str(self.maker_address or "").strip().lower()
+        if _ADDRESS.fullmatch(maker_address) is None:
+            raise ValueError("remote order maker address is invalid")
+        object.__setattr__(self, "maker_address", maker_address)
         side = str(self.side or "").strip().upper()
         if side not in {"BUY", "SELL"}:
             raise ValueError("remote order side is invalid")
         object.__setattr__(self, "side", side)
+        order_type = str(self.order_type or "").strip().upper()
+        if order_type not in {"GTC", "FOK", "GTD", "FAK"}:
+            raise ValueError("remote order type is invalid")
+        object.__setattr__(self, "order_type", order_type)
+        price = _decimal(self.price, name="remote order price", positive=True)
+        if price >= 1:
+            raise ValueError("remote order price must be below one")
+        object.__setattr__(self, "price", price)
         status = str(self.status or "").strip().upper()
         if not status:
             raise ValueError("remote order status is missing")
@@ -417,6 +433,12 @@ class PolymarketVenuePreflight:
     wallet_address: str
     open_orders: tuple[PolymarketRemoteOrder, ...]
     positions: tuple[PolymarketRemotePosition, ...]
+
+    def __post_init__(self) -> None:
+        wallet_address = str(self.wallet_address or "").strip().lower()
+        if _ADDRESS.fullmatch(wallet_address) is None:
+            raise ValueError("preflight wallet address is invalid")
+        object.__setattr__(self, "wallet_address", wallet_address)
 
     @property
     def clock_skew_ms(self) -> int:
@@ -639,6 +661,9 @@ class PolymarketCancelResult:
 
 class PolymarketLiveVenue(Protocol):
     """Authenticated venue boundary used by the coordinator."""
+
+    @property
+    def wallet_address(self) -> str: ...
 
     def preflight(self) -> PolymarketVenuePreflight: ...
 
@@ -2256,6 +2281,8 @@ class PolymarketLiveCoordinator:
             errors.append("clock_skew")
         if venue.closed_only:
             errors.append("closed_only")
+        if venue.wallet_address != self.venue.wallet_address:
+            errors.append("wallet_identity_mismatch")
         result = self._reconcile_snapshot(
             open_orders=venue.open_orders,
             positions=venue.positions,
@@ -2290,8 +2317,8 @@ class PolymarketLiveCoordinator:
             return False
         return True
 
-    @staticmethod
     def _remote_identity_matches(
+        self,
         record: PolymarketLiveOrderRecord,
         remote: PolymarketRemoteOrder,
     ) -> bool:
@@ -2299,7 +2326,10 @@ class PolymarketLiveCoordinator:
             remote.order_id == record.expected_order_id
             and remote.market_id == record.intent.market_id
             and remote.token_id == record.intent.token_id
+            and remote.maker_address == self.venue.wallet_address
             and remote.side == record.intent.side
+            and remote.order_type == record.intent.order_type
+            and remote.price == record.intent.limit_price
             and remote.original_quantity == record.intent.quantity
         )
 

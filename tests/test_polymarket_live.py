@@ -98,7 +98,10 @@ def _remote_order(
         order_id=order_id,
         market_id=intent.market_id,
         token_id=intent.token_id,
+        maker_address=WALLET,
         side=intent.side,
+        order_type=intent.order_type,
+        price=intent.limit_price,
         status="LIVE",
         original_quantity=intent.quantity,
         matched_quantity=Decimal(matched),
@@ -129,6 +132,7 @@ def _fill(
 
 class FakeVenue:
     def __init__(self) -> None:
+        self.wallet_address = WALLET
         self.open: tuple[PolymarketRemoteOrder, ...] = ()
         self.remote_positions: tuple[PolymarketRemotePosition, ...] = ()
         self.fills: tuple[PolymarketRemoteFill, ...] = ()
@@ -1028,6 +1032,30 @@ def test_duplicate_exact_order_response_is_rejected(tmp_path: Path) -> None:
             lambda intent, order_id: replace(
                 _remote_order(intent, order_id),
                 token_id="2" * 40,
+            ),
+            None,
+            "remote_order_identity_mismatch",
+        ),
+        (
+            lambda intent, order_id: replace(
+                _remote_order(intent, order_id),
+                maker_address="0x" + "b" * 40,
+            ),
+            None,
+            "remote_order_identity_mismatch",
+        ),
+        (
+            lambda intent, order_id: replace(
+                _remote_order(intent, order_id),
+                order_type="FOK",
+            ),
+            None,
+            "remote_order_identity_mismatch",
+        ),
+        (
+            lambda intent, order_id: replace(
+                _remote_order(intent, order_id),
+                price=Decimal("0.52"),
             ),
             None,
             "remote_order_identity_mismatch",
