@@ -443,12 +443,20 @@ class PolymarketAutonomousSupervisor:
 
     async def _close_owned(self) -> bool:
         self._requested_closes += 1
-        payload, status = await asyncio.to_thread(
-            stop_owned_polymarket_exposure,
-            coordinator=self.coordinator,
-            ledger=self.ledger,
-            timeout_seconds=self.stop_timeout_seconds,
-        )
+        try:
+            payload, status = await asyncio.to_thread(
+                stop_owned_polymarket_exposure,
+                coordinator=self.coordinator,
+                ledger=self.ledger,
+                timeout_seconds=self.stop_timeout_seconds,
+            )
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            self._last_fault = (
+                f"owned_exposure_close_failure:{exc.__class__.__name__}"
+            )
+            return False
         completed = status == 0 and payload["completed"] is True
         if completed:
             self._completed_closes += 1
@@ -458,6 +466,16 @@ class PolymarketAutonomousSupervisor:
                 payload["reason"]
             )
         return completed
+
+    async def _drain_owned_exposure(self) -> None:
+        """Stay alive in close-only recovery until the owned ledger is flat."""
+
+        retry_delay = max(0.25, self.decision_interval_seconds)
+        while self._owned_market_ids():
+            await self._close_owned()
+            if self._owned_market_ids():
+                await asyncio.sleep(retry_delay)
+        self._stop_completed = True
 
     async def _apply_decision(
         self,
@@ -639,7 +657,7 @@ class PolymarketAutonomousSupervisor:
         finally:
             self.request_stop()
             if self._owned_market_ids():
-                await self._close_owned()
+                await self._drain_owned_exposure()
             services_stop.set()
             if timer is not None:
                 timer.cancel()

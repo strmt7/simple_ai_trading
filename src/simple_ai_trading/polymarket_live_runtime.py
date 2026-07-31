@@ -546,7 +546,6 @@ class PolymarketAuthenticatedUserStream:
                 ) as websocket:
                     active_markets = await self._market_snapshot()
                     await websocket.send(self._subscription(active_markets))
-                    self.consumer.runtime_guard.note_stream_liveness()
                     delay_seconds = 0.5
                     await self._connected(
                         websocket,

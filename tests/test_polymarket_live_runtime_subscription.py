@@ -7,6 +7,7 @@ import pytest
 
 from simple_ai_trading.polymarket_live_runtime import (
     PolymarketAuthenticatedUserStream,
+    PolymarketLiveRuntimeGuard,
 )
 from simple_ai_trading.polymarket_live_v2 import PolymarketLiveCredentials
 
@@ -16,7 +17,12 @@ CONDITION_B = "0x" + "2" * 64
 
 
 class _Consumer:
-    def handle(self, _message: str) -> int:
+    def __init__(self, runtime_guard: PolymarketLiveRuntimeGuard | None = None) -> None:
+        self.runtime_guard = runtime_guard or PolymarketLiveRuntimeGuard()
+
+    def handle(self, message: str) -> int:
+        if message == "PONG":
+            self.runtime_guard.note_stream_liveness()
         return 0
 
 
@@ -31,6 +37,17 @@ class _WebSocket:
     async def recv(self) -> str:
         await self._never.wait()
         raise AssertionError("unreachable")
+
+
+class _Connection:
+    def __init__(self, websocket: _WebSocket) -> None:
+        self.websocket = websocket
+
+    async def __aenter__(self) -> _WebSocket:
+        return self.websocket
+
+    async def __aexit__(self, *_args: object) -> None:
+        return None
 
 
 def _credentials() -> PolymarketLiveCredentials:
@@ -111,6 +128,41 @@ def test_user_stream_reconnect_snapshot_tracks_current_markets() -> None:
 
         assert payload["markets"] == [CONDITION_A, CONDITION_B]
         assert payload["type"] == "user"
+
+    asyncio.run(scenario())
+
+
+def test_user_stream_is_not_authoritative_before_first_server_frame(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def scenario() -> None:
+        import websockets
+
+        runtime_guard = PolymarketLiveRuntimeGuard()
+        consumer = _Consumer(runtime_guard)
+        websocket = _WebSocket()
+        monkeypatch.setattr(
+            websockets,
+            "connect",
+            lambda *_args, **_kwargs: _Connection(websocket),
+        )
+        stream = PolymarketAuthenticatedUserStream(
+            _credentials(),
+            consumer,  # type: ignore[arg-type]
+            markets=(CONDITION_A,),
+        )
+        stop = asyncio.Event()
+        running = asyncio.create_task(stream.run(stop))
+        for _ in range(20):
+            await asyncio.sleep(0)
+            if websocket.sent:
+                break
+
+        assert json.loads(websocket.sent[0])["type"] == "user"
+        assert runtime_guard.snapshot().stream_connected is False
+
+        stop.set()
+        await running
 
     asyncio.run(scenario())
 

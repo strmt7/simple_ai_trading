@@ -41,12 +41,24 @@ flowchart LR
 - Official `polymarket-client==0.2.0` pinned for the typed transaction and
   redemption path.
 - Environment-only, redacted credentials and a dedicated-wallet requirement.
+- Current wallet types `0` (EOA), `1` (Polymarket proxy), `2` (Gnosis Safe),
+  and `3` (POLY_1271 deposit wallet) are accepted. Every prepared order must
+  preserve the configured signature type and funder. Types `0`-`2` must use
+  the private-key signer field; type `3` must use the deposit wallet as both
+  maker and signer, as required by the current V2 contract.
 - FAK, FOK, or bounded GTD orders only. Live Polymarket execution is BTC-only;
   every SELL must close confirmed bot-owned inventory.
 - Intent TTL, tick alignment, quote-plus-fee ceiling, token inventory ceiling,
-  and exact pUSD or outcome-token balance/allowance checks.
+  aggregate gross capital-at-risk ceiling, active-market ceiling, and exact
+  pUSD or outcome-token balance/allowance checks. Conservative permits at most
+  10 pUSD across one active market, regular 50 pUSD across two, and aggressive
+  100 pUSD across three; each profile also retains its lower per-order ceiling.
 - One POST attempt. A transport ambiguity becomes `unknown`; it is never
-  blindly retried.
+  blindly retried. HTTP `400` is also ambiguous because the official error
+  catalog includes duplicate-order responses; exact signed-hash
+  reconciliation must resolve it. Only non-ambiguous authentication,
+  authorization, not-found, or unprocessable responses are terminal
+  rejections.
 - Exact owned-order cancellation only. Account-wide heartbeat, cancel-all, and
   market-wide cancellation are prohibited.
 - Missing FAK/FOK orders are resolved through authenticated exact-ID lookup.
@@ -89,7 +101,9 @@ flowchart LR
   ownership and preflight check. Unknown outcomes are never retried and block
   new exposure.
 - Independent user-stream and REST loops. Stream freshness is mandatory for
-  opens; a fresh ownership reconciliation can still permit an owned close.
+  opens; merely sending the authenticated subscription never grants liveness.
+  At least one valid inbound server frame must be parsed first. A fresh
+  ownership reconciliation can still permit an owned close.
 - A separate autonomous supervisor discovers only the current and next BTC
   horizon named by an evidence-verified five-minute or fifteen-minute
   promotion. The horizon is bound into both the promotion and every proposal,
@@ -104,8 +118,17 @@ flowchart LR
   enabled public-signal task is supervised as critical. Safety services receive
   one scheduling turn before model decisions begin. An unexpected task
   exception or return immediately latches Stop, prevents further model work,
-  closes only exact bot-owned exposure, awaits all service shutdowns, and
-  surfaces the named failure after cleanup.
+  enters a close-only recovery loop, and keeps retrying exact bot-owned
+  cancellation and closing while reconciliation and settlement remain alive.
+  The named failure is surfaced only after the owned ledger is flat. A network
+  exception is retained as visible retry state instead of aborting cleanup.
+- Current CLOB limits separate per-signer order and cancel token buckets.
+  The standard tier documents 40 order tokens/s with a 60-token burst and 80
+  cancel tokens/s with a 120-token burst; exact-ID cancels therefore do not
+  compete with openings for the same bucket. The runtime cadence is far below
+  these limits and never uses account-wide cancellation. Server
+  `Poly-RateLimit-*` values are not fabricated when the pinned Python SDK does
+  not expose response headers.
 - The optional external BTC signal is a read-only callback. It receives no
   wallet, venue, coordinator, ledger, credential, balance, position, or order
   object and can only preserve, reduce, or veto a promoted Polymarket proposal.
@@ -235,6 +258,9 @@ warmup and proves neither predictive nor financial edge.
 ## Primary Contracts
 
 - [CLOB V2 migration](https://docs.polymarket.com/v2-migration)
+- [Trading authentication and signature types](https://docs.polymarket.com/trading/overview)
+- [Deposit wallets and POLY_1271](https://docs.polymarket.com/trading/deposit-wallets)
+- [Per-signer CLOB trading limits](https://docs.polymarket.com/api-reference/trading-rate-limits)
 - [Order lifecycle](https://docs.polymarket.com/concepts/order-lifecycle)
 - [Market WebSocket channel](https://docs.polymarket.com/market-data/websocket/market-channel)
 - [Get one authenticated order](https://docs.polymarket.com/api-reference/trade/get-single-order-by-id)
