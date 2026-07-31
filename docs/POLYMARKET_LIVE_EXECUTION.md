@@ -85,6 +85,10 @@ flowchart LR
   complete ownership-only close routine, preventing duplicate close
   reservations. Crashed leases remain fail-closed until Stop proves zero owned
   exposure and the heartbeat is stale.
+- Stop also latches when no autonomous owner is running. If credentials,
+  network access, or closing fails, the ownerless `stop_requested` state blocks
+  every later autonomous lease; it clears only after a subsequent exact-owned
+  recovery proves the ledger flat.
 - The Windows `Stop + Close` control invokes Binance and Polymarket shutdown
   independently and attempts both even if either command fails.
 - Hash-bound, numbered redemption attempts. Exact confirmed local inventory
