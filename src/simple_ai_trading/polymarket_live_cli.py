@@ -685,15 +685,19 @@ def command_polymarket_live(args: argparse.Namespace) -> int:
                     timeout_seconds=args.stop_timeout_seconds,
                 )
                 if bool(payload.get("completed")):
-                    runtime_control.wait_until_stopped(
-                        timeout_seconds=min(
-                            3.0,
-                            float(args.stop_timeout_seconds),
-                        ),
-                    )
                     runtime_control.complete_stale_stop(
                         exposure_closed=not bool(ledger.owned_inventory()),
                     )
+                    if runtime_control.snapshot().state != "stopped":
+                        runtime_control.wait_until_stopped(
+                            timeout_seconds=min(
+                                3.0,
+                                float(args.stop_timeout_seconds),
+                            ),
+                        )
+                        runtime_control.complete_stale_stop(
+                            exposure_closed=not bool(ledger.owned_inventory()),
+                        )
                 control_snapshot = runtime_control.snapshot()
                 payload["runtime_control"] = control_snapshot.asdict()
                 if control_snapshot.state != "stopped":

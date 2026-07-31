@@ -509,7 +509,7 @@ class PolymarketRuntimeControl:
                 running = current.state == "running"
                 payload = {
                     "schema_version": POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION,
-                    "state": "stop_requested" if running else "stopped",
+                    "state": "stop_requested",
                     "lease_id": current.lease_id if running else "",
                     "owner_process_id": (current.owner_process_id if running else 0),
                     "started_at_ms": current.started_at_ms if running else 0,
@@ -603,6 +603,29 @@ class PolymarketRuntimeControl:
                     connection.execute("COMMIT")
                     return True
                 now = self._now_ms()
+                ownerless_stop = (
+                    current.state == "stop_requested"
+                    and not current.lease_id
+                    and current.owner_process_id == 0
+                    and current.started_at_ms == 0
+                    and current.heartbeat_at_ms == 0
+                )
+                if ownerless_stop:
+                    payload = {
+                        "schema_version": POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION,
+                        "state": "stopped",
+                        "lease_id": "",
+                        "owner_process_id": 0,
+                        "started_at_ms": 0,
+                        "heartbeat_at_ms": 0,
+                        "stop_epoch": current.stop_epoch,
+                        "stop_requested_at_ms": current.stop_requested_at_ms,
+                        "stop_reason": "ownerless_stop_completed",
+                        "updated_at_ms": now,
+                    }
+                    self._write(connection, payload)
+                    connection.execute("COMMIT")
+                    return True
                 if (
                     current.state != "stop_requested"
                     or current.heartbeat_at_ms <= 0

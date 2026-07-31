@@ -134,6 +134,23 @@ def test_stale_stop_requires_closed_exposure_and_expired_heartbeat(tmp_path) -> 
     assert control.snapshot().state == "stopped"
 
 
+def test_ownerless_stop_stays_latched_until_exposure_is_proven_closed(
+    tmp_path,
+) -> None:
+    control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+
+    requested = control.request_stop(reason="operator_stop")
+
+    assert requested.state == "stop_requested"
+    assert requested.lease_id == ""
+    with pytest.raises(PolymarketLiveBlocked, match="Stop completion"):
+        control.acquire(owner_process_id=101)
+    with pytest.raises(PolymarketLiveBlocked, match="owned exposure"):
+        control.complete_stale_stop(exposure_closed=False)
+    assert control.complete_stale_stop(exposure_closed=True) is True
+    assert control.snapshot().state == "stopped"
+
+
 def test_runtime_control_detects_record_tampering(tmp_path) -> None:
     path = tmp_path / "ownership.sqlite3"
     control = PolymarketRuntimeControl(path)
