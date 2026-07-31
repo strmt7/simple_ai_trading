@@ -1423,7 +1423,7 @@ def test_v1_fill_ledger_migrates_without_inventing_fee_accounting(
         ).fetchone()
     finally:
         connection.close()
-    assert version == ("polymarket-live-ledger-v2",)
+    assert version == ("polymarket-live-ledger-v3",)
     assert row == ("UNKNOWN", "UNKNOWN", "", 0, "")
 
 

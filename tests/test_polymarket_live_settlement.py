@@ -4,6 +4,7 @@ import asyncio
 import ast
 from collections.abc import Callable
 from decimal import Decimal
+import hashlib
 import json
 from pathlib import Path
 import sqlite3
@@ -51,6 +52,110 @@ OTHER_TRANSACTION_HASH = "0x" + "5" * 64
 WALLET = "0x" + "a" * 40
 ADAPTER = "0x" + "b" * 40
 CONDITIONAL_TOKENS = "0x" + "c" * 40
+COLLATERAL_TOKEN = "0x" + "d" * 40
+USDCE = "0x" + "e" * 40
+NEG_RISK_ADAPTER = "0x" + "f" * 40
+BLOCK_HASH = "0x" + "6" * 64
+PAYOUT_PROOF = "f" * 64
+
+
+def _topic_address(address: str) -> str:
+    return "0x" + address[2:].lower().rjust(64, "0")
+
+
+def _words(*values: int) -> str:
+    return "0x" + "".join(f"{value:064x}" for value in values)
+
+
+def _standard_redemption_receipt(
+    *,
+    transaction_hash: str = TRANSACTION_HASH,
+    payout_base_units: int = 2_000_000,
+    status: str = "0x1",
+) -> dict[str, object]:
+    return {
+        "transactionHash": transaction_hash,
+        "blockHash": BLOCK_HASH,
+        "blockNumber": "0x10",
+        "status": status,
+        "logs": [
+            {
+                "address": CONDITIONAL_TOKENS,
+                "topics": [
+                    settlement_module._CTF_PAYOUT_EVENT_TOPIC,
+                    _topic_address(ADAPTER),
+                    _topic_address(USDCE),
+                    "0x" + "0" * 64,
+                ],
+                "data": _words(
+                    int(CONDITION_ID, 16),
+                    96,
+                    payout_base_units,
+                    2,
+                    1,
+                    2,
+                ),
+                "removed": False,
+            },
+            {
+                "address": COLLATERAL_TOKEN,
+                "topics": [
+                    settlement_module._WRAPPED_EVENT_TOPIC,
+                    _topic_address(ADAPTER),
+                    _topic_address(USDCE),
+                    _topic_address(WALLET),
+                ],
+                "data": _words(payout_base_units),
+                "removed": False,
+            },
+            {
+                "address": COLLATERAL_TOKEN,
+                "topics": [
+                    settlement_module._TRANSFER_EVENT_TOPIC,
+                    "0x" + "0" * 64,
+                    _topic_address(WALLET),
+                ],
+                "data": _words(payout_base_units),
+                "removed": False,
+            },
+        ],
+    }
+
+
+def _negative_risk_redemption_receipt(
+    *,
+    payout_base_units: int = 2_000_000,
+) -> dict[str, object]:
+    receipt = _standard_redemption_receipt(
+        payout_base_units=payout_base_units,
+    )
+    receipt["logs"] = [
+        {
+            "address": NEG_RISK_ADAPTER,
+            "topics": [
+                settlement_module._NEG_RISK_PAYOUT_EVENT_TOPIC,
+                _topic_address(ADAPTER),
+                CONDITION_ID,
+            ],
+            "data": _words(64, payout_base_units, 2, payout_base_units, 0),
+            "removed": False,
+        },
+        *receipt["logs"][1:],  # type: ignore[index]
+    ]
+    return receipt
+
+
+def _preflight_payload() -> dict[str, object]:
+    return {
+        "condition_id": CONDITION_ID,
+        "adapter_address": ADAPTER,
+        "neg_risk": False,
+        "gas_estimate": 100_000,
+        "gas_price_wei": 1_000,
+        "native_balance_wei": 1_000_000_000,
+        "required_native_balance_wei": 200_000_000,
+        "gasless": False,
+    }
 
 
 def _intent() -> PolymarketLiveOrderIntent:
@@ -155,7 +260,7 @@ class FakeRedemptionVenue:
     ) -> PolymarketRedemptionPreflight:
         return PolymarketRedemptionPreflight(
             condition_id=self.preflight_condition,
-            adapter_address=WALLET,
+            adapter_address=ADAPTER,
             neg_risk=False,
             gas_estimate=100_000,
             gas_price_wei=1_000,
@@ -175,6 +280,9 @@ class FakeRedemptionVenue:
         return PolymarketRedemptionSubmission(
             transaction_id="",
             transaction_hash=self.transaction_hash,
+            condition_id=condition_id,
+            adapter_address=ADAPTER,
+            neg_risk=False,
             _handle=object(),
         )
 
@@ -187,6 +295,8 @@ class FakeRedemptionVenue:
         return PolymarketRedemptionOutcome(
             transaction_id=submission.transaction_id,
             transaction_hash=submission.transaction_hash,
+            payout_quote=Decimal("2"),
+            payout_proof_sha256=PAYOUT_PROOF,
         )
 
     def recover_redemption(
@@ -194,8 +304,11 @@ class FakeRedemptionVenue:
         *,
         transaction_id: str,
         transaction_hash: str,
+        condition_id: str,
+        adapter_address: str,
+        neg_risk: bool,
     ) -> PolymarketRedemptionRecovery:
-        del transaction_id, transaction_hash
+        del transaction_id, transaction_hash, condition_id, adapter_address, neg_risk
         if self.recover_error is not None:
             raise self.recover_error
         return self.recovery
@@ -370,9 +483,7 @@ def test_open_owned_order_or_provisional_fill_blocks_redemption(
     with pytest.raises(PolymarketLiveBlocked, match="open bot-owned"):
         open_coordinator.redeem_next_ready()
 
-    provisional_ledger = PolymarketLiveOrderLedger(
-        tmp_path / "provisional.sqlite3"
-    )
+    provisional_ledger = PolymarketLiveOrderLedger(tmp_path / "provisional.sqlite3")
     _seed_confirmed_inventory(provisional_ledger, fill_status="MATCHED")
     provisional_coordinator = PolymarketRedemptionCoordinator(
         FakeAccount(),
@@ -427,6 +538,8 @@ def test_proven_failure_allows_only_a_new_numbered_attempt(
         state="confirmed",
         transaction_id="",
         transaction_hash=OTHER_TRANSACTION_HASH,
+        payout_quote=Decimal("2"),
+        payout_proof_sha256=PAYOUT_PROOF,
     )
     second = coordinator.redeem_next_ready()
 
@@ -449,6 +562,8 @@ def test_unknown_wait_recovers_only_from_matching_receipt_proof(
         state="confirmed",
         transaction_id="",
         transaction_hash=TRANSACTION_HASH,
+        payout_quote=Decimal("2"),
+        payout_proof_sha256=PAYOUT_PROOF,
     )
     recovered = coordinator.recover_incomplete()
 
@@ -489,6 +604,7 @@ def test_restart_before_submission_is_proven_safe_failure(
         CONDITION_ID,
         ledger.owned_inventory(),
         observed_at_ms=NOW_MS + 3,
+        preflight=_preflight_payload(),
     )
 
     recovered = coordinator.recover_incomplete()
@@ -507,6 +623,7 @@ def test_recovery_query_failure_and_pending_state_never_trigger_retry(
         CONDITION_ID,
         ledger.owned_inventory(),
         observed_at_ms=NOW_MS + 3,
+        preflight=_preflight_payload(),
     )
     submitting = ledger.transition_redemption(
         prepared.redemption_id,
@@ -566,6 +683,133 @@ def test_redemption_snapshot_tampering_is_detected(tmp_path: Path) -> None:
 
     with pytest.raises(PolymarketLiveError, match="snapshot hash differs"):
         ledger.redemption_records()
+
+
+def test_v2_redemption_ledger_migrates_without_inventing_payout(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "legacy-redemption.sqlite3"
+    ledger = PolymarketLiveOrderLedger(path)
+    _seed_confirmed_inventory(ledger)
+    prepared = ledger.reserve_redemption(
+        CONDITION_ID,
+        ledger.owned_inventory(),
+        observed_at_ms=NOW_MS + 3,
+        preflight=_preflight_payload(),
+    )
+    submitting = ledger.transition_redemption(
+        prepared.redemption_id,
+        expected_states=("prepared",),
+        state="submitting",
+        observed_at_ms=NOW_MS + 4,
+    )
+    submitted = ledger.transition_redemption(
+        submitting.redemption_id,
+        expected_states=("submitting",),
+        state="submitted",
+        observed_at_ms=NOW_MS + 5,
+        transaction_hash=TRANSACTION_HASH,
+    )
+    ledger.transition_redemption(
+        submitted.redemption_id,
+        expected_states=("submitted",),
+        state="confirmed",
+        observed_at_ms=NOW_MS + 6,
+        payout_quote=Decimal("2"),
+        payout_proof_sha256=PAYOUT_PROOF,
+    )
+
+    connection = sqlite3.connect(path)
+    connection.row_factory = sqlite3.Row
+    try:
+        row = connection.execute("SELECT * FROM polymarket_live_redemptions").fetchone()
+        assert row is not None
+        payload = PolymarketLiveOrderLedger._redemption_row_payload_v2(row)
+        payload_json = json.dumps(
+            payload,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        )
+        connection.execute("PRAGMA foreign_keys=OFF")
+        connection.execute(
+            """
+            CREATE TABLE polymarket_live_redemptions_v2 (
+                redemption_id TEXT PRIMARY KEY,
+                condition_id TEXT NOT NULL,
+                attempt INTEGER NOT NULL,
+                inventory_json TEXT NOT NULL,
+                preflight_json TEXT NOT NULL,
+                state TEXT NOT NULL,
+                transaction_id TEXT NOT NULL,
+                transaction_hash TEXT NOT NULL,
+                failure_code TEXT NOT NULL,
+                created_at_ms INTEGER NOT NULL,
+                updated_at_ms INTEGER NOT NULL,
+                record_sha256 TEXT NOT NULL,
+                UNIQUE (condition_id, attempt),
+                CHECK (attempt > 0)
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO polymarket_live_redemptions_v2
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                *payload.values(),
+                hashlib.sha256(payload_json.encode("ascii")).hexdigest(),
+            ],
+        )
+        connection.execute("DROP TABLE polymarket_live_redemptions")
+        connection.execute(
+            "ALTER TABLE polymarket_live_redemptions_v2 "
+            "RENAME TO polymarket_live_redemptions"
+        )
+        connection.execute(
+            """
+            UPDATE polymarket_live_metadata SET value = 'polymarket-live-ledger-v2'
+            WHERE key = 'schema_version'
+            """
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    migrated = PolymarketLiveOrderLedger(path)
+    record = migrated.redemption_records()[0]
+    assert record.state == "confirmed"
+    assert record.payout_quote == 0
+    assert record.payout_proof_sha256 == ""
+    assert record.payout_accounting_state == "UNKNOWN"
+    assert migrated.unverified_redemption_accounting_count() == 1
+    venue = FakeRedemptionVenue()
+    venue.recovery = PolymarketRedemptionRecovery(
+        state="failed",
+        transaction_id="",
+        transaction_hash=TRANSACTION_HASH,
+    )
+    recovered = PolymarketRedemptionCoordinator(
+        FakeAccount(),
+        venue,
+        migrated,
+        clock_ms=lambda: NOW_MS + 7,
+    ).recover_incomplete()
+    assert recovered[0].state == "confirmed"
+    assert recovered[0].payout_accounting_state == "UNKNOWN"
+
+    upgraded = migrated.transition_redemption(
+        record.redemption_id,
+        expected_states=("confirmed",),
+        state="confirmed",
+        observed_at_ms=NOW_MS + 8,
+        payout_quote=Decimal("2"),
+        payout_proof_sha256=PAYOUT_PROOF,
+    )
+    assert upgraded.payout_accounting_state == "VERIFIED"
+    assert migrated.unverified_redemption_accounting_count() == 0
 
 
 @pytest.mark.parametrize(
@@ -932,10 +1176,26 @@ def test_confirmed_redemption_requires_hash_and_cannot_exceed_inventory(
             state="confirmed",
             observed_at_ms=NOW_MS + 3,
         )
+    with pytest.raises(ValueError, match="verified payout accounting"):
+        ledger.transition_redemption(
+            submitted.redemption_id,
+            expected_states=("submitted",),
+            state="confirmed",
+            observed_at_ms=NOW_MS + 3,
+            transaction_hash=TRANSACTION_HASH,
+        )
+    with pytest.raises(PolymarketLiveBlocked, match="exceeds reserved inventory"):
+        ledger.transition_redemption(
+            submitted.redemption_id,
+            expected_states=("submitted",),
+            state="confirmed",
+            observed_at_ms=NOW_MS + 3,
+            transaction_hash=TRANSACTION_HASH,
+            payout_quote=Decimal("3"),
+            payout_proof_sha256=PAYOUT_PROOF,
+        )
 
-    inventory_ledger = PolymarketLiveOrderLedger(
-        tmp_path / "excess-inventory.sqlite3"
-    )
+    inventory_ledger = PolymarketLiveOrderLedger(tmp_path / "excess-inventory.sqlite3")
     _seed_confirmed_inventory(inventory_ledger)
     excess = inventory_ledger.reserve_redemption(
         CONDITION_ID,
@@ -960,6 +1220,8 @@ def test_confirmed_redemption_requires_hash_and_cannot_exceed_inventory(
         expected_states=("submitted",),
         state="confirmed",
         observed_at_ms=NOW_MS + 6,
+        payout_quote=Decimal("0"),
+        payout_proof_sha256=PAYOUT_PROOF,
     )
 
     with pytest.raises(PolymarketLiveError, match="exceeds owned inventory"):
@@ -1025,7 +1287,9 @@ class FakeUnifiedClient:
                     "Environment",
                     (),
                     {
-                        "collateral_token": "0x" + "d" * 40,
+                        "collateral_token": COLLATERAL_TOKEN,
+                        "conditional_tokens": CONDITIONAL_TOKENS,
+                        "neg_risk_adapter": NEG_RISK_ADAPTER,
                         "relayer_poll_frequency_ms": 2_000,
                         "relayer_max_polls": 100,
                     },
@@ -1088,10 +1352,14 @@ class FakeRpcSession:
         *,
         balance_result: object = hex(1_000_000_000),
         receipt_result: object | None = None,
+        finalized_block: int = 0x20,
+        canonical_block_hash: str = BLOCK_HASH,
     ) -> None:
         self.status = status
         self.balance_result = balance_result
         self.receipt_result = receipt_result
+        self.finalized_block = finalized_block
+        self.canonical_block_hash = canonical_block_hash
         self.calls: list[object] = []
         self.closed = False
 
@@ -1108,13 +1376,20 @@ class FakeRpcSession:
         method = json["method"]
         if method == "eth_getBalance":
             result: object = self.balance_result
+        elif method == "eth_getBlockByNumber":
+            assert isinstance(json["params"], list)
+            result = (
+                {"number": hex(self.finalized_block)}
+                if json["params"][0] == "finalized"
+                else {
+                    "number": "0x10",
+                    "hash": self.canonical_block_hash,
+                }
+            )
         elif self.receipt_result is not None:
             result = self.receipt_result
         else:
-            result = {
-                "transactionHash": TRANSACTION_HASH,
-                "status": self.status,
-            }
+            result = _standard_redemption_receipt(status=self.status)
         return FakeRpcResponse(
             {
                 "jsonrpc": "2.0",
@@ -1139,10 +1414,18 @@ class StaticRpcSession(FakeRpcSession):
         json: object,
         timeout: float,
     ) -> FakeRpcResponse:
-        del url, json, timeout
-        return FakeRpcResponse(
-            {"jsonrpc": "2.0", "id": 1, "result": self.result}
-        )
+        del url, timeout
+        assert isinstance(json, dict)
+        if json.get("method") == "eth_getBlockByNumber":
+            assert isinstance(json["params"], list)
+            result = (
+                {"number": "0x20"}
+                if json["params"][0] == "finalized"
+                else {"number": "0x10", "hash": BLOCK_HASH}
+            )
+        else:
+            result = self.result
+        return FakeRpcResponse({"jsonrpc": "2.0", "id": 1, "result": result})
 
 
 class FakeOnchainRpc:
@@ -1192,6 +1475,85 @@ def _credentials(*, signature_type: int = 0) -> PolymarketLiveCredentials:
 def test_polygon_rpc_response_parser_fails_closed(response: object) -> None:
     with pytest.raises(PolymarketLiveUnknownState):
         settlement_module._response_json(response)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("neg_risk", "receipt"),
+    [
+        (False, _standard_redemption_receipt()),
+        (True, _negative_risk_redemption_receipt()),
+    ],
+)
+def test_redemption_receipt_proof_binds_condition_wallet_and_payout(
+    neg_risk: bool,
+    receipt: dict[str, object],
+) -> None:
+    payout, proof = settlement_module._redemption_payout_proof(
+        receipt,
+        transaction_hash=TRANSACTION_HASH,
+        condition_id=CONDITION_ID,
+        adapter_address=ADAPTER,
+        wallet_address=WALLET,
+        collateral_token=COLLATERAL_TOKEN,
+        conditional_tokens=CONDITIONAL_TOKENS,
+        neg_risk_adapter=NEG_RISK_ADAPTER,
+        neg_risk=neg_risk,
+    )
+
+    assert payout == Decimal("2")
+    assert len(proof) == 64
+    assert (
+        proof
+        == settlement_module._redemption_payout_proof(
+            receipt,
+            transaction_hash=TRANSACTION_HASH,
+            condition_id=CONDITION_ID,
+            adapter_address=ADAPTER,
+            wallet_address=WALLET,
+            collateral_token=COLLATERAL_TOKEN,
+            conditional_tokens=CONDITIONAL_TOKENS,
+            neg_risk_adapter=NEG_RISK_ADAPTER,
+            neg_risk=neg_risk,
+        )[1]
+    )
+
+
+@pytest.mark.parametrize(
+    "mutator",
+    [
+        lambda receipt: receipt["logs"].pop(0),
+        lambda receipt: receipt["logs"].append(dict(receipt["logs"][0])),
+        lambda receipt: receipt["logs"][1].update({"removed": True}),
+        lambda receipt: receipt["logs"][1].update({"data": _words(1)}),
+        lambda receipt: receipt["logs"][2].update(
+            {
+                "topics": [
+                    settlement_module._TRANSFER_EVENT_TOPIC,
+                    "0x" + "0" * 64,
+                    _topic_address("0x" + "9" * 40),
+                ]
+            }
+        ),
+    ],
+)
+def test_redemption_receipt_proof_rejects_missing_or_contradictory_events(
+    mutator: Callable[[dict[str, object]], object],
+) -> None:
+    receipt = _standard_redemption_receipt()
+    mutator(receipt)
+
+    with pytest.raises(PolymarketLiveUnknownState):
+        settlement_module._redemption_payout_proof(
+            receipt,
+            transaction_hash=TRANSACTION_HASH,
+            condition_id=CONDITION_ID,
+            adapter_address=ADAPTER,
+            wallet_address=WALLET,
+            collateral_token=COLLATERAL_TOKEN,
+            conditional_tokens=CONDITIONAL_TOKENS,
+            neg_risk_adapter=NEG_RISK_ADAPTER,
+            neg_risk=False,
+        )
 
 
 def test_official_adapter_validates_transport_and_wallet_identity() -> None:
@@ -1388,9 +1750,7 @@ def test_official_preflight_rejects_unproved_market_context() -> None:
 
 
 def test_official_preflight_requires_approval_and_gas_reserve() -> None:
-    no_approval = FakeUnifiedClient(
-        rpc=FakeOnchainRpc(approval="0x" + "0" * 64)
-    )
+    no_approval = FakeUnifiedClient(rpc=FakeOnchainRpc(approval="0x" + "0" * 64))
     venue = OfficialPolymarketUnifiedRedemptionVenue(
         _credentials(),
         client=no_approval,
@@ -1432,13 +1792,51 @@ def test_official_eoa_adapter_preserves_identity_and_verifies_receipt() -> None:
     recovered = venue.recover_redemption(
         transaction_id="",
         transaction_hash=TRANSACTION_HASH,
+        condition_id=CONDITION_ID,
+        adapter_address=ADAPTER,
+        neg_risk=False,
     )
 
     assert client.conditions == [CONDITION_ID]
     assert preflight.required_native_balance_wei == 200_000_000
     assert outcome.transaction_hash == TRANSACTION_HASH
     assert recovered.state == "confirmed"
-    assert len(session.calls) == 2
+    assert len(session.calls) == 7
+
+
+def test_redemption_recovery_waits_for_finality_and_rejects_orphan_receipt() -> None:
+    pending = OfficialPolymarketUnifiedRedemptionVenue(
+        _credentials(),
+        client=FakeUnifiedClient(),
+        session=FakeRpcSession(
+            "0x1",
+            finalized_block=0x0F,
+        ),  # type: ignore[arg-type]
+    ).recover_redemption(
+        transaction_id="",
+        transaction_hash=TRANSACTION_HASH,
+        condition_id=CONDITION_ID,
+        adapter_address=ADAPTER,
+        neg_risk=False,
+    )
+    assert pending.state == "pending"
+
+    orphaned = OfficialPolymarketUnifiedRedemptionVenue(
+        _credentials(),
+        client=FakeUnifiedClient(),
+        session=FakeRpcSession(
+            "0x1",
+            canonical_block_hash=OTHER_TRANSACTION_HASH,
+        ),  # type: ignore[arg-type]
+    )
+    with pytest.raises(PolymarketLiveUnknownState, match="canonical finalized"):
+        orphaned.recover_redemption(
+            transaction_id="",
+            transaction_hash=TRANSACTION_HASH,
+            condition_id=CONDITION_ID,
+            adapter_address=ADAPTER,
+            neg_risk=False,
+        )
 
 
 def test_official_submit_and_wait_classify_only_proven_failures() -> None:
@@ -1466,6 +1864,9 @@ def test_official_submit_and_wait_classify_only_proven_failures() -> None:
     failed = PolymarketRedemptionSubmission(
         transaction_id="",
         transaction_hash=TRANSACTION_HASH,
+        condition_id=CONDITION_ID,
+        adapter_address=ADAPTER,
+        neg_risk=False,
         _handle=failed_handle,
     )
     with pytest.raises(PolymarketRedemptionFailed):
@@ -1474,6 +1875,9 @@ def test_official_submit_and_wait_classify_only_proven_failures() -> None:
     ambiguous = PolymarketRedemptionSubmission(
         transaction_id="",
         transaction_hash=TRANSACTION_HASH,
+        condition_id=CONDITION_ID,
+        adapter_address=ADAPTER,
+        neg_risk=False,
         _handle=FakeHandle(wait_error=TimeoutError("receipt unavailable")),
     )
     with pytest.raises(TimeoutError):
@@ -1520,14 +1924,15 @@ def test_official_wait_rejects_transaction_identity_drift(
             "transaction-0002" if mismatch == "id" else "transaction-0001"
         ),
         outcome_transaction_hash=(
-            OTHER_TRANSACTION_HASH
-            if mismatch == "hash"
-            else TRANSACTION_HASH
+            OTHER_TRANSACTION_HASH if mismatch == "hash" else TRANSACTION_HASH
         ),
     )
     submission = PolymarketRedemptionSubmission(
         transaction_id="transaction-0001",
         transaction_hash=TRANSACTION_HASH,
+        condition_id=CONDITION_ID,
+        adapter_address=ADAPTER,
+        neg_risk=False,
         _handle=handle,
     )
 
@@ -1669,9 +2074,7 @@ def test_gasless_environment_selects_one_complete_credential_type() -> None:
         {
             "SIMPLE_AI_TRADING_POLYMARKET_BUILDER_API_KEY": "builder-api-key",
             "SIMPLE_AI_TRADING_POLYMARKET_BUILDER_SECRET": "builder-secret",
-            "SIMPLE_AI_TRADING_POLYMARKET_BUILDER_PASSPHRASE": (
-                "builder-passphrase"
-            ),
+            "SIMPLE_AI_TRADING_POLYMARKET_BUILDER_PASSPHRASE": ("builder-passphrase"),
         }
     )
 
@@ -1765,25 +2168,50 @@ def test_redemption_preflight_value_contracts(
         lambda: PolymarketRedemptionSubmission(
             transaction_id="bad",
             transaction_hash="",
+            condition_id=CONDITION_ID,
+            adapter_address=ADAPTER,
+            neg_risk=False,
             _handle=object(),
         ),
         lambda: PolymarketRedemptionSubmission(
             transaction_id="",
             transaction_hash="bad",
+            condition_id=CONDITION_ID,
+            adapter_address=ADAPTER,
+            neg_risk=False,
             _handle=object(),
         ),
         lambda: PolymarketRedemptionSubmission(
             transaction_id="",
             transaction_hash="",
+            condition_id=CONDITION_ID,
+            adapter_address=ADAPTER,
+            neg_risk=False,
             _handle=object(),
         ),
         lambda: PolymarketRedemptionOutcome(
             transaction_id="bad",
             transaction_hash=TRANSACTION_HASH,
+            payout_quote=Decimal("1"),
+            payout_proof_sha256=PAYOUT_PROOF,
         ),
         lambda: PolymarketRedemptionOutcome(
             transaction_id="",
             transaction_hash="bad",
+            payout_quote=Decimal("1"),
+            payout_proof_sha256=PAYOUT_PROOF,
+        ),
+        lambda: PolymarketRedemptionOutcome(
+            transaction_id="",
+            transaction_hash=TRANSACTION_HASH,
+            payout_quote=Decimal("NaN"),
+            payout_proof_sha256=PAYOUT_PROOF,
+        ),
+        lambda: PolymarketRedemptionOutcome(
+            transaction_id="",
+            transaction_hash=TRANSACTION_HASH,
+            payout_quote=Decimal("1"),
+            payout_proof_sha256="",
         ),
         lambda: PolymarketRedemptionRecovery(
             state="invalid",
@@ -1804,6 +2232,13 @@ def test_redemption_preflight_value_contracts(
             state="confirmed",
             transaction_id="transaction-0001",
             transaction_hash="",
+        ),
+        lambda: PolymarketRedemptionRecovery(
+            state="confirmed",
+            transaction_id="transaction-0001",
+            transaction_hash=TRANSACTION_HASH,
+            payout_quote=Decimal("1"),
+            payout_proof_sha256="",
         ),
         lambda: PolymarketRedemptionRecovery(
             state="failed",
@@ -1856,6 +2291,9 @@ def test_smart_wallet_recovery_uses_terminal_relayer_proof(
     recovered = venue.recover_redemption(
         transaction_id="transaction-0001",
         transaction_hash="",
+        condition_id=CONDITION_ID,
+        adapter_address=ADAPTER,
+        neg_risk=False,
     )
 
     assert recovered.state == "confirmed"
@@ -1890,9 +2328,7 @@ def test_smart_wallet_recovery_preserves_pending_and_failure_proof(
         del relayer
         return GaslessTransaction(
             state=getattr(RelayerTransactionState, state_name),
-            transaction_hash=(
-                TRANSACTION_HASH if state_name == "FAILED" else None
-            ),
+            transaction_hash=(TRANSACTION_HASH if state_name == "FAILED" else None),
             transaction_id=transaction_id,
             error_msg="proven failure" if state_name == "FAILED" else None,
         )
@@ -1910,9 +2346,10 @@ def test_smart_wallet_recovery_preserves_pending_and_failure_proof(
 
     recovered = venue.recover_redemption(
         transaction_id="transaction-0001",
-        transaction_hash=(
-            TRANSACTION_HASH if state_name == "FAILED" else ""
-        ),
+        transaction_hash=(TRANSACTION_HASH if state_name == "FAILED" else ""),
+        condition_id=CONDITION_ID,
+        adapter_address=ADAPTER,
+        neg_risk=False,
     )
 
     assert recovered.state == expected
@@ -1927,11 +2364,20 @@ def test_eoa_recovery_rejects_missing_or_contradictory_receipts() -> None:
     pending = venue.recover_redemption(
         transaction_id="",
         transaction_hash=TRANSACTION_HASH,
+        condition_id=CONDITION_ID,
+        adapter_address=ADAPTER,
+        neg_risk=False,
     )
     assert pending.state == "pending"
 
     with pytest.raises(PolymarketLiveUnknownState, match="requires"):
-        venue.recover_redemption(transaction_id="", transaction_hash="")
+        venue.recover_redemption(
+            transaction_id="",
+            transaction_hash="",
+            condition_id=CONDITION_ID,
+            adapter_address=ADAPTER,
+            neg_risk=False,
+        )
 
     for result, message in (
         ([], "receipt is invalid"),
@@ -1959,6 +2405,9 @@ def test_eoa_recovery_rejects_missing_or_contradictory_receipts() -> None:
             invalid.recover_redemption(
                 transaction_id="",
                 transaction_hash=TRANSACTION_HASH,
+                condition_id=CONDITION_ID,
+                adapter_address=ADAPTER,
+                neg_risk=False,
             )
 
     failed = OfficialPolymarketUnifiedRedemptionVenue(
@@ -1967,7 +2416,10 @@ def test_eoa_recovery_rejects_missing_or_contradictory_receipts() -> None:
         session=StaticRpcSession(
             {
                 "transactionHash": TRANSACTION_HASH,
+                "blockHash": BLOCK_HASH,
+                "blockNumber": "0x10",
                 "status": "0x0",
+                "logs": [],
             }
         ),  # type: ignore[arg-type]
     )
@@ -1975,6 +2427,9 @@ def test_eoa_recovery_rejects_missing_or_contradictory_receipts() -> None:
         failed.recover_redemption(
             transaction_id="",
             transaction_hash=TRANSACTION_HASH,
+            condition_id=CONDITION_ID,
+            adapter_address=ADAPTER,
+            neg_risk=False,
         ).state
         == "failed"
     )
@@ -2114,17 +2569,10 @@ def test_settlement_service_supervisor_survives_iteration_failures(
 def test_live_polymarket_boundary_never_imports_binance_execution(
     module_name: str,
 ) -> None:
-    source_path = (
-        Path(__file__).parents[1]
-        / "src"
-        / "simple_ai_trading"
-        / module_name
-    )
+    source_path = Path(__file__).parents[1] / "src" / "simple_ai_trading" / module_name
     tree = ast.parse(source_path.read_text(encoding="utf-8"))
     imported_modules = {
-        node.module or ""
-        for node in ast.walk(tree)
-        if isinstance(node, ast.ImportFrom)
+        node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
     }
     imported_modules.update(
         alias.name

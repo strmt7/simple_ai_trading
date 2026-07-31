@@ -109,7 +109,21 @@ flowchart LR
 - EOA settlement broadcasts once through the pinned unified SDK. Proxy, Safe,
   and Deposit Wallet settlement uses its audited one-shot relayer primitive,
   bypassing the SDK retry wrapper. Transaction ID/hash is persisted before
-  waiting; only matching Polygon or terminal relayer proof resolves ambiguity.
+  waiting; only matching Polygon or terminal relayer proof resolves submission
+  ambiguity.
+- A relayer `CONFIRMED` state or successful receipt status does not establish
+  realized proceeds. The receipt block must be at or below Polygon's
+  `finalized` block and its block hash must match the canonical block query.
+  Standard redemption requires the condition-bound Conditional Tokens
+  `PayoutRedemption`; negative-risk redemption requires the condition-bound
+  Neg Risk Adapter `PayoutRedemption`. Both must agree with exactly one pUSD
+  `Wrapped` event and one pUSD mint to the dedicated wallet. The exact
+  six-decimal payout and a canonical proof digest are stored in the hash-bound
+  ledger.
+- Ledger v3 never invents historical proceeds. Version-2 confirmed
+  redemptions migrate as payout-accounting `UNKNOWN`, block new exposure, and
+  may be upgraded only by replaying their immutable transaction hash through
+  the same finalized receipt proof. Verified payout accounting cannot change.
 - Proven transaction failures create a new numbered attempt only after a fresh
   ownership and preflight check. Unknown outcomes are never retried and block
   new exposure.
@@ -283,6 +297,9 @@ warmup and proves neither predictive nor financial edge.
 - [Real-time order updates](https://docs.polymarket.com/trading/realtime-order-updates)
 - [Wallets and authentication](https://docs.polymarket.com/trading/wallets-auth)
 - [Manage and redeem positions](https://docs.polymarket.com/trading/positions/manage#redeem-resolved-positions)
+- [CTF V2 standard collateral adapter source](https://github.com/Polymarket/ctf-exchange-v2/blob/main/src/adapters/CtfCollateralAdapter.sol)
+- [CTF V2 negative-risk collateral adapter source](https://github.com/Polymarket/ctf-exchange-v2/blob/main/src/adapters/NegRiskCtfCollateralAdapter.sol)
+- [Legacy negative-risk redemption event source](https://github.com/Polymarket/neg-risk-ctf-adapter/blob/main/src/NegRiskAdapter.sol)
 - [Current position schema](https://docs.polymarket.com/api-reference/core/get-current-positions-for-a-user)
 - [Geographic restrictions](https://docs.polymarket.com/api-reference/geoblock)
 - [Rate limits](https://docs.polymarket.com/api-reference/rate-limits)

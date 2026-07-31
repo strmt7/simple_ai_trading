@@ -19,9 +19,10 @@ import time
 from typing import ContextManager, Mapping, Protocol, Sequence
 
 
-POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION = "polymarket-live-ledger-v2"
+POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION = "polymarket-live-ledger-v3"
 POLYMARKET_LIVE_ORDER_SCHEMA_VERSION = "polymarket-live-order-v1"
 _POLYMARKET_LIVE_LEDGER_V1 = "polymarket-live-ledger-v1"
+_POLYMARKET_LIVE_LEDGER_V2 = "polymarket-live-ledger-v2"
 
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
@@ -609,12 +610,7 @@ class PolymarketCloseQuote:
             name="close minimum order size",
             positive=True,
         )
-        if (
-            price >= 1
-            or price % tick
-            or average_price >= 1
-            or average_price < price
-        ):
+        if price >= 1 or price % tick or average_price >= 1 or average_price < price:
             raise ValueError("close limit price is invalid for the venue tick")
         if quantity < minimum:
             raise ValueError("close quantity is below the venue minimum")
@@ -934,6 +930,9 @@ class PolymarketRedemptionRecord:
     failure_code: str
     created_at_ms: int
     updated_at_ms: int
+    payout_quote: Decimal = Decimal("0")
+    payout_proof_sha256: str = ""
+    payout_accounting_state: str = "UNKNOWN"
 
 
 @dataclass(frozen=True, slots=True)
@@ -1121,9 +1120,13 @@ class PolymarketLiveOrderLedger:
                 failure_code TEXT NOT NULL,
                 created_at_ms INTEGER NOT NULL,
                 updated_at_ms INTEGER NOT NULL,
+                payout_quote TEXT NOT NULL,
+                payout_proof_sha256 TEXT NOT NULL,
+                payout_accounting_state TEXT NOT NULL,
                 record_sha256 TEXT NOT NULL,
                 UNIQUE (condition_id, attempt),
-                CHECK (attempt > 0)
+                CHECK (attempt > 0),
+                CHECK (payout_accounting_state IN ('UNKNOWN', 'VERIFIED'))
             );
             CREATE UNIQUE INDEX IF NOT EXISTS
                 polymarket_live_redemptions_transaction_id
@@ -1153,9 +1156,7 @@ class PolymarketLiveOrderLedger:
                 )
             )
             if populated:
-                raise PolymarketLiveError(
-                    "populated live ledger has no schema version"
-                )
+                raise PolymarketLiveError("populated live ledger has no schema version")
             connection.execute(
                 """
                 INSERT INTO polymarket_live_metadata (key, value)
@@ -1167,6 +1168,9 @@ class PolymarketLiveOrderLedger:
         version = str(row[0])
         if version == _POLYMARKET_LIVE_LEDGER_V1:
             PolymarketLiveOrderLedger._migrate_v1_fill_accounting(connection)
+            version = _POLYMARKET_LIVE_LEDGER_V2
+        if version == _POLYMARKET_LIVE_LEDGER_V2:
+            PolymarketLiveOrderLedger._migrate_v2_redemption_accounting(connection)
             return
         if version != POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION:
             raise PolymarketLiveError("live ledger schema differs")
@@ -1193,9 +1197,7 @@ class PolymarketLiveOrderLedger:
                 PolymarketLiveOrderLedger._fill_row_payload_v1(row)
             )
             if str(row["fill_sha256"]) != expected:
-                raise PolymarketLiveError(
-                    "legacy live fill snapshot hash differs"
-                )
+                raise PolymarketLiveError("legacy live fill snapshot hash differs")
         columns = {
             str(row["name"])
             for row in connection.execute(
@@ -1243,7 +1245,7 @@ class PolymarketLiveOrderLedger:
                 WHERE key = 'schema_version' AND value = ?
                 """,
                 [
-                    POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION,
+                    _POLYMARKET_LIVE_LEDGER_V2,
                     _POLYMARKET_LIVE_LEDGER_V1,
                 ],
             )
@@ -1255,6 +1257,102 @@ class PolymarketLiveOrderLedger:
                 "SELECT * FROM polymarket_live_fills"
             ).fetchall():
                 PolymarketLiveOrderLedger._verify_fill_row(row)
+            connection.execute("COMMIT")
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+
+    @staticmethod
+    def _redemption_row_payload_v2(
+        row: Mapping[str, object],
+    ) -> dict[str, object]:
+        return {
+            "redemption_id": str(row["redemption_id"]),
+            "condition_id": str(row["condition_id"]),
+            "attempt": int(row["attempt"]),
+            "inventory_json": str(row["inventory_json"]),
+            "preflight_json": str(row["preflight_json"]),
+            "state": str(row["state"]),
+            "transaction_id": str(row["transaction_id"]),
+            "transaction_hash": str(row["transaction_hash"]),
+            "failure_code": str(row["failure_code"]),
+            "created_at_ms": int(row["created_at_ms"]),
+            "updated_at_ms": int(row["updated_at_ms"]),
+        }
+
+    @staticmethod
+    def _migrate_v2_redemption_accounting(
+        connection: sqlite3.Connection,
+    ) -> None:
+        rows = connection.execute(
+            "SELECT * FROM polymarket_live_redemptions"
+        ).fetchall()
+        for row in rows:
+            expected = _canonical_sha256(
+                PolymarketLiveOrderLedger._redemption_row_payload_v2(row)
+            )
+            if str(row["record_sha256"]) != expected:
+                raise PolymarketLiveError(
+                    "legacy live redemption snapshot hash differs"
+                )
+        columns = {
+            str(row["name"])
+            for row in connection.execute(
+                "PRAGMA table_info(polymarket_live_redemptions)"
+            ).fetchall()
+        }
+        additions = (
+            ("payout_quote", "TEXT NOT NULL DEFAULT '0'"),
+            ("payout_proof_sha256", "TEXT NOT NULL DEFAULT ''"),
+            (
+                "payout_accounting_state",
+                "TEXT NOT NULL DEFAULT 'UNKNOWN'",
+            ),
+        )
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            for name, definition in additions:
+                if name not in columns:
+                    connection.execute(
+                        "ALTER TABLE polymarket_live_redemptions "
+                        f"ADD COLUMN {name} {definition}"
+                    )
+            migrated = connection.execute(
+                "SELECT * FROM polymarket_live_redemptions"
+            ).fetchall()
+            for row in migrated:
+                connection.execute(
+                    """
+                    UPDATE polymarket_live_redemptions SET record_sha256 = ?
+                    WHERE redemption_id = ?
+                    """,
+                    [
+                        _canonical_sha256(
+                            PolymarketLiveOrderLedger._redemption_row_payload(row)
+                        ),
+                        str(row["redemption_id"]),
+                    ],
+                )
+            updated = connection.execute(
+                """
+                UPDATE polymarket_live_metadata SET value = ?
+                WHERE key = 'schema_version' AND value = ?
+                """,
+                [
+                    POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION,
+                    _POLYMARKET_LIVE_LEDGER_V2,
+                ],
+            )
+            if updated.rowcount != 1:
+                raise PolymarketLiveError(
+                    "legacy live ledger version changed during migration"
+                )
+            for row in connection.execute(
+                "SELECT * FROM polymarket_live_redemptions"
+            ).fetchall():
+                PolymarketLiveOrderLedger._verify_redemption_row(row)
+                PolymarketLiveOrderLedger._redemption_record(row)
             connection.execute("COMMIT")
         except Exception:
             if connection.in_transaction:
@@ -1420,6 +1518,9 @@ class PolymarketLiveOrderLedger:
             "failure_code": str(row["failure_code"]),
             "created_at_ms": int(row["created_at_ms"]),
             "updated_at_ms": int(row["updated_at_ms"]),
+            "payout_quote": str(row["payout_quote"]),
+            "payout_proof_sha256": str(row["payout_proof_sha256"]),
+            "payout_accounting_state": str(row["payout_accounting_state"]),
         }
 
     @classmethod
@@ -1788,14 +1889,11 @@ class PolymarketLiveOrderLedger:
                 prior_role = str(existing["role"])
                 if prior_role not in {"UNKNOWN", fill.role}:
                     raise PolymarketLiveBlocked("existing fill role differs")
-                prior_reported_fee_rate_bps = int(
-                    existing["reported_fee_rate_bps"]
-                )
+                prior_reported_fee_rate_bps = int(existing["reported_fee_rate_bps"])
                 if (
                     prior_reported_fee_rate_bps >= 0
                     and fill.reported_fee_rate_bps >= 0
-                    and prior_reported_fee_rate_bps
-                    != fill.reported_fee_rate_bps
+                    and prior_reported_fee_rate_bps != fill.reported_fee_rate_bps
                 ):
                     raise PolymarketLiveBlocked(
                         "existing reported fill fee rate differs"
@@ -1811,9 +1909,7 @@ class PolymarketLiveOrderLedger:
                     )
                 prior_accounting_state = str(existing["accounting_state"])
                 if prior_accounting_state not in {"UNKNOWN", "VERIFIED"}:
-                    raise PolymarketLiveError(
-                        "stored fill accounting state is invalid"
-                    )
+                    raise PolymarketLiveError("stored fill accounting state is invalid")
                 if prior_accounting_state == "VERIFIED":
                     prior_fee_economics = (
                         str(existing["fee_rate"]),
@@ -1841,9 +1937,7 @@ class PolymarketLiveOrderLedger:
                     )
                 payload.update(
                     {
-                        "role": (
-                            fill.role if prior_role == "UNKNOWN" else prior_role
-                        ),
+                        "role": (fill.role if prior_role == "UNKNOWN" else prior_role),
                         "reported_fee_rate_bps": (
                             fill.reported_fee_rate_bps
                             if prior_reported_fee_rate_bps < 0
@@ -2267,6 +2361,28 @@ class PolymarketLiveOrderLedger:
             or _canonical_json(preflight) != preflight_json
         ):
             raise PolymarketLiveError("redemption preflight JSON is not canonical")
+        try:
+            payout_quote = _decimal(
+                row["payout_quote"],
+                name="redemption payout",
+                nonnegative=True,
+            )
+        except ValueError as exc:
+            raise PolymarketLiveError("redemption payout is invalid") from exc
+        payout_proof_sha256 = str(row["payout_proof_sha256"]).lower()
+        payout_accounting_state = str(row["payout_accounting_state"])
+        if payout_accounting_state not in {"UNKNOWN", "VERIFIED"}:
+            raise PolymarketLiveError("redemption payout accounting state is invalid")
+        if payout_accounting_state == "UNKNOWN":
+            if payout_quote != 0 or payout_proof_sha256:
+                raise PolymarketLiveError(
+                    "unverified redemption cannot carry payout accounting"
+                )
+        elif (
+            state != "confirmed"
+            or re.fullmatch(r"[0-9a-f]{64}", payout_proof_sha256) is None
+        ):
+            raise PolymarketLiveError("verified redemption payout proof is invalid")
         return PolymarketRedemptionRecord(
             redemption_id=redemption_id,
             condition_id=condition_id,
@@ -2282,6 +2398,9 @@ class PolymarketLiveOrderLedger:
             failure_code=str(row["failure_code"]),
             created_at_ms=created_at_ms,
             updated_at_ms=updated_at_ms,
+            payout_quote=payout_quote,
+            payout_proof_sha256=payout_proof_sha256,
+            payout_accounting_state=payout_accounting_state,
         )
 
     def redemption_records(self) -> tuple[PolymarketRedemptionRecord, ...]:
@@ -2294,6 +2413,20 @@ class PolymarketLiveOrderLedger:
                 """
             ).fetchall()
             return tuple(self._redemption_record(row) for row in rows)
+        finally:
+            connection.close()
+
+    def unverified_redemption_accounting_count(self) -> int:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                """
+                SELECT COUNT(*) FROM polymarket_live_redemptions
+                WHERE state = 'confirmed'
+                  AND payout_accounting_state != 'VERIFIED'
+                """
+            ).fetchone()
+            return int(row[0]) if row is not None else 0
         finally:
             connection.close()
 
@@ -2341,8 +2474,12 @@ class PolymarketLiveOrderLedger:
                 INSERT INTO polymarket_live_redemptions (
                     redemption_id, condition_id, attempt, inventory_json,
                     preflight_json, state, transaction_id, transaction_hash, failure_code,
-                    created_at_ms, updated_at_ms, record_sha256
-                ) VALUES (?, ?, ?, ?, ?, 'prepared', '', '', '', ?, ?, '')
+                    created_at_ms, updated_at_ms, payout_quote,
+                    payout_proof_sha256, payout_accounting_state, record_sha256
+                ) VALUES (
+                    ?, ?, ?, ?, ?, 'prepared', '', '', '', ?, ?,
+                    '0', '', 'UNKNOWN', ''
+                )
                 """,
                 [
                     redemption_id,
@@ -2396,6 +2533,8 @@ class PolymarketLiveOrderLedger:
         transaction_id: str | None = None,
         transaction_hash: str | None = None,
         failure_code: str = "",
+        payout_quote: Decimal | str | None = None,
+        payout_proof_sha256: str | None = None,
     ) -> PolymarketRedemptionRecord:
         normalized_id = _identifier(redemption_id, name="redemption_id")
         expected = tuple(str(value) for value in expected_states)
@@ -2431,7 +2570,76 @@ class PolymarketLiveOrderLedger:
                     f"redemption state {row['state']} does not permit {state}"
                 )
             prior_state = str(row["state"])
-            if state not in _REDEMPTION_TRANSITIONS[prior_state]:
+            proof_requested = (
+                payout_quote is not None or payout_proof_sha256 is not None
+            )
+            if proof_requested and (
+                payout_quote is None or payout_proof_sha256 is None
+            ):
+                raise ValueError(
+                    "redemption payout and proof must be supplied together"
+                )
+            prior_accounting = str(row["payout_accounting_state"])
+            prior_payout = _decimal(
+                row["payout_quote"],
+                name="stored redemption payout",
+                nonnegative=True,
+            )
+            prior_proof = str(row["payout_proof_sha256"]).lower()
+            if proof_requested:
+                resolved_payout = _decimal(
+                    payout_quote,
+                    name="redemption payout",
+                    nonnegative=True,
+                )
+                resolved_proof = str(payout_proof_sha256).strip().lower()
+                if re.fullmatch(r"[0-9a-f]{64}", resolved_proof) is None:
+                    raise ValueError("redemption payout proof hash is invalid")
+                if state != "confirmed":
+                    raise ValueError(
+                        "redemption payout can only accompany confirmation"
+                    )
+                redeemed_inventory = self._parse_redemption_inventory(
+                    str(row["condition_id"]),
+                    str(row["inventory_json"]),
+                )
+                if resolved_payout > sum(
+                    (item.quantity for item in redeemed_inventory),
+                    start=Decimal("0"),
+                ):
+                    raise PolymarketLiveBlocked(
+                        "redemption payout exceeds reserved inventory"
+                    )
+                if prior_accounting == "VERIFIED" and (
+                    resolved_payout != prior_payout or resolved_proof != prior_proof
+                ):
+                    raise PolymarketLiveBlocked(
+                        "verified redemption payout cannot change"
+                    )
+                resolved_accounting = "VERIFIED"
+            else:
+                resolved_payout = prior_payout
+                resolved_proof = prior_proof
+                resolved_accounting = prior_accounting
+            accounting_upgrade = (
+                prior_state == "confirmed"
+                and state == "confirmed"
+                and prior_accounting == "UNKNOWN"
+                and resolved_accounting == "VERIFIED"
+            )
+            accounting_idempotent = (
+                prior_state == "confirmed"
+                and state == "confirmed"
+                and prior_accounting == "VERIFIED"
+                and resolved_accounting == "VERIFIED"
+                and resolved_payout == prior_payout
+                and resolved_proof == prior_proof
+            )
+            if (
+                state not in _REDEMPTION_TRANSITIONS[prior_state]
+                and not accounting_upgrade
+                and not accounting_idempotent
+            ):
                 raise PolymarketStateConflict(
                     f"redemption transition {prior_state} -> {state} is invalid"
                 )
@@ -2489,6 +2697,10 @@ class PolymarketLiveOrderLedger:
                 raise ValueError("submitted redemption lacks transaction identity")
             if state == "confirmed" and not resolved_hash:
                 raise ValueError("confirmed redemption lacks a transaction hash")
+            if state == "confirmed" and resolved_accounting != "VERIFIED":
+                raise ValueError(
+                    "confirmed redemption lacks verified payout accounting"
+                )
             resolved_failure = str(failure_code or "").strip()
             if len(resolved_failure) > 256:
                 raise ValueError("redemption failure code is too long")
@@ -2496,7 +2708,8 @@ class PolymarketLiveOrderLedger:
                 """
                 UPDATE polymarket_live_redemptions
                 SET state = ?, transaction_id = ?, transaction_hash = ?,
-                    failure_code = ?, updated_at_ms = ?
+                    failure_code = ?, updated_at_ms = ?, payout_quote = ?,
+                    payout_proof_sha256 = ?, payout_accounting_state = ?
                 WHERE redemption_id = ?
                 """,
                 [
@@ -2505,6 +2718,9 @@ class PolymarketLiveOrderLedger:
                     resolved_hash,
                     resolved_failure,
                     now,
+                    format(resolved_payout, "f"),
+                    resolved_proof,
+                    resolved_accounting,
                     normalized_id,
                 ],
             )
@@ -2518,6 +2734,9 @@ class PolymarketLiveOrderLedger:
                     "transaction_id": resolved_id,
                     "transaction_hash": resolved_hash,
                     "failure_code": resolved_failure,
+                    "payout_quote": format(resolved_payout, "f"),
+                    "payout_proof_sha256": resolved_proof,
+                    "payout_accounting_state": resolved_accounting,
                 },
                 observed_at_ms=now,
             )
@@ -3029,6 +3248,8 @@ class PolymarketLiveCoordinator:
             errors.append("provisional_fill_state")
         if self.ledger.unverified_fill_accounting_count():
             errors.append("unverified_fill_accounting")
+        if self.ledger.unverified_redemption_accounting_count():
+            errors.append("unverified_redemption_accounting")
         if any(
             record.state in {"prepared", "submitting", "submitted", "unknown"}
             for record in self.ledger.redemption_records()
@@ -3052,9 +3273,7 @@ class PolymarketLiveCoordinator:
         )
 
     def _owned_at_risk(self) -> tuple[Decimal, frozenset[str]]:
-        records = {
-            record.intent.intent_id: record for record in self.ledger.records()
-        }
+        records = {record.intent.intent_id: record for record in self.ledger.records()}
         total = Decimal("0")
         markets: set[str] = set()
         for lot in self.ledger.owned_lots():
@@ -3064,9 +3283,7 @@ class PolymarketLiveCoordinator:
                     "bot-owned inventory lacks its opening risk record"
                 )
             intent = parent.intent
-            fee_reserve = (
-                intent.fee_reserve_quote * lot.quantity / intent.quantity
-            )
+            fee_reserve = intent.fee_reserve_quote * lot.quantity / intent.quantity
             total += intent.limit_price * lot.quantity + fee_reserve
             markets.add(lot.market_id)
         return total, frozenset(markets)
@@ -3144,8 +3361,7 @@ class PolymarketLiveCoordinator:
                 )
             if (
                 intent.market_id not in active_markets
-                and len(active_markets)
-                >= self.risk_limits.maximum_active_markets
+                and len(active_markets) >= self.risk_limits.maximum_active_markets
             ):
                 raise PolymarketLiveBlocked(
                     "live order exceeds the active-market ceiling"
@@ -3550,12 +3766,8 @@ class PolymarketLiveCoordinator:
             current = self.ledger.record(record.intent.intent_id)
             if current.state == "cancel_pending":
                 fill_evidence = self.ledger.order_fill_evidence(order_id)
-                fill_mismatch = (
-                    fill_evidence.quantity > current.matched_quantity
-                    or (
-                        current.matched_quantity == 0
-                        and fill_evidence.has_active_fills
-                    )
+                fill_mismatch = fill_evidence.quantity > current.matched_quantity or (
+                    current.matched_quantity == 0 and fill_evidence.has_active_fills
                 )
                 if fill_mismatch:
                     next_state = "cancel_unknown"
@@ -3572,9 +3784,7 @@ class PolymarketLiveCoordinator:
                     failure_code = ""
                 else:
                     next_state = "matched_pending"
-                    failure_code = (
-                        "cancelled_order_awaiting_exact_fill_evidence"
-                    )
+                    failure_code = "cancelled_order_awaiting_exact_fill_evidence"
                     missing_evidence = True
                 try:
                     self.ledger.transition(
