@@ -14,12 +14,15 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.special import expit, logit
 
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .polymarket_round21_contract import POLYMARKET_ROUND21_CONTRACT_SHA256
 
 
 POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION = (
-    "polymarket-round21-matched-residual-development-v1"
+    "polymarket-round21-matched-residual-development-v2"
 )
 POLYMARKET_ROUND21_MODEL_SEED = 21_021
 POLYMARKET_ROUND21_MINIMUM_DEVELOPMENT_CONDITIONS = 30
@@ -27,11 +30,16 @@ POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES = 2_000
 POLYMARKET_ROUND21_DATASET_DESIGN_SHA256 = (
     "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba"
 )
+POLYMARKET_ROUND21_MODEL_DESIGN_SHA256 = (
+    "6dd59a429c1013ef737086da9fbd9a59cb93bcbb616fb7a97cc0ddf4dbb1e7be"
+)
 _ROLES = ("train", "tune_calibration", "tune_selection", "test")
 _LAYERS = ("core", "core_spot", "core_spot_usdm")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PROBABILITY_FLOOR = 1e-6
+_CONDITION_DURATION_MS = 300_000
+_TRAIN_TO_TUNE_MINIMUM_START_GAP_MS = 2_100_000
 _LOGISTIC_L2 = (0.01, 0.1, 1.0)
 _LIGHTGBM_GRID = (
     {"max_depth": 2, "num_leaves": 3, "min_data_in_leaf": 20},
@@ -149,8 +157,7 @@ class Round21DevelopmentPanel:
                     self.dataset_design_sha256,
                 )
             )
-            or self.dataset_design_sha256
-            != POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
+            or self.dataset_design_sha256 != POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
         ):
             raise ValueError("Round 21 development panel is invalid")
         core = _float_matrix(self.core_features, rows=rows)
@@ -181,13 +188,21 @@ class Round21DevelopmentPanel:
             or np.any(usdm_available & ~spot_available)
         ):
             raise ValueError("Round 21 development panel is invalid")
-        for condition, start, end in _condition_groups(condition_ids):
+        groups = _condition_groups(condition_ids)
+        for condition, start, end in groups:
             if (
                 _CONDITION_ID.fullmatch(condition) is None
                 or event_starts[start] != event_starts[end - 1]
                 or not np.all(labels64[start:end] == labels64[start])
+                or np.any(decisions[start + 1 : end] <= decisions[start : end - 1])
             ):
                 raise ValueError("Round 21 condition target identity differs")
+        group_event_starts = np.asarray(
+            [event_starts[start] for _condition, start, _end in groups],
+            dtype=np.int64,
+        )
+        if np.any(group_event_starts[1:] <= group_event_starts[:-1]):
+            raise ValueError("Round 21 condition target identity differs")
         return replace(
             self,
             role=role,
@@ -274,20 +289,27 @@ def _fit_transform(
 ) -> dict[str, list[float]]:
     lower = np.empty(matrix.shape[1], dtype=np.float64)
     upper = np.empty(matrix.shape[1], dtype=np.float64)
-    mean = np.empty(matrix.shape[1], dtype=np.float64)
+    center = np.empty(matrix.shape[1], dtype=np.float64)
     scale = np.empty(matrix.shape[1], dtype=np.float64)
     for index in range(matrix.shape[1]):
         column = np.asarray(matrix[:, index], dtype=np.float64)
         lower[index] = _weighted_quantile(column, weights, 0.001)
         upper[index] = _weighted_quantile(column, weights, 0.999)
         clipped = np.clip(column, lower[index], upper[index])
-        mean[index] = float(np.sum(weights * clipped))
-        variance = float(np.sum(weights * np.square(clipped - mean[index])))
-        scale[index] = math.sqrt(max(variance, 1e-12))
+        center[index] = _weighted_quantile(clipped, weights, 0.5)
+        first_quartile = _weighted_quantile(clipped, weights, 0.25)
+        third_quartile = _weighted_quantile(clipped, weights, 0.75)
+        robust_scale = (third_quartile - first_quartile) / 1.3489795003921634
+        if robust_scale <= 1e-12:
+            absolute_deviation = np.abs(clipped - center[index])
+            robust_scale = (
+                _weighted_quantile(absolute_deviation, weights, 0.5) * 1.482602218505602
+            )
+        scale[index] = max(robust_scale, 1.0 if lower[index] == upper[index] else 1e-6)
     return {
         "lower": lower.tolist(),
         "upper": upper.tolist(),
-        "mean": mean.tolist(),
+        "center": center.tolist(),
         "scale": scale.tolist(),
     }
 
@@ -309,15 +331,15 @@ def _transform_matrix(
     output = np.asarray(matrix, dtype=np.float32, order="C").copy()
     np.clip(output, lower, upper, out=output)
     if normalize:
-        mean = np.asarray(transform["mean"], dtype=np.float32)
+        center = np.asarray(transform["center"], dtype=np.float32)
         scale = np.asarray(transform["scale"], dtype=np.float32)
         if (
-            mean.shape != lower.shape
+            center.shape != lower.shape
             or scale.shape != lower.shape
             or np.any(scale <= 0.0)
         ):
             raise ValueError("Round 21 feature transform is invalid")
-        np.subtract(output, mean, out=output)
+        np.subtract(output, center, out=output)
         np.divide(output, scale, out=output)
     return output
 
@@ -330,7 +352,9 @@ def _fit_logistic_residual(
     transform: Mapping[str, object],
     *,
     l2: float,
-    layer: str,
+    population_layer: str,
+    feature_layer: str,
+    candidate_namespace: str,
 ) -> dict[str, object]:
     normalized = _transform_matrix(matrix, transform, normalize=True)
     offset = logit(_probability(structural_probability))
@@ -349,8 +373,7 @@ def _fit_logistic_residual(
         gradient = np.concatenate(
             (
                 np.asarray([np.sum(weighted_residual)]),
-                np.asarray(normalized.T @ weighted_residual)
-                + l2 * coefficient,
+                np.asarray(normalized.T @ weighted_residual) + l2 * coefficient,
             )
         )
         return loss, gradient
@@ -367,9 +390,11 @@ def _fit_logistic_residual(
             f"Round 21 residual logistic fit failed: {str(result.message).strip()}"
         )
     return {
-        "candidate_id": f"{layer}-logistic-l2-{format(l2, 'g')}",
+        "candidate_id": (f"{candidate_namespace}-logistic-l2-{format(l2, 'g')}"),
         "family": "logistic_residual",
-        "layer": layer,
+        "layer": population_layer,
+        "population_layer": population_layer,
+        "feature_layer": feature_layer,
         "l2": float(l2),
         "transform": dict(transform),
         "intercept": float(result.x[0]),
@@ -392,7 +417,9 @@ def _fit_lightgbm_residual(
     *,
     backend_kind: str,
     backend_device: str,
-    layer: str,
+    population_layer: str,
+    feature_layer: str,
+    candidate_namespace: str,
 ) -> dict[str, object]:
     train_values = _transform_matrix(train_matrix, transform, normalize=False)
     stop_values = _transform_matrix(stop_matrix, transform, normalize=False)
@@ -454,9 +481,11 @@ def _fit_lightgbm_residual(
         f"m{configuration['min_data_in_leaf']}"
     )
     return {
-        "candidate_id": f"{layer}-lightgbm-{label}",
+        "candidate_id": f"{candidate_namespace}-lightgbm-{label}",
         "family": "lightgbm_residual",
-        "layer": layer,
+        "layer": population_layer,
+        "population_layer": population_layer,
+        "feature_layer": feature_layer,
         "configuration": dict(configuration),
         "transform": dict(transform),
         "best_iteration": best_iteration,
@@ -511,9 +540,7 @@ def _fit_platt(
     def objective(parameters: np.ndarray) -> tuple[float, np.ndarray]:
         linear = float(parameters[0]) + float(parameters[1]) * raw
         residual = expit(linear) - target
-        loss = float(
-            np.sum(weights * (np.logaddexp(0.0, linear) - target * linear))
-        )
+        loss = float(np.sum(weights * (np.logaddexp(0.0, linear) - target * linear)))
         gradient = np.asarray(
             [
                 np.sum(weights * residual),
@@ -544,19 +571,23 @@ def _apply_platt(
     slope = float(calibration["slope"])
     if not math.isfinite(intercept) or not math.isfinite(slope) or slope < 0.0:
         raise ValueError("Round 21 calibration is invalid")
-    return _probability(
-        expit(intercept + slope * logit(_probability(predictions)))
-    )
+    return _probability(expit(intercept + slope * logit(_probability(predictions))))
 
 
-def predict_round21_candidate(
+def _predict_validated_round21_candidate(
     model: Mapping[str, object],
-    panel: Round21DevelopmentPanel,
+    selected: Round21DevelopmentPanel,
 ) -> tuple[np.ndarray, np.ndarray]:
-    selected = panel.validate()
-    layer = str(model.get("layer") or "")
-    indices = _selected_indices(selected, layer)
-    matrix = _layer_matrix(selected, layer)[indices]
+    population_layer = str(model.get("population_layer") or "")
+    feature_layer = str(model.get("feature_layer") or "")
+    if (
+        model.get("layer") != population_layer
+        or population_layer not in _LAYERS
+        or feature_layer not in _LAYERS
+    ):
+        raise ValueError("Round 21 model layer identity differs")
+    indices = _selected_indices(selected, population_layer)
+    matrix = _layer_matrix(selected, feature_layer)[indices]
     raw = _raw_prediction(
         model,
         matrix,
@@ -566,6 +597,13 @@ def predict_round21_candidate(
     if not isinstance(calibration, Mapping):
         raise ValueError("Round 21 model calibration is unavailable")
     return indices, _apply_platt(raw, calibration)
+
+
+def predict_round21_candidate(
+    model: Mapping[str, object],
+    panel: Round21DevelopmentPanel,
+) -> tuple[np.ndarray, np.ndarray]:
+    return _predict_validated_round21_candidate(model, panel.validate())
 
 
 def _condition_losses(
@@ -584,8 +622,7 @@ def _condition_losses(
         selected = probability[start:end]
         if metric == "log_loss":
             value = -np.mean(
-                target * np.log(selected)
-                + (1.0 - target) * np.log1p(-selected)
+                target * np.log(selected) + (1.0 - target) * np.log1p(-selected)
             )
         elif metric == "brier":
             value = np.mean(np.square(selected - target))
@@ -649,9 +686,7 @@ def _paired_improvement(
     if control_conditions != candidate_conditions:
         raise RuntimeError("Round 21 paired condition identities differ")
     difference = control_loss - candidate_loss
-    generator = np.random.default_rng(
-        POLYMARKET_ROUND21_MODEL_SEED + int(seed_offset)
-    )
+    generator = np.random.default_rng(POLYMARKET_ROUND21_MODEL_SEED + int(seed_offset))
     samples = np.empty(POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES, dtype=np.float64)
     for index in range(POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES):
         selected = generator.integers(0, len(difference), size=len(difference))
@@ -682,29 +717,37 @@ def _fit_layer_candidates(
     train: Round21DevelopmentPanel,
     calibration: Round21DevelopmentPanel,
     selection: Round21DevelopmentPanel,
-    layer: str,
+    population_layer: str,
+    feature_layer: str,
+    candidate_namespace: str,
     backend_parameters: Mapping[str, object],
     *,
     backend_kind: str,
     backend_device: str,
 ) -> tuple[list[dict[str, object]], np.ndarray]:
-    train_indices = _selected_indices(train, layer)
-    selection_indices = _selected_indices(selection, layer)
-    stop_indices, platt_indices = _split_calibration_indices(calibration, layer)
+    train_indices = _selected_indices(train, population_layer)
+    selection_indices = _selected_indices(selection, population_layer)
+    stop_indices, platt_indices = _split_calibration_indices(
+        calibration,
+        population_layer,
+    )
     for name, panel, indices in (
         ("train", train, train_indices),
         ("tune early-stop", calibration, stop_indices),
         ("tune calibration", calibration, platt_indices),
         ("tune selection", selection, selection_indices),
     ):
+        labels = panel.labels[indices]
         if _condition_count(panel.condition_ids[indices]) < (
             POLYMARKET_ROUND21_MINIMUM_DEVELOPMENT_CONDITIONS
-        ):
-            raise ValueError(f"Round 21 {layer} {name} has too few conditions")
-    train_matrix = _layer_matrix(train, layer)[train_indices]
-    stop_matrix = _layer_matrix(calibration, layer)[stop_indices]
-    platt_matrix = _layer_matrix(calibration, layer)[platt_indices]
-    selection_matrix = _layer_matrix(selection, layer)[selection_indices]
+        ) or set(labels.tolist()) != {0.0, 1.0}:
+            raise ValueError(
+                f"Round 21 {population_layer} {name} has too few conditions"
+            )
+    train_matrix = _layer_matrix(train, feature_layer)[train_indices]
+    stop_matrix = _layer_matrix(calibration, feature_layer)[stop_indices]
+    platt_matrix = _layer_matrix(calibration, feature_layer)[platt_indices]
+    selection_matrix = _layer_matrix(selection, feature_layer)[selection_indices]
     train_weights = _condition_weights(train.condition_ids[train_indices])
     stop_weights = _condition_weights(calibration.condition_ids[stop_indices])
     transform = _fit_transform(train_matrix, train_weights)
@@ -718,7 +761,9 @@ def _fit_layer_candidates(
                 train_weights,
                 transform,
                 l2=l2,
-                layer=layer,
+                population_layer=population_layer,
+                feature_layer=feature_layer,
+                candidate_namespace=candidate_namespace,
             )
         )
     for configuration in _LIGHTGBM_GRID:
@@ -737,7 +782,9 @@ def _fit_layer_candidates(
                 backend_parameters,
                 backend_kind=backend_kind,
                 backend_device=backend_device,
-                layer=layer,
+                population_layer=population_layer,
+                feature_layer=feature_layer,
+                candidate_namespace=candidate_namespace,
             )
         )
     records: list[dict[str, object]] = []
@@ -764,7 +811,8 @@ def _fit_layer_candidates(
             {
                 "candidate_id": model["candidate_id"],
                 "family": model["family"],
-                "layer": layer,
+                "population_layer": population_layer,
+                "feature_layer": feature_layer,
                 "model": model,
                 "selection_metrics": _metrics(
                     selection.condition_ids[selection_indices],
@@ -865,9 +913,7 @@ def _control_predictions(
                 },
             )
         )
-    prevalence = float(
-        np.sum(_condition_weights(train.condition_ids) * train.labels)
-    )
+    prevalence = float(np.sum(_condition_weights(train.condition_ids) * train.labels))
     prevalence_prediction = np.full(
         len(selection.labels),
         prevalence,
@@ -915,10 +961,14 @@ def fit_round21_development(
         train.role != "train"
         or tune_calibration.role != "tune_calibration"
         or tune_selection.role != "tune_selection"
-        or not (
-            train.event_start_ms[-1]
-            < tune_calibration.event_start_ms[0]
-            < tune_selection.event_start_ms[0]
+        or tune_calibration.event_start_ms[0] - train.event_start_ms[-1]
+        < _TRAIN_TO_TUNE_MINIMUM_START_GAP_MS
+        or tune_selection.event_start_ms[0] - tune_calibration.event_start_ms[-1]
+        < _CONDITION_DURATION_MS
+        or not set(train.condition_ids).isdisjoint(tune_calibration.condition_ids)
+        or not set(train.condition_ids).isdisjoint(tune_selection.condition_ids)
+        or not set(tune_calibration.condition_ids).isdisjoint(
+            tune_selection.condition_ids
         )
         or len(
             {
@@ -970,13 +1020,11 @@ def fit_round21_development(
         != 1
     ):
         raise ValueError("Round 21 development partition boundary differs")
-    backend_parameters, backend_kind, backend_device = (
-        lightgbm_backend_parameters(
-            compute_backend,
-            POLYMARKET_ROUND21_MODEL_SEED,
-            reproducible=True,
-            pin_opencl_device=True,
-        )
+    backend_parameters, backend_kind, backend_device = lightgbm_backend_parameters(
+        compute_backend,
+        POLYMARKET_ROUND21_MODEL_SEED,
+        reproducible=True,
+        pin_opencl_device=True,
     )
     controls = _control_predictions(
         train,
@@ -990,13 +1038,13 @@ def fit_round21_development(
         ),
     )
     layer_results: dict[str, object] = {}
-    selected_models: dict[str, Mapping[str, object]] = {}
-    core_prediction: np.ndarray | None = None
     for layer_index, layer in enumerate(_LAYERS):
         records, selection_indices = _fit_layer_candidates(
             train,
             tune_calibration,
             tune_selection,
+            layer,
+            layer,
             layer,
             backend_parameters,
             backend_kind=backend_kind,
@@ -1006,15 +1054,20 @@ def fit_round21_development(
         selected_model = selected_record["model"]
         if not isinstance(selected_model, Mapping):
             raise RuntimeError("Round 21 selected model is unavailable")
-        indices, prediction = predict_round21_candidate(
+        indices, prediction = _predict_validated_round21_candidate(
             selected_model,
             tune_selection,
         )
         if not np.array_equal(indices, selection_indices):
             raise RuntimeError("Round 21 selected prediction population differs")
-        selected_models[layer] = selected_model
+        layer_payload: dict[str, object] = {
+            "candidate_ledger": records,
+            "selected_candidate_id": selected_model["candidate_id"],
+            "selection_indices_sha256": hashlib.sha256(
+                np.asarray(selection_indices, dtype="<i8").tobytes()
+            ).hexdigest(),
+        }
         if layer == "core":
-            core_prediction = prediction
             improvements = {
                 str(control["control_id"]): {
                     metric: _paired_improvement(
@@ -1041,9 +1094,32 @@ def fit_round21_development(
                 "predictive_development_accepted": accepted,
             }
         else:
-            if core_prediction is None:
-                raise RuntimeError("Round 21 core model was not selected first")
-            matched_core = core_prediction[selection_indices]
+            matched_records, matched_indices = _fit_layer_candidates(
+                train,
+                tune_calibration,
+                tune_selection,
+                layer,
+                "core",
+                f"{layer}-matched-core",
+                backend_parameters,
+                backend_kind=backend_kind,
+                backend_device=backend_device,
+            )
+            matched_record = _select_candidate(matched_records)
+            matched_model = matched_record["model"]
+            if not isinstance(matched_model, Mapping):
+                raise RuntimeError("Round 21 matched core model is unavailable")
+            predicted_indices, matched_core = _predict_validated_round21_candidate(
+                matched_model,
+                tune_selection,
+            )
+            if not np.array_equal(
+                matched_indices, selection_indices
+            ) or not np.array_equal(
+                predicted_indices,
+                selection_indices,
+            ):
+                raise RuntimeError("Round 21 matched core population differs")
             improvements = {
                 metric: _paired_improvement(
                     tune_selection.condition_ids[selection_indices],
@@ -1060,9 +1136,7 @@ def fit_round21_development(
                 for metric in ("log_loss", "brier")
             )
             comparison = {
-                "matched_core_candidate_id": selected_models["core"][
-                    "candidate_id"
-                ],
+                "matched_core_candidate_id": matched_model["candidate_id"],
                 "matched_decision_count": len(selection_indices),
                 "matched_condition_count": _condition_count(
                     tune_selection.condition_ids[selection_indices]
@@ -1070,18 +1144,17 @@ def fit_round21_development(
                 "incremental_improvement": improvements,
                 "predictive_development_accepted": accepted,
             }
-        layer_results[layer] = {
-            "candidate_ledger": records,
-            "selected_candidate_id": selected_model["candidate_id"],
-            "selection_indices_sha256": hashlib.sha256(
-                np.asarray(selection_indices, dtype="<i8").tobytes()
-            ).hexdigest(),
-            "comparison": comparison,
-        }
+            layer_payload["matched_core_candidate_ledger"] = matched_records
+            layer_payload["matched_core_selected_candidate_id"] = matched_model[
+                "candidate_id"
+            ]
+        layer_payload["comparison"] = comparison
+        layer_results[layer] = layer_payload
     payload: dict[str, object] = {
         "schema_version": POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION,
         "contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
         "dataset_design_sha256": POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
+        "model_design_sha256": POLYMARKET_ROUND21_MODEL_DESIGN_SHA256,
         "dataset_and_partition": {
             "train": _dataset_identity(train),
             "tune_calibration": _dataset_identity(tune_calibration),
@@ -1096,10 +1169,21 @@ def fit_round21_development(
         ],
         "strongest_control_id": strongest_control["control_id"],
         "layers": layer_results,
+        "preprocessing": {
+            "fit_population": "train_only_condition_equal_weighted",
+            "winsor_quantiles": ["0.001", "0.999"],
+            "center": "weighted_median",
+            "scale": "weighted_iqr_over_1.3489795003921634",
+            "constant_feature_scale": "1",
+            "optional_missingness": "explicit_zero_with_availability_gate",
+        },
         "selection_rule": {
             "primary_metric": "condition_equal_log_loss",
             "prefer_simplest_within_one_standard_error": True,
-            "optional_layers_use_exact_matched_core_population": True,
+            "optional_layers_use_exact_matched_core_train_population": True,
+            "optional_layers_use_exact_matched_core_early_stop_population": True,
+            "optional_layers_use_exact_matched_core_calibration_population": True,
+            "optional_layers_use_exact_matched_core_selection_population": True,
         },
         "compute": {
             "requested": str(compute_backend),
@@ -1119,6 +1203,122 @@ def fit_round21_development(
     return validate_round21_development_artifact(payload)
 
 
+def _valid_transform(value: object) -> bool:
+    if not isinstance(value, Mapping) or set(value) != {
+        "lower",
+        "upper",
+        "center",
+        "scale",
+    }:
+        return False
+    try:
+        lower = np.asarray(value["lower"], dtype=np.float64)
+        upper = np.asarray(value["upper"], dtype=np.float64)
+        center = np.asarray(value["center"], dtype=np.float64)
+        scale = np.asarray(value["scale"], dtype=np.float64)
+    except (TypeError, ValueError):
+        return False
+    return bool(
+        lower.ndim == 1
+        and len(lower) > 0
+        and upper.shape == lower.shape
+        and center.shape == lower.shape
+        and scale.shape == lower.shape
+        and np.all(np.isfinite(lower))
+        and np.all(np.isfinite(upper))
+        and np.all(np.isfinite(center))
+        and np.all(np.isfinite(scale))
+        and np.all(lower <= center)
+        and np.all(center <= upper)
+        and np.all(scale > 0)
+    )
+
+
+def _valid_candidate_ledger(
+    value: object,
+    *,
+    population_layer: str,
+    feature_layer: str,
+    candidate_namespace: str,
+) -> bool:
+    if not isinstance(value, list) or len(value) != 5:
+        return False
+    candidate_ids: set[str] = set()
+    family_counts = {"logistic_residual": 0, "lightgbm_residual": 0}
+    for record in value:
+        if not isinstance(record, Mapping):
+            return False
+        model = record.get("model")
+        metrics = record.get("selection_metrics")
+        if not isinstance(model, Mapping) or not isinstance(metrics, Mapping):
+            return False
+        candidate_id = str(record.get("candidate_id") or "")
+        family = str(record.get("family") or "")
+        if (
+            not candidate_id.startswith(f"{candidate_namespace}-")
+            or candidate_id in candidate_ids
+            or family not in family_counts
+            or record.get("population_layer") != population_layer
+            or record.get("feature_layer") != feature_layer
+            or model.get("candidate_id") != candidate_id
+            or model.get("family") != family
+            or model.get("layer") != population_layer
+            or model.get("population_layer") != population_layer
+            or model.get("feature_layer") != feature_layer
+            or not _valid_transform(model.get("transform"))
+        ):
+            return False
+        try:
+            metric_values = (
+                float(metrics["condition_equal_log_loss"]),
+                float(metrics["condition_equal_brier_score"]),
+                float(metrics["log_loss_standard_error"]),
+            )
+            condition_count = int(metrics["condition_count"])
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return False
+        if (
+            not all(math.isfinite(item) and item >= 0 for item in metric_values)
+            or condition_count < POLYMARKET_ROUND21_MINIMUM_DEVELOPMENT_CONDITIONS
+        ):
+            return False
+        transform = model["transform"]
+        if not isinstance(transform, Mapping):
+            return False
+        width = len(transform["lower"])  # type: ignore[arg-type]
+        if family == "logistic_residual":
+            try:
+                coefficient = np.asarray(model["coefficient"], dtype=np.float64)
+                intercept = float(model["intercept"])
+                l2 = float(model["l2"])
+            except (KeyError, TypeError, ValueError, OverflowError):
+                return False
+            if (
+                coefficient.shape != (width,)
+                or not np.all(np.isfinite(coefficient))
+                or not math.isfinite(intercept)
+                or l2 not in _LOGISTIC_L2
+            ):
+                return False
+        else:
+            try:
+                best_iteration = int(model.get("best_iteration", 0))
+            except (TypeError, ValueError, OverflowError):
+                return False
+            if (
+                model.get("configuration") not in _LIGHTGBM_GRID
+                or not 1 <= best_iteration <= 512
+                or not str(model.get("model_string") or "")
+                or not 1 <= len(str(model.get("lightgbm_version") or "")) <= 64
+                or model.get("backend_kind") not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
+                or not str(model.get("backend_device") or "")
+            ):
+                return False
+        candidate_ids.add(candidate_id)
+        family_counts[family] += 1
+    return family_counts == {"logistic_residual": 3, "lightgbm_residual": 2}
+
+
 def validate_round21_development_artifact(
     value: Mapping[str, object],
 ) -> dict[str, object]:
@@ -1126,6 +1326,8 @@ def validate_round21_development_artifact(
     claimed = str(payload.pop("artifact_sha256", "")).strip().lower()
     layers = payload.get("layers")
     controls = payload.get("controls")
+    preprocessing = payload.get("preprocessing")
+    selection_rule = payload.get("selection_rule")
     false_fields = (
         "economic_evaluation_completed",
         "test_features_accessed",
@@ -1139,31 +1341,80 @@ def validate_round21_development_artifact(
     if (
         claimed != _canonical_sha256(payload)
         or _SHA256.fullmatch(claimed) is None
-        or payload.get("schema_version")
-        != POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION
-        or payload.get("contract_sha256")
-        != POLYMARKET_ROUND21_CONTRACT_SHA256
+        or payload.get("schema_version") != POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION
+        or payload.get("contract_sha256") != POLYMARKET_ROUND21_CONTRACT_SHA256
         or payload.get("dataset_design_sha256")
         != POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
+        or payload.get("model_design_sha256") != POLYMARKET_ROUND21_MODEL_DESIGN_SHA256
         or not isinstance(controls, list)
         or len(controls) != 5
         or not isinstance(layers, Mapping)
         or set(layers) != set(_LAYERS)
+        or preprocessing
+        != {
+            "fit_population": "train_only_condition_equal_weighted",
+            "winsor_quantiles": ["0.001", "0.999"],
+            "center": "weighted_median",
+            "scale": "weighted_iqr_over_1.3489795003921634",
+            "constant_feature_scale": "1",
+            "optional_missingness": "explicit_zero_with_availability_gate",
+        }
+        or selection_rule
+        != {
+            "primary_metric": "condition_equal_log_loss",
+            "prefer_simplest_within_one_standard_error": True,
+            "optional_layers_use_exact_matched_core_train_population": True,
+            "optional_layers_use_exact_matched_core_early_stop_population": True,
+            "optional_layers_use_exact_matched_core_calibration_population": True,
+            "optional_layers_use_exact_matched_core_selection_population": True,
+        }
         or any(
             not isinstance(layer, Mapping)
-            or not isinstance(layer.get("candidate_ledger"), list)
-            or len(layer["candidate_ledger"]) != 5
+            or not _valid_candidate_ledger(
+                layer.get("candidate_ledger"),
+                population_layer=layer_name,
+                feature_layer=layer_name,
+                candidate_namespace=layer_name,
+            )
             or layer.get("selected_candidate_id")
             not in {
                 record.get("candidate_id")
                 for record in layer["candidate_ledger"]
                 if isinstance(record, Mapping)
             }
-            or _SHA256.fullmatch(
-                str(layer.get("selection_indices_sha256") or "")
-            )
+            or _SHA256.fullmatch(str(layer.get("selection_indices_sha256") or ""))
             is None
-            for layer in layers.values()
+            or (
+                layer_name == "core"
+                and (
+                    "matched_core_candidate_ledger" in layer
+                    or "matched_core_selected_candidate_id" in layer
+                )
+            )
+            or (
+                layer_name != "core"
+                and (
+                    not _valid_candidate_ledger(
+                        layer.get("matched_core_candidate_ledger"),
+                        population_layer=layer_name,
+                        feature_layer="core",
+                        candidate_namespace=f"{layer_name}-matched-core",
+                    )
+                    or layer.get("matched_core_selected_candidate_id")
+                    not in {
+                        record.get("candidate_id")
+                        for record in layer.get(
+                            "matched_core_candidate_ledger",
+                            [],
+                        )
+                        if isinstance(record, Mapping)
+                    }
+                    or not isinstance(layer.get("comparison"), Mapping)
+                    or layer["comparison"].get("matched_core_candidate_id")
+                    != layer.get("matched_core_selected_candidate_id")
+                )
+            )
+            for layer_name, layer in layers.items()
         )
         or any(payload.get(field) is not False for field in false_fields)
     ):
@@ -1175,6 +1426,7 @@ __all__ = [
     "POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES",
     "POLYMARKET_ROUND21_DATASET_DESIGN_SHA256",
     "POLYMARKET_ROUND21_MINIMUM_DEVELOPMENT_CONDITIONS",
+    "POLYMARKET_ROUND21_MODEL_DESIGN_SHA256",
     "POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION",
     "Round21DevelopmentPanel",
     "fit_round21_development",
