@@ -1,0 +1,101 @@
+{
+  "schema_version": "polymarket-round21-executable-action-policy-v1",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba",
+    "round21_feature_policy_sha256": "a55408ebb99180cdfd21b443a924002ffd9cc1443b54ae1f882b49a38ae8ce70"
+  },
+  "protocol_basis": {
+    "protocol": "polymarket_clob_v2",
+    "python_sdk_repository": "Polymarket/py-clob-client-v2",
+    "python_sdk_commit": "215fc63a8fd6ec3a10c7edb73997c9772d8686d3",
+    "exchange_repository": "Polymarket/ctf-exchange-v2",
+    "exchange_commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+    "public_market_data_only_for_replay": true,
+    "credentials": false,
+    "account_access": false,
+    "orders_submitted": false
+  },
+  "scenarios": {
+    "construction": "full_cartesian_product",
+    "primary": {
+      "submission_latency_ms": 500,
+      "displayed_depth_fraction": "1",
+      "adverse_ticks": 0
+    },
+    "submission_latency_ms": [
+      250,
+      500,
+      1000
+    ],
+    "displayed_depth_fraction": [
+      "1",
+      "0.5",
+      "0.25"
+    ],
+    "adverse_ticks": [
+      0,
+      1,
+      2
+    ],
+    "scenario_count": 27,
+    "all_scenarios_required_for_economic_gate": true
+  },
+  "timing": {
+    "decision_plan_fixed_before_execution_book": true,
+    "effective_delay": "submission_latency_ms_plus_captured_taker_order_delay_ms_plus_captured_general_order_delay_seconds",
+    "taker_order_delay_ms_when_enabled": 250,
+    "execution_book": "first_reconstructed_gap_free_book_observed_at_or_after_effective_target",
+    "maximum_execution_observation_lateness_ms": 500,
+    "source_timestamps": "audit_only",
+    "receipt_time": "execution_authority",
+    "future_execution_book_used_for_decision": false
+  },
+  "order_and_book": {
+    "order_type": "FAK",
+    "partial_fills": true,
+    "price_improvement": true,
+    "hidden_liquidity_credit": false,
+    "queue_fill_inference": false,
+    "displayed_depth_scaling": "each_executable_level_quantity_multiplied_by_scenario_fraction",
+    "adverse_buy_price": "ask_plus_tick_size_times_adverse_ticks",
+    "adverse_sell_price": "bid_minus_tick_size_times_adverse_ticks",
+    "tick_size": "causally_effective_captured_tick",
+    "minimum_order_size": "captured_market_rule",
+    "share_quantum": "0.000001",
+    "one_active_transition_at_a_time": true
+  },
+  "fees": {
+    "platform": "captured_market_fee_rate_times_quantity_times_price_times_one_minus_price_to_captured_exponent",
+    "platform_precision": "conservative_ceiling_to_0.00001_quote",
+    "builder": "explicit_configured_nonnegative_basis_points_times_fill_notional",
+    "builder_precision": "conservative_ceiling_to_0.000001_quote",
+    "maker_rebate_credit": false,
+    "fee_free_assumption_without_captured_rule": false,
+    "fee_calculated_per_fill_level": true
+  },
+  "unknown_state": {
+    "missing_execution_book_after_submit": "maximum_bound_loss_and_block_new_exposure",
+    "connection_or_gap_unproven": "maximum_bound_loss_and_block_new_exposure",
+    "known_zero_fill_fak_cancel": "zero_execution_cash_flow",
+    "partial_fill": "filled_inventory_is_owned_and_unfilled_remainder_is_cancelled",
+    "malformed_or_wrong_market_evidence": "reject_condition_not_no_fill"
+  },
+  "independence": {
+    "execution_venue": "polymarket_only",
+    "binance_execution": false,
+    "binance_account": false,
+    "binance_risk_or_stop_dependency": false,
+    "optional_binance_values_may_only_affect_the_already_frozen_predictor": true
+  },
+  "authority": {
+    "model_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "c49e6eef0642a68810d8aefafc6a303b2ec9c8a7bbce703b8f05167baba69bd9"
+}
