@@ -272,6 +272,27 @@ class Round21ReplayCondition:
             raise ValueError("Round 21 replay condition differs")
         return self
 
+    def matched_population_sha256(self) -> str:
+        selected = self.validated()
+        return _canonical_sha256(
+            {
+                "schema_version": (
+                    POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION
+                ),
+                "market": selected.market.asdict(),
+                "market_execution_evidence_sha256": (
+                    selected.market_evidence.evidence_sha256
+                ),
+                "books": [_book_payload(value) for value in selected.books],
+                "outcome_sha256": selected.outcome.outcome_sha256,
+                "source_manifest_sha256": selected.source_manifest_sha256,
+                "reconciliation_sha256": selected.reconciliation_sha256,
+                "decision_time_ms": [
+                    value.decision_time_ms for value in selected.envelopes
+                ],
+            }
+        )
+
     def creation_book(
         self,
         *,
@@ -733,7 +754,7 @@ def _drawdown_fraction(
     return max(Decimal("0"), peak - equity) / capital
 
 
-def _daily_lower_95(
+def round21_daily_lower_95(
     values: Sequence[Decimal],
     *,
     identity: str,
@@ -807,7 +828,7 @@ def _metrics(
         maximum_drawdown_fraction=maximum_drawdown,
         realized_maximum_drawdown_fraction=realized_maximum_drawdown,
         tail_mean_worst_five_percent_quote=tail,
-        daily_mean_pnl_lower_95_quote=_daily_lower_95(
+        daily_mean_pnl_lower_95_quote=round21_daily_lower_95(
             daily,
             identity=bootstrap_identity,
         ),
@@ -1140,4 +1161,5 @@ __all__ = [
     "Round21ReplayStep",
     "replay_round21_economics",
     "replay_round21_full_matrix",
+    "round21_daily_lower_95",
 ]

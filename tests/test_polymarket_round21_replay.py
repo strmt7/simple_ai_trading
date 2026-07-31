@@ -14,6 +14,10 @@ from simple_ai_trading.polymarket import (
     PolymarketFiveMinuteMarket,
 )
 from simple_ai_trading.polymarket_round21_dataset import Round21OfficialOutcome
+from simple_ai_trading.polymarket_round21_comparison import (
+    POLYMARKET_ROUND21_MATCHED_COMPARISON_DESIGN_SHA256,
+    compare_round21_optional_full_matrix,
+)
 from simple_ai_trading.polymarket_round21_execution import (
     Round21MarketExecutionEvidence,
 )
@@ -37,6 +41,9 @@ DESIGN_PATH = (
     / "model-research"
     / "polymarket"
     / "round-021-economic-replay-design-v1.json"
+)
+COMPARISON_DESIGN_PATH = (
+    DESIGN_PATH.parent / "round-021-matched-economic-comparison-design-v1.json"
 )
 
 
@@ -89,16 +96,16 @@ def _evidence() -> Round21MarketExecutionEvidence:
     )
 
 
-def _envelope() -> Round21ProbabilityEnvelope:
+def _envelope(*, layer: str = "core") -> Round21ProbabilityEnvelope:
     return Round21ProbabilityEnvelope.create(
         condition_id=CONDITION_ID,
         decision_time_ms=DECISION_MS,
         probability_up=Decimal("0.80"),
         lower_up=Decimal("0.75"),
         upper_up=Decimal("0.85"),
-        model_layer="core",
-        source_model_artifact_sha256=_sha("model"),
-        source_probability_batch_sha256=_sha("probability-batch"),
+        model_layer=layer,
+        source_model_artifact_sha256=_sha(f"model-{layer}"),
+        source_probability_batch_sha256=_sha(f"probability-batch-{layer}"),
         feature_row_sha256=_sha("feature-row"),
     )
 
@@ -137,6 +144,7 @@ def _condition(
     resolved_up: bool = True,
     include_execution: bool = True,
     execution_ask: str = "0.50",
+    layer: str = "core",
 ) -> Round21ReplayCondition:
     books = [
         _book("Up", DECISION_MS - 50),
@@ -157,7 +165,7 @@ def _condition(
     return Round21ReplayCondition.create(
         market=_market(),
         market_evidence=_evidence(),
-        envelopes=(_envelope(),),
+        envelopes=(_envelope(layer=layer),),
         books=books,
         outcome=Round21OfficialOutcome.create(
             condition_id=CONDITION_ID,
@@ -189,6 +197,23 @@ def test_round21_economic_replay_design_is_canonical_and_independent() -> None:
     assert design["independence"]["execution_and_settlement_venue"] == "polymarket_only"
     assert design["independence"]["binance_execution"] is False
     assert not any(design["authority"].values())
+
+    comparison = json.loads(COMPARISON_DESIGN_PATH.read_text(encoding="utf-8"))
+    comparison_claimed = comparison.pop("design_sha256")
+    comparison_actual = hashlib.sha256(
+        json.dumps(
+            comparison,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    assert (
+        comparison_claimed
+        == comparison_actual
+        == POLYMARKET_ROUND21_MATCHED_COMPARISON_DESIGN_SHA256
+    )
 
 
 def test_round21_replay_settles_exact_fills_without_claiming_qualification() -> None:
@@ -267,3 +292,33 @@ def test_round21_full_matrix_contains_all_independent_profile_scenarios() -> Non
         "aggressive",
     }
     assert all(value.paper_trading_authority is False for value in matrix)
+
+
+def test_round21_optional_comparison_uses_exact_matched_polymarket_paths() -> None:
+    comparison = compare_round21_optional_full_matrix(
+        baseline_conditions=(_condition(layer="core"),),
+        challenger_conditions=(_condition(layer="core_spot"),),
+    )
+
+    assert comparison.challenger_layer == "core_spot"
+    assert len(comparison.deltas) == 81
+    assert comparison.all_replays_accepted is False
+    assert comparison.optional_layer_selected is False
+    assert all(
+        "net_pnl_delta_not_positive" in value.reasons
+        for value in comparison.deltas
+    )
+    assert comparison.live_trading_authority is False
+    with pytest.raises(
+        ValueError,
+        match="matched economic comparison differs",
+    ):
+        replace(comparison, optional_layer_selected=True).validated()
+
+    with pytest.raises(ValueError, match="matched input population differs"):
+        compare_round21_optional_full_matrix(
+            baseline_conditions=(_condition(layer="core"),),
+            challenger_conditions=(
+                _condition(layer="core_spot", execution_ask="0.51"),
+            ),
+        )
