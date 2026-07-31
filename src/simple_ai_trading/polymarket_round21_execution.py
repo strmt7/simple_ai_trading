@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from decimal import Decimal, InvalidOperation, ROUND_CEILING
+from decimal import Decimal, InvalidOperation, ROUND_CEILING, ROUND_DOWN
 import hashlib
 import json
 from pathlib import Path
@@ -121,6 +121,19 @@ def _ceil_quote(value: Decimal, quantum: Decimal) -> Decimal:
     if value == 0:
         return Decimal("0")
     return value.quantize(quantum, rounding=ROUND_CEILING)
+
+
+def _maximum_executable_price_levels(
+    *,
+    side: str,
+    limit_price: Decimal,
+    tick_size: Decimal,
+) -> int:
+    span = limit_price if side == "BUY" else Decimal("1") - limit_price
+    levels = int((span / tick_size).to_integral_value(rounding=ROUND_DOWN))
+    if levels <= 0:
+        raise ValueError("Round 21 executable price lattice is invalid")
+    return levels
 
 
 def _is_tick_aligned(value: Decimal, tick_size: Decimal) -> bool:
@@ -248,17 +261,12 @@ def validate_round21_execution_policy(
         or policy.get("schema_version")
         != POLYMARKET_ROUND21_EXECUTION_POLICY_SCHEMA_VERSION
         or policy.get("round") != 21
-        or policy.get("status")
-        != "preregistered_during_target_and_model_blind_capture"
+        or policy.get("status") != "preregistered_during_target_and_model_blind_capture"
         or parents
         != {
             "round21_contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
-            "round21_dataset_design_sha256": (
-                POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
-            ),
-            "round21_feature_policy_sha256": (
-                POLYMARKET_ROUND21_FEATURE_POLICY_SHA256
-            ),
+            "round21_dataset_design_sha256": (POLYMARKET_ROUND21_DATASET_DESIGN_SHA256),
+            "round21_feature_policy_sha256": (POLYMARKET_ROUND21_FEATURE_POLICY_SHA256),
         }
         or not isinstance(protocol, Mapping)
         or protocol.get("protocol") != "polymarket_clob_v2"
@@ -274,8 +282,7 @@ def validate_round21_execution_policy(
             "displayed_depth_fraction": "1",
             "adverse_ticks": 0,
         }
-        or scenarios.get("submission_latency_ms")
-        != list(_SUBMISSION_LATENCIES_MS)
+        or scenarios.get("submission_latency_ms") != list(_SUBMISSION_LATENCIES_MS)
         or scenarios.get("displayed_depth_fraction")
         != [format(value, "f") for value in _DISPLAYED_DEPTH_FRACTIONS]
         or scenarios.get("adverse_ticks") != list(_ADVERSE_TICKS)
@@ -341,9 +348,7 @@ def load_round21_execution_policy(path: str | Path) -> dict[str, object]:
             parse_constant=_reject_nonfinite,
         )
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise ValueError(
-            "Round 21 executable action policy is unavailable"
-        ) from exc
+        raise ValueError("Round 21 executable action policy is unavailable") from exc
     if not isinstance(value, Mapping):
         raise ValueError("Round 21 executable action policy is not an object")
     return validate_round21_execution_policy(value)
@@ -424,9 +429,7 @@ class Round21MarketExecutionEvidence:
         }
         payload = {
             "schema_version": POLYMARKET_ROUND21_EXECUTION_SCHEMA_VERSION,
-            "execution_policy_sha256": (
-                POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256
-            ),
+            "execution_policy_sha256": (POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256),
             "condition_id": condition,
             "observed_wall_ms": observed,
             "observed_monotonic_ns": monotonic,
@@ -475,11 +478,7 @@ class Round21MarketExecutionEvidence:
 
     @property
     def taker_order_delay_ms(self) -> int:
-        return (
-            POLYMARKET_TAKER_ORDER_DELAY_MS
-            if self.taker_order_delay_enabled
-            else 0
-        )
+        return POLYMARKET_TAKER_ORDER_DELAY_MS if self.taker_order_delay_enabled else 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -574,10 +573,7 @@ class Round21AggressiveOrderPlan:
             or (selected_side == "BUY" and (parent or owned_cost != 0))
             or (
                 selected_side == "SELL"
-                and (
-                    _INVENTORY_ID.fullmatch(parent) is None
-                    or owned_cost <= 0
-                )
+                and (_INVENTORY_ID.fullmatch(parent) is None or owned_cost <= 0)
             )
         ):
             raise ValueError("Round 21 aggressive order plan is invalid")
@@ -590,9 +586,7 @@ class Round21AggressiveOrderPlan:
         if target >= market.end_ms:
             raise ValueError("Round 21 aggressive order cannot execute before expiry")
         token_id = (
-            market.up_token_id
-            if selected_outcome == "Up"
-            else market.down_token_id
+            market.up_token_id if selected_outcome == "Up" else market.down_token_id
         )
         fee_model = market.fee_schedule.fee_model()
         maximum_platform_fee = fee_model(
@@ -600,13 +594,25 @@ class Round21AggressiveOrderPlan:
             selected_quantity,
             "taker",
         )
+        maximum_price_levels = _maximum_executable_price_levels(
+            side=selected_side,
+            limit_price=selected_limit,
+            tick_size=tick,
+        )
+        if maximum_platform_fee > 0:
+            maximum_platform_fee += (
+                Decimal(maximum_price_levels - 1)
+                * POLYMARKET_ROUND21_PLATFORM_FEE_QUANTUM
+            )
         maximum_builder_fee = _ceil_quote(
-            selected_quantity
-            * selected_limit
-            * builder_fee_bps
-            / Decimal("10000"),
+            selected_quantity * selected_limit * builder_fee_bps / Decimal("10000"),
             POLYMARKET_ROUND21_BUILDER_FEE_QUANTUM,
         )
+        if builder_fee_bps > 0:
+            maximum_builder_fee += (
+                Decimal(maximum_price_levels - 1)
+                * POLYMARKET_ROUND21_BUILDER_FEE_QUANTUM
+            )
         maximum_loss = (
             selected_quantity * selected_limit
             + maximum_platform_fee
@@ -655,9 +661,7 @@ class Round21AggressiveOrderPlan:
     def identity_payload(self) -> dict[str, object]:
         return {
             "schema_version": POLYMARKET_ROUND21_EXECUTION_SCHEMA_VERSION,
-            "execution_policy_sha256": (
-                POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256
-            ),
+            "execution_policy_sha256": (POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256),
             "condition_id": self.condition_id,
             "token_id": self.token_id,
             "event_end_ms": self.event_end_ms,
@@ -693,9 +697,7 @@ class Round21AggressiveOrderPlan:
             "parent_inventory_id": self.parent_inventory_id,
             "predictor_evidence_sha256": self.predictor_evidence_sha256,
             "reconciliation_sha256": self.reconciliation_sha256,
-            "market_execution_evidence_sha256": (
-                self.market_execution_evidence_sha256
-            ),
+            "market_execution_evidence_sha256": (self.market_execution_evidence_sha256),
             "binance_credentials_used": False,
             "binance_execution_connected": False,
             "trading_authority": False,
@@ -706,8 +708,7 @@ class Round21AggressiveOrderPlan:
             scenario = self.scenario.validated()
             token_valid = _TOKEN_ID.fullmatch(self.token_id) is not None
             hashes_valid = all(
-                _SHA256.fullmatch(value) is not None
-                and value != _EMPTY_SHA256
+                _SHA256.fullmatch(value) is not None and value != _EMPTY_SHA256
                 for value in (
                     self.predictor_evidence_sha256,
                     self.reconciliation_sha256,
@@ -741,9 +742,7 @@ class Round21AggressiveOrderPlan:
                 POLYMARKET_ROUND21_SHARE_QUANTUM,
             )
             or not _is_tick_aligned(self.limit_price, self.tick_size)
-            or not self.tick_size
-            <= self.limit_price
-            <= Decimal("1") - self.tick_size
+            or not self.tick_size <= self.limit_price <= Decimal("1") - self.tick_size
             or self.fee_rate < 0
             or self.fee_rate > 1
             or self.fee_exponent <= 0
@@ -817,12 +816,10 @@ def _transformed_book(
         "scenario": plan.scenario.name,
         "side": plan.side,
         "bids": [
-            [format(level.price, "f"), format(level.quantity, "f")]
-            for level in bids
+            [format(level.price, "f"), format(level.quantity, "f")] for level in bids
         ],
         "asks": [
-            [format(level.price, "f"), format(level.quantity, "f")]
-            for level in asks
+            [format(level.price, "f"), format(level.quantity, "f")] for level in asks
         ],
     }
     return replace(
@@ -855,9 +852,7 @@ class Round21AggressiveExecutionObservation:
     def identity_payload(self) -> dict[str, object]:
         return {
             "schema_version": POLYMARKET_ROUND21_EXECUTION_SCHEMA_VERSION,
-            "execution_policy_sha256": (
-                POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256
-            ),
+            "execution_policy_sha256": (POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256),
             "plan_sha256": self.plan_sha256,
             "state": self.state,
             "filled_quantity": format(self.filled_quantity, "f"),
@@ -913,8 +908,7 @@ class Round21AggressiveExecutionObservation:
                 self.total_fee_quote,
             )
             < 0
-            or self.total_fee_quote
-            != self.platform_fee_quote + self.builder_fee_quote
+            or self.total_fee_quote != self.platform_fee_quote + self.builder_fee_quote
             or type(self.blocks_new_exposure) is not bool
             or (
                 self.state == "unknown_after_submit"
@@ -927,8 +921,7 @@ class Round21AggressiveExecutionObservation:
                     or self.transformed_execution_book_sha256
                     or (
                         self.execution_book_sha256
-                        and _SHA256.fullmatch(self.execution_book_sha256)
-                        is None
+                        and _SHA256.fullmatch(self.execution_book_sha256) is None
                     )
                 )
             )
@@ -937,25 +930,16 @@ class Round21AggressiveExecutionObservation:
                 and (
                     self.blocks_new_exposure
                     or _SHA256.fullmatch(self.execution_book_sha256) is None
-                    or _SHA256.fullmatch(
-                        self.transformed_execution_book_sha256
-                    )
-                    is None
+                    or _SHA256.fullmatch(self.transformed_execution_book_sha256) is None
                 )
             )
             or (
                 self.state == "filled"
-                and (
-                    self.filled_quantity <= 0
-                    or self.unfilled_quantity != 0
-                )
+                and (self.filled_quantity <= 0 or self.unfilled_quantity != 0)
             )
             or (
                 self.state == "partial_fill"
-                and (
-                    self.filled_quantity <= 0
-                    or self.unfilled_quantity <= 0
-                )
+                and (self.filled_quantity <= 0 or self.unfilled_quantity <= 0)
             )
             or (
                 self.state == "known_no_fill"
@@ -967,8 +951,7 @@ class Round21AggressiveExecutionObservation:
                 )
             )
             or not self.reason
-            or self.observation_sha256
-            != _canonical_sha256(self.identity_payload())
+            or self.observation_sha256 != _canonical_sha256(self.identity_payload())
             or self.trading_authority
         ):
             raise ValueError("Round 21 aggressive execution observation differs")
@@ -1073,8 +1056,7 @@ def observe_round21_aggressive_execution(
         transformed,
         execution_time_ms=transformed.received_wall_ms,
         submission_latency_ms=(
-            selected.effective_execution_target_ms
-            - selected.decision_time_ms
+            selected.effective_execution_target_ms - selected.decision_time_ms
         ),
         maximum_book_age_ms=0,
         fee=combined_fee,
@@ -1130,9 +1112,7 @@ def observe_round21_aggressive_execution(
         conservative_utility_bound_quote=cash_flow,
         blocks_new_exposure=False,
         execution_book_sha256=source.source_payload_sha256,
-        transformed_execution_book_sha256=(
-            transformed.source_payload_sha256
-        ),
+        transformed_execution_book_sha256=(transformed.source_payload_sha256),
         reason=result.reason,
         observation_sha256=_EMPTY_SHA256,
     )
