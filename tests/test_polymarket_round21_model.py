@@ -12,9 +12,12 @@ import simple_ai_trading.polymarket_round21_model as model_module
 from simple_ai_trading.polymarket_round21_model import (
     POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
     POLYMARKET_ROUND21_MODEL_DESIGN_SHA256,
+    POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256,
     Round21DevelopmentPanel,
+    Round21InferencePanel,
     fit_round21_development,
     predict_round21_candidate,
+    predict_round21_probability_batch,
     validate_round21_development_artifact,
 )
 
@@ -24,6 +27,9 @@ MODEL_DESIGN_PATH = (
     / "model-research"
     / "polymarket"
     / "round-021-matched-model-design-v2.json"
+)
+PROBABILITY_ENVELOPE_DESIGN_PATH = (
+    MODEL_DESIGN_PATH.parent / "round-021-probability-envelope-design-v1.json"
 )
 
 
@@ -131,6 +137,24 @@ def test_round21_model_design_is_canonical_and_target_blind() -> None:
         "matched_core_is_refit_on_each_optional_population"
     ]
     assert not any(design["authority"].values())
+
+
+def test_round21_probability_envelope_design_makes_no_coverage_claim() -> None:
+    design = json.loads(PROBABILITY_ENVELOPE_DESIGN_PATH.read_text(encoding="utf-8"))
+    claimed = design.pop("design_sha256")
+    actual = hashlib.sha256(
+        json.dumps(
+            design,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+
+    assert claimed == actual == POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256
+    assert design["bounds"]["semantics"] == "calibrated_candidate_disagreement_hull"
+    assert design["bounds"]["formal_frequentist_coverage_claim"] is False
 
 
 def test_round21_panel_requires_explicit_zero_missingness() -> None:
@@ -289,6 +313,66 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     assert np.array_equal(indices, np.arange(len(selection.labels)))
     assert predictions.shape == selection.labels.shape
     assert np.all((predictions > 0.0) & (predictions < 1.0))
+
+    inference = Round21InferencePanel.from_development(selection)
+    assert not hasattr(inference, "labels")
+    assert inference.target_accessed is False
+    assert all(
+        not value.flags.writeable
+        for value in (
+            inference.condition_ids,
+            inference.event_start_ms,
+            inference.decision_time_ms,
+            inference.structural_probability,
+            inference.market_prior_probability,
+            inference.core_features,
+            inference.spot_features,
+            inference.usdm_features,
+            inference.spot_available,
+            inference.usdm_available,
+        )
+    )
+    inference_indices, inference_predictions = predict_round21_candidate(
+        core_record["model"],
+        inference,
+    )
+    assert np.array_equal(inference_indices, indices)
+    assert np.array_equal(inference_predictions, predictions)
+    mutated_core = inference.core_features.copy()
+    mutated_core[0, 0] += np.float32(0.01)
+    with pytest.raises(ValueError, match="inference panel is invalid"):
+        replace(inference, core_features=mutated_core).validate()
+    mutated_core.setflags(write=False)
+    with pytest.raises(ValueError, match="inference panel identity differs"):
+        replace(inference, core_features=mutated_core).validate()
+
+    core_batch = predict_round21_probability_batch(
+        artifact,
+        population_layer="core",
+        panel=inference,
+    )
+    optional_batch = predict_round21_probability_batch(
+        artifact,
+        population_layer="core_spot",
+        panel=inference,
+    )
+    assert len(core_batch.contributing_candidate_ids) == 5
+    assert len(optional_batch.contributing_candidate_ids) == 10
+    assert np.all(core_batch.lower_up <= core_batch.probability_up)
+    assert np.all(core_batch.probability_up <= core_batch.upper_up)
+    assert not core_batch.probability_up.flags.writeable
+    assert (
+        core_batch.identity_payload()["probability_envelope_design_sha256"]
+        == POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256
+    )
+    assert core_batch.row(int(core_batch.indices[0]))[0] == pytest.approx(
+        core_batch.probability_up[0]
+    )
+    with pytest.raises(ValueError, match="probability batch is invalid"):
+        replace(
+            core_batch,
+            lower_up=np.full_like(core_batch.lower_up, 1.0),
+        ).validated()
 
     changed = json.loads(json.dumps(artifact))
     changed["layers"]["core_spot"]["matched_core_candidate_ledger"][0]["model"][
