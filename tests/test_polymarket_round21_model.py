@@ -3,16 +3,27 @@ from __future__ import annotations
 from dataclasses import replace
 import hashlib
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
 
+import simple_ai_trading.polymarket_round21_model as model_module
 from simple_ai_trading.polymarket_round21_model import (
     POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
+    POLYMARKET_ROUND21_MODEL_DESIGN_SHA256,
     Round21DevelopmentPanel,
     fit_round21_development,
     predict_round21_candidate,
     validate_round21_development_artifact,
+)
+
+MODEL_DESIGN_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-021-matched-model-design-v2.json"
 )
 
 
@@ -67,9 +78,9 @@ def _panel(
         event_start_ms=event_start,
         decision_time_ms=event_start + 150_000,
         labels=labels,
-        structural_probability=(
-            0.5 + 0.02 * np.sin(condition_numbers * 0.17)
-        ).astype(np.float64),
+        structural_probability=(0.5 + 0.02 * np.sin(condition_numbers * 0.17)).astype(
+            np.float64
+        ),
         market_prior_probability=(
             0.5 + 0.015 * np.cos(condition_numbers * 0.11)
         ).astype(np.float64),
@@ -102,6 +113,26 @@ def _rehash(value: dict[str, object]) -> dict[str, object]:
     return body
 
 
+def test_round21_model_design_is_canonical_and_target_blind() -> None:
+    design = json.loads(MODEL_DESIGN_PATH.read_text(encoding="utf-8"))
+    claimed = design.pop("design_sha256")
+    actual = hashlib.sha256(
+        json.dumps(
+            design,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+
+    assert claimed == actual == POLYMARKET_ROUND21_MODEL_DESIGN_SHA256
+    assert design["optional_binance_comparison"][
+        "matched_core_is_refit_on_each_optional_population"
+    ]
+    assert not any(design["authority"].values())
+
+
 def test_round21_panel_requires_explicit_zero_missingness() -> None:
     panel = _panel("train", first_condition=0, condition_count=80)
     spot = panel.spot_features.copy()
@@ -121,6 +152,27 @@ def test_round21_panel_rejects_usdm_without_spot() -> None:
         replace(panel, usdm_available=usdm_available).validate()
 
 
+def test_round21_panel_rejects_duplicate_condition_decision_rows() -> None:
+    panel = _panel("train", first_condition=0, condition_count=80)
+    condition_ids = panel.condition_ids.copy()
+    event_start_ms = panel.event_start_ms.copy()
+    decision_time_ms = panel.decision_time_ms.copy()
+    labels = panel.labels.copy()
+    condition_ids[1] = condition_ids[0]
+    event_start_ms[1] = event_start_ms[0]
+    decision_time_ms[1] = decision_time_ms[0]
+    labels[1] = labels[0]
+
+    with pytest.raises(ValueError, match="condition target identity differs"):
+        replace(
+            panel,
+            condition_ids=condition_ids,
+            event_start_ms=event_start_ms,
+            decision_time_ms=decision_time_ms,
+            labels=labels,
+        ).validate()
+
+
 def test_round21_panel_rejects_probability_clipping_or_hash_case_drift() -> None:
     panel = _panel("train", first_condition=0, condition_count=80)
     structural = panel.structural_probability.copy()
@@ -135,7 +187,19 @@ def test_round21_panel_rejects_probability_clipping_or_hash_case_drift() -> None
         ).validate()
 
 
-def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
+def test_round21_transform_uses_weighted_median_and_iqr_not_mean_std() -> None:
+    matrix = np.asarray([[0], [1], [2], [3], [100_000]], dtype=np.float32)
+    transform = model_module._fit_transform(
+        matrix,
+        np.full(5, 0.2, dtype=np.float64),
+    )
+
+    assert transform["center"] == [2.0]
+    assert "mean" not in transform
+    assert 1.4 < transform["scale"][0] < 1.5
+
+
+def test_round21_development_requires_the_frozen_train_to_tune_purge() -> None:
     train = _panel("train", first_condition=0, condition_count=100)
     calibration = _panel(
         "tune_calibration",
@@ -148,6 +212,28 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
         condition_count=80,
     )
 
+    with pytest.raises(ValueError, match="partition boundary differs"):
+        fit_round21_development(
+            train=train,
+            tune_calibration=calibration,
+            tune_selection=selection,
+            compute_backend="cpu",
+        )
+
+
+def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
+    train = _panel("train", first_condition=0, condition_count=100)
+    calibration = _panel(
+        "tune_calibration",
+        first_condition=106,
+        condition_count=120,
+    )
+    selection = _panel(
+        "tune_selection",
+        first_condition=226,
+        condition_count=80,
+    )
+
     artifact = fit_round21_development(
         train=train,
         tune_calibration=calibration,
@@ -156,10 +242,7 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     )
 
     assert artifact["economic_evaluation_completed"] is False
-    assert (
-        artifact["dataset_design_sha256"]
-        == POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
-    )
+    assert artifact["dataset_design_sha256"] == POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
     assert artifact["test_features_accessed"] is False
     assert artifact["test_targets_accessed"] is False
     assert artifact["model_selected"] is False
@@ -168,16 +251,31 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     layers = artifact["layers"]
     assert set(layers) == {"core", "core_spot", "core_spot_usdm"}
     assert all(len(layer["candidate_ledger"]) == 5 for layer in layers.values())
+    assert all(
+        len(layers[layer]["matched_core_candidate_ledger"]) == 5
+        for layer in ("core_spot", "core_spot_usdm")
+    )
     assert layers["core_spot"]["comparison"]["matched_decision_count"] == int(
         np.count_nonzero(selection.spot_available)
     )
-    assert layers["core_spot_usdm"]["comparison"][
-        "matched_decision_count"
-    ] == int(np.count_nonzero(selection.usdm_available))
+    assert layers["core_spot_usdm"]["comparison"]["matched_decision_count"] == int(
+        np.count_nonzero(selection.usdm_available)
+    )
     assert layers["core_spot"]["comparison"]["predictive_development_accepted"]
-    assert layers["core_spot_usdm"]["comparison"][
-        "predictive_development_accepted"
-    ]
+    assert layers["core_spot_usdm"]["comparison"]["predictive_development_accepted"]
+    for layer in ("core_spot", "core_spot_usdm"):
+        matched_record = next(
+            record
+            for record in layers[layer]["matched_core_candidate_ledger"]
+            if record["candidate_id"]
+            == layers[layer]["matched_core_selected_candidate_id"]
+        )
+        assert matched_record["model"]["population_layer"] == layer
+        assert matched_record["model"]["feature_layer"] == "core"
+        assert (
+            layers[layer]["comparison"]["matched_core_candidate_id"]
+            == matched_record["candidate_id"]
+        )
 
     core_record = next(
         record
@@ -192,17 +290,24 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     assert predictions.shape == selection.labels.shape
     assert np.all((predictions > 0.0) & (predictions < 1.0))
 
+    changed = json.loads(json.dumps(artifact))
+    changed["layers"]["core_spot"]["matched_core_candidate_ledger"][0]["model"][
+        "feature_layer"
+    ] = "core_spot"
+    with pytest.raises(ValueError, match="artifact differs"):
+        validate_round21_development_artifact(_rehash(changed))
+
 
 def test_round21_artifact_rejects_rehashed_authority_drift() -> None:
     train = _panel("train", first_condition=0, condition_count=100)
     calibration = _panel(
         "tune_calibration",
-        first_condition=100,
+        first_condition=106,
         condition_count=120,
     )
     selection = _panel(
         "tune_selection",
-        first_condition=220,
+        first_condition=226,
         condition_count=80,
     )
     artifact = fit_round21_development(

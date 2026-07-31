@@ -1,0 +1,115 @@
+{
+  "schema_version": "polymarket-round21-matched-model-design-v2",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba",
+    "round21_feature_policy_sha256": "a55408ebb99180cdfd21b443a924002ffd9cc1443b54ae1f882b49a38ae8ce70"
+  },
+  "prediction": {
+    "target": "official_binary_up_resolution",
+    "base_offset": "chainlink_structural_probability_log_odds",
+    "output": "calibrated_up_probability",
+    "condition_equal_weighting": true,
+    "forced_probability_direction": false
+  },
+  "preprocessing": {
+    "fit_population": "train_only_condition_equal_weighted",
+    "winsor_quantiles": [
+      "0.001",
+      "0.999"
+    ],
+    "center": "weighted_median",
+    "scale": "weighted_iqr_over_1.3489795003921634",
+    "zero_iqr_fallback": "weighted_mad_times_1.482602218505602",
+    "constant_feature_scale": "1",
+    "optional_missingness": "explicit_zero_with_availability_gate"
+  },
+  "candidate_program": {
+    "families": {
+      "logistic_residual": {
+        "l2": [
+          "0.01",
+          "0.1",
+          "1"
+        ],
+        "intercept_penalized": false
+      },
+      "shallow_lightgbm_residual": {
+        "configurations": [
+          {
+            "max_depth": 2,
+            "num_leaves": 3,
+            "min_data_in_leaf": 20
+          },
+          {
+            "max_depth": 3,
+            "num_leaves": 7,
+            "min_data_in_leaf": 40
+          }
+        ],
+        "maximum_boost_rounds": 512,
+        "early_stopping_rounds": 40
+      }
+    },
+    "candidate_count_per_ledger": 5,
+    "bounded_before_target_access": true,
+    "deep_sequence_candidate": "deferred_until_simpler_candidate_passes_development_stability"
+  },
+  "partition": {
+    "whole_condition_groups": true,
+    "train_to_tune_purge_seconds": 1800,
+    "minimum_train_last_start_to_tune_first_start_ms": 2100000,
+    "tune_calibration_precedes_tune_selection": true,
+    "test_access": false
+  },
+  "calibration_and_selection": {
+    "tune_calibration_first_half": "lightgbm_early_stop",
+    "tune_calibration_second_half": "condition_equal_platt",
+    "tune_selection": "candidate_selection_only",
+    "primary_metric": "condition_equal_log_loss",
+    "secondary_metric": "condition_equal_brier_score",
+    "selection_rule": "simplest_candidate_within_one_standard_error_of_best_log_loss",
+    "paired_bootstrap_samples": 2000
+  },
+  "optional_binance_comparison": {
+    "layers": [
+      "core_spot",
+      "core_spot_usdm"
+    ],
+    "binance_credentials": false,
+    "binance_execution": false,
+    "same_train_population": true,
+    "same_early_stop_population": true,
+    "same_platt_calibration_population": true,
+    "same_selection_population": true,
+    "matched_core_is_refit_on_each_optional_population": true,
+    "admission": "positive_paired_lower_95_log_loss_and_brier_before_economic_evaluation"
+  },
+  "research_basis": [
+    {
+      "url": "https://arxiv.org/abs/2602.00133",
+      "use": "deterministic_event_replay_and_execution_realistic_prediction_market_evaluation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2502.15757",
+      "use": "simple_model_control_and_transaction_cost_sensitivity"
+    },
+    {
+      "url": "https://arxiv.org/abs/2506.05764",
+      "use": "feature_quality_and_simple_crypto_order_book_baselines"
+    }
+  ],
+  "authority": {
+    "capture_data_accessed": false,
+    "targets_accessed": false,
+    "model_selected": false,
+    "economic_evaluation_completed": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "6dd59a429c1013ef737086da9fbd9a59cb93bcbb616fb7a97cc0ddf4dbb1e7be"
+}
