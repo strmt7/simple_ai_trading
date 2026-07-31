@@ -104,7 +104,13 @@ class FakeClient:
         self.get_order_calls: list[str] = []
         self.get_order_error: Exception | None = None
         self.order_book: object = {}
-        self.market_info: object = {}
+        self.market_info: object = {
+            "c": MARKET_ID,
+            "t": [{"t": TOKEN_ID, "o": "Up"}],
+            "mos": 5,
+            "mts": 0.01,
+            "fd": {"r": 0.07, "e": 1, "to": True},
+        }
         self.tick_size = "0.01"
         self.neg_risk = False
 
@@ -644,6 +650,11 @@ def test_close_quote_walks_exact_displayed_bids_and_cross_checks_parameters() ->
     )
 
     assert quote.limit_price == Decimal("0.48")
+    assert quote.average_price == Decimal("0.484")
+    assert quote.fee_quote == Decimal("0.08741")
+    assert quote.net_quote == Decimal("2.33259")
+    assert quote.fee_rate == Decimal("0.07")
+    assert quote.fee_exponent == 1
     assert quote.quantity == Decimal("5")
     assert quote.tick_size == Decimal("0.01")
     assert quote.neg_risk is False

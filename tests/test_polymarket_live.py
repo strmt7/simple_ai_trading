@@ -253,6 +253,11 @@ class FakeVenue:
             token_id=token_id,
             quantity=quantity,
             limit_price=Decimal("0.49"),
+            average_price=Decimal("0.49"),
+            fee_quote=Decimal("0"),
+            net_quote=Decimal("0.49") * quantity,
+            fee_rate=Decimal("0"),
+            fee_exponent=1,
             tick_size=Decimal("0.01"),
             minimum_order_size=Decimal("0.1"),
             neg_risk=False,
@@ -347,6 +352,11 @@ def test_close_quote_value_object_rejects_invalid_evidence(
         "token_id": TOKEN_ID,
         "quantity": Decimal("5"),
         "limit_price": Decimal("0.49"),
+        "average_price": Decimal("0.49"),
+        "fee_quote": Decimal("0"),
+        "net_quote": Decimal("2.45"),
+        "fee_rate": Decimal("0"),
+        "fee_exponent": 1,
         "tick_size": Decimal("0.01"),
         "minimum_order_size": Decimal("5"),
         "neg_risk": False,
@@ -1703,6 +1713,11 @@ def test_owned_close_uses_fresh_polymarket_quote_for_exact_parent_lot(
             token_id=TOKEN_ID,
             quantity=Decimal("5"),
             limit_price=Decimal("0.47"),
+            average_price=Decimal("0.47"),
+            fee_quote=Decimal("0.08719"),
+            net_quote=Decimal("2.26281"),
+            fee_rate=Decimal("0.07"),
+            fee_exponent=1,
             tick_size=Decimal("0.01"),
             minimum_order_size=Decimal("5"),
             neg_risk=True,
@@ -1723,6 +1738,7 @@ def test_owned_close_uses_fresh_polymarket_quote_for_exact_parent_lot(
     assert close.intent.parent_intent_id == parent.intent_id
     assert close.intent.quantity == Decimal("5")
     assert close.intent.limit_price == Decimal("0.47")
+    assert close.intent.fee_reserve_quote == Decimal("0.08719")
     assert close.intent.order_type == "FAK"
     assert close.state == "live"
 
@@ -1758,6 +1774,11 @@ def test_owned_close_rejects_stale_or_mismatched_quote_without_signing(
             token_id=TOKEN_ID,
             quantity=Decimal("5"),
             limit_price=Decimal("0.47"),
+            average_price=Decimal("0.47"),
+            fee_quote=Decimal("0"),
+            net_quote=Decimal("2.35"),
+            fee_rate=Decimal("0"),
+            fee_exponent=1,
             tick_size=Decimal("0.01"),
             minimum_order_size=Decimal("5"),
             neg_risk=False,
