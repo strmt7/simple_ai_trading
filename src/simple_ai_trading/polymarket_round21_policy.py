@@ -25,10 +25,10 @@ from .polymarket_round21_execution import (
 
 
 POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SCHEMA_VERSION = (
-    "polymarket-round21-multi-action-policy-design-v2"
+    "polymarket-round21-multi-action-policy-design-v3"
 )
 POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SHA256 = (
-    "6a809b73a110d0f5acbb3d3d7efe8f533e0394a86c51d8421f3e72082b947481"
+    "4dddb3ef8f3695ec0d7820c4789ddc6b19349fa3bbe4c68d5a882a464553c769"
 )
 POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256 = (
     "f502c28b7a152e8eb6e3d49e2a23c145e2a90118040e79c17a7adfb0e543857c"
@@ -336,6 +336,11 @@ def validate_round21_multi_action_policy(
         "cooldown_gate": (
             "no_new_directional_entry_reductions_and_positive_locks_remain_available"
         ),
+        "new_directional_risk_budget": (
+            "minimum_remaining_event_daily_and_drawdown_loss_headroom_after_"
+            "current_event_worst_case_loss"
+        ),
+        "positive_daily_pnl_increases_risk_budget": False,
         "stale_disconnected_gapped_or_wrong_market_book": "abstain",
         "reconciliation_failure": "abstain",
         "cash_and_event_loss_cap": ("both_must_cover_the_maximum_buy_loss_bound"),
@@ -374,7 +379,7 @@ def validate_round21_multi_action_policy(
         or policy.get("round") != 21
         or policy.get("status") != "preregistered_during_target_and_model_blind_capture"
         or policy.get("supersedes")
-        != "polymarket-round21-multi-action-policy-design-v1"
+        != "polymarket-round21-multi-action-policy-design-v2"
         or parents
         != {
             "round21_contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
@@ -470,6 +475,46 @@ class Round21ProbabilityEnvelope:
     feature_row_sha256: str
     evidence_sha256: str
     trading_authority: bool = False
+
+    @classmethod
+    def from_probability_batch(
+        cls,
+        *,
+        batch: object,
+        panel: object,
+        panel_row_index: int,
+    ) -> Round21ProbabilityEnvelope:
+        from .polymarket_round21_model import (  # noqa: PLC0415
+            Round21InferencePanel,
+            Round21ProbabilityBatch,
+        )
+
+        if not isinstance(batch, Round21ProbabilityBatch) or not isinstance(
+            panel,
+            Round21InferencePanel,
+        ):
+            raise ValueError("Round 21 probability evidence type is invalid")
+        selected_batch = batch.validated()
+        selected_panel = panel.validate()
+        if selected_batch.feature_batch_sha256 != selected_panel.feature_batch_sha256:
+            raise ValueError("Round 21 probability evidence population differs")
+        index = int(panel_row_index)
+        probability, lower, upper = selected_batch.row(index)
+        if index < 0 or index >= len(selected_panel.condition_ids):
+            raise ValueError("Round 21 probability evidence row is unavailable")
+        return cls.create(
+            condition_id=str(selected_panel.condition_ids[index]),
+            decision_time_ms=int(selected_panel.decision_time_ms[index]),
+            probability_up=Decimal(format(probability, ".17g")),
+            lower_up=Decimal(format(lower, ".17g")),
+            upper_up=Decimal(format(upper, ".17g")),
+            model_layer=selected_batch.population_layer,
+            source_model_artifact_sha256=(
+                selected_batch.source_model_artifact_sha256
+            ),
+            source_probability_batch_sha256=selected_batch.prediction_sha256,
+            feature_row_sha256=selected_panel.row_sha256(index),
+        )
 
     @classmethod
     def create(
@@ -1347,9 +1392,30 @@ def select_round21_action(
     cooldown_gate = decision_time < cooldown
     if not (daily_gate or drawdown_gate or cooldown_gate):
         event_cap = capital * selected_profile.maximum_event_loss_capital_fraction
+        current_event_loss = selected_inventory.worst_case_loss_quote
         remaining_event_loss = max(
             Decimal("0"),
-            event_cap - selected_inventory.worst_case_loss_quote,
+            event_cap - current_event_loss,
+        )
+        remaining_daily_loss = max(
+            Decimal("0"),
+            capital * selected_profile.maximum_daily_loss_capital_fraction
+            - max(Decimal("0"), -daily_pnl)
+            - current_event_loss,
+        )
+        remaining_drawdown_loss = max(
+            Decimal("0"),
+            capital
+            * (
+                selected_profile.maximum_drawdown_capital_fraction
+                - drawdown
+            )
+            - current_event_loss,
+        )
+        remaining_directional_loss = min(
+            remaining_event_loss,
+            remaining_daily_loss,
+            remaining_drawdown_loss,
         )
         for outcome, book, action in (
             ("Up", up_book, "buy_up"),
@@ -1363,7 +1429,7 @@ def select_round21_action(
                 priority=2,
                 participation=(selected_profile.maximum_displayed_depth_participation),
                 maximum_quantity=None,
-                event_loss_budget=remaining_event_loss,
+                event_loss_budget=remaining_directional_loss,
             )
 
     if not candidates:

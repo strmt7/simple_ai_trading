@@ -503,6 +503,55 @@ class Round21InferencePanel:
             raise ValueError("Round 21 inference panel identity differs")
         return rebuilt
 
+    def row_sha256(self, panel_row_index: int) -> str:
+        selected = self.validate()
+        index = int(panel_row_index)
+        if index < 0 or index >= len(selected.condition_ids):
+            raise ValueError("Round 21 inference row is unavailable")
+        return _canonical_sha256(
+            {
+                "schema_version": POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION,
+                "feature_batch_sha256": selected.feature_batch_sha256,
+                "row_index": index,
+                "condition_id": str(selected.condition_ids[index]),
+                "event_start_ms": int(selected.event_start_ms[index]),
+                "decision_time_ms": int(selected.decision_time_ms[index]),
+                "structural_probability": format(
+                    float(selected.structural_probability[index]),
+                    ".17g",
+                ),
+                "market_prior_probability": format(
+                    float(selected.market_prior_probability[index]),
+                    ".17g",
+                ),
+                "core_features_sha256": _array_sha256(
+                    selected.core_features[index],
+                    dtype="<f4",
+                ),
+                "spot_features_sha256": _array_sha256(
+                    selected.spot_features[index],
+                    dtype="<f4",
+                ),
+                "usdm_features_sha256": _array_sha256(
+                    selected.usdm_features[index],
+                    dtype="<f4",
+                ),
+                "spot_available": bool(selected.spot_available[index]),
+                "usdm_available": bool(selected.usdm_available[index]),
+                "core_feature_names_sha256": (
+                    selected.core_feature_names_sha256
+                ),
+                "spot_feature_names_sha256": (
+                    selected.spot_feature_names_sha256
+                ),
+                "usdm_feature_names_sha256": (
+                    selected.usdm_feature_names_sha256
+                ),
+                "target_accessed": False,
+                "trading_authority": False,
+            }
+        )
+
 
 Round21FeaturePanel = Round21DevelopmentPanel | Round21InferencePanel
 
