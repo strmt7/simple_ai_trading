@@ -10,20 +10,15 @@ import json
 from pathlib import Path
 import sys
 import time
+from types import SimpleNamespace
 from typing import Mapping
 
-from .polymarket import PolymarketPublicClient
-from .polymarket_autonomous_runtime import PolymarketAutonomousSupervisor
-from .polymarket_binance_signal import BinanceBtcPublicSignalProvider
-from .polymarket_historical_shadow import PolymarketBtcFlowBuffer
-from .polymarket_historical_shadow_feed import PolymarketHistoricalShadowFeed
 from .polymarket_live import (
     PolymarketLiveBlocked,
     PolymarketLiveCoordinator,
     PolymarketLiveOrderLedger,
     PolymarketLiveRiskLimits,
 )
-from .polymarket_live_promotion import load_polymarket_live_promotion
 from .polymarket_live_runtime import (
     PolymarketAuthenticatedUserStream,
     PolymarketLiveRuntimeGuard,
@@ -40,14 +35,6 @@ from .polymarket_live_settlement import (
 from .polymarket_live_v2 import (
     OfficialPolymarketV2Venue,
     PolymarketLiveCredentials,
-)
-from .polymarket_round16_decision import (
-    PolymarketRound16PromotedDecisionProvider,
-)
-from .polymarket_round16_shadow import (
-    PolymarketRound16LiveFeatureBuilder,
-    PolymarketRound16ShadowScorer,
-    load_verified_round16_shadow_predictor,
 )
 from .polymarket_runtime_control import (
     PolymarketRuntimeControl,
@@ -402,6 +389,41 @@ def _required_autonomous_argument(value: object, *, name: str) -> str:
     return selected
 
 
+def _load_autonomous_components() -> SimpleNamespace:
+    """Load the optional model/advisory stack only for autonomous operation."""
+    from .polymarket import PolymarketPublicClient
+    from .polymarket_autonomous_runtime import PolymarketAutonomousSupervisor
+    from .polymarket_binance_signal import BinanceBtcPublicSignalProvider
+    from .polymarket_historical_shadow import PolymarketBtcFlowBuffer
+    from .polymarket_historical_shadow_feed import PolymarketHistoricalShadowFeed
+    from .polymarket_live_promotion import load_polymarket_live_promotion
+    from .polymarket_round16_decision import (
+        PolymarketRound16PromotedDecisionProvider,
+    )
+    from .polymarket_round16_shadow import (
+        PolymarketRound16LiveFeatureBuilder,
+        PolymarketRound16ShadowScorer,
+        load_verified_round16_shadow_predictor,
+    )
+
+    return SimpleNamespace(
+        BinanceBtcPublicSignalProvider=BinanceBtcPublicSignalProvider,
+        PolymarketAutonomousSupervisor=PolymarketAutonomousSupervisor,
+        PolymarketBtcFlowBuffer=PolymarketBtcFlowBuffer,
+        PolymarketHistoricalShadowFeed=PolymarketHistoricalShadowFeed,
+        PolymarketPublicClient=PolymarketPublicClient,
+        PolymarketRound16LiveFeatureBuilder=PolymarketRound16LiveFeatureBuilder,
+        PolymarketRound16PromotedDecisionProvider=(
+            PolymarketRound16PromotedDecisionProvider
+        ),
+        PolymarketRound16ShadowScorer=PolymarketRound16ShadowScorer,
+        load_polymarket_live_promotion=load_polymarket_live_promotion,
+        load_verified_round16_shadow_predictor=(
+            load_verified_round16_shadow_predictor
+        ),
+    )
+
+
 async def _autonomous(
     *,
     credentials: PolymarketLiveCredentials,
@@ -449,14 +471,15 @@ async def _autonomous(
         evaluation_envelope_sha256,
         name="evaluation-envelope-sha256",
     )
+    components = _load_autonomous_components()
     observed_at_ms = int(time.time() * 1_000)
-    promotion = load_polymarket_live_promotion(
+    promotion = components.load_polymarket_live_promotion(
         selected_promotion,
         evidence_root=selected_root,
         require_live_authority=True,
         observed_at_ms=observed_at_ms,
     )
-    predictor = load_verified_round16_shadow_predictor(
+    predictor = components.load_verified_round16_shadow_predictor(
         contract_path=selected_contract,
         pretest_path=promotion.model_artifact_path,
         evaluation_path=promotion.evaluation_report_path,
@@ -466,18 +489,18 @@ async def _autonomous(
     runtime_control = PolymarketRuntimeControl(ledger.path)
     runtime_lease = runtime_control.acquire()
     runtime_released = False
-    public_client: PolymarketPublicClient | None = None
+    public_client: object | None = None
     settlement_venue: OfficialPolymarketUnifiedRedemptionVenue | None = None
     started = time.monotonic()
     try:
-        public_client = PolymarketPublicClient()
-        flow = PolymarketBtcFlowBuffer(retention_seconds=1_200)
-        predictor_feed = PolymarketHistoricalShadowFeed(flow=flow)
-        scorer = PolymarketRound16ShadowScorer(
+        public_client = components.PolymarketPublicClient()
+        flow = components.PolymarketBtcFlowBuffer(retention_seconds=1_200)
+        predictor_feed = components.PolymarketHistoricalShadowFeed(flow=flow)
+        scorer = components.PolymarketRound16ShadowScorer(
             predictor=predictor,
-            feature_builder=PolymarketRound16LiveFeatureBuilder(flow),
+            feature_builder=components.PolymarketRound16LiveFeatureBuilder(flow),
         )
-        decision_provider = PolymarketRound16PromotedDecisionProvider(
+        decision_provider = components.PolymarketRound16PromotedDecisionProvider(
             public_client=public_client,
             scorer=scorer,
             promotion=promotion,
@@ -521,9 +544,11 @@ async def _autonomous(
             interval_seconds=max(5.0, interval),
         )
         external_signal = (
-            BinanceBtcPublicSignalProvider() if binance_bbo_safeguard else None
+            components.BinanceBtcPublicSignalProvider()
+            if binance_bbo_safeguard
+            else None
         )
-        supervisor = PolymarketAutonomousSupervisor(
+        supervisor = components.PolymarketAutonomousSupervisor(
             public_client=public_client,
             coordinator=coordinator,
             ledger=ledger,

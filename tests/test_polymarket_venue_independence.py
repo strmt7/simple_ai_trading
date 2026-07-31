@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import ast
+import os
 from pathlib import Path
+import subprocess
+import sys
+import textwrap
 
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1] / "src" / "simple_ai_trading"
@@ -193,3 +197,59 @@ def test_public_binance_advisor_has_no_execution_surface() -> None:
         "sell",
         "submit",
     }
+
+
+def test_operator_status_imports_without_optional_advisory_stack(
+    tmp_path: Path,
+) -> None:
+    blocked_modules = (
+        "simple_ai_trading.polymarket_autonomous_runtime",
+        "simple_ai_trading.polymarket_binance_signal",
+        "simple_ai_trading.polymarket_historical_shadow",
+        "simple_ai_trading.polymarket_historical_shadow_feed",
+        "simple_ai_trading.polymarket_live_promotion",
+        "simple_ai_trading.polymarket_round16_decision",
+        "simple_ai_trading.polymarket_round16_shadow",
+    )
+    code = textwrap.dedent(
+        f"""
+        import importlib.abc
+        from pathlib import Path
+        import sys
+
+        blocked = {blocked_modules!r}
+
+        class BlockOptionalStack(importlib.abc.MetaPathFinder):
+            def find_spec(self, fullname, path=None, target=None):
+                if fullname in blocked:
+                    raise ModuleNotFoundError(fullname)
+                return None
+
+        sys.meta_path.insert(0, BlockOptionalStack())
+        from simple_ai_trading import polymarket_live_cli
+
+        payload = polymarket_live_cli._local_status(
+            Path({str(tmp_path / "missing.sqlite3")!r})
+        )
+        assert payload["venue"] == "polymarket"
+        assert payload["ledger_exists"] is False
+        """
+    )
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = os.pathsep.join(
+        (
+            str(SOURCE_ROOT.parent),
+            environment.get("PYTHONPATH", ""),
+        )
+    ).rstrip(os.pathsep)
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+
+    assert result.returncode == 0, result.stderr

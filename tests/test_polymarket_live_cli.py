@@ -1256,21 +1256,15 @@ def test_autonomous_assembles_independent_promoted_runtime(
         def snapshot(self) -> PolymarketAutonomousRuntimeSnapshot:
             return snapshot
 
-    monkeypatch.setattr(
-        live_cli,
-        "load_polymarket_live_promotion",
-        lambda path, **kwargs: (
+    components = SimpleNamespace(
+        load_polymarket_live_promotion=lambda path, **kwargs: (
             promotion
             if path == "promotion.json"
             and kwargs["evidence_root"] == str(tmp_path)
             and kwargs["require_live_authority"] is True
             else pytest.fail()
         ),
-    )
-    monkeypatch.setattr(
-        live_cli,
-        "load_verified_round16_shadow_predictor",
-        lambda **kwargs: (
+        load_verified_round16_shadow_predictor=lambda **kwargs: (
             predictor
             if kwargs["pretest_path"] == model_path
             and kwargs["evaluation_path"] == evaluation_path
@@ -1278,35 +1272,26 @@ def test_autonomous_assembles_independent_promoted_runtime(
             and kwargs["expected_evaluation_envelope_sha256"] == "4" * 64
             else pytest.fail()
         ),
-    )
-    monkeypatch.setattr(live_cli, "PolymarketPublicClient", PublicClient)
-    monkeypatch.setattr(
-        live_cli,
-        "PolymarketBtcFlowBuffer",
-        lambda *, retention_seconds: (
+        PolymarketPublicClient=PublicClient,
+        PolymarketBtcFlowBuffer=lambda *, retention_seconds: (
             flow if retention_seconds == 1_200 else pytest.fail()
         ),
-    )
-    monkeypatch.setattr(live_cli, "PolymarketHistoricalShadowFeed", Feed)
-    monkeypatch.setattr(
-        live_cli,
-        "PolymarketRound16LiveFeatureBuilder",
-        lambda selected_flow: "builder" if selected_flow is flow else pytest.fail(),
-    )
-    monkeypatch.setattr(
-        live_cli,
-        "PolymarketRound16ShadowScorer",
-        lambda **kwargs: (
+        PolymarketHistoricalShadowFeed=Feed,
+        PolymarketRound16LiveFeatureBuilder=lambda selected_flow: (
+            "builder" if selected_flow is flow else pytest.fail()
+        ),
+        PolymarketRound16ShadowScorer=lambda **kwargs: (
             "scorer"
             if kwargs == {"predictor": predictor, "feature_builder": "builder"}
             else pytest.fail()
         ),
+        PolymarketRound16PromotedDecisionProvider=(
+            lambda **kwargs: "decision-provider"
+        ),
+        BinanceBtcPublicSignalProvider=lambda: pytest.fail(),
+        PolymarketAutonomousSupervisor=Supervisor,
     )
-    monkeypatch.setattr(
-        live_cli,
-        "PolymarketRound16PromotedDecisionProvider",
-        lambda **kwargs: "decision-provider",
-    )
+    monkeypatch.setattr(live_cli, "_load_autonomous_components", lambda: components)
     monkeypatch.setattr(
         live_cli,
         "PolymarketLiveRuntimeGuard",
@@ -1348,8 +1333,6 @@ def test_autonomous_assembles_independent_promoted_runtime(
             else pytest.fail()
         ),
     )
-    monkeypatch.setattr(live_cli, "PolymarketAutonomousSupervisor", Supervisor)
-
     credentials_object = SimpleNamespace()
     venue_object = SimpleNamespace()
     limits = live_cli._risk_limits("conservative")
