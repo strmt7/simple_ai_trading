@@ -244,6 +244,7 @@ class Round21FeatureSchema:
     core_names: tuple[str, ...]
     spot_names: tuple[str, ...]
     usdm_names: tuple[str, ...]
+    feature_policy_sha256: str
     schema_sha256: str
 
     @classmethod
@@ -253,13 +254,21 @@ class Round21FeatureSchema:
         core_names: Sequence[str],
         spot_names: Sequence[str],
         usdm_names: Sequence[str],
+        feature_policy_sha256: str,
     ) -> Round21FeatureSchema:
         core = _feature_names(core_names, layer="core")
         spot = _feature_names(spot_names, layer="spot")
         usdm = _feature_names(usdm_names, layer="usdm")
+        policy_sha256 = str(feature_policy_sha256 or "").strip().lower()
+        if (
+            _SHA256.fullmatch(policy_sha256) is None
+            or policy_sha256 == _EMPTY_SHA256
+        ):
+            raise ValueError("Round 21 feature policy identity is invalid")
         payload = {
             "schema_version": POLYMARKET_ROUND21_DATASET_SCHEMA_VERSION,
             "dataset_design_sha256": POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
+            "feature_policy_sha256": policy_sha256,
             "core_names": list(core),
             "spot_names": list(spot),
             "usdm_names": list(usdm),
@@ -268,6 +277,7 @@ class Round21FeatureSchema:
             core_names=core,
             spot_names=spot,
             usdm_names=usdm,
+            feature_policy_sha256=policy_sha256,
             schema_sha256=_canonical_sha256(payload),
         )
 
@@ -276,6 +286,7 @@ class Round21FeatureSchema:
             core_names=self.core_names,
             spot_names=self.spot_names,
             usdm_names=self.usdm_names,
+            feature_policy_sha256=self.feature_policy_sha256,
         )
         if self != rebuilt:
             raise ValueError("Round 21 feature schema differs")

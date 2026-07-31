@@ -39,6 +39,7 @@ def _schema() -> Round21FeatureSchema:
         core_names=("core.structural_distance", "core.up_spread"),
         spot_names=("spot.return_250ms", "spot.trade_count_250ms"),
         usdm_names=("usdm.return_250ms", "usdm.basis"),
+        feature_policy_sha256="f" * 64,
     )
 
 
@@ -146,6 +147,21 @@ def test_round21_dataset_design_rejects_rehashed_causal_or_authority_drift() -> 
     design["authority"]["paper_trading_authority"] = True
     with pytest.raises(ValueError, match="dataset design differs"):
         validate_round21_dataset_design(_rehash_design(design))
+
+
+def test_round21_feature_schema_binds_the_feature_policy() -> None:
+    schema = _schema()
+
+    assert schema.feature_policy_sha256 == "f" * 64
+    with pytest.raises(ValueError, match="feature policy identity"):
+        Round21FeatureSchema.create(
+            core_names=schema.core_names,
+            spot_names=schema.spot_names,
+            usdm_names=schema.usdm_names,
+            feature_policy_sha256=hashlib.sha256(b"").hexdigest(),
+        )
+    with pytest.raises(ValueError, match="feature schema differs"):
+        replace(schema, feature_policy_sha256="e" * 64).validated()
 
 
 def test_round21_partition_assigns_purges_and_keeps_test_sealed() -> None:
