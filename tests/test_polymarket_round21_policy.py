@@ -39,7 +39,7 @@ POLICY_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-021-multi-action-policy-design-v1.json"
+    / "round-021-multi-action-policy-design-v2.json"
 )
 
 
@@ -140,6 +140,7 @@ def _envelope(
         source_model_artifact_sha256=_digest(
             f"model-{probability}-{lower}-{upper}-{layer}"
         ),
+        source_probability_batch_sha256=_digest("probability-batch"),
         feature_row_sha256=_digest("causal-feature-row"),
     )
 
@@ -398,6 +399,11 @@ def test_round21_decision_hash_rejects_action_or_parent_drift() -> None:
         replace(decision, action="buy_down").validated()
     with pytest.raises(ValueError, match="probability envelope differs"):
         replace(_envelope(), lower_up=Decimal("0.70")).validated()
+    with pytest.raises(ValueError, match="probability envelope differs"):
+        replace(
+            _envelope(),
+            source_probability_batch_sha256=_digest("other-probability-batch"),
+        ).validated()
     with pytest.raises(ValueError, match="aggressive order plan differs"):
         replace(
             decision.plan,

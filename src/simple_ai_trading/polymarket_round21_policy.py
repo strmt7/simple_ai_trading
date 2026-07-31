@@ -25,10 +25,13 @@ from .polymarket_round21_execution import (
 
 
 POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SCHEMA_VERSION = (
-    "polymarket-round21-multi-action-policy-design-v1"
+    "polymarket-round21-multi-action-policy-design-v2"
 )
 POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SHA256 = (
-    "2276ddfce8e5efac809ecf5c0d821eb0cc1470f3c3e287e3393486b15fba7b64"
+    "6a809b73a110d0f5acbb3d3d7efe8f533e0394a86c51d8421f3e72082b947481"
+)
+POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256 = (
+    "f502c28b7a152e8eb6e3d49e2a23c145e2a90118040e79c17a7adfb0e543857c"
 )
 POLYMARKET_ROUND21_ACTION_DECISION_SCHEMA_VERSION = (
     "polymarket-round21-multi-action-decision-v1"
@@ -270,8 +273,8 @@ def validate_round21_multi_action_policy(
         "cadence_ms": 250,
         "maximum_creation_book_age_ms": 500,
         "probability_input": (
-            "condition_and_decision_time_bound_hash_bound_calibrated_point_"
-            "lower_and_upper_up_probability"
+            "condition_decision_model_artifact_feature_row_and_probability_batch_"
+            "bound_calibrated_point_lower_and_upper_up_probability"
         ),
         "probability_range": "inclusive_zero_to_one",
         "minimum_edge_per_share": "immutable_development_selected_parameter",
@@ -354,6 +357,7 @@ def validate_round21_multi_action_policy(
             "schema_version",
             "round",
             "status",
+            "supersedes",
             "parents",
             "decision",
             "actions",
@@ -369,11 +373,16 @@ def validate_round21_multi_action_policy(
         != POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SCHEMA_VERSION
         or policy.get("round") != 21
         or policy.get("status") != "preregistered_during_target_and_model_blind_capture"
+        or policy.get("supersedes")
+        != "polymarket-round21-multi-action-policy-design-v1"
         or parents
         != {
             "round21_contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
             "round21_execution_policy_sha256": (
                 POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256
+            ),
+            "round21_probability_envelope_design_sha256": (
+                POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256
             ),
         }
         or decision != expected_decision
@@ -457,6 +466,7 @@ class Round21ProbabilityEnvelope:
     upper_up: Decimal
     model_layer: str
     source_model_artifact_sha256: str
+    source_probability_batch_sha256: str
     feature_row_sha256: str
     evidence_sha256: str
     trading_authority: bool = False
@@ -472,6 +482,7 @@ class Round21ProbabilityEnvelope:
         upper_up: Decimal,
         model_layer: str,
         source_model_artifact_sha256: str,
+        source_probability_batch_sha256: str,
         feature_row_sha256: str,
     ) -> Round21ProbabilityEnvelope:
         condition = str(condition_id or "").strip().lower()
@@ -483,6 +494,10 @@ class Round21ProbabilityEnvelope:
         model_sha = _digest(
             source_model_artifact_sha256,
             name="source model artifact",
+        )
+        probability_batch_sha = _digest(
+            source_probability_batch_sha256,
+            name="source probability batch",
         )
         row_sha = _digest(feature_row_sha256, name="causal feature row")
         if (
@@ -504,6 +519,7 @@ class Round21ProbabilityEnvelope:
             "upper_up": format(upper, "f"),
             "model_layer": layer,
             "source_model_artifact_sha256": model_sha,
+            "source_probability_batch_sha256": probability_batch_sha,
             "feature_row_sha256": row_sha,
             "trading_authority": False,
         }
@@ -515,6 +531,7 @@ class Round21ProbabilityEnvelope:
             upper_up=upper,
             model_layer=layer,
             source_model_artifact_sha256=model_sha,
+            source_probability_batch_sha256=probability_batch_sha,
             feature_row_sha256=row_sha,
             evidence_sha256=_canonical_sha256(payload),
         )
@@ -528,6 +545,7 @@ class Round21ProbabilityEnvelope:
             upper_up=self.upper_up,
             model_layer=self.model_layer,
             source_model_artifact_sha256=self.source_model_artifact_sha256,
+            source_probability_batch_sha256=self.source_probability_batch_sha256,
             feature_row_sha256=self.feature_row_sha256,
         )
         if self != rebuilt or self.trading_authority:
@@ -1393,6 +1411,7 @@ __all__ = [
     "POLYMARKET_ROUND21_MAXIMUM_CREATION_BOOK_AGE_MS",
     "POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SHA256",
+    "POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256",
     "POLYMARKET_ROUND21_RISK_PROFILES",
     "Round21ActionDecision",
     "Round21BotInventory",
