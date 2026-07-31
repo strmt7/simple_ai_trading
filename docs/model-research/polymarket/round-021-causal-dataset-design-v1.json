@@ -1,0 +1,133 @@
+{
+  "schema_version": "polymarket-round21-causal-dataset-design-v1",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_sidecar_design_sha256": "c802b13e169f868c7a37619669cdc957862a1cb58c6d3299c0aae63ff0d86d4a",
+    "round20_campaign_plan_sha256": "2c1d87577de566bd4934c9678bcbded5bf156b671a413b83fa6d463372db1d71"
+  },
+  "partition": {
+    "campaign_duration_ms": 2592000000,
+    "condition_duration_ms": 300000,
+    "decision_cadence_ms": 250,
+    "assignment_key": "condition_event_start_ms_relative_to_audited_campaign_start",
+    "whole_condition_assignment": true,
+    "intervals": [
+      {
+        "role": "train",
+        "start_offset_ms": 0,
+        "end_offset_ms": 1555200000
+      },
+      {
+        "role": "purge_train_to_tune",
+        "start_offset_ms": 1555200000,
+        "end_offset_ms": 1557000000
+      },
+      {
+        "role": "tune_calibration",
+        "start_offset_ms": 1557000000,
+        "end_offset_ms": 1771200000
+      },
+      {
+        "role": "tune_selection",
+        "start_offset_ms": 1771200000,
+        "end_offset_ms": 1987200000
+      },
+      {
+        "role": "purge_tune_to_test",
+        "start_offset_ms": 1987200000,
+        "end_offset_ms": 1989000000
+      },
+      {
+        "role": "test",
+        "start_offset_ms": 1989000000,
+        "end_offset_ms": 2592000000
+      }
+    ],
+    "calendar_windows": {
+      "train_days": 18,
+      "tune_days": 5,
+      "test_days": 7
+    },
+    "purge_seconds_between_calendar_roles": 1800,
+    "test_role_is_sealed": true,
+    "development_builder_may_access_test_features": false,
+    "development_builder_may_access_test_targets": false
+  },
+  "feature_rows": {
+    "identity": [
+      "condition_id",
+      "event_start_ms",
+      "decision_time_ms"
+    ],
+    "maximum_lookback_ms": 120000,
+    "windows_ms": [
+      250,
+      1000,
+      5000,
+      15000,
+      30000,
+      60000,
+      120000
+    ],
+    "core_required": true,
+    "optional_spot": true,
+    "optional_usdm_requires_spot": true,
+    "missing_optional_values": "exact_zero_vector_plus_false_availability",
+    "forward_or_backward_fill": false,
+    "cross_gap_carry": false,
+    "source_timestamp_use": "audit_only",
+    "inference_clock": "local_utc_receipt_time",
+    "maximum_source_receipt_ms": "less_than_or_equal_to_decision_time_ms",
+    "future_receipts": "rejected",
+    "future_books": "rejected",
+    "future_reference_prices": "rejected",
+    "outcomes_or_resolution_in_features": "rejected",
+    "fees_fills_orders_or_pnl_in_features": "rejected"
+  },
+  "join": {
+    "core_population": "all_core_eligible_decision_rows_in_admitted_conditions",
+    "key": [
+      "condition_id",
+      "decision_time_ms"
+    ],
+    "optional_join": "exact_key_and_causally_available_receipts_only",
+    "optional_rows_may_expand_core_population": false,
+    "optional_rows_may_change_condition_role": false,
+    "optional_rows_may_change_core_admission": false,
+    "duplicate_keys": "rejected",
+    "unmatched_optional_rows": "rejected",
+    "sort_order": [
+      "event_start_ms",
+      "decision_time_ms"
+    ]
+  },
+  "targets": {
+    "one_official_resolution_per_condition": true,
+    "resolution_must_be_observed_after_event_end": true,
+    "condition_and_event_start_must_match_feature_identity": true,
+    "target_source_and_payload_sha256_required": true,
+    "condition_equal_weighting": true,
+    "test_target_access_before_one_use_unlock": false
+  },
+  "artifacts": {
+    "canonical_json": true,
+    "feature_name_hashes": true,
+    "row_value_hashes": true,
+    "source_chain_hashes": true,
+    "partition_policy_hash": true,
+    "dataset_hash": true,
+    "target_manifest_hash": true,
+    "hand_edited_numeric_result_authority": false
+  },
+  "authority": {
+    "model_data_eligible": false,
+    "model_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba"
+}
