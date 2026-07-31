@@ -44,6 +44,17 @@ def _digest(value: str) -> str:
     return hashlib.sha256(value.encode("ascii")).hexdigest()
 
 
+def test_round21_price_lattice_count_always_floors_partial_ticks() -> None:
+    assert (
+        execution_module._maximum_executable_price_levels(
+            side="SELL",
+            limit_price=Decimal("0.48"),
+            tick_size=Decimal("0.03"),
+        )
+        == 17
+    )
+
+
 def _market() -> PolymarketFiveMinuteMarket:
     return PolymarketFiveMinuteMarket(
         asset="BTC",
@@ -140,12 +151,10 @@ def _book(
         market_id=CONDITION_ID,
         asset_id=plan.token_id,
         bids=tuple(
-            BookLevel(Decimal(price), Decimal(quantity))
-            for price, quantity in bids
+            BookLevel(Decimal(price), Decimal(quantity)) for price, quantity in bids
         ),
         asks=tuple(
-            BookLevel(Decimal(price), Decimal(quantity))
-            for price, quantity in asks
+            BookLevel(Decimal(price), Decimal(quantity)) for price, quantity in asks
         ),
         source_time_ms=received - 25,
         received_wall_ms=received,
@@ -202,7 +211,7 @@ def test_round21_plan_adds_captured_venue_and_general_delay() -> None:
     )
 
     assert plan.effective_execution_target_ms == DECISION_MS + 1_500
-    assert plan.maximum_loss_quote == Decimal("5.680500")
+    assert plan.maximum_loss_quote == Decimal("5.681094")
     assert plan.identity_payload()["binance_execution_connected"] is False
     assert plan.trading_authority is False
 
@@ -220,8 +229,24 @@ def test_round21_full_fill_reconciles_per_level_platform_and_builder_fees() -> N
     assert observation.builder_fee_quote == Decimal("0.005040")
     assert observation.total_fee_quote == Decimal("0.180020")
     assert observation.execution_cash_flow_quote == Decimal("-5.220020")
+    assert -observation.execution_cash_flow_quote <= plan.maximum_loss_quote
     assert observation.blocks_new_exposure is False
     assert observation.trading_authority is False
+
+
+def test_round21_maximum_loss_covers_fee_rounding_at_every_price_level() -> None:
+    plan = _plan(limit_price="0.50")
+    asks = tuple((format(Decimal(index) / 100, "f"), "0.2") for index in range(1, 51))
+
+    observation = observe_round21_aggressive_execution(
+        plan,
+        _book(plan, bids=(), asks=asks),
+    )
+
+    assert observation.filled_quantity == plan.quantity
+    assert observation.platform_fee_quote > 0
+    assert observation.builder_fee_quote > 0
+    assert -observation.execution_cash_flow_quote <= plan.maximum_loss_quote
 
 
 def test_round21_depth_and_adverse_price_stress_produce_real_partial_fak() -> None:
@@ -276,10 +301,13 @@ def test_round21_missing_or_gapped_execution_evidence_blocks_new_exposure() -> N
         )
         assert observation.blocks_new_exposure is True
     assert missing.execution_book_sha256 == ""
-    assert gapped.execution_book_sha256 == _book(
-        plan,
-        gap_free=False,
-    ).source_payload_sha256
+    assert (
+        gapped.execution_book_sha256
+        == _book(
+            plan,
+            gap_free=False,
+        ).source_payload_sha256
+    )
 
 
 def test_round21_wrong_time_market_or_tampered_plan_is_not_a_no_fill() -> None:
