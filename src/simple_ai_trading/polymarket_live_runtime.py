@@ -243,6 +243,11 @@ class PolymarketUserStreamConsumer:
         ):
             self.runtime_guard.note_hard_fault("owned_order_stream_identity_mismatch")
             return
+        if matched_quantity < record.matched_quantity:
+            self.runtime_guard.note_hard_fault(
+                "owned_order_stream_matched_quantity_regressed"
+            )
+            return
         event_type = str(payload.get("type") or "").strip().upper()
         if record.state not in {
             "prepared",
@@ -256,7 +261,26 @@ class PolymarketUserStreamConsumer:
         }:
             return
         if event_type == "CANCELLATION":
-            next_state = "cancelled"
+            fill_evidence = self.ledger.order_fill_evidence(order_id)
+            if fill_evidence.quantity > matched_quantity:
+                self.runtime_guard.note_hard_fault(
+                    "owned_order_stream_fill_quantity_mismatch"
+                )
+                return
+            if matched_quantity == 0:
+                if fill_evidence.has_active_fills:
+                    self.runtime_guard.note_hard_fault(
+                        "owned_order_stream_fill_quantity_mismatch"
+                    )
+                    return
+                next_state = "cancelled"
+            elif (
+                fill_evidence.quantity == matched_quantity
+                and fill_evidence.all_active_fills_confirmed
+            ):
+                next_state = "filled"
+            else:
+                next_state = "matched_pending"
         elif event_type in {"PLACEMENT", "UPDATE"}:
             next_state = "partial" if matched_quantity > 0 else "live"
         else:

@@ -1963,6 +1963,112 @@ def test_user_stream_applies_only_exact_owned_order_and_fill_events(
     assert guard.snapshot().hard_faults == ()
 
 
+def test_user_stream_cancellation_with_unresolved_match_remains_blocking(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "matched-cancel.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    guard = PolymarketLiveRuntimeGuard()
+    consumer = PolymarketUserStreamConsumer(ledger, guard)
+    cancellation = {
+        "event_type": "order",
+        "type": "CANCELLATION",
+        "id": prepared.expected_order_id,
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "side": "BUY",
+        "original_size": "1",
+        "size_matched": "0.25",
+        "timestamp": str(int(time.time())),
+    }
+
+    assert consumer.handle(json.dumps(cancellation)) == 1
+
+    record = ledger.record(intent.intent_id)
+    assert record.state == "matched_pending"
+    assert record.blocks_new_exposure is True
+    assert record.matched_quantity == Decimal("0.25")
+    assert guard.snapshot().hard_faults == ()
+
+
+def test_user_stream_cancellation_closes_only_after_exact_confirmed_fill(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "confirmed-cancel.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    ledger.record_fill(
+        _fill(
+            intent,
+            prepared.expected_order_id,
+            quantity="0.25",
+            status="CONFIRMED",
+        )
+    )
+    guard = PolymarketLiveRuntimeGuard()
+    consumer = PolymarketUserStreamConsumer(ledger, guard)
+    cancellation = {
+        "event_type": "order",
+        "type": "CANCELLATION",
+        "id": prepared.expected_order_id,
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "side": "BUY",
+        "original_size": "1",
+        "size_matched": "0.25",
+        "timestamp": str(int(time.time())),
+    }
+
+    assert consumer.handle(json.dumps(cancellation)) == 1
+
+    record = ledger.record(intent.intent_id)
+    assert record.state == "filled"
+    assert record.matched_quantity == Decimal("0.25")
+    assert guard.snapshot().hard_faults == ()
+
+
+def test_user_stream_never_regresses_owned_matched_quantity(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "regressed-match.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    ledger.transition(
+        intent.intent_id,
+        expected_states=("live",),
+        state="partial",
+        observed_at_ms=NOW_MS + 2,
+        remote_status="UPDATE",
+        matched_quantity=Decimal("0.50"),
+    )
+    guard = PolymarketLiveRuntimeGuard()
+    consumer = PolymarketUserStreamConsumer(ledger, guard)
+    regressed = {
+        "event_type": "order",
+        "type": "UPDATE",
+        "id": prepared.expected_order_id,
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "side": "BUY",
+        "original_size": "1",
+        "size_matched": "0.25",
+        "timestamp": str(int(time.time())),
+    }
+
+    assert consumer.handle(json.dumps(regressed)) == 1
+
+    record = ledger.record(intent.intent_id)
+    assert record.state == "partial"
+    assert record.matched_quantity == Decimal("0.50")
+    assert guard.snapshot().hard_faults == (
+        "owned_order_stream_matched_quantity_regressed",
+    )
+
+
 def test_foreign_user_stream_event_latches_without_touching_ledger(
     tmp_path: Path,
 ) -> None:
