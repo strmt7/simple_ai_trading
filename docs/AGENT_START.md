@@ -32,7 +32,9 @@ agents to canonical evidence without replacing that evidence.
 - Historical labels, future books, resolutions, fills, and PnL must never enter
   a live inference payload. Unknown order or redemption state blocks new
   exposure. Polymarket settlement never auto-deploys wallets or creates token
-  approvals.
+  approvals. A successful redemption transaction is not realized payout
+  evidence: the canonical finalized Polygon receipt must bind the condition,
+  adapter, dedicated wallet, pUSD wrap, mint, and one exact payout amount.
 - Secrets must never enter prompts, logs, artifacts, tests, commits, or docs.
 
 ## Task routing

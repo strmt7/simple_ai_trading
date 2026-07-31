@@ -218,6 +218,9 @@ def _local_status(path: Path) -> dict[str, object]:
         "unverified_fill_accounting_count": (
             ledger.unverified_fill_accounting_count()
         ),
+        "unverified_redemption_accounting_count": (
+            ledger.unverified_redemption_accounting_count()
+        ),
         "unresolved_redemption_count": len(unresolved),
         "runtime_control": runtime_control.asdict(),
         "can_open": False,

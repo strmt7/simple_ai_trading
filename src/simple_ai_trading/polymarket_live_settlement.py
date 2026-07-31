@@ -5,8 +5,10 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+import hashlib
 from importlib.metadata import PackageNotFoundError, version as package_version
+import json
 import os
 import re
 from threading import RLock
@@ -33,6 +35,20 @@ POLYMARKET_POLYGON_RPC_URL = "https://polygon.drpc.org"
 _TRANSACTION_HASH = re.compile(r"^0x[0-9a-f]{64}$")
 _TRANSACTION_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$")
 _POSITION_TOLERANCE = Decimal("0.000001")
+_RECEIPT_LOG_LIMIT = 2_048
+_ZERO_ADDRESS_TOPIC = "0x" + "0" * 64
+_WRAPPED_EVENT_TOPIC = (
+    "0xc00a5c84859ae82a7f5e6a2773283fb525335d5b3195f61174aa1ecc7e15dd84"
+)
+_TRANSFER_EVENT_TOPIC = (
+    "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+)
+_CTF_PAYOUT_EVENT_TOPIC = (
+    "0x2682012a4a4f1973119f1c9b90745d1bd91fa2bab387344f044cb3586864d18d"
+)
+_NEG_RISK_PAYOUT_EVENT_TOPIC = (
+    "0x9140a6a270ef945260c03894b3c6b3b2695e9d5101feef0ff24fec960cfd3224"
+)
 
 
 class PolymarketRedemptionRejected(PolymarketLiveBlocked):
@@ -196,6 +212,9 @@ class PolymarketRedemptionPreflight:
 class PolymarketRedemptionSubmission:
     transaction_id: str
     transaction_hash: str
+    condition_id: str
+    adapter_address: str
+    neg_risk: bool
     _handle: object = field(repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -203,21 +222,29 @@ class PolymarketRedemptionSubmission:
         transaction_hash = str(self.transaction_hash or "").strip().lower()
         if transaction_id and _TRANSACTION_ID.fullmatch(transaction_id) is None:
             raise ValueError("redemption transaction ID is invalid")
-        if (
-            transaction_hash
-            and _TRANSACTION_HASH.fullmatch(transaction_hash) is None
-        ):
+        if transaction_hash and _TRANSACTION_HASH.fullmatch(transaction_hash) is None:
             raise ValueError("redemption transaction hash is invalid")
         if not transaction_id and not transaction_hash:
             raise ValueError("redemption submission lacks transaction identity")
+        condition_id = str(self.condition_id or "").strip().lower()
+        adapter_address = str(self.adapter_address or "").strip().lower()
+        if _TRANSACTION_HASH.fullmatch(condition_id) is None:
+            raise ValueError("redemption submission condition ID is invalid")
+        if re.fullmatch(r"0x[0-9a-f]{40}", adapter_address) is None:
+            raise ValueError("redemption submission adapter is invalid")
         object.__setattr__(self, "transaction_id", transaction_id)
         object.__setattr__(self, "transaction_hash", transaction_hash)
+        object.__setattr__(self, "condition_id", condition_id)
+        object.__setattr__(self, "adapter_address", adapter_address)
+        object.__setattr__(self, "neg_risk", bool(self.neg_risk))
 
 
 @dataclass(frozen=True, slots=True)
 class PolymarketRedemptionOutcome:
     transaction_id: str
     transaction_hash: str
+    payout_quote: Decimal
+    payout_proof_sha256: str
 
     def __post_init__(self) -> None:
         transaction_id = str(self.transaction_id or "").strip()
@@ -226,8 +253,19 @@ class PolymarketRedemptionOutcome:
             raise ValueError("redemption outcome transaction ID is invalid")
         if _TRANSACTION_HASH.fullmatch(transaction_hash) is None:
             raise ValueError("redemption outcome transaction hash is invalid")
+        try:
+            payout = Decimal(str(self.payout_quote))
+        except (InvalidOperation, ValueError) as exc:
+            raise ValueError("redemption outcome payout is invalid") from exc
+        if not payout.is_finite() or payout < 0:
+            raise ValueError("redemption outcome payout is invalid")
+        proof = str(self.payout_proof_sha256 or "").strip().lower()
+        if re.fullmatch(r"[0-9a-f]{64}", proof) is None:
+            raise ValueError("redemption outcome payout proof is invalid")
         object.__setattr__(self, "transaction_id", transaction_id)
         object.__setattr__(self, "transaction_hash", transaction_hash)
+        object.__setattr__(self, "payout_quote", payout)
+        object.__setattr__(self, "payout_proof_sha256", proof)
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,6 +273,8 @@ class PolymarketRedemptionRecovery:
     state: str
     transaction_id: str
     transaction_hash: str
+    payout_quote: Decimal = Decimal("0")
+    payout_proof_sha256: str = ""
 
     def __post_init__(self) -> None:
         state = str(self.state or "").strip().lower()
@@ -244,18 +284,29 @@ class PolymarketRedemptionRecovery:
         transaction_hash = str(self.transaction_hash or "").strip().lower()
         if transaction_id and _TRANSACTION_ID.fullmatch(transaction_id) is None:
             raise ValueError("redemption recovery transaction ID is invalid")
-        if (
-            transaction_hash
-            and _TRANSACTION_HASH.fullmatch(transaction_hash) is None
-        ):
+        if transaction_hash and _TRANSACTION_HASH.fullmatch(transaction_hash) is None:
             raise ValueError("redemption recovery transaction hash is invalid")
         if state == "confirmed" and not transaction_hash:
             raise ValueError("terminal redemption recovery lacks a transaction hash")
         if state == "failed" and not (transaction_id or transaction_hash):
             raise ValueError("failed redemption recovery lacks transaction identity")
+        try:
+            payout = Decimal(str(self.payout_quote))
+        except (InvalidOperation, ValueError) as exc:
+            raise ValueError("redemption recovery payout is invalid") from exc
+        if not payout.is_finite() or payout < 0:
+            raise ValueError("redemption recovery payout is invalid")
+        proof = str(self.payout_proof_sha256 or "").strip().lower()
+        if state == "confirmed":
+            if re.fullmatch(r"[0-9a-f]{64}", proof) is None:
+                raise ValueError("confirmed redemption recovery lacks payout proof")
+        elif payout != 0 or proof:
+            raise ValueError("non-confirmed redemption recovery cannot carry payout")
         object.__setattr__(self, "state", state)
         object.__setattr__(self, "transaction_id", transaction_id)
         object.__setattr__(self, "transaction_hash", transaction_hash)
+        object.__setattr__(self, "payout_quote", payout)
+        object.__setattr__(self, "payout_proof_sha256", proof)
 
 
 class PolymarketSettlementAccount(Protocol):
@@ -289,6 +340,9 @@ class PolymarketRedemptionVenue(Protocol):
         *,
         transaction_id: str,
         transaction_hash: str,
+        condition_id: str,
+        adapter_address: str,
+        neg_risk: bool,
     ) -> PolymarketRedemptionRecovery: ...
 
 
@@ -302,6 +356,264 @@ def _response_json(response: requests.Response) -> object:
     if payload.get("error") is not None:
         raise PolymarketLiveUnknownState("Polygon RPC returned an error")
     return payload.get("result")
+
+
+def _canonical_sha256(payload: Mapping[str, object]) -> str:
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=True,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _address_topic(address: str) -> str:
+    normalized = str(address or "").strip().lower()
+    if re.fullmatch(r"0x[0-9a-f]{40}", normalized) is None:
+        raise PolymarketLiveUnknownState("receipt proof address is invalid")
+    return "0x" + normalized[2:].rjust(64, "0")
+
+
+def _receipt_words(value: object, *, expected: int, name: str) -> tuple[int, ...]:
+    encoded = str(value or "").strip().lower()
+    if (
+        not encoded.startswith("0x")
+        or len(encoded) != 2 + expected * 64
+        or re.fullmatch(r"0x[0-9a-f]*", encoded) is None
+    ):
+        raise PolymarketLiveUnknownState(f"{name} event data is invalid")
+    raw = encoded[2:]
+    return tuple(int(raw[index : index + 64], 16) for index in range(0, len(raw), 64))
+
+
+def _receipt_topics(
+    value: object,
+    *,
+    expected: int,
+    name: str,
+) -> tuple[str, ...]:
+    if (
+        not isinstance(value, Sequence)
+        or isinstance(value, (str, bytes, bytearray))
+        or len(value) != expected
+    ):
+        raise PolymarketLiveUnknownState(f"{name} event topics are invalid")
+    topics = tuple(str(item or "").strip().lower() for item in value)
+    if any(_TRANSACTION_HASH.fullmatch(topic) is None for topic in topics):
+        raise PolymarketLiveUnknownState(f"{name} event topics are invalid")
+    return topics
+
+
+def _matching_receipt_logs(
+    receipt: Mapping[str, object],
+    *,
+    address: str,
+    event_topic: str,
+) -> tuple[tuple[int, Mapping[str, object]], ...]:
+    logs = receipt.get("logs")
+    if (
+        not isinstance(logs, Sequence)
+        or isinstance(logs, (str, bytes, bytearray))
+        or len(logs) > _RECEIPT_LOG_LIMIT
+    ):
+        raise PolymarketLiveUnknownState("Polygon receipt logs are invalid")
+    normalized_address = str(address).lower()
+    matches: list[tuple[int, Mapping[str, object]]] = []
+    for index, item in enumerate(logs):
+        if not isinstance(item, Mapping):
+            raise PolymarketLiveUnknownState("Polygon receipt log is invalid")
+        topics = item.get("topics")
+        first_topic = (
+            str(topics[0]).strip().lower()
+            if isinstance(topics, Sequence)
+            and not isinstance(topics, (str, bytes, bytearray))
+            and topics
+            else ""
+        )
+        if (
+            str(item.get("address") or "").strip().lower() == normalized_address
+            and first_topic == event_topic
+        ):
+            removed = item.get("removed")
+            if removed is not None and removed is not False:
+                raise PolymarketLiveUnknownState(
+                    "removed receipt log cannot prove redemption"
+                )
+            matches.append((index, item))
+    return tuple(matches)
+
+
+def _redemption_payout_proof(
+    receipt: Mapping[str, object],
+    *,
+    transaction_hash: str,
+    condition_id: str,
+    adapter_address: str,
+    wallet_address: str,
+    collateral_token: str,
+    conditional_tokens: str,
+    neg_risk_adapter: str,
+    neg_risk: bool,
+) -> tuple[Decimal, str]:
+    normalized_hash = str(transaction_hash).lower()
+    normalized_condition = str(condition_id).lower()
+    adapter_topic = _address_topic(adapter_address)
+    wallet_topic = _address_topic(wallet_address)
+    if neg_risk:
+        payout_logs = _matching_receipt_logs(
+            receipt,
+            address=neg_risk_adapter,
+            event_topic=_NEG_RISK_PAYOUT_EVENT_TOPIC,
+        )
+        if len(payout_logs) != 1:
+            raise PolymarketLiveUnknownState(
+                "negative-risk redemption payout event is not unique"
+            )
+        payout_index, payout_log = payout_logs[0]
+        payout_topics = _receipt_topics(
+            payout_log.get("topics"),
+            expected=3,
+            name="negative-risk payout",
+        )
+        if (
+            payout_topics[1] != adapter_topic
+            or payout_topics[2] != normalized_condition
+        ):
+            raise PolymarketLiveUnknownState(
+                "negative-risk redemption payout identity differs"
+            )
+        payout_words = _receipt_words(
+            payout_log.get("data"),
+            expected=5,
+            name="negative-risk payout",
+        )
+        if payout_words[0] != 64 or payout_words[2] != 2:
+            raise PolymarketLiveUnknownState(
+                "negative-risk redemption payout ABI differs"
+            )
+        payout_base_units = payout_words[1]
+        payout_asset_topic = ""
+    else:
+        payout_logs = _matching_receipt_logs(
+            receipt,
+            address=conditional_tokens,
+            event_topic=_CTF_PAYOUT_EVENT_TOPIC,
+        )
+        if len(payout_logs) != 1:
+            raise PolymarketLiveUnknownState(
+                "standard redemption payout event is not unique"
+            )
+        payout_index, payout_log = payout_logs[0]
+        payout_topics = _receipt_topics(
+            payout_log.get("topics"),
+            expected=4,
+            name="standard payout",
+        )
+        if payout_topics[1] != adapter_topic or payout_topics[3] != _ZERO_ADDRESS_TOPIC:
+            raise PolymarketLiveUnknownState(
+                "standard redemption payout identity differs"
+            )
+        payout_words = _receipt_words(
+            payout_log.get("data"),
+            expected=6,
+            name="standard payout",
+        )
+        if (
+            "0x" + f"{payout_words[0]:064x}" != normalized_condition
+            or payout_words[1] != 96
+            or payout_words[3:] != (2, 1, 2)
+        ):
+            raise PolymarketLiveUnknownState("standard redemption payout ABI differs")
+        payout_base_units = payout_words[2]
+        payout_asset_topic = payout_topics[2]
+
+    wrapped_logs = _matching_receipt_logs(
+        receipt,
+        address=collateral_token,
+        event_topic=_WRAPPED_EVENT_TOPIC,
+    )
+    if len(wrapped_logs) != 1:
+        raise PolymarketLiveUnknownState(
+            "redemption collateral wrap event is not unique"
+        )
+    wrapped_index, wrapped_log = wrapped_logs[0]
+    wrapped_topics = _receipt_topics(
+        wrapped_log.get("topics"),
+        expected=4,
+        name="collateral wrap",
+    )
+    wrapped_words = _receipt_words(
+        wrapped_log.get("data"),
+        expected=1,
+        name="collateral wrap",
+    )
+    if (
+        wrapped_topics[1] != adapter_topic
+        or wrapped_topics[3] != wallet_topic
+        or (payout_asset_topic and wrapped_topics[2] != payout_asset_topic)
+        or wrapped_words[0] != payout_base_units
+    ):
+        raise PolymarketLiveUnknownState("redemption collateral wrap economics differ")
+
+    transfer_logs = _matching_receipt_logs(
+        receipt,
+        address=collateral_token,
+        event_topic=_TRANSFER_EVENT_TOPIC,
+    )
+    matching_transfers: list[tuple[int, Mapping[str, object]]] = []
+    for index, transfer_log in transfer_logs:
+        topics = _receipt_topics(
+            transfer_log.get("topics"),
+            expected=3,
+            name="collateral mint",
+        )
+        words = _receipt_words(
+            transfer_log.get("data"),
+            expected=1,
+            name="collateral mint",
+        )
+        if (
+            topics[1] == _ZERO_ADDRESS_TOPIC
+            and topics[2] == wallet_topic
+            and words[0] == payout_base_units
+        ):
+            matching_transfers.append((index, transfer_log))
+    if len(matching_transfers) != 1:
+        raise PolymarketLiveUnknownState(
+            "redemption collateral mint event is not unique"
+        )
+    transfer_index, transfer_log = matching_transfers[0]
+    proof = {
+        "schema_version": "polymarket-redemption-receipt-proof-v1",
+        "transaction_hash": normalized_hash,
+        "block_hash": str(receipt.get("blockHash") or "").lower(),
+        "block_number": str(receipt.get("blockNumber") or "").lower(),
+        "condition_id": normalized_condition,
+        "adapter_address": str(adapter_address).lower(),
+        "wallet_address": str(wallet_address).lower(),
+        "collateral_token": str(collateral_token).lower(),
+        "neg_risk": bool(neg_risk),
+        "payout_base_units": payout_base_units,
+        "event_log_indices": [
+            payout_index,
+            wrapped_index,
+            transfer_index,
+        ],
+        "event_logs": [
+            {
+                "address": str(log.get("address") or "").lower(),
+                "topics": [str(topic).lower() for topic in log["topics"]],
+                "data": str(log.get("data") or "").lower(),
+            }
+            for log in (payout_log, wrapped_log, transfer_log)
+        ],
+    }
+    return (
+        Decimal(payout_base_units) / Decimal(1_000_000),
+        _canonical_sha256(proof),
+    )
 
 
 class OfficialPolymarketUnifiedRedemptionVenue:
@@ -339,7 +651,10 @@ class OfficialPolymarketUnifiedRedemptionVenue:
             raise ValueError("preflight TTL must lie in [500, 30000]")
         self._monotonic_ns = monotonic_ns
         self._preflight_lock = RLock()
-        self._fresh_preflights: dict[str, int] = {}
+        self._fresh_preflights: dict[
+            str,
+            tuple[int, PolymarketRedemptionPreflight],
+        ] = {}
         self._client = client or self._build_client()
         wallet = str(getattr(self._client, "wallet", "")).lower()
         wallet_type = str(getattr(self._client, "wallet_type", ""))
@@ -349,10 +664,7 @@ class OfficialPolymarketUnifiedRedemptionVenue:
             2: "GNOSIS_SAFE",
             3: "DEPOSIT_WALLET",
         }[credentials.signature_type]
-        if (
-            wallet != credentials.funder_address
-            or wallet_type != expected_wallet_type
-        ):
+        if wallet != credentials.funder_address or wallet_type != expected_wallet_type:
             raise PolymarketLiveBlocked(
                 "unified SDK wallet identity differs from configured credentials"
             )
@@ -444,7 +756,10 @@ class OfficialPolymarketUnifiedRedemptionVenue:
             timeout=self.timeout_seconds,
         )
         result = _response_json(response)
-        if not isinstance(result, str) or re.fullmatch(r"0x[0-9a-fA-F]+", result) is None:
+        if (
+            not isinstance(result, str)
+            or re.fullmatch(r"0x[0-9a-fA-F]+", result) is None
+        ):
             raise PolymarketLiveBlocked("Polygon native balance is invalid")
         return int(result, 16)
 
@@ -482,13 +797,9 @@ class OfficialPolymarketUnifiedRedemptionVenue:
             + self.credentials.funder_address[2:].rjust(64, "0")
             + adapter[2:].rjust(64, "0")
         )
-        approval = str(
-            rpc.eth_call(to=conditional_tokens, data=approval_data)
-        ).lower()
+        approval = str(rpc.eth_call(to=conditional_tokens, data=approval_data)).lower()
         if approval != "0x" + "0" * 63 + "1":
-            raise PolymarketLiveBlocked(
-                "redemption adapter approval is absent"
-            )
+            raise PolymarketLiveBlocked("redemption adapter approval is absent")
         try:
             from polymarket._internal.actions.relayer.calls import (
                 ctf_redeem_positions_call,
@@ -515,9 +826,7 @@ class OfficialPolymarketUnifiedRedemptionVenue:
         else:
             gas_estimate = int(rpc.eth_estimate_gas(estimate_payload))
             gas_price = int(rpc.eth_gas_price())
-            required_balance = (
-                gas_estimate * gas_price * self.gas_reserve_multiplier
-            )
+            required_balance = gas_estimate * gas_price * self.gas_reserve_multiplier
             native_balance = self._native_balance_wei()
             if native_balance < required_balance:
                 raise PolymarketLiveBlocked(
@@ -535,7 +844,8 @@ class OfficialPolymarketUnifiedRedemptionVenue:
         )
         with self._preflight_lock:
             self._fresh_preflights[result.condition_id] = (
-                self._monotonic_ns() + self.preflight_ttl_ms * 1_000_000
+                self._monotonic_ns() + self.preflight_ttl_ms * 1_000_000,
+                result,
             )
         return result
 
@@ -553,11 +863,15 @@ class OfficialPolymarketUnifiedRedemptionVenue:
     ) -> PolymarketRedemptionSubmission:
         normalized_condition = str(condition_id or "").strip().lower()
         with self._preflight_lock:
-            deadline = self._fresh_preflights.pop(normalized_condition, None)
-        if deadline is None or self._monotonic_ns() > deadline:
+            reserved_preflight = self._fresh_preflights.pop(
+                normalized_condition,
+                None,
+            )
+        if reserved_preflight is None or self._monotonic_ns() > reserved_preflight[0]:
             raise PolymarketRedemptionRejected(
                 "fresh single-use redemption preflight is required"
             )
+        preflight = reserved_preflight[1]
         try:
             if self.credentials.signature_type == 0:
                 handle = self._client.redeem_positions(
@@ -568,13 +882,14 @@ class OfficialPolymarketUnifiedRedemptionVenue:
                 handle = self._submit_gasless_once(normalized_condition)
         except Exception as exc:
             if self._deterministic_submit_error(exc):
-                raise PolymarketRedemptionRejected(
-                    exc.__class__.__name__
-                ) from exc
+                raise PolymarketRedemptionRejected(exc.__class__.__name__) from exc
             raise
         return PolymarketRedemptionSubmission(
             transaction_id=str(getattr(handle, "transaction_id", "") or ""),
             transaction_hash=str(getattr(handle, "transaction_hash", "") or ""),
+            condition_id=preflight.condition_id,
+            adapter_address=preflight.adapter_address,
+            neg_risk=preflight.neg_risk,
             _handle=handle,
         )
 
@@ -604,15 +919,145 @@ class OfficialPolymarketUnifiedRedemptionVenue:
             calls=[call],
             metadata=f"Simple AI Trading redemption {condition_id}",
         )
-        poll_delay = (
-            client_context.environment.relayer_poll_frequency_ms / 1_000
-        )
+        poll_delay = client_context.environment.relayer_poll_frequency_ms / 1_000
         return SyncGaslessTransactionHandle(
             transaction_id=response.transaction_id,
             transaction_hash=response.transaction_hash,
             _relayer=client_context.relayer,
             _max_polls=client_context.environment.relayer_max_polls,
             _poll_delay_s=poll_delay,
+        )
+
+    def _environment_address(self, name: str) -> str:
+        environment = getattr(getattr(self._client, "_ctx", None), "environment", None)
+        address = str(getattr(environment, name, "") or "").strip().lower()
+        if re.fullmatch(r"0x[0-9a-f]{40}", address) is None:
+            raise PolymarketLiveUnknownState(
+                f"audited unified SDK {name} address differs"
+            )
+        return address
+
+    def _rpc_result(self, method: str, params: Sequence[object]) -> object:
+        response = self.session.post(
+            self.rpc_url,
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": method,
+                "params": list(params),
+            },
+            timeout=self.timeout_seconds,
+        )
+        return _response_json(response)
+
+    @staticmethod
+    def _hex_quantity(value: object, *, name: str) -> int:
+        encoded = str(value or "").strip().lower()
+        if re.fullmatch(r"0x(?:0|[1-9a-f][0-9a-f]*)", encoded) is None:
+            raise PolymarketLiveUnknownState(f"{name} is invalid")
+        return int(encoded, 16)
+
+    def _recover_finalized_receipt(
+        self,
+        *,
+        transaction_id: str,
+        transaction_hash: str,
+        condition_id: str,
+        adapter_address: str,
+        neg_risk: bool,
+    ) -> PolymarketRedemptionRecovery:
+        normalized_hash = str(transaction_hash or "").strip().lower()
+        if _TRANSACTION_HASH.fullmatch(normalized_hash) is None:
+            raise PolymarketLiveUnknownState(
+                "redemption receipt proof requires a transaction hash"
+            )
+        result = self._rpc_result(
+            "eth_getTransactionReceipt",
+            [normalized_hash],
+        )
+        if result is None:
+            return PolymarketRedemptionRecovery(
+                state="pending",
+                transaction_id=transaction_id,
+                transaction_hash=normalized_hash,
+            )
+        if not isinstance(result, Mapping):
+            raise PolymarketLiveUnknownState("Polygon receipt is invalid")
+        receipt_hash = str(result.get("transactionHash") or "").lower()
+        if receipt_hash != normalized_hash:
+            raise PolymarketLiveUnknownState("Polygon receipt transaction hash differs")
+        status = result.get("status")
+        if status not in {"0x0", "0x1", 0, 1}:
+            raise PolymarketLiveUnknownState(
+                "Polygon receipt has an unrecognized status"
+            )
+        block_hash = str(result.get("blockHash") or "").strip().lower()
+        if _TRANSACTION_HASH.fullmatch(block_hash) is None:
+            raise PolymarketLiveUnknownState("Polygon receipt block hash is invalid")
+        receipt_block = self._hex_quantity(
+            result.get("blockNumber"),
+            name="Polygon receipt block number",
+        )
+        finalized = self._rpc_result(
+            "eth_getBlockByNumber",
+            ["finalized", False],
+        )
+        if not isinstance(finalized, Mapping):
+            raise PolymarketLiveUnknownState(
+                "Polygon finalized block response is invalid"
+            )
+        finalized_block = self._hex_quantity(
+            finalized.get("number"),
+            name="Polygon finalized block number",
+        )
+        if receipt_block > finalized_block:
+            return PolymarketRedemptionRecovery(
+                state="pending",
+                transaction_id=transaction_id,
+                transaction_hash=normalized_hash,
+            )
+        canonical_block = self._rpc_result(
+            "eth_getBlockByNumber",
+            [hex(receipt_block), False],
+        )
+        if not isinstance(canonical_block, Mapping):
+            raise PolymarketLiveUnknownState(
+                "Polygon canonical block response is invalid"
+            )
+        if (
+            self._hex_quantity(
+                canonical_block.get("number"),
+                name="Polygon canonical block number",
+            )
+            != receipt_block
+            or str(canonical_block.get("hash") or "").strip().lower() != block_hash
+        ):
+            raise PolymarketLiveUnknownState(
+                "Polygon receipt is not bound to the canonical finalized block"
+            )
+        if status in {"0x0", 0}:
+            return PolymarketRedemptionRecovery(
+                state="failed",
+                transaction_id=transaction_id,
+                transaction_hash=normalized_hash,
+            )
+        payout, payout_proof = _redemption_payout_proof(
+            result,
+            transaction_hash=normalized_hash,
+            condition_id=condition_id,
+            adapter_address=adapter_address,
+            wallet_address=self.credentials.funder_address,
+            collateral_token=self._environment_address("collateral_token"),
+            conditional_tokens=self._environment_address("conditional_tokens"),
+            neg_risk_adapter=self._environment_address("neg_risk_adapter"),
+            neg_risk=neg_risk,
+        )
+        return PolymarketRedemptionRecovery(
+            state="confirmed",
+            transaction_id=transaction_id,
+            transaction_hash=normalized_hash,
+            payout_quote=payout,
+            payout_proof_sha256=payout_proof,
         )
 
     def wait_redemption(
@@ -627,9 +1072,7 @@ class OfficialPolymarketUnifiedRedemptionVenue:
             except ImportError:
                 TransactionFailedError = ()  # type: ignore[assignment,misc]
             if isinstance(exc, TransactionFailedError):
-                raise PolymarketRedemptionFailed(
-                    exc.__class__.__name__
-                ) from exc
+                raise PolymarketRedemptionFailed(exc.__class__.__name__) from exc
             raise
         transaction_id = str(getattr(outcome, "transaction_id", "") or "")
         transaction_hash = str(getattr(outcome, "transaction_hash", "") or "")
@@ -648,9 +1091,22 @@ class OfficialPolymarketUnifiedRedemptionVenue:
             raise PolymarketLiveUnknownState(
                 "redemption outcome transaction hash differs"
             )
-        return PolymarketRedemptionOutcome(
+        recovered = self._recover_finalized_receipt(
             transaction_id=transaction_id or submission.transaction_id,
             transaction_hash=transaction_hash,
+            condition_id=submission.condition_id,
+            adapter_address=submission.adapter_address,
+            neg_risk=submission.neg_risk,
+        )
+        if recovered.state == "pending":
+            raise PolymarketLiveUnknownState("redemption receipt is not finalized")
+        if recovered.state == "failed":
+            raise PolymarketRedemptionFailed("finalized redemption transaction failed")
+        return PolymarketRedemptionOutcome(
+            transaction_id=recovered.transaction_id,
+            transaction_hash=recovered.transaction_hash,
+            payout_quote=recovered.payout_quote,
+            payout_proof_sha256=recovered.payout_proof_sha256,
         )
 
     def recover_redemption(
@@ -658,6 +1114,9 @@ class OfficialPolymarketUnifiedRedemptionVenue:
         *,
         transaction_id: str,
         transaction_hash: str,
+        condition_id: str,
+        adapter_address: str,
+        neg_risk: bool,
     ) -> PolymarketRedemptionRecovery:
         normalized_id = str(transaction_id or "").strip()
         normalized_hash = str(transaction_hash or "").strip().lower()
@@ -669,9 +1128,7 @@ class OfficialPolymarketUnifiedRedemptionVenue:
                 )
                 from polymarket.errors import TransactionFailedError
             except ImportError as exc:
-                raise RuntimeError(
-                    "audited unified SDK recovery path differs"
-                ) from exc
+                raise RuntimeError("audited unified SDK recovery path differs") from exc
             try:
                 transaction = fetch_gasless_transaction_sync(
                     self._client._ctx.relayer,
@@ -694,52 +1151,23 @@ class OfficialPolymarketUnifiedRedemptionVenue:
                     transaction_id=normalized_id,
                     transaction_hash=normalized_hash,
                 )
-            return PolymarketRedemptionRecovery(
-                state="confirmed",
+            return self._recover_finalized_receipt(
                 transaction_id=str(outcome.transaction_id or normalized_id),
                 transaction_hash=str(outcome.transaction_hash),
+                condition_id=condition_id,
+                adapter_address=adapter_address,
+                neg_risk=neg_risk,
             )
         if _TRANSACTION_HASH.fullmatch(normalized_hash) is None:
             raise PolymarketLiveUnknownState(
                 "EOA redemption recovery requires a transaction hash"
             )
-        response = self.session.post(
-            self.rpc_url,
-            json={
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "eth_getTransactionReceipt",
-                "params": [normalized_hash],
-            },
-            timeout=self.timeout_seconds,
-        )
-        result = _response_json(response)
-        if result is None:
-            return PolymarketRedemptionRecovery(
-                state="pending",
-                transaction_id="",
-                transaction_hash=normalized_hash,
-            )
-        if not isinstance(result, Mapping):
-            raise PolymarketLiveUnknownState("Polygon receipt is invalid")
-        receipt_hash = str(result.get("transactionHash") or "").lower()
-        if receipt_hash != normalized_hash:
-            raise PolymarketLiveUnknownState(
-                "Polygon receipt transaction hash differs"
-            )
-        status = result.get("status")
-        if status in {"0x1", 1}:
-            state = "confirmed"
-        elif status in {"0x0", 0}:
-            state = "failed"
-        else:
-            raise PolymarketLiveUnknownState(
-                "Polygon receipt has an unrecognized status"
-            )
-        return PolymarketRedemptionRecovery(
-            state=state,
+        return self._recover_finalized_receipt(
             transaction_id="",
             transaction_hash=normalized_hash,
+            condition_id=condition_id,
+            adapter_address=adapter_address,
+            neg_risk=neg_risk,
         )
 
     def close(self) -> None:
@@ -788,15 +1216,11 @@ class PolymarketRedemptionCoordinator:
     ]:
         local = self.ledger.owned_inventory()
         if any(item.provisional for item in local):
-            raise PolymarketLiveBlocked(
-                "provisional fills block Polymarket redemption"
-            )
+            raise PolymarketLiveBlocked("provisional fills block Polymarket redemption")
         remote = self.account.positions()
         local_by_token = {item.token_id: item for item in local}
         if len(local_by_token) != len(local):
-            raise PolymarketLiveBlocked(
-                "bot-owned inventory contains duplicate tokens"
-            )
+            raise PolymarketLiveBlocked("bot-owned inventory contains duplicate tokens")
         remote_by_token = self._position_map(remote)
         if set(local_by_token) != set(remote_by_token):
             raise PolymarketLiveBlocked(
@@ -806,8 +1230,7 @@ class PolymarketRedemptionCoordinator:
             observed = remote_by_token[token_id]
             if (
                 observed.market_id != owned.market_id
-                or abs(observed.quantity - owned.quantity)
-                > _POSITION_TOLERANCE
+                or abs(observed.quantity - owned.quantity) > _POSITION_TOLERANCE
             ):
                 raise PolymarketLiveBlocked(
                     "remote position economics differ from bot-owned inventory"
@@ -864,14 +1287,10 @@ class PolymarketRedemptionCoordinator:
         if condition not in ready_conditions or any(
             not remote_by_token[item.token_id].redeemable for item in inventory
         ):
-            raise PolymarketLiveBlocked(
-                "requested condition is not fully redeemable"
-            )
+            raise PolymarketLiveBlocked("requested condition is not fully redeemable")
         preflight = self.venue.assert_redemption_ready(condition)
         if preflight.condition_id != condition:
-            raise PolymarketLiveBlocked(
-                "redemption preflight condition differs"
-            )
+            raise PolymarketLiveBlocked("redemption preflight condition differs")
         now = self._clock_ms()
         prepared = self.ledger.reserve_redemption(
             condition,
@@ -942,6 +1361,8 @@ class PolymarketRedemptionCoordinator:
             observed_at_ms=self._clock_ms(),
             transaction_id=outcome.transaction_id or submitted.transaction_id,
             transaction_hash=outcome.transaction_hash,
+            payout_quote=outcome.payout_quote,
+            payout_proof_sha256=outcome.payout_proof_sha256,
         )
 
     def recover_incomplete(self) -> tuple[PolymarketRedemptionRecord, ...]:
@@ -969,12 +1390,41 @@ class PolymarketRedemptionCoordinator:
                     )
                 )
                 continue
-            if record.state not in {"submitted", "unknown"}:
+            needs_payout_upgrade = (
+                record.state == "confirmed"
+                and record.payout_accounting_state != "VERIFIED"
+            )
+            if (
+                record.state not in {"submitted", "unknown"}
+                and not needs_payout_upgrade
+            ):
+                continue
+            try:
+                preflight_payload = json.loads(record.preflight_json)
+                if not isinstance(preflight_payload, Mapping):
+                    raise ValueError("preflight is not an object")
+                preflight = PolymarketRedemptionPreflight(**preflight_payload)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                if record.state == "submitted":
+                    output.append(
+                        self.ledger.transition_redemption(
+                            record.redemption_id,
+                            expected_states=(record.state,),
+                            state="unknown",
+                            observed_at_ms=self._clock_ms(),
+                            failure_code="invalid_recovery_preflight",
+                        )
+                    )
+                else:
+                    output.append(record)
                 continue
             try:
                 recovered = self.venue.recover_redemption(
                     transaction_id=record.transaction_id,
                     transaction_hash=record.transaction_hash,
+                    condition_id=record.condition_id,
+                    adapter_address=preflight.adapter_address,
+                    neg_risk=preflight.neg_risk,
                 )
             except Exception:
                 if record.state == "submitted":
@@ -993,15 +1443,16 @@ class PolymarketRedemptionCoordinator:
             if recovered.state == "pending":
                 output.append(record)
                 continue
+            if needs_payout_upgrade and recovered.state != "confirmed":
+                output.append(record)
+                continue
             output.append(
                 self.ledger.transition_redemption(
                     record.redemption_id,
                     expected_states=(record.state,),
                     state=recovered.state,
                     observed_at_ms=self._clock_ms(),
-                    transaction_id=(
-                        recovered.transaction_id or record.transaction_id
-                    ),
+                    transaction_id=(recovered.transaction_id or record.transaction_id),
                     transaction_hash=(
                         recovered.transaction_hash or record.transaction_hash
                     ),
@@ -1009,6 +1460,16 @@ class PolymarketRedemptionCoordinator:
                         "proven_transaction_failure"
                         if recovered.state == "failed"
                         else ""
+                    ),
+                    payout_quote=(
+                        recovered.payout_quote
+                        if recovered.state == "confirmed"
+                        else None
+                    ),
+                    payout_proof_sha256=(
+                        recovered.payout_proof_sha256
+                        if recovered.state == "confirmed"
+                        else None
                     ),
                 )
             )
@@ -1032,9 +1493,7 @@ class PolymarketSettlementService:
         self.interval_seconds = max(5.0, min(300.0, float(interval_seconds)))
 
     async def run_once(self) -> PolymarketRedemptionRecord | None:
-        recovered = await asyncio.to_thread(
-            self.coordinator.recover_incomplete
-        )
+        recovered = await asyncio.to_thread(self.coordinator.recover_incomplete)
         if any(record.state == "unknown" for record in recovered):
             self.runtime_authority.note_reconciliation_failure(
                 "unknown_redemption_state"
@@ -1044,9 +1503,7 @@ class PolymarketSettlementService:
             return None
         self.runtime_authority.assert_submission_allowed(closing_only=True)
         try:
-            return await asyncio.to_thread(
-                self.coordinator.redeem_next_ready
-            )
+            return await asyncio.to_thread(self.coordinator.redeem_next_ready)
         except PolymarketLiveUnknownState:
             self.runtime_authority.note_reconciliation_failure(
                 "unknown_redemption_state"
