@@ -176,7 +176,9 @@ class Round21MatchedEconomicComparison:
         return self
 
 
-def _matrix_sha256(values: Sequence[Round21EconomicReplay]) -> str:
+def round21_replay_matrix_sha256(
+    values: Sequence[Round21EconomicReplay],
+) -> str:
     selected = tuple(value.validated() for value in values)
     return _canonical_sha256(
         {
@@ -186,7 +188,7 @@ def _matrix_sha256(values: Sequence[Round21EconomicReplay]) -> str:
     )
 
 
-def _paired_delta(
+def paired_round21_replay_delta(
     baseline: Round21EconomicReplay,
     challenger: Round21EconomicReplay,
 ) -> Round21MatchedReplayDelta:
@@ -340,14 +342,14 @@ def compare_round21_optional_full_matrix(
         builder_taker_fee_bps=builder_taker_fee_bps,
     )
     deltas = tuple(
-        _paired_delta(left, right)
+        paired_round21_replay_delta(left, right)
         for left, right in zip(baseline_matrix, challenger_matrix, strict=True)
     )
     provisional = Round21MatchedEconomicComparison(
         challenger_layer=challenger_layer,
         matched_population_sha256=matched_population_sha,
-        baseline_matrix_sha256=_matrix_sha256(baseline_matrix),
-        challenger_matrix_sha256=_matrix_sha256(challenger_matrix),
+        baseline_matrix_sha256=round21_replay_matrix_sha256(baseline_matrix),
+        challenger_matrix_sha256=round21_replay_matrix_sha256(challenger_matrix),
         deltas=deltas,
         all_replays_accepted=all(value.accepted for value in deltas),
         optional_layer_selected=False,
@@ -372,4 +374,6 @@ __all__ = [
     "Round21MatchedEconomicComparison",
     "Round21MatchedReplayDelta",
     "compare_round21_optional_full_matrix",
+    "paired_round21_replay_delta",
+    "round21_replay_matrix_sha256",
 ]
