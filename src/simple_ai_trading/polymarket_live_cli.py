@@ -69,9 +69,9 @@ _ACTIONS = (
     "redeem",
 )
 _RISK_LIMITS = {
-    "conservative": (Decimal("10"), Decimal("20")),
-    "regular": (Decimal("25"), Decimal("50")),
-    "aggressive": (Decimal("50"), Decimal("100")),
+    "conservative": (Decimal("10"), Decimal("20"), Decimal("10"), 1),
+    "regular": (Decimal("25"), Decimal("50"), Decimal("50"), 2),
+    "aggressive": (Decimal("50"), Decimal("100"), Decimal("100"), 3),
 }
 
 
@@ -180,10 +180,14 @@ def register_polymarket_live_command(
 
 
 def _risk_limits(profile: str) -> PolymarketLiveRiskLimits:
-    maximum_quote, maximum_tokens = _RISK_LIMITS[str(profile)]
+    maximum_quote, maximum_tokens, maximum_at_risk, maximum_markets = (
+        _RISK_LIMITS[str(profile)]
+    )
     return PolymarketLiveRiskLimits(
         maximum_order_quote=maximum_quote,
         maximum_token_quantity=maximum_tokens,
+        maximum_total_at_risk_quote=maximum_at_risk,
+        maximum_active_markets=maximum_markets,
     )
 
 

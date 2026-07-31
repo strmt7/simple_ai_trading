@@ -802,6 +802,8 @@ class PolymarketLiveRiskLimits:
 
     maximum_order_quote: Decimal
     maximum_token_quantity: Decimal
+    maximum_total_at_risk_quote: Decimal
+    maximum_active_markets: int
     maximum_intent_age_ms: int = 2_000
 
     def __post_init__(self) -> None:
@@ -822,6 +824,28 @@ class PolymarketLiveRiskLimits:
                 name="maximum_token_quantity",
                 positive=True,
             ),
+        )
+        total_at_risk = _decimal(
+            self.maximum_total_at_risk_quote,
+            name="maximum_total_at_risk_quote",
+            positive=True,
+        )
+        if total_at_risk < self.maximum_order_quote:
+            raise ValueError(
+                "maximum_total_at_risk_quote cannot be below maximum_order_quote"
+            )
+        object.__setattr__(
+            self,
+            "maximum_total_at_risk_quote",
+            total_at_risk,
+        )
+        maximum_active_markets = int(self.maximum_active_markets)
+        if not 1 <= maximum_active_markets <= 10:
+            raise ValueError("maximum_active_markets must lie in [1, 10]")
+        object.__setattr__(
+            self,
+            "maximum_active_markets",
+            maximum_active_markets,
         )
         maximum_intent_age_ms = int(self.maximum_intent_age_ms)
         if not 100 <= maximum_intent_age_ms <= 30_000:
@@ -2526,6 +2550,26 @@ class PolymarketLiveCoordinator:
             errors=unique_errors,
         )
 
+    def _owned_at_risk(self) -> tuple[Decimal, frozenset[str]]:
+        records = {
+            record.intent.intent_id: record for record in self.ledger.records()
+        }
+        total = Decimal("0")
+        markets: set[str] = set()
+        for lot in self.ledger.owned_lots():
+            parent = records.get(lot.parent_intent_id)
+            if parent is None or parent.intent.side != "BUY":
+                raise PolymarketLiveBlocked(
+                    "bot-owned inventory lacks its opening risk record"
+                )
+            intent = parent.intent
+            fee_reserve = (
+                intent.fee_reserve_quote * lot.quantity / intent.quantity
+            )
+            total += intent.limit_price * lot.quantity + fee_reserve
+            markets.add(lot.market_id)
+        return total, frozenset(markets)
+
     def submit(
         self,
         intent: PolymarketLiveOrderIntent,
@@ -2589,6 +2633,22 @@ class PolymarketLiveCoordinator:
             )
             if order_quote > self.risk_limits.maximum_order_quote:
                 raise PolymarketLiveBlocked("live order exceeds its quote ceiling")
+            current_at_risk, active_markets = self._owned_at_risk()
+            if (
+                current_at_risk + order_quote
+                > self.risk_limits.maximum_total_at_risk_quote
+            ):
+                raise PolymarketLiveBlocked(
+                    "live order exceeds the aggregate capital-at-risk ceiling"
+                )
+            if (
+                intent.market_id not in active_markets
+                and len(active_markets)
+                >= self.risk_limits.maximum_active_markets
+            ):
+                raise PolymarketLiveBlocked(
+                    "live order exceeds the active-market ceiling"
+                )
             inventory = {
                 item.token_id: item.quantity for item in self.ledger.owned_inventory()
             }

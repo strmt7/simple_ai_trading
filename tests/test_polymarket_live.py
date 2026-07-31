@@ -52,6 +52,8 @@ WALLET = "0x" + "a" * 40
 RISK_LIMITS = PolymarketLiveRiskLimits(
     maximum_order_quote=Decimal("10"),
     maximum_token_quantity=Decimal("20"),
+    maximum_total_at_risk_quote=Decimal("10"),
+    maximum_active_markets=1,
     maximum_intent_age_ms=30_000,
 )
 
@@ -1247,6 +1249,80 @@ def test_hard_risk_limits_block_stale_and_oversized_open_intents(
         )
 
     assert ledger.records() == ()
+
+
+def test_aggregate_capital_at_risk_blocks_repeated_small_orders(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "aggregate-risk.sqlite3")
+    venue = FakeVenue()
+    limits = PolymarketLiveRiskLimits(
+        maximum_order_quote=Decimal("1"),
+        maximum_token_quantity=Decimal("20"),
+        maximum_total_at_risk_quote=Decimal("1"),
+        maximum_active_markets=1,
+        maximum_intent_age_ms=30_000,
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=limits)
+    parent = _intent(1)
+    prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, prepared.expected_order_id))
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1"),
+            redeemable=False,
+        ),
+    )
+    coordinator.reconcile()
+
+    with pytest.raises(PolymarketLiveBlocked, match="capital-at-risk"):
+        coordinator.submit(
+            _intent(2),
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+
+    assert venue.submit_calls == 0
+
+
+def test_active_market_ceiling_blocks_cross_contract_accumulation(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "active-markets.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(
+        venue,
+        ledger,
+        risk_limits=RISK_LIMITS,
+    )
+    parent = _intent(1)
+    prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, prepared.expected_order_id))
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1"),
+            redeemable=False,
+        ),
+    )
+    coordinator.reconcile()
+    other_market = replace(
+        _intent(2),
+        market_id="0x" + "2" * 64,
+        token_id="2" * 40,
+    )
+
+    with pytest.raises(PolymarketLiveBlocked, match="active-market ceiling"):
+        coordinator.submit(
+            other_market,
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+
+    assert venue.submit_calls == 0
 
 
 @pytest.mark.parametrize("field", ["funding_balance", "funding_allowance"])

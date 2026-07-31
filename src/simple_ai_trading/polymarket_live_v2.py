@@ -45,7 +45,7 @@ _PRIVATE_KEY = re.compile(r"^0x[0-9a-fA-F]{64}$")
 _ADDRESS = re.compile(r"^0x[0-9a-fA-F]{40}$")
 _ORDER_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _TOKEN_ID = re.compile(r"^[0-9]{20,80}$")
-_SAFE_REJECTION_STATUSES = frozenset({400, 401, 403, 404, 422})
+_SAFE_REJECTION_STATUSES = frozenset({401, 403, 404, 422})
 _TOKEN_SCALE = Decimal("1000000")
 
 
@@ -785,8 +785,17 @@ class OfficialPolymarketV2Venue:
                 neg_risk=bool(neg_risk),
             ),
         )
+        sdk_signer = str(self._client.builder.signer.address()).lower()
+        expected_signer = (
+            self.credentials.funder_address
+            if self.credentials.signature_type == 3
+            else sdk_signer
+        )
         if (
             str(getattr(signed, "maker", "")).lower() != self.credentials.funder_address
+            or str(getattr(signed, "signer", "")).lower() != expected_signer
+            or int(getattr(signed, "signatureType", -1))
+            != self.credentials.signature_type
             or str(getattr(signed, "tokenId", "")) != intent.token_id
             or getattr(signed, "side", None) != side
             or int(getattr(signed, "expiration", -1)) != expiration

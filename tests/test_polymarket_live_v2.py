@@ -13,6 +13,7 @@ from simple_ai_trading.polymarket_live import (
     PolymarketLiveBlocked,
     PolymarketLiveOrderIntent,
     PolymarketPreparedOrder,
+    PolymarketVenueRejected,
 )
 from simple_ai_trading.polymarket_live_v2 import (
     OfficialPolymarketV2Venue,
@@ -198,6 +199,51 @@ def test_official_sdk_builds_exact_v2_hash_and_preserves_economics() -> None:
     assert str(prepared.opaque_signed_order.makerAmount) == "2500000"
     assert str(prepared.opaque_signed_order.takerAmount) == "5000000"
     assert prepared.opaque_signed_order.metadata == prepared.intent.metadata
+    assert prepared.opaque_signed_order.maker.lower() == credentials.funder_address
+    assert prepared.opaque_signed_order.signer.lower() == credentials.funder_address
+    assert int(prepared.opaque_signed_order.signatureType) == 0
+
+
+def test_official_sdk_deposit_wallet_binds_maker_signer_and_signature_type() -> None:
+    clob = pytest.importorskip("py_clob_client_v2")
+    credentials = PolymarketLiveCredentials(
+        private_key=PRIVATE_KEY,
+        api_key="offline-api-key",
+        api_secret="offline-api-secret",
+        api_passphrase="offline-passphrase",
+        funder_address="0x" + "2" * 40,
+        signature_type=3,
+    )
+    client = clob.ClobClient(
+        host=CLOB_BASE_URL,
+        chain_id=POLYGON_CHAIN_ID,
+        key=credentials.private_key,
+        creds=clob.ApiCreds(
+            api_key=credentials.api_key,
+            api_secret=credentials.api_secret,
+            api_passphrase=credentials.api_passphrase,
+        ),
+        signature_type=credentials.signature_type,
+        funder=credentials.funder_address,
+        use_server_time=False,
+        retry_on_error=False,
+    )
+    client.get_version = lambda: 2
+    client.get_tick_size = lambda token_id: "0.01"
+
+    prepared = OfficialPolymarketV2Venue(
+        credentials,
+        client=client,
+    ).prepare_order(
+        _intent(),
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+    )
+    signed = prepared.opaque_signed_order
+
+    assert signed.maker.lower() == credentials.funder_address
+    assert signed.signer.lower() == credentials.funder_address
+    assert int(signed.signatureType) == 3
 
 
 @pytest.mark.parametrize(
@@ -291,6 +337,32 @@ def test_submission_transport_error_is_propagated_after_one_attempt() -> None:
         venue.submit_order(prepared)
 
     assert client.post_calls == 1
+
+
+def test_duplicate_capable_http_400_requires_exact_hash_reconciliation() -> None:
+    class ApiError(RuntimeError):
+        def __init__(self, status_code: int) -> None:
+            super().__init__(f"HTTP {status_code}")
+            self.status_code = status_code
+
+    client = FakeClient()
+    prepared = PolymarketPreparedOrder(
+        intent=_intent(),
+        expected_order_id="0x" + "2" * 64,
+        metadata=_intent().metadata,
+        opaque_signed_order=object(),
+    )
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+
+    client.post_error = ApiError(400)
+    with pytest.raises(ApiError, match="400"):
+        venue.submit_order(prepared)
+
+    client.post_error = ApiError(422)
+    with pytest.raises(PolymarketVenueRejected, match="HTTP 422"):
+        venue.submit_order(prepared)
+
+    assert client.post_calls == 2
 
 
 def test_exact_order_lookup_parses_only_requested_owned_hashes() -> None:

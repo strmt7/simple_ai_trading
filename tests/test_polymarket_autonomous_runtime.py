@@ -585,6 +585,68 @@ def test_stop_retries_until_owned_exposure_is_closed(tmp_path: Path) -> None:
     assert supervisor.snapshot().stop_completed is True
 
 
+def test_close_failure_is_retained_as_retriable_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+    )
+
+    def fail_close(**_kwargs: object) -> object:
+        raise ConnectionError("network unavailable")
+
+    monkeypatch.setattr(
+        runtime_module,
+        "stop_owned_polymarket_exposure",
+        fail_close,
+    )
+
+    assert asyncio.run(supervisor._close_owned()) is False
+    assert supervisor.snapshot().last_fault == (
+        "owned_exposure_close_failure:ConnectionError"
+    )
+
+
+def test_critical_service_failure_drains_owned_exposure_before_exit(
+    tmp_path: Path,
+) -> None:
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+    )
+    owned = {MARKET_ID}
+    attempts = 0
+    supervisor._owned_market_ids = lambda: set(owned)  # type: ignore[method-assign]
+
+    async def close_owned() -> bool:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 2:
+            owned.clear()
+            return True
+        return False
+
+    async def failed_stream(_stop: asyncio.Event) -> None:
+        raise ConnectionError("authenticated stream failed")
+
+    supervisor._close_owned = close_owned  # type: ignore[method-assign]
+    supervisor.user_stream.run = failed_stream  # type: ignore[method-assign]
+
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            "critical_service_exit:"
+            "authenticated_user_stream:ConnectionError"
+        ),
+    ):
+        asyncio.run(supervisor.run())
+
+    assert attempts == 2
+    assert supervisor.snapshot().stop_completed is True
+
+
 def test_forced_exit_window_never_opens_new_exposure(tmp_path: Path) -> None:
     calls = 0
 
