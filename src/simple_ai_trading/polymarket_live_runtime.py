@@ -303,6 +303,7 @@ class PolymarketUserStreamConsumer:
         side: str,
         quantity: object,
         price: object,
+        role: str,
     ) -> PolymarketRemoteFill:
         status = str(payload.get("status") or "").strip().upper()
         if status.startswith("TRADE_STATUS_"):
@@ -321,13 +322,31 @@ class PolymarketUserStreamConsumer:
                 or payload.get("timestamp")
                 or payload.get("matchtime")
             ),
+            role=role,
+            reported_fee_rate_bps=(
+                -1
+                if payload.get("fee_rate_bps") in {None, ""}
+                else int(str(payload.get("fee_rate_bps")))
+            ),
+            fee_rate=None,
+            fee_exponent=None,
+            fee_quote=None,
+            fee_schedule_sha256="",
+            transaction_hash=str(payload.get("transaction_hash") or ""),
         )
 
     def _handle_trade(self, payload: Mapping[str, object]) -> None:
         owned = set(self._owned_records())
         fills: list[PolymarketRemoteFill] = []
+        trader_role = str(payload.get("trader_side") or "").strip().upper()
+        if trader_role not in {"MAKER", "TAKER"}:
+            raise ValueError("Polymarket trade stream role is invalid")
         taker_order_id = str(payload.get("taker_order_id") or "").strip().lower()
         if taker_order_id in owned:
+            if trader_role != "TAKER":
+                raise PolymarketLiveBlocked(
+                    "owned taker stream fill has contradictory role"
+                )
             fills.append(
                 self._fill(
                     payload,
@@ -336,6 +355,7 @@ class PolymarketUserStreamConsumer:
                     side=str(payload.get("side") or ""),
                     quantity=payload.get("size"),
                     price=payload.get("price"),
+                    role="TAKER",
                 )
             )
         maker_orders = payload.get("maker_orders") or []
@@ -349,6 +369,10 @@ class PolymarketUserStreamConsumer:
             maker_id = str(maker.get("order_id") or "").strip().lower()
             if maker_id not in owned:
                 continue
+            if trader_role != "MAKER":
+                raise PolymarketLiveBlocked(
+                    "owned maker stream fill has contradictory role"
+                )
             maker_side = str(maker.get("side") or "").strip().upper()
             if not maker_side:
                 maker_side = "SELL" if taker_side == "BUY" else "BUY"
@@ -360,6 +384,7 @@ class PolymarketUserStreamConsumer:
                     side=maker_side,
                     quantity=maker.get("matched_amount"),
                     price=maker.get("price"),
+                    role="MAKER",
                 )
             )
         if not fills:

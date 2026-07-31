@@ -19,8 +19,9 @@ import time
 from typing import ContextManager, Mapping, Protocol, Sequence
 
 
-POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION = "polymarket-live-ledger-v1"
+POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION = "polymarket-live-ledger-v2"
 POLYMARKET_LIVE_ORDER_SCHEMA_VERSION = "polymarket-live-order-v1"
+_POLYMARKET_LIVE_LEDGER_V1 = "polymarket-live-ledger-v1"
 
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
@@ -373,6 +374,13 @@ class PolymarketRemoteFill:
     price: Decimal
     status: str
     observed_at_ms: int
+    role: str
+    reported_fee_rate_bps: int
+    fee_rate: Decimal | None
+    fee_exponent: int | None
+    fee_quote: Decimal | None
+    fee_schedule_sha256: str
+    transaction_hash: str
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -402,6 +410,73 @@ class PolymarketRemoteFill:
         if observed_at_ms <= 0:
             raise ValueError("fill observation time is invalid")
         object.__setattr__(self, "observed_at_ms", observed_at_ms)
+        role = str(self.role or "").strip().upper()
+        if role not in {"MAKER", "TAKER"}:
+            raise ValueError("fill role is invalid")
+        object.__setattr__(self, "role", role)
+        reported_fee_rate_bps = int(self.reported_fee_rate_bps)
+        if not -1 <= reported_fee_rate_bps <= 10_000:
+            raise ValueError("reported fill fee rate is invalid")
+        object.__setattr__(
+            self,
+            "reported_fee_rate_bps",
+            reported_fee_rate_bps,
+        )
+        fee_schedule_sha256 = str(self.fee_schedule_sha256 or "").strip().lower()
+        accounting_values = (
+            self.fee_rate is not None,
+            self.fee_exponent is not None,
+            self.fee_quote is not None,
+            bool(fee_schedule_sha256),
+        )
+        if any(accounting_values) and not all(accounting_values):
+            raise ValueError("fill fee accounting evidence is incomplete")
+        if all(accounting_values):
+            fee_rate = _decimal(
+                self.fee_rate,
+                name="fill fee rate",
+                nonnegative=True,
+            )
+            fee_exponent = int(self.fee_exponent)
+            fee_quote = _decimal(
+                self.fee_quote,
+                name="fill fee quote",
+                nonnegative=True,
+            )
+            if (
+                fee_rate > 1
+                or fee_exponent <= 0
+                or fee_quote > self.quantity
+                or re.fullmatch(r"[0-9a-f]{64}", fee_schedule_sha256) is None
+            ):
+                raise ValueError("fill fee accounting evidence is invalid")
+            if role == "MAKER" and fee_quote:
+                raise ValueError("maker fills cannot carry a Polymarket fee")
+            if fee_rate == 0 and fee_quote:
+                raise ValueError("zero-rate fill cannot carry a Polymarket fee")
+            object.__setattr__(self, "fee_rate", fee_rate)
+            object.__setattr__(self, "fee_exponent", fee_exponent)
+            object.__setattr__(self, "fee_quote", fee_quote)
+            object.__setattr__(
+                self,
+                "fee_schedule_sha256",
+                fee_schedule_sha256,
+            )
+        else:
+            object.__setattr__(self, "fee_rate", None)
+            object.__setattr__(self, "fee_exponent", None)
+            object.__setattr__(self, "fee_quote", None)
+            object.__setattr__(self, "fee_schedule_sha256", "")
+        transaction_hash = str(self.transaction_hash or "").strip().lower()
+        if transaction_hash and _BYTES32.fullmatch(transaction_hash) is None:
+            raise ValueError("fill transaction hash is invalid")
+        if status in {"MINED", "CONFIRMED"} and not transaction_hash:
+            raise ValueError("mined or confirmed fill requires a transaction hash")
+        object.__setattr__(self, "transaction_hash", transaction_hash)
+
+    @property
+    def accounting_verified(self) -> bool:
+        return self.fee_rate is not None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1009,10 +1084,20 @@ class PolymarketLiveOrderLedger:
                 price TEXT NOT NULL,
                 status TEXT NOT NULL,
                 observed_at_ms INTEGER NOT NULL,
+                role TEXT NOT NULL,
+                reported_fee_rate_bps INTEGER NOT NULL,
+                fee_rate TEXT NOT NULL,
+                fee_exponent INTEGER NOT NULL,
+                fee_quote TEXT NOT NULL,
+                fee_schedule_sha256 TEXT NOT NULL,
+                transaction_hash TEXT NOT NULL,
+                accounting_state TEXT NOT NULL,
                 fill_sha256 TEXT NOT NULL,
                 PRIMARY KEY (trade_id, order_id),
                 FOREIGN KEY (order_id)
-                    REFERENCES polymarket_live_orders(expected_order_id)
+                    REFERENCES polymarket_live_orders(expected_order_id),
+                CHECK (role IN ('UNKNOWN', 'MAKER', 'TAKER')),
+                CHECK (accounting_state IN ('UNKNOWN', 'VERIFIED'))
             );
             CREATE TABLE IF NOT EXISTS polymarket_live_audit (
                 sequence INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1050,18 +1135,131 @@ class PolymarketLiveOrderLedger:
                 WHERE transaction_hash != '';
             """
         )
-        connection.execute(
-            """
-            INSERT OR IGNORE INTO polymarket_live_metadata (key, value)
-            VALUES ('schema_version', ?)
-            """,
-            [POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION],
-        )
         row = connection.execute(
             "SELECT value FROM polymarket_live_metadata WHERE key = 'schema_version'"
         ).fetchone()
-        if row is None or str(row[0]) != POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION:
+        if row is None:
+            populated = any(
+                int(
+                    connection.execute(
+                        f"SELECT COUNT(*) FROM {table}"  # noqa: S608 - fixed names
+                    ).fetchone()[0]
+                )
+                for table in (
+                    "polymarket_live_orders",
+                    "polymarket_live_fills",
+                    "polymarket_live_audit",
+                    "polymarket_live_redemptions",
+                )
+            )
+            if populated:
+                raise PolymarketLiveError(
+                    "populated live ledger has no schema version"
+                )
+            connection.execute(
+                """
+                INSERT INTO polymarket_live_metadata (key, value)
+                VALUES ('schema_version', ?)
+                """,
+                [POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION],
+            )
+            return
+        version = str(row[0])
+        if version == _POLYMARKET_LIVE_LEDGER_V1:
+            PolymarketLiveOrderLedger._migrate_v1_fill_accounting(connection)
+            return
+        if version != POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION:
             raise PolymarketLiveError("live ledger schema differs")
+
+    @staticmethod
+    def _fill_row_payload_v1(row: Mapping[str, object]) -> dict[str, object]:
+        return {
+            "trade_id": str(row["trade_id"]),
+            "order_id": str(row["order_id"]),
+            "market_id": str(row["market_id"]),
+            "token_id": str(row["token_id"]),
+            "side": str(row["side"]),
+            "quantity": str(row["quantity"]),
+            "price": str(row["price"]),
+            "status": str(row["status"]),
+            "observed_at_ms": int(row["observed_at_ms"]),
+        }
+
+    @staticmethod
+    def _migrate_v1_fill_accounting(connection: sqlite3.Connection) -> None:
+        rows = connection.execute("SELECT * FROM polymarket_live_fills").fetchall()
+        for row in rows:
+            expected = _canonical_sha256(
+                PolymarketLiveOrderLedger._fill_row_payload_v1(row)
+            )
+            if str(row["fill_sha256"]) != expected:
+                raise PolymarketLiveError(
+                    "legacy live fill snapshot hash differs"
+                )
+        columns = {
+            str(row["name"])
+            for row in connection.execute(
+                "PRAGMA table_info(polymarket_live_fills)"
+            ).fetchall()
+        }
+        additions = (
+            ("role", "TEXT NOT NULL DEFAULT 'UNKNOWN'"),
+            ("reported_fee_rate_bps", "INTEGER NOT NULL DEFAULT -1"),
+            ("fee_rate", "TEXT NOT NULL DEFAULT ''"),
+            ("fee_exponent", "INTEGER NOT NULL DEFAULT 0"),
+            ("fee_quote", "TEXT NOT NULL DEFAULT ''"),
+            ("fee_schedule_sha256", "TEXT NOT NULL DEFAULT ''"),
+            ("transaction_hash", "TEXT NOT NULL DEFAULT ''"),
+            ("accounting_state", "TEXT NOT NULL DEFAULT 'UNKNOWN'"),
+        )
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            for name, definition in additions:
+                if name not in columns:
+                    connection.execute(
+                        f"ALTER TABLE polymarket_live_fills "
+                        f"ADD COLUMN {name} {definition}"
+                    )
+            migrated = connection.execute(
+                "SELECT * FROM polymarket_live_fills"
+            ).fetchall()
+            for row in migrated:
+                connection.execute(
+                    """
+                    UPDATE polymarket_live_fills SET fill_sha256 = ?
+                    WHERE trade_id = ? AND order_id = ?
+                    """,
+                    [
+                        _canonical_sha256(
+                            PolymarketLiveOrderLedger._fill_row_payload(row)
+                        ),
+                        str(row["trade_id"]),
+                        str(row["order_id"]),
+                    ],
+                )
+            updated = connection.execute(
+                """
+                UPDATE polymarket_live_metadata SET value = ?
+                WHERE key = 'schema_version' AND value = ?
+                """,
+                [
+                    POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION,
+                    _POLYMARKET_LIVE_LEDGER_V1,
+                ],
+            )
+            if updated.rowcount != 1:
+                raise PolymarketLiveError(
+                    "legacy live ledger version changed during migration"
+                )
+            for row in connection.execute(
+                "SELECT * FROM polymarket_live_fills"
+            ).fetchall():
+                PolymarketLiveOrderLedger._verify_fill_row(row)
+            connection.execute("COMMIT")
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
 
     @staticmethod
     def _order_row_payload(row: Mapping[str, object]) -> dict[str, object]:
@@ -1129,12 +1327,84 @@ class PolymarketLiveOrderLedger:
             "price": str(row["price"]),
             "status": str(row["status"]),
             "observed_at_ms": int(row["observed_at_ms"]),
+            "role": str(row["role"]),
+            "reported_fee_rate_bps": int(row["reported_fee_rate_bps"]),
+            "fee_rate": str(row["fee_rate"]),
+            "fee_exponent": int(row["fee_exponent"]),
+            "fee_quote": str(row["fee_quote"]),
+            "fee_schedule_sha256": str(row["fee_schedule_sha256"]),
+            "transaction_hash": str(row["transaction_hash"]),
+            "accounting_state": str(row["accounting_state"]),
         }
 
     @classmethod
     def _verify_fill_row(cls, row: Mapping[str, object]) -> None:
         if str(row["fill_sha256"]) != _canonical_sha256(cls._fill_row_payload(row)):
             raise PolymarketLiveError("live fill snapshot hash differs")
+        accounting_state = str(row["accounting_state"])
+        role = str(row["role"])
+        reported_fee_rate_bps = int(row["reported_fee_rate_bps"])
+        transaction_hash = str(row["transaction_hash"])
+        if (
+            accounting_state not in {"UNKNOWN", "VERIFIED"}
+            or role not in {"UNKNOWN", "MAKER", "TAKER"}
+            or not -1 <= reported_fee_rate_bps <= 10_000
+            or transaction_hash
+            and _BYTES32.fullmatch(transaction_hash) is None
+        ):
+            raise PolymarketLiveError("stored fill accounting metadata is invalid")
+        if accounting_state == "UNKNOWN":
+            if (
+                str(row["fee_rate"])
+                or int(row["fee_exponent"])
+                or str(row["fee_quote"])
+                or str(row["fee_schedule_sha256"])
+            ):
+                raise PolymarketLiveError(
+                    "unverified fill carries fee accounting values"
+                )
+            return
+        if role == "UNKNOWN":
+            raise PolymarketLiveError("verified fill role is unknown")
+        try:
+            PolymarketRemoteFill(
+                trade_id=str(row["trade_id"]),
+                order_id=str(row["order_id"]),
+                market_id=str(row["market_id"]),
+                token_id=str(row["token_id"]),
+                side=str(row["side"]),
+                quantity=_decimal(
+                    row["quantity"],
+                    name="stored fill quantity",
+                    positive=True,
+                ),
+                price=_decimal(
+                    row["price"],
+                    name="stored fill price",
+                    positive=True,
+                ),
+                status=str(row["status"]),
+                observed_at_ms=int(row["observed_at_ms"]),
+                role=role,
+                reported_fee_rate_bps=reported_fee_rate_bps,
+                fee_rate=_decimal(
+                    row["fee_rate"],
+                    name="stored fill fee rate",
+                    nonnegative=True,
+                ),
+                fee_exponent=int(row["fee_exponent"]),
+                fee_quote=_decimal(
+                    row["fee_quote"],
+                    name="stored fill fee quote",
+                    nonnegative=True,
+                ),
+                fee_schedule_sha256=str(row["fee_schedule_sha256"]),
+                transaction_hash=transaction_hash,
+            )
+        except ValueError as exc:
+            raise PolymarketLiveError(
+                "stored verified fill accounting is invalid"
+            ) from exc
 
     @staticmethod
     def _redemption_row_payload(row: Mapping[str, object]) -> dict[str, object]:
@@ -1452,7 +1722,17 @@ class PolymarketLiveOrderLedger:
                 or fill.side == "SELL"
                 and fill.price < limit_price
             )
-            payload = {
+            fee_rate_text = ""
+            fee_exponent = 0
+            fee_quote_text = ""
+            if fill.accounting_verified:
+                assert fill.fee_rate is not None
+                assert fill.fee_exponent is not None
+                assert fill.fee_quote is not None
+                fee_rate_text = format(fill.fee_rate, "f")
+                fee_exponent = fill.fee_exponent
+                fee_quote_text = format(fill.fee_quote, "f")
+            payload: dict[str, object] = {
                 "trade_id": fill.trade_id,
                 "order_id": fill.order_id,
                 "market_id": fill.market_id,
@@ -1462,8 +1742,17 @@ class PolymarketLiveOrderLedger:
                 "price": format(fill.price, "f"),
                 "status": fill.status,
                 "observed_at_ms": fill.observed_at_ms,
+                "role": fill.role,
+                "reported_fee_rate_bps": fill.reported_fee_rate_bps,
+                "fee_rate": fee_rate_text,
+                "fee_exponent": fee_exponent,
+                "fee_quote": fee_quote_text,
+                "fee_schedule_sha256": fill.fee_schedule_sha256,
+                "transaction_hash": fill.transaction_hash,
+                "accounting_state": (
+                    "VERIFIED" if fill.accounting_verified else "UNKNOWN"
+                ),
             }
-            digest = _canonical_sha256(payload)
             existing = connection.execute(
                 """
                 SELECT *
@@ -1496,28 +1785,123 @@ class PolymarketLiveOrderLedger:
                     raise PolymarketLiveBlocked(
                         "fill price violates the signed limit price"
                     )
+                prior_role = str(existing["role"])
+                if prior_role not in {"UNKNOWN", fill.role}:
+                    raise PolymarketLiveBlocked("existing fill role differs")
+                prior_reported_fee_rate_bps = int(
+                    existing["reported_fee_rate_bps"]
+                )
+                if (
+                    prior_reported_fee_rate_bps >= 0
+                    and fill.reported_fee_rate_bps >= 0
+                    and prior_reported_fee_rate_bps
+                    != fill.reported_fee_rate_bps
+                ):
+                    raise PolymarketLiveBlocked(
+                        "existing reported fill fee rate differs"
+                    )
+                prior_transaction_hash = str(existing["transaction_hash"])
+                if (
+                    prior_transaction_hash
+                    and fill.transaction_hash
+                    and prior_transaction_hash != fill.transaction_hash
+                ):
+                    raise PolymarketLiveBlocked(
+                        "existing fill transaction hash differs"
+                    )
+                prior_accounting_state = str(existing["accounting_state"])
+                if prior_accounting_state not in {"UNKNOWN", "VERIFIED"}:
+                    raise PolymarketLiveError(
+                        "stored fill accounting state is invalid"
+                    )
+                if prior_accounting_state == "VERIFIED":
+                    prior_fee_economics = (
+                        str(existing["fee_rate"]),
+                        int(existing["fee_exponent"]),
+                        str(existing["fee_quote"]),
+                        str(existing["fee_schedule_sha256"]),
+                    )
+                    if fill.accounting_verified and prior_fee_economics != (
+                        fee_rate_text,
+                        fee_exponent,
+                        fee_quote_text,
+                        fill.fee_schedule_sha256,
+                    ):
+                        raise PolymarketLiveBlocked(
+                            "existing fill fee accounting differs"
+                        )
+                    payload.update(
+                        {
+                            "fee_rate": prior_fee_economics[0],
+                            "fee_exponent": prior_fee_economics[1],
+                            "fee_quote": prior_fee_economics[2],
+                            "fee_schedule_sha256": prior_fee_economics[3],
+                            "accounting_state": "VERIFIED",
+                        }
+                    )
+                payload.update(
+                    {
+                        "role": (
+                            fill.role if prior_role == "UNKNOWN" else prior_role
+                        ),
+                        "reported_fee_rate_bps": (
+                            fill.reported_fee_rate_bps
+                            if prior_reported_fee_rate_bps < 0
+                            else prior_reported_fee_rate_bps
+                        ),
+                        "transaction_hash": (
+                            prior_transaction_hash or fill.transaction_hash
+                        ),
+                        "observed_at_ms": max(
+                            int(existing["observed_at_ms"]),
+                            fill.observed_at_ms,
+                        ),
+                    }
+                )
                 prior_status = str(existing["status"])
                 if prior_status in _FILL_TERMINAL_STATUSES:
-                    if str(existing["fill_sha256"]) != digest:
-                        raise PolymarketLiveBlocked("terminal fill evidence differs")
+                    if fill.status != prior_status:
+                        raise PolymarketLiveBlocked("terminal fill status differs")
+                    payload["status"] = prior_status
+                else:
+                    allowed = {
+                        "MATCHED": {
+                            "MATCHED",
+                            "MINED",
+                            "CONFIRMED",
+                            "RETRYING",
+                            "FAILED",
+                        },
+                        "MINED": {"MINED", "CONFIRMED", "RETRYING", "FAILED"},
+                        "RETRYING": {"RETRYING", "MINED", "CONFIRMED", "FAILED"},
+                    }
+                    if fill.status not in allowed.get(prior_status, set()):
+                        raise PolymarketLiveBlocked("fill status regressed")
+                digest = _canonical_sha256(payload)
+                if str(existing["fill_sha256"]) == digest:
                     connection.execute("COMMIT")
                     return
-                allowed = {
-                    "MATCHED": {"MATCHED", "MINED", "CONFIRMED", "RETRYING", "FAILED"},
-                    "MINED": {"MINED", "CONFIRMED", "RETRYING", "FAILED"},
-                    "RETRYING": {"RETRYING", "MINED", "CONFIRMED", "FAILED"},
-                }
-                if fill.status not in allowed.get(prior_status, set()):
-                    raise PolymarketLiveBlocked("fill status regressed")
                 connection.execute(
                     """
                     UPDATE polymarket_live_fills
-                    SET status = ?, observed_at_ms = ?, fill_sha256 = ?
+                    SET status = ?, observed_at_ms = ?, role = ?,
+                        reported_fee_rate_bps = ?, fee_rate = ?,
+                        fee_exponent = ?, fee_quote = ?,
+                        fee_schedule_sha256 = ?, transaction_hash = ?,
+                        accounting_state = ?, fill_sha256 = ?
                     WHERE trade_id = ? AND order_id = ?
                     """,
                     [
-                        fill.status,
-                        fill.observed_at_ms,
+                        payload["status"],
+                        payload["observed_at_ms"],
+                        payload["role"],
+                        payload["reported_fee_rate_bps"],
+                        payload["fee_rate"],
+                        payload["fee_exponent"],
+                        payload["fee_quote"],
+                        payload["fee_schedule_sha256"],
+                        payload["transaction_hash"],
+                        payload["accounting_state"],
                         digest,
                         fill.trade_id,
                         fill.order_id,
@@ -1528,12 +1912,16 @@ class PolymarketLiveOrderLedger:
                     raise PolymarketLiveBlocked(
                         "fill price violates the signed limit price"
                     )
+                digest = _canonical_sha256(payload)
                 connection.execute(
                     """
                     INSERT INTO polymarket_live_fills (
                         trade_id, order_id, market_id, token_id, side, quantity,
-                        price, status, observed_at_ms, fill_sha256
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        price, status, observed_at_ms, role,
+                        reported_fee_rate_bps, fee_rate, fee_exponent, fee_quote,
+                        fee_schedule_sha256, transaction_hash, accounting_state,
+                        fill_sha256
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     [
                         fill.trade_id,
@@ -1543,8 +1931,16 @@ class PolymarketLiveOrderLedger:
                         fill.side,
                         format(fill.quantity, "f"),
                         format(fill.price, "f"),
-                        fill.status,
-                        fill.observed_at_ms,
+                        payload["status"],
+                        payload["observed_at_ms"],
+                        payload["role"],
+                        payload["reported_fee_rate_bps"],
+                        payload["fee_rate"],
+                        payload["fee_exponent"],
+                        payload["fee_quote"],
+                        payload["fee_schedule_sha256"],
+                        payload["transaction_hash"],
+                        payload["accounting_state"],
                         digest,
                     ],
                 )
@@ -1693,6 +2089,7 @@ class PolymarketLiveOrderLedger:
                 """
                 SELECT DISTINCT order_id FROM polymarket_live_fills
                 WHERE status NOT IN ('CONFIRMED', 'FAILED')
+                   OR accounting_state != 'VERIFIED'
                 """
             ).fetchall()
         finally:
@@ -1745,6 +2142,19 @@ class PolymarketLiveOrderLedger:
             all_active_fills_confirmed=bool(rows)
             and all(str(row["status"]) == "CONFIRMED" for row in rows),
         )
+
+    def unverified_fill_accounting_count(self) -> int:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                """
+                SELECT COUNT(*) FROM polymarket_live_fills
+                WHERE status != 'FAILED' AND accounting_state != 'VERIFIED'
+                """
+            ).fetchone()
+            return 0 if row is None else int(row[0])
+        finally:
+            connection.close()
 
     @staticmethod
     def _redemption_inventory_json(
@@ -2617,6 +3027,8 @@ class PolymarketLiveCoordinator:
             errors.append("unknown_order_state")
         if any(item.provisional for item in owned_inventory.values()):
             errors.append("provisional_fill_state")
+        if self.ledger.unverified_fill_accounting_count():
+            errors.append("unverified_fill_accounting")
         if any(
             record.state in {"prepared", "submitting", "submitted", "unknown"}
             for record in self.ledger.redemption_records()

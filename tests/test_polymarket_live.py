@@ -127,6 +127,13 @@ def _fill(
         price=Decimal(price),
         status=status,
         observed_at_ms=NOW_MS + seed,
+        role="TAKER",
+        reported_fee_rate_bps=0,
+        fee_rate=Decimal("0"),
+        fee_exponent=1,
+        fee_quote=Decimal("0"),
+        fee_schedule_sha256="a" * 64,
+        transaction_hash="0x" + "d" * 64,
     )
 
 
@@ -1260,6 +1267,166 @@ def test_fill_economics_are_immutable_and_cumulative_quantity_is_capped(
     assert evidence.all_active_fills_confirmed is False
 
 
+def test_stream_fill_accounting_upgrades_once_and_blocks_open_until_verified(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "fill-accounting.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    verified = _fill(intent, prepared.expected_order_id)
+    stream_only = replace(
+        verified,
+        fee_rate=None,
+        fee_exponent=None,
+        fee_quote=None,
+        fee_schedule_sha256="",
+    )
+    ledger.record_fill(stream_only)
+    ledger.transition(
+        intent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 10,
+        remote_status="CONFIRMED",
+        matched_quantity=Decimal("1"),
+    )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1"),
+            redeemable=False,
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    blocked = coordinator.reconcile()
+
+    assert ledger.unverified_fill_accounting_count() == 1
+    assert blocked.can_open is False
+    assert blocked.can_close is True
+    assert "unverified_fill_accounting" in blocked.errors
+
+    ledger.record_fill(verified)
+    admitted = coordinator.reconcile()
+
+    assert ledger.unverified_fill_accounting_count() == 0
+    assert "unverified_fill_accounting" not in admitted.errors
+    with pytest.raises(PolymarketLiveBlocked, match="fee accounting differs"):
+        ledger.record_fill(
+            replace(
+                verified,
+                fee_rate=Decimal("0.07"),
+                fee_quote=Decimal("0.01"),
+                fee_schedule_sha256="b" * 64,
+            )
+        )
+
+
+def test_v1_fill_ledger_migrates_without_inventing_fee_accounting(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "legacy-live.sqlite3"
+    ledger = PolymarketLiveOrderLedger(path)
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    ledger.record_fill(_fill(intent, prepared.expected_order_id))
+
+    connection = sqlite3.connect(path)
+    connection.row_factory = sqlite3.Row
+    try:
+        connection.execute("PRAGMA foreign_keys=OFF")
+        connection.execute(
+            """
+            CREATE TABLE polymarket_live_fills_v1 (
+                trade_id TEXT NOT NULL,
+                order_id TEXT NOT NULL,
+                market_id TEXT NOT NULL,
+                token_id TEXT NOT NULL,
+                side TEXT NOT NULL,
+                quantity TEXT NOT NULL,
+                price TEXT NOT NULL,
+                status TEXT NOT NULL,
+                observed_at_ms INTEGER NOT NULL,
+                fill_sha256 TEXT NOT NULL,
+                PRIMARY KEY (trade_id, order_id)
+            )
+            """
+        )
+        for row in connection.execute(
+            "SELECT * FROM polymarket_live_fills"
+        ).fetchall():
+            payload = {
+                "trade_id": str(row["trade_id"]),
+                "order_id": str(row["order_id"]),
+                "market_id": str(row["market_id"]),
+                "token_id": str(row["token_id"]),
+                "side": str(row["side"]),
+                "quantity": str(row["quantity"]),
+                "price": str(row["price"]),
+                "status": str(row["status"]),
+                "observed_at_ms": int(row["observed_at_ms"]),
+            }
+            payload_json = json.dumps(
+                payload,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+                allow_nan=False,
+            )
+            connection.execute(
+                """
+                INSERT INTO polymarket_live_fills_v1
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    *payload.values(),
+                    hashlib.sha256(payload_json.encode("ascii")).hexdigest(),
+                ],
+            )
+        connection.execute("DROP TABLE polymarket_live_fills")
+        connection.execute(
+            "ALTER TABLE polymarket_live_fills_v1 "
+            "RENAME TO polymarket_live_fills"
+        )
+        connection.execute(
+            """
+            UPDATE polymarket_live_metadata SET value = 'polymarket-live-ledger-v1'
+            WHERE key = 'schema_version'
+            """
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    migrated = PolymarketLiveOrderLedger(path)
+
+    assert migrated.unverified_fill_accounting_count() == 1
+    assert migrated.order_fill_evidence(
+        prepared.expected_order_id
+    ).all_active_fills_confirmed
+    connection = sqlite3.connect(path)
+    try:
+        version = connection.execute(
+            """
+            SELECT value FROM polymarket_live_metadata
+            WHERE key = 'schema_version'
+            """
+        ).fetchone()
+        row = connection.execute(
+            """
+            SELECT role, accounting_state, fee_rate, fee_exponent, fee_quote
+            FROM polymarket_live_fills
+            """
+        ).fetchone()
+    finally:
+        connection.close()
+    assert version == ("polymarket-live-ledger-v2",)
+    assert row == ("UNKNOWN", "UNKNOWN", "", 0, "")
+
+
 def test_order_and_fill_snapshot_corruption_is_detected(tmp_path: Path) -> None:
     path = tmp_path / "live.sqlite3"
     ledger = PolymarketLiveOrderLedger(path)
@@ -2072,6 +2239,9 @@ def test_user_stream_applies_only_exact_owned_order_and_fill_events(
         "price": "0.50",
         "status": "CONFIRMED",
         "last_update": timestamp,
+        "trader_side": "TAKER",
+        "fee_rate_bps": "0",
+        "transaction_hash": "0x" + "d" * 64,
         "maker_orders": [],
     }
 
@@ -2084,6 +2254,7 @@ def test_user_stream_applies_only_exact_owned_order_and_fill_events(
     assert record.matched_quantity == Decimal("0.25")
     assert evidence.quantity == Decimal("0.25")
     assert evidence.all_active_fills_confirmed is True
+    assert ledger.unverified_fill_accounting_count() == 1
     assert guard.snapshot().hard_faults == ()
 
 

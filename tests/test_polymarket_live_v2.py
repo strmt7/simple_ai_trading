@@ -307,6 +307,9 @@ def test_trade_parser_binds_maker_fill_to_exact_owned_hash_and_normalizes_status
             "price": "0.5",
             "status": "TRADE_STATUS_CONFIRMED",
             "last_update": str(int(time.time())),
+            "fee_rate_bps": "700",
+            "transaction_hash": "0x" + "d" * 64,
+            "trader_side": "MAKER",
             "maker_orders": [
                 {
                     "order_id": owned,
@@ -325,6 +328,46 @@ def test_trade_parser_binds_maker_fill_to_exact_owned_hash_and_normalizes_status
     assert fills[0].order_id == owned
     assert fills[0].side == "SELL"
     assert fills[0].status == "CONFIRMED"
+    assert fills[0].role == "MAKER"
+    assert fills[0].fee_quote == Decimal("0")
+    assert fills[0].accounting_verified is True
+
+
+def test_trade_parser_prices_taker_fee_from_exact_market_schedule() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    owned = "0x" + "2" * 64
+    client.trades = [
+        {
+            "id": "trade-official-0002",
+            "taker_order_id": owned,
+            "market": MARKET_ID,
+            "asset_id": TOKEN_ID,
+            "side": "BUY",
+            "size": "5",
+            "price": "0.5",
+            "status": "TRADE_STATUS_CONFIRMED",
+            "last_update": str(int(time.time())),
+            "fee_rate_bps": "700",
+            "transaction_hash": "0x" + "e" * 64,
+            "trader_side": "TAKER",
+            "maker_orders": [],
+        }
+    ]
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    fills = venue.fills_for_orders((owned,), market_ids=(MARKET_ID,))
+
+    assert len(fills) == 1
+    assert fills[0].role == "TAKER"
+    assert fills[0].fee_rate == Decimal("0.07")
+    assert fills[0].fee_exponent == 1
+    assert fills[0].fee_quote == Decimal("0.08750")
+    assert len(fills[0].fee_schedule_sha256) == 64
+
+    client.trades[0] = {**client.trades[0], "trader_side": "MAKER"}
+    with pytest.raises(PolymarketLiveBlocked, match="contradictory trade role"):
+        venue.fills_for_orders((owned,), market_ids=(MARKET_ID,))
 
 
 def test_submission_transport_error_is_propagated_after_one_attempt() -> None:

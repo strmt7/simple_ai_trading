@@ -95,6 +95,13 @@ def _seed_confirmed_inventory(
             price=Decimal("0.51"),
             status=fill_status,
             observed_at_ms=NOW_MS + 1,
+            role="TAKER",
+            reported_fee_rate_bps=0,
+            fee_rate=Decimal("0"),
+            fee_exponent=1,
+            fee_quote=Decimal("0"),
+            fee_schedule_sha256="a" * 64,
+            transaction_hash="0x" + "d" * 64,
         )
     )
     ledger.transition(
