@@ -30,6 +30,15 @@ This is **predictive evidence only**. Polymarket spread, queue position, fills,
 latency, fees, settlement, redemption, inventory risk, and PnL were not tested,
 so it is not a profitability or execution claim.
 
+Round 21 is a separate 30-day, target-blind BTC five-minute campaign. No model
+or profitability result exists while that capture is active. Its deterministic
+program evaluates five settlement-probability candidates and 81 after-cost
+profile/scenario ledgers. The local AI comparison is also finite: exactly
+`qwen3:8b`, `fin-r1:8b`, and `fino1:8b` must use the same matched development
+population and deterministic baseline. A model is nominated for the one-use
+sealed test only if all 81 ledgers pass; otherwise the auditable result is no
+challenger. Nomination is not model promotion or trading authority.
+
 Round 16 is a separate, preregistered BTC fifteen-minute comparison. Its
 historical/live one-second feature transform is bit-identical, but no model
 result exists yet. Before held-out access, its pretest artifact must freeze
@@ -53,6 +62,7 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Decision-offset metrics](tables/round14-decision-offsets.csv)
 - [Cross-round progression](tables/optimization-progress.csv)
 - [AI risk-model rejection record](ai-risk-models-rejected.json)
+- [Round 21 AI candidate-selection contract](../round-021-ai-candidate-selection-design-v1.json)
 - [Publication integrity](publication-integrity.json)
 
 Regenerate from the closed local evidence database with

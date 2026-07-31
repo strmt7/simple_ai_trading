@@ -1,0 +1,56 @@
+{
+  "schema_version": "polymarket-round21-ai-candidate-selection-design-v1",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_ai_veto_design_sha256": "b84e49cbc382e4211a2e83f2b889c06506cd8ae477a7cdd35e1cd4258b0cce84",
+    "round21_model_design_sha256": "6dd59a429c1013ef737086da9fbd9a59cb93bcbb616fb7a97cc0ddf4dbb1e7be"
+  },
+  "candidate_program": {
+    "models": [
+      "qwen3:8b",
+      "fin-r1:8b",
+      "fino1:8b"
+    ],
+    "exactly_one_report_per_model": true,
+    "immutable_weight_digest_required": true,
+    "duplicate_weight_digest_rejected": true,
+    "same_matched_population_required": true,
+    "same_deterministic_baseline_matrix_required": true,
+    "same_81_profile_scenario_ledgers_required": true
+  },
+  "admission": {
+    "development_qualified_required": true,
+    "all_81_after_cost_ledgers_must_pass": true,
+    "minimum_matched_decisions": 300,
+    "minimum_non_tied_primary_actions": 30,
+    "failed_candidates_remain_in_audit_artifact": true
+  },
+  "ranking": {
+    "scope": "development_only_before_one_use_sealed_test",
+    "primary": "maximize_minimum_daily_mean_delta_lower_95_quote_across_81_ledgers",
+    "secondary": "maximize_minimum_mean_condition_utility_delta_quote_across_81_ledgers",
+    "tertiary": "minimize_maximum_drawdown_delta_fraction_across_81_ledgers",
+    "quaternary": "maximize_minimum_tail_mean_delta_quote_across_81_ledgers",
+    "final_tie_break": "ascending_exact_model_name",
+    "post_nomination_development_retuning": false
+  },
+  "semantics": {
+    "output": "one_development_nominated_sealed_test_challenger_or_none",
+    "nomination_is_model_selection": false,
+    "nomination_is_ai_edge_claim": false,
+    "nomination_is_profitability_claim": false,
+    "nomination_grants_execution_authority": false
+  },
+  "authority": {
+    "capture_data_accessed": false,
+    "test_targets_accessed": false,
+    "ai_model_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "4249bb64de61e01dd7dced9c8c0749d46e52ded8c634bcc903c3191db13a1231"
+}

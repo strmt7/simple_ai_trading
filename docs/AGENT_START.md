@@ -43,7 +43,7 @@ agents to canonical evidence without replacing that evidence.
 |---|---|---|
 | Binance model or backtest | nearest model module and test | `docs/model-research/action-value/latest/README.md`, then selected rows from `progress.csv` |
 | Prior model failure | last row plus the relevant mechanism row in `docs/model-research/action-value/latest/progress.csv` | that row's named design/report only |
-| Polymarket model | Round 13 program/evaluator and focused tests; use Round 11 only for predecessor diagnostics | `docs/model-research/polymarket/latest/README.md`, then the Round 13 contract |
+| Polymarket model | Latest canonical status plus the target-blind Round 21 finite model, economic replay, and AI candidate-selection contracts | `docs/model-research/polymarket/latest/README.md`, then the Round 21 contracts |
 | Polymarket recorder/replay | matching recorder or replay module and test | `docs/model-research/polymarket/prospective-continuity-contract-v2.json` |
 | Risk or execution | nearest risk/execution module and test | `docs/LIVE_MARKET_SIMULATION.md`, `docs/POLYMARKET_PAPER_TRADING.md`, or `docs/POLYMARKET_LIVE_EXECUTION.md` only at the relevant heading |
 | AI provider/model | nearest AI module and test | `docs/ai/risk-review/latest/comparison.json` and its sibling provenance |
