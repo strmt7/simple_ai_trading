@@ -215,6 +215,9 @@ def _local_status(path: Path) -> dict[str, object]:
             sum((item.quantity for item in inventory), Decimal("0")),
             "f",
         ),
+        "unverified_fill_accounting_count": (
+            ledger.unverified_fill_accounting_count()
+        ),
         "unresolved_redemption_count": len(unresolved),
         "runtime_control": runtime_control.asdict(),
         "can_open": False,

@@ -63,20 +63,28 @@ flowchart LR
   market-wide cancellation are prohibited.
 - Missing FAK/FOK orders are resolved through authenticated exact-ID lookup.
   Only documented V2 `LIVE`, `INVALID`, `CANCELED_MARKET_RESOLVED`,
-  `CANCELED`, and `MATCHED` states are accepted. Market, token, side, original
-  quantity, matched quantity, and fill evidence must reconcile.
-- Hash-bound order and fill snapshots, an append-only audit chain, exact fill
-  economics, cumulative-fill caps, and restart reconciliation.
+  `CANCELED`, and `MATCHED` states are accepted. Order hash, dedicated-wallet
+  maker, market, token, side, order type, signed price, original quantity,
+  matched quantity, and fill evidence must reconcile.
+- Hash-bound order and fill snapshots, an append-only audit chain, maker/taker
+  role, reported fee metadata, transaction hash, exact per-market fee-schedule
+  provenance, cumulative-fill caps, and restart reconciliation. User-stream
+  fills may establish quantity before fee evidence is available, but that
+  state is explicitly unverified and blocks new exposure. Authenticated REST
+  evidence can upgrade it once; verified accounting cannot be rewritten.
+  Version-1 ledgers migrate without inventing fees and remain close-capable
+  while their historical accounting is unresolved.
 - Confirmed BUY fills form parent-specific bot-owned lots. Confirmed and
   provisional child SELL fills, outstanding close reservations, and
   redemptions are reconciled per parent, preventing two closes from consuming
   the same shares.
 - Stop cancels only exact bot-owned hashes, walks a fresh Polymarket bid book
-  for each unreserved lot, cross-checks tick size and negative-risk mode, and
-  submits bounded FAK SELLs. It succeeds only at zero bot-owned inventory and
-  zero bot-owned open orders. Stale books, insufficient depth, sub-minimum
-  dust, ambiguity, or timeout return a nonzero incomplete result with the exact
-  remaining inventory.
+  for each unreserved lot, cross-checks tick size, minimum size,
+  negative-risk mode, and the condition-specific fee schedule, then submits
+  bounded FAK SELLs with a nonzero taker-fee reserve when applicable. It
+  succeeds only at zero bot-owned inventory and zero bot-owned open orders.
+  Stale books, insufficient depth, sub-minimum dust, ambiguity, or timeout
+  return a nonzero incomplete result with the exact remaining inventory.
 - A hash-verified runtime-control record permits one autonomous process. Stop
   is persisted before credential or network access, polled without a
   write-heavy heartbeat, and ordered against the final order dispatch through

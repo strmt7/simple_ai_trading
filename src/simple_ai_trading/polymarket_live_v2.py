@@ -286,7 +286,7 @@ class OfficialPolymarketV2Venue:
         market_info: Mapping[str, object],
         *,
         condition_id: str,
-    ) -> tuple[PolymarketFeeModel, Decimal, int]:
+    ) -> tuple[PolymarketFeeModel, Decimal, int, str]:
         if str(market_info.get("c") or "").strip().lower() != condition_id:
             raise PolymarketLiveBlocked("Polymarket market fee identity differs")
         fee_details = _mapping(
@@ -304,6 +304,16 @@ class OfficialPolymarketV2Venue:
             or taker_only is not True
         ):
             raise ValueError("Polymarket fee parameters are invalid")
+        schedule_json = json.dumps(
+            {
+                "condition_id": condition_id,
+                "fee_details": dict(fee_details),
+            },
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        )
         return (
             PolymarketFeeModel(
                 enabled=fee_rate > 0,
@@ -313,6 +323,7 @@ class OfficialPolymarketV2Venue:
             ),
             fee_rate,
             fee_exponent_raw,
+            hashlib.sha256(schedule_json.encode("ascii")).hexdigest(),
         )
 
     def _remote_order(self, value: object) -> PolymarketRemoteOrder:
@@ -457,7 +468,7 @@ class OfficialPolymarketV2Venue:
             raise PolymarketLiveBlocked(
                 "proposed Polymarket quantity is below the venue minimum"
             )
-        fee_model, fee_rate, fee_exponent = self._fee_schedule(
+        fee_model, fee_rate, fee_exponent, _ = self._fee_schedule(
             market_info,
             condition_id=condition,
         )
@@ -600,7 +611,7 @@ class OfficialPolymarketV2Venue:
             raise PolymarketLiveBlocked(
                 "bot-owned close quantity is below the venue minimum"
             )
-        fee_model, fee_rate, fee_exponent = self._fee_schedule(
+        fee_model, fee_rate, fee_exponent, _ = self._fee_schedule(
             market_info,
             condition_id=condition,
         )
@@ -943,22 +954,47 @@ class OfficialPolymarketV2Venue:
         side: str,
         quantity: object,
         price: object,
+        role: str,
+        fee_model: PolymarketFeeModel,
+        fee_rate: Decimal,
+        fee_exponent: int,
+        fee_schedule_sha256: str,
     ) -> PolymarketRemoteFill:
         status = str(trade.get("status") or "").strip().upper()
         if status.startswith("TRADE_STATUS_"):
             status = status.removeprefix("TRADE_STATUS_")
+        fill_quantity = Decimal(str(quantity))
+        fill_price = Decimal(str(price))
+        normalized_role = str(role or "").strip().upper()
+        reported_fee_rate = trade.get("fee_rate_bps")
+        reported_fee_rate_bps = (
+            -1
+            if reported_fee_rate in {None, ""}
+            else int(str(reported_fee_rate))
+        )
         return PolymarketRemoteFill(
             trade_id=str(trade.get("id") or ""),
             order_id=order_id,
             market_id=str(trade.get("market") or ""),
             token_id=token_id,
             side=side,
-            quantity=Decimal(str(quantity)),
-            price=Decimal(str(price)),
+            quantity=fill_quantity,
+            price=fill_price,
             status=status,
             observed_at_ms=_observed_time_ms(
                 trade.get("last_update") or trade.get("matchtime")
             ),
+            role=normalized_role,
+            reported_fee_rate_bps=reported_fee_rate_bps,
+            fee_rate=fee_rate,
+            fee_exponent=fee_exponent,
+            fee_quote=fee_model(
+                fill_price,
+                fill_quantity,
+                normalized_role.lower(),
+            ),
+            fee_schedule_sha256=fee_schedule_sha256,
+            transaction_hash=str(trade.get("transaction_hash") or ""),
         )
 
     def fills_for_orders(
@@ -978,13 +1014,30 @@ class OfficialPolymarketV2Venue:
             ) from exc
         output: dict[tuple[str, str], PolymarketRemoteFill] = {}
         for market_id in sorted(set(market_ids)):
+            market_info = _mapping(
+                self._client.get_clob_market_info(market_id),
+                name="fill market info",
+            )
+            fee_model, fee_rate, fee_exponent, fee_schedule_sha256 = (
+                self._fee_schedule(
+                    market_info,
+                    condition_id=market_id,
+                )
+            )
             rows = self._client.get_trades(TradeParams(market=market_id))
             if not isinstance(rows, list):
                 raise ValueError("Polymarket trade response is invalid")
             for raw in rows:
                 trade = _mapping(raw, name="trade")
+                trader_role = str(trade.get("trader_side") or "").strip().upper()
+                if trader_role not in {"MAKER", "TAKER"}:
+                    raise ValueError("Polymarket trade role is invalid")
                 taker_order_id = str(trade.get("taker_order_id") or "").lower()
                 if taker_order_id in owned:
+                    if trader_role != "TAKER":
+                        raise PolymarketLiveBlocked(
+                            "owned taker order has contradictory trade role"
+                        )
                     fill = self._fill(
                         trade=trade,
                         order_id=taker_order_id,
@@ -992,6 +1045,11 @@ class OfficialPolymarketV2Venue:
                         side=str(trade.get("side") or ""),
                         quantity=trade.get("size"),
                         price=trade.get("price"),
+                        role="TAKER",
+                        fee_model=fee_model,
+                        fee_rate=fee_rate,
+                        fee_exponent=fee_exponent,
+                        fee_schedule_sha256=fee_schedule_sha256,
                     )
                     output[(fill.trade_id, fill.order_id)] = fill
                 maker_orders = trade.get("maker_orders") or []
@@ -1002,6 +1060,10 @@ class OfficialPolymarketV2Venue:
                     maker_order_id = str(maker.get("order_id") or "").lower()
                     if maker_order_id not in owned:
                         continue
+                    if trader_role != "MAKER":
+                        raise PolymarketLiveBlocked(
+                            "owned maker order has contradictory trade role"
+                        )
                     maker_side = str(maker.get("side") or "").strip().upper()
                     if not maker_side:
                         taker_side = str(trade.get("side") or "").strip().upper()
@@ -1013,6 +1075,11 @@ class OfficialPolymarketV2Venue:
                         side=maker_side,
                         quantity=maker.get("matched_amount"),
                         price=maker.get("price"),
+                        role="MAKER",
+                        fee_model=fee_model,
+                        fee_rate=fee_rate,
+                        fee_exponent=fee_exponent,
+                        fee_schedule_sha256=fee_schedule_sha256,
                     )
                     output[(fill.trade_id, fill.order_id)] = fill
         return tuple(
