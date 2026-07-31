@@ -3062,14 +3062,42 @@ class PolymarketLiveCoordinator:
             record = by_order[order_id]
             current = self.ledger.record(record.intent.intent_id)
             if current.state == "cancel_pending":
+                fill_evidence = self.ledger.order_fill_evidence(order_id)
+                fill_mismatch = (
+                    fill_evidence.quantity > current.matched_quantity
+                    or (
+                        current.matched_quantity == 0
+                        and fill_evidence.has_active_fills
+                    )
+                )
+                if fill_mismatch:
+                    next_state = "cancel_unknown"
+                    failure_code = "cancelled_order_fill_quantity_mismatch"
+                    missing_evidence = True
+                elif current.matched_quantity == 0:
+                    next_state = "cancelled"
+                    failure_code = ""
+                elif (
+                    fill_evidence.quantity == current.matched_quantity
+                    and fill_evidence.all_active_fills_confirmed
+                ):
+                    next_state = "filled"
+                    failure_code = ""
+                else:
+                    next_state = "matched_pending"
+                    failure_code = (
+                        "cancelled_order_awaiting_exact_fill_evidence"
+                    )
+                    missing_evidence = True
                 try:
                     self.ledger.transition(
                         record.intent.intent_id,
                         expected_states=("cancel_pending",),
-                        state="cancelled",
+                        state=next_state,
                         observed_at_ms=int(time.time() * 1_000),
                         remote_status="CANCELLED",
                         matched_quantity=current.matched_quantity,
+                        failure_code=failure_code,
                     )
                 except PolymarketStateConflict:
                     missing_evidence = True
