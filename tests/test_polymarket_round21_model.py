@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from simple_ai_trading.polymarket_round21_model import (
+    POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
     Round21DevelopmentPanel,
     fit_round21_development,
     predict_round21_candidate,
@@ -82,6 +83,7 @@ def _panel(
         usdm_feature_names_sha256=_sha("usdm-v1"),
         dataset_sha256=_sha(f"dataset-{role}"),
         target_manifest_sha256=_sha(f"targets-{role}"),
+        dataset_design_sha256=POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
     )
 
 
@@ -119,6 +121,20 @@ def test_round21_panel_rejects_usdm_without_spot() -> None:
         replace(panel, usdm_available=usdm_available).validate()
 
 
+def test_round21_panel_rejects_probability_clipping_or_hash_case_drift() -> None:
+    panel = _panel("train", first_condition=0, condition_count=80)
+    structural = panel.structural_probability.copy()
+    structural[0] = 1.01
+
+    with pytest.raises(ValueError, match="panel is invalid"):
+        replace(panel, structural_probability=structural).validate()
+    with pytest.raises(ValueError, match="panel is invalid"):
+        replace(
+            panel,
+            core_feature_names_sha256=panel.core_feature_names_sha256.upper(),
+        ).validate()
+
+
 def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     train = _panel("train", first_condition=0, condition_count=100)
     calibration = _panel(
@@ -140,6 +156,10 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     )
 
     assert artifact["economic_evaluation_completed"] is False
+    assert (
+        artifact["dataset_design_sha256"]
+        == POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
+    )
     assert artifact["test_features_accessed"] is False
     assert artifact["test_targets_accessed"] is False
     assert artifact["model_selected"] is False

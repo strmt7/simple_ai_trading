@@ -24,6 +24,9 @@ POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION = (
 POLYMARKET_ROUND21_MODEL_SEED = 21_021
 POLYMARKET_ROUND21_MINIMUM_DEVELOPMENT_CONDITIONS = 30
 POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES = 2_000
+POLYMARKET_ROUND21_DATASET_DESIGN_SHA256 = (
+    "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba"
+)
 _ROLES = ("train", "tune_calibration", "tune_selection", "test")
 _LAYERS = ("core", "core_spot", "core_spot_usdm")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
@@ -107,6 +110,7 @@ class Round21DevelopmentPanel:
     usdm_feature_names_sha256: str
     dataset_sha256: str
     target_manifest_sha256: str
+    dataset_design_sha256: str
 
     def validate(self) -> Round21DevelopmentPanel:
         role = str(self.role or "").strip()
@@ -135,15 +139,18 @@ class Round21DevelopmentPanel:
             or usdm_available.shape != (rows,)
             or usdm_available.dtype.kind != "b"
             or any(
-                _SHA256.fullmatch(str(value or "").strip().lower()) is None
+                _SHA256.fullmatch(str(value or "").strip()) is None
                 for value in (
                     self.core_feature_names_sha256,
                     self.spot_feature_names_sha256,
                     self.usdm_feature_names_sha256,
                     self.dataset_sha256,
                     self.target_manifest_sha256,
+                    self.dataset_design_sha256,
                 )
             )
+            or self.dataset_design_sha256
+            != POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
         ):
             raise ValueError("Round 21 development panel is invalid")
         core = _float_matrix(self.core_features, rows=rows)
@@ -155,6 +162,10 @@ class Round21DevelopmentPanel:
         if (
             not np.all(np.isin(labels64, (0.0, 1.0)))
             or set(labels64.tolist()) != {0.0, 1.0}
+            or np.any(np.asarray(structural, dtype=np.float64) <= 0.0)
+            or np.any(np.asarray(structural, dtype=np.float64) >= 1.0)
+            or np.any(np.asarray(market_prior, dtype=np.float64) <= 0.0)
+            or np.any(np.asarray(market_prior, dtype=np.float64) >= 1.0)
             or np.any(event_starts <= 0)
             or np.any(event_starts % 300_000)
             or np.any(decisions < event_starts)
@@ -886,6 +897,7 @@ def _dataset_identity(panel: Round21DevelopmentPanel) -> dict[str, object]:
         "last_event_start_ms": int(panel.event_start_ms[-1]),
         "dataset_sha256": panel.dataset_sha256,
         "target_manifest_sha256": panel.target_manifest_sha256,
+        "dataset_design_sha256": panel.dataset_design_sha256,
     }
 
 
@@ -1069,6 +1081,7 @@ def fit_round21_development(
     payload: dict[str, object] = {
         "schema_version": POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION,
         "contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
+        "dataset_design_sha256": POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
         "dataset_and_partition": {
             "train": _dataset_identity(train),
             "tune_calibration": _dataset_identity(tune_calibration),
@@ -1130,6 +1143,8 @@ def validate_round21_development_artifact(
         != POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION
         or payload.get("contract_sha256")
         != POLYMARKET_ROUND21_CONTRACT_SHA256
+        or payload.get("dataset_design_sha256")
+        != POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
         or not isinstance(controls, list)
         or len(controls) != 5
         or not isinstance(layers, Mapping)
@@ -1158,6 +1173,7 @@ def validate_round21_development_artifact(
 
 __all__ = [
     "POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES",
+    "POLYMARKET_ROUND21_DATASET_DESIGN_SHA256",
     "POLYMARKET_ROUND21_MINIMUM_DEVELOPMENT_CONDITIONS",
     "POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION",
     "Round21DevelopmentPanel",
