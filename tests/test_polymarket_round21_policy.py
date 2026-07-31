@@ -189,6 +189,8 @@ def _select(
     reconciliation_ok: bool = True,
     capital: str = "10000",
     cash: str = "1000",
+    directional_entry_allowed: bool = True,
+    directional_entry_permission_sha256: str = "",
 ):
     return select_round21_action(
         market=_market(),
@@ -213,6 +215,10 @@ def _select(
         reconciliation_ok=reconciliation_ok,
         reconciliation_sha256=_digest("reconciliation"),
         minimum_edge_per_share=Decimal("0.02"),
+        directional_entry_allowed=directional_entry_allowed,
+        directional_entry_permission_sha256=(
+            directional_entry_permission_sha256
+        ),
     )
 
 
@@ -342,6 +348,28 @@ def test_round21_directional_size_cannot_overshoot_remaining_loss_headroom() -> 
     assert near_daily_limit.plan.maximum_loss_quote <= Decimal("1")
     assert near_drawdown_limit.plan is not None
     assert near_drawdown_limit.plan.maximum_loss_quote <= Decimal("1")
+
+
+def test_round21_ai_veto_blocks_only_new_directional_entries() -> None:
+    permission_sha = _digest("ai-permission")
+    entry = _select(
+        directional_entry_allowed=False,
+        directional_entry_permission_sha256=permission_sha,
+    )
+    reduction = _select(
+        envelope=_envelope("0.40", "0.35", "0.45"),
+        inventory=_inventory(_lot("Up")),
+        up_book=_book("Up", bid="0.60", ask="0.61", quantity="10"),
+        down_book=_book("Down", bid="0.69", ask="0.70", quantity="10"),
+        directional_entry_allowed=False,
+        directional_entry_permission_sha256=permission_sha,
+    )
+
+    assert entry.action == "abstain"
+    assert entry.reason == "ai_veto_no_positive_reduction"
+    assert reduction.action == "reduce_up"
+    with pytest.raises(ValueError, match="requires bound permission evidence"):
+        _select(directional_entry_allowed=False)
 
 
 def test_round21_reconciliation_transition_and_unknown_state_fail_closed() -> None:

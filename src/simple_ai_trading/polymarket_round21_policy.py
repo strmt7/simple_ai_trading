@@ -33,6 +33,12 @@ POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SHA256 = (
 POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256 = (
     "f502c28b7a152e8eb6e3d49e2a23c145e2a90118040e79c17a7adfb0e543857c"
 )
+POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256 = (
+    "b84e49cbc382e4211a2e83f2b889c06506cd8ae477a7cdd35e1cd4258b0cce84"
+)
+POLYMARKET_ROUND21_DETERMINISTIC_PERMISSION_SHA256 = hashlib.sha256(
+    b"polymarket-round21-deterministic-core-permission-v1"
+).hexdigest()
 POLYMARKET_ROUND21_ACTION_DECISION_SCHEMA_VERSION = (
     "polymarket-round21-multi-action-decision-v1"
 )
@@ -1084,6 +1090,8 @@ def select_round21_action(
     risk_profile: str = "conservative",
     scenario_name: str = "primary",
     builder_taker_fee_bps: Decimal = Decimal("0"),
+    directional_entry_allowed: bool = True,
+    directional_entry_permission_sha256: str = "",
 ) -> Round21ActionDecision:
     """Select at most one target-blind Polymarket action from bot-owned state."""
 
@@ -1119,6 +1127,18 @@ def select_round21_action(
         builder_taker_fee_bps,
         name="builder taker fee",
     )
+    permission_sha = str(directional_entry_permission_sha256 or "").strip().lower()
+    if type(directional_entry_allowed) is not bool:
+        raise ValueError("Round 21 action context is invalid")
+    if permission_sha:
+        permission_sha = _digest(
+            permission_sha,
+            name="directional entry permission",
+        )
+    elif directional_entry_allowed:
+        permission_sha = POLYMARKET_ROUND21_DETERMINISTIC_PERMISSION_SHA256
+    else:
+        raise ValueError("Round 21 AI veto requires bound permission evidence")
     reconciliation = _digest(
         reconciliation_sha256,
         name="reconciliation",
@@ -1183,6 +1203,9 @@ def select_round21_action(
             "minimum_edge_per_share": format(minimum_edge, "f"),
             "scenario_name": selected_scenario.name,
             "builder_taker_fee_bps": format(builder_fee_bps, "f"),
+            "ai_veto_design_sha256": POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256,
+            "directional_entry_allowed": directional_entry_allowed,
+            "directional_entry_permission_sha256": permission_sha,
             "creation_books": {
                 "Up": (
                     None
@@ -1390,7 +1413,12 @@ def select_round21_action(
     )
     drawdown_gate = drawdown >= selected_profile.maximum_drawdown_capital_fraction
     cooldown_gate = decision_time < cooldown
-    if not (daily_gate or drawdown_gate or cooldown_gate):
+    if not (
+        daily_gate
+        or drawdown_gate
+        or cooldown_gate
+        or not directional_entry_allowed
+    ):
         event_cap = capital * selected_profile.maximum_event_loss_capital_fraction
         current_event_loss = selected_inventory.worst_case_loss_quote
         remaining_event_loss = max(
@@ -1439,6 +1467,8 @@ def select_round21_action(
             return abstain("drawdown_gate_no_positive_reduction")
         if cooldown_gate:
             return abstain("cooldown_gate_no_positive_reduction")
+        if not directional_entry_allowed:
+            return abstain("ai_veto_no_positive_reduction")
         return abstain("no_positive_after_cost_action")
     selected_candidate = min(
         candidates,
@@ -1474,6 +1504,8 @@ live_trading_authority = False
 
 __all__ = [
     "POLYMARKET_ROUND21_ACTION_DECISION_SCHEMA_VERSION",
+    "POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256",
+    "POLYMARKET_ROUND21_DETERMINISTIC_PERMISSION_SHA256",
     "POLYMARKET_ROUND21_MAXIMUM_CREATION_BOOK_AGE_MS",
     "POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SHA256",

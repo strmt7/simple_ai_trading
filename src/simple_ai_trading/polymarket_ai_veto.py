@@ -37,6 +37,7 @@ SUPPORTED_POLYMARKET_AI_MODELS = (
     "qwen3:14b",
     "qwen3.5:9b",
     "fin-r1:8b",
+    "fino1:8b",
 )
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 

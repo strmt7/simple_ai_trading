@@ -24,6 +24,7 @@ from simple_ai_trading.polymarket_round21_execution import (
 from simple_ai_trading.polymarket_round21_policy import Round21ProbabilityEnvelope
 from simple_ai_trading.polymarket_round21_replay import (
     POLYMARKET_ROUND21_ECONOMIC_REPLAY_DESIGN_SHA256,
+    Round21DirectionalPermission,
     Round21ReplayCondition,
     replay_round21_economics,
     replay_round21_full_matrix,
@@ -268,6 +269,41 @@ def test_round21_missing_post_submit_book_rejects_the_scenario() -> None:
     assert replay.qualified is False
     assert replay.conditions == ()
     assert "unknown_post_submit_state" in replay.qualification_reasons
+
+
+def test_round21_ai_permission_applies_only_after_measured_arrival() -> None:
+    veto = Round21DirectionalPermission.create(
+        condition_id=CONDITION_ID,
+        effective_at_ms=DECISION_MS,
+        directional_entry_allowed=False,
+        source_evidence_sha256=_sha("ai-veto-evidence"),
+    )
+    late_veto = Round21DirectionalPermission.create(
+        condition_id=CONDITION_ID,
+        effective_at_ms=DECISION_MS + 1,
+        directional_entry_allowed=False,
+        source_evidence_sha256=_sha("late-ai-veto-evidence"),
+    )
+
+    blocked = replay_round21_economics(
+        (_condition(),),
+        scenario_name="primary",
+        directional_permissions=(veto,),
+    )
+    not_yet_effective = replay_round21_economics(
+        (_condition(),),
+        scenario_name="primary",
+        directional_permissions=(late_veto,),
+    )
+
+    assert blocked.conditions[0].steps[0].action == "abstain"
+    assert blocked.metrics.executed_action_count == 0
+    assert not_yet_effective.conditions[0].steps[0].action == "buy_up"
+    assert not_yet_effective.metrics.executed_action_count == 1
+    assert (
+        blocked.directional_permission_root_sha256
+        != not_yet_effective.directional_permission_root_sha256
+    )
 
 
 def test_round21_condition_identity_rejects_book_or_manifest_tampering() -> None:
