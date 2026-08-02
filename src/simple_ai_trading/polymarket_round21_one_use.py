@@ -18,6 +18,9 @@ from .polymarket_round21_comparison import (
     round21_replay_matrix_sha256,
 )
 from .polymarket_round21_contract import POLYMARKET_ROUND21_CONTRACT_SHA256
+from .polymarket_round21_corpus_store import (
+    validate_round21_core_publication_boundary,
+)
 from .polymarket_round21_model import validate_round21_development_artifact
 from .polymarket_round21_replay import Round21EconomicReplay
 from .polymarket_round21_sealed import (
@@ -29,7 +32,7 @@ from .polymarket_round21_sealed import (
 
 
 POLYMARKET_ROUND21_PRETEST_MANIFEST_SCHEMA_VERSION = (
-    "polymarket-round21-pretest-manifest-v1"
+    "polymarket-round21-pretest-manifest-v2"
 )
 POLYMARKET_ROUND21_ONE_USE_CLAIM_SCHEMA_VERSION = (
     "polymarket-round21-one-use-claim-v1"
@@ -57,6 +60,7 @@ _REQUIRED_FILES = (
     "src/simple_ai_trading/polymarket_round21_comparison.py",
     "src/simple_ai_trading/polymarket_round21_core_features.py",
     "src/simple_ai_trading/polymarket_round21_corpus.py",
+    "src/simple_ai_trading/polymarket_round21_corpus_store.py",
     "src/simple_ai_trading/polymarket_round21_dataset.py",
     "src/simple_ai_trading/polymarket_round21_execution.py",
     "src/simple_ai_trading/polymarket_round21_model.py",
@@ -67,6 +71,7 @@ _REQUIRED_FILES = (
     "src/simple_ai_trading/polymarket_round21_terminal.py",
     "tests/test_polymarket_round21_core_features.py",
     "tests/test_polymarket_round21_corpus.py",
+    "tests/test_polymarket_round21_corpus_store.py",
     "tests/test_polymarket_round21_one_use.py",
     "tests/test_polymarket_round21_sealed.py",
     "tests/test_polymarket_round21_terminal.py",
@@ -173,7 +178,7 @@ def _digest(value: object, *, name: str) -> str:
 class Round21PretestManifest:
     created_at_ms: int
     selected_population_layer: str
-    core_campaign_terminal_sha256: str
+    core_corpus_publication_manifest_sha256: str
     optional_campaign_terminal_sha256: str | None
     sealed_test_population_manifest_sha256: str
     development_model_artifact_sha256: str
@@ -201,7 +206,9 @@ class Round21PretestManifest:
             "sealed_design_sha256": POLYMARKET_ROUND21_SEALED_DESIGN_SHA256,
             "created_at_ms": self.created_at_ms,
             "selected_population_layer": self.selected_population_layer,
-            "core_campaign_terminal_sha256": self.core_campaign_terminal_sha256,
+            "core_corpus_publication_manifest_sha256": (
+                self.core_corpus_publication_manifest_sha256
+            ),
             "optional_campaign_terminal_sha256": (
                 self.optional_campaign_terminal_sha256
             ),
@@ -253,7 +260,7 @@ class Round21PretestManifest:
             or any(
                 _SHA256.fullmatch(value) is None or value == _EMPTY_SHA256
                 for value in (
-                    self.core_campaign_terminal_sha256,
+                    self.core_corpus_publication_manifest_sha256,
                     self.sealed_test_population_manifest_sha256,
                     self.development_model_artifact_sha256,
                     self.development_economic_matrix_sha256,
@@ -319,9 +326,8 @@ def build_round21_pretest_manifest(
     repository: str | Path,
     *,
     selected_population_layer: str,
-    core_campaign_terminal_sha256: str,
+    core_corpus_publication_directory: str | Path,
     optional_campaign_terminal_sha256: str | None,
-    sealed_test_population_manifest_sha256: str,
     development_model_artifact: Mapping[str, object],
     development_economic_matrix: Sequence[Round21EconomicReplay],
     development_optional_comparison: Round21MatchedEconomicComparison | None,
@@ -332,6 +338,9 @@ def build_round21_pretest_manifest(
 
     root = Path(repository).resolve()
     load_round21_sealed_design(root)
+    core_publication = validate_round21_core_publication_boundary(
+        core_corpus_publication_directory
+    )
     artifact = validate_round21_development_artifact(development_model_artifact)
     matrix = tuple(value.validated() for value in development_economic_matrix)
     if (
@@ -374,9 +383,8 @@ def build_round21_pretest_manifest(
     provisional = Round21PretestManifest(
         created_at_ms=now,
         selected_population_layer=layer,
-        core_campaign_terminal_sha256=_digest(
-            core_campaign_terminal_sha256,
-            name="core campaign terminal",
+        core_corpus_publication_manifest_sha256=str(
+            core_publication["manifest_sha256"]
         ),
         optional_campaign_terminal_sha256=(
             None
@@ -386,9 +394,8 @@ def build_round21_pretest_manifest(
                 name="optional campaign terminal",
             )
         ),
-        sealed_test_population_manifest_sha256=_digest(
-            sealed_test_population_manifest_sha256,
-            name="sealed test population manifest",
+        sealed_test_population_manifest_sha256=str(
+            core_publication["sealed_test_population_manifest_sha256"]
         ),
         development_model_artifact_sha256=str(artifact["artifact_sha256"]),
         development_economic_matrix_sha256=round21_replay_matrix_sha256(matrix),
@@ -770,6 +777,33 @@ class Round21OneUseStore:
         except Exception:
             self.connection.execute("ROLLBACK")
             raise
+
+    def authorize_test_feature_access(
+        self,
+        claim: Round21OneUseClaim,
+        *,
+        test_access_sha256: str,
+    ) -> dict[str, str]:
+        """Authorize sealed features only inside the consumed access window."""
+
+        selected = claim.validated()
+        access = _digest(test_access_sha256, name="test access")
+        snapshot = self.snapshot()
+        stored_claim = snapshot.get("claim")
+        if (
+            snapshot.get("status") != "test_access_consumed"
+            or snapshot.get("test_access_sha256") != access
+            or not isinstance(stored_claim, Mapping)
+            or stored_claim != selected.asdict()
+        ):
+            raise PermissionError("Round 21 sealed feature access is unavailable")
+        return {
+            "claim_sha256": selected.claim_sha256,
+            "test_access_sha256": access,
+            "sealed_test_population_manifest_sha256": (
+                selected.sealed_test_population_manifest_sha256
+            ),
+        }
 
     def complete(
         self,

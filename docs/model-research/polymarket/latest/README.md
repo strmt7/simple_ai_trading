@@ -62,6 +62,14 @@ joint-gap, book, Chainlink open/close, reconnect, role, and causal-availability
 gates across all 1,200 five-minute decisions. This is implemented mechanics,
 not a completed corpus or model result.
 
+Its publication sink is also implemented but has not run: one same-volume
+directory rename publishes separate development and sealed-test DuckDB files,
+canonical admission ledgers, and condition-sized Zstandard level-3 binary64
+feature chunks bound to the terminal receipt audit. Failed audits remove the
+entire staging directory. The pretest v2 seal accepts this validated publication
+rather than caller-supplied digests. A sealed-test audit requires its exact claim
+and access hash in the durable one-use ledger's consumed state.
+
 The external [OpenMarket study](https://arxiv.org/abs/2607.26245) is a negative
 benchmark, not training evidence: its published out-of-sample logistic baseline
 did not establish tradable after-cost edge. Round 21 therefore requires strict
