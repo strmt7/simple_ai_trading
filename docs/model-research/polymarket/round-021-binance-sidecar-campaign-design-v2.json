@@ -1,0 +1,79 @@
+{
+  "schema_version": "polymarket-round21-binance-sidecar-campaign-design-v2",
+  "round": 21,
+  "status": "preregistered_after_host_reboot_before_target_or_model_access",
+  "supersedes": "polymarket-round21-binance-sidecar-capture-design-v1",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round20_campaign_plan_sha256": "2c1d87577de566bd4934c9678bcbded5bf156b671a413b83fa6d463372db1d71",
+    "sidecar_v1_design_sha256": "c802b13e169f868c7a37619669cdc957862a1cb58c6d3299c0aae63ff0d86d4a"
+  },
+  "incident": {
+    "class": "host_reboot",
+    "legacy_run_preserved_as_segment_zero": true,
+    "legacy_database_overwrite_or_deletion": false,
+    "interruption_interval_is_missing_optional_data": true,
+    "interruption_may_change_core_condition_admission": false
+  },
+  "campaign": {
+    "scheduled_end_ms": 1788046800000,
+    "segments_share_one_exact_frame_database": true,
+    "one_writer_process_at_a_time": true,
+    "exclusive_file_lock": true,
+    "orphaned_running_segments_are_terminally_failed_before_restart": true,
+    "new_segment_after_every_process_restart": true,
+    "maximum_consecutive_segment_failures": 3,
+    "failure_backoff_seconds": 30,
+    "progress_interval_seconds": 30
+  },
+  "scope": {
+    "purpose": "optional_public_predictor_only",
+    "asset": "BTC",
+    "streams": [
+      "binance_futures",
+      "binance_spot"
+    ],
+    "spot_subscriptions": [
+      "btcusdt@bookTicker",
+      "btcusdt@trade"
+    ],
+    "usdm_subscriptions": [
+      "btcusdt@bookTicker",
+      "btcusdt@trade"
+    ],
+    "credentials": false,
+    "account_state": false,
+    "order_endpoints": false,
+    "execution": false
+  },
+  "causal_join": {
+    "clock": "local_utc_and_monotonic_receipt_time_per_segment",
+    "cross_segment_state_carry": false,
+    "cross_gap_forward_or_backward_fill": false,
+    "missing_optional_values": "exact_zero_vector_plus_false_availability",
+    "optional_rows_may_expand_core_population": false,
+    "optional_rows_may_change_core_condition_admission": false,
+    "sidecar_failure_blocks_polymarket_capture_or_model": false,
+    "sidecar_failure_blocks_polymarket_risk_close_stop_or_recovery": false
+  },
+  "storage": {
+    "database": "duckdb",
+    "schema": "polymarket-evidence-storage-v4",
+    "compression": "zstd-level-1-exact-frames",
+    "database_and_wal_cap_bytes": 68719476736,
+    "minimum_free_bytes": 274877906944,
+    "memory_limit": "512MB",
+    "database_threads": 1,
+    "queue_capacity": 50000,
+    "terminal_exact_frame_audit_per_segment": true
+  },
+  "authority": {
+    "outcomes_accessed": false,
+    "model_scores_accessed": false,
+    "model_data_eligible": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "f29f272c7e1d072f5723b029d8c867c9ceb26b9a70eef3603e81360faae5c27c"
+}
