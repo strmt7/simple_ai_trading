@@ -988,8 +988,12 @@ async def run_round20_campaign(
             "paper_trading_authority": False,
             "live_trading_authority": False,
         }
-        notify(terminal)
-        return terminal
+        persisted_terminal = _write_hashed_json(
+            config.state_root / "campaign-state.json",
+            terminal,
+        )
+        notify(persisted_terminal)
+        return persisted_terminal
 
 
 __all__ = [

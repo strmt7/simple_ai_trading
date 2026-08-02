@@ -47,6 +47,8 @@ _REQUIRED_FILES = (
     "round-021-independent-matched-edge-contract-v1.json",
     "docs/model-research/polymarket/"
     "round-021-terminal-sealed-evaluation-design-v1.json",
+    "docs/model-research/polymarket/"
+    "round-021-terminal-transport-manifest-design-v1.json",
     "src/simple_ai_trading/polymarket_round21_ai.py",
     "src/simple_ai_trading/polymarket_round21_ai_comparison.py",
     "src/simple_ai_trading/polymarket_round21_ai_selection.py",
@@ -57,8 +59,10 @@ _REQUIRED_FILES = (
     "src/simple_ai_trading/polymarket_round21_policy.py",
     "src/simple_ai_trading/polymarket_round21_replay.py",
     "src/simple_ai_trading/polymarket_round21_sealed.py",
+    "src/simple_ai_trading/polymarket_round21_terminal.py",
     "tests/test_polymarket_round21_one_use.py",
     "tests/test_polymarket_round21_sealed.py",
+    "tests/test_polymarket_round21_terminal.py",
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _GIT_OID = re.compile(r"^[0-9a-f]{40,64}$")

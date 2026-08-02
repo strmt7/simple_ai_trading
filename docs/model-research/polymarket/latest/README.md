@@ -50,6 +50,12 @@ then consumed once in a synchronous SQLite state machine; completion, failure,
 or interruption cannot reopen it. No claim has been opened and no test data has
 been scored.
 
+Terminal opening now starts with a separate transport manifest. It fails before
+the scheduled campaign end, preserves every interrupted or failed segment and
+its coverage hole, and admits only hash-valid complete/degraded runs for later
+exact receipt replay. Transport coverage is not condition admission or model
+eligibility; redundant-union reconstruction remains mandatory.
+
 The external [OpenMarket study](https://arxiv.org/abs/2607.26245) is a negative
 benchmark, not training evidence: its published out-of-sample logistic baseline
 did not establish tradable after-cost edge. Round 21 therefore requires strict
@@ -82,6 +88,7 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [AI risk-model rejection record](ai-risk-models-rejected.json)
 - [Round 21 AI candidate-selection contract](../round-021-ai-candidate-selection-design-v1.json)
 - [Round 21 terminal sealed-evaluation contract](../round-021-terminal-sealed-evaluation-design-v1.json)
+- [Round 21 terminal transport-manifest contract](../round-021-terminal-transport-manifest-design-v1.json)
 - [Publication integrity](publication-integrity.json)
 
 Regenerate from the closed local evidence database with
