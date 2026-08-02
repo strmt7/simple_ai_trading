@@ -11,7 +11,6 @@ import json
 from pathlib import Path
 import re
 
-from .polymarket_btc_reference import parse_polymarket_chainlink_btc_tick
 from .polymarket_capture_frame import CaptureFrameRecord
 from .polymarket_recorder import (
     PolymarketEvidenceStore,
@@ -29,6 +28,7 @@ from .polymarket_round21_core_features import (
     POLYMARKET_ROUND21_FEATURE_POLICY_SHA256,
     Round21CoreFeatureEngine,
     Round21CoreFeatureSnapshot,
+    parse_round21_chainlink_wire_text,
     validate_round21_union_event,
 )
 from .polymarket_round21_dataset import (
@@ -368,22 +368,12 @@ def _chainlink_observations(
         previous_sequence = record.sequence_number
         previous_monotonic = record.received_monotonic_ns
         previous_wall = record.received_wall_ms
-        if record.raw_text in {"PING", "PONG"}:
-            continue
-        try:
-            payload = json.loads(
-                record.raw_text,
-                object_pairs_hook=_strict_object,
-                parse_constant=_reject_nonfinite,
-            )
-        except (UnicodeError, json.JSONDecodeError) as exc:
-            raise ValueError("Round 21 condition Chainlink payload differs") from exc
-        if not isinstance(payload, Mapping):
-            raise ValueError("Round 21 condition Chainlink payload is not an object")
-        tick = parse_polymarket_chainlink_btc_tick(
-            payload,
+        tick = parse_round21_chainlink_wire_text(
+            record.raw_text,
             received_at_ms=record.received_wall_ms,
         )
+        if tick is None:
+            continue
         observations.append((record, tick.price, tick.source_time_ms))
     return observations, reasons
 

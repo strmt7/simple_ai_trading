@@ -24,6 +24,7 @@ from simple_ai_trading.polymarket_round21_core_features import (
     Round21CoreFeatureEngine,
     join_round21_causal_features,
     load_round21_feature_policy,
+    parse_round21_chainlink_wire_text,
     validate_round21_feature_policy,
 )
 
@@ -258,6 +259,63 @@ def test_round21_core_builds_receipt_time_structural_and_book_features() -> None
     assert snapshot.trading_authority is False
     assert engine.credentials_used is False
     assert engine.execution_connected is False
+
+
+def test_round21_chainlink_bootstrap_is_sequence_accounted_control_only() -> None:
+    snapshot = {
+        "topic": "crypto_prices",
+        "type": "subscribe",
+        "timestamp": EVENT_START_MS,
+        "payload": {
+            "symbol": "btc/usd",
+            "data": [
+                {"timestamp": EVENT_START_MS - 2_000, "value": 59_999.0},
+                {"timestamp": EVENT_START_MS - 1_000, "value": 60_000.0},
+            ],
+        },
+    }
+    raw = json.dumps(snapshot, separators=(",", ":"), sort_keys=True)
+    assert parse_round21_chainlink_wire_text(
+        "",
+        received_at_ms=EVENT_START_MS,
+    ) is None
+    assert parse_round21_chainlink_wire_text(
+        raw,
+        received_at_ms=EVENT_START_MS,
+    ) is None
+    tick = parse_round21_chainlink_wire_text(
+        _chainlink_record(1, 0).raw_text,
+        received_at_ms=EVENT_START_MS + 10,
+    )
+    assert tick is not None
+    assert float(tick.price) == pytest.approx(60_000.5)
+
+    engine = Round21CoreFeatureEngine(
+        condition_id=CONDITION_ID,
+        up_token_id=UP_TOKEN,
+        down_token_id=DOWN_TOKEN,
+        event_start_ms=EVENT_START_MS,
+    )
+    for sequence, control in enumerate(("", raw, "PING"), start=1):
+        engine.ingest_chainlink_record(
+            CaptureFrameRecord(
+                stream="polymarket_rtds",
+                connection_id="rtds:chainlink:btc:" + "e" * 32,
+                sequence_number=sequence,
+                received_wall_ms=EVENT_START_MS + sequence,
+                received_monotonic_ns=(EVENT_START_MS + sequence) * 1_000_000,
+                raw_text=control,
+            )
+        )
+    assert engine._chainlink_sequence == 3
+    assert engine._chainlink.latest_received_ms is None
+
+    snapshot["payload"]["data"][1]["timestamp"] = EVENT_START_MS - 2_000
+    with pytest.raises(ValueError, match="subscription snapshot differs"):
+        parse_round21_chainlink_wire_text(
+            json.dumps(snapshot),
+            received_at_ms=EVENT_START_MS,
+        )
 
 
 def test_round21_core_is_unavailable_before_causal_warmup() -> None:

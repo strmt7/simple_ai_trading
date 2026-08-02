@@ -180,6 +180,55 @@ def _chainlink_records(
     return tuple(records)
 
 
+def test_chainlink_controls_preserve_terminal_sequence_without_entering_features() -> None:
+    snapshot = _canonical(
+        {
+            "topic": "crypto_prices",
+            "type": "subscribe",
+            "timestamp": EVENT_START_MS,
+            "payload": {
+                "symbol": "btc/usd",
+                "data": [
+                    {"timestamp": EVENT_START_MS - 1_000, "value": 60_000.0}
+                ],
+            },
+        }
+    )
+    update = _chainlink_records()[0]
+    records = (
+        replace(
+            update,
+            sequence_number=415,
+            received_wall_ms=EVENT_START_MS + 1,
+            received_monotonic_ns=(EVENT_START_MS + 1) * 1_000_000,
+            raw_text="",
+        ),
+        replace(
+            update,
+            sequence_number=416,
+            received_wall_ms=EVENT_START_MS + 2,
+            received_monotonic_ns=(EVENT_START_MS + 2) * 1_000_000,
+            raw_text=snapshot,
+        ),
+        replace(
+            update,
+            sequence_number=417,
+            received_wall_ms=EVENT_START_MS + 10,
+            received_monotonic_ns=(EVENT_START_MS + 10) * 1_000_000,
+        ),
+    )
+
+    observations, reasons = corpus_module._chainlink_observations(
+        records,
+        start_ms=EVENT_START_MS,
+        end_ms=EVENT_START_MS + 1_000,
+    )
+
+    assert len(observations) == 1
+    assert observations[0][0].sequence_number == 417
+    assert reasons == []
+
+
 def _raw_messages() -> tuple[RawStreamMessage, ...]:
     messages: list[RawStreamMessage] = []
     sequences = {"clob-a": 0, "clob-b": 0}
