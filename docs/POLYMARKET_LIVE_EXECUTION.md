@@ -184,6 +184,15 @@ flowchart LR
   and settlement abstention rates are reported without filtering the
   predictive metrics. A passing score remains telemetry only and must enter a
   separate prospective after-cost campaign before promotion.
+- The Round 21 five-minute path now has a separate target-free prospective
+  scorer and in-memory public-feature coordinator. It requires an accepted
+  sealed result whose model hash and selected layer match the development
+  artifact. It keeps at most 16 contiguous 250 ms rows, records exact causal
+  row/model/batch/latency evidence, and grants no execution authority. Any
+  Polymarket CLOB or Chainlink gap interlocks new entries for the current
+  market. An optional Binance disconnect clears only optional predictor state;
+  the Polymarket core, authenticated safety loops, reconciliation, Stop,
+  closure, and settlement remain independent.
 - The concrete fifteen-minute decision provider can be constructed only when
   the promotion's raw model and evaluation file hashes equal the verified
   scorer files. It reserves each scheduled model timestamp while evaluating
@@ -232,6 +241,10 @@ flowchart LR
   implemented, but no accepted model, prospective after-cost evaluation,
   implementation manifest, or live-authority promotion exists. The earlier
   five-minute first-candidate policy remains rejected.
+- Round 21 live feature scoring is implemented, but its capture is still open.
+  No accepted sealed result, prospective score record, authenticated lifecycle
+  qualification, promotion, or five-minute CLI decision-provider assembly
+  exists.
 
 These gaps block release authority. A public API check or offline signature is
 not an authenticated order, cancellation, fill, or redemption test.
