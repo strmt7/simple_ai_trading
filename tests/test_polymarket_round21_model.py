@@ -4,6 +4,7 @@ from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -17,7 +18,10 @@ from simple_ai_trading.polymarket_round21_model import (
     Round21InferencePanel,
     fit_round21_development,
     predict_round21_candidate,
+    predict_round21_controls,
     predict_round21_probability_batch,
+    round21_paired_predictive_improvement,
+    round21_predictive_diagnostics,
     validate_round21_development_artifact,
 )
 from simple_ai_trading.polymarket_round21_policy import Round21ProbabilityEnvelope
@@ -369,6 +373,35 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     assert core_batch.row(int(core_batch.indices[0]))[0] == pytest.approx(
         core_batch.probability_up[0]
     )
+    controls = predict_round21_controls(artifact, selection)
+    assert set(controls) == {
+        "structural_probability_raw",
+        "structural_probability_calibrated",
+        "executable_market_prior_raw",
+        "executable_market_prior_calibrated",
+        "training_prevalence",
+    }
+    assert all(value.shape == selection.labels.shape for value in controls.values())
+    assert all(not value.flags.writeable for value in controls.values())
+    diagnostics = round21_predictive_diagnostics(
+        selection.condition_ids,
+        selection.labels,
+        core_batch.probability_up,
+    )
+    assert diagnostics["condition_count"] == len(selection.labels)
+    assert 0.0 <= diagnostics["expected_calibration_error"] <= 1.0
+    assert 0.0 <= diagnostics["balanced_accuracy"] <= 1.0
+    assert -1.0 <= diagnostics["matthews_correlation_coefficient"] <= 1.0
+    improvement = round21_paired_predictive_improvement(
+        selection.condition_ids,
+        selection.labels,
+        controls["executable_market_prior_raw"],
+        core_batch.probability_up,
+        metric="log_loss",
+        seed_offset=900,
+    )
+    assert improvement["condition_count"] == len(selection.labels)
+    assert improvement["lower_95"] <= improvement["upper_95"]
     row_index = int(core_batch.indices[0])
     envelope = Round21ProbabilityEnvelope.from_probability_batch(
         batch=core_batch,
@@ -391,6 +424,11 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     ] = "core_spot"
     with pytest.raises(ValueError, match="artifact differs"):
         validate_round21_development_artifact(_rehash(changed))
+
+    changed = json.loads(json.dumps(artifact))
+    changed["controls"][0]["control_id"] = "unregistered"
+    with pytest.raises(ValueError, match="probability control differs"):
+        predict_round21_controls(_rehash(changed), selection)
 
 
 def test_round21_artifact_rejects_rehashed_authority_drift() -> None:
@@ -415,3 +453,85 @@ def test_round21_artifact_rejects_rehashed_authority_drift() -> None:
 
     with pytest.raises(ValueError, match="artifact differs"):
         validate_round21_development_artifact(_rehash(artifact))
+
+
+def test_round21_control_and_diagnostic_fail_closed_paths(monkeypatch) -> None:
+    panel = _panel("test", first_condition=400, condition_count=20)
+    monkeypatch.setattr(
+        model_module,
+        "validate_round21_development_artifact",
+        lambda artifact: artifact,
+    )
+    with pytest.raises(ValueError, match="controls are unavailable"):
+        predict_round21_controls({}, panel)
+    with pytest.raises(ValueError, match="control differs"):
+        predict_round21_controls({"controls": [None]}, panel)
+    with pytest.raises(ValueError, match="control differs"):
+        predict_round21_controls(
+            {
+                "controls": [
+                    {
+                        "control_id": "training_prevalence",
+                        "probability_up": "bad",
+                    }
+                ]
+            },
+            panel,
+        )
+    with pytest.raises(ValueError, match="control differs"):
+        predict_round21_controls(
+            {
+                "controls": [
+                    {"control_id": "structural_probability_calibrated"}
+                ]
+            },
+            panel,
+        )
+    with pytest.raises(ValueError, match="control set differs"):
+        predict_round21_controls(
+            {
+                "controls": [
+                    {
+                        "control_id": "training_prevalence",
+                        "probability_up": 0.5,
+                    }
+                ]
+            },
+            panel,
+        )
+
+    with pytest.raises(ValueError, match="population differs"):
+        round21_predictive_diagnostics(
+            panel.condition_ids,
+            panel.labels[:-1],
+            panel.structural_probability,
+        )
+    with pytest.raises(ValueError, match="single-class"):
+        round21_predictive_diagnostics(
+            panel.condition_ids,
+            np.zeros(len(panel.labels)),
+            panel.structural_probability,
+        )
+    monkeypatch.setattr(
+        model_module,
+        "minimize",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            success=False,
+            x=np.asarray((0.0, 1.0)),
+        ),
+    )
+    with pytest.raises(RuntimeError, match="calibration diagnostic failed"):
+        round21_predictive_diagnostics(
+            panel.condition_ids,
+            panel.labels,
+            panel.structural_probability,
+        )
+    with pytest.raises(ValueError, match="metric is invalid"):
+        round21_paired_predictive_improvement(
+            panel.condition_ids,
+            panel.labels,
+            panel.structural_probability,
+            panel.market_prior_probability,
+            metric="invalid",
+            seed_offset=0,
+        )

@@ -271,26 +271,18 @@ extends the established parser with independently registered commands.
   `docs/model-research/polymarket/latest/README.md`, then the Round 13 contract,
   Round 12 invalidation, and Round 11 report. Round 10 rejected the one-second scalp on negative action scores;
   Round 9 remains the immutable unknown-state admission failure.
-- Polymarket Round 14 is the active prospective BTC five-minute campaign. Its
-  public-wire, compressed-storage, overlap, and strict causal-replay
-  qualification passed on commit `f2da0796`; that 60-second run is permanently
-  non-model evidence. The immutable 30-day campaign is scheduled from
-  2026-07-29 17:00 UTC through 2026-08-28 17:00 UTC under plan
-  `c19ef773...`. A separate one-hour shadow resolved 12 conditions and rejected
-  the current first-candidate policy: 3 wins, 9 losses, `-9.87720`
-  counterfactual after-cost quote PnL, `0.455725` profit factor, and `11.69847`
-  quote maximum drawdown. It submitted zero orders and observed zero fills, so
-  it is diagnostic evidence only and grants no profitability or trading
-  authority. Read
-  `round-014-btc-5m-prospective-contract-v1.json`, the campaign plan, and the
-  one-hour evaluation before modifying this lane. Outcome-blind condition
-  admission is frozen by
-  `round-014-btc-5m-admission-spec-v1.json` (`17dfe108...`) and implemented in
-  `polymarket_round14_dataset.py`; replay must use
-  `include_resolutions=False`. The 60-second qualification correctly admits
-  zero rows because it cannot cover a complete decision window. Never weaken
-  the split, source, coverage, gap, power, cost, latency, depth, uncertainty, or
-  promotion gates.
+- Polymarket Round 14's one-hour shadow rejected its first-candidate policy: 3
+  wins, 9 losses, `-9.87720` counterfactual after-cost quote PnL, `0.455725`
+  profit factor, and `11.69847` quote maximum drawdown. It is historical
+  diagnostic evidence only. Round 20 is the active successor corpus: a
+  target-blind BTC five-minute campaign scheduled from 2026-07-30 23:40 UTC
+  through 2026-08-29 23:40 UTC under plan `2c1d8757...`. Its reboot recovery
+  preserved the interrupted segment and started a new attested segment. One
+  single-lane reconnect gap is recorded; the frozen contract rejects affected
+  conditions after redundant-union reconstruction and does not silently treat
+  the interval as continuous. No outcomes or model scores may be consulted
+  during capture. Read the Round 20 contract and campaign design before touching
+  this lane.
 - Polymarket Round 15 is the preregistered expanded BTC five-minute historical
   screen. It binds 154 complete UTC days of official one-second BTCUSDT spot
   and USD-M perpetual archives, excludes all four previously consulted
@@ -325,6 +317,17 @@ extends the established parser with independently registered commands.
   credential, account, balance, order, fill, position, capital, PnL, risk, or
   execution state may enter the Polymarket wallet, ownership ledger,
   reconciliation, stop, or settlement boundary.
+- Round 21 adds only an optional, credential-free Binance spot/USD-M predictor
+  sidecar. Its campaign, database, terminal identity, failure handling, and
+  availability are separate from the Round 20 Polymarket corpus. Terminal
+  development and one-use evaluation are frozen by
+  `round-021-terminal-sealed-evaluation-design-v1.json`. Before test access, the
+  manifest binds the clean repository, terminal captures, selected model layer,
+  81-ledger development matrix, test population, and any development-nominated
+  AI identity. The durable claim is consumed before test feature, target, or
+  execution access and cannot reopen after completion, failure, or interruption.
+  No Round 21 claim, model score, economic verdict, profitability claim, or
+  trading authority exists while capture remains active.
 - `polymarket-live --action autonomous` assembles the Round 16 predictor,
   independent public predictor feed, Polymarket user stream, reconciliation,
   durable single-writer/Stop control, and settlement loops only after exact
