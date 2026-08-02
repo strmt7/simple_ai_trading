@@ -1,0 +1,69 @@
+{
+  "schema_version": "polymarket-round21-terminal-transport-manifest-design-v1",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture_before_terminal_access",
+  "parents": {
+    "round20_campaign_design_sha256": "1616da48a7a63477e03328f6a1c032b611981a58f2d0c801f06f95462471757f",
+    "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba"
+  },
+  "purpose": "transport_run_admission_only_not_condition_or_model_admission",
+  "terminal_gate": {
+    "scheduled_campaign_end_must_have_passed": true,
+    "every_segment_result_must_be_hash_valid_and_contiguous": true,
+    "persisted_terminal_campaign_state_preferred": true,
+    "superseded_active_heartbeat_allowed": "only_when_a_later_matching_terminal_segment_ends_at_or_after_campaign_end",
+    "active_campaign_or_unmatched_heartbeat": "reject"
+  },
+  "segment_admission": {
+    "eligible_statuses": [
+      "complete",
+      "degraded"
+    ],
+    "condition_admission_pending_required": true,
+    "terminal_manifest_and_report_sha256_required": true,
+    "positive_raw_message_and_condition_counts_required": true,
+    "required_streams": [
+      "clob_market",
+      "polymarket_rtds"
+    ],
+    "recorder_errors_allowed": false,
+    "integrity_errors_allowed": false,
+    "degraded_requires_explicit_stream_gap": true,
+    "interrupted_or_failed_segments": "preserve_and_exclude"
+  },
+  "coverage": {
+    "basis": "clamped_terminal_segment_lifecycle_intervals",
+    "known_ineligible_or_unobserved_intervals_preserved": true,
+    "role_intervals": "round21_causal_dataset_design_v1",
+    "internal_stream_gaps_are_not_erased": true,
+    "transport_coverage_is_condition_admission": false,
+    "transport_coverage_is_model_data_eligibility": false,
+    "exact_receipt_replay_and_redundant_union_rebuild_still_required": true
+  },
+  "receipt_audit": {
+    "database_access": "read_only_after_valid_terminal_transport_manifest",
+    "database_run_set_must_match_segment_ledger": true,
+    "stored_report_and_preregistration_hashes_reconciled": true,
+    "eligible_run_receipts_replayed_exactly_once": true,
+    "receipt_payload_storage": "sha256_only_never_raw_payload",
+    "stream_counts_and_receipt_bounds_reconciled": true,
+    "gap_ledger_replayed_and_hash_chained": true,
+    "interrupted_or_failed_receipts_used_for_modeling": false,
+    "receipt_audit_is_condition_admission": false,
+    "receipt_audit_is_model_data_eligibility": false
+  },
+  "causal_blinding": {
+    "outcomes_consulted": false,
+    "model_scores_consulted": false,
+    "target_values_stored": false,
+    "profit_and_loss_stored": false
+  },
+  "authority": {
+    "condition_admission_pending": "derived_from_eligible_terminal_segments",
+    "model_data_eligible": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "7e2f294e20e3ce6425026a31f3bc63a50cf39e6e0ab51c25eafb20e7ca67b551"
+}

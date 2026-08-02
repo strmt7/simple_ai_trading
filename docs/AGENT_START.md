@@ -326,6 +326,11 @@ extends the established parser with independently registered commands.
   81-ledger development matrix, test population, and any development-nominated
   AI identity. The durable claim is consumed before test feature, target, or
   execution access and cannot reopen after completion, failure, or interruption.
+  Terminal opening first uses
+  `round-021-terminal-transport-manifest-design-v1.json`: it never opens the
+  active database, preserves every failed/interrupted segment and scheduled
+  coverage hole, and grants only permission for later exact receipt and
+  redundant-union reconstruction. It is not condition or model eligibility.
   No Round 21 claim, model score, economic verdict, profitability claim, or
   trading authority exists while capture remains active.
 - `polymarket-live --action autonomous` assembles the Round 16 predictor,
