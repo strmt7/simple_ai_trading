@@ -344,6 +344,13 @@ extends the established parser with independently registered commands.
   v2 seal derives its corpus and sealed-population hashes from that validated
   publication; sealed feature audits require the exact consumed claim and
   access hash in the durable one-use ledger.
+  The target-blind model program is now frozen at six candidates per matched
+  ledger: three logistic residuals, two shallow LightGBM residuals, and one
+  compact causal TCN residual. The TCN uses 16 causal 250 ms rows, resets on a
+  condition or cadence gap, samples eight endpoints per training condition,
+  stores exact checksummed float32 weights, and reports every epoch. Do not add
+  another candidate or interpret the successful AMD DirectML runtime probe as
+  predictive or economic evidence.
   No Round 21 claim, model score, economic verdict, profitability claim, or
   trading authority exists while capture remains active.
 - `polymarket-live --action autonomous` assembles the Round 16 predictor,

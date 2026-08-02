@@ -4,8 +4,8 @@
   "status": "preregistered_during_target_and_model_blind_capture",
   "parents": {
     "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
-    "round21_model_design_sha256": "6dd59a429c1013ef737086da9fbd9a59cb93bcbb616fb7a97cc0ddf4dbb1e7be",
-    "round21_economic_replay_design_sha256": "f075d125699eb9de07b5822c8cee7b69f23dd608c66e4447b92ad264afa8e9f4"
+    "round21_model_design_sha256": "817e98c28922b8bfefcba60cde54b92346a65c1b11ead5067c1793a90e191095",
+    "round21_economic_replay_design_sha256": "dcfa3b5a93dbf8ab4f1248a9e524d56ffafc5c9d440f69594aed3a2757327c4a"
   },
   "arms": {
     "baseline": "exact_population_matched_core_probability_envelopes",
@@ -68,5 +68,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "design_sha256": "ff372fe219e61752c66b598738d742f5979ab2ebabcc20b2bb04b679acaac737"
+  "design_sha256": "ede0d3cd989cf62116c1882b84b7fd3bdc211c34b8f3ea98dffd6bda48b20c10"
 }

@@ -33,7 +33,7 @@ POLYMARKET_ROUND21_SEALED_DESIGN_SCHEMA_VERSION = (
     "polymarket-round21-terminal-sealed-evaluation-design-v1"
 )
 POLYMARKET_ROUND21_SEALED_DESIGN_SHA256 = (
-    "c6b917150a583fa8a0d57f7c0f2a1f6f838aba6bb8e5a584adf7015f010ce332"
+    "683278969bc91993f573c4549a83b517d88eacaf792a014694536c96c1fea62d"
 )
 POLYMARKET_ROUND21_SEALED_PREDICTIVE_SCHEMA_VERSION = (
     "polymarket-round21-sealed-predictive-result-v1"

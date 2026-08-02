@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 import hashlib
 import json
@@ -14,15 +14,21 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.special import expit, logit
 
+from .compute import BackendInfo, SUPPORTED_COMPUTE_BACKENDS, resolve_backend
 from .lightgbm_backend import (
     SUPPORTED_LIGHTGBM_BACKEND_KINDS,
     lightgbm_backend_parameters,
 )
 from .polymarket_round21_contract import POLYMARKET_ROUND21_CONTRACT_SHA256
+from .polymarket_round21_tcn import (
+    fit_round21_tcn,
+    predict_round21_tcn,
+    validate_round21_tcn_payload,
+)
 
 
 POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION = (
-    "polymarket-round21-matched-residual-development-v3"
+    "polymarket-round21-matched-residual-development-v4"
 )
 POLYMARKET_ROUND21_PROBABILITY_BATCH_SCHEMA_VERSION = (
     "polymarket-round21-probability-batch-v1"
@@ -34,10 +40,10 @@ POLYMARKET_ROUND21_DATASET_DESIGN_SHA256 = (
     "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba"
 )
 POLYMARKET_ROUND21_MODEL_DESIGN_SHA256 = (
-    "6dd59a429c1013ef737086da9fbd9a59cb93bcbb616fb7a97cc0ddf4dbb1e7be"
+    "817e98c28922b8bfefcba60cde54b92346a65c1b11ead5067c1793a90e191095"
 )
 POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256 = (
-    "f502c28b7a152e8eb6e3d49e2a23c145e2a90118040e79c17a7adfb0e543857c"
+    "bdd328e5b23f660757094e7561d37a22217d4ee180302186f706cd9fc906142e"
 )
 _ROLES = ("train", "tune_calibration", "tune_selection", "test")
 _LAYERS = ("core", "core_spot", "core_spot_usdm")
@@ -52,6 +58,8 @@ _LIGHTGBM_GRID = (
     {"max_depth": 2, "num_leaves": 3, "min_data_in_leaf": 20},
     {"max_depth": 3, "num_leaves": 7, "min_data_in_leaf": 40},
 )
+
+ProgressCallback = Callable[[str, Mapping[str, object]], None]
 
 
 def _canonical_json(value: object) -> str:
@@ -850,10 +858,76 @@ def _fit_lightgbm_residual(
     }
 
 
+def _fit_tcn_residual(
+    train_matrix: np.ndarray,
+    train_labels: np.ndarray,
+    train_structural: np.ndarray,
+    train_condition_ids: np.ndarray,
+    train_decision_time_ms: np.ndarray,
+    stop_matrix: np.ndarray,
+    stop_labels: np.ndarray,
+    stop_structural: np.ndarray,
+    stop_condition_ids: np.ndarray,
+    stop_decision_time_ms: np.ndarray,
+    transform: Mapping[str, object],
+    backend: BackendInfo,
+    *,
+    population_layer: str,
+    feature_layer: str,
+    feature_names_sha256: str,
+    candidate_namespace: str,
+    progress: ProgressCallback | None,
+) -> dict[str, object]:
+    train_values = _transform_matrix(train_matrix, transform, normalize=True)
+    stop_values = _transform_matrix(stop_matrix, transform, normalize=True)
+    namespace_seed = int.from_bytes(
+        hashlib.sha256(candidate_namespace.encode("ascii")).digest()[:4],
+        "big",
+    )
+
+    def candidate_progress(event: str, payload: Mapping[str, object]) -> None:
+        if progress is not None:
+            progress(
+                event,
+                {
+                    "candidate_namespace": candidate_namespace,
+                    **dict(payload),
+                },
+            )
+
+    fitted = fit_round21_tcn(
+        train_matrix=train_values,
+        train_labels=train_labels,
+        train_structural_log_odds=logit(_probability(train_structural)),
+        train_condition_ids=train_condition_ids,
+        train_decision_time_ms=train_decision_time_ms,
+        stop_matrix=stop_values,
+        stop_labels=stop_labels,
+        stop_structural_log_odds=logit(_probability(stop_structural)),
+        stop_condition_ids=stop_condition_ids,
+        stop_decision_time_ms=stop_decision_time_ms,
+        backend=backend,
+        seed=POLYMARKET_ROUND21_MODEL_SEED + namespace_seed,
+        progress=candidate_progress if progress is not None else None,
+    )
+    return {
+        "candidate_id": f"{candidate_namespace}-causal-tcn",
+        "family": "causal_tcn_residual",
+        "layer": population_layer,
+        "population_layer": population_layer,
+        "feature_layer": feature_layer,
+        "feature_names_sha256": feature_names_sha256,
+        "transform": dict(transform),
+        **fitted.payload,
+    }
+
+
 def _raw_prediction(
     model: Mapping[str, object],
     matrix: np.ndarray,
     structural_probability: np.ndarray,
+    condition_ids: np.ndarray,
+    decision_time_ms: np.ndarray,
 ) -> np.ndarray:
     family = str(model.get("family") or "")
     offset = logit(_probability(structural_probability))
@@ -876,6 +950,17 @@ def _raw_prediction(
         linear = offset + np.asarray(
             booster.predict(values, raw_score=True),
             dtype=np.float64,
+        )
+    elif family == "causal_tcn_residual":
+        values = _transform_matrix(matrix, transform, normalize=True)
+        return _probability(
+            predict_round21_tcn(
+                model,
+                matrix=values,
+                structural_log_odds=offset,
+                condition_ids=condition_ids,
+                decision_time_ms=decision_time_ms,
+            )
         )
     else:
         raise ValueError("Round 21 model family is invalid")
@@ -948,6 +1033,8 @@ def _predict_validated_round21_candidate(
         model,
         matrix,
         selected.structural_probability[indices],
+        selected.condition_ids[indices],
+        selected.decision_time_ms[indices],
     )
     calibration = model.get("calibration")
     if not isinstance(calibration, Mapping):
@@ -1238,9 +1325,11 @@ def _fit_layer_candidates(
     feature_layer: str,
     candidate_namespace: str,
     backend_parameters: Mapping[str, object],
+    tcn_backend: BackendInfo,
     *,
     backend_kind: str,
     backend_device: str,
+    progress: ProgressCallback | None,
 ) -> tuple[list[dict[str, object]], np.ndarray]:
     train_indices = _selected_indices(train, population_layer)
     selection_indices = _selected_indices(selection, population_layer)
@@ -1312,12 +1401,35 @@ def _fit_layer_candidates(
                 candidate_namespace=candidate_namespace,
             )
         )
+    models.append(
+        _fit_tcn_residual(
+            train_matrix,
+            train.labels[train_indices],
+            train.structural_probability[train_indices],
+            train.condition_ids[train_indices],
+            train.decision_time_ms[train_indices],
+            stop_matrix,
+            calibration.labels[stop_indices],
+            calibration.structural_probability[stop_indices],
+            calibration.condition_ids[stop_indices],
+            calibration.decision_time_ms[stop_indices],
+            transform,
+            tcn_backend,
+            population_layer=population_layer,
+            feature_layer=feature_layer,
+            feature_names_sha256=feature_names_sha,
+            candidate_namespace=candidate_namespace,
+            progress=progress,
+        )
+    )
     records: list[dict[str, object]] = []
     for model in models:
         raw_calibration = _raw_prediction(
             model,
             platt_matrix,
             calibration.structural_probability[platt_indices],
+            calibration.condition_ids[platt_indices],
+            calibration.decision_time_ms[platt_indices],
         )
         model["calibration"] = _fit_platt(
             calibration.labels[platt_indices],
@@ -1329,6 +1441,8 @@ def _fit_layer_candidates(
                 model,
                 selection_matrix,
                 selection.structural_probability[selection_indices],
+                selection.condition_ids[selection_indices],
+                selection.decision_time_ms[selection_indices],
             ),
             model["calibration"],  # type: ignore[arg-type]
         )
@@ -1374,7 +1488,11 @@ def _select_candidate(records: Sequence[Mapping[str, object]]) -> Mapping[str, o
     return min(
         eligible,
         key=lambda item: (
-            0 if item["family"] == "logistic_residual" else 1,
+            {
+                "logistic_residual": 0,
+                "lightgbm_residual": 1,
+                "causal_tcn_residual": 2,
+            }[str(item["family"])],
             -float(item["model"].get("l2", 0.0)),  # type: ignore[union-attr]
             float(
                 item["selection_metrics"][  # type: ignore[index]
@@ -1478,6 +1596,7 @@ def fit_round21_development(
     tune_calibration: Round21DevelopmentPanel,
     tune_selection: Round21DevelopmentPanel,
     compute_backend: str = "auto",
+    progress: ProgressCallback | None = None,
 ) -> dict[str, object]:
     train = train.validate()
     tune_calibration = tune_calibration.validate()
@@ -1545,9 +1664,15 @@ def fit_round21_development(
         != 1
     ):
         raise ValueError("Round 21 development partition boundary differs")
+    requested_backend = str(compute_backend or "auto").strip().lower()
+    resolved_backend = resolve_backend(
+        requested_backend,
+        require=requested_backend != "auto",
+    )
     backend_parameters, backend_kind, backend_device = lightgbm_backend_parameters(
         compute_backend,
         POLYMARKET_ROUND21_MODEL_SEED,
+        resolved_backend=resolved_backend,
         reproducible=True,
         pin_opencl_device=True,
     )
@@ -1572,8 +1697,10 @@ def fit_round21_development(
             layer,
             layer,
             backend_parameters,
+            resolved_backend,
             backend_kind=backend_kind,
             backend_device=backend_device,
+            progress=progress,
         )
         selected_record = _select_candidate(records)
         selected_model = selected_record["model"]
@@ -1627,8 +1754,10 @@ def fit_round21_development(
                 "core",
                 f"{layer}-matched-core",
                 backend_parameters,
+                resolved_backend,
                 backend_kind=backend_kind,
                 backend_device=backend_device,
+                progress=progress,
             )
             matched_record = _select_candidate(matched_records)
             matched_model = matched_record["model"]
@@ -1711,9 +1840,12 @@ def fit_round21_development(
             "optional_layers_use_exact_matched_core_selection_population": True,
         },
         "compute": {
-            "requested": str(compute_backend),
+            "requested": requested_backend,
             "lightgbm_backend_kind": backend_kind,
             "lightgbm_backend_device": backend_device,
+            "tcn_backend_kind": resolved_backend.kind,
+            "tcn_backend_device": resolved_backend.device,
+            "tcn_backend_vendor": resolved_backend.vendor,
         },
         "economic_evaluation_completed": False,
         "test_features_accessed": False,
@@ -1787,11 +1919,17 @@ def _valid_candidate_ledger(
     feature_layer: str,
     feature_names_sha256: str,
     candidate_namespace: str,
+    tcn_backend_kind: str,
+    tcn_backend_device: str,
 ) -> bool:
-    if not isinstance(value, list) or len(value) != 5:
+    if not isinstance(value, list) or len(value) != 6:
         return False
     candidate_ids: set[str] = set()
-    family_counts = {"logistic_residual": 0, "lightgbm_residual": 0}
+    family_counts = {
+        "logistic_residual": 0,
+        "lightgbm_residual": 0,
+        "causal_tcn_residual": 0,
+    }
     for record in value:
         if not isinstance(record, Mapping):
             return False
@@ -1848,7 +1986,7 @@ def _valid_candidate_ledger(
                 or l2 not in _LOGISTIC_L2
             ):
                 return False
-        else:
+        elif family == "lightgbm_residual":
             try:
                 best_iteration = int(model.get("best_iteration", 0))
             except (TypeError, ValueError, OverflowError):
@@ -1862,9 +2000,20 @@ def _valid_candidate_ledger(
                 or not str(model.get("backend_device") or "")
             ):
                 return False
+        else:
+            if (
+                not validate_round21_tcn_payload(model, feature_width=width)
+                or model.get("backend_kind") != tcn_backend_kind
+                or model.get("backend_device") != tcn_backend_device
+            ):
+                return False
         candidate_ids.add(candidate_id)
         family_counts[family] += 1
-    return family_counts == {"logistic_residual": 3, "lightgbm_residual": 2}
+    return family_counts == {
+        "logistic_residual": 3,
+        "lightgbm_residual": 2,
+        "causal_tcn_residual": 1,
+    }
 
 
 def validate_round21_development_artifact(
@@ -1877,6 +2026,46 @@ def validate_round21_development_artifact(
     dataset_and_partition = payload.get("dataset_and_partition")
     preprocessing = payload.get("preprocessing")
     selection_rule = payload.get("selection_rule")
+    compute = payload.get("compute")
+    if isinstance(compute, Mapping):
+        requested_compute = str(compute.get("requested") or "")
+        lightgbm_kind = str(compute.get("lightgbm_backend_kind") or "")
+        lightgbm_device = str(compute.get("lightgbm_backend_device") or "")
+        tcn_kind = str(compute.get("tcn_backend_kind") or "")
+        tcn_device = str(compute.get("tcn_backend_device") or "")
+        tcn_vendor = str(compute.get("tcn_backend_vendor") or "")
+    else:
+        requested_compute = ""
+        lightgbm_kind = ""
+        lightgbm_device = ""
+        tcn_kind = ""
+        tcn_device = ""
+        tcn_vendor = ""
+    valid_compute = bool(
+        isinstance(compute, Mapping)
+        and set(compute)
+        == {
+            "requested",
+            "lightgbm_backend_kind",
+            "lightgbm_backend_device",
+            "tcn_backend_kind",
+            "tcn_backend_device",
+            "tcn_backend_vendor",
+        }
+        and requested_compute in SUPPORTED_COMPUTE_BACKENDS
+        and lightgbm_kind in SUPPORTED_LIGHTGBM_BACKEND_KINDS
+        and lightgbm_device
+        and tcn_kind in {"cpu", "cuda", "rocm", "xpu", "directml", "mps"}
+        and tcn_device
+        and tcn_vendor
+        and (requested_compute == "auto" or requested_compute == tcn_kind)
+        and (requested_compute != "cpu" or lightgbm_kind == "cpu")
+        and (requested_compute != "cuda" or lightgbm_kind == "cuda")
+        and (
+            requested_compute not in {"rocm", "xpu", "mps", "directml"}
+            or lightgbm_kind == "opencl"
+        )
+    )
     false_fields = (
         "economic_evaluation_completed",
         "test_features_accessed",
@@ -1900,6 +2089,7 @@ def validate_round21_development_artifact(
         or not isinstance(dataset_and_partition, Mapping)
         or not isinstance(layers, Mapping)
         or set(layers) != set(_LAYERS)
+        or not valid_compute
         or preprocessing
         != {
             "fit_population": "train_only_condition_equal_weighted",
@@ -1929,6 +2119,8 @@ def validate_round21_development_artifact(
                     layer_name,
                 ),
                 candidate_namespace=layer_name,
+                tcn_backend_kind=tcn_kind,
+                tcn_backend_device=tcn_device,
             )
             or layer.get("selected_candidate_id")
             not in {
@@ -1957,6 +2149,8 @@ def validate_round21_development_artifact(
                             "core",
                         ),
                         candidate_namespace=f"{layer_name}-matched-core",
+                        tcn_backend_kind=tcn_kind,
+                        tcn_backend_device=tcn_device,
                     )
                     or layer.get("matched_core_selected_candidate_id")
                     not in {

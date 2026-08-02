@@ -21,7 +21,7 @@ POLYMARKET_ROUND21_AI_SELECTION_DESIGN_SCHEMA_VERSION = (
     "polymarket-round21-ai-candidate-selection-design-v1"
 )
 POLYMARKET_ROUND21_AI_SELECTION_DESIGN_SHA256 = (
-    "4249bb64de61e01dd7dced9c8c0749d46e52ded8c634bcc903c3191db13a1231"
+    "c6522b4f02b7d573bbb277dd6474f80c782143d5d491110b1b96496754d76071"
 )
 POLYMARKET_ROUND21_AI_CANDIDATES = (
     "qwen3:8b",
@@ -92,10 +92,10 @@ def validate_round21_ai_candidate_selection_design(
                 "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116"
             ),
             "round21_ai_veto_design_sha256": (
-                "b84e49cbc382e4211a2e83f2b889c06506cd8ae477a7cdd35e1cd4258b0cce84"
+                "c9b6924246e3e61dc52720ccd7eb6e49718e21ffd54e0b1567e58cc9181dfdfb"
             ),
             "round21_model_design_sha256": (
-                "6dd59a429c1013ef737086da9fbd9a59cb93bcbb616fb7a97cc0ddf4dbb1e7be"
+                "817e98c28922b8bfefcba60cde54b92346a65c1b11ead5067c1793a90e191095"
             ),
         }
         or program
