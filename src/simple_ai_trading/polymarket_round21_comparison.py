@@ -22,7 +22,7 @@ POLYMARKET_ROUND21_MATCHED_COMPARISON_SCHEMA_VERSION = (
     "polymarket-round21-matched-economic-comparison-v1"
 )
 POLYMARKET_ROUND21_MATCHED_COMPARISON_DESIGN_SHA256 = (
-    "ede0d3cd989cf62116c1882b84b7fd3bdc211c34b8f3ea98dffd6bda48b20c10"
+    "450e3fa159358dfc6bfcf9a6cc64c2b960750c774fdc141026fc80c680994b78"
 )
 _EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")

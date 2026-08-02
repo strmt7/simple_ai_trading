@@ -6,13 +6,13 @@
     "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
     "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba",
     "round21_feature_policy_sha256": "a55408ebb99180cdfd21b443a924002ffd9cc1443b54ae1f882b49a38ae8ce70",
-    "round21_model_design_sha256": "817e98c28922b8bfefcba60cde54b92346a65c1b11ead5067c1793a90e191095",
-    "round21_multi_action_policy_sha256": "206cb4b6f2dc11c5d178ce866d2d4450cb5c45b47a44c52d10419b00dfc21a1d",
+    "round21_model_design_sha256": "1b64fd08f4c58cb5b1c87ff4f6f97538d258fedf27717be6f3922f93cf5bfb14",
+    "round21_multi_action_policy_sha256": "8330b66861523f8204b37acd6e46e25d35238a5a6909b9bdb55f8dd087e5a041",
     "round21_execution_policy_sha256": "c49e6eef0642a68810d8aefafc6a303b2ec9c8a7bbce703b8f05167baba69bd9",
-    "round21_economic_replay_design_sha256": "dcfa3b5a93dbf8ab4f1248a9e524d56ffafc5c9d440f69594aed3a2757327c4a",
-    "round21_matched_comparison_design_sha256": "ede0d3cd989cf62116c1882b84b7fd3bdc211c34b8f3ea98dffd6bda48b20c10",
-    "round21_ai_veto_design_sha256": "c9b6924246e3e61dc52720ccd7eb6e49718e21ffd54e0b1567e58cc9181dfdfb",
-    "round21_ai_selection_design_sha256": "c6522b4f02b7d573bbb277dd6474f80c782143d5d491110b1b96496754d76071",
+    "round21_economic_replay_design_sha256": "ce19f8722801f359220818be58e2da715fc3be4e8c28d6c37993566d97863763",
+    "round21_matched_comparison_design_sha256": "450e3fa159358dfc6bfcf9a6cc64c2b960750c774fdc141026fc80c680994b78",
+    "round21_ai_veto_design_sha256": "3b059ee9dd6d02768cff8f3a6f39ec2cc3bad3e8d6a49fd76f9abc9ec5956155",
+    "round21_ai_selection_design_sha256": "7f953c21fd18371306b93a9ee3587e7f416e55578732631c6a4677036ddc2141",
     "round21_sidecar_campaign_design_sha256": "f29f272c7e1d072f5723b029d8c867c9ceb26b9a70eef3603e81360faae5c27c"
   },
   "external_null_benchmark": {
@@ -113,5 +113,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "design_sha256": "683278969bc91993f573c4549a83b517d88eacaf792a014694536c96c1fea62d"
+  "design_sha256": "07f9855c78a7907dadba7cf2725894fc78c941a946adb378ea5d66a9b1faef27"
 }

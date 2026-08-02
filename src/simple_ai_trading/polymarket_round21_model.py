@@ -28,7 +28,7 @@ from .polymarket_round21_tcn import (
 
 
 POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION = (
-    "polymarket-round21-matched-residual-development-v4"
+    "polymarket-round21-matched-residual-development-v5"
 )
 POLYMARKET_ROUND21_PROBABILITY_BATCH_SCHEMA_VERSION = (
     "polymarket-round21-probability-batch-v1"
@@ -36,14 +36,19 @@ POLYMARKET_ROUND21_PROBABILITY_BATCH_SCHEMA_VERSION = (
 POLYMARKET_ROUND21_MODEL_SEED = 21_021
 POLYMARKET_ROUND21_MINIMUM_DEVELOPMENT_CONDITIONS = 30
 POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES = 2_000
+POLYMARKET_ROUND21_DEPENDENCE_BLOCK_RULE = "min_n_max_2_ceil_sqrt_n"
+POLYMARKET_ROUND21_HAC_METHOD = "newey_west_bartlett"
+POLYMARKET_ROUND21_PAIRED_INTERVAL_METHOD = (
+    "circular_block_bootstrap_percentile_2000"
+)
 POLYMARKET_ROUND21_DATASET_DESIGN_SHA256 = (
     "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba"
 )
 POLYMARKET_ROUND21_MODEL_DESIGN_SHA256 = (
-    "817e98c28922b8bfefcba60cde54b92346a65c1b11ead5067c1793a90e191095"
+    "1b64fd08f4c58cb5b1c87ff4f6f97538d258fedf27717be6f3922f93cf5bfb14"
 )
 POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256 = (
-    "bdd328e5b23f660757094e7561d37a22217d4ee180302186f706cd9fc906142e"
+    "14f2436cc1091df5d5f6119a0d013f9300fc3c338443c1b684eda5ee8e24d9b0"
 )
 _ROLES = ("train", "tune_calibration", "tune_selection", "test")
 _LAYERS = ("core", "core_spot", "core_spot_usdm")
@@ -1258,12 +1263,52 @@ def _metrics(
         "condition_count": len(conditions),
         "condition_equal_log_loss": float(np.mean(losses)),
         "condition_equal_brier_score": float(np.mean(brier)),
-        "log_loss_standard_error": (
-            0.0
-            if len(losses) < 2
-            else float(np.std(losses, ddof=1) / math.sqrt(len(losses)))
-        ),
+        "log_loss_standard_error": _hac_standard_error(losses),
     }
+
+
+def _dependence_block_length(condition_count: int) -> int:
+    if condition_count < 1:
+        raise ValueError("Round 21 dependence population is empty")
+    return min(condition_count, max(2, math.ceil(math.sqrt(condition_count))))
+
+
+def _hac_standard_error(values: np.ndarray) -> float:
+    selected = np.asarray(values, dtype=np.float64)
+    if selected.ndim != 1 or len(selected) < 1 or not np.all(np.isfinite(selected)):
+        raise ValueError("Round 21 HAC population is invalid")
+    if len(selected) == 1:
+        return 0.0
+    centered = selected - float(np.mean(selected))
+    lag_count = _dependence_block_length(len(selected)) - 1
+    long_run_variance = float(np.dot(centered, centered) / len(selected))
+    for lag in range(1, lag_count + 1):
+        covariance = float(
+            np.dot(centered[lag:], centered[:-lag]) / len(selected)
+        )
+        bartlett_weight = 1.0 - lag / (lag_count + 1.0)
+        long_run_variance += 2.0 * bartlett_weight * covariance
+    return float(math.sqrt(max(0.0, long_run_variance) / len(selected)))
+
+
+def _circular_block_bootstrap_means(
+    values: np.ndarray,
+    *,
+    seed_offset: int,
+) -> np.ndarray:
+    selected = np.asarray(values, dtype=np.float64)
+    if selected.ndim != 1 or len(selected) < 1 or not np.all(np.isfinite(selected)):
+        raise ValueError("Round 21 bootstrap population is invalid")
+    block_length = _dependence_block_length(len(selected))
+    block_count = math.ceil(len(selected) / block_length)
+    offsets = np.arange(block_length, dtype=np.int64)
+    generator = np.random.default_rng(POLYMARKET_ROUND21_MODEL_SEED + int(seed_offset))
+    samples = np.empty(POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES, dtype=np.float64)
+    for index in range(POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES):
+        starts = generator.integers(0, len(selected), size=block_count)
+        indices = np.add.outer(starts, offsets).reshape(-1)[: len(selected)]
+        samples[index] = float(np.mean(selected[indices % len(selected)]))
+    return samples
 
 
 def _paired_improvement(
@@ -1290,11 +1335,10 @@ def _paired_improvement(
     if control_conditions != candidate_conditions:
         raise RuntimeError("Round 21 paired condition identities differ")
     difference = control_loss - candidate_loss
-    generator = np.random.default_rng(POLYMARKET_ROUND21_MODEL_SEED + int(seed_offset))
-    samples = np.empty(POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES, dtype=np.float64)
-    for index in range(POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES):
-        selected = generator.integers(0, len(difference), size=len(difference))
-        samples[index] = float(np.mean(difference[selected]))
+    samples = _circular_block_bootstrap_means(
+        difference,
+        seed_offset=seed_offset,
+    )
     return {
         "condition_count": len(difference),
         "mean": float(np.mean(difference)),
@@ -1458,42 +1502,57 @@ def _fit_layer_candidates(
                     selection.labels[selection_indices],
                     prediction,
                 ),
+                "_selection_condition_log_loss": _condition_losses(
+                    selection.condition_ids[selection_indices],
+                    selection.labels[selection_indices],
+                    prediction,
+                    metric="log_loss",
+                )[0],
             }
         )
     return records, selection_indices
 
 
-def _select_candidate(records: Sequence[Mapping[str, object]]) -> Mapping[str, object]:
+def _candidate_complexity_key(item: Mapping[str, object]) -> tuple[object, ...]:
+    model = item.get("model")
+    if not isinstance(model, Mapping):
+        raise ValueError("Round 21 candidate model is unavailable")
+    metrics = item.get("selection_metrics")
+    if not isinstance(metrics, Mapping):
+        raise ValueError("Round 21 candidate metrics are unavailable")
+    return (
+        {
+            "logistic_residual": 0,
+            "lightgbm_residual": 1,
+            "causal_tcn_residual": 2,
+        }[str(item["family"])],
+        -float(model.get("l2", 0.0)),
+        float(metrics["condition_equal_log_loss"]),
+        str(item["candidate_id"]),
+    )
+
+
+def _select_candidate_from_evidence(
+    records: Sequence[Mapping[str, object]],
+) -> Mapping[str, object]:
+    eligible = []
+    for item in records:
+        comparison = item.get("selection_comparison_to_best")
+        if not isinstance(comparison, Mapping):
+            raise ValueError("Round 21 paired selection evidence is unavailable")
+        if comparison.get("within_one_standard_error") is True:
+            eligible.append(item)
+    if not eligible:
+        raise ValueError("Round 21 candidate selection has no eligible model")
+    return min(eligible, key=_candidate_complexity_key)
+
+
+def _select_candidate(records: Sequence[dict[str, object]]) -> Mapping[str, object]:
     if not records:
         raise ValueError("Round 21 candidate ledger is empty")
     best = min(
         records,
-        key=lambda item: float(
-            item["selection_metrics"]["condition_equal_log_loss"]  # type: ignore[index]
-        ),
-    )
-    threshold = float(
-        best["selection_metrics"]["condition_equal_log_loss"]  # type: ignore[index]
-    ) + float(
-        best["selection_metrics"]["log_loss_standard_error"]  # type: ignore[index]
-    )
-    eligible = [
-        item
-        for item in records
-        if float(
-            item["selection_metrics"]["condition_equal_log_loss"]  # type: ignore[index]
-        )
-        <= threshold
-    ]
-    return min(
-        eligible,
         key=lambda item: (
-            {
-                "logistic_residual": 0,
-                "lightgbm_residual": 1,
-                "causal_tcn_residual": 2,
-            }[str(item["family"])],
-            -float(item["model"].get("l2", 0.0)),  # type: ignore[union-attr]
             float(
                 item["selection_metrics"][  # type: ignore[index]
                     "condition_equal_log_loss"
@@ -1502,6 +1561,30 @@ def _select_candidate(records: Sequence[Mapping[str, object]]) -> Mapping[str, o
             str(item["candidate_id"]),
         ),
     )
+    best_loss = np.asarray(best.pop("_selection_condition_log_loss"), dtype=np.float64)
+    best_candidate_id = str(best["candidate_id"])
+    lag_count = _dependence_block_length(len(best_loss)) - 1
+    for item in records:
+        if item is best:
+            candidate_loss = best_loss
+        else:
+            candidate_loss = np.asarray(
+                item.pop("_selection_condition_log_loss"),
+                dtype=np.float64,
+            )
+        if candidate_loss.shape != best_loss.shape:
+            raise RuntimeError("Round 21 paired candidate losses differ")
+        difference = candidate_loss - best_loss
+        mean_difference = float(np.mean(difference))
+        standard_error = _hac_standard_error(difference)
+        item["selection_comparison_to_best"] = {
+            "best_candidate_id": best_candidate_id,
+            "mean_log_loss_difference": mean_difference,
+            "hac_standard_error": standard_error,
+            "hac_lag_conditions": lag_count,
+            "within_one_standard_error": mean_difference <= standard_error,
+        }
+    return _select_candidate_from_evidence(records)
 
 
 def _control_predictions(
@@ -1834,6 +1917,14 @@ def fit_round21_development(
         "selection_rule": {
             "primary_metric": "condition_equal_log_loss",
             "prefer_simplest_within_one_standard_error": True,
+            "one_standard_error_comparison": (
+                "paired_candidate_minus_best_condition_log_loss"
+            ),
+            "log_loss_standard_error": POLYMARKET_ROUND21_HAC_METHOD,
+            "dependence_block_length_rule": (
+                POLYMARKET_ROUND21_DEPENDENCE_BLOCK_RULE
+            ),
+            "paired_interval": POLYMARKET_ROUND21_PAIRED_INTERVAL_METHOD,
             "optional_layers_use_exact_matched_core_train_population": True,
             "optional_layers_use_exact_matched_core_early_stop_population": True,
             "optional_layers_use_exact_matched_core_calibration_population": True,
@@ -1931,11 +2022,29 @@ def _valid_candidate_ledger(
         "causal_tcn_residual": 0,
     }
     for record in value:
-        if not isinstance(record, Mapping):
+        if not isinstance(record, Mapping) or set(record) != {
+            "candidate_id",
+            "family",
+            "population_layer",
+            "feature_layer",
+            "model",
+            "selection_metrics",
+            "selection_comparison_to_best",
+        }:
             return False
         model = record.get("model")
         metrics = record.get("selection_metrics")
-        if not isinstance(model, Mapping) or not isinstance(metrics, Mapping):
+        if (
+            not isinstance(model, Mapping)
+            or not isinstance(metrics, Mapping)
+            or set(metrics)
+            != {
+                "condition_count",
+                "condition_equal_log_loss",
+                "condition_equal_brier_score",
+                "log_loss_standard_error",
+            }
+        ):
             return False
         candidate_id = str(record.get("candidate_id") or "")
         family = str(record.get("family") or "")
@@ -2009,11 +2118,78 @@ def _valid_candidate_ledger(
                 return False
         candidate_ids.add(candidate_id)
         family_counts[family] += 1
-    return family_counts == {
+    if family_counts != {
         "logistic_residual": 3,
         "lightgbm_residual": 2,
         "causal_tcn_residual": 1,
-    }
+    }:
+        return False
+    best = min(
+        value,
+        key=lambda item: (
+            float(item["selection_metrics"]["condition_equal_log_loss"]),
+            str(item["candidate_id"]),
+        ),
+    )
+    best_candidate_id = str(best["candidate_id"])
+    best_metrics = best["selection_metrics"]
+    if not isinstance(best_metrics, Mapping):
+        return False
+    condition_count = int(best_metrics["condition_count"])
+    expected_lag = _dependence_block_length(condition_count) - 1
+    for record in value:
+        metrics = record["selection_metrics"]
+        comparison = record["selection_comparison_to_best"]
+        if not isinstance(metrics, Mapping) or not isinstance(comparison, Mapping):
+            return False
+        if set(comparison) != {
+            "best_candidate_id",
+            "mean_log_loss_difference",
+            "hac_standard_error",
+            "hac_lag_conditions",
+            "within_one_standard_error",
+        }:
+            return False
+        try:
+            mean_difference = float(comparison["mean_log_loss_difference"])
+            standard_error = float(comparison["hac_standard_error"])
+            expected_difference = float(metrics["condition_equal_log_loss"]) - float(
+                best_metrics["condition_equal_log_loss"]
+            )
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return False
+        if (
+            metrics.get("condition_count") != condition_count
+            or comparison.get("best_candidate_id") != best_candidate_id
+            or comparison.get("hac_lag_conditions") != expected_lag
+            or type(comparison.get("within_one_standard_error")) is not bool
+            or not math.isfinite(mean_difference)
+            or not math.isfinite(standard_error)
+            or mean_difference < -1e-12
+            or standard_error < 0.0
+            or not math.isclose(
+                mean_difference,
+                expected_difference,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or comparison["within_one_standard_error"]
+            is not (mean_difference <= standard_error)
+        ):
+            return False
+        if record is best and (mean_difference != 0.0 or standard_error != 0.0):
+            return False
+    return True
+
+
+def _validated_selected_candidate_id(value: object) -> str:
+    if not isinstance(value, list):
+        return ""
+    try:
+        selected = _select_candidate_from_evidence(value)
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return ""
+    return str(selected.get("candidate_id") or "")
 
 
 def validate_round21_development_artifact(
@@ -2103,6 +2279,14 @@ def validate_round21_development_artifact(
         != {
             "primary_metric": "condition_equal_log_loss",
             "prefer_simplest_within_one_standard_error": True,
+            "one_standard_error_comparison": (
+                "paired_candidate_minus_best_condition_log_loss"
+            ),
+            "log_loss_standard_error": POLYMARKET_ROUND21_HAC_METHOD,
+            "dependence_block_length_rule": (
+                POLYMARKET_ROUND21_DEPENDENCE_BLOCK_RULE
+            ),
+            "paired_interval": POLYMARKET_ROUND21_PAIRED_INTERVAL_METHOD,
             "optional_layers_use_exact_matched_core_train_population": True,
             "optional_layers_use_exact_matched_core_early_stop_population": True,
             "optional_layers_use_exact_matched_core_calibration_population": True,
@@ -2123,11 +2307,7 @@ def validate_round21_development_artifact(
                 tcn_backend_device=tcn_device,
             )
             or layer.get("selected_candidate_id")
-            not in {
-                record.get("candidate_id")
-                for record in layer["candidate_ledger"]
-                if isinstance(record, Mapping)
-            }
+            != _validated_selected_candidate_id(layer["candidate_ledger"])
             or _SHA256.fullmatch(str(layer.get("selection_indices_sha256") or ""))
             is None
             or (
@@ -2153,14 +2333,9 @@ def validate_round21_development_artifact(
                         tcn_backend_device=tcn_device,
                     )
                     or layer.get("matched_core_selected_candidate_id")
-                    not in {
-                        record.get("candidate_id")
-                        for record in layer.get(
-                            "matched_core_candidate_ledger",
-                            [],
-                        )
-                        if isinstance(record, Mapping)
-                    }
+                    != _validated_selected_candidate_id(
+                        layer.get("matched_core_candidate_ledger")
+                    )
                     or not isinstance(layer.get("comparison"), Mapping)
                     or layer["comparison"].get("matched_core_candidate_id")
                     != layer.get("matched_core_selected_candidate_id")
@@ -2412,9 +2587,12 @@ def round21_paired_predictive_improvement(
 __all__ = [
     "POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES",
     "POLYMARKET_ROUND21_DATASET_DESIGN_SHA256",
+    "POLYMARKET_ROUND21_DEPENDENCE_BLOCK_RULE",
+    "POLYMARKET_ROUND21_HAC_METHOD",
     "POLYMARKET_ROUND21_MINIMUM_DEVELOPMENT_CONDITIONS",
     "POLYMARKET_ROUND21_MODEL_DESIGN_SHA256",
     "POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION",
+    "POLYMARKET_ROUND21_PAIRED_INTERVAL_METHOD",
     "POLYMARKET_ROUND21_PROBABILITY_BATCH_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256",
     "Round21DevelopmentPanel",

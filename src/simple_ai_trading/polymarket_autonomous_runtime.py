@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from decimal import Decimal
+import inspect
 import time
 from typing import Callable, Protocol
 
@@ -212,6 +214,7 @@ class PolymarketAutonomousSupervisor:
         self.decision_data_service = decision_data_service
         self.durable_control_service = durable_control_service
         self.external_signal_provider = external_signal_provider
+        self._external_signal_runtime_available = external_signal_provider is not None
         self.decision_interval_seconds = interval
         self.decision_timeout_seconds = timeout
         self.forced_exit_seconds = forced_exit
@@ -399,6 +402,13 @@ class PolymarketAutonomousSupervisor:
     ) -> PolymarketExternalSignalDecision | None:
         if self.external_signal_provider is None:
             return None
+        if not self._external_signal_runtime_available:
+            return PolymarketExternalSignalDecision(
+                action="abstain",
+                maximum_size_multiplier=Decimal("0"),
+                reasons=("external_public_signal_runtime_unavailable",),
+                features=None,
+            )
         pending = self._pending_signal
         if pending is not None and pending[0] != proposal.proposal_sha256:
             if not pending[1].done():
@@ -440,6 +450,35 @@ class PolymarketAutonomousSupervisor:
                 "external BTC price discovery returned an invalid decision"
             )
         return signal
+
+    async def _run_external_signal_service(
+        self,
+        stop: asyncio.Event,
+        run: Callable[[asyncio.Event], object],
+    ) -> None:
+        """Isolate an optional public predictor without weakening entry safety."""
+
+        try:
+            outcome = run(stop)
+            if not inspect.isawaitable(outcome):
+                raise TypeError("external public signal run loop must be async")
+            await outcome
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            if stop.is_set():
+                return
+            self._external_signal_runtime_available = False
+            self._last_fault = (
+                "advisory_service_exit:external_public_signal:"
+                f"{exc.__class__.__name__}"
+            )
+            await stop.wait()
+            return
+        if not stop.is_set():
+            self._external_signal_runtime_available = False
+            self._last_fault = "advisory_service_exit:external_public_signal:returned"
+            await stop.wait()
 
     async def _close_owned(self) -> bool:
         self._requested_closes += 1
@@ -604,7 +643,7 @@ class PolymarketAutonomousSupervisor:
         external_run = getattr(self.external_signal_provider, "run", None)
         if callable(external_run):
             tasks["external_public_signal"] = asyncio.create_task(
-                external_run(services_stop)
+                self._run_external_signal_service(services_stop, external_run)
             )
         timer: asyncio.Task[None] | None = None
         if duration:

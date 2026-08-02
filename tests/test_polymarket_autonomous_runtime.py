@@ -286,6 +286,38 @@ def test_runtime_imports_no_binance_execution_module() -> None:
     assert all("binance" not in name.lower() for name in imports)
 
 
+def test_optional_public_predictor_failure_isolated_from_polymarket_runtime(
+    tmp_path: Path,
+) -> None:
+    class ExternalSignal:
+        trading_authority = False
+        credentials_used = False
+        execution_connected = False
+
+        async def run(self, _stop: asyncio.Event) -> None:
+            raise ConnectionError("public predictor unavailable")
+
+        def evaluate(self, **_kwargs: object) -> object:
+            pytest.fail("failed optional predictor must not be queried")
+
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(
+            decide=lambda **_kwargs: PolymarketAutonomousDecision()
+        ),
+        external=ExternalSignal(),
+    )
+
+    asyncio.run(supervisor.run(duration_seconds=0.05))
+
+    snapshot = supervisor.snapshot()
+    assert snapshot.stop_completed is True
+    assert snapshot.binance_execution_connected is False
+    assert snapshot.last_fault == (
+        "advisory_service_exit:external_public_signal:ConnectionError"
+    )
+
+
 def test_decision_rejects_duplicate_proposals(tmp_path: Path) -> None:
     proposal = _proposal(_promotion(tmp_path))
     with pytest.raises(ValueError, match="duplicate"):
