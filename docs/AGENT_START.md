@@ -362,8 +362,19 @@ extends the established parser with independently registered commands.
   implemented as non-authoritative prerequisites. They require an accepted
   sealed result, preserve the 16-row 250 ms sequence contract, interlock the
   current market after any Polymarket CLOB/Chainlink gap, and reset optional
-  Binance state independently. No prospective record, authenticated
-  qualification, promotion, or Round 21 CLI assembly exists.
+  Binance state independently. The credential-free public session opens two
+  redundant CLOB market channels and one Polymarket RTDS Chainlink channel in
+  memory. Its strict RTDS classifier sequence-accounts the current empty
+  opening frame and subscription-history snapshot but excludes both from
+  causal features. A 2026-08-02 live-host transport probe processed 19,147
+  frames in 15 seconds (19,131 CLOB, 14 live Chainlink updates, two RTDS
+  controls), with zero gaps and a queue high-watermark of two. A separate
+  three-second real-coordinator probe processed 2,106 frames into 243
+  redundant-union events and three live Chainlink prices, also with zero gaps
+  or core interlocks. Both probes used no credentials, account, Binance,
+  persistence, scorer invocation, or trading authority; they are runtime
+  evidence only. No prospective record, authenticated qualification,
+  promotion, or Round 21 CLI assembly exists.
 - `polymarket-live --action autonomous` assembles the Round 16 predictor,
   independent public predictor feed, Polymarket user stream, reconciliation,
   durable single-writer/Stop control, and settlement loops only after exact

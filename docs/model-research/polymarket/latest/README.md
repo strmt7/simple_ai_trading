@@ -72,7 +72,19 @@ in-memory coordinator serializes redundant Polymarket CLOB and Chainlink input;
 any Polymarket source gap interlocks new entries for that market. Optional
 Binance state is discarded and rewarmed independently after a disconnect. It
 never opens a database and imports no wallet, order, ledger, or execution
-boundary. No prospective prediction or qualification result exists yet.
+boundary. The credential-free public session now drives two redundant CLOB
+channels and one RTDS Chainlink channel. Its strict wire classifier preserves
+sequence continuity across the empty opening frame and subscription-history
+snapshot observed on the current RTDS service, while excluding both controls
+from features. On 2026-08-02, a bounded 15-second live-host transport probe
+processed 19,147 frames (19,131 CLOB, 14 live Chainlink updates, two controls)
+with zero gaps and queue high-watermark two. A separate three-second probe
+through the real union and feature coordinator processed 2,106 frames into 243
+union events and three live Chainlink prices, with zero gaps or core
+interlocks. Neither probe used credentials, an account, Binance, persistence,
+model scoring, or trading authority. These are runtime observations, not
+predictive, economic, paper, or live-trading evidence. No prospective
+prediction or qualification result exists yet.
 
 Terminal opening now starts with a separate transport manifest. It fails before
 the scheduled campaign end, preserves every interrupted or failed segment and

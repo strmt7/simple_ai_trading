@@ -12,7 +12,10 @@ from pathlib import Path
 import re
 from typing import Mapping, Sequence
 
-from .polymarket_btc_reference import parse_polymarket_chainlink_btc_tick
+from .polymarket_btc_reference import (
+    PolymarketChainlinkBtcTick,
+    parse_polymarket_chainlink_btc_tick,
+)
 from .polymarket_capture_frame import CaptureFrameRecord
 from .polymarket_redundant_union import (
     POLYMARKET_REDUNDANT_UNION_SCHEMA_VERSION,
@@ -471,6 +474,80 @@ class _ChainlinkObservation:
     control: bool
 
 
+def parse_round21_chainlink_wire_text(
+    raw_text: str,
+    *,
+    received_at_ms: int,
+) -> PolymarketChainlinkBtcTick | None:
+    """Classify exact RTDS controls and return only a live Chainlink tick."""
+
+    raw = str(raw_text)
+    received = int(received_at_ms)
+    if received <= 0:
+        raise ValueError("Round 21 Chainlink receipt time is invalid")
+    if raw in {"", "PING", "PONG"}:
+        return None
+    try:
+        payload = json.loads(
+            raw,
+            object_pairs_hook=_strict_object,
+            parse_constant=_reject_nonfinite,
+        )
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Round 21 Chainlink payload is not strict JSON") from exc
+    if not isinstance(payload, Mapping):
+        raise ValueError("Round 21 Chainlink payload is not an object")
+    if payload.get("type") != "subscribe":
+        return parse_polymarket_chainlink_btc_tick(
+            payload,
+            received_at_ms=received,
+        )
+    allowed_envelope = {"topic", "type", "timestamp", "payload"}
+    if "connection_id" in payload:
+        allowed_envelope.add("connection_id")
+    body = payload.get("payload")
+    if (
+        set(payload) != allowed_envelope
+        or payload.get("topic")
+        not in {"crypto_prices", "crypto_prices_chainlink"}
+        or type(payload.get("timestamp")) is not int
+        or int(payload["timestamp"]) <= 0
+        or not isinstance(body, Mapping)
+        or set(body) != {"data", "symbol"}
+        or str(body.get("symbol") or "").strip().lower() != "btc/usd"
+        or not isinstance(body.get("data"), list)
+        or len(body["data"]) > 1_000
+        or (
+            "connection_id" in payload
+            and (
+                not isinstance(payload["connection_id"], str)
+                or not 1 <= len(payload["connection_id"]) <= 128
+            )
+        )
+    ):
+        raise ValueError("Round 21 Chainlink subscription snapshot differs")
+    previous_timestamp = 0
+    for point in body["data"]:
+        if not isinstance(point, Mapping) or set(point) != {"timestamp", "value"}:
+            raise ValueError("Round 21 Chainlink subscription snapshot differs")
+        timestamp = point.get("timestamp")
+        try:
+            price = Decimal(str(point.get("value")))
+        except (InvalidOperation, TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 21 Chainlink subscription snapshot differs"
+            ) from exc
+        if (
+            type(timestamp) is not int
+            or timestamp <= previous_timestamp
+            or not price.is_finite()
+            or price <= 0
+        ):
+            raise ValueError("Round 21 Chainlink subscription snapshot differs")
+        previous_timestamp = timestamp
+    return None
+
+
 def _parse_chainlink_record(record: CaptureFrameRecord) -> _ChainlinkObservation:
     if not isinstance(record, CaptureFrameRecord):
         raise TypeError("Round 21 Chainlink input is not a capture-frame record")
@@ -485,7 +562,11 @@ def _parse_chainlink_record(record: CaptureFrameRecord) -> _ChainlinkObservation
         raise ValueError("Round 21 Chainlink capture metadata is invalid")
     raw = str(record.raw_text)
     raw_sha = hashlib.sha256(raw.encode("utf-8")).hexdigest()
-    if raw in {"PING", "PONG"}:
+    tick = parse_round21_chainlink_wire_text(
+        raw,
+        received_at_ms=int(record.received_wall_ms),
+    )
+    if tick is None:
         return _ChainlinkObservation(
             connection_id=connection,
             sequence_number=int(record.sequence_number),
@@ -495,20 +576,6 @@ def _parse_chainlink_record(record: CaptureFrameRecord) -> _ChainlinkObservation
             source_payload_sha256=raw_sha,
             control=True,
         )
-    try:
-        payload = json.loads(
-            raw,
-            object_pairs_hook=_strict_object,
-            parse_constant=_reject_nonfinite,
-        )
-    except (UnicodeError, json.JSONDecodeError) as exc:
-        raise ValueError("Round 21 Chainlink payload is not strict JSON") from exc
-    if not isinstance(payload, Mapping):
-        raise ValueError("Round 21 Chainlink payload is not an object")
-    tick = parse_polymarket_chainlink_btc_tick(
-        payload,
-        received_at_ms=int(record.received_wall_ms),
-    )
     return _ChainlinkObservation(
         connection_id=connection,
         sequence_number=int(record.sequence_number),
@@ -1459,6 +1526,7 @@ __all__ = [
     "Round21CoreFeatureSnapshot",
     "join_round21_causal_features",
     "load_round21_feature_policy",
+    "parse_round21_chainlink_wire_text",
     "validate_round21_union_event",
     "validate_round21_feature_policy",
 ]
