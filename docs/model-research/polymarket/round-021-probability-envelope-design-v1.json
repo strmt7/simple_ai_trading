@@ -4,7 +4,7 @@
   "status": "preregistered_during_target_and_model_blind_capture",
   "parents": {
     "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
-    "round21_model_design_sha256": "6dd59a429c1013ef737086da9fbd9a59cb93bcbb616fb7a97cc0ddf4dbb1e7be",
+    "round21_model_design_sha256": "817e98c28922b8bfefcba60cde54b92346a65c1b11ead5067c1793a90e191095",
     "round21_action_policy_sha256": "2276ddfce8e5efac809ecf5c0d821eb0cc1470f3c3e287e3393486b15fba7b64"
   },
   "inference": {
@@ -23,8 +23,8 @@
   },
   "bounds": {
     "semantics": "calibrated_candidate_disagreement_hull",
-    "core_contributors": "all_five_preregistered_core_candidates",
-    "optional_contributors": "all_five_optional_candidates_plus_all_five_exact_population_matched_core_candidates",
+    "core_contributors": "all_six_preregistered_core_candidates",
+    "optional_contributors": "all_six_optional_candidates_plus_all_six_exact_population_matched_core_candidates",
     "lower": "minimum_contributor_probability",
     "upper": "maximum_contributor_probability",
     "formal_frequentist_coverage_claim": false,
@@ -66,5 +66,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "design_sha256": "f502c28b7a152e8eb6e3d49e2a23c145e2a90118040e79c17a7adfb0e543857c"
+  "design_sha256": "bdd328e5b23f660757094e7561d37a22217d4ee180302186f706cd9fc906142e"
 }

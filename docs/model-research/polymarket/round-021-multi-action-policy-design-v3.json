@@ -6,7 +6,7 @@
   "parents": {
     "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
     "round21_execution_policy_sha256": "c49e6eef0642a68810d8aefafc6a303b2ec9c8a7bbce703b8f05167baba69bd9",
-    "round21_probability_envelope_design_sha256": "f502c28b7a152e8eb6e3d49e2a23c145e2a90118040e79c17a7adfb0e543857c"
+    "round21_probability_envelope_design_sha256": "bdd328e5b23f660757094e7561d37a22217d4ee180302186f706cd9fc906142e"
   },
   "decision": {
     "cadence_ms": 250,
@@ -103,5 +103,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "design_sha256": "4dddb3ef8f3695ec0d7820c4789ddc6b19349fa3bbe4c68d5a882a464553c769"
+  "design_sha256": "206cb4b6f2dc11c5d178ce866d2d4450cb5c45b47a44c52d10419b00dfc21a1d"
 }

@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 import simple_ai_trading.polymarket_round21_model as model_module
+import simple_ai_trading.polymarket_round21_tcn as tcn_module
 from simple_ai_trading.polymarket_round21_model import (
     POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
     POLYMARKET_ROUND21_MODEL_DESIGN_SHA256,
@@ -31,7 +32,7 @@ MODEL_DESIGN_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-021-matched-model-design-v2.json"
+    / "round-021-matched-model-design-v3.json"
 )
 PROBABILITY_ENVELOPE_DESIGN_PATH = (
     MODEL_DESIGN_PATH.parent / "round-021-probability-envelope-design-v1.json"
@@ -40,6 +41,11 @@ PROBABILITY_ENVELOPE_DESIGN_PATH = (
 
 def _sha(value: str) -> str:
     return hashlib.sha256(value.encode("ascii")).hexdigest()
+
+
+@pytest.fixture(autouse=True)
+def _bounded_tcn_test_epochs(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(tcn_module, "ROUND21_TCN_MAXIMUM_EPOCHS", 1)
 
 
 def _panel(
@@ -279,9 +285,9 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     assert artifact["live_trading_authority"] is False
     layers = artifact["layers"]
     assert set(layers) == {"core", "core_spot", "core_spot_usdm"}
-    assert all(len(layer["candidate_ledger"]) == 5 for layer in layers.values())
+    assert all(len(layer["candidate_ledger"]) == 6 for layer in layers.values())
     assert all(
-        len(layers[layer]["matched_core_candidate_ledger"]) == 5
+        len(layers[layer]["matched_core_candidate_ledger"]) == 6
         for layer in ("core_spot", "core_spot_usdm")
     )
     assert layers["core_spot"]["comparison"]["matched_decision_count"] == int(
@@ -361,8 +367,8 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
         population_layer="core_spot",
         panel=inference,
     )
-    assert len(core_batch.contributing_candidate_ids) == 5
-    assert len(optional_batch.contributing_candidate_ids) == 10
+    assert len(core_batch.contributing_candidate_ids) == 6
+    assert len(optional_batch.contributing_candidate_ids) == 12
     assert np.all(core_batch.lower_up <= core_batch.probability_up)
     assert np.all(core_batch.probability_up <= core_batch.upper_up)
     assert not core_batch.probability_up.flags.writeable
@@ -449,6 +455,16 @@ def test_round21_artifact_rejects_rehashed_authority_drift() -> None:
         tune_selection=selection,
         compute_backend="cpu",
     )
+    changed_compute = json.loads(json.dumps(artifact))
+    changed_compute["compute"]["requested"] = "unregistered"
+    with pytest.raises(ValueError, match="artifact differs"):
+        validate_round21_development_artifact(_rehash(changed_compute))
+    changed_backend = json.loads(json.dumps(artifact))
+    changed_backend["layers"]["core"]["candidate_ledger"][-1]["model"][
+        "backend_device"
+    ] = "different"
+    with pytest.raises(ValueError, match="artifact differs"):
+        validate_round21_development_artifact(_rehash(changed_backend))
     artifact["live_trading_authority"] = True
 
     with pytest.raises(ValueError, match="artifact differs"):

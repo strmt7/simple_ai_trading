@@ -1,5 +1,5 @@
 {
-  "schema_version": "polymarket-round21-matched-model-design-v2",
+  "schema_version": "polymarket-round21-matched-model-design-v3",
   "round": 21,
   "status": "preregistered_during_target_and_model_blind_capture",
   "parents": {
@@ -51,11 +51,48 @@
         ],
         "maximum_boost_rounds": 512,
         "early_stopping_rounds": 40
+      },
+      "compact_causal_tcn_residual": {
+        "sequence_length": 16,
+        "decision_cadence_ms": 250,
+        "sequence_span_ms": 3750,
+        "causal_receptive_field_rows": 15,
+        "causal_receptive_field_ms": 3500,
+        "endpoints_per_condition_per_epoch": 8,
+        "endpoint_sampling": "deterministic_midpoint_stratified",
+        "history_reset": "condition_change_or_non_250ms_cadence",
+        "history_padding": "left_zero_after_train_only_normalization_plus_mask",
+        "hidden_channels": 12,
+        "kernel_size": 3,
+        "dilations": [
+          1,
+          2,
+          4
+        ],
+        "blocks": "causal_depthwise_separable_residual",
+        "maximum_epochs": 32,
+        "early_stopping_patience": 5,
+        "optimizer": "adamw_exact_equations_without_backend_fallback",
+        "learning_rate": "0.001",
+        "weight_decay": "0.0001",
+        "gradient_clip_norm": "1",
+        "capacity_rule": "12_times_feature_width_plus_649_parameters",
+        "target_pseudoreplication_control": "equal_conditions_and_equal_stratified_endpoints_within_condition",
+        "stored_weights": "network_order_independent_little_endian_float32_with_sha256",
+        "training_backends": [
+          "cuda",
+          "rocm",
+          "xpu",
+          "mps",
+          "directml",
+          "cpu"
+        ],
+        "portable_inference_fallback": "cpu"
       }
     },
-    "candidate_count_per_ledger": 5,
+    "candidate_count_per_ledger": 6,
     "bounded_before_target_access": true,
-    "deep_sequence_candidate": "deferred_until_simpler_candidate_passes_development_stability"
+    "additional_deep_or_foundation_candidates": false
   },
   "partition": {
     "whole_condition_groups": true,
@@ -65,12 +102,17 @@
     "test_access": false
   },
   "calibration_and_selection": {
-    "tune_calibration_first_half": "lightgbm_early_stop",
+    "tune_calibration_first_half": "lightgbm_and_tcn_early_stop",
     "tune_calibration_second_half": "condition_equal_platt",
     "tune_selection": "candidate_selection_only",
     "primary_metric": "condition_equal_log_loss",
     "secondary_metric": "condition_equal_brier_score",
     "selection_rule": "simplest_candidate_within_one_standard_error_of_best_log_loss",
+    "complexity_order": [
+      "logistic_residual",
+      "shallow_lightgbm_residual",
+      "compact_causal_tcn_residual"
+    ],
     "paired_bootstrap_samples": 2000
   },
   "optional_binance_comparison": {
@@ -89,16 +131,32 @@
   },
   "research_basis": [
     {
-      "url": "https://arxiv.org/abs/2602.00133",
-      "use": "deterministic_event_replay_and_execution_realistic_prediction_market_evaluation"
+      "url": "https://arxiv.org/abs/2607.26245",
+      "use": "negative_after_cost_prediction_market_benchmark_and_source_clock_risk"
     },
     {
       "url": "https://arxiv.org/abs/2502.15757",
-      "use": "simple_model_control_and_transaction_cost_sensitivity"
+      "use": "dual_attention_limit_order_book_sequence_model_and_simple_control_comparison"
     },
     {
-      "url": "https://arxiv.org/abs/2506.05764",
-      "use": "feature_quality_and_simple_crypto_order_book_baselines"
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "forecast_accuracy_does_not_imply_actionable_after_cost_trading"
+    },
+    {
+      "url": "https://arxiv.org/abs/1011.6402",
+      "use": "order_flow_imbalance_and_depth_conditioned_short_horizon_price_impact"
+    },
+    {
+      "url": "https://arxiv.org/abs/2512.05734",
+      "use": "dilated_causal_convolution_for_order_book_sequences_while_deferring_fill_survival_without_own_order_queue_labels"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/ai/directml/dml-get-started",
+      "use": "directml_sustained_engineering_and_portable_windows_inference_direction"
+    },
+    {
+      "url": "https://docs.pytorch.org/docs/stable/accelerator.html",
+      "use": "device_agnostic_accelerator_discovery"
     }
   ],
   "authority": {
@@ -111,5 +169,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "design_sha256": "6dd59a429c1013ef737086da9fbd9a59cb93bcbb616fb7a97cc0ddf4dbb1e7be"
+  "design_sha256": "817e98c28922b8bfefcba60cde54b92346a65c1b11ead5067c1793a90e191095"
 }

@@ -30,7 +30,7 @@ from .polymarket_round21_replay import (
 
 
 POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256 = (
-    "b84e49cbc382e4211a2e83f2b889c06506cd8ae477a7cdd35e1cd4258b0cce84"
+    "c9b6924246e3e61dc52720ccd7eb6e49718e21ffd54e0b1567e58cc9181dfdfb"
 )
 POLYMARKET_ROUND21_AI_CASE_SCHEMA_VERSION = "polymarket-round21-ai-veto-case-v1"
 _EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()

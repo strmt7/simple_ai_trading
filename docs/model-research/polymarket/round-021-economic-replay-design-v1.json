@@ -5,9 +5,9 @@
   "parents": {
     "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
     "round21_execution_policy_sha256": "c49e6eef0642a68810d8aefafc6a303b2ec9c8a7bbce703b8f05167baba69bd9",
-    "round21_model_design_sha256": "6dd59a429c1013ef737086da9fbd9a59cb93bcbb616fb7a97cc0ddf4dbb1e7be",
-    "round21_probability_envelope_design_sha256": "f502c28b7a152e8eb6e3d49e2a23c145e2a90118040e79c17a7adfb0e543857c",
-    "round21_multi_action_policy_sha256": "4dddb3ef8f3695ec0d7820c4789ddc6b19349fa3bbe4c68d5a882a464553c769"
+    "round21_model_design_sha256": "817e98c28922b8bfefcba60cde54b92346a65c1b11ead5067c1793a90e191095",
+    "round21_probability_envelope_design_sha256": "bdd328e5b23f660757094e7561d37a22217d4ee180302186f706cd9fc906142e",
+    "round21_multi_action_policy_sha256": "206cb4b6f2dc11c5d178ce866d2d4450cb5c45b47a44c52d10419b00dfc21a1d"
   },
   "independence": {
     "execution_and_settlement_venue": "polymarket_only",
@@ -96,5 +96,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "design_sha256": "f075d125699eb9de07b5822c8cee7b69f23dd608c66e4447b92ad264afa8e9f4"
+  "design_sha256": "dcfa3b5a93dbf8ab4f1248a9e524d56ffafc5c9d440f69594aed3a2757327c4a"
 }

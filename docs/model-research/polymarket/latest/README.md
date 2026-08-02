@@ -40,8 +40,14 @@ continuous or invalidating unrelated conditions. The optional predictor has no
 execution, wallet, risk, settlement, Stop, or availability dependency.
 
 No target, model, AI, economic, or profitability result exists while capture is
-active. The terminal program evaluates one frozen candidate against five
-probability controls and all 81 after-cost profile/scenario ledgers. The local
+active. The finite development ledger now contains three regularized logistic
+residuals, two shallow LightGBM residuals, and one compact causal TCN residual.
+The TCN consumes 16 causal 250 ms rows, resets at every condition or cadence
+gap, uses equal condition weight, and is capped at `12 * feature_width + 649`
+parameters. It is a bounded challenger, not an edge claim; adding larger
+sequence or foundation models is prohibited in this round. The terminal program
+evaluates one development-selected candidate against five probability controls
+and all 81 after-cost profile/scenario ledgers. The local
 AI comparison is finite: exactly `qwen3:8b`, `fin-r1:8b`, and `fino1:8b` use the
 same matched development population and deterministic baseline. The pretest
 manifest binds the repository, selected layer, terminal captures, model,
@@ -76,6 +82,12 @@ did not establish tradable after-cost edge. Round 21 therefore requires strict
 improvement over every frozen control, at least 1,800 resolved conditions over
 seven calendar days, all 81 economic gates, and explicit optional/AI ablations.
 Passing those gates still grants neither paper nor live authority.
+
+The compact TCN uses the repo's device-neutral training boundary. A live-host
+probe completed forward, backward, exact-weight reload, and inference on an AMD
+RX 9070 XT through DirectML without an unsupported-operator fallback. DirectML
+is not assumed: CUDA, ROCm, XPU, MPS, and CPU remain valid runtime paths. This is
+runtime capability evidence only, not model-performance evidence.
 
 Round 16 is a separate, preregistered BTC fifteen-minute comparison. Its
 historical/live one-second feature transform is bit-identical, but no model

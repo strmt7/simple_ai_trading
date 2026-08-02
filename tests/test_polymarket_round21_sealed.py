@@ -8,6 +8,8 @@ from types import SimpleNamespace
 
 import pytest
 
+import simple_ai_trading.polymarket_round21_tcn as tcn_module
+
 from polymarket_round21_support import round21_panel, round21_replay_condition, sha
 import simple_ai_trading.polymarket_round21_sealed as sealed_module
 from simple_ai_trading.polymarket_round21_model import fit_round21_development
@@ -30,6 +32,14 @@ DESIGN_PATH = (
     / "polymarket"
     / "round-021-terminal-sealed-evaluation-design-v1.json"
 )
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _bounded_tcn_test_epochs():
+    patch = pytest.MonkeyPatch()
+    patch.setattr(tcn_module, "ROUND21_TCN_MAXIMUM_EPOCHS", 1)
+    yield
+    patch.undo()
 
 
 @pytest.fixture(scope="module")
