@@ -2054,6 +2054,167 @@ def predict_round21_probability_batch(
     ).validated()
 
 
+def predict_round21_controls(
+    artifact: Mapping[str, object],
+    panel: Round21DevelopmentPanel,
+) -> dict[str, np.ndarray]:
+    """Replay every frozen probability control on one target-bearing panel."""
+
+    validated_artifact = validate_round21_development_artifact(artifact)
+    selected = panel.validate()
+    controls = validated_artifact.get("controls")
+    if not isinstance(controls, list):
+        raise ValueError("Round 21 probability controls are unavailable")
+    expected = {
+        "structural_probability_raw",
+        "structural_probability_calibrated",
+        "executable_market_prior_raw",
+        "executable_market_prior_calibrated",
+        "training_prevalence",
+    }
+    output: dict[str, np.ndarray] = {}
+    for control in controls:
+        if not isinstance(control, Mapping):
+            raise ValueError("Round 21 probability control differs")
+        control_id = str(control.get("control_id") or "")
+        if control_id in output or control_id not in expected:
+            raise ValueError("Round 21 probability control differs")
+        if control_id == "training_prevalence":
+            try:
+                probability = float(control["probability_up"])
+            except (KeyError, TypeError, ValueError, OverflowError) as exc:
+                raise ValueError("Round 21 probability control differs") from exc
+            prediction = np.full(len(selected.labels), probability, dtype=np.float64)
+        else:
+            raw = (
+                selected.structural_probability
+                if control_id.startswith("structural_probability_")
+                else selected.market_prior_probability
+            )
+            if control_id.endswith("_raw"):
+                prediction = np.asarray(raw, dtype=np.float64).copy()
+            else:
+                calibration = control.get("calibration")
+                if not isinstance(calibration, Mapping):
+                    raise ValueError("Round 21 probability control differs")
+                prediction = _apply_platt(raw, calibration)
+        prediction = _probability(np.asarray(prediction, dtype=np.float64))
+        prediction.setflags(write=False)
+        output[control_id] = prediction
+    if set(output) != expected:
+        raise ValueError("Round 21 probability control set differs")
+    return dict(sorted(output.items()))
+
+
+def round21_predictive_diagnostics(
+    condition_ids: np.ndarray,
+    labels: np.ndarray,
+    predictions: np.ndarray,
+) -> dict[str, float | int]:
+    """Compute condition-equal accuracy, calibration, and probability scores."""
+
+    conditions = np.asarray(condition_ids, dtype=object)
+    target = np.asarray(labels, dtype=np.float64)
+    probability = _probability(np.asarray(predictions, dtype=np.float64))
+    if (
+        conditions.ndim != 1
+        or target.shape != conditions.shape
+        or probability.shape != conditions.shape
+        or len(conditions) < 1
+        or not np.all(np.isin(target, (0.0, 1.0)))
+    ):
+        raise ValueError("Round 21 predictive diagnostic population differs")
+    weights = _condition_weights(conditions)
+    positive_weight = float(np.sum(weights[target == 1.0]))
+    negative_weight = float(np.sum(weights[target == 0.0]))
+    if positive_weight <= 0.0 or negative_weight <= 0.0:
+        raise ValueError("Round 21 predictive diagnostic target is single-class")
+    log_odds = logit(probability)
+
+    def calibration_objective(parameters: np.ndarray) -> float:
+        fitted = _probability(expit(parameters[0] + parameters[1] * log_odds))
+        return float(
+            -np.sum(
+                weights
+                * (target * np.log(fitted) + (1.0 - target) * np.log1p(-fitted))
+            )
+        )
+
+    calibration = minimize(
+        calibration_objective,
+        np.asarray((0.0, 1.0), dtype=np.float64),
+        method="L-BFGS-B",
+        bounds=((-20.0, 20.0), (-20.0, 20.0)),
+        options={"maxiter": 1_000, "ftol": 1e-12},
+    )
+    if not calibration.success or not np.all(np.isfinite(calibration.x)):
+        raise RuntimeError("Round 21 sealed calibration diagnostic failed")
+
+    predicted = probability >= 0.5
+    true_positive = float(np.sum(weights[(target == 1.0) & predicted]))
+    false_negative = positive_weight - true_positive
+    true_negative = float(np.sum(weights[(target == 0.0) & ~predicted]))
+    false_positive = negative_weight - true_negative
+    balanced_accuracy = 0.5 * (
+        true_positive / positive_weight + true_negative / negative_weight
+    )
+    denominator = math.sqrt(
+        (true_positive + false_positive)
+        * (true_positive + false_negative)
+        * (true_negative + false_positive)
+        * (true_negative + false_negative)
+    )
+    mcc = (
+        0.0
+        if denominator == 0.0
+        else (
+            true_positive * true_negative - false_positive * false_negative
+        )
+        / denominator
+    )
+    bins = np.minimum((probability * 10.0).astype(np.int64), 9)
+    expected_calibration_error = 0.0
+    for bin_index in range(10):
+        mask = bins == bin_index
+        bin_weight = float(np.sum(weights[mask]))
+        if bin_weight == 0.0:
+            continue
+        expected_calibration_error += bin_weight * abs(
+            float(np.sum(weights[mask] * probability[mask]) / bin_weight)
+            - float(np.sum(weights[mask] * target[mask]) / bin_weight)
+        )
+    metrics = _metrics(conditions, target, probability)
+    return {
+        **metrics,
+        "calibration_intercept": float(calibration.x[0]),
+        "calibration_slope": float(calibration.x[1]),
+        "expected_calibration_error": expected_calibration_error,
+        "balanced_accuracy": balanced_accuracy,
+        "matthews_correlation_coefficient": mcc,
+    }
+
+
+def round21_paired_predictive_improvement(
+    condition_ids: np.ndarray,
+    labels: np.ndarray,
+    control: np.ndarray,
+    candidate: np.ndarray,
+    *,
+    metric: str,
+    seed_offset: int,
+) -> dict[str, float | int]:
+    """Expose the frozen condition-paired bootstrap for sealed evaluation."""
+
+    return _paired_improvement(
+        np.asarray(condition_ids, dtype=object),
+        np.asarray(labels, dtype=np.float64),
+        np.asarray(control, dtype=np.float64),
+        np.asarray(candidate, dtype=np.float64),
+        metric=metric,
+        seed_offset=seed_offset,
+    )
+
+
 __all__ = [
     "POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES",
     "POLYMARKET_ROUND21_DATASET_DESIGN_SHA256",
@@ -2067,6 +2228,9 @@ __all__ = [
     "Round21ProbabilityBatch",
     "fit_round21_development",
     "predict_round21_candidate",
+    "predict_round21_controls",
     "predict_round21_probability_batch",
+    "round21_paired_predictive_improvement",
+    "round21_predictive_diagnostics",
     "validate_round21_development_artifact",
 ]

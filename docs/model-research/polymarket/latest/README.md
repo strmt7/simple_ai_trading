@@ -30,14 +30,32 @@ This is **predictive evidence only**. Polymarket spread, queue position, fills,
 latency, fees, settlement, redemption, inventory risk, and PnL were not tested,
 so it is not a profitability or execution claim.
 
-Round 21 is a separate 30-day, target-blind BTC five-minute campaign. No model
-or profitability result exists while that capture is active. Its deterministic
-program evaluates five settlement-probability candidates and 81 after-cost
-profile/scenario ledgers. The local AI comparison is also finite: exactly
-`qwen3:8b`, `fin-r1:8b`, and `fino1:8b` must use the same matched development
-population and deterministic baseline. A model is nominated for the one-use
-sealed test only if all 81 ledgers pass; otherwise the auditable result is no
-challenger. Nomination is not model promotion or trading authority.
+Round 20/21 is a separate 30-day, target-blind BTC five-minute program scheduled
+from 2026-07-30 23:40 UTC through 2026-08-29 23:40 UTC. After a host reboot, the
+core Polymarket capture resumed in a new attested segment and the optional,
+credential-free Binance predictor resumed in its own worktree and database. A
+single-lane Polymarket reconnect gap is explicitly recorded; the frozen
+contract rejects affected conditions rather than silently treating them as
+continuous or invalidating unrelated conditions. The optional predictor has no
+execution, wallet, risk, settlement, Stop, or availability dependency.
+
+No target, model, AI, economic, or profitability result exists while capture is
+active. The terminal program evaluates one frozen candidate against five
+probability controls and all 81 after-cost profile/scenario ledgers. The local
+AI comparison is finite: exactly `qwen3:8b`, `fin-r1:8b`, and `fino1:8b` use the
+same matched development population and deterministic baseline. The pretest
+manifest binds the repository, selected layer, terminal captures, model,
+economic matrix, test population, and any nominated AI identity. Test access is
+then consumed once in a synchronous SQLite state machine; completion, failure,
+or interruption cannot reopen it. No claim has been opened and no test data has
+been scored.
+
+The external [OpenMarket study](https://arxiv.org/abs/2607.26245) is a negative
+benchmark, not training evidence: its published out-of-sample logistic baseline
+did not establish tradable after-cost edge. Round 21 therefore requires strict
+improvement over every frozen control, at least 1,800 resolved conditions over
+seven calendar days, all 81 economic gates, and explicit optional/AI ablations.
+Passing those gates still grants neither paper nor live authority.
 
 Round 16 is a separate, preregistered BTC fifteen-minute comparison. Its
 historical/live one-second feature transform is bit-identical, but no model
@@ -63,6 +81,7 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Cross-round progression](tables/optimization-progress.csv)
 - [AI risk-model rejection record](ai-risk-models-rejected.json)
 - [Round 21 AI candidate-selection contract](../round-021-ai-candidate-selection-design-v1.json)
+- [Round 21 terminal sealed-evaluation contract](../round-021-terminal-sealed-evaluation-design-v1.json)
 - [Publication integrity](publication-integrity.json)
 
 Regenerate from the closed local evidence database with
