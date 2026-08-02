@@ -376,6 +376,31 @@ def test_round21_chainlink_reconnect_requires_explicit_epoch_reset() -> None:
     assert "chainlink_coverage_below_minimum" not in snapshot.reasons
 
 
+def test_round21_chainlink_condition_slice_binds_mid_epoch_sequence() -> None:
+    engine = Round21CoreFeatureEngine(
+        condition_id=CONDITION_ID,
+        up_token_id=UP_TOKEN,
+        down_token_id=DOWN_TOKEN,
+        event_start_ms=EVENT_START_MS,
+    )
+    first = replace(_chainlink_record(417, 0), sequence_number=417)
+
+    engine.start_chainlink_epoch(
+        first.connection_id,
+        first_sequence_number=first.sequence_number,
+    )
+    engine.ingest_chainlink_record(first)
+    engine.ingest_chainlink_record(
+        replace(_chainlink_record(418, 1_500), sequence_number=418)
+    )
+    with pytest.raises(ValueError, match="reconnect or chronology"):
+        engine.ingest_chainlink_record(
+            replace(_chainlink_record(420, 3_000), sequence_number=420)
+        )
+    with pytest.raises(ValueError, match="epoch identity"):
+        engine.start_chainlink_epoch(first.connection_id, first_sequence_number=0)
+
+
 def test_round21_exact_join_keeps_missing_binance_optional() -> None:
     core = _ready_engine().build(EVENT_START_MS + 31_000)
     optional = Round21IndependentBinanceFeatureEngine().build(

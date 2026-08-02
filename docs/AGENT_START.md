@@ -331,6 +331,12 @@ extends the established parser with independently registered commands.
   active database, preserves every failed/interrupted segment and scheduled
   coverage hole, and grants only permission for later exact receipt and
   redundant-union reconstruction. It is not condition or model eligibility.
+  `round-021-core-corpus-materialization-design-v1.json` then freezes the
+  single-pass condition boundary: per-segment union reset, mid-epoch Chainlink
+  sequence binding without renumbering, exact open/close transport checks,
+  whole-condition roles, joint-gap rejection, and all 1,200 causal decision
+  times. Its implementation has no terminal corpus or result while capture is
+  active.
   No Round 21 claim, model score, economic verdict, profitability claim, or
   trading authority exists while capture remains active.
 - `polymarket-live --action autonomous` assembles the Round 16 predictor,

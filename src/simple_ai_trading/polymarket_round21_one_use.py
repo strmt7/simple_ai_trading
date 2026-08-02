@@ -44,6 +44,8 @@ _LAYERS = ("core", "core_spot", "core_spot_usdm")
 _STATUSES = frozenset({"claim_open", "test_access_consumed", "completed", "failed"})
 _REQUIRED_FILES = (
     "docs/model-research/polymarket/"
+    "round-021-core-corpus-materialization-design-v1.json",
+    "docs/model-research/polymarket/"
     "round-021-independent-matched-edge-contract-v1.json",
     "docs/model-research/polymarket/"
     "round-021-terminal-sealed-evaluation-design-v1.json",
@@ -53,6 +55,9 @@ _REQUIRED_FILES = (
     "src/simple_ai_trading/polymarket_round21_ai_comparison.py",
     "src/simple_ai_trading/polymarket_round21_ai_selection.py",
     "src/simple_ai_trading/polymarket_round21_comparison.py",
+    "src/simple_ai_trading/polymarket_round21_core_features.py",
+    "src/simple_ai_trading/polymarket_round21_corpus.py",
+    "src/simple_ai_trading/polymarket_round21_dataset.py",
     "src/simple_ai_trading/polymarket_round21_execution.py",
     "src/simple_ai_trading/polymarket_round21_model.py",
     "src/simple_ai_trading/polymarket_round21_one_use.py",
@@ -60,6 +65,8 @@ _REQUIRED_FILES = (
     "src/simple_ai_trading/polymarket_round21_replay.py",
     "src/simple_ai_trading/polymarket_round21_sealed.py",
     "src/simple_ai_trading/polymarket_round21_terminal.py",
+    "tests/test_polymarket_round21_core_features.py",
+    "tests/test_polymarket_round21_corpus.py",
     "tests/test_polymarket_round21_one_use.py",
     "tests/test_polymarket_round21_sealed.py",
     "tests/test_polymarket_round21_terminal.py",
