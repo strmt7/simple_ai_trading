@@ -64,6 +64,16 @@ then consumed once in a synchronous SQLite state machine; completion, failure,
 or interruption cannot reopen it. No claim has been opened and no test data has
 been scored.
 
+The target-free prospective path is implemented but cannot activate without an
+accepted sealed result. It converts at most 16 contiguous 250 ms causal rows
+into the same inference panel used offline, resets on a condition or cadence
+gap, and records exact model, batch, row, latency, and abstention evidence. Its
+in-memory coordinator serializes redundant Polymarket CLOB and Chainlink input;
+any Polymarket source gap interlocks new entries for that market. Optional
+Binance state is discarded and rewarmed independently after a disconnect. It
+never opens a database and imports no wallet, order, ledger, or execution
+boundary. No prospective prediction or qualification result exists yet.
+
 Terminal opening now starts with a separate transport manifest. It fails before
 the scheduled campaign end, preserves every interrupted or failed segment and
 its coverage hole, and admits only hash-valid complete/degraded runs for later

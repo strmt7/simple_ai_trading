@@ -358,6 +358,12 @@ extends the established parser with independently registered commands.
   visible.
   No Round 21 claim, model score, economic verdict, profitability claim, or
   trading authority exists while capture remains active.
+  The target-free prospective scorer and in-memory live-feature coordinator are
+  implemented as non-authoritative prerequisites. They require an accepted
+  sealed result, preserve the 16-row 250 ms sequence contract, interlock the
+  current market after any Polymarket CLOB/Chainlink gap, and reset optional
+  Binance state independently. No prospective record, authenticated
+  qualification, promotion, or Round 21 CLI assembly exists.
 - `polymarket-live --action autonomous` assembles the Round 16 predictor,
   independent public predictor feed, Polymarket user stream, reconciliation,
   durable single-writer/Stop control, and settlement loops only after exact
