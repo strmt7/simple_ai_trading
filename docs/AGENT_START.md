@@ -350,7 +350,12 @@ extends the established parser with independently registered commands.
   condition or cadence gap, samples eight endpoints per training condition,
   stores exact checksummed float32 weights, and reports every epoch. Do not add
   another candidate or interpret the successful AMD DirectML runtime probe as
-  predictive or economic evidence.
+  predictive or economic evidence. Candidate uncertainty is dependence-aware:
+  ordered condition losses use Bartlett Newey-West standard errors, paired
+  intervals use a circular block bootstrap, and the one-standard-error rule is
+  computed from each candidate-minus-best paired loss series. The frozen block
+  length is `min(n, max(2, ceil(sqrt(n))))`; do not replace it after targets are
+  visible.
   No Round 21 claim, model score, economic verdict, profitability claim, or
   trading authority exists while capture remains active.
 - `polymarket-live --action autonomous` assembles the Round 16 predictor,

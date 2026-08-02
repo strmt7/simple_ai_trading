@@ -32,7 +32,7 @@ MODEL_DESIGN_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-021-matched-model-design-v3.json"
+    / "round-021-matched-model-design-v4.json"
 )
 PROBABILITY_ENVELOPE_DESIGN_PATH = (
     MODEL_DESIGN_PATH.parent / "round-021-probability-envelope-design-v1.json"
@@ -234,6 +234,107 @@ def test_round21_transform_uses_weighted_median_and_iqr_not_mean_std() -> None:
     assert 1.4 < transform["scale"][0] < 1.5
 
 
+def _selection_record(
+    candidate_id: str,
+    family: str,
+    losses: np.ndarray,
+    *,
+    reported_standard_error: float,
+) -> dict[str, object]:
+    return {
+        "candidate_id": candidate_id,
+        "family": family,
+        "population_layer": "core",
+        "feature_layer": "core",
+        "model": {"l2": 1.0},
+        "selection_metrics": {
+            "condition_count": len(losses),
+            "condition_equal_log_loss": float(np.mean(losses)),
+            "condition_equal_brier_score": 0.25,
+            "log_loss_standard_error": reported_standard_error,
+        },
+        "_selection_condition_log_loss": losses,
+    }
+
+
+def test_round21_hac_uncertainty_accounts_for_condition_dependence() -> None:
+    clustered = np.tile(
+        np.concatenate((np.full(16, -1.0), np.full(16, 1.0))),
+        4,
+    )
+    iid_standard_error = float(
+        np.std(clustered, ddof=1) / np.sqrt(len(clustered))
+    )
+
+    assert model_module._hac_standard_error(clustered) > iid_standard_error
+    assert model_module._dependence_block_length(len(clustered)) == 12
+
+
+def test_round21_circular_block_bootstrap_is_deterministic() -> None:
+    clustered = np.repeat(np.asarray((-1.0, 1.0)), 32)
+
+    first = model_module._circular_block_bootstrap_means(clustered, seed_offset=7)
+    second = model_module._circular_block_bootstrap_means(clustered, seed_offset=7)
+
+    assert np.array_equal(first, second)
+    assert len(first) == model_module.POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES
+    assert float(np.std(first)) > 0.0
+
+
+def test_round21_one_se_selection_uses_paired_loss_difference() -> None:
+    best_losses = np.tile(np.asarray((0.1, 0.9)), 32)
+    simpler = _selection_record(
+        "simple",
+        "logistic_residual",
+        best_losses + 0.02,
+        reported_standard_error=10.0,
+    )
+    best = _selection_record(
+        "best",
+        "causal_tcn_residual",
+        best_losses,
+        reported_standard_error=10.0,
+    )
+
+    selected = model_module._select_candidate([simpler, best])
+
+    assert selected["candidate_id"] == "best"
+    assert simpler["selection_comparison_to_best"][
+        "within_one_standard_error"
+    ] is False
+    assert "_selection_condition_log_loss" not in simpler
+    assert "_selection_condition_log_loss" not in best
+
+
+def test_round21_one_se_selection_prefers_simpler_when_paired_uncertainty_allows() -> None:
+    best_losses = np.full(64, 0.5)
+    clustered_difference = np.concatenate(
+        (np.full(32, -0.05), np.full(32, 0.06))
+    )
+    simpler = _selection_record(
+        "simple",
+        "logistic_residual",
+        best_losses + clustered_difference,
+        reported_standard_error=0.0,
+    )
+    best = _selection_record(
+        "best",
+        "lightgbm_residual",
+        best_losses,
+        reported_standard_error=0.0,
+    )
+
+    selected = model_module._select_candidate([simpler, best])
+
+    assert simpler["selection_comparison_to_best"][
+        "mean_log_loss_difference"
+    ] == pytest.approx(0.005)
+    assert simpler["selection_comparison_to_best"][
+        "within_one_standard_error"
+    ] is True
+    assert selected["candidate_id"] == "simple"
+
+
 def test_round21_development_requires_the_frozen_train_to_tune_purge() -> None:
     train = _panel("train", first_condition=0, condition_count=100)
     calibration = _panel(
@@ -286,6 +387,12 @@ def test_round21_fits_core_and_exact_matched_optional_challengers() -> None:
     layers = artifact["layers"]
     assert set(layers) == {"core", "core_spot", "core_spot_usdm"}
     assert all(len(layer["candidate_ledger"]) == 6 for layer in layers.values())
+    assert all(
+        "_selection_condition_log_loss" not in record
+        and "selection_comparison_to_best" in record
+        for layer in layers.values()
+        for record in layer["candidate_ledger"]
+    )
     assert all(
         len(layers[layer]["matched_core_candidate_ledger"]) == 6
         for layer in ("core_spot", "core_spot_usdm")
@@ -465,6 +572,21 @@ def test_round21_artifact_rejects_rehashed_authority_drift() -> None:
     ] = "different"
     with pytest.raises(ValueError, match="artifact differs"):
         validate_round21_development_artifact(_rehash(changed_backend))
+    changed_selection = json.loads(json.dumps(artifact))
+    core = changed_selection["layers"]["core"]
+    core["selected_candidate_id"] = next(
+        record["candidate_id"]
+        for record in core["candidate_ledger"]
+        if record["candidate_id"] != core["selected_candidate_id"]
+    )
+    with pytest.raises(ValueError, match="artifact differs"):
+        validate_round21_development_artifact(_rehash(changed_selection))
+    changed_hac = json.loads(json.dumps(artifact))
+    changed_hac["layers"]["core"]["candidate_ledger"][0][
+        "selection_comparison_to_best"
+    ]["hac_lag_conditions"] += 1
+    with pytest.raises(ValueError, match="artifact differs"):
+        validate_round21_development_artifact(_rehash(changed_hac))
     artifact["live_trading_authority"] = True
 
     with pytest.raises(ValueError, match="artifact differs"):

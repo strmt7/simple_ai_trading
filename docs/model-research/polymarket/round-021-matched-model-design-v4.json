@@ -1,5 +1,5 @@
 {
-  "schema_version": "polymarket-round21-matched-model-design-v3",
+  "schema_version": "polymarket-round21-matched-model-design-v4",
   "round": 21,
   "status": "preregistered_during_target_and_model_blind_capture",
   "parents": {
@@ -107,7 +107,12 @@
     "tune_selection": "candidate_selection_only",
     "primary_metric": "condition_equal_log_loss",
     "secondary_metric": "condition_equal_brier_score",
-    "selection_rule": "simplest_candidate_within_one_standard_error_of_best_log_loss",
+    "selection_rule": "simplest_candidate_with_paired_candidate_minus_best_mean_log_loss_not_exceeding_its_hac_standard_error",
+    "log_loss_standard_error": "newey_west_bartlett_on_ordered_condition_equal_losses",
+    "dependence_block_length_rule": "min_n_max_2_ceil_sqrt_n_conditions",
+    "hac_lag_rule": "dependence_block_length_minus_one",
+    "paired_interval": "circular_block_bootstrap_percentile",
+    "paired_resampling_unit": "ordered_five_minute_condition_loss_difference_blocks",
     "complexity_order": [
       "logistic_residual",
       "shallow_lightgbm_residual",
@@ -157,6 +162,18 @@
     {
       "url": "https://docs.pytorch.org/docs/stable/accelerator.html",
       "use": "device_agnostic_accelerator_discovery"
+    },
+    {
+      "url": "https://www.nber.org/papers/t0055",
+      "use": "positive_semidefinite_heteroskedasticity_and_autocorrelation_consistent_uncertainty"
+    },
+    {
+      "url": "https://www.nber.org/papers/t0169",
+      "use": "paired_predictive_loss_comparison_with_serially_and_contemporaneously_correlated_errors"
+    },
+    {
+      "url": "https://statistics.stanford.edu/technical-reports/circular-block-resampling-procedure-stationary-data",
+      "use": "circular_block_resampling_for_ordered_weakly_dependent_condition_losses"
     }
   ],
   "authority": {
@@ -169,5 +186,5 @@
     "paper_trading_authority": false,
     "live_trading_authority": false
   },
-  "design_sha256": "817e98c28922b8bfefcba60cde54b92346a65c1b11ead5067c1793a90e191095"
+  "design_sha256": "1b64fd08f4c58cb5b1c87ff4f6f97538d258fedf27717be6f3922f93cf5bfb14"
 }

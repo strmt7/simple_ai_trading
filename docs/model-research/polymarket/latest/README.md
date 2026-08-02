@@ -37,7 +37,9 @@ credential-free Binance predictor resumed in its own worktree and database. A
 single-lane Polymarket reconnect gap is explicitly recorded; the frozen
 contract rejects affected conditions rather than silently treating them as
 continuous or invalidating unrelated conditions. The optional predictor has no
-execution, wallet, risk, settlement, Stop, or availability dependency.
+execution, wallet, risk, settlement, Stop, existing-position supervision, or
+closure dependency. If configured and unavailable, only signal-dependent new
+entries abstain; Polymarket recovery and exits continue independently.
 
 No target, model, AI, economic, or profitability result exists while capture is
 active. The finite development ledger now contains three regularized logistic
@@ -48,6 +50,12 @@ parameters. It is a bounded challenger, not an edge claim; adding larger
 sequence or foundation models is prohibited in this round. The terminal program
 evaluates one development-selected candidate against five probability controls
 and all 81 after-cost profile/scenario ledgers. The local
+candidate selector compares each candidate's ordered, condition-equal log loss
+directly with the best candidate. It uses a Bartlett Newey-West standard error
+and circular block-bootstrap intervals with the target-blind block rule
+`min(n, max(2, ceil(sqrt(n))))`; consecutive five-minute conditions are not
+treated as independent. This reduces false-promotion risk but is not a
+performance improvement or edge result. The local
 AI comparison is finite: exactly `qwen3:8b`, `fin-r1:8b`, and `fino1:8b` use the
 same matched development population and deterministic baseline. The pretest
 manifest binds the repository, selected layer, terminal captures, model,
