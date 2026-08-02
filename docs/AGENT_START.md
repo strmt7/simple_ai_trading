@@ -337,6 +337,13 @@ extends the established parser with independently registered commands.
   whole-condition roles, joint-gap rejection, and all 1,200 causal decision
   times. Its implementation has no terminal corpus or result while capture is
   active.
+  `polymarket_round21_corpus_store.py` stages separate development and sealed
+  test DuckDB artifacts under one atomic directory publication. It stores no
+  raw payload copies, uses one Zstandard level-3 exact-binary64 chunk per
+  condition, and publishes nothing after a failed terminal audit. The pretest
+  v2 seal derives its corpus and sealed-population hashes from that validated
+  publication; sealed feature audits require the exact consumed claim and
+  access hash in the durable one-use ledger.
   No Round 21 claim, model score, economic verdict, profitability claim, or
   trading authority exists while capture remains active.
 - `polymarket-live --action autonomous` assembles the Round 16 predictor,

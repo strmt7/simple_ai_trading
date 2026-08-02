@@ -49,13 +49,20 @@ def _sha(value: str) -> str:
     return hashlib.sha256(value.encode("ascii")).hexdigest()
 
 
+def _core_publication() -> dict[str, object]:
+    return {
+        "manifest_sha256": _sha("core-publication"),
+        "sealed_test_population_manifest_sha256": _sha("test-population"),
+    }
+
+
 def _pretest(*, ai_model: str | None = None) -> Round21PretestManifest:
     ai_digest = None if ai_model is None else _sha("ai-model")
     ai_comparison = None if ai_model is None else _sha("ai-development-comparison")
     provisional = Round21PretestManifest(
         created_at_ms=1_700_000_000_000,
         selected_population_layer="core",
-        core_campaign_terminal_sha256=_sha("core-terminal"),
+        core_corpus_publication_manifest_sha256=_sha("core-publication"),
         optional_campaign_terminal_sha256=None,
         sealed_test_population_manifest_sha256=_sha("test-population"),
         development_model_artifact_sha256=_sha("model-artifact"),
@@ -355,6 +362,11 @@ def test_round21_pretest_builder_binds_qualified_development(
     monkeypatch.setattr(one_use_module, "load_round21_sealed_design", lambda _root: {})
     monkeypatch.setattr(
         one_use_module,
+        "validate_round21_core_publication_boundary",
+        lambda _directory: _core_publication(),
+    )
+    monkeypatch.setattr(
+        one_use_module,
         "validate_round21_development_artifact",
         lambda _artifact: artifact,
     )
@@ -379,9 +391,8 @@ def test_round21_pretest_builder_binds_qualified_development(
     manifest = build_round21_pretest_manifest(
         tmp_path,
         selected_population_layer="core",
-        core_campaign_terminal_sha256=_sha("core-terminal"),
+        core_corpus_publication_directory=tmp_path / "core-publication",
         optional_campaign_terminal_sha256=None,
-        sealed_test_population_manifest_sha256=_sha("test-population"),
         development_model_artifact={},
         development_economic_matrix=matrix,
         development_optional_comparison=None,
@@ -396,9 +407,8 @@ def test_round21_pretest_builder_binds_qualified_development(
         build_round21_pretest_manifest(
             tmp_path,
             selected_population_layer="core",
-            core_campaign_terminal_sha256=_sha("core-terminal"),
+            core_corpus_publication_directory=tmp_path / "core-publication",
             optional_campaign_terminal_sha256=None,
-            sealed_test_population_manifest_sha256=_sha("test-population"),
             development_model_artifact={},
             development_economic_matrix=matrix[:-1],
             development_optional_comparison=None,
@@ -551,6 +561,11 @@ def test_round21_pretest_builder_rejects_selection_drift(monkeypatch, tmp_path) 
     monkeypatch.setattr(one_use_module, "load_round21_sealed_design", lambda _root: {})
     monkeypatch.setattr(
         one_use_module,
+        "validate_round21_core_publication_boundary",
+        lambda _directory: _core_publication(),
+    )
+    monkeypatch.setattr(
+        one_use_module,
         "validate_round21_development_artifact",
         lambda _artifact: artifact,
     )
@@ -568,8 +583,7 @@ def test_round21_pretest_builder_rejects_selection_drift(monkeypatch, tmp_path) 
     )
 
     common = {
-        "core_campaign_terminal_sha256": _sha("core-terminal"),
-        "sealed_test_population_manifest_sha256": _sha("test-population"),
+        "core_corpus_publication_directory": tmp_path / "core-publication",
         "development_model_artifact": {},
         "development_economic_matrix": matrix,
         "development_ai_selection": ai,

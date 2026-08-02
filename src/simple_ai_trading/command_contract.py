@@ -87,6 +87,7 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
             "polymarket-continuity",
             "polymarket-features",
             "polymarket-action-value",
+            "polymarket-round21-corpus",
         ),
     ),
     (

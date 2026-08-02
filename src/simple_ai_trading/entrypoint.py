@@ -7,6 +7,7 @@ import sys
 
 from . import cli
 from .polymarket_live_cli import register_polymarket_live_command
+from .polymarket_round21_cli import register_polymarket_round21_commands
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -24,6 +25,7 @@ def _build_parser() -> argparse.ArgumentParser:
     if subparsers is None:
         raise RuntimeError("CLI parser has no command registry")
     register_polymarket_live_command(subparsers)
+    register_polymarket_round21_commands(subparsers)
     return parser
 
 

@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import UTC, datetime
 import hashlib
 import json
 from pathlib import Path
 
 import pytest
 
+from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
 from simple_ai_trading.polymarket_capture_frame import CaptureFrameRecord
-from simple_ai_trading.polymarket_recorder import RawStreamMessage, StreamGap
+from simple_ai_trading.polymarket_recorder import (
+    MarketEvidence,
+    PolymarketEvidenceStore,
+    RawStreamMessage,
+    StreamGap,
+)
+from simple_ai_trading import polymarket_round21_corpus as corpus_module
 from simple_ai_trading.polymarket_redundant_union import (
     PolymarketClobLaneReceipt,
     PolymarketRedundantUnionBuilder,
@@ -20,6 +28,7 @@ from simple_ai_trading.polymarket_round21_corpus import (
     Round21CoreCorpusObserver,
     build_round21_core_condition_materialization,
     load_round21_core_corpus_design,
+    load_round21_core_conditions,
     validate_round21_condition_admission,
 )
 from simple_ai_trading.polymarket_round21_dataset import Round21PartitionPolicy
@@ -450,3 +459,92 @@ def test_round21_terminal_observer_flushes_union_before_rtds_finalization() -> N
 
     assert len(results) == 1
     assert results[0].admission["union_event_count"] == 600
+
+
+def test_round21_snapshot_loader_reconciles_actual_duckdb_payload(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    start = datetime.fromtimestamp(EVENT_START_MS / 1_000, tz=UTC)
+    end = datetime.fromtimestamp(EVENT_END_MS / 1_000, tz=UTC)
+    payload = {
+        "id": "btc-five-minute-fixture",
+        "question": "Bitcoin Up or Down",
+        "conditionId": CONDITION_ID,
+        "slug": f"btc-updown-5m-{EVENT_START_MS // 1_000}",
+        "eventStartTime": start.isoformat().replace("+00:00", "Z"),
+        "endDate": end.isoformat().replace("+00:00", "Z"),
+        "active": True,
+        "closed": False,
+        "enableOrderBook": True,
+        "acceptingOrders": True,
+        "clobTokenIds": json.dumps([UP_TOKEN, DOWN_TOKEN]),
+        "outcomes": '["Up","Down"]',
+        "orderPriceMinTickSize": 0.01,
+        "orderMinSize": 5,
+        "feesEnabled": True,
+        "feeSchedule": {
+            "exponent": 1,
+            "rate": 0.07,
+            "takerOnly": True,
+            "rebateRate": 0.2,
+        },
+        "liquidityNum": 20_000,
+        "volumeNum": 50_000,
+        "resolutionSource": "https://data.chain.link/streams/btc-usd",
+    }
+    market = parse_polymarket_five_minute_market(payload)
+    clob_json = _canonical({"condition_id": CONDITION_ID})
+    fee_json = _canonical({"base_fee": 1000})
+    database = tmp_path / "snapshots.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run(RUN_ID, EVENT_START_MS - 60_000)
+        store.record_market_evidence(
+            RUN_ID,
+            MarketEvidence(
+                market=market,
+                observed_wall_ms=EVENT_START_MS - 30_000,
+                observed_monotonic_ns=(EVENT_START_MS - 30_000) * 1_000_000,
+                clob_info_json=clob_json,
+                clob_info_sha256=hashlib.sha256(
+                    clob_json.encode("ascii")
+                ).hexdigest(),
+                up_fee_rate_json=fee_json,
+                up_fee_rate_sha256=hashlib.sha256(
+                    fee_json.encode("ascii")
+                ).hexdigest(),
+                down_fee_rate_json=fee_json,
+                down_fee_rate_sha256=hashlib.sha256(
+                    fee_json.encode("ascii")
+                ).hexdigest(),
+                maker_base_fee=0,
+                taker_base_fee=1000,
+                taker_order_delay_enabled=True,
+                minimum_order_age_seconds=0,
+            ),
+        )
+    transport = {
+        "segments": [
+            {
+                "run_id": RUN_ID,
+                "segment_index": 7,
+                "eligible_for_condition_rebuild": True,
+            }
+        ]
+    }
+    monkeypatch.setattr(
+        corpus_module,
+        "validate_round21_terminal_transport_manifest",
+        lambda value: value,
+    )
+
+    conditions = load_round21_core_conditions(
+        database=database,
+        terminal_transport_manifest=transport,
+    )
+
+    assert len(conditions) == 1
+    assert conditions[0].segment_index == 7
+    assert conditions[0].condition_id == CONDITION_ID
+    assert conditions[0].event_start_ms == EVENT_START_MS
+    assert conditions[0].up_token_id == UP_TOKEN

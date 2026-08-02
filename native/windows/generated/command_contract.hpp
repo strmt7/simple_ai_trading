@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"135c2a9a57b24d491e070dc11bccd7d519bb8f856d023ffae96843910879797d";
+inline constexpr const wchar_t* kCommandContractSha256 = L"a5d2d08764fc3e06c0a59ef7631ccb6c92db4bef0e1ce300cc882f8023331c23";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -792,6 +792,15 @@ inline constexpr CommandOptionSpec kOptions_polymarket_round13_publish[] = {
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_corpus[] = {
+    {L"--source-database", L"source_database", L"", L"", L"closed Polymarket Round 21 evidence DuckDB", L"1", true, true, false},
+    {L"--terminal-transport-manifest", L"terminal_transport_manifest", L"", L"", L"hash-valid terminal Round 21 transport manifest JSON", L"1", true, true, false},
+    {L"--publication-directory", L"publication_directory", L"", L"", L"new directory for one atomic development/sealed-test publication", L"1", true, true, false},
+    {L"--repository", L"repository", L"", L".", L"repository root containing the frozen Round 21 design", L"1", false, true, false},
+    {L"--observed-at-ms", L"observed_at_ms", L"", L"", L"optional fixed audit timestamp for reproducible controlled runs", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"emit the complete canonical publication manifest", L"0", false, false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_polymarket_verify[] = {
     {L"--artifact", L"artifact", L"", L"", L"", L"1", true, true, false},
     {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
@@ -1260,6 +1269,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-ridge", L"Reconstruct hash-bound causal actions from one confirmation-eligible Round 9 pipeline, select the frozen ridge and threshold candidates on validation, evaluate the untouched test partition exactly once, and persist the complete audit trail. This command grants no trading or profitability authority.", kOptions_polymarket_ridge, 5},
     {L"polymarket-round13-evaluate", L"Revalidate the complete recorder and label-free action pipeline, commit the one-use claim, then fetch dual-source official resolutions and score all frozen execution stresses. This command never places an order.", kOptions_polymarket_round13_evaluate, 9},
     {L"polymarket-round13-publish", L"Atomically replace the latest Polymarket research view from one immutable stored evaluation report. Manual chart editing is prohibited.", kOptions_polymarket_round13_publish, 6},
+    {L"polymarket-round21-corpus", L"After the independent Polymarket capture is terminal, reconcile its exact receipts and atomically publish physically separate development and sealed-test core feature stores. This command reads no outcomes, models, Binance data, credentials, accounts, or orders.", kOptions_polymarket_round21_corpus, 6},
     {L"polymarket-verify", L"Independently rebuild features, the chronological split, deterministic model fit, held-out predictions, and every execution-latency scenario from the immutable recorder database. This command has no trading authority.", kOptions_polymarket_verify, 6},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},
     {L"prepare", L"usage: simple-ai-trading prepare [-h] [--historical HISTORICAL]                                  [--model MODEL] [--limit LIMIT]                                  [--batch-size BATCH_SIZE]                                  [--preset {balanced,custom,quick,thorough}]                                  [--epochs EPOCHS]                                  [--learning-rate LEARNING_RATE]                                  [--l2-penalty L2_PENALTY] [--seed SEED]                                  [--start-cash START_CASH] [--walk-forward]                                  [--no-walk-forward]                                  [--walk-forward-train WALK_FORWARD_TRAIN]                                  [--walk-forward-test WALK_FORWARD_TEST]                                  [--walk-forward-step WALK_FORWARD_STEP]                                  [--calibrate-threshold]                                  [--no-calibrate-threshold] [--online-doctor]", kOptions_prepare, 18},
@@ -1303,6 +1313,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Research", L"Polymarket evidence", L"polymarket-continuity"},
     {L"Research", L"Polymarket evidence", L"polymarket-features"},
     {L"Research", L"Polymarket evidence", L"polymarket-action-value"},
+    {L"Research", L"Polymarket evidence", L"polymarket-round21-corpus"},
     {L"Research", L"Polymarket models", L"polymarket-model"},
     {L"Research", L"Polymarket models", L"polymarket-ridge"},
     {L"Research", L"Polymarket models", L"polymarket-mlp"},
