@@ -77,6 +77,21 @@ def test_union_retains_unmatched_event_after_bounded_pairing_window() -> None:
     assert audit.lane_coverage_fraction == {"clob-a": 0.5, "clob-b": 0.5}
 
 
+def test_union_external_watermark_flushes_without_losing_causal_order() -> None:
+    builder = PolymarketRedundantUnionBuilder(pairing_window_ms=100)
+    event = {"event_type": "book", "asset_id": "7", "timestamp": "1"}
+
+    assert builder.add(_receipt("clob-a", 1, 1_000_000_000, event)) == ()
+    ready = builder.advance(1_100_000_001)
+
+    assert len(ready) == 1
+    assert ready[0].selected_lane_id == "clob-a"
+    with pytest.raises(ValueError, match="precedes the union watermark"):
+        builder.add(_receipt("clob-b", 1, 1_050_000_000, event))
+    with pytest.raises(ValueError, match="watermark regressed"):
+        builder.advance(1_000_000_000)
+
+
 def test_union_pairs_repeated_identical_events_fifo_without_dropping_occurrences() -> None:
     event = {"event_type": "best_bid_ask", "asset_id": "7", "timestamp": "3"}
     builder = PolymarketRedundantUnionBuilder(pairing_window_ms=1_000)

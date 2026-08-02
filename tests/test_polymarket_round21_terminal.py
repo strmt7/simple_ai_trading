@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import UTC, datetime
 import hashlib
 import json
@@ -353,6 +354,30 @@ def _segment_from_report(
         },
         "artifact_sha256",
     )
+
+
+class _ReceiptObserver:
+    def __init__(self) -> None:
+        self.starts: list[tuple[str, int]] = []
+        self.messages: list[tuple[str, str]] = []
+        self.finishes: list[str] = []
+
+    def start_run(
+        self,
+        segment: Mapping[str, object],
+        gaps: tuple[StreamGap, ...],
+    ) -> None:
+        self.starts.append((str(segment["run_id"]), len(gaps)))
+
+    def observe_message(
+        self,
+        segment: Mapping[str, object],
+        message: RawStreamMessage,
+    ) -> None:
+        self.messages.append((str(segment["run_id"]), message.stream))
+
+    def finish_run(self, segment: Mapping[str, object]) -> None:
+        self.finishes.append(str(segment["run_id"]))
 
 
 def test_terminal_design_is_hash_bound_and_non_authoritative() -> None:
@@ -966,13 +991,21 @@ def test_terminal_receipt_audit_reconciles_database_and_skips_interruption(
         observed_at_ms=END_MS,
     )
 
+    observer = _ReceiptObserver()
     audit = audit_round21_terminal_receipts(
         database=database,
         terminal_transport_manifest=transport,
         observed_at_ms=END_MS + 1,
+        observer=observer,
     )
 
     assert audit["database_run_count"] == 2
+    assert observer.starts == [(eligible_run, 1)]
+    assert observer.messages == [
+        (eligible_run, "clob_market"),
+        (eligible_run, "polymarket_rtds"),
+    ]
+    assert observer.finishes == [eligible_run]
     assert audit["eligible_runs"][0]["run_id"] == eligible_run
     assert audit["eligible_runs"][0]["receipt_count"] == 2
     assert audit["eligible_runs"][0]["stream_counts"] == {

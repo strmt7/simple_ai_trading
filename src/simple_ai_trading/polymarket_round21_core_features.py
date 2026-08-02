@@ -452,6 +452,14 @@ def _validate_union_event(event: PolymarketUnionEvent) -> Mapping[str, object]:
     return decoded
 
 
+def validate_round21_union_event(
+    event: PolymarketUnionEvent,
+) -> Mapping[str, object]:
+    """Validate and decode one exact redundant-union event."""
+
+    return _validate_union_event(event)
+
+
 @dataclass(frozen=True, slots=True)
 class _ChainlinkObservation:
     connection_id: str
@@ -1094,14 +1102,23 @@ class Round21CoreFeatureEngine:
         self._clob_chain = _EMPTY_SHA256
         self._last_union_monotonic_ns = 0
 
-    def start_chainlink_epoch(self, connection_id: str) -> None:
+    def start_chainlink_epoch(
+        self,
+        connection_id: str,
+        *,
+        first_sequence_number: int = 1,
+    ) -> None:
         connection = str(connection_id or "").strip().lower()
-        if _CONNECTION_ID.fullmatch(connection) is None:
+        first_sequence = int(first_sequence_number)
+        if (
+            _CONNECTION_ID.fullmatch(connection) is None
+            or first_sequence <= 0
+        ):
             raise ValueError("Round 21 Chainlink epoch identity is invalid")
         if self._chainlink_sequence:
             self._chainlink_gap_detected = True
         self._chainlink_connection_id = connection
-        self._chainlink_sequence = 0
+        self._chainlink_sequence = first_sequence - 1
         self._chainlink_monotonic_ns = 0
         self._chainlink_wall_ms = 0
         self._chainlink_chain = _EMPTY_SHA256
@@ -1442,5 +1459,6 @@ __all__ = [
     "Round21CoreFeatureSnapshot",
     "join_round21_causal_features",
     "load_round21_feature_policy",
+    "validate_round21_union_event",
     "validate_round21_feature_policy",
 ]

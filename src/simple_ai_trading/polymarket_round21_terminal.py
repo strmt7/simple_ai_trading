@@ -10,6 +10,7 @@ import math
 from pathlib import Path
 import re
 import time
+from typing import Protocol
 
 from .polymarket_round20_campaign import (
     POLYMARKET_ROUND20_CAMPAIGN_DESIGN_SHA256,
@@ -19,7 +20,11 @@ from .polymarket_round20_campaign import (
     PolymarketRound20CampaignPlan,
     load_round20_campaign_plan,
 )
-from .polymarket_recorder import PolymarketEvidenceStore
+from .polymarket_recorder import (
+    PolymarketEvidenceStore,
+    RawStreamMessage,
+    StreamGap,
+)
 from .polymarket_round21_dataset import (
     POLYMARKET_ROUND21_CONDITION_DURATION_MS,
     POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
@@ -79,6 +84,24 @@ _SUMMARY_KEYS = {
     "eligible_for_condition_rebuild",
     "exclusion_reasons",
 }
+
+
+class Round21TerminalReceiptObserver(Protocol):
+    """Consume an eligible run during the same exact terminal receipt scan."""
+
+    def start_run(
+        self,
+        segment: Mapping[str, object],
+        gaps: tuple[StreamGap, ...],
+    ) -> None: ...
+
+    def observe_message(
+        self,
+        segment: Mapping[str, object],
+        message: RawStreamMessage,
+    ) -> None: ...
+
+    def finish_run(self, segment: Mapping[str, object]) -> None: ...
 
 
 def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -972,14 +995,47 @@ def _audit_eligible_run(
     *,
     segment: Mapping[str, object],
     preregistration_sha256: str,
+    observer: Round21TerminalReceiptObserver | None,
 ) -> dict[str, object]:
     run_id = str(segment["run_id"])
+    gaps = tuple(store.iter_terminal_stream_gaps(run_id))
+    gap_count = len(gaps)
+    if gap_count != segment["stream_gap_count"]:
+        raise ValueError("Round 21 terminal gap accounting differs")
+    first_gap_ms: int | None = None
+    last_gap_ms: int | None = None
+    gap_chain = _EMPTY_SHA256
+    for gap in gaps:
+        gap_chain = _receipt_chain(
+            gap_chain,
+            {
+                "stream": gap.stream,
+                "connection_id": gap.connection_id,
+                "opened_at_ms": gap.opened_at_ms,
+                "reason": gap.reason,
+                "last_sequence_number": gap.last_sequence_number,
+            },
+        )
+        first_gap_ms = (
+            gap.opened_at_ms
+            if first_gap_ms is None
+            else min(first_gap_ms, gap.opened_at_ms)
+        )
+        last_gap_ms = (
+            gap.opened_at_ms
+            if last_gap_ms is None
+            else max(last_gap_ms, gap.opened_at_ms)
+        )
+    if observer is not None:
+        observer.start_run(segment, gaps)
     counts: dict[str, int] = defaultdict(int)
     receipt_count = 0
     first_wall_ms: int | None = None
     last_wall_ms: int | None = None
     receipt_chain = _EMPTY_SHA256
     for message in store.iter_terminal_capture_messages(run_id):
+        if observer is not None:
+            observer.observe_message(segment, message)
         raw_sha256 = hashlib.sha256(message.raw_text.encode("utf-8")).hexdigest()
         receipt_chain = _receipt_chain(
             receipt_chain,
@@ -1011,34 +1067,8 @@ def _audit_eligible_run(
         or last_wall_ms is None
     ):
         raise ValueError("Round 21 terminal receipt accounting differs")
-    gap_count = 0
-    first_gap_ms: int | None = None
-    last_gap_ms: int | None = None
-    gap_chain = _EMPTY_SHA256
-    for gap in store.iter_terminal_stream_gaps(run_id):
-        gap_chain = _receipt_chain(
-            gap_chain,
-            {
-                "stream": gap.stream,
-                "connection_id": gap.connection_id,
-                "opened_at_ms": gap.opened_at_ms,
-                "reason": gap.reason,
-                "last_sequence_number": gap.last_sequence_number,
-            },
-        )
-        gap_count += 1
-        first_gap_ms = (
-            gap.opened_at_ms
-            if first_gap_ms is None
-            else min(first_gap_ms, gap.opened_at_ms)
-        )
-        last_gap_ms = (
-            gap.opened_at_ms
-            if last_gap_ms is None
-            else max(last_gap_ms, gap.opened_at_ms)
-        )
-    if gap_count != segment["stream_gap_count"]:
-        raise ValueError("Round 21 terminal gap accounting differs")
+    if observer is not None:
+        observer.finish_run(segment)
     return {
         "segment_index": segment["segment_index"],
         "run_id": run_id,
@@ -1258,6 +1288,7 @@ def audit_round21_terminal_receipts(
     database: str | Path,
     terminal_transport_manifest: Mapping[str, object],
     observed_at_ms: int | None = None,
+    observer: Round21TerminalReceiptObserver | None = None,
 ) -> dict[str, object]:
     """Reconcile terminal exact receipts once without reading outcomes or models."""
 
@@ -1325,6 +1356,7 @@ def audit_round21_terminal_receipts(
                         store,
                         segment=segment,
                         preregistration_sha256=preregistration_sha256,
+                        observer=observer,
                     )
                 )
             else:
@@ -1397,6 +1429,7 @@ __all__ = [
     "POLYMARKET_ROUND21_TERMINAL_TRANSPORT_DESIGN_SHA256",
     "POLYMARKET_ROUND21_TERMINAL_TRANSPORT_MANIFEST_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_TERMINAL_RECEIPT_AUDIT_SCHEMA_VERSION",
+    "Round21TerminalReceiptObserver",
     "audit_round21_terminal_receipts",
     "build_round21_terminal_transport_manifest",
     "load_round21_terminal_transport_design",

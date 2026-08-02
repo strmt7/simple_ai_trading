@@ -201,6 +201,7 @@ class PolymarketRedundantUnionBuilder:
         self._last_sequence: dict[tuple[str, str], int] = {}
         self._last_lane_monotonic: dict[str, int] = {}
         self._last_global_monotonic = -1
+        self._last_advanced_monotonic = -1
         self._emitted_occurrences: Counter[str] = Counter()
         self._lane_event_counts: Counter[str] = Counter()
         self._event_type_counts: Counter[str] = Counter()
@@ -229,9 +230,32 @@ class PolymarketRedundantUnionBuilder:
             raise ValueError("Polymarket CLOB lane receipt time regressed")
         if receipt.received_monotonic_ns < self._last_global_monotonic:
             raise ValueError("Polymarket CLOB merged receipt order regressed")
+        if receipt.received_monotonic_ns < self._last_advanced_monotonic:
+            raise ValueError("Polymarket CLOB receipt precedes the union watermark")
         self._last_sequence[key] = receipt.sequence_number
         self._last_lane_monotonic[receipt.lane_id] = receipt.received_monotonic_ns
         self._last_global_monotonic = receipt.received_monotonic_ns
+
+    def advance(
+        self,
+        received_monotonic_ns: int,
+    ) -> tuple[PolymarketUnionEvent, ...]:
+        """Advance causal time when another stream supplies the watermark."""
+
+        if self._finished:
+            raise RuntimeError("Polymarket redundant union is already finished")
+        selected = received_monotonic_ns
+        if (
+            type(selected) is not int
+            or selected <= 0
+            or selected < self._last_global_monotonic
+            or selected < self._last_advanced_monotonic
+        ):
+            raise ValueError("Polymarket redundant union watermark regressed")
+        self._last_advanced_monotonic = selected
+        watermark = selected - self._pairing_window_ns
+        self._expire_unmatched(watermark)
+        return self._drain_resolved(watermark)
 
     def _resolve(
         self,
