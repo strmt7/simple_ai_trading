@@ -1,0 +1,57 @@
+{
+  "schema_version": "polymarket-round25-official-resolution-transport-probe-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T20:48:02Z",
+  "scope": "credential_free_post_close_transport_and_schema_validation_only",
+  "contract_sha256": "f0f0faf5da10c18be4d3b19989988c626aaa95aec105f787098505f7fbef2700",
+  "client": "simple_ai_trading.polymarket_round25_resolution_store.Round25ResolutionPublicClient",
+  "official_sources": {
+    "gamma_origin": "https://gamma-api.polymarket.com",
+    "clob_origin": "https://clob.polymarket.com",
+    "redirects_allowed": false,
+    "credentials_used": false,
+    "authentication_headers_used": false,
+    "outbound_cookie_header_observed": false,
+    "response_cookie_offered_by_each_origin": true,
+    "response_cookie_persisted": false,
+    "session_cookie_count_after_requests": 0,
+    "cookie_name_or_value_recorded": false
+  },
+  "bounded_sequence": {
+    "maximum_candidates": 8,
+    "candidates_queried": 3,
+    "pending_without_inference": 2,
+    "jointly_terminal": 1,
+    "stopped_after_first_jointly_terminal_candidate": true
+  },
+  "validated_market": {
+    "market_id": "3469172",
+    "condition_id": "0x12d737c74b659957fe53e784b99c8d59335f355eef3278057f2b193d29de80b3",
+    "slug": "btc-updown-5m-1786393800",
+    "event_end_utc": "2026-08-10T20:35:00Z",
+    "resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+    "gamma_payload_sha256": "e4f582ecec5f55240ae31791c5dcc6a98fcd70deecfd44b7dac92ba910af2252",
+    "clob_payload_sha256": "4a54ac108812841dc0428a79c8472b1d20dd983c37b2296409a454c61bb1c939",
+    "gamma_identity_and_terminal_schema_validated": true,
+    "clob_identity_and_terminal_schema_validated": true,
+    "cross_source_winner_agreement_validated": true,
+    "winning_outcome": "Down"
+  },
+  "payload_retention": {
+    "official_response_bodies_persisted": false,
+    "canonical_payload_hashes_persisted": true,
+    "cookie_headers_persisted": false
+  },
+  "authority": {
+    "round25_target_access": false,
+    "preclose_identity_proved": false,
+    "model_data_eligibility": false,
+    "model_fitted": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "orders_submitted": false
+  },
+  "probe_sha256": "7baa50e39bbd4de5e92c71711457594bb075d3d4d8bd738e8885b9c4d22d2c4d"
+}

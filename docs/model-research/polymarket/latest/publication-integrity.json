@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 44805,
+      "bytes": 45517,
       "path": "latest/README.md",
-      "sha256": "11cac1e3bd8270ae0a529348ba482068cafc08dd366c0fc9b205bb260b6287a4"
+      "sha256": "bd5e54202fd14c85440bdf15b96ff4177c40a72b6671629d872c1c2bfdb375bc"
     },
     {
       "bytes": 77606,
@@ -342,6 +342,16 @@
       "sha256": "dbbd1af8e6a0b2a431f3b759de818614d576eb9927458feca67bad4ea35849d1"
     },
     {
+      "bytes": 5788,
+      "path": "round-025-official-resolution-collection-contract-v2.json",
+      "sha256": "42cf0a2d558cbbe0c65182c48a27a052a462dc75cc3f9a240d2d7e03dd04005d"
+    },
+    {
+      "bytes": 2384,
+      "path": "round-025-official-resolution-transport-probe-v1-2026-08-10.json",
+      "sha256": "c15a5330f27f9a130e9a90d461707dd0e5956ecf37ca32feac41f761a2e92114"
+    },
+    {
       "bytes": 4079,
       "path": "round-025-post-capture-coordinator-contract-v1.json",
       "sha256": "1ae0edf2708092f7c3d92923d5098f962c27599417bc4ad559adf7896577e6b1"
@@ -434,7 +444,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 25,
   "live_trading_authority": false,
-  "manifest_sha256": "31b4d5542624f0390d7b0cbe28baf5578abed21a9014bde3bc83b05240c3cd37",
+  "manifest_sha256": "36230b15624e0de412c2c74edec7efc708f213ebfbb14019206b578e2cb39f2e",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -482,7 +492,10 @@
   "round25_qwen3_8b_supervisor_candidate_rejected": true,
   "round25_resolution_authority_available": false,
   "round25_resolution_collection_contract_frozen": true,
+  "round25_resolution_collection_contract_revision": 2,
+  "round25_resolution_public_transport_verified": true,
   "round25_resolution_store_implemented": true,
+  "round25_resolution_terminal_schema_verified": true,
   "round25_result_available": false,
   "round25_sealed_test_campaign_planned": false,
   "round25_sequence_corpus_materialized": false,

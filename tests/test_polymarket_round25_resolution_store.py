@@ -4,6 +4,7 @@ from collections.abc import Mapping
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import duckdb
 import pytest
@@ -60,7 +61,7 @@ CONTRACT = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-025-official-resolution-collection-contract-v1.json"
+    / "round-025-official-resolution-collection-contract-v2.json"
 )
 RUN_ID = "3" * 32
 EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
@@ -536,6 +537,45 @@ class _Cookies(list[object]):
         super().clear()
 
 
+class _PublicResponse:
+    def __init__(
+        self,
+        value: object,
+        *,
+        url: str,
+        status_code: int = 200,
+        request_headers: Mapping[str, str] | None = None,
+    ) -> None:
+        self.content = json.dumps(value, separators=(",", ":")).encode("ascii")
+        self.headers = {"Content-Type": "application/json"}
+        self.request = SimpleNamespace(headers=dict(request_headers or {}))
+        self.status_code = status_code
+        self.url = url
+
+
+class _PublicSession:
+    def __init__(
+        self,
+        responses: list[_PublicResponse],
+        *,
+        response_sets_cookie: bool = False,
+    ) -> None:
+        self.headers: dict[str, str] = {}
+        self.cookies = _Cookies()
+        self.responses = list(responses)
+        self.response_sets_cookie = response_sets_cookie
+        self.calls: list[dict[str, object]] = []
+
+    def get(self, url: str, **kwargs: object) -> _PublicResponse:
+        self.calls.append({"url": url, **kwargs})
+        response = self.responses.pop(0)
+        if not response.request.headers:
+            response.request.headers = dict(kwargs["headers"])  # type: ignore[arg-type]
+        if self.response_sets_cookie:
+            self.cookies.append(object())
+        return response
+
+
 class _AuthenticatedSession:
     headers = {"Authorization": "not-a-real-secret"}
     cookies = _Cookies()
@@ -549,3 +589,50 @@ def test_public_client_rejects_authority_headers_before_request() -> None:
 
     with pytest.raises(ValueError, match="authority headers"):
         client.gamma_market("123")
+
+
+def test_public_client_discards_response_cookies_before_retry_and_return() -> None:
+    url = "https://gamma-api.polymarket.com/markets/123"
+    session = _PublicSession(
+        [
+            _PublicResponse({"error": "busy"}, url=url, status_code=503),
+            _PublicResponse({"id": "123"}, url=url),
+        ],
+        response_sets_cookie=True,
+    )
+    sleeps: list[float] = []
+    client = Round25ResolutionPublicClient(
+        session=session,
+        minimum_request_interval_seconds=0,
+        sleeper=sleeps.append,
+    )
+
+    payload = client.gamma_market("123")
+
+    assert payload.value == {"id": "123"}
+    assert len(session.calls) == 2
+    assert session.cookies == []
+    assert sleeps == [0.5]
+
+
+def test_public_client_rejects_preexisting_and_outbound_cookies() -> None:
+    url = "https://gamma-api.polymarket.com/markets/123"
+    preexisting = _PublicSession([_PublicResponse({"id": "123"}, url=url)])
+    preexisting.cookies.append(object())
+    with pytest.raises(ValueError, match="session contains cookies"):
+        Round25ResolutionPublicClient(session=preexisting).gamma_market("123")
+    assert preexisting.calls == []
+
+    outbound = _PublicSession(
+        [
+            _PublicResponse(
+                {"id": "123"},
+                url=url,
+                request_headers={"Cookie": "present"},
+            )
+        ],
+        response_sets_cookie=True,
+    )
+    with pytest.raises(ValueError, match="request sent cookies"):
+        Round25ResolutionPublicClient(session=outbound).gamma_market("123")
+    assert outbound.cookies == []
