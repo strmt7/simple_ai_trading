@@ -25,6 +25,9 @@ POLYMARKET_ROUND21_DATASET_DESIGN_SCHEMA_VERSION = (
 POLYMARKET_ROUND21_DATASET_SCHEMA_VERSION = (
     "polymarket-round21-causal-development-dataset-v1"
 )
+POLYMARKET_ROUND21_SEALED_DATASET_SCHEMA_VERSION = (
+    "polymarket-round21-causal-sealed-test-dataset-v1"
+)
 POLYMARKET_ROUND21_CAMPAIGN_DURATION_MS = 30 * 86_400_000
 POLYMARKET_ROUND21_CONDITION_DURATION_MS = 300_000
 POLYMARKET_ROUND21_DECISION_CADENCE_MS = 250
@@ -628,19 +631,20 @@ class Round21OfficialOutcome:
         return self
 
 
-def build_round21_development_panel(
+def _build_round21_panel(
     *,
     role: str,
     feature_schema: Round21FeatureSchema,
     partition_policy: Round21PartitionPolicy,
     feature_rows: Sequence[Round21CausalFeatureRow],
     outcomes: Sequence[Round21OfficialOutcome],
+    allowed_roles: frozenset[str],
+    dataset_schema_version: str,
+    identity_binding: Mapping[str, object] | None = None,
 ) -> Round21DevelopmentPanel:
-    """Join one development role without accepting sealed-test inputs."""
-
     selected_role = str(role or "").strip()
-    if selected_role not in _DEVELOPMENT_ROLES:
-        raise ValueError("Round 21 development role is invalid or sealed")
+    if selected_role not in allowed_roles:
+        raise ValueError("Round 21 panel role is invalid for this access boundary")
     schema = feature_schema.validated()
     policy = partition_policy.validated()
     unverified_rows = tuple(feature_rows)
@@ -682,17 +686,18 @@ def build_round21_development_panel(
             raise ValueError("Round 21 feature and outcome identities differ")
     dataset_sha256 = _canonical_sha256(
         {
-            "schema_version": POLYMARKET_ROUND21_DATASET_SCHEMA_VERSION,
+            "schema_version": dataset_schema_version,
             "dataset_design_sha256": POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
             "partition_policy_sha256": policy.policy_sha256,
             "feature_schema_sha256": schema.schema_sha256,
             "role": selected_role,
             "row_sha256": [row.row_sha256 for row in ordered],
+            **({} if identity_binding is None else dict(identity_binding)),
         }
     )
     target_manifest_sha256 = _canonical_sha256(
         {
-            "schema_version": POLYMARKET_ROUND21_DATASET_SCHEMA_VERSION,
+            "schema_version": dataset_schema_version,
             "dataset_design_sha256": POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
             "partition_policy_sha256": policy.policy_sha256,
             "role": selected_role,
@@ -700,6 +705,7 @@ def build_round21_development_panel(
                 outcome_map[condition].outcome_sha256
                 for condition in sorted(row_conditions)
             ],
+            **({} if identity_binding is None else dict(identity_binding)),
         }
     )
     panel = Round21DevelopmentPanel(
@@ -761,12 +767,74 @@ def build_round21_development_panel(
     return panel.validate()
 
 
+def build_round21_development_panel(
+    *,
+    role: str,
+    feature_schema: Round21FeatureSchema,
+    partition_policy: Round21PartitionPolicy,
+    feature_rows: Sequence[Round21CausalFeatureRow],
+    outcomes: Sequence[Round21OfficialOutcome],
+) -> Round21DevelopmentPanel:
+    """Join one development role without accepting sealed-test inputs."""
+
+    if str(role or "").strip() not in _DEVELOPMENT_ROLES:
+        raise ValueError("Round 21 development role is invalid or sealed")
+    return _build_round21_panel(
+        role=role,
+        feature_schema=feature_schema,
+        partition_policy=partition_policy,
+        feature_rows=feature_rows,
+        outcomes=outcomes,
+        allowed_roles=_DEVELOPMENT_ROLES,
+        dataset_schema_version=POLYMARKET_ROUND21_DATASET_SCHEMA_VERSION,
+    )
+
+
+def build_round21_sealed_test_panel(
+    *,
+    feature_schema: Round21FeatureSchema,
+    partition_policy: Round21PartitionPolicy,
+    feature_rows: Sequence[Round21CausalFeatureRow],
+    outcomes: Sequence[Round21OfficialOutcome],
+    claim_sha256: str,
+    test_access_sha256: str,
+    sealed_test_population_manifest_sha256: str,
+) -> Round21DevelopmentPanel:
+    """Join the test role only after a durable one-use access was consumed."""
+
+    binding = {
+        "claim_sha256": str(claim_sha256 or "").strip().lower(),
+        "test_access_sha256": str(test_access_sha256 or "").strip().lower(),
+        "sealed_test_population_manifest_sha256": str(
+            sealed_test_population_manifest_sha256 or ""
+        )
+        .strip()
+        .lower(),
+    }
+    if any(
+        _SHA256.fullmatch(value) is None or value == _EMPTY_SHA256
+        for value in binding.values()
+    ):
+        raise ValueError("Round 21 sealed-test access identity differs")
+    return _build_round21_panel(
+        role="test",
+        feature_schema=feature_schema,
+        partition_policy=partition_policy,
+        feature_rows=feature_rows,
+        outcomes=outcomes,
+        allowed_roles=frozenset(("test",)),
+        dataset_schema_version=POLYMARKET_ROUND21_SEALED_DATASET_SCHEMA_VERSION,
+        identity_binding=binding,
+    )
+
+
 __all__ = [
     "POLYMARKET_ROUND21_CAMPAIGN_DURATION_MS",
     "POLYMARKET_ROUND21_CONDITION_DURATION_MS",
     "POLYMARKET_ROUND21_DATASET_DESIGN_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_DATASET_DESIGN_SHA256",
     "POLYMARKET_ROUND21_DATASET_SCHEMA_VERSION",
+    "POLYMARKET_ROUND21_SEALED_DATASET_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_DECISION_CADENCE_MS",
     "POLYMARKET_ROUND21_MAXIMUM_LOOKBACK_MS",
     "POLYMARKET_ROUND21_PURGE_MS",
@@ -776,6 +844,7 @@ __all__ = [
     "Round21OfficialOutcome",
     "Round21PartitionPolicy",
     "build_round21_development_panel",
+    "build_round21_sealed_test_panel",
     "load_round21_dataset_design",
     "validate_round21_dataset_design",
 ]

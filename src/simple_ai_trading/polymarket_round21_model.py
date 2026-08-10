@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, replace
 import hashlib
 import json
 import math
+from pathlib import Path
 import re
+from threading import Lock
 
 import lightgbm as lgb
 import numpy as np
@@ -21,6 +24,7 @@ from .lightgbm_backend import (
 )
 from .polymarket_round21_contract import POLYMARKET_ROUND21_CONTRACT_SHA256
 from .polymarket_round21_tcn import (
+    Round21CompiledTCNPredictor,
     fit_round21_tcn,
     predict_round21_tcn,
     validate_round21_tcn_payload,
@@ -28,27 +32,25 @@ from .polymarket_round21_tcn import (
 
 
 POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION = (
-    "polymarket-round21-matched-residual-development-v5"
+    "polymarket-round21-matched-residual-development-v9"
 )
 POLYMARKET_ROUND21_PROBABILITY_BATCH_SCHEMA_VERSION = (
-    "polymarket-round21-probability-batch-v1"
+    "polymarket-round21-probability-batch-v2"
 )
 POLYMARKET_ROUND21_MODEL_SEED = 21_021
 POLYMARKET_ROUND21_MINIMUM_DEVELOPMENT_CONDITIONS = 30
 POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES = 2_000
 POLYMARKET_ROUND21_DEPENDENCE_BLOCK_RULE = "min_n_max_2_ceil_sqrt_n"
 POLYMARKET_ROUND21_HAC_METHOD = "newey_west_bartlett"
-POLYMARKET_ROUND21_PAIRED_INTERVAL_METHOD = (
-    "circular_block_bootstrap_percentile_2000"
-)
+POLYMARKET_ROUND21_PAIRED_INTERVAL_METHOD = "circular_block_bootstrap_percentile_2000"
 POLYMARKET_ROUND21_DATASET_DESIGN_SHA256 = (
     "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba"
 )
 POLYMARKET_ROUND21_MODEL_DESIGN_SHA256 = (
-    "1b64fd08f4c58cb5b1c87ff4f6f97538d258fedf27717be6f3922f93cf5bfb14"
+    "ee81fb773028ffeedb62f34a56e1741075f22d68429c94d1e50e55c3cdc5563e"
 )
 POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256 = (
-    "14f2436cc1091df5d5f6119a0d013f9300fc3c338443c1b684eda5ee8e24d9b0"
+    "049b4f88e1746286176009ab8fe974fcceff2ae3b262d7142f10b996a874a125"
 )
 _ROLES = ("train", "tune_calibration", "tune_selection", "test")
 _LAYERS = ("core", "core_spot", "core_spot_usdm")
@@ -63,8 +65,18 @@ _LIGHTGBM_GRID = (
     {"max_depth": 2, "num_leaves": 3, "min_data_in_leaf": 20},
     {"max_depth": 3, "num_leaves": 7, "min_data_in_leaf": 40},
 )
+_MODEL_BASIS_FEATURES = ("model.market_prior_minus_structural_log_odds",)
+_FEATURE_SUPPORT_SCHEMA_VERSION = "polymarket-round21-feature-support-v1"
+_FEATURE_SUPPORT_ROW_QUANTILE = 0.995
+_FEATURE_SUPPORT_SEQUENCE_ROWS = 16
+_FEATURE_SUPPORT_DECISION_CADENCE_MS = 250
+_FEATURE_SUPPORT_CHUNK_ROWS = 65_536
+_FEATURE_SUPPORT_ACTION = (
+    "block_new_directional_exposure_preserve_scoring_and_risk_reduction"
+)
 
 ProgressCallback = Callable[[str, Mapping[str, object]], None]
+_VERIFIED_ARTIFACT_CAPABILITY = object()
 
 
 def _canonical_json(value: object) -> str:
@@ -79,6 +91,19 @@ def _canonical_json(value: object) -> str:
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    output: dict[str, object] = {}
+    for key, value in pairs:
+        if key in output:
+            raise ValueError("Round 21 model artifact contains duplicate JSON keys")
+        output[key] = value
+    return output
+
+
+def _reject_nonfinite(value: str) -> object:
+    raise ValueError(f"Round 21 model artifact contains {value}")
 
 
 def _array_sha256(value: np.ndarray, *, dtype: str) -> str:
@@ -516,54 +541,62 @@ class Round21InferencePanel:
             raise ValueError("Round 21 inference panel identity differs")
         return rebuilt
 
-    def row_sha256(self, panel_row_index: int) -> str:
-        selected = self.validate()
+    def _row_sha256_validated(self, panel_row_index: int) -> str:
         index = int(panel_row_index)
-        if index < 0 or index >= len(selected.condition_ids):
+        if index < 0 or index >= len(self.condition_ids):
             raise ValueError("Round 21 inference row is unavailable")
         return _canonical_sha256(
             {
                 "schema_version": POLYMARKET_ROUND21_MODEL_SCHEMA_VERSION,
-                "feature_batch_sha256": selected.feature_batch_sha256,
+                "feature_batch_sha256": self.feature_batch_sha256,
                 "row_index": index,
-                "condition_id": str(selected.condition_ids[index]),
-                "event_start_ms": int(selected.event_start_ms[index]),
-                "decision_time_ms": int(selected.decision_time_ms[index]),
+                "condition_id": str(self.condition_ids[index]),
+                "event_start_ms": int(self.event_start_ms[index]),
+                "decision_time_ms": int(self.decision_time_ms[index]),
                 "structural_probability": format(
-                    float(selected.structural_probability[index]),
+                    float(self.structural_probability[index]),
                     ".17g",
                 ),
                 "market_prior_probability": format(
-                    float(selected.market_prior_probability[index]),
+                    float(self.market_prior_probability[index]),
                     ".17g",
                 ),
                 "core_features_sha256": _array_sha256(
-                    selected.core_features[index],
+                    self.core_features[index],
                     dtype="<f4",
                 ),
                 "spot_features_sha256": _array_sha256(
-                    selected.spot_features[index],
+                    self.spot_features[index],
                     dtype="<f4",
                 ),
                 "usdm_features_sha256": _array_sha256(
-                    selected.usdm_features[index],
+                    self.usdm_features[index],
                     dtype="<f4",
                 ),
-                "spot_available": bool(selected.spot_available[index]),
-                "usdm_available": bool(selected.usdm_available[index]),
-                "core_feature_names_sha256": (
-                    selected.core_feature_names_sha256
-                ),
-                "spot_feature_names_sha256": (
-                    selected.spot_feature_names_sha256
-                ),
-                "usdm_feature_names_sha256": (
-                    selected.usdm_feature_names_sha256
-                ),
+                "spot_available": bool(self.spot_available[index]),
+                "usdm_available": bool(self.usdm_available[index]),
+                "core_feature_names_sha256": self.core_feature_names_sha256,
+                "spot_feature_names_sha256": self.spot_feature_names_sha256,
+                "usdm_feature_names_sha256": self.usdm_feature_names_sha256,
                 "target_accessed": False,
                 "trading_authority": False,
             }
         )
+
+    def row_sha256(self, panel_row_index: int) -> str:
+        return self.validate()._row_sha256_validated(panel_row_index)
+
+    def row_sha256_many(
+        self,
+        panel_row_indices: Sequence[int],
+    ) -> tuple[str, ...]:
+        """Hash selected rows after validating the immutable panel once."""
+
+        selected = self.validate()
+        indices = tuple(int(value) for value in panel_row_indices)
+        if len(set(indices)) != len(indices):
+            raise ValueError("Round 21 inference row population contains duplicates")
+        return tuple(selected._row_sha256_validated(index) for index in indices)
 
 
 Round21FeaturePanel = Round21DevelopmentPanel | Round21InferencePanel
@@ -594,13 +627,27 @@ def _layer_matrix(panel: Round21FeaturePanel, layer: str) -> np.ndarray:
         )
     else:
         raise ValueError("Round 21 feature layer is invalid")
-    return np.asarray(values, dtype=np.float32, order="C")
+    structural_log_odds = logit(_probability(panel.structural_probability))
+    market_prior_log_odds = logit(_probability(panel.market_prior_probability))
+    basis = np.asarray(
+        market_prior_log_odds - structural_log_odds,
+        dtype=np.float32,
+        order="C",
+    ).reshape(-1, 1)
+    if not np.all(np.isfinite(basis)):
+        raise ValueError("Round 21 probability basis is invalid")
+    return np.asarray(
+        np.concatenate((values, basis), axis=1),
+        dtype=np.float32,
+        order="C",
+    )
 
 
 def _feature_layer_sha256(panel: Round21FeaturePanel, layer: str) -> str:
     payload: dict[str, object] = {
         "layer": layer,
         "core_feature_names_sha256": panel.core_feature_names_sha256,
+        "model_basis_features": list(_MODEL_BASIS_FEATURES),
     }
     if layer in {"core_spot", "core_spot_usdm"}:
         payload["spot_feature_names_sha256"] = panel.spot_feature_names_sha256
@@ -649,7 +696,7 @@ def _weighted_quantile(
 def _fit_transform(
     matrix: np.ndarray,
     weights: np.ndarray,
-) -> dict[str, list[float]]:
+) -> dict[str, object]:
     lower = np.empty(matrix.shape[1], dtype=np.float64)
     upper = np.empty(matrix.shape[1], dtype=np.float64)
     center = np.empty(matrix.shape[1], dtype=np.float64)
@@ -669,12 +716,188 @@ def _fit_transform(
                 _weighted_quantile(absolute_deviation, weights, 0.5) * 1.482602218505602
             )
         scale[index] = max(robust_scale, 1.0 if lower[index] == upper[index] else 1e-6)
+    matrix32 = np.asarray(matrix, dtype=np.float32, order="C")
+    lower32 = np.asarray(lower, dtype=np.float32)
+    upper32 = np.asarray(upper, dtype=np.float32)
+    scale32 = np.asarray(scale, dtype=np.float32)
+    clipped_fraction, maximum_excess = _feature_support_row_metrics(
+        matrix32,
+        lower=lower32,
+        upper=upper32,
+        scale=scale32,
+    )
     return {
         "lower": lower.tolist(),
         "upper": upper.tolist(),
         "center": center.tolist(),
         "scale": scale.tolist(),
+        "support": {
+            "schema_version": _FEATURE_SUPPORT_SCHEMA_VERSION,
+            "fit_population": "train_only_condition_equal_weighted",
+            "labels_used": False,
+            "row_quantile": format(_FEATURE_SUPPORT_ROW_QUANTILE, ".17g"),
+            "maximum_clipped_feature_fraction": _weighted_quantile(
+                clipped_fraction,
+                weights,
+                _FEATURE_SUPPORT_ROW_QUANTILE,
+            ),
+            "maximum_robust_scale_excess": _weighted_quantile(
+                maximum_excess,
+                weights,
+                _FEATURE_SUPPORT_ROW_QUANTILE,
+            ),
+            "training_rows": len(matrix32),
+            "sequence_contamination_rows": _FEATURE_SUPPORT_SEQUENCE_ROWS,
+            "decision_cadence_ms": _FEATURE_SUPPORT_DECISION_CADENCE_MS,
+            "action": _FEATURE_SUPPORT_ACTION,
+            "test_features_used": False,
+            "live_features_used": False,
+            "trading_authority": False,
+        },
     }
+
+
+def _feature_support_admission(
+    matrix: np.ndarray,
+    transform: Mapping[str, object],
+) -> np.ndarray:
+    lower = np.asarray(transform["lower"], dtype=np.float32)
+    upper = np.asarray(transform["upper"], dtype=np.float32)
+    scale = np.asarray(transform["scale"], dtype=np.float32)
+    support = transform.get("support")
+    values = np.asarray(matrix, dtype=np.float32, order="C")
+    if (
+        values.ndim != 2
+        or lower.shape != (values.shape[1],)
+        or upper.shape != lower.shape
+        or scale.shape != lower.shape
+        or np.any(~np.isfinite(values))
+        or np.any(lower > upper)
+        or np.any(scale <= 0.0)
+        or not isinstance(support, Mapping)
+    ):
+        raise ValueError("Round 21 feature support is invalid")
+    try:
+        maximum_fraction = float(support["maximum_clipped_feature_fraction"])
+        maximum_excess = float(support["maximum_robust_scale_excess"])
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Round 21 feature support is invalid") from exc
+    return _feature_support_admission_values(
+        values,
+        lower=lower,
+        upper=upper,
+        scale=scale,
+        maximum_fraction=maximum_fraction,
+        maximum_excess=maximum_excess,
+    )
+
+
+def _feature_support_admission_values(
+    matrix: np.ndarray,
+    *,
+    lower: np.ndarray,
+    upper: np.ndarray,
+    scale: np.ndarray,
+    maximum_fraction: float,
+    maximum_excess: float,
+) -> np.ndarray:
+    values = np.asarray(matrix, dtype=np.float32, order="C")
+    if (
+        values.ndim != 2
+        or lower.shape != (values.shape[1],)
+        or upper.shape != lower.shape
+        or scale.shape != lower.shape
+        or np.any(~np.isfinite(values))
+        or np.any(lower > upper)
+        or np.any(scale <= 0.0)
+        or not math.isfinite(maximum_fraction)
+        or not 0.0 <= maximum_fraction <= 1.0
+        or not math.isfinite(maximum_excess)
+        or maximum_excess < 0.0
+    ):
+        raise ValueError("Round 21 feature support is invalid")
+    clipped_fraction, row_excess = _feature_support_row_metrics(
+        values,
+        lower=lower,
+        upper=upper,
+        scale=scale,
+    )
+    return np.asarray(
+        (clipped_fraction <= maximum_fraction) & (row_excess <= maximum_excess),
+        dtype=np.bool_,
+    )
+
+
+def _feature_support_row_metrics(
+    matrix: np.ndarray,
+    *,
+    lower: np.ndarray,
+    upper: np.ndarray,
+    scale: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    values = np.asarray(matrix, dtype=np.float32, order="C")
+    if (
+        values.ndim != 2
+        or not len(values)
+        or lower.shape != (values.shape[1],)
+        or upper.shape != lower.shape
+        or scale.shape != lower.shape
+    ):
+        raise ValueError("Round 21 feature support is invalid")
+    clipped_fraction = np.empty(len(values), dtype=np.float64)
+    maximum_excess = np.empty(len(values), dtype=np.float32)
+    feature_count = values.shape[1]
+    for start in range(0, len(values), _FEATURE_SUPPORT_CHUNK_ROWS):
+        end = min(len(values), start + _FEATURE_SUPPORT_CHUNK_ROWS)
+        chunk = values[start:end]
+        outside_count = np.zeros(end - start, dtype=np.int32)
+        chunk_maximum_excess = np.zeros(end - start, dtype=np.float32)
+        for feature_index in range(feature_count):
+            column = chunk[:, feature_index]
+            outside_count += (column < lower[feature_index]) | (
+                column > upper[feature_index]
+            )
+            excess = np.subtract(lower[feature_index], column)
+            upper_excess = np.subtract(column, upper[feature_index])
+            np.maximum(excess, upper_excess, out=excess)
+            np.maximum(excess, np.float32(0.0), out=excess)
+            np.divide(excess, scale[feature_index], out=excess)
+            np.maximum(chunk_maximum_excess, excess, out=chunk_maximum_excess)
+        clipped_fraction[start:end] = outside_count / feature_count
+        maximum_excess[start:end] = chunk_maximum_excess
+    return clipped_fraction, maximum_excess
+
+
+def _sequence_support_admission(
+    base_admission: np.ndarray,
+    condition_ids: np.ndarray,
+    decision_time_ms: np.ndarray,
+) -> np.ndarray:
+    admitted = np.asarray(base_admission, dtype=np.bool_)
+    conditions = np.asarray(condition_ids, dtype=object)
+    decisions = np.asarray(decision_time_ms, dtype=np.int64)
+    if (
+        admitted.ndim != 1
+        or conditions.shape != admitted.shape
+        or decisions.shape != admitted.shape
+        or not len(admitted)
+    ):
+        raise ValueError("Round 21 feature support history is invalid")
+    output = admitted.copy()
+    contaminated_rows = 0
+    for index in range(len(output)):
+        if index == 0 or (
+            conditions[index] != conditions[index - 1]
+            or decisions[index] - decisions[index - 1]
+            != _FEATURE_SUPPORT_DECISION_CADENCE_MS
+        ):
+            contaminated_rows = 0
+        if not admitted[index]:
+            contaminated_rows = _FEATURE_SUPPORT_SEQUENCE_ROWS
+        if contaminated_rows:
+            output[index] = False
+            contaminated_rows -= 1
+    return output
 
 
 def _transform_matrix(
@@ -1063,6 +1286,7 @@ class Round21ProbabilityBatch:
     probability_up: np.ndarray
     lower_up: np.ndarray
     upper_up: np.ndarray
+    feature_support_eligible: np.ndarray
     source_model_artifact_sha256: str
     feature_batch_sha256: str
     prediction_sha256: str
@@ -1079,6 +1303,7 @@ class Round21ProbabilityBatch:
         probability_up: np.ndarray,
         lower_up: np.ndarray,
         upper_up: np.ndarray,
+        feature_support_eligible: np.ndarray,
         source_model_artifact_sha256: str,
         feature_batch_sha256: str,
     ) -> Round21ProbabilityBatch:
@@ -1091,6 +1316,12 @@ class Round21ProbabilityBatch:
         probability = np.array(probability_up, dtype="<f8", order="C", copy=True)
         lower = np.array(lower_up, dtype="<f8", order="C", copy=True)
         upper = np.array(upper_up, dtype="<f8", order="C", copy=True)
+        support_eligible = np.array(
+            feature_support_eligible,
+            dtype=np.bool_,
+            order="C",
+            copy=True,
+        )
         model_sha = str(source_model_artifact_sha256 or "").strip().lower()
         batch_sha = str(feature_batch_sha256 or "").strip().lower()
         if (
@@ -1104,6 +1335,7 @@ class Round21ProbabilityBatch:
             or probability.shape != selected_indices.shape
             or lower.shape != selected_indices.shape
             or upper.shape != selected_indices.shape
+            or support_eligible.shape != selected_indices.shape
             or not np.all(np.isfinite(probability))
             or not np.all(np.isfinite(lower))
             or not np.all(np.isfinite(upper))
@@ -1121,7 +1353,13 @@ class Round21ProbabilityBatch:
             or batch_sha == _EMPTY_SHA256
         ):
             raise ValueError("Round 21 probability batch is invalid")
-        for array in (selected_indices, probability, lower, upper):
+        for array in (
+            selected_indices,
+            probability,
+            lower,
+            upper,
+            support_eligible,
+        ):
             array.setflags(write=False)
         provisional = cls(
             population_layer=layer,
@@ -1131,6 +1369,7 @@ class Round21ProbabilityBatch:
             probability_up=probability,
             lower_up=lower,
             upper_up=upper,
+            feature_support_eligible=support_eligible,
             source_model_artifact_sha256=model_sha,
             feature_batch_sha256=batch_sha,
             prediction_sha256=_EMPTY_SHA256,
@@ -1158,9 +1397,18 @@ class Round21ProbabilityBatch:
             ),
             "lower_up_sha256": _array_sha256(self.lower_up, dtype="<f8"),
             "upper_up_sha256": _array_sha256(self.upper_up, dtype="<f8"),
+            "feature_support_eligible_sha256": _array_sha256(
+                self.feature_support_eligible,
+                dtype="|b1",
+            ),
             "source_model_artifact_sha256": self.source_model_artifact_sha256,
             "feature_batch_sha256": self.feature_batch_sha256,
             "bound_semantics": "calibrated_candidate_disagreement_hull",
+            "feature_support_semantics": (
+                "train_only_condition_equal_weighted_0.995_row_quantile_"
+                "with_16_row_causal_history_contamination"
+            ),
+            "unsupported_action": _FEATURE_SUPPORT_ACTION,
             "formal_coverage_claim": False,
             "trading_authority": False,
         }
@@ -1174,6 +1422,7 @@ class Round21ProbabilityBatch:
             probability_up=self.probability_up,
             lower_up=self.lower_up,
             upper_up=self.upper_up,
+            feature_support_eligible=self.feature_support_eligible,
             source_model_artifact_sha256=self.source_model_artifact_sha256,
             feature_batch_sha256=self.feature_batch_sha256,
         )
@@ -1185,6 +1434,7 @@ class Round21ProbabilityBatch:
                     self.probability_up,
                     self.lower_up,
                     self.upper_up,
+                    self.feature_support_eligible,
                 )
             )
             or self.population_layer != rebuilt.population_layer
@@ -1194,6 +1444,10 @@ class Round21ProbabilityBatch:
             or not np.array_equal(self.probability_up, rebuilt.probability_up)
             or not np.array_equal(self.lower_up, rebuilt.lower_up)
             or not np.array_equal(self.upper_up, rebuilt.upper_up)
+            or not np.array_equal(
+                self.feature_support_eligible,
+                rebuilt.feature_support_eligible,
+            )
             or self.source_model_artifact_sha256 != rebuilt.source_model_artifact_sha256
             or self.feature_batch_sha256 != rebuilt.feature_batch_sha256
             or self.prediction_sha256 != rebuilt.prediction_sha256
@@ -1213,6 +1467,13 @@ class Round21ProbabilityBatch:
             float(selected.lower_up[position]),
             float(selected.upper_up[position]),
         )
+
+    def support_eligible(self, panel_row_index: int) -> bool:
+        selected = self.validated()
+        matches = np.flatnonzero(selected.indices == int(panel_row_index))
+        if len(matches) != 1:
+            raise ValueError("Round 21 probability row is unavailable")
+        return bool(selected.feature_support_eligible[int(matches[0])])
 
 
 def _condition_losses(
@@ -1283,9 +1544,7 @@ def _hac_standard_error(values: np.ndarray) -> float:
     lag_count = _dependence_block_length(len(selected)) - 1
     long_run_variance = float(np.dot(centered, centered) / len(selected))
     for lag in range(1, lag_count + 1):
-        covariance = float(
-            np.dot(centered[lag:], centered[:-lag]) / len(selected)
-        )
+        covariance = float(np.dot(centered[lag:], centered[:-lag]) / len(selected))
         bartlett_weight = 1.0 - lag / (lag_count + 1.0)
         long_run_variance += 2.0 * bartlett_weight * covariance
     return float(math.sqrt(max(0.0, long_run_variance) / len(selected)))
@@ -1673,14 +1932,26 @@ def _dataset_identity(panel: Round21DevelopmentPanel) -> dict[str, object]:
     }
 
 
-def fit_round21_development(
+def round21_development_dataset_identity(
+    panel: Round21DevelopmentPanel,
+) -> dict[str, object]:
+    """Return the canonical public identity for one validated development panel."""
+
+    return _dataset_identity(panel.validate())
+
+
+def validate_round21_development_partitions(
     *,
     train: Round21DevelopmentPanel,
     tune_calibration: Round21DevelopmentPanel,
     tune_selection: Round21DevelopmentPanel,
-    compute_backend: str = "auto",
-    progress: ProgressCallback | None = None,
-) -> dict[str, object]:
+) -> tuple[
+    Round21DevelopmentPanel,
+    Round21DevelopmentPanel,
+    Round21DevelopmentPanel,
+]:
+    """Validate the shared target-bearing development partition boundary."""
+
     train = train.validate()
     tune_calibration = tune_calibration.validate()
     tune_selection = tune_selection.validate()
@@ -1747,6 +2018,84 @@ def fit_round21_development(
         != 1
     ):
         raise ValueError("Round 21 development partition boundary differs")
+    return train, tune_calibration, tune_selection
+
+
+def _validated_probability_basis_gate(
+    value: Mapping[str, object],
+    *,
+    train: Round21DevelopmentPanel,
+    tune_calibration: Round21DevelopmentPanel,
+    tune_selection: Round21DevelopmentPanel,
+    require_exact_dataset_identity: bool,
+) -> dict[str, object]:
+    from .polymarket_round21_ablation import (  # Avoid a module-import cycle.
+        validate_round21_probability_basis_ablation_result,
+    )
+
+    result = validate_round21_probability_basis_ablation_result(value)
+    if result["basis_accepted"] is not True:
+        raise ValueError("Round 21 probability-basis gate is not accepted")
+    datasets = result["dataset_and_partition"]
+    shared_identity_keys = {
+        "role",
+        "row_count",
+        "condition_count",
+        "first_event_start_ms",
+        "last_event_start_ms",
+        "target_manifest_sha256",
+        "dataset_design_sha256",
+    }
+    for role, panel in (
+        ("train", train),
+        ("tune_calibration", tune_calibration),
+        ("tune_selection", tune_selection),
+    ):
+        expected = _dataset_identity(panel)
+        observed = datasets[role]
+        matches = (
+            observed == expected
+            if require_exact_dataset_identity
+            else all(observed[key] == expected[key] for key in shared_identity_keys)
+        )
+        if not matches:
+            raise ValueError("Round 21 probability-basis dataset identity differs")
+    return {
+        "schema_version": "polymarket-round21-probability-basis-gate-binding-v1",
+        "result_sha256": result["result_sha256"],
+        "design_sha256": result["design_sha256"],
+        "model_design_sha256": result["model_design_sha256"],
+        "source_evidence": deepcopy(result["source_evidence"]),
+        "dataset_and_partition": deepcopy(datasets),
+        "basis_accepted": True,
+    }
+
+
+def fit_round21_development(
+    *,
+    train: Round21DevelopmentPanel,
+    tune_calibration: Round21DevelopmentPanel,
+    tune_selection: Round21DevelopmentPanel,
+    basis_ablation_result: Mapping[str, object],
+    compute_backend: str = "auto",
+    feature_layers: Sequence[str] = _LAYERS,
+    progress: ProgressCallback | None = None,
+) -> dict[str, object]:
+    train, tune_calibration, tune_selection = validate_round21_development_partitions(
+        train=train,
+        tune_calibration=tune_calibration,
+        tune_selection=tune_selection,
+    )
+    requested_layers = tuple(str(layer or "").strip() for layer in feature_layers)
+    if requested_layers not in {("core",), _LAYERS}:
+        raise ValueError("Round 21 development layer request differs")
+    probability_basis_gate = _validated_probability_basis_gate(
+        basis_ablation_result,
+        train=train,
+        tune_calibration=tune_calibration,
+        tune_selection=tune_selection,
+        require_exact_dataset_identity=requested_layers == ("core",),
+    )
     requested_backend = str(compute_backend or "auto").strip().lower()
     resolved_backend = resolve_backend(
         requested_backend,
@@ -1771,7 +2120,7 @@ def fit_round21_development(
         ),
     )
     layer_results: dict[str, object] = {}
-    for layer_index, layer in enumerate(_LAYERS):
+    for layer_index, layer in enumerate(requested_layers):
         records, selection_indices = _fit_layer_candidates(
             train,
             tune_calibration,
@@ -1892,6 +2241,7 @@ def fit_round21_development(
         "contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
         "dataset_design_sha256": POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
         "model_design_sha256": POLYMARKET_ROUND21_MODEL_DESIGN_SHA256,
+        "probability_basis_gate": probability_basis_gate,
         "dataset_and_partition": {
             "train": _dataset_identity(train),
             "tune_calibration": _dataset_identity(tune_calibration),
@@ -1905,6 +2255,7 @@ def fit_round21_development(
             for control in controls
         ],
         "strongest_control_id": strongest_control["control_id"],
+        "trained_layers": list(requested_layers),
         "layers": layer_results,
         "preprocessing": {
             "fit_population": "train_only_condition_equal_weighted",
@@ -1913,6 +2264,23 @@ def fit_round21_development(
             "scale": "weighted_iqr_over_1.3489795003921634",
             "constant_feature_scale": "1",
             "optional_missingness": "explicit_zero_with_availability_gate",
+            "feature_support": {
+                "schema_version": _FEATURE_SUPPORT_SCHEMA_VERSION,
+                "row_quantile": format(_FEATURE_SUPPORT_ROW_QUANTILE, ".17g"),
+                "metrics": [
+                    "clipped_feature_fraction",
+                    "maximum_robust_scale_excess",
+                ],
+                "sequence_contamination_rows": _FEATURE_SUPPORT_SEQUENCE_ROWS,
+                "decision_cadence_ms": _FEATURE_SUPPORT_DECISION_CADENCE_MS,
+                "action": _FEATURE_SUPPORT_ACTION,
+                "proper_scoring_population_filtered": False,
+                "risk_reducing_actions_blocked": False,
+            },
+            "model_basis": (
+                "market_prior_log_odds_minus_structural_log_odds_clipped_to_"
+                "probability_floor"
+            ),
         },
         "selection_rule": {
             "primary_metric": "condition_equal_log_loss",
@@ -1921,9 +2289,7 @@ def fit_round21_development(
                 "paired_candidate_minus_best_condition_log_loss"
             ),
             "log_loss_standard_error": POLYMARKET_ROUND21_HAC_METHOD,
-            "dependence_block_length_rule": (
-                POLYMARKET_ROUND21_DEPENDENCE_BLOCK_RULE
-            ),
+            "dependence_block_length_rule": (POLYMARKET_ROUND21_DEPENDENCE_BLOCK_RULE),
             "paired_interval": POLYMARKET_ROUND21_PAIRED_INTERVAL_METHOD,
             "optional_layers_use_exact_matched_core_train_population": True,
             "optional_layers_use_exact_matched_core_early_stop_population": True,
@@ -1957,6 +2323,7 @@ def _valid_transform(value: object) -> bool:
         "upper",
         "center",
         "scale",
+        "support",
     }:
         return False
     try:
@@ -1965,6 +2332,29 @@ def _valid_transform(value: object) -> bool:
         center = np.asarray(value["center"], dtype=np.float64)
         scale = np.asarray(value["scale"], dtype=np.float64)
     except (TypeError, ValueError):
+        return False
+    support = value.get("support")
+    if not isinstance(support, Mapping) or set(support) != {
+        "schema_version",
+        "fit_population",
+        "labels_used",
+        "row_quantile",
+        "maximum_clipped_feature_fraction",
+        "maximum_robust_scale_excess",
+        "training_rows",
+        "sequence_contamination_rows",
+        "decision_cadence_ms",
+        "action",
+        "test_features_used",
+        "live_features_used",
+        "trading_authority",
+    }:
+        return False
+    try:
+        maximum_fraction = float(support["maximum_clipped_feature_fraction"])
+        maximum_excess = float(support["maximum_robust_scale_excess"])
+        training_rows = int(support["training_rows"])
+    except (KeyError, TypeError, ValueError, OverflowError):
         return False
     return bool(
         lower.ndim == 1
@@ -1979,6 +2369,21 @@ def _valid_transform(value: object) -> bool:
         and np.all(lower <= center)
         and np.all(center <= upper)
         and np.all(scale > 0)
+        and support["schema_version"] == _FEATURE_SUPPORT_SCHEMA_VERSION
+        and support["fit_population"] == "train_only_condition_equal_weighted"
+        and support["labels_used"] is False
+        and support["row_quantile"] == format(_FEATURE_SUPPORT_ROW_QUANTILE, ".17g")
+        and math.isfinite(maximum_fraction)
+        and 0.0 <= maximum_fraction <= 1.0
+        and math.isfinite(maximum_excess)
+        and maximum_excess >= 0.0
+        and training_rows > 0
+        and support["sequence_contamination_rows"] == _FEATURE_SUPPORT_SEQUENCE_ROWS
+        and support["decision_cadence_ms"] == _FEATURE_SUPPORT_DECISION_CADENCE_MS
+        and support["action"] == _FEATURE_SUPPORT_ACTION
+        and support["test_features_used"] is False
+        and support["live_features_used"] is False
+        and support["trading_authority"] is False
     )
 
 
@@ -1991,6 +2396,7 @@ def _artifact_feature_layer_sha256(
         "core_feature_names_sha256": dataset_and_partition.get(
             "core_feature_names_sha256"
         ),
+        "model_basis_features": list(_MODEL_BASIS_FEATURES),
     }
     if layer in {"core_spot", "core_spot_usdm"}:
         payload["spot_feature_names_sha256"] = dataset_and_partition.get(
@@ -2010,6 +2416,8 @@ def _valid_candidate_ledger(
     feature_layer: str,
     feature_names_sha256: str,
     candidate_namespace: str,
+    lightgbm_backend_kind: str,
+    lightgbm_backend_device: str,
     tcn_backend_kind: str,
     tcn_backend_device: str,
 ) -> bool:
@@ -2105,8 +2513,8 @@ def _valid_candidate_ledger(
                 or not 1 <= best_iteration <= 512
                 or not str(model.get("model_string") or "")
                 or not 1 <= len(str(model.get("lightgbm_version") or "")) <= 64
-                or model.get("backend_kind") not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
-                or not str(model.get("backend_device") or "")
+                or model.get("backend_kind") != lightgbm_backend_kind
+                or model.get("backend_device") != lightgbm_backend_device
             ):
                 return False
         else:
@@ -2192,13 +2600,92 @@ def _validated_selected_candidate_id(value: object) -> str:
     return str(selected.get("candidate_id") or "")
 
 
+def _valid_probability_basis_gate_binding(
+    value: object,
+    *,
+    dataset_and_partition: object,
+    trained_layers: object,
+) -> bool:
+    from .polymarket_round21_ablation import (
+        POLYMARKET_ROUND21_BASIS_ABLATION_DESIGN_SHA256,
+        POLYMARKET_ROUND21_BASIS_ABLATION_PARENT_MODEL_DESIGN_SHA256,
+    )
+
+    if (
+        not isinstance(value, Mapping)
+        or set(value)
+        != {
+            "schema_version",
+            "result_sha256",
+            "design_sha256",
+            "model_design_sha256",
+            "source_evidence",
+            "dataset_and_partition",
+            "basis_accepted",
+        }
+        or not isinstance(dataset_and_partition, Mapping)
+        or not isinstance(trained_layers, list)
+    ):
+        return False
+    source = value.get("source_evidence")
+    gate_datasets = value.get("dataset_and_partition")
+    if (
+        value.get("schema_version")
+        != "polymarket-round21-probability-basis-gate-binding-v1"
+        or _SHA256.fullmatch(str(value.get("result_sha256") or "")) is None
+        or value.get("design_sha256") != POLYMARKET_ROUND21_BASIS_ABLATION_DESIGN_SHA256
+        or value.get("model_design_sha256")
+        != POLYMARKET_ROUND21_BASIS_ABLATION_PARENT_MODEL_DESIGN_SHA256
+        or value.get("basis_accepted") is not True
+        or not isinstance(source, Mapping)
+        or set(source)
+        != {
+            "publication_manifest_sha256",
+            "terminal_transport_manifest_sha256",
+        }
+        or any(
+            _SHA256.fullmatch(str(source.get(key) or "")) is None
+            or str(source.get(key)) == _EMPTY_SHA256
+            for key in source
+        )
+        or not isinstance(gate_datasets, Mapping)
+        or set(gate_datasets) != {"train", "tune_calibration", "tune_selection"}
+    ):
+        return False
+    exact = tuple(trained_layers) == ("core",)
+    shared_identity_keys = {
+        "role",
+        "row_count",
+        "condition_count",
+        "first_event_start_ms",
+        "last_event_start_ms",
+        "target_manifest_sha256",
+        "dataset_design_sha256",
+    }
+    for role in ("train", "tune_calibration", "tune_selection"):
+        observed = gate_datasets.get(role)
+        expected = dataset_and_partition.get(role)
+        if not isinstance(observed, Mapping) or not isinstance(expected, Mapping):
+            return False
+        if exact:
+            if observed != expected:
+                return False
+        elif any(
+            observed.get(key) != expected.get(key) for key in shared_identity_keys
+        ):
+            return False
+    return True
+
+
 def validate_round21_development_artifact(
     value: Mapping[str, object],
 ) -> dict[str, object]:
     payload = dict(value)
     claimed = str(payload.pop("artifact_sha256", "")).strip().lower()
     layers = payload.get("layers")
+    trained_layers = payload.get("trained_layers")
     controls = payload.get("controls")
+    probability_basis_gate = payload.get("probability_basis_gate")
     dataset_and_partition = payload.get("dataset_and_partition")
     preprocessing = payload.get("preprocessing")
     selection_rule = payload.get("selection_rule")
@@ -2264,7 +2751,15 @@ def validate_round21_development_artifact(
         or len(controls) != 5
         or not isinstance(dataset_and_partition, Mapping)
         or not isinstance(layers, Mapping)
-        or set(layers) != set(_LAYERS)
+        or not isinstance(trained_layers, list)
+        or tuple(trained_layers) not in {("core",), _LAYERS}
+        or set(layers) != set(trained_layers)
+        or tuple(sorted(layers, key=_LAYERS.index)) != tuple(trained_layers)
+        or not _valid_probability_basis_gate_binding(
+            probability_basis_gate,
+            dataset_and_partition=dataset_and_partition,
+            trained_layers=trained_layers,
+        )
         or not valid_compute
         or preprocessing
         != {
@@ -2274,6 +2769,23 @@ def validate_round21_development_artifact(
             "scale": "weighted_iqr_over_1.3489795003921634",
             "constant_feature_scale": "1",
             "optional_missingness": "explicit_zero_with_availability_gate",
+            "feature_support": {
+                "schema_version": _FEATURE_SUPPORT_SCHEMA_VERSION,
+                "row_quantile": format(_FEATURE_SUPPORT_ROW_QUANTILE, ".17g"),
+                "metrics": [
+                    "clipped_feature_fraction",
+                    "maximum_robust_scale_excess",
+                ],
+                "sequence_contamination_rows": _FEATURE_SUPPORT_SEQUENCE_ROWS,
+                "decision_cadence_ms": _FEATURE_SUPPORT_DECISION_CADENCE_MS,
+                "action": _FEATURE_SUPPORT_ACTION,
+                "proper_scoring_population_filtered": False,
+                "risk_reducing_actions_blocked": False,
+            },
+            "model_basis": (
+                "market_prior_log_odds_minus_structural_log_odds_clipped_to_"
+                "probability_floor"
+            ),
         }
         or selection_rule
         != {
@@ -2283,9 +2795,7 @@ def validate_round21_development_artifact(
                 "paired_candidate_minus_best_condition_log_loss"
             ),
             "log_loss_standard_error": POLYMARKET_ROUND21_HAC_METHOD,
-            "dependence_block_length_rule": (
-                POLYMARKET_ROUND21_DEPENDENCE_BLOCK_RULE
-            ),
+            "dependence_block_length_rule": (POLYMARKET_ROUND21_DEPENDENCE_BLOCK_RULE),
             "paired_interval": POLYMARKET_ROUND21_PAIRED_INTERVAL_METHOD,
             "optional_layers_use_exact_matched_core_train_population": True,
             "optional_layers_use_exact_matched_core_early_stop_population": True,
@@ -2303,6 +2813,8 @@ def validate_round21_development_artifact(
                     layer_name,
                 ),
                 candidate_namespace=layer_name,
+                lightgbm_backend_kind=lightgbm_kind,
+                lightgbm_backend_device=lightgbm_device,
                 tcn_backend_kind=tcn_kind,
                 tcn_backend_device=tcn_device,
             )
@@ -2329,6 +2841,8 @@ def validate_round21_development_artifact(
                             "core",
                         ),
                         candidate_namespace=f"{layer_name}-matched-core",
+                        lightgbm_backend_kind=lightgbm_kind,
+                        lightgbm_backend_device=lightgbm_device,
                         tcn_backend_kind=tcn_kind,
                         tcn_backend_device=tcn_device,
                     )
@@ -2349,6 +2863,507 @@ def validate_round21_development_artifact(
     return {**payload, "artifact_sha256": claimed}
 
 
+def load_round21_development_artifact(
+    path: str | Path,
+) -> dict[str, object]:
+    """Load one bounded strict-JSON Round 21 model artifact."""
+
+    source = Path(path).expanduser()
+    if source.is_symlink():
+        raise ValueError("Round 21 model artifact is unavailable")
+    selected = source.resolve()
+    if not selected.is_file():
+        raise ValueError("Round 21 model artifact is unavailable")
+    try:
+        with selected.open("rb") as handle:
+            raw = handle.read(64 * 1024 * 1024 + 1)
+        if not 2 <= len(raw) <= 64 * 1024 * 1024:
+            raise ValueError("Round 21 model artifact is unavailable")
+        value = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_strict_object,
+            parse_constant=_reject_nonfinite,
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Round 21 model artifact is invalid") from exc
+    if not isinstance(value, Mapping):
+        raise ValueError("Round 21 model artifact is invalid")
+    return validate_round21_development_artifact(value)
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedRound21DevelopmentArtifact:
+    """File- and content-verified Round 21 model capability."""
+
+    artifact: Mapping[str, object]
+    path: Path
+    file_sha256: str
+    _capability: object
+
+    def __post_init__(self) -> None:
+        if self._capability is not _VERIFIED_ARTIFACT_CAPABILITY:
+            raise ValueError("Round 21 model artifact was not verified")
+
+    @property
+    def artifact_sha256(self) -> str:
+        return str(self.artifact["artifact_sha256"])
+
+
+def load_verified_round21_development_artifact(
+    path: str | Path,
+    *,
+    expected_file_sha256: str,
+) -> VerifiedRound21DevelopmentArtifact:
+    """Bind exact file bytes to the validated model's canonical identity."""
+
+    expected = str(expected_file_sha256 or "").strip().lower()
+    if _SHA256.fullmatch(expected) is None:
+        raise ValueError("Round 21 model evidence hash is invalid")
+    source = Path(path).expanduser()
+    if source.is_symlink():
+        raise ValueError("Round 21 model artifact is unavailable")
+    selected = source.resolve()
+    try:
+        with selected.open("rb") as handle:
+            raw = handle.read(64 * 1024 * 1024 + 1)
+    except OSError as exc:
+        raise ValueError("Round 21 model artifact is unavailable") from exc
+    if not 2 <= len(raw) <= 64 * 1024 * 1024:
+        raise ValueError("Round 21 model artifact is unavailable")
+    actual = hashlib.sha256(raw).hexdigest()
+    if actual != expected:
+        raise ValueError("Round 21 model evidence hash differs")
+    try:
+        value = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_strict_object,
+            parse_constant=_reject_nonfinite,
+        )
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Round 21 model artifact is invalid") from exc
+    if not isinstance(value, Mapping):
+        raise ValueError("Round 21 model artifact is invalid")
+    artifact = validate_round21_development_artifact(value)
+    return VerifiedRound21DevelopmentArtifact(
+        artifact=artifact,
+        path=selected,
+        file_sha256=actual,
+        _capability=_VERIFIED_ARTIFACT_CAPABILITY,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class _CompiledRound21Candidate:
+    candidate_id: str
+    family: str
+    population_layer: str
+    feature_layer: str
+    feature_names_sha256: str
+    lower: np.ndarray
+    upper: np.ndarray
+    center: np.ndarray
+    scale: np.ndarray
+    maximum_clipped_feature_fraction: float
+    maximum_robust_scale_excess: float
+    support_identity_sha256: str
+    intercept: float
+    coefficient: np.ndarray | None
+    booster: lgb.Booster | None
+    tcn: Round21CompiledTCNPredictor | None
+    calibration_intercept: float
+    calibration_slope: float
+
+    @classmethod
+    def from_model(
+        cls,
+        candidate_id: str,
+        model: Mapping[str, object],
+    ) -> _CompiledRound21Candidate:
+        family = str(model.get("family") or "")
+        transform = model.get("transform")
+        calibration = model.get("calibration")
+        if not isinstance(transform, Mapping) or not isinstance(
+            calibration,
+            Mapping,
+        ):
+            raise ValueError("Round 21 compiled candidate is unavailable")
+        arrays = tuple(
+            np.asarray(transform[name], dtype=np.float32).copy()
+            for name in ("lower", "upper", "center", "scale")
+        )
+        lower, upper, center, scale = arrays
+        support = transform.get("support")
+        if (
+            lower.ndim != 1
+            or not len(lower)
+            or any(value.shape != lower.shape for value in arrays[1:])
+            or np.any(lower > upper)
+            or np.any(scale <= 0)
+            or not all(np.all(np.isfinite(value)) for value in arrays)
+            or not isinstance(support, Mapping)
+        ):
+            raise ValueError("Round 21 compiled transform differs")
+        try:
+            maximum_fraction = float(support["maximum_clipped_feature_fraction"])
+            maximum_excess = float(support["maximum_robust_scale_excess"])
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("Round 21 compiled transform differs") from exc
+        if (
+            not math.isfinite(maximum_fraction)
+            or not 0.0 <= maximum_fraction <= 1.0
+            or not math.isfinite(maximum_excess)
+            or maximum_excess < 0.0
+        ):
+            raise ValueError("Round 21 compiled transform differs")
+        for value in arrays:
+            value.setflags(write=False)
+        coefficient: np.ndarray | None = None
+        booster: lgb.Booster | None = None
+        tcn: Round21CompiledTCNPredictor | None = None
+        intercept = 0.0
+        if family == "logistic_residual":
+            coefficient = np.asarray(
+                model.get("coefficient"),
+                dtype=np.float32,
+            ).copy()
+            if coefficient.shape != lower.shape or not np.all(np.isfinite(coefficient)):
+                raise ValueError("Round 21 compiled coefficient differs")
+            coefficient.setflags(write=False)
+            intercept = float(model.get("intercept"))
+        elif family == "lightgbm_residual":
+            booster = lgb.Booster(model_str=str(model.get("model_string") or ""))
+        elif family == "causal_tcn_residual":
+            tcn = Round21CompiledTCNPredictor(
+                model,
+                feature_width=len(lower),
+            )
+        else:
+            raise ValueError("Round 21 compiled model family differs")
+        calibration_intercept = float(calibration.get("intercept"))
+        calibration_slope = float(calibration.get("slope"))
+        if (
+            not math.isfinite(intercept)
+            or not math.isfinite(calibration_intercept)
+            or not math.isfinite(calibration_slope)
+            or calibration_slope < 0
+        ):
+            raise ValueError("Round 21 compiled calibration differs")
+        return cls(
+            candidate_id=str(candidate_id),
+            family=family,
+            population_layer=str(model.get("population_layer") or ""),
+            feature_layer=str(model.get("feature_layer") or ""),
+            feature_names_sha256=str(model.get("feature_names_sha256") or ""),
+            lower=lower,
+            upper=upper,
+            center=center,
+            scale=scale,
+            maximum_clipped_feature_fraction=maximum_fraction,
+            maximum_robust_scale_excess=maximum_excess,
+            support_identity_sha256=_canonical_sha256(
+                {
+                    "feature_layer": str(model.get("feature_layer") or ""),
+                    "lower": transform["lower"],
+                    "upper": transform["upper"],
+                    "scale": transform["scale"],
+                    "support": support,
+                }
+            ),
+            intercept=intercept,
+            coefficient=coefficient,
+            booster=booster,
+            tcn=tcn,
+            calibration_intercept=calibration_intercept,
+            calibration_slope=calibration_slope,
+        )
+
+    def _transform(self, matrix: np.ndarray, *, normalize: bool) -> np.ndarray:
+        if matrix.ndim != 2 or matrix.shape[1] != len(self.lower):
+            raise ValueError("Round 21 compiled feature width differs")
+        output = np.asarray(matrix, dtype=np.float32, order="C").copy()
+        np.clip(output, self.lower, self.upper, out=output)
+        if normalize:
+            np.subtract(output, self.center, out=output)
+            np.divide(output, self.scale, out=output)
+        return output
+
+    def support_admission(self, matrix: np.ndarray) -> np.ndarray:
+        return _feature_support_admission_values(
+            matrix,
+            lower=self.lower,
+            upper=self.upper,
+            scale=self.scale,
+            maximum_fraction=self.maximum_clipped_feature_fraction,
+            maximum_excess=self.maximum_robust_scale_excess,
+        )
+
+    def predict(
+        self,
+        panel: Round21FeaturePanel,
+        *,
+        include_support: bool,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+        if (
+            self.population_layer not in _LAYERS
+            or self.feature_layer not in _LAYERS
+            or self.feature_names_sha256
+            != _feature_layer_sha256(panel, self.feature_layer)
+        ):
+            raise ValueError("Round 21 compiled model layer identity differs")
+        indices = _selected_indices(panel, self.population_layer)
+        matrix = _layer_matrix(panel, self.feature_layer)[indices]
+        offset = logit(_probability(panel.structural_probability[indices]))
+        if self.family == "logistic_residual":
+            if self.coefficient is None:
+                raise RuntimeError("Round 21 compiled logistic is unavailable")
+            values = self._transform(matrix, normalize=True)
+            raw = _probability(
+                expit(
+                    offset
+                    + self.intercept
+                    + np.asarray(values @ self.coefficient, dtype=np.float64)
+                )
+            )
+        elif self.family == "lightgbm_residual":
+            if self.booster is None:
+                raise RuntimeError("Round 21 compiled LightGBM is unavailable")
+            values = self._transform(matrix, normalize=False)
+            raw = _probability(
+                expit(
+                    offset
+                    + np.asarray(
+                        self.booster.predict(values, raw_score=True),
+                        dtype=np.float64,
+                    )
+                )
+            )
+        else:
+            if self.tcn is None:
+                raise RuntimeError("Round 21 compiled TCN is unavailable")
+            values = self._transform(matrix, normalize=True)
+            raw = self.tcn.predict(
+                matrix=values,
+                structural_log_odds=offset,
+                condition_ids=panel.condition_ids[indices],
+                decision_time_ms=panel.decision_time_ms[indices],
+            )
+        return (
+            indices,
+            _probability(
+                expit(
+                    self.calibration_intercept
+                    + self.calibration_slope * logit(_probability(raw))
+                )
+            ),
+            self.support_admission(matrix) if include_support else None,
+        )
+
+
+class Round21CompiledProbabilityPredictor:
+    """Validate and compile one frozen probability hull for repeated use."""
+
+    def __init__(
+        self,
+        artifact: Mapping[str, object],
+        *,
+        population_layer: str,
+        matched_core_for_layer: str | None = None,
+    ) -> None:
+        selected_artifact = validate_round21_development_artifact(artifact)
+        layer_name = str(population_layer or "").strip()
+        matched_layer = str(matched_core_for_layer or "").strip()
+        layers = selected_artifact.get("layers")
+        if not isinstance(layers, Mapping) or layer_name not in _LAYERS:
+            raise ValueError("Round 21 probability layer is invalid")
+        source_layer_name = matched_layer or layer_name
+        if matched_layer and (layer_name != "core" or matched_layer not in _LAYERS[1:]):
+            raise ValueError("Round 21 matched core probability layer is invalid")
+        layer = layers.get(source_layer_name)
+        if not isinstance(layer, Mapping):
+            raise ValueError("Round 21 probability layer is unavailable")
+        if matched_layer:
+            ledgers = [layer.get("matched_core_candidate_ledger")]
+            selected_candidate_id = str(
+                layer.get("matched_core_selected_candidate_id") or ""
+            )
+        else:
+            ledgers = [layer.get("candidate_ledger")]
+            selected_candidate_id = str(layer.get("selected_candidate_id") or "")
+        if not matched_layer and layer_name != "core":
+            ledgers.append(layer.get("matched_core_candidate_ledger"))
+        candidates: list[_CompiledRound21Candidate] = []
+        for ledger in ledgers:
+            if not isinstance(ledger, list):
+                raise ValueError("Round 21 probability candidate ledger is unavailable")
+            for record in ledger:
+                if not isinstance(record, Mapping) or not isinstance(
+                    record.get("model"),
+                    Mapping,
+                ):
+                    raise ValueError("Round 21 probability candidate is unavailable")
+                candidates.append(
+                    _CompiledRound21Candidate.from_model(
+                        str(record.get("candidate_id") or ""),
+                        record["model"],
+                    )
+                )
+        dataset_identity = selected_artifact.get("dataset_and_partition")
+        if not isinstance(dataset_identity, Mapping):
+            raise ValueError("Round 21 probability dataset identity is unavailable")
+        self.population_layer = layer_name
+        self.selected_candidate_id = selected_candidate_id
+        self.candidate_ids = tuple(item.candidate_id for item in candidates)
+        self.artifact_sha256 = str(selected_artifact["artifact_sha256"])
+        self.core_feature_names_sha256 = str(
+            dataset_identity.get("core_feature_names_sha256") or ""
+        )
+        self.spot_feature_names_sha256 = str(
+            dataset_identity.get("spot_feature_names_sha256") or ""
+        )
+        self.usdm_feature_names_sha256 = str(
+            dataset_identity.get("usdm_feature_names_sha256") or ""
+        )
+        self._candidates = tuple(candidates)
+        tcn_predictors = tuple(item.tcn for item in candidates if item.tcn is not None)
+        training_backends = {
+            (item.training_backend_kind, item.training_backend_device)
+            for item in tcn_predictors
+        }
+        runtime_backends = {
+            (item.backend.kind, item.backend.device) for item in tcn_predictors
+        }
+        if (
+            not tcn_predictors
+            or len(training_backends) != 1
+            or len(runtime_backends) != 1
+        ):
+            raise RuntimeError("Round 21 TCN runtime provenance differs")
+        (
+            self.tcn_training_backend_kind,
+            self.tcn_training_backend_device,
+        ) = next(iter(training_backends))
+        (
+            self.tcn_runtime_backend_kind,
+            self.tcn_runtime_backend_device,
+        ) = next(iter(runtime_backends))
+        self.tcn_backend_substituted = any(
+            item.backend_substituted for item in tcn_predictors
+        )
+        self.tcn_accelerator_fallback = any(
+            item.accelerator_fallback for item in tcn_predictors
+        )
+        self._lock = Lock()
+
+    def predict(self, panel: Round21FeaturePanel) -> Round21ProbabilityBatch:
+        selected_panel = panel.validate()
+        selected_indices: np.ndarray | None = None
+        point: np.ndarray | None = None
+        lower: np.ndarray | None = None
+        upper: np.ndarray | None = None
+        support_eligible: np.ndarray | None = None
+        support_cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+        with self._lock:
+            for candidate in self._candidates:
+                cached_support = support_cache.get(candidate.support_identity_sha256)
+                indices, prediction, candidate_support = candidate.predict(
+                    selected_panel,
+                    include_support=cached_support is None,
+                )
+                if cached_support is None:
+                    if candidate_support is None:
+                        raise AssertionError(
+                            "Round 21 candidate support is unavailable"
+                        )
+                    support_cache[candidate.support_identity_sha256] = (
+                        indices,
+                        candidate_support,
+                    )
+                else:
+                    support_indices, candidate_support = cached_support
+                    if not np.array_equal(indices, support_indices):
+                        raise RuntimeError(
+                            "Round 21 feature support populations differ"
+                        )
+                if selected_indices is None:
+                    selected_indices = indices
+                    lower = prediction.copy()
+                    upper = prediction.copy()
+                    support_eligible = candidate_support.copy()
+                elif not np.array_equal(indices, selected_indices):
+                    raise RuntimeError("Round 21 probability populations differ")
+                else:
+                    if lower is None or upper is None or support_eligible is None:
+                        raise AssertionError(
+                            "Round 21 probability bounds are unavailable"
+                        )
+                    np.minimum(lower, prediction, out=lower)
+                    np.maximum(upper, prediction, out=upper)
+                    np.logical_and(
+                        support_eligible,
+                        candidate_support,
+                        out=support_eligible,
+                    )
+                if candidate.candidate_id == self.selected_candidate_id:
+                    point = prediction.copy()
+        if (
+            selected_indices is None
+            or point is None
+            or lower is None
+            or upper is None
+            or support_eligible is None
+        ):
+            raise RuntimeError("Round 21 probability batch is unavailable")
+        support_eligible = _sequence_support_admission(
+            support_eligible,
+            selected_panel.condition_ids[selected_indices],
+            selected_panel.decision_time_ms[selected_indices],
+        )
+        feature_batch_sha = (
+            selected_panel.dataset_sha256
+            if isinstance(selected_panel, Round21DevelopmentPanel)
+            else selected_panel.feature_batch_sha256
+        )
+        return Round21ProbabilityBatch.create(
+            population_layer=self.population_layer,
+            selected_candidate_id=self.selected_candidate_id,
+            contributing_candidate_ids=self.candidate_ids,
+            indices=selected_indices,
+            probability_up=point,
+            lower_up=lower,
+            upper_up=upper,
+            feature_support_eligible=support_eligible,
+            source_model_artifact_sha256=self.artifact_sha256,
+            feature_batch_sha256=feature_batch_sha,
+        ).validated()
+
+
+def compile_round21_probability_predictor(
+    artifact: Mapping[str, object],
+    *,
+    population_layer: str,
+) -> Round21CompiledProbabilityPredictor:
+    """Compile one validated Round 21 probability layer for repeated inference."""
+
+    return Round21CompiledProbabilityPredictor(
+        artifact,
+        population_layer=population_layer,
+    )
+
+
+def compile_round21_matched_core_predictor(
+    artifact: Mapping[str, object],
+    *,
+    optional_population_layer: str,
+) -> Round21CompiledProbabilityPredictor:
+    """Compile the core baseline fitted on one exact optional-layer population."""
+
+    return Round21CompiledProbabilityPredictor(
+        artifact,
+        population_layer="core",
+        matched_core_for_layer=optional_population_layer,
+    )
+
+
 def predict_round21_probability_batch(
     artifact: Mapping[str, object],
     *,
@@ -2357,70 +3372,10 @@ def predict_round21_probability_batch(
 ) -> Round21ProbabilityBatch:
     """Predict a target-free conservative hull over frozen calibrated candidates."""
 
-    validated_artifact = validate_round21_development_artifact(artifact)
-    selected_panel = panel.validate()
-    layer_name = str(population_layer or "").strip()
-    layers = validated_artifact["layers"]
-    if not isinstance(layers, Mapping) or layer_name not in _LAYERS:
-        raise ValueError("Round 21 probability layer is invalid")
-    layer = layers.get(layer_name)
-    if not isinstance(layer, Mapping):
-        raise ValueError("Round 21 probability layer is unavailable")
-    selected_candidate_id = str(layer.get("selected_candidate_id") or "")
-    ledgers = [layer.get("candidate_ledger")]
-    if layer_name != "core":
-        ledgers.append(layer.get("matched_core_candidate_ledger"))
-    candidate_ids: list[str] = []
-    selected_indices: np.ndarray | None = None
-    point: np.ndarray | None = None
-    lower: np.ndarray | None = None
-    upper: np.ndarray | None = None
-    for ledger in ledgers:
-        if not isinstance(ledger, list):
-            raise ValueError("Round 21 probability candidate ledger is unavailable")
-        for record in ledger:
-            if not isinstance(record, Mapping) or not isinstance(
-                record.get("model"),
-                Mapping,
-            ):
-                raise ValueError("Round 21 probability candidate is unavailable")
-            candidate_id = str(record.get("candidate_id") or "")
-            indices, prediction = _predict_validated_round21_candidate(
-                record["model"],
-                selected_panel,
-            )
-            if selected_indices is None:
-                selected_indices = indices
-                lower = prediction.copy()
-                upper = prediction.copy()
-            elif not np.array_equal(indices, selected_indices):
-                raise RuntimeError("Round 21 probability populations differ")
-            else:
-                if lower is None or upper is None:
-                    raise AssertionError("Round 21 probability bounds are unavailable")
-                np.minimum(lower, prediction, out=lower)
-                np.maximum(upper, prediction, out=upper)
-            if candidate_id == selected_candidate_id:
-                point = prediction.copy()
-            candidate_ids.append(candidate_id)
-    if selected_indices is None or point is None or lower is None or upper is None:
-        raise RuntimeError("Round 21 probability batch is unavailable")
-    feature_batch_sha = (
-        selected_panel.dataset_sha256
-        if isinstance(selected_panel, Round21DevelopmentPanel)
-        else selected_panel.feature_batch_sha256
-    )
-    return Round21ProbabilityBatch.create(
-        population_layer=layer_name,
-        selected_candidate_id=selected_candidate_id,
-        contributing_candidate_ids=candidate_ids,
-        indices=selected_indices,
-        probability_up=point,
-        lower_up=lower,
-        upper_up=upper,
-        source_model_artifact_sha256=validated_artifact["artifact_sha256"],
-        feature_batch_sha256=feature_batch_sha,
-    ).validated()
+    return compile_round21_probability_predictor(
+        artifact,
+        population_layer=population_layer,
+    ).predict(panel)
 
 
 def predict_round21_controls(
@@ -2504,8 +3459,7 @@ def round21_predictive_diagnostics(
         fitted = _probability(expit(parameters[0] + parameters[1] * log_odds))
         return float(
             -np.sum(
-                weights
-                * (target * np.log(fitted) + (1.0 - target) * np.log1p(-fitted))
+                weights * (target * np.log(fitted) + (1.0 - target) * np.log1p(-fitted))
             )
         )
 
@@ -2536,9 +3490,7 @@ def round21_predictive_diagnostics(
     mcc = (
         0.0
         if denominator == 0.0
-        else (
-            true_positive * true_negative - false_positive * false_negative
-        )
+        else (true_positive * true_negative - false_positive * false_negative)
         / denominator
     )
     bins = np.minimum((probability * 10.0).astype(np.int64), 9)
@@ -2596,13 +3548,21 @@ __all__ = [
     "POLYMARKET_ROUND21_PROBABILITY_BATCH_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256",
     "Round21DevelopmentPanel",
+    "Round21CompiledProbabilityPredictor",
     "Round21InferencePanel",
     "Round21ProbabilityBatch",
+    "VerifiedRound21DevelopmentArtifact",
+    "compile_round21_matched_core_predictor",
+    "compile_round21_probability_predictor",
     "fit_round21_development",
+    "load_round21_development_artifact",
+    "load_verified_round21_development_artifact",
     "predict_round21_candidate",
     "predict_round21_controls",
     "predict_round21_probability_batch",
+    "round21_development_dataset_identity",
     "round21_paired_predictive_improvement",
     "round21_predictive_diagnostics",
+    "validate_round21_development_partitions",
     "validate_round21_development_artifact",
 ]

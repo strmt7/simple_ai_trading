@@ -1,0 +1,93 @@
+{
+  "schema_version": "polymarket-round21-probability-basis-ablation-design-v1",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba",
+    "round21_model_design_v6_sha256": "3b90f4fb0940dccccd5dd673c27257882531685a2c7a1181659924cadc4ffab0"
+  },
+  "purpose": "cheap_paired_development_screen_before_full_six_candidate_fit",
+  "population": {
+    "feature_layer": "core",
+    "train": "frozen_whole_condition_train_role",
+    "regularization_selection": "first_condition_half_of_tune_calibration",
+    "platt_calibration": "second_condition_half_of_tune_calibration",
+    "paired_evaluation": "untouched_tune_selection_role",
+    "sealed_test_features_or_targets": false,
+    "minimum_conditions_per_stage": 30
+  },
+  "arms": {
+    "baseline": "structural_log_odds_offset_plus_raw_core_features",
+    "challenger": "baseline_plus_market_prior_minus_structural_log_odds_basis",
+    "basis_identity": "model.market_prior_minus_structural_log_odds",
+    "probability_floor": "0.000001",
+    "all_other_inputs_and_rows_identical": true
+  },
+  "candidate_program": {
+    "family": "logistic_residual",
+    "l2_grid": [
+      "0.01",
+      "0.1",
+      "1"
+    ],
+    "selection_metric": "condition_equal_log_loss",
+    "selection_tie_break": "strongest_regularization_then_candidate_id",
+    "calibration": "condition_equal_platt_with_nonnegative_slope",
+    "target_access_before_design": false,
+    "gpu_required": false,
+    "bounded_candidate_fits": 6
+  },
+  "paired_gate": {
+    "metrics": [
+      "condition_equal_log_loss",
+      "condition_equal_brier_score"
+    ],
+    "interval": "deterministic_2000_sample_circular_block_bootstrap_percentile",
+    "block_rule": "min_n_max_2_ceil_sqrt_n_conditions",
+    "accepted": "both_metric_improvement_lower_95_strictly_positive",
+    "rejected": "otherwise",
+    "inconclusive_is_accepted": false,
+    "post_result_threshold_change": false,
+    "result_is_profitability_or_execution_evidence": false
+  },
+  "historical_source_limit": {
+    "round14_has_required_polymarket_prior_and_chainlink_structural_pair": false,
+    "public_price_history_minimum_documented_fidelity": "minutes",
+    "public_trade_history_contains_historical_depth_or_spread": false,
+    "rtds_historical_snapshot_is_full_campaign_history": false,
+    "synthetic_or_imputed_market_prior_permitted": false
+  },
+  "research_basis": [
+    {
+      "url": "https://arxiv.org/abs/2510.15205",
+      "use": "logit_space_prediction_market_probability_dynamics"
+    },
+    {
+      "url": "https://arxiv.org/abs/2506.05764",
+      "use": "feature_engineering_before_unbounded_model_complexity"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/markets/get-prices-history",
+      "use": "documented_historical_price_fidelity_limit"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/core/get-trades-for-a-user-or-markets",
+      "use": "public_trade_history_fields_do_not_supply_historical_books"
+    },
+    {
+      "url": "https://docs.polymarket.com/market-data/websocket/rtds",
+      "use": "live_and_short_snapshot_price_feed_not_full_historical_book_reconstruction"
+    }
+  ],
+  "authority": {
+    "capture_data_accessed": false,
+    "targets_accessed": false,
+    "model_selected": false,
+    "economic_evaluation_completed": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "a54391db7652e0d17d7bae65dd2706ff2bae5c9fbfd99d5d2a9a1e501e0c642a"
+}

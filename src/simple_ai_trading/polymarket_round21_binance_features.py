@@ -60,15 +60,17 @@ _MARKET_FEATURE_NAMES = tuple(
     )
 )
 POLYMARKET_ROUND21_SPOT_FEATURE_NAMES = tuple(
-    value.format(market="spot") for value in _MARKET_FEATURE_NAMES
+    (
+        *(value.format(market="spot") for value in _MARKET_FEATURE_NAMES),
+        "spot.book_receipt_age_ms",
+    )
 )
 POLYMARKET_ROUND21_USDM_FEATURE_NAMES = (
-    *(
-        value.format(market="usdm")
-        for value in _MARKET_FEATURE_NAMES
-    ),
+    *(value.format(market="usdm") for value in _MARKET_FEATURE_NAMES),
+    "usdm.book_receipt_age_ms",
     "usdm.log_mid_basis",
     "usdm.log_microprice_basis",
+    "usdm.spot_minus_usdm_book_receipt_skew_ms",
     *(
         f"usdm.spot_minus_usdm_mid_log_return_{window}ms"
         for window in POLYMARKET_ROUND21_BINANCE_WINDOWS_MS
@@ -79,6 +81,7 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 _SPOT_BOOK_KEYS = frozenset({"u", "s", "b", "B", "a", "A"})
 _USDM_BOOK_KEYS = frozenset({"e", "E", "T", "u", "s", "b", "B", "a", "A"})
+_USDM_BOOK_CURRENT_KEYS = _USDM_BOOK_KEYS | {"ps", "st"}
 _TRADE_REQUIRED_KEYS = frozenset({"e", "E", "s", "t", "p", "q", "T", "m"})
 _TRADE_OPTIONAL_KEYS = frozenset({"M", "a", "b", "X", "st"})
 _COMPACT_THRESHOLD = 250_000
@@ -167,9 +170,8 @@ def _payload(record: CaptureFrameRecord) -> tuple[str, Mapping[str, object], str
         raise ValueError("Round 21 Binance combined-stream envelope drifted")
     stream_name = str(envelope["stream"] or "").strip()
     body = envelope["data"]
-    if (
-        stream_name not in {"btcusdt@bookTicker", "btcusdt@trade"}
-        or not isinstance(body, Mapping)
+    if stream_name not in {"btcusdt@bookTicker", "btcusdt@trade"} or not isinstance(
+        body, Mapping
     ):
         raise ValueError("Round 21 Binance combined-stream identity differs")
     return market, body, stream_name
@@ -234,9 +236,9 @@ class Round21BinanceBookTicker:
 
     @property
     def microprice(self) -> float:
-        return (
-            self.ask * self.bid_quantity + self.bid * self.ask_quantity
-        ) / (self.bid_quantity + self.ask_quantity)
+        return (self.ask * self.bid_quantity + self.bid * self.ask_quantity) / (
+            self.bid_quantity + self.ask_quantity
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -320,11 +322,24 @@ def parse_round21_binance_record(
             control_type=str(record.raw_text).lower(),
         )
     if stream_name == "btcusdt@bookTicker":
-        expected = _SPOT_BOOK_KEYS if market == "spot" else _USDM_BOOK_KEYS
-        if set(body) != expected or str(body.get("s") or "").upper() != "BTCUSDT":
+        keys = set(body)
+        expected_shapes = (
+            {_SPOT_BOOK_KEYS}
+            if market == "spot"
+            else {_USDM_BOOK_KEYS, _USDM_BOOK_CURRENT_KEYS}
+        )
+        if (
+            frozenset(keys) not in expected_shapes
+            or str(body.get("s") or "").upper() != "BTCUSDT"
+        ):
             raise ValueError("Round 21 Binance book-ticker schema drifted")
         if market == "usdm" and body["e"] != "bookTicker":
             raise ValueError("Round 21 USD-M book-ticker event differs")
+        if keys == _USDM_BOOK_CURRENT_KEYS and (
+            str(body["ps"] or "").upper() != "BTCUSDT"
+            or _positive_integer(body["st"], name="stream type") <= 0
+        ):
+            raise ValueError("Round 21 USD-M book-ticker identity differs")
         bid = _positive_decimal(body["b"], name="best bid")
         ask = _positive_decimal(body["a"], name="best ask")
         return Round21BinanceBookTicker(
@@ -454,16 +469,13 @@ class _RollingTradeSeries:
 
     def append(self, observation: Round21BinanceTrade) -> None:
         if (
-            self.received_ms
-            and observation.received_wall_ms < self.received_ms[-1]
+            self.received_ms and observation.received_wall_ms < self.received_ms[-1]
         ) or observation.trade_id <= self.last_trade_id:
             raise ValueError("Round 21 Binance trade chronology differs")
         price = math.log(observation.price)
         quote = observation.quote_notional
         signed = -quote if observation.buyer_is_maker else quote
-        squared = (
-            0.0 if not self.log_price else (price - self.log_price[-1]) ** 2
-        )
+        squared = 0.0 if not self.log_price else (price - self.log_price[-1]) ** 2
         self.received_ms.append(observation.received_wall_ms)
         self.log_price.append(price)
         self.squared_return.append(squared)
@@ -476,24 +488,25 @@ class _RollingTradeSeries:
         self._compact(observation.received_wall_ms)
 
     def window(self, decision_ms: int, window_ms: int) -> _TradeWindow:
-        left = bisect_left(self.received_ms, decision_ms - window_ms)
+        window_start_ms = decision_ms - window_ms
+        left = bisect_left(self.received_ms, window_start_ms)
         right = bisect_right(self.received_ms, decision_ms)
         count = right - left
         if count <= 0:
             return _TradeWindow(0.0, 0.0, 0.0, 0.0, 0)
+        anchor = bisect_right(self.received_ms, window_start_ms) - 1
+        if anchor < 0:
+            anchor = left
         quote = self.quote_prefix[right] - self.quote_prefix[left]
         signed = self.signed_prefix[right] - self.signed_prefix[left]
+        variance_start = min(right, anchor + 1)
         realized = (
             0.0
-            if count < 2
-            else self.squared_prefix[right] - self.squared_prefix[left + 1]
+            if variance_start >= right
+            else self.squared_prefix[right] - self.squared_prefix[variance_start]
         )
         tolerance = 1e-12 * max(1.0, quote)
-        if (
-            quote <= 0.0
-            or realized < -tolerance
-            or abs(signed) > quote + tolerance
-        ):
+        if quote <= 0.0 or realized < -tolerance or abs(signed) > quote + tolerance:
             raise RuntimeError("Round 21 Binance trade-window accounting differs")
         if realized < 0.0:
             realized = 0.0
@@ -502,8 +515,8 @@ class _RollingTradeSeries:
         return _TradeWindow(
             log_return=(
                 0.0
-                if count < 2
-                else self.log_price[right - 1] - self.log_price[left]
+                if anchor >= right - 1
+                else self.log_price[right - 1] - self.log_price[anchor]
             ),
             realized_variance=realized,
             signed_quote_imbalance=signed / quote,
@@ -569,8 +582,7 @@ class _RollingBookSeries:
 
     def append(self, observation: Round21BinanceBookTicker) -> None:
         if (
-            self.received_ms
-            and observation.received_wall_ms < self.received_ms[-1]
+            self.received_ms and observation.received_wall_ms < self.received_ms[-1]
         ) or observation.update_id <= self.last_update_id:
             raise ValueError("Round 21 Binance book-ticker chronology differs")
         midpoint = observation.midpoint
@@ -593,35 +605,34 @@ class _RollingBookSeries:
         self._compact(observation.received_wall_ms)
 
     def window(self, decision_ms: int, window_ms: int) -> _BookWindow:
-        left = bisect_left(self.received_ms, decision_ms - window_ms)
+        window_start_ms = decision_ms - window_ms
+        left = bisect_left(self.received_ms, window_start_ms)
         right = bisect_right(self.received_ms, decision_ms)
         count = right - left
         if count <= 0:
             return _BookWindow(0.0, 0.0, 0.0, 0.0, 0.0, 0)
+        anchor = bisect_right(self.received_ms, window_start_ms) - 1
+        if anchor < 0:
+            anchor = left
         divisor = float(count)
         return _BookWindow(
             mid_log_return=(
                 0.0
-                if count < 2
-                else self.log_mid[right - 1] - self.log_mid[left]
+                if anchor >= right - 1
+                else self.log_mid[right - 1] - self.log_mid[anchor]
             ),
             microprice_log_return=(
                 0.0
-                if count < 2
-                else self.log_microprice[right - 1]
-                - self.log_microprice[left]
+                if anchor >= right - 1
+                else self.log_microprice[right - 1] - self.log_microprice[anchor]
             ),
-            mean_relative_spread=(
-                self.spread_prefix[right] - self.spread_prefix[left]
-            )
+            mean_relative_spread=(self.spread_prefix[right] - self.spread_prefix[left])
             / divisor,
             mean_quantity_imbalance=(
                 self.imbalance_prefix[right] - self.imbalance_prefix[left]
             )
             / divisor,
-            mean_log_depth=(
-                self.depth_prefix[right] - self.depth_prefix[left]
-            )
+            mean_log_depth=(self.depth_prefix[right] - self.depth_prefix[left])
             / divisor,
             count=count,
         )
@@ -645,6 +656,7 @@ class _MarketSnapshot:
     mid_returns: tuple[float, ...]
     current_log_mid: float
     current_log_microprice: float
+    latest_book_receipt_ms: int
     source_chain_sha256: str
     maximum_receipt_ms: int
 
@@ -670,8 +682,7 @@ class _MarketAccumulator:
             observation.market != self.market
             or observation.connection_id != self.connection_id
             or observation.sequence_number != self.last_sequence_number + 1
-            or observation.received_monotonic_ns
-            <= self.last_received_monotonic_ns
+            or observation.received_monotonic_ns <= self.last_received_monotonic_ns
             or observation.received_wall_ms < self.last_received_wall_ms
         ):
             raise ValueError("Round 21 Binance connection epoch differs")
@@ -711,10 +722,11 @@ class _MarketAccumulator:
         latest_book = self.books.latest_received_ms
         available = (
             latest_book is not None
-            and 0 <= decision - latest_book
+            and 0
+            <= decision - latest_book
             <= POLYMARKET_ROUND21_BINANCE_MAXIMUM_BBO_AGE_MS
         )
-        zero_count = len(_MARKET_FEATURE_NAMES)
+        zero_count = len(POLYMARKET_ROUND21_SPOT_FEATURE_NAMES)
         if not available:
             return _MarketSnapshot(
                 available=False,
@@ -722,6 +734,7 @@ class _MarketAccumulator:
                 mid_returns=(0.0,) * len(POLYMARKET_ROUND21_BINANCE_WINDOWS_MS),
                 current_log_mid=0.0,
                 current_log_microprice=0.0,
+                latest_book_receipt_ms=0,
                 source_chain_sha256=_EMPTY_SHA256,
                 maximum_receipt_ms=0,
             )
@@ -756,10 +769,11 @@ class _MarketAccumulator:
             raise RuntimeError("Round 21 available Binance book has no current state")
         return _MarketSnapshot(
             available=True,
-            values=tuple(values),
+            values=(*values, float(decision - latest_book)),
             mid_returns=tuple(mid_returns),
             current_log_mid=current[0],
             current_log_microprice=current[1],
+            latest_book_receipt_ms=latest_book,
             source_chain_sha256=self.source_chain_sha256,
             maximum_receipt_ms=self.last_received_wall_ms,
         )
@@ -787,7 +801,8 @@ class Round21OptionalBinanceFeatures:
             or any(not math.isfinite(value) for value in self.usdm_values)
             or type(self.spot_available) is not bool
             or type(self.usdm_available) is not bool
-            or self.usdm_available and not self.spot_available
+            or self.usdm_available
+            and not self.spot_available
             or _SHA256.fullmatch(self.spot_source_chain_sha256) is None
             or _SHA256.fullmatch(self.usdm_source_chain_sha256) is None
             or self.trading_authority
@@ -832,6 +847,14 @@ class Round21IndependentBinanceFeatureEngine:
             connection_id=connection,
         )
 
+    def invalidate_market(self, market: str) -> None:
+        """Discard one public-feed epoch after a gap or transport boundary."""
+
+        selected = str(market or "").strip().lower()
+        if selected not in _MARKETS:
+            raise ValueError("Round 21 Binance market identity is invalid")
+        self._markets.pop(selected, None)
+
     def ingest_record(self, record: CaptureFrameRecord) -> None:
         observation = parse_round21_binance_record(record)
         if observation is None:
@@ -850,10 +873,11 @@ class Round21IndependentBinanceFeatureEngine:
         decision = int(decision_time_ms)
         empty = _MarketSnapshot(
             available=False,
-            values=(0.0,) * len(_MARKET_FEATURE_NAMES),
+            values=(0.0,) * len(POLYMARKET_ROUND21_SPOT_FEATURE_NAMES),
             mid_returns=(0.0,) * len(POLYMARKET_ROUND21_BINANCE_WINDOWS_MS),
             current_log_mid=0.0,
             current_log_microprice=0.0,
+            latest_book_receipt_ms=0,
             source_chain_sha256=_EMPTY_SHA256,
             maximum_receipt_ms=0,
         )
@@ -872,6 +896,7 @@ class Round21IndependentBinanceFeatureEngine:
             cross = (
                 futures.current_log_mid - spot.current_log_mid,
                 futures.current_log_microprice - spot.current_log_microprice,
+                float(spot.latest_book_receipt_ms - futures.latest_book_receipt_ms),
                 *(
                     spot_return - futures_return
                     for spot_return, futures_return in zip(

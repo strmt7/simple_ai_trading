@@ -19,10 +19,10 @@ from .polymarket_round21_replay import (
 
 
 POLYMARKET_ROUND21_MATCHED_COMPARISON_SCHEMA_VERSION = (
-    "polymarket-round21-matched-economic-comparison-v1"
+    "polymarket-round21-matched-economic-comparison-v5"
 )
 POLYMARKET_ROUND21_MATCHED_COMPARISON_DESIGN_SHA256 = (
-    "450e3fa159358dfc6bfcf9a6cc64c2b960750c774fdc141026fc80c680994b78"
+    "dfae1dac53e713b0b0dfef3901677b27ee5bf859dc3ad54e9f99673efd46a3c7"
 )
 _EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -169,8 +169,7 @@ class Round21MatchedEconomicComparison:
             or self.profitability_claim
             or self.paper_trading_authority
             or self.live_trading_authority
-            or self.comparison_sha256
-            != _canonical_sha256(self.identity_payload())
+            or self.comparison_sha256 != _canonical_sha256(self.identity_payload())
         ):
             raise ValueError("Round 21 matched economic comparison differs")
         return self
@@ -314,8 +313,7 @@ def compare_round21_optional_full_matrix(
         or len(challenger_layers) != 1
         or not challenger_layers.issubset(_OPTIONAL_LAYERS)
         or any(
-            left.matched_population_sha256()
-            != right.matched_population_sha256()
+            left.matched_population_sha256() != right.matched_population_sha256()
             for left, right in zip(baseline, challenger, strict=True)
         )
     ):
@@ -341,15 +339,46 @@ def compare_round21_optional_full_matrix(
         minimum_edge_per_share=minimum_edge_per_share,
         builder_taker_fee_bps=builder_taker_fee_bps,
     )
-    deltas = tuple(
-        paired_round21_replay_delta(left, right)
-        for left, right in zip(baseline_matrix, challenger_matrix, strict=True)
-    )
-    provisional = Round21MatchedEconomicComparison(
+    return compare_round21_optional_replay_matrices(
+        baseline_matrix=baseline_matrix,
+        challenger_matrix=challenger_matrix,
         challenger_layer=challenger_layer,
         matched_population_sha256=matched_population_sha,
-        baseline_matrix_sha256=round21_replay_matrix_sha256(baseline_matrix),
-        challenger_matrix_sha256=round21_replay_matrix_sha256(challenger_matrix),
+    )
+
+
+def compare_round21_optional_replay_matrices(
+    *,
+    baseline_matrix: Sequence[Round21EconomicReplay],
+    challenger_matrix: Sequence[Round21EconomicReplay],
+    challenger_layer: str,
+    matched_population_sha256: str,
+) -> Round21MatchedEconomicComparison:
+    """Compare two already-streamed matrices without replaying source receipts."""
+
+    baseline = tuple(value.validated() for value in baseline_matrix)
+    challenger = tuple(value.validated() for value in challenger_matrix)
+    layer = str(challenger_layer or "").strip()
+    matched_sha = str(matched_population_sha256 or "").strip().lower()
+    if (
+        layer not in _OPTIONAL_LAYERS
+        or _SHA256.fullmatch(matched_sha) is None
+        or matched_sha == _EMPTY_SHA256
+        or len(baseline) != 81
+        or len(challenger) != 81
+        or len({(value.profile, value.scenario) for value in baseline}) != 81
+        or len({(value.profile, value.scenario) for value in challenger}) != 81
+    ):
+        raise ValueError("Round 21 matched replay matrix differs")
+    deltas = tuple(
+        paired_round21_replay_delta(left, right)
+        for left, right in zip(baseline, challenger, strict=True)
+    )
+    provisional = Round21MatchedEconomicComparison(
+        challenger_layer=layer,
+        matched_population_sha256=matched_sha,
+        baseline_matrix_sha256=round21_replay_matrix_sha256(baseline),
+        challenger_matrix_sha256=round21_replay_matrix_sha256(challenger),
         deltas=deltas,
         all_replays_accepted=all(value.accepted for value in deltas),
         optional_layer_selected=False,
@@ -374,6 +403,7 @@ __all__ = [
     "Round21MatchedEconomicComparison",
     "Round21MatchedReplayDelta",
     "compare_round21_optional_full_matrix",
+    "compare_round21_optional_replay_matrices",
     "paired_round21_replay_delta",
     "round21_replay_matrix_sha256",
 ]

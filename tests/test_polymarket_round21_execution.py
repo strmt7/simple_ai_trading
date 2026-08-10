@@ -36,7 +36,7 @@ POLICY_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-021-executable-action-policy-v1.json"
+    / "round-021-executable-action-policy-v3.json"
 )
 
 

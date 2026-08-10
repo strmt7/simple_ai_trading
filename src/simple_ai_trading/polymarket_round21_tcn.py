@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import base64
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 import hashlib
 import math
+from threading import Lock
 import time
 from typing import Any
 
@@ -32,7 +33,13 @@ ROUND21_TCN_ADAM_EPSILON = 1e-8
 ROUND21_TCN_ARCHITECTURE = {
     "sequence_length": ROUND21_TCN_SEQUENCE_LENGTH,
     "decision_cadence_ms": 250,
-    "endpoint_sampling": "eight_midpoint_stratified_rows_per_condition",
+    "training_endpoint_sampling": (
+        "eight_target_blind_seeded_rotating_stratified_rows_per_condition_per_epoch"
+    ),
+    "training_endpoint_epoch_stride": (
+        "smallest_coprime_at_or_above_floor_987_over_1597_of_stratum_width"
+    ),
+    "early_stopping_endpoint_sampling": "eight_fixed_midpoint_stratified_rows_per_condition",
     "history_padding": "left_zero_after_train_only_normalization_plus_mask",
     "history_reset": "condition_change_or_non_250ms_cadence",
     "projection": "pointwise_conv1d_relu",
@@ -64,7 +71,9 @@ def _groups(condition_ids: np.ndarray) -> tuple[tuple[int, int], ...]:
     boundaries = np.flatnonzero(selected[1:] != selected[:-1]) + 1
     starts = np.concatenate((np.asarray([0]), boundaries))
     ends = np.concatenate((boundaries, np.asarray([len(selected)])))
-    groups = tuple((int(start), int(end)) for start, end in zip(starts, ends, strict=True))
+    groups = tuple(
+        (int(start), int(end)) for start, end in zip(starts, ends, strict=True)
+    )
     identities = tuple(str(selected[start]) for start, _end in groups)
     if len(set(identities)) != len(identities):
         raise ValueError("Round 21 TCN condition identities are not contiguous")
@@ -99,40 +108,168 @@ def _validate_arrays(
         raise ValueError("Round 21 TCN arrays are invalid")
     groups = _groups(conditions)
     for start, end in groups:
-        if (
-            np.any(target[start:end] != target[start])
-            or np.any(decisions[start + 1 : end] <= decisions[start : end - 1])
+        if np.any(target[start:end] != target[start]) or np.any(
+            decisions[start + 1 : end] <= decisions[start : end - 1]
         ):
             raise ValueError("Round 21 TCN condition rows are invalid")
     return values, target, offset, conditions, decisions
 
 
-def _history_starts(condition_ids: np.ndarray, decision_time_ms: np.ndarray) -> np.ndarray:
-    starts = np.empty(len(condition_ids), dtype=np.int64)
-    current = 0
-    for index in range(len(condition_ids)):
-        if index == 0 or (
-            condition_ids[index] != condition_ids[index - 1]
-            or int(decision_time_ms[index]) - int(decision_time_ms[index - 1]) != 250
-        ):
-            current = index
-        starts[index] = current
+def _history_starts(
+    condition_ids: np.ndarray, decision_time_ms: np.ndarray
+) -> np.ndarray:
+    conditions = np.asarray(condition_ids, dtype=object)
+    decisions = np.asarray(decision_time_ms, dtype=np.int64)
+    if (
+        conditions.ndim != 1
+        or decisions.shape != conditions.shape
+        or not len(conditions)
+    ):
+        raise ValueError("Round 21 TCN history arrays are invalid")
+    reset = np.empty(len(conditions), dtype=np.bool_)
+    reset[0] = True
+    reset[1:] = conditions[1:] != conditions[:-1]
+    reset[1:] |= decisions[1:] - decisions[:-1] != 250
+    starts = np.arange(len(conditions), dtype=np.int64)
+    starts[~reset] = 0
+    np.maximum.accumulate(starts, out=starts)
     return starts
 
 
-def _condition_endpoints(condition_ids: np.ndarray) -> tuple[np.ndarray, ...]:
-    output: list[np.ndarray] = []
+def _build_sequences_from_history_starts(
+    values: np.ndarray,
+    history_starts: np.ndarray,
+    endpoints: np.ndarray,
+) -> np.ndarray:
+    selected = np.asarray(endpoints, dtype=np.int64)
+    starts = np.asarray(history_starts, dtype=np.int64)
+    if (
+        values.ndim != 2
+        or starts.shape != (len(values),)
+        or selected.ndim != 1
+        or np.any(selected < 0)
+        or np.any(selected >= len(values))
+    ):
+        raise ValueError("Round 21 TCN sequence request is invalid")
+    output = np.zeros(
+        (len(selected), ROUND21_TCN_SEQUENCE_LENGTH, values.shape[1] + 1),
+        dtype=np.float32,
+    )
+    lags = np.arange(
+        ROUND21_TCN_SEQUENCE_LENGTH - 1,
+        -1,
+        -1,
+        dtype=np.int64,
+    )
+    source_indices = selected[:, None] - lags[None, :]
+    valid = source_indices >= starts[selected, None]
+    safe_indices = np.maximum(source_indices, 0)
+    output[..., :-1] = values[safe_indices]
+    output[..., :-1] *= valid[..., None]
+    output[..., -1] = valid
+    return output
+
+
+def _validated_training_seed(value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+        raise ValueError("Round 21 TCN training seed is invalid")
+    selected = int(value)
+    if selected < 0 or selected >= 2**63:
+        raise ValueError("Round 21 TCN training seed is invalid")
+    return selected
+
+
+def _coprime_epoch_stride(span: int) -> int:
+    if span < 1:
+        raise ValueError("Round 21 TCN endpoint stratum is empty")
+    if span == 1:
+        return 1
+    stride = max(1, (span * 987) // 1_597)
+    while math.gcd(stride, span) != 1:
+        stride += 1
+    if stride >= span:
+        raise RuntimeError("Round 21 TCN endpoint stride differs")
+    return stride
+
+
+def _condition_endpoint_plan(
+    condition_ids: np.ndarray,
+    *,
+    seed: int,
+) -> tuple[tuple[int, int, int, tuple[int, ...]], ...]:
+    selected_seed = _validated_training_seed(seed)
+    output: list[tuple[int, int, int, tuple[int, ...]]] = []
     for start, end in _groups(condition_ids):
+        identity = str(condition_ids[start])
+        phase = int.from_bytes(
+            hashlib.sha256(f"{selected_seed}:{identity}".encode("utf-8")).digest()[:8],
+            byteorder="big",
+            signed=False,
+        )
         count = min(ROUND21_TCN_ENDPOINTS_PER_CONDITION, end - start)
         width = end - start
-        endpoints = np.asarray(
-            [start + min(width - 1, ((2 * index + 1) * width) // (2 * count)) for index in range(count)],
-            dtype=np.int64,
+        strides = tuple(
+            _coprime_epoch_stride(
+                ((index + 1) * width) // count - (index * width) // count
+            )
+            for index in range(count)
         )
+        output.append((start, end, phase, strides))
+    return tuple(output)
+
+
+def _condition_endpoints_from_plan(
+    plan: Sequence[tuple[int, int, int, tuple[int, ...]]],
+    *,
+    epoch: int | None,
+) -> tuple[np.ndarray, ...]:
+    if epoch is not None:
+        if isinstance(epoch, bool) or not isinstance(epoch, (int, np.integer)):
+            raise ValueError("Round 21 TCN sampling epoch is invalid")
+        selected_epoch = int(epoch)
+        if selected_epoch < 1:
+            raise ValueError("Round 21 TCN sampling epoch is invalid")
+    else:
+        selected_epoch = None
+    output: list[np.ndarray] = []
+    for start, end, phase, strides in plan:
+        count = min(ROUND21_TCN_ENDPOINTS_PER_CONDITION, end - start)
+        width = end - start
+        if selected_epoch is None:
+            relative = [
+                min(width - 1, ((2 * index + 1) * width) // (2 * count))
+                for index in range(count)
+            ]
+        else:
+            relative = []
+            for index in range(count):
+                left = (index * width) // count
+                right = ((index + 1) * width) // count
+                span = right - left
+                if span < 1:
+                    raise RuntimeError("Round 21 TCN endpoint stratum is empty")
+                relative.append(
+                    left
+                    + (phase + 131 * index + (selected_epoch - 1) * strides[index])
+                    % span
+                )
+        endpoints = np.asarray([start + value for value in relative], dtype=np.int64)
         if len(set(endpoints.tolist())) != count:
             raise RuntimeError("Round 21 TCN endpoint sampling differs")
         output.append(endpoints)
     return tuple(output)
+
+
+def _condition_endpoints(
+    condition_ids: np.ndarray,
+    *,
+    epoch: int | None = None,
+    seed: int = 0,
+) -> tuple[np.ndarray, ...]:
+    return _condition_endpoints_from_plan(
+        _condition_endpoint_plan(condition_ids, seed=seed),
+        epoch=epoch,
+    )
 
 
 def build_round21_tcn_sequences(
@@ -157,24 +294,11 @@ def build_round21_tcn_sequences(
         or not np.all(np.isfinite(values))
     ):
         raise ValueError("Round 21 TCN sequence request is invalid")
-    history_starts = _history_starts(conditions, decisions)
-    output = np.zeros(
-        (len(selected), ROUND21_TCN_SEQUENCE_LENGTH, values.shape[1] + 1),
-        dtype=np.float32,
+    return _build_sequences_from_history_starts(
+        values,
+        _history_starts(conditions, decisions),
+        selected,
     )
-    lags = np.arange(
-        ROUND21_TCN_SEQUENCE_LENGTH - 1,
-        -1,
-        -1,
-        dtype=np.int64,
-    )
-    source_indices = selected[:, None] - lags[None, :]
-    valid = source_indices >= history_starts[selected, None]
-    safe_indices = np.maximum(source_indices, 0)
-    output[..., :-1] = values[safe_indices]
-    output[..., :-1] *= valid[..., None]
-    output[..., -1] = valid
-    return output
 
 
 def round21_tcn_parameter_count(feature_width: int) -> int:
@@ -183,12 +307,7 @@ def round21_tcn_parameter_count(feature_width: int) -> int:
         raise ValueError("Round 21 TCN feature width is invalid")
     hidden = ROUND21_TCN_HIDDEN_CHANNELS
     projection = hidden * (width + 1) + hidden
-    per_block = (
-        hidden * ROUND21_TCN_KERNEL_SIZE
-        + hidden
-        + hidden * hidden
-        + hidden
-    )
+    per_block = hidden * ROUND21_TCN_KERNEL_SIZE + hidden + hidden * hidden + hidden
     head = hidden + 1
     return projection + len(ROUND21_TCN_DILATIONS) * per_block + head
 
@@ -208,6 +327,7 @@ def validate_round21_tcn_payload(
         "best_stop_condition_equal_log_loss",
         "training_condition_count",
         "stop_condition_count",
+        "training_seed",
         "backend_kind",
         "backend_device",
         "torch_version",
@@ -234,6 +354,7 @@ def validate_round21_tcn_payload(
         stop_log_loss = float(payload["best_stop_condition_equal_log_loss"])
         train_conditions = int(payload["training_condition_count"])
         stop_conditions = int(payload["stop_condition_count"])
+        training_seed = _validated_training_seed(payload["training_seed"])
     except (KeyError, TypeError, ValueError, OverflowError):
         return False
     expected_parameters = round21_tcn_parameter_count(feature_width)
@@ -249,6 +370,7 @@ def validate_round21_tcn_payload(
         and stop_log_loss >= 0.0
         and train_conditions >= 30
         and stop_conditions >= 30
+        and training_seed == payload.get("training_seed")
         and payload.get("backend_kind")
         in {"cpu", "cuda", "rocm", "xpu", "directml", "mps"}
         and bool(str(payload.get("backend_device") or "").strip())
@@ -345,7 +467,9 @@ def _adamw_step(
             parameter.mul_(1.0 - ROUND21_TCN_LEARNING_RATE * ROUND21_TCN_WEIGHT_DECAY)
             first.mul_(beta1).add_((1.0 - beta1) * gradient)
             second.mul_(beta2).add_((1.0 - beta2) * gradient * gradient)
-            denominator = torch.sqrt(second / second_correction) + ROUND21_TCN_ADAM_EPSILON
+            denominator = (
+                torch.sqrt(second / second_correction) + ROUND21_TCN_ADAM_EPSILON
+            )
             parameter.add_(-step_size * first / denominator)
 
 
@@ -378,15 +502,15 @@ def _predict(
 ) -> np.ndarray:
     torch = _torch()
     output = np.empty(len(endpoints), dtype=np.float64)
+    history_starts = _history_starts(condition_ids, decision_time_ms)
     model.eval()
     with torch.no_grad():
         for start in range(0, len(endpoints), ROUND21_TCN_PREDICTION_BATCH_SIZE):
             stop = min(len(endpoints), start + ROUND21_TCN_PREDICTION_BATCH_SIZE)
             selected = endpoints[start:stop]
-            sequences = build_round21_tcn_sequences(
+            sequences = _build_sequences_from_history_starts(
                 matrix,
-                condition_ids,
-                decision_time_ms,
+                history_starts,
                 selected,
             )
             residual = model(torch.from_numpy(sequences).to(device))
@@ -423,6 +547,36 @@ def _condition_equal_log_loss(
             )
         )
     return float(np.mean(losses))
+
+
+def _condition_equal_batch_weights(
+    endpoint_groups: Sequence[np.ndarray],
+) -> np.ndarray:
+    groups = tuple(endpoint_groups)
+    if (
+        not groups
+        or len(groups) > ROUND21_TCN_CONDITIONS_PER_BATCH
+        or any(len(group) < 1 for group in groups)
+    ):
+        raise ValueError("Round 21 TCN batch condition endpoints are invalid")
+    condition_weight = 1.0 / ROUND21_TCN_CONDITIONS_PER_BATCH
+    weights = np.concatenate(
+        [
+            np.full(
+                len(group),
+                condition_weight / len(group),
+                dtype=np.float32,
+            )
+            for group in groups
+        ]
+    )
+    expected_total = len(groups) / ROUND21_TCN_CONDITIONS_PER_BATCH
+    if not np.isclose(
+        float(np.sum(weights, dtype=np.float64)),
+        expected_total,
+    ):
+        raise RuntimeError("Round 21 TCN batch weights differ")
+    return weights
 
 
 @dataclass(frozen=True, slots=True)
@@ -469,15 +623,19 @@ def fit_round21_tcn(
     if set(train[1].tolist()) != {0.0, 1.0} or set(stop[1].tolist()) != {0.0, 1.0}:
         raise ValueError("Round 21 TCN target population is single-class")
     device = torch_device_for_backend(backend)
-    torch.manual_seed(int(seed))
+    training_seed = _validated_training_seed(seed)
+    torch.manual_seed(training_seed)
     model = _model(feature_width).to(device)
-    if sum(parameter.numel() for parameter in model.parameters()) != round21_tcn_parameter_count(feature_width):
+    if sum(
+        parameter.numel() for parameter in model.parameters()
+    ) != round21_tcn_parameter_count(feature_width):
         raise RuntimeError("Round 21 TCN parameter count differs")
     parameters = tuple(model.parameters())
     first_moments = tuple(torch.zeros_like(parameter) for parameter in parameters)
     second_moments = tuple(torch.zeros_like(parameter) for parameter in parameters)
     optimizer_step = 0
-    train_endpoints = _condition_endpoints(train[3])
+    train_endpoint_plan = _condition_endpoint_plan(train[3], seed=training_seed)
+    train_history_starts = _history_starts(train[3], train[4])
     stop_endpoint_groups = _condition_endpoints(stop[3])
     stop_endpoints = np.concatenate(stop_endpoint_groups)
     best_state: bytes | None = None
@@ -485,33 +643,31 @@ def fit_round21_tcn(
     best_epoch = 0
     stale_epochs = 0
     epochs_run = 0
-    generator = np.random.default_rng(int(seed))
+    generator = np.random.default_rng(training_seed)
     for epoch in range(1, ROUND21_TCN_MAXIMUM_EPOCHS + 1):
         epochs_run = epoch
+        train_endpoints = _condition_endpoints_from_plan(
+            train_endpoint_plan,
+            epoch=epoch,
+        )
         order = generator.permutation(len(train_endpoints))
         model.train()
         epoch_loss_sum = 0.0
         batch_count = 0
-        batches_in_epoch = math.ceil(
-            len(order) / ROUND21_TCN_CONDITIONS_PER_BATCH
-        )
+        batches_in_epoch = math.ceil(len(order) / ROUND21_TCN_CONDITIONS_PER_BATCH)
         last_batch_heartbeat = time.perf_counter()
         for batch_start in range(0, len(order), ROUND21_TCN_CONDITIONS_PER_BATCH):
             condition_selection = order[
                 batch_start : batch_start + ROUND21_TCN_CONDITIONS_PER_BATCH
             ]
-            endpoint_groups = [train_endpoints[int(index)] for index in condition_selection]
+            endpoint_groups = [
+                train_endpoints[int(index)] for index in condition_selection
+            ]
             endpoints = np.concatenate(endpoint_groups)
-            weights = np.concatenate(
-                [
-                    np.full(len(group), 1.0 / len(group), dtype=np.float32)
-                    for group in endpoint_groups
-                ]
-            )
-            sequences = build_round21_tcn_sequences(
+            weights = _condition_equal_batch_weights(endpoint_groups)
+            sequences = _build_sequences_from_history_starts(
                 train[0],
-                train[3],
-                train[4],
+                train_history_starts,
                 endpoints,
             )
             values = torch.from_numpy(sequences).to(device)
@@ -523,13 +679,9 @@ def fit_round21_tcn(
             logits = offset + model(values)
             positive = torch.maximum(logits, torch.zeros_like(logits))
             losses = (
-                positive
-                - logits * target
-                + torch.log1p(torch.exp(-torch.abs(logits)))
+                positive - logits * target + torch.log1p(torch.exp(-torch.abs(logits)))
             )
-            loss = torch.sum(losses * sample_weight) / float(
-                ROUND21_TCN_CONDITIONS_PER_BATCH
-            )
+            loss = torch.sum(losses * sample_weight)
             if not bool(torch.isfinite(loss).detach().cpu().item()):
                 raise RuntimeError("Round 21 TCN training loss is nonfinite")
             loss.backward()
@@ -558,9 +710,7 @@ def fit_round21_tcn(
                         "maximum_epochs": ROUND21_TCN_MAXIMUM_EPOCHS,
                         "batch": batch_count,
                         "batches_in_epoch": batches_in_epoch,
-                        "latest_training_batch_loss": float(
-                            loss.detach().cpu().item()
-                        ),
+                        "latest_training_batch_loss": float(loss.detach().cpu().item()),
                         "backend_kind": backend.kind,
                         "backend_device": backend.device,
                     },
@@ -623,8 +773,9 @@ def fit_round21_tcn(
         "best_epoch": best_epoch,
         "epochs_run": epochs_run,
         "best_stop_condition_equal_log_loss": best_loss,
-        "training_condition_count": len(train_endpoints),
+        "training_condition_count": len(train_endpoint_plan),
         "stop_condition_count": len(stop_endpoint_groups),
+        "training_seed": training_seed,
         "backend_kind": backend.kind,
         "backend_device": backend.device,
         "torch_version": str(torch.__version__),
@@ -645,37 +796,90 @@ def predict_round21_tcn(
     """Run stored weights on their training backend or a portable CPU fallback."""
 
     values = np.asarray(matrix, dtype=np.float32, order="C")
-    labels = np.zeros(len(values), dtype=np.float32)
-    validated = _validate_arrays(
-        values,
-        labels,
-        structural_log_odds,
-        condition_ids,
-        decision_time_ms,
+    if values.ndim != 2 or values.shape[1] < 1:
+        raise ValueError("Round 21 TCN feature matrix is invalid")
+    return Round21CompiledTCNPredictor(
+        payload,
+        feature_width=values.shape[1],
+    ).predict(
+        matrix=values,
+        structural_log_odds=structural_log_odds,
+        condition_ids=condition_ids,
+        decision_time_ms=decision_time_ms,
     )
-    if not validate_round21_tcn_payload(payload, feature_width=values.shape[1]):
-        raise ValueError("Round 21 TCN payload differs")
-    state = base64.b64decode(str(payload["state_base64"]), validate=True)
-    backend = resolve_backend(str(payload["backend_kind"]), require=False)
-    device = torch_device_for_backend(backend)
-    model = _model(values.shape[1])
-    _load_state_bytes(model, state)
-    model = model.to(device)
-    endpoints = np.arange(len(values), dtype=np.int64)
-    return _predict(
-        model,
-        validated[0],
-        validated[3],
-        validated[4],
-        validated[2],
-        device=device,
-        endpoints=endpoints,
-    )
+
+
+class Round21CompiledTCNPredictor:
+    """Load and place immutable TCN weights once for repeated inference."""
+
+    def __init__(
+        self,
+        payload: Mapping[str, object],
+        *,
+        feature_width: int,
+    ) -> None:
+        width = int(feature_width)
+        if width < 1 or not validate_round21_tcn_payload(
+            payload,
+            feature_width=width,
+        ):
+            raise ValueError("Round 21 TCN payload differs")
+        state = base64.b64decode(str(payload["state_base64"]), validate=True)
+        if hashlib.sha256(state).hexdigest() != str(payload["state_sha256"]):
+            raise ValueError("Round 21 TCN state hash differs")
+        backend = resolve_backend(str(payload["backend_kind"]), require=False)
+        device = torch_device_for_backend(backend)
+        model = _model(width)
+        _load_state_bytes(model, state)
+        self._model = model.to(device)
+        self._model.eval()
+        self._device = device
+        self.feature_width = width
+        self.training_backend_kind = str(payload["backend_kind"])
+        self.training_backend_device = str(payload["backend_device"])
+        self.backend = backend
+        self.backend_substituted = self.training_backend_kind != backend.kind
+        self.accelerator_fallback = bool(
+            self.training_backend_kind != "cpu" and backend.kind == "cpu"
+        )
+        self._lock = Lock()
+
+    def predict(
+        self,
+        *,
+        matrix: np.ndarray,
+        structural_log_odds: np.ndarray,
+        condition_ids: np.ndarray,
+        decision_time_ms: np.ndarray,
+    ) -> np.ndarray:
+        values = np.asarray(matrix, dtype=np.float32, order="C")
+        labels = np.zeros(len(values), dtype=np.float32)
+        validated = _validate_arrays(
+            values,
+            labels,
+            structural_log_odds,
+            condition_ids,
+            decision_time_ms,
+        )
+        if values.shape[1] != self.feature_width:
+            raise ValueError("Round 21 TCN feature width differs")
+        endpoints = np.arange(len(values), dtype=np.int64)
+        with self._lock:
+            return _predict(
+                self._model,
+                validated[0],
+                validated[3],
+                validated[4],
+                validated[2],
+                device=self._device,
+                endpoints=endpoints,
+            )
 
 
 __all__ = [
     "ROUND21_TCN_ARCHITECTURE",
     "ROUND21_TCN_MAXIMUM_EPOCHS",
+    "Round21CompiledTCNPredictor",
     "Round21TCNFit",
     "build_round21_tcn_sequences",
     "fit_round21_tcn",

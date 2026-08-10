@@ -21,7 +21,7 @@ from .polymarket_round21_comparison import (
     POLYMARKET_ROUND21_MATCHED_COMPARISON_SCHEMA_VERSION,
     round21_replay_matrix_sha256,
 )
-from .polymarket_execution_books import build_polymarket_execution_books
+from .polymarket_round21_core_features import build_round21_execution_books
 from .polymarket_round21_dataset import Round21OfficialOutcome
 from .polymarket_round21_execution import (
     POLYMARKET_ROUND21_EXECUTION_SCENARIOS,
@@ -754,7 +754,7 @@ class _Round25EconomicObserver:
         events = tuple(self._active_events.pop(condition_id))
         books = tuple(
             book
-            for book in build_polymarket_execution_books(
+            for book in build_round21_execution_books(
                 condition_id=condition_id,
                 up_token_id=condition.up_token_id,
                 down_token_id=condition.down_token_id,

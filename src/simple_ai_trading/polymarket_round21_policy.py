@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation, ROUND_CEILING, ROUND_DOWN
+from functools import lru_cache
 import hashlib
 import json
 from pathlib import Path
@@ -17,6 +18,7 @@ from .polymarket_round21_execution import (
     POLYMARKET_ROUND21_BUILDER_FEE_QUANTUM,
     POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256,
     POLYMARKET_ROUND21_MAXIMUM_BUILDER_TAKER_FEE_BPS,
+    POLYMARKET_ROUND21_PLATFORM_FEE_QUANTUM,
     POLYMARKET_ROUND21_SHARE_QUANTUM,
     Round21AggressiveOrderPlan,
     Round21MarketExecutionEvidence,
@@ -25,22 +27,22 @@ from .polymarket_round21_execution import (
 
 
 POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SCHEMA_VERSION = (
-    "polymarket-round21-multi-action-policy-design-v3"
+    "polymarket-round21-multi-action-policy-design-v8"
 )
 POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SHA256 = (
-    "8330b66861523f8204b37acd6e46e25d35238a5a6909b9bdb55f8dd087e5a041"
+    "3286725dcdcc01b4b1f82717b59e30e94a123c5d1cdb0726f887ff3c4517308e"
 )
 POLYMARKET_ROUND21_PROBABILITY_ENVELOPE_DESIGN_SHA256 = (
-    "14f2436cc1091df5d5f6119a0d013f9300fc3c338443c1b684eda5ee8e24d9b0"
+    "049b4f88e1746286176009ab8fe974fcceff2ae3b262d7142f10b996a874a125"
 )
 POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256 = (
-    "3b059ee9dd6d02768cff8f3a6f39ec2cc3bad3e8d6a49fd76f9abc9ec5956155"
+    "65ebb61934cac403af4369e862d851db09126efbe5d35e4b091d851ee251d7c5"
 )
 POLYMARKET_ROUND21_DETERMINISTIC_PERMISSION_SHA256 = hashlib.sha256(
     b"polymarket-round21-deterministic-core-permission-v1"
 ).hexdigest()
 POLYMARKET_ROUND21_ACTION_DECISION_SCHEMA_VERSION = (
-    "polymarket-round21-multi-action-decision-v1"
+    "polymarket-round21-multi-action-decision-v2"
 )
 POLYMARKET_ROUND21_MAXIMUM_CREATION_BOOK_AGE_MS = 500
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -290,6 +292,7 @@ def validate_round21_multi_action_policy(
         "future_books_or_outcomes": False,
         "one_active_transition_at_a_time": True,
         "forced_activity": False,
+        "feature_support_evidence_required": True,
     }
     expected_actions = {
         "allowed": [
@@ -342,6 +345,14 @@ def validate_round21_multi_action_policy(
         "cooldown_gate": (
             "no_new_directional_entry_reductions_and_positive_locks_remain_available"
         ),
+        "feature_support_gate": (
+            "no_new_directional_entry_bot_owned_reductions_and_positive_locks_"
+            "remain_available"
+        ),
+        "feature_support_gate_population": (
+            "train_only_condition_equal_weighted_with_tcn_history_contamination"
+        ),
+        "unsupported_rows_remain_in_proper_scoring": True,
         "new_directional_risk_budget": (
             "minimum_remaining_event_daily_and_drawdown_loss_headroom_after_"
             "current_event_worst_case_loss"
@@ -385,7 +396,7 @@ def validate_round21_multi_action_policy(
         or policy.get("round") != 21
         or policy.get("status") != "preregistered_during_target_and_model_blind_capture"
         or policy.get("supersedes")
-        != "polymarket-round21-multi-action-policy-design-v2"
+        != "polymarket-round21-multi-action-policy-design-v7"
         or parents
         != {
             "round21_contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
@@ -479,6 +490,7 @@ class Round21ProbabilityEnvelope:
     source_model_artifact_sha256: str
     source_probability_batch_sha256: str
     feature_row_sha256: str
+    feature_support_eligible: bool
     evidence_sha256: str
     trading_authority: bool = False
 
@@ -506,6 +518,7 @@ class Round21ProbabilityEnvelope:
             raise ValueError("Round 21 probability evidence population differs")
         index = int(panel_row_index)
         probability, lower, upper = selected_batch.row(index)
+        feature_support_eligible = selected_batch.support_eligible(index)
         if index < 0 or index >= len(selected_panel.condition_ids):
             raise ValueError("Round 21 probability evidence row is unavailable")
         return cls.create(
@@ -515,11 +528,10 @@ class Round21ProbabilityEnvelope:
             lower_up=Decimal(format(lower, ".17g")),
             upper_up=Decimal(format(upper, ".17g")),
             model_layer=selected_batch.population_layer,
-            source_model_artifact_sha256=(
-                selected_batch.source_model_artifact_sha256
-            ),
+            source_model_artifact_sha256=(selected_batch.source_model_artifact_sha256),
             source_probability_batch_sha256=selected_batch.prediction_sha256,
             feature_row_sha256=selected_panel.row_sha256(index),
+            feature_support_eligible=feature_support_eligible,
         )
 
     @classmethod
@@ -535,6 +547,7 @@ class Round21ProbabilityEnvelope:
         source_model_artifact_sha256: str,
         source_probability_batch_sha256: str,
         feature_row_sha256: str,
+        feature_support_eligible: bool = True,
     ) -> Round21ProbabilityEnvelope:
         condition = str(condition_id or "").strip().lower()
         decision = int(decision_time_ms)
@@ -551,6 +564,8 @@ class Round21ProbabilityEnvelope:
             name="source probability batch",
         )
         row_sha = _digest(feature_row_sha256, name="causal feature row")
+        if type(feature_support_eligible) is not bool:
+            raise ValueError("Round 21 feature support evidence is invalid")
         if (
             _CONDITION_ID.fullmatch(condition) is None
             or decision <= 0
@@ -572,6 +587,7 @@ class Round21ProbabilityEnvelope:
             "source_model_artifact_sha256": model_sha,
             "source_probability_batch_sha256": probability_batch_sha,
             "feature_row_sha256": row_sha,
+            "feature_support_eligible": feature_support_eligible,
             "trading_authority": False,
         }
         return cls(
@@ -584,6 +600,7 @@ class Round21ProbabilityEnvelope:
             source_model_artifact_sha256=model_sha,
             source_probability_batch_sha256=probability_batch_sha,
             feature_row_sha256=row_sha,
+            feature_support_eligible=feature_support_eligible,
             evidence_sha256=_canonical_sha256(payload),
         )
 
@@ -598,6 +615,7 @@ class Round21ProbabilityEnvelope:
             source_model_artifact_sha256=self.source_model_artifact_sha256,
             source_probability_batch_sha256=self.source_probability_batch_sha256,
             feature_row_sha256=self.feature_row_sha256,
+            feature_support_eligible=self.feature_support_eligible,
         )
         if self != rebuilt or self.trading_authority:
             raise ValueError("Round 21 probability envelope differs")
@@ -618,6 +636,50 @@ class Round21ProbabilityEnvelope:
         if outcome == "Down":
             return Decimal("1") - item.lower_up
         raise ValueError("Round 21 outcome is invalid")
+
+
+def build_round21_probability_envelopes(
+    *,
+    batch: object,
+    panel: object,
+) -> tuple[Round21ProbabilityEnvelope, ...]:
+    """Create a probability evidence population with one panel validation pass."""
+
+    from .polymarket_round21_model import (  # noqa: PLC0415
+        Round21InferencePanel,
+        Round21ProbabilityBatch,
+    )
+
+    if not isinstance(batch, Round21ProbabilityBatch) or not isinstance(
+        panel,
+        Round21InferencePanel,
+    ):
+        raise ValueError("Round 21 probability evidence type is invalid")
+    selected_batch = batch.validated()
+    selected_panel = panel.validate()
+    if selected_batch.feature_batch_sha256 != selected_panel.feature_batch_sha256:
+        raise ValueError("Round 21 probability evidence population differs")
+    indices = tuple(int(value) for value in selected_batch.indices)
+    row_hashes = selected_panel.row_sha256_many(indices)
+    return tuple(
+        Round21ProbabilityEnvelope.create(
+            condition_id=str(selected_panel.condition_ids[index]),
+            decision_time_ms=int(selected_panel.decision_time_ms[index]),
+            probability_up=Decimal(
+                format(float(selected_batch.probability_up[position]), ".17g")
+            ),
+            lower_up=Decimal(format(float(selected_batch.lower_up[position]), ".17g")),
+            upper_up=Decimal(format(float(selected_batch.upper_up[position]), ".17g")),
+            model_layer=selected_batch.population_layer,
+            source_model_artifact_sha256=(selected_batch.source_model_artifact_sha256),
+            source_probability_batch_sha256=selected_batch.prediction_sha256,
+            feature_row_sha256=row_hashes[position],
+            feature_support_eligible=bool(
+                selected_batch.feature_support_eligible[position]
+            ),
+        )
+        for position, index in enumerate(indices)
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -777,13 +839,17 @@ def _fresh_book(
     *,
     outcome: str,
     decision_time_ms: int,
+    already_validated: bool = False,
 ) -> PaperBookSnapshot | None:
     if book is None:
         return None
-    try:
-        selected = book.validated()
-    except (TypeError, ValueError):
-        return None
+    if already_validated:
+        selected = book
+    else:
+        try:
+            selected = book.validated()
+        except (TypeError, ValueError):
+            return None
     token_id = market.up_token_id if outcome == "Up" else market.down_token_id
     age = decision_time_ms - selected.received_wall_ms
     if (
@@ -799,6 +865,7 @@ def _fresh_book(
     return selected
 
 
+@lru_cache(maxsize=2_048)
 def _book_identity_sha256(book: PaperBookSnapshot) -> str:
     selected = book.validated()
     return _canonical_sha256(
@@ -938,6 +1005,78 @@ class _Candidate:
     plan: Round21AggressiveOrderPlan
 
 
+def _minimum_sell_cash_flow_quote(
+    plan: Round21AggressiveOrderPlan,
+    fee_model: PolymarketFeeModel,
+) -> Decimal:
+    """Bound a full FAK sell fill without assuming favorable price improvement."""
+
+    maximum_price_levels = (
+        int((Decimal("1") - plan.tick_size - plan.limit_price) / plan.tick_size) + 1
+    )
+    maximum_platform_fee = fee_model(
+        Decimal("0.5"),
+        plan.quantity,
+        "taker",
+    )
+    if maximum_platform_fee > 0:
+        maximum_platform_fee += (
+            Decimal(maximum_price_levels - 1) * POLYMARKET_ROUND21_PLATFORM_FEE_QUANTUM
+        )
+    maximum_builder_fee = (
+        plan.quantity
+        * (Decimal("1") - plan.tick_size)
+        * plan.builder_taker_fee_bps
+        / Decimal("10000")
+    )
+    if maximum_builder_fee > 0:
+        maximum_builder_fee = maximum_builder_fee.quantize(
+            POLYMARKET_ROUND21_BUILDER_FEE_QUANTUM,
+            rounding=ROUND_CEILING,
+        ) + (Decimal(maximum_price_levels - 1) * POLYMARKET_ROUND21_BUILDER_FEE_QUANTUM)
+    return max(
+        Decimal("0"),
+        plan.quantity * plan.limit_price - maximum_platform_fee - maximum_builder_fee,
+    )
+
+
+def _maximum_event_downside_after_plan(
+    *,
+    plan: Round21AggressiveOrderPlan,
+    inventory: Round21BotInventory,
+    available_cash_quote: Decimal,
+    condition_start_cash_quote: Decimal,
+    fee_model: PolymarketFeeModel,
+) -> Decimal:
+    """Bound event downside at both endpoints of any possible partial fill."""
+
+    up_quantity = inventory.quantity("Up")
+    down_quantity = inventory.quantity("Down")
+    current_equity = available_cash_quote + min(up_quantity, down_quantity)
+    if plan.side == "BUY":
+        post_cash = available_cash_quote - plan.maximum_loss_quote
+        if plan.outcome == "Up":
+            up_quantity += plan.quantity
+        else:
+            down_quantity += plan.quantity
+    else:
+        post_cash = available_cash_quote + _minimum_sell_cash_flow_quote(
+            plan,
+            fee_model,
+        )
+        if plan.outcome == "Up":
+            up_quantity -= plan.quantity
+        else:
+            down_quantity -= plan.quantity
+    if up_quantity < 0 or down_quantity < 0:
+        raise ValueError("Round 21 candidate exceeds bot-owned inventory")
+    post_equity = post_cash + min(up_quantity, down_quantity)
+    return max(
+        Decimal("0"),
+        condition_start_cash_quote - min(current_equity, post_equity),
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class Round21ActionDecision:
     condition_id: str
@@ -1067,7 +1206,7 @@ def _decision(
     return replace(
         provisional,
         decision_sha256=_canonical_sha256(provisional.identity_payload()),
-    ).validated()
+    )
 
 
 def select_round21_action(
@@ -1080,6 +1219,7 @@ def select_round21_action(
     decision_time_ms: int,
     risk_capital_quote: Decimal,
     available_cash_quote: Decimal,
+    condition_start_cash_quote: Decimal,
     daily_realized_pnl_quote: Decimal,
     drawdown_capital_fraction: Decimal,
     cooldown_until_ms: int,
@@ -1092,14 +1232,21 @@ def select_round21_action(
     builder_taker_fee_bps: Decimal = Decimal("0"),
     directional_entry_allowed: bool = True,
     directional_entry_permission_sha256: str = "",
+    _validated_replay_inputs: bool = False,
 ) -> Round21ActionDecision:
     """Select at most one target-blind Polymarket action from bot-owned state."""
 
-    selected_envelope = envelope.validated()
-    selected_inventory = inventory.validated()
+    if type(_validated_replay_inputs) is not bool:
+        raise ValueError("Round 21 action validation mode is invalid")
+    selected_envelope = envelope if _validated_replay_inputs else envelope.validated()
+    selected_inventory = (
+        inventory if _validated_replay_inputs else inventory.validated()
+    )
     selected_profile = round21_risk_profile(risk_profile)
     selected_scenario = round21_execution_scenario(scenario_name)
-    evidence = market_evidence.validated()
+    evidence = (
+        market_evidence if _validated_replay_inputs else market_evidence.validated()
+    )
     decision_time = int(decision_time_ms)
     capital = _decimal(
         risk_capital_quote,
@@ -1109,6 +1256,10 @@ def select_round21_action(
     available_cash = _decimal(
         available_cash_quote,
         name="available cash",
+    )
+    condition_start_cash = _decimal(
+        condition_start_cash_quote,
+        name="condition start cash",
     )
     daily_pnl = _decimal(
         daily_realized_pnl_quote,
@@ -1156,6 +1307,7 @@ def select_round21_action(
         or not market.event_start_ms <= decision_time < market.end_ms
         or (decision_time - market.event_start_ms) % 250
         or available_cash < 0
+        or condition_start_cash < 0
         or not Decimal("0") <= drawdown <= Decimal("1")
         or minimum_edge >= Decimal("1")
         or not Decimal("0")
@@ -1173,12 +1325,14 @@ def select_round21_action(
         books.get("Up"),
         outcome="Up",
         decision_time_ms=decision_time,
+        already_validated=_validated_replay_inputs,
     )
     down_book = _fresh_book(
         market,
         books.get("Down"),
         outcome="Down",
         decision_time_ms=decision_time,
+        already_validated=_validated_replay_inputs,
     )
     policy_context_sha256 = _canonical_sha256(
         {
@@ -1194,6 +1348,7 @@ def select_round21_action(
             "risk_profile": selected_profile.name,
             "risk_capital_quote": format(capital, "f"),
             "available_cash_quote": format(available_cash, "f"),
+            "condition_start_cash_quote": format(condition_start_cash, "f"),
             "daily_realized_pnl_quote": format(daily_pnl, "f"),
             "drawdown_capital_fraction": format(drawdown, "f"),
             "cooldown_until_ms": cooldown,
@@ -1256,6 +1411,23 @@ def select_round21_action(
         return abstain("creation_book_context_unavailable")
     fee_model = market.fee_schedule.fee_model()
     candidates: list[_Candidate] = []
+    current_guaranteed_payout = min(
+        selected_inventory.quantity("Up"),
+        selected_inventory.quantity("Down"),
+    )
+    current_event_downside = max(
+        Decimal("0"),
+        condition_start_cash - available_cash - current_guaranteed_payout,
+    )
+    event_cap = capital * selected_profile.maximum_event_loss_capital_fraction
+    daily_cap = capital * selected_profile.maximum_daily_loss_capital_fraction
+    drawdown_cap = capital * selected_profile.maximum_drawdown_capital_fraction
+    prior_daily_loss = max(Decimal("0"), -daily_pnl)
+    prior_drawdown_loss = capital * drawdown
+    event_gate = current_event_downside >= event_cap
+    daily_gate = prior_daily_loss + current_event_downside >= daily_cap
+    drawdown_gate = prior_drawdown_loss + current_event_downside >= drawdown_cap
+    cooldown_gate = decision_time < cooldown
 
     def add_buy(
         *,
@@ -1408,37 +1580,25 @@ def select_round21_action(
         ) - selected_envelope.upper(outcome)
         candidates.append(_Candidate(1, action, edge, plan))
 
-    daily_gate = daily_pnl <= -(
-        capital * selected_profile.maximum_daily_loss_capital_fraction
-    )
-    drawdown_gate = drawdown >= selected_profile.maximum_drawdown_capital_fraction
-    cooldown_gate = decision_time < cooldown
     if not (
-        daily_gate
+        event_gate
+        or daily_gate
         or drawdown_gate
         or cooldown_gate
+        or not selected_envelope.feature_support_eligible
         or not directional_entry_allowed
     ):
-        event_cap = capital * selected_profile.maximum_event_loss_capital_fraction
-        current_event_loss = selected_inventory.worst_case_loss_quote
         remaining_event_loss = max(
             Decimal("0"),
-            event_cap - current_event_loss,
+            event_cap - current_event_downside,
         )
         remaining_daily_loss = max(
             Decimal("0"),
-            capital * selected_profile.maximum_daily_loss_capital_fraction
-            - max(Decimal("0"), -daily_pnl)
-            - current_event_loss,
+            daily_cap - prior_daily_loss - current_event_downside,
         )
         remaining_drawdown_loss = max(
             Decimal("0"),
-            capital
-            * (
-                selected_profile.maximum_drawdown_capital_fraction
-                - drawdown
-            )
-            - current_event_loss,
+            drawdown_cap - prior_drawdown_loss - current_event_downside,
         )
         remaining_directional_loss = min(
             remaining_event_loss,
@@ -1460,15 +1620,43 @@ def select_round21_action(
                 event_loss_budget=remaining_directional_loss,
             )
 
+    risk_rejected_candidate = False
+    admissible_candidates: list[_Candidate] = []
+    for candidate in candidates:
+        maximum_event_downside = _maximum_event_downside_after_plan(
+            plan=candidate.plan,
+            inventory=selected_inventory,
+            available_cash_quote=available_cash,
+            condition_start_cash_quote=condition_start_cash,
+            fee_model=fee_model,
+        )
+        increases_downside = maximum_event_downside > current_event_downside
+        breaches_cap = (
+            maximum_event_downside > event_cap
+            or prior_daily_loss + maximum_event_downside > daily_cap
+            or prior_drawdown_loss + maximum_event_downside > drawdown_cap
+        )
+        if increases_downside and (breaches_cap or cooldown_gate):
+            risk_rejected_candidate = True
+            continue
+        admissible_candidates.append(candidate)
+    candidates = admissible_candidates
+
     if not candidates:
+        if event_gate:
+            return abstain("event_loss_gate_no_risk_reducing_action")
         if daily_gate:
             return abstain("daily_loss_gate_no_positive_reduction")
         if drawdown_gate:
             return abstain("drawdown_gate_no_positive_reduction")
         if cooldown_gate:
             return abstain("cooldown_gate_no_positive_reduction")
+        if not selected_envelope.feature_support_eligible:
+            return abstain("feature_support_out_of_distribution_no_risk_reduction")
         if not directional_entry_allowed:
             return abstain("ai_veto_no_positive_reduction")
+        if risk_rejected_candidate:
+            return abstain("candidate_would_breach_risk_cap")
         return abstain("no_positive_after_cost_action")
     selected_candidate = min(
         candidates,
@@ -1516,6 +1704,7 @@ __all__ = [
     "Round21OwnedLot",
     "Round21ProbabilityEnvelope",
     "Round21RiskProfile",
+    "build_round21_probability_envelopes",
     "load_round21_multi_action_policy",
     "round21_risk_profile",
     "select_round21_action",

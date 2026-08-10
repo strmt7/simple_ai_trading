@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from decimal import Decimal, InvalidOperation, ROUND_CEILING
+from functools import lru_cache
 import hashlib
 import json
 from math import isqrt
 import re
 from statistics import median
-from typing import Sequence
+from collections.abc import Iterable, Sequence
 
 from .paper_execution import PaperBookSnapshot
 from .polymarket import PolymarketFiveMinuteMarket
@@ -36,16 +37,17 @@ from .polymarket_round21_policy import (
     Round21BotInventory,
     Round21OwnedLot,
     Round21ProbabilityEnvelope,
+    Round21RiskProfile,
     round21_risk_profile,
     select_round21_action,
 )
 
 
 POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION = (
-    "polymarket-round21-economic-replay-v1"
+    "polymarket-round21-economic-replay-v5"
 )
 POLYMARKET_ROUND21_ECONOMIC_REPLAY_DESIGN_SHA256 = (
-    "ce19f8722801f359220818be58e2da715fc3be4e8c28d6c37993566d97863763"
+    "5a1a7b4d28bd1d759638988815237589d3ca2539d4243fae1812c8b286340a63"
 )
 POLYMARKET_ROUND21_MINIMUM_SEALED_CONDITIONS = 1_800
 POLYMARKET_ROUND21_MINIMUM_SEALED_DAYS = 7
@@ -189,6 +191,7 @@ class Round21ReplayCondition:
                 (value.validated() for value in books),
                 key=lambda value: (
                     value.received_wall_ms,
+                    value.received_monotonic_ns,
                     value.asset_id,
                     value.source_payload_sha256,
                 ),
@@ -200,11 +203,14 @@ class Round21ReplayCondition:
             reconciliation_sha256,
             name="reconciliation",
         )
-        decision_times = tuple(
-            value.decision_time_ms for value in selected_envelopes
-        )
+        decision_times = tuple(value.decision_time_ms for value in selected_envelopes)
         book_keys = tuple(
-            (value.asset_id, value.received_wall_ms) for value in selected_books
+            (
+                value.asset_id,
+                value.received_wall_ms,
+                value.received_monotonic_ns,
+            )
+            for value in selected_books
         )
         if (
             evidence.condition_id != market.condition_id
@@ -212,9 +218,7 @@ class Round21ReplayCondition:
             or len(set(decision_times)) != len(decision_times)
             or any(
                 value.condition_id != market.condition_id
-                or not market.event_start_ms
-                <= value.decision_time_ms
-                < market.end_ms
+                or not market.event_start_ms <= value.decision_time_ms < market.end_ms
                 for value in selected_envelopes
             )
             or evidence.observed_wall_ms > decision_times[0]
@@ -225,7 +229,8 @@ class Round21ReplayCondition:
                 or value.market_id != market.condition_id
                 or value.asset_id not in market.token_ids
                 or value.received_wall_ms
-                < market.event_start_ms - POLYMARKET_ROUND21_MAXIMUM_CREATION_BOOK_AGE_MS
+                < market.event_start_ms
+                - POLYMARKET_ROUND21_MAXIMUM_CREATION_BOOK_AGE_MS
                 or value.received_wall_ms >= market.end_ms
                 or value.source_payload_sha256 == _EMPTY_SHA256
                 for value in selected_books
@@ -275,43 +280,40 @@ class Round21ReplayCondition:
 
     def causal_market_path_sha256(self, *, decision_time_ms: int) -> str:
         selected = self.validated()
+        return selected._causal_market_path_sha256_validated(  # noqa: SLF001
+            decision_time_ms=decision_time_ms,
+        )
+
+    def _causal_market_path_sha256_validated(self, *, decision_time_ms: int) -> str:
         if isinstance(decision_time_ms, bool):
             raise ValueError("Round 21 causal decision time is invalid")
         decision_time = int(decision_time_ms)
         causal_envelopes = tuple(
-            value
-            for value in selected.envelopes
-            if value.decision_time_ms <= decision_time
+            value for value in self.envelopes if value.decision_time_ms <= decision_time
         )
         causal_books = tuple(
-            value
-            for value in selected.books
-            if value.received_wall_ms <= decision_time
+            value for value in self.books if value.received_wall_ms <= decision_time
         )
         if (
-            decision_time not in {
-                value.decision_time_ms for value in selected.envelopes
-            }
+            decision_time not in {value.decision_time_ms for value in self.envelopes}
             or not causal_envelopes
             or not causal_books
         ):
             raise ValueError("Round 21 causal market path is unavailable")
         return _canonical_sha256(
             {
-                "schema_version": (
-                    POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION
-                ),
+                "schema_version": (POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION),
                 "decision_time_ms": decision_time,
-                "market": selected.market.asdict(),
+                "market": self.market.asdict(),
                 "market_execution_evidence_sha256": (
-                    selected.market_evidence.evidence_sha256
+                    self.market_evidence.evidence_sha256
                 ),
                 "available_decision_time_ms": [
                     value.decision_time_ms for value in causal_envelopes
                 ],
                 "books": [_book_payload(value) for value in causal_books],
-                "source_manifest_sha256": selected.source_manifest_sha256,
-                "reconciliation_sha256": selected.reconciliation_sha256,
+                "source_manifest_sha256": self.source_manifest_sha256,
+                "reconciliation_sha256": self.reconciliation_sha256,
                 "future_books_accessed": False,
                 "outcome_accessed": False,
             }
@@ -319,24 +321,7 @@ class Round21ReplayCondition:
 
     def matched_population_sha256(self) -> str:
         selected = self.validated()
-        return _canonical_sha256(
-            {
-                "schema_version": (
-                    POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION
-                ),
-                "market": selected.market.asdict(),
-                "market_execution_evidence_sha256": (
-                    selected.market_evidence.evidence_sha256
-                ),
-                "decision_time_ms": [
-                    value.decision_time_ms for value in selected.envelopes
-                ],
-                "books": [_book_payload(value) for value in selected.books],
-                "source_manifest_sha256": selected.source_manifest_sha256,
-                "reconciliation_sha256": selected.reconciliation_sha256,
-                "outcome_sha256": selected.outcome.outcome_sha256,
-            }
-        )
+        return _round21_matched_population_sha256_from_validated(selected)
 
     def creation_book(
         self,
@@ -344,7 +329,9 @@ class Round21ReplayCondition:
         outcome: str,
         decision_time_ms: int,
     ) -> PaperBookSnapshot | None:
-        token = self.market.up_token_id if outcome == "Up" else self.market.down_token_id
+        token = (
+            self.market.up_token_id if outcome == "Up" else self.market.down_token_id
+        )
         eligible = tuple(
             value
             for value in self.books
@@ -372,6 +359,128 @@ class Round21ReplayCondition:
             ),
             None,
         )
+
+
+def _round21_creation_book_path(
+    condition: Round21ReplayCondition,
+) -> tuple[tuple[PaperBookSnapshot | None, PaperBookSnapshot | None], ...]:
+    """Compile the causal top-of-book lookup once for all 81 ledgers."""
+
+    market = condition.market
+    latest: dict[str, PaperBookSnapshot | None] = {
+        market.up_token_id: None,
+        market.down_token_id: None,
+    }
+    books = condition.books
+    book_index = 0
+    output: list[tuple[PaperBookSnapshot | None, PaperBookSnapshot | None]] = []
+    for envelope in condition.envelopes:
+        while (
+            book_index < len(books)
+            and books[book_index].received_wall_ms <= envelope.decision_time_ms
+        ):
+            book = books[book_index]
+            latest[book.asset_id] = book
+            book_index += 1
+        output.append(
+            (
+                latest[market.up_token_id],
+                latest[market.down_token_id],
+            )
+        )
+    return tuple(output)
+
+
+def _round21_matched_population_sha256_from_validated(
+    condition: Round21ReplayCondition,
+) -> str:
+    return _canonical_sha256(
+        {
+            "schema_version": POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION,
+            "market": condition.market.asdict(),
+            "market_execution_evidence_sha256": (
+                condition.market_evidence.evidence_sha256
+            ),
+            "decision_time_ms": [
+                value.decision_time_ms for value in condition.envelopes
+            ],
+            "books": [_book_payload(value) for value in condition.books],
+            "source_manifest_sha256": condition.source_manifest_sha256,
+            "reconciliation_sha256": condition.reconciliation_sha256,
+            "outcome_sha256": condition.outcome.outcome_sha256,
+        }
+    )
+
+
+def _round21_flat_abstention_proof(
+    condition: Round21ReplayCondition,
+    creation_book_path: Sequence[
+        tuple[PaperBookSnapshot | None, PaperBookSnapshot | None]
+    ],
+    *,
+    minimum_edge_per_share: Decimal,
+) -> str | None:
+    """Prove that a flat inventory cannot buy either outcome at any decision."""
+
+    if len(creation_book_path) != len(condition.envelopes):
+        raise ValueError("Round 21 creation-book path differs")
+    market = condition.market
+
+    def usable(
+        book: PaperBookSnapshot | None,
+        *,
+        token_id: str,
+        decision_time_ms: int,
+    ) -> bool:
+        if book is None:
+            return False
+        age = decision_time_ms - book.received_wall_ms
+        return (
+            book.venue == "polymarket"
+            and book.market_id == market.condition_id
+            and book.asset_id == token_id
+            and book.connected
+            and book.gap_free
+            and 0 <= age <= POLYMARKET_ROUND21_MAXIMUM_CREATION_BOOK_AGE_MS
+        )
+
+    for envelope, (up_book, down_book) in zip(
+        condition.envelopes,
+        creation_book_path,
+        strict=True,
+    ):
+        if not usable(
+            up_book,
+            token_id=market.up_token_id,
+            decision_time_ms=envelope.decision_time_ms,
+        ) or not usable(
+            down_book,
+            token_id=market.down_token_id,
+            decision_time_ms=envelope.decision_time_ms,
+        ):
+            continue
+        if (
+            up_book is not None
+            and up_book.asks
+            and envelope.lower_up - up_book.asks[0].price >= minimum_edge_per_share
+        ) or (
+            down_book is not None
+            and down_book.asks
+            and Decimal("1") - envelope.upper_up - down_book.asks[0].price
+            >= minimum_edge_per_share
+        ):
+            return None
+    return _canonical_sha256(
+        {
+            "schema_version": POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION,
+            "audit_mode": "flat_inventory_raw_edge_impossibility",
+            "condition_input_sha256": condition.condition_input_sha256,
+            "decision_count": len(condition.envelopes),
+            "minimum_edge_per_share": format(minimum_edge_per_share, "f"),
+            "fees_slippage_and_adverse_ticks_can_only_reduce_raw_edge": True,
+            "outcome_accessed": False,
+        }
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -505,6 +614,90 @@ class Round21ReplayStep:
         return self
 
 
+def _replay_step_from_validated_state(
+    *,
+    decision_sha256: str,
+    condition_id: str,
+    decision_time_ms: int,
+    action: str,
+    observation: Round21AggressiveExecutionObservation | None,
+    cash_after_quote: Decimal,
+    inventory: Round21BotInventory,
+    conservative_equity_quote: Decimal,
+) -> Round21ReplayStep:
+    if observation is None:
+        observation_sha256 = ""
+        execution_state = "abstain"
+        filled_quantity = Decimal("0")
+    else:
+        observation_sha256 = observation.observation_sha256
+        execution_state = observation.state
+        filled_quantity = observation.filled_quantity
+    provisional = Round21ReplayStep(
+        condition_id=condition_id,
+        decision_time_ms=decision_time_ms,
+        decision_sha256=decision_sha256,
+        action=action,
+        observation_sha256=observation_sha256,
+        execution_state=execution_state,
+        filled_quantity=filled_quantity,
+        cash_after_quote=cash_after_quote,
+        inventory_sha256=inventory.inventory_sha256,
+        conservative_equity_quote=conservative_equity_quote,
+        step_sha256=_EMPTY_SHA256,
+    )
+    return replace(
+        provisional,
+        step_sha256=_canonical_sha256(provisional.identity_payload()),
+    )
+
+
+def _next_step_chain_sha256(previous: str, step: Round21ReplayStep) -> str:
+    return _canonical_sha256(
+        {
+            "schema_version": POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION,
+            "previous_step_chain_sha256": previous,
+            "step_sha256": step.step_sha256,
+        }
+    )
+
+
+@dataclass(slots=True)
+class _Round21ConditionStepAudit:
+    decision_count: int = 0
+    step_chain_sha256: str = _EMPTY_SHA256
+    first: Round21ReplayStep | None = None
+    last: Round21ReplayStep | None = None
+    actions: list[Round21ReplayStep] = field(default_factory=list)
+
+    def observe(self, step: Round21ReplayStep) -> None:
+        selected = step
+        if self.last is not None and (
+            selected.condition_id != self.last.condition_id
+            or selected.decision_time_ms <= self.last.decision_time_ms
+        ):
+            raise ValueError("Round 21 replay step order differs")
+        self.decision_count += 1
+        self.step_chain_sha256 = _next_step_chain_sha256(
+            self.step_chain_sha256,
+            selected,
+        )
+        if self.first is None:
+            self.first = selected
+        if selected.action != "abstain":
+            self.actions.append(selected)
+        self.last = selected
+
+    def retained(self) -> tuple[Round21ReplayStep, ...]:
+        if self.first is None or self.last is None or self.decision_count <= 0:
+            raise ValueError("Round 21 replay step audit is empty")
+        by_time = {
+            value.decision_time_ms: value
+            for value in (self.first, *self.actions, self.last)
+        }
+        return tuple(by_time[key] for key in sorted(by_time))
+
+
 @dataclass(frozen=True, slots=True)
 class Round21ConditionReplay:
     condition_id: str
@@ -514,6 +707,8 @@ class Round21ConditionReplay:
     utility_quote: Decimal
     end_cash_quote: Decimal
     executed_action_count: int
+    decision_count: int
+    step_chain_sha256: str
     steps: tuple[Round21ReplayStep, ...]
     condition_result_sha256: str
 
@@ -526,7 +721,9 @@ class Round21ConditionReplay:
             "utility_quote": format(self.utility_quote, "f"),
             "end_cash_quote": format(self.end_cash_quote, "f"),
             "executed_action_count": self.executed_action_count,
-            "step_sha256": [value.step_sha256 for value in self.steps],
+            "decision_count": self.decision_count,
+            "step_chain_sha256": self.step_chain_sha256,
+            "retained_step_sha256": [value.step_sha256 for value in self.steps],
         }
 
     def validated(self) -> Round21ConditionReplay:
@@ -544,6 +741,10 @@ class Round21ConditionReplay:
             or self.end_cash_quote < 0
             or self.executed_action_count
             != sum(value.filled_quantity > 0 for value in steps)
+            or self.decision_count < len(steps)
+            or self.decision_count <= 0
+            or _SHA256.fullmatch(self.step_chain_sha256) is None
+            or self.step_chain_sha256 == _EMPTY_SHA256
             or any(value.condition_id != self.condition_id for value in steps)
             or any(
                 steps[index - 1].decision_time_ms >= steps[index].decision_time_ms
@@ -553,6 +754,12 @@ class Round21ConditionReplay:
             != _canonical_sha256(self.identity_payload())
         ):
             raise ValueError("Round 21 condition replay differs")
+        if self.decision_count == len(steps):
+            chain = _EMPTY_SHA256
+            for step in steps:
+                chain = _next_step_chain_sha256(chain, step)
+            if chain != self.step_chain_sha256:
+                raise ValueError("Round 21 replay step chain differs")
         return self
 
 
@@ -607,6 +814,27 @@ class Round21DirectionalPermission:
         if self != rebuilt:
             raise ValueError("Round 21 directional permission differs")
         return self
+
+
+def round21_directional_permission_root_sha256(
+    values: Sequence[Round21DirectionalPermission],
+) -> str:
+    permissions = tuple(
+        sorted(
+            (value.validated() for value in values),
+            key=lambda value: value.condition_id,
+        )
+    )
+    if len({value.condition_id for value in permissions}) != len(permissions):
+        raise ValueError("Round 21 replay permission population differs")
+    if not permissions:
+        return POLYMARKET_ROUND21_DETERMINISTIC_PERMISSION_SHA256
+    return _canonical_sha256(
+        {
+            "schema_version": POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION,
+            "permission_sha256": [value.permission_sha256 for value in permissions],
+        }
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -688,8 +916,7 @@ class Round21EconomicMetrics:
             )
             < 0
             or self.profit_factor > 999
-            or self.net_pnl_quote
-            != self.gross_profit_quote - self.gross_loss_quote
+            or self.net_pnl_quote != self.gross_profit_quote - self.gross_loss_quote
             or (
                 self.daily_mean_pnl_lower_95_quote is not None
                 and not self.daily_mean_pnl_lower_95_quote.is_finite()
@@ -758,6 +985,12 @@ class Round21EconomicReplay:
         scenario = round21_execution_scenario(self.scenario)
         metrics = self.metrics.validated()
         conditions = tuple(value.validated() for value in self.conditions)
+        expected_reasons = _round21_qualification_reasons(
+            metrics,
+            profile=profile,
+            unknown_state_count=self.unknown_state_count,
+            risk_violation_count=self.risk_violation_count,
+        )
         if (
             profile.name != self.profile
             or scenario.name != self.scenario
@@ -770,16 +1003,12 @@ class Round21EconomicReplay:
             or metrics.condition_count != len(conditions)
             or metrics.executed_action_count
             != sum(value.executed_action_count for value in conditions)
-            or len(set(self.qualification_reasons))
-            != len(self.qualification_reasons)
+            or len(set(self.qualification_reasons)) != len(self.qualification_reasons)
+            or self.qualification_reasons != expected_reasons
             or type(self.economic_gate_passed) is not bool
-            or self.economic_gate_passed
-            != (
-                self.qualification_reasons
-                == ("sealed_test_evidence_unavailable",)
-            )
+            or self.economic_gate_passed != (len(expected_reasons) == 1)
             or self.qualified
-            or self.unknown_state_count < 0
+            or self.unknown_state_count not in {0, 1}
             or self.risk_violation_count < 0
             or self.profitability_claim
             or self.paper_trading_authority
@@ -787,6 +1016,15 @@ class Round21EconomicReplay:
             or self.replay_sha256 != _canonical_sha256(self.identity_payload())
         ):
             raise ValueError("Round 21 economic replay differs")
+        _validate_round21_replay_accounting(
+            initial_capital_quote=self.initial_capital_quote,
+            final_cash_quote=self.final_cash_quote,
+            metrics=metrics,
+            conditions=conditions,
+            profile_name=profile.name,
+            scenario_name=scenario.name,
+            unknown_state_count=self.unknown_state_count,
+        )
         return self
 
 
@@ -863,7 +1101,14 @@ def round21_daily_lower_95(
     *,
     identity: str,
 ) -> Decimal | None:
-    selected = tuple(values)
+    return _round21_daily_lower_95_cached(tuple(values), str(identity))
+
+
+@lru_cache(maxsize=1_024)
+def _round21_daily_lower_95_cached(
+    selected: tuple[Decimal, ...],
+    identity: str,
+) -> Decimal | None:
     if len(selected) < 2:
         return None
     block_length = isqrt(len(selected) - 1) + 1
@@ -919,13 +1164,9 @@ def _metrics(
         executed_action_count=executed_actions,
         net_pnl_quote=sum(utility, start=Decimal("0")),
         mean_event_utility_quote=(
-            sum(utility, start=Decimal("0")) / len(utility)
-            if utility
-            else Decimal("0")
+            sum(utility, start=Decimal("0")) / len(utility) if utility else Decimal("0")
         ),
-        median_daily_pnl_quote=(
-            Decimal(median(daily)) if daily else Decimal("0")
-        ),
+        median_daily_pnl_quote=(Decimal(median(daily)) if daily else Decimal("0")),
         gross_profit_quote=gains,
         gross_loss_quote=losses,
         profit_factor=profit_factor,
@@ -944,7 +1185,795 @@ def _metrics(
     )
 
 
-def replay_round21_economics(
+def _round21_qualification_reasons(
+    metrics: Round21EconomicMetrics,
+    *,
+    profile: Round21RiskProfile,
+    unknown_state_count: int,
+    risk_violation_count: int,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if unknown_state_count:
+        reasons.append("unknown_post_submit_state")
+    if risk_violation_count:
+        reasons.append("risk_limit_violation")
+    if metrics.condition_count < POLYMARKET_ROUND21_MINIMUM_SEALED_CONDITIONS:
+        reasons.append("insufficient_resolved_conditions")
+    if metrics.calendar_day_count < POLYMARKET_ROUND21_MINIMUM_SEALED_DAYS:
+        reasons.append("insufficient_calendar_days")
+    if metrics.executed_action_count < POLYMARKET_ROUND21_MINIMUM_EXECUTED_ACTIONS:
+        reasons.append("insufficient_executed_actions")
+    if metrics.net_pnl_quote <= 0:
+        reasons.append("net_pnl_not_positive")
+    if metrics.mean_event_utility_quote <= 0:
+        reasons.append("mean_event_utility_not_positive")
+    if metrics.median_daily_pnl_quote <= 0:
+        reasons.append("median_daily_pnl_not_positive")
+    if metrics.profit_factor <= 1:
+        reasons.append("profit_factor_not_above_one")
+    if (
+        metrics.daily_mean_pnl_lower_95_quote is None
+        or metrics.daily_mean_pnl_lower_95_quote <= 0
+    ):
+        reasons.append("daily_pnl_lower_95_not_positive")
+    if metrics.maximum_drawdown_fraction > (profile.maximum_drawdown_capital_fraction):
+        reasons.append("maximum_drawdown_limit_exceeded")
+    return (*reasons, "sealed_test_evidence_unavailable")
+
+
+def _validate_round21_replay_accounting(
+    *,
+    initial_capital_quote: Decimal,
+    final_cash_quote: Decimal,
+    metrics: Round21EconomicMetrics,
+    conditions: Sequence[Round21ConditionReplay],
+    profile_name: str,
+    scenario_name: str,
+    unknown_state_count: int,
+) -> None:
+    if len({value.condition_id for value in conditions}) != len(conditions) or any(
+        conditions[index - 1].event_start_ms >= conditions[index].event_start_ms
+        for index in range(1, len(conditions))
+    ):
+        raise ValueError("Round 21 economic replay accounting differs")
+
+    running_cash = initial_capital_quote
+    conservative_peak = initial_capital_quote
+    maximum_drawdown = Decimal("0")
+    realized_peak = initial_capital_quote
+    realized_maximum_drawdown = Decimal("0")
+    utilities: list[Decimal] = []
+    daily_values: dict[int, Decimal] = {}
+    executed_actions = 0
+    for condition in conditions:
+        for step in condition.steps:
+            equity = step.conservative_equity_quote
+            maximum_drawdown = max(
+                maximum_drawdown,
+                _drawdown_fraction(
+                    equity,
+                    conservative_peak,
+                    initial_capital_quote,
+                ),
+            )
+            conservative_peak = max(conservative_peak, equity)
+        running_cash += condition.utility_quote
+        if condition.end_cash_quote != running_cash:
+            raise ValueError("Round 21 economic replay accounting differs")
+        maximum_drawdown = max(
+            maximum_drawdown,
+            _drawdown_fraction(
+                running_cash,
+                conservative_peak,
+                initial_capital_quote,
+            ),
+        )
+        conservative_peak = max(conservative_peak, running_cash)
+        realized_maximum_drawdown = max(
+            realized_maximum_drawdown,
+            _drawdown_fraction(
+                running_cash,
+                realized_peak,
+                initial_capital_quote,
+            ),
+        )
+        realized_peak = max(realized_peak, running_cash)
+        utilities.append(condition.utility_quote)
+        day = condition.event_start_ms // _DAY_MS
+        daily_values[day] = daily_values.get(day, Decimal("0")) + (
+            condition.utility_quote
+        )
+        executed_actions += condition.executed_action_count
+
+    if (
+        metrics.maximum_drawdown_fraction < maximum_drawdown
+        or (
+            not unknown_state_count
+            and metrics.maximum_drawdown_fraction != maximum_drawdown
+        )
+        or (not unknown_state_count and final_cash_quote != running_cash)
+    ):
+        raise ValueError("Round 21 economic replay accounting differs")
+    recomputed = _metrics(
+        utilities=utilities,
+        daily_values=tuple(daily_values.values()),
+        executed_actions=executed_actions,
+        maximum_drawdown=metrics.maximum_drawdown_fraction,
+        realized_maximum_drawdown=realized_maximum_drawdown,
+        bootstrap_identity=(
+            f"{profile_name}:{scenario_name}"
+            + (":unknown" if unknown_state_count else "")
+        ),
+    )
+    if recomputed != metrics:
+        raise ValueError("Round 21 economic replay accounting differs")
+
+
+class Round21EconomicLedger:
+    """Incrementally evaluate one profile/scenario without retaining source books."""
+
+    credentials_used = False
+    account_connected = False
+    binance_execution_connected = False
+    paper_trading_authority = False
+    live_trading_authority = False
+
+    def __init__(
+        self,
+        *,
+        scenario_name: str,
+        risk_profile: str = "conservative",
+        initial_capital_quote: Decimal = Decimal("10000"),
+        minimum_edge_per_share: Decimal = Decimal("0.02"),
+        builder_taker_fee_bps: Decimal = Decimal("0"),
+        directional_permissions: Sequence[Round21DirectionalPermission] = (),
+    ) -> None:
+        self.scenario = round21_execution_scenario(scenario_name)
+        self.profile = round21_risk_profile(risk_profile)
+        self.capital = _decimal(
+            initial_capital_quote,
+            name="initial capital",
+            positive=True,
+        )
+        self.minimum_edge = _decimal(
+            minimum_edge_per_share,
+            name="minimum edge",
+            positive=True,
+        )
+        self.builder_fee = _decimal(
+            builder_taker_fee_bps,
+            name="builder taker fee",
+        )
+        self.permissions = tuple(
+            sorted(
+                (value.validated() for value in directional_permissions),
+                key=lambda value: value.condition_id,
+            )
+        )
+        self.permission_map = {value.condition_id: value for value in self.permissions}
+        if len(self.permission_map) != len(self.permissions):
+            raise ValueError("Round 21 replay permission population differs")
+        self.permission_root_sha256 = round21_directional_permission_root_sha256(
+            self.permissions
+        )
+        self.cash = self.capital
+        self.settled_peak = self.capital
+        self.conservative_peak = self.capital
+        self.maximum_drawdown = Decimal("0")
+        self.realized_maximum_drawdown = Decimal("0")
+        self.cooldown_until_ms = 0
+        self.consecutive_losses = 0
+        self.day_values: dict[int, Decimal] = {}
+        self.results: list[Round21ConditionReplay] = []
+        self.utilities: list[Decimal] = []
+        self.executed_actions = 0
+        self.unknown_states = 0
+        self.risk_violations = 0
+        self._condition_ids: list[str] = []
+        self._last_event_start_ms = 0
+        self._last_event_end_ms = 0
+        self._halted = False
+        self._finished = False
+
+    def observe(self, condition: Round21ReplayCondition) -> None:
+        selected = condition.validated()
+        creation_book_path = _round21_creation_book_path(selected)
+        proof = _round21_flat_abstention_proof(
+            selected,
+            creation_book_path,
+            minimum_edge_per_share=self.minimum_edge,
+        )
+        if proof is None:
+            self._observe_validated(selected, creation_book_path)
+        else:
+            self._observe_flat_abstention(selected, creation_book_path, proof)
+
+    def _observe_flat_abstention(
+        self,
+        condition: Round21ReplayCondition,
+        creation_book_path: Sequence[
+            tuple[PaperBookSnapshot | None, PaperBookSnapshot | None]
+        ],
+        proof_sha256: str,
+    ) -> None:
+        if self._finished:
+            raise RuntimeError("Round 21 economic ledger is terminal")
+        market = condition.market
+        if (
+            self._last_event_start_ms >= market.event_start_ms
+            or self._last_event_end_ms > market.event_start_ms
+            or len(creation_book_path) != len(condition.envelopes)
+            or _SHA256.fullmatch(proof_sha256) is None
+            or proof_sha256 == _EMPTY_SHA256
+        ):
+            raise ValueError("Round 21 flat-abstention proof differs")
+        self._last_event_start_ms = market.event_start_ms
+        self._last_event_end_ms = market.end_ms
+        self._condition_ids.append(market.condition_id)
+        if self._halted:
+            return
+
+        day = market.event_start_ms // _DAY_MS
+        inventory = _inventory(market.condition_id, ())
+        settled_drawdown = _drawdown_fraction(
+            self.cash,
+            self.settled_peak,
+            self.capital,
+        )
+        audit = _Round21ConditionStepAudit()
+        indices = (
+            (0,) if len(condition.envelopes) == 1 else (0, len(condition.envelopes) - 1)
+        )
+        for index in indices:
+            envelope = condition.envelopes[index]
+            permission = self.permission_map.get(market.condition_id)
+            permission_effective = (
+                permission is not None
+                and envelope.decision_time_ms >= permission.effective_at_ms
+            )
+            directional_entry_allowed = (
+                permission.directional_entry_allowed
+                if permission_effective and permission is not None
+                else True
+            )
+            permission_sha = (
+                permission.permission_sha256
+                if permission_effective and permission is not None
+                else POLYMARKET_ROUND21_DETERMINISTIC_PERMISSION_SHA256
+            )
+            up_book, down_book = creation_book_path[index]
+            decision = select_round21_action(
+                market=market,
+                market_evidence=condition.market_evidence,
+                books={"Up": up_book, "Down": down_book},
+                envelope=envelope,
+                inventory=inventory,
+                decision_time_ms=envelope.decision_time_ms,
+                risk_capital_quote=self.capital,
+                available_cash_quote=self.cash,
+                condition_start_cash_quote=self.cash,
+                daily_realized_pnl_quote=self.day_values.get(day, Decimal("0")),
+                drawdown_capital_fraction=settled_drawdown,
+                cooldown_until_ms=self.cooldown_until_ms,
+                transition_pending=False,
+                reconciliation_ok=True,
+                reconciliation_sha256=condition.reconciliation_sha256,
+                minimum_edge_per_share=self.minimum_edge,
+                risk_profile=self.profile.name,
+                scenario_name=self.scenario.name,
+                builder_taker_fee_bps=self.builder_fee,
+                directional_entry_allowed=directional_entry_allowed,
+                directional_entry_permission_sha256=permission_sha,
+                _validated_replay_inputs=True,
+            )
+            if decision.action != "abstain" or decision.plan is not None:
+                raise RuntimeError("Round 21 flat-abstention proof was violated")
+            audit.observe(
+                _replay_step_from_validated_state(
+                    condition_id=market.condition_id,
+                    decision_time_ms=envelope.decision_time_ms,
+                    decision_sha256=decision.decision_sha256,
+                    action=decision.action,
+                    observation=None,
+                    cash_after_quote=self.cash,
+                    inventory=inventory,
+                    conservative_equity_quote=self.cash,
+                )
+            )
+        retained = audit.retained()
+        decision_count = len(condition.envelopes)
+        step_chain_sha256 = (
+            audit.step_chain_sha256
+            if decision_count == len(retained)
+            else _canonical_sha256(
+                {
+                    "schema_version": (
+                        POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION
+                    ),
+                    "audit_mode": "flat_inventory_raw_edge_impossibility",
+                    "proof_sha256": proof_sha256,
+                    "profile": self.profile.name,
+                    "scenario": self.scenario.name,
+                    "cash_quote": format(self.cash, "f"),
+                    "daily_realized_pnl_quote": format(
+                        self.day_values.get(day, Decimal("0")),
+                        "f",
+                    ),
+                    "drawdown_capital_fraction": format(settled_drawdown, "f"),
+                    "cooldown_until_ms": self.cooldown_until_ms,
+                    "directional_permission_root_sha256": (self.permission_root_sha256),
+                    "retained_step_sha256": [value.step_sha256 for value in retained],
+                    "decision_count": decision_count,
+                }
+            )
+        )
+        outcome = condition.outcome.validated()
+        utility = Decimal("0")
+        self.utilities.append(utility)
+        self.day_values[day] = self.day_values.get(day, Decimal("0"))
+        self.consecutive_losses = 0
+        provisional_result = Round21ConditionReplay(
+            condition_id=market.condition_id,
+            event_start_ms=market.event_start_ms,
+            source_input_sha256=condition.condition_input_sha256,
+            outcome_sha256=outcome.outcome_sha256,
+            utility_quote=utility,
+            end_cash_quote=self.cash,
+            executed_action_count=0,
+            decision_count=decision_count,
+            step_chain_sha256=step_chain_sha256,
+            steps=retained,
+            condition_result_sha256=_EMPTY_SHA256,
+        )
+        self.results.append(
+            replace(
+                provisional_result,
+                condition_result_sha256=_canonical_sha256(
+                    provisional_result.identity_payload()
+                ),
+            ).validated()
+        )
+
+    def _observe_validated(
+        self,
+        condition: Round21ReplayCondition,
+        creation_book_path: Sequence[
+            tuple[PaperBookSnapshot | None, PaperBookSnapshot | None]
+        ]
+        | None = None,
+    ) -> None:
+        if self._finished:
+            raise RuntimeError("Round 21 economic ledger is terminal")
+        market = condition.market
+        if (
+            self._last_event_start_ms >= market.event_start_ms
+            or self._last_event_end_ms > market.event_start_ms
+        ):
+            raise ValueError("Round 21 replay condition order is invalid")
+        self._last_event_start_ms = market.event_start_ms
+        self._last_event_end_ms = market.end_ms
+        self._condition_ids.append(market.condition_id)
+        if self._halted:
+            return
+
+        condition_start_cash = self.cash
+        settled_drawdown = _drawdown_fraction(
+            condition_start_cash,
+            self.settled_peak,
+            self.capital,
+        )
+        day = market.event_start_ms // _DAY_MS
+        lots: tuple[Round21OwnedLot, ...] = ()
+        inventory = _inventory(market.condition_id, lots)
+        step_audit = _Round21ConditionStepAudit()
+        condition_actions = 0
+        unresolved = False
+        books_by_decision = (
+            _round21_creation_book_path(condition)
+            if creation_book_path is None
+            else tuple(creation_book_path)
+        )
+        if len(books_by_decision) != len(condition.envelopes):
+            raise ValueError("Round 21 creation-book path differs")
+        for envelope, (up_creation_book, down_creation_book) in zip(
+            condition.envelopes,
+            books_by_decision,
+            strict=True,
+        ):
+            permission = self.permission_map.get(market.condition_id)
+            permission_effective = (
+                permission is not None
+                and envelope.decision_time_ms >= permission.effective_at_ms
+            )
+            directional_entry_allowed = (
+                permission.directional_entry_allowed
+                if permission_effective and permission is not None
+                else True
+            )
+            permission_sha = (
+                permission.permission_sha256
+                if permission_effective and permission is not None
+                else POLYMARKET_ROUND21_DETERMINISTIC_PERMISSION_SHA256
+            )
+            decision = select_round21_action(
+                market=market,
+                market_evidence=condition.market_evidence,
+                books={
+                    "Up": up_creation_book,
+                    "Down": down_creation_book,
+                },
+                envelope=envelope,
+                inventory=inventory,
+                decision_time_ms=envelope.decision_time_ms,
+                risk_capital_quote=self.capital,
+                available_cash_quote=self.cash,
+                condition_start_cash_quote=condition_start_cash,
+                daily_realized_pnl_quote=self.day_values.get(day, Decimal("0")),
+                drawdown_capital_fraction=settled_drawdown,
+                cooldown_until_ms=self.cooldown_until_ms,
+                transition_pending=False,
+                reconciliation_ok=True,
+                reconciliation_sha256=condition.reconciliation_sha256,
+                minimum_edge_per_share=self.minimum_edge,
+                risk_profile=self.profile.name,
+                scenario_name=self.scenario.name,
+                builder_taker_fee_bps=self.builder_fee,
+                directional_entry_allowed=directional_entry_allowed,
+                directional_entry_permission_sha256=permission_sha,
+                _validated_replay_inputs=True,
+            )
+            observation: Round21AggressiveExecutionObservation | None = None
+            if decision.plan is not None:
+                observation = observe_round21_aggressive_execution(
+                    decision.plan,
+                    condition.execution_book(decision.plan),
+                )
+                if observation.state == "unknown_after_submit":
+                    self.unknown_states += 1
+                    inventory = _inventory(
+                        market.condition_id,
+                        lots,
+                        blocking=True,
+                    )
+                    unresolved = True
+                else:
+                    self.cash += observation.execution_cash_flow_quote
+                    lots = _apply_fill(
+                        plan=decision.plan,
+                        observation=observation,
+                        lots=lots,
+                    )
+                    inventory = _inventory(market.condition_id, lots)
+                    if observation.filled_quantity > 0:
+                        condition_actions += 1
+                        self.executed_actions += 1
+            guaranteed = min(
+                inventory.quantity("Up"),
+                inventory.quantity("Down"),
+            )
+            conservative_equity = self.cash + guaranteed
+            self.conservative_peak = max(
+                self.conservative_peak,
+                conservative_equity,
+            )
+            self.maximum_drawdown = max(
+                self.maximum_drawdown,
+                _drawdown_fraction(
+                    conservative_equity,
+                    self.conservative_peak,
+                    self.capital,
+                ),
+            )
+            event_downside = max(
+                Decimal("0"),
+                condition_start_cash - conservative_equity,
+            )
+            settled_drawdown_quote = max(
+                Decimal("0"),
+                self.settled_peak - condition_start_cash,
+            )
+            if (
+                event_downside
+                > self.capital * self.profile.maximum_event_loss_capital_fraction
+                or max(
+                    Decimal("0"),
+                    -self.day_values.get(day, Decimal("0")),
+                )
+                + event_downside
+                > self.capital * self.profile.maximum_daily_loss_capital_fraction
+                or settled_drawdown_quote + event_downside
+                > self.capital * self.profile.maximum_drawdown_capital_fraction
+                or self.cash < 0
+            ):
+                self.risk_violations += 1
+            step_audit.observe(
+                _replay_step_from_validated_state(
+                    condition_id=market.condition_id,
+                    decision_time_ms=envelope.decision_time_ms,
+                    decision_sha256=decision.decision_sha256,
+                    action=decision.action,
+                    observation=observation,
+                    cash_after_quote=self.cash,
+                    inventory=inventory,
+                    conservative_equity_quote=conservative_equity,
+                )
+            )
+            if unresolved:
+                self._halted = True
+                break
+        if unresolved:
+            return
+
+        outcome = condition.outcome.validated()
+        winning = "Up" if outcome.resolved_up else "Down"
+        self.cash += inventory.quantity(winning)
+        utility = self.cash - condition_start_cash
+        self.utilities.append(utility)
+        self.day_values[day] = self.day_values.get(day, Decimal("0")) + utility
+        if utility < 0:
+            self.consecutive_losses += 1
+            if self.consecutive_losses >= 2:
+                self.cooldown_until_ms = (
+                    market.end_ms + self.profile.loss_cluster_cooldown_minutes * 60_000
+                )
+        else:
+            self.consecutive_losses = 0
+        self.maximum_drawdown = max(
+            self.maximum_drawdown,
+            _drawdown_fraction(
+                self.cash,
+                self.conservative_peak,
+                self.capital,
+            ),
+        )
+        self.conservative_peak = max(self.conservative_peak, self.cash)
+        self.settled_peak = max(self.settled_peak, self.cash)
+        self.realized_maximum_drawdown = max(
+            self.realized_maximum_drawdown,
+            _drawdown_fraction(self.cash, self.settled_peak, self.capital),
+        )
+        provisional_result = Round21ConditionReplay(
+            condition_id=market.condition_id,
+            event_start_ms=market.event_start_ms,
+            source_input_sha256=condition.condition_input_sha256,
+            outcome_sha256=outcome.outcome_sha256,
+            utility_quote=utility,
+            end_cash_quote=self.cash,
+            executed_action_count=condition_actions,
+            decision_count=step_audit.decision_count,
+            step_chain_sha256=step_audit.step_chain_sha256,
+            steps=step_audit.retained(),
+            condition_result_sha256=_EMPTY_SHA256,
+        )
+        self.results.append(
+            replace(
+                provisional_result,
+                condition_result_sha256=_canonical_sha256(
+                    provisional_result.identity_payload()
+                ),
+            ).validated()
+        )
+
+    def finish(self) -> Round21EconomicReplay:
+        if self._finished:
+            raise RuntimeError("Round 21 economic ledger is already terminal")
+        if not self._condition_ids or (
+            self.permissions and set(self.permission_map) != set(self._condition_ids)
+        ):
+            raise ValueError("Round 21 replay condition order is invalid")
+        bootstrap_identity = f"{self.profile.name}:{self.scenario.name}"
+        if self.unknown_states:
+            bootstrap_identity += ":unknown"
+        metrics = _metrics(
+            utilities=self.utilities,
+            daily_values=tuple(self.day_values.values()),
+            executed_actions=self.executed_actions,
+            maximum_drawdown=self.maximum_drawdown,
+            realized_maximum_drawdown=self.realized_maximum_drawdown,
+            bootstrap_identity=bootstrap_identity,
+        )
+        reasons = _round21_qualification_reasons(
+            metrics,
+            profile=self.profile,
+            unknown_state_count=self.unknown_states,
+            risk_violation_count=self.risk_violations,
+        )
+        economic_gate_passed = len(reasons) == 1
+        provisional = Round21EconomicReplay(
+            profile=self.profile.name,
+            scenario=self.scenario.name,
+            initial_capital_quote=self.capital,
+            final_cash_quote=self.cash,
+            directional_permission_root_sha256=self.permission_root_sha256,
+            metrics=metrics,
+            conditions=tuple(self.results),
+            qualification_reasons=reasons,
+            economic_gate_passed=economic_gate_passed,
+            qualified=False,
+            unknown_state_count=self.unknown_states,
+            risk_violation_count=self.risk_violations,
+            replay_sha256=_EMPTY_SHA256,
+        )
+        result = replace(
+            provisional,
+            replay_sha256=_canonical_sha256(provisional.identity_payload()),
+        ).validated()
+        self._finished = True
+        return result
+
+
+class Round21EconomicMatrixAccumulator:
+    """Advance all 81 risk/scenario ledgers from one validated source stream."""
+
+    credentials_used = False
+    account_connected = False
+    binance_execution_connected = False
+    paper_trading_authority = False
+    live_trading_authority = False
+
+    def __init__(
+        self,
+        *,
+        initial_capital_quote: Decimal = Decimal("10000"),
+        minimum_edge_per_share: Decimal = Decimal("0.02"),
+        builder_taker_fee_bps: Decimal = Decimal("0"),
+        directional_permissions: Sequence[Round21DirectionalPermission] = (),
+    ) -> None:
+        self._ledgers = tuple(
+            Round21EconomicLedger(
+                scenario_name=scenario.name,
+                risk_profile=profile,
+                initial_capital_quote=initial_capital_quote,
+                minimum_edge_per_share=minimum_edge_per_share,
+                builder_taker_fee_bps=builder_taker_fee_bps,
+                directional_permissions=directional_permissions,
+            )
+            for profile in ("conservative", "regular", "aggressive")
+            for scenario in POLYMARKET_ROUND21_EXECUTION_SCENARIOS
+        )
+        if len(self._ledgers) != 81:
+            raise RuntimeError("Round 21 economic ledger matrix differs")
+        self._finished = False
+
+    def observe(self, condition: Round21ReplayCondition) -> None:
+        if self._finished:
+            raise RuntimeError("Round 21 economic matrix is terminal")
+        selected = condition.validated()
+        creation_book_path = _round21_creation_book_path(selected)
+        proof = _round21_flat_abstention_proof(
+            selected,
+            creation_book_path,
+            minimum_edge_per_share=self._ledgers[0].minimum_edge,
+        )
+        self._observe_prepared(selected, creation_book_path, proof)
+
+    def _observe_prepared(
+        self,
+        condition: Round21ReplayCondition,
+        creation_book_path: Sequence[
+            tuple[PaperBookSnapshot | None, PaperBookSnapshot | None]
+        ],
+        flat_abstention_proof_sha256: str | None,
+    ) -> None:
+        if self._finished:
+            raise RuntimeError("Round 21 economic matrix is terminal")
+        for ledger in self._ledgers:
+            if flat_abstention_proof_sha256 is None:
+                ledger._observe_validated(  # noqa: SLF001
+                    condition,
+                    creation_book_path,
+                )
+            else:
+                ledger._observe_flat_abstention(  # noqa: SLF001
+                    condition,
+                    creation_book_path,
+                    flat_abstention_proof_sha256,
+                )
+
+    def finish(self) -> tuple[Round21EconomicReplay, ...]:
+        if self._finished:
+            raise RuntimeError("Round 21 economic matrix is already terminal")
+        results = tuple(ledger.finish() for ledger in self._ledgers)
+        if (
+            len(results) != 81
+            or len({(value.profile, value.scenario) for value in results}) != 81
+        ):
+            raise RuntimeError("Round 21 economic replay matrix differs")
+        self._finished = True
+        return results
+
+
+class Round21PairedEconomicMatrixAccumulator:
+    """Advance matched baseline and challenger ledgers from one source pass."""
+
+    credentials_used = False
+    account_connected = False
+    binance_execution_connected = False
+    paper_trading_authority = False
+    live_trading_authority = False
+
+    def __init__(
+        self,
+        *,
+        initial_capital_quote: Decimal = Decimal("10000"),
+        minimum_edge_per_share: Decimal = Decimal("0.02"),
+        builder_taker_fee_bps: Decimal = Decimal("0"),
+        baseline_directional_permissions: Sequence[Round21DirectionalPermission] = (),
+        challenger_directional_permissions: Sequence[Round21DirectionalPermission] = (),
+    ) -> None:
+        shared = {
+            "initial_capital_quote": initial_capital_quote,
+            "minimum_edge_per_share": minimum_edge_per_share,
+            "builder_taker_fee_bps": builder_taker_fee_bps,
+        }
+        self._baseline = Round21EconomicMatrixAccumulator(
+            **shared,
+            directional_permissions=baseline_directional_permissions,
+        )
+        self._challenger = Round21EconomicMatrixAccumulator(
+            **shared,
+            directional_permissions=challenger_directional_permissions,
+        )
+        self._condition_ids: list[str] = []
+        self._matched_condition_sha256: list[str] = []
+        self._matched_decision_count = 0
+        self._finished = False
+
+    @property
+    def condition_ids(self) -> tuple[str, ...]:
+        return tuple(self._condition_ids)
+
+    @property
+    def matched_condition_sha256(self) -> tuple[str, ...]:
+        return tuple(self._matched_condition_sha256)
+
+    @property
+    def matched_decision_count(self) -> int:
+        return self._matched_decision_count
+
+    def observe(self, condition: Round21ReplayCondition) -> None:
+        if self._finished:
+            raise RuntimeError("Round 21 paired economic matrix is terminal")
+        selected = condition.validated()
+        if selected.market.condition_id in self._condition_ids:
+            raise ValueError("Round 21 paired replay condition is duplicated")
+        creation_book_path = _round21_creation_book_path(selected)
+        proof = _round21_flat_abstention_proof(
+            selected,
+            creation_book_path,
+            minimum_edge_per_share=self._baseline._ledgers[0].minimum_edge,
+        )
+        self._baseline._observe_prepared(  # noqa: SLF001
+            selected,
+            creation_book_path,
+            proof,
+        )
+        self._challenger._observe_prepared(  # noqa: SLF001
+            selected,
+            creation_book_path,
+            proof,
+        )
+        self._condition_ids.append(selected.market.condition_id)
+        self._matched_condition_sha256.append(
+            _round21_matched_population_sha256_from_validated(selected)
+        )
+        self._matched_decision_count += len(selected.envelopes)
+
+    def finish(
+        self,
+    ) -> tuple[
+        tuple[Round21EconomicReplay, ...],
+        tuple[Round21EconomicReplay, ...],
+    ]:
+        if self._finished:
+            raise RuntimeError("Round 21 paired economic matrix is already terminal")
+        baseline = self._baseline.finish()
+        challenger = self._challenger.finish()
+        self._finished = True
+        return baseline, challenger
+
+
+def _replay_round21_economics_materialized_reference(
     conditions: Sequence[Round21ReplayCondition],
     *,
     scenario_name: str,
@@ -954,7 +1983,7 @@ def replay_round21_economics(
     builder_taker_fee_bps: Decimal = Decimal("0"),
     directional_permissions: Sequence[Round21DirectionalPermission] = (),
 ) -> Round21EconomicReplay:
-    """Replay one independent profile/scenario ledger without trading authority."""
+    """Bounded regression oracle retained to verify the streaming implementation."""
 
     scenario = round21_execution_scenario(scenario_name)
     profile = round21_risk_profile(risk_profile)
@@ -991,8 +2020,7 @@ def replay_round21_economics(
         or len(permission_map) != len(permissions)
         or (
             permissions
-            and set(permission_map)
-            != {value.market.condition_id for value in selected}
+            and set(permission_map) != {value.market.condition_id for value in selected}
         )
     ):
         raise ValueError("Round 21 replay condition order is invalid")
@@ -1001,12 +2029,8 @@ def replay_round21_economics(
         if not permissions
         else _canonical_sha256(
             {
-                "schema_version": (
-                    POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION
-                ),
-                "permission_sha256": [
-                    value.permission_sha256 for value in permissions
-                ],
+                "schema_version": (POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION),
+                "permission_sha256": [value.permission_sha256 for value in permissions],
             }
         )
     )
@@ -1028,14 +2052,18 @@ def replay_round21_economics(
     for condition in selected:
         market = condition.market
         condition_start_cash = cash
+        settled_drawdown = _drawdown_fraction(
+            condition_start_cash,
+            settled_peak,
+            capital,
+        )
         day = market.event_start_ms // _DAY_MS
         lots: tuple[Round21OwnedLot, ...] = ()
-        steps: list[Round21ReplayStep] = []
+        inventory = _inventory(market.condition_id, lots)
+        step_audit = _Round21ConditionStepAudit()
         condition_actions = 0
         unresolved = False
         for envelope in condition.envelopes:
-            inventory = _inventory(market.condition_id, lots)
-            settled_drawdown = _drawdown_fraction(cash, settled_peak, capital)
             permission = permission_map.get(market.condition_id)
             permission_effective = (
                 permission is not None
@@ -1069,6 +2097,7 @@ def replay_round21_economics(
                 decision_time_ms=envelope.decision_time_ms,
                 risk_capital_quote=capital,
                 available_cash_quote=cash,
+                condition_start_cash_quote=condition_start_cash,
                 daily_realized_pnl_quote=day_values.get(day, Decimal("0")),
                 drawdown_capital_fraction=settled_drawdown,
                 cooldown_until_ms=cooldown_until_ms,
@@ -1081,6 +2110,7 @@ def replay_round21_economics(
                 builder_taker_fee_bps=builder_fee,
                 directional_entry_allowed=directional_entry_allowed,
                 directional_entry_permission_sha256=permission_sha,
+                _validated_replay_inputs=True,
             )
             observation: Round21AggressiveExecutionObservation | None = None
             if decision.plan is not None:
@@ -1125,10 +2155,11 @@ def replay_round21_economics(
                 Decimal("0"),
                 condition_start_cash - conservative_equity,
             )
-            settled_drawdown_quote = max(Decimal("0"), settled_peak - condition_start_cash)
+            settled_drawdown_quote = max(
+                Decimal("0"), settled_peak - condition_start_cash
+            )
             if (
-                event_downside
-                > capital * profile.maximum_event_loss_capital_fraction
+                event_downside > capital * profile.maximum_event_loss_capital_fraction
                 or max(
                     Decimal("0"),
                     -day_values.get(day, Decimal("0")),
@@ -1140,8 +2171,8 @@ def replay_round21_economics(
                 or cash < 0
             ):
                 risk_violations += 1
-            steps.append(
-                Round21ReplayStep.create(
+            step_audit.observe(
+                _replay_step_from_validated_state(
                     condition_id=market.condition_id,
                     decision_time_ms=envelope.decision_time_ms,
                     decision_sha256=decision.decision_sha256,
@@ -1160,7 +2191,7 @@ def replay_round21_economics(
         # The official outcome is consulted only after every causal decision.
         outcome = condition.outcome.validated()
         winning = "Up" if outcome.resolved_up else "Down"
-        cash += _inventory(market.condition_id, lots).quantity(winning)
+        cash += inventory.quantity(winning)
         utility = cash - condition_start_cash
         utilities.append(utility)
         day_values[day] = day_values.get(day, Decimal("0")) + utility
@@ -1172,6 +2203,11 @@ def replay_round21_economics(
                 )
         else:
             consecutive_losses = 0
+        maximum_drawdown = max(
+            maximum_drawdown,
+            _drawdown_fraction(cash, conservative_peak, capital),
+        )
+        conservative_peak = max(conservative_peak, cash)
         settled_peak = max(settled_peak, cash)
         realized_maximum_drawdown = max(
             realized_maximum_drawdown,
@@ -1185,7 +2221,9 @@ def replay_round21_economics(
             utility_quote=utility,
             end_cash_quote=cash,
             executed_action_count=condition_actions,
-            steps=tuple(steps),
+            decision_count=step_audit.decision_count,
+            step_chain_sha256=step_audit.step_chain_sha256,
+            steps=step_audit.retained(),
             condition_result_sha256=_EMPTY_SHA256,
         )
         results.append(
@@ -1215,35 +2253,13 @@ def replay_round21_economics(
             realized_maximum_drawdown=realized_maximum_drawdown,
             bootstrap_identity=f"{profile.name}:{scenario.name}",
         )
-    reasons: list[str] = []
-    if unknown_states:
-        reasons.append("unknown_post_submit_state")
-    if risk_violations:
-        reasons.append("risk_limit_violation")
-    if metrics.condition_count < POLYMARKET_ROUND21_MINIMUM_SEALED_CONDITIONS:
-        reasons.append("insufficient_resolved_conditions")
-    if metrics.calendar_day_count < POLYMARKET_ROUND21_MINIMUM_SEALED_DAYS:
-        reasons.append("insufficient_calendar_days")
-    if metrics.executed_action_count < POLYMARKET_ROUND21_MINIMUM_EXECUTED_ACTIONS:
-        reasons.append("insufficient_executed_actions")
-    if metrics.net_pnl_quote <= 0:
-        reasons.append("net_pnl_not_positive")
-    if metrics.mean_event_utility_quote <= 0:
-        reasons.append("mean_event_utility_not_positive")
-    if metrics.median_daily_pnl_quote <= 0:
-        reasons.append("median_daily_pnl_not_positive")
-    if metrics.profit_factor <= 1:
-        reasons.append("profit_factor_not_above_one")
-    if (
-        metrics.daily_mean_pnl_lower_95_quote is None
-        or metrics.daily_mean_pnl_lower_95_quote <= 0
-    ):
-        reasons.append("daily_pnl_lower_95_not_positive")
-    if metrics.maximum_drawdown_fraction > profile.maximum_drawdown_capital_fraction:
-        reasons.append("maximum_drawdown_limit_exceeded")
-    reasons = list(dict.fromkeys(reasons))
-    economic_gate_passed = not reasons
-    reasons.append("sealed_test_evidence_unavailable")
+    reasons = _round21_qualification_reasons(
+        metrics,
+        profile=profile,
+        unknown_state_count=unknown_states,
+        risk_violation_count=risk_violations,
+    )
+    economic_gate_passed = len(reasons) == 1
     provisional_replay = Round21EconomicReplay(
         profile=profile.name,
         scenario=scenario.name,
@@ -1252,7 +2268,7 @@ def replay_round21_economics(
         directional_permission_root_sha256=permission_root_sha256,
         metrics=metrics,
         conditions=tuple(results),
-        qualification_reasons=tuple(reasons),
+        qualification_reasons=reasons,
         economic_gate_passed=economic_gate_passed,
         qualified=False,
         unknown_state_count=unknown_states,
@@ -1265,35 +2281,50 @@ def replay_round21_economics(
     ).validated()
 
 
+def replay_round21_economics(
+    conditions: Iterable[Round21ReplayCondition],
+    *,
+    scenario_name: str,
+    risk_profile: str = "conservative",
+    initial_capital_quote: Decimal = Decimal("10000"),
+    minimum_edge_per_share: Decimal = Decimal("0.02"),
+    builder_taker_fee_bps: Decimal = Decimal("0"),
+    directional_permissions: Sequence[Round21DirectionalPermission] = (),
+) -> Round21EconomicReplay:
+    """Replay one ledger incrementally without retaining source book histories."""
+
+    ledger = Round21EconomicLedger(
+        scenario_name=scenario_name,
+        risk_profile=risk_profile,
+        initial_capital_quote=initial_capital_quote,
+        minimum_edge_per_share=minimum_edge_per_share,
+        builder_taker_fee_bps=builder_taker_fee_bps,
+        directional_permissions=directional_permissions,
+    )
+    for condition in conditions:
+        ledger.observe(condition)
+    return ledger.finish()
+
+
 def replay_round21_full_matrix(
-    conditions: Sequence[Round21ReplayCondition],
+    conditions: Iterable[Round21ReplayCondition],
     *,
     initial_capital_quote: Decimal = Decimal("10000"),
     minimum_edge_per_share: Decimal = Decimal("0.02"),
     builder_taker_fee_bps: Decimal = Decimal("0"),
     directional_permissions: Sequence[Round21DirectionalPermission] = (),
 ) -> tuple[Round21EconomicReplay, ...]:
-    """Replay all 81 independent profile/scenario ledgers."""
+    """Replay all 81 ledgers in one pass over the validated condition stream."""
 
-    results = tuple(
-        replay_round21_economics(
-            conditions,
-            scenario_name=scenario.name,
-            risk_profile=profile,
-            initial_capital_quote=initial_capital_quote,
-            minimum_edge_per_share=minimum_edge_per_share,
-            builder_taker_fee_bps=builder_taker_fee_bps,
-            directional_permissions=directional_permissions,
-        )
-        for profile in ("conservative", "regular", "aggressive")
-        for scenario in POLYMARKET_ROUND21_EXECUTION_SCENARIOS
+    accumulator = Round21EconomicMatrixAccumulator(
+        initial_capital_quote=initial_capital_quote,
+        minimum_edge_per_share=minimum_edge_per_share,
+        builder_taker_fee_bps=builder_taker_fee_bps,
+        directional_permissions=directional_permissions,
     )
-    if (
-        len(results) != 81
-        or len({(value.profile, value.scenario) for value in results}) != 81
-    ):
-        raise RuntimeError("Round 21 economic replay matrix differs")
-    return results
+    for condition in conditions:
+        accumulator.observe(condition)
+    return accumulator.finish()
 
 
 credentials_used = False
@@ -1308,11 +2339,15 @@ __all__ = [
     "POLYMARKET_ROUND21_ECONOMIC_REPLAY_SCHEMA_VERSION",
     "Round21ConditionReplay",
     "Round21DirectionalPermission",
+    "Round21EconomicLedger",
+    "Round21EconomicMatrixAccumulator",
     "Round21EconomicMetrics",
     "Round21EconomicReplay",
+    "Round21PairedEconomicMatrixAccumulator",
     "Round21ReplayCondition",
     "Round21ReplayStep",
     "replay_round21_economics",
     "replay_round21_full_matrix",
+    "round21_directional_permission_root_sha256",
     "round21_daily_lower_95",
 ]
