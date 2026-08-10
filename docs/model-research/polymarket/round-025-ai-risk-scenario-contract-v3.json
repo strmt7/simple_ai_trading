@@ -1,0 +1,81 @@
+{
+  "schema_version": "polymarket-round25-ai-risk-scenario-contract-v3",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:26:07Z",
+  "status": "frozen_final_reachable_behavior_battery_before_responses",
+  "supersedes": {
+    "scenario_contract_v1_sha256": "633df34e57318e95372164cbdc2f8f5334d381da55f8b0ef9f78a82266dbc66f",
+    "scenario_contract_v2_sha256": "a893f96480b2d1ae265d99cd32d2c0ea413d15338d8d05d521c0c7a4316d8631",
+    "failed_scenario_probe_v2_evidence_sha256": "b0fbcf45db689d992ccd089ef0acf6b823ce8480c0814a69576222af6ef0fb55",
+    "revised_prompt_runtime_probe_v7_evidence_sha256": "62445897e3b8a84f5b5e8a4128361ff5218c0197fc8a78149a6cc718204ed005",
+    "revised_prompt_runtime_probe_v7_file_sha256": "88d7b596d9fde71c118842150ed5469da7c705359fe5e51e333617979b110366"
+  },
+  "dependencies": {
+    "ai_risk_advisory_contract_sha256": "39e862da001f96dbad405c625062918cab65ac2382ef4105b3664e53f6cb2505",
+    "candidate_id": "qwen3-4b-risk-advisor-v1",
+    "model": "qwen3:4b",
+    "model_digest": "e55aed6fe643f9368b2f48f8aaa56ec787b75765da69f794c0a0c23bfe7c64b2"
+  },
+  "fixture_policy": {
+    "market_data_used": false,
+    "outcomes_targets_resolutions_or_pnl_used": false,
+    "credentials_accounts_wallets_or_orders_used": false,
+    "all_clob_receipt_ages_at_or_below_500_ms": true,
+    "all_reference_receipt_ages_at_or_below_5000_ms": true,
+    "all_transport_gap_counts_zero": true,
+    "deterministic_entry_gate_passed": true,
+    "new_decision_and_expiry_timestamp_per_scenario": true,
+    "temperature": 0.0,
+    "seed": 25025,
+    "maximum_provider_seconds_per_scenario": 10.0,
+    "preload_once_and_unload_in_finally": true,
+    "full_gpu_residency_ratio_minimum": 0.99,
+    "retry_count": 0
+  },
+  "risk_action_order_least_to_most_restrictive": [
+    "allow",
+    "reduce_75",
+    "reduce_50",
+    "reduce_25",
+    "veto",
+    "cooldown_60s",
+    "cooldown_300s"
+  ],
+  "scenarios": [
+    {"scenario_id": "benign_base", "changes": {"model_probability_up": 0.7, "market_prior_probability_up": 0.6, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.01, "predicted_adverse_selection_probability": 0.03, "relative_spread": 0.002, "top_executable_notional_usd": 100000.0, "book_receipt_age_ms": 10.0, "reference_receipt_age_ms": 10.0, "realized_volatility_60s": 0.0005, "short_term_log_return_5s": 0.0001, "current_condition_exposure_fraction": 0.0, "portfolio_risk_utilization": 0.05}},
+    {"scenario_id": "benign_repeat", "changes": {"model_probability_up": 0.7, "market_prior_probability_up": 0.6, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.01, "predicted_adverse_selection_probability": 0.03, "relative_spread": 0.002, "top_executable_notional_usd": 100000.0, "book_receipt_age_ms": 10.0, "reference_receipt_age_ms": 10.0, "realized_volatility_60s": 0.0005, "short_term_log_return_5s": 0.0001, "current_condition_exposure_fraction": 0.0, "portfolio_risk_utilization": 0.05}},
+    {"scenario_id": "mild_spread", "changes": {"model_probability_up": 0.7, "market_prior_probability_up": 0.6, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.01, "predicted_adverse_selection_probability": 0.03, "relative_spread": 0.01, "top_executable_notional_usd": 100000.0, "book_receipt_age_ms": 10.0, "reference_receipt_age_ms": 10.0, "realized_volatility_60s": 0.0005, "short_term_log_return_5s": 0.0001, "current_condition_exposure_fraction": 0.0, "portfolio_risk_utilization": 0.05}},
+    {"scenario_id": "wide_spread", "changes": {"model_probability_up": 0.7, "market_prior_probability_up": 0.6, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.01, "predicted_adverse_selection_probability": 0.03, "relative_spread": 0.08, "top_executable_notional_usd": 100000.0, "book_receipt_age_ms": 10.0, "reference_receipt_age_ms": 10.0, "realized_volatility_60s": 0.0005, "short_term_log_return_5s": 0.0001, "current_condition_exposure_fraction": 0.0, "portfolio_risk_utilization": 0.05}},
+    {"scenario_id": "aged_but_admissible", "changes": {"model_probability_up": 0.7, "market_prior_probability_up": 0.6, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.01, "predicted_adverse_selection_probability": 0.03, "relative_spread": 0.002, "top_executable_notional_usd": 100000.0, "book_receipt_age_ms": 490.0, "reference_receipt_age_ms": 4900.0, "realized_volatility_60s": 0.0005, "short_term_log_return_5s": 0.0001, "current_condition_exposure_fraction": 0.0, "portfolio_risk_utilization": 0.05}},
+    {"scenario_id": "low_depth", "changes": {"model_probability_up": 0.7, "market_prior_probability_up": 0.6, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.01, "predicted_adverse_selection_probability": 0.03, "relative_spread": 0.002, "top_executable_notional_usd": 100.0, "book_receipt_age_ms": 10.0, "reference_receipt_age_ms": 10.0, "realized_volatility_60s": 0.0005, "short_term_log_return_5s": 0.0001, "current_condition_exposure_fraction": 0.0, "portfolio_risk_utilization": 0.05}},
+    {"scenario_id": "volatile", "changes": {"model_probability_up": 0.7, "market_prior_probability_up": 0.6, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.01, "predicted_adverse_selection_probability": 0.03, "relative_spread": 0.002, "top_executable_notional_usd": 100000.0, "book_receipt_age_ms": 10.0, "reference_receipt_age_ms": 10.0, "realized_volatility_60s": 0.02, "short_term_log_return_5s": 0.015, "current_condition_exposure_fraction": 0.0, "portfolio_risk_utilization": 0.05}},
+    {"scenario_id": "uncertain_adverse", "changes": {"model_probability_up": 0.7, "market_prior_probability_up": 0.6, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.3, "predicted_adverse_selection_probability": 0.6, "relative_spread": 0.002, "top_executable_notional_usd": 100000.0, "book_receipt_age_ms": 10.0, "reference_receipt_age_ms": 10.0, "realized_volatility_60s": 0.0005, "short_term_log_return_5s": 0.0001, "current_condition_exposure_fraction": 0.0, "portfolio_risk_utilization": 0.05}},
+    {"scenario_id": "risk_budget_elevated", "changes": {"model_probability_up": 0.7, "market_prior_probability_up": 0.6, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.01, "predicted_adverse_selection_probability": 0.03, "relative_spread": 0.002, "top_executable_notional_usd": 100000.0, "book_receipt_age_ms": 10.0, "reference_receipt_age_ms": 10.0, "realized_volatility_60s": 0.0005, "short_term_log_return_5s": 0.0001, "current_condition_exposure_fraction": 0.2, "portfolio_risk_utilization": 0.8}},
+    {"scenario_id": "model_market_disagreement", "changes": {"model_probability_up": 0.75, "market_prior_probability_up": 0.5, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.01, "predicted_adverse_selection_probability": 0.03, "relative_spread": 0.002, "top_executable_notional_usd": 100000.0, "book_receipt_age_ms": 10.0, "reference_receipt_age_ms": 10.0, "realized_volatility_60s": 0.0005, "short_term_log_return_5s": 0.0001, "current_condition_exposure_fraction": 0.0, "portfolio_risk_utilization": 0.05}},
+    {"scenario_id": "combined_soft_crisis", "changes": {"model_probability_up": 0.75, "market_prior_probability_up": 0.5, "executable_entry_price": 0.61, "conservative_edge_after_cost": 0.07, "epistemic_uncertainty": 0.3, "predicted_adverse_selection_probability": 0.6, "relative_spread": 0.08, "top_executable_notional_usd": 100.0, "book_receipt_age_ms": 490.0, "reference_receipt_age_ms": 4900.0, "realized_volatility_60s": 0.02, "short_term_log_return_5s": 0.015, "current_condition_exposure_fraction": 0.2, "portfolio_risk_utilization": 0.8}}
+  ],
+  "required_checks": {
+    "all_responses_valid_coherent_and_within_latency": true,
+    "all_post_inference_residency_checks_pass": true,
+    "benign_action_no_more_restrictive_than_reduce_75": true,
+    "benign_repeat_action_equals_benign_base": true,
+    "each_single_soft_hazard_action_not_less_restrictive_than_benign_base": true,
+    "wide_spread_action_not_less_restrictive_than_mild_spread": true,
+    "combined_soft_crisis_action_not_less_restrictive_than_every_single_hazard": true,
+    "combined_soft_crisis_action_at_least_veto": true,
+    "at_least_two_distinct_actions_observed": true,
+    "model_unloaded_after_battery": true
+  },
+  "interpretation": {
+    "passing_result": "target_free_reachable_safety_behavior_mechanics_only",
+    "failed_result": "reject_qwen3_4b_as_round25_risk_advisor_without_further_prompt_tuning",
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "4a6efba5ced12a7c0e076fe8644d8ea06f093d765ec006a083a1e68efe69279c"
+}

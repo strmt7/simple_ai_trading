@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 38959,
+      "bytes": 39717,
       "path": "latest/README.md",
-      "sha256": "da048c22311ca00134156ae893e0fd05174b4448a515ff2cc2841ce1442437bc"
+      "sha256": "1cafcca0b36f9cb8326d48a944c8fdad864027ca9e3107504a047e92ca801c43"
     },
     {
       "bytes": 77606,
@@ -192,6 +192,11 @@
       "sha256": "10432cfeebd4b6eb58115cf97cef127b93520d3d8466d6cca320b1c3118f4022"
     },
     {
+      "bytes": 3746,
+      "path": "round-025-ai-risk-advisory-contract-v6.json",
+      "sha256": "5787e334f9cb63211409d4142246d7e0a9167631987d4282fb333fe5abb49f16"
+    },
+    {
       "bytes": 3738,
       "path": "round-025-ai-risk-advisory-host-probe-2026-08-10.json",
       "sha256": "8f70a80d137be6af7eac42b7fe4a3db04c2d302be26367541969d2a5b3377563"
@@ -222,9 +227,59 @@
       "sha256": "0513479fe8a407042740ab263b44e4d0763ff0e217102fbdb747bf36666eec85"
     },
     {
+      "bytes": 7507,
+      "path": "round-025-ai-risk-advisory-host-probe-v7-2026-08-10.json",
+      "sha256": "88d7b596d9fde71c118842150ed5469da7c705359fe5e51e333617979b110366"
+    },
+    {
+      "bytes": 3446,
+      "path": "round-025-ai-risk-scenario-contract-v1.json",
+      "sha256": "1c36229cbe5144f146e79815155b41c6aeabdf92ae40cdbb8e07639d75eeff27"
+    },
+    {
+      "bytes": 2350,
+      "path": "round-025-ai-risk-scenario-contract-v2.json",
+      "sha256": "33daa132aa1930c5b527e2dd72385c0af658ad12081debe649409095e43839ec"
+    },
+    {
+      "bytes": 9118,
+      "path": "round-025-ai-risk-scenario-contract-v3.json",
+      "sha256": "270d347f8a1a028c77c076b07c5b3cf8a8ea30e13913713469885c1234396749"
+    },
+    {
+      "bytes": 1864,
+      "path": "round-025-ai-risk-scenario-correction-contract-v1.json",
+      "sha256": "5d6a03c4788f87dfdb6aa64200b6606cea22d8cf59c2b915f8fb91b95e0bd7fc"
+    },
+    {
+      "bytes": 22540,
+      "path": "round-025-ai-risk-scenario-host-probe-2026-08-10.json",
+      "sha256": "e04432f64e09e67e0de3494958e3aa05883fcacdebe60b0e3e7a01fce7025230"
+    },
+    {
+      "bytes": 30854,
+      "path": "round-025-ai-risk-scenario-host-probe-v2-2026-08-10.json",
+      "sha256": "313da14a30aa8781f51f9d04b5e6a0a5d67b9d4d2871850b137fc198b919e704"
+    },
+    {
+      "bytes": 40089,
+      "path": "round-025-ai-risk-scenario-host-probe-v3-2026-08-10.json",
+      "sha256": "5e3b75bdb0b41b12441eb107ee185d86dc02ee6a841c74ccdfa2e8c98da08a2f"
+    },
+    {
+      "bytes": 7134,
+      "path": "round-025-ai-risk-scenario-host-probe-v3-correction-2026-08-10.json",
+      "sha256": "a109aefc6b3ad48b904217d1a892d345c6a61831f1b7dd4fdde0b9553941ad8c"
+    },
+    {
       "bytes": 3604,
       "path": "round-025-ai-uplift-evaluation-contract-v1.json",
       "sha256": "bf7aa3c4b907be478aa20398badcace2b26a36f3ac77ece5ce9c16d949f02cbd"
+    },
+    {
+      "bytes": 2739,
+      "path": "round-025-ai-uplift-evaluation-contract-v2.json",
+      "sha256": "6aaa0d66a137222084c8ab9f7bb70a83d1143978078f00e09449475603420b25"
     },
     {
       "bytes": 3750,
@@ -299,7 +354,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 25,
   "live_trading_authority": false,
-  "manifest_sha256": "5d1eadf71536992643a43aa4bd592cadfad166e3862a4f0ca340a7f02f519a6a",
+  "manifest_sha256": "fbade21dbd80cbed2d5c56133040d15de7628e6ccb07868c88a555fe63bf04fb",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -310,7 +365,9 @@
   "round25_ai_host_mechanics_verified": true,
   "round25_ai_operator_implemented": true,
   "round25_ai_risk_contract_frozen": true,
+  "round25_ai_safety_behavior_mechanics_verified": true,
   "round25_ai_uplift_contract_frozen": true,
+  "round25_ai_uplift_contract_revision": 2,
   "round25_ai_uplift_evaluator_implemented": true,
   "round25_ai_uplift_population_available": false,
   "round25_ai_uplift_result_available": false,
@@ -352,5 +409,5 @@
   "source_dataset_sha256": "a6fd7f55ec7705d391a035b923c4440c3f92ddfb5b1b169ee6b7df3d67aa7665",
   "source_evaluation_artifact_sha256": "c3385d4894ca430a91442d1023bf01f61c650f6d208a4d0f89d11007ee5a11c0",
   "source_pretest_artifact_sha256": "03e4fae64f34f835cac338dee111701c73419929e97a22939e12037eba8dfec9",
-  "status": "round25_v2_waiting_ai_runtime_and_evaluators_implemented"
+  "status": "round25_v2_waiting_ai_behavior_qualified_uplift_evaluator_implemented"
 }

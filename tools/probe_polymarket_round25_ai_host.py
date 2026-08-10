@@ -28,7 +28,7 @@ DEFAULT_OUTPUT = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-025-ai-risk-advisory-host-probe-v6-2026-08-10.json"
+    / "round-025-ai-risk-advisory-host-probe-v7-2026-08-10.json"
 )
 FAILED_V1_PATH = (
     ROOT
@@ -70,6 +70,14 @@ FAILED_V5_PATH = (
     / "round-025-ai-risk-advisory-host-probe-v5-2026-08-10.json"
 )
 FAILED_V5_SHA256 = "fda0a5a9fc8a61402e64849163d9c16657303d13b7fdff1b6161d76d6fe2f4d3"
+PRIOR_V6_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-025-ai-risk-advisory-host-probe-v6-2026-08-10.json"
+)
+PRIOR_V6_SHA256 = "febf68717042b2d69c410c34e86c0703feb56bacae5163430b8e226e3eb1b540"
 
 
 def _canonical_json(value: object) -> str:
@@ -239,7 +247,7 @@ def run_probe(*, candidate_ids: tuple[str, ...]) -> dict[str, object]:
         / "docs"
         / "model-research"
         / "polymarket"
-        / "round-025-ai-risk-advisory-contract-v5.json"
+        / "round-025-ai-risk-advisory-contract-v6.json"
     )
     tool = Path(__file__).resolve()
     failed_v1 = json.loads(FAILED_V1_PATH.read_text(encoding="ascii"))
@@ -257,8 +265,11 @@ def run_probe(*, candidate_ids: tuple[str, ...]) -> dict[str, object]:
     failed_v5 = json.loads(FAILED_V5_PATH.read_text(encoding="ascii"))
     if failed_v5.get("evidence_sha256") != FAILED_V5_SHA256:
         raise ValueError("Round 25 AI failed v5 probe identity differs")
+    prior_v6 = json.loads(PRIOR_V6_PATH.read_text(encoding="ascii"))
+    if prior_v6.get("evidence_sha256") != PRIOR_V6_SHA256:
+        raise ValueError("Round 25 AI prior v6 probe identity differs")
     return {
-        "schema_version": "polymarket-round25-ai-risk-advisory-host-probe-v6",
+        "schema_version": "polymarket-round25-ai-risk-advisory-host-probe-v7",
         "captured_at_utc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "status": (
             "runtime_mechanics_verified"
@@ -270,24 +281,26 @@ def run_probe(*, candidate_ids: tuple[str, ...]) -> dict[str, object]:
             "python": platform.python_version(),
             "gpu_names": list(_windows_gpu_names()),
         },
-        "supersedes_failed_probe": {
-            "path": FAILED_V5_PATH.relative_to(ROOT).as_posix(),
-            "evidence_sha256": FAILED_V5_SHA256,
+        "supersedes_runtime_probe": {
+            "path": PRIOR_V6_PATH.relative_to(ROOT).as_posix(),
+            "evidence_sha256": PRIOR_V6_SHA256,
             "prior_failure_paths": [
                 FAILED_V1_PATH.relative_to(ROOT).as_posix(),
                 FAILED_V2_PATH.relative_to(ROOT).as_posix(),
                 FAILED_V3_PATH.relative_to(ROOT).as_posix(),
                 FAILED_V4_PATH.relative_to(ROOT).as_posix(),
+                FAILED_V5_PATH.relative_to(ROOT).as_posix(),
             ],
             "prior_failure_evidence_sha256": [
                 FAILED_V1_SHA256,
                 FAILED_V2_SHA256,
                 FAILED_V3_SHA256,
                 FAILED_V4_SHA256,
+                FAILED_V5_SHA256,
             ],
-            "failure_boundary": "qwen3_4b_completed_in_time_but_failed_the_free_numeric_and_relational_response_contract",
-            "correction": "replace_model_generated_numeric_and_relational_fields_with_one_discrete_risk_action_and_deterministic_operator_mapping",
-            "model_response_observed": False,
+            "failure_boundary": "qwen3_4b_returned_allow_for_all_ten_target_free_v2_safety_scenarios",
+            "correction": "add_non_numeric_monotonic_risk_dimension_instruction_without_changing_model_authority_or_deadline",
+            "model_response_observed": True,
         },
         "source": {
             "ai_contract_sha256": POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_SHA256,

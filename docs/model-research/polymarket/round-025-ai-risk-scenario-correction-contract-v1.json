@@ -1,0 +1,41 @@
+{
+  "schema_version": "polymarket-round25-ai-risk-scenario-correction-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:29:51Z",
+  "status": "frozen_before_offline_check_recomputation_without_model_inference",
+  "source": {
+    "scenario_contract_v3_sha256": "4a6efba5ced12a7c0e076fe8644d8ea06f093d765ec006a083a1e68efe69279c",
+    "host_probe_v3_evidence_sha256": "2ee0f848829a362a4b1957809a8c4ca86f7d103cd726057f21f40e6eb1a7f246",
+    "host_probe_v3_file_sha256": "5e3b75bdb0b41b12441eb107ee185d86dc02ee6a841c74ccdfa2e8c98da08a2f",
+    "accepted_scenario_results": 11,
+    "probe_failure_object": null
+  },
+  "reporting_defect": {
+    "model_or_provider_failure": false,
+    "scenario_result_failure": false,
+    "check_evaluator_called": false,
+    "cause": "post_run_dispatch_retained_the_obsolete_len_results_equals_10_guard_after_the_frozen_v3_ledger_expanded_to_11",
+    "effect": "fallback_initialized_every_check_false_even_though_all_11_result_objects_were_retained"
+  },
+  "correction": {
+    "model_inference_may_be_repeated": false,
+    "raw_model_response_needed": false,
+    "immutable_v3_scenario_results_may_be_reclassified": true,
+    "required_checks_changed": false,
+    "risk_action_order_changed": false,
+    "scenario_values_changed": false,
+    "unload_must_be_reverified_against_exact_digest": true,
+    "derived_artifact_must_reference_every_packet_advisory_and_telemetry_hash": true
+  },
+  "interpretation": {
+    "passing_result": "target_free_reachable_safety_behavior_mechanics_only",
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "271c9d964224cea77ed7df1a68a39ae077f20de868849640aac24f9a4e80dc2d"
+}

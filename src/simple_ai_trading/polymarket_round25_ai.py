@@ -42,8 +42,11 @@ POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_V3_SHA256 = (
 POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_V4_SHA256 = (
     "c0f14340de46dba9726a6f86d4d7d5ab09d7368454114bb45bedd9cf0a114a31"
 )
-POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_SHA256 = (
+POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_V5_SHA256 = (
     "3d8ea3e7cd77c483bd64b578f8e0893c0cceaa0e7b84adfcfd206d16480e62db"
+)
+POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_SHA256 = (
+    "39e862da001f96dbad405c625062918cab65ac2382ef4105b3664e53f6cb2505"
 )
 POLYMARKET_ROUND25_AI_PACKET_SCHEMA_VERSION = (
     "polymarket-round25-target-free-ai-risk-packet-v1"
@@ -996,8 +999,11 @@ def _prompt(packet: Round25AIAdvisoryPacket) -> str:
     instructions = (
         "Review one proposed BTC 5m entry using only this target-free packet. Select "
         "one schema risk_action. Never create or increase risk, change side, or affect "
-        "exits. Use allow only when no additional restriction is warranted. Return "
-        "only schema JSON. Packet:"
+        "exits. Risk increases with spread, receipt age, transport gaps, volatility, "
+        "epistemic uncertainty, adverse selection, exposure, and portfolio utilization, "
+        "and increases when executable depth falls. Never become less restrictive as "
+        "risk worsens. Combined severe risks require veto or cooldown. Use allow only "
+        "when the packet is benign. Return only schema JSON. Packet:"
     )
     return f"{instructions}{_canonical_json(packet.prompt_payload())}"
 

@@ -1,0 +1,80 @@
+{
+  "schema_version": "polymarket-round25-ai-risk-advisory-contract-v6",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:22:54Z",
+  "status": "frozen_target_free_safety_prompt_correction_before_reprobe",
+  "supersedes": {
+    "contract_v5_sha256": "3d8ea3e7cd77c483bd64b578f8e0893c0cceaa0e7b84adfcfd206d16480e62db",
+    "failed_scenario_probe_v2_evidence_sha256": "b0fbcf45db689d992ccd089ef0acf6b823ce8480c0814a69576222af6ef0fb55",
+    "failed_scenario_probe_v2_file_sha256": "313da14a30aa8781f51f9d04b5e6a0a5d67b9d4d2871850b137fc198b919e704"
+  },
+  "observed_failure_boundary": {
+    "valid_coherent_responses": 10,
+    "responses_within_ten_seconds": 10,
+    "responses_fully_gpu_resident": 10,
+    "risk_actions": {"allow": 10},
+    "combined_crisis_at_least_veto_check": false,
+    "model_unloaded_after_probe": true,
+    "market_data_accessed": false,
+    "target_outcome_resolution_or_pnl_accessed": false,
+    "diagnosis": "the_minimal_prompt_defined_authority_but_did_not_define_how_packet_risk_dimensions_should_change_restriction"
+  },
+  "scenario_reachability_correction": {
+    "near_stale_clob_receipt_at_4900_ms_removed": true,
+    "transport_gap_count_20_removed": true,
+    "reason": "round25_causal_feature_admission_rejects_clob_receipts_over_500_ms_and_any_observed_stream_gap_before_model_or_ai_input",
+    "remaining_scenarios_are_soft_risk_states_within_feature_packet_domains": true
+  },
+  "prompt_correction": {
+    "authority_changed": false,
+    "packet_fields_changed": false,
+    "response_protocol_changed": false,
+    "model_or_digest_changed": false,
+    "provider_deadline_changed": false,
+    "output_token_budget_changed": false,
+    "numeric_action_thresholds_added": false,
+    "instruction_added": "treat_spread_receipt_age_transport_gaps_volatility_uncertainty_adverse_selection_exposure_and_risk_utilization_as_increasing_risk_treat_depth_as_decreasing_risk_and_never_be_less_restrictive_when_risk_worsens",
+    "combined_severe_risk_instruction_added": true,
+    "attempt_count_after_behavior_failure": 1,
+    "further_same_candidate_prompt_tuning_allowed_after_failed_reachable_v3_battery": false
+  },
+  "inherited_unchanged": {
+    "active_candidate_id": "qwen3-4b-risk-advisor-v1",
+    "active_model": "qwen3:4b",
+    "active_model_digest": "e55aed6fe643f9368b2f48f8aaa56ec787b75765da69f794c0a0c23bfe7c64b2",
+    "model_output_protocol": "one_enum_risk_action",
+    "maximum_provider_wall_seconds": 10.0,
+    "preload_timeout_seconds": 60.0,
+    "context_tokens": 4096,
+    "maximum_output_tokens": 24,
+    "hidden_thinking": false,
+    "temperature": 0.0,
+    "seed": 25025,
+    "full_gpu_residency_ratio_minimum": 0.99,
+    "ai_can_create_entry": false,
+    "ai_can_increase_size": false,
+    "ai_can_change_side": false,
+    "ai_can_override_deterministic_gate": false,
+    "ai_can_block_cancel_close_stop_or_reconciliation": false,
+    "invalid_failed_stale_slow_or_nonresident_response": "veto_new_entries_with_zero_multiplier",
+    "matched_uplift_minimum_conditions": 500,
+    "matched_uplift_minimum_interventions": 50,
+    "live_authority": false
+  },
+  "truth_state": {
+    "round25_v2_data_captured": false,
+    "predictive_candidate_selected": false,
+    "ai_candidate_operator_implemented": true,
+    "qwen3_4b_revised_prompt_host_mechanics_verified": false,
+    "qwen3_4b_reachable_safety_behavior_verified": false,
+    "ai_uplift_population_captured": false,
+    "ai_uplift_evaluated": false,
+    "ai_uplift_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "39e862da001f96dbad405c625062918cab65ac2382ef4105b3664e53f6cb2505"
+}
