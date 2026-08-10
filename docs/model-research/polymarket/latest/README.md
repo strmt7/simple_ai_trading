@@ -70,7 +70,8 @@ retained and no credentials or orders. It is transport evidence only; no target
 collection, pre-close identity proof, resolution authority, or target store
 exists.
 
-The post-capture coordinator is also implemented. Its single-writer,
+The [post-capture coordinator v2](../round-025-post-capture-coordinator-contract-v2.json)
+binds the corrected resolution transport contract. Its single-writer,
 self-hashed recovery state orders terminal audit, feature publication, bounded
 resolution batches, train/calibration-only loading, one-time transform fitting,
 finite model fitting, target-free selection prediction freeze, one-use
@@ -678,7 +679,7 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Round 25 joint feature materialization](../round-025-joint-feature-materialization-contract-v1.json)
 - [Round 25 official resolution collection v2](../round-025-official-resolution-collection-contract-v2.json)
 - [Round 25 official resolution transport probe](../round-025-official-resolution-transport-probe-v1-2026-08-10.json)
-- [Round 25 post-capture coordinator](../round-025-post-capture-coordinator-contract-v1.json)
+- [Round 25 post-capture coordinator v2](../round-025-post-capture-coordinator-contract-v2.json)
 - [Round 25 Fin-R1 supervisor rejection](../round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json)
 - [Round 25 slow LLM supervisor mechanism rejection](../round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json)
 

@@ -203,6 +203,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_resolution_store_implemented"] is True
     assert manifest["round25_resolution_authority_available"] is False
     assert manifest["round25_post_capture_coordinator_contract_frozen"] is True
+    assert manifest["round25_post_capture_coordinator_contract_revision"] == 2
     assert manifest["round25_post_capture_coordinator_implemented"] is True
     assert manifest["round25_post_capture_coordinator_run"] is False
     assert manifest["profitability_claim"] is False
@@ -226,6 +227,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
         in artifact_paths
     )
     assert "round-025-post-capture-coordinator-contract-v1.json" in artifact_paths
+    assert "round-025-post-capture-coordinator-contract-v2.json" in artifact_paths
     assert "round-025-control-fit-contract-v1.json" in artifact_paths
     assert "round-025-lightgbm-fit-contract-v1.json" in artifact_paths
     assert "round-025-predictive-evaluation-contract-v1.json" in artifact_paths

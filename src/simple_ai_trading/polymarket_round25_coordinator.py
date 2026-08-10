@@ -65,7 +65,7 @@ from .polymarket_round25_terminal import (
 
 
 POLYMARKET_ROUND25_COORDINATOR_CONTRACT_SHA256 = (
-    "da1b29c00f368dc3ad2639fbfefabf2acf0f688aafebc74d826c1712f8d74140"
+    "a82a4bd913e9cc267474b56e9319e036480f990f706ab1cdfffcf627446dc6fc"
 )
 POLYMARKET_ROUND25_COORDINATOR_STATE_SCHEMA_VERSION = (
     "polymarket-round25-post-capture-coordinator-state-v1"
