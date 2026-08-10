@@ -102,18 +102,26 @@ The v2 plan has no test role. The
 [candidate amendment](../round-025-twap-native-candidate-selection-amendment-v2.json)
 therefore requires a separate prospective campaign after model selection.
 Qwen3.5-9B and Fin-R1-8B failed the frozen 10-second local runtime boundary and
-cannot re-enter it. The current [AI risk contract](../round-025-ai-risk-advisory-contract-v5.json)
+cannot re-enter it. The current [AI risk contract](../round-025-ai-risk-advisory-contract-v6.json)
 limits exact-digest Qwen3 4B to one of seven entry-only risk ceilings; trusted
 code derives veto, size, cooldown, and audit semantics. AI cannot create or
 enlarge a trade, change side, override deterministic safety, or affect exits.
 
-A bounded [AMD host probe](../round-025-ai-risk-advisory-host-probe-v6-2026-08-10.json)
-returned a valid constrained action in `1.6733` seconds with the exact model
+A bounded [AMD host probe](../round-025-ai-risk-advisory-host-probe-v7-2026-08-10.json)
+returned a valid constrained action in `1.8152` seconds with the exact model
 fully resident on the RX 9070 XT and unloaded it afterward. The probe used one
 target-free numerical fixture, no market outcome, no credential, and no order.
-It proves runtime mechanics only, not useful judgment.
+It proves runtime mechanics only, not useful judgment. The final target-free
+[reachable safety battery](../round-025-ai-risk-scenario-host-probe-v3-2026-08-10.json)
+retained 11 valid responses but its reporter incorrectly marked every check
+false after expecting the obsolete 10-row ledger. A frozen
+[no-inference correction](../round-025-ai-risk-scenario-host-probe-v3-correction-2026-08-10.json)
+verified every original packet, advisory, telemetry hash, and unload state.
+Benign and most isolated soft hazards returned `allow`; elevated portfolio risk
+and the combined soft crisis returned `veto`. Maximum latency was `2.0685`
+seconds. This is constrained safety-behavior evidence only, not economic value.
 
-The [AI uplift contract](../round-025-ai-uplift-evaluation-contract-v1.json)
+The [AI uplift contract](../round-025-ai-uplift-evaluation-contract-v2.json)
 and evaluator require a new chronological population after selection with at
 least 500 conditions and 50 actual interventions. The control and AI paths must
 share the selected prediction, pre-AI decision, and execution/cost/latency
@@ -588,9 +596,10 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Round 21 terminal sealed-evaluation contract](../round-021-terminal-sealed-evaluation-design-v7.json)
 - [Round 21 terminal transport-manifest contract](../round-021-terminal-transport-manifest-design-v1.json)
 - [Publication integrity](publication-integrity.json)
-- [Round 25 AI risk contract](../round-025-ai-risk-advisory-contract-v5.json)
-- [Round 25 AI host mechanics](../round-025-ai-risk-advisory-host-probe-v6-2026-08-10.json)
-- [Round 25 AI uplift contract](../round-025-ai-uplift-evaluation-contract-v1.json)
+- [Round 25 AI risk contract](../round-025-ai-risk-advisory-contract-v6.json)
+- [Round 25 AI host mechanics](../round-025-ai-risk-advisory-host-probe-v7-2026-08-10.json)
+- [Round 25 AI safety behavior](../round-025-ai-risk-scenario-host-probe-v3-correction-2026-08-10.json)
+- [Round 25 AI uplift contract](../round-025-ai-uplift-evaluation-contract-v2.json)
 
 Regenerate Round 14 tables and charts from the closed local evidence database
 with `python tools/publish_polymarket_round14_historical.py`. After an

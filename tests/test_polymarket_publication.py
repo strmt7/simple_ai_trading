@@ -136,7 +136,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["latest_graph_round"] == 23
     assert (
         manifest["status"]
-        == "round25_v2_waiting_ai_runtime_and_evaluators_implemented"
+        == "round25_v2_waiting_ai_behavior_qualified_uplift_evaluator_implemented"
     )
     assert manifest["round21_result_available"] is False
     assert manifest["round23_result_available"] is True
@@ -170,7 +170,9 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_ai_risk_contract_frozen"] is True
     assert manifest["round25_ai_operator_implemented"] is True
     assert manifest["round25_ai_host_mechanics_verified"] is True
+    assert manifest["round25_ai_safety_behavior_mechanics_verified"] is True
     assert manifest["round25_ai_uplift_contract_frozen"] is True
+    assert manifest["round25_ai_uplift_contract_revision"] == 2
     assert manifest["round25_ai_uplift_evaluator_implemented"] is True
     assert manifest["round25_ai_uplift_population_available"] is False
     assert manifest["round25_ai_uplift_result_available"] is False

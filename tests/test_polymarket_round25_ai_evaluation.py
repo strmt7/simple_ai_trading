@@ -9,6 +9,7 @@ import pytest
 
 from simple_ai_trading.polymarket_round25_ai_evaluation import (
     POLYMARKET_ROUND25_AI_UPLIFT_CONTRACT_SHA256,
+    POLYMARKET_ROUND25_AI_UPLIFT_CONTRACT_V1_SHA256,
     Round25AIMatchedReplayCondition,
     create_round25_ai_uplift_panel,
     evaluate_round25_ai_uplift,
@@ -156,12 +157,31 @@ def test_round25_ai_uplift_contract_is_self_hashed_and_non_authoritative() -> No
     contract = json.loads(path.read_text(encoding="ascii"))
     claimed = contract.pop("contract_sha256")
 
-    assert claimed == POLYMARKET_ROUND25_AI_UPLIFT_CONTRACT_SHA256
+    assert claimed == POLYMARKET_ROUND25_AI_UPLIFT_CONTRACT_V1_SHA256
     assert claimed == _canonical_sha256(contract)
     assert contract["population"]["minimum_conditions"] == 500
     assert contract["population"]["selection_condition_reuse_allowed"] is False
     assert contract["statistical_test"]["bootstrap_replicates"] == 10_000
     assert contract["interpretation"]["live_authority"] is False
+
+
+def test_round25_ai_uplift_v2_contract_binds_qualified_prompt_without_new_claims() -> None:
+    path = (
+        Path(__file__).parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-025-ai-uplift-evaluation-contract-v2.json"
+    )
+    contract = json.loads(path.read_text(encoding="ascii"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == POLYMARKET_ROUND25_AI_UPLIFT_CONTRACT_SHA256
+    assert claimed == _canonical_sha256(contract)
+    assert contract["dependency_correction"]["statistical_method_changed"] is False
+    assert contract["dependency_correction"]["minimum_conditions"] == 500
+    assert contract["truth_state"]["uplift_evaluated"] is False
+    assert contract["truth_state"]["ai_uplift_verified"] is False
 
 
 def test_round25_ai_matched_rows_are_hash_bound_and_panels_are_disjoint() -> None:

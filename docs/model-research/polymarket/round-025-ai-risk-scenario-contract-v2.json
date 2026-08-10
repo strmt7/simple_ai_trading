@@ -1,0 +1,46 @@
+{
+  "schema_version": "polymarket-round25-ai-risk-scenario-contract-v2",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:15:07Z",
+  "status": "frozen_after_incomplete_v1_timing_failure_and_before_fresh_remaining_scenario_responses",
+  "supersedes": {
+    "scenario_contract_v1_sha256": "633df34e57318e95372164cbdc2f8f5334d381da55f8b0ef9f78a82266dbc66f",
+    "failed_host_probe_v1_evidence_sha256": "89a4b598e8dfc5e3a79339706f7938447230e45a5c7840338584b75eb0e754ed",
+    "failed_host_probe_v1_file_sha256": "e04432f64e09e67e0de3494958e3aa05883fcacdebe60b0e3e7a01fce7025230"
+  },
+  "observed_failure_boundary": {
+    "completed_valid_scenarios": ["calm_base", "calm_repeat", "mild_spread", "wide_spread"],
+    "packet_stale_scenarios": ["near_stale_receipts", "transport_degraded", "volatile", "uncertain_adverse", "risk_budget_saturated", "combined_crisis"],
+    "model_responses_observed_for_completed_scenarios": true,
+    "target_outcome_resolution_or_pnl_accessed": false,
+    "model_unloaded_after_failure": true,
+    "diagnosis": "one_initial_decision_timestamp_was_reused_across_a_sequential_battery_despite_the_frozen_ten_second_packet_validity"
+  },
+  "correction": {
+    "scenario_feature_values_changed": false,
+    "scenario_order_changed": false,
+    "required_behavior_checks_changed": false,
+    "model_prompt_or_response_protocol_changed": false,
+    "candidate_or_digest_changed": false,
+    "provider_deadline_changed": false,
+    "new_decision_and_expiry_timestamp_per_scenario": true,
+    "calm_repeat_compares_action_semantics_with_identical_financial_features": true,
+    "retry_count_per_scenario": 0
+  },
+  "inherited_unchanged": {
+    "scenario_ledger": "round-025-ai-risk-scenario-contract-v1.json",
+    "risk_action_order": "round-025-ai-risk-scenario-contract-v1.json",
+    "required_checks": "round-025-ai-risk-scenario-contract-v1.json",
+    "maximum_provider_seconds_per_scenario": 10.0,
+    "preload_once_and_unload_in_finally": true,
+    "full_gpu_residency_ratio_minimum": 0.99,
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "a893f96480b2d1ae265d99cd32d2c0ea413d15338d8d05d521c0c7a4316d8631"
+}

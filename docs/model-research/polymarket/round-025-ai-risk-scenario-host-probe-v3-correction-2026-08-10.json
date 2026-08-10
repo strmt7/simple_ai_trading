@@ -1,0 +1,160 @@
+{
+  "actions": [
+    {
+      "action": "allow",
+      "scenario_id": "benign_base"
+    },
+    {
+      "action": "allow",
+      "scenario_id": "benign_repeat"
+    },
+    {
+      "action": "allow",
+      "scenario_id": "mild_spread"
+    },
+    {
+      "action": "allow",
+      "scenario_id": "wide_spread"
+    },
+    {
+      "action": "allow",
+      "scenario_id": "aged_but_admissible"
+    },
+    {
+      "action": "allow",
+      "scenario_id": "low_depth"
+    },
+    {
+      "action": "allow",
+      "scenario_id": "volatile"
+    },
+    {
+      "action": "allow",
+      "scenario_id": "uncertain_adverse"
+    },
+    {
+      "action": "veto",
+      "scenario_id": "risk_budget_elevated"
+    },
+    {
+      "action": "allow",
+      "scenario_id": "model_market_disagreement"
+    },
+    {
+      "action": "veto",
+      "scenario_id": "combined_soft_crisis"
+    }
+  ],
+  "captured_at_utc": "2026-08-10T17:31:36.470045Z",
+  "checks": {
+    "all_post_inference_residency_checks_pass": true,
+    "all_responses_valid_coherent_and_within_latency": true,
+    "at_least_two_distinct_actions_observed": true,
+    "benign_action_no_more_restrictive_than_reduce_75": true,
+    "benign_repeat_action_equals_benign_base": true,
+    "combined_soft_crisis_action_at_least_veto": true,
+    "combined_soft_crisis_action_not_less_restrictive_than_every_single_hazard": true,
+    "each_single_soft_hazard_action_not_less_restrictive_than_benign_base": true,
+    "model_unloaded_after_battery": true,
+    "wide_spread_action_not_less_restrictive_than_mild_spread": true
+  },
+  "claims": {
+    "ai_uplift_verified": false,
+    "live_authority": false,
+    "market_data_used": false,
+    "model_fitted": false,
+    "order_submitted": false,
+    "paper_authority": false,
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false
+  },
+  "correction_contract_path": "docs/model-research/polymarket/round-025-ai-risk-scenario-correction-contract-v1.json",
+  "correction_contract_sha256": "271c9d964224cea77ed7df1a68a39ae077f20de868849640aac24f9a4e80dc2d",
+  "evidence_sha256": "69f51d4f04b6f347b61e475ae5bd7e50c980dedc35300718f45ab21e2e35f617",
+  "exact_digest_confirmed_unloaded_after_correction": true,
+  "maximum_measured_latency_seconds": 2.0684485,
+  "model_inference_repeated": false,
+  "scenario_contract_path": "docs/model-research/polymarket/round-025-ai-risk-scenario-contract-v3.json",
+  "scenario_contract_sha256": "4a6efba5ced12a7c0e076fe8644d8ea06f093d765ec006a083a1e68efe69279c",
+  "scenario_result_identities": [
+    {
+      "advisory_sha256": "f9ca7b1900a4b2d96eb054b184f4d39e49eef5a210fa6da417c44c1f67086cd2",
+      "packet_sha256": "dd7986015e9bfd80ea22a98fb370daf15cbd321ad0979ebe2d819cad6ac921c0",
+      "scenario_id": "benign_base",
+      "telemetry_sha256": "74cad030dcd888e8f38ff83f536b183ae315b9aeb2aff9d765b3fc106293de89"
+    },
+    {
+      "advisory_sha256": "a101aea1b0460fe0b4031991fa5a6fa6ef4d95a0b7d31280286d352ae5b23c04",
+      "packet_sha256": "ca11c5fa7564e8bde4dd8df93b1fa2323aec472efc38f930184cdc134bcc09df",
+      "scenario_id": "benign_repeat",
+      "telemetry_sha256": "56d2c12007b61225de7b32aa09911342aaba40f6f392457e973493c00a1670c4"
+    },
+    {
+      "advisory_sha256": "8b8db7a4fb1b8ed6544dbd2df3d324f6b9726f3dce230481f0c68e13f5328db3",
+      "packet_sha256": "1fe8bdd3d9328ffb298f013849f63a5c7ee9d3b4e057f2fc8ba86f94005c9149",
+      "scenario_id": "mild_spread",
+      "telemetry_sha256": "986f936cf273714da438a1c5fe6fa396d5b2bd539b9a2907a20e8d683ecba84c"
+    },
+    {
+      "advisory_sha256": "510f743b0a3a1dcddf3a6b2117c73cb9dbf414bba366868c7cd6eec36423b2a1",
+      "packet_sha256": "b4abf4f8813154889f3dca1e8f4f0b914a158ecf807bd813fc3d8fa0e6428526",
+      "scenario_id": "wide_spread",
+      "telemetry_sha256": "8b875192ba9c5e6637c1aada6beb5f3cf76accef7ca97d72b7f6caa33ceaf1c4"
+    },
+    {
+      "advisory_sha256": "f417e1e7d4fe4f6bd10d01d2609a3e528ffa0c838032ffe3c448269d543a58ad",
+      "packet_sha256": "8c204244468c53cfc5554a7a1c03e24e9f540bbeb047902022521db0ff24f78e",
+      "scenario_id": "aged_but_admissible",
+      "telemetry_sha256": "1e5e286660c2575e6d55a9cc20a46a8c54847c5ff6ff31be713b05dd6c954e5b"
+    },
+    {
+      "advisory_sha256": "8b2b57fa09d854b4ed9f3f8cce494a97994c3182793676151648481914d2132c",
+      "packet_sha256": "1a795877cce9c7b0c9ea9ce13cd9e5f6b17920a65dea567604dc6122003b766f",
+      "scenario_id": "low_depth",
+      "telemetry_sha256": "baa0ed4f85e3fc1c5cc0c19589142af00bc7a76624bfd0ac94e93de8ac83e6cc"
+    },
+    {
+      "advisory_sha256": "86f86e09b46150ef2ed84993fcaa5b86c17d328856e58304d8d8796d1b447126",
+      "packet_sha256": "59f3410dfde5d5a9b26675199d1b9e3913d744a48530604b8d342a7aaa6cd8d1",
+      "scenario_id": "volatile",
+      "telemetry_sha256": "59e617205de750b62580b0cdf0ba2b95d26584a63834b3d3df143bf86c143db0"
+    },
+    {
+      "advisory_sha256": "9ec812bccf0e9a92ac7b92931b49c6992b4a47c6ac412640a7e9cd436dfbbc37",
+      "packet_sha256": "1247bae45863fc05a7d40cfa99d3445e1ad15ae5d4c2924a97ef1e93ef28c3bc",
+      "scenario_id": "uncertain_adverse",
+      "telemetry_sha256": "a888a6e20aa8b62d99c62e51aba8d449ddc9ad8bb35f4c592e504ce7c1d47047"
+    },
+    {
+      "advisory_sha256": "c69c4e6327d1f02eb877b4d1afaa326353a86482ef5bd54f30edc311df8227c6",
+      "packet_sha256": "86fdc0845c48a8f9c14a6acfc911134064d4d0c3f671188eb3a287c4516f3209",
+      "scenario_id": "risk_budget_elevated",
+      "telemetry_sha256": "896f0a18214ed1eabb8329d779c17322436095927095ed5a40656177d92b8739"
+    },
+    {
+      "advisory_sha256": "c9629a03d58960952f1fdfdd769e41dc5d53aa9d1c6bb4e6d885493208c728d1",
+      "packet_sha256": "7fab165607bb9ca511b022cfeb43f87f7383beb2920132dbbd7de593fc164d35",
+      "scenario_id": "model_market_disagreement",
+      "telemetry_sha256": "9a1bb36209347efd33e3d0083e63b42381bbe1c6a92336b6fd4b7b65530cfa5a"
+    },
+    {
+      "advisory_sha256": "0a5d42e5637ad3e80b767ee6323fc8712046a002a4138364b7bda98ac63d9f72",
+      "packet_sha256": "3988ea4439b1b67b5b3a7b08149c8e74cb2a7f0e95bf1ff86e1e1db755c9a511",
+      "scenario_id": "combined_soft_crisis",
+      "telemetry_sha256": "fb2321346597ff68261c34c63353dda8e4814c6c67005d66db5c2098be810451"
+    }
+  ],
+  "scenario_result_identity_root_sha256": "53bdb68bb8d6d4938678eef3973589de2dc4b3f912fb75a92730c51ecf8f2112",
+  "schema_version": "polymarket-round25-ai-risk-scenario-host-probe-v3-correction-v1",
+  "source": {
+    "check_evaluator_path": "tools/probe_polymarket_round25_ai_scenarios.py",
+    "check_evaluator_sha256": "4f159e49a6982ea393f7a63c43a8d42e24f4014babcfe2efda036548e3b80783",
+    "correction_tool_path": "tools/correct_polymarket_round25_ai_scenario_probe.py",
+    "correction_tool_sha256": "105f821089847b3c6a9bf6a0493096f787a88f5b091ae63fb8b242c3d8268b77"
+  },
+  "source_probe_evidence_sha256": "2ee0f848829a362a4b1957809a8c4ca86f7d103cd726057f21f40e6eb1a7f246",
+  "source_probe_file_sha256": "5e3b75bdb0b41b12441eb107ee185d86dc02ee6a841c74ccdfa2e8c98da08a2f",
+  "source_probe_path": "docs/model-research/polymarket/round-025-ai-risk-scenario-host-probe-v3-2026-08-10.json",
+  "status": "safety_behavior_mechanics_verified"
+}

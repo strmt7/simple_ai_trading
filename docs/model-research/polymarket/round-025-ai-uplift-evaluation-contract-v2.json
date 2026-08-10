@@ -1,0 +1,59 @@
+{
+  "schema_version": "polymarket-round25-ai-uplift-evaluation-contract-v2",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:31:50Z",
+  "status": "frozen_after_target_free_behavior_qualification_and_before_uplift_population_capture",
+  "supersedes": {
+    "uplift_contract_v1_sha256": "117b17da6f31d6d90d2730cae10d003cd424bcad9455fdabb6c16dc7cf61cbdc",
+    "ai_risk_advisory_contract_v6_sha256": "39e862da001f96dbad405c625062918cab65ac2382ef4105b3664e53f6cb2505",
+    "reachable_scenario_contract_v3_sha256": "4a6efba5ced12a7c0e076fe8644d8ea06f093d765ec006a083a1e68efe69279c",
+    "corrected_behavior_evidence_sha256": "69f51d4f04b6f347b61e475ae5bd7e50c980dedc35300718f45ab21e2e35f617"
+  },
+  "dependency_correction": {
+    "active_ai_prompt_changed_from_v5_to_v6": true,
+    "candidate_model_or_digest_changed": false,
+    "model_output_protocol_changed": false,
+    "uplift_population_changed": false,
+    "matched_replay_fields_changed": false,
+    "statistical_method_changed": false,
+    "required_gates_changed": false,
+    "minimum_conditions": 500,
+    "minimum_actual_ai_interventions": 50,
+    "minimum_valid_model_response_ratio": 0.99,
+    "maximum_schema_or_coherence_violations": 0,
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 25025,
+    "circular_block_conditions": 12
+  },
+  "inherited_unchanged": {
+    "base_contract": "round-025-ai-uplift-evaluation-contract-v1.json",
+    "selection_population_reuse_allowed": false,
+    "same_selected_model_prediction_required": true,
+    "same_pre_ai_decision_and_market_state_required": true,
+    "same_execution_cost_latency_fill_cancel_reject_and_recovery_scenario_required": true,
+    "only_permitted_difference": "validated_ai_entry_veto_size_ceiling_or_cooldown",
+    "paired_mean_after_cost_return_delta_lower_95_bound": "strictly_greater_than_zero",
+    "paired_expected_shortfall_95_delta_upper_95_bound": "less_than_or_equal_to_zero",
+    "maximum_drawdown_delta_point_estimate": "less_than_or_equal_to_zero",
+    "passing_result": "development_uplift_nomination_only",
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "production_ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "truth_state": {
+    "predictive_candidate_selected": false,
+    "uplift_population_captured": false,
+    "uplift_panel_materialized": false,
+    "uplift_evaluated": false,
+    "development_uplift_gate_passed": false,
+    "profitability_verified": false,
+    "ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "47a51c97d723b37f278e1ef1f5860acae187d3a4747158d8525d2f16734d432a"
+}

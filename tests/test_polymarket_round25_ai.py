@@ -18,6 +18,7 @@ from simple_ai_trading.polymarket_round25_ai import (
     POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_V2_SHA256,
     POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_V3_SHA256,
     POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_V4_SHA256,
+    POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_V5_SHA256,
     Round25AIAdvisoryPacket,
     Round25AIAdvisoryWorker,
     Round25AIConfig,
@@ -276,12 +277,31 @@ def test_round25_ai_v5_contract_is_self_hashed_and_reduces_model_authority() -> 
     contract = json.loads(path.read_text(encoding="utf-8"))
     claimed = contract.pop("contract_sha256")
 
-    assert claimed == POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_SHA256
+    assert claimed == POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_V5_SHA256
     assert claimed == _canonical_sha256(contract)
     assert contract["correction"]["model_output_protocol_after"] == "one_enum_risk_action"
     assert contract["correction"]["operator_derives_veto_multiplier_cooldown_reasons_and_summary"] is True
     assert contract["correction"]["maximum_provider_wall_seconds"] == 10.0
     assert contract["inherited_unchanged"]["ai_can_create_entry"] is False
+
+
+def test_round25_ai_v6_contract_is_self_hashed_and_preserves_authority() -> None:
+    path = (
+        Path(__file__).parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-025-ai-risk-advisory-contract-v6.json"
+    )
+    contract = json.loads(path.read_text(encoding="ascii"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == POLYMARKET_ROUND25_AI_RISK_ADVISORY_CONTRACT_SHA256
+    assert claimed == _canonical_sha256(contract)
+    assert contract["prompt_correction"]["numeric_action_thresholds_added"] is False
+    assert contract["prompt_correction"]["authority_changed"] is False
+    assert contract["inherited_unchanged"]["ai_can_create_entry"] is False
+    assert contract["inherited_unchanged"]["live_authority"] is False
 
 
 def test_round25_ai_v6_host_probe_is_hash_bound_and_non_authoritative() -> None:
@@ -303,6 +323,32 @@ def test_round25_ai_v6_host_probe_is_hash_bound_and_non_authoritative() -> None:
     assert candidate["passed"] is True
     assert all(candidate["checks"].values())
     assert candidate["review_result"]["telemetry"]["residency"]["vram_to_model_ratio"] == 1.0
+    assert candidate["review_result"]["telemetry"]["measured_latency_seconds"] <= 10.0
+    assert not any(evidence["claims"].values())
+    assert evidence["source"]["contract_file_sha256"] == hashlib.sha256(
+        (root / evidence["source"]["contract_path"]).read_bytes()
+    ).hexdigest()
+    assert len(evidence["source"]["ai_module_sha256"]) == 64
+    assert len(evidence["source"]["probe_tool_sha256"]) == 64
+
+
+def test_round25_ai_v7_host_probe_binds_revised_prompt_and_current_sources() -> None:
+    root = Path(__file__).parents[1]
+    path = (
+        root
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-025-ai-risk-advisory-host-probe-v7-2026-08-10.json"
+    )
+    evidence = json.loads(path.read_text(encoding="ascii"))
+    claimed = evidence.pop("evidence_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["status"] == "runtime_mechanics_verified"
+    candidate = evidence["candidates"][0]
+    assert candidate["passed"] is True
+    assert all(candidate["checks"].values())
     assert candidate["review_result"]["telemetry"]["measured_latency_seconds"] <= 10.0
     assert not any(evidence["claims"].values())
     for key, relative in (
