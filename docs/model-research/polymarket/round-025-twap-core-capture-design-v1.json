@@ -1,0 +1,101 @@
+{
+  "schema_version": "polymarket-round25-twap-core-capture-design-v1",
+  "round": 25,
+  "status": "frozen_after_public_source_drift_observation_before_successor_capture",
+  "created_at_utc": "2026-08-10T08:21:25.3728717Z",
+  "supersedes": {
+    "round20_campaign_plan_sha256": "2c1d87577de566bd4934c9678bcbded5bf156b671a413b83fa6d463372db1d71",
+    "round20_terminal_status": "campaign_failed",
+    "round20_terminal_failure": "market resolution source is not the expected Chainlink stream",
+    "round20_data_reused": false,
+    "reason": "the BTC five-minute settlement reference changed from the legacy point stream to a distinct 30-second TWAP stream"
+  },
+  "source_regime": {
+    "asset": "BTC",
+    "horizon_seconds": 300,
+    "resolution_provider": "Chainlink Data Streams",
+    "resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+    "legacy_resolution_source": "https://data.chain.link/streams/btc-usd",
+    "legacy_and_twap_conditions_may_be_pooled": false,
+    "runtime_source_drift_policy": "fail_campaign_before_accepting_the_changed_market",
+    "public_gamma_endpoint": "https://gamma-api.polymarket.com/markets",
+    "public_clob_endpoint": "https://clob.polymarket.com",
+    "public_rtds_endpoint": "wss://ws-live-data.polymarket.com",
+    "credentials_allowed": false
+  },
+  "schedule": {
+    "scheduled_start_ms": 1786406400000,
+    "scheduled_end_ms": 1788046800000,
+    "scheduled_start_utc": "2026-08-11T00:00:00Z",
+    "scheduled_end_utc": "2026-08-29T23:40:00Z",
+    "matched_binance_sidecar_end_ms": 1788046800000,
+    "train_end_ms": 1787443200000,
+    "calibration_end_ms": 1787745600000,
+    "selection_end_ms": 1788046800000,
+    "minimum_train_conditions": 2000,
+    "minimum_calibration_conditions": 400,
+    "minimum_selection_conditions": 400
+  },
+  "capture": {
+    "assets": [
+      "BTC"
+    ],
+    "required_streams": [
+      "clob_market",
+      "polymarket_rtds"
+    ],
+    "required_clob_lanes": [
+      "clob"
+    ],
+    "required_rtds_topics": [
+      "crypto_prices_chainlink"
+    ],
+    "discovery_interval_seconds": 30,
+    "queue_capacity": 100000,
+    "writer_count": 1,
+    "database_threads": 2,
+    "memory_limit": "1GB",
+    "storage_schema": "polymarket-evidence-storage-v4",
+    "exact_compressed_receipt_frames": true,
+    "normalized_event_cache_during_capture": false,
+    "binance_captured": false,
+    "outcomes_accessed": false,
+    "model_scores_accessed": false
+  },
+  "efficiency": {
+    "duplicate_clob_lane_removed": true,
+    "reason": "single-lane conditions fail closed on any local transport gap; no receipt is duplicated solely for gap repair",
+    "database_cap_bytes": 214748364800,
+    "minimum_free_bytes": 549755813888,
+    "raw_archive_copy_created": false,
+    "feature_cache_created_during_capture": false,
+    "sidecar_database_copied": false
+  },
+  "admission": {
+    "terminal_exact_receipt_audit_required": true,
+    "condition_source_must_equal_frozen_twap_source": true,
+    "condition_touching_stream_gap_rejected": true,
+    "condition_outside_schedule_rejected": true,
+    "condition_with_missing_market_snapshot_rejected": true,
+    "condition_with_crossed_or_noncausal_book_rejected": true,
+    "campaign_completion_is_model_eligibility": false,
+    "selection_target_access_before_frozen_model_claim": false,
+    "source_regime_identity_enters_terminal_manifest": true
+  },
+  "independence": {
+    "polymarket_execution_connected": false,
+    "polymarket_account_state_accessed": false,
+    "binance_execution_connected": false,
+    "binance_account_state_accessed": false,
+    "binance_private_api_imported": false,
+    "future_optional_binance_join_is_receipt_time_and_public_only": true
+  },
+  "authority": {
+    "model_data_eligible": false,
+    "edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "b5c130622514b2b82855f0e1cc011b29a81bf0583e6bd37fa3e4d4b702d6a113"
+}

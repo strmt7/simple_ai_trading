@@ -9,6 +9,7 @@ import pytest
 from simple_ai_trading.polymarket import (
     CLOB_BASE_URL,
     GAMMA_MARKETS_URL,
+    POLYMARKET_FIVE_MINUTE_RESOLUTION_SOURCES,
     POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION,
     PolymarketPublicClient,
     parse_polymarket_fifteen_minute_market,
@@ -75,6 +76,33 @@ def test_market_parser_requires_exact_five_minute_chainlink_contract() -> None:
     ) == Decimal("1.75000")
 
 
+def test_five_minute_parser_accepts_the_exact_twap_30s_source_contract() -> None:
+    payload = _market()
+    payload["resolutionSource"] = (
+        "https://data.chain.link/streams/btc-usd-twap-30s-streams"
+    )
+    payload["cryptoMarketConfigId"] = "btc-5m-twap-30"
+    payload["cryptoMarketConfig"] = {
+        "asset": "btc",
+        "duration": "5m",
+        "id": "btc-5m-twap-30",
+        "twapEnabled": True,
+        "twapLookbackSeconds": 30,
+    }
+
+    market = parse_polymarket_five_minute_market(payload)
+
+    assert market.resolution_source == payload["resolutionSource"]
+    assert tuple(POLYMARKET_FIVE_MINUTE_RESOLUTION_SOURCES["BTC"]) == (
+        "https://data.chain.link/streams/btc-usd",
+        "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+    )
+
+    payload["cryptoMarketConfig"]["twapLookbackSeconds"] = 60
+    with pytest.raises(ValueError, match="TWAP resolution contract"):
+        parse_polymarket_five_minute_market(payload)
+
+
 def test_fifteen_minute_parser_is_separately_typed_and_exact() -> None:
     market = parse_polymarket_fifteen_minute_market(_fifteen_minute_market())
 
@@ -96,6 +124,13 @@ def test_fifteen_minute_parser_rejects_wrong_horizon_and_asset() -> None:
     wrong_asset["slug"] = f"eth-updown-15m-{EPOCH_15}"
     with pytest.raises(ValueError, match="supported BTC fifteen-minute"):
         parse_polymarket_fifteen_minute_market(wrong_asset)
+
+    wrong_source = _fifteen_minute_market()
+    wrong_source["resolutionSource"] = (
+        "https://data.chain.link/streams/btc-usd-twap-30s-streams"
+    )
+    with pytest.raises(ValueError, match="approved Chainlink"):
+        parse_polymarket_fifteen_minute_market(wrong_source)
 
 
 def test_market_parser_applies_recorded_v2_fee_exponent_exactly() -> None:
@@ -127,7 +162,7 @@ def test_market_parser_rejects_fractional_fee_exponents() -> None:
     [
         ("eventStartTime", "2026-07-14T19:50:01Z", "event window"),
         ("endDate", "2026-07-14T19:56:00Z", "event window"),
-        ("resolutionSource", "https://example.com/btc", "Chainlink"),
+        ("resolutionSource", "https://example.com/btc", "approved Chainlink"),
         ("acceptingOrders", False, "accepting orders"),
         ("outcomes", '["Yes", "No"]', "Up/Down"),
     ],
@@ -286,6 +321,56 @@ def test_discovery_can_request_only_btc_without_precompiled_market_ids() -> None
         f"btc-updown-5m-{EPOCH}",
         f"btc-updown-5m-{EPOCH + 300}",
     ]
+
+
+def test_discovery_can_pin_the_exact_twap_source_regime() -> None:
+    payload = _market("BTC")
+    payload["resolutionSource"] = (
+        "https://data.chain.link/streams/btc-usd-twap-30s-streams"
+    )
+    payload["cryptoMarketConfigId"] = "btc-5m-twap-30"
+    payload["cryptoMarketConfig"] = {
+        "asset": "btc",
+        "duration": "5m",
+        "id": "btc-5m-twap-30",
+        "twapEnabled": True,
+        "twapLookbackSeconds": 30,
+    }
+    client = PolymarketPublicClient(
+        session=_Session([payload]),
+        required_five_minute_resolution_sources={
+            "BTC": "https://data.chain.link/streams/btc-usd-twap-30s-streams"
+        },
+    )
+
+    markets = client.discover_five_minute_markets(
+        now_ms=EPOCH * 1_000 + 30_000,
+        assets=("BTC",),
+    )
+
+    assert len(markets) == 1
+    assert markets[0].resolution_source.endswith("btc-usd-twap-30s-streams")
+
+
+def test_discovery_fails_closed_on_configured_source_regime_drift() -> None:
+    client = PolymarketPublicClient(
+        session=_Session([_market("BTC")]),
+        required_five_minute_resolution_sources={
+            "BTC": "https://data.chain.link/streams/btc-usd-twap-30s-streams"
+        },
+    )
+
+    with pytest.raises(ValueError, match="configured exact source"):
+        client.discover_five_minute_markets(
+            now_ms=EPOCH * 1_000 + 30_000,
+            assets=("BTC",),
+        )
+
+    with pytest.raises(ValueError, match="lacks a configured"):
+        client.discover_five_minute_markets(
+            now_ms=EPOCH * 1_000 + 30_000,
+            assets=("ETH",),
+        )
 
 
 def test_fifteen_minute_discovery_uses_utc_epochs_not_market_ids() -> None:
