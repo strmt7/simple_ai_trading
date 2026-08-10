@@ -28,4 +28,4 @@ docs/model-research/action-value/latest/*.md text eol=lf
 docs/model-research/action-value/latest/charts/*.svg text eol=lf
 docs/model-research/polymarket/round-008-executable-repricing-ceiling-report.json text eol=crlf
 docs/model-research/polymarket/latest/** text eol=lf
-docs/model-research/polymarket/round-025-fin-r1-regime-supervisor-*.json text eol=lf
+docs/model-research/polymarket/round-025-*-regime-supervisor-*.json text eol=lf

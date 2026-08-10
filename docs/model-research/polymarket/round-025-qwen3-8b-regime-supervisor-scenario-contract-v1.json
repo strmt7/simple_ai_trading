@@ -1,0 +1,83 @@
+{
+  "schema_version": "polymarket-round25-qwen3-8b-regime-supervisor-scenario-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T18:10:22Z",
+  "status": "frozen_before_candidate_scenario_responses",
+  "purpose": "screen_the_strongest_installed_prior_risk_benchmark_candidate_for_slow_target_free_regime_discrimination",
+  "research_basis": {
+    "official_model_card": "https://huggingface.co/Qwen/Qwen3-8B",
+    "official_model_blog": "https://qwenlm.github.io/blog/qwen3/",
+    "supported_inference": "qwen3_8b_supports_deterministic_non_thinking_inference_and_is_a_plausible_structured_risk_reviewer",
+    "unsupported_inference": "general_reasoning_benchmarks_or_prior_synthetic_risk_score_imply_market_edge"
+  },
+  "candidate": {
+    "candidate_id": "qwen3-8b-regime-supervisor-v1",
+    "model": "qwen3:8b",
+    "ollama_digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+    "parameter_size": "8.2B",
+    "quantization": "Q4_K_M",
+    "context_length": 40960,
+    "upstream_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "finance_specialized": false
+  },
+  "selection_without_new_market_outcomes": {
+    "prior_risk_benchmark_file_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+    "prior_candidate_score": 0.8868181818181818,
+    "prior_candidate_passed": false,
+    "prior_candidate_failure_count": 2,
+    "relative_installed_candidate_rank": 1,
+    "prior_benchmark_is_market_edge_evidence": false
+  },
+  "runtime": {
+    "base_url": "http://127.0.0.1:11434",
+    "ollama_compatibility_line": "0.32.x_patch_4_or_newer",
+    "maximum_provider_wall_seconds": 30.0,
+    "preload_timeout_seconds": 60.0,
+    "context_tokens": 4096,
+    "maximum_output_tokens": 24,
+    "thinking": false,
+    "temperature": 0.0,
+    "seed": 25027,
+    "keep_alive": "2m",
+    "full_gpu_residency_ratio_minimum": 0.99
+  },
+  "packet_and_prompt": {
+    "scenario_ledger_source_sha256": "9828aaf05deafe776c09a26c4e4cc0578762b9c53efa6c75ef83d4c3dc14dac4",
+    "supervisor_packet_contract_sha256": "83aaed6dd3a37a5f3930384d7697131a3e656ee2c2a778c75b299bfdd669dda7",
+    "scenario_order_changed": false,
+    "scenario_values_changed": false,
+    "prompt_changed": false,
+    "output_protocol_changed": false,
+    "model_sees_candidate_identity_or_expected_action": false
+  },
+  "checks": {
+    "all_seven_responses_valid": true,
+    "all_responses_within_30_seconds": true,
+    "all_responses_fully_gpu_resident": true,
+    "benign_repeat_matches": true,
+    "benign_at_most_cautious": true,
+    "combined_crisis_at_least_defensive": true,
+    "at_least_two_distinct_actions": true,
+    "benign_to_each_single_stress_to_combined_is_nondecreasing": true,
+    "model_unloaded_after_probe": true
+  },
+  "promotion_boundary": {
+    "behavior_pass_is_sufficient_for_execution": false,
+    "behavior_pass_is_sufficient_for_ai_uplift": false,
+    "behavior_pass_allows_research_operator_implementation": true,
+    "prospective_incremental_after_cost_uplift_required": true,
+    "same_candidate_prompt_tuning_after_failure_allowed": false,
+    "paper_or_live_authority": false
+  },
+  "claims": {
+    "market_data_used": false,
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "ai_uplift_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "8e5e1a210441069e3f71bec42005c725e2c52b521263342b78a82e7bfda3eaf8"
+}

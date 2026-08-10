@@ -132,6 +132,16 @@ bars prompt tuning, economic evaluation, and execution integration for this
 exact role. Finance QA benchmarks did not translate into useful regime-risk
 discrimination.
 
+The strongest installed prior general-risk candidate, Qwen3 8B, then ran the
+same packet ledger, prompt, protocol, and gates. Its
+[host probe](../round-025-qwen3-8b-regime-supervisor-host-probe-v1-2026-08-10.json)
+also returned seven valid `normal` actions, including the crisis packet, at
+`2.6730` seconds average latency. The resulting
+[mechanism rejection](../round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json)
+closes further model cycling on this slow regime-supervisor design. The fast
+Qwen3 4B entry reviewer is unchanged; its economic value still requires the
+prospective matched uplift experiment.
+
 The [AI uplift contract](../round-025-ai-uplift-evaluation-contract-v2.json)
 and evaluator require a new chronological population after selection with at
 least 500 conditions and 50 actual interventions. The control and AI paths must
@@ -618,6 +628,7 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Round 25 AI safety behavior](../round-025-ai-risk-scenario-host-probe-v3-correction-2026-08-10.json)
 - [Round 25 AI uplift contract](../round-025-ai-uplift-evaluation-contract-v2.json)
 - [Round 25 Fin-R1 supervisor rejection](../round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json)
+- [Round 25 slow LLM supervisor mechanism rejection](../round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json)
 
 Regenerate Round 14 tables and charts from the closed local evidence database
 with `python tools/publish_polymarket_round14_historical.py`. After an
