@@ -23,7 +23,7 @@ CONTRACT = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-025-post-capture-coordinator-contract-v1.json"
+    / "round-025-post-capture-coordinator-contract-v2.json"
 )
 SOURCE_COMMIT = "a" * 40
 FEATURE_SHA = "b" * 64
