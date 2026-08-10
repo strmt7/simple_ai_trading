@@ -28,6 +28,8 @@ from simple_ai_trading.polymarket_round25_evaluation import (
     Round25SelectionAccessStore,
     create_round25_prediction_panel,
     evaluate_round25_predictive_candidates,
+    load_round25_predictive_result,
+    write_round25_predictive_result,
 )
 from simple_ai_trading.polymarket_round25_joint_features import (
     POLYMARKET_ROUND25_JOINT_FEATURE_NAMES,
@@ -44,6 +46,16 @@ def _canonical_sha256(value: object) -> str:
         allow_nan=False,
     ).encode("ascii")
     return hashlib.sha256(payload).hexdigest()
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
 
 
 def _selection_fixture() -> Round25DevelopmentDataset:
@@ -215,9 +227,14 @@ def test_paired_stepdown_evaluation_is_deterministic_and_claim_bounded(
         panel=panel,
         one_use_claim_sha256="b" * 64,
     )
+    assert store.validate_prediction_frozen(panel=panel) == "b" * 64
     receipt = store.consume_target_access(
         panel=panel,
         selection=selection,
+    )
+    assert store.validate_prediction_binding(panel=panel) == (
+        "target_access_consumed",
+        "b" * 64,
     )
 
     result = evaluate_round25_predictive_candidates(
@@ -250,6 +267,15 @@ def test_paired_stepdown_evaluation_is_deterministic_and_claim_bounded(
     assert result.paper_authority is False
     assert result.live_authority is False
     assert result.validated() is result
+    result_path = tmp_path / "round25-predictive-result.json"
+    assert write_round25_predictive_result(result_path, result) == result_path
+    assert load_round25_predictive_result(result_path) == result
+    assert write_round25_predictive_result(result_path, result) == result_path
+    tampered = json.loads(result_path.read_text(encoding="ascii"))
+    tampered["result_sha256"] = "0" * 64
+    result_path.write_text(_canonical_json(tampered), encoding="ascii")
+    with pytest.raises(ValueError, match="payload differs"):
+        load_round25_predictive_result(result_path)
     reopened = Round25SelectionAccessStore(
         tmp_path / "selection-access.sqlite3"
     )

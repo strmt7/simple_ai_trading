@@ -8,7 +8,7 @@ import hashlib
 import hmac
 import json
 import time
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Mapping, Protocol, Sequence
 
 from .polymarket import (
     PolymarketFiveMinuteMarket,
@@ -20,6 +20,21 @@ from .polymarket_recorder import PolymarketEvidenceStore
 
 POLYMARKET_RESOLUTION_SCHEMA_VERSION = "polymarket-official-resolution-v1"
 _ROUND13_CLAIM_SCHEMA_VERSION = "polymarket-round13-one-use-claim-v1"
+
+
+class PolymarketResolutionMarket(Protocol):
+    """Minimal recorded identity required for official resolution validation."""
+
+    market_id: str
+    condition_id: str
+    slug: str
+    up_token_id: str
+    down_token_id: str
+    resolution_source: str
+    end_ms: int
+
+    @property
+    def token_ids(self) -> tuple[str, str]: ...
 
 
 def _canonical_json(value: object) -> str:
@@ -258,7 +273,7 @@ class PolymarketResolutionFinalizationReport:
 
 
 def _validate_market_identity(
-    market: PolymarketFiveMinuteMarket,
+    market: PolymarketResolutionMarket,
     clob_payload: Mapping[str, object],
     gamma_payload: Mapping[str, object],
 ) -> tuple[list[Mapping[str, object]], list[Decimal]]:
@@ -323,7 +338,7 @@ def _validate_market_identity(
 
 
 def validate_official_resolution(
-    market: PolymarketFiveMinuteMarket,
+    market: PolymarketResolutionMarket,
     clob_payload: Mapping[str, object],
     gamma_payload: Mapping[str, object],
     *,

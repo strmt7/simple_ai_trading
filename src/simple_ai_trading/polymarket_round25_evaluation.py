@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
 import sqlite3
@@ -48,6 +49,20 @@ POLYMARKET_ROUND25_PREDICTIVE_RESULT_SCHEMA_VERSION = (
 )
 POLYMARKET_ROUND25_BOOTSTRAP_REPLICATES = 10_000
 POLYMARKET_ROUND25_BOOTSTRAP_SEED = 25_025
+POLYMARKET_ROUND25_PREDICTIVE_RESULT_MAXIMUM_BYTES = 2 * 1024 * 1024
+
+
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    output: dict[str, object] = {}
+    for key, value in pairs:
+        if key in output:
+            raise ValueError("Round 25 predictive result contains duplicate keys")
+        output[key] = value
+    return output
+
+
+def _reject_nonfinite(value: str) -> object:
+    raise ValueError(f"Round 25 predictive result contains {value}")
 POLYMARKET_ROUND25_BOOTSTRAP_BLOCK_CONDITIONS = 12
 POLYMARKET_ROUND25_BOOTSTRAP_CHUNK_REPLICATES = 256
 POLYMARKET_ROUND25_LOG_LOSS_CLIP = 1e-12
@@ -766,6 +781,152 @@ class Round25SelectionAccessStore:
                 raise
         return receipt
 
+    def validate_prediction_frozen(self, *, panel: Round25PredictionPanel) -> str:
+        """Verify the one-use panel lock without opening any target payload."""
+
+        if not isinstance(panel, Round25PredictionPanel):
+            raise TypeError("Round 25 prediction panel type differs")
+        panel.validated()
+        with self._connect() as connection:
+            quick_check = connection.execute("PRAGMA quick_check").fetchone()
+            row = connection.execute(
+                "SELECT * FROM round25_selection_access WHERE singleton = 1"
+            ).fetchone()
+            events = connection.execute(
+                "SELECT * FROM round25_selection_event ORDER BY sequence"
+            ).fetchall()
+        if row is None or len(events) != 1:
+            raise RuntimeError("Round 25 prediction panel is not durably frozen")
+        event = events[0]
+        try:
+            payload = json.loads(str(event["event_json"]))
+        except json.JSONDecodeError as exc:
+            raise ValueError("Round 25 frozen prediction event differs") from exc
+        claim_sha256 = str(row["one_use_claim_sha256"])
+        expected_details = {
+            "one_use_claim_sha256": claim_sha256,
+            "prediction_frozen_at_ns": int(row["prediction_frozen_at_ns"]),
+            "prediction_panel_sha256": panel.panel_sha256,
+        }
+        if (
+            quick_check is None
+            or quick_check[0] != "ok"
+            or row["status"] != "prediction_panel_frozen"
+            or row["prediction_panel_sha256"] != panel.panel_sha256
+            or _SHA256.fullmatch(claim_sha256) is None
+            or any(
+                row[field] is not None
+                for field in (
+                    "selection_dataset_sha256",
+                    "resolution_authority_sha256",
+                    "one_use_consumption_sha256",
+                    "target_access_consumed_at_ns",
+                    "store_event_sha256",
+                    "receipt_json",
+                    "receipt_sha256",
+                )
+            )
+            or int(event["sequence"]) != 1
+            or event["previous_event_sha256"] != "0" * 64
+            or payload
+            != {
+                "details": expected_details,
+                "event_type": "prediction_panel_frozen",
+                "previous_event_sha256": "0" * 64,
+                "sequence": 1,
+            }
+            or str(event["event_json"]) != _canonical_json(payload)
+            or event["event_sha256"] != _canonical_sha256(payload)
+        ):
+            raise ValueError("Round 25 frozen prediction access differs")
+        return claim_sha256
+
+    def validate_prediction_binding(
+        self,
+        *,
+        panel: Round25PredictionPanel,
+    ) -> tuple[str, str]:
+        """Validate either recoverable frozen or already-consumed panel state."""
+
+        if not isinstance(panel, Round25PredictionPanel):
+            raise TypeError("Round 25 prediction panel type differs")
+        panel.validated()
+        with self._connect() as connection:
+            quick_check = connection.execute("PRAGMA quick_check").fetchone()
+            row = connection.execute(
+                "SELECT * FROM round25_selection_access WHERE singleton = 1"
+            ).fetchone()
+            events = connection.execute(
+                "SELECT * FROM round25_selection_event ORDER BY sequence"
+            ).fetchall()
+        if row is None:
+            raise RuntimeError("Round 25 prediction panel is not bound")
+        status = str(row["status"])
+        claim_sha256 = str(row["one_use_claim_sha256"])
+        if status == "prediction_panel_frozen":
+            return status, self.validate_prediction_frozen(panel=panel)
+        if (
+            status != "target_access_consumed"
+            or quick_check is None
+            or quick_check[0] != "ok"
+            or row["prediction_panel_sha256"] != panel.panel_sha256
+            or _SHA256.fullmatch(claim_sha256) is None
+            or len(events) != 2
+        ):
+            raise ValueError("Round 25 consumed prediction binding differs")
+        previous = "0" * 64
+        payloads: list[Mapping[str, object]] = []
+        for sequence, event in enumerate(events, start=1):
+            try:
+                payload = json.loads(str(event["event_json"]))
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    "Round 25 consumed prediction event differs"
+                ) from exc
+            if (
+                not isinstance(payload, Mapping)
+                or int(event["sequence"]) != sequence
+                or event["previous_event_sha256"] != previous
+                or payload.get("sequence") != sequence
+                or payload.get("previous_event_sha256") != previous
+                or str(event["event_json"]) != _canonical_json(payload)
+                or event["event_sha256"] != _canonical_sha256(payload)
+            ):
+                raise ValueError("Round 25 consumed prediction event chain differs")
+            payloads.append(payload)
+            previous = str(event["event_sha256"])
+        receipt_json = row["receipt_json"]
+        if not isinstance(receipt_json, str):
+            raise ValueError("Round 25 consumed prediction receipt differs")
+        try:
+            receipt_payload = json.loads(receipt_json)
+        except json.JSONDecodeError as exc:
+            raise ValueError("Round 25 consumed prediction receipt differs") from exc
+        receipt = _selection_receipt_from_mapping(
+            receipt_payload,
+            receipt_sha256=str(row["receipt_sha256"]),
+        )
+        first_details = payloads[0].get("details")
+        second_details = payloads[1].get("details")
+        if (
+            payloads[0].get("event_type") != "prediction_panel_frozen"
+            or not isinstance(first_details, Mapping)
+            or first_details.get("one_use_claim_sha256") != claim_sha256
+            or first_details.get("prediction_panel_sha256") != panel.panel_sha256
+            or payloads[1].get("event_type") != "target_access_consumed"
+            or not isinstance(second_details, Mapping)
+            or second_details.get("one_use_claim_sha256") != claim_sha256
+            or second_details.get("prediction_panel_sha256") != panel.panel_sha256
+            or second_details.get("one_use_consumption_sha256")
+            != receipt.one_use_consumption_sha256
+            or row["store_event_sha256"] != receipt.store_event_sha256
+            or previous != receipt.store_event_sha256
+            or receipt.prediction_panel_sha256 != panel.panel_sha256
+            or receipt.one_use_claim_sha256 != claim_sha256
+        ):
+            raise ValueError("Round 25 consumed prediction binding differs")
+        return status, claim_sha256
+
     def validate_consumed(
         self,
         *,
@@ -1062,6 +1223,10 @@ class Round25PredictiveEvaluationResult:
     def validated(self) -> Round25PredictiveEvaluationResult:
         self.__post_init__()
         return self
+
+    def serialized_payload(self) -> dict[str, object]:
+        self.validated()
+        return {**self.identity_payload(), "result_sha256": self.result_sha256}
 
 
 def _condition_losses(
@@ -1393,8 +1558,143 @@ def evaluate_round25_predictive_candidates(
     )
 
 
+def write_round25_predictive_result(
+    path: str | Path,
+    result: Round25PredictiveEvaluationResult,
+) -> Path:
+    if not isinstance(result, Round25PredictiveEvaluationResult):
+        raise TypeError("Round 25 predictive result type differs")
+    target = Path(path)
+    if target.is_symlink() or (target.exists() and not target.is_file()):
+        raise ValueError("Round 25 predictive result path differs")
+    payload = (_canonical_json(result.serialized_payload()) + "\n").encode("ascii")
+    if len(payload) > POLYMARKET_ROUND25_PREDICTIVE_RESULT_MAXIMUM_BYTES:
+        raise ValueError("Round 25 predictive result exceeds its storage bound")
+    if target.exists():
+        if load_round25_predictive_result(target).result_sha256 == result.result_sha256:
+            return target
+        raise FileExistsError("Round 25 predictive result path already exists")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(descriptor, "wb", closefd=True) as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+    return target
+
+
+def load_round25_predictive_result(
+    path: str | Path,
+) -> Round25PredictiveEvaluationResult:
+    source = Path(path)
+    if (
+        source.is_symlink()
+        or not source.is_file()
+        or not 2
+        <= source.stat().st_size
+        <= POLYMARKET_ROUND25_PREDICTIVE_RESULT_MAXIMUM_BYTES
+    ):
+        raise ValueError("Round 25 predictive result file differs")
+    try:
+        value = json.loads(
+            source.read_text(encoding="ascii"),
+            object_pairs_hook=_strict_object,
+            parse_constant=_reject_nonfinite,
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Round 25 predictive result is unreadable") from exc
+    expected = {
+        "ai_uplift_verified",
+        "bootstrap_mean_sha256",
+        "candidate_metrics",
+        "development_evidence_only",
+        "edge_verified",
+        "evaluation_contract_sha256",
+        "hypotheses",
+        "live_authority",
+        "nominated_candidate_id",
+        "paper_authority",
+        "prediction_panel_sha256",
+        "predictive_gate_passed",
+        "profitability_verified",
+        "resolution_authority_sha256",
+        "result_sha256",
+        "schema_version",
+        "selection_dataset_sha256",
+        "target_access_receipt_sha256",
+    }
+    if (
+        not isinstance(value, Mapping)
+        or set(value) != expected
+        or not isinstance(value.get("candidate_metrics"), list)
+        or not isinstance(value.get("hypotheses"), list)
+        or any(
+            type(value.get(field)) is not bool
+            for field in (
+                "ai_uplift_verified",
+                "development_evidence_only",
+                "edge_verified",
+                "live_authority",
+                "paper_authority",
+                "predictive_gate_passed",
+                "profitability_verified",
+            )
+        )
+    ):
+        raise ValueError("Round 25 predictive result payload differs")
+    try:
+        metrics = tuple(
+            Round25CandidateMetrics(**dict(item))
+            for item in value["candidate_metrics"]
+            if isinstance(item, Mapping)
+        )
+        hypotheses = tuple(
+            Round25PredictiveHypothesis(**dict(item))
+            for item in value["hypotheses"]
+            if isinstance(item, Mapping)
+        )
+        result = Round25PredictiveEvaluationResult(
+            prediction_panel_sha256=str(value["prediction_panel_sha256"]),
+            selection_dataset_sha256=str(value["selection_dataset_sha256"]),
+            resolution_authority_sha256=str(
+                value["resolution_authority_sha256"]
+            ),
+            target_access_receipt_sha256=str(
+                value["target_access_receipt_sha256"]
+            ),
+            candidate_metrics=metrics,
+            hypotheses=hypotheses,
+            bootstrap_mean_sha256=str(value["bootstrap_mean_sha256"]),
+            nominated_candidate_id=(
+                None
+                if value["nominated_candidate_id"] is None
+                else str(value["nominated_candidate_id"])
+            ),
+            predictive_gate_passed=value["predictive_gate_passed"],
+            result_sha256=str(value["result_sha256"]),
+            schema_version=str(value["schema_version"]),
+            evaluation_contract_sha256=str(value["evaluation_contract_sha256"]),
+            development_evidence_only=value["development_evidence_only"],
+            edge_verified=value["edge_verified"],
+            profitability_verified=value["profitability_verified"],
+            ai_uplift_verified=value["ai_uplift_verified"],
+            paper_authority=value["paper_authority"],
+            live_authority=value["live_authority"],
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Round 25 predictive result payload differs") from exc
+    if (
+        len(metrics) != len(value["candidate_metrics"])
+        or len(hypotheses) != len(value["hypotheses"])
+        or dict(value) != result.serialized_payload()
+    ):
+        raise ValueError("Round 25 predictive result serialization differs")
+    return result
+
+
 __all__ = [
     "POLYMARKET_ROUND25_PREDICTIVE_EVALUATION_CONTRACT_SHA256",
+    "POLYMARKET_ROUND25_PREDICTIVE_RESULT_MAXIMUM_BYTES",
     "Round25CandidateMetrics",
     "Round25CandidatePrediction",
     "Round25PredictionPanel",
@@ -1404,4 +1704,6 @@ __all__ = [
     "Round25SelectionAccessStore",
     "create_round25_prediction_panel",
     "evaluate_round25_predictive_candidates",
+    "load_round25_predictive_result",
+    "write_round25_predictive_result",
 ]

@@ -3,8 +3,11 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+
+from simple_ai_trading import polymarket_round25_model_ledger as ledger_module
 
 from simple_ai_trading.polymarket_round25_candidate_design import (
     POLYMARKET_ROUND25_CANDIDATE_AMENDMENT_SHA256,
@@ -38,6 +41,7 @@ from simple_ai_trading.polymarket_round25_model_ledger import (
     POLYMARKET_ROUND25_MODEL_LEDGER_CONTRACT_SHA256,
     POLYMARKET_ROUND25_MODEL_LEDGER_SCHEMA_VERSION,
     create_round25_model_ledger,
+    fit_round25_model_ledger_coordinated,
     load_round25_model_ledger,
     write_round25_model_ledger,
 )
@@ -290,6 +294,128 @@ def test_model_ledger_contract_is_self_hashed_and_target_blind() -> None:
     assert contract["candidate_order"][-1] == "causal-multitask-tcn-residual-v1"
     assert contract["ledger"]["selection_target_access_allowed"] is False
     assert contract["truth_state"]["candidate_fitted"] is False
+
+
+def test_model_ledger_binds_every_upstream_feature_and_dataset_operator() -> None:
+    assert POLYMARKET_ROUND25_MODEL_IMPLEMENTATION_PATHS[:5] == (
+        "src/simple_ai_trading/polymarket_round25_candidate_design.py",
+        "src/simple_ai_trading/polymarket_round25_twap_features.py",
+        "src/simple_ai_trading/polymarket_round25_clob_features.py",
+        "src/simple_ai_trading/polymarket_round25_joint_features.py",
+        "src/simple_ai_trading/polymarket_round25_dataset.py",
+    )
+    assert (
+        "src/simple_ai_trading/polymarket_round25_joint_materialization.py"
+        in POLYMARKET_ROUND25_MODEL_IMPLEMENTATION_PATHS
+    )
+    assert (
+        "src/simple_ai_trading/polymarket_round25_joint_store.py"
+        in POLYMARKET_ROUND25_MODEL_IMPLEMENTATION_PATHS
+    )
+    assert (
+        "src/simple_ai_trading/polymarket_round25_resolution_store.py"
+        in POLYMARKET_ROUND25_MODEL_IMPLEMENTATION_PATHS
+    )
+    assert (
+        "src/simple_ai_trading/polymarket_round25_tcn_store_source.py"
+        in POLYMARKET_ROUND25_MODEL_IMPLEMENTATION_PATHS
+    )
+    assert (
+        "src/simple_ai_trading/polymarket_round25_coordinator.py"
+        in POLYMARKET_ROUND25_MODEL_IMPLEMENTATION_PATHS
+    )
+
+
+def test_coordinated_fit_creates_tcn_sources_after_one_logistic_fit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    class Dataset:
+        def __init__(self, role: str, dataset_sha256: str) -> None:
+            self.role = role
+            self.dataset_sha256 = dataset_sha256
+            self.resolution_authority_sha256 = AUTHORITY_SHA256
+
+        def __post_init__(self) -> None:
+            calls.append(f"validate:{self.role}")
+
+    train = Dataset("train", TRAIN_SHA256)
+    calibration = Dataset("calibration", CALIBRATION_SHA256)
+    phase = object()
+    logistic = SimpleNamespace(center=(0.0,), scale=(1.0,))
+    tcn_train = SimpleNamespace(
+        source_dataset_sha256=TRAIN_SHA256,
+        resolution_authority_sha256=AUTHORITY_SHA256,
+        feature_transform_sha256="f" * 64,
+    )
+    tcn_calibration = SimpleNamespace(
+        source_dataset_sha256=CALIBRATION_SHA256,
+        resolution_authority_sha256=AUTHORITY_SHA256,
+        feature_transform_sha256="f" * 64,
+    )
+    result = object()
+
+    monkeypatch.setattr(ledger_module, "Round25DevelopmentDataset", Dataset)
+    monkeypatch.setattr(
+        ledger_module,
+        "_validate_model_source_identity",
+        lambda *_args: (),
+    )
+    monkeypatch.setattr(
+        ledger_module,
+        "fit_round25_phase_isotonic",
+        lambda _dataset: calls.append("phase") or phase,
+    )
+    monkeypatch.setattr(
+        ledger_module,
+        "fit_round25_logistic_residual",
+        lambda **_kwargs: calls.append("logistic") or logistic,
+    )
+    monkeypatch.setattr(
+        ledger_module,
+        "round25_feature_transform_sha256",
+        lambda *_args: "f" * 64,
+    )
+    monkeypatch.setattr(
+        ledger_module,
+        "validate_round25_tcn_fit_sources",
+        lambda *sources: calls.append("validate_tcn") or sources,
+    )
+    monkeypatch.setattr(
+        ledger_module,
+        "fit_round25_lightgbm_residual",
+        lambda **_kwargs: calls.append("lightgbm") or object(),
+    )
+    monkeypatch.setattr(
+        ledger_module,
+        "fit_round25_tcn_ensemble",
+        lambda *_args, **_kwargs: calls.append("tcn") or object(),
+    )
+    monkeypatch.setattr(
+        ledger_module,
+        "create_round25_model_ledger",
+        lambda **_kwargs: calls.append("ledger") or result,
+    )
+
+    def source_factory(observed: object) -> tuple[object, object]:
+        assert observed is logistic
+        calls.append("source_factory")
+        return tcn_train, tcn_calibration
+
+    observed = fit_round25_model_ledger_coordinated(
+        source_commit_oid=SOURCE_COMMIT_OID,
+        implementation_sha256=(),
+        train=train,
+        calibration=calibration,
+        tcn_source_factory=source_factory,
+    )
+
+    assert observed is result
+    assert calls.count("logistic") == 1
+    assert calls.index("logistic") < calls.index("source_factory")
+    assert calls.index("source_factory") < calls.index("lightgbm")
+    assert calls[-2:] == ["tcn", "ledger"]
 
 
 def test_model_ledger_round_trip_binds_all_artifacts(tmp_path: Path) -> None:

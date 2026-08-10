@@ -1,0 +1,79 @@
+{
+  "schema_version": "polymarket-round25-twap-wire-schema-correction-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T19:01:47.0394476Z",
+  "status": "frozen_before_round25_v2_capture_start",
+  "parent_twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+  "trigger": "bounded_public_wire_probe_found_that_the_preregistered_fixture_schema_differed_from_the_current_rtds_wire_schema",
+  "public_wire_probe": {
+    "endpoint": "wss://ws-live-data.polymarket.com",
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_submitted": false,
+    "schema_sample_count": 1,
+    "timing_sample_count": 5,
+    "topic": "crypto_prices_chainlink",
+    "message_type": "update",
+    "top_level_keys": [
+      "connection_id",
+      "payload",
+      "timestamp",
+      "topic",
+      "type"
+    ],
+    "payload_keys": [
+      "full_accuracy_value",
+      "symbol",
+      "timestamp",
+      "value"
+    ],
+    "symbol": "btc/usd",
+    "full_accuracy_value_type": "decimal_digit_string",
+    "window_s_present": false,
+    "publisher_minus_source_ms_min": 1336,
+    "publisher_minus_source_ms_max": 1599,
+    "local_receipt_minus_publisher_ms_min": 382,
+    "local_receipt_minus_publisher_ms_max": 417,
+    "timing_scope": "bounded_host_observation_only_not_a_latency_distribution_or_execution_claim"
+  },
+  "superseded_parent_source_fields": {
+    "source_contracts.rtds_topic": {
+      "old": "crypto_prices_twap_thirty",
+      "new": "crypto_prices_chainlink"
+    },
+    "wire_payload.window_s": {
+      "old": "required_equal_to_30_in_fixture_parser",
+      "new": "absent_on_current_public_wire_and_must_not_be_invented_as_a_wire_field"
+    }
+  },
+  "corrected_parser_contract": {
+    "window_seconds_authority": "hash_bound_market_crypto_config_twapLookbackSeconds_and_resolution_source",
+    "required_window_seconds": 30,
+    "wire_window_field_required": false,
+    "wire_window_field_allowed": false,
+    "exact_payload_key_set_required": true,
+    "exact_fixed_point_value_required": true,
+    "rounded_display_value_used_for_features": false,
+    "unknown_or_drifted_fields": "reject",
+    "future_receipts": "reject"
+  },
+  "unchanged_parent_contracts": [
+    "settlement_hypothesis",
+    "causal_receipt_policy",
+    "twap_feature_names_and_math",
+    "model_candidates",
+    "training_and_selection",
+    "execution_replay",
+    "ai_assist"
+  ],
+  "truth_state": {
+    "capture_started": false,
+    "development_rows_available": false,
+    "model_trained": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "correction_sha256": "ad3a320b9d4c6054260cbf5a560dca329f271e0dfb05d8f2ade3ae4d812062e2"
+}
