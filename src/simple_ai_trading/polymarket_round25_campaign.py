@@ -24,28 +24,29 @@ from .polymarket import (
 )
 from .polymarket_recorder import (
     POLYMARKET_MAXIMUM_CAPTURE_DURATION_SECONDS,
+    POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC,
     PolymarketPublicRecorder,
 )
 from .storage import write_bytes_atomic
 
 
 POLYMARKET_ROUND25_DESIGN_RELATIVE = (
-    "docs/model-research/polymarket/round-025-twap-core-capture-design-v1.json"
+    "docs/model-research/polymarket/round-025-twap-core-capture-design-v2.json"
 )
 POLYMARKET_ROUND25_DESIGN_SHA256 = (
-    "b5c130622514b2b82855f0e1cc011b29a81bf0583e6bd37fa3e4d4b702d6a113"
+    "c083a7fb4a3ecb0f080ce2bf2c2bb3021000b2ab85562caa6a9a69067c6e673d"
 )
 POLYMARKET_ROUND25_PLAN_SCHEMA_VERSION = (
-    "polymarket-round25-twap-core-campaign-plan-v1"
+    "polymarket-round25-twap-core-campaign-plan-v2"
 )
 POLYMARKET_ROUND25_MANIFEST_SCHEMA_VERSION = (
-    "polymarket-round25-twap-core-segment-manifest-v1"
+    "polymarket-round25-twap-core-segment-manifest-v2"
 )
 POLYMARKET_ROUND25_STATE_SCHEMA_VERSION = (
-    "polymarket-round25-twap-core-campaign-state-v1"
+    "polymarket-round25-twap-core-campaign-state-v2"
 )
 POLYMARKET_ROUND25_RESULT_SCHEMA_VERSION = (
-    "polymarket-round25-twap-core-segment-result-v1"
+    "polymarket-round25-twap-core-segment-result-v2"
 )
 POLYMARKET_ROUND25_RESOLUTION_SOURCE = (
     "https://data.chain.link/streams/btc-usd-twap-30s-streams"
@@ -59,14 +60,14 @@ POLYMARKET_ROUND25_MAXIMUM_CONSECUTIVE_FAILURES = 3
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _GIT_OID = re.compile(r"^[0-9a-f]{40}$")
 _REQUIRED_FILES = (
-    "docs/model-research/polymarket/round-025-twap-core-capture-design-v1.json",
-    "docs/model-research/polymarket/round-025-twap-source-qualification-2026-08-10.json",
+    "docs/model-research/polymarket/round-025-twap-core-capture-design-v2.json",
+    "docs/model-research/polymarket/round-025-twap-wire-source-qualification-v2-2026-08-10.json",
     "src/simple_ai_trading/polymarket.py",
     "src/simple_ai_trading/polymarket_recorder.py",
     "src/simple_ai_trading/polymarket_round25_campaign.py",
     "tests/test_polymarket.py",
     "tests/test_polymarket_round25_campaign.py",
-    "tools/qualify_polymarket_round25_source.py",
+    "tools/qualify_polymarket_round25_twap_wire_v2.py",
     "tools/run_polymarket_round25_campaign.py",
 )
 
@@ -171,10 +172,13 @@ def load_round25_design(repository: str | Path) -> dict[str, object]:
         claimed != POLYMARKET_ROUND25_DESIGN_SHA256
         or claimed != _canonical_sha256(payload)
         or payload.get("status")
-        != "frozen_after_public_source_drift_observation_before_successor_capture"
+        != "frozen_after_exact_twap_wire_qualification_before_successor_capture"
         or not isinstance(source, Mapping)
         or source.get("resolution_source") != POLYMARKET_ROUND25_RESOLUTION_SOURCE
         or source.get("legacy_and_twap_conditions_may_be_pooled") is not False
+        or source.get("rtds_topic") != POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC
+        or source.get("twap_window_seconds") != 30
+        or source.get("exact_e18_value_required") is not True
         or not isinstance(schedule, Mapping)
         or schedule.get("scheduled_start_ms") != POLYMARKET_ROUND25_START_MS
         or schedule.get("scheduled_end_ms") != POLYMARKET_ROUND25_END_MS
@@ -298,7 +302,7 @@ def create_round25_campaign_plan(
         "required_assets": ["BTC"],
         "required_streams": ["clob_market", "polymarket_rtds"],
         "required_clob_lanes": ["clob"],
-        "required_rtds_topics": ["crypto_prices_chainlink"],
+        "required_rtds_topics": [POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC],
         "database_cap_bytes": POLYMARKET_ROUND25_DATABASE_CAP_BYTES,
         "minimum_free_bytes": POLYMARKET_ROUND25_MINIMUM_FREE_BYTES,
         "repository_commit_oid": str(repository_commit_oid).lower(),
@@ -375,7 +379,8 @@ def validate_round25_campaign_plan(
         or payload.get("required_assets") != ["BTC"]
         or payload.get("required_streams") != ["clob_market", "polymarket_rtds"]
         or payload.get("required_clob_lanes") != ["clob"]
-        or payload.get("required_rtds_topics") != ["crypto_prices_chainlink"]
+        or payload.get("required_rtds_topics")
+        != [POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC]
         or payload.get("database_cap_bytes")
         != POLYMARKET_ROUND25_DATABASE_CAP_BYTES
         or payload.get("minimum_free_bytes")
@@ -422,6 +427,10 @@ def build_round25_campaign_plan(
         != POLYMARKET_ROUND25_RESOLUTION_SOURCE
         or qualification.get("credentials_used") is not False
         or qualification.get("execution_connected") is not False
+        or qualification.get("required_rtds_topic")
+        != POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC
+        or qualification.get("twap_window_seconds") != 30
+        or qualification.get("exact_e18_value_observed") is not True
     ):
         raise ValueError("Round 25 source qualification differs")
     commit, tree, files = _repository_attestation(root, require_clean=True)
@@ -479,7 +488,7 @@ def build_round25_segment_manifest(
         "required_assets": ["BTC"],
         "required_streams": ["clob_market", "polymarket_rtds"],
         "required_clob_lanes": ["clob"],
-        "required_rtds_topics": ["crypto_prices_chainlink"],
+        "required_rtds_topics": [POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC],
         "repository_commit_oid": plan.repository_commit_oid,
         "repository_tree_oid": plan.repository_tree_oid,
         "binance_captured": False,
@@ -540,7 +549,8 @@ def validate_round25_segment_manifest(
         or payload.get("required_assets") != ["BTC"]
         or payload.get("required_streams") != ["clob_market", "polymarket_rtds"]
         or payload.get("required_clob_lanes") != ["clob"]
-        or payload.get("required_rtds_topics") != ["crypto_prices_chainlink"]
+        or payload.get("required_rtds_topics")
+        != [POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC]
         or payload.get("repository_commit_oid") != plan.repository_commit_oid
         or payload.get("repository_tree_oid") != plan.repository_tree_oid
         or any(payload.get(field) is not False for field in false_fields)
@@ -745,6 +755,7 @@ def _create_recorder(database: Path) -> PolymarketPublicRecorder:
         include_binance_futures=False,
         include_binance_spot=False,
         include_rtds_binance=False,
+        chainlink_price_mode="twap_30s",
         clob_lane_ids=("clob",),
     )
 
