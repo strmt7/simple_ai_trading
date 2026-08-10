@@ -18,7 +18,10 @@ POLYMARKET_ROUND25_TWAP_FEATURE_SCHEMA_VERSION = (
 POLYMARKET_ROUND25_TWAP_MODEL_DESIGN_SHA256 = (
     "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc"
 )
-POLYMARKET_ROUND25_TWAP_TOPIC = "crypto_prices_twap_thirty"
+POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256 = (
+    "ad3a320b9d4c6054260cbf5a560dca329f271e0dfb05d8f2ade3ae4d812062e2"
+)
+POLYMARKET_ROUND25_TWAP_TOPIC = "crypto_prices_chainlink"
 POLYMARKET_ROUND25_TWAP_SYMBOL = "btc/usd"
 POLYMARKET_ROUND25_TWAP_WINDOW_SECONDS = 30
 POLYMARKET_ROUND25_CONDITION_DURATION_MS = 300_000
@@ -30,7 +33,7 @@ POLYMARKET_ROUND25_MINIMUM_COVERAGE_MS = 2_000
 _LAG_SECONDS = (1, 5, 10, 30, 60)
 _SLOPE_SECONDS = (5, 10, 30, 60)
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
-_E18_INTEGER = re.compile(r"^-?[0-9]+$")
+_E18_INTEGER = re.compile(r"^[0-9]+$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 
@@ -113,6 +116,9 @@ class Round25TwapObservation:
     raw_frame_sha256: str
     symbol: str = POLYMARKET_ROUND25_TWAP_SYMBOL
     window_seconds: int = POLYMARKET_ROUND25_TWAP_WINDOW_SECONDS
+    wire_schema_correction_sha256: str = (
+        POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256
+    )
 
     def __post_init__(self) -> None:
         if (
@@ -122,6 +128,7 @@ class Round25TwapObservation:
             or self.publisher_timestamp_ms < self.source_timestamp_ms
             or type(self.received_wall_ms) is not int
             or self.received_wall_ms <= 0
+            or self.publisher_timestamp_ms > self.received_wall_ms
             or type(self.received_monotonic_ns) is not int
             or self.received_monotonic_ns <= 0
             or type(self.full_accuracy_value_e18) is not int
@@ -131,6 +138,8 @@ class Round25TwapObservation:
             or self.symbol != POLYMARKET_ROUND25_TWAP_SYMBOL
             or type(self.window_seconds) is not int
             or self.window_seconds != POLYMARKET_ROUND25_TWAP_WINDOW_SECONDS
+            or self.wire_schema_correction_sha256
+            != POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256
         ):
             raise ValueError("Round 25 TWAP observation is invalid")
 
@@ -155,12 +164,23 @@ class Round25TwapObservation:
         if not isinstance(event, Mapping):
             raise ValueError("Round 25 TWAP frame is not an object")
         payload = event.get("payload")
+        required_event_keys = {"payload", "timestamp", "topic", "type"}
+        allowed_event_keys = required_event_keys | {"connection_id"}
         if (
-            event.get("topic") != POLYMARKET_ROUND25_TWAP_TOPIC
+            set(event) not in (required_event_keys, allowed_event_keys)
+            or event.get("topic") != POLYMARKET_ROUND25_TWAP_TOPIC
             or event.get("type") != "update"
             or not isinstance(payload, Mapping)
+            or set(payload)
+            != {"full_accuracy_value", "symbol", "timestamp", "value"}
             or payload.get("symbol") != POLYMARKET_ROUND25_TWAP_SYMBOL
-            or payload.get("window_s") != POLYMARKET_ROUND25_TWAP_WINDOW_SECONDS
+            or (
+                "connection_id" in event
+                and (
+                    not isinstance(event["connection_id"], str)
+                    or not 1 <= len(event["connection_id"]) <= 128
+                )
+            )
         ):
             raise ValueError("Round 25 TWAP frame identity differs")
         full_accuracy = payload.get("full_accuracy_value")
@@ -219,6 +239,9 @@ class Round25TwapFeatureSnapshot:
     opening_value_e18: int
     latest_value_e18: int
     model_design_sha256: str = POLYMARKET_ROUND25_TWAP_MODEL_DESIGN_SHA256
+    wire_schema_correction_sha256: str = (
+        POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256
+    )
     trading_authority: bool = False
 
     def __post_init__(self) -> None:
@@ -249,6 +272,8 @@ class Round25TwapFeatureSnapshot:
             or not isinstance(self.model_design_sha256, str)
             or self.model_design_sha256
             != POLYMARKET_ROUND25_TWAP_MODEL_DESIGN_SHA256
+            or self.wire_schema_correction_sha256
+            != POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256
             or self.trading_authority is not False
         ):
             raise ValueError("Round 25 TWAP feature snapshot is invalid")
@@ -387,12 +412,6 @@ class Round25TwapFeatureEngine:
         duplicate_count = 0
         conflicting_source = False
         for observation in self._observations:
-            if observation.source_timestamp_ms > decision:
-                reasons.append("future_twap_source_timestamp")
-                continue
-            if observation.publisher_timestamp_ms > decision:
-                reasons.append("future_twap_publisher_timestamp")
-                continue
             prior = by_source.get(observation.source_timestamp_ms)
             if prior is None:
                 by_source[observation.source_timestamp_ms] = observation
@@ -550,6 +569,9 @@ class Round25TwapFeatureEngine:
                     "received_monotonic_ns": observation.received_monotonic_ns,
                     "received_wall_ms": observation.received_wall_ms,
                     "source_timestamp_ms": observation.source_timestamp_ms,
+                    "wire_schema_correction_sha256": (
+                        observation.wire_schema_correction_sha256
+                    ),
                 }
             ).encode("ascii")
             chain = hashlib.sha256(bytes.fromhex(chain) + identity).hexdigest()
@@ -574,6 +596,7 @@ __all__ = [
     "POLYMARKET_ROUND25_TWAP_MODEL_DESIGN_SHA256",
     "POLYMARKET_ROUND25_TWAP_SYMBOL",
     "POLYMARKET_ROUND25_TWAP_TOPIC",
+    "POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256",
     "POLYMARKET_ROUND25_TWAP_WINDOW_SECONDS",
     "Round25TwapFeatureEngine",
     "Round25TwapFeatureSnapshot",

@@ -1,0 +1,64 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "model_data_eligible_before_terminal_audit": false,
+    "outcomes_consulted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "campaign": {
+    "campaign_end_ms": 1788046800000,
+    "campaign_start_ms": 1786406400000,
+    "capture_design_sha256": "b5c130622514b2b82855f0e1cc011b29a81bf0583e6bd37fa3e4d4b702d6a113",
+    "capture_plan_sha256": "95820964e0692d66de2df3b624d8987f8ce9de699ad0b5fa16a7ccee53627bc2",
+    "required_assets": [
+      "BTC"
+    ],
+    "required_clob_lanes": [
+      "clob"
+    ],
+    "required_streams": [
+      "clob_market",
+      "polymarket_rtds"
+    ],
+    "resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+    "source_qualification_sha256": "53e8a8a22c94fef83944a29d82229ae69d0688275d953133a19f30b69dc2487b"
+  },
+  "condition_admission": {
+    "cross_segment_receipts_permitted": false,
+    "decision_alignment_ms": 1000,
+    "decision_interval": "event_start_inclusive_event_end_exclusive",
+    "duplicate_condition_identity_permitted": false,
+    "full_book_required_for_both_tokens": true,
+    "gap_window": "event_start_minus_120000ms_through_event_end_plus_5000ms",
+    "one_authoritative_clob_lane": true,
+    "receipt_or_connection_gap_action": "reject_affected_condition",
+    "redundant_lane_coverage_claim": false,
+    "source_regime_mismatch_action": "reject_segment_and_terminalize_campaign",
+    "twap_outcome_reconstructed": false
+  },
+  "frozen_at_ms": 1786352715666,
+  "frozen_at_utc": "2026-08-10T09:05:15.6662192Z",
+  "materialization": {
+    "core_feature_source": "single_lane_exact_clob_receipts_plus_target_blind_public_chainlink_context",
+    "future_receipts_permitted": false,
+    "maximum_memory_policy": "one_condition_core_state_plus_bounded_result_arrays",
+    "official_resolution_accessed": false,
+    "optional_predictor": "independent_round21_public_binance_sidecar_joined_by_local_receipt_time",
+    "optional_predictor_execution_dependency": false,
+    "output_interval_ms": 1000,
+    "round24_target": "future_1000ms_normalized_polymarket_market_prior_logit_change",
+    "round24_twap_settlement_label_constructed": false,
+    "scan_policy": "one_exact_receipt_pass_after_terminal_transport_validation"
+  },
+  "parents": {
+    "round24_specification_sha256": "a45dc61c44dd77eefd594609973446ffda81576cd4c9abf05a4e28ab24c7b53b",
+    "round25_capture_design_sha256": "b5c130622514b2b82855f0e1cc011b29a81bf0583e6bd37fa3e4d4b702d6a113",
+    "round25_plan_sha256": "95820964e0692d66de2df3b624d8987f8ce9de699ad0b5fa16a7ccee53627bc2"
+  },
+  "schema_version": "polymarket-round25-terminal-receipt-materialization-design-v1",
+  "status": "frozen_before_first_eligible_round25_receipt",
+  "design_sha256": "cd2ce1a720928d6bdd319433475e8530ad3071673d70b261658862ba2b2526a4"
+}

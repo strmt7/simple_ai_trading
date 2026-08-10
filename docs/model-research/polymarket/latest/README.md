@@ -23,10 +23,13 @@ from the legacy Chainlink point stream to the `btc-5m-twap-30` contract. Its
 failed source lineage is closed and will not be pooled into a successor.
 
 Round 25 v1 was retired before its first eligible receipt. Its generic
-Chainlink point-price RTDS wire did not match the current market's exact
-`crypto_prices_twap_thirty` direct-feed contract, so its capture,
-materializer, terminal design, and Round 24 pairing are inadmissible for the
-current source regime.
+Chainlink point-price assumptions are inadmissible for the current source
+regime. A bounded prestart v2 wire probe then found that the frozen fixture was
+also stale: the current exact topic is `crypto_prices_chainlink`, its payload
+contains `full_accuracy_value`, `symbol`, `timestamp`, and `value`, and it has
+no wire-level window field. The correction was frozen before capture; the
+hash-bound market configuration and resolution source remain the authority for
+the required 30-second window.
 
 Round 25 v2 is the source-correct successor. Before its 2026-08-11 00:00 UTC
 start, a credential-free live qualification observed two exact E18 BTC/USD
@@ -43,9 +46,29 @@ gaps, conflicting duplicate timestamps, and broken 30-second grids. It exposes
 path and transport features but no structural probability. Comparing exact
 event-boundary TWAP values is only a frozen settlement hypothesis until it is
 matched against official resolutions; nearest-tick, Binance, and independently
-reconstructed TWAP substitutions are prohibited. No v2 terminal materializer
-or model is claimed complete before that verification and the prospective
-corpus gates pass.
+reconstructed TWAP substitutions are prohibited.
+
+The terminal receipt auditor and target-blind joint materializer/store are now
+implemented. They make one read-only, WAL-free receipt pass, rebuild one strict
+top-20 CLOB lane, admit only exact E18 TWAP observations, and persist only the
+16 target-blind endpoints and bounded 64-step histories selected per condition.
+The store binds exact market, token, role, source-snapshot, and receipt-audit
+identities. No v2 terminal receipt audit or materialization result exists.
+
+Official resolution collection is separately implemented behind a persisted
+target-access claim. It requires complete identity agreement and terminal
+winner agreement from credential-free Gamma and CLOB responses, keeps pending
+conditions unlabeled, and atomically publishes a distinct compressed target
+store only after full population and role-count audit. No target collection,
+resolution authority, or target store exists.
+
+The post-capture coordinator is also implemented. Its single-writer,
+self-hashed recovery state orders terminal audit, feature publication, bounded
+resolution batches, train/calibration-only loading, one-time transform fitting,
+finite model fitting, target-free selection prediction freeze, one-use
+selection access, and immutable evaluation. Pending resolutions return before
+any model access. No coordinator run, fitted model, prediction panel,
+evaluation, predictive edge, economic result, or profitability result exists.
 
 The frozen predictive ledger combines 37 TWAP features with 111 causal CLOB
 features at the same 250 ms decision receipt. Its six finite families are the
@@ -643,6 +666,10 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Round 25 AI uplift contract](../round-025-ai-uplift-evaluation-contract-v2.json)
 - [Round 25 target-free sequence inference](../round-025-target-free-sequence-inference-contract-v1.json)
 - [Round 25 fitted-model ledger](../round-025-model-ledger-contract-v1.json)
+- [Round 25 RTDS wire correction](../round-025-twap-wire-schema-correction-v1.json)
+- [Round 25 joint feature materialization](../round-025-joint-feature-materialization-contract-v1.json)
+- [Round 25 official resolution collection](../round-025-official-resolution-collection-contract-v1.json)
+- [Round 25 post-capture coordinator](../round-025-post-capture-coordinator-contract-v1.json)
 - [Round 25 Fin-R1 supervisor rejection](../round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json)
 - [Round 25 slow LLM supervisor mechanism rejection](../round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json)
 

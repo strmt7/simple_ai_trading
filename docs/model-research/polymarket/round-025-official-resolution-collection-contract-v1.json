@@ -1,0 +1,117 @@
+{
+  "schema_version": "polymarket-round25-official-resolution-collection-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T21:30:00Z",
+  "status": "frozen_before_round25_v2_capture_start_and_before_any_target_access",
+  "parents": {
+    "capture_plan_sha256": "a0b5525697c3c1e1b175bd0f0ac724fdb62845638d2040e9964221031d3e7b20",
+    "joint_feature_materialization_contract_sha256": "b696d4951705ca62402e5e27dacda590ff69ad352fa75185282c8adc275e4df5",
+    "joint_feature_store_schema_version": "polymarket-round25-joint-feature-store-v2"
+  },
+  "opening_gate": {
+    "campaign_terminal_required": true,
+    "feature_store_deep_audit_required": true,
+    "feature_store_wal_allowed": false,
+    "feature_store_target_accessed_required": false,
+    "feature_store_outcomes_consulted_required": false,
+    "target_access_claim_persisted_before_first_request": true,
+    "claim_binds_feature_manifest_sha256": true,
+    "claim_binds_condition_population_sha256": true,
+    "claim_binds_terminal_receipt_audit_sha256": true,
+    "claim_binds_terminal_transport_manifest_sha256": true
+  },
+  "source_identity": {
+    "asset": "BTC",
+    "horizon_minutes": 5,
+    "condition_fields": [
+      "run_id",
+      "segment_index",
+      "source_snapshot_sha256",
+      "source_snapshot_observed_wall_ms",
+      "market_id",
+      "condition_id",
+      "slug",
+      "event_start_ms",
+      "event_end_ms",
+      "up_token_id",
+      "down_token_id",
+      "resolution_source",
+      "role"
+    ],
+    "condition_additions_allowed": false,
+    "condition_omissions_allowed": false,
+    "condition_duplicates_allowed": false,
+    "condition_reordering_allowed": false
+  },
+  "official_sources": {
+    "gamma_market_endpoint": "https://gamma-api.polymarket.com/markets/{market_id}",
+    "clob_market_endpoint": "https://clob.polymarket.com/markets/{condition_id}",
+    "credential_free_public_requests_only": true,
+    "redirects_allowed": false,
+    "cookies_allowed": false,
+    "authentication_headers_allowed": false,
+    "bounded_response_bytes_required": true,
+    "bounded_retries_required": true,
+    "per_origin_rate_pacing_required": true,
+    "canonical_response_hashes_required": true
+  },
+  "resolution_semantics": {
+    "shared_validator": "simple_ai_trading.polymarket_resolution.validate_official_resolution",
+    "gamma_and_clob_identity_agreement_required": true,
+    "gamma_and_clob_terminal_state_required": true,
+    "gamma_and_clob_winner_agreement_required": true,
+    "terminal_prices_required": [
+      "0",
+      "1"
+    ],
+    "unresolved_condition_behavior": "pending_without_inference",
+    "binance_signal_allowed_for_resolution": false,
+    "twap_signal_allowed_for_resolution": false,
+    "clob_price_direction_allowed_for_resolution": false,
+    "manual_label_allowed": false
+  },
+  "persistence": {
+    "feature_and_target_database_must_be_distinct": true,
+    "feature_database_attach_allowed": false,
+    "raw_feature_rows_copied": false,
+    "collection_database_model_readable": false,
+    "canonical_gamma_payload_persisted": true,
+    "canonical_clob_payload_persisted": true,
+    "response_hashes_persisted": true,
+    "observation_times_persisted": true,
+    "per_condition_evidence_self_hash_required": true,
+    "zstd_payload_compression_level": 3,
+    "final_store_atomic_publication_required": true,
+    "final_store_wal_allowed": false
+  },
+  "finalization_gate": {
+    "all_feature_conditions_resolved_exactly_once": true,
+    "condition_population_sha256_reconciled": true,
+    "role_counts_reconciled": true,
+    "minimum_role_counts": {
+      "train": 2000,
+      "calibration": 400,
+      "selection": 400
+    },
+    "official_evidence_chain_recomputed": true,
+    "resolution_authority_created_only_after_full_audit": true,
+    "resolution_rows_created_only_after_authority": true
+  },
+  "authority": {
+    "model_data_eligibility_granted": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "truth_state": {
+    "round25_v2_feature_store_exists": false,
+    "official_target_collection_started": false,
+    "official_target_store_exists": false,
+    "development_dataset_created": false,
+    "model_fitted": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false
+  },
+  "contract_sha256": "f0943bb4296288563c3506aec06fd30c68caa75423252c227e17b26a6cdf66a2"
+}

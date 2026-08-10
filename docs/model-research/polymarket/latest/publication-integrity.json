@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 42856,
+      "bytes": 44805,
       "path": "latest/README.md",
-      "sha256": "138c9446b334a20a92f39dd0aa72a770f0bbc45b2a610d41aaba2dc63a102610"
+      "sha256": "11cac1e3bd8270ae0a529348ba482068cafc08dd366c0fc9b205bb260b6287a4"
     },
     {
       "bytes": 77606,
@@ -322,6 +322,11 @@
       "sha256": "4b3f37a0b0b67eb230836c0166f14158a7ddc367f244c615610e1df503f461d2"
     },
     {
+      "bytes": 3389,
+      "path": "round-025-joint-feature-materialization-contract-v1.json",
+      "sha256": "f2ce622f054e9e4c0b51ae191721463aaf193d0dbbd700a45d064f387625e02c"
+    },
+    {
       "bytes": 4039,
       "path": "round-025-lightgbm-fit-contract-v1.json",
       "sha256": "93b43003b13a97d1d9efc2b668b23e005d21e910ce7e7bea61067aebe806947c"
@@ -330,6 +335,16 @@
       "bytes": 3566,
       "path": "round-025-model-ledger-contract-v1.json",
       "sha256": "0c97b72f802a8c43483adc3f81a09a9fb1a4d04ba474b582c7c6999cba07f9b9"
+    },
+    {
+      "bytes": 4438,
+      "path": "round-025-official-resolution-collection-contract-v1.json",
+      "sha256": "dbbd1af8e6a0b2a431f3b759de818614d576eb9927458feca67bad4ea35849d1"
+    },
+    {
+      "bytes": 4079,
+      "path": "round-025-post-capture-coordinator-contract-v1.json",
+      "sha256": "1ae0edf2708092f7c3d92923d5098f962c27599417bc4ad559adf7896577e6b1"
     },
     {
       "bytes": 7048,
@@ -405,6 +420,11 @@
       "bytes": 14942,
       "path": "round-025-twap-source-qualification-2026-08-10.json",
       "sha256": "62f028641463fb9f487a6bab49bbfff31d0c7adc2c7b2cb191b9c9eb69b20ea2"
+    },
+    {
+      "bytes": 2782,
+      "path": "round-025-twap-wire-schema-correction-v1.json",
+      "sha256": "b82f7b2785877dad39931e41e7dcad3caac01bab8e84e1bf89ca45b920817ba3"
     }
   ],
   "asset": "BTC",
@@ -414,7 +434,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 25,
   "live_trading_authority": false,
-  "manifest_sha256": "18b13d401e6667de12488fb0f97ec36c3d9d264f88899a2116164175a9b13b85",
+  "manifest_sha256": "31b4d5542624f0390d7b0cbe28baf5578abed21a9014bde3bc83b05240c3cd37",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -445,15 +465,24 @@
   "round25_fin_r1_supervisor_contract_frozen": true,
   "round25_fin_r1_supervisor_uplift_evaluation_allowed": false,
   "round25_fin_r1_supervisor_uplift_evaluator_implemented": true,
+  "round25_joint_feature_materialization_contract_frozen": true,
+  "round25_joint_feature_materializer_implemented": true,
+  "round25_joint_feature_store_implemented": true,
   "round25_lightgbm_fit_contract_frozen": true,
   "round25_lightgbm_model_fitted": false,
   "round25_lightgbm_operator_implemented": true,
   "round25_materialization_result_available": false,
+  "round25_post_capture_coordinator_contract_frozen": true,
+  "round25_post_capture_coordinator_implemented": true,
+  "round25_post_capture_coordinator_run": false,
   "round25_prediction_panel_frozen": false,
   "round25_predictive_evaluation_contract_frozen": true,
   "round25_predictive_evaluator_implemented": true,
   "round25_predictive_result_available": false,
   "round25_qwen3_8b_supervisor_candidate_rejected": true,
+  "round25_resolution_authority_available": false,
+  "round25_resolution_collection_contract_frozen": true,
+  "round25_resolution_store_implemented": true,
   "round25_result_available": false,
   "round25_sealed_test_campaign_planned": false,
   "round25_sequence_corpus_materialized": false,
@@ -468,9 +497,11 @@
   "round25_tcn_model_fitted": false,
   "round25_tcn_operator_implemented": true,
   "round25_tcn_seed_model_fitted": false,
-  "round25_terminal_design_frozen": false,
+  "round25_terminal_design_frozen": true,
+  "round25_terminal_operator_implemented": true,
   "round25_terminal_receipt_audit_available": false,
   "round25_twap_native_model_design_frozen": true,
+  "round25_twap_wire_schema_corrected": true,
   "round25_v1_capture_eligible": false,
   "round25_v2_campaign_start_utc": "2026-08-11T00:00:00Z",
   "schema_version": "polymarket-current-status-publication-v1",
@@ -478,5 +509,5 @@
   "source_dataset_sha256": "a6fd7f55ec7705d391a035b923c4440c3f92ddfb5b1b169ee6b7df3d67aa7665",
   "source_evaluation_artifact_sha256": "c3385d4894ca430a91442d1023bf01f61c650f6d208a4d0f89d11007ee5a11c0",
   "source_pretest_artifact_sha256": "03e4fae64f34f835cac338dee111701c73419929e97a22939e12037eba8dfec9",
-  "status": "round25_v2_waiting_fast_ai_qualified_slow_llm_supervisor_rejected"
+  "status": "round25_v2_waiting_post_capture_pipeline_implemented_no_result"
 }

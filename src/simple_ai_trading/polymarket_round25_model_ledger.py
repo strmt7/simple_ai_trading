@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 import hashlib
 import json
@@ -41,6 +42,7 @@ from .polymarket_round25_tcn import (
     Round25TCNProgressCallback,
     Round25TCNSeedArtifact,
     fit_round25_tcn_ensemble,
+    validate_round25_tcn_fit_sources,
 )
 
 
@@ -52,6 +54,17 @@ POLYMARKET_ROUND25_MODEL_LEDGER_SCHEMA_VERSION = (
 )
 POLYMARKET_ROUND25_MODEL_LEDGER_MAXIMUM_BYTES = 64 * 1024 * 1024
 POLYMARKET_ROUND25_MODEL_IMPLEMENTATION_PATHS = (
+    "src/simple_ai_trading/polymarket_round25_candidate_design.py",
+    "src/simple_ai_trading/polymarket_round25_twap_features.py",
+    "src/simple_ai_trading/polymarket_round25_clob_features.py",
+    "src/simple_ai_trading/polymarket_round25_joint_features.py",
+    "src/simple_ai_trading/polymarket_round25_dataset.py",
+    "src/simple_ai_trading/polymarket_round25_joint_materialization.py",
+    "src/simple_ai_trading/polymarket_round25_joint_store.py",
+    "src/simple_ai_trading/polymarket_resolution.py",
+    "src/simple_ai_trading/polymarket_round25_resolution_store.py",
+    "src/simple_ai_trading/polymarket_round25_tcn_store_source.py",
+    "src/simple_ai_trading/polymarket_round25_coordinator.py",
     "src/simple_ai_trading/polymarket_round25_controls.py",
     "src/simple_ai_trading/polymarket_round25_lightgbm.py",
     "src/simple_ai_trading/polymarket_round25_sequence.py",
@@ -684,6 +697,90 @@ def fit_round25_model_ledger(
     )
 
 
+Round25TCNSourceFactory = Callable[
+    [Round25LogisticResidualArtifact],
+    tuple[Round25TCNCorpusSource, Round25TCNCorpusSource],
+]
+
+
+def fit_round25_model_ledger_coordinated(
+    *,
+    source_commit_oid: str,
+    implementation_sha256: Sequence[tuple[str, str]],
+    train: Round25DevelopmentDataset,
+    calibration: Round25DevelopmentDataset,
+    tcn_source_factory: Round25TCNSourceFactory,
+    lightgbm_backend: str = "auto",
+    tcn_backend: str = "auto",
+    progress_callback: Round25TCNProgressCallback | None = None,
+) -> Round25ModelLedger:
+    """Fit the transform once before hash-binding lazy TCN sources."""
+
+    _validate_model_source_identity(source_commit_oid, implementation_sha256)
+    if not isinstance(train, Round25DevelopmentDataset) or not isinstance(
+        calibration,
+        Round25DevelopmentDataset,
+    ):
+        raise TypeError("Round 25 coordinated fitted-model dataset type differs")
+    train.__post_init__()
+    calibration.__post_init__()
+    if (
+        train.role != "train"
+        or calibration.role != "calibration"
+        or train.resolution_authority_sha256
+        != calibration.resolution_authority_sha256
+        or not callable(tcn_source_factory)
+    ):
+        raise ValueError("Round 25 coordinated fitted-model populations differ")
+    phase = fit_round25_phase_isotonic(calibration)
+    logistic = fit_round25_logistic_residual(
+        train=train,
+        calibration=calibration,
+    )
+    transform_sha256 = round25_feature_transform_sha256(
+        logistic.center,
+        logistic.scale,
+    )
+    sources = tcn_source_factory(logistic)
+    if not isinstance(sources, tuple) or len(sources) != 2:
+        raise ValueError("Round 25 coordinated TCN source factory differs")
+    tcn_train, tcn_calibration = validate_round25_tcn_fit_sources(*sources)
+    if (
+        tcn_train.source_dataset_sha256 != train.dataset_sha256
+        or tcn_calibration.source_dataset_sha256 != calibration.dataset_sha256
+        or tcn_train.resolution_authority_sha256
+        != train.resolution_authority_sha256
+        or tcn_calibration.resolution_authority_sha256
+        != calibration.resolution_authority_sha256
+        or tcn_train.feature_transform_sha256 != transform_sha256
+        or tcn_calibration.feature_transform_sha256 != transform_sha256
+    ):
+        raise ValueError("Round 25 coordinated TCN sources differ from fitted transform")
+    trees = tuple(
+        fit_round25_lightgbm_residual(
+            candidate_id=config.candidate_id,
+            train=train,
+            calibration=calibration,
+            compute_backend=lightgbm_backend,
+        )
+        for config in POLYMARKET_ROUND25_LIGHTGBM_CONFIGS
+    )
+    tcn = fit_round25_tcn_ensemble(
+        tcn_train,
+        tcn_calibration,
+        compute_backend=tcn_backend,
+        progress_callback=progress_callback,
+    )
+    return create_round25_model_ledger(
+        source_commit_oid=source_commit_oid,
+        implementation_sha256=implementation_sha256,
+        phase_isotonic=phase,
+        logistic_residual=logistic,
+        lightgbm_residuals=trees,
+        tcn_ensemble=tcn,
+    )
+
+
 def round25_model_implementation_sha256(
     repository: str | Path,
 ) -> tuple[tuple[str, str], ...]:
@@ -793,6 +890,7 @@ __all__ = [
     "Round25ModelLedger",
     "create_round25_model_ledger",
     "fit_round25_model_ledger",
+    "fit_round25_model_ledger_coordinated",
     "load_round25_model_ledger",
     "round25_model_implementation_sha256",
     "write_round25_model_ledger",

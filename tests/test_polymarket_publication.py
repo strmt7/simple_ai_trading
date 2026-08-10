@@ -136,7 +136,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["latest_graph_round"] == 23
     assert (
         manifest["status"]
-        == "round25_v2_waiting_fast_ai_qualified_slow_llm_supervisor_rejected"
+        == "round25_v2_waiting_post_capture_pipeline_implemented_no_result"
     )
     assert manifest["round21_result_available"] is False
     assert manifest["round23_result_available"] is True
@@ -145,7 +145,11 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_capture_revision"] == 2
     assert manifest["round25_v1_capture_eligible"] is False
     assert manifest["round25_twap_native_model_design_frozen"] is True
+    assert manifest["round25_twap_wire_schema_corrected"] is True
     assert manifest["round25_feature_contract_implemented"] is True
+    assert manifest["round25_joint_feature_materialization_contract_frozen"] is True
+    assert manifest["round25_joint_feature_materializer_implemented"] is True
+    assert manifest["round25_joint_feature_store_implemented"] is True
     assert manifest["round25_candidate_ledger_frozen"] is True
     assert manifest["round25_development_dataset_contract_implemented"] is True
     assert manifest["round25_control_fit_contract_frozen"] is True
@@ -188,9 +192,16 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_slow_llm_supervisor_additional_model_cycling_allowed"] is False
     assert manifest["round25_sealed_test_campaign_planned"] is False
     assert manifest["round25_settlement_rule_verified"] is False
-    assert manifest["round25_terminal_design_frozen"] is False
+    assert manifest["round25_terminal_design_frozen"] is True
+    assert manifest["round25_terminal_operator_implemented"] is True
     assert manifest["round25_terminal_receipt_audit_available"] is False
     assert manifest["round25_materialization_result_available"] is False
+    assert manifest["round25_resolution_collection_contract_frozen"] is True
+    assert manifest["round25_resolution_store_implemented"] is True
+    assert manifest["round25_resolution_authority_available"] is False
+    assert manifest["round25_post_capture_coordinator_contract_frozen"] is True
+    assert manifest["round25_post_capture_coordinator_implemented"] is True
+    assert manifest["round25_post_capture_coordinator_run"] is False
     assert manifest["profitability_claim"] is False
     assert manifest["paper_authority"] is False
     assert manifest["live_trading_authority"] is False
@@ -203,6 +214,10 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert "round-024-prospective-receipt-lead-lag-spec-v3.json" in artifact_paths
     assert "round-024-preregistration-publication-v2-2026-08-10.json" in artifact_paths
     assert "round-025-terminal-receipt-materialization-design-v1.json" in artifact_paths
+    assert "round-025-twap-wire-schema-correction-v1.json" in artifact_paths
+    assert "round-025-joint-feature-materialization-contract-v1.json" in artifact_paths
+    assert "round-025-official-resolution-collection-contract-v1.json" in artifact_paths
+    assert "round-025-post-capture-coordinator-contract-v1.json" in artifact_paths
     assert "round-025-control-fit-contract-v1.json" in artifact_paths
     assert "round-025-lightgbm-fit-contract-v1.json" in artifact_paths
     assert "round-025-predictive-evaluation-contract-v1.json" in artifact_paths

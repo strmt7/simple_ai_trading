@@ -14,7 +14,7 @@ from simple_ai_trading.polymarket_round25_twap_features import (
     POLYMARKET_ROUND25_TWAP_MODEL_DESIGN_SHA256,
     POLYMARKET_ROUND25_TWAP_SYMBOL,
     POLYMARKET_ROUND25_TWAP_TOPIC,
-    POLYMARKET_ROUND25_TWAP_WINDOW_SECONDS,
+    POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256,
     Round25TwapFeatureEngine,
     Round25TwapObservation,
 )
@@ -27,6 +27,13 @@ DESIGN_PATH = (
     / "model-research"
     / "polymarket"
     / "round-025-twap-native-model-design-v1.json"
+)
+CORRECTION_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-025-twap-wire-schema-correction-v1.json"
 )
 START_MS = 1_800_000_000_000
 CONDITION_ID = "0x" + "a" * 64
@@ -66,7 +73,6 @@ def _raw_frame(
                 "value": display_value,
                 "full_accuracy_value": str(exact_value_e18),
                 "timestamp": source_ms,
-                "window_s": POLYMARKET_ROUND25_TWAP_WINDOW_SECONDS,
             },
         },
         separators=(",", ":"),
@@ -125,7 +131,7 @@ def test_design_is_self_hashed_target_blind_and_non_authoritative() -> None:
     assert declared == _canonical_sha256(payload)
     assert declared == POLYMARKET_ROUND25_TWAP_MODEL_DESIGN_SHA256
     assert payload["status"] == "frozen_target_blind_before_round25_v2_capture_start"
-    assert payload["source_contracts"]["rtds_topic"] == POLYMARKET_ROUND25_TWAP_TOPIC
+    assert payload["source_contracts"]["rtds_topic"] == "crypto_prices_twap_thirty"
     assert payload["settlement_hypothesis"]["verification_status"].startswith(
         "unverified_"
     )
@@ -133,6 +139,21 @@ def test_design_is_self_hashed_target_blind_and_non_authoritative() -> None:
     assert payload["settlement_hypothesis"]["binance_price_substitution_allowed"] is False
     assert payload["invalidated_basis"]["admissible_for_round25_v2"] is False
     assert payload["ai_assist"]["safety_override_allowed"] is False
+    assert not any(payload["truth_state"].values())
+
+
+def test_live_wire_schema_correction_is_self_hashed_and_source_only() -> None:
+    payload = json.loads(CORRECTION_PATH.read_text(encoding="utf-8"))
+    declared = payload.pop("correction_sha256")
+
+    assert declared == _canonical_sha256(payload)
+    assert declared == POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256
+    assert payload["parent_twap_native_model_design_sha256"] == (
+        POLYMARKET_ROUND25_TWAP_MODEL_DESIGN_SHA256
+    )
+    assert payload["public_wire_probe"]["topic"] == POLYMARKET_ROUND25_TWAP_TOPIC
+    assert payload["public_wire_probe"]["window_s_present"] is False
+    assert payload["corrected_parser_contract"]["wire_window_field_allowed"] is False
     assert not any(payload["truth_state"].values())
 
 
@@ -167,15 +188,15 @@ def test_exact_wire_frame_parses_without_using_display_value_as_price() -> None:
 @pytest.mark.parametrize(
     ("mutator", "error"),
     [
-        (lambda event: event.update(topic="crypto_prices_chainlink"), "identity"),
+        (lambda event: event.update(topic="crypto_prices_twap_thirty"), "identity"),
         (lambda event: event.update(type="snapshot"), "identity"),
         (lambda event: event["payload"].update(symbol="BTC/USD"), "identity"),
-        (lambda event: event["payload"].update(window_s=60), "identity"),
+        (lambda event: event["payload"].update(window_s=30), "identity"),
         (lambda event: event["payload"].update(value="65000"), "display"),
         (lambda event: event["payload"].update(value=True), "display"),
         (lambda event: event["payload"].update(value=1.0), "display"),
         (lambda event: event["payload"].update(full_accuracy_value="1.2"), "exact"),
-        (lambda event: event["payload"].update(full_accuracy_value="-1"), "display"),
+        (lambda event: event["payload"].update(full_accuracy_value="-1"), "exact"),
         (lambda event: event.update(timestamp=True), "positive integer"),
     ],
 )
@@ -222,6 +243,15 @@ def test_observation_constructor_rejects_bool_integer_substitution() -> None:
     ):
         with pytest.raises(ValueError):
             replace(valid, **{field: True})
+
+
+def test_observation_rejects_publisher_time_after_local_receipt() -> None:
+    with pytest.raises(ValueError, match="observation is invalid"):
+        replace(
+            _observation(0),
+            publisher_timestamp_ms=START_MS + 500,
+            received_wall_ms=START_MS + 499,
+        )
 
 
 def test_available_snapshot_is_causal_deterministic_and_target_blind() -> None:
@@ -315,37 +345,25 @@ def test_conflicting_source_value_is_rejected_but_identical_duplicate_is_counted
     assert "conflicting_twap_source_timestamp" in conflict.reasons
 
 
-def test_future_source_publisher_and_receipt_are_never_consumed() -> None:
-    source_engine = _ready_engine()
-    source_engine.ingest(
-        _observation(
-            3_000,
-            sequence=10,
-            received_ms=START_MS + 2_200,
-        )
-    )
-    source_snapshot = source_engine.build(START_MS + 2_250)
-
-    publisher_engine = _ready_engine()
-    publisher_engine.ingest(
-        _observation(
-            2_100,
-            sequence=10,
-            publisher_ms=START_MS + 2_300,
-            received_ms=START_MS + 2_200,
-        )
-    )
-    publisher_snapshot = publisher_engine.build(START_MS + 2_250)
-
+def test_future_receipts_and_noncausal_wire_order_are_never_consumed() -> None:
     receipt_engine = _ready_engine()
     receipt_engine.ingest(_observation(2_250, sequence=10))
 
-    assert source_snapshot.available is False
-    assert "future_twap_source_timestamp" in source_snapshot.reasons
-    assert publisher_snapshot.available is False
-    assert "future_twap_publisher_timestamp" in publisher_snapshot.reasons
     with pytest.raises(ValueError, match="future receipts"):
         receipt_engine.build(START_MS + 2_250)
+    with pytest.raises(ValueError, match="observation is invalid"):
+        _observation(
+            3_000,
+            sequence=11,
+            received_ms=START_MS + 2_200,
+        )
+    with pytest.raises(ValueError, match="observation is invalid"):
+        _observation(
+            2_100,
+            sequence=12,
+            publisher_ms=START_MS + 2_000,
+            received_ms=START_MS + 2_200,
+        )
 
 
 def test_nonoverlapping_variance_requires_consecutive_exact_grid_points() -> None:
