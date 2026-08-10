@@ -197,6 +197,9 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_terminal_receipt_audit_available"] is False
     assert manifest["round25_materialization_result_available"] is False
     assert manifest["round25_resolution_collection_contract_frozen"] is True
+    assert manifest["round25_resolution_collection_contract_revision"] == 2
+    assert manifest["round25_resolution_public_transport_verified"] is True
+    assert manifest["round25_resolution_terminal_schema_verified"] is True
     assert manifest["round25_resolution_store_implemented"] is True
     assert manifest["round25_resolution_authority_available"] is False
     assert manifest["round25_post_capture_coordinator_contract_frozen"] is True
@@ -217,6 +220,11 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert "round-025-twap-wire-schema-correction-v1.json" in artifact_paths
     assert "round-025-joint-feature-materialization-contract-v1.json" in artifact_paths
     assert "round-025-official-resolution-collection-contract-v1.json" in artifact_paths
+    assert "round-025-official-resolution-collection-contract-v2.json" in artifact_paths
+    assert (
+        "round-025-official-resolution-transport-probe-v1-2026-08-10.json"
+        in artifact_paths
+    )
     assert "round-025-post-capture-coordinator-contract-v1.json" in artifact_paths
     assert "round-025-control-fit-contract-v1.json" in artifact_paths
     assert "round-025-lightgbm-fit-contract-v1.json" in artifact_paths
@@ -295,6 +303,35 @@ def test_latest_public_clob_probe_is_truthfully_scoped() -> None:
     assert probe["validation"]["predictive_edge_tested"] is False
     assert probe["validation"]["profitability_tested"] is False
     assert probe["validation"]["live_readiness_proved"] is False
+
+
+def test_round25_resolution_transport_probe_is_self_hashed_and_non_authoritative() -> None:
+    probe = json.loads(
+        (
+            RESEARCH
+            / "round-025-official-resolution-transport-probe-v1-2026-08-10.json"
+        ).read_text(encoding="utf-8")
+    )
+    claimed = probe.pop("probe_sha256")
+    canonical = json.dumps(
+        probe,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert probe["official_sources"]["session_cookie_count_after_requests"] == 0
+    assert probe["bounded_sequence"] == {
+        "maximum_candidates": 8,
+        "candidates_queried": 3,
+        "pending_without_inference": 2,
+        "jointly_terminal": 1,
+        "stopped_after_first_jointly_terminal_candidate": True,
+    }
+    assert probe["validated_market"]["cross_source_winner_agreement_validated"] is True
+    assert not any(bool(value) for value in probe["authority"].values())
 
 
 def test_round_013_failed_capture_evidence_is_hash_bound_and_ineligible() -> None:

@@ -59,8 +59,16 @@ Official resolution collection is separately implemented behind a persisted
 target-access claim. It requires complete identity agreement and terminal
 winner agreement from credential-free Gamma and CLOB responses, keeps pending
 conditions unlabeled, and atomically publishes a distinct compressed target
-store only after full population and role-count audit. No target collection,
-resolution authority, or target store exists.
+store only after full population and role-count audit. A prestart live check
+found that both public origins offer a Cloudflare response cookie. The frozen
+[v2 transport contract](../round-025-official-resolution-collection-contract-v2.json)
+therefore rejects preexisting or outbound cookies but immediately discards
+offered response cookies before validation, retry, or return. The
+[post-close probe](../round-025-official-resolution-transport-probe-v1-2026-08-10.json)
+jointly validated one terminal BTC market across both origins with zero cookies
+retained and no credentials or orders. It is transport evidence only; no target
+collection, pre-close identity proof, resolution authority, or target store
+exists.
 
 The post-capture coordinator is also implemented. Its single-writer,
 self-hashed recovery state orders terminal audit, feature publication, bounded
@@ -668,7 +676,8 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Round 25 fitted-model ledger](../round-025-model-ledger-contract-v1.json)
 - [Round 25 RTDS wire correction](../round-025-twap-wire-schema-correction-v1.json)
 - [Round 25 joint feature materialization](../round-025-joint-feature-materialization-contract-v1.json)
-- [Round 25 official resolution collection](../round-025-official-resolution-collection-contract-v1.json)
+- [Round 25 official resolution collection v2](../round-025-official-resolution-collection-contract-v2.json)
+- [Round 25 official resolution transport probe](../round-025-official-resolution-transport-probe-v1-2026-08-10.json)
 - [Round 25 post-capture coordinator](../round-025-post-capture-coordinator-contract-v1.json)
 - [Round 25 Fin-R1 supervisor rejection](../round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json)
 - [Round 25 slow LLM supervisor mechanism rejection](../round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json)

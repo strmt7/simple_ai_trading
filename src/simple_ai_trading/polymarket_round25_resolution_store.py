@@ -38,7 +38,7 @@ from .polymarket_round25_joint_store import (
 
 
 POLYMARKET_ROUND25_RESOLUTION_CONTRACT_SHA256 = (
-    "f0943bb4296288563c3506aec06fd30c68caa75423252c227e17b26a6cdf66a2"
+    "f0f0faf5da10c18be4d3b19989988c626aaa95aec105f787098505f7fbef2700"
 )
 POLYMARKET_ROUND25_RESOLUTION_ACCESS_CLAIM_SCHEMA_VERSION = (
     "polymarket-round25-resolution-access-claim-v1"
@@ -100,6 +100,7 @@ class _Response(Protocol):
     content: bytes
     headers: Mapping[str, str]
     url: str
+    request: object
 
 
 class _Session(Protocol):
@@ -329,6 +330,25 @@ class Round25ResolutionPublicClient:
         if cookies is not None and len(cookies):
             raise ValueError("Round 25 resolution session contains cookies")
 
+    def _discard_response_cookies(self, response: _Response) -> None:
+        request = getattr(response, "request", None)
+        request_headers = getattr(request, "headers", None)
+        if not isinstance(request_headers, Mapping):
+            raise ValueError("Round 25 resolution request metadata is unavailable")
+        sent_cookie = any(
+            str(name).strip().lower() == "cookie" for name in request_headers
+        )
+        cookies = getattr(self.session, "cookies", None)
+        if cookies is not None:
+            clear = getattr(cookies, "clear", None)
+            if not callable(clear):
+                raise ValueError("Round 25 resolution cookie jar cannot be cleared")
+            clear()
+            if len(cookies):
+                raise ValueError("Round 25 resolution response cookies persisted")
+        if sent_cookie:
+            raise ValueError("Round 25 resolution request sent cookies")
+
     def _wait(self, origin: str) -> None:
         now = float(self.monotonic())
         previous = self._last_request_by_origin.get(origin)
@@ -348,8 +368,8 @@ class Round25ResolutionPublicClient:
         return max(fallback, min(30.0, float(value)))
 
     def _request(self, url: str, *, origin: str, path: str) -> Round25OfficialPublicPayload:
-        self._assert_public_session()
         for attempt in range(self.maximum_attempts):
+            self._assert_public_session()
             self._wait(origin)
             try:
                 response = self.session.get(
@@ -362,18 +382,17 @@ class Round25ResolutionPublicClient:
                     allow_redirects=False,
                 )
             except requests.RequestException as exc:
+                cookies = getattr(self.session, "cookies", None)
+                clear = getattr(cookies, "clear", None)
+                if callable(clear):
+                    clear()
                 if attempt + 1 == self.maximum_attempts:
                     raise Round25ResolutionTransportError(
                         "Round 25 resolution transport retries were exhausted"
                     ) from exc
                 self.sleeper(min(8.0, 0.5 * (2**attempt)))
                 continue
-            cookies = getattr(self.session, "cookies", None)
-            if cookies is not None and len(cookies):
-                clear = getattr(cookies, "clear", None)
-                if callable(clear):
-                    clear()
-                raise ValueError("Round 25 resolution response attempted to set cookies")
+            self._discard_response_cookies(response)
             status = int(response.status_code)
             if status == 200:
                 parsed_url = urlparse(str(response.url))
