@@ -158,7 +158,7 @@ def test_round25_economic_contract_is_self_hashed_and_claim_free() -> None:
         / "docs"
         / "model-research"
         / "polymarket"
-        / "round-025-economic-replay-contract-v1.json"
+        / "round-025-economic-replay-contract-v2.json"
     )
     contract = json.loads(path.read_text(encoding="utf-8"))
     claimed = contract.pop("contract_sha256")

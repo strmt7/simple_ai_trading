@@ -45,7 +45,7 @@ from .polymarket_round25_terminal import (
 
 
 POLYMARKET_ROUND25_JOINT_MATERIALIZATION_CONTRACT_SHA256 = (
-    "b696d4951705ca62402e5e27dacda590ff69ad352fa75185282c8adc275e4df5"
+    "57fb2cf088bdd64e3b6e05d087d5d4aa3d77cc484b8611be77b02cd12a34a6c2"
 )
 POLYMARKET_ROUND25_CONDITION_MATERIALIZATION_SCHEMA_VERSION = (
     "polymarket-round25-condition-joint-feature-materialization-v2"

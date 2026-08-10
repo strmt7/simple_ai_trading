@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 46389,
+      "bytes": 47140,
       "path": "latest/README.md",
-      "sha256": "e2301a1d2a74823108cedb8f876fc20b7154f0061a9ce1d2b5eb3cb004ba2eaa"
+      "sha256": "934a763a7017d87fa69a585f41fcbd0f7f071bf7b179cb6cdbe952276f9f1ea2"
     },
     {
       "bytes": 77606,
@@ -292,6 +292,11 @@
       "sha256": "346c086d3edbcea46cdb882112a4f79f85c662f902541daf6328e97872d695bf"
     },
     {
+      "bytes": 6785,
+      "path": "round-025-economic-replay-contract-v2.json",
+      "sha256": "1a68a302db652e9c39f078b6074dbd8ec27aebb4548e870977753d8331d0d457"
+    },
+    {
       "bytes": 5590,
       "path": "round-025-fin-r1-regime-supervisor-contract-v1.json",
       "sha256": "b607cfe29f11ab858caca16ef768b96848017eaba8518b2a33d989ae1a018c5b"
@@ -332,6 +337,11 @@
       "sha256": "f2ce622f054e9e4c0b51ae191721463aaf193d0dbbd700a45d064f387625e02c"
     },
     {
+      "bytes": 3887,
+      "path": "round-025-joint-feature-materialization-contract-v2.json",
+      "sha256": "41e6a49e67122484dfa7cdc6b779f58d38adcb3af37d4cf6a7885b72783d9a74"
+    },
+    {
       "bytes": 4039,
       "path": "round-025-lightgbm-fit-contract-v1.json",
       "sha256": "93b43003b13a97d1d9efc2b668b23e005d21e910ce7e7bea61067aebe806947c"
@@ -352,6 +362,11 @@
       "sha256": "42cf0a2d558cbbe0c65182c48a27a052a462dc75cc3f9a240d2d7e03dd04005d"
     },
     {
+      "bytes": 5951,
+      "path": "round-025-official-resolution-collection-contract-v3.json",
+      "sha256": "3c76df8b18987d825dd3bd4a92d997c5a72076b2cda7f3447df692f28a258b67"
+    },
+    {
       "bytes": 2384,
       "path": "round-025-official-resolution-transport-probe-v1-2026-08-10.json",
       "sha256": "c15a5330f27f9a130e9a90d461707dd0e5956ecf37ca32feac41f761a2e92114"
@@ -370,6 +385,11 @@
       "bytes": 5082,
       "path": "round-025-post-capture-coordinator-contract-v3.json",
       "sha256": "74acdc23c4815fbb8151331302fd50f2925c0bf150cd29761c022892c9022c6d"
+    },
+    {
+      "bytes": 5214,
+      "path": "round-025-post-capture-coordinator-contract-v4.json",
+      "sha256": "9852b3af5db12a2af12da713d6e78b432edd4073e0706bc999cd4b3732e87170"
     },
     {
       "bytes": 7048,
@@ -417,14 +437,29 @@
       "sha256": "f87d48244c89425f7ab681879bcf35817c05cb5861667d0297c08141e8595392"
     },
     {
+      "bytes": 2903,
+      "path": "round-025-terminal-receipt-materialization-design-v2.json",
+      "sha256": "10d0fa2d58515ebe06072fe170aeb0be6c0296b453fbd64f13226acb1d60a7ac"
+    },
+    {
       "bytes": 2378,
       "path": "round-025-twap-core-campaign-plan-publication-2026-08-10.json",
       "sha256": "e4aae96247d59eb414401883c125b9c9e033ef86d62c58e473704927e04ea355"
     },
     {
+      "bytes": 2394,
+      "path": "round-025-twap-core-campaign-plan-publication-v2-2026-08-10.json",
+      "sha256": "13a5d828230d2f48eff83fb883309e4d8bd132cda37983e19c85405e0138d589"
+    },
+    {
       "bytes": 3992,
       "path": "round-025-twap-core-capture-design-v1.json",
       "sha256": "2962220ac98ef84c8d8983e4e99c804493c2284906c2fa8f0241bc192f681d70"
+    },
+    {
+      "bytes": 4514,
+      "path": "round-025-twap-core-capture-design-v2.json",
+      "sha256": "fb9c5ca6b001731227f2da82a148829060d4f584dc615ca2f6512d3f6f256fc9"
     },
     {
       "bytes": 2946,
@@ -450,6 +485,16 @@
       "bytes": 2782,
       "path": "round-025-twap-wire-schema-correction-v1.json",
       "sha256": "b82f7b2785877dad39931e41e7dcad3caac01bab8e84e1bf89ca45b920817ba3"
+    },
+    {
+      "bytes": 2629,
+      "path": "round-025-twap-wire-schema-correction-v2.json",
+      "sha256": "05bea617122459f03195856f47aa26e5901023a4bedd0ae299c2ad4aaf7529ee"
+    },
+    {
+      "bytes": 17545,
+      "path": "round-025-twap-wire-source-qualification-v2-2026-08-10.json",
+      "sha256": "e5bb338db3e57c0cb891b5117c8feb8b91176f16bebba7f31d9349bbe6548cc4"
     }
   ],
   "asset": "BTC",
@@ -459,7 +504,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 25,
   "live_trading_authority": false,
-  "manifest_sha256": "d16ee28d1d590a54eb09e514d47e27dddfb6e3d600e700829ff40c5751896531",
+  "manifest_sha256": "c82502e4e8cbfccdc5d02d6544d395eb439366ec18ecfa5fc600e7b3c0e2c6f3",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -485,6 +530,7 @@
   "round25_development_dataset_contract_implemented": true,
   "round25_development_economic_gate_passed": false,
   "round25_economic_replay_contract_frozen": true,
+  "round25_economic_replay_contract_revision": 2,
   "round25_economic_replay_operator_implemented": true,
   "round25_economic_result_available": false,
   "round25_feature_contract_implemented": true,
@@ -495,6 +541,7 @@
   "round25_fin_r1_supervisor_uplift_evaluation_allowed": false,
   "round25_fin_r1_supervisor_uplift_evaluator_implemented": true,
   "round25_joint_feature_materialization_contract_frozen": true,
+  "round25_joint_feature_materialization_contract_revision": 2,
   "round25_joint_feature_materializer_implemented": true,
   "round25_joint_feature_store_implemented": true,
   "round25_lightgbm_fit_contract_frozen": true,
@@ -502,9 +549,13 @@
   "round25_lightgbm_operator_implemented": true,
   "round25_materialization_result_available": false,
   "round25_post_capture_coordinator_contract_frozen": true,
-  "round25_post_capture_coordinator_contract_revision": 3,
+  "round25_post_capture_coordinator_contract_revision": 4,
   "round25_post_capture_coordinator_implemented": true,
   "round25_post_capture_coordinator_run": false,
+  "round25_post_capture_runner_implemented": true,
+  "round25_post_capture_runner_orders_submitted": 0,
+  "round25_post_capture_runner_source_database_opened": false,
+  "round25_post_capture_runner_waiting_mode_host_verified": true,
   "round25_prediction_panel_frozen": false,
   "round25_predictive_evaluation_contract_frozen": true,
   "round25_predictive_evaluator_implemented": true,
@@ -512,7 +563,7 @@
   "round25_qwen3_8b_supervisor_candidate_rejected": true,
   "round25_resolution_authority_available": false,
   "round25_resolution_collection_contract_frozen": true,
-  "round25_resolution_collection_contract_revision": 2,
+  "round25_resolution_collection_contract_revision": 3,
   "round25_resolution_public_transport_verified": true,
   "round25_resolution_store_implemented": true,
   "round25_resolution_terminal_schema_verified": true,
@@ -531,16 +582,20 @@
   "round25_tcn_operator_implemented": true,
   "round25_tcn_seed_model_fitted": false,
   "round25_terminal_design_frozen": true,
+  "round25_terminal_design_revision": 2,
   "round25_terminal_operator_implemented": true,
   "round25_terminal_receipt_audit_available": false,
   "round25_twap_native_model_design_frozen": true,
   "round25_twap_wire_schema_corrected": true,
+  "round25_twap_wire_schema_correction_revision": 2,
   "round25_v1_capture_eligible": false,
+  "round25_v2_campaign_end_utc": "2026-08-29T23:40:00Z",
   "round25_v2_campaign_start_utc": "2026-08-11T00:00:00Z",
+  "round25_v2_capture_evidence_published": true,
   "schema_version": "polymarket-current-status-publication-v1",
   "source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0",
   "source_dataset_sha256": "a6fd7f55ec7705d391a035b923c4440c3f92ddfb5b1b169ee6b7df3d67aa7665",
   "source_evaluation_artifact_sha256": "c3385d4894ca430a91442d1023bf01f61c650f6d208a4d0f89d11007ee5a11c0",
   "source_pretest_artifact_sha256": "03e4fae64f34f835cac338dee111701c73419929e97a22939e12037eba8dfec9",
-  "status": "round25_v2_waiting_post_capture_pipeline_implemented_no_result"
+  "status": "round25_v2_waiting_capture_post_capture_runner_verified_no_result"
 }

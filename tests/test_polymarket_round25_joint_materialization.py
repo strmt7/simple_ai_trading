@@ -16,8 +16,9 @@ from simple_ai_trading.polymarket_recorder import (
     RawStreamMessage,
     StreamGap,
 )
-from simple_ai_trading.polymarket_round25_campaign import (
-    POLYMARKET_ROUND25_DESIGN_SHA256,
+from simple_ai_trading.polymarket_round25_active_campaign import (
+    POLYMARKET_ROUND25_ACTIVE_DESIGN_SHA256,
+    POLYMARKET_ROUND25_ACTIVE_SOURCE_QUALIFICATION_SHA256,
     POLYMARKET_ROUND25_RESOLUTION_SOURCE,
 )
 from simple_ai_trading.polymarket_round25_dataset import (
@@ -53,7 +54,7 @@ CONTRACT = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-025-joint-feature-materialization-contract-v1.json"
+    / "round-025-joint-feature-materialization-contract-v2.json"
 )
 EVENT_START_MS = 1_800_000_000_000
 CONDITION_ID = "0x" + "1" * 64
@@ -112,6 +113,7 @@ def _twap_frame(offset_ms: int, *, ordinal: int) -> CaptureFrameRecord:
                     "symbol": "btc/usd",
                     "timestamp": source,
                     "value": exact / E18,
+                    "window_s": 30,
                 },
                 "timestamp": publisher,
                 "topic": POLYMARKET_ROUND25_TWAP_TOPIC,
@@ -373,9 +375,11 @@ def _terminal_transport_manifest(
         "resolution_source": POLYMARKET_ROUND25_RESOLUTION_SOURCE,
         "schema_version": POLYMARKET_ROUND25_TERMINAL_TRANSPORT_SCHEMA_VERSION,
         "segments": [segment],
-        "source_capture_design_sha256": POLYMARKET_ROUND25_DESIGN_SHA256,
+        "source_capture_design_sha256": POLYMARKET_ROUND25_ACTIVE_DESIGN_SHA256,
         "source_plan_sha256": source_plan_sha256,
-        "source_qualification_sha256": "5" * 64,
+        "source_qualification_sha256": (
+            POLYMARKET_ROUND25_ACTIVE_SOURCE_QUALIFICATION_SHA256
+        ),
         "terminal_design_sha256": POLYMARKET_ROUND25_TERMINAL_DESIGN_SHA256,
     }
     return {**body, "manifest_sha256": _canonical_sha256(body)}
@@ -433,7 +437,7 @@ def test_joint_condition_loader_derives_v2_roles_and_excludes_purge(
 
 
 def test_joint_condition_loader_rejects_capture_plan_drift(tmp_path: Path) -> None:
-    with pytest.raises(ValueError, match="capture plan differs"):
+    with pytest.raises(ValueError, match="terminal transport manifest differs"):
         load_round25_joint_receipt_conditions(
             database=tmp_path / "absent.duckdb",
             terminal_transport_manifest=_terminal_transport_manifest(
@@ -582,7 +586,7 @@ def test_twap_decoder_accepts_empty_control_and_rejects_schema_drift() -> None:
     assert decode_round25_twap_record(control) is None
 
     payload = json.loads(_twap_frame(0, ordinal=1).raw_text)
-    payload["payload"]["window_s"] = 30
+    payload["payload"]["window_s"] = 31
     drifted = replace(
         _twap_frame(0, ordinal=1),
         raw_text=json.dumps(payload, separators=(",", ":")),

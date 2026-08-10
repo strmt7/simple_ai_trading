@@ -1,0 +1,84 @@
+{
+  "schema_version": "polymarket-round25-joint-feature-materialization-contract-v2",
+  "round": 25,
+  "created_at_utc": "2026-08-10T21:34:23Z",
+  "status": "frozen_before_round25_v2_capture_start_and_before_any_receipt_materialization",
+  "supersedes": {
+    "schema_version": "polymarket-round25-joint-feature-materialization-contract-v1",
+    "contract_sha256": "b696d4951705ca62402e5e27dacda590ff69ad352fa75185282c8adc275e4df5",
+    "reason": "v1 named the legacy point-price topic even though the active v2 campaign captures the separately qualified exact-TWAP topic"
+  },
+  "parents": {
+    "candidate_amendment_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2",
+    "candidate_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "target_free_sequence_inference_contract_sha256": "d2e0b304a616ba1d819ac2c28af584291bd393c1cd1f84b0d831c3bcfa5d02ff",
+    "terminal_design_sha256": "b7f693680de7eace5408489a75b65de2ba7058c7f01c0d8e0038430419eb7786",
+    "twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "twap_wire_schema_correction_sha256": "3cbbb0105d6fc61e845ae42978a06a0b012ba4328694c49fae892427cf480f4c"
+  },
+  "source_boundary": {
+    "terminal_transport_manifest_required": true,
+    "terminal_receipt_audit_required": true,
+    "source_database_read_only": true,
+    "source_database_wal_allowed": false,
+    "receipt_scan_count": 1,
+    "authoritative_clob_lane_count": 1,
+    "rtds_topic": "crypto_prices_twap_thirty",
+    "rtds_symbol": "btc/usd",
+    "rtds_window_s": 30,
+    "exact_e18_twap_required": true,
+    "legacy_point_topic_allowed": false,
+    "official_resolution_accessed": false,
+    "target_accessed": false,
+    "model_score_accessed": false
+  },
+  "causal_replay": {
+    "condition_isolation_required": true,
+    "decision_cadence_ms": 250,
+    "condition_duration_ms": 300000,
+    "future_local_receipt_allowed": false,
+    "future_source_timestamp_allowed": false,
+    "future_publisher_timestamp_allowed": false,
+    "stream_gap_condition_behavior": "reject_condition",
+    "connection_change_condition_behavior": "reject_condition",
+    "clob_rebuild": "exact_top_20_from_strict_full_book_and_price_change_events",
+    "twap_value": "exact_full_accuracy_value_e18_only",
+    "partial_joint_row_allowed": false,
+    "unavailable_row_used_for_model_input": false
+  },
+  "bounded_population": {
+    "endpoint_selection": "four_target_blind_hash_ranked_available_rows_per_quarter_phase",
+    "endpoint_count_per_admitted_condition": 16,
+    "sequence_steps_per_endpoint": 64,
+    "sequence_cadence_ms": 250,
+    "persisted_rows": "deduplicated_union_of_selected_endpoints_and_their_available_64_step_condition_local_histories",
+    "full_1200_row_condition_persistence_required": false,
+    "endpoint_reselection_from_persisted_rows_must_be_identical": true,
+    "underfilled_phase_behavior": "reject_condition"
+  },
+  "integrity": {
+    "condition_materialization_self_hash_required": true,
+    "selected_endpoint_times_bound": true,
+    "persisted_row_source_hashes_bound": true,
+    "unavailable_reason_counts_bound": true,
+    "future_receipt_check_required_before_output": true,
+    "duplicate_condition_decision_key_behavior": "reject"
+  },
+  "authority": {
+    "model_data_eligibility_granted": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "truth_state": {
+    "round25_v2_receipt_corpus_exists": false,
+    "joint_features_materialized": false,
+    "development_dataset_created": false,
+    "model_fitted": false,
+    "candidate_selected": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false
+  },
+  "contract_sha256": "57fb2cf088bdd64e3b6e05d087d5d4aa3d77cc484b8611be77b02cd12a34a6c2"
+}

@@ -65,7 +65,7 @@ from .polymarket_round25_terminal import (
 
 
 POLYMARKET_ROUND25_ECONOMIC_REPLAY_CONTRACT_SHA256 = (
-    "f396510a49346015f57f29be7a2a1560841890c99d26e36995469f7daf0bd996"
+    "aaf3b72c88b22b9e1275acc8a97fb48ad73f894c8345366eab50f319e05877b0"
 )
 POLYMARKET_ROUND25_ECONOMIC_RESULT_SCHEMA_VERSION = (
     "polymarket-round25-development-economic-result-v1"

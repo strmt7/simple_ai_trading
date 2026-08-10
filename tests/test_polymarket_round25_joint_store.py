@@ -9,8 +9,9 @@ import duckdb
 import pytest
 
 from simple_ai_trading import polymarket_round25_joint_store as joint_store
-from simple_ai_trading.polymarket_round25_campaign import (
-    POLYMARKET_ROUND25_DESIGN_SHA256,
+from simple_ai_trading.polymarket_round25_active_campaign import (
+    POLYMARKET_ROUND25_ACTIVE_DESIGN_SHA256,
+    POLYMARKET_ROUND25_ACTIVE_SOURCE_QUALIFICATION_SHA256,
     POLYMARKET_ROUND25_RESOLUTION_SOURCE,
 )
 from simple_ai_trading.polymarket_recorder import StreamGap
@@ -121,9 +122,11 @@ def _transport() -> dict[str, object]:
         "resolution_source": POLYMARKET_ROUND25_RESOLUTION_SOURCE,
         "schema_version": POLYMARKET_ROUND25_TERMINAL_TRANSPORT_SCHEMA_VERSION,
         "segments": [segment],
-        "source_capture_design_sha256": POLYMARKET_ROUND25_DESIGN_SHA256,
+        "source_capture_design_sha256": POLYMARKET_ROUND25_ACTIVE_DESIGN_SHA256,
         "source_plan_sha256": POLYMARKET_ROUND25_CAPTURE_PLAN_SHA256,
-        "source_qualification_sha256": "5" * 64,
+        "source_qualification_sha256": (
+            POLYMARKET_ROUND25_ACTIVE_SOURCE_QUALIFICATION_SHA256
+        ),
         "terminal_design_sha256": POLYMARKET_ROUND25_TERMINAL_DESIGN_SHA256,
     }
     return {**body, "manifest_sha256": _canonical_sha256(body)}

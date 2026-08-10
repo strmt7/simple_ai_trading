@@ -1,0 +1,71 @@
+{
+  "schema_version": "polymarket-round25-twap-wire-schema-correction-v2",
+  "round": 25,
+  "created_at_utc": "2026-08-10T21:34:23Z",
+  "status": "frozen_before_round25_v2_capture_start",
+  "supersedes": {
+    "schema_version": "polymarket-round25-twap-wire-schema-correction-v1",
+    "correction_sha256": "ad3a320b9d4c6054260cbf5a560dca329f271e0dfb05d8f2ade3ae4d812062e2",
+    "reason": "the earlier probe subscribed to the legacy point-price topic and therefore could not define the active exact-TWAP corpus wire schema"
+  },
+  "parents": {
+    "twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "active_capture_design_sha256": "c083a7fb4a3ecb0f080ce2bf2c2bb3021000b2ab85562caa6a9a69067c6e673d",
+    "active_capture_plan_sha256": "a0b5525697c3c1e1b175bd0f0ac724fdb62845638d2040e9964221031d3e7b20",
+    "active_wire_qualification_sha256": "d06f76ba7305b55e254209839360af277f68947f1ff5fbe986df5a9dd374334d"
+  },
+  "qualified_wire": {
+    "endpoint": "wss://ws-live-data.polymarket.com",
+    "topic": "crypto_prices_twap_thirty",
+    "message_type": "update",
+    "symbol": "btc/usd",
+    "window_s": 30,
+    "top_level_keys": [
+      "payload",
+      "timestamp",
+      "topic",
+      "type"
+    ],
+    "payload_keys": [
+      "full_accuracy_value",
+      "symbol",
+      "timestamp",
+      "value",
+      "window_s"
+    ],
+    "empty_control_frame_allowed": true,
+    "exact_e18_value_required": true,
+    "source_timestamp_required": true,
+    "publisher_timestamp_required": true,
+    "display_value_model_eligible": false,
+    "legacy_point_topic_model_eligible": false
+  },
+  "parser_contract": {
+    "exact_key_sets_required": true,
+    "duplicate_json_keys_rejected": true,
+    "nonfinite_json_rejected": true,
+    "publisher_time_must_not_precede_source_time": true,
+    "publisher_time_must_not_follow_local_receipt": true,
+    "unknown_or_drifted_fields": "reject",
+    "future_receipts": "reject",
+    "legacy_point_frames": "reject"
+  },
+  "authority": {
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_submitted": false,
+    "model_data_eligibility_granted": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "truth_state": {
+    "round25_v2_capture_started": false,
+    "round25_v2_receipts_materialized": false,
+    "model_trained": false,
+    "predictive_result_available": false,
+    "economic_result_available": false
+  },
+  "correction_sha256": "3cbbb0105d6fc61e845ae42978a06a0b012ba4328694c49fae892427cf480f4c"
+}

@@ -19,9 +19,9 @@ POLYMARKET_ROUND25_TWAP_MODEL_DESIGN_SHA256 = (
     "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc"
 )
 POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256 = (
-    "ad3a320b9d4c6054260cbf5a560dca329f271e0dfb05d8f2ade3ae4d812062e2"
+    "3cbbb0105d6fc61e845ae42978a06a0b012ba4328694c49fae892427cf480f4c"
 )
-POLYMARKET_ROUND25_TWAP_TOPIC = "crypto_prices_chainlink"
+POLYMARKET_ROUND25_TWAP_TOPIC = "crypto_prices_twap_thirty"
 POLYMARKET_ROUND25_TWAP_SYMBOL = "btc/usd"
 POLYMARKET_ROUND25_TWAP_WINDOW_SECONDS = 30
 POLYMARKET_ROUND25_CONDITION_DURATION_MS = 300_000
@@ -172,8 +172,9 @@ class Round25TwapObservation:
             or event.get("type") != "update"
             or not isinstance(payload, Mapping)
             or set(payload)
-            != {"full_accuracy_value", "symbol", "timestamp", "value"}
+            != {"full_accuracy_value", "symbol", "timestamp", "value", "window_s"}
             or payload.get("symbol") != POLYMARKET_ROUND25_TWAP_SYMBOL
+            or payload.get("window_s") != POLYMARKET_ROUND25_TWAP_WINDOW_SECONDS
             or (
                 "connection_id" in event
                 and (
@@ -204,14 +205,8 @@ class Round25TwapObservation:
             or not isinstance(display_value, (int, float))
             or not math.isfinite(float(display_value))
             or float(display_value) <= 0.0
-            or not math.isclose(
-                float(display_value),
-                exact_value / 1_000_000_000_000_000_000,
-                rel_tol=1e-12,
-                abs_tol=1e-9,
-            )
         ):
-            raise ValueError("Round 25 TWAP display value differs from exact E18")
+            raise ValueError("Round 25 TWAP display value is invalid")
         return cls(
             source_timestamp_ms=source_timestamp,
             publisher_timestamp_ms=publisher_timestamp,

@@ -90,6 +90,8 @@ def test_latest_publication_distinguishes_round25_capture_from_results() -> None
     assert "round 25" in readme
     assert "round 25 v1 was retired" in normalized_readme
     assert "round 25 v2 is the source-correct successor" in normalized_readme
+    assert "`crypto_prices_twap_thirty`" in normalized_readme
+    assert "point-topic frames are rejected" in normalized_readme
     assert "structural probability" in normalized_readme
     assert "settlement hypothesis" in normalized_readme
     assert "minimum condition counts of `2000/400/400`" in normalized_readme
@@ -136,7 +138,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["latest_graph_round"] == 23
     assert (
         manifest["status"]
-        == "round25_v2_waiting_post_capture_pipeline_implemented_no_result"
+        == "round25_v2_waiting_capture_post_capture_runner_verified_no_result"
     )
     assert manifest["round21_result_available"] is False
     assert manifest["round23_result_available"] is True
@@ -144,10 +146,13 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_result_available"] is False
     assert manifest["round25_capture_revision"] == 2
     assert manifest["round25_v1_capture_eligible"] is False
+    assert manifest["round25_v2_capture_evidence_published"] is True
     assert manifest["round25_twap_native_model_design_frozen"] is True
     assert manifest["round25_twap_wire_schema_corrected"] is True
+    assert manifest["round25_twap_wire_schema_correction_revision"] == 2
     assert manifest["round25_feature_contract_implemented"] is True
     assert manifest["round25_joint_feature_materialization_contract_frozen"] is True
+    assert manifest["round25_joint_feature_materialization_contract_revision"] == 2
     assert manifest["round25_joint_feature_materializer_implemented"] is True
     assert manifest["round25_joint_feature_store_implemented"] is True
     assert manifest["round25_candidate_ledger_frozen"] is True
@@ -172,6 +177,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_prediction_panel_frozen"] is False
     assert manifest["round25_predictive_result_available"] is False
     assert manifest["round25_economic_replay_contract_frozen"] is True
+    assert manifest["round25_economic_replay_contract_revision"] == 2
     assert manifest["round25_economic_replay_operator_implemented"] is True
     assert manifest["round25_economic_result_available"] is False
     assert manifest["round25_development_economic_gate_passed"] is False
@@ -197,19 +203,24 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_sealed_test_campaign_planned"] is False
     assert manifest["round25_settlement_rule_verified"] is False
     assert manifest["round25_terminal_design_frozen"] is True
+    assert manifest["round25_terminal_design_revision"] == 2
     assert manifest["round25_terminal_operator_implemented"] is True
     assert manifest["round25_terminal_receipt_audit_available"] is False
     assert manifest["round25_materialization_result_available"] is False
     assert manifest["round25_resolution_collection_contract_frozen"] is True
-    assert manifest["round25_resolution_collection_contract_revision"] == 2
+    assert manifest["round25_resolution_collection_contract_revision"] == 3
     assert manifest["round25_resolution_public_transport_verified"] is True
     assert manifest["round25_resolution_terminal_schema_verified"] is True
     assert manifest["round25_resolution_store_implemented"] is True
     assert manifest["round25_resolution_authority_available"] is False
     assert manifest["round25_post_capture_coordinator_contract_frozen"] is True
-    assert manifest["round25_post_capture_coordinator_contract_revision"] == 3
+    assert manifest["round25_post_capture_coordinator_contract_revision"] == 4
     assert manifest["round25_post_capture_coordinator_implemented"] is True
     assert manifest["round25_post_capture_coordinator_run"] is False
+    assert manifest["round25_post_capture_runner_implemented"] is True
+    assert manifest["round25_post_capture_runner_waiting_mode_host_verified"] is True
+    assert manifest["round25_post_capture_runner_source_database_opened"] is False
+    assert manifest["round25_post_capture_runner_orders_submitted"] == 0
     assert manifest["profitability_claim"] is False
     assert manifest["paper_authority"] is False
     assert manifest["live_trading_authority"] is False
@@ -222,10 +233,14 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert "round-024-prospective-receipt-lead-lag-spec-v3.json" in artifact_paths
     assert "round-024-preregistration-publication-v2-2026-08-10.json" in artifact_paths
     assert "round-025-terminal-receipt-materialization-design-v1.json" in artifact_paths
+    assert "round-025-terminal-receipt-materialization-design-v2.json" in artifact_paths
     assert "round-025-twap-wire-schema-correction-v1.json" in artifact_paths
+    assert "round-025-twap-wire-schema-correction-v2.json" in artifact_paths
     assert "round-025-joint-feature-materialization-contract-v1.json" in artifact_paths
+    assert "round-025-joint-feature-materialization-contract-v2.json" in artifact_paths
     assert "round-025-official-resolution-collection-contract-v1.json" in artifact_paths
     assert "round-025-official-resolution-collection-contract-v2.json" in artifact_paths
+    assert "round-025-official-resolution-collection-contract-v3.json" in artifact_paths
     assert (
         "round-025-official-resolution-transport-probe-v1-2026-08-10.json"
         in artifact_paths
@@ -233,7 +248,9 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert "round-025-post-capture-coordinator-contract-v1.json" in artifact_paths
     assert "round-025-post-capture-coordinator-contract-v2.json" in artifact_paths
     assert "round-025-post-capture-coordinator-contract-v3.json" in artifact_paths
+    assert "round-025-post-capture-coordinator-contract-v4.json" in artifact_paths
     assert "round-025-economic-replay-contract-v1.json" in artifact_paths
+    assert "round-025-economic-replay-contract-v2.json" in artifact_paths
     assert "round-025-control-fit-contract-v1.json" in artifact_paths
     assert "round-025-lightgbm-fit-contract-v1.json" in artifact_paths
     assert "round-025-predictive-evaluation-contract-v1.json" in artifact_paths
@@ -249,6 +266,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert "round-025-twap-native-candidate-selection-design-v1.json" in artifact_paths
     assert "round-025-twap-native-model-design-v1.json" in artifact_paths
     assert "round-025-twap-core-capture-design-v1.json" in artifact_paths
+    assert "round-025-twap-core-capture-design-v2.json" in artifact_paths
     assert "round-025-twap-source-qualification-2026-08-10.json" in artifact_paths
     assert "round-025-fin-r1-regime-supervisor-contract-v1.json" in artifact_paths
     assert (
@@ -273,6 +291,14 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     )
     assert (
         "round-025-twap-core-campaign-plan-publication-2026-08-10.json"
+        in artifact_paths
+    )
+    assert (
+        "round-025-twap-core-campaign-plan-publication-v2-2026-08-10.json"
+        in artifact_paths
+    )
+    assert (
+        "round-025-twap-wire-source-qualification-v2-2026-08-10.json"
         in artifact_paths
     )
     root = RESEARCH.resolve()
