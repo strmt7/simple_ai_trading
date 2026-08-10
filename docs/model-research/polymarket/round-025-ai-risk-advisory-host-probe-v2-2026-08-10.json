@@ -1,0 +1,204 @@
+{
+  "candidates": [
+    {
+      "candidate": {
+        "candidate_id": "qwen35-9b-risk-advisor-v1",
+        "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+        "model": "qwen3.5:9b",
+        "parameter_size": "9.7B",
+        "quantization": "Q4_K_M",
+        "upstream_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a"
+      },
+      "checks": {
+        "model_unloaded_after_probe": true,
+        "post_inference_exact_digest_full_gpu_residency": false,
+        "preload_full_gpu_residency": true,
+        "provider_latency_within_contract": false,
+        "target_outcome_resolution_and_pnl_absent": true,
+        "trading_authority_absent": true,
+        "valid_coherent_typed_response": false
+      },
+      "failure": null,
+      "fixture": {
+        "conditions": 1,
+        "kind": "deterministic_numerical_runtime_fixture_no_market_data",
+        "outcomes": 0,
+        "pnl_observations": 0,
+        "resolutions": 0,
+        "targets": 0
+      },
+      "passed": false,
+      "preload_residency": {
+        "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+        "gpu_resident": true,
+        "loaded": true,
+        "loaded_model": "qwen3.5:9b",
+        "requested_model": "qwen3.5:9b",
+        "size_bytes": 5880141577,
+        "size_vram_bytes": 5880141577,
+        "status": "gpu_resident",
+        "vram_to_model_ratio": 1.0
+      },
+      "review_result": {
+        "advisory": {
+          "advisory_sha256": "66bcf53d6dc9ca29d0265f01bd5884aaa4a7af8d8ec5eb7eb164e8e9e192ff30",
+          "ai_contract_sha256": "10c05777a06511e62aa335b8bab03f895235c85f314b09e338e63caf77cdd5aa",
+          "can_block_exit": false,
+          "can_change_side": false,
+          "can_create_entry": false,
+          "can_increase_risk": false,
+          "candidate_id": "qwen35-9b-risk-advisor-v1",
+          "cooldown_ms": 0,
+          "expires_at_ms": 1786379929996,
+          "failure_code": "provider_failure",
+          "generated_at_ms": 1786379930054,
+          "maximum_size_multiplier": 0.0,
+          "model": "qwen3.5:9b",
+          "model_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+          "packet_sha256": "c07c5219d103ed39ead44c64aced5ac91eb727137282baad47afb8ac08a64f28",
+          "reason_codes": [
+            "provider_failure"
+          ],
+          "schema_version": "polymarket-round25-ai-risk-advisory-v1",
+          "summary": "AI unavailable or invalid; deterministic entry veto remains active.",
+          "trading_authority": false,
+          "valid_model_response": false,
+          "veto_new_entries": true
+        },
+        "ai_uplift_verified": false,
+        "edge_verified": false,
+        "live_authority": false,
+        "order_submitted": false,
+        "outcome_accessed": false,
+        "packet_sha256": "c07c5219d103ed39ead44c64aced5ac91eb727137282baad47afb8ac08a64f28",
+        "paper_authority": false,
+        "profitability_verified": false,
+        "resolution_accessed": false,
+        "result_sha256": "aeda065028e606a7eef62655bf85f251ed18cdf7e04ad57ef4d9d45bfd69314b",
+        "schema_version": "polymarket-round25-ai-risk-review-result-v1",
+        "target_accessed": false,
+        "telemetry": null
+      },
+      "unload_failure": null
+    },
+    {
+      "candidate": {
+        "candidate_id": "fin-r1-8b-risk-advisor-v1",
+        "digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+        "model": "fin-r1:8b",
+        "parameter_size": "7.62B",
+        "quantization": "Q6_K",
+        "upstream_revision": "026768c4a015b591b54b240743edeac1de0970fa"
+      },
+      "checks": {
+        "model_unloaded_after_probe": true,
+        "post_inference_exact_digest_full_gpu_residency": false,
+        "preload_full_gpu_residency": true,
+        "provider_latency_within_contract": false,
+        "target_outcome_resolution_and_pnl_absent": true,
+        "trading_authority_absent": true,
+        "valid_coherent_typed_response": false
+      },
+      "failure": null,
+      "fixture": {
+        "conditions": 1,
+        "kind": "deterministic_numerical_runtime_fixture_no_market_data",
+        "outcomes": 0,
+        "pnl_observations": 0,
+        "resolutions": 0,
+        "targets": 0
+      },
+      "passed": false,
+      "preload_residency": {
+        "digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+        "gpu_resident": true,
+        "loaded": true,
+        "loaded_model": "fin-r1:8b",
+        "requested_model": "fin-r1:8b",
+        "size_bytes": 6564557618,
+        "size_vram_bytes": 6564557618,
+        "status": "gpu_resident",
+        "vram_to_model_ratio": 1.0
+      },
+      "review_result": {
+        "advisory": {
+          "advisory_sha256": "3b5f6306e296b6b9658e4c3a6cee7e6fdad2d479721ce83efd5aa7eabb671cd9",
+          "ai_contract_sha256": "10c05777a06511e62aa335b8bab03f895235c85f314b09e338e63caf77cdd5aa",
+          "can_block_exit": false,
+          "can_change_side": false,
+          "can_create_entry": false,
+          "can_increase_risk": false,
+          "candidate_id": "fin-r1-8b-risk-advisor-v1",
+          "cooldown_ms": 0,
+          "expires_at_ms": 1786379950442,
+          "failure_code": "provider_failure",
+          "generated_at_ms": 1786379950491,
+          "maximum_size_multiplier": 0.0,
+          "model": "fin-r1:8b",
+          "model_digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+          "packet_sha256": "325275636c139771d52aad8ea501b07ac7700a88873bcf09637da3c26e28713d",
+          "reason_codes": [
+            "provider_failure"
+          ],
+          "schema_version": "polymarket-round25-ai-risk-advisory-v1",
+          "summary": "AI unavailable or invalid; deterministic entry veto remains active.",
+          "trading_authority": false,
+          "valid_model_response": false,
+          "veto_new_entries": true
+        },
+        "ai_uplift_verified": false,
+        "edge_verified": false,
+        "live_authority": false,
+        "order_submitted": false,
+        "outcome_accessed": false,
+        "packet_sha256": "325275636c139771d52aad8ea501b07ac7700a88873bcf09637da3c26e28713d",
+        "paper_authority": false,
+        "profitability_verified": false,
+        "resolution_accessed": false,
+        "result_sha256": "6cde89ff063b11da6590e097d66f44e3051fdc8f8d9fa397657b9a2b3ef9f798",
+        "schema_version": "polymarket-round25-ai-risk-review-result-v1",
+        "target_accessed": false,
+        "telemetry": null
+      },
+      "unload_failure": null
+    }
+  ],
+  "captured_at_utc": "2026-08-10T16:39:12.026250Z",
+  "claims": {
+    "ai_uplift_verified": false,
+    "live_authority": false,
+    "market_data_used": false,
+    "model_fitted": false,
+    "order_submitted": false,
+    "paper_authority": false,
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false
+  },
+  "evidence_sha256": "68c1b00b8659fd45c3f1a14667ff94944e18673eb635c1d8540b5565c41e045a",
+  "host": {
+    "gpu_names": [
+      "AMD Radeon RX 9070 XT"
+    ],
+    "operating_system": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10"
+  },
+  "schema_version": "polymarket-round25-ai-risk-advisory-host-probe-v2",
+  "source": {
+    "ai_contract_sha256": "10c05777a06511e62aa335b8bab03f895235c85f314b09e338e63caf77cdd5aa",
+    "ai_module_path": "src/simple_ai_trading/polymarket_round25_ai.py",
+    "ai_module_sha256": "fd1bc73861179ec17b95c80e84967548ca270d7efd36d00801991a9222b25ce4",
+    "contract_file_sha256": "1060fc47a5eecaeab2c69e3a743d49c7de881cb25c32e65738bc81014fedfdfb",
+    "contract_path": "docs/model-research/polymarket/round-025-ai-risk-advisory-contract-v1.json",
+    "probe_tool_path": "tools/probe_polymarket_round25_ai_host.py",
+    "probe_tool_sha256": "050a89d693b2abcae5972a62778137e75a0a44c48ba23aa6a602e13615bc57fe"
+  },
+  "status": "runtime_mechanics_failed",
+  "supersedes_failed_probe": {
+    "correction": "bounded_60_second_preload_separate_from_10_second_advisory_deadline",
+    "evidence_sha256": "882549d5d9ab8df97ca31c28842c583016ce6bb3511cb7a182cd4ade89e5b2d0",
+    "failure_boundary": "model_preload_before_packet_review",
+    "model_response_observed": false,
+    "path": "docs/model-research/polymarket/round-025-ai-risk-advisory-host-probe-2026-08-10.json"
+  }
+}

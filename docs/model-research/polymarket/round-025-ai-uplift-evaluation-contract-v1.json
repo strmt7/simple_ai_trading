@@ -1,0 +1,75 @@
+{
+  "schema_version": "polymarket-round25-ai-uplift-evaluation-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:00:43Z",
+  "status": "frozen_before_uplift_population_capture_or_outcome_access",
+  "dependencies": {
+    "ai_risk_advisory_contract_sha256": "3d8ea3e7cd77c483bd64b578f8e0893c0cceaa0e7b84adfcfd206d16480e62db",
+    "predictive_evaluation_contract_sha256": "4e5036103cfb11319b68908a09fa9acdb93a02f4ff1cede9dec9e9a81f491077",
+    "candidate_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "twap_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc"
+  },
+  "population": {
+    "eligible_only_after_predictive_candidate_result_is_frozen_and_passed": true,
+    "source": "new_prospective_conditions_beginning_after_round25_selection_population_end",
+    "selection_condition_reuse_allowed": false,
+    "condition_order": "event_start_ms_then_condition_id",
+    "minimum_conditions": 500,
+    "minimum_actual_ai_interventions": 50,
+    "minimum_valid_model_response_ratio": 0.99,
+    "maximum_schema_or_coherence_violations": 0
+  },
+  "matched_replay": {
+    "control": "frozen_selected_ml_policy_without_ai",
+    "challenger": "same_frozen_selected_ml_policy_plus_qwen3_4b_risk_advisor_v1",
+    "same_selected_model_prediction_required": true,
+    "same_pre_ai_decision_and_market_state_required": true,
+    "same_execution_cost_latency_fill_cancel_reject_and_recovery_scenario_required": true,
+    "only_permitted_difference": "validated_ai_entry_veto_size_ceiling_or_cooldown",
+    "after_cost_return_unit": "fraction_of_condition_start_equity",
+    "return_must_be_finite_and_strictly_greater_than_negative_one": true,
+    "chronological_compounding_for_drawdown": true,
+    "midpoint_or_zero_latency_execution_allowed": false
+  },
+  "statistical_test": {
+    "paired_unit": "condition",
+    "bootstrap": "circular_moving_block",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 25025,
+    "block_conditions": 12,
+    "confidence_level": 0.95,
+    "expected_shortfall_loss_tail_probability": 0.05,
+    "shared_resamples_for_net_return_and_expected_shortfall": true,
+    "net_return_delta": "challenger_after_cost_return_minus_control_after_cost_return",
+    "expected_shortfall_delta": "challenger_positive_loss_expected_shortfall_95_minus_control_positive_loss_expected_shortfall_95",
+    "maximum_drawdown_delta": "challenger_compounded_maximum_drawdown_minus_control_compounded_maximum_drawdown"
+  },
+  "required_gates": {
+    "paired_mean_after_cost_return_delta_lower_95_bound": "strictly_greater_than_zero",
+    "paired_expected_shortfall_95_delta_upper_95_bound": "less_than_or_equal_to_zero",
+    "maximum_drawdown_delta_point_estimate": "less_than_or_equal_to_zero",
+    "all_population_and_response_gates": true
+  },
+  "interpretation": {
+    "passing_result": "development_uplift_nomination_only",
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "production_ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "truth_state": {
+    "predictive_candidate_selected": false,
+    "uplift_population_captured": false,
+    "uplift_panel_materialized": false,
+    "uplift_evaluated": false,
+    "development_uplift_gate_passed": false,
+    "profitability_verified": false,
+    "ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "117b17da6f31d6d90d2730cae10d003cd424bcad9455fdabb6c16dc7cf61cbdc"
+}

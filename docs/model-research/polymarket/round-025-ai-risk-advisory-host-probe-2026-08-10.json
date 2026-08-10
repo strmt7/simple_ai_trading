@@ -1,0 +1,105 @@
+{
+  "candidates": [
+    {
+      "candidate": {
+        "candidate_id": "qwen35-9b-risk-advisor-v1",
+        "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+        "model": "qwen3.5:9b",
+        "parameter_size": "9.7B",
+        "quantization": "Q4_K_M",
+        "upstream_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a"
+      },
+      "checks": {
+        "model_unloaded_after_probe": true,
+        "post_inference_exact_digest_full_gpu_residency": false,
+        "preload_full_gpu_residency": false,
+        "provider_latency_within_contract": false,
+        "target_outcome_resolution_and_pnl_absent": true,
+        "trading_authority_absent": false,
+        "valid_coherent_typed_response": false
+      },
+      "failure": {
+        "message": "Ollama POST request failed",
+        "type": "ValueError"
+      },
+      "fixture": {
+        "conditions": 1,
+        "kind": "deterministic_numerical_runtime_fixture_no_market_data",
+        "outcomes": 0,
+        "pnl_observations": 0,
+        "resolutions": 0,
+        "targets": 0
+      },
+      "passed": false,
+      "preload_residency": null,
+      "review_result": null,
+      "unload_failure": null
+    },
+    {
+      "candidate": {
+        "candidate_id": "fin-r1-8b-risk-advisor-v1",
+        "digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+        "model": "fin-r1:8b",
+        "parameter_size": "7.62B",
+        "quantization": "Q6_K",
+        "upstream_revision": "026768c4a015b591b54b240743edeac1de0970fa"
+      },
+      "checks": {
+        "model_unloaded_after_probe": true,
+        "post_inference_exact_digest_full_gpu_residency": false,
+        "preload_full_gpu_residency": false,
+        "provider_latency_within_contract": false,
+        "target_outcome_resolution_and_pnl_absent": true,
+        "trading_authority_absent": false,
+        "valid_coherent_typed_response": false
+      },
+      "failure": {
+        "message": "Ollama POST request failed",
+        "type": "ValueError"
+      },
+      "fixture": {
+        "conditions": 1,
+        "kind": "deterministic_numerical_runtime_fixture_no_market_data",
+        "outcomes": 0,
+        "pnl_observations": 0,
+        "resolutions": 0,
+        "targets": 0
+      },
+      "passed": false,
+      "preload_residency": null,
+      "review_result": null,
+      "unload_failure": null
+    }
+  ],
+  "captured_at_utc": "2026-08-10T16:37:03.936557Z",
+  "claims": {
+    "ai_uplift_verified": false,
+    "live_authority": false,
+    "market_data_used": false,
+    "model_fitted": false,
+    "order_submitted": false,
+    "paper_authority": false,
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false
+  },
+  "evidence_sha256": "882549d5d9ab8df97ca31c28842c583016ce6bb3511cb7a182cd4ade89e5b2d0",
+  "host": {
+    "gpu_names": [
+      "AMD Radeon RX 9070 XT"
+    ],
+    "operating_system": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10"
+  },
+  "schema_version": "polymarket-round25-ai-risk-advisory-host-probe-v1",
+  "source": {
+    "ai_contract_sha256": "10c05777a06511e62aa335b8bab03f895235c85f314b09e338e63caf77cdd5aa",
+    "ai_module_path": "src/simple_ai_trading/polymarket_round25_ai.py",
+    "ai_module_sha256": "d541ad9071adf4bb248bc172274a4245166362661077485240a026437df765ef",
+    "contract_file_sha256": "1060fc47a5eecaeab2c69e3a743d49c7de881cb25c32e65738bc81014fedfdfb",
+    "contract_path": "docs/model-research/polymarket/round-025-ai-risk-advisory-contract-v1.json",
+    "probe_tool_path": "tools/probe_polymarket_round25_ai_host.py",
+    "probe_tool_sha256": "eb7c22bf7b032a42c3bcfe7d8660411eb4a8d4241c36705669e68eb7c8f407bc"
+  },
+  "status": "runtime_mechanics_failed"
+}
