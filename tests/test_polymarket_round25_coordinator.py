@@ -23,7 +23,7 @@ CONTRACT = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-025-post-capture-coordinator-contract-v2.json"
+    / "round-025-post-capture-coordinator-contract-v3.json"
 )
 SOURCE_COMMIT = "a" * 40
 FEATURE_SHA = "b" * 64
@@ -31,6 +31,7 @@ RESOLUTION_SHA = "c" * 64
 LEDGER_SHA = "d" * 64
 PREPARED_SHA = "e" * 64
 RESULT_SHA = "f" * 64
+ECONOMIC_SHA = "0" * 64
 CLAIM_SHA = "1" * 64
 
 
@@ -60,6 +61,7 @@ def _paths(tmp_path: Path) -> Round25CoordinatorPaths:
         prepared_prediction=tmp_path / "prepared-prediction.json",
         selection_access_store=tmp_path / "selection-access.sqlite3",
         predictive_result=tmp_path / "predictive-result.json",
+        economic_result=tmp_path / "economic-result.json",
         state=tmp_path / "coordinator-state.json",
         lock=tmp_path / "coordinator.lock",
     ).validated()
@@ -140,6 +142,7 @@ def test_coordinator_returns_bounded_pending_state_before_any_model_access(
     assert state["resolution_pending_count"] == 7
     assert state["model_ledger_sha256"] is None
     assert state["predictive_result_sha256"] is None
+    assert state["economic_result_sha256"] is None
     assert load_round25_coordinator_state(paths.state) == state
     assert events == [
         "coordinator_started",
@@ -148,9 +151,18 @@ def test_coordinator_returns_bounded_pending_state_before_any_model_access(
     ]
 
 
+@pytest.mark.parametrize(
+    ("predictive_gate_passed", "expected_phase"),
+    (
+        (False, "predictive_evaluation_complete"),
+        (True, "economic_evaluation_complete"),
+    ),
+)
 def test_coordinator_recovers_existing_artifacts_and_completes_one_use_evaluation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    predictive_gate_passed: bool,
+    expected_phase: str,
 ) -> None:
     paths = _paths(tmp_path)
     paths.feature_database.write_bytes(b"features")
@@ -173,7 +185,15 @@ def test_coordinator_recovers_existing_artifacts_and_completes_one_use_evaluatio
     receipt = object()
     result = SimpleNamespace(
         result_sha256=RESULT_SHA,
-        predictive_gate_passed=True,
+        predictive_gate_passed=predictive_gate_passed,
+    )
+    economic = SimpleNamespace(
+        feature_store_manifest_sha256=FEATURE_SHA,
+        resolution_store_manifest_sha256=RESOLUTION_SHA,
+        prepared_prediction_sha256=PREPARED_SHA,
+        predictive_result_sha256=RESULT_SHA,
+        development_economic_gate_passed=False,
+        result_sha256=ECONOMIC_SHA,
     )
 
     class AccessStore:
@@ -256,6 +276,24 @@ def test_coordinator_recovers_existing_artifacts_and_completes_one_use_evaluatio
         return path
 
     monkeypatch.setattr(coordinator, "write_round25_predictive_result", write_result)
+    economic_calls: list[object] = []
+
+    def replay_economic(**_kwargs: object) -> object:
+        economic_calls.append(object())
+        return economic
+
+    monkeypatch.setattr(
+        coordinator,
+        "replay_round25_development_economics",
+        replay_economic,
+    )
+
+    def write_economic(path: Path, observed: object) -> Path:
+        assert observed is economic
+        path.write_text("economic", encoding="ascii")
+        return path
+
+    monkeypatch.setattr(coordinator, "write_round25_economic_result", write_economic)
 
     state = advance_round25_post_capture(
         paths=paths,
@@ -264,10 +302,15 @@ def test_coordinator_recovers_existing_artifacts_and_completes_one_use_evaluatio
         observed_at_ms=1_900_000_000_000,
     )
 
-    assert state["phase"] == "predictive_evaluation_complete"
+    assert state["phase"] == expected_phase
     assert state["selection_access_status"] == "target_access_consumed"
     assert state["predictive_result_sha256"] == RESULT_SHA
-    assert state["predictive_gate_passed"] is True
+    assert state["economic_result_sha256"] == (
+        ECONOMIC_SHA if predictive_gate_passed else None
+    )
+    assert state["predictive_gate_passed"] is predictive_gate_passed
+    assert state["development_economic_gate_passed"] is False
+    assert len(economic_calls) == int(predictive_gate_passed)
     assert state["profitability_claim"] is False
     assert state["live_trading_authority"] is False
 
