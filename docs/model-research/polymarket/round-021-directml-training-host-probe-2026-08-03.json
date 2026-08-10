@@ -1,0 +1,49 @@
+{
+  "artifact_sha256": "abdf1425dd065d0246ff4d07c2f84b48d6ef705afd717725a582fc542ab058e8",
+  "candidate_count": 6,
+  "candidate_families": [
+    "causal_tcn_residual",
+    "lightgbm_residual",
+    "logistic_residual"
+  ],
+  "compute": {
+    "lightgbm_backend_device": "opencl:0:0:AMD Radeon RX 9070 XT",
+    "lightgbm_backend_kind": "opencl",
+    "requested": "directml",
+    "tcn_backend_device": "privateuseone:0",
+    "tcn_backend_kind": "directml",
+    "tcn_backend_vendor": "AMD Radeon RX 9070 XT"
+  },
+  "development_model_artifact_sha256": "3a099020d84e17b432bfbb81f65aac3d90fddeaf34940fbf558d76b19cdb65c8",
+  "elapsed_seconds": 1.467505,
+  "fallback_observed": false,
+  "financial_data_used": false,
+  "fixture": {
+    "feature_layers": [
+      "core"
+    ],
+    "synthetic": true,
+    "train_conditions": 100,
+    "tune_calibration_conditions": 120,
+    "tune_selection_conditions": 80
+  },
+  "host": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10"
+  },
+  "live_trading_authority": false,
+  "observed_end_ms": 1785724340142,
+  "observed_start_ms": 1785724338675,
+  "packages": {
+    "lightgbm": "4.6.0",
+    "numpy": "2.2.6",
+    "torch": "2.4.1+cpu",
+    "torch_directml": "unknown"
+  },
+  "paper_trading_authority": false,
+  "predictive_or_economic_evidence": false,
+  "profitability_claim": false,
+  "repository_commit_oid": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "repository_worktree_clean": false,
+  "schema_version": "polymarket-round21-directml-training-host-probe-v1"
+}

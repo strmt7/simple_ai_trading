@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 import hashlib
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -38,7 +39,7 @@ FEATURE_POLICY_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-021-causal-feature-policy-v1.json"
+    / "round-021-causal-feature-policy-v3.json"
 )
 
 
@@ -76,9 +77,7 @@ def _book_event(
         "market": CONDITION_ID,
         "asset_id": token,
         "timestamp": str(EVENT_START_MS + offset_ms),
-        "hash": hashlib.sha256(
-            f"{token}:{offset_ms}".encode("ascii")
-        ).hexdigest(),
+        "hash": hashlib.sha256(f"{token}:{offset_ms}".encode("ascii")).hexdigest(),
         "bids": [
             {"price": bid, "size": "8"},
             {"price": format(float(bid) - 0.01, ".2f"), "size": "7"},
@@ -134,8 +133,7 @@ def _union_events(events: list[tuple[int, dict[str, object]]]) -> tuple:
                     sequence_number=sequence[lane],
                     received_wall_ms=EVENT_START_MS + offset_ms + 20,
                     received_monotonic_ns=(
-                        (EVENT_START_MS + offset_ms + 20) * 1_000_000
-                        + delay_ns
+                        (EVENT_START_MS + offset_ms + 20) * 1_000_000 + delay_ns
                     ),
                     raw_text=raw,
                 )
@@ -240,21 +238,36 @@ def test_round21_core_builds_receipt_time_structural_and_book_features() -> None
     assert 0.5 < snapshot.structural_probability < 1.0
     assert 0.0 < snapshot.market_prior_probability < 1.0
     assert len(snapshot.values) == len(POLYMARKET_ROUND21_CORE_FEATURE_NAMES)
+    assert (
+        snapshot.values[
+            POLYMARKET_ROUND21_CORE_FEATURE_NAMES.index("core.chainlink_return_count")
+        ]
+        == 20.0
+    )
     assert snapshot.values[
-        POLYMARKET_ROUND21_CORE_FEATURE_NAMES.index(
-            "core.chainlink_return_count"
-        )
-    ] == 20.0
-    assert snapshot.values[
-        POLYMARKET_ROUND21_CORE_FEATURE_NAMES.index(
-            "core.complement_buy_overround"
-        )
+        POLYMARKET_ROUND21_CORE_FEATURE_NAMES.index("core.complement_buy_overround")
     ] == pytest.approx(0.03)
     assert snapshot.values[
-        POLYMARKET_ROUND21_CORE_FEATURE_NAMES.index(
-            "core.complement_sell_underround"
-        )
+        POLYMARKET_ROUND21_CORE_FEATURE_NAMES.index("core.complement_sell_underround")
     ] == pytest.approx(0.03)
+    assert (
+        snapshot.values[
+            POLYMARKET_ROUND21_CORE_FEATURE_NAMES.index("core.up_book_receipt_age_ms")
+        ]
+        == 980.0
+    )
+    assert (
+        snapshot.values[
+            POLYMARKET_ROUND21_CORE_FEATURE_NAMES.index("core.down_book_receipt_age_ms")
+        ]
+        == 970.0
+    )
+    assert (
+        snapshot.values[
+            POLYMARKET_ROUND21_CORE_FEATURE_NAMES.index("core.book_receipt_skew_ms")
+        ]
+        == 10.0
+    )
     assert snapshot.source_chain_sha256 != hashlib.sha256(b"").hexdigest()
     assert snapshot.trading_authority is False
     assert engine.credentials_used is False
@@ -275,14 +288,20 @@ def test_round21_chainlink_bootstrap_is_sequence_accounted_control_only() -> Non
         },
     }
     raw = json.dumps(snapshot, separators=(",", ":"), sort_keys=True)
-    assert parse_round21_chainlink_wire_text(
-        "",
-        received_at_ms=EVENT_START_MS,
-    ) is None
-    assert parse_round21_chainlink_wire_text(
-        raw,
-        received_at_ms=EVENT_START_MS,
-    ) is None
+    assert (
+        parse_round21_chainlink_wire_text(
+            "",
+            received_at_ms=EVENT_START_MS,
+        )
+        is None
+    )
+    assert (
+        parse_round21_chainlink_wire_text(
+            raw,
+            received_at_ms=EVENT_START_MS,
+        )
+        is None
+    )
     tick = parse_round21_chainlink_wire_text(
         _chainlink_record(1, 0).raw_text,
         received_at_ms=EVENT_START_MS + 10,
@@ -357,6 +376,42 @@ def test_round21_book_flow_allows_only_roundoff_sized_correction() -> None:
     series.prefixes[0][1] = 1.0 + 2e-12
     with pytest.raises(RuntimeError, match="flow accounting"):
         series.window(1_000, 250)
+
+
+def test_round21_short_windows_use_only_the_previous_tick_as_causal_anchor() -> None:
+    prices = core_features._RollingPriceSeries()
+    prices.append(700, 100.0)
+    prices.append(800, 101.0)
+
+    price_window = prices.window(1_000, 250)
+    expected_return = math.log(101.0 / 100.0)
+
+    assert price_window.count == 1
+    assert price_window.log_return == pytest.approx(expected_return)
+    assert price_window.realized_variance == pytest.approx(expected_return**2)
+
+    books = core_features._RollingBookSeries()
+    books.append(
+        core_features._BookSnapshot(
+            received_wall_ms=700,
+            received_monotonic_ns=700_000_000,
+            bids=((0.49, 8.0),),
+            asks=((0.51, 8.0),),
+        )
+    )
+    books.append(
+        core_features._BookSnapshot(
+            received_wall_ms=800,
+            received_monotonic_ns=800_000_000,
+            bids=((0.54, 8.0),),
+            asks=((0.56, 8.0),),
+        )
+    )
+
+    book_window = books.window(1_000, 250)
+
+    assert book_window.count == 1
+    assert book_window.microprice_return == pytest.approx(math.log(0.55 / 0.50))
 
 
 def test_round21_core_fails_closed_on_contradictory_delta() -> None:
@@ -461,9 +516,7 @@ def test_round21_chainlink_condition_slice_binds_mid_epoch_sequence() -> None:
 
 def test_round21_exact_join_keeps_missing_binance_optional() -> None:
     core = _ready_engine().build(EVENT_START_MS + 31_000)
-    optional = Round21IndependentBinanceFeatureEngine().build(
-        EVENT_START_MS + 31_000
-    )
+    optional = Round21IndependentBinanceFeatureEngine().build(EVENT_START_MS + 31_000)
 
     row = join_round21_causal_features(core, optional)
 

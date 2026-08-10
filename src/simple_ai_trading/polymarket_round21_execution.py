@@ -31,10 +31,10 @@ from .polymarket_round21_dataset import (
 
 
 POLYMARKET_ROUND21_EXECUTION_POLICY_SCHEMA_VERSION = (
-    "polymarket-round21-executable-action-policy-v1"
+    "polymarket-round21-executable-action-policy-v3"
 )
 POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256 = (
-    "c49e6eef0642a68810d8aefafc6a303b2ec9c8a7bbce703b8f05167baba69bd9"
+    "979788e5fa16a9d9c3aa3f3639286e4da659e074c29fd8019f6e3e5977dc51e0"
 )
 POLYMARKET_ROUND21_EXECUTION_SCHEMA_VERSION = (
     "polymarket-round21-delayed-fak-execution-v1"
@@ -240,6 +240,7 @@ def validate_round21_execution_policy(
     unknown = policy.get("unknown_state")
     independence = policy.get("independence")
     authority = policy.get("authority")
+    supersession = policy.get("supersession")
     if (
         set(policy)
         != {
@@ -255,6 +256,8 @@ def validate_round21_execution_policy(
             "unknown_state",
             "independence",
             "authority",
+            "supersedes",
+            "supersession",
         }
         or claimed != POLYMARKET_ROUND21_EXECUTION_POLICY_SHA256
         or claimed != _canonical_sha256(policy)
@@ -262,6 +265,7 @@ def validate_round21_execution_policy(
         != POLYMARKET_ROUND21_EXECUTION_POLICY_SCHEMA_VERSION
         or policy.get("round") != 21
         or policy.get("status") != "preregistered_during_target_and_model_blind_capture"
+        or policy.get("supersedes") != "polymarket-round21-executable-action-policy-v2"
         or parents
         != {
             "round21_contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
@@ -320,6 +324,18 @@ def validate_round21_execution_policy(
         or independence.get("binance_execution") is not False
         or independence.get("binance_account") is not False
         or independence.get("binance_risk_or_stop_dependency") is not False
+        or supersession
+        != {
+            "round21_executable_action_policy_v2_sha256": (
+                "fce75edb69b20dfe593337036a95299312262ef468bc9df5d811ccbbc99017f7"
+            ),
+            "change": ("bind_unchanged_execution_matrix_to_receipt_age_features"),
+            "scenario_matrix_changed": False,
+            "fees_or_latency_changed": False,
+            "capture_data_used_for_change": False,
+            "targets_used_for_change": False,
+            "market_outcomes_used_for_change": False,
+        }
         or authority
         != {
             "model_selected": False,

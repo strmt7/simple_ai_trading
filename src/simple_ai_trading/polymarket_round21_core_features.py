@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 from typing import Mapping, Sequence
 
+from .paper_execution import BookLevel, PaperBookSnapshot
 from .polymarket_btc_reference import (
     PolymarketChainlinkBtcTick,
     parse_polymarket_chainlink_btc_tick,
@@ -39,10 +40,10 @@ POLYMARKET_ROUND21_CORE_FEATURE_SCHEMA_VERSION = (
     "polymarket-round21-receipt-time-core-features-v1"
 )
 POLYMARKET_ROUND21_FEATURE_POLICY_SCHEMA_VERSION = (
-    "polymarket-round21-causal-feature-policy-v1"
+    "polymarket-round21-causal-feature-policy-v3"
 )
 POLYMARKET_ROUND21_FEATURE_POLICY_SHA256 = (
-    "a55408ebb99180cdfd21b443a924002ffd9cc1443b54ae1f882b49a38ae8ce70"
+    "a0ca1f9f5631a6f3d8b7710c20d2679cf6b50ad6b269548824d87503d80dbe5b"
 )
 POLYMARKET_ROUND21_CORE_WINDOWS_MS = (
     250,
@@ -103,6 +104,8 @@ _STATIC_FEATURE_NAMES = (
     "core.structural_minus_market_prior",
     "core.complement_buy_overround",
     "core.complement_sell_underround",
+    "core.up_book_receipt_age_ms",
+    "core.down_book_receipt_age_ms",
     "core.book_receipt_skew_ms",
 )
 _TEMPORAL_FEATURE_NAMES = (
@@ -145,9 +148,7 @@ _FULL_BOOK_KEYS = frozenset(
     }
 )
 _FULL_BOOK_OPTIONAL_KEYS = frozenset({"tick_size", "last_trade_price"})
-_PRICE_CHANGE_KEYS = frozenset(
-    {"event_type", "market", "timestamp", "price_changes"}
-)
+_PRICE_CHANGE_KEYS = frozenset({"event_type", "market", "timestamp", "price_changes"})
 _PRICE_CHANGE_ITEM_KEYS = frozenset(
     {"asset_id", "price", "size", "side", "hash", "best_bid", "best_ask"}
 )
@@ -218,6 +219,7 @@ def validate_round21_feature_policy(
     schema = policy.get("feature_schema")
     anti_leakage = policy.get("anti_leakage")
     authority = policy.get("authority")
+    supersession = policy.get("supersession")
     if (
         set(policy)
         != {
@@ -232,22 +234,20 @@ def validate_round21_feature_policy(
             "feature_schema",
             "anti_leakage",
             "authority",
+            "supersession",
         }
         or claimed != POLYMARKET_ROUND21_FEATURE_POLICY_SHA256
         or claimed != _canonical_sha256(policy)
         or policy.get("schema_version")
         != POLYMARKET_ROUND21_FEATURE_POLICY_SCHEMA_VERSION
         or policy.get("round") != 21
-        or policy.get("status")
-        != "preregistered_during_target_and_model_blind_capture"
+        or policy.get("status") != "preregistered_during_target_and_model_blind_capture"
         or parents
         != {
             "round21_contract_sha256": (
                 "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116"
             ),
-            "round21_dataset_design_sha256": (
-                POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
-            ),
+            "round21_dataset_design_sha256": (POLYMARKET_ROUND21_DATASET_DESIGN_SHA256),
             "round21_sidecar_design_sha256": (
                 "c802b13e169f868c7a37619669cdc957862a1cb58c6d3299c0aae63ff0d86d4a"
             ),
@@ -261,6 +261,19 @@ def validate_round21_feature_policy(
         or clock.get("future_receipts") != "rejected"
         or clock.get("forward_or_backward_fill") is not False
         or clock.get("cross_connection_gap_carry") is not False
+        or clock.get("window_endpoint_anchor")
+        != "latest_valid_receipt_at_or_before_window_start"
+        or clock.get("window_return_population")
+        != ("returns_ending_strictly_after_window_start_and_at_or_before_decision_time")
+        or clock.get("window_bipower_population")
+        != (
+            "adjacent_returns_both_ending_strictly_after_window_start_and_at_"
+            "or_before_decision_time"
+        )
+        or clock.get("window_count_population")
+        != "receipts_at_or_after_window_start_and_at_or_before_decision_time"
+        or clock.get("missing_previous_tick")
+        != "first_in_window_receipt_is_anchor_with_zero_preceding_return"
         or not isinstance(chainlink, Mapping)
         or chainlink.get("mid_condition_reconnect") != "condition_ineligible"
         or chainlink.get("probability_bound")
@@ -269,8 +282,7 @@ def validate_round21_feature_policy(
         or clob.get("crossed_empty_or_contradictory_book")
         != "invalid_until_fresh_full_book"
         or not isinstance(optional, Mapping)
-        or optional.get("role")
-        != "independent_credential_free_read_only_predictor"
+        or optional.get("role") != "independent_credential_free_read_only_predictor"
         or optional.get("credentials") is not False
         or optional.get("account_access") is not False
         or optional.get("orders") is not False
@@ -298,9 +310,27 @@ def validate_round21_feature_policy(
         or anti_leakage.get("future_reference_prices") != "rejected"
         or anti_leakage.get("outcomes_or_resolution") != "rejected"
         or anti_leakage.get("fees_fills_orders_or_pnl") != "rejected"
-        or anti_leakage.get("test_role_access_during_development")
-        != "rejected"
+        or anti_leakage.get("test_role_access_during_development") != "rejected"
         or anti_leakage.get("feature_availability_may_use_target") is not False
+        or optional.get("causal_bbo_receipt_age_ms") is not True
+        or optional.get("signed_spot_minus_usdm_bbo_receipt_skew_ms") is not True
+        or optional.get("receipt_age_clock") != "local_utc_receipt_time"
+        or "causal_book_receipt_age" not in clob.get("static_families", ())
+        or supersession
+        != {
+            "round21_causal_feature_policy_v2_sha256": (
+                "04bc591f4875559d1b7a5e75cc676d47d57b888b255ee3b1369eee06e32d49ef"
+            ),
+            "change": (
+                "add_causal_quote_receipt_ages_and_signed_spot_usdm_bbo_receipt_skew"
+            ),
+            "feature_names_or_widths_changed": True,
+            "receipt_time_causality_changed": False,
+            "capture_data_used_for_change": False,
+            "targets_used_for_change": False,
+            "market_outcomes_used_for_change": False,
+            "edge_or_profitability_inferred_from_change": False,
+        }
         or authority
         != {
             "model_data_eligible": False,
@@ -330,9 +360,7 @@ def load_round21_feature_policy(path: str | Path) -> dict[str, object]:
             parse_constant=_reject_nonfinite,
         )
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise ValueError(
-            "Round 21 causal feature policy is unavailable"
-        ) from exc
+        raise ValueError("Round 21 causal feature policy is unavailable") from exc
     if not isinstance(value, Mapping):
         raise ValueError("Round 21 causal feature policy is not an object")
     return validate_round21_feature_policy(value)
@@ -350,11 +378,7 @@ def _decimal(
         parsed = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError) as exc:
         raise ValueError(f"Round 21 {name} is invalid") from exc
-    if (
-        not parsed.is_finite()
-        or parsed < 0
-        or (not allow_zero and parsed == 0)
-    ):
+    if not parsed.is_finite() or parsed < 0 or (not allow_zero and parsed == 0):
         raise ValueError(f"Round 21 {name} is invalid")
     return parsed
 
@@ -444,8 +468,7 @@ def _validate_union_event(event: PolymarketUnionEvent) -> Mapping[str, object]:
         or str(decoded.get("event_type") or "unknown") != event.event_type
         or event.source_time_ms != parsed_source
         or event.selected_received_wall_ms != selected.received_wall_ms
-        or event.selected_received_monotonic_ns
-        != selected.received_monotonic_ns
+        or event.selected_received_monotonic_ns != selected.received_monotonic_ns
         or event.selected_lane_id != selected.lane_id
         or receipts != ordered
         or _SHA256.fullmatch(event.event_sha256) is None
@@ -508,8 +531,7 @@ def parse_round21_chainlink_wire_text(
     body = payload.get("payload")
     if (
         set(payload) != allowed_envelope
-        or payload.get("topic")
-        not in {"crypto_prices", "crypto_prices_chainlink"}
+        or payload.get("topic") not in {"crypto_prices", "crypto_prices_chainlink"}
         or type(payload.get("timestamp")) is not int
         or int(payload["timestamp"]) <= 0
         or not isinstance(body, Mapping)
@@ -651,13 +673,9 @@ class _RollingPriceSeries:
             raise ValueError("Round 21 Chainlink receipt time regressed")
         log_price = math.log(float(price))
         previous_return = (
-            0.0
-            if len(self.log_price) < 2
-            else self.log_price[-1] - self.log_price[-2]
+            0.0 if len(self.log_price) < 2 else self.log_price[-1] - self.log_price[-2]
         )
-        current_return = (
-            0.0 if not self.log_price else log_price - self.log_price[-1]
-        )
+        current_return = 0.0 if not self.log_price else log_price - self.log_price[-1]
         squared = current_return * current_return
         bipower = abs(previous_return * current_return)
         self.received_ms.append(received)
@@ -669,22 +687,28 @@ class _RollingPriceSeries:
         self._compact(received)
 
     def window(self, decision_ms: int, window_ms: int) -> _PriceWindow:
-        left = bisect_left(self.received_ms, decision_ms - window_ms)
+        window_start_ms = decision_ms - window_ms
+        left = bisect_left(self.received_ms, window_start_ms)
         right = bisect_right(self.received_ms, decision_ms)
         count = right - left
         if count <= 0:
             return _PriceWindow(0.0, 0.0, 0.0, 0.0, 0)
+        anchor = bisect_right(self.received_ms, window_start_ms) - 1
+        if anchor < 0:
+            anchor = left
+        variance_start = min(right, anchor + 1)
+        bipower_start = min(right, anchor + 2)
         variance = (
             0.0
-            if count < 2
-            else self.squared_prefix[right] - self.squared_prefix[left + 1]
+            if variance_start >= right
+            else self.squared_prefix[right] - self.squared_prefix[variance_start]
         )
         bipower = (
             0.0
-            if count < 3
+            if bipower_start >= right
             else math.pi
             / 2.0
-            * (self.bipower_prefix[right] - self.bipower_prefix[left + 2])
+            * (self.bipower_prefix[right] - self.bipower_prefix[bipower_start])
         )
         tolerance = 1e-15
         if variance < -tolerance or bipower < -tolerance:
@@ -694,15 +718,13 @@ class _RollingPriceSeries:
         return _PriceWindow(
             log_return=(
                 0.0
-                if count < 2
-                else self.log_price[right - 1] - self.log_price[left]
+                if anchor >= right - 1
+                else self.log_price[right - 1] - self.log_price[anchor]
             ),
             realized_variance=variance,
             bipower_variation=bipower,
             jump_fraction=(
-                0.0
-                if variance <= 0.0
-                else max(0.0, (variance - bipower) / variance)
+                0.0 if variance <= 0.0 else max(0.0, (variance - bipower) / variance)
             ),
             count=count,
         )
@@ -777,11 +799,7 @@ class _BookState:
         self.valid = self._valid_top()
 
     def _valid_top(self) -> bool:
-        return (
-            bool(self.bids)
-            and bool(self.asks)
-            and max(self.bids) < min(self.asks)
-        )
+        return bool(self.bids) and bool(self.asks) and max(self.bids) < min(self.asks)
 
     def apply(self, changes: Sequence[Mapping[str, object]]) -> None:
         if not self.valid:
@@ -839,8 +857,7 @@ class _BookState:
             for price in sorted(self.bids, reverse=True)[:20]
         )
         asks = tuple(
-            (float(price), float(self.asks[price]))
-            for price in sorted(self.asks)[:20]
+            (float(price), float(self.asks[price])) for price in sorted(self.asks)[:20]
         )
         if not bids or not asks or bids[0][0] >= asks[0][0]:
             return None
@@ -850,6 +867,126 @@ class _BookState:
             bids=bids,
             asks=asks,
         )
+
+
+def build_round21_execution_books(
+    *,
+    condition_id: str,
+    up_token_id: str,
+    down_token_id: str,
+    union_events: Sequence[PolymarketUnionEvent],
+    admitted_gap_free: bool,
+) -> tuple[PaperBookSnapshot, ...]:
+    """Rebuild exact top-20 execution books from one admitted union epoch."""
+
+    condition = str(condition_id or "").strip().lower()
+    tokens = tuple(str(value or "").strip() for value in (up_token_id, down_token_id))
+    if (
+        _CONDITION_ID.fullmatch(condition) is None
+        or len(set(tokens)) != 2
+        or any(_TOKEN_ID.fullmatch(token) is None for token in tokens)
+        or admitted_gap_free is not True
+    ):
+        raise ValueError("Round 21 execution-book identity differs")
+    states = {token: _BookState(token_id=token) for token in tokens}
+    output: list[PaperBookSnapshot] = []
+    identities: set[tuple[str, int, int]] = set()
+    last_monotonic_ns = 0
+    for event in union_events:
+        payload = _validate_union_event(event)
+        if str(payload.get("market") or "").strip().lower() != condition:
+            raise ValueError("Round 21 execution-book market differs")
+        if event.selected_received_monotonic_ns < last_monotonic_ns:
+            raise ValueError("Round 21 execution-book receipt order regressed")
+        last_monotonic_ns = event.selected_received_monotonic_ns
+        updated_tokens: set[str] = set()
+        if event.event_type == "book":
+            keys = frozenset(payload)
+            if (
+                not _FULL_BOOK_KEYS.issubset(keys)
+                or keys - _FULL_BOOK_KEYS - _FULL_BOOK_OPTIONAL_KEYS
+            ):
+                raise ValueError("Round 21 full-book schema drifted")
+            token = str(payload["asset_id"] or "")
+            state = states.get(token)
+            if state is None:
+                raise ValueError("Round 21 execution book has an unknown token")
+            state.replace(payload)
+            updated_tokens.add(token)
+        elif event.event_type == "price_change":
+            if set(payload) != _PRICE_CHANGE_KEYS:
+                raise ValueError("Round 21 price-change schema drifted")
+            raw_changes = payload["price_changes"]
+            if not isinstance(raw_changes, list) or not raw_changes:
+                raise ValueError("Round 21 price-change batch is invalid")
+            grouped: dict[str, list[Mapping[str, object]]] = {}
+            for change in raw_changes:
+                if (
+                    not isinstance(change, Mapping)
+                    or set(change) != _PRICE_CHANGE_ITEM_KEYS
+                ):
+                    raise ValueError("Round 21 price-change item schema drifted")
+                token = str(change["asset_id"] or "")
+                if token not in states:
+                    raise ValueError("Round 21 execution change has an unknown token")
+                grouped.setdefault(token, []).append(change)
+            for token, changes in grouped.items():
+                states[token].apply(changes)
+                updated_tokens.add(token)
+        elif event.event_type == "best_bid_ask":
+            if set(payload) != _BEST_BID_ASK_KEYS:
+                raise ValueError("Round 21 best-bid-ask schema drifted")
+        elif event.event_type not in _IGNORED_EVENT_TYPES:
+            raise ValueError(
+                f"Round 21 unsupported CLOB event type: {event.event_type}"
+            )
+        for token in sorted(updated_tokens):
+            state = states[token]
+            if not state.valid:
+                continue
+            source_time_ms = event.source_time_ms
+            identity = (
+                token,
+                event.selected_received_wall_ms,
+                event.selected_received_monotonic_ns,
+            )
+            if source_time_ms is None or identity in identities:
+                raise ValueError("Round 21 execution-book source identity differs")
+            identities.add(identity)
+            output.append(
+                PaperBookSnapshot(
+                    venue="polymarket",
+                    market_id=condition,
+                    asset_id=token,
+                    bids=tuple(
+                        BookLevel(price, state.bids[price])
+                        for price in sorted(state.bids, reverse=True)[:20]
+                    ),
+                    asks=tuple(
+                        BookLevel(price, state.asks[price])
+                        for price in sorted(state.asks)[:20]
+                    ),
+                    source_time_ms=source_time_ms,
+                    received_wall_ms=event.selected_received_wall_ms,
+                    received_monotonic_ns=event.selected_received_monotonic_ns,
+                    source_payload_sha256=event.event_sha256,
+                    connected=True,
+                    gap_free=True,
+                ).validated()
+            )
+    if not output:
+        raise ValueError("Round 21 execution-book population is empty")
+    return tuple(
+        sorted(
+            output,
+            key=lambda value: (
+                value.received_wall_ms,
+                value.received_monotonic_ns,
+                value.asset_id,
+                value.source_payload_sha256,
+            ),
+        )
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -886,20 +1023,12 @@ class _RollingBookSeries:
         bid_flow = (
             bid_qty
             if bid > prior_bid
-            else (
-                bid_qty - prior_bid_qty
-                if bid == prior_bid
-                else -prior_bid_qty
-            )
+            else (bid_qty - prior_bid_qty if bid == prior_bid else -prior_bid_qty)
         )
         ask_flow = (
             ask_qty
             if ask < prior_ask
-            else (
-                ask_qty - prior_ask_qty
-                if ask == prior_ask
-                else -prior_ask_qty
-            )
+            else (ask_qty - prior_ask_qty if ask == prior_ask else -prior_ask_qty)
         )
         signed = bid_flow - ask_flow
         gross = abs(bid_flow) + abs(ask_flow)
@@ -940,9 +1069,7 @@ class _RollingBookSeries:
         )
         for row in rows:
             for index, value in enumerate(row):
-                self.prefixes[index].append(
-                    self.prefixes[index][-1] + value
-                )
+                self.prefixes[index].append(self.prefixes[index][-1] + value)
 
     def _compact(self, latest_ms: int) -> None:
         if len(self.received_ms) < _COMPACT_THRESHOLD:
@@ -997,11 +1124,15 @@ class _RollingBookSeries:
         self._compact(snapshot.received_wall_ms)
 
     def window(self, decision_ms: int, window_ms: int) -> _BookFlowWindow:
-        left = bisect_left(self.received_ms, decision_ms - window_ms)
+        window_start_ms = decision_ms - window_ms
+        left = bisect_left(self.received_ms, window_start_ms)
         right = bisect_right(self.received_ms, decision_ms)
         count = right - left
         if count <= 0:
             return _BookFlowWindow(0.0, 0.0, 0.0, 0.0, 0.0, 0)
+        anchor = bisect_right(self.received_ms, window_start_ms) - 1
+        if anchor < 0:
+            anchor = left
         top_signed, top_gross, imbalance, level_signed, level_gross = (
             prefix[right] - prefix[left] for prefix in self.prefixes
         )
@@ -1029,13 +1160,10 @@ class _RollingBookSeries:
             mean_imbalance=imbalance / count,
             microprice_return=(
                 0.0
-                if count < 2
-                else self.log_microprice[right - 1]
-                - self.log_microprice[left]
+                if anchor >= right - 1
+                else self.log_microprice[right - 1] - self.log_microprice[anchor]
             ),
-            level_pressure=(
-                0.0 if level_gross == 0.0 else level_signed / level_gross
-            ),
+            level_pressure=(0.0 if level_gross == 0.0 else level_signed / level_gross),
             gross_level_change=level_gross,
             count=count,
         )
@@ -1177,10 +1305,7 @@ class Round21CoreFeatureEngine:
     ) -> None:
         connection = str(connection_id or "").strip().lower()
         first_sequence = int(first_sequence_number)
-        if (
-            _CONNECTION_ID.fullmatch(connection) is None
-            or first_sequence <= 0
-        ):
+        if _CONNECTION_ID.fullmatch(connection) is None or first_sequence <= 0:
             raise ValueError("Round 21 Chainlink epoch identity is invalid")
         if self._chainlink_sequence:
             self._chainlink_gap_detected = True
@@ -1198,8 +1323,7 @@ class Round21CoreFeatureEngine:
         if (
             observation.connection_id != self._chainlink_connection_id
             or observation.sequence_number != self._chainlink_sequence + 1
-            or observation.received_monotonic_ns
-            <= self._chainlink_monotonic_ns
+            or observation.received_monotonic_ns <= self._chainlink_monotonic_ns
             or observation.received_wall_ms < self._chainlink_wall_ms
         ):
             raise ValueError("Round 21 Chainlink reconnect or chronology differs")
@@ -1315,13 +1439,9 @@ class Round21CoreFeatureEngine:
             or (decision - self.event_start_ms) % 250
         ):
             raise ValueError("Round 21 core decision time is invalid")
-        if (
-            self._chainlink_wall_ms > decision
-            or any(
-                series.latest is not None
-                and series.latest.received_wall_ms > decision
-                for series in self._book_series.values()
-            )
+        if self._chainlink_wall_ms > decision or any(
+            series.latest is not None and series.latest.received_wall_ms > decision
+            for series in self._book_series.values()
         ):
             raise ValueError("Round 21 core engine contains future receipts")
         reasons: list[str] = []
@@ -1338,14 +1458,10 @@ class Round21CoreFeatureEngine:
             self.event_start_ms,
             decision,
         )
-        if len(receipt_times) - 1 < (
-            POLYMARKET_ROUND21_CORE_MINIMUM_CHAINLINK_RETURNS
-        ):
+        if len(receipt_times) - 1 < (POLYMARKET_ROUND21_CORE_MINIMUM_CHAINLINK_RETURNS):
             reasons.append("chainlink_return_count_below_minimum")
         coverage_ms = (
-            0
-            if len(receipt_times) < 2
-            else receipt_times[-1] - receipt_times[0]
+            0 if len(receipt_times) < 2 else receipt_times[-1] - receipt_times[0]
         )
         if coverage_ms < POLYMARKET_ROUND21_CORE_MINIMUM_CHAINLINK_COVERAGE_MS:
             reasons.append("chainlink_coverage_below_minimum")
@@ -1399,8 +1515,7 @@ class Round21CoreFeatureEngine:
         down_mid = down_values[2]
         market_prior = up_mid / (up_mid + down_mid)
         static = (
-            (decision - self.event_start_ms)
-            / POLYMARKET_ROUND21_CONDITION_DURATION_MS,
+            (decision - self.event_start_ms) / POLYMARKET_ROUND21_CONDITION_DURATION_MS,
             remaining_seconds,
             log_distance,
             variance_rate,
@@ -1414,6 +1529,8 @@ class Round21CoreFeatureEngine:
             structural - market_prior,
             (up_values[1] + down_values[1]) - 1.0,
             1.0 - (up_values[0] + down_values[0]),
+            float(decision - book_snapshots["up"].received_wall_ms),
+            float(decision - book_snapshots["down"].received_wall_ms),
             float(
                 abs(
                     book_snapshots["up"].received_wall_ms
@@ -1453,9 +1570,7 @@ class Round21CoreFeatureEngine:
             {
                 "condition_id": self.condition_id,
                 "decision_time_ms": decision,
-                "feature_policy_sha256": (
-                    POLYMARKET_ROUND21_FEATURE_POLICY_SHA256
-                ),
+                "feature_policy_sha256": (POLYMARKET_ROUND21_FEATURE_POLICY_SHA256),
                 "chainlink_source_chain_sha256": self._chainlink_chain,
                 "clob_source_chain_sha256": self._clob_chain,
             }
@@ -1524,6 +1639,7 @@ __all__ = [
     "POLYMARKET_ROUND21_FEATURE_POLICY_SHA256",
     "Round21CoreFeatureEngine",
     "Round21CoreFeatureSnapshot",
+    "build_round21_execution_books",
     "join_round21_causal_features",
     "load_round21_feature_policy",
     "parse_round21_chainlink_wire_text",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from decimal import Decimal, InvalidOperation, ROUND_CEILING
+from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import re
@@ -11,6 +11,7 @@ from typing import Callable, Iterable, Mapping
 
 import duckdb
 
+from .polymarket_fees import PolymarketFeeModel
 from .positions import BOT_OWNER
 
 
@@ -829,9 +830,7 @@ class PaperOrderJournal:
         opening_id = _identifier(
             payload.get("opening_intent_id"), name="opening_intent_id"
         )
-        venue = _identifier(
-            str(payload.get("venue") or "").lower(), name="venue"
-        )
+        venue = _identifier(str(payload.get("venue") or "").lower(), name="venue")
         quantity = _decimal(payload.get("quantity"), name="quantity", positive=True)
         payout = _decimal(payload.get("payout_per_unit"), name="payout_per_unit")
         fee = _decimal(payload.get("fee_quote"), name="fee_quote")
@@ -902,11 +901,7 @@ class PaperOrderJournal:
         if not report.ok:
             raise ValueError("paper inventory cannot settle while reconciliation fails")
         inventory = next(
-            (
-                item
-                for item in report.inventory
-                if item.opening_intent_id == opening_id
-            ),
+            (item for item in report.inventory if item.opening_intent_id == opening_id),
             None,
         )
         if inventory is None or inventory.remaining_quantity <= 0:
@@ -919,9 +914,7 @@ class PaperOrderJournal:
         unsafe = [
             str(row[0])
             for row in rows
-            if (
-                str(row[0]) == opening_id or str(row[13]) == opening_id
-            )
+            if (str(row[0]) == opening_id or str(row[13]) == opening_id)
             and str(row[14]) in BLOCKING_ORDER_STATES
             and str(row[14]) != "CLOSE_PENDING"
         ]
@@ -1297,38 +1290,6 @@ class BinanceBpsFeeModel:
             raise ValueError("Binance fee rates must be non-negative")
         rate = maker if role == "maker" else taker
         return price * quantity * rate / Decimal("10000")
-
-
-@dataclass(frozen=True)
-class PolymarketFeeModel:
-    """Recorded Polymarket V2 fee curve with conservative precision."""
-
-    enabled: bool
-    rate: Decimal
-    exponent: int
-    taker_only: bool
-
-    def __call__(self, price: Decimal, quantity: Decimal, role: str) -> Decimal:
-        if not self.enabled or (role == "maker" and self.taker_only):
-            return Decimal("0")
-        rate = _decimal(self.rate, name="Polymarket fee rate")
-        if rate < 0 or rate > 1:
-            raise ValueError("Polymarket fee rate is outside [0, 1]")
-        exponent_value = _decimal(
-            self.exponent,
-            name="Polymarket fee exponent",
-            positive=True,
-        )
-        if exponent_value != exponent_value.to_integral_value():
-            raise ValueError("Polymarket fee exponent must be a positive integer")
-        exponent = int(exponent_value)
-        if price <= 0 or price >= 1:
-            raise ValueError("Polymarket match price must lie strictly between 0 and 1")
-        curve = (price * (Decimal("1") - price)) ** exponent
-        raw = quantity * rate * curve
-        if raw < Decimal("0.00001"):
-            return Decimal("0")
-        return raw.quantize(Decimal("0.00001"), rounding=ROUND_CEILING)
 
 
 def simulate_aggressive_order(

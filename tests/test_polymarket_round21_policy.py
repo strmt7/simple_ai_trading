@@ -39,7 +39,7 @@ POLICY_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-021-multi-action-policy-design-v3.json"
+    / "round-021-multi-action-policy-design-v8.json"
 )
 
 
@@ -129,6 +129,7 @@ def _envelope(
     layer: str = "core",
     condition_id: str = CONDITION_ID,
     decision_time_ms: int = DECISION_MS,
+    feature_support_eligible: bool = True,
 ) -> Round21ProbabilityEnvelope:
     return Round21ProbabilityEnvelope.create(
         condition_id=condition_id,
@@ -142,6 +143,7 @@ def _envelope(
         ),
         source_probability_batch_sha256=_digest("probability-batch"),
         feature_row_sha256=_digest("causal-feature-row"),
+        feature_support_eligible=feature_support_eligible,
     )
 
 
@@ -189,6 +191,7 @@ def _select(
     reconciliation_ok: bool = True,
     capital: str = "10000",
     cash: str = "1000",
+    condition_start_cash: str | None = None,
     directional_entry_allowed: bool = True,
     directional_entry_permission_sha256: str = "",
 ):
@@ -208,6 +211,9 @@ def _select(
         decision_time_ms=DECISION_MS,
         risk_capital_quote=Decimal(capital),
         available_cash_quote=Decimal(cash),
+        condition_start_cash_quote=Decimal(
+            cash if condition_start_cash is None else condition_start_cash
+        ),
         daily_realized_pnl_quote=Decimal(daily_pnl),
         drawdown_capital_fraction=Decimal(drawdown),
         cooldown_until_ms=cooldown_until_ms,
@@ -216,9 +222,7 @@ def _select(
         reconciliation_sha256=_digest("reconciliation"),
         minimum_edge_per_share=Decimal("0.02"),
         directional_entry_allowed=directional_entry_allowed,
-        directional_entry_permission_sha256=(
-            directional_entry_permission_sha256
-        ),
+        directional_entry_permission_sha256=(directional_entry_permission_sha256),
     )
 
 
@@ -340,6 +344,26 @@ def test_round21_loss_and_cooldown_gates_block_only_new_directional_risk() -> No
     assert reduction.action == "reduce_up"
 
 
+def test_round21_out_of_support_blocks_entry_but_preserves_owned_reduction() -> None:
+    unsupported = _envelope(feature_support_eligible=False)
+    entry = _select(envelope=unsupported)
+    reduction = _select(
+        envelope=_envelope(
+            "0.40",
+            "0.35",
+            "0.45",
+            feature_support_eligible=False,
+        ),
+        inventory=_inventory(_lot("Up")),
+        up_book=_book("Up", bid="0.60", ask="0.61", quantity="10"),
+        down_book=_book("Down", bid="0.69", ask="0.70", quantity="10"),
+    )
+
+    assert entry.action == "abstain"
+    assert entry.reason == "feature_support_out_of_distribution_no_risk_reduction"
+    assert reduction.action == "reduce_up"
+
+
 def test_round21_directional_size_cannot_overshoot_remaining_loss_headroom() -> None:
     near_daily_limit = _select(daily_pnl="-49")
     near_drawdown_limit = _select(drawdown="0.0199")
@@ -348,6 +372,45 @@ def test_round21_directional_size_cannot_overshoot_remaining_loss_headroom() -> 
     assert near_daily_limit.plan.maximum_loss_quote <= Decimal("1")
     assert near_drawdown_limit.plan is not None
     assert near_drawdown_limit.plan.maximum_loss_quote <= Decimal("1")
+
+
+def test_round21_realized_intra_event_loss_cannot_be_forgotten_after_exit() -> None:
+    decision = _select(
+        cash="989",
+        condition_start_cash="1000",
+    )
+
+    assert decision.action == "abstain"
+    assert decision.reason == "event_loss_gate_no_risk_reducing_action"
+
+
+def test_round21_paired_reduction_cannot_breach_remaining_event_cap() -> None:
+    decision = _select(
+        envelope=_envelope("0.40", "0.35", "0.45"),
+        inventory=_inventory(
+            _lot("Up", quantity="10", cost="4", parent="owned-up"),
+            _lot("Down", quantity="10", cost="4", parent="owned-down"),
+        ),
+        up_book=_book("Up", bid="0.60", ask="0.61", quantity="10"),
+        down_book=_book("Down", bid="0.69", ask="0.70", quantity="10"),
+        cash="980.5",
+        condition_start_cash="1000",
+    )
+
+    assert decision.action == "abstain"
+    assert decision.reason == "candidate_would_breach_risk_cap"
+
+
+def test_round21_risk_reducing_complement_lock_remains_available_over_cap() -> None:
+    decision = _select(
+        inventory=_inventory(_lot("Up", cost="4", parent="owned-up")),
+        cash="989",
+        condition_start_cash="1000",
+    )
+
+    assert decision.action == "lock_up_with_down"
+    assert decision.plan is not None
+    assert decision.plan.outcome == "Down"
 
 
 def test_round21_ai_veto_blocks_only_new_directional_entries() -> None:
@@ -418,6 +481,7 @@ def test_round21_validates_execution_scenario_even_when_abstaining() -> None:
             decision_time_ms=DECISION_MS,
             risk_capital_quote=Decimal("10000"),
             available_cash_quote=Decimal("1000"),
+            condition_start_cash_quote=Decimal("1000"),
             daily_realized_pnl_quote=Decimal("0"),
             drawdown_capital_fraction=Decimal("0"),
             cooldown_until_ms=0,

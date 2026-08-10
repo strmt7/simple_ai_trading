@@ -1,0 +1,253 @@
+{
+  "schema_version": "polymarket-round21-matched-model-design-v9",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba",
+    "round21_feature_policy_sha256": "a0ca1f9f5631a6f3d8b7710c20d2679cf6b50ad6b269548824d87503d80dbe5b",
+    "round21_probability_basis_ablation_design_sha256": "a54391db7652e0d17d7bae65dd2706ff2bae5c9fbfd99d5d2a9a1e501e0c642a"
+  },
+  "supersession": {
+    "round21_matched_model_design_v8_sha256": "ab487bb836ec5970c15bb7069c2188defc32a277df76a8b8ab2fc90584bbbd5e",
+    "change": "add_target_free_causal_quote_receipt_age_features",
+    "probability_basis_ablation_inherited_unchanged": true,
+    "candidate_count_changed": false,
+    "predictive_model_families_changed": false,
+    "training_schedule_changed": false,
+    "capture_data_used_for_change": false,
+    "targets_used_for_change": false,
+    "market_outcomes_used_for_change": false,
+    "edge_or_profitability_inferred_from_change": false
+  },
+  "prediction": {
+    "target": "official_binary_up_resolution",
+    "base_offset": "chainlink_structural_probability_log_odds",
+    "output": "calibrated_up_probability",
+    "condition_equal_weighting": true,
+    "forced_probability_direction": false
+  },
+  "preprocessing": {
+    "fit_population": "train_only_condition_equal_weighted",
+    "winsor_quantiles": [
+      "0.001",
+      "0.999"
+    ],
+    "center": "weighted_median",
+    "scale": "weighted_iqr_over_1.3489795003921634",
+    "zero_iqr_fallback": "weighted_mad_times_1.482602218505602",
+    "constant_feature_scale": "1",
+    "optional_missingness": "explicit_zero_with_availability_gate",
+    "model_basis": "market_prior_log_odds_minus_structural_log_odds_clipped_to_probability_floor",
+    "feature_support": {
+      "fit_population": "train_only_condition_equal_weighted",
+      "labels_used": false,
+      "row_quantile": "0.995",
+      "metrics": [
+        "clipped_feature_fraction",
+        "maximum_robust_scale_excess"
+      ],
+      "numeric_domain": "float32_same_as_training_and_live_transform",
+      "sequence_contamination_rows": 16,
+      "decision_cadence_ms": 250,
+      "action": "block_new_directional_exposure_preserve_scoring_and_risk_reduction",
+      "proper_scoring_population_filtered": false,
+      "risk_reducing_actions_blocked": false
+    }
+  },
+  "candidate_program": {
+    "families": {
+      "logistic_residual": {
+        "l2": [
+          "0.01",
+          "0.1",
+          "1"
+        ],
+        "intercept_penalized": false
+      },
+      "shallow_lightgbm_residual": {
+        "configurations": [
+          {
+            "max_depth": 2,
+            "num_leaves": 3,
+            "min_data_in_leaf": 20
+          },
+          {
+            "max_depth": 3,
+            "num_leaves": 7,
+            "min_data_in_leaf": 40
+          }
+        ],
+        "maximum_boost_rounds": 512,
+        "early_stopping_rounds": 40
+      },
+      "compact_causal_tcn_residual": {
+        "sequence_length": 16,
+        "decision_cadence_ms": 250,
+        "sequence_span_ms": 3750,
+        "causal_receptive_field_rows": 15,
+        "causal_receptive_field_ms": 3500,
+        "endpoints_per_condition_per_epoch": 8,
+        "training_endpoint_sampling": "target_blind_seeded_epoch_rotating_stratified",
+        "training_endpoint_epoch_stride": "smallest_coprime_at_or_above_floor_987_over_1597_of_stratum_width",
+        "early_stopping_endpoint_sampling": "fixed_midpoint_stratified",
+        "history_reset": "condition_change_or_non_250ms_cadence",
+        "history_padding": "left_zero_after_train_only_normalization_plus_mask",
+        "hidden_channels": 12,
+        "kernel_size": 3,
+        "dilations": [
+          1,
+          2,
+          4
+        ],
+        "blocks": "causal_depthwise_separable_residual",
+        "maximum_epochs": 32,
+        "early_stopping_patience": 5,
+        "optimizer": "adamw_exact_equations_without_backend_fallback",
+        "learning_rate": "0.001",
+        "weight_decay": "0.0001",
+        "gradient_clip_norm": "1",
+        "capacity_rule": "12_times_feature_width_plus_649_parameters",
+        "target_pseudoreplication_control": "equal_conditions_and_equal_stratified_endpoints_within_condition_per_epoch",
+        "training_seed_provenance": "required_nonnegative_int64_in_serialized_model_artifact",
+        "stored_weights": "network_order_independent_little_endian_float32_with_sha256",
+        "training_backends": [
+          "cuda",
+          "rocm",
+          "xpu",
+          "mps",
+          "directml",
+          "cpu"
+        ],
+        "portable_inference_fallback": "cpu"
+      }
+    },
+    "candidate_count_per_ledger": 6,
+    "bounded_before_target_access": true,
+    "additional_deep_or_foundation_candidates": false,
+    "model_basis_features": [
+      "model.market_prior_minus_structural_log_odds"
+    ]
+  },
+  "partition": {
+    "whole_condition_groups": true,
+    "train_to_tune_purge_seconds": 1800,
+    "minimum_train_last_start_to_tune_first_start_ms": 2100000,
+    "tune_calibration_precedes_tune_selection": true,
+    "test_access": false
+  },
+  "calibration_and_selection": {
+    "tune_calibration_first_half": "lightgbm_and_tcn_early_stop",
+    "tune_calibration_second_half": "condition_equal_platt",
+    "tune_selection": "candidate_selection_only",
+    "primary_metric": "condition_equal_log_loss",
+    "secondary_metric": "condition_equal_brier_score",
+    "selection_rule": "simplest_candidate_with_paired_candidate_minus_best_mean_log_loss_not_exceeding_its_hac_standard_error",
+    "log_loss_standard_error": "newey_west_bartlett_on_ordered_condition_equal_losses",
+    "dependence_block_length_rule": "min_n_max_2_ceil_sqrt_n_conditions",
+    "hac_lag_rule": "dependence_block_length_minus_one",
+    "paired_interval": "circular_block_bootstrap_percentile",
+    "paired_resampling_unit": "ordered_five_minute_condition_loss_difference_blocks",
+    "complexity_order": [
+      "logistic_residual",
+      "shallow_lightgbm_residual",
+      "compact_causal_tcn_residual"
+    ],
+    "paired_bootstrap_samples": 2000
+  },
+  "optional_binance_comparison": {
+    "layers": [
+      "core_spot",
+      "core_spot_usdm"
+    ],
+    "binance_credentials": false,
+    "binance_execution": false,
+    "same_train_population": true,
+    "same_early_stop_population": true,
+    "same_platt_calibration_population": true,
+    "same_selection_population": true,
+    "matched_core_is_refit_on_each_optional_population": true,
+    "admission": "positive_paired_lower_95_log_loss_and_brier_before_economic_evaluation"
+  },
+  "research_basis": [
+    {
+      "url": "https://arxiv.org/abs/2607.26245",
+      "use": "negative_after_cost_prediction_market_benchmark_and_source_clock_risk"
+    },
+    {
+      "url": "https://arxiv.org/abs/2502.15757",
+      "use": "dual_attention_limit_order_book_sequence_model_and_simple_control_comparison"
+    },
+    {
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "forecast_accuracy_does_not_imply_actionable_after_cost_trading"
+    },
+    {
+      "url": "https://arxiv.org/abs/1011.6402",
+      "use": "order_flow_imbalance_and_depth_conditioned_short_horizon_price_impact"
+    },
+    {
+      "url": "https://arxiv.org/abs/2512.05734",
+      "use": "dilated_causal_convolution_for_order_book_sequences_while_deferring_fill_survival_without_own_order_queue_labels"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/ai/directml/dml-get-started",
+      "use": "directml_sustained_engineering_and_portable_windows_inference_direction"
+    },
+    {
+      "url": "https://docs.pytorch.org/docs/stable/accelerator.html",
+      "use": "device_agnostic_accelerator_discovery"
+    },
+    {
+      "url": "https://www.nber.org/papers/t0055",
+      "use": "positive_semidefinite_heteroskedasticity_and_autocorrelation_consistent_uncertainty"
+    },
+    {
+      "url": "https://www.nber.org/papers/t0169",
+      "use": "paired_predictive_loss_comparison_with_serially_and_contemporaneously_correlated_errors"
+    },
+    {
+      "url": "https://statistics.stanford.edu/technical-reports/circular-block-resampling-procedure-stationary-data",
+      "use": "circular_block_resampling_for_ordered_weakly_dependent_condition_losses"
+    },
+    {
+      "url": "https://arxiv.org/abs/2510.15205",
+      "use": "logit_space_short_horizon_prediction_market_probability_dynamics"
+    },
+    {
+      "url": "https://arxiv.org/abs/2602.00776",
+      "use": "crypto_microstructure_order_flow_spread_and_adverse_selection_evidence"
+    },
+    {
+      "url": "https://arxiv.org/abs/2506.05764",
+      "use": "feature_engineering_before_unbounded_deep_model_expansion"
+    },
+    {
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2019/hash/8558cb408c1d76621371888657d2eb1d-Abstract.html",
+      "use": "predictive_uncertainty_can_degrade_under_input_distribution_shift"
+    },
+    {
+      "url": "https://proceedings.mlr.press/v97/geifman19a.html",
+      "use": "selective_prediction_reject_option_and_risk_coverage_tradeoff"
+    },
+    {
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4095405",
+      "use": "millisecond_data_timeliness_changes_high_frequency_predictability"
+    },
+    {
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5907665",
+      "use": "differential_feed_latency_can_invert_event_order_and_create_lookahead"
+    }
+  ],
+  "authority": {
+    "capture_data_accessed": false,
+    "targets_accessed": false,
+    "model_selected": false,
+    "economic_evaluation_completed": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "ee81fb773028ffeedb62f34a56e1741075f22d68429c94d1e50e55c3cdc5563e"
+}
