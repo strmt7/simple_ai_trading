@@ -1,0 +1,46 @@
+{
+  "binance_captured": false,
+  "created_at_ms": 1786350855981,
+  "credentials_used": false,
+  "database_cap_bytes": 214748364800,
+  "design_sha256": "b5c130622514b2b82855f0e1cc011b29a81bf0583e6bd37fa3e4d4b702d6a113",
+  "live_trading_authority": false,
+  "minimum_free_bytes": 549755813888,
+  "model_data_eligible": false,
+  "model_scores_consulted": false,
+  "outcomes_consulted": false,
+  "paper_trading_authority": false,
+  "plan_sha256": "95820964e0692d66de2df3b624d8987f8ce9de699ad0b5fa16a7ccee53627bc2",
+  "profitability_claim": false,
+  "repository_commit_oid": "6ed30d73d4732673319fa0fd5bf68ad60ee8189e",
+  "repository_file_sha256": {
+    "docs/model-research/polymarket/round-025-twap-core-capture-design-v1.json": "2962220ac98ef84c8d8983e4e99c804493c2284906c2fa8f0241bc192f681d70",
+    "docs/model-research/polymarket/round-025-twap-source-qualification-2026-08-10.json": "62f028641463fb9f487a6bab49bbfff31d0c7adc2c7b2cb191b9c9eb69b20ea2",
+    "src/simple_ai_trading/polymarket.py": "a29de0363ac759b377d79e76cfbc8f4e6e120c5e737fb27add528601b5b90566",
+    "src/simple_ai_trading/polymarket_recorder.py": "14acafbacb1a121811af66b928809be434fc9611c7a36c46a705d812c40eadca",
+    "src/simple_ai_trading/polymarket_round25_campaign.py": "6b0f99126400fc62e0445272a47a811707d2160db1829c640ae3833eb9d4cd21",
+    "tests/test_polymarket.py": "a326f75dc207fa15808b7e233f89024d6fc0e2d6dd567931d1eff12df418d338",
+    "tests/test_polymarket_round25_campaign.py": "57f6a0385f7a6a12be199d162c0f5d2c2e261ee942c3a86fef0ae6334de18844",
+    "tools/qualify_polymarket_round25_source.py": "1fec21fd9af193c30486e37be6422420f0b9d08caa7b2452a7287022e2c55a17",
+    "tools/run_polymarket_round25_campaign.py": "f34e6d4319e8f90bcd99e11886cad18746500012e9f86d45a6b360f5860ba481"
+  },
+  "repository_tree_oid": "99f949eaf6a2d5853e3a9ae2b19c5109898a53c6",
+  "required_assets": [
+    "BTC"
+  ],
+  "required_clob_lanes": [
+    "clob"
+  ],
+  "required_rtds_topics": [
+    "crypto_prices_chainlink"
+  ],
+  "required_streams": [
+    "clob_market",
+    "polymarket_rtds"
+  ],
+  "resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+  "scheduled_end_ms": 1788046800000,
+  "scheduled_start_ms": 1786406400000,
+  "schema_version": "polymarket-round25-twap-core-campaign-plan-v1",
+  "source_qualification_sha256": "53e8a8a22c94fef83944a29d82229ae69d0688275d953133a19f30b69dc2487b"
+}

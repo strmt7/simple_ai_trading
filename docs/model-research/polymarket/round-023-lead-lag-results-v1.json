@@ -1,0 +1,181 @@
+{
+  "authority": {
+    "ai_edge_claim": false,
+    "economic_backtest": false,
+    "live_trading": false,
+    "model_promotion": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "bootstrap": {
+    "improvement_probability": 1.0,
+    "mean_mse_improvement": 0.00188307942,
+    "mse_improvement_95_interval": [
+      0.00126912779,
+      0.00258178876
+    ]
+  },
+  "calibration": {
+    "baseline_metrics": {
+      "changed_row_direction_accuracy": 0.576830780623,
+      "condition_equal_mae": 0.088432363233,
+      "condition_equal_mse": 0.024242363532,
+      "pearson_correlation": 0.22008212082
+    },
+    "baseline_scale": 0.75,
+    "baseline_scale_mse": {
+      "0.0": 0.025440516682,
+      "0.25": 0.024834351432,
+      "0.5": 0.024434967048,
+      "0.75": 0.024242363532,
+      "1.0": 0.024256540883
+    },
+    "candidate_metrics": {
+      "changed_row_direction_accuracy": 0.595363784222,
+      "condition_equal_mae": 0.086310945847,
+      "condition_equal_mse": 0.022533148552,
+      "pearson_correlation": 0.344741560796
+    },
+    "candidate_scale": 1.0,
+    "candidate_scale_mse": {
+      "0.0": 0.025440516682,
+      "0.25": 0.024348008005,
+      "0.5": 0.023499277091,
+      "0.75": 0.02289432394,
+      "1.0": 0.022533148552
+    },
+    "mse_improvement": 0.00170921498
+  },
+  "conclusion": "exploratory_lead_lag_mechanism_passed_requires_fresh_receipt_time_holdout",
+  "dataset": {
+    "dataset_chain_sha256": "a6fd7f55ec7705d391a035b923c4440c3f92ddfb5b1b169ee6b7df3d67aa7665",
+    "official_resolution_accessed": false,
+    "partitions": {
+      "train": {
+        "condition_count": 12,
+        "row_count": 2802,
+        "target_changed_row_count": 2801
+      },
+      "tune_calibration": {
+        "condition_count": 12,
+        "row_count": 2946,
+        "target_changed_row_count": 2946
+      },
+      "tune_selection": {
+        "condition_count": 12,
+        "row_count": 2929,
+        "target_changed_row_count": 2929
+      }
+    },
+    "target_source": "future_polymarket_market_prior_only"
+  },
+  "mechanism_gate_passed": true,
+  "model": {
+    "baseline_loco_mse": {
+      "0.1": 0.026485760681,
+      "1.0": 0.026620760317,
+      "10.0": 0.027413897449,
+      "100.0": 0.027679329746,
+      "1000.0": 0.027711931282
+    },
+    "baseline_selected_penalty": 0.1,
+    "candidate_binance_standardized_coefficients": {
+      "binance.futures.log_return_15s_bps": 0.000852519761,
+      "binance.futures.log_return_1s_bps": 0.013971587584,
+      "binance.futures.log_return_5s_bps": 0.005569831869,
+      "binance.futures.signed_quote_share_15s": 0.001664065441,
+      "binance.futures.signed_quote_share_1s": 0.00892838074,
+      "binance.futures.signed_quote_share_5s": 0.005043421057,
+      "binance.futures_spot_basis_bps": 0.003698052465,
+      "binance.futures_spot_basis_change_5s_bps": 0.003441324685,
+      "binance.spot.log_return_15s_bps": 0.000664775764,
+      "binance.spot.log_return_1s_bps": 0.010484752824,
+      "binance.spot.log_return_5s_bps": 0.004721715248,
+      "binance.spot.signed_quote_share_15s": 0.002783692833,
+      "binance.spot.signed_quote_share_1s": 0.006785016546,
+      "binance.spot.signed_quote_share_5s": 0.003145094251
+    },
+    "candidate_loco_mse": {
+      "0.1": 0.024691058045,
+      "1.0": 0.024465348588,
+      "10.0": 0.026118555175,
+      "100.0": 0.027462554013,
+      "1000.0": 0.027688750396
+    },
+    "candidate_selected_penalty": 1.0
+  },
+  "parents": {
+    "model_specification_sha256": "03e4fae64f34f835cac338dee111701c73419929e97a22939e12037eba8dfec9",
+    "source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0"
+  },
+  "result_sha256": "c3385d4894ca430a91442d1023bf01f61c650f6d208a4d0f89d11007ee5a11c0",
+  "schema_version": "polymarket-round23-lead-lag-result-v1",
+  "selection": {
+    "baseline_metrics": {
+      "changed_row_direction_accuracy": 0.608964949593,
+      "condition_equal_mae": 0.084496436221,
+      "condition_equal_mse": 0.020425583906,
+      "pearson_correlation": 0.291070906072
+    },
+    "candidate_metrics": {
+      "changed_row_direction_accuracy": 0.623291832473,
+      "condition_equal_mae": 0.082168224228,
+      "condition_equal_mse": 0.018542235726,
+      "pearson_correlation": 0.42960727565
+    },
+    "changed_row_sign_accuracy_improvement": 0.01432688288,
+    "condition_mse_improvements": [
+      {
+        "condition_id": "0x175c9d86f8de7e210a8f8d1db0e038c817ff05a270f0be4e14b52626c8297d09",
+        "mse_improvement": 0.001011158146
+      },
+      {
+        "condition_id": "0x1abc81f715c480bcecfab22da571dc0262f4441e0aa9529cb05dea722952b9d8",
+        "mse_improvement": 0.004560516481
+      },
+      {
+        "condition_id": "0x7164fceb18506f881b344cf6f6e250bd3567ff62369920fba8ec6255ce0aba21",
+        "mse_improvement": 0.001209474418
+      },
+      {
+        "condition_id": "0x71fb69cc7966000605162721a628c053f45b911f1a91e89b1a571d35173b9e46",
+        "mse_improvement": 0.002922656445
+      },
+      {
+        "condition_id": "0x72326f34ca2ef0edc7a7e6e38121c1027a0c21e7dc50ac6519cfe098ebf3bdfc",
+        "mse_improvement": 0.00174258231
+      },
+      {
+        "condition_id": "0x997d5941cadad1dc3949bc8d86a84ef05840753ba16865e025d52a3709eb2e11",
+        "mse_improvement": 0.001875438443
+      },
+      {
+        "condition_id": "0xa71de679f4dcc199ea89041a586eea358a8932dfe14ae7d5ae35477f4b077f6f",
+        "mse_improvement": 0.000555771216
+      },
+      {
+        "condition_id": "0xb13ab8e77ff9c6571cf4a3c444e0621da223a646236559aa78689db46c0be544",
+        "mse_improvement": 0.000614974317
+      },
+      {
+        "condition_id": "0xbeaf6395bf081620b334d4f711e041f35ec8d211d3b1081feb8d4418904a641c",
+        "mse_improvement": 0.001203659741
+      },
+      {
+        "condition_id": "0xc50f3d4ff8c916ac7e0016095aacdeb7047d94bec1586eb91e47c4625a11e95a",
+        "mse_improvement": 0.003001790551
+      },
+      {
+        "condition_id": "0xee5882e3e199bc3584f1c726fc5ed51c60859da1d07480ecb791217ebbbf5d15",
+        "mse_improvement": 0.001009467974
+      },
+      {
+        "condition_id": "0xf6af260317ee9b8cb0d220d5ec71dca40d133c3c8272a8fa4be9451d324e40da",
+        "mse_improvement": 0.002892688125
+      }
+    ],
+    "mse_improvement": 0.001883348181,
+    "positive_condition_fraction": 1.0,
+    "status": "exploratory_previously_consumed_partition"
+  }
+}

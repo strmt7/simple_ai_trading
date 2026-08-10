@@ -1,0 +1,93 @@
+{
+  "archives": [
+    {
+      "compressed_bytes": 2389965,
+      "date": "2026-04-27",
+      "filename": "BTCUSDT-1s-2026-04-27.zip",
+      "sha256": "de89f46d20d1df582d13f32d197bf062188948994a12dd5dab5919ae09cff5b5",
+      "source": "spot_1s",
+      "url": "https://data.binance.vision/data/spot/daily/klines/BTCUSDT/1s/BTCUSDT-1s-2026-04-27.zip"
+    },
+    {
+      "compressed_bytes": 2359088,
+      "date": "2026-06-15",
+      "filename": "BTCUSDT-1s-2026-06-15.zip",
+      "sha256": "cc87b079d0f2d58bbff122f45069d9ee15da9189138a117c8b9e6b141549d6ad",
+      "source": "spot_1s",
+      "url": "https://data.binance.vision/data/spot/daily/klines/BTCUSDT/1s/BTCUSDT-1s-2026-06-15.zip"
+    },
+    {
+      "compressed_bytes": 2386792,
+      "date": "2026-07-06",
+      "filename": "BTCUSDT-1s-2026-07-06.zip",
+      "sha256": "7a9c2cc7b61269cf0f0589366cb57c03742e0470b18e3d851d3a121d78417f6a",
+      "source": "spot_1s",
+      "url": "https://data.binance.vision/data/spot/daily/klines/BTCUSDT/1s/BTCUSDT-1s-2026-07-06.zip"
+    },
+    {
+      "compressed_bytes": 18161840,
+      "date": "2026-04-27",
+      "filename": "BTCUSDT-aggTrades-2026-04-27.zip",
+      "sha256": "18329167fd06906073131c60679fb28650d26f48fa011700001443923e847f84",
+      "source": "futures_aggTrades",
+      "url": "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-04-27.zip"
+    },
+    {
+      "compressed_bytes": 16643518,
+      "date": "2026-06-15",
+      "filename": "BTCUSDT-aggTrades-2026-06-15.zip",
+      "sha256": "8fd6768f10c80a11e54279d4584b1dbe468a3f8a42bad4083728f606ca12dd9a",
+      "source": "futures_aggTrades",
+      "url": "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-06-15.zip"
+    },
+    {
+      "compressed_bytes": 23746892,
+      "date": "2026-07-06",
+      "filename": "BTCUSDT-aggTrades-2026-07-06.zip",
+      "sha256": "54b6c7a3c17b0c330ae87cd5b0baa68547109b2e8ca1d7fedd30af03b9c83d57",
+      "source": "futures_aggTrades",
+      "url": "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2026-07-06.zip"
+    }
+  ],
+  "authority": {
+    "binance_account_api": false,
+    "binance_execution": false,
+    "live_trading": false,
+    "polymarket_authentication": false,
+    "polymarket_execution": false,
+    "profitability_claim": false
+  },
+  "data_contract": {
+    "archive_persistence": false,
+    "archive_transport": "bounded_https_download_to_memory",
+    "futures_aggregation": "aggregate_trades_to_utc_one_second_ohlc_quote_volume_signed_quote_volume_and_underlying_trade_count",
+    "futures_timestamp_unit": "milliseconds",
+    "maximum_compressed_archive_bytes": 33554432,
+    "maximum_uncompressed_member_bytes": 1073741824,
+    "official_checksum_required": true,
+    "maximum_causal_feature_history_seconds": 15,
+    "retained_window": "from_first_polymarket_condition_start_through_last_condition_end_for_each_date",
+    "spot_timestamp_unit": "microseconds_from_2025_onward",
+    "symbol": "BTCUSDT",
+    "zip_member": "exactly_one_flat_csv_matching_archive_basename"
+  },
+  "experimental_limits": {
+    "condition_level_labels_already_exist": true,
+    "economic_backtest_allowed": false,
+    "fresh_holdout_required_after_any_positive_exploratory_result": true,
+    "model_promotion_allowed": false,
+    "purpose": "bounded_exploratory_binance_predictor_ablation_after_round22_core_failure",
+    "round22_selection_partition_is_no_longer_sealed": true
+  },
+  "parents": {
+    "round22_diagnostic_result_sha256": "d12cd2529b88731b8fe95c3a2a9defeebf9facb2902b0ea4beb965ddfd48659a",
+    "round22_preregistration_sha256": "1014fd3ca79aa043acd4a79652a9503b1713eda22e64f04ecc95f0b374dddd75"
+  },
+  "research_sources": {
+    "binance_public_data": "https://github.com/binance/binance-public-data",
+    "data_host": "https://data.binance.vision"
+  },
+  "schema_version": "polymarket-round23-binance-lead-lag-source-v1",
+  "status": "frozen_before_archive_download_or_condition_level_label_join",
+  "source_contract_sha256": "3424105cc6374a623f9a2944c38a777d19ecc5f50444b2444827dce85e6a454a"
+}

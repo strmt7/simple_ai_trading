@@ -1,0 +1,21 @@
+{
+  "authority": {
+    "economic_backtest": false,
+    "live_trading": false,
+    "outcome_access": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "core_campaign_plan_sha256": "2c1d87577de566bd4934c9678bcbded5bf156b671a413b83fa6d463372db1d71",
+  "effective_specification_sha256": "d3923dff38211e07f1b9e65776000676291dd3d9656fd898f3bee66c1fce8f64",
+  "first_eligible_condition_start_ms": 1785801600000,
+  "frozen_at_utc": "2026-08-03T20:51:16.5932851Z",
+  "future_interval_data_accessed": false,
+  "future_target_constructed": false,
+  "performance_metric_computed": false,
+  "publication_sha256": "36554e1a8888c2f994205102472e2ea8c9bce2f9f8618f7a04c7522bebe47b5d",
+  "schema_version": "polymarket-round24-preregistration-publication-v1",
+  "sidecar_campaign_plan_sha256": "a0a0508c5e1b5c0d55d66cf98186b0e815e674d9a95c4318f3303337378fa518",
+  "status": "published_before_first_eligible_condition",
+  "superseded_specification_sha256": "80fca0a6381569b813462873bfa506533f4b547a992bd3717ae176cc3821e65d"
+}

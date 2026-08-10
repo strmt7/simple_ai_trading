@@ -1,0 +1,126 @@
+{
+  "authority": {
+    "ai_edge_claim": false,
+    "economic_backtest": false,
+    "live_trading": false,
+    "model_promotion": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "candidate_features": [
+    "binance.spot.log_return_1s_bps",
+    "binance.spot.log_return_5s_bps",
+    "binance.spot.log_return_15s_bps",
+    "binance.futures.log_return_1s_bps",
+    "binance.futures.log_return_5s_bps",
+    "binance.futures.log_return_15s_bps",
+    "binance.spot.signed_quote_share_1s",
+    "binance.spot.signed_quote_share_5s",
+    "binance.spot.signed_quote_share_15s",
+    "binance.futures.signed_quote_share_1s",
+    "binance.futures.signed_quote_share_5s",
+    "binance.futures.signed_quote_share_15s",
+    "binance.futures_spot_basis_bps",
+    "binance.futures_spot_basis_change_5s_bps"
+  ],
+  "causal_alignment": {
+    "binance_bar_eligibility": "bar_timestamp_ms_plus_1000_less_than_or_equal_to_polymarket_decision_time_ms",
+    "binance_history": "sixteen_exact_contiguous_source_seconds_supporting_returns_up_to_15_seconds",
+    "event_time_limitation": "Historical Binance archives contain source event time, not client receipt time; this experiment cannot establish an executable latency edge.",
+    "futures_no_trade_second": "use_contract_v2_zero_trade_bar_and_prior_traded_close_without_quote_or_book_claim",
+    "maximum_history_seconds": 15,
+    "polymarket_current_row": "available_tabular_anchor_with_complete_15_second_causal_history",
+    "polymarket_future_row": "exactly_1000ms_later_available_tabular_anchor_in_same_condition",
+    "target": "future_market_prior_up_logit_minus_current_market_prior_up_logit",
+    "target_horizon_ms": 1000
+  },
+  "data_selection": {
+    "fit_partition": "train",
+    "partitions": [
+      "train",
+      "tune_calibration",
+      "tune_selection"
+    ],
+    "probability_clip": [
+      0.005,
+      0.995
+    ],
+    "sample_weighting": "equal_total_weight_per_condition",
+    "sealed_test_access": false,
+    "standardization": "train_only_condition_weighted_mean_and_standard_deviation_then_clip_to_plus_or_minus_5",
+    "tune_selection_status": "previously_consumed_and_exploratory_only"
+  },
+  "evaluation": {
+    "bootstrap_draws": 100000,
+    "bootstrap_seed": 2301,
+    "changed_target_absolute_logit_minimum": 1e-06,
+    "cluster_unit": "polymarket_condition",
+    "mechanism_gate": {
+      "calibration_mse_improvement_strictly_positive": true,
+      "candidate_changed_row_sign_accuracy_minimum": 0.5,
+      "candidate_sign_accuracy_improvement_minimum": 0.01,
+      "positive_condition_fraction_minimum": 0.666666666667,
+      "selection_improvement_bootstrap_lower_95_strictly_positive": true,
+      "selection_improvement_probability_minimum": 0.95,
+      "selection_mse_improvement_strictly_positive": true
+    },
+    "primary_metric": "condition_equal_weight_mean_squared_logit_change_error",
+    "reference_model": "polymarket_only_ridge",
+    "secondary_metrics": [
+      "condition_equal_weight_mean_absolute_error",
+      "changed_row_direction_accuracy",
+      "pearson_correlation",
+      "positive_condition_fraction"
+    ],
+    "selection_partition": "tune_selection_exploratory_single_access_after_spec_freeze"
+  },
+  "knowledge_at_freeze": {
+    "binance_polymarket_relation_computed": false,
+    "condition_level_outcomes_used": false,
+    "future_polymarket_targets_constructed": false,
+    "performance_metric_computed": false,
+    "round22_condition_level_outcomes_exist_but_are_out_of_scope": true
+  },
+  "model": {
+    "baseline_features": [
+      "derived.market_prior_logit",
+      "up.spread",
+      "down.spread",
+      "up.depth_imbalance_l5",
+      "down.depth_imbalance_l5",
+      "microprice_sum_minus_one",
+      "buy_overround",
+      "sell_underround",
+      "absolute_book_age_skew_ms",
+      "elapsed_fraction",
+      "prior_logit_return_1000ms",
+      "prior_realized_logit_variation_1000ms",
+      "prior_logit_return_5000ms",
+      "prior_realized_logit_variation_5000ms",
+      "prior_logit_return_15000ms",
+      "prior_realized_logit_variation_15000ms"
+    ],
+    "candidate_form": "same_polymarket_baseline_plus_all_frozen_binance_features",
+    "calibration": "choose_zero_or_quarter_or_half_or_three_quarter_or_full_prediction_scale_on_tune_calibration_only_choose_smallest_scale_on_tie",
+    "l2_penalty_grid": [
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "penalty_selection": "train_only_leave_one_condition_out_condition_equal_mse_choose_largest_penalty_on_tie",
+    "solver": "deterministic_weighted_closed_form_ridge_with_unpenalized_intercept",
+    "training_seed": 2301
+  },
+  "parents": {
+    "binance_ingestion_result_sha256": "477d9982d2348e7cbb5eb3c66283597ebdf0687467bb34c4e8acae97e5a90276",
+    "binance_source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0",
+    "binance_source_qualification_sha256": "3cf328dfee5d653690eba79ec0b9c7de818006ea6391506a0033d05ec9aa240d",
+    "round22_feature_names_sha256": "7a70392566e62494d4f5361500b0667dc92a4c4e80139f2033fd0a34256e9e8d",
+    "round22_feature_policy_sha256": "9de2a470a7ef64dc802e5fc4df88b8acfd20ad929a8afb5fd2704a1b94e4725e"
+  },
+  "schema_version": "polymarket-round23-lead-lag-model-spec-v1",
+  "specification_sha256": "03e4fae64f34f835cac338dee111701c73419929e97a22939e12037eba8dfec9",
+  "status": "frozen_before_binance_polymarket_relation_future_target_construction_or_metric_computation"
+}

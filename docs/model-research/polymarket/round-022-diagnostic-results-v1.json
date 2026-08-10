@@ -1,0 +1,315 @@
+{
+  "authority": {
+    "ai_edge_claim": false,
+    "economic_backtest": false,
+    "live_trading": false,
+    "model_promotion": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "calibration_partition": {
+    "calibrated": {
+      "baseline": {
+        "brier_score": 0.14872233614,
+        "log_loss": 0.4442701183,
+        "threshold_accuracy": 0.742954814414
+      },
+      "condition_count": 12,
+      "model": {
+        "brier_score": 0.137711962959,
+        "calibration_intercept": -0.158321295469,
+        "calibration_slope": 1.686564621271,
+        "log_loss": 0.420106251312,
+        "threshold_accuracy": 0.791224700929
+      },
+      "row_count": 2960
+    },
+    "intercept": -0.304032524971,
+    "raw": {
+      "baseline": {
+        "brier_score": 0.14872233614,
+        "log_loss": 0.4442701183,
+        "threshold_accuracy": 0.742954814414
+      },
+      "condition_count": 12,
+      "model": {
+        "brier_score": 0.141213168474,
+        "calibration_intercept": -0.671091800314,
+        "calibration_slope": 1.686564620495,
+        "log_loss": 0.427764671912,
+        "threshold_accuracy": 0.799333618618
+      },
+      "row_count": 2960
+    },
+    "residual_scale": 1.0
+  },
+  "conclusion": "diagnostic_candidate_falsified",
+  "diagnostic_pass": false,
+  "fit": {
+    "coefficients_standardized": [
+      {
+        "feature": "up.spread",
+        "value": 8.8747318e-05
+      },
+      {
+        "feature": "down.spread",
+        "value": 9.736434e-05
+      },
+      {
+        "feature": "up.depth_imbalance_l5",
+        "value": -0.000203690781
+      },
+      {
+        "feature": "down.depth_imbalance_l5",
+        "value": 0.000227295052
+      },
+      {
+        "feature": "microprice_sum_minus_one",
+        "value": 9.7007834e-05
+      },
+      {
+        "feature": "buy_overround",
+        "value": 0.000169204998
+      },
+      {
+        "feature": "sell_underround",
+        "value": -3.122562e-06
+      },
+      {
+        "feature": "absolute_book_age_skew_ms",
+        "value": -2.5067697e-05
+      },
+      {
+        "feature": "elapsed_fraction",
+        "value": 9.9584756e-05
+      },
+      {
+        "feature": "prior_logit_return_1000ms",
+        "value": 4.7411802e-05
+      },
+      {
+        "feature": "prior_realized_logit_variation_1000ms",
+        "value": 0.000147490493
+      },
+      {
+        "feature": "prior_logit_return_5000ms",
+        "value": 7.4559358e-05
+      },
+      {
+        "feature": "prior_realized_logit_variation_5000ms",
+        "value": 0.000222739449
+      },
+      {
+        "feature": "prior_logit_return_15000ms",
+        "value": 0.000167305869
+      },
+      {
+        "feature": "prior_realized_logit_variation_15000ms",
+        "value": 0.000271682569
+      }
+    ],
+    "cross_validation_log_loss_by_penalty": {
+      "0.1": 0.419471096936,
+      "1.0": 0.415672824799,
+      "10.0": 0.415406209649,
+      "100.0": 0.415393843826
+    },
+    "intercept": 0.83768705088,
+    "selected_l2_penalty": 100.0
+  },
+  "implementation": {
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1"
+  },
+  "label_counts": {
+    "train": {
+      "Down": 4,
+      "Up": 8
+    },
+    "tune_calibration": {
+      "Down": 5,
+      "Up": 7
+    },
+    "tune_selection": {
+      "Down": 5,
+      "Up": 7
+    }
+  },
+  "parents": {
+    "diagnostic_preregistration_sha256": "1014fd3ca79aa043acd4a79652a9503b1713eda22e64f04ecc95f0b374dddd75",
+    "feature_names_sha256": "7a70392566e62494d4f5361500b0667dc92a4c4e80139f2033fd0a34256e9e8d",
+    "feature_policy_sha256": "9de2a470a7ef64dc802e5fc4df88b8acfd20ad929a8afb5fd2704a1b94e4725e",
+    "model_specification_sha256": "0d457942b0d84ecc703d882f66a1a560234f65c4a99e97a0841cd50faa152107",
+    "target_access_claim_sha256": "d9e3f0b99ab87a70761b7da8f3a3fdf46a7f504de60a8f689330b79a4d52679f",
+    "target_implementation_manifest_sha256": "53a4ba665b3524a749a2daa1f6c33ecbd1e9cff8c4a89ee9f93f6882d9e56e5f"
+  },
+  "partitions": {
+    "train": {
+      "condition_count": 12,
+      "row_count": 2813
+    },
+    "tune_calibration": {
+      "condition_count": 12,
+      "row_count": 2960
+    },
+    "tune_selection": {
+      "condition_count": 12,
+      "row_count": 2941
+    }
+  },
+  "result_sha256": "d12cd2529b88731b8fe95c3a2a9defeebf9facb2902b0ea4beb965ddfd48659a",
+  "schema_version": "polymarket-round22-diagnostic-result-v1",
+  "selection": {
+    "bootstrap": {
+      "brier": {
+        "improvement_ci_2_5": -0.060385477763,
+        "improvement_ci_97_5": 0.04546593886,
+        "improvement_mean": -0.007651266348,
+        "improvement_probability": 0.39157
+      },
+      "draws": 100000,
+      "log_loss": {
+        "improvement_ci_2_5": -0.15539745759,
+        "improvement_ci_97_5": 0.118212078472,
+        "improvement_mean": -0.017378361434,
+        "improvement_probability": 0.40498
+      },
+      "seed": 2201
+    },
+    "by_elapsed_horizon": [
+      {
+        "baseline": {
+          "brier_score": 0.312949585984,
+          "log_loss": 0.844079101512,
+          "threshold_accuracy": 0.418981481481
+        },
+        "condition_count": 12,
+        "elapsed_seconds": [
+          15,
+          60
+        ],
+        "model": {
+          "brier_score": 0.306741345819,
+          "calibration_intercept": 0.629220474041,
+          "calibration_slope": -0.420220624783,
+          "log_loss": 0.845156520418,
+          "threshold_accuracy": 0.497643097643
+        },
+        "row_count": 538
+      },
+      {
+        "baseline": {
+          "brier_score": 0.289437751383,
+          "log_loss": 0.811749196965,
+          "threshold_accuracy": 0.519444444444
+        },
+        "condition_count": 12,
+        "elapsed_seconds": [
+          60,
+          120
+        ],
+        "model": {
+          "brier_score": 0.300104677854,
+          "calibration_intercept": 0.241581731625,
+          "calibration_slope": 0.102382578152,
+          "log_loss": 0.837100218891,
+          "threshold_accuracy": 0.502777777778
+        },
+        "row_count": 720
+      },
+      {
+        "baseline": {
+          "brier_score": 0.219220419831,
+          "log_loss": 0.609804909412,
+          "threshold_accuracy": 0.602921455939
+        },
+        "condition_count": 12,
+        "elapsed_seconds": [
+          120,
+          180
+        ],
+        "model": {
+          "brier_score": 0.231724061698,
+          "calibration_intercept": -0.174106462451,
+          "calibration_slope": 0.633418226855,
+          "log_loss": 0.628740430477,
+          "threshold_accuracy": 0.575
+        },
+        "row_count": 698
+      },
+      {
+        "baseline": {
+          "brier_score": 0.185911290652,
+          "log_loss": 0.539363827816,
+          "threshold_accuracy": 0.729238329238
+        },
+        "condition_count": 11,
+        "elapsed_seconds": [
+          180,
+          240
+        ],
+        "model": {
+          "brier_score": 0.200223792992,
+          "calibration_intercept": -0.473772468724,
+          "calibration_slope": 0.791426503418,
+          "log_loss": 0.574080511389,
+          "threshold_accuracy": 0.68705978706
+        },
+        "row_count": 588
+      },
+      {
+        "baseline": {
+          "brier_score": 0.146739353974,
+          "log_loss": 0.439175165955,
+          "threshold_accuracy": 0.791841568018
+        },
+        "condition_count": 9,
+        "elapsed_seconds": [
+          240,
+          296
+        ],
+        "model": {
+          "brier_score": 0.156522210882,
+          "calibration_intercept": -0.428898571492,
+          "calibration_slope": 0.943243017156,
+          "log_loss": 0.452612415521,
+          "threshold_accuracy": 0.742209206915
+        },
+        "row_count": 397
+      }
+    ],
+    "calibrated": {
+      "baseline": {
+        "brier_score": 0.227071883273,
+        "log_loss": 0.643714858636,
+        "threshold_accuracy": 0.624010832003
+      },
+      "condition_count": 12,
+      "model": {
+        "brier_score": 0.234723149621,
+        "calibration_intercept": -0.127095489906,
+        "calibration_slope": 0.55371594784,
+        "log_loss": 0.66109322007,
+        "threshold_accuracy": 0.615169131225
+      },
+      "row_count": 2941
+    },
+    "raw": {
+      "baseline": {
+        "brier_score": 0.227071883273,
+        "log_loss": 0.643714858636,
+        "threshold_accuracy": 0.624010832003
+      },
+      "condition_count": 12,
+      "model": {
+        "brier_score": 0.24451621715,
+        "calibration_intercept": -0.295444706263,
+        "calibration_slope": 0.553720066489,
+        "log_loss": 0.691999548563,
+        "threshold_accuracy": 0.606936438414
+      },
+      "row_count": 2941
+    }
+  },
+  "status": "diagnostic_only_not_economic_or_promotable"
+}

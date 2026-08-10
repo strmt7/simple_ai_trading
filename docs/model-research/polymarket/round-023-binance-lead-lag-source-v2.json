@@ -1,0 +1,42 @@
+{
+  "authority": {
+    "binance_account_api": false,
+    "binance_execution": false,
+    "live_trading": false,
+    "polymarket_authentication": false,
+    "polymarket_execution": false,
+    "profitability_claim": false
+  },
+  "effective_archive_population": {
+    "archive_count": 6,
+    "parent_contract_sha256": "3424105cc6374a623f9a2944c38a777d19ecc5f50444b2444827dce85e6a454a",
+    "symbol": "BTCUSDT"
+  },
+  "experimental_limits": {
+    "condition_level_labels_already_exist": true,
+    "economic_backtest_allowed": false,
+    "fresh_holdout_required_after_any_positive_exploratory_result": true,
+    "model_promotion_allowed": false,
+    "remaining_archives_unseen_when_frozen": true
+  },
+  "futures_no_trade_second_policy": {
+    "base_volume": "0",
+    "close_price": "prior_observed_trade_close",
+    "high_price": "prior_observed_trade_close",
+    "leading_no_trade_second": "fail_closed_without_a_prior_same_archive_trade",
+    "low_price": "prior_observed_trade_close",
+    "open_price": "prior_observed_trade_close",
+    "quote_or_book_claim": false,
+    "quote_volume": "0",
+    "signed_quote_volume": "0",
+    "trade_count": 0,
+    "trigger": "no_aggregate_trade_timestamp_in_a_checksum_verified_source_second"
+  },
+  "parents": {
+    "source_contract_v1_sha256": "3424105cc6374a623f9a2944c38a777d19ecc5f50444b2444827dce85e6a454a",
+    "source_qualification_attempt1_sha256": "c5790ee5580fe9d9b43fbb9319d32c729a99ce25d10f39f10c7477790cedef56"
+  },
+  "schema_version": "polymarket-round23-binance-lead-lag-source-v2",
+  "source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0",
+  "status": "frozen_after_first_source_qualification_before_remaining_archive_download_feature_construction_or_label_join"
+}

@@ -1,0 +1,139 @@
+{
+  "authority": {
+    "ai_edge_claim": false,
+    "economic_backtest": false,
+    "live_trading": false,
+    "model_promotion": false,
+    "outcome_access": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "candidate_features": [
+    "spot.trade_log_return_1000ms_bps",
+    "spot.trade_log_return_5000ms_bps",
+    "spot.trade_log_return_15000ms_bps",
+    "usdm.trade_log_return_1000ms_bps",
+    "usdm.trade_log_return_5000ms_bps",
+    "usdm.trade_log_return_15000ms_bps",
+    "spot.trade_signed_quote_imbalance_1000ms",
+    "spot.trade_signed_quote_imbalance_5000ms",
+    "spot.trade_signed_quote_imbalance_15000ms",
+    "usdm.trade_signed_quote_imbalance_1000ms",
+    "usdm.trade_signed_quote_imbalance_5000ms",
+    "usdm.trade_signed_quote_imbalance_15000ms",
+    "usdm.log_mid_basis_bps",
+    "usdm.mid_basis_change_5000ms_bps",
+    "spot.book_receipt_age_ms",
+    "usdm.book_receipt_age_ms",
+    "usdm.spot_minus_usdm_book_receipt_skew_ms"
+  ],
+  "data": {
+    "campaign_end_ms": 1788046800000,
+    "campaign_start_ms": 1785454800000,
+    "core_campaign_plan_sha256": "2c1d87577de566bd4934c9678bcbded5bf156b671a413b83fa6d463372db1d71",
+    "fresh_condition_start_minimum_ms": 1785801600000,
+    "future_target_horizon_ms": 1000,
+    "required_decision_alignment_ms": 1000,
+    "sidecar_campaign_plan_sha256": "a0a0508c5e1b5c0d55d66cf98186b0e815e674d9a95c4318f3303337378fa518",
+    "source": "terminal_integrity_qualified_round20_core_and_independent_round21_public_binance_sidecar",
+    "target": "future_normalized_market_prior_up_logit_minus_current_normalized_market_prior_up_logit",
+    "target_source": "future_polymarket_feature_row_only_without_official_resolution"
+  },
+  "evaluation": {
+    "bootstrap_draws": 100000,
+    "bootstrap_seed": 2401,
+    "changed_target_absolute_logit_minimum": 1e-06,
+    "cluster_unit": "polymarket_condition",
+    "mechanism_gate": {
+      "calibration_mse_improvement_strictly_positive": true,
+      "candidate_changed_row_sign_accuracy_minimum": 0.51,
+      "candidate_sign_accuracy_improvement_minimum": 0.01,
+      "positive_condition_fraction_minimum": 0.6,
+      "selection_improvement_bootstrap_lower_95_strictly_positive": true,
+      "selection_improvement_probability_minimum": 0.99,
+      "selection_mse_relative_improvement_minimum": 0.02,
+      "selection_mse_improvement_strictly_positive": true
+    },
+    "primary_metric": "condition_equal_mean_squared_logit_change_error",
+    "selection_access": "once_after_train_fit_and_calibration_are_frozen",
+    "secondary_metrics": [
+      "condition_equal_mean_absolute_error",
+      "changed_row_direction_accuracy",
+      "pearson_correlation",
+      "positive_condition_fraction"
+    ]
+  },
+  "knowledge_at_freeze": {
+    "capture_active": true,
+    "condition_outcomes_accessed": false,
+    "future_interval_data_accessed": false,
+    "future_targets_constructed": false,
+    "performance_metrics_computed": false,
+    "round23_exploratory_result_known": true
+  },
+  "minimum_population": {
+    "train_conditions": 2000,
+    "tune_calibration_conditions": 400,
+    "tune_selection_conditions": 400
+  },
+  "model": {
+    "baseline_features": [
+      "derived.market_prior_logit",
+      "core.up_spread",
+      "core.down_spread",
+      "derived.up_depth_imbalance_5",
+      "derived.down_depth_imbalance_5",
+      "derived.microprice_sum_minus_one",
+      "core.complement_buy_overround",
+      "core.complement_sell_underround",
+      "derived.absolute_book_receipt_skew_ms",
+      "core.elapsed_fraction",
+      "core.up_microprice_log_return_1000ms",
+      "core.down_microprice_log_return_1000ms",
+      "core.up_microprice_log_return_5000ms",
+      "core.down_microprice_log_return_5000ms",
+      "core.up_microprice_log_return_15000ms",
+      "core.down_microprice_log_return_15000ms"
+    ],
+    "calibration": "choose_zero_or_quarter_or_half_or_three_quarter_or_full_prediction_scale_on_tune_calibration_only_choose_smallest_scale_on_tie",
+    "candidate_form": "same_receipt_time_polymarket_baseline_plus_all_frozen_public_binance_features",
+    "l2_penalty_grid": [
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "penalty_selection": "train_only_leave_one_condition_out_condition_equal_mse_choose_largest_penalty_on_tie",
+    "sample_weighting": "equal_total_weight_per_condition",
+    "solver": "deterministic_weighted_closed_form_ridge_with_unpenalized_intercept",
+    "standardization": "train_only_condition_weighted_mean_and_standard_deviation_then_clip_to_plus_or_minus_5"
+  },
+  "parents": {
+    "round21_core_corpus_design_sha256": "0ec926fce06713bd022d493952c53ac8d9bb960fa912a1435d1a3d39cca2de2f",
+    "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba",
+    "round21_feature_policy_sha256": "a0ca1f9f5631a6f3d8b7710c20d2679cf6b50ad6b269548824d87503d80dbe5b",
+    "round21_feature_schema_sha256": "af21c256f404188cbfc041c203b0a69ab5cfd1404594c1b1d1974eb2f45723e5",
+    "round23_result_sha256": "c3385d4894ca430a91442d1023bf01f61c650f6d208a4d0f89d11007ee5a11c0"
+  },
+  "partitions": [
+    {
+      "end_ms": 1787010000000,
+      "role": "train",
+      "start_ms": 1785801600000
+    },
+    {
+      "end_ms": 1787226000000,
+      "role": "tune_calibration",
+      "start_ms": 1787011800000
+    },
+    {
+      "end_ms": 1787442000000,
+      "role": "tune_selection",
+      "start_ms": 1787226000000
+    }
+  ],
+  "schema_version": "polymarket-round24-prospective-receipt-lead-lag-spec-v1",
+  "specification_sha256": "80fca0a6381569b813462873bfa506533f4b547a992bd3717ae176cc3821e65d",
+  "status": "frozen_before_future_condition_start_or_data_access"
+}

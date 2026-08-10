@@ -1,0 +1,83 @@
+{
+  "schema_version": "polymarket-public-clob-live-probe-v1",
+  "observed_at_utc": "2026-08-10T09:57:04.387Z",
+  "observed_at_ms": 1786355824387,
+  "scope": {
+    "asset": "BTC",
+    "market_variant": "fiveminute",
+    "credentials_accessed": false,
+    "orders_submitted": 0,
+    "wallet_accessed": false,
+    "trading_authority": false
+  },
+  "sources": {
+    "clob_base_url": "https://clob.polymarket.com",
+    "gamma_markets_url": "https://gamma-api.polymarket.com/markets",
+    "required_resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams"
+  },
+  "protocol_version": 2,
+  "market_count": 2,
+  "markets": [
+    {
+      "slug": "btc-updown-5m-1786355700",
+      "condition_id": "0x6d23b83dc0b76e93416a8af395bdba8212b3680d46732fc92e7c8f221b7a08c3",
+      "event_start_ms": 1786355700000,
+      "end_ms": 1786356000000,
+      "resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+      "fee_rate": "0.07",
+      "fee_exponent": 1,
+      "clob_info_sha256": "75496e8cb318d4f7ef3c0d963470509f5c5b75ef33f7a33f0f3e9073b62c5a12",
+      "books": [
+        {
+          "token_id_suffix": "87519876",
+          "bid_levels": 81,
+          "ask_levels": 18,
+          "source_age_ms": 0,
+          "payload_sha256": "916b13f59ab16e255078312ba8a5118724b5270f9ebcc5e3525023acff5e6c60"
+        },
+        {
+          "token_id_suffix": "45188531",
+          "bid_levels": 18,
+          "ask_levels": 81,
+          "source_age_ms": 0,
+          "payload_sha256": "c15bea6ad162dbd19d34745f10db4467219208eb850f86dfdb476879859a3b8b"
+        }
+      ]
+    },
+    {
+      "slug": "btc-updown-5m-1786356000",
+      "condition_id": "0xe13a15cf5d4091c87bce4b62390e382ea2c9e40c630c9955a25602e84effcfb3",
+      "event_start_ms": 1786356000000,
+      "end_ms": 1786356300000,
+      "resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+      "fee_rate": "0.07",
+      "fee_exponent": 1,
+      "clob_info_sha256": "bada26596538a3d4f7f9bcce3781a2a81005718136139b2b7d70e0274706aa8b",
+      "books": [
+        {
+          "token_id_suffix": "81623211",
+          "bid_levels": 50,
+          "ask_levels": 49,
+          "source_age_ms": 1277,
+          "payload_sha256": "d7f7ff72187938db8cb151051e8aa205d9260e02f437d90a0e38f5a76e01d1a6"
+        },
+        {
+          "token_id_suffix": "75433363",
+          "bid_levels": 49,
+          "ask_levels": 50,
+          "source_age_ms": 1311,
+          "payload_sha256": "5fe1d21fa48be8755d8339ed0404cd971c0cdf93a9daebab7c40c331ba847b8a"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "gamma_clob_identity_matched": true,
+    "fee_schedule_matched": true,
+    "twap_resolution_contract_matched": true,
+    "all_books_strictly_validated": true,
+    "predictive_edge_tested": false,
+    "profitability_tested": false,
+    "live_readiness_proved": false
+  }
+}

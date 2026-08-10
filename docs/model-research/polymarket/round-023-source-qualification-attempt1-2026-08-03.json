@@ -1,0 +1,44 @@
+{
+  "authority": {
+    "authentication_used": false,
+    "binance_execution": false,
+    "database_mutated": false,
+    "live_trading": false,
+    "polymarket_execution": false,
+    "raw_archive_persisted": false
+  },
+  "futures_aggTrades": {
+    "archive_date": "2026-04-27",
+    "archive_download_count": 2,
+    "archive_sha256": "18329167fd06906073131c60679fb28650d26f48fa011700001443923e847f84",
+    "first_missing_timestamp_ms": 1777249012000,
+    "first_timestamp_ms": 1777248000000,
+    "last_missing_timestamp_ms": 1777250372000,
+    "last_timestamp_ms": 1777251599000,
+    "missing_second_count": 23,
+    "observed_traded_second_count": 3577,
+    "qualification": "failed_v1_exact_observed_second_coverage",
+    "source_window_seconds": 3600
+  },
+  "observed_at_utc": "2026-08-03T20:17:53.6163988Z",
+  "parent_source_contract_sha256": "3424105cc6374a623f9a2944c38a777d19ecc5f50444b2444827dce85e6a454a",
+  "resolution": {
+    "financial_interpretation": "A checksum-verified aggregate-trade archive can legitimately contain seconds with no aggregate trade. Such seconds are not evidence of a quote, book, or executable price.",
+    "next_contract": "Deterministically retain trade_count=0, base_volume=0, quote_volume=0, and signed_quote_volume=0 while carrying only the prior traded close into OHLC. A missing leading price remains a hard failure.",
+    "v1_assumption": "Every retained futures second has at least one aggregate trade.",
+    "v1_assumption_status": "falsified"
+  },
+  "schema_version": "polymarket-round23-source-qualification-attempt-v1",
+  "spot_1s": {
+    "archive_date": "2026-04-27",
+    "archive_download_count": 1,
+    "archive_sha256": "de89f46d20d1df582d13f32d197bf062188948994a12dd5dab5919ae09cff5b5",
+    "elapsed_seconds": 2.536,
+    "first_timestamp_ms": 1777248000000,
+    "last_timestamp_ms": 1777251599000,
+    "qualification": "passed",
+    "row_chain_sha256": "9dca2ba44786b727abbf9748264b81c3084a2981510f06aafbc73610ea3f61c7",
+    "row_count": 3600
+  },
+  "status": "immutable_failed_assumption_evidence"
+}

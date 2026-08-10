@@ -1,0 +1,71 @@
+{
+  "archives": [
+    {
+      "archive_date": "2026-04-27",
+      "row_chain_sha256": "dd41da39b07073d27e76460cb22a1b72705e34d663a03d14ce7ea14ec82d5bfe",
+      "row_count": 3600,
+      "source": "futures_aggTrades",
+      "zero_trade_second_count": 23
+    },
+    {
+      "archive_date": "2026-06-15",
+      "row_chain_sha256": "fb7a6624e5f37101545fc535c16d6e2c60c5c1c443c41887d903b3b1a35d10da",
+      "row_count": 3600,
+      "source": "futures_aggTrades",
+      "zero_trade_second_count": 14
+    },
+    {
+      "archive_date": "2026-07-06",
+      "row_chain_sha256": "eb99996c30bd23e65c749b503c823009ae76ecc07ea23c5474dad54d06660001",
+      "row_count": 3600,
+      "source": "futures_aggTrades",
+      "zero_trade_second_count": 33
+    },
+    {
+      "archive_date": "2026-04-27",
+      "row_chain_sha256": "9dca2ba44786b727abbf9748264b81c3084a2981510f06aafbc73610ea3f61c7",
+      "row_count": 3600,
+      "source": "spot_1s",
+      "zero_trade_second_count": 472
+    },
+    {
+      "archive_date": "2026-06-15",
+      "row_chain_sha256": "420ece842639d0f7dbad15ea23600f127f4f90feefe6aa592472cbdefd4ddf3e",
+      "row_count": 3600,
+      "source": "spot_1s",
+      "zero_trade_second_count": 426
+    },
+    {
+      "archive_date": "2026-07-06",
+      "row_chain_sha256": "08979ec36d084f5701e85b7011b21b4d62eae023bdd5c50991aab226b3947614",
+      "row_count": 3600,
+      "source": "spot_1s",
+      "zero_trade_second_count": 597
+    }
+  ],
+  "authority": {
+    "authentication_used": false,
+    "binance_execution": false,
+    "condition_level_target_values_accessed": false,
+    "live_trading": false,
+    "polymarket_execution": false,
+    "raw_archive_persisted": false
+  },
+  "database": {
+    "after_bytes": 52441088,
+    "before_bytes": 52441088,
+    "physical_growth_bytes": 0,
+    "retained_row_count": 21600,
+    "schema": "exploratory"
+  },
+  "first_ingestion_elapsed_seconds": 21.8,
+  "idempotent_replay": {
+    "downloaded_archive_count": 0,
+    "elapsed_seconds": 1.0,
+    "replayed_row_count": 21600,
+    "status": "passed"
+  },
+  "parent_source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0",
+  "schema_version": "polymarket-round23-binance-ingestion-result-v1",
+  "status": "complete_and_integrity_replayed"
+}
