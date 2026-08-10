@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 39717,
+      "bytes": 41040,
       "path": "latest/README.md",
-      "sha256": "1cafcca0b36f9cb8326d48a944c8fdad864027ca9e3107504a047e92ca801c43"
+      "sha256": "4e860fbf4ea9d3c4df680a450c9655f229fe35479bc094b4b2ce358faa5f3735"
     },
     {
       "bytes": 77606,
@@ -287,6 +287,41 @@
       "sha256": "484fb7b3670443f963b825fc516e6b396464e041f7d0f32d873f03c637c66e18"
     },
     {
+      "bytes": 5590,
+      "path": "round-025-fin-r1-regime-supervisor-contract-v1.json",
+      "sha256": "b607cfe29f11ab858caca16ef768b96848017eaba8518b2a33d989ae1a018c5b"
+    },
+    {
+      "bytes": 10787,
+      "path": "round-025-fin-r1-regime-supervisor-host-probe-v2-2026-08-10.json",
+      "sha256": "8668074d5e165af0571c249a24583b856de34617bad1347f0b2e1981346e40c5"
+    },
+    {
+      "bytes": 3288,
+      "path": "round-025-fin-r1-regime-supervisor-infrastructure-failure-v1-2026-08-10.json",
+      "sha256": "6c08b45e6ff35abe53a937d7d472bb74171fc9c67794c03f6e132a134c01c522"
+    },
+    {
+      "bytes": 2782,
+      "path": "round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json",
+      "sha256": "52c8cc3ba4d49a56bbb54b7a5f755a64ec362d287e9645e0cc4dc3911bc162f1"
+    },
+    {
+      "bytes": 3014,
+      "path": "round-025-fin-r1-regime-supervisor-scenario-contract-v1.json",
+      "sha256": "c944693e01eb96674569265f132bca53de4e185380e8fae61def3be0b68e9df9"
+    },
+    {
+      "bytes": 2361,
+      "path": "round-025-fin-r1-regime-supervisor-scenario-contract-v2.json",
+      "sha256": "7fdd8bf7cded824f91915d58eb7bbd956118a6211cb6c8bec155e7f74ae0bac2"
+    },
+    {
+      "bytes": 2691,
+      "path": "round-025-fin-r1-regime-supervisor-uplift-contract-v1.json",
+      "sha256": "4b3f37a0b0b67eb230836c0166f14158a7ddc367f244c615610e1df503f461d2"
+    },
+    {
       "bytes": 4039,
       "path": "round-025-lightgbm-fit-contract-v1.json",
       "sha256": "93b43003b13a97d1d9efc2b668b23e005d21e910ce7e7bea61067aebe806947c"
@@ -354,7 +389,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 25,
   "live_trading_authority": false,
-  "manifest_sha256": "fbade21dbd80cbed2d5c56133040d15de7628e6ccb07868c88a555fe63bf04fb",
+  "manifest_sha256": "d7c0ca1fa685d0fed64dbe289e40cbdee07a60012ee0df26fcc9f5ed5b448051",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -379,6 +414,12 @@
   "round25_control_model_fitted": false,
   "round25_development_dataset_contract_implemented": true,
   "round25_feature_contract_implemented": true,
+  "round25_fin_r1_supervisor_behavior_passed": false,
+  "round25_fin_r1_supervisor_called_by_execution": false,
+  "round25_fin_r1_supervisor_candidate_rejected": true,
+  "round25_fin_r1_supervisor_contract_frozen": true,
+  "round25_fin_r1_supervisor_uplift_evaluation_allowed": false,
+  "round25_fin_r1_supervisor_uplift_evaluator_implemented": true,
   "round25_lightgbm_fit_contract_frozen": true,
   "round25_lightgbm_model_fitted": false,
   "round25_lightgbm_operator_implemented": true,
@@ -409,5 +450,5 @@
   "source_dataset_sha256": "a6fd7f55ec7705d391a035b923c4440c3f92ddfb5b1b169ee6b7df3d67aa7665",
   "source_evaluation_artifact_sha256": "c3385d4894ca430a91442d1023bf01f61c650f6d208a4d0f89d11007ee5a11c0",
   "source_pretest_artifact_sha256": "03e4fae64f34f835cac338dee111701c73419929e97a22939e12037eba8dfec9",
-  "status": "round25_v2_waiting_ai_behavior_qualified_uplift_evaluator_implemented"
+  "status": "round25_v2_waiting_fast_ai_behavior_qualified_fin_r1_supervisor_rejected"
 }

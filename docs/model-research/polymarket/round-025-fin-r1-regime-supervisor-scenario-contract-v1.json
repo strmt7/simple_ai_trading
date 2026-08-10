@@ -1,0 +1,90 @@
+{
+  "schema_version": "polymarket-round25-fin-r1-regime-supervisor-scenario-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:53:50Z",
+  "status": "frozen_before_candidate_scenario_responses",
+  "supervisor_contract_sha256": "83aaed6dd3a37a5f3930384d7697131a3e656ee2c2a778c75b299bfdd669dda7",
+  "candidate_id": "fin-r1-8b-regime-supervisor-v1",
+  "scenario_order": [
+    "benign_base",
+    "benign_repeat",
+    "mild_spread",
+    "low_depth",
+    "volatile",
+    "risk_budget_elevated",
+    "combined_soft_crisis"
+  ],
+  "scenario_overrides": {
+    "benign_base": {},
+    "benign_repeat": {},
+    "mild_spread": {
+      "clob_relative_spread_median_60s": 0.025,
+      "clob_relative_spread_p95_60s": 0.05,
+      "round_trip_cost_bps_p95_60s": 55.0
+    },
+    "low_depth": {
+      "clob_top_executable_notional_p10_usd_60s": 150.0
+    },
+    "volatile": {
+      "realized_volatility_60s": 0.02,
+      "realized_volatility_300s": 0.035,
+      "absolute_log_return_60s": 0.018,
+      "absolute_log_return_300s": 0.03,
+      "market_probability_range_60s": 0.22
+    },
+    "risk_budget_elevated": {
+      "portfolio_risk_utilization": 0.88,
+      "current_condition_exposure_fraction": 0.16
+    },
+    "combined_soft_crisis": {
+      "clob_relative_spread_median_60s": 0.04,
+      "clob_relative_spread_p95_60s": 0.09,
+      "clob_top_executable_notional_p10_usd_60s": 80.0,
+      "clob_book_receipt_age_p95_ms_60s": 450.0,
+      "reference_receipt_age_p95_ms_60s": 850.0,
+      "realized_volatility_60s": 0.035,
+      "realized_volatility_300s": 0.06,
+      "absolute_log_return_60s": 0.03,
+      "absolute_log_return_300s": 0.05,
+      "absolute_order_flow_imbalance_mean_60s": 0.85,
+      "market_probability_range_60s": 0.35,
+      "round_trip_cost_bps_p95_60s": 95.0,
+      "portfolio_risk_utilization": 0.94,
+      "current_condition_exposure_fraction": 0.2
+    }
+  },
+  "action_ordinal": {
+    "normal": 0,
+    "cautious_50": 1,
+    "defensive_25": 2,
+    "halt_300s": 3
+  },
+  "checks": {
+    "all_seven_responses_valid": true,
+    "all_responses_within_30_seconds": true,
+    "all_responses_fully_gpu_resident": true,
+    "benign_repeat_matches": true,
+    "benign_at_most_cautious": true,
+    "combined_crisis_at_least_defensive": true,
+    "at_least_two_distinct_actions": true,
+    "benign_to_each_single_stress_to_combined_is_nondecreasing": true,
+    "model_unloaded_after_probe": true
+  },
+  "response_use": {
+    "market_data_accessed": false,
+    "target_outcome_resolution_fill_or_pnl_accessed": false,
+    "model_selected": false,
+    "economic_uplift_evaluated": false,
+    "same_candidate_prompt_tuning_after_failure_allowed": false,
+    "paper_or_live_authority": false
+  },
+  "claims": {
+    "predictive_edge_verified": false,
+    "ai_uplift_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "9828aaf05deafe776c09a26c4e4cc0578762b9c53efa6c75ef83d4c3dc14dac4"
+}

@@ -1,0 +1,131 @@
+{
+  "schema_version": "polymarket-round25-fin-r1-regime-supervisor-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:41:02Z",
+  "status": "frozen_target_free_mechanics_before_host_probe",
+  "purpose": "evaluate_whether_a_slow_finance_specialized_model_adds_incremental_entry_risk_control_beyond_ml_and_the_fast_qwen_reviewer",
+  "research_basis": {
+    "fin_r1_repository": "https://github.com/SUFE-AIFLM-Lab/Fin-R1",
+    "fin_r1_paper": "https://arxiv.org/abs/2503.16252",
+    "realfin_2026_paper": "https://aclanthology.org/2026.findings-acl.1255/",
+    "supported_inference": "fin_r1_is_a_plausible_abstention_reviewer_because_primary_benchmarks_show_financial_reasoning_and_missing_premise_detection_but_do_not_establish_market_prediction_or_profitability",
+    "unsupported_inferences": [
+      "finance_qa_accuracy_implies_market_edge",
+      "parameter_count_implies_trading_quality",
+      "one_target_free_response_implies_economic_uplift"
+    ]
+  },
+  "candidate": {
+    "candidate_id": "fin-r1-8b-regime-supervisor-v1",
+    "model": "fin-r1:8b",
+    "ollama_digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+    "parameter_size": "7.62B",
+    "quantization": "Q6_K",
+    "context_length": 32768,
+    "upstream_revision": "026768c4a015b591b54b240743edeac1de0970fa",
+    "existing_round21_host_probe_artifact_sha256": "f8a3f62563df6b23d3d284acea5686457ee148066670eb3fdf48e80be421b15a",
+    "existing_round21_host_probe_file_sha256": "e53d50e60c1e0b46931126d3f2c9d51d0676e63c2c1020b73e75fe43e9c90d91",
+    "existing_probe_scope": "one_target_free_schema_latency_and_gpu_compatibility_response_only"
+  },
+  "runtime": {
+    "base_url": "http://127.0.0.1:11434",
+    "ollama_compatibility_line": "0.32.x_patch_4_or_newer",
+    "refresh_interval_ms": 60000,
+    "packet_maximum_age_at_submission_ms": 5000,
+    "advisory_ttl_ms": 90000,
+    "maximum_provider_wall_seconds": 30.0,
+    "preload_timeout_seconds": 60.0,
+    "context_tokens": 4096,
+    "maximum_output_tokens": 24,
+    "temperature": 0.0,
+    "seed": 25026,
+    "keep_alive": "2m",
+    "full_gpu_residency_ratio_minimum": 0.99,
+    "worker_capacity": 1,
+    "risk_execution_reconciliation_and_exit_loops_wait_for_ai": false
+  },
+  "causal_packet": {
+    "lookback_ms": 60000,
+    "market": "polymarket_btc_5m",
+    "target_outcome_resolution_fill_pnl_or_future_book_fields": [],
+    "credential_wallet_order_or_foreign_position_fields": [],
+    "fields": [
+      "condition_id",
+      "window_start_ms",
+      "observed_at_ms",
+      "expires_at_ms",
+      "feature_source_chain_sha256",
+      "clob_relative_spread_median_60s",
+      "clob_relative_spread_p95_60s",
+      "clob_top_executable_notional_p10_usd_60s",
+      "clob_book_receipt_age_p95_ms_60s",
+      "reference_receipt_age_p95_ms_60s",
+      "realized_volatility_60s",
+      "realized_volatility_300s",
+      "absolute_log_return_60s",
+      "absolute_log_return_300s",
+      "absolute_order_flow_imbalance_mean_60s",
+      "market_probability_range_60s",
+      "round_trip_cost_bps_p95_60s",
+      "portfolio_risk_utilization",
+      "current_condition_exposure_fraction",
+      "deterministic_gate_sha256"
+    ],
+    "hard_input_requirements": {
+      "deterministic_market_data_gate_passed": true,
+      "transport_gap_count_60s": 0,
+      "unknown_order_state": false,
+      "unknown_position_state": false,
+      "recovery_requalification_pending": false,
+      "trading_authority": false
+    }
+  },
+  "output_protocol": {
+    "model_fields": ["regime_action"],
+    "allowed_actions": ["normal", "cautious_50", "defensive_25", "halt_300s"],
+    "trusted_code_mapping": {
+      "normal": {"maximum_size_multiplier": 1.0, "cooldown_ms": 0},
+      "cautious_50": {"maximum_size_multiplier": 0.5, "cooldown_ms": 0},
+      "defensive_25": {"maximum_size_multiplier": 0.25, "cooldown_ms": 0},
+      "halt_300s": {"maximum_size_multiplier": 0.0, "cooldown_ms": 300000}
+    },
+    "merge_with_fast_reviewer": "minimum_size_multiplier_and_maximum_cooldown",
+    "invalid_failed_stale_slow_pending_or_nonresident_response": "veto_new_entries_with_zero_multiplier",
+    "model_can_write_reason_codes_or_numeric_risk": false
+  },
+  "authority": {
+    "can_create_entry": false,
+    "can_increase_size": false,
+    "can_change_side": false,
+    "can_override_deterministic_gate": false,
+    "can_block_cancel_close_stop_reconciliation_or_settlement": false,
+    "can_access_credentials": false,
+    "can_submit_orders": false,
+    "can_grant_paper_or_live_authority": false,
+    "unpromoted_supervisor_is_called_by_execution": false
+  },
+  "promotion_gate": {
+    "mechanics_probe_is_sufficient": false,
+    "finance_benchmark_is_sufficient": false,
+    "target_free_behavior_battery_is_sufficient": false,
+    "requires_prospective_matched_incremental_after_cost_uplift": true,
+    "requires_no_worse_expected_shortfall": true,
+    "requires_no_worse_maximum_drawdown": true,
+    "requires_predictive_candidate_selected_first": true
+  },
+  "truth_state": {
+    "round25_v2_data_captured": false,
+    "predictive_candidate_selected": false,
+    "supervisor_operator_implemented": false,
+    "supervisor_host_mechanics_verified": false,
+    "supervisor_behavior_verified": false,
+    "incremental_uplift_evaluated": false,
+    "incremental_uplift_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "83aaed6dd3a37a5f3930384d7697131a3e656ee2c2a778c75b299bfdd669dda7"
+}

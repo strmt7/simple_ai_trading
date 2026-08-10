@@ -1,0 +1,73 @@
+{
+  "schema_version": "polymarket-round25-fin-r1-regime-supervisor-infrastructure-failure-v1",
+  "captured_at_utc": "2026-08-10T17:57:36Z",
+  "status": "pre_inference_identity_and_reporter_failure",
+  "scenario_contract_sha256": "9828aaf05deafe776c09a26c4e4cc0578762b9c53efa6c75ef83d4c3dc14dac4",
+  "supervisor_contract_sha256": "83aaed6dd3a37a5f3930384d7697131a3e656ee2c2a778c75b299bfdd669dda7",
+  "candidate": {
+    "candidate_id": "fin-r1-8b-regime-supervisor-v1",
+    "model": "fin-r1:8b",
+    "digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377"
+  },
+  "observed_execution": {
+    "model_preload_completed": true,
+    "scenario_calls_attempted": 7,
+    "scenario_provider_inferences_completed": 0,
+    "scenario_telemetry_records": 0,
+    "stdout_fail_closed_action_labels": {
+      "halt_300s": 7
+    },
+    "stdout_labels_are_model_responses": false,
+    "model_unload_completed": true,
+    "ollama_process_inventory_after_failure_empty": true,
+    "evidence_file_written_by_failed_tool": false
+  },
+  "root_cause": {
+    "preflight_stage": "api_tags_inventory_metadata",
+    "api_tags_exact_model_digest_matched": true,
+    "api_tags_parameter_size": "7.62B",
+    "api_tags_quantization_level": "unknown",
+    "api_show_quantization_level": "Q6_K",
+    "api_show_parameter_count": 7615616512,
+    "implementation_required_api_tags_quantization_level": "Q6_K",
+    "review_result": "model_identity_failure_fail_closed_before_scenario_generation",
+    "diagnosis_basis": "exact_local_api_tags_and_api_show_metadata_plus_frozen_source_control_flow"
+  },
+  "reporter_failure": {
+    "type": "TypeError",
+    "message": "float() argument must be a string or a real number, not 'NoneType'",
+    "cause": "check_evaluator_assumed_latency_telemetry_existed_for_fail_closed_results",
+    "behavior_result_available": false
+  },
+  "correction_boundary": {
+    "candidate_model_digest_changes": false,
+    "prompt_changes": false,
+    "scenario_changes": false,
+    "action_mapping_changes": false,
+    "provider_deadline_changes": false,
+    "allow_api_tags_unknown_quantization_only_when_api_show_binds_exact_q6_k": true,
+    "reporter_treats_missing_telemetry_as_failed_check_without_throwing": true,
+    "reporter_prints_failure_code_with_action": true,
+    "fresh_superseding_contract_required_before_retry": true
+  },
+  "source": {
+    "scenario_contract_file_sha256": "c944693e01eb96674569265f132bca53de4e185380e8fae61def3be0b68e9df9",
+    "supervisor_contract_file_sha256": "b607cfe29f11ab858caca16ef768b96848017eaba8518b2a33d989ae1a018c5b",
+    "supervisor_module_file_sha256": "9788c1159449ea9b772b3ba013b86059bd97fc1a1fe33bfb7180b765917bb18b",
+    "failed_probe_tool_file_sha256": "f39f5f2ca974dfdc008eda48e7578a687c7efd9da3279abaf6401cc853fc8f8b"
+  },
+  "claims": {
+    "target_or_outcome_accessed": false,
+    "market_data_used": false,
+    "model_response_observed": false,
+    "supervisor_behavior_verified": false,
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "ai_uplift_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "artifact_sha256": "034c69c5cbfdd5372ffa373a3568910ca18620a11af29a510fa6547db0651132"
+}

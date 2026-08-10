@@ -101,8 +101,8 @@ No real prediction panel, target access, evaluation, or nomination exists.
 The v2 plan has no test role. The
 [candidate amendment](../round-025-twap-native-candidate-selection-amendment-v2.json)
 therefore requires a separate prospective campaign after model selection.
-Qwen3.5-9B and Fin-R1-8B failed the frozen 10-second local runtime boundary and
-cannot re-enter it. The current [AI risk contract](../round-025-ai-risk-advisory-contract-v6.json)
+Qwen3.5-9B and Fin-R1-8B failed the frozen 10-second per-entry runtime boundary
+and cannot re-enter it. The current [AI risk contract](../round-025-ai-risk-advisory-contract-v6.json)
 limits exact-digest Qwen3 4B to one of seven entry-only risk ceilings; trusted
 code derives veto, size, cooldown, and audit semantics. AI cannot create or
 enlarge a trade, change side, override deterministic safety, or affect exits.
@@ -121,6 +121,17 @@ Benign and most isolated soft hazards returned `allow`; elevated portfolio risk
 and the combined soft crisis returned `veto`. Maximum latency was `2.0685`
 seconds. This is constrained safety-behavior evidence only, not economic value.
 
+Fin-R1 8B was also evaluated once as a slower 60-second regime supervisor. A
+pre-inference [inventory/reporting failure](../round-025-fin-r1-regime-supervisor-infrastructure-failure-v1-2026-08-10.json)
+was corrected without changing the prompt, scenarios, model, or digest. The
+superseding [seven-case host probe](../round-025-fin-r1-regime-supervisor-host-probe-v2-2026-08-10.json)
+then produced seven valid, fully GPU-resident responses in `2.6296` seconds on
+average, but returned `normal` for every case, including the combined crisis.
+The [rejection](../round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json)
+bars prompt tuning, economic evaluation, and execution integration for this
+exact role. Finance QA benchmarks did not translate into useful regime-risk
+discrimination.
+
 The [AI uplift contract](../round-025-ai-uplift-evaluation-contract-v2.json)
 and evaluator require a new chronological population after selection with at
 least 500 conditions and 50 actual interventions. The control and AI paths must
@@ -130,6 +141,12 @@ after-cost return uplift without worse expected shortfall or maximum drawdown.
 A pass is only a development nomination. No model training, candidate
 selection, AI uplift, edge, profitability, paper authority, or live authority
 exists yet.
+
+The research-only [four-arm supervisor uplift contract](../round-025-fin-r1-regime-supervisor-uplift-contract-v1.json)
+and clustered evaluator compare ML-only, fast Qwen, slow Fin-R1, and their
+minimum-risk hierarchy using 10,000 bootstrap paths over supervisor windows.
+They establish experiment mechanics only. Because Fin-R1 failed its frozen
+behavior gate, this economic experiment is closed for that candidate.
 
 The core capture uses no Binance input, credentials, account, wallet, model, or
 execution authority. Round 21 remains a separate credential-free public
@@ -600,6 +617,7 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Round 25 AI host mechanics](../round-025-ai-risk-advisory-host-probe-v7-2026-08-10.json)
 - [Round 25 AI safety behavior](../round-025-ai-risk-scenario-host-probe-v3-correction-2026-08-10.json)
 - [Round 25 AI uplift contract](../round-025-ai-uplift-evaluation-contract-v2.json)
+- [Round 25 Fin-R1 supervisor rejection](../round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json)
 
 Regenerate Round 14 tables and charts from the closed local evidence database
 with `python tools/publish_polymarket_round14_historical.py`. After an
