@@ -31,10 +31,25 @@ _SLUG = re.compile(r"^(btc|eth|sol)-updown-5m-([0-9]{10})$")
 _FIFTEEN_MINUTE_SLUG = re.compile(r"^(btc)-updown-15m-([0-9]{10})$")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _TOKEN_ID = re.compile(r"^[0-9]{20,80}$")
-_RESOLUTION_PATH = {
+_LEGACY_RESOLUTION_PATH = {
     "BTC": "/streams/btc-usd",
     "ETH": "/streams/eth-usd",
     "SOL": "/streams/sol-usd",
+}
+_TWAP_30S_RESOLUTION_PATH = {
+    "BTC": "/streams/btc-usd-twap-30s-streams",
+    "ETH": "/streams/eth-usd-twap-30s-streams",
+    "SOL": "/streams/sol-usd-twap-30s-streams",
+}
+POLYMARKET_FIVE_MINUTE_RESOLUTION_SOURCES = {
+    asset: (
+        f"https://data.chain.link{_LEGACY_RESOLUTION_PATH[asset]}",
+        f"https://data.chain.link{_TWAP_30S_RESOLUTION_PATH[asset]}",
+    )
+    for asset in SUPPORTED_POLYMARKET_ASSETS
+}
+POLYMARKET_FIFTEEN_MINUTE_RESOLUTION_SOURCES = {
+    "BTC": (f"https://data.chain.link{_LEGACY_RESOLUTION_PATH['BTC']}",)
 }
 
 
@@ -222,6 +237,7 @@ def _parse_polymarket_short_horizon_market(
     duration_ms: int,
     market_type: type[PolymarketFiveMinuteMarket],
     horizon_label: str,
+    resolution_sources: Mapping[str, Sequence[str]],
 ) -> PolymarketFiveMinuteMarket:
     raw = dict(payload)
     slug = str(raw.get("slug") or "").strip().lower()
@@ -291,11 +307,32 @@ def _parse_polymarket_short_horizon_market(
     if not fees_enabled and fee_rate != 0:
         raise ValueError("disabled fees cannot carry a positive fee rate")
     resolution_source = str(raw.get("resolutionSource") or "").strip().lower()
-    expected_source = f"https://data.chain.link{_RESOLUTION_PATH[asset]}"
-    if resolution_source.rstrip("/") != expected_source:
+    approved_sources = tuple(
+        str(source).strip().lower().rstrip("/")
+        for source in resolution_sources.get(asset, ())
+    )
+    normalized_resolution_source = resolution_source.rstrip("/")
+    if not approved_sources or normalized_resolution_source not in approved_sources:
         raise ValueError(
-            "market resolution source is not the expected Chainlink stream"
+            "market resolution source is not an approved Chainlink stream contract"
         )
+    twap_source = (
+        f"https://data.chain.link{_TWAP_30S_RESOLUTION_PATH[asset]}"
+    )
+    if normalized_resolution_source == twap_source:
+        config = raw.get("cryptoMarketConfig")
+        expected_config_id = f"{asset.lower()}-5m-twap-30"
+        if (
+            duration_ms != 300_000
+            or not isinstance(config, Mapping)
+            or config.get("asset") != asset.lower()
+            or config.get("duration") != "5m"
+            or config.get("id") != expected_config_id
+            or config.get("twapEnabled") is not True
+            or config.get("twapLookbackSeconds") != 30
+            or raw.get("cryptoMarketConfigId") != expected_config_id
+        ):
+            raise ValueError("market 30-second TWAP resolution contract differs")
     liquidity = _decimal(
         raw.get("liquidityNum", 0), name="liquidityNum", minimum=Decimal("0")
     )
@@ -342,6 +379,7 @@ def parse_polymarket_five_minute_market(
         duration_ms=300_000,
         market_type=PolymarketFiveMinuteMarket,
         horizon_label="BTC/ETH/SOL five-minute",
+        resolution_sources=POLYMARKET_FIVE_MINUTE_RESOLUTION_SOURCES,
     )
 
 
@@ -356,6 +394,7 @@ def parse_polymarket_fifteen_minute_market(
         duration_ms=900_000,
         market_type=PolymarketFifteenMinuteMarket,
         horizon_label="BTC fifteen-minute",
+        resolution_sources=POLYMARKET_FIFTEEN_MINUTE_RESOLUTION_SOURCES,
     )
     if not isinstance(parsed, PolymarketFifteenMinuteMarket):
         raise AssertionError("fifteen-minute parser returned the wrong market type")
@@ -516,12 +555,27 @@ class PolymarketPublicClient:
         session: requests.Session | None = None,
         timeout_seconds: float = 10.0,
         maximum_response_bytes: int = 8 * 1024 * 1024,
+        required_five_minute_resolution_sources: Mapping[str, str] | None = None,
     ) -> None:
         self.session = session or _public_http_session()
         self.timeout_seconds = max(1.0, min(60.0, float(timeout_seconds)))
         self.maximum_response_bytes = max(
             1024, min(64 * 1024 * 1024, int(maximum_response_bytes))
         )
+        required_sources = {
+            str(asset or "").strip().upper(): str(source or "")
+            .strip()
+            .lower()
+            .rstrip("/")
+            for asset, source in (required_five_minute_resolution_sources or {}).items()
+        }
+        if any(
+            asset not in SUPPORTED_POLYMARKET_ASSETS
+            or source not in POLYMARKET_FIVE_MINUTE_RESOLUTION_SOURCES[asset]
+            for asset, source in required_sources.items()
+        ):
+            raise ValueError("required five-minute resolution source is invalid")
+        self.required_five_minute_resolution_sources = required_sources
         self._clob_protocol_version: int | None = None
         self._clob_protocol_lock = Lock()
 
@@ -553,7 +607,12 @@ class PolymarketPublicClient:
             if assets is None
             else tuple(str(asset or "").strip().upper() for asset in assets)
         )
-        return self._discover_short_horizon_markets(
+        required = self.required_five_minute_resolution_sources
+        if required and any(asset not in required for asset in selected_assets):
+            raise ValueError(
+                "five-minute discovery lacks a configured resolution source"
+            )
+        markets = self._discover_short_horizon_markets(
             now_ms=now_ms,
             include_next=include_next,
             require_all_assets=require_all_assets,
@@ -563,6 +622,15 @@ class PolymarketPublicClient:
             slug_horizon="5m",
             parser=parse_polymarket_five_minute_market,
         )
+        if required:
+            if any(
+                market.resolution_source.rstrip("/") != required[market.asset]
+                for market in markets
+            ):
+                raise ValueError(
+                    "market resolution source differs from the configured exact source"
+                )
+        return markets
 
     def discover_fifteen_minute_markets(
         self,
