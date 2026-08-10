@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 41786,
+      "bytes": 42856,
       "path": "latest/README.md",
-      "sha256": "1281837d05363d82f8a76a7972fcb6a658f8ed1b84dca10b8c4a2bb751550e00"
+      "sha256": "138c9446b334a20a92f39dd0aa72a770f0bbc45b2a610d41aaba2dc63a102610"
     },
     {
       "bytes": 77606,
@@ -327,6 +327,11 @@
       "sha256": "93b43003b13a97d1d9efc2b668b23e005d21e910ce7e7bea61067aebe806947c"
     },
     {
+      "bytes": 3566,
+      "path": "round-025-model-ledger-contract-v1.json",
+      "sha256": "0c97b72f802a8c43483adc3f81a09a9fb1a4d04ba474b582c7c6999cba07f9b9"
+    },
+    {
       "bytes": 7048,
       "path": "round-025-predictive-evaluation-contract-v1.json",
       "sha256": "4f7f14278ba6fa6077fad6b81153061a77e976d375cc1cfada98dce4a84d34b6"
@@ -350,6 +355,11 @@
       "bytes": 3523,
       "path": "round-025-sequence-materialization-contract-v1.json",
       "sha256": "eda31cc5302712ec2e373dee7ecef620912f3fc178259088dbd65674b1da0d7d"
+    },
+    {
+      "bytes": 4515,
+      "path": "round-025-target-free-sequence-inference-contract-v1.json",
+      "sha256": "8930dd0168acd8581dc5d620383bca9facd4ace155fcbeb426fd43652ccc8bed"
     },
     {
       "bytes": 2488,
@@ -404,7 +414,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 25,
   "live_trading_authority": false,
-  "manifest_sha256": "d87034fd7f68a453e0bfd6c2a7cec41d4593e34579e8c703a18e3cce73f805fd",
+  "manifest_sha256": "18b13d401e6667de12488fb0f97ec36c3d9d264f88899a2116164175a9b13b85",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,

@@ -1,0 +1,116 @@
+{
+  "schema_version": "polymarket-round25-tcn-fit-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T15:36:31Z",
+  "status": "frozen_target_and_outcome_blind_before_round25_v2_capture_start",
+  "parents": {
+    "twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "candidate_selection_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "candidate_selection_amendment_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2",
+    "control_fit_contract_sha256": "4865de354943bf3db3d8a5a3b93f348606944c3bb5d75a55a49417ff79872e54",
+    "sequence_materialization_contract_sha256": "3fe3923adc7e638e82adc6db54c84aee0aae135f2baa944c2575191a79327ba9"
+  },
+  "candidate": {
+    "candidate_id": "causal-multitask-tcn-residual-v1",
+    "sequence_rows": 64,
+    "input_duration_seconds": 16,
+    "input_width_including_history_mask": 149,
+    "hidden_channels": 32,
+    "input_projection": "pointwise_conv1d_relu",
+    "block_count": 4,
+    "dilations": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "convolutions_per_block": 2,
+    "convolution": "causal_depthwise_conv1d_then_pointwise_conv1d",
+    "kernel_size": 3,
+    "activation": "relu",
+    "dropout": 0.1,
+    "residual_connection_per_block": true,
+    "terminal_representation": "last_valid_endpoint_step",
+    "terminal_head": "linear_raw_residual_then_four_times_tanh_divided_by_four_plus_exact_market_prior_logit",
+    "terminal_residual_logit_bound": 4.0,
+    "auxiliary_head": "linear_two_output_market_prior_logit_change",
+    "auxiliary_horizons_ms": [
+      1000,
+      5000
+    ],
+    "auxiliary_outputs_used_at_inference": false
+  },
+  "loss": {
+    "terminal": "condition_equal_binary_cross_entropy_with_logits",
+    "auxiliary": "masked_smooth_l1_huber_delta_one",
+    "auxiliary_weight_per_head": 0.1,
+    "masked_auxiliary_values_excluded_from_numerator_and_denominator": true,
+    "masked_zero_placeholder_treated_as_target": false
+  },
+  "training": {
+    "fit_role": "train",
+    "early_stopping_role": "calibration",
+    "minimum_train_conditions": 2000,
+    "minimum_calibration_conditions": 400,
+    "conditions_per_batch": 16,
+    "maximum_epochs": 64,
+    "early_stopping_patience_epochs": 8,
+    "minimum_log_loss_improvement": 1e-7,
+    "optimizer": "explicit_float32_adamw",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "adam_betas": [
+      0.9,
+      0.999
+    ],
+    "adam_epsilon": 1e-8,
+    "gradient_clip_norm": 1.0,
+    "automatic_mixed_precision_allowed": false,
+    "training_seeds": [
+      1729,
+      3253,
+      7919
+    ],
+    "ensemble": "arithmetic_mean_probability_across_three_seed_artifacts",
+    "epoch_condition_order": "deterministic_seeded_permutation",
+    "progress_heartbeat_maximum_seconds": 30,
+    "selection_or_test_role_during_fit_allowed": false
+  },
+  "compute": {
+    "resolver": "capability_tested_repository_compute_backend",
+    "supported_effective_backends": [
+      "cpu",
+      "cuda",
+      "rocm",
+      "xpu",
+      "directml",
+      "mps"
+    ],
+    "explicit_accelerator_failure": "fail_closed",
+    "automatic_cpu_fallback": "allowed_warned_and_recorded",
+    "backend_and_device_recorded_per_seed": true,
+    "host_specific_backend_hardcoding_allowed": false
+  },
+  "serialization": {
+    "state_dtype": "little_endian_float32",
+    "state_parameter_order": "lexicographic_state_dict_name",
+    "state_sha256_required": true,
+    "state_roundtrip_byte_identity_required": true,
+    "architecture_and_parameter_count_binding_required": true,
+    "source_train_calibration_and_batch_manifest_hash_binding_required": true,
+    "trading_authority": false
+  },
+  "truth_state": {
+    "round25_v2_data_captured": false,
+    "tcn_seed_model_fitted": false,
+    "tcn_ensemble_fitted": false,
+    "selection_evaluated": false,
+    "sealed_test_evaluated": false,
+    "edge_verified": false,
+    "profitability_verified": false,
+    "ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false
+  },
+  "contract_sha256": "abe1f93ccab38172e400286601e6fa9befaadf07acb448d0d2604314c2c59876"
+}

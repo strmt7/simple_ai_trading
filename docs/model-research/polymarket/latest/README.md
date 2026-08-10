@@ -77,6 +77,12 @@ history mask, and excludes unavailable +1s/+5s auxiliary targets from loss.
 Its sequence materializer is implemented but no sequence corpus has been
 materialized.
 
+Selection inference uses the separate
+[target-free sequence contract](../round-025-target-free-sequence-inference-contract-v1.json).
+It exposes only causal tensors and source receipts: terminal labels, auxiliary
+targets, resolution authority, and target-bearing dataset identity are absent.
+The builder is implemented, but no real selection batch exists.
+
 The [TCN fit contract](../round-025-tcn-fit-contract-v1.json) freezes a compact
 14,371-parameter causal residual network, exact three-seed ensemble, bounded
 16-condition batches, calibration-only early stopping, and minimum `2000/400`
@@ -97,6 +103,14 @@ opened, access is restart-recoverable, and repeated access or event-chain
 tampering fails closed. ECE, balanced accuracy, and ROC AUC are descriptive;
 only simultaneous log-loss and Brier improvement can nominate a candidate.
 No real prediction panel, target access, evaluation, or nomination exists.
+
+The [model-ledger contract](../round-025-model-ledger-contract-v1.json) binds
+all six fitted candidates to the source commit, implementation hashes, exact
+train/calibration populations, and resolution authority. The target-free
+preparation operator binds that ledger, the terminal-receipt audit, every
+condition-level TCN batch, and all six probability arrays before the one-use
+selection lock. The durable ledger and preparation mechanics are implemented;
+no real ledger, prepared prediction, fitted candidate, or result exists.
 
 The v2 plan has no test role. The
 [candidate amendment](../round-025-twap-native-candidate-selection-amendment-v2.json)
@@ -627,6 +641,8 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Round 25 AI host mechanics](../round-025-ai-risk-advisory-host-probe-v7-2026-08-10.json)
 - [Round 25 AI safety behavior](../round-025-ai-risk-scenario-host-probe-v3-correction-2026-08-10.json)
 - [Round 25 AI uplift contract](../round-025-ai-uplift-evaluation-contract-v2.json)
+- [Round 25 target-free sequence inference](../round-025-target-free-sequence-inference-contract-v1.json)
+- [Round 25 fitted-model ledger](../round-025-model-ledger-contract-v1.json)
 - [Round 25 Fin-R1 supervisor rejection](../round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json)
 - [Round 25 slow LLM supervisor mechanism rejection](../round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json)
 

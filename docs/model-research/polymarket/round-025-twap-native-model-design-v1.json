@@ -1,0 +1,161 @@
+{
+  "schema_version": "polymarket-round25-twap-native-model-design-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T14:24:38.7075815Z",
+  "status": "frozen_target_blind_before_round25_v2_capture_start",
+  "source_contracts": {
+    "capture_branch": "round25-twap-core-capture-v2",
+    "capture_commit_oid": "0e2f5c043ed0a0309d0e420b90b667565841d019",
+    "capture_design_sha256": "c083a7fb4a3ecb0f080ce2bf2c2bb3021000b2ab85562caa6a9a69067c6e673d",
+    "capture_plan_sha256": "a0b5525697c3c1e1b175bd0f0ac724fdb62845638d2040e9964221031d3e7b20",
+    "wire_qualification_sha256": "d06f76ba7305b55e254209839360af277f68947f1ff5fbe986df5a9dd374334d",
+    "resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+    "rtds_topic": "crypto_prices_twap_thirty",
+    "symbol": "btc/usd",
+    "window_seconds": 30,
+    "exact_fixed_point_scale": 18
+  },
+  "invalidated_basis": {
+    "component": "Round21CoreFeatureEngine.structural_probability",
+    "formula": "normal_cdf(log_distance_from_first_tick / sqrt(overlapping_twap_return_variance_rate * remaining_seconds))",
+    "admissible_for_round25_v2": false,
+    "reasons": [
+      "the observed source is a rolling 30-second TWAP rather than a point price",
+      "successive TWAP returns overlap mechanically and are not independent increments",
+      "the first received event tick is not necessarily the exact opening settlement reference",
+      "Chainlink does not publish the custom feed weighting, sampling, rounding, or missing-input algorithm",
+      "the formula has no prospective calibration evidence in the new source regime"
+    ],
+    "historical_round21_artifacts_modified": false
+  },
+  "settlement_hypothesis": {
+    "candidate_rule": "compare the exact E18 Chainlink TWAP observation at event_end_ms with the exact E18 observation at event_start_ms",
+    "verification_status": "unverified_until_terminal_official_resolution_comparison",
+    "opening_observation_must_have_exact_source_timestamp": true,
+    "closing_observation_must_have_exact_source_timestamp": true,
+    "nearest_tick_substitution_allowed": false,
+    "binance_price_substitution_allowed": false,
+    "independent_twap_reconstruction_allowed": false,
+    "conditions_without_exact_boundary_observations_rejected": true,
+    "labels_available_during_feature_or_model_freeze": false
+  },
+  "causal_receipt_policy": {
+    "decision_cadence_ms": 250,
+    "future_source_timestamps_allowed": false,
+    "future_publisher_timestamps_allowed": false,
+    "future_local_receipts_allowed": false,
+    "maximum_source_age_ms": 5000,
+    "maximum_receipt_age_ms": 5000,
+    "minimum_observations_including_open": 5,
+    "minimum_coverage_ms": 2000,
+    "conflicting_values_for_one_source_timestamp_rejected": true,
+    "identical_duplicate_source_observations_counted_once": true,
+    "stream_or_capture_gap_enters_admission": true
+  },
+  "twap_feature_families": {
+    "identity_and_phase": [
+      "elapsed_fraction",
+      "remaining_seconds",
+      "mechanical_final_window_overlap_fraction"
+    ],
+    "exact_reference_distance": [
+      "log_distance_from_exact_open",
+      "lagged_log_returns_at_1_5_10_30_60_seconds",
+      "explicit_lag_availability_indicators"
+    ],
+    "path_shape": [
+      "causal_log_price_slopes_at_5_10_30_60_seconds",
+      "explicit_slope_availability_indicators",
+      "overlapping_realized_variance_rate",
+      "nonoverlapping_30_second_realized_variance_rate",
+      "lag_one_return_autocorrelation",
+      "distance_to_nonoverlapping_scale_as_feature_only"
+    ],
+    "transport_quality": [
+      "source_age_ms",
+      "receipt_age_ms",
+      "publisher_minus_source_ms",
+      "receipt_minus_publisher_ms",
+      "observation_count",
+      "coverage_seconds",
+      "source_interval_mean_std_and_max_ms",
+      "identical_duplicate_count"
+    ],
+    "forbidden_features": [
+      "future_book_or_price_receipts",
+      "official_resolution",
+      "constructed_terminal_label",
+      "future_fill_or_pnl",
+      "generic_chainlink_point_price_as_settlement_reference"
+    ]
+  },
+  "model_candidates": {
+    "controls": [
+      "normalized_polymarket_order_book_prior",
+      "time_bucketed_isotonic_calibration_of_market_prior",
+      "regularized_logistic_residual_over_market_prior"
+    ],
+    "primary_ml": "causal_dilated_tcn_over_twap_and_clob_event_sequences_with_a_bounded_residual_logit_head",
+    "secondary_ml": "lightgbm_residual_over_predeclared_tabular_twap_clob_and_transport_features",
+    "output_parameterization": "market_prior_logit_plus_bounded_candidate_residual",
+    "structural_probability_baseline_allowed": false,
+    "optional_binance_predictor": "separate_public_receipt_time_sidecar_ablation_only",
+    "optional_binance_required_for_core_operation": false
+  },
+  "training_and_selection": {
+    "split_unit": "whole_condition",
+    "split_order": "chronological",
+    "train_calibration_selection_boundaries": "capture_plan_frozen_boundaries",
+    "purge_conditions_across_boundaries": 1,
+    "target_access_before_feature_and_candidate_freeze": false,
+    "primary_predictive_metrics": [
+      "log_loss",
+      "brier_score",
+      "expected_calibration_error",
+      "balanced_accuracy",
+      "roc_auc"
+    ],
+    "economic_metrics_after_predictive_gate": [
+      "after_fee_slippage_and_latency_net_pnl",
+      "maximum_drawdown",
+      "expected_shortfall",
+      "turnover",
+      "fill_ratio",
+      "profit_factor"
+    ],
+    "uncertainty": "condition_block_bootstrap_confidence_intervals_and_deflated_multiple_candidate_selection",
+    "promotion_requires_better_than_market_prior_control": true,
+    "negative_or_null_result_must_be_published": true
+  },
+  "execution_replay": {
+    "event_time_order_book_replay_required": true,
+    "queue_position_or_conservative_taker_execution_required": true,
+    "fees_from_exact_market_metadata_required": true,
+    "collector_clock_latency_distribution_required": true,
+    "partial_fills_cancellations_rejections_and_disconnects_required": true,
+    "market_impact_and_post_trade_decay_sensitivity_required": true,
+    "midpoint_execution_allowed": false,
+    "zero_latency_allowed": false
+  },
+  "ai_assist": {
+    "role": "optional_multibillion_parameter_veto_or_risk_reduction_only",
+    "raw_high_frequency_frame_generation_allowed": false,
+    "inputs": "causal_schema_validated_regime_liquidity_transport_and_model_disagreement_summary",
+    "safety_override_allowed": false,
+    "entry_expansion_allowed": false,
+    "close_blocking_allowed": false,
+    "promotion": "matched_same_decisions_same_costs_same_execution_ai_off_versus_ai_on_holdout",
+    "required_uplift": "positive_net_economic_uplift_with_noninferior_calibration_and_drawdown_confidence_bounds",
+    "unverified_ai_claim_allowed": false
+  },
+  "truth_state": {
+    "prospective_round25_v2_rows_available": false,
+    "model_trained": false,
+    "ai_uplift_tested": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc"
+}

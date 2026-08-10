@@ -1,0 +1,71 @@
+{
+  "backend": {
+    "accelerated": true,
+    "device": "privateuseone:0",
+    "kind": "directml",
+    "reason": "",
+    "request_satisfied": true,
+    "requested": "directml",
+    "selection": "runtime_current_device",
+    "vendor": "AMD Radeon RX 9070 XT"
+  },
+  "captured_at_utc": "2026-08-10T15:57:43.031845Z",
+  "claims": {
+    "ai_uplift_verified": false,
+    "live_authority": false,
+    "market_data_used": false,
+    "model_fitted": false,
+    "order_submitted": false,
+    "paper_authority": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false
+  },
+  "evidence_sha256": "8485214fe98e9dee27af0e3f92378271e3a0c0066752ea76fdb85094172fb962",
+  "fixture": {
+    "auxiliary_targets_available": false,
+    "conditions": 1,
+    "endpoints": 16,
+    "kind": "deterministic_numerical_runtime_fixture_no_market_data",
+    "market_prior_probability": 0.5,
+    "seed": 1729,
+    "sequence_shape": [
+      16,
+      64,
+      149
+    ],
+    "target_class": 1
+  },
+  "mechanics": {
+    "auxiliary_1000ms_loss": 0.0,
+    "auxiliary_5000ms_loss": 0.0,
+    "elapsed_seconds": 0.0855823999736458,
+    "gradient_norm_before_clip": 1.2074649333953857,
+    "maximum_probability": 0.5771214962005615,
+    "minimum_probability": 0.5771214962005615,
+    "parameter_count": 14371,
+    "probability_sha256": "50508466b36d634f5f4ecc97778b136ed1a8aaf7517261e9a814405ab1203a65",
+    "state_after_sha256": "227bfe271ca71a19580cf0131d05b27097256cf430ecee6a4a86bd2c0ea9f197",
+    "state_before_sha256": "e24df8c32aedc33483ad629cecd62962d4b8d426dba01cfdd375bd6f200a82fd",
+    "state_bytes": 57484,
+    "state_changed": true,
+    "state_roundtrip_byte_identity": true,
+    "terminal_loss": 0.5710547566413879,
+    "total_loss": 0.5710547566413879
+  },
+  "runtime": {
+    "numpy": "2.2.6",
+    "operating_system": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10",
+    "torch": "2.4.1+cpu",
+    "torch_directml": "0.2.5.dev240914"
+  },
+  "schema_version": "polymarket-round25-tcn-host-probe-v1",
+  "source": {
+    "fit_contract_sha256": "abe1f93ccab38172e400286601e6fa9befaadf07acb448d0d2604314c2c59876",
+    "probe_tool_path": "tools/probe_polymarket_round25_tcn_host.py",
+    "probe_tool_sha256": "830a72a66379acffe175753350a605367d8a3843e54a335fd6cbf814f9a6c3c2",
+    "tcn_module_path": "src/simple_ai_trading/polymarket_round25_tcn.py",
+    "tcn_module_sha256": "86ba2a5d08db7c92e0f3c3eb1062b09a7ab6d9cbcd56ae3ccd377e8a1acec346"
+  },
+  "status": "runtime_mechanics_verified"
+}

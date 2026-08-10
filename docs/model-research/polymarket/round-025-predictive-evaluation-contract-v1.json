@@ -1,0 +1,133 @@
+{
+  "schema_version": "polymarket-round25-predictive-evaluation-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T16:05:00Z",
+  "status": "frozen_target_and_outcome_blind_before_round25_v2_capture_start",
+  "parents": {
+    "twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "candidate_selection_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "candidate_selection_amendment_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2",
+    "control_fit_contract_sha256": "4865de354943bf3db3d8a5a3b93f348606944c3bb5d75a55a49417ff79872e54",
+    "lightgbm_fit_contract_sha256": "f82bbad224f48b97a4e90c95af1f5180228a1e45590af03a75024acac29f64ec",
+    "sequence_materialization_contract_sha256": "3fe3923adc7e638e82adc6db54c84aee0aae135f2baa944c2575191a79327ba9",
+    "tcn_fit_contract_sha256": "abe1f93ccab38172e400286601e6fa9befaadf07acb448d0d2604314c2c59876"
+  },
+  "research_basis": [
+    {
+      "source": "https://doi.org/10.1111/j.1468-0262.2005.00615.x",
+      "finding": "Romano-Wolf stepdown controls familywise error while retaining the joint dependence of test statistics and recommends studentization when feasible",
+      "consequence": "use one shared paired bootstrap path and studentized stepdown tests over every candidate-score hypothesis"
+    },
+    {
+      "source": "https://doi.org/10.1080/01621459.1994.10476870",
+      "finding": "block resampling preserves weak serial dependence that independent row resampling discards",
+      "consequence": "resample whole chronological five-minute conditions in circular one-hour blocks"
+    },
+    {
+      "source": "https://proceedings.mlr.press/v291/rossellini25a.html",
+      "finding": "ordinary expected calibration error is not generally testable despite being operationally interpretable",
+      "consequence": "report a frozen ECE estimator descriptively but do not use it as a predictive promotion gate"
+    }
+  ],
+  "target_isolation": {
+    "prediction_role": "selection",
+    "minimum_conditions": 400,
+    "endpoints_per_condition": 16,
+    "condition_order": "event_start_ms_then_condition_id",
+    "prediction_panel_contains_target_or_resolution": false,
+    "prediction_panel_frozen_before_selection_target_access": true,
+    "durable_prediction_panel_sha256_required_in_target_access_receipt": true,
+    "model_artifact_sha256_required_per_candidate": true,
+    "candidate_predictions_may_change_after_target_access": false,
+    "candidate_reselection_after_target_access": false
+  },
+  "finite_hypothesis_family": {
+    "control_candidate_id": "market-prior-v1",
+    "challenger_candidate_ids": [
+      "phase-isotonic-market-prior-v1",
+      "l2-logistic-residual-v1",
+      "lightgbm-residual-depth3-v1",
+      "lightgbm-residual-depth5-v1",
+      "causal-multitask-tcn-residual-v1"
+    ],
+    "gate_metrics": [
+      "condition_equal_log_loss_improvement",
+      "condition_equal_brier_score_improvement"
+    ],
+    "hypothesis_count": 10,
+    "improvement_definition": "market_prior_condition_loss_minus_challenger_condition_loss",
+    "positive_is_better": true
+  },
+  "metric_definitions": {
+    "probability_domain": "closed_interval_zero_to_one",
+    "log_loss_probability_clip": 1e-12,
+    "condition_equal_log_loss": "mean_of_sixteen_endpoint_binary_log_losses_then_mean_over_conditions",
+    "condition_equal_brier_score": "mean_of_sixteen_endpoint_squared_probability_errors_then_mean_over_conditions",
+    "expected_calibration_error": "descriptive_only_ten_equal_row_count_bins_stable_sorted_by_probability_weighted_by_bin_row_fraction",
+    "balanced_accuracy": "descriptive_only_probability_at_least_one_half_is_positive_condition_equal_endpoint_weights",
+    "roc_auc": "descriptive_only_condition_equal_endpoint_weights_with_half_credit_for_probability_ties",
+    "both_target_classes_required": true,
+    "nonfinite_metric_allowed": false
+  },
+  "paired_block_bootstrap": {
+    "replicates": 10000,
+    "random_generator": "numpy_pcg64",
+    "seed": 25025,
+    "unit": "whole_chronological_condition_vector_across_all_ten_hypotheses",
+    "method": "circular_moving_block_bootstrap",
+    "block_length_conditions": 12,
+    "block_duration_minutes": 60,
+    "blocks_per_replicate": "ceiling_of_condition_count_divided_by_twelve",
+    "replicate_length": "truncate_concatenated_blocks_to_exact_condition_count",
+    "shared_indices_across_candidates_and_metrics": true,
+    "bootstrap_chunk_replicates": 256,
+    "bootstrap_mean_matrix_dtype": "binary64",
+    "bootstrap_index_matrix_persisted": false
+  },
+  "romano_wolf_stepdown": {
+    "alpha": 0.05,
+    "standard_error": "sample_standard_deviation_of_bootstrap_condition_mean_improvements",
+    "degenerate_or_nonpositive_standard_error": "hypothesis_fails_closed",
+    "observed_statistic": "observed_mean_improvement_divided_by_bootstrap_standard_error",
+    "centered_bootstrap_statistic": "bootstrap_mean_minus_observed_mean_divided_by_bootstrap_standard_error",
+    "step_order": "descending_observed_statistic_then_candidate_ledger_order_then_log_loss_before_brier",
+    "step_null_distribution": "maximum_centered_bootstrap_statistic_over_hypotheses_remaining_at_the_step",
+    "unadjusted_step_p_value": "one_plus_exceedance_count_divided_by_10001",
+    "adjusted_p_value": "running_maximum_of_step_p_values",
+    "critical_value": "upper_95_percentile_of_step_null_distribution_numpy_quantile_method_higher",
+    "stepdown_lower_bound": "observed_mean_improvement_minus_critical_value_times_bootstrap_standard_error",
+    "hypothesis_pass": "adjusted_p_value_at_most_0.05_and_stepdown_lower_bound_strictly_positive",
+    "candidate_predictive_gate": "both_log_loss_and_brier_hypotheses_pass"
+  },
+  "nomination": {
+    "eligible_candidates": "challengers_passing_both_predictive_hypotheses",
+    "no_eligible_candidate_result": "publish_null_result_and_nominate_none",
+    "ranking_metrics_in_order": [
+      "lowest_condition_equal_log_loss",
+      "lowest_condition_equal_brier_score",
+      "lowest_descriptive_expected_calibration_error",
+      "highest_descriptive_balanced_accuracy",
+      "highest_descriptive_roc_auc",
+      "candidate_ledger_order"
+    ],
+    "selection_result_is_development_evidence_only": true,
+    "economic_replay_required_after_predictive_gate": true,
+    "sealed_test_required_after_model_claim_freeze": true,
+    "predictive_result_can_grant_paper_or_live_authority": false
+  },
+  "truth_state": {
+    "round25_v2_selection_rows_available": false,
+    "prediction_panel_frozen": false,
+    "selection_targets_accessed": false,
+    "predictive_evaluation_completed": false,
+    "candidate_nominated": false,
+    "economic_replay_completed": false,
+    "sealed_test_planned": false,
+    "edge_verified": false,
+    "profitability_verified": false,
+    "ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false
+  },
+  "contract_sha256": "4e5036103cfb11319b68908a09fa9acdb93a02f4ff1cede9dec9e9a81f491077"
+}
