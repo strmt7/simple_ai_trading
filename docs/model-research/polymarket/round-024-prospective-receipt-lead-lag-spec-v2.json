@@ -1,0 +1,28 @@
+{
+  "authority": {
+    "ai_edge_claim": false,
+    "economic_backtest": false,
+    "live_trading": false,
+    "model_promotion": false,
+    "outcome_access": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "changes": {
+    "bootstrap_batch_draws_maximum": 5000,
+    "condition_fold_assignment": "first_64_bits_of_sha256_condition_id_modulo_8",
+    "condition_fold_count": 8,
+    "penalty_selection": "train_only_condition_grouped_8_fold_cross_validation_condition_equal_mse_choose_largest_penalty_on_tie",
+    "reason": "bound_cpu_and_memory_without_changing_features_targets_partitions_or_gates"
+  },
+  "knowledge_at_freeze": {
+    "capture_active": true,
+    "future_interval_data_accessed": false,
+    "future_targets_constructed": false,
+    "performance_metrics_computed": false
+  },
+  "parent_specification_sha256": "80fca0a6381569b813462873bfa506533f4b547a992bd3717ae176cc3821e65d",
+  "schema_version": "polymarket-round24-prospective-receipt-lead-lag-spec-v2",
+  "specification_sha256": "d3923dff38211e07f1b9e65776000676291dd3d9656fd898f3bee66c1fce8f64",
+  "status": "frozen_before_future_condition_start_or_data_access_superseding_v1_compute_strategy"
+}

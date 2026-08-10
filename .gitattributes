@@ -28,6 +28,10 @@ docs/model-research/action-value/latest/*.md text eol=lf
 docs/model-research/action-value/latest/charts/*.svg text eol=lf
 docs/model-research/polymarket/round-008-executable-repricing-ceiling-report.json text eol=crlf
 docs/model-research/polymarket/latest/** text eol=lf
+docs/model-research/polymarket/round-022-* text eol=lf
+docs/model-research/polymarket/round-023-* text eol=lf
+docs/model-research/polymarket/round-023-lead-lag-performance.svg whitespace=-trailing-space
+docs/model-research/polymarket/round-024-* text eol=lf
 docs/model-research/polymarket/round-025-*-regime-supervisor-*.json text eol=lf
 docs/model-research/polymarket/round-025-model-ledger-contract-v1.json text eol=lf
 docs/model-research/polymarket/round-025-joint-feature-materialization-contract-v1.json text eol=lf
@@ -35,4 +39,5 @@ docs/model-research/polymarket/round-025-official-resolution-collection-contract
 docs/model-research/polymarket/round-025-post-capture-coordinator-contract-v1.json text eol=lf
 docs/model-research/polymarket/round-025-target-free-sequence-inference-contract-v1.json text eol=lf
 docs/model-research/polymarket/round-025-terminal-receipt-materialization-design-v1.json text eol=lf
+docs/model-research/polymarket/round-025-twap-core-campaign-plan-publication-2026-08-10.json text eol=lf
 docs/model-research/polymarket/round-025-twap-wire-schema-correction-v1.json text eol=lf

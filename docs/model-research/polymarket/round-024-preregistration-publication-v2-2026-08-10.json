@@ -1,0 +1,33 @@
+{
+  "authority": {
+    "economic_backtest": false,
+    "live_trading": false,
+    "model_promotion": false,
+    "outcome_access": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "core_campaign_design_sha256": "b5c130622514b2b82855f0e1cc011b29a81bf0583e6bd37fa3e4d4b702d6a113",
+  "core_campaign_plan_publication": "round-025-twap-core-campaign-plan-publication-2026-08-10.json",
+  "core_campaign_plan_sha256": "95820964e0692d66de2df3b624d8987f8ce9de699ad0b5fa16a7ccee53627bc2",
+  "effective_specification_sha256": "a45dc61c44dd77eefd594609973446ffda81576cd4c9abf05a4e28ab24c7b53b",
+  "first_eligible_condition_start_ms": 1786406400000,
+  "frozen_at_ms": 1786351110280,
+  "frozen_at_utc": "2026-08-10T08:38:30.2743215Z",
+  "legacy_core_campaign_plan_sha256": "2c1d87577de566bd4934c9678bcbded5bf156b671a413b83fa6d463372db1d71",
+  "legacy_core_campaign_status": "campaign_failed",
+  "legacy_core_data_reused": false,
+  "model_fit_performed": false,
+  "new_core_capture_started": false,
+  "new_core_data_accessed": false,
+  "performance_metric_computed": false,
+  "publication_sha256": "00b7744d3aa92d919c94d5ac4f6fd713bfb3f7c24a2f983c5f39d54aabe49710",
+  "round24_selection_access_claim_created": false,
+  "round24_target_constructed": false,
+  "schema_version": "polymarket-round24-preregistration-publication-v2",
+  "sidecar_campaign_plan_sha256": "a0a0508c5e1b5c0d55d66cf98186b0e815e674d9a95c4318f3303337378fa518",
+  "source_qualification_sha256": "53e8a8a22c94fef83944a29d82229ae69d0688275d953133a19f30b69dc2487b",
+  "status": "published_before_successor_campaign_start_after_legacy_source_regime_failure",
+  "superseded_publication_sha256": "36554e1a8888c2f994205102472e2ea8c9bce2f9f8618f7a04c7522bebe47b5d",
+  "superseded_specification_sha256": "d3923dff38211e07f1b9e65776000676291dd3d9656fd898f3bee66c1fce8f64"
+}

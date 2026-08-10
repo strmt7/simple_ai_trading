@@ -1,0 +1,35 @@
+{
+  "authority": {
+    "authentication_used": false,
+    "binance_execution": false,
+    "database_mutated": false,
+    "live_trading": false,
+    "polymarket_execution": false,
+    "raw_archive_persisted": false
+  },
+  "futures_aggTrades": {
+    "archive_date": "2026-04-27",
+    "archive_sha256": "18329167fd06906073131c60679fb28650d26f48fa011700001443923e847f84",
+    "elapsed_seconds": 3.736,
+    "first_timestamp_ms": 1777248000000,
+    "last_timestamp_ms": 1777251599000,
+    "qualification": "passed_v2_no_trade_second_policy",
+    "row_chain_sha256": "dd41da39b07073d27e76460cb22a1b72705e34d663a03d14ce7ea14ec82d5bfe",
+    "row_count": 3600,
+    "zero_trade_second_count": 23
+  },
+  "observed_at_utc": "2026-08-03T20:20:49.5263769Z",
+  "parent_source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0",
+  "schema_version": "polymarket-round23-source-qualification-v2",
+  "spot_1s": {
+    "archive_date": "2026-04-27",
+    "archive_sha256": "de89f46d20d1df582d13f32d197bf062188948994a12dd5dab5919ae09cff5b5",
+    "elapsed_seconds": 2.536,
+    "first_timestamp_ms": 1777248000000,
+    "last_timestamp_ms": 1777251599000,
+    "qualification": "passed",
+    "row_chain_sha256": "9dca2ba44786b727abbf9748264b81c3084a2981510f06aafbc73610ea3f61c7",
+    "row_count": 3600
+  },
+  "status": "qualified_for_bounded_exploratory_ingestion"
+}
