@@ -1,0 +1,67 @@
+{
+  "schema_version": "polymarket-round25-fin-r1-regime-supervisor-uplift-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:41:02Z",
+  "status": "frozen_before_any_supervisor_market_outcome_access",
+  "supervisor_contract_sha256": "83aaed6dd3a37a5f3930384d7697131a3e656ee2c2a778c75b299bfdd669dda7",
+  "fast_ai_contract_sha256": "39e862da001f96dbad405c625062918cab65ac2382ef4105b3664e53f6cb2505",
+  "fast_ai_uplift_contract_sha256": "47a51c97d723b37f278e1ef1f5860acae187d3a4747158d8525d2f16734d432a",
+  "population": {
+    "source": "round25_v2_prospective_twap_core_only",
+    "chronological_and_condition_disjoint_from_model_and_ai_selection": true,
+    "begins_strictly_after_selection_population_end": true,
+    "minimum_conditions": 500,
+    "minimum_unique_supervisor_windows": 120,
+    "minimum_valid_response_ratio_each_ai_arm": 0.99,
+    "minimum_fast_interventions": 50,
+    "minimum_supervisor_interventions": 30,
+    "schema_or_coherence_violations_allowed": 0
+  },
+  "matched_arms": [
+    "ml_control",
+    "fast_qwen3_4b",
+    "slow_fin_r1_8b",
+    "hierarchical_minimum_risk"
+  ],
+  "matching": {
+    "same_condition": true,
+    "same_causal_prediction": true,
+    "same_execution_scenario": true,
+    "same_official_resolution": true,
+    "same_cost_and_fill_model": true,
+    "supervisor_window_reuse_is_explicitly_clustered": true
+  },
+  "statistics": {
+    "bootstrap": "circular_moving_block_over_chronological_supervisor_windows",
+    "replicates": 10000,
+    "seed": 25026,
+    "block_supervisor_windows": 12,
+    "confidence": 0.99,
+    "primary_incremental_comparison": "hierarchical_minimum_risk_minus_fast_qwen3_4b",
+    "secondary_total_comparison": "hierarchical_minimum_risk_minus_ml_control",
+    "metrics": [
+      "paired_mean_after_cost_return_delta",
+      "expected_shortfall_95_loss_delta",
+      "maximum_drawdown_delta"
+    ]
+  },
+  "promotion_gate": {
+    "primary_mean_return_delta_lower_99_strictly_positive": true,
+    "primary_expected_shortfall_loss_delta_upper_99_nonpositive": true,
+    "primary_maximum_drawdown_delta_nonpositive": true,
+    "secondary_mean_return_delta_lower_99_strictly_positive": true,
+    "secondary_expected_shortfall_loss_delta_upper_99_nonpositive": true,
+    "secondary_maximum_drawdown_delta_nonpositive": true,
+    "development_nomination_only": true,
+    "grants_paper_or_live_authority": false
+  },
+  "claims": {
+    "ai_uplift_verified": false,
+    "market_edge_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "967159d9946e2411827d602cd027f2c972fd2a6ba9eda05aff930c8d04064b73"
+}

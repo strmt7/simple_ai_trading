@@ -1,0 +1,64 @@
+{
+  "schema_version": "polymarket-round25-fin-r1-regime-supervisor-rejection-v1",
+  "created_at_utc": "2026-08-10T18:02:02Z",
+  "status": "candidate_rejected_before_market_data_or_economic_evaluation",
+  "candidate": {
+    "candidate_id": "fin-r1-8b-regime-supervisor-v1",
+    "model": "fin-r1:8b",
+    "digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377"
+  },
+  "source": {
+    "supervisor_contract_sha256": "83aaed6dd3a37a5f3930384d7697131a3e656ee2c2a778c75b299bfdd669dda7",
+    "scenario_contract_v1_sha256": "9828aaf05deafe776c09a26c4e4cc0578762b9c53efa6c75ef83d4c3dc14dac4",
+    "scenario_contract_v2_sha256": "749f3a8b1e02523b6a11113db1498971d0e89bab034fefb57ec94cc9b98696f5",
+    "host_probe_evidence_sha256": "9ba198fbd90f469bd5c0ae7ebe7dd13059e9ce4a51400e2794bce68b94857f19",
+    "host_probe_file_sha256": "8668074d5e165af0571c249a24583b856de34617bad1347f0b2e1981346e40c5",
+    "supervisor_module_file_sha256": "b9f2ab3f14dafc12210552a208e92abce6acc6bae546bdd8b0ee4b072a57d293",
+    "probe_tool_file_sha256": "d39a030d18944d68f157988fd2466fc8f85313d0e8f932ebb8401127d48563a7"
+  },
+  "observations": {
+    "scenario_count": 7,
+    "valid_response_count": 7,
+    "full_gpu_residency_count": 7,
+    "action_counts": {
+      "normal": 7,
+      "cautious_50": 0,
+      "defensive_25": 0,
+      "halt_300s": 0
+    },
+    "mean_latency_seconds": 2.6295538857142855,
+    "maximum_latency_seconds": 2.9089673,
+    "prompt_token_count_range": [505, 511],
+    "output_token_count": 12,
+    "model_unloaded_after_probe": true,
+    "behavioral_discrimination_check_passed": false,
+    "combined_crisis_severity_check_passed": false
+  },
+  "decision": {
+    "candidate_promoted": false,
+    "candidate_called_by_execution": false,
+    "candidate_called_by_cli_or_windows_app": false,
+    "economic_uplift_evaluation_allowed": false,
+    "same_candidate_prompt_tuning_allowed": false,
+    "research_operator_retained_for_audit_only": true,
+    "reason": "valid_responses_failed_to_distinguish_benign_from_combined_admissible_crisis_state"
+  },
+  "interpretation": {
+    "finance_reasoning_benchmark_implies_market_or_risk_edge": false,
+    "target_free_behavior_failure_proves_model_is_bad_for_all_finance_tasks": false,
+    "target_free_behavior_failure_rejects_this_exact_supervisor_role_and_prompt": true
+  },
+  "claims": {
+    "market_data_used": false,
+    "model_fitted": false,
+    "supervisor_behavior_verified": false,
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "ai_uplift_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "artifact_sha256": "964d48739608bb6bcc09ec81db54d0c50ae108b61b13dd992fcf64cc4354b87f"
+}

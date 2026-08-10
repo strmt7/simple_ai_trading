@@ -1,0 +1,50 @@
+{
+  "schema_version": "polymarket-round25-fin-r1-regime-supervisor-scenario-contract-v2",
+  "round": 25,
+  "created_at_utc": "2026-08-10T17:58:26Z",
+  "status": "frozen_reporter_and_inventory_correction_before_first_provider_responses",
+  "supersedes": {
+    "scenario_contract_v1_sha256": "9828aaf05deafe776c09a26c4e4cc0578762b9c53efa6c75ef83d4c3dc14dac4",
+    "infrastructure_failure_v1_artifact_sha256": "034c69c5cbfdd5372ffa373a3568910ca18620a11af29a510fa6547db0651132"
+  },
+  "first_attempt_boundary": {
+    "scenario_calls_attempted": 7,
+    "provider_inferences_completed": 0,
+    "model_responses_observed": 0,
+    "failure_stage": "pre_inference_api_tags_identity_check",
+    "model_unloaded": true
+  },
+  "correction": {
+    "candidate_model_or_digest_changed": false,
+    "prompt_changed": false,
+    "scenario_order_or_values_changed": false,
+    "action_protocol_or_mapping_changed": false,
+    "deadline_context_seed_or_token_budget_changed": false,
+    "api_tags_quantization_policy_before": "require_q6_k",
+    "api_tags_quantization_policy_after": "accept_q6_k_or_unknown_only_while_digest_parameter_size_and_format_match",
+    "api_show_quantization_policy": "require_exact_q6_k",
+    "api_show_minimum_parameter_count": 7000000000,
+    "missing_telemetry_reporter_behavior": "mark_checks_false_and_preserve_failure_code_without_throwing",
+    "progress_output_includes_failure_code": true,
+    "retry_count_authorized": 1,
+    "reason_retry_is_not_response_reuse": "no_scenario_provider_inference_or_model_response_occurred_in_attempt_one"
+  },
+  "inherited_v1": {
+    "candidate_id": "fin-r1-8b-regime-supervisor-v1",
+    "supervisor_contract_sha256": "83aaed6dd3a37a5f3930384d7697131a3e656ee2c2a778c75b299bfdd669dda7",
+    "scenario_order_and_overrides_source": "round-025-fin-r1-regime-supervisor-scenario-contract-v1.json",
+    "all_behavior_checks_unchanged": true,
+    "same_candidate_prompt_tuning_after_failure_allowed": false,
+    "economic_uplift_required_for_promotion": true
+  },
+  "claims": {
+    "supervisor_behavior_verified": false,
+    "predictive_edge_verified": false,
+    "ai_uplift_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "749f3a8b1e02523b6a11113db1498971d0e89bab034fefb57ec94cc9b98696f5"
+}
