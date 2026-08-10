@@ -66,6 +66,8 @@ _CHUNK_STORAGE_SCHEMA_VERSIONS = frozenset(
 )
 CLOB_MARKET_WEBSOCKET = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
 POLYMARKET_RTDS_WEBSOCKET = "wss://ws-live-data.polymarket.com"
+POLYMARKET_RTDS_CHAINLINK_POINT_TOPIC = "crypto_prices_chainlink"
+POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC = "crypto_prices_twap_thirty"
 BINANCE_SPOT_WEBSOCKET = (
     "wss://stream.binance.com:9443/stream?streams="
     "btcusdt@bookTicker/btcusdt@trade/"
@@ -96,6 +98,7 @@ _RAW_CHUNK_FRAME_FORMAT = "length-prefixed-utf8-v1"
 _RAW_CHUNK_CODEC = "zstd"
 _RAW_CHUNK_COMPRESSION_LEVEL = 1
 _DUCKDB_MEMORY_LIMIT = re.compile(r"[1-9][0-9]*(?:KB|MB|GB|TB)", re.IGNORECASE)
+_CHAINLINK_E18_INTEGER = re.compile(r"-?[0-9]+")
 _RAW_CHUNK_MESSAGE_LIMIT = 1_024
 _CONDITION_CACHE_SCHEMA_VERSION = "polymarket-condition-message-cache-v1"
 _CONDITION_CACHE_FRAME_MESSAGE_LIMIT = 512
@@ -378,6 +381,66 @@ def _strict_json_loads(value: str) -> object:
         raise ValueError(f"non-finite JSON constant: {constant}")
 
     return json.loads(value, parse_constant=reject_constant)
+
+
+def _validate_chainlink_twap_30_frame(
+    raw_text: str,
+    *,
+    expected_symbol: str,
+) -> None:
+    """Reject any non-control frame outside the documented 30-second TWAP wire contract."""
+
+    if raw_text == "":
+        return
+
+    def reject_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        value: dict[str, object] = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError(f"duplicate JSON key: {key}")
+            value[key] = item
+        return value
+
+    try:
+        event = json.loads(
+            raw_text,
+            object_pairs_hook=reject_duplicates,
+            parse_constant=lambda constant: (_ for _ in ()).throw(
+                ValueError(f"non-finite JSON constant: {constant}")
+            ),
+        )
+    except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
+        raise ValueError("Chainlink TWAP frame is not strict JSON") from exc
+    if not isinstance(event, Mapping):
+        raise ValueError("Chainlink TWAP frame is not an object")
+    payload = event.get("payload")
+    if (
+        event.get("topic") != POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC
+        or event.get("type") != "update"
+        or not isinstance(payload, Mapping)
+    ):
+        raise ValueError("Chainlink TWAP event identity differs")
+    publisher_time_ms = event.get("timestamp")
+    source_time_ms = payload.get("timestamp")
+    window_seconds = payload.get("window_s")
+    full_accuracy_value = payload.get("full_accuracy_value")
+    if (
+        isinstance(publisher_time_ms, bool)
+        or not isinstance(publisher_time_ms, int)
+        or publisher_time_ms <= 0
+        or isinstance(source_time_ms, bool)
+        or not isinstance(source_time_ms, int)
+        or source_time_ms <= 0
+        or publisher_time_ms < source_time_ms
+        or payload.get("symbol") != expected_symbol
+        or isinstance(window_seconds, bool)
+        or window_seconds != 30
+        or not isinstance(full_accuracy_value, str)
+        or _CHAINLINK_E18_INTEGER.fullmatch(full_accuracy_value) is None
+        or int(full_accuracy_value) <= 0
+        or "value" not in payload
+    ):
+        raise ValueError("Chainlink TWAP payload differs")
 
 
 def _validated_canonical_payload(
@@ -6392,6 +6455,7 @@ class PolymarketPublicRecorder:
         include_binance_futures: bool = False,
         include_binance_spot: bool = True,
         include_rtds_binance: bool = True,
+        chainlink_price_mode: str = "point",
         clob_lane_ids: Sequence[str] = ("clob",),
     ) -> None:
         self.database = Path(database)
@@ -6427,6 +6491,9 @@ class PolymarketPublicRecorder:
             or type(include_rtds_binance) is not bool
         ):
             raise ValueError("recorder source selectors must be boolean")
+        selected_chainlink_mode = str(chainlink_price_mode or "").strip().lower()
+        if selected_chainlink_mode not in {"point", "twap_30s"}:
+            raise ValueError("chainlink_price_mode must be point or twap_30s")
         selected_clob_lanes = tuple(
             str(lane or "").strip().lower() for lane in clob_lane_ids
         )
@@ -6443,11 +6510,17 @@ class PolymarketPublicRecorder:
         self.include_binance_futures = include_binance_futures
         self.include_binance_spot = include_binance_spot
         self.include_rtds_binance = include_rtds_binance
+        self.chainlink_price_mode = selected_chainlink_mode
+        self.chainlink_topic = (
+            POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC
+            if selected_chainlink_mode == "twap_30s"
+            else POLYMARKET_RTDS_CHAINLINK_POINT_TOPIC
+        )
         self.clob_lane_ids = selected_clob_lanes
         self.rtds_topics = (
-            ("crypto_prices", "crypto_prices_chainlink")
+            ("crypto_prices", self.chainlink_topic)
             if include_rtds_binance
-            else ("crypto_prices_chainlink",)
+            else (self.chainlink_topic,)
         )
         required_streams: list[str] = []
         if include_binance_futures:
@@ -7305,13 +7378,17 @@ class PolymarketPublicRecorder:
             ),
             *(
                 (
-                    f"rtds:chainlink:{asset}",
+                    (
+                        f"rtds:chainlink-twap-30:{asset}"
+                        if self.chainlink_price_mode == "twap_30s"
+                        else f"rtds:chainlink:{asset}"
+                    ),
                     _canonical_json(
                         {
                             "action": "subscribe",
                             "subscriptions": [
                                 {
-                                    "topic": "crypto_prices_chainlink",
+                                    "topic": self.chainlink_topic,
                                     "type": "update",
                                     "filters": _canonical_json(
                                         {"symbol": f"{asset}/usd"}
@@ -7336,6 +7413,15 @@ class PolymarketPublicRecorder:
                         subscription=subscription,
                         heartbeat="PING",
                         heartbeat_seconds=5.0,
+                        frame_validator=(
+                            partial(
+                                _validate_chainlink_twap_30_frame,
+                                expected_symbol=f"{lane.rsplit(':', 1)[-1]}/usd",
+                            )
+                            if self.chainlink_price_mode == "twap_30s"
+                            and lane.startswith("rtds:chainlink-twap-30:")
+                            else None
+                        ),
                         output=output,
                         stop=stop,
                     )
@@ -7393,6 +7479,7 @@ class PolymarketPublicRecorder:
         subscription: str | None,
         heartbeat: str | None,
         heartbeat_seconds: float,
+        frame_validator: Callable[[str], None] | None = None,
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
         stop: asyncio.Event,
     ) -> None:
@@ -7456,6 +7543,8 @@ class PolymarketPublicRecorder:
                             raw = receive.result()
                             next_sequence = sequence + 1
                             text = _text_frame(raw)
+                            if frame_validator is not None:
+                                frame_validator(text)
                             await self._emit_raw_message(
                                 output,
                                 RawStreamMessage(
