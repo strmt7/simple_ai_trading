@@ -19,10 +19,8 @@ from .polymarket_redundant_union import (
     PolymarketClobLaneReceipt,
     PolymarketUnionEvent,
 )
-from .polymarket_round21_core_features import (
-    build_round21_execution_books,
-    validate_round21_union_event,
-)
+from .polymarket_execution_books import build_polymarket_execution_books
+from .polymarket_round21_core_features import validate_round21_union_event
 from .polymarket_round25_campaign import POLYMARKET_ROUND25_RESOLUTION_SOURCE
 from .polymarket_round25_clob_features import Round25ClobFeatureEngine
 from .polymarket_round25_dataset import (
@@ -1022,7 +1020,7 @@ def materialize_round25_joint_condition(
 
     books = tuple(
         snapshot
-        for snapshot in build_round21_execution_books(
+        for snapshot in build_polymarket_execution_books(
             condition_id=selected.condition_id,
             up_token_id=selected.up_token_id,
             down_token_id=selected.down_token_id,
