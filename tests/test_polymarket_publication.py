@@ -17,6 +17,13 @@ ROOT = Path(__file__).resolve().parents[1]
 RESEARCH = ROOT / "docs" / "model-research" / "polymarket"
 
 
+def _canonical_artifact_bytes(path: Path) -> bytes:
+    payload = path.read_bytes()
+    if path.suffix.lower() in {".csv", ".json", ".md", ".svg"}:
+        payload = payload.replace(b"\r\n", b"\n")
+    return payload
+
+
 def test_round_002_publication_is_internally_consistent() -> None:
     report = json.loads(
         (RESEARCH / "round-002-prospective-pipeline-evidence.json").read_text(
@@ -55,7 +62,7 @@ def test_round_002_publication_is_internally_consistent() -> None:
     } == set(manifest)
     for relative_path, expected in manifest.items():
         artifact = ROOT / relative_path
-        payload = artifact.read_bytes()
+        payload = _canonical_artifact_bytes(artifact)
         assert len(payload) == expected["bytes"]
         assert hashlib.sha256(payload).hexdigest() == expected["sha256"]
     market_manifest = manifest[
@@ -65,9 +72,10 @@ def test_round_002_publication_is_internally_consistent() -> None:
     assert market_manifest["columns"] == list(markets[0])
 
 
-def test_latest_publication_reports_failed_round_13_without_invented_metrics() -> None:
+def test_latest_publication_distinguishes_round25_capture_from_results() -> None:
     latest = RESEARCH / "latest"
     readme = (latest / "README.md").read_text(encoding="utf-8").lower()
+    normalized_readme = " ".join(readme.split())
     chart = (
         (latest / "charts" / "optimization-progress.svg")
         .read_text(encoding="utf-8")
@@ -78,30 +86,41 @@ def test_latest_publication_reports_failed_round_13_without_invented_metrics() -
     ) as handle:
         rows = {row["round"]: row for row in csv.DictReader(handle)}
 
-    assert "round 13 failed before outcome access" in readme
-    assert "round 12 is not performance evidence" in readme
-    assert "no profitability, roi, acceptable-drawdown" in readme
-    assert "round 13" in chart
-    assert "n/a simulated fills | failed: 1,921.322 s of 86,400 s" in chart
-    assert "rounds 12 and 13 were invalidated before outcomes" in chart
+    assert "round 20 failed" in readme
+    assert "round 25" in readme
+    assert "round 25 v1 was retired" in normalized_readme
+    assert "round 25 v2 is the source-correct successor" in normalized_readme
+    assert "structural probability" in normalized_readme
+    assert "settlement hypothesis" in normalized_readme
+    assert "minimum condition counts of `2000/400/400`" in normalized_readme
+    assert "control fitter is implemented but no control model has been fitted" in normalized_readme
+    assert "lightgbm operator is implemented but no round 25 tree has been fitted" in normalized_readme
+    assert "sequence materializer is implemented but no sequence corpus has been materialized" in normalized_readme
+    assert "no seed model or ensemble has been fitted" in normalized_readme
+    assert "the v2 plan has no test role" in normalized_readme
+    assert "ai cannot create or enlarge a trade" in normalized_readme
+    assert (
+        "no v2 campaign database, target, model, ai comparison, economic result"
+        in normalized_readme
+    )
+    assert "round 14 has no execution or pnl claim" in chart
+    assert "r14" in chart
     unavailable_metrics = {
-        "independent_groups",
         "conditions",
-        "selected_filled_conditions",
-        "total_utility_quote",
-        "maximum_drawdown_quote",
-        "bootstrap_lower_mean_group_utility_quote",
+        "held_out_log_loss_skill",
+        "held_out_brier_skill",
+        "held_out_balanced_accuracy",
     }
     for round_number in ("12", "13"):
         assert all(rows[round_number][field] == "" for field in unavailable_metrics)
         assert rows[round_number]["profitability_claim"] == "False"
 
 
-def test_failed_round_013_manifest_reconstructs_every_artifact() -> None:
+def test_current_status_manifest_reconstructs_every_artifact() -> None:
     manifest = json.loads(
         (RESEARCH / "latest" / "publication-integrity.json").read_text(encoding="utf-8")
     )
-    claimed = manifest.pop("publication_sha256")
+    claimed = manifest.pop("manifest_sha256")
     canonical = json.dumps(
         manifest,
         ensure_ascii=True,
@@ -111,26 +130,122 @@ def test_failed_round_013_manifest_reconstructs_every_artifact() -> None:
     )
 
     assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert manifest["schema_version"] == "polymarket-current-status-publication-v1"
+    assert manifest["latest_research_round"] == 25
+    assert manifest["latest_evaluated_round"] == 23
+    assert manifest["latest_graph_round"] == 23
     assert (
-        manifest["schema_version"]
-        == "polymarket-round13-failed-capture-publication-v1"
+        manifest["status"]
+        == "round25_v2_waiting_ai_runtime_and_evaluators_implemented"
     )
-    assert manifest["latest_round"] == 13
-    assert manifest["status"] == "round13_capture_failed_ineligible"
+    assert manifest["round21_result_available"] is False
+    assert manifest["round23_result_available"] is True
+    assert manifest["round24_result_available"] is False
+    assert manifest["round25_result_available"] is False
+    assert manifest["round25_capture_revision"] == 2
+    assert manifest["round25_v1_capture_eligible"] is False
+    assert manifest["round25_twap_native_model_design_frozen"] is True
+    assert manifest["round25_feature_contract_implemented"] is True
+    assert manifest["round25_candidate_ledger_frozen"] is True
+    assert manifest["round25_development_dataset_contract_implemented"] is True
+    assert manifest["round25_control_fit_contract_frozen"] is True
+    assert manifest["round25_control_fit_implemented"] is True
+    assert manifest["round25_control_model_fitted"] is False
+    assert manifest["round25_lightgbm_fit_contract_frozen"] is True
+    assert manifest["round25_lightgbm_operator_implemented"] is True
+    assert manifest["round25_lightgbm_model_fitted"] is False
+    assert manifest["round25_sequence_materialization_contract_frozen"] is True
+    assert manifest["round25_sequence_materializer_implemented"] is True
+    assert manifest["round25_sequence_corpus_materialized"] is False
+    assert manifest["round25_tcn_fit_contract_frozen"] is True
+    assert manifest["round25_tcn_operator_implemented"] is True
+    assert manifest["round25_tcn_host_directml_mechanics_verified"] is True
+    assert manifest["round25_tcn_seed_model_fitted"] is False
+    assert manifest["round25_tcn_ensemble_fitted"] is False
+    assert manifest["round25_tcn_model_fitted"] is False
+    assert manifest["round25_predictive_evaluation_contract_frozen"] is True
+    assert manifest["round25_predictive_evaluator_implemented"] is True
+    assert manifest["round25_prediction_panel_frozen"] is False
+    assert manifest["round25_predictive_result_available"] is False
+    assert manifest["round25_ai_risk_contract_frozen"] is True
+    assert manifest["round25_ai_operator_implemented"] is True
+    assert manifest["round25_ai_host_mechanics_verified"] is True
+    assert manifest["round25_ai_uplift_contract_frozen"] is True
+    assert manifest["round25_ai_uplift_evaluator_implemented"] is True
+    assert manifest["round25_ai_uplift_population_available"] is False
+    assert manifest["round25_ai_uplift_result_available"] is False
+    assert manifest["round25_ai_uplift_verified"] is False
+    assert manifest["round25_sealed_test_campaign_planned"] is False
+    assert manifest["round25_settlement_rule_verified"] is False
+    assert manifest["round25_terminal_design_frozen"] is False
+    assert manifest["round25_terminal_receipt_audit_available"] is False
+    assert manifest["round25_materialization_result_available"] is False
     assert manifest["profitability_claim"] is False
-    assert manifest["roi_claim"] is False
-    assert manifest["drawdown_claim"] is False
     assert manifest["paper_authority"] is False
-    assert manifest["trading_authority"] is False
+    assert manifest["live_trading_authority"] is False
     artifact_paths = [entry["path"] for entry in manifest["artifacts"]]
     assert artifact_paths == sorted(set(artifact_paths))
-    root = ROOT.resolve()
+    assert "round-023-lead-lag-results-v1.json" in artifact_paths
+    assert "round-023-lead-lag-performance.svg" in artifact_paths
+    assert "latest/public-clob-live-probe-2026-08-10.json" in artifact_paths
+    assert "round-024-prospective-receipt-lead-lag-spec-v2.json" in artifact_paths
+    assert "round-024-prospective-receipt-lead-lag-spec-v3.json" in artifact_paths
+    assert "round-024-preregistration-publication-v2-2026-08-10.json" in artifact_paths
+    assert "round-025-terminal-receipt-materialization-design-v1.json" in artifact_paths
+    assert "round-025-control-fit-contract-v1.json" in artifact_paths
+    assert "round-025-lightgbm-fit-contract-v1.json" in artifact_paths
+    assert "round-025-predictive-evaluation-contract-v1.json" in artifact_paths
+    assert "round-025-sequence-materialization-contract-v1.json" in artifact_paths
+    assert "round-025-tcn-directml-host-probe-2026-08-10.json" in artifact_paths
+    assert "round-025-tcn-fit-contract-v1.json" in artifact_paths
+    assert (
+        "round-025-twap-native-candidate-selection-amendment-v2.json"
+        in artifact_paths
+    )
+    assert "round-025-twap-native-candidate-selection-design-v1.json" in artifact_paths
+    assert "round-025-twap-native-model-design-v1.json" in artifact_paths
+    assert "round-025-twap-core-capture-design-v1.json" in artifact_paths
+    assert "round-025-twap-source-qualification-2026-08-10.json" in artifact_paths
+    assert (
+        "round-025-twap-core-campaign-plan-publication-2026-08-10.json"
+        in artifact_paths
+    )
+    root = RESEARCH.resolve()
     for entry in manifest["artifacts"]:
-        path = (ROOT / entry["path"]).resolve()
+        path = (RESEARCH / entry["path"]).resolve()
         assert path.is_relative_to(root)
-        payload = path.read_bytes()
+        payload = _canonical_artifact_bytes(path)
         assert len(payload) == entry["bytes"]
         assert hashlib.sha256(payload).hexdigest() == entry["sha256"]
+
+
+def test_latest_public_clob_probe_is_truthfully_scoped() -> None:
+    probe = json.loads(
+        (RESEARCH / "latest" / "public-clob-live-probe-2026-08-10.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert probe["protocol_version"] == 2
+    assert probe["market_count"] == len(probe["markets"]) == 2
+    assert probe["scope"] == {
+        "asset": "BTC",
+        "credentials_accessed": False,
+        "market_variant": "fiveminute",
+        "orders_submitted": 0,
+        "trading_authority": False,
+        "wallet_accessed": False,
+    }
+    assert all(
+        market["resolution_source"]
+        == "https://data.chain.link/streams/btc-usd-twap-30s-streams"
+        and len(market["books"]) == 2
+        for market in probe["markets"]
+    )
+    assert probe["validation"]["all_books_strictly_validated"] is True
+    assert probe["validation"]["predictive_edge_tested"] is False
+    assert probe["validation"]["profitability_tested"] is False
+    assert probe["validation"]["live_readiness_proved"] is False
 
 
 def test_round_013_failed_capture_evidence_is_hash_bound_and_ineligible() -> None:
@@ -161,9 +276,12 @@ def test_round_013_failed_capture_evidence_is_hash_bound_and_ineligible() -> Non
         "stream_gap_count": 4,
     }
     assert evidence["outcome_access_evidence"]["performance_labels_opened"] is False
-    assert evidence["outcome_access_evidence"][
-        "round13_action_and_evaluation_tables_present"
-    ] is False
+    assert (
+        evidence["outcome_access_evidence"][
+            "round13_action_and_evaluation_tables_present"
+        ]
+        is False
+    )
     assert all(value is False for value in evidence["authority"].values())
 
 

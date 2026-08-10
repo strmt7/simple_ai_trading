@@ -1,10 +1,10 @@
 {
-  "accepted_predictive_edge": true,
+  "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 1383,
+      "bytes": 38959,
       "path": "latest/README.md",
-      "sha256": "f4f0d9795f40cd52be97096757b86ce8be5012e08577006adad77b093f71f63f"
+      "sha256": "da048c22311ca00134156ae893e0fd05174b4448a515ff2cc2841ce1442437bc"
     },
     {
       "bytes": 77606,
@@ -42,6 +42,16 @@
       "source_tables": [
         "round14-candidates.csv"
       ]
+    },
+    {
+      "bytes": 2860,
+      "path": "latest/public-clob-live-probe-2026-08-10.json",
+      "sha256": "55809b60c39b0c1dd2a4885644d93fcd176b86cd8993c6125b956819d765fa1c"
+    },
+    {
+      "bytes": 1366,
+      "path": "latest/public-predictor-live-probe.json",
+      "sha256": "cc92de1f7b7060c089e7b7ef88807d2a7c365d0011c017fe7ddf1a07f18a04e4"
     },
     {
       "bytes": 3169,
@@ -82,21 +92,265 @@
       "path": "latest/tables/round14-decisions.csv",
       "row_count": 2296,
       "sha256": "680d98917e68d8cc2b7b7659367afe8d384d4f11997b94e2ad5d5b67e24a189d"
+    },
+    {
+      "bytes": 8651,
+      "path": "round-022-diagnostic-results-v1.json",
+      "sha256": "7f4be7e3bc4406d73b20a81354d1aff07285a40442100487a731101fa510dc33"
+    },
+    {
+      "bytes": 2265,
+      "path": "round-023-binance-ingestion-result-v1.json",
+      "sha256": "b49d89567ef8f33415043017154bdc752e1c853c508bbbc77a15d7342e6ee788"
+    },
+    {
+      "bytes": 4121,
+      "path": "round-023-binance-lead-lag-source-v1.json",
+      "sha256": "aa8b8e7585212b7485fc3ebfb4e8a3b971b5da3b6242f9684844ad84e7475ca7"
+    },
+    {
+      "bytes": 1754,
+      "path": "round-023-binance-lead-lag-source-v2.json",
+      "sha256": "32271fcef159a50463649e8e7fd4584e5d3f483c0d890fb864de8edc8b28071f"
+    },
+    {
+      "bytes": 5460,
+      "path": "round-023-lead-lag-model-spec-v1.json",
+      "sha256": "3958959c9d3f9438b1ca6f3867a36a85b54c1ed9a5a34d40b28d868ae1a4ed94"
+    },
+    {
+      "bytes": 112997,
+      "path": "round-023-lead-lag-performance.svg",
+      "sha256": "2a8b78cc75c6a443e875b41bcec897040306502b99e7b334f8ef3d97c6c2dda2",
+      "source_artifacts": [
+        "round-023-lead-lag-results-v1.json"
+      ]
+    },
+    {
+      "bytes": 6348,
+      "path": "round-023-lead-lag-results-v1.json",
+      "sha256": "cc372906ff4fad7649123588e12d7ac9c196723714fbceee1719504159658ec3"
+    },
+    {
+      "bytes": 2052,
+      "path": "round-023-source-qualification-attempt1-2026-08-03.json",
+      "sha256": "9ff07cc6389f64b53d27b270ad65e9fd9675db3b3b0a5fec13dc151e1175d225"
+    },
+    {
+      "bytes": 1371,
+      "path": "round-023-source-qualification-v2-2026-08-03.json",
+      "sha256": "a8d8b1f5262e0dfaf37a4e2d844b227e85e2a874b5ecda70460771e9c1087465"
+    },
+    {
+      "bytes": 1031,
+      "path": "round-024-preregistration-publication-2026-08-03.json",
+      "sha256": "8bce541a7ca8dbb9777bd821fc254f359850baf7c8ae45f4bf908fb0ef610ec8"
+    },
+    {
+      "bytes": 1843,
+      "path": "round-024-preregistration-publication-v2-2026-08-10.json",
+      "sha256": "a14ef28410fabe675f8b3068b4ec20249523d7e5815b4111739ff24dc8c8fcc3"
+    },
+    {
+      "bytes": 5671,
+      "path": "round-024-prospective-receipt-lead-lag-spec-v1.json",
+      "sha256": "609dbdb358c5beb13d0ecc0707a58e2808b13b21af5d7a2dab883645a2ba05af"
+    },
+    {
+      "bytes": 1190,
+      "path": "round-024-prospective-receipt-lead-lag-spec-v2.json",
+      "sha256": "af39eae9185c5d92c227ad24ac234ee5ffbfb3a6209e02f614f53694da396836"
+    },
+    {
+      "bytes": 3463,
+      "path": "round-024-prospective-receipt-lead-lag-spec-v3.json",
+      "sha256": "92e339ac3e640fdeba17b666fa0d709f3f4125ec633c2b14f6ab399050df1954"
+    },
+    {
+      "bytes": 8682,
+      "path": "round-025-ai-risk-advisory-contract-v1.json",
+      "sha256": "1060fc47a5eecaeab2c69e3a743d49c7de881cb25c32e65738bc81014fedfdfb"
+    },
+    {
+      "bytes": 3546,
+      "path": "round-025-ai-risk-advisory-contract-v2.json",
+      "sha256": "eb1fd3f2e6787f9ed8bc0654feb0be0d3b3bf9b4dda8c01712d3b7c54fe5500f"
+    },
+    {
+      "bytes": 4893,
+      "path": "round-025-ai-risk-advisory-contract-v3.json",
+      "sha256": "55a22827f504ae8bbc1fa42e37375e6fa27a47727edd19776f528fb63a2e7c43"
+    },
+    {
+      "bytes": 3267,
+      "path": "round-025-ai-risk-advisory-contract-v4.json",
+      "sha256": "65a8634655511203c5b21db48b2850b5bb5855f416e7fa5a748f5048b88d24f4"
+    },
+    {
+      "bytes": 4637,
+      "path": "round-025-ai-risk-advisory-contract-v5.json",
+      "sha256": "10432cfeebd4b6eb58115cf97cef127b93520d3d8466d6cca320b1c3118f4022"
+    },
+    {
+      "bytes": 3738,
+      "path": "round-025-ai-risk-advisory-host-probe-2026-08-10.json",
+      "sha256": "8f70a80d137be6af7eac42b7fe4a3db04c2d302be26367541969d2a5b3377563"
+    },
+    {
+      "bytes": 8334,
+      "path": "round-025-ai-risk-advisory-host-probe-v2-2026-08-10.json",
+      "sha256": "a883b0d5195922f9e4660f4ad97d11598299f45ad5912943623459ae5dc6e193"
+    },
+    {
+      "bytes": 8619,
+      "path": "round-025-ai-risk-advisory-host-probe-v3-2026-08-10.json",
+      "sha256": "06f16b89d394e213890fa422a649c6bbbb9237113c494889d2034bdb41b7d6ad"
+    },
+    {
+      "bytes": 5540,
+      "path": "round-025-ai-risk-advisory-host-probe-v4-2026-08-10.json",
+      "sha256": "d409436cf15cf401ed03be1a980186db89995184ad8da6e4f5ea0d372549db27"
+    },
+    {
+      "bytes": 5687,
+      "path": "round-025-ai-risk-advisory-host-probe-v5-2026-08-10.json",
+      "sha256": "e808f71c875abdc8a617fd8a4b22195c7dbc2008ca1e6d48b0bbf57d7c9518cd"
+    },
+    {
+      "bytes": 7356,
+      "path": "round-025-ai-risk-advisory-host-probe-v6-2026-08-10.json",
+      "sha256": "0513479fe8a407042740ab263b44e4d0763ff0e217102fbdb747bf36666eec85"
+    },
+    {
+      "bytes": 3604,
+      "path": "round-025-ai-uplift-evaluation-contract-v1.json",
+      "sha256": "bf7aa3c4b907be478aa20398badcace2b26a36f3ac77ece5ce9c16d949f02cbd"
+    },
+    {
+      "bytes": 3750,
+      "path": "round-025-control-fit-contract-v1.json",
+      "sha256": "484fb7b3670443f963b825fc516e6b396464e041f7d0f32d873f03c637c66e18"
+    },
+    {
+      "bytes": 4039,
+      "path": "round-025-lightgbm-fit-contract-v1.json",
+      "sha256": "93b43003b13a97d1d9efc2b668b23e005d21e910ce7e7bea61067aebe806947c"
+    },
+    {
+      "bytes": 7048,
+      "path": "round-025-predictive-evaluation-contract-v1.json",
+      "sha256": "4f7f14278ba6fa6077fad6b81153061a77e976d375cc1cfada98dce4a84d34b6"
+    },
+    {
+      "bytes": 3523,
+      "path": "round-025-sequence-materialization-contract-v1.json",
+      "sha256": "eda31cc5302712ec2e373dee7ecef620912f3fc178259088dbd65674b1da0d7d"
+    },
+    {
+      "bytes": 2488,
+      "path": "round-025-tcn-directml-host-probe-2026-08-10.json",
+      "sha256": "afd11d19f8727b5f7ea551928f073242d3d1a246ba484d2e99e2413af6e5a7d5"
+    },
+    {
+      "bytes": 4163,
+      "path": "round-025-tcn-fit-contract-v1.json",
+      "sha256": "5ce7fee155825acf974243efcc6f4e92f1cc9e4b7b50498175b8cd71a852eefe"
+    },
+    {
+      "bytes": 2922,
+      "path": "round-025-terminal-receipt-materialization-design-v1.json",
+      "sha256": "f87d48244c89425f7ab681879bcf35817c05cb5861667d0297c08141e8595392"
+    },
+    {
+      "bytes": 2378,
+      "path": "round-025-twap-core-campaign-plan-publication-2026-08-10.json",
+      "sha256": "e4aae96247d59eb414401883c125b9c9e033ef86d62c58e473704927e04ea355"
+    },
+    {
+      "bytes": 3992,
+      "path": "round-025-twap-core-capture-design-v1.json",
+      "sha256": "2962220ac98ef84c8d8983e4e99c804493c2284906c2fa8f0241bc192f681d70"
+    },
+    {
+      "bytes": 2946,
+      "path": "round-025-twap-native-candidate-selection-amendment-v2.json",
+      "sha256": "b9acd08c038fff549a7d7fec02c4ed0bd51da3e40fdfb409137950c3a9be5750"
+    },
+    {
+      "bytes": 10633,
+      "path": "round-025-twap-native-candidate-selection-design-v1.json",
+      "sha256": "3c3775024ce15264721ce3320a5f3dc0e40d7b6b74442f385e0d194efe221ba6"
+    },
+    {
+      "bytes": 7158,
+      "path": "round-025-twap-native-model-design-v1.json",
+      "sha256": "c8bd8d576e6f0bd9fcef64ce0293372e470b7292f848b91e432fd9675a31ead5"
+    },
+    {
+      "bytes": 14942,
+      "path": "round-025-twap-source-qualification-2026-08-10.json",
+      "sha256": "62f028641463fb9f487a6bab49bbfff31d0c7adc2c7b2cb191b9c9eb69b20ea2"
     }
   ],
   "asset": "BTC",
-  "latest_round": 14,
+  "evaluated_test_end_utc": "2026-07-06T01:00:00Z",
+  "evaluated_test_start_utc": "2026-07-06T00:00:00Z",
+  "latest_evaluated_round": 23,
+  "latest_graph_round": 23,
+  "latest_research_round": 25,
   "live_trading_authority": false,
-  "manifest_sha256": "908b379f79abde5b4433e656e086752d3cea9994c6c97a1cefed964786d703ea",
+  "manifest_sha256": "5d1eadf71536992643a43aa4bd592cadfad166e3862a4f0ca340a7f02f519a6a",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
   "profitability_claim": false,
-  "schema_version": "polymarket-round14-historical-publication-v1",
-  "source_contract_sha256": "086365c0488ac404124ac1a9ff14f7a96784576b53baeeed1b725e9b8999fb79",
-  "source_dataset_sha256": "f00f64cca78beeead476ed6bde90555af13ece79c189104b0f27b898827fefb2",
-  "source_evaluation_artifact_sha256": "f69d20389edc1d9da4fc5fb811b8618b472521abf98d4ca1215e80c79e926950",
-  "source_pretest_artifact_sha256": "211d7e418135d8d57e27d832d24647d8c13930ed31d710de5a89193023565a94",
-  "test_end_utc": "2026-06-22T23:55:00Z",
-  "test_start_utc": "2026-06-22T00:05:00Z"
+  "round21_result_available": false,
+  "round23_result_available": true,
+  "round24_result_available": false,
+  "round25_ai_host_mechanics_verified": true,
+  "round25_ai_operator_implemented": true,
+  "round25_ai_risk_contract_frozen": true,
+  "round25_ai_uplift_contract_frozen": true,
+  "round25_ai_uplift_evaluator_implemented": true,
+  "round25_ai_uplift_population_available": false,
+  "round25_ai_uplift_result_available": false,
+  "round25_ai_uplift_verified": false,
+  "round25_candidate_ledger_frozen": true,
+  "round25_capture_revision": 2,
+  "round25_control_fit_contract_frozen": true,
+  "round25_control_fit_implemented": true,
+  "round25_control_model_fitted": false,
+  "round25_development_dataset_contract_implemented": true,
+  "round25_feature_contract_implemented": true,
+  "round25_lightgbm_fit_contract_frozen": true,
+  "round25_lightgbm_model_fitted": false,
+  "round25_lightgbm_operator_implemented": true,
+  "round25_materialization_result_available": false,
+  "round25_prediction_panel_frozen": false,
+  "round25_predictive_evaluation_contract_frozen": true,
+  "round25_predictive_evaluator_implemented": true,
+  "round25_predictive_result_available": false,
+  "round25_result_available": false,
+  "round25_sealed_test_campaign_planned": false,
+  "round25_sequence_corpus_materialized": false,
+  "round25_sequence_materialization_contract_frozen": true,
+  "round25_sequence_materializer_implemented": true,
+  "round25_settlement_rule_verified": false,
+  "round25_tcn_ensemble_fitted": false,
+  "round25_tcn_fit_contract_frozen": true,
+  "round25_tcn_host_directml_mechanics_verified": true,
+  "round25_tcn_model_fitted": false,
+  "round25_tcn_operator_implemented": true,
+  "round25_tcn_seed_model_fitted": false,
+  "round25_terminal_design_frozen": false,
+  "round25_terminal_receipt_audit_available": false,
+  "round25_twap_native_model_design_frozen": true,
+  "round25_v1_capture_eligible": false,
+  "round25_v2_campaign_start_utc": "2026-08-11T00:00:00Z",
+  "schema_version": "polymarket-current-status-publication-v1",
+  "source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0",
+  "source_dataset_sha256": "a6fd7f55ec7705d391a035b923c4440c3f92ddfb5b1b169ee6b7df3d67aa7665",
+  "source_evaluation_artifact_sha256": "c3385d4894ca430a91442d1023bf01f61c650f6d208a4d0f89d11007ee5a11c0",
+  "source_pretest_artifact_sha256": "03e4fae64f34f835cac338dee111701c73419929e97a22939e12037eba8dfec9",
+  "status": "round25_v2_waiting_ai_runtime_and_evaluators_implemented"
 }

@@ -1,0 +1,199 @@
+{
+  "schema_version": "polymarket-round25-ai-risk-advisory-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T16:24:28Z",
+  "status": "frozen_target_outcome_and_resolution_blind_before_round25_v2_capture_start",
+  "parents": {
+    "twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "candidate_selection_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "candidate_selection_amendment_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2",
+    "predictive_evaluation_contract_sha256": "4e5036103cfb11319b68908a09fa9acdb93a02f4ff1cede9dec9e9a81f491077"
+  },
+  "research_basis": {
+    "qwen_model_card": "https://huggingface.co/Qwen/Qwen3.5-9B/tree/c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "fin_r1_model_card": "https://huggingface.co/SUFE-AIFLM-Lab/Fin-R1/blob/026768c4a015b591b54b240743edeac1de0970fa/README_en.md",
+    "fin_r1_paper": "https://arxiv.org/abs/2503.16252",
+    "ollama_generate_api": "https://docs.ollama.com/api/generate",
+    "ollama_residency_api": "https://docs.ollama.com/api/ps",
+    "selection_rationale": "one_current_general_reasoning_model_and_one_finance_specialized_reasoning_model_with_exact_local_artifacts",
+    "finance_benchmark_scores_are_market_forecasting_evidence": false,
+    "upstream_model_identity_equals_local_quantized_artifact_identity": false,
+    "model_card_or_host_probe_can_establish_edge": false
+  },
+  "candidate_family": [
+    {
+      "candidate_id": "qwen35-9b-risk-advisor-v1",
+      "ollama_model": "qwen3.5:9b",
+      "local_artifact_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+      "local_format": "gguf",
+      "local_parameter_size": "9.7B",
+      "local_quantization": "Q4_K_M",
+      "local_context_length": 262144,
+      "upstream_model": "Qwen/Qwen3.5-9B",
+      "upstream_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "upstream_license": "apache-2.0"
+    },
+    {
+      "candidate_id": "fin-r1-8b-risk-advisor-v1",
+      "ollama_model": "fin-r1:8b",
+      "local_artifact_digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+      "local_format": "gguf",
+      "local_parameter_size": "7.62B",
+      "local_quantization": "Q6_K",
+      "local_context_length": 32768,
+      "upstream_model": "SUFE-AIFLM-Lab/Fin-R1",
+      "upstream_revision": "026768c4a015b591b54b240743edeac1de0970fa",
+      "upstream_base_model": "Qwen2.5-7B-Instruct",
+      "upstream_training": "financial_reasoning_sft_then_grpo",
+      "upstream_license": "apache-2.0"
+    }
+  ],
+  "input_packet": {
+    "purpose": "target_free_review_of_one_deterministically_safe_ml_entry_proposal",
+    "maximum_age_at_submission_ms": 5000,
+    "maximum_response_validity_from_decision_ms": 10000,
+    "btc_five_minute_market_only": true,
+    "exact_condition_decision_source_model_and_packet_hashes_required": true,
+    "allowed_information": [
+      "frozen_ml_probability_and_candidate_identity",
+      "current_executable_clob_prices_spread_depth_and_age",
+      "causal_twap_path_returns_volatility_and_transport_state",
+      "causal_order_flow_and_book_imbalance",
+      "current_bot_owned_exposure_and_deterministic_risk_budget",
+      "target_free_model_uncertainty_and_adverse_selection_estimates"
+    ],
+    "forbidden_information": [
+      "future_market_data",
+      "resolution_or_outcome",
+      "future_fill_or_pnl",
+      "selection_or_test_target",
+      "credential_or_signed_request",
+      "wallet_private_material",
+      "foreign_order_or_position_state",
+      "raw_unbounded_market_frame"
+    ],
+    "deterministic_entry_gate_must_already_pass": true,
+    "unknown_order_position_or_recovery_state_must_block_packet_creation": true
+  },
+  "response": {
+    "strict_json_schema": true,
+    "additional_properties_allowed": false,
+    "fields": {
+      "veto_new_entries": "boolean",
+      "maximum_size_multiplier": "finite_number_inclusive_zero_one",
+      "cooldown_ms": "integer_inclusive_zero_300000",
+      "reason_codes": "unique_nonempty_array_from_frozen_enum",
+      "summary": "ascii_string_one_to_160_characters"
+    },
+    "reason_code_enum": [
+      "no_additional_restriction",
+      "weak_after_cost_margin",
+      "model_market_disagreement",
+      "liquidity_stress",
+      "quote_stale",
+      "transport_degraded",
+      "regime_instability",
+      "epistemic_uncertainty",
+      "adverse_selection_risk",
+      "inventory_risk",
+      "risk_budget_tight",
+      "size_reduction_required",
+      "cooldown_required"
+    ],
+    "coherence": {
+      "veto_requires_zero_multiplier": true,
+      "cooldown_requires_veto_zero_multiplier_and_cooldown_reason": true,
+      "subunit_multiplier_requires_size_reduction_reason": true,
+      "unit_multiplier_requires_no_additional_restriction_only": true,
+      "no_additional_restriction_forbidden_with_adverse_reason": true
+    }
+  },
+  "provider": {
+    "local_loopback_ollama_only": true,
+    "base_url": "http://127.0.0.1:11434",
+    "minimum_ollama_version": "0.32.4",
+    "maximum_compatible_ollama_minor": "0.32.x",
+    "exact_tag_digest_and_show_metadata_required_before_inference": true,
+    "exact_digest_full_gpu_residency_ratio_minimum": 0.99,
+    "stream": false,
+    "temperature": 0.0,
+    "seed": 25025,
+    "maximum_output_tokens": 96,
+    "context_tokens": 8192,
+    "keep_alive": "5m",
+    "maximum_provider_wall_seconds": 10.0,
+    "positive_and_coherent_provider_usage_required": true,
+    "response_and_provider_telemetry_hash_binding_required": true,
+    "credentials_or_remote_provider_allowed": false
+  },
+  "application": {
+    "ai_can_create_entry": false,
+    "ai_can_increase_size": false,
+    "ai_can_change_side": false,
+    "ai_can_override_deterministic_gate": false,
+    "ai_can_block_cancel_close_stop_or_reconciliation": false,
+    "invalid_failed_stale_slow_or_nonresident_response": "veto_new_entries_with_zero_multiplier",
+    "pending_response": "veto_new_entries_with_zero_multiplier",
+    "worker": "single_bounded_daemon_worker_with_nonblocking_submit_and_poll",
+    "queue_capacity": 1,
+    "risk_execution_and_reconciliation_loops_wait_for_ai": false,
+    "raw_response_logged": false,
+    "packet_or_response_contains_secret": false
+  },
+  "host_mechanics_probe": {
+    "market_data_allowed": false,
+    "target_outcome_resolution_or_pnl_allowed": false,
+    "one_deterministic_numerical_packet_per_candidate": true,
+    "preload_before_measured_request": true,
+    "full_gpu_residency_required": true,
+    "model_unloaded_after_candidate": true,
+    "schema_and_coherence_pass_required_for_mechanics_pass": true,
+    "predictive_or_economic_claim_allowed": false
+  },
+  "matched_uplift_evaluation": {
+    "eligible_only_after_predictive_candidate_artifact_is_frozen": true,
+    "population": "new_prospective_disjoint_ai_uplift_cohort_after_round25_selection_end",
+    "round25_selection_population_reuse_allowed": false,
+    "minimum_conditions": 500,
+    "minimum_actual_ai_interventions": 50,
+    "same_conditions_ml_predictions_decisions_execution_costs_and_latency": true,
+    "control": "selected_ml_policy_without_ai",
+    "challengers": [
+      "selected_ml_policy_plus_qwen35_9b_risk_advisor",
+      "selected_ml_policy_plus_fin_r1_8b_risk_advisor"
+    ],
+    "valid_response_ratio_minimum": 0.99,
+    "schema_or_coherence_violations_maximum": 0,
+    "bootstrap": {
+      "replicates": 10000,
+      "seed": 25025,
+      "circular_moving_block_conditions": 12,
+      "shared_resamples_across_candidates": true,
+      "familywise_method": "holm_over_two_preregistered_ai_candidates",
+      "alpha": 0.05
+    },
+    "required_gates": {
+      "paired_after_cost_net_pnl_delta_lower_confidence_bound": "strictly_greater_than_zero",
+      "paired_expected_shortfall_95_delta_upper_confidence_bound": "less_than_or_equal_to_zero",
+      "maximum_drawdown_delta_point_estimate": "less_than_or_equal_to_zero"
+    },
+    "passing_result": "development_nomination_only",
+    "prospective_paper_qualification_still_required": true,
+    "live_authority": false
+  },
+  "truth_state": {
+    "round25_v2_data_captured": false,
+    "predictive_candidate_selected": false,
+    "ai_candidate_operator_implemented": false,
+    "ai_host_mechanics_verified": false,
+    "ai_uplift_population_captured": false,
+    "ai_uplift_evaluated": false,
+    "ai_uplift_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "10c05777a06511e62aa335b8bab03f895235c85f314b09e338e63caf77cdd5aa"
+}

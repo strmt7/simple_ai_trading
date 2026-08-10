@@ -1,0 +1,83 @@
+{
+  "schema_version": "polymarket-round25-ai-risk-advisory-contract-v2",
+  "round": 25,
+  "created_at_utc": "2026-08-10T16:40:06Z",
+  "status": "frozen_target_outcome_resolution_and_model_response_blind_latency_correction",
+  "supersedes": {
+    "contract_v1_sha256": "10c05777a06511e62aa335b8bab03f895235c85f314b09e338e63caf77cdd5aa",
+    "failed_host_probe_v1_sha256": "882549d5d9ab8df97ca31c28842c583016ce6bb3511cb7a182cd4ade89e5b2d0",
+    "failed_host_probe_v2_sha256": "68c1b00b8659fd45c3f1a14667ff94944e18673eb635c1d8540b5565c41e045a"
+  },
+  "observed_failure_boundary": {
+    "probe_v1": "both_candidates_timed_out_during_preload_before_packet_review",
+    "probe_v2": "both_candidates_preloaded_fully_on_gpu_then_provider_failed_before_any_accepted_response",
+    "model_response_observed": false,
+    "market_data_accessed": false,
+    "target_outcome_resolution_or_pnl_accessed": false,
+    "candidate_rank_or_financial_metric_observed": false
+  },
+  "correction": {
+    "model_candidate_family_changed": false,
+    "local_model_digest_changed": false,
+    "input_packet_fields_changed": false,
+    "response_fields_or_coherence_changed": false,
+    "risk_semantics_changed": false,
+    "uplift_population_or_gate_changed": false,
+    "maximum_provider_wall_seconds_changed": false,
+    "maximum_provider_wall_seconds": 10.0,
+    "preload_timeout_seconds": 60.0,
+    "context_tokens_before": 8192,
+    "context_tokens_after": 4096,
+    "maximum_output_tokens_before": 96,
+    "maximum_output_tokens_after": 64,
+    "hidden_thinking_before": "provider_default",
+    "hidden_thinking_after": false,
+    "prompt_policy": "one_compact_instruction_block_plus_one_canonical_packet",
+    "retry_count": 0
+  },
+  "inherited_unchanged": {
+    "candidate_family": [
+      {
+        "candidate_id": "qwen35-9b-risk-advisor-v1",
+        "ollama_model": "qwen3.5:9b",
+        "local_artifact_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
+      },
+      {
+        "candidate_id": "fin-r1-8b-risk-advisor-v1",
+        "ollama_model": "fin-r1:8b",
+        "local_artifact_digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377"
+      }
+    ],
+    "packet_maximum_age_at_submission_ms": 5000,
+    "response_validity_from_decision_ms": 10000,
+    "full_gpu_residency_ratio_minimum": 0.99,
+    "ai_can_create_entry": false,
+    "ai_can_increase_size": false,
+    "ai_can_change_side": false,
+    "ai_can_override_deterministic_gate": false,
+    "ai_can_block_cancel_close_stop_or_reconciliation": false,
+    "invalid_failed_stale_slow_or_nonresident_response": "veto_new_entries_with_zero_multiplier",
+    "worker_queue_capacity": 1,
+    "risk_execution_and_reconciliation_loops_wait_for_ai": false,
+    "matched_uplift_minimum_conditions": 500,
+    "matched_uplift_minimum_interventions": 50,
+    "round25_selection_population_reuse_allowed": false,
+    "passing_uplift_result": "development_nomination_only",
+    "live_authority": false
+  },
+  "truth_state": {
+    "round25_v2_data_captured": false,
+    "predictive_candidate_selected": false,
+    "ai_candidate_operator_implemented": true,
+    "ai_host_mechanics_verified": false,
+    "ai_uplift_population_captured": false,
+    "ai_uplift_evaluated": false,
+    "ai_uplift_verified": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "1b6e6c2977e0c2e5bfcc7dd3ddcfb6e3de03cd41b32f17658b8d6cf97fce3f27"
+}
