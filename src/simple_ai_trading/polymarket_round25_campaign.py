@@ -835,7 +835,7 @@ async def run_round25_campaign(
                 },
             )
             notify(state)
-            await asyncio.sleep(min(30.0, interval))
+            await asyncio.sleep(30.0)
         results = _recover_orphans(
             selected,
             plan,
