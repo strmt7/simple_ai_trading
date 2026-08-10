@@ -1,0 +1,165 @@
+{
+  "schema_version": "polymarket-round25-economic-replay-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T21:15:00Z",
+  "status": "frozen_before_round25_v2_capture_start_and_before_any_model_or_target_access",
+  "parents": {
+    "post_capture_coordinator_contract_sha256": "a82a4bd913e9cc267474b56e9319e036480f990f706ab1cdfffcf627446dc6fc",
+    "predictive_evaluation_contract_sha256": "4e5036103cfb11319b68908a09fa9acdb93a02f4ff1cede9dec9e9a81f491077",
+    "joint_feature_materialization_contract_sha256": "b696d4951705ca62402e5e27dacda590ff69ad352fa75185282c8adc275e4df5",
+    "official_resolution_contract_sha256": "f0f0faf5da10c18be4d3b19989988c626aaa95aec105f787098505f7fbef2700",
+    "shared_execution_engine_design_sha256": "5a1a7b4d28bd1d759638988815237589d3ca2539d4243fae1812c8b286340a63"
+  },
+  "research_basis": [
+    {
+      "source": "https://docs.polymarket.com/trading/fees",
+      "finding": "fees_are_market_specific_and_applied_at_match_time",
+      "consequence": "use_only_the_captured_market_fee_schedule_and_never_assume_fee_free_execution"
+    },
+    {
+      "source": "https://docs.polymarket.com/market-data/websocket/market-channel",
+      "finding": "public_market_messages_include_full_books_price_changes_trades_and_tick_size_changes",
+      "consequence": "rebuild_exact_structured_books_from_receipt_order_without_interpolation"
+    },
+    {
+      "source": "https://docs.polymarket.com/api-reference/markets/get-clob-market-info",
+      "finding": "clob_market_info_exposes_tick_order_size_fee_and_order_delay_parameters",
+      "consequence": "bind_every_replay_condition_to_its_captured_clob_execution_metadata"
+    }
+  ],
+  "entry_gate": {
+    "predictive_result_required": true,
+    "predictive_gate_passed_required": true,
+    "exactly_one_nominated_candidate_required": true,
+    "frozen_prediction_panel_required": true,
+    "consumed_selection_access_receipt_required": true,
+    "terminal_receipt_audit_required": true,
+    "joint_feature_store_deep_audit_required": true,
+    "official_resolution_authority_required": true,
+    "candidate_or_threshold_reselection_allowed": false
+  },
+  "probability_policy": {
+    "source": "frozen_nominated_round25_selection_probability",
+    "point_probability_used_as_lower_and_upper_action_value": true,
+    "probability_uncertainty_claim": false,
+    "minimum_edge_per_share": "0.02",
+    "minimum_edge_tuned_after_selection_access": false,
+    "feature_support": "round25_admitted_target_blind_feature_condition_only",
+    "future_book_or_outcome_used_for_action_selection": false
+  },
+  "source_replay": {
+    "source_database_read_only": true,
+    "source_database_wal_allowed": false,
+    "receipt_time_is_execution_authority": true,
+    "source_timestamp_is_audit_only": true,
+    "structured_book_rebuild": "exact_full_book_plus_price_change_receipt_order",
+    "book_interpolation_allowed": false,
+    "midpoint_fill_allowed": false,
+    "hidden_liquidity_credit_allowed": false,
+    "queue_position_credit_allowed": false,
+    "post_nomination_full_receipt_scan_count": 1,
+    "progress_required_per_condition": true
+  },
+  "execution_matrix": {
+    "profiles": [
+      "conservative",
+      "regular",
+      "aggressive"
+    ],
+    "submission_latency_ms": [
+      250,
+      500,
+      1000
+    ],
+    "displayed_depth_fraction": [
+      "1",
+      "0.5",
+      "0.25"
+    ],
+    "adverse_ticks": [
+      0,
+      1,
+      2
+    ],
+    "full_cartesian_product_required": true,
+    "scenario_count_per_profile": 27,
+    "ledger_count": 81,
+    "order_type": "FAK",
+    "partial_fill_behavior": "persist_fill_and_cancel_unfilled_remainder",
+    "execution_book": "first_exact_book_received_at_or_after_effective_execution_target_within_500ms",
+    "taker_order_delay": "captured_market_parameter",
+    "general_order_delay": "captured_market_parameter"
+  },
+  "fees_and_accounting": {
+    "platform_fee": "captured_market_fee_curve_per_fill_level",
+    "builder_taker_fee_bps": "0",
+    "maker_rebate_credit": false,
+    "initial_capital_quote": "10000",
+    "risk_capital": "initial_capital_only",
+    "reinvestment": false,
+    "leverage": false,
+    "daily_boundary": "UTC",
+    "settlement": "one_quote_per_winning_share_and_zero_per_losing_share",
+    "foreign_inventory_present_or_modified": false,
+    "unknown_post_submit_state": "maximum_bound_loss_and_halt_new_exposure"
+  },
+  "qualification": {
+    "all_81_ledgers_required": true,
+    "minimum_resolved_conditions": 1800,
+    "minimum_calendar_days": 7,
+    "minimum_executed_actions_per_ledger": 300,
+    "positive_net_pnl_required": true,
+    "positive_mean_event_utility_required": true,
+    "positive_median_daily_pnl_required": true,
+    "profit_factor_strictly_above_one_required": true,
+    "positive_daily_mean_pnl_lower_95_required": true,
+    "profile_drawdown_limit_required": true,
+    "zero_unknown_state_and_risk_violations_required": true,
+    "development_economic_gate_can_grant_profitability_or_authority": false,
+    "chronologically_later_sealed_test_required": true
+  },
+  "engine_reuse_boundary": {
+    "shared_round21_execution_and_risk_code_reused": true,
+    "round21_data_models_targets_or_results_reused": false,
+    "round25_source_identity_required": true,
+    "round25_prediction_identity_required": true,
+    "round25_resolution_identity_required": true,
+    "round25_result_identity_required": true
+  },
+  "graph_source_evidence": {
+    "primary_scenario": {
+      "submission_latency_ms": 500,
+      "displayed_depth_fraction": "1",
+      "adverse_ticks": 0
+    },
+    "profiles": [
+      "conservative",
+      "regular",
+      "aggressive"
+    ],
+    "one_point_per_resolved_condition_and_profile": true,
+    "point_fields": [
+      "condition_id",
+      "event_start_ms",
+      "utility_quote",
+      "cumulative_net_pnl_quote",
+      "executed_action_count",
+      "source_condition_result_sha256"
+    ],
+    "series_self_hashed": true,
+    "manual_graph_value_edits_allowed": false
+  },
+  "truth_state": {
+    "round25_v2_capture_data_exists": false,
+    "predictive_candidate_nominated": false,
+    "economic_replay_run": false,
+    "development_economic_gate_passed": false,
+    "sealed_test_exists": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "orders_submitted": false
+  },
+  "contract_sha256": "f396510a49346015f57f29be7a2a1560841890c99d26e36995469f7daf0bd996"
+}

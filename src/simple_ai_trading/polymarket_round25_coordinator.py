@@ -27,6 +27,11 @@ from .polymarket_round25_evaluation import (
     load_round25_predictive_result,
     write_round25_predictive_result,
 )
+from .polymarket_round25_economic import (
+    load_round25_economic_result,
+    replay_round25_development_economics,
+    write_round25_economic_result,
+)
 from .polymarket_round25_joint_features import Round25JointFeatureSnapshot
 from .polymarket_round25_joint_store import (
     audit_round25_joint_store,
@@ -65,10 +70,10 @@ from .polymarket_round25_terminal import (
 
 
 POLYMARKET_ROUND25_COORDINATOR_CONTRACT_SHA256 = (
-    "a82a4bd913e9cc267474b56e9319e036480f990f706ab1cdfffcf627446dc6fc"
+    "dff318629a03c273ff3f437eca187dca9dc65ae6ad4398b0e78195ef847e30fa"
 )
 POLYMARKET_ROUND25_COORDINATOR_STATE_SCHEMA_VERSION = (
-    "polymarket-round25-post-capture-coordinator-state-v1"
+    "polymarket-round25-post-capture-coordinator-state-v2"
 )
 POLYMARKET_ROUND25_COORDINATOR_PHASES = (
     "feature_materialized",
@@ -77,6 +82,7 @@ POLYMARKET_ROUND25_COORDINATOR_PHASES = (
     "model_fitted",
     "selection_prediction_frozen",
     "predictive_evaluation_complete",
+    "economic_evaluation_complete",
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
@@ -120,6 +126,7 @@ class Round25CoordinatorPaths:
     prepared_prediction: Path
     selection_access_store: Path
     predictive_result: Path
+    economic_result: Path
     state: Path
     lock: Path
 
@@ -132,6 +139,7 @@ class Round25CoordinatorPaths:
             self.prepared_prediction,
             self.selection_access_store,
             self.predictive_result,
+            self.economic_result,
             self.state,
             self.lock,
         )
@@ -152,6 +160,8 @@ def validate_round25_coordinator_state(
     claimed = str(payload.pop("state_sha256", "")).strip().lower()
     expected = {
         "contract_sha256",
+        "development_economic_gate_passed",
+        "economic_result_sha256",
         "feature_store_manifest_sha256",
         "live_trading_authority",
         "model_data_eligible",
@@ -174,6 +184,7 @@ def validate_round25_coordinator_state(
         "model_ledger_sha256",
         "prepared_prediction_sha256",
         "predictive_result_sha256",
+        "economic_result_sha256",
     )
     if (
         set(payload) != expected
@@ -196,6 +207,7 @@ def validate_round25_coordinator_state(
         or payload.get("selection_access_status")
         not in {None, "prediction_panel_frozen", "target_access_consumed"}
         or type(payload.get("predictive_gate_passed")) is not bool
+        or type(payload.get("development_economic_gate_passed")) is not bool
         or any(
             payload.get(field) is not False
             for field in (
@@ -214,6 +226,7 @@ def validate_round25_coordinator_state(
         "model_ledger_sha256",
         "prepared_prediction_sha256",
         "predictive_result_sha256",
+        "economic_result_sha256",
     )
     required_count = max(1, phase_index)
     if (
@@ -223,8 +236,10 @@ def validate_round25_coordinator_state(
         or phase_index >= 4 and payload["selection_access_status"] is None
         or phase_index < 4 and payload["selection_access_status"] is not None
         or phase_index < 5 and payload["predictive_gate_passed"]
-        or phase_index == 5
+        or phase_index < 6 and payload["development_economic_gate_passed"]
+        or phase_index >= 5
         and payload["selection_access_status"] != "target_access_consumed"
+        or phase_index == 6 and not payload["predictive_gate_passed"]
     ):
         raise ValueError("Round 25 coordinator phase evidence differs")
     return {**payload, "state_sha256": claimed}
@@ -282,11 +297,15 @@ def _state_body(
     prepared_prediction_sha256: str | None = None,
     selection_access_status: str | None = None,
     predictive_result_sha256: str | None = None,
+    economic_result_sha256: str | None = None,
     resolution_pending_count: int = 0,
     predictive_gate_passed: bool = False,
+    development_economic_gate_passed: bool = False,
 ) -> dict[str, object]:
     return {
         "contract_sha256": POLYMARKET_ROUND25_COORDINATOR_CONTRACT_SHA256,
+        "development_economic_gate_passed": development_economic_gate_passed,
+        "economic_result_sha256": economic_result_sha256,
         "feature_store_manifest_sha256": feature_store_manifest_sha256,
         "live_trading_authority": False,
         "model_data_eligible": False,
@@ -735,6 +754,77 @@ def advance_round25_post_capture(
             {
                 "predictive_gate_passed": result.predictive_gate_passed,
                 "result_sha256": result.result_sha256,
+            },
+        )
+        if not result.predictive_gate_passed:
+            return state
+
+        if selected_paths.economic_result.exists():
+            economic = load_round25_economic_result(
+                selected_paths.economic_result
+            )
+            if (
+                economic.feature_store_manifest_sha256
+                != feature_manifest["manifest_sha256"]
+                or economic.terminal_transport_manifest_sha256
+                != transport["manifest_sha256"]
+                or economic.terminal_receipt_audit_sha256
+                != feature_manifest["terminal_receipt_audit_sha256"]
+                or economic.resolution_store_manifest_sha256
+                != resolution_manifest["manifest_sha256"]
+                or economic.resolution_authority_sha256
+                != selection_authority.authority_sha256
+                or economic.prepared_prediction_sha256
+                != prepared.prepared_sha256
+                or economic.predictive_result_sha256 != result.result_sha256
+                or economic.nominated_candidate_id
+                != result.nominated_candidate_id
+            ):
+                raise ValueError("Round 25 existing economic result differs")
+        else:
+            economic = replay_round25_development_economics(
+                source_database=selected_paths.source_database,
+                terminal_transport_manifest=transport,
+                feature_database=selected_paths.feature_database,
+                resolution_store_manifest=resolution_manifest,
+                resolution_authority=selection_authority,
+                selection_resolutions=selection_resolutions,
+                prepared_prediction=prepared,
+                predictive_result=result,
+                progress=progress,
+            )
+            write_round25_economic_result(
+                selected_paths.economic_result,
+                economic,
+            )
+        state = _write_state(
+            selected_paths.state,
+            _state_body(
+                phase="economic_evaluation_complete",
+                updated_at_ms=now_ms,
+                feature_store_manifest_sha256=feature_manifest["manifest_sha256"],
+                resolution_store_manifest_sha256=(
+                    resolution_manifest["manifest_sha256"]
+                ),
+                model_ledger_sha256=ledger.ledger_sha256,
+                prepared_prediction_sha256=prepared.prepared_sha256,
+                selection_access_status="target_access_consumed",
+                predictive_result_sha256=result.result_sha256,
+                economic_result_sha256=economic.result_sha256,
+                predictive_gate_passed=True,
+                development_economic_gate_passed=(
+                    economic.development_economic_gate_passed
+                ),
+            ),
+        )
+        _emit(
+            progress,
+            "economic_evaluation_complete",
+            {
+                "development_economic_gate_passed": (
+                    economic.development_economic_gate_passed
+                ),
+                "result_sha256": economic.result_sha256,
             },
         )
         return state

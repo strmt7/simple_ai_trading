@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 45611,
+      "bytes": 46389,
       "path": "latest/README.md",
-      "sha256": "aa318a6e260a5a5a1ba42a374d9017dc695f32c4ac2407ed9917e57f42671eba"
+      "sha256": "e2301a1d2a74823108cedb8f876fc20b7154f0061a9ce1d2b5eb3cb004ba2eaa"
     },
     {
       "bytes": 77606,
@@ -287,6 +287,11 @@
       "sha256": "484fb7b3670443f963b825fc516e6b396464e041f7d0f32d873f03c637c66e18"
     },
     {
+      "bytes": 6489,
+      "path": "round-025-economic-replay-contract-v1.json",
+      "sha256": "346c086d3edbcea46cdb882112a4f79f85c662f902541daf6328e97872d695bf"
+    },
+    {
       "bytes": 5590,
       "path": "round-025-fin-r1-regime-supervisor-contract-v1.json",
       "sha256": "b607cfe29f11ab858caca16ef768b96848017eaba8518b2a33d989ae1a018c5b"
@@ -360,6 +365,11 @@
       "bytes": 4350,
       "path": "round-025-post-capture-coordinator-contract-v2.json",
       "sha256": "6c5a9c27a1edd237280979a29bde194f031c9c10bc2eaf65819d25c413152722"
+    },
+    {
+      "bytes": 5082,
+      "path": "round-025-post-capture-coordinator-contract-v3.json",
+      "sha256": "74acdc23c4815fbb8151331302fd50f2925c0bf150cd29761c022892c9022c6d"
     },
     {
       "bytes": 7048,
@@ -449,7 +459,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 25,
   "live_trading_authority": false,
-  "manifest_sha256": "851d8e9cbead2f3bd5ea98238bde2e56ea213f8ca27e73a82134b9cde5374d4c",
+  "manifest_sha256": "d16ee28d1d590a54eb09e514d47e27dddfb6e3d600e700829ff40c5751896531",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -473,6 +483,10 @@
   "round25_control_fit_implemented": true,
   "round25_control_model_fitted": false,
   "round25_development_dataset_contract_implemented": true,
+  "round25_development_economic_gate_passed": false,
+  "round25_economic_replay_contract_frozen": true,
+  "round25_economic_replay_operator_implemented": true,
+  "round25_economic_result_available": false,
   "round25_feature_contract_implemented": true,
   "round25_fin_r1_supervisor_behavior_passed": false,
   "round25_fin_r1_supervisor_called_by_execution": false,
@@ -488,7 +502,7 @@
   "round25_lightgbm_operator_implemented": true,
   "round25_materialization_result_available": false,
   "round25_post_capture_coordinator_contract_frozen": true,
-  "round25_post_capture_coordinator_contract_revision": 2,
+  "round25_post_capture_coordinator_contract_revision": 3,
   "round25_post_capture_coordinator_implemented": true,
   "round25_post_capture_coordinator_run": false,
   "round25_prediction_panel_frozen": false,

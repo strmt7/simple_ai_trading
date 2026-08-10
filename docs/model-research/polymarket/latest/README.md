@@ -70,14 +70,26 @@ retained and no credentials or orders. It is transport evidence only; no target
 collection, pre-close identity proof, resolution authority, or target store
 exists.
 
-The [post-capture coordinator v2](../round-025-post-capture-coordinator-contract-v2.json)
-binds the corrected resolution transport contract. Its single-writer,
+The [post-capture coordinator v3](../round-025-post-capture-coordinator-contract-v3.json)
+binds the corrected resolution transport and exact-receipt economic contracts.
+Its single-writer,
 self-hashed recovery state orders terminal audit, feature publication, bounded
 resolution batches, train/calibration-only loading, one-time transform fitting,
 finite model fitting, target-free selection prediction freeze, one-use
-selection access, and immutable evaluation. Pending resolutions return before
-any model access. No coordinator run, fitted model, prediction panel,
-evaluation, predictive edge, economic result, or profitability result exists.
+selection access, and immutable predictive evaluation. Pending resolutions
+return before any model access. An economic scan is prohibited unless the
+predictive gate nominates exactly one frozen candidate.
+
+The [economic replay contract](../round-025-economic-replay-contract-v1.json)
+then fixes one exact receipt-time source scan, captured market-specific fees
+and venue delays, FAK depth walking, and 81 combinations of risk profile,
+latency, displayed depth, and adverse ticks. It uses initial capital only,
+never credits midpoint fills or hidden liquidity, and persists no authority.
+Its result also preserves a self-hashed primary-scenario condition series for
+all three risk profiles, so performance graphs remain data-reconstructible.
+The operator is implemented. No coordinator run, fitted model, prediction
+panel, nomination, economic result, predictive edge, or profitability result
+exists.
 
 The frozen predictive ledger combines 37 TWAP features with 111 causal CLOB
 features at the same 250 ms decision receipt. Its six finite families are the
@@ -679,7 +691,8 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Round 25 joint feature materialization](../round-025-joint-feature-materialization-contract-v1.json)
 - [Round 25 official resolution collection v2](../round-025-official-resolution-collection-contract-v2.json)
 - [Round 25 official resolution transport probe](../round-025-official-resolution-transport-probe-v1-2026-08-10.json)
-- [Round 25 post-capture coordinator v2](../round-025-post-capture-coordinator-contract-v2.json)
+- [Round 25 economic replay](../round-025-economic-replay-contract-v1.json)
+- [Round 25 post-capture coordinator v3](../round-025-post-capture-coordinator-contract-v3.json)
 - [Round 25 Fin-R1 supervisor rejection](../round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json)
 - [Round 25 slow LLM supervisor mechanism rejection](../round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json)
 

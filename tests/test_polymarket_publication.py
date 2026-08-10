@@ -171,6 +171,10 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_predictive_evaluator_implemented"] is True
     assert manifest["round25_prediction_panel_frozen"] is False
     assert manifest["round25_predictive_result_available"] is False
+    assert manifest["round25_economic_replay_contract_frozen"] is True
+    assert manifest["round25_economic_replay_operator_implemented"] is True
+    assert manifest["round25_economic_result_available"] is False
+    assert manifest["round25_development_economic_gate_passed"] is False
     assert manifest["round25_ai_risk_contract_frozen"] is True
     assert manifest["round25_ai_operator_implemented"] is True
     assert manifest["round25_ai_host_mechanics_verified"] is True
@@ -203,7 +207,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_resolution_store_implemented"] is True
     assert manifest["round25_resolution_authority_available"] is False
     assert manifest["round25_post_capture_coordinator_contract_frozen"] is True
-    assert manifest["round25_post_capture_coordinator_contract_revision"] == 2
+    assert manifest["round25_post_capture_coordinator_contract_revision"] == 3
     assert manifest["round25_post_capture_coordinator_implemented"] is True
     assert manifest["round25_post_capture_coordinator_run"] is False
     assert manifest["profitability_claim"] is False
@@ -228,6 +232,8 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     )
     assert "round-025-post-capture-coordinator-contract-v1.json" in artifact_paths
     assert "round-025-post-capture-coordinator-contract-v2.json" in artifact_paths
+    assert "round-025-post-capture-coordinator-contract-v3.json" in artifact_paths
+    assert "round-025-economic-replay-contract-v1.json" in artifact_paths
     assert "round-025-control-fit-contract-v1.json" in artifact_paths
     assert "round-025-lightgbm-fit-contract-v1.json" in artifact_paths
     assert "round-025-predictive-evaluation-contract-v1.json" in artifact_paths
