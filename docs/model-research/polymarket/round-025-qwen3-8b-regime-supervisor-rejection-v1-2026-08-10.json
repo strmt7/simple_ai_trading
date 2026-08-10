@@ -1,0 +1,71 @@
+{
+  "schema_version": "polymarket-round25-qwen3-8b-regime-supervisor-rejection-v1",
+  "created_at_utc": "2026-08-10T18:14:34Z",
+  "status": "candidate_and_slow_llm_regime_supervisor_mechanism_rejected",
+  "candidate": {
+    "candidate_id": "qwen3-8b-regime-supervisor-v1",
+    "model": "qwen3:8b",
+    "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41"
+  },
+  "source": {
+    "scenario_contract_sha256": "8e5e1a210441069e3f71bec42005c725e2c52b521263342b78a82e7bfda3eaf8",
+    "scenario_contract_file_sha256": "57e077a37c8a003a7a5d6da584830466956284bb3280228588d1b41707540a9e",
+    "host_probe_evidence_sha256": "78c34ccc99a368e6d764ac52c1fabad2a10f4458f31b50bda63b763168654786",
+    "host_probe_file_sha256": "742f3544c4b0a270715bbb2e2190312e745515e15bd5e8207a290f2e1f4fbad4",
+    "probe_tool_file_sha256": "063a3f838dba6aefbe1c055a5ff7e21c119e03ff2e2ff6bad2669f16650ba806",
+    "matched_fin_r1_rejection_artifact_sha256": "964d48739608bb6bcc09ec81db54d0c50ae108b61b13dd992fcf64cc4354b87f"
+  },
+  "observations": {
+    "scenario_count": 7,
+    "valid_response_count": 7,
+    "full_gpu_residency_count": 7,
+    "action_counts": {
+      "normal": 7,
+      "cautious_50": 0,
+      "defensive_25": 0,
+      "halt_300s": 0
+    },
+    "mean_latency_seconds": 2.6729969857142857,
+    "maximum_latency_seconds": 3.0822569,
+    "prompt_token_count_range": [513, 519],
+    "output_token_count": 12,
+    "model_unloaded_after_probe": true,
+    "behavioral_discrimination_check_passed": false,
+    "combined_crisis_severity_check_passed": false
+  },
+  "matched_mechanism_result": {
+    "candidate_count": 2,
+    "candidates": [
+      "fin-r1-8b-regime-supervisor-v1",
+      "qwen3-8b-regime-supervisor-v1"
+    ],
+    "same_packet_scenarios": true,
+    "same_prompt": true,
+    "same_output_protocol": true,
+    "both_returned_normal_for_all_seven_scenarios": true,
+    "mechanism_behavior_gate_passed": false
+  },
+  "decision": {
+    "candidate_promoted": false,
+    "candidate_called_by_execution": false,
+    "research_operator_implementation_allowed": false,
+    "economic_uplift_evaluation_allowed": false,
+    "same_candidate_prompt_tuning_allowed": false,
+    "additional_model_cycling_on_same_mechanism_allowed": false,
+    "fast_qwen3_4b_entry_reviewer_status_changed": false,
+    "next_model_priority": "fit_and_evaluate_causal_predictive_models_after_round25_v2_capture"
+  },
+  "claims": {
+    "market_data_used": false,
+    "model_fitted": false,
+    "supervisor_behavior_verified": false,
+    "predictive_accuracy_verified": false,
+    "predictive_edge_verified": false,
+    "ai_uplift_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false,
+    "orders_submitted": false
+  },
+  "artifact_sha256": "fac8ddbf58e585259de0572bfb7334af7d8a711291919babba562edf29184376"
+}

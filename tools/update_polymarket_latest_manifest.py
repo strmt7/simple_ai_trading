@@ -65,6 +65,9 @@ _CURRENT_RESEARCH_ARTIFACTS = (
     "round-025-fin-r1-regime-supervisor-scenario-contract-v1.json",
     "round-025-fin-r1-regime-supervisor-scenario-contract-v2.json",
     "round-025-fin-r1-regime-supervisor-uplift-contract-v1.json",
+    "round-025-qwen3-8b-regime-supervisor-host-probe-v1-2026-08-10.json",
+    "round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json",
+    "round-025-qwen3-8b-regime-supervisor-scenario-contract-v1.json",
     "round-025-control-fit-contract-v1.json",
     "round-025-lightgbm-fit-contract-v1.json",
     "round-025-predictive-evaluation-contract-v1.json",
@@ -150,7 +153,7 @@ def _artifact(path: Path) -> dict[str, object]:
 def build_manifest() -> dict[str, object]:
     body: dict[str, object] = {
         "schema_version": "polymarket-current-status-publication-v1",
-        "status": "round25_v2_waiting_fast_ai_behavior_qualified_fin_r1_supervisor_rejected",
+        "status": "round25_v2_waiting_fast_ai_qualified_slow_llm_supervisor_rejected",
         "asset": "BTC",
         "market_variant": "fiveminute",
         "latest_research_round": 25,
@@ -203,6 +206,9 @@ def build_manifest() -> dict[str, object]:
         "round25_fin_r1_supervisor_uplift_evaluator_implemented": True,
         "round25_fin_r1_supervisor_uplift_evaluation_allowed": False,
         "round25_fin_r1_supervisor_called_by_execution": False,
+        "round25_qwen3_8b_supervisor_candidate_rejected": True,
+        "round25_slow_llm_supervisor_mechanism_rejected": True,
+        "round25_slow_llm_supervisor_additional_model_cycling_allowed": False,
         "round25_sealed_test_campaign_planned": False,
         "round25_settlement_rule_verified": False,
         "round25_terminal_design_frozen": False,

@@ -136,7 +136,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["latest_graph_round"] == 23
     assert (
         manifest["status"]
-        == "round25_v2_waiting_fast_ai_behavior_qualified_fin_r1_supervisor_rejected"
+        == "round25_v2_waiting_fast_ai_qualified_slow_llm_supervisor_rejected"
     )
     assert manifest["round21_result_available"] is False
     assert manifest["round23_result_available"] is True
@@ -183,6 +183,9 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_fin_r1_supervisor_uplift_evaluator_implemented"] is True
     assert manifest["round25_fin_r1_supervisor_uplift_evaluation_allowed"] is False
     assert manifest["round25_fin_r1_supervisor_called_by_execution"] is False
+    assert manifest["round25_qwen3_8b_supervisor_candidate_rejected"] is True
+    assert manifest["round25_slow_llm_supervisor_mechanism_rejected"] is True
+    assert manifest["round25_slow_llm_supervisor_additional_model_cycling_allowed"] is False
     assert manifest["round25_sealed_test_campaign_planned"] is False
     assert manifest["round25_settlement_rule_verified"] is False
     assert manifest["round25_terminal_design_frozen"] is False
@@ -225,6 +228,14 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     )
     assert (
         "round-025-fin-r1-regime-supervisor-uplift-contract-v1.json"
+        in artifact_paths
+    )
+    assert (
+        "round-025-qwen3-8b-regime-supervisor-host-probe-v1-2026-08-10.json"
+        in artifact_paths
+    )
+    assert (
+        "round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json"
         in artifact_paths
     )
     assert (

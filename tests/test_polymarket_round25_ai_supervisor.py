@@ -267,6 +267,29 @@ def test_round25_ai_supervisor_contracts_are_self_hashed_and_claim_free() -> Non
     assert rejection["decision"]["candidate_promoted"] is False
     assert rejection["decision"]["same_candidate_prompt_tuning_allowed"] is False
 
+    qwen_contract_path = REPOSITORY / "docs/model-research/polymarket/round-025-qwen3-8b-regime-supervisor-scenario-contract-v1.json"
+    qwen_contract = json.loads(qwen_contract_path.read_text(encoding="utf-8"))
+    qwen_contract_claimed = qwen_contract.pop("contract_sha256")
+    assert qwen_contract_claimed == _canonical_sha256(qwen_contract)
+    assert qwen_contract_claimed == "8e5e1a210441069e3f71bec42005c725e2c52b521263342b78a82e7bfda3eaf8"
+    assert qwen_contract["promotion_boundary"]["behavior_pass_is_sufficient_for_execution"] is False
+
+    qwen_probe_path = REPOSITORY / "docs/model-research/polymarket/round-025-qwen3-8b-regime-supervisor-host-probe-v1-2026-08-10.json"
+    qwen_probe = json.loads(qwen_probe_path.read_text(encoding="utf-8"))
+    qwen_probe_claimed = qwen_probe.pop("evidence_sha256")
+    assert qwen_probe_claimed == _canonical_sha256(qwen_probe)
+    assert qwen_probe_claimed == "78c34ccc99a368e6d764ac52c1fabad2a10f4458f31b50bda63b763168654786"
+    assert {row["action"] for row in qwen_probe["scenario_results"]} == {"normal"}
+    assert qwen_probe["checks"]["combined_crisis_at_least_defensive"] is False
+
+    mechanism_path = REPOSITORY / "docs/model-research/polymarket/round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json"
+    mechanism = json.loads(mechanism_path.read_text(encoding="utf-8"))
+    mechanism_claimed = mechanism.pop("artifact_sha256")
+    assert mechanism_claimed == _canonical_sha256(mechanism)
+    assert mechanism_claimed == "fac8ddbf58e585259de0572bfb7334af7d8a711291919babba562edf29184376"
+    assert mechanism["decision"]["additional_model_cycling_on_same_mechanism_allowed"] is False
+    assert mechanism["decision"]["fast_qwen3_4b_entry_reviewer_status_changed"] is False
+
 
 def test_round25_ai_supervisor_packet_is_target_free_and_hard_gated() -> None:
     packet = _packet()
