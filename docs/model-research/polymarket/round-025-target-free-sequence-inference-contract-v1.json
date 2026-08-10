@@ -1,0 +1,85 @@
+{
+  "schema_version": "polymarket-round25-target-free-sequence-inference-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T18:29:08.1453245Z",
+  "status": "frozen_before_round25_v2_capture_start_and_before_selection_target_access",
+  "parents": {
+    "candidate_amendment_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2",
+    "candidate_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "predictive_evaluation_contract_sha256": "4e5036103cfb11319b68908a09fa9acdb93a02f4ff1cede9dec9e9a81f491077",
+    "sequence_materialization_contract_sha256": "3fe3923adc7e638e82adc6db54c84aee0aae135f2baa944c2575191a79327ba9"
+  },
+  "problem": {
+    "observed_gap": "the training sequence schema contains terminal labels and official-resolution identity, so it cannot be used to generate a prediction panel before one-use selection-target access",
+    "prohibited_response": "selection labels, winning-token evidence, resolution hashes, auxiliary future targets, or target-bearing dataset identity must not enter sequence inference",
+    "required_response": "materialize an independently hash-bound target-free selection tensor from causal feature snapshots only"
+  },
+  "research_basis": [
+    {
+      "source": "https://arxiv.org/abs/2512.06932",
+      "finding": "time-series sequences constructed before the evaluation split can leak future information and materially distort reported performance",
+      "design_consequence": "selection inference receives only its already-partitioned causal feature history and never a target-bearing sequence object"
+    },
+    {
+      "source": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7029819",
+      "finding": "financial backtest leakage can materially alter measured performance and must be controlled with explicit chronological and embargo boundaries",
+      "design_consequence": "the existing purged chronological roles remain unchanged and this contract adds a hard object-level target boundary"
+    }
+  ],
+  "selection_inference": {
+    "role": "selection_only",
+    "endpoint_selection": "the unchanged target-blind four-phase hash-ranked endpoint selector",
+    "history_rows": 64,
+    "cadence_ms": 250,
+    "gap_behavior": "reset history at every missing 250 millisecond receipt",
+    "normalization": "the exact training-role median and interquartile transform bound by its SHA-256",
+    "allowed_inputs": [
+      "condition_id",
+      "event_start_ms",
+      "decision_time_ms",
+      "causal_joint_twap_clob_feature_rows",
+      "same_receipt_market_prior_probability",
+      "source_receipt_audit_sha256",
+      "source_feature_chain_sha256",
+      "training_feature_transform"
+    ],
+    "forbidden_inputs": [
+      "target_up",
+      "winning_token_id",
+      "official_resolution_payload",
+      "resolution_sha256",
+      "resolution_authority_sha256",
+      "selection_dataset_sha256",
+      "future_market_prior",
+      "auxiliary_future_target",
+      "profit_and_loss",
+      "candidate_metric",
+      "candidate_rank"
+    ]
+  },
+  "integrity": {
+    "arrays": "little-endian contiguous read-only float32 sequence tensor, float64 prior vector, and int64 decision times",
+    "source_binding": "each endpoint and causal history is hash-bound and the complete condition feature chain is reduced to one manifest SHA-256",
+    "receipt_binding": "every batch carries the terminal receipt-audit SHA-256 supplied by the target-free materializer",
+    "candidate_prediction_order": "the sequence output must be joined to the prediction panel by exact condition, decision time, endpoint source chain, and frozen candidate order",
+    "target_bearing_training_batch_selection_role_allowed": false,
+    "selection_target_access_before_prediction_freeze_allowed": false,
+    "reconstructed_or_substituted_market_data_allowed": false
+  },
+  "authority": {
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "truth_state": {
+    "round25_v2_selection_features_available": false,
+    "target_free_selection_sequence_materialized": false,
+    "candidate_model_fitted": false,
+    "prediction_panel_frozen": false,
+    "selection_target_accessed": false,
+    "predictive_evaluation_completed": false
+  },
+  "contract_sha256": "d2e0b304a616ba1d819ac2c28af584291bd393c1cd1f84b0d831c3bcfa5d02ff"
+}

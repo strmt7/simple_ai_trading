@@ -1,0 +1,83 @@
+{
+  "schema_version": "polymarket-round25-sequence-materialization-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T15:29:12Z",
+  "status": "frozen_target_and_outcome_blind_before_round25_v2_capture_start",
+  "parents": {
+    "twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "candidate_selection_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "candidate_selection_amendment_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2",
+    "control_fit_contract_sha256": "4865de354943bf3db3d8a5a3b93f348606944c3bb5d75a55a49417ff79872e54",
+    "joint_feature_schema_version": "polymarket-round25-joint-twap-clob-features-v1",
+    "joint_feature_names_sha256": "e48d8984f94f1c557667480fc7dada1fe552d78410e69f00f963d29fe0415f51",
+    "joint_feature_width": 148
+  },
+  "terminal_examples": {
+    "source": "exact_sixteen_target_blind_phase_balanced_round25_development_samples",
+    "condition_weight": 1.0,
+    "endpoint_weight": 0.0625,
+    "terminal_target": "official_polymarket_resolved_outcome_only",
+    "endpoint_feature_and_source_hash_identity_required": true
+  },
+  "causal_history": {
+    "rows": 64,
+    "cadence_ms": 250,
+    "duration_ms": 15750,
+    "condition_crossing_allowed": false,
+    "future_receipt_allowed": false,
+    "gap_policy": "reset_history_after_any_non_250ms_cadence",
+    "prefix_and_post_gap_padding": "left_zero_after_training_only_normalization",
+    "history_valid_mask_channel": true,
+    "model_input_width": 149,
+    "endpoint_row_required": true,
+    "endpoint_row_is_last_valid_step": true
+  },
+  "auxiliary_targets": {
+    "definitions": [
+      "exact_plus_1000ms_market_prior_logit_change",
+      "exact_plus_5000ms_market_prior_logit_change"
+    ],
+    "same_condition_required": true,
+    "exact_future_decision_timestamp_required": true,
+    "missing_or_outside_condition_policy": "mask_and_exclude_from_loss",
+    "masked_storage_placeholder": 0.0,
+    "masked_placeholder_treated_as_target": false,
+    "inference_access_allowed": false
+  },
+  "normalization": {
+    "source": "round25_control_fit_contract_training_median_iqr_transform",
+    "fit_on_train_only": true,
+    "float64_transform_before_float32_sequence_storage": true,
+    "binary_availability_indicators_unscaled": true
+  },
+  "resource_policy": {
+    "condition_stream_order": "chronological",
+    "maximum_conditions_per_materialized_batch": 16,
+    "maximum_endpoints_per_materialized_batch": 256,
+    "maximum_sequence_tensor_bytes_per_materialized_batch": 9764864,
+    "temporary_sequence_files_allowed": false,
+    "database_duplication_allowed": false,
+    "bounded_in_memory_batches_required": true
+  },
+  "integrity": {
+    "source_chain_sha256_per_endpoint_required": true,
+    "endpoint_sample_sha256_required": true,
+    "normalized_sequence_tensor_sha256_required": true,
+    "terminal_and_auxiliary_tensor_sha256_required": true,
+    "canonical_batch_sha256_required": true,
+    "nonfinite_values_allowed": false,
+    "trading_authority": false
+  },
+  "truth_state": {
+    "round25_v2_data_captured": false,
+    "sequence_corpus_materialized": false,
+    "tcn_model_fitted": false,
+    "selection_evaluated": false,
+    "sealed_test_evaluated": false,
+    "edge_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false
+  },
+  "contract_sha256": "3fe3923adc7e638e82adc6db54c84aee0aae135f2baa944c2575191a79327ba9"
+}

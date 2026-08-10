@@ -1,0 +1,233 @@
+{
+  "schema_version": "polymarket-round25-twap-native-candidate-selection-design-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T14:49:22.3305644Z",
+  "status": "frozen_target_and_outcome_blind_before_round25_v2_capture_start",
+  "parents": {
+    "twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "capture_commit_oid": "0e2f5c043ed0a0309d0e420b90b667565841d019",
+    "capture_design_sha256": "c083a7fb4a3ecb0f080ce2bf2c2bb3021000b2ab85562caa6a9a69067c6e673d",
+    "capture_plan_sha256": "a0b5525697c3c1e1b175bd0f0ac724fdb62845638d2040e9964221031d3e7b20",
+    "wire_qualification_sha256": "d06f76ba7305b55e254209839360af277f68947f1ff5fbe986df5a9dd374334d"
+  },
+  "feature_contracts": {
+    "twap_schema_version": "polymarket-round25-twap-causal-features-v1",
+    "twap_width": 37,
+    "twap_names_sha256": "7371705c314bf05f7353be10d33d62ab42f68d7a877053758e212cd08d3384da",
+    "clob_schema_version": "polymarket-round25-causal-clob-features-v1",
+    "clob_width": 111,
+    "clob_names_sha256": "7611a4dde6a86f0531c0c774f533ff9a5639a860a1c1ccec26127e007f476d4f",
+    "joint_schema_version": "polymarket-round25-joint-twap-clob-features-v1",
+    "joint_width": 148,
+    "joint_names_sha256": "e48d8984f94f1c557667480fc7dada1fe552d78410e69f00f963d29fe0415f51",
+    "future_receipts_allowed": false,
+    "partial_source_rows_allowed": false,
+    "structural_probability_allowed": false,
+    "resolution_or_target_in_features_allowed": false
+  },
+  "research_basis": [
+    {
+      "source": "https://docs.polymarket.com/market-data/chainlink-twap",
+      "finding": "the direct RTDS source publishes exact signed E18 30-second rolling TWAP observations and no historical replay after disconnect",
+      "design_consequence": "preserve exact E18 values, reject gaps, and do not reconstruct the proprietary TWAP"
+    },
+    {
+      "source": "https://arxiv.org/abs/2602.00133",
+      "finding": "prediction-market agent evaluation requires deterministic event replay, maker-taker semantics, fees, lifecycle, and settlement",
+      "design_consequence": "predictive ranking precedes a separate event-time economic replay and no midpoint execution is allowed"
+    },
+    {
+      "source": "https://arxiv.org/abs/2607.26245",
+      "finding": "a synchronized Polymarket and Binance walk-forward study did not beat the market prior and a simplistic lead-lag strategy lost money",
+      "design_consequence": "the market prior is a mandatory control and Binance remains a separately ablated optional predictor"
+    },
+    {
+      "source": "https://arxiv.org/abs/2603.24137",
+      "finding": "realistic limit-order-book evaluation is sensitive to latency, spread, imbalance, signed-flow impact, decay, and reversion",
+      "design_consequence": "economic promotion requires event-time books, measured collector latency, partial fills, impact, decay, and reversion sensitivity"
+    },
+    {
+      "source": "https://arxiv.org/abs/2602.07048",
+      "finding": "an LLM improved prediction-market lead-lag portfolios primarily by filtering fragile relationships and reducing loss magnitude",
+      "design_consequence": "local LLMs may only veto or reduce deterministic risk and must prove matched economic uplift"
+    },
+    {
+      "source": "https://arxiv.org/abs/2605.19337",
+      "finding": "most published LLM trading studies lack time-consistent splits, transaction costs, and reproducible execution semantics",
+      "design_consequence": "all AI comparisons use sealed chronological populations, identical costs, exact model digests, and reproducible decision traces"
+    }
+  ],
+  "population_and_splits": {
+    "unit": "whole_five_minute_condition",
+    "order": "chronological",
+    "boundaries": "exact_round25_v2_campaign_plan_roles",
+    "purge_conditions_between_roles": 1,
+    "feature_normalization": "training_role_median_and_interquartile_range_only_with_binary_availability_indicators_unscaled",
+    "training_endpoints_per_condition": 16,
+    "endpoint_selection": "deterministic_condition_hash_rank_with_four_equal_event_phase_strata_and_four_endpoints_per_stratum",
+    "condition_weight": 1.0,
+    "endpoint_weight_within_condition": 0.0625,
+    "live_decision_cadence_ms": 250,
+    "target": "official_polymarket_resolved_outcome_only",
+    "constructed_twap_terminal_target_allowed": false,
+    "minimum_training_conditions": 1000,
+    "minimum_calibration_conditions": 250,
+    "minimum_selection_conditions": 250,
+    "minimum_sealed_test_conditions": 500
+  },
+  "finite_candidate_ledger": [
+    {
+      "candidate_id": "market-prior-v1",
+      "family": "control",
+      "definition": "normalized_same_receipt_up_and_down_clob_midpoint_prior",
+      "trainable_parameters": 0
+    },
+    {
+      "candidate_id": "phase-isotonic-market-prior-v1",
+      "family": "control",
+      "definition": "market_prior_isotonic_calibration_in_four_predeclared_event_phase_buckets",
+      "fit_role": "calibration_only"
+    },
+    {
+      "candidate_id": "l2-logistic-residual-v1",
+      "family": "linear_control",
+      "definition": "market_prior_logit_plus_bounded_joint_feature_residual",
+      "regularization_grid": [0.01, 0.1, 1.0, 10.0],
+      "selection_role": "calibration_only",
+      "residual_logit_bound": 4.0
+    },
+    {
+      "candidate_id": "lightgbm-residual-depth3-v1",
+      "family": "tabular_ml",
+      "definition": "market_prior_logit_plus_bounded_shallow_gradient_boosted_residual",
+      "max_depth": 3,
+      "num_leaves": 8,
+      "learning_rate": 0.03,
+      "maximum_trees": 500,
+      "minimum_conditions_per_leaf": 25,
+      "residual_logit_bound": 4.0
+    },
+    {
+      "candidate_id": "lightgbm-residual-depth5-v1",
+      "family": "tabular_ml",
+      "definition": "market_prior_logit_plus_bounded_shallow_gradient_boosted_residual",
+      "max_depth": 5,
+      "num_leaves": 16,
+      "learning_rate": 0.02,
+      "maximum_trees": 750,
+      "minimum_conditions_per_leaf": 40,
+      "residual_logit_bound": 4.0
+    },
+    {
+      "candidate_id": "causal-multitask-tcn-residual-v1",
+      "family": "sequence_ml",
+      "input_rows": 64,
+      "input_duration_seconds": 16,
+      "channels": 32,
+      "kernel_size": 3,
+      "dilations": [1, 2, 4, 8],
+      "convolutions_per_block": 2,
+      "dropout": 0.1,
+      "terminal_head": "market_prior_logit_plus_four_times_tanh_residual",
+      "auxiliary_training_heads": [
+        "one_second_future_market_prior_logit_change",
+        "five_second_future_market_prior_logit_change"
+      ],
+      "loss": "condition_equal_terminal_binary_cross_entropy_plus_0.1_huber_per_auxiliary_head",
+      "inference_uses_auxiliary_heads": false,
+      "training_seeds": [1729, 3253, 7919],
+      "ensemble": "arithmetic_mean_probability_across_three_seeds"
+    }
+  ],
+  "candidate_selection": {
+    "primary_metrics_in_order": [
+      "condition_equal_log_loss",
+      "condition_equal_brier_score",
+      "expected_calibration_error",
+      "balanced_accuracy",
+      "roc_auc"
+    ],
+    "market_prior_control_must_be_beaten": true,
+    "paired_condition_block_bootstrap_replicates": 10000,
+    "familywise_selection_adjustment": "romano_wolf_stepdown_over_the_finite_candidate_ledger",
+    "predictive_gate": "lower_95_percent_simultaneous_improvement_bound_strictly_positive_for_log_loss_and_brier",
+    "economic_replay_after_predictive_gate_only": true,
+    "negative_or_null_result_published": true
+  },
+  "ai_candidate_audit": {
+    "role": "asynchronous_risk_veto_or_position_reduction_only",
+    "direct_250ms_trade_generation_allowed": false,
+    "entry_expansion_allowed": false,
+    "safety_or_exit_override_allowed": false,
+    "raw_frame_input_allowed": false,
+    "maximum_packet_age_ms": 5000,
+    "maximum_response_validity_ms": 10000,
+    "required_output": {
+      "veto_new_entries": "boolean",
+      "maximum_size_multiplier": "closed_interval_zero_to_one",
+      "cooldown_ms": "integer_zero_to_300000",
+      "reason_codes": "finite_predeclared_enum"
+    },
+    "candidates": [
+      {
+        "candidate_id": "qwen3.5-9b-risk-veto-v1",
+        "upstream": "Qwen/Qwen3.5-9B",
+        "parameters": "9B",
+        "license": "Apache-2.0",
+        "local_exact_digest_required": true,
+        "status": "eligible_for_target_blind_runtime_and_matched_holdout_only"
+      },
+      {
+        "candidate_id": "fin-r1-8b-risk-veto-v1",
+        "upstream": "SUFE-AIFLM-Lab/Fin-R1",
+        "parameters": "8B",
+        "local_exact_digest_required": true,
+        "status": "eligible_for_target_blind_runtime_and_matched_holdout_only"
+      }
+    ],
+    "rejected_candidates": [
+      {
+        "candidate_id": "fino1-8b",
+        "reason": "the upstream card documents a FinQA mathematical-reasoning fine-tune with placeholder training fields and supplies no high-frequency trading evidence; the prior host probe also emitted an unsafe approval that the deterministic boundary rejected"
+      }
+    ],
+    "matched_uplift_gate": {
+      "same_candidate_predictions": true,
+      "same_decision_population": true,
+      "same_execution_replay": true,
+      "same_cost_and_latency_scenarios": true,
+      "minimum_test_conditions": 500,
+      "minimum_ai_interventions": 50,
+      "minimum_valid_response_ratio": 0.99,
+      "maximum_safety_schema_violations": 0,
+      "paired_condition_block_bootstrap_replicates": 10000,
+      "required_net_pnl_uplift_lower_95_bound": "strictly_positive",
+      "required_expected_shortfall_change_upper_95_bound": "nonpositive",
+      "required_maximum_drawdown_point_change": "nonpositive",
+      "selection_adjustment": "holm_over_two_ai_candidates"
+    }
+  },
+  "execution_gate": {
+    "event_time_l2_book_replay": true,
+    "measured_collector_latency_distribution": true,
+    "maker_taker_and_exact_market_fee_schedule": true,
+    "partial_fill_cancel_reject_disconnect_and_recovery_paths": true,
+    "queue_position_or_conservative_taker_assumption": true,
+    "impact_decay_and_reversion_sensitivity": true,
+    "midpoint_or_zero_latency_execution_allowed": false,
+    "paper_or_live_authority_from_predictive_result_allowed": false
+  },
+  "truth_state": {
+    "prospective_round25_v2_rows_available": false,
+    "official_resolution_semantics_verified": false,
+    "candidate_trained": false,
+    "candidate_selected": false,
+    "economic_replay_completed": false,
+    "ai_uplift_tested": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494"
+}

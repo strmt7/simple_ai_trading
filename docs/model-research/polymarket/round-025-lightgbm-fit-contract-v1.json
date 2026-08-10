@@ -1,0 +1,107 @@
+{
+  "schema_version": "polymarket-round25-lightgbm-fit-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T15:19:40Z",
+  "status": "frozen_target_and_outcome_blind_before_round25_v2_capture_start",
+  "parents": {
+    "twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "candidate_selection_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "candidate_selection_amendment_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2",
+    "control_fit_contract_sha256": "4865de354943bf3db3d8a5a3b93f348606944c3bb5d75a55a49417ff79872e54",
+    "joint_feature_schema_version": "polymarket-round25-joint-twap-clob-features-v1",
+    "joint_feature_names_sha256": "e48d8984f94f1c557667480fc7dada1fe552d78410e69f00f963d29fe0415f51",
+    "joint_feature_width": 148
+  },
+  "dataset_gates": {
+    "fit_role": "train",
+    "early_stopping_role": "calibration",
+    "minimum_train_conditions": 2000,
+    "minimum_calibration_conditions": 400,
+    "whole_condition_disjointness_required": true,
+    "chronological_role_order_required": true,
+    "condition_equal_weight": 1.0,
+    "endpoint_weight": 0.0625,
+    "undersized_fit_allowed": false,
+    "selection_or_test_role_during_fit_allowed": false
+  },
+  "preprocessing": {
+    "source": "round25_control_fit_contract_training_median_iqr_transform",
+    "fit_on_train_only": true,
+    "binary_availability_indicators_unscaled": true,
+    "future_or_target_derived_features_allowed": false
+  },
+  "shared_training": {
+    "objective": "binary_logloss_with_exact_market_prior_logit_init_score",
+    "evaluation_metric": "binary_logloss",
+    "training_matrix_dtype": "float32_after_float64_training_only_transform",
+    "prediction": "exact_market_prior_logit_plus_four_times_tanh_of_tree_raw_residual_divided_by_four",
+    "residual_logit_bound": 4.0,
+    "feature_fraction": 1.0,
+    "bagging_fraction": 1.0,
+    "bagging_frequency": 0,
+    "lambda_l1": 0.0,
+    "lambda_l2": 1.0,
+    "max_bin": 127,
+    "minimum_gain_to_split": 0.0,
+    "feature_pre_filter": false,
+    "seed": 25025,
+    "serialized_model_prediction_identity_tolerance": 1e-10,
+    "probability_clipping_allowed": false
+  },
+  "candidates": [
+    {
+      "candidate_id": "lightgbm-residual-depth3-v1",
+      "max_depth": 3,
+      "num_leaves": 8,
+      "learning_rate": 0.03,
+      "maximum_trees": 500,
+      "early_stopping_rounds": 50,
+      "minimum_conditions_per_leaf": 25,
+      "minimum_rows_per_leaf": 400
+    },
+    {
+      "candidate_id": "lightgbm-residual-depth5-v1",
+      "max_depth": 5,
+      "num_leaves": 16,
+      "learning_rate": 0.02,
+      "maximum_trees": 750,
+      "early_stopping_rounds": 75,
+      "minimum_conditions_per_leaf": 40,
+      "minimum_rows_per_leaf": 640
+    }
+  ],
+  "compute": {
+    "resolver": "capability_tested_lightgbm_backend_parameters",
+    "supported_effective_backends": [
+      "cpu",
+      "opencl",
+      "cuda"
+    ],
+    "explicit_accelerator_failure": "fail_closed",
+    "automatic_cpu_fallback": "allowed_and_recorded",
+    "opencl_device_pinning": true,
+    "opencl_reproducibility_mitigation": "fp64_accumulation",
+    "backend_and_device_recorded_in_artifact": true
+  },
+  "artifact_contract": {
+    "canonical_json_sha256_required": true,
+    "source_train_and_calibration_dataset_sha256_binding_required": true,
+    "feature_name_and_schema_binding_required": true,
+    "candidate_and_fit_contract_binding_required": true,
+    "best_iteration_recorded": true,
+    "model_string_recorded": true,
+    "nonfinite_values_allowed": false,
+    "trading_authority": false
+  },
+  "truth_state": {
+    "round25_v2_data_captured": false,
+    "lightgbm_model_fitted": false,
+    "selection_evaluated": false,
+    "sealed_test_evaluated": false,
+    "edge_verified": false,
+    "profitability_verified": false,
+    "paper_authority": false,
+    "live_authority": false
+  },
+  "contract_sha256": "f82bbad224f48b97a4e90c95af1f5180228a1e45590af03a75024acac29f64ec"
+}

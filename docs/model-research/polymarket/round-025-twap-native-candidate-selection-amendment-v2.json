@@ -1,0 +1,70 @@
+{
+  "schema_version": "polymarket-round25-twap-native-candidate-selection-amendment-v2",
+  "round": 25,
+  "created_at_utc": "2026-08-10T14:52:30.0000000Z",
+  "status": "frozen_before_round25_v2_capture_start",
+  "parent_candidate_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+  "reason": "the source-bound Round 25 v2 campaign plan contains development train calibration and selection intervals only and cannot truthfully supply the sealed test population described by the parent design",
+  "development_campaign": {
+    "capture_plan_sha256": "a0b5525697c3c1e1b175bd0f0ac724fdb62845638d2040e9964221031d3e7b20",
+    "scheduled_start_ms": 1786406400000,
+    "train_end_ms": 1787443200000,
+    "calibration_end_ms": 1787745600000,
+    "selection_end_ms": 1788046800000,
+    "roles": [
+      "train",
+      "calibration",
+      "selection"
+    ],
+    "minimum_train_conditions": 2000,
+    "minimum_calibration_conditions": 400,
+    "minimum_selection_conditions": 400,
+    "boundary_purge_conditions_each_side": 1,
+    "test_role_present": false,
+    "model_claim_may_be_frozen_after_selection": true,
+    "edge_profitability_or_ai_uplift_claim_allowed": false
+  },
+  "separate_sealed_test_campaign": {
+    "required": true,
+    "plan_available": false,
+    "must_start_after_model_and_ai_claim_freeze": true,
+    "minimum_conditions": 500,
+    "same_source_feature_and_execution_contracts_required": true,
+    "single_use_target_access_required": true,
+    "development_refit_after_test_access_allowed": false,
+    "candidate_reselection_after_test_access_allowed": false,
+    "ai_reselection_after_test_access_allowed": false
+  },
+  "superseded_parent_fields": {
+    "population_and_splits.boundaries": "development roles come from the exact Round 25 v2 plan; sealed test comes from a separate future post-freeze plan",
+    "population_and_splits.minimum_training_conditions": 2000,
+    "population_and_splits.minimum_calibration_conditions": 400,
+    "population_and_splits.minimum_selection_conditions": 400,
+    "population_and_splits.minimum_sealed_test_conditions": 500
+  },
+  "unchanged_parent_sections": [
+    "feature_contracts",
+    "research_basis",
+    "finite_candidate_ledger",
+    "candidate_selection",
+    "ai_candidate_audit",
+    "execution_gate"
+  ],
+  "truth_state": {
+    "development_campaign_started": false,
+    "development_rows_available": false,
+    "development_targets_accessed": false,
+    "candidate_trained": false,
+    "candidate_selected": false,
+    "model_claim_frozen": false,
+    "sealed_test_campaign_planned": false,
+    "sealed_test_rows_available": false,
+    "sealed_test_targets_accessed": false,
+    "ai_uplift_tested": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2"
+}

@@ -1,0 +1,76 @@
+{
+  "schema_version": "polymarket-round25-model-ledger-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T18:31:52.9333943Z",
+  "status": "frozen_before_round25_v2_capture_start_and_before_any_model_fit",
+  "parents": {
+    "candidate_amendment_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2",
+    "candidate_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "control_fit_contract_sha256": "4865de354943bf3db3d8a5a3b93f348606944c3bb5d75a55a49417ff79872e54",
+    "lightgbm_fit_contract_sha256": "f82bbad224f48b97a4e90c95af1f5180228a1e45590af03a75024acac29f64ec",
+    "predictive_evaluation_contract_sha256": "4e5036103cfb11319b68908a09fa9acdb93a02f4ff1cede9dec9e9a81f491077",
+    "target_free_sequence_inference_contract_sha256": "d2e0b304a616ba1d819ac2c28af584291bd393c1cd1f84b0d831c3bcfa5d02ff",
+    "tcn_fit_contract_sha256": "abe1f93ccab38172e400286601e6fa9befaadf07acb448d0d2604314c2c59876"
+  },
+  "candidate_order": [
+    "market-prior-v1",
+    "phase-isotonic-market-prior-v1",
+    "l2-logistic-residual-v1",
+    "lightgbm-residual-depth3-v1",
+    "lightgbm-residual-depth5-v1",
+    "causal-multitask-tcn-residual-v1"
+  ],
+  "ledger": {
+    "one_exact_artifact_per_trainable_candidate": true,
+    "market_prior_control_identity_hash_required": true,
+    "training_dataset_identity_required": true,
+    "calibration_dataset_identity_required": true,
+    "common_resolution_authority_required": true,
+    "exact_source_commit_required": true,
+    "implementation_file_sha256_required": true,
+    "candidate_reordering_allowed": false,
+    "mixed_training_or_calibration_populations_allowed": false,
+    "mixed_feature_transforms_allowed": false,
+    "mixed_resolution_authorities_allowed": false,
+    "selection_target_access_allowed": false,
+    "paper_or_live_authority": false
+  },
+  "persistence": {
+    "format": "strict_duplicate-rejecting_canonical_json",
+    "maximum_bytes": 67108864,
+    "artifact_payloads_embedded": true,
+    "model_weights_embedded": true,
+    "artifact_self_hashes_revalidated_on_load": true,
+    "ledger_self_hash_revalidated_on_load": true,
+    "write_policy": "append_only_new_path_with_idempotent_same-payload_acceptance",
+    "partial_or_tampered_file_behavior": "fail_closed_without_refit_or_target_access",
+    "temporary_model_copy_required": false
+  },
+  "prediction_boundary": {
+    "selection_predictions_generated_from_target_free_features_only": true,
+    "target_free_tcn_sequence_contract_required": true,
+    "all_six_candidate_outputs_frozen_together": true,
+    "candidate_artifact_hashes_bound_to_prediction_panel": true,
+    "selection_target_access_after_panel_freeze_only": true,
+    "model_refit_after_selection_target_access_allowed": false
+  },
+  "resource_policy": {
+    "lightgbm_backend": "capability_tested_auto_or_explicit_supported_backend",
+    "tcn_backend": "device_neutral_auto_or_explicit_supported_backend",
+    "in_memory_model_fit": true,
+    "overlapping_feature_or_weight_cache_allowed": false,
+    "progress_heartbeat_required_for_tcn_fit": true
+  },
+  "truth_state": {
+    "round25_v2_model_eligible_corpus_exists": false,
+    "model_ledger_created": false,
+    "candidate_fitted": false,
+    "prediction_panel_frozen": false,
+    "selection_target_accessed": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "contract_sha256": "9e207eabf669a39741f619681357a61b73b2211bc8ecd7498de746310c6b6914"
+}

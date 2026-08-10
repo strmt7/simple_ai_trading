@@ -207,6 +207,8 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert "round-025-lightgbm-fit-contract-v1.json" in artifact_paths
     assert "round-025-predictive-evaluation-contract-v1.json" in artifact_paths
     assert "round-025-sequence-materialization-contract-v1.json" in artifact_paths
+    assert "round-025-target-free-sequence-inference-contract-v1.json" in artifact_paths
+    assert "round-025-model-ledger-contract-v1.json" in artifact_paths
     assert "round-025-tcn-directml-host-probe-2026-08-10.json" in artifact_paths
     assert "round-025-tcn-fit-contract-v1.json" in artifact_paths
     assert (

@@ -1,0 +1,102 @@
+{
+  "schema_version": "polymarket-round25-control-fit-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-10T15:08:41Z",
+  "status": "frozen_target_and_outcome_blind_before_round25_v2_capture_start",
+  "parents": {
+    "twap_native_model_design_sha256": "4f227d60c8a59b21f687679b41abdce668430480692526e230730c0248719fdc",
+    "candidate_selection_design_sha256": "a9ae152730cc4d931f3d5846f339143e67dbeca17449ca28950d0a8d3d129494",
+    "candidate_selection_amendment_sha256": "9bd48b5ca12d717bd14ef8c00754ff4166c75a854fa78ee3abf2fd46af2384e2",
+    "joint_feature_schema_version": "polymarket-round25-joint-twap-clob-features-v1",
+    "joint_feature_names_sha256": "e48d8984f94f1c557667480fc7dada1fe552d78410e69f00f963d29fe0415f51",
+    "joint_feature_width": 148
+  },
+  "dataset_gates": {
+    "fit_roles": [
+      "train",
+      "calibration"
+    ],
+    "minimum_train_conditions": 2000,
+    "minimum_calibration_conditions": 400,
+    "whole_condition_disjointness_required": true,
+    "chronological_role_order_required": true,
+    "condition_equal_weight": 1.0,
+    "endpoint_weight": 0.0625,
+    "undersized_fit_allowed": false,
+    "sealed_test_access_allowed": false
+  },
+  "market_prior_control": {
+    "candidate_id": "market-prior-v1",
+    "definition": "exact_same_receipt_normalized_up_down_clob_midpoint_prior",
+    "fit_required": false,
+    "probability_clipping_allowed": false
+  },
+  "phase_isotonic_control": {
+    "candidate_id": "phase-isotonic-market-prior-v1",
+    "fit_role": "calibration",
+    "phase_boundaries_elapsed_ms": [
+      0,
+      75000,
+      150000,
+      225000,
+      300000
+    ],
+    "algorithm": "weighted_pool_adjacent_violators_after_exact_prior_tie_aggregation",
+    "interpolation": "piecewise_linear_between_block_edge_thresholds_constant_outside_range",
+    "monotonic_direction": "nondecreasing",
+    "single_class_phase_allowed": false,
+    "probability_clipping_allowed": false
+  },
+  "logistic_residual_control": {
+    "candidate_id": "l2-logistic-residual-v1",
+    "fit_role": "train",
+    "selection_role": "calibration",
+    "normalization": "training_role_column_median_and_interquartile_range",
+    "quantile_method": "linear",
+    "zero_iqr_scale": 1.0,
+    "binary_availability_suffix": "_available",
+    "binary_availability_center": 0.0,
+    "binary_availability_scale": 1.0,
+    "l2_grid": [
+      0.01,
+      0.1,
+      1.0,
+      10.0
+    ],
+    "penalize_intercept": false,
+    "residual_logit_parameterization": "4_times_tanh_of_raw_residual_divided_by_4",
+    "residual_logit_bound": 4.0,
+    "objective": "condition_equal_weighted_binary_log_loss_plus_half_l2_coefficient_norm_squared",
+    "optimizer": "scipy_lbfgsb_analytic_gradient",
+    "optimizer_max_iterations": 512,
+    "optimizer_ftol": 1e-11,
+    "optimizer_gtol": 1e-8,
+    "selection_order": [
+      "condition_equal_log_loss_ascending",
+      "condition_equal_brier_score_ascending",
+      "l2_grid_order_ascending"
+    ],
+    "probability_clipping_allowed": false
+  },
+  "artifact_contract": {
+    "canonical_json_sha256_required": true,
+    "source_dataset_sha256_binding_required": true,
+    "feature_name_and_schema_binding_required": true,
+    "candidate_design_binding_required": true,
+    "nonfinite_values_allowed": false,
+    "trading_authority": false
+  },
+  "truth_state": {
+    "round25_v2_data_captured": false,
+    "control_model_fitted": false,
+    "selection_evaluated": false,
+    "sealed_test_planned": false,
+    "sealed_test_evaluated": false,
+    "edge_verified": false,
+    "profitability_verified": false,
+    "ai_uplift_verified": false,
+    "paper_authority": false,
+    "live_authority": false
+  },
+  "contract_sha256": "4865de354943bf3db3d8a5a3b93f348606944c3bb5d75a55a49417ff79872e54"
+}
