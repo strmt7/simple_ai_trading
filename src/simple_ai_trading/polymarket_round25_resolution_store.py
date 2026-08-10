@@ -38,7 +38,7 @@ from .polymarket_round25_joint_store import (
 
 
 POLYMARKET_ROUND25_RESOLUTION_CONTRACT_SHA256 = (
-    "f0f0faf5da10c18be4d3b19989988c626aaa95aec105f787098505f7fbef2700"
+    "bc2e4f462ac45b99340872a0db1ad3078e3a53626f07ab1aedce0e65a0023a36"
 )
 POLYMARKET_ROUND25_RESOLUTION_ACCESS_CLAIM_SCHEMA_VERSION = (
     "polymarket-round25-resolution-access-claim-v1"

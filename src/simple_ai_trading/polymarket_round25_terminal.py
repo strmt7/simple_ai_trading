@@ -17,31 +17,35 @@ from .polymarket_recorder import (
     RawStreamMessage,
     StreamGap,
 )
-from .polymarket_round25_campaign import (
-    POLYMARKET_ROUND25_DESIGN_SHA256,
+from .polymarket_round25_active_campaign import (
+    POLYMARKET_ROUND25_ACTIVE_DESIGN_SHA256,
+    POLYMARKET_ROUND25_ACTIVE_PLAN_SHA256,
+    POLYMARKET_ROUND25_ACTIVE_RESULT_SCHEMA_VERSION,
+    POLYMARKET_ROUND25_ACTIVE_SOURCE_QUALIFICATION_SHA256,
+    POLYMARKET_ROUND25_ACTIVE_STATE_SCHEMA_VERSION,
+    POLYMARKET_ROUND25_ACTIVE_TWAP_TOPIC,
     POLYMARKET_ROUND25_END_MS,
     POLYMARKET_ROUND25_RESOLUTION_SOURCE,
-    POLYMARKET_ROUND25_RESULT_SCHEMA_VERSION,
     POLYMARKET_ROUND25_START_MS,
-    PolymarketRound25CampaignPlan,
-    load_round25_campaign_plan,
-    validate_round25_segment_manifest,
+    PolymarketRound25ActiveCampaignPlan,
+    load_round25_active_campaign_plan,
+    validate_round25_active_segment_manifest,
 )
 from .storage import write_bytes_atomic
 
 
 POLYMARKET_ROUND25_TERMINAL_DESIGN_RELATIVE = (
     "docs/model-research/polymarket/"
-    "round-025-terminal-receipt-materialization-design-v1.json"
+    "round-025-terminal-receipt-materialization-design-v2.json"
 )
 POLYMARKET_ROUND25_TERMINAL_DESIGN_SHA256 = (
-    "cd2ce1a720928d6bdd319433475e8530ad3071673d70b261658862ba2b2526a4"
+    "b7f693680de7eace5408489a75b65de2ba7058c7f01c0d8e0038430419eb7786"
 )
 POLYMARKET_ROUND25_TERMINAL_TRANSPORT_SCHEMA_VERSION = (
-    "polymarket-round25-twap-terminal-transport-v1"
+    "polymarket-round25-twap-terminal-transport-v2"
 )
 POLYMARKET_ROUND25_TERMINAL_RECEIPT_AUDIT_SCHEMA_VERSION = (
-    "polymarket-round25-twap-terminal-receipt-audit-v1"
+    "polymarket-round25-twap-terminal-receipt-audit-v2"
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _RUN_ID = re.compile(r"^[0-9a-f]{32}$")
@@ -167,15 +171,25 @@ def load_round25_terminal_design(repository: str | Path) -> dict[str, object]:
         claimed != _canonical_sha256(payload)
         or claimed != POLYMARKET_ROUND25_TERMINAL_DESIGN_SHA256
         or payload.get("schema_version")
-        != "polymarket-round25-terminal-receipt-materialization-design-v1"
-        or payload.get("status") != "frozen_before_first_eligible_round25_receipt"
+        != "polymarket-round25-terminal-receipt-materialization-design-v2"
+        or payload.get("status")
+        != "frozen_before_round25_v2_first_eligible_receipt"
+        or payload.get("created_at_utc") != "2026-08-10T21:34:23Z"
         or not isinstance(campaign, Mapping)
-        or campaign.get("capture_design_sha256") != POLYMARKET_ROUND25_DESIGN_SHA256
+        or campaign.get("capture_design_sha256")
+        != POLYMARKET_ROUND25_ACTIVE_DESIGN_SHA256
+        or campaign.get("capture_plan_sha256")
+        != POLYMARKET_ROUND25_ACTIVE_PLAN_SHA256
+        or campaign.get("source_qualification_sha256")
+        != POLYMARKET_ROUND25_ACTIVE_SOURCE_QUALIFICATION_SHA256
         or campaign.get("campaign_start_ms") != POLYMARKET_ROUND25_START_MS
         or campaign.get("campaign_end_ms") != POLYMARKET_ROUND25_END_MS
         or campaign.get("resolution_source") != POLYMARKET_ROUND25_RESOLUTION_SOURCE
         or campaign.get("required_clob_lanes") != ["clob"]
         or campaign.get("required_streams") != list(_REQUIRED_STREAMS)
+        or campaign.get("required_rtds_topics")
+        != [POLYMARKET_ROUND25_ACTIVE_TWAP_TOPIC]
+        or campaign.get("legacy_point_campaign_data_permitted") is not False
         or not isinstance(condition_admission, Mapping)
         or condition_admission.get("one_authoritative_clob_lane") is not True
         or condition_admission.get("redundant_lane_coverage_claim") is not False
@@ -183,11 +197,9 @@ def load_round25_terminal_design(repository: str | Path) -> dict[str, object]:
         or not isinstance(materialization, Mapping)
         or materialization.get("official_resolution_accessed") is not False
         or materialization.get("future_receipts_permitted") is not False
-        or materialization.get("round24_twap_settlement_label_constructed") is not False
         or not isinstance(authority, Mapping)
         or set(authority) != _DESIGN_AUTHORITY_FIELDS
         or any(authority.get(field) is not False for field in authority)
-        or int(payload.get("frozen_at_ms") or 0) >= POLYMARKET_ROUND25_START_MS
     ):
         raise ValueError("Round 25 terminal design differs")
     return {**payload, "design_sha256": claimed}
@@ -211,13 +223,13 @@ def _manifest_path(state_root: Path, index: int) -> Path:
 def _validated_manifest(
     state_root: Path,
     *,
-    plan: PolymarketRound25CampaignPlan,
+    plan: PolymarketRound25ActiveCampaignPlan,
     index: int,
 ) -> dict[str, object] | None:
     path = _manifest_path(state_root, index)
     if not path.exists():
         return None
-    value = validate_round25_segment_manifest(
+    value = validate_round25_active_segment_manifest(
         _read_object(path, label=f"segment {index} manifest"),
         plan,
     )
@@ -305,7 +317,7 @@ def _source_segment(
     path: Path,
     *,
     state_root: Path,
-    plan: PolymarketRound25CampaignPlan,
+    plan: PolymarketRound25ActiveCampaignPlan,
     expected_index: int,
 ) -> dict[str, object]:
     source = _read_object(path, label=f"segment {expected_index} result")
@@ -330,7 +342,8 @@ def _source_segment(
     if (
         set(source) != expected
         or claimed != _canonical_sha256(source)
-        or source.get("schema_version") != POLYMARKET_ROUND25_RESULT_SCHEMA_VERSION
+        or source.get("schema_version")
+        != POLYMARKET_ROUND25_ACTIVE_RESULT_SCHEMA_VERSION
         or source.get("plan_sha256") != plan.plan_sha256
         or source.get("segment_index") != expected_index
         or status not in _ALL_STATUSES
@@ -583,11 +596,12 @@ def validate_round25_terminal_transport_manifest(
         != POLYMARKET_ROUND25_TERMINAL_TRANSPORT_SCHEMA_VERSION
         or payload.get("terminal_design_sha256")
         != POLYMARKET_ROUND25_TERMINAL_DESIGN_SHA256
-        or _SHA256.fullmatch(str(payload.get("source_plan_sha256") or "")) is None
+        or payload.get("source_plan_sha256")
+        != POLYMARKET_ROUND25_ACTIVE_PLAN_SHA256
         or payload.get("source_capture_design_sha256")
-        != POLYMARKET_ROUND25_DESIGN_SHA256
-        or _SHA256.fullmatch(str(payload.get("source_qualification_sha256") or ""))
-        is None
+        != POLYMARKET_ROUND25_ACTIVE_DESIGN_SHA256
+        or payload.get("source_qualification_sha256")
+        != POLYMARKET_ROUND25_ACTIVE_SOURCE_QUALIFICATION_SHA256
         or payload.get("resolution_source") != POLYMARKET_ROUND25_RESOLUTION_SOURCE
         or payload.get("campaign_start_ms") != POLYMARKET_ROUND25_START_MS
         or payload.get("campaign_end_ms") != POLYMARKET_ROUND25_END_MS
@@ -642,7 +656,7 @@ def build_round25_terminal_transport_manifest(
     observed_at_ms: int | None = None,
 ) -> dict[str, object]:
     load_round25_terminal_design(repository)
-    plan = load_round25_campaign_plan(plan_path)
+    plan = load_round25_active_campaign_plan(plan_path)
     observed = (
         time.time_ns() // 1_000_000 if observed_at_ms is None else int(observed_at_ms)
     )
@@ -658,7 +672,7 @@ def build_round25_terminal_transport_manifest(
     if (
         state_sha256 != _canonical_sha256(state)
         or state.get("schema_version")
-        != "polymarket-round25-twap-core-campaign-state-v1"
+        != POLYMARKET_ROUND25_ACTIVE_STATE_SCHEMA_VERSION
         or state.get("plan_sha256") != plan.plan_sha256
         or state.get("status")
         not in {"campaign_window_ended", "source_regime_changed", "campaign_failed"}
@@ -694,7 +708,7 @@ def build_round25_terminal_transport_manifest(
         "terminal_design_sha256": POLYMARKET_ROUND25_TERMINAL_DESIGN_SHA256,
         "created_at_ms": observed,
         "source_plan_sha256": plan.plan_sha256,
-        "source_capture_design_sha256": POLYMARKET_ROUND25_DESIGN_SHA256,
+        "source_capture_design_sha256": POLYMARKET_ROUND25_ACTIVE_DESIGN_SHA256,
         "source_qualification_sha256": plan.source_qualification_sha256,
         "resolution_source": POLYMARKET_ROUND25_RESOLUTION_SOURCE,
         "campaign_start_ms": plan.scheduled_start_ms,

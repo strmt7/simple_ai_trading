@@ -24,12 +24,11 @@ failed source lineage is closed and will not be pooled into a successor.
 
 Round 25 v1 was retired before its first eligible receipt. Its generic
 Chainlink point-price assumptions are inadmissible for the current source
-regime. A bounded prestart v2 wire probe then found that the frozen fixture was
-also stale: the current exact topic is `crypto_prices_chainlink`, its payload
-contains `full_accuracy_value`, `symbol`, `timestamp`, and `value`, and it has
-no wire-level window field. The correction was frozen before capture; the
-hash-bound market configuration and resolution source remain the authority for
-the required 30-second window.
+regime. A bounded probe of that legacy topic was also retired as source
+evidence. The active v2 qualification instead observed the distinct
+`crypto_prices_twap_thirty` topic with exact E18 value, BTC/USD identity,
+source and publisher timestamps, and `window_s=30`. Point-topic frames are
+rejected rather than pooled or reinterpreted.
 
 Round 25 v2 is the source-correct successor. Before its 2026-08-11 00:00 UTC
 start, a credential-free live qualification observed two exact E18 BTC/USD
@@ -48,8 +47,9 @@ event-boundary TWAP values is only a frozen settlement hypothesis until it is
 matched against official resolutions; nearest-tick, Binance, and independently
 reconstructed TWAP substitutions are prohibited.
 
-The terminal receipt auditor and target-blind joint materializer/store are now
-implemented. They make one read-only, WAL-free receipt pass, rebuild one strict
+The [v2 terminal contract](../round-025-terminal-receipt-materialization-design-v2.json),
+receipt auditor, and target-blind joint materializer/store are implemented for
+the active v2 plan/state/result schemas. They make one read-only, WAL-free receipt pass, rebuild one strict
 top-20 CLOB lane, admit only exact E18 TWAP observations, and persist only the
 16 target-blind endpoints and bounded 64-step histories selected per condition.
 The store binds exact market, token, role, source-snapshot, and receipt-audit
@@ -61,7 +61,7 @@ winner agreement from credential-free Gamma and CLOB responses, keeps pending
 conditions unlabeled, and atomically publishes a distinct compressed target
 store only after full population and role-count audit. A prestart live check
 found that both public origins offer a Cloudflare response cookie. The frozen
-[v2 transport contract](../round-025-official-resolution-collection-contract-v2.json)
+[v3 transport contract](../round-025-official-resolution-collection-contract-v3.json)
 therefore rejects preexisting or outbound cookies but immediately discards
 offered response cookies before validation, retry, or return. The
 [post-close probe](../round-025-official-resolution-transport-probe-v1-2026-08-10.json)
@@ -70,7 +70,7 @@ retained and no credentials or orders. It is transport evidence only; no target
 collection, pre-close identity proof, resolution authority, or target store
 exists.
 
-The [post-capture coordinator v3](../round-025-post-capture-coordinator-contract-v3.json)
+The [post-capture coordinator v4](../round-025-post-capture-coordinator-contract-v4.json)
 binds the corrected resolution transport and exact-receipt economic contracts.
 Its single-writer,
 self-hashed recovery state orders terminal audit, feature publication, bounded
@@ -78,9 +78,13 @@ resolution batches, train/calibration-only loading, one-time transform fitting,
 finite model fitting, target-free selection prediction freeze, one-use
 selection access, and immutable predictive evaluation. Pending resolutions
 return before any model access. An economic scan is prohibited unless the
-predictive gate nominates exactly one frozen candidate.
+predictive gate nominates exactly one frozen candidate. The host-neutral
+`tools/run_polymarket_round25_post_capture.py` command adds an outer
+single-writer lock, creates the terminal manifest once, emits flushed JSON
+progress, and resumes bounded resolution batches. Its live-host pre-terminal
+check opened no capture database, created no output, and submitted no order.
 
-The [economic replay contract](../round-025-economic-replay-contract-v1.json)
+The [economic replay contract v2](../round-025-economic-replay-contract-v2.json)
 then fixes one exact receipt-time source scan, captured market-specific fees
 and venue delays, FAK depth walking, and 81 combinations of risk profile,
 latency, displayed depth, and adverse ticks. It uses initial capital only,
@@ -687,12 +691,16 @@ requires `--acknowledge-one-use-test-access`; only then may `evaluate` and
 - [Round 25 AI uplift contract](../round-025-ai-uplift-evaluation-contract-v2.json)
 - [Round 25 target-free sequence inference](../round-025-target-free-sequence-inference-contract-v1.json)
 - [Round 25 fitted-model ledger](../round-025-model-ledger-contract-v1.json)
-- [Round 25 RTDS wire correction](../round-025-twap-wire-schema-correction-v1.json)
-- [Round 25 joint feature materialization](../round-025-joint-feature-materialization-contract-v1.json)
-- [Round 25 official resolution collection v2](../round-025-official-resolution-collection-contract-v2.json)
+- [Round 25 v2 capture design](../round-025-twap-core-capture-design-v2.json)
+- [Round 25 v2 campaign plan](../round-025-twap-core-campaign-plan-publication-v2-2026-08-10.json)
+- [Round 25 v2 TWAP wire qualification](../round-025-twap-wire-source-qualification-v2-2026-08-10.json)
+- [Round 25 RTDS wire correction v2](../round-025-twap-wire-schema-correction-v2.json)
+- [Round 25 terminal receipt materialization v2](../round-025-terminal-receipt-materialization-design-v2.json)
+- [Round 25 joint feature materialization v2](../round-025-joint-feature-materialization-contract-v2.json)
+- [Round 25 official resolution collection v3](../round-025-official-resolution-collection-contract-v3.json)
 - [Round 25 official resolution transport probe](../round-025-official-resolution-transport-probe-v1-2026-08-10.json)
-- [Round 25 economic replay](../round-025-economic-replay-contract-v1.json)
-- [Round 25 post-capture coordinator v3](../round-025-post-capture-coordinator-contract-v3.json)
+- [Round 25 economic replay v2](../round-025-economic-replay-contract-v2.json)
+- [Round 25 post-capture coordinator v4](../round-025-post-capture-coordinator-contract-v4.json)
 - [Round 25 Fin-R1 supervisor rejection](../round-025-fin-r1-regime-supervisor-rejection-v1-2026-08-10.json)
 - [Round 25 slow LLM supervisor mechanism rejection](../round-025-qwen3-8b-regime-supervisor-rejection-v1-2026-08-10.json)
 

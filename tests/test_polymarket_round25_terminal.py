@@ -14,13 +14,14 @@ from simple_ai_trading.polymarket_recorder import (
     PolymarketEvidenceStore,
     RawStreamMessage,
 )
-from simple_ai_trading.polymarket_round25_campaign import (
+from simple_ai_trading.polymarket_round25_active_campaign import (
+    POLYMARKET_ROUND25_ACTIVE_RESULT_SCHEMA_VERSION,
+    POLYMARKET_ROUND25_ACTIVE_STATE_SCHEMA_VERSION,
     POLYMARKET_ROUND25_END_MS,
     POLYMARKET_ROUND25_RESOLUTION_SOURCE,
-    POLYMARKET_ROUND25_RESULT_SCHEMA_VERSION,
     POLYMARKET_ROUND25_START_MS,
-    build_round25_segment_manifest,
-    load_round25_campaign_plan,
+    build_round25_active_segment_manifest,
+    load_round25_active_campaign_plan,
 )
 from simple_ai_trading.polymarket_round25_terminal import (
     POLYMARKET_ROUND25_TERMINAL_DESIGN_SHA256,
@@ -40,7 +41,7 @@ PLAN = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-025-twap-core-campaign-plan-publication-2026-08-10.json"
+    / "round-025-twap-core-campaign-plan-publication-v2-2026-08-10.json"
 )
 RUN_ID = "1" * 32
 
@@ -67,10 +68,10 @@ def _write_hashed(path: Path, body: dict[str, object]) -> None:
 def _terminal_state_root(tmp_path: Path, *, status: str = "complete") -> Path:
     state_root = tmp_path / "state"
     state_root.mkdir()
-    plan = load_round25_campaign_plan(PLAN)
+    plan = load_round25_active_campaign_plan(PLAN)
     if status in {"complete", "degraded"}:
         gap_count = 0 if status == "complete" else 1
-        manifest = build_round25_segment_manifest(
+        manifest = build_round25_active_segment_manifest(
             plan,
             run_id=RUN_ID,
             created_at_ms=POLYMARKET_ROUND25_START_MS,
@@ -109,7 +110,7 @@ def _terminal_state_root(tmp_path: Path, *, status: str = "complete") -> Path:
             "paper_trading_authority": False,
             "plan_sha256": plan.plan_sha256,
             "profitability_claim": False,
-            "schema_version": POLYMARKET_ROUND25_RESULT_SCHEMA_VERSION,
+            "schema_version": POLYMARKET_ROUND25_ACTIVE_RESULT_SCHEMA_VERSION,
             "segment_index": 0,
             "status": status,
         },
@@ -123,7 +124,7 @@ def _terminal_state_root(tmp_path: Path, *, status: str = "complete") -> Path:
             "paper_trading_authority": False,
             "plan_sha256": plan.plan_sha256,
             "profitability_claim": False,
-            "schema_version": "polymarket-round25-twap-core-campaign-state-v1",
+            "schema_version": POLYMARKET_ROUND25_ACTIVE_STATE_SCHEMA_VERSION,
             "status": "campaign_window_ended",
             "status_counts": {status: 1},
             "terminal_segment_count": 1,
@@ -214,12 +215,14 @@ def _public_messages(received_at_ms: int) -> list[RawStreamMessage]:
     rtds = json.dumps(
         {
             "payload": {
-                "symbol": "btcusdt",
+                "full_accuracy_value": "100000000000000000000000",
+                "symbol": "btc/usd",
                 "timestamp": received_at_ms,
-                "value": "100000.0",
+                "value": 100000.0,
+                "window_s": 30,
             },
             "timestamp": received_at_ms,
-            "topic": "crypto_prices_chainlink",
+            "topic": "crypto_prices_twap_thirty",
             "type": "update",
         },
         ensure_ascii=True,
@@ -250,8 +253,8 @@ def _terminal_database_fixture(tmp_path: Path) -> tuple[Path, Path]:
     database = tmp_path / "round25-terminal.duckdb"
     state_root = tmp_path / "database-state"
     state_root.mkdir()
-    plan = load_round25_campaign_plan(PLAN)
-    manifest = build_round25_segment_manifest(
+    plan = load_round25_active_campaign_plan(PLAN)
+    manifest = build_round25_active_segment_manifest(
         plan,
         run_id=RUN_ID,
         created_at_ms=POLYMARKET_ROUND25_START_MS,
@@ -309,7 +312,7 @@ def _terminal_database_fixture(tmp_path: Path) -> tuple[Path, Path]:
             "paper_trading_authority": False,
             "plan_sha256": plan.plan_sha256,
             "profitability_claim": False,
-            "schema_version": POLYMARKET_ROUND25_RESULT_SCHEMA_VERSION,
+            "schema_version": POLYMARKET_ROUND25_ACTIVE_RESULT_SCHEMA_VERSION,
             "segment_index": 0,
             "status": report.status,
         },
@@ -323,7 +326,7 @@ def _terminal_database_fixture(tmp_path: Path) -> tuple[Path, Path]:
             "paper_trading_authority": False,
             "plan_sha256": plan.plan_sha256,
             "profitability_claim": False,
-            "schema_version": "polymarket-round25-twap-core-campaign-state-v1",
+            "schema_version": POLYMARKET_ROUND25_ACTIVE_STATE_SCHEMA_VERSION,
             "status": "campaign_window_ended",
             "status_counts": {"complete": 1},
             "terminal_segment_count": 1,
@@ -356,7 +359,7 @@ def test_terminal_design_is_frozen_before_capture() -> None:
     design = load_round25_terminal_design(ROOT)
 
     assert design["design_sha256"] == POLYMARKET_ROUND25_TERMINAL_DESIGN_SHA256
-    assert design["frozen_at_ms"] < POLYMARKET_ROUND25_START_MS
+    assert design["status"] == "frozen_before_round25_v2_first_eligible_receipt"
     assert design["materialization"]["official_resolution_accessed"] is False
 
 
@@ -365,7 +368,7 @@ def test_terminal_design_is_frozen_before_capture() -> None:
     [
         ("condition_admission", "twap_outcome_reconstructed"),
         ("materialization", "future_receipts_permitted"),
-        ("materialization", "round24_twap_settlement_label_constructed"),
+        ("campaign", "legacy_point_campaign_data_permitted"),
         ("authority", "credentials_used"),
     ],
 )
@@ -381,7 +384,7 @@ def test_terminal_design_rejects_relaxed_causal_or_authority_flags(
             / "docs"
             / "model-research"
             / "polymarket"
-            / "round-025-terminal-receipt-materialization-design-v1.json"
+            / "round-025-terminal-receipt-materialization-design-v2.json"
         ).read_text(encoding="ascii")
     )
     body = dict(value)
@@ -394,7 +397,7 @@ def test_terminal_design_rejects_relaxed_causal_or_authority_flags(
         / "docs"
         / "model-research"
         / "polymarket"
-        / "round-025-terminal-receipt-materialization-design-v1.json"
+        / "round-025-terminal-receipt-materialization-design-v2.json"
     )
     destination.parent.mkdir(parents=True)
     destination.write_text(

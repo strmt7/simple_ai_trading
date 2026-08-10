@@ -33,7 +33,7 @@ CORRECTION_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-025-twap-wire-schema-correction-v1.json"
+    / "round-025-twap-wire-schema-correction-v2.json"
 )
 START_MS = 1_800_000_000_000
 CONDITION_ID = "0x" + "a" * 64
@@ -73,6 +73,7 @@ def _raw_frame(
                 "value": display_value,
                 "full_accuracy_value": str(exact_value_e18),
                 "timestamp": source_ms,
+                "window_s": 30,
             },
         },
         separators=(",", ":"),
@@ -148,12 +149,12 @@ def test_live_wire_schema_correction_is_self_hashed_and_source_only() -> None:
 
     assert declared == _canonical_sha256(payload)
     assert declared == POLYMARKET_ROUND25_TWAP_WIRE_SCHEMA_CORRECTION_SHA256
-    assert payload["parent_twap_native_model_design_sha256"] == (
+    assert payload["parents"]["twap_native_model_design_sha256"] == (
         POLYMARKET_ROUND25_TWAP_MODEL_DESIGN_SHA256
     )
-    assert payload["public_wire_probe"]["topic"] == POLYMARKET_ROUND25_TWAP_TOPIC
-    assert payload["public_wire_probe"]["window_s_present"] is False
-    assert payload["corrected_parser_contract"]["wire_window_field_allowed"] is False
+    assert payload["qualified_wire"]["topic"] == POLYMARKET_ROUND25_TWAP_TOPIC
+    assert payload["qualified_wire"]["window_s"] == 30
+    assert payload["qualified_wire"]["legacy_point_topic_model_eligible"] is False
     assert not any(payload["truth_state"].values())
 
 
@@ -188,13 +189,13 @@ def test_exact_wire_frame_parses_without_using_display_value_as_price() -> None:
 @pytest.mark.parametrize(
     ("mutator", "error"),
     [
-        (lambda event: event.update(topic="crypto_prices_twap_thirty"), "identity"),
+        (lambda event: event.update(topic="crypto_prices_chainlink"), "identity"),
         (lambda event: event.update(type="snapshot"), "identity"),
         (lambda event: event["payload"].update(symbol="BTC/USD"), "identity"),
-        (lambda event: event["payload"].update(window_s=30), "identity"),
+        (lambda event: event["payload"].update(window_s=31), "identity"),
         (lambda event: event["payload"].update(value="65000"), "display"),
         (lambda event: event["payload"].update(value=True), "display"),
-        (lambda event: event["payload"].update(value=1.0), "display"),
+        (lambda event: event["payload"].update(value=0.0), "display"),
         (lambda event: event["payload"].update(full_accuracy_value="1.2"), "exact"),
         (lambda event: event["payload"].update(full_accuracy_value="-1"), "exact"),
         (lambda event: event.update(timestamp=True), "positive integer"),

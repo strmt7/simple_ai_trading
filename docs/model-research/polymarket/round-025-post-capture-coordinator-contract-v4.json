@@ -1,0 +1,106 @@
+{
+  "schema_version": "polymarket-round25-post-capture-coordinator-contract-v4",
+  "round": 25,
+  "created_at_utc": "2026-08-10T21:34:23Z",
+  "status": "frozen_before_round25_v2_capture_start_and_before_any_post_capture_artifact",
+  "supersedes": {
+    "schema_version": "polymarket-round25-post-capture-coordinator-contract-v3",
+    "contract_sha256": "dff318629a03c273ff3f437eca187dca9dc65ae6ad4398b0e78195ef847e30fa",
+    "reason": "bind_the_active_v2_exact_twap_terminal_materialization_resolution_and_economic_contract_chain"
+  },
+  "parents": {
+    "capture_plan_sha256": "a0b5525697c3c1e1b175bd0f0ac724fdb62845638d2040e9964221031d3e7b20",
+    "economic_replay_contract_sha256": "aaf3b72c88b22b9e1275acc8a97fb48ad73f894c8345366eab50f319e05877b0",
+    "joint_feature_materialization_contract_sha256": "57fb2cf088bdd64e3b6e05d087d5d4aa3d77cc484b8611be77b02cd12a34a6c2",
+    "official_resolution_contract_sha256": "bc2e4f462ac45b99340872a0db1ad3078e3a53626f07ab1aedce0e65a0023a36",
+    "model_ledger_contract_sha256": "9e207eabf669a39741f619681357a61b73b2211bc8ecd7498de746310c6b6914",
+    "predictive_evaluation_contract_sha256": "4e5036103cfb11319b68908a09fa9acdb93a02f4ff1cede9dec9e9a81f491077",
+    "tcn_fit_contract_sha256": "abe1f93ccab38172e400286601e6fa9befaadf07acb448d0d2604314c2c59876",
+    "terminal_design_sha256": "b7f693680de7eace5408489a75b65de2ba7058c7f01c0d8e0038430419eb7786"
+  },
+  "ordered_phases": [
+    "wait_for_terminal_capture",
+    "materialize_and_deep_audit_target_free_features",
+    "persist_target_access_claim",
+    "collect_and_deep_audit_dual_source_resolutions",
+    "atomically_finalize_resolution_authority",
+    "load_train_and_calibration_targets_only",
+    "build_and_gate_train_and_calibration_datasets",
+    "fit_logistic_transform_once",
+    "hash_bind_lazy_tcn_sources",
+    "fit_finite_model_ledger",
+    "prepare_and_persist_target_free_selection_predictions",
+    "durably_freeze_prediction_panel",
+    "open_selection_targets_once",
+    "consume_selection_access_and_evaluate",
+    "persist_immutable_predictive_result",
+    "if_and_only_if_nominated_scan_terminal_receipts_once_for_exact_economics",
+    "persist_immutable_development_economic_result"
+  ],
+  "leakage_control": {
+    "selection_resolution_query_before_prediction_freeze_allowed": false,
+    "train_calibration_loader_selects_selection_rows": false,
+    "selection_loader_requires_durable_panel_freeze": true,
+    "selection_loader_revalidates_freeze_after_read": true,
+    "selection_target_access_one_use": true,
+    "future_receipts_in_prediction_allowed": false,
+    "economic_replay_can_reselect_candidate_or_threshold": false
+  },
+  "resource_control": {
+    "resolution_collection_batch_maximum_conditions": 512,
+    "default_resolution_collection_batch_conditions": 128,
+    "tcn_loader_batch_maximum_conditions": 16,
+    "feature_endpoint_rows_retained_per_condition": 16,
+    "full_feature_corpus_retained_in_ram": false,
+    "logistic_transform_fit_count": 1,
+    "tcn_source_hash_scan_count": 1,
+    "economic_terminal_receipt_scan_count_after_nomination": 1,
+    "economic_terminal_receipt_scan_without_nomination_allowed": false,
+    "checkpoint_after_each_resolution_batch": true,
+    "unattended_process_without_progress_allowed": false
+  },
+  "recovery": {
+    "single_writer_lock_required": true,
+    "state_self_hash_required": true,
+    "state_atomic_replace_required": true,
+    "immutable_artifact_hashes_bound_in_state": true,
+    "completed_phase_reexecution_behavior": "load_and_revalidate_existing_artifact",
+    "network_interruption_behavior": "retain_verified_resolution_rows_and_retry_pending_conditions",
+    "malformed_or_disagreeing_official_resolution_behavior": "abort_batch_without_partial_commit",
+    "existing_different_artifact_overwrite_allowed": false
+  },
+  "source_identity": {
+    "fitted_source_commit_oid_required": true,
+    "implementation_file_hashes_required": true,
+    "feature_store_manifest_sha256_required": true,
+    "resolution_store_manifest_sha256_required": true,
+    "terminal_receipt_audit_sha256_required": true,
+    "predictive_result_sha256_required_for_economic_replay": true,
+    "economic_source_replay_matrix_sha256_required": true
+  },
+  "completion_boundary": {
+    "predictive_gate_is_development_evidence_only": true,
+    "development_economic_gate_is_development_evidence_only": true,
+    "economic_backtest_completed": false,
+    "ai_uplift_completed": false,
+    "predictive_edge_verified": false,
+    "profitability_verified": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "order_submission_allowed": false
+  },
+  "truth_state": {
+    "round25_v2_feature_store_exists": false,
+    "round25_v2_resolution_store_exists": false,
+    "train_dataset_exists": false,
+    "calibration_dataset_exists": false,
+    "selection_prediction_exists": false,
+    "selection_evaluation_exists": false,
+    "development_economic_result_exists": false,
+    "model_fitted": false,
+    "predictive_gate_passed": false,
+    "development_economic_gate_passed": false,
+    "profitability_verified": false
+  },
+  "contract_sha256": "ad5c646f56e22498fa3dd48455ba6f55b9db14db7d94c7054fe602503a61ad36"
+}
