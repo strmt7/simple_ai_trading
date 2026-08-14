@@ -24,6 +24,13 @@ from simple_ai_trading.polymarket_round27_capture import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PUBLISHED_RESULT = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-027-documented-source-smoke-result-v1-2026-08-15.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -90,6 +97,26 @@ def test_round27_capture_contract_rejects_rehashed_semantic_drift() -> None:
 
     with pytest.raises(ValueError, match="contract differs"):
         validate_round27_capture_contract(payload, repository=ROOT)
+
+
+def test_round27_published_source_smoke_is_self_hashed_and_non_authorizing() -> None:
+    payload = json.loads(PUBLISHED_RESULT.read_text(encoding="ascii"))
+    claim = payload.pop("result_sha256")
+    source_quality = dict(payload["source_quality"])
+    source_claim = source_quality.pop("source_quality_sha256")
+
+    assert claim == _canonical_sha256(payload)
+    assert source_claim == _canonical_sha256(source_quality)
+    assert payload["status"] == "passed"
+    assert payload["failure_reasons"] == []
+    assert payload["capture_report"]["raw_message_count"] == 194_980
+    assert payload["capture_report"]["stream_gap_count"] == 0
+    assert payload["source_quality"]["streams"]["binance_futures"][
+        "accepted_trade_count"
+    ] == 1_014
+    assert payload["authority"]["model_data_eligible"] is False
+    assert payload["authority"]["edge_claim"] is False
+    assert payload["authority"]["live_trading_authority"] is False
 
 
 def test_round27_recorder_uses_documented_aggregate_trade_profile() -> None:

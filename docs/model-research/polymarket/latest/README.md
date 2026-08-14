@@ -27,9 +27,16 @@ remain prospective model-value hypotheses; public quotes do not prove fills.
 
 The next capture uses Binance's documented USD-M `@aggTrade` market stream.
 A live 33.719-second source probe recorded 29/29 finite positive trades, while
-the new source gate independently rejects the legacy v3 feed. The
+the new source gate independently rejects the legacy v3 feed. The subsequent
+one-use 600-second prospective smoke recorded 194,980 raw public messages
+across four BTC markets with zero gaps, recorder errors, or integrity errors.
+Its independent target-free replay accepted all 1,014 USD-M `aggTrade` records
+and all 2,961 spot trade records, with zero invalid, non-positive, or unexpected
+trade types. Database plus WAL used 19,410,944 bytes against a 2 GiB cap. The
 [source qualification](../binance-usdm-aggregate-trade-source-qualification-v1-2026-08-15.json)
-is conditional until a complete prospective capture passes the same gate.
+and [prospective smoke result](../round-027-documented-source-smoke-result-v1-2026-08-15.json)
+qualify this public source profile for a larger prospective capture only; they
+grant no model-data, edge, profitability, paper-trading, or live authority.
 
 ![Round 27 mechanics diagnostic](round-027-mechanics-diagnostic/mechanics-diagnostic.svg)
 
@@ -38,6 +45,7 @@ is conditional until a complete prospective capture passes the same gate.
 The [canonical Round 26 audit](round-026-twap60-condition-audit/condition-replay-audit.json),
 [v3 analysis failure](../round-026-twap60-development-analysis-failure-v2.json),
 the [Round 27 mechanics data](round-027-mechanics-diagnostic/mechanics-diagnostic.json),
+the [documented-source smoke contract](../round-027-documented-source-smoke-v1.json),
 and [untrusted execution-hypothesis preregistration](../round-027-execution-hypothesis-preregistration-v3.json)
 preserve the exact boundaries. No market edge or after-cost profitability has
 been found yet.
