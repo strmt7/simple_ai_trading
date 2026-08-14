@@ -12,7 +12,7 @@ POLYMARKET_ROUND25_FORENSIC_VENUE_PARAMETER_SCHEMA_VERSION = (
     "polymarket-round25-v2-forensic-venue-parameter-audit-v1"
 )
 POLYMARKET_ROUND25_FORENSIC_VENUE_PARAMETER_AUDIT_SHA256 = (
-    "244ad6bc32149315ca0a47c9c1d49473c3c54a068f23d3c345c4a1d630bbe3c2"
+    "be5cb9626d8fff531cb0d4e3d9feac520e6e82e1019476d4486e3c8950b5fa67"
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
@@ -109,7 +109,7 @@ def validate_round25_forensic_venue_parameter_audit(
             )
         )
         or not isinstance(observations, Mapping)
-        or set(observations) != {"fee_parameter_groups", "tick_size_groups"}
+        or set(observations) != {"market_parameter_groups", "tick_size_groups"}
         or observations.get("tick_size_groups")
         != [
             {
@@ -118,11 +118,20 @@ def validate_round25_forensic_venue_parameter_audit(
                 "distinct_condition_count": 111,
             }
         ]
-        or observations.get("fee_parameter_groups")
+        or observations.get("market_parameter_groups")
         != [
             {
+                "tick_size": "0.01",
+                "minimum_order_size": "5",
                 "fees_enabled": True,
                 "fee_rate": "0.07",
+                "fee_exponent": 1,
+                "fee_taker_only": True,
+                "fee_rebate_rate": "0.2",
+                "maker_base_fee": 1000,
+                "taker_base_fee": 1000,
+                "taker_order_delay_enabled": True,
+                "minimum_order_age_seconds": 0,
                 "snapshot_count": 111,
                 "distinct_condition_count": 111,
             }
@@ -134,8 +143,12 @@ def validate_round25_forensic_venue_parameter_audit(
             "all_captured_conditions_match",
             "fee_curve_exponent",
             "fee_formula",
+            "formal_after_cost_claim_allowed",
+            "measured_order_delay_distribution_available",
+            "minimum_order_size_shares",
             "per_market_parameter_assumption_allowed",
             "stressed_tick_size",
+            "taker_order_delay_observed",
             "taker_fee_rate",
         }
         or economics.get("all_captured_conditions_match") is not True
@@ -144,6 +157,10 @@ def validate_round25_forensic_venue_parameter_audit(
         or economics.get("fee_curve_exponent") != 1
         or economics.get("fee_formula")
         != "ceil_to_0.00001(quantity*rate*(price*(1-price))^exponent)"
+        or economics.get("minimum_order_size_shares") != "5"
+        or economics.get("taker_order_delay_observed") is not True
+        or economics.get("measured_order_delay_distribution_available") is not False
+        or economics.get("formal_after_cost_claim_allowed") is not False
         or economics.get("per_market_parameter_assumption_allowed") is not False
         or economics.get("abort_if_admitted_population_differs") is not True
         or not isinstance(truth, Mapping)
