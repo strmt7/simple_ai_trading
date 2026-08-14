@@ -7,6 +7,7 @@ import math
 
 import pytest
 
+from simple_ai_trading import polymarket_round25_clob_features as clob_features
 from simple_ai_trading.paper_execution import BookLevel, PaperBookSnapshot
 from simple_ai_trading.polymarket_round25_clob_features import (
     POLYMARKET_ROUND25_CLOB_FEATURE_NAMES,
@@ -180,6 +181,27 @@ def test_flow_windows_capture_direction_depth_and_update_count() -> None:
     assert _feature(snapshot, "clob.down_top_order_flow_imbalance_250ms") < 0.0
     assert _feature(snapshot, "clob.up_log1p_gross_level_quantity_change_250ms") > 0.0
     assert _feature(snapshot, "clob.down_log1p_gross_level_quantity_change_250ms") > 0.0
+
+
+def test_flow_window_recomputes_a_numerically_inconsistent_prefix_delta() -> None:
+    series = clob_features._RollingBookSeries()
+    series.append(clob_features._book_point(_book(UP_TOKEN, monotonic_ns=1_000)))
+    series.append(
+        clob_features._book_point(
+            _book(
+                UP_TOKEN,
+                offset_ms=200,
+                monotonic_ns=2_000,
+                bid_quantity="14",
+            )
+        )
+    )
+    series.prefixes[0][-1] = series.prefixes[1][-1] + 1.0
+
+    window = series.window(START_MS + 250, 250)
+
+    assert abs(window.top_ofi) <= 1.0
+    assert window.gross_level_change >= 0.0
 
 
 @pytest.mark.parametrize(
