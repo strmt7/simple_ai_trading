@@ -1,0 +1,93 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "model_data_eligible": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "capture_duration_seconds": 3600,
+  "capture_scope": {
+    "assets": [
+      "BTC"
+    ],
+    "crypto_market_config_id": "btc-5m-twap-60",
+    "one_process_monotonic_receipt_clock": true,
+    "required_clob_lanes": [
+      "clob"
+    ],
+    "required_rtds_topics": [
+      "crypto_prices",
+      "crypto_prices_twap_sixty"
+    ],
+    "required_streams": [
+      "binance_futures",
+      "binance_spot",
+      "clob_market",
+      "polymarket_rtds"
+    ],
+    "resolution_source": "https://data.chain.link/streams/btc-usd-twap-60s-streams",
+    "twap_window_seconds": 60
+  },
+  "contract_sha256": "0349f7b688609de4ebc0fc84b755e5943b976753e7771b7f76f5a40a13eae43a",
+  "created_at_ms": 1786736663544,
+  "effective_start_ms": 1786737000000,
+  "experiment": {
+    "candidate_actions": [
+      "cross_up_ask",
+      "cross_down_ask",
+      "post_only_up_bid",
+      "post_only_down_bid",
+      "abstain"
+    ],
+    "forward_receipt_horizons_ms": [
+      100,
+      250,
+      500,
+      1000,
+      2000
+    ],
+    "latency_policy": "use empirical source-to-receipt and cross-feed receipt distributions; do not assume zero latency",
+    "maker_accounting": "price-time queue-ahead lower bound, adverse-selection markout, zero rebate in the primary result",
+    "minimum_executable_actions_for_followup": 20,
+    "pilot_pass_conditions": {
+      "minimum_action_count_met": true,
+      "no_integrity_errors": true,
+      "positive_after_cost_pnl": true,
+      "positive_mean_markout": true
+    },
+    "pilot_pass_is_edge_claim": false,
+    "pilot_pass_is_profitability_claim": false,
+    "primary_hypothesis": "receipt-time Binance spot and futures innovations predict an executable Polymarket repricing after measured transport delay",
+    "role": "development_only",
+    "sealed_selection_eligible": false,
+    "taker_accounting": "actual displayed depth plus exact per-market taker fee; no rebate"
+  },
+  "predecessor_lineage": {
+    "predecessor_data_reused": false,
+    "reason": "settlement source changed from a 30-second to 60-second TWAP",
+    "round25_forensic_report_sha256": "45a613588f15ef45f57c51931d1b01e19f7cb7b0d6b08e7be0b0dd5b8d49631d",
+    "round25_plan_sha256": "a0b5525697c3c1e1b175bd0f0ac724fdb62845638d2040e9964221031d3e7b20",
+    "round25_terminal_state_sha256": "827655168339cfb7fae34fa8a2b06770e58134667c0d1a845d32fa72559a27b7"
+  },
+  "repository_commit": "97839c492de9587cdd8326dd67431f85b8a423a7",
+  "resource_limits": {
+    "database_cap_bytes": 4294967296,
+    "duckdb_memory_limit": "1GB",
+    "duckdb_threads": 2,
+    "minimum_free_bytes": 34359738368,
+    "queue_capacity": 100000
+  },
+  "schema_version": "polymarket-round26-twap60-pilot-contract-v2",
+  "source_qualification_path": "docs/model-research/polymarket/btc-5m-twap-60-wire-source-qualification-v1-2026-08-14.json",
+  "source_qualification_sha256": "9d1493b37469d98ac26ca4033b3b2d59f051f66ae04f8702e787b641d8d58071",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket.py": "8b4890e1291c2902f43b075f8b3b183484bb60e8e9df485da11e186372cbff36",
+    "src/simple_ai_trading/polymarket_recorder.py": "a022a5fdd1021948ad1e1b2560fc88f632a8a7e9e266ee2bb7a28bfbd6a35a15",
+    "src/simple_ai_trading/polymarket_round26_pilot.py": "a7c9687d00afe9f90e5a8d8241b96127c9e91b2e56cd1bc78f9400fc4c06f40e",
+    "tools/run_polymarket_round26_pilot.py": "c147e1fd3eaef72f04e1feb6342cc324972a603a35dd02180a3ff067919601fd"
+  }
+}
