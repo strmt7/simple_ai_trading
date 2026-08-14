@@ -21,9 +21,9 @@ from simple_ai_trading.polymarket_round26_analysis import (
     _return_bps,
     _settlement_mechanism_audit,
     _source_points,
-    _TwapPoint,
     _twap_point,
 )
+from simple_ai_trading.polymarket_twap60 import PolymarketTwap60Tick
 
 
 _START_SECONDS = 1_784_058_600
@@ -166,6 +166,7 @@ def test_twap_point_preserves_exact_e18_value() -> None:
             "payload": {
                 "symbol": "btc/usd",
                 "timestamp": _START_MS,
+                "value": 63947.08172696262,
                 "window_s": 60,
                 "full_accuracy_value": "63947081726962622791680",
             },
@@ -193,19 +194,21 @@ def test_settlement_audit_uses_exact_boundaries_and_official_outcome() -> None:
         source="clob_market",
     )
     points = (
-        _TwapPoint(
+        PolymarketTwap60Tick(
             market.event_start_ms,
             market.event_start_ms + 1_500,
             market.event_start_ms + 3_000,
             1_000_000_000,
             100 * 10**18,
+            "a" * 64,
         ),
-        _TwapPoint(
+        PolymarketTwap60Tick(
             market.end_ms,
             market.end_ms + 1_500,
             market.end_ms + 3_000,
             2_000_000_000,
             101 * 10**18,
+            "b" * 64,
         ),
     )
 
@@ -221,12 +224,13 @@ def test_settlement_audit_uses_exact_boundaries_and_official_outcome() -> None:
 
 def test_settlement_audit_rejects_conflicting_source_timestamp() -> None:
     market = _market()
-    first = _TwapPoint(
+    first = PolymarketTwap60Tick(
         market.event_start_ms,
         market.event_start_ms,
         market.event_start_ms,
         1,
         100 * 10**18,
+        "a" * 64,
     )
 
     with pytest.raises(ValueError, match="duplicate source values conflict"):
