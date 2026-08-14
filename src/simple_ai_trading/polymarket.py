@@ -41,10 +41,19 @@ _TWAP_30S_RESOLUTION_PATH = {
     "ETH": "/streams/eth-usd-twap-30s-streams",
     "SOL": "/streams/sol-usd-twap-30s-streams",
 }
+_TWAP_60S_RESOLUTION_PATH = {
+    "BTC": "/streams/btc-usd-twap-60s-streams",
+    "ETH": "/streams/eth-usd-twap-60s-streams",
+    "SOL": "/streams/sol-usd-twap-60s-streams",
+}
+POLYMARKET_BTC_FIVE_MINUTE_TWAP_60_RESOLUTION_SOURCE = (
+    f"https://data.chain.link{_TWAP_60S_RESOLUTION_PATH['BTC']}"
+)
 POLYMARKET_FIVE_MINUTE_RESOLUTION_SOURCES = {
     asset: (
         f"https://data.chain.link{_LEGACY_RESOLUTION_PATH[asset]}",
         f"https://data.chain.link{_TWAP_30S_RESOLUTION_PATH[asset]}",
+        f"https://data.chain.link{_TWAP_60S_RESOLUTION_PATH[asset]}",
     )
     for asset in SUPPORTED_POLYMARKET_ASSETS
 }
@@ -316,12 +325,14 @@ def _parse_polymarket_short_horizon_market(
         raise ValueError(
             "market resolution source is not an approved Chainlink stream contract"
         )
-    twap_source = (
-        f"https://data.chain.link{_TWAP_30S_RESOLUTION_PATH[asset]}"
-    )
-    if normalized_resolution_source == twap_source:
+    twap_contracts = {
+        f"https://data.chain.link{_TWAP_30S_RESOLUTION_PATH[asset]}": 30,
+        f"https://data.chain.link{_TWAP_60S_RESOLUTION_PATH[asset]}": 60,
+    }
+    twap_lookback_seconds = twap_contracts.get(normalized_resolution_source)
+    if twap_lookback_seconds is not None:
         config = raw.get("cryptoMarketConfig")
-        expected_config_id = f"{asset.lower()}-5m-twap-30"
+        expected_config_id = f"{asset.lower()}-5m-twap-{twap_lookback_seconds}"
         if (
             duration_ms != 300_000
             or not isinstance(config, Mapping)
@@ -329,10 +340,10 @@ def _parse_polymarket_short_horizon_market(
             or config.get("duration") != "5m"
             or config.get("id") != expected_config_id
             or config.get("twapEnabled") is not True
-            or config.get("twapLookbackSeconds") != 30
+            or config.get("twapLookbackSeconds") != twap_lookback_seconds
             or raw.get("cryptoMarketConfigId") != expected_config_id
         ):
-            raise ValueError("market 30-second TWAP resolution contract differs")
+            raise ValueError("market TWAP resolution contract differs")
     liquidity = _decimal(
         raw.get("liquidityNum", 0), name="liquidityNum", minimum=Decimal("0")
     )

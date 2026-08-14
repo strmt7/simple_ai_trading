@@ -69,6 +69,7 @@ CLOB_MARKET_WEBSOCKET = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
 POLYMARKET_RTDS_WEBSOCKET = "wss://ws-live-data.polymarket.com"
 POLYMARKET_RTDS_CHAINLINK_POINT_TOPIC = "crypto_prices_chainlink"
 POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC = "crypto_prices_twap_thirty"
+POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC = "crypto_prices_twap_sixty"
 BINANCE_SPOT_WEBSOCKET = (
     "wss://stream.binance.com:9443/stream?streams="
     "btcusdt@bookTicker/btcusdt@trade/"
@@ -392,12 +393,25 @@ def _strict_json_loads(value: str) -> object:
     return json.loads(value, parse_constant=reject_constant)
 
 
-def _validate_chainlink_twap_30_frame(
+def _validate_chainlink_twap_frame(
     raw_text: str,
     *,
     expected_symbol: str,
+    expected_topic: str,
+    expected_window_seconds: int,
 ) -> None:
-    """Reject any non-control frame outside the documented 30-second TWAP wire contract."""
+    """Reject any non-control frame outside one exact TWAP wire contract."""
+
+    if expected_topic not in {
+        POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC,
+        POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC,
+    } or expected_window_seconds not in {30, 60}:
+        raise ValueError("Chainlink TWAP validator contract is unsupported")
+    if (expected_topic, expected_window_seconds) not in {
+        (POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC, 30),
+        (POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC, 60),
+    }:
+        raise ValueError("Chainlink TWAP validator topic and window disagree")
 
     if raw_text == "":
         return
@@ -424,7 +438,7 @@ def _validate_chainlink_twap_30_frame(
         raise ValueError("Chainlink TWAP frame is not an object")
     payload = event.get("payload")
     if (
-        event.get("topic") != POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC
+        event.get("topic") != expected_topic
         or event.get("type") != "update"
         or not isinstance(payload, Mapping)
     ):
@@ -443,13 +457,39 @@ def _validate_chainlink_twap_30_frame(
         or publisher_time_ms < source_time_ms
         or payload.get("symbol") != expected_symbol
         or isinstance(window_seconds, bool)
-        or window_seconds != 30
+        or window_seconds != expected_window_seconds
         or not isinstance(full_accuracy_value, str)
         or _CHAINLINK_E18_INTEGER.fullmatch(full_accuracy_value) is None
         or int(full_accuracy_value) <= 0
         or "value" not in payload
     ):
         raise ValueError("Chainlink TWAP payload differs")
+
+
+def _validate_chainlink_twap_30_frame(
+    raw_text: str,
+    *,
+    expected_symbol: str,
+) -> None:
+    _validate_chainlink_twap_frame(
+        raw_text,
+        expected_symbol=expected_symbol,
+        expected_topic=POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC,
+        expected_window_seconds=30,
+    )
+
+
+def _validate_chainlink_twap_60_frame(
+    raw_text: str,
+    *,
+    expected_symbol: str,
+) -> None:
+    _validate_chainlink_twap_frame(
+        raw_text,
+        expected_symbol=expected_symbol,
+        expected_topic=POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC,
+        expected_window_seconds=60,
+    )
 
 
 def _validated_canonical_payload(
@@ -6638,8 +6678,10 @@ class PolymarketPublicRecorder:
         ):
             raise ValueError("recorder source selectors must be boolean")
         selected_chainlink_mode = str(chainlink_price_mode or "").strip().lower()
-        if selected_chainlink_mode not in {"point", "twap_30s"}:
-            raise ValueError("chainlink_price_mode must be point or twap_30s")
+        if selected_chainlink_mode not in {"point", "twap_30s", "twap_60s"}:
+            raise ValueError(
+                "chainlink_price_mode must be point, twap_30s, or twap_60s"
+            )
         selected_clob_lanes = tuple(
             str(lane or "").strip().lower() for lane in clob_lane_ids
         )
@@ -6665,11 +6707,16 @@ class PolymarketPublicRecorder:
             )
         self.market_subscription_grace_seconds = subscription_grace_seconds
         self.chainlink_price_mode = selected_chainlink_mode
-        self.chainlink_topic = (
-            POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC
-            if selected_chainlink_mode == "twap_30s"
-            else POLYMARKET_RTDS_CHAINLINK_POINT_TOPIC
-        )
+        self.chainlink_topic = {
+            "point": POLYMARKET_RTDS_CHAINLINK_POINT_TOPIC,
+            "twap_30s": POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC,
+            "twap_60s": POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC,
+        }[selected_chainlink_mode]
+        self.chainlink_twap_window_seconds = {
+            "point": None,
+            "twap_30s": 30,
+            "twap_60s": 60,
+        }[selected_chainlink_mode]
         self.clob_lane_ids = selected_clob_lanes
         if not include_polymarket_core and (
             selected_assets != ("BTC",)
@@ -7692,8 +7739,8 @@ class PolymarketPublicRecorder:
             *(
                 (
                     (
-                        f"rtds:chainlink-twap-30:{asset}"
-                        if self.chainlink_price_mode == "twap_30s"
+                        f"rtds:chainlink-twap-{self.chainlink_twap_window_seconds}:{asset}"
+                        if self.chainlink_twap_window_seconds is not None
                         else f"rtds:chainlink:{asset}"
                     ),
                     _canonical_json(
@@ -7728,11 +7775,15 @@ class PolymarketPublicRecorder:
                         heartbeat_seconds=5.0,
                         frame_validator=(
                             partial(
-                                _validate_chainlink_twap_30_frame,
+                                _validate_chainlink_twap_frame,
                                 expected_symbol=f"{lane.rsplit(':', 1)[-1]}/usd",
+                                expected_topic=self.chainlink_topic,
+                                expected_window_seconds=self.chainlink_twap_window_seconds,
                             )
-                            if self.chainlink_price_mode == "twap_30s"
-                            and lane.startswith("rtds:chainlink-twap-30:")
+                            if self.chainlink_twap_window_seconds is not None
+                            and lane.startswith(
+                                f"rtds:chainlink-twap-{self.chainlink_twap_window_seconds}:"
+                            )
                             else None
                         ),
                         output=output,
