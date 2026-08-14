@@ -1,0 +1,105 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "model_data_eligible": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "capture_report": {
+    "assets": [
+      "BTC"
+    ],
+    "conditions": [
+      "0x04fc9bee47fa1c347ddbe8d470395b39c6727eb965aae156cb4f3c593ed055f1",
+      "0x184f712e91813861a06a97eaafac64981368e08789697fb254ddcd70ab7f0c95",
+      "0x1fcc0dd8e7c945e605d4a89f58be1467516dff9e5b1caded1d647f9060171b8d",
+      "0xb8340c9aaf26241a991447d1b973270bab033e89053277f24c0ddab8378bc89b"
+    ],
+    "database": "C:\\trader\\simple_ai_trading-model-dev\\data\\round27-documented-source-smoke-v1.duckdb",
+    "duration_seconds": 603.008,
+    "ended_at_ms": 1786747979728,
+    "errors": [],
+    "evidence_manifest_sha256": "cfc1eeb3fd988c3fcca24f692084d032f6de9630e01035b53397e7398a9b8759",
+    "integrity_errors": [],
+    "market_snapshot_count": 4,
+    "normalized_event_count": 194924,
+    "raw_message_count": 194980,
+    "report_sha256": "958e44fa1b385f7076fc84c2d6207a7c8bd4723d0bddb68c24f9c08ea424a885",
+    "run_id": "1bc5ef7708254232bedd75377ae4a882",
+    "schema_version": "polymarket-public-recorder-v1",
+    "started_at_ms": 1786747376720,
+    "status": "complete",
+    "stream_counts": {
+      "binance_futures": 1014,
+      "binance_spot": 3522,
+      "clob_market": 189264,
+      "clob_rest_book": 2,
+      "polymarket_rtds": 1178
+    },
+    "stream_gap_count": 0
+  },
+  "conclusion": "documented public source smoke passed; no model or economic claim",
+  "contract_sha256": "cc319d8f0d180171401919a9b2edda2cbd20d92332dc79f7380b6d758616a671",
+  "database_cap_bytes": 2147483648,
+  "database_footprint_bytes": 19410944,
+  "failure_reasons": [],
+  "gate_checks": {
+    "database_footprint_at_or_below_cap": true,
+    "documented_spot_and_futures_trade_quality_passed": true,
+    "integrity_error_count_zero": true,
+    "recorder_error_count_zero": true,
+    "required_stream_message_count_positive": true,
+    "resource_stop_not_triggered": true,
+    "stream_gap_count_zero": true,
+    "terminal_recorder_status_complete": true
+  },
+  "resource_stop_reason": "",
+  "result_sha256": "9c69148f8ba2c0ed7a6494f3d4bc3662b620862dcbf52714d144f78c5aa2f648",
+  "run_id": "1bc5ef7708254232bedd75377ae4a882",
+  "schema_version": "polymarket-round27-documented-source-smoke-result-v1",
+  "source_quality": {
+    "edge_claim": false,
+    "model_data_eligible": false,
+    "passed": true,
+    "profitability_claim": false,
+    "run_id": "1bc5ef7708254232bedd75377ae4a882",
+    "schema_version": "polymarket-source-quality-v1",
+    "source_quality_sha256": "7ffdedbcc4d271c992902fd4a24ed5c456fe0d932c9bc233051daa8da0bbc99c",
+    "streams": {
+      "binance_futures": {
+        "accepted_trade_count": 1014,
+        "event_types": {
+          "aggTrade": 1014
+        },
+        "examples": [],
+        "expected_trade_type": "aggTrade",
+        "invalid_numeric_count": 0,
+        "non_positive_count": 0,
+        "passed": true,
+        "trade_like_count": 1014,
+        "unexpected_trade_type_count": 0
+      },
+      "binance_spot": {
+        "accepted_trade_count": 2961,
+        "event_types": {
+          "24hrTicker": 561,
+          "trade": 2961
+        },
+        "examples": [],
+        "expected_trade_type": "trade",
+        "invalid_numeric_count": 0,
+        "non_positive_count": 0,
+        "passed": true,
+        "trade_like_count": 2961,
+        "unexpected_trade_type_count": 0
+      }
+    },
+    "symbol": "BTC",
+    "target_free": true
+  },
+  "status": "passed"
+}
