@@ -1,0 +1,59 @@
+{
+  "amendment_sha256": "a98eb130829ed1baecc346a09e4a8377c0178ca4eedb4eb1960bff7022f8b7ec",
+  "authority": {
+    "edge_claim": false,
+    "live_trading_authority": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786739640000,
+  "implementation_audit": {
+    "current_round26_analyzer_uses_public_polymarket_trade_side": false,
+    "current_round26_analyzer_uses_receipt_ordered_clob_books": true,
+    "current_round26_analyzer_uses_signed_binance_trade_flow": false,
+    "current_round27_design_requires_polymarket_trade_side": false
+  },
+  "measurement_policy": {
+    "allowed_causal_polymarket_inputs": [
+      "receipt-ordered full book snapshots",
+      "receipt-ordered price-level changes",
+      "best bid and ask changes",
+      "tick-size changes",
+      "market lifecycle and official resolution events"
+    ],
+    "onchain_order_filled_role": "retrospective trade-side and fill audit only unless its observed confirmation delay is represented and the feature is available before the decision receipt",
+    "public_last_trade_price_side_role": "descriptive only; forbidden as authoritative signed order flow",
+    "reason": "public-feed trade direction has weak agreement with authoritative on-chain fills and can reverse effective-spread and price-impact signs",
+    "signed_polymarket_flow_requires": "authoritative OrderFilled semantics plus causal availability at the exact decision receipt",
+    "unavailable_authoritative_flow_action": "omit the feature; never infer or impute it"
+  },
+  "model_policy": {
+    "book_prior_remains_mandatory_baseline": true,
+    "favorite_longshot_or_longshot_spread_patterns_are_diagnostic_strata_not_assumed_edges": true,
+    "maker_fill_claim_requires_order_specific_authenticated_fill_or_queue_evidence": true,
+    "primary_candidate_remains_taker_settlement_value": true,
+    "probability_calibration_is_stratified_by_price_and_time_to_close": true,
+    "statistical_predictability_without_after_cost_profit_is_rejected": true
+  },
+  "predecessor_design_sha256": "52f684eba182ef01231bd5b0add1833c2314a184877f5795e003e3577ba49dff",
+  "research_evidence": [
+    {
+      "finding": "A 30-billion-event Polymarket study reports only about 59% public-feed versus on-chain trade-direction agreement and sign instability in effective spread and Kyle lambda.",
+      "url": "https://arxiv.org/abs/2604.24366"
+    },
+    {
+      "finding": "Official Polymarket documentation defines the on-chain OrderFilled event and its maker and taker asset semantics as the settled-trade record.",
+      "url": "https://docs.polymarket.com/trading/orders/overview"
+    },
+    {
+      "finding": "A synchronized 727-million-row BTC Polymarket-Binance study reports no out-of-sample edge after fees and slippage despite measurable quote response, reinforcing the book-prior and economic-gate requirements.",
+      "url": "https://arxiv.org/abs/2607.26245"
+    },
+    {
+      "finding": "A 6.83-billion-event futures study finds statistically significant short-horizon predictability but no economic exploitability at taker costs, reinforcing the separation of accuracy from after-cost edge.",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7067778"
+    }
+  ],
+  "schema_version": "polymarket-round27-microstructure-measurement-amendment-v2",
+  "status": "frozen_before_round26_pilot_outcome_access"
+}
