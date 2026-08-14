@@ -44,6 +44,9 @@ POLYMARKET_ROUND25_JOINT_STORE_SCHEMA_VERSION = (
 POLYMARKET_ROUND25_JOINT_STORE_MANIFEST_SCHEMA_VERSION = (
     "polymarket-round25-joint-feature-store-manifest-v2"
 )
+POLYMARKET_ROUND25_FORENSIC_JOINT_STORE_MANIFEST_SCHEMA_VERSION = (
+    "polymarket-round25-forensic-joint-feature-store-manifest-v1"
+)
 POLYMARKET_ROUND25_JOINT_CHUNK_SCHEMA_VERSION = (
     "polymarket-round25-joint-feature-chunk-v1"
 )
@@ -417,36 +420,27 @@ def _replace_with_retries(source: Path, destination: Path) -> None:
             time.sleep(_REPLACE_RETRY_SECONDS[attempt])
 
 
-class Round25JointStoreWriter:
-    """One-writer atomic store; the destination appears only after final audit."""
-
-    def __init__(
-        self,
-        destination: str | Path,
-        *,
-        terminal_transport_manifest: Mapping[str, object],
-    ) -> None:
-        transport = validate_round25_terminal_transport_manifest(
-            terminal_transport_manifest
-        )
-        self.transport = transport
-        self.destination = Path(destination)
-        self.partial = self.destination.with_name(f".{self.destination.name}.partial")
-        if (
-            self.destination.is_symlink()
-            or self.destination.exists()
-            or self.partial.is_symlink()
-            or self.partial.exists()
-            or Path(f"{self.partial}.wal").exists()
-        ):
-            raise ValueError("Round 25 joint store destination is not empty")
-        self.destination.parent.mkdir(parents=True, exist_ok=True)
-        self.connection = duckdb.connect(str(self.partial))
-        self.connection.execute("SET memory_limit = '1GB'")
-        self.connection.execute("SET threads = 2")
-        self.connection.execute("PRAGMA enable_checkpoint_on_shutdown")
-        self.connection.execute(
-            """
+def _initialize_joint_store_writer(
+    writer: Round25JointStoreWriter,
+    destination: str | Path,
+) -> None:
+    writer.destination = Path(destination)
+    writer.partial = writer.destination.with_name(f".{writer.destination.name}.partial")
+    if (
+        writer.destination.is_symlink()
+        or writer.destination.exists()
+        or writer.partial.is_symlink()
+        or writer.partial.exists()
+        or Path(f"{writer.partial}.wal").exists()
+    ):
+        raise ValueError("Round 25 joint store destination is not empty")
+    writer.destination.parent.mkdir(parents=True, exist_ok=True)
+    writer.connection = duckdb.connect(str(writer.partial))
+    writer.connection.execute("SET memory_limit = '1GB'")
+    writer.connection.execute("SET threads = 2")
+    writer.connection.execute("PRAGMA enable_checkpoint_on_shutdown")
+    writer.connection.execute(
+        """
             CREATE TABLE round25_joint_condition (
                 condition_id VARCHAR PRIMARY KEY,
                 event_start_ms BIGINT NOT NULL,
@@ -480,20 +474,35 @@ class Round25JointStoreWriter:
                 manifest_sha256 VARCHAR NOT NULL
             );
             """
+    )
+    writer.connection.execute("BEGIN TRANSACTION")
+    writer.condition_count = 0
+    writer.admitted_condition_count = 0
+    writer.feature_row_count = 0
+    writer.role_counts = Counter()
+    writer.rejection_counts = Counter()
+    writer.unavailable_reason_counts = Counter()
+    writer.logical_root_sha256 = _EMPTY_SHA256
+    writer.condition_population_sha256 = _EMPTY_SHA256
+    writer._condition_ids = set()
+    writer._last_identity = None
+    writer._closed = False
+    writer._published = False
+
+
+class Round25JointStoreWriter:
+    """One-writer atomic store; the destination appears only after final audit."""
+
+    def __init__(
+        self,
+        destination: str | Path,
+        *,
+        terminal_transport_manifest: Mapping[str, object],
+    ) -> None:
+        self.transport = validate_round25_terminal_transport_manifest(
+            terminal_transport_manifest
         )
-        self.connection.execute("BEGIN TRANSACTION")
-        self.condition_count = 0
-        self.admitted_condition_count = 0
-        self.feature_row_count = 0
-        self.role_counts: Counter[str] = Counter()
-        self.rejection_counts: Counter[str] = Counter()
-        self.unavailable_reason_counts: Counter[str] = Counter()
-        self.logical_root_sha256 = _EMPTY_SHA256
-        self.condition_population_sha256 = _EMPTY_SHA256
-        self._condition_ids: set[str] = set()
-        self._last_identity: tuple[int, str] | None = None
-        self._closed = False
-        self._published = False
+        _initialize_joint_store_writer(self, destination)
 
     def add(self, value: Round25ConditionFeatureMaterialization) -> None:
         selected = value.validated()
@@ -574,19 +583,17 @@ class Round25JointStoreWriter:
             dict(selected.unavailable_reason_counts)
         )
 
-    def finalize(
+    def _common_manifest_body(
         self,
         *,
-        terminal_receipt_audit: Mapping[str, object],
+        created_at_ms: int,
         source_counts: Mapping[str, int],
     ) -> dict[str, object]:
-        audit = validate_round25_terminal_receipt_audit(
-            terminal_receipt_audit,
-            terminal_transport_manifest=self.transport,
-        )
         counts = dict(source_counts)
         if (
             self._closed
+            or type(created_at_ms) is not int
+            or created_at_ms <= 0
             or set(counts) != _SOURCE_COUNT_FIELDS
             or any(type(value) is not int or value < 0 for value in counts.values())
             or counts["admitted_condition_count"] != self.condition_count
@@ -600,13 +607,13 @@ class Round25JointStoreWriter:
             or self.logical_root_sha256 == _EMPTY_SHA256
         ):
             raise ValueError("Round 25 joint store final accounting differs")
-        body: dict[str, object] = {
+        return {
             "admitted_condition_count": self.admitted_condition_count,
             "atomic_file_publication": True,
             "chunk_codec": POLYMARKET_ROUND25_JOINT_CHUNK_CODEC,
             "condition_count": self.condition_count,
             "condition_population_sha256": self.condition_population_sha256,
-            "created_at_ms": audit["created_at_ms"],
+            "created_at_ms": created_at_ms,
             "feature_chunk_count": self.admitted_condition_count,
             "feature_names_sha256": POLYMARKET_ROUND25_JOINT_FEATURE_NAMES_SHA256,
             "feature_row_count": self.feature_row_count,
@@ -631,16 +638,15 @@ class Round25JointStoreWriter:
             "role_condition_counts": {
                 role: self.role_counts[role] for role in _ROLES
             },
-            "schema_version": POLYMARKET_ROUND25_JOINT_STORE_MANIFEST_SCHEMA_VERSION,
             "source_snapshot_count": counts["source_snapshot_count"],
             "store_schema_version": POLYMARKET_ROUND25_JOINT_STORE_SCHEMA_VERSION,
             "target_accessed": False,
-            "terminal_receipt_audit_sha256": audit["audit_sha256"],
-            "terminal_transport_manifest_sha256": self.transport["manifest_sha256"],
             "unavailable_reason_counts": dict(
                 sorted(self.unavailable_reason_counts.items())
             ),
         }
+
+    def _publish_manifest(self, body: Mapping[str, object]) -> dict[str, object]:
         manifest = validate_round25_joint_store_manifest(
             {**body, "manifest_sha256": _canonical_sha256(body)}
         )
@@ -657,6 +663,27 @@ class Round25JointStoreWriter:
         _replace_with_retries(self.partial, self.destination)
         self._published = True
         return manifest
+
+    def finalize(
+        self,
+        *,
+        terminal_receipt_audit: Mapping[str, object],
+        source_counts: Mapping[str, int],
+    ) -> dict[str, object]:
+        audit = validate_round25_terminal_receipt_audit(
+            terminal_receipt_audit,
+            terminal_transport_manifest=self.transport,
+        )
+        body = {
+            **self._common_manifest_body(
+                created_at_ms=int(audit["created_at_ms"]),
+                source_counts=source_counts,
+            ),
+            "schema_version": (POLYMARKET_ROUND25_JOINT_STORE_MANIFEST_SCHEMA_VERSION),
+            "terminal_receipt_audit_sha256": audit["audit_sha256"],
+            "terminal_transport_manifest_sha256": self.transport["manifest_sha256"],
+        }
+        return self._publish_manifest(body)
 
     def abort(self) -> None:
         if not self._closed:
@@ -675,12 +702,69 @@ class Round25JointStoreWriter:
                 pass
 
 
+class Round25ForensicJointStoreWriter(Round25JointStoreWriter):
+    """Atomic joint store with explicit failed-transport provenance."""
+
+    def __init__(
+        self,
+        destination: str | Path,
+        *,
+        forensic_audit_sha256: str,
+        salvage_contract_sha256: str,
+        source_report_sha256: str,
+        source_evidence_manifest_sha256: str,
+        source_run_id: str,
+    ) -> None:
+        hashes = (
+            forensic_audit_sha256,
+            salvage_contract_sha256,
+            source_report_sha256,
+            source_evidence_manifest_sha256,
+        )
+        if (
+            any(_SHA256.fullmatch(value) is None for value in hashes)
+            or re.fullmatch(r"[0-9a-f]{32}", source_run_id) is None
+        ):
+            raise ValueError("Round 25 forensic joint store source differs")
+        self.forensic_audit_sha256 = forensic_audit_sha256
+        self.salvage_contract_sha256 = salvage_contract_sha256
+        self.source_report_sha256 = source_report_sha256
+        self.source_evidence_manifest_sha256 = source_evidence_manifest_sha256
+        self.source_run_id = source_run_id
+        _initialize_joint_store_writer(self, destination)
+
+    def finalize_forensic(
+        self,
+        *,
+        created_at_ms: int,
+        source_counts: Mapping[str, int],
+    ) -> dict[str, object]:
+        body = {
+            **self._common_manifest_body(
+                created_at_ms=created_at_ms,
+                source_counts=source_counts,
+            ),
+            "diagnostic_only": True,
+            "forensic_audit_sha256": self.forensic_audit_sha256,
+            "salvage_contract_sha256": self.salvage_contract_sha256,
+            "schema_version": (
+                POLYMARKET_ROUND25_FORENSIC_JOINT_STORE_MANIFEST_SCHEMA_VERSION
+            ),
+            "source_evidence_manifest_sha256": (self.source_evidence_manifest_sha256),
+            "source_kind": "qualified_transport_failure",
+            "source_recorder_status": "failed",
+            "source_report_sha256": self.source_report_sha256,
+            "source_run_id": self.source_run_id,
+        }
+        return self._publish_manifest(body)
+
+
 def validate_round25_joint_store_manifest(
     value: Mapping[str, object],
 ) -> dict[str, object]:
     payload = dict(value)
     claimed = str(payload.pop("manifest_sha256", "")).strip().lower()
-    expected = {
+    common_expected = {
         "admitted_condition_count",
         "atomic_file_publication",
         "chunk_codec",
@@ -709,10 +793,52 @@ def validate_round25_joint_store_manifest(
         "source_snapshot_count",
         "store_schema_version",
         "target_accessed",
-        "terminal_receipt_audit_sha256",
-        "terminal_transport_manifest_sha256",
         "unavailable_reason_counts",
     }
+    schema_version = payload.get("schema_version")
+    if schema_version == POLYMARKET_ROUND25_JOINT_STORE_MANIFEST_SCHEMA_VERSION:
+        provenance_expected = {
+            "terminal_receipt_audit_sha256",
+            "terminal_transport_manifest_sha256",
+        }
+        provenance_valid = all(
+            _SHA256.fullmatch(str(payload.get(field) or "")) is not None
+            for field in provenance_expected
+        )
+    elif (
+        schema_version
+        == POLYMARKET_ROUND25_FORENSIC_JOINT_STORE_MANIFEST_SCHEMA_VERSION
+    ):
+        provenance_expected = {
+            "diagnostic_only",
+            "forensic_audit_sha256",
+            "salvage_contract_sha256",
+            "source_evidence_manifest_sha256",
+            "source_kind",
+            "source_recorder_status",
+            "source_report_sha256",
+            "source_run_id",
+        }
+        provenance_valid = (
+            payload.get("diagnostic_only") is True
+            and payload.get("source_kind") == "qualified_transport_failure"
+            and payload.get("source_recorder_status") == "failed"
+            and re.fullmatch(r"[0-9a-f]{32}", str(payload.get("source_run_id") or ""))
+            is not None
+            and all(
+                _SHA256.fullmatch(str(payload.get(field) or "")) is not None
+                for field in (
+                    "forensic_audit_sha256",
+                    "salvage_contract_sha256",
+                    "source_evidence_manifest_sha256",
+                    "source_report_sha256",
+                )
+            )
+        )
+    else:
+        provenance_expected = set()
+        provenance_valid = False
+    expected = common_expected | provenance_expected
     count_fields = (
         "admitted_condition_count",
         "condition_count",
@@ -729,10 +855,9 @@ def validate_round25_joint_store_manifest(
     )
     if (
         set(payload) != expected
+        or not provenance_valid
         or _SHA256.fullmatch(claimed) is None
         or claimed != _canonical_sha256(payload)
-        or payload.get("schema_version")
-        != POLYMARKET_ROUND25_JOINT_STORE_MANIFEST_SCHEMA_VERSION
         or payload.get("store_schema_version")
         != POLYMARKET_ROUND25_JOINT_STORE_SCHEMA_VERSION
         or payload.get("materialization_contract_sha256")
@@ -762,7 +887,10 @@ def validate_round25_joint_store_manifest(
         != payload["condition_count"] + payload["purged_condition_count"]
         or not isinstance(role_counts, Mapping)
         or set(role_counts) != set(_ROLES)
-        or any(type(role_counts[role]) is not int or role_counts[role] < 0 for role in _ROLES)
+        or any(
+            type(role_counts[role]) is not int or role_counts[role] < 0
+            for role in _ROLES
+        )
         or sum(role_counts.values()) != payload["condition_count"]
         or any(
             not isinstance(counts, Mapping)
@@ -777,13 +905,6 @@ def validate_round25_joint_store_manifest(
         )
         or _SHA256.fullmatch(str(payload.get("logical_root_sha256") or "")) is None
         or payload.get("logical_root_sha256") == _EMPTY_SHA256
-        or any(
-            _SHA256.fullmatch(str(payload.get(field) or "")) is None
-            for field in (
-                "terminal_receipt_audit_sha256",
-                "terminal_transport_manifest_sha256",
-            )
-        )
         or payload.get("receipt_scan_count") != 1
         or payload.get("atomic_file_publication") is not True
         or any(
@@ -1359,11 +1480,13 @@ def materialize_round25_joint_feature_store(
 
 
 __all__ = [
+    "POLYMARKET_ROUND25_FORENSIC_JOINT_STORE_MANIFEST_SCHEMA_VERSION",
     "POLYMARKET_ROUND25_JOINT_CHUNK_CODEC",
     "POLYMARKET_ROUND25_JOINT_CHUNK_SCHEMA_VERSION",
     "POLYMARKET_ROUND25_JOINT_FEATURE_NAMES_SHA256",
     "POLYMARKET_ROUND25_JOINT_STORE_MANIFEST_SCHEMA_VERSION",
     "POLYMARKET_ROUND25_JOINT_STORE_SCHEMA_VERSION",
+    "Round25ForensicJointStoreWriter",
     "Round25JointStoreWriter",
     "audit_round25_joint_store",
     "load_round25_joint_condition_identities",
