@@ -47,6 +47,9 @@ from simple_ai_trading.polymarket_features import (
 from simple_ai_trading.polymarket_continuity import (
     evaluate_polymarket_continuity_eligibility,
 )
+from simple_ai_trading.polymarket_condition_replay_audit import (
+    audit_polymarket_condition_replay,
+)
 from simple_ai_trading.polymarket_model import (
     POLYMARKET_MODEL_FEATURE_NAMES,
     POLYMARKET_MODEL_RISK_CONTEXT_NAMES,
@@ -3987,6 +3990,66 @@ def test_segmented_replay_resets_books_and_never_executes_across_gap(tmp_path) -
             "Up",
             "Down",
         }
+
+
+def test_condition_replay_audit_is_target_free_and_segment_bounded(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "condition-audit.duckdb") as store:
+        _finish_segmented_store(store, "condition-audit")
+        report = audit_polymarket_condition_replay(
+            store,
+            run_id="condition-audit",
+            build_condition_cache=True,
+        )
+
+    assert report["target_free"] is True
+    assert report["minimum_executable_interval_ms"] == 250
+    assert report["condition_count"] == 3
+    assert report["eligible_condition_count"] == 1
+    assert report["failed_condition_count"] == 2
+    condition = next(item for item in report["conditions"] if item["eligible"])
+    assert condition["slug"].startswith("btc-")
+    assert condition["eligible"] is True
+    assert any(segment["eligible"] for segment in condition["segments"])
+    assert all(
+        segment["interval_end_ms"]
+        <= parse_polymarket_five_minute_market(_market_payload("BTC")).end_ms - 1
+        for segment in condition["segments"]
+        if segment["interval_end_ms"] is not None
+    )
+    body = dict(report)
+    claimed = body.pop("audit_sha256")
+    assert claimed == hashlib.sha256(_canonical(body).encode("ascii")).hexdigest()
+
+
+def test_condition_replay_audit_isolates_checksum_failure(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "condition-audit-failure.duckdb") as store:
+        _finish_replay_store(store, "condition-audit-failure", wrong_best=True)
+        report = audit_polymarket_condition_replay(
+            store,
+            run_id="condition-audit-failure",
+            build_condition_cache=True,
+        )
+
+    assert report["eligible_condition_count"] == 0
+    assert report["failed_condition_count"] == 3
+    checksum_failures = [
+        item
+        for item in report["conditions"]
+        if item["failure_class"] == "book_integrity"
+    ]
+    assert len(checksum_failures) == 1
+    assert checksum_failures[0]["slug"].startswith("btc-")
+    assert "checksum" in checksum_failures[0]["failure"].lower()
+
+
+def test_condition_replay_audit_never_builds_cache_implicitly(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "condition-audit-opt-in.duckdb") as store:
+        _finish_replay_store(store, "condition-audit-opt-in")
+        with pytest.raises(ValueError, match="explicitly enabled"):
+            audit_polymarket_condition_replay(
+                store,
+                run_id="condition-audit-opt-in",
+            )
 
 
 def test_segmented_replay_uses_reconnect_book_tick_without_metadata_fallback(

@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Mapping
 
 from simple_ai_trading.polymarket_round26_analysis import (
     run_round26_pilot_analysis,
 )
+from simple_ai_trading.storage import write_bytes_atomic
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -36,6 +38,7 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("data/round26-twap60-development-analysis-v3.json"),
     )
+    parser.add_argument("--progress", type=Path)
     return parser
 
 
@@ -46,12 +49,25 @@ def _resolve(root: Path, value: Path) -> Path:
 def main() -> int:
     arguments = _parser().parse_args()
     root = arguments.repository.resolve()
+
+    def progress(phase: str, payload: Mapping[str, object]) -> None:
+        message = {"phase": phase, **payload}
+        print(json.dumps(message, sort_keys=True), flush=True)
+        if arguments.progress is not None:
+            write_bytes_atomic(
+                _resolve(root, arguments.progress),
+                (json.dumps(message, indent=2, sort_keys=True) + "\n").encode(
+                    "ascii"
+                ),
+            )
+
     result = run_round26_pilot_analysis(
         root,
         contract_path=_resolve(root, arguments.contract),
         database_path=_resolve(root, arguments.database),
         capture_result_path=_resolve(root, arguments.capture_result),
         output_path=_resolve(root, arguments.output),
+        progress=progress,
     )
     print(json.dumps(result, sort_keys=True))
     return 0

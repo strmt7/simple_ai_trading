@@ -174,6 +174,24 @@ def test_source_points_use_prevalidated_segmented_source_reconstruction() -> Non
     assert event_count == 1
 
 
+def test_source_points_reject_non_positive_binance_trade_prices() -> None:
+    class Store:
+        def iter_public_events(self, run_id, **controls):
+            assert run_id == "round26"
+            assert controls["verified_source"] is False
+            yield SimpleNamespace(
+                stream="binance_futures",
+                event_type="trade",
+                symbol="BTC",
+                received_monotonic_ns=1_000,
+                received_wall_ms=1,
+                event={"data": {"p": "0", "q": "0", "X": "NA", "st": 1}},
+            )
+
+    with pytest.raises(ValueError, match="trade price is non-positive"):
+        _source_points(Store(), "round26")
+
+
 def test_executable_scope_excludes_books_at_documented_close() -> None:
     class Connection:
         def execute(self, query, arguments):
