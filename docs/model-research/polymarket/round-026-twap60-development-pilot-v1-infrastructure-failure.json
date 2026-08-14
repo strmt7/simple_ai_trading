@@ -1,0 +1,22 @@
+{
+  "artifact_sha256": "a0bae17372139347a1a113afe09330b808c10500d754375a4281f147a4463e38",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "model_data_eligible": false,
+    "orders_submitted": 0,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "database_created": false,
+  "failed_contract_sha256": "6fe1b2774b512d239e81db7b068443bff98c8fcf91b93532bab01ceb81a8fd2b",
+  "failure_class": "pre_capture_portability_attestation_failure",
+  "failure_detail": "The contract byte-hashed canonical JSON before commit; Git converted LF to CRLF in the clean Windows worktree, so source verification failed before recorder construction.",
+  "observed_at_ms": 1786736603413,
+  "raw_messages_captured": 0,
+  "remediation": "Supersede v1 with canonical JSON claims and line-ending-normalized UTF-8 source hashes.",
+  "schema_version": "polymarket-round26-twap60-pilot-infrastructure-failure-v1",
+  "status": "failed_before_capture"
+}

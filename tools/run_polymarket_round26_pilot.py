@@ -19,12 +19,12 @@ from simple_ai_trading.storage import write_json_atomic
 
 
 DEFAULT_CONTRACT = Path(
-    "docs/model-research/polymarket/round-026-twap60-development-pilot-v1.json"
+    "docs/model-research/polymarket/round-026-twap60-development-pilot-v2.json"
 )
-DEFAULT_DATABASE = Path("data/round26-twap60-development-pilot-v1.duckdb")
-DEFAULT_RESULT = Path("data/round26-twap60-development-pilot-v1-result.json")
-DEFAULT_PROGRESS = Path("data/round26-twap60-development-pilot-v1-progress.json")
-DEFAULT_LOCK = Path("data/round26-twap60-development-pilot-v1.lock")
+DEFAULT_DATABASE = Path("data/round26-twap60-development-pilot-v2.duckdb")
+DEFAULT_RESULT = Path("data/round26-twap60-development-pilot-v2-result.json")
+DEFAULT_PROGRESS = Path("data/round26-twap60-development-pilot-v2-progress.json")
+DEFAULT_LOCK = Path("data/round26-twap60-development-pilot-v2.lock")
 
 
 def _next_start(now_ms: int) -> int:

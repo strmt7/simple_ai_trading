@@ -27,9 +27,9 @@ from .polymarket_recorder import (
 from .storage import write_bytes_atomic
 
 
-ROUND26_PILOT_SCHEMA_VERSION = "polymarket-round26-twap60-pilot-contract-v1"
-ROUND26_MANIFEST_SCHEMA_VERSION = "polymarket-round26-twap60-pilot-manifest-v1"
-ROUND26_RESULT_SCHEMA_VERSION = "polymarket-round26-twap60-pilot-result-v1"
+ROUND26_PILOT_SCHEMA_VERSION = "polymarket-round26-twap60-pilot-contract-v2"
+ROUND26_MANIFEST_SCHEMA_VERSION = "polymarket-round26-twap60-pilot-manifest-v2"
+ROUND26_RESULT_SCHEMA_VERSION = "polymarket-round26-twap60-pilot-result-v2"
 ROUND26_CAPTURE_DURATION_SECONDS = 3_600
 ROUND26_DATABASE_CAP_BYTES = 4 * 1024**3
 ROUND26_MINIMUM_FREE_BYTES = 32 * 1024**3
@@ -74,12 +74,15 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
 
 
-def _file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+def _text_sha256(path: Path) -> str:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise ValueError(f"source file is not UTF-8 text: {path}") from exc
+    normalized = text.replace("\r\n", "\n")
+    if "\r" in normalized:
+        raise ValueError(f"source file contains unsupported carriage returns: {path}")
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def _read_json(path: Path, *, label: str) -> dict[str, object]:
@@ -115,9 +118,8 @@ class Round26PilotContract:
     effective_start_ms: int
     capture_duration_seconds: int
     repository_commit: str
-    source_qualification_sha256: str
     source_qualification_claim_sha256: str
-    source_file_sha256: Mapping[str, str]
+    source_text_sha256: Mapping[str, str]
     contract_sha256: str
 
 
@@ -148,7 +150,6 @@ def create_round26_pilot_contract(
         or source.get("profitability_claim") is not False
     ):
         raise ValueError("Round 26 source qualification claim differs")
-    source_sha = _file_sha256(source_path)
     payload: dict[str, object] = {
         "schema_version": ROUND26_PILOT_SCHEMA_VERSION,
         "created_at_ms": created,
@@ -156,10 +157,9 @@ def create_round26_pilot_contract(
         "capture_duration_seconds": ROUND26_CAPTURE_DURATION_SECONDS,
         "repository_commit": _git(root, "rev-parse", "HEAD"),
         "source_qualification_path": ROUND26_SOURCE_QUALIFICATION_RELATIVE,
-        "source_qualification_file_sha256": source_sha,
-        "source_qualification_claim_sha256": source_claim,
-        "source_file_sha256": {
-            relative: _file_sha256(root / relative)
+        "source_qualification_sha256": source_claim,
+        "source_text_sha256": {
+            relative: _text_sha256(root / relative)
             for relative in ROUND26_REQUIRED_SOURCE_FILES
         },
         "predecessor_lineage": {
@@ -262,7 +262,7 @@ def validate_round26_pilot_contract(
     root = Path(repository).resolve()
     payload = dict(value)
     claimed = str(payload.pop("contract_sha256", "")).lower()
-    source_files = payload.get("source_file_sha256")
+    source_files = payload.get("source_text_sha256")
     lineage = payload.get("predecessor_lineage")
     scope = payload.get("capture_scope")
     experiment = payload.get("experiment")
@@ -271,11 +271,8 @@ def validate_round26_pilot_contract(
     created = payload.get("created_at_ms")
     effective = payload.get("effective_start_ms")
     repository_commit = str(payload.get("repository_commit", "")).lower()
-    source_file_sha = str(
-        payload.get("source_qualification_file_sha256", "")
-    ).lower()
     source_claim_sha = str(
-        payload.get("source_qualification_claim_sha256", "")
+        payload.get("source_qualification_sha256", "")
     ).lower()
     if (
         not root.is_dir()
@@ -287,9 +284,8 @@ def validate_round26_pilot_contract(
             "capture_duration_seconds",
             "repository_commit",
             "source_qualification_path",
-            "source_qualification_file_sha256",
-            "source_qualification_claim_sha256",
-            "source_file_sha256",
+            "source_qualification_sha256",
+            "source_text_sha256",
             "predecessor_lineage",
             "capture_scope",
             "experiment",
@@ -308,7 +304,6 @@ def validate_round26_pilot_contract(
         or _COMMIT.fullmatch(repository_commit) is None
         or payload.get("source_qualification_path")
         != ROUND26_SOURCE_QUALIFICATION_RELATIVE
-        or _SHA256.fullmatch(source_file_sha) is None
         or _SHA256.fullmatch(source_claim_sha) is None
         or _SHA256.fullmatch(claimed) is None
         or claimed != _canonical_sha256(payload)
@@ -439,9 +434,8 @@ def validate_round26_pilot_contract(
         effective_start_ms=effective,
         capture_duration_seconds=ROUND26_CAPTURE_DURATION_SECONDS,
         repository_commit=repository_commit,
-        source_qualification_sha256=source_file_sha,
         source_qualification_claim_sha256=source_claim_sha,
-        source_file_sha256={str(key): str(item) for key, item in source_files.items()},
+        source_text_sha256={str(key): str(item) for key, item in source_files.items()},
         contract_sha256=claimed,
     )
 
@@ -548,12 +542,10 @@ def _verify_sources(repository: Path, contract: Round26PilotContract) -> None:
     )
     if ancestor.returncode != 0:
         raise ValueError("Round 26 source commit is not an ancestor of HEAD")
-    for relative, expected in contract.source_file_sha256.items():
-        if _file_sha256(repository / relative) != expected:
+    for relative, expected in contract.source_text_sha256.items():
+        if _text_sha256(repository / relative) != expected:
             raise ValueError(f"Round 26 source file differs: {relative}")
     qualification = repository / ROUND26_SOURCE_QUALIFICATION_RELATIVE
-    if _file_sha256(qualification) != contract.source_qualification_sha256:
-        raise ValueError("Round 26 source qualification differs")
     qualification_payload = _read_json(
         qualification, label="Round 26 source qualification"
     )
@@ -623,7 +615,7 @@ def _manifest(
             "crypto_prices",
             POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC,
         ],
-        "source_qualification_sha256": contract.source_qualification_sha256,
+        "source_qualification_sha256": contract.source_qualification_claim_sha256,
         "development_only": True,
         "sealed_selection_eligible": False,
         "model_data_eligible": False,

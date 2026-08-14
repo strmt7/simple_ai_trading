@@ -10,12 +10,20 @@ from simple_ai_trading.polymarket_round26_pilot import (
     ROUND26_CAPTURE_DURATION_SECONDS,
     _create_recorder,
     _manifest,
+    _text_sha256,
     create_round26_pilot_contract,
     validate_round26_pilot_contract,
 )
 
 
 ROOT = Path(__file__).resolve().parents[1]
+V1_FAILURE = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-026-twap60-development-pilot-v1-infrastructure-failure.json"
+)
 CREATED_MS = 1_786_736_100_000
 EFFECTIVE_START_MS = 1_786_736_400_000
 
@@ -115,3 +123,24 @@ def test_round26_pilot_manifest_is_hash_bound_and_non_authorizing() -> None:
     assert manifest["model_data_eligible"] is False
     assert manifest["edge_claim"] is False
     assert manifest["profitability_claim"] is False
+
+
+def test_round26_source_hash_is_stable_across_git_line_endings(tmp_path: Path) -> None:
+    lf = tmp_path / "lf.py"
+    crlf = tmp_path / "crlf.py"
+    lf.write_bytes(b"first\nsecond\n")
+    crlf.write_bytes(b"first\r\nsecond\r\n")
+
+    assert _text_sha256(lf) == _text_sha256(crlf)
+
+
+def test_round26_v1_portability_failure_is_hash_bound_and_non_data() -> None:
+    payload = json.loads(V1_FAILURE.read_text(encoding="ascii"))
+    claimed = payload.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(payload)
+    assert payload["status"] == "failed_before_capture"
+    assert payload["database_created"] is False
+    assert payload["raw_messages_captured"] == 0
+    assert payload["authority"]["edge_claim"] is False
+    assert payload["authority"]["profitability_claim"] is False
