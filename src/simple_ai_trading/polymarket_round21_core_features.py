@@ -890,7 +890,7 @@ def build_round21_execution_books(
         raise ValueError("Round 21 execution-book identity differs")
     states = {token: _BookState(token_id=token) for token in tokens}
     output: list[PaperBookSnapshot] = []
-    identities: set[tuple[str, int, int]] = set()
+    identities: set[tuple[str, int, int, str]] = set()
     last_monotonic_ns = 0
     for event in union_events:
         payload = _validate_union_event(event)
@@ -949,6 +949,7 @@ def build_round21_execution_books(
                 token,
                 event.selected_received_wall_ms,
                 event.selected_received_monotonic_ns,
+                event.event_sha256,
             )
             if source_time_ms is None or identity in identities:
                 raise ValueError("Round 21 execution-book source identity differs")
