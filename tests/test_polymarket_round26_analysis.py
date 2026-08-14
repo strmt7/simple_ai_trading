@@ -16,9 +16,11 @@ from simple_ai_trading.polymarket_round26_analysis import (
     _PricePoint,
     _Signal,
     _configuration_result,
+    _execute_settlement_trade,
     _execute_taker_trade,
     _maximum_drawdown,
     _return_bps,
+    _settlement_configuration_result,
     _settlement_mechanism_audit,
     _source_points,
     _twap_point,
@@ -102,6 +104,23 @@ def _series(*books: PolymarketRecordedBook) -> _BookSeries:
     return _BookSeries(
         times_ns=tuple(book.received_monotonic_ns for book in books),
         books=books,
+    )
+
+
+def _resolution(market, *, winning_outcome: str) -> PolymarketResolutionEvidence:
+    return PolymarketResolutionEvidence(
+        run_id="round26",
+        event_id="resolution",
+        condition_id=market.condition_id,
+        winning_asset_id=(
+            market.up_token_id if winning_outcome == "Up" else market.down_token_id
+        ),
+        winning_outcome=winning_outcome,
+        resolved_at_ms=market.end_ms + 1_000,
+        received_wall_ms=market.end_ms + 2_000,
+        received_monotonic_ns=10_000_000_000,
+        event_sha256="b" * 64,
+        source="clob_market",
     )
 
 
@@ -281,6 +300,52 @@ def test_taker_round_trip_delays_both_legs_and_charges_exact_fees() -> None:
     assert trade.gross_pnl == Decimal("-0.05")
     assert trade.fees == Decimal("0.17497")
     assert trade.net_pnl == Decimal("-0.22497")
+
+
+def test_settlement_trade_charges_one_fee_and_uses_official_payout() -> None:
+    market = _market()
+    entry = _book(market, monotonic_ns=1_300_000_000, bid="0.49", ask="0.50")
+
+    trade = _execute_settlement_trade(
+        _Signal(1_000_000_000, _START_MS + 1_000, 2.0),
+        market,
+        _resolution(market, winning_outcome="Up"),
+        _series(entry),
+        mode="momentum",
+        delay_ms=250,
+    )
+
+    assert trade is not None
+    assert trade.payout_per_share == Decimal("1")
+    assert trade.gross_pnl == Decimal("2.50")
+    assert trade.fees == Decimal("0.0875")
+    assert trade.net_pnl == Decimal("2.4125")
+
+
+def test_settlement_configuration_opens_at_most_once_per_market() -> None:
+    market = _market()
+    book = _book(market, monotonic_ns=1_300_000_000, bid="0.49", ask="0.50")
+    signals = (
+        _Signal(1_000_000_000, _START_MS + 1_000, 2.0),
+        _Signal(1_100_000_000, _START_MS + 1_100, 3.0),
+    )
+
+    result, trades = _settlement_configuration_result(
+        signals,
+        (market,),
+        (market.event_start_ms,),
+        {market.condition_id: _resolution(market, winning_outcome="Down")},
+        {market.up_token_id: _series(book)},
+        lookback_ms=250,
+        threshold_bps=1.0,
+        mode="momentum",
+        delay_ms=250,
+    )
+
+    assert result["eligible_signal_count"] == 1
+    assert result["trade_count"] == 1
+    assert len(trades) == 1
+    assert trades[0].net_pnl == Decimal("-2.5875")
 
 
 def test_configuration_prevents_overlap_until_observed_exit() -> None:
