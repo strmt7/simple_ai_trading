@@ -1349,6 +1349,93 @@ def test_rtds_uses_independent_json_subscriptions_for_each_crypto_feed(
     assert chainlink_filters == {"btc/usd", "eth/usd", "sol/usd"}
 
 
+def test_market_registry_can_drop_expired_tokens_without_post_market_grace() -> None:
+    market = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    registry = recorder_module._MarketRegistry(subscription_grace_ms=0)
+
+    assert registry.update((market,), now_ms=market.event_start_ms) == (market,)
+    assert registry.token_ids() == tuple(sorted(market.token_ids))
+    registry.update((), now_ms=market.end_ms)
+
+    assert registry.token_ids() == ()
+    assert registry.changed.is_set()
+
+
+def test_recorder_retries_transient_initial_discovery_and_records_gap(
+    tmp_path, monkeypatch
+) -> None:
+    recorder = PolymarketPublicRecorder(
+        tmp_path / "resilient-discovery.duckdb",
+        market_subscription_grace_seconds=0,
+    )
+    attempts = 0
+
+    async def discover(*_args, **_kwargs) -> None:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise recorder_module.requests.ConnectionError("temporary outage")
+
+    async def no_wait(_stop: asyncio.Event, _seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(recorder, "_discover", discover)
+    monkeypatch.setattr(recorder_module, "_bounded_backoff", no_wait)
+
+    async def exercise() -> StreamGap:
+        output: asyncio.Queue[
+            RawStreamMessage | StreamGap | MarketEvidence | None
+        ] = asyncio.Queue()
+        await recorder._initial_discover(
+            "run",
+            output,
+            asyncio.Event(),
+            maximum_wait_seconds=1.0,
+        )
+        gap = output.get_nowait()
+        assert isinstance(gap, StreamGap)
+        return gap.validated()
+
+    gap = asyncio.run(exercise())
+
+    assert attempts == 2
+    assert recorder.market_subscription_grace_seconds == 0
+    assert gap.stream == "clob_rest_book"
+    assert gap.connection_id.startswith("discovery:")
+    assert gap.last_sequence_number == 1
+    assert gap.reason == "ConnectionError:temporary outage"
+
+
+def test_recorder_does_not_retry_a_discovery_contract_failure(
+    tmp_path, monkeypatch
+) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "contract-failure.duckdb")
+    attempts = 0
+
+    async def discover(*_args, **_kwargs) -> None:
+        nonlocal attempts
+        attempts += 1
+        raise ValueError("market resolution source differs")
+
+    monkeypatch.setattr(recorder, "_discover", discover)
+
+    async def exercise() -> None:
+        output: asyncio.Queue[
+            RawStreamMessage | StreamGap | MarketEvidence | None
+        ] = asyncio.Queue()
+        with pytest.raises(ValueError, match="resolution source differs"):
+            await recorder._initial_discover(
+                "run",
+                output,
+                asyncio.Event(),
+                maximum_wait_seconds=1.0,
+            )
+        assert output.empty()
+
+    asyncio.run(exercise())
+    assert attempts == 1
+
+
 def test_rtds_wire_contract_probe_is_hash_bound() -> None:
     path = (
         Path(__file__).resolve().parents[1]
