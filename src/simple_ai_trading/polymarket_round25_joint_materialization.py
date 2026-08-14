@@ -422,6 +422,16 @@ def _joint_condition_from_snapshot(
     ).validated()
 
 
+def round25_joint_condition_from_snapshot(
+    row: Sequence[object],
+    *,
+    segment: Mapping[str, object],
+) -> Round25JointReceiptCondition | None:
+    """Decode one target-free market snapshot under the joint feature contract."""
+
+    return _joint_condition_from_snapshot(row, segment=segment)
+
+
 def load_round25_joint_receipt_conditions(
     *,
     database: str | Path,
@@ -829,6 +839,13 @@ class Round25JointMaterializationObserver:
                 <= segment_end
             ):
                 accumulator.rejection_reasons.add("cross_segment_condition_window")
+            if (
+                accumulator.condition.snapshot_observed_wall_ms
+                >= accumulator.condition.event_start_ms
+            ):
+                accumulator.rejection_reasons.add(
+                    "market_snapshot_not_before_event_start"
+                )
         for gap in gaps:
             selected = gap.validated()
             self._mark_at(
@@ -1169,5 +1186,6 @@ __all__ = [
     "load_round25_joint_receipt_conditions",
     "materialize_round25_joint_condition",
     "reject_round25_joint_condition",
+    "round25_joint_condition_from_snapshot",
     "round25_joint_snapshot_sha256",
 ]
