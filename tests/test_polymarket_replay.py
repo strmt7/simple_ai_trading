@@ -473,6 +473,7 @@ def _finish_replay_store(
     wrong_best: bool = False,
     trade_resync: bool = False,
     trade_resync_lag_ms: int = 1,
+    trade_resync_book_monotonic_ns: int = 1_011_500_000,
     trade_resync_top_change: bool = False,
     feature_evidence: bool = False,
     synchronized_feature_evidence: bool = False,
@@ -939,7 +940,7 @@ def _finish_replay_store(
                 },
                 sequence=41,
                 wall_offset_ms=1_012,
-                monotonic_ns=1_011_500_000,
+                monotonic_ns=trade_resync_book_monotonic_ns,
             ),
         ]
         if trade_resync_top_change:
@@ -2882,6 +2883,20 @@ def test_replay_rejects_events_outside_bounded_causal_reorder_window(
         )
         with pytest.raises(ValueError, match="bounded causal reorder window"):
             PolymarketEvidenceReplay.load(store, run_id="stale-book")
+
+
+def test_replay_accepts_source_reordering_within_one_receipt_tie(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "same-receipt-book.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "same-receipt-book",
+            trade_resync=True,
+            trade_resync_lag_ms=1_002,
+            trade_resync_book_monotonic_ns=1_011_200_000,
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="same-receipt-book")
+
+    assert replay.diagnostics.maximum_source_regression_ms == 1_002
 
 
 def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(

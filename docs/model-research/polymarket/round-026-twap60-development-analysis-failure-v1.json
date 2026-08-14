@@ -1,0 +1,130 @@
+{
+  "analysis_failure_sha256": "462e968abcb5662bc639fdca4dad5a5c45f8903791a281c7da6ceebdbd4980df",
+  "authority": {
+    "analysis_produced": false,
+    "edge_claim": false,
+    "live_trading_authority": false,
+    "model_data_eligible": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "capture": {
+    "condition_count": 13,
+    "contract_sha256": "0349f7b688609de4ebc0fc84b755e5943b976753e7771b7f76f5a40a13eae43a",
+    "duration_seconds": 3603.047,
+    "ended_at_ms": 1786740603053,
+    "market_snapshot_count": 13,
+    "raw_message_count": 1519316,
+    "report_sha256": "271ecdb323288689a90c9a45298f5facd541fb8730a4f543d3d488a3e75a2ce9",
+    "result_sha256": "862cd38bdb8ed45b3ab52bbf7ba6f33444e81392d398c2e39cc45a76cee356b1",
+    "run_id": "5543a49ffff24716b37f719fee43abbb",
+    "started_at_ms": 1786737000006,
+    "status": "degraded",
+    "stream_counts": {
+      "binance_futures": 68448,
+      "binance_spot": 63444,
+      "clob_market": 1380397,
+      "clob_rest_book": 2,
+      "polymarket_rtds": 7025
+    },
+    "stream_gap_count": 2,
+    "stream_gaps": [
+      {
+        "opened_at_ms": 1786737126115,
+        "reason": "ConnectionClosedError:received 1013 (try again later) slow consumer: send buffer full; then sent 1013 (try again later) slow consumer: send buffer full",
+        "stream": "clob_market"
+      },
+      {
+        "opened_at_ms": 1786740398403,
+        "reason": "ConnectionClosedError:received 1013 (try again later) slow consumer: send buffer full; then sent 1013 (try again later) slow consumer: send buffer full",
+        "stream": "clob_market"
+      }
+    ]
+  },
+  "created_at_ms": 1786741841970,
+  "failure_classification": {
+    "analysis_status": "replay_ineligible",
+    "economic_result_status": "not_computed",
+    "primary_reason": "an in-market incremental CLOB state conflicts with the exchange checksum and cannot be repaired causally",
+    "promotion_gate_passed": false
+  },
+  "replay_attempts": [
+    {
+      "attempt": 1,
+      "failure": "atomic checksum mismatch",
+      "condition_id": "0xdcf03ea95640ce6e4a394f507c15f8b4834888121b4530e73145514d4b460be3",
+      "classification": "post_close_mass_clear",
+      "source_time_ms": 1786737454038,
+      "reported_best_bid": 0.0,
+      "reported_best_ask": 1.0,
+      "reconstructed_best_bid": 0.99,
+      "reconstructed_best_ask": 1.0,
+      "remediation": "exclude book events received at or after the documented market close while retaining official resolution events"
+    },
+    {
+      "attempt": 2,
+      "failure": "bounded causal reorder rejection without sufficient diagnostics",
+      "remediation": "add exact condition, event, connection, source skew, and receipt-delay fields to the exception"
+    },
+    {
+      "attempt": 3,
+      "failure": "bounded causal reorder rejection",
+      "condition_id": "0x8b159598eebf041d1ff3bfaafb67596be912581c3105ff03005c1b33a3cc6ea3",
+      "classification": "premarket_same_receipt_tie",
+      "source_regression_ms": 2135,
+      "arrival_delay_ns": 0,
+      "market_start_ms": 1786737900000,
+      "source_time_ms": 1786737834807,
+      "remediation": "permit source reordering only within one exact monotonic receipt tie; retain the existing bound for every later receipt"
+    },
+    {
+      "attempt": 4,
+      "failure": "atomic checksum mismatch",
+      "condition_id": "0x8b159598eebf041d1ff3bfaafb67596be912581c3105ff03005c1b33a3cc6ea3",
+      "token_id": "19876371298745586385336614826487454936503432984651728105826226207334378608330",
+      "classification": "in_market_irreparable",
+      "source_time_ms": 1786737977952,
+      "reported_best_bid": 0.37,
+      "reported_best_ask": 0.39,
+      "reconstructed_best_bid": 0.38,
+      "reconstructed_best_ask": 0.39,
+      "next_full_book_source_time_ms": 1786737978044,
+      "unrepairable_interval_ms": 92,
+      "event_id_prefixes": [
+        "7bc04dae",
+        "8cec4ed",
+        "021dade",
+        "e3a7ac",
+        "75e065"
+      ],
+      "decision": "reject the dataset for economic replay because using the later full book would introduce future leakage"
+    }
+  ],
+  "remediation_state": {
+    "implemented": [
+      "post-close executable-event scoping",
+      "diagnostic causal-reorder exceptions",
+      "exact-receipt-tie causal reordering with a paired later-receipt rejection test",
+      "persistent CLOB receiver ownership"
+    ],
+    "not_permitted": [
+      "silent checksum repair",
+      "retroactive use of a future full-book snapshot",
+      "fabricated or zero-filled economic results",
+      "model fitting on this capture"
+    ],
+    "required_next_evidence": "a successor capture with causally reconstructable executable books and no unbounded evidence gaps"
+  },
+  "schema_version": "polymarket-round26-twap60-development-analysis-failure-v1",
+  "successor": {
+    "contract_sha256": "ea5d3d64b3fbb73fd7b1c581c4be34f9d7dcf6ab4cd974ed73417d2e5ffb15f5",
+    "elapsed_seconds_at_publication": 1200.116,
+    "message_count_at_publication": 445359,
+    "observed_at_ms": 1786741800132,
+    "run_id": "02a948019cf14b68a7f81d836170dc85",
+    "status_at_publication": "running_degraded",
+    "observed_gap_count": 1,
+    "observed_gap_reason": "ConnectionClosedError:no close frame received or sent",
+    "statement": "the successor removed the prior slow-consumer failure mode but is not promotion eligible because an upstream disconnect was observed"
+  }
+}

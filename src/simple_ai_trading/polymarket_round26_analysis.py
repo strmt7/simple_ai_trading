@@ -733,6 +733,37 @@ def _load_capture_result(
     return result
 
 
+def _executable_event_scope(
+    store: PolymarketEvidenceStore,
+    run_id: str,
+) -> dict[str, int]:
+    rows = store.connect().execute(
+        """
+        SELECT condition_id, end_ms
+        FROM polymarket_market_snapshot
+        WHERE run_id = ?
+        ORDER BY condition_id
+        """,
+        [run_id],
+    ).fetchall()
+    scope: dict[str, int] = {}
+    for raw_condition, raw_end_ms in rows:
+        condition = str(raw_condition or "").strip().lower()
+        if (
+            not condition
+            or condition in scope
+            or isinstance(raw_end_ms, bool)
+            or int(raw_end_ms) <= 0
+        ):
+            raise ValueError("Round 26 executable event scope differs")
+        # A book received at or after the documented close was never executable.
+        # Replay still retains market_resolved events beyond this cutoff.
+        scope[condition] = int(raw_end_ms) - 1
+    if not scope:
+        raise ValueError("Round 26 executable event scope is empty")
+    return scope
+
+
 def run_round26_pilot_analysis(
     repository: str | Path,
     *,
@@ -753,12 +784,14 @@ def run_round26_pilot_analysis(
         memory_limit="1GB",
         threads=2,
     ) as store:
+        event_scope = _executable_event_scope(store, run_id)
         replay = PolymarketEvidenceReplay.load(
             store,
             run_id=run_id,
             allow_segmented_gaps=True,
             include_resolutions=True,
             book_sample_interval_ms=ROUND26_BOOK_SAMPLE_INTERVAL_MS,
+            maximum_received_wall_ms_by_condition=event_scope,
             materialized_minimum_depth_levels=1,
             cap_materialized_depth_to_minimum_order_size=True,
         )
@@ -885,6 +918,7 @@ def run_round26_pilot_analysis(
         "capture_ended_at_ms": int(capture["ended_at_ms"]),
         "capture_duration_seconds": int(capture["duration_seconds"]),
         "capture_stream_gap_count": int(capture.get("stream_gap_count", 0)),
+        "book_event_scope": "received_before_documented_market_end",
         "replay_diagnostics": replay.diagnostics.asdict(),
         "market_count": len(markets),
         "resolved_market_count": len(replay.resolutions),
