@@ -12,8 +12,12 @@ from pathlib import Path
 from typing import Mapping, Sequence
 
 from .polymarket import PolymarketFiveMinuteMarket
-from .polymarket_recorder import PolymarketEvidenceStore
-from .polymarket_replay import PolymarketEvidenceReplay, PolymarketRecordedBook
+from .polymarket_recorder import DecodedPublicEvent, PolymarketEvidenceStore
+from .polymarket_replay import (
+    PolymarketEvidenceReplay,
+    PolymarketRecordedBook,
+    PolymarketResolutionEvidence,
+)
 from .polymarket_round26_pilot import (
     Round26PilotContract,
     load_round26_pilot_contract,
@@ -95,6 +99,15 @@ class _PricePoint:
 
 
 @dataclass(frozen=True, slots=True)
+class _TwapPoint:
+    source_time_ms: int
+    publisher_time_ms: int
+    received_wall_ms: int
+    received_monotonic_ns: int
+    exact_e18: int
+
+
+@dataclass(frozen=True, slots=True)
 class _Signal:
     received_monotonic_ns: int
     received_wall_ms: int
@@ -138,11 +151,55 @@ class _Trade:
     net_pnl: Decimal
 
 
-def _price_points(
+def _twap_point(event: DecodedPublicEvent) -> _TwapPoint | None:
+    if event.event_type != "crypto_prices_twap_sixty:update":
+        return None
+    message = event.event
+    payload = message.get("payload")
+    if (
+        message.get("topic") != "crypto_prices_twap_sixty"
+        or message.get("type") != "update"
+        or not isinstance(payload, Mapping)
+    ):
+        raise ValueError("Round 26 TWAP60 event identity differs")
+    source_time = payload.get("timestamp")
+    publisher_time = message.get("timestamp")
+    exact_text = payload.get("full_accuracy_value")
+    if (
+        isinstance(source_time, bool)
+        or not isinstance(source_time, int)
+        or source_time <= 0
+        or source_time % 1_000 != 0
+        or isinstance(publisher_time, bool)
+        or not isinstance(publisher_time, int)
+        or publisher_time < source_time
+        or payload.get("symbol") != "btc/usd"
+        or payload.get("window_s") != 60
+        or not isinstance(exact_text, str)
+        or not exact_text.isascii()
+        or not exact_text.isdigit()
+        or int(exact_text) <= 0
+    ):
+        raise ValueError("Round 26 TWAP60 payload differs")
+    return _TwapPoint(
+        source_time_ms=source_time,
+        publisher_time_ms=publisher_time,
+        received_wall_ms=event.received_wall_ms,
+        received_monotonic_ns=event.received_monotonic_ns,
+        exact_e18=int(exact_text),
+    )
+
+
+def _source_points(
     store: PolymarketEvidenceStore,
     run_id: str,
-) -> tuple[tuple[_PricePoint, ...], tuple[_PricePoint, ...], int]:
-    """Load CEX trades after the caller has validated the complete replay.
+) -> tuple[
+    tuple[_PricePoint, ...],
+    tuple[_PricePoint, ...],
+    tuple[_TwapPoint, ...],
+    int,
+]:
+    """Load CEX trades and TWAP60 after validating the complete replay.
 
     ``verified_source=True`` intentionally requires a gap-free terminal audit.
     Round 26 admits segmented CLOB gaps for diagnostics, so the enclosing replay
@@ -154,14 +211,20 @@ def _price_points(
         "binance_spot": [],
         "binance_futures": [],
     }
+    twap: list[_TwapPoint] = []
     event_count = 0
     for event in store.iter_public_events(
         run_id,
-        streams=("binance_spot", "binance_futures"),
+        streams=("binance_spot", "binance_futures", "polymarket_rtds"),
         ordered=True,
         verified_source=False,
     ):
         event_count += 1
+        if event.stream == "polymarket_rtds":
+            point = _twap_point(event)
+            if point is not None:
+                twap.append(point)
+            continue
         if event.event_type != "trade" or event.symbol != "BTC":
             continue
         payload = event.event.get("data")
@@ -182,7 +245,92 @@ def _price_points(
         if points and point.received_monotonic_ns < points[-1].received_monotonic_ns:
             raise ValueError("Round 26 Binance receipt clock regressed")
         points.append(point)
-    return tuple(by_stream["binance_spot"]), tuple(by_stream["binance_futures"]), event_count
+    return (
+        tuple(by_stream["binance_spot"]),
+        tuple(by_stream["binance_futures"]),
+        tuple(twap),
+        event_count,
+    )
+
+
+def _settlement_mechanism_audit(
+    markets: Sequence[PolymarketFiveMinuteMarket],
+    resolutions: Sequence[PolymarketResolutionEvidence],
+    twap_points: Sequence[_TwapPoint],
+) -> dict[str, object]:
+    by_source_time: dict[int, _TwapPoint] = {}
+    duplicate_count = 0
+    for point in twap_points:
+        existing = by_source_time.get(point.source_time_ms)
+        if existing is None:
+            by_source_time[point.source_time_ms] = point
+            continue
+        duplicate_count += 1
+        if existing.exact_e18 != point.exact_e18:
+            raise ValueError("Round 26 TWAP60 duplicate source values conflict")
+        if point.received_monotonic_ns < existing.received_monotonic_ns:
+            by_source_time[point.source_time_ms] = point
+    resolution_by_condition: dict[str, PolymarketResolutionEvidence] = {}
+    for resolution in resolutions:
+        existing = resolution_by_condition.get(resolution.condition_id)
+        if existing is not None and (
+            existing.winning_asset_id != resolution.winning_asset_id
+            or existing.winning_outcome != resolution.winning_outcome
+        ):
+            raise ValueError("Round 26 official resolution evidence conflicts")
+        resolution_by_condition[resolution.condition_id] = resolution
+    rows: list[dict[str, object]] = []
+    missing_boundary_count = 0
+    tie_count = 0
+    for market in sorted(markets, key=lambda item: item.event_start_ms):
+        resolution = resolution_by_condition.get(market.condition_id)
+        if resolution is None:
+            continue
+        if resolution.winning_outcome not in {"Up", "Down"}:
+            raise ValueError("Round 26 official winning outcome differs")
+        start = by_source_time.get(market.event_start_ms)
+        end = by_source_time.get(market.end_ms)
+        if start is None or end is None:
+            missing_boundary_count += 1
+            continue
+        if end.exact_e18 == start.exact_e18:
+            tie_count += 1
+            continue
+        predicted = "Up" if end.exact_e18 > start.exact_e18 else "Down"
+        rows.append(
+            {
+                "condition_id": market.condition_id,
+                "event_start_ms": market.event_start_ms,
+                "end_ms": market.end_ms,
+                "start_twap_e18": str(start.exact_e18),
+                "end_twap_e18": str(end.exact_e18),
+                "start_receipt_delay_ms": start.received_wall_ms - start.source_time_ms,
+                "end_receipt_delay_ms": end.received_wall_ms - end.source_time_ms,
+                "predicted_outcome": predicted,
+                "official_outcome": resolution.winning_outcome,
+                "agrees": predicted == resolution.winning_outcome,
+            }
+        )
+    agreement_count = sum(bool(row["agrees"]) for row in rows)
+    minimum_sample_met = len(rows) >= 8
+    exact_boundary_rule_supported = minimum_sample_met and agreement_count == len(rows)
+    return {
+        "twap_point_count": len(twap_points),
+        "unique_source_time_count": len(by_source_time),
+        "identical_duplicate_count": duplicate_count,
+        "official_resolution_count": len(resolution_by_condition),
+        "evaluated_market_count": len(rows),
+        "missing_exact_boundary_count": missing_boundary_count,
+        "tie_rule_unverified_count": tie_count,
+        "agreement_count": agreement_count,
+        "agreement_rate": agreement_count / len(rows) if rows else 0.0,
+        "minimum_eight_markets_met": minimum_sample_met,
+        "exact_boundary_rule_supported_in_pilot": exact_boundary_rule_supported,
+        "market_results": rows,
+        "qualification_claim": False,
+        "edge_claim": False,
+        "profitability_claim": False,
+    }
 
 
 def _latest_point(
@@ -491,10 +639,15 @@ def run_round26_pilot_analysis(
             materialized_minimum_depth_levels=1,
             cap_materialized_depth_to_minimum_order_size=True,
         )
-        spot, futures, binance_event_count = _price_points(store, run_id)
+        spot, futures, twap_points, source_event_count = _source_points(store, run_id)
     markets = tuple(sorted(replay.markets, key=lambda market: market.event_start_ms))
     starts = tuple(market.event_start_ms for market in markets)
     series_by_token = _book_series(replay)
+    settlement_audit = _settlement_mechanism_audit(
+        markets,
+        replay.resolutions,
+        twap_points,
+    )
     configurations: list[dict[str, object]] = []
     trades_by_key: dict[tuple[object, ...], tuple[_Trade, ...]] = {}
     signal_count_by_lookback: dict[str, int] = {}
@@ -566,9 +719,10 @@ def run_round26_pilot_analysis(
         "market_count": len(markets),
         "resolved_market_count": len(replay.resolutions),
         "materialized_book_count": len(replay.books),
-        "binance_event_count": binance_event_count,
+        "source_event_count": source_event_count,
         "binance_spot_trade_count": len(spot),
         "binance_futures_trade_count": len(futures),
+        "settlement_mechanism_audit": settlement_audit,
         "signal_count_by_lookback": signal_count_by_lookback,
         "configuration_count": len(configurations),
         "fixed_grid": {

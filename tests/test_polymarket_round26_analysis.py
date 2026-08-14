@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal
 import json
 from types import SimpleNamespace
@@ -9,6 +10,7 @@ import pytest
 from simple_ai_trading.paper_execution import BookLevel, PaperBookSnapshot
 from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
 from simple_ai_trading.polymarket_replay import PolymarketRecordedBook
+from simple_ai_trading.polymarket_replay import PolymarketResolutionEvidence
 from simple_ai_trading.polymarket_round26_analysis import (
     _BookSeries,
     _PricePoint,
@@ -16,8 +18,11 @@ from simple_ai_trading.polymarket_round26_analysis import (
     _configuration_result,
     _execute_taker_trade,
     _maximum_drawdown,
-    _price_points,
     _return_bps,
+    _settlement_mechanism_audit,
+    _source_points,
+    _TwapPoint,
+    _twap_point,
 )
 
 
@@ -127,7 +132,7 @@ def test_return_bps_is_causal_and_rejects_stale_receipts() -> None:
     )
 
 
-def test_price_points_use_prevalidated_segmented_source_reconstruction() -> None:
+def test_source_points_use_prevalidated_segmented_source_reconstruction() -> None:
     class Store:
         def iter_public_events(self, run_id, **controls):
             assert run_id == "round26"
@@ -141,11 +146,95 @@ def test_price_points_use_prevalidated_segmented_source_reconstruction() -> None
                 event={"data": {"p": "100"}},
             )
 
-    spot, futures, event_count = _price_points(Store(), "round26")
+    spot, futures, twap, event_count = _source_points(Store(), "round26")
 
     assert len(spot) == 1
     assert futures == ()
+    assert twap == ()
     assert event_count == 1
+
+
+def test_twap_point_preserves_exact_e18_value() -> None:
+    event = SimpleNamespace(
+        event_type="crypto_prices_twap_sixty:update",
+        received_wall_ms=_START_MS + 3_000,
+        received_monotonic_ns=3_000_000_000,
+        event={
+            "topic": "crypto_prices_twap_sixty",
+            "type": "update",
+            "timestamp": _START_MS + 1_500,
+            "payload": {
+                "symbol": "btc/usd",
+                "timestamp": _START_MS,
+                "window_s": 60,
+                "full_accuracy_value": "63947081726962622791680",
+            },
+        },
+    )
+
+    point = _twap_point(event)
+
+    assert point is not None
+    assert point.exact_e18 == 63_947_081_726_962_622_791_680
+
+
+def test_settlement_audit_uses_exact_boundaries_and_official_outcome() -> None:
+    market = _market()
+    resolution = PolymarketResolutionEvidence(
+        run_id="round26",
+        event_id="resolution",
+        condition_id=market.condition_id,
+        winning_asset_id=market.up_token_id,
+        winning_outcome="Up",
+        resolved_at_ms=market.end_ms + 1_000,
+        received_wall_ms=market.end_ms + 2_000,
+        received_monotonic_ns=10_000_000_000,
+        event_sha256="b" * 64,
+        source="clob_market",
+    )
+    points = (
+        _TwapPoint(
+            market.event_start_ms,
+            market.event_start_ms + 1_500,
+            market.event_start_ms + 3_000,
+            1_000_000_000,
+            100 * 10**18,
+        ),
+        _TwapPoint(
+            market.end_ms,
+            market.end_ms + 1_500,
+            market.end_ms + 3_000,
+            2_000_000_000,
+            101 * 10**18,
+        ),
+    )
+
+    audit = _settlement_mechanism_audit((market,), (resolution,), points)
+
+    assert audit["evaluated_market_count"] == 1
+    assert audit["agreement_count"] == 1
+    assert audit["agreement_rate"] == 1.0
+    assert audit["minimum_eight_markets_met"] is False
+    assert audit["exact_boundary_rule_supported_in_pilot"] is False
+    assert audit["edge_claim"] is False
+
+
+def test_settlement_audit_rejects_conflicting_source_timestamp() -> None:
+    market = _market()
+    first = _TwapPoint(
+        market.event_start_ms,
+        market.event_start_ms,
+        market.event_start_ms,
+        1,
+        100 * 10**18,
+    )
+
+    with pytest.raises(ValueError, match="duplicate source values conflict"):
+        _settlement_mechanism_audit(
+            (market,),
+            (),
+            (first, replace(first, exact_e18=101 * 10**18)),
+        )
 
 
 def test_book_lookup_enforces_maximum_observation_delay() -> None:
