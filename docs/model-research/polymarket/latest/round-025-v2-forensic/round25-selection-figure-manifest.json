@@ -1,0 +1,12 @@
+{
+  "chart_family": "time_change_and_baseline_comparison",
+  "diagnostic_only": true,
+  "files": {
+    "round25-selection-diagnostic.svg": "8485888f9dbe380d78b13a4e8b6d6e50ed3c62569756da848acb43361a20a6bb",
+    "round25-selection-metrics.csv": "650f2fe52cd2bc8cd99d2f1981b6fbcba2458eda61bdc6f13909d5ff9ab72059",
+    "round25-selection-trades.csv": "416ed5e676cb536deb10c9466a8c1e83d96f3addd7286b47a2f2d68c9dea5ac9"
+  },
+  "manifest_sha256": "99025a619d9c4573dc783416254df751dd0a4dcd78fc24aae5a813632f586095",
+  "result_sha256": "13f08aa51fdabfefd85da0e3f59923c0fea837b65209186135911d566dcc7f9f",
+  "schema_version": "polymarket-round25-forensic-figure-manifest-v1"
+}
