@@ -96,9 +96,32 @@ def test_five_minute_parser_accepts_the_exact_twap_30s_source_contract() -> None
     assert tuple(POLYMARKET_FIVE_MINUTE_RESOLUTION_SOURCES["BTC"]) == (
         "https://data.chain.link/streams/btc-usd",
         "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+        "https://data.chain.link/streams/btc-usd-twap-60s-streams",
     )
 
     payload["cryptoMarketConfig"]["twapLookbackSeconds"] = 60
+    with pytest.raises(ValueError, match="TWAP resolution contract"):
+        parse_polymarket_five_minute_market(payload)
+
+
+def test_five_minute_parser_accepts_the_exact_twap_60s_source_contract() -> None:
+    payload = _market()
+    payload["resolutionSource"] = (
+        "https://data.chain.link/streams/btc-usd-twap-60s-streams"
+    )
+    payload["cryptoMarketConfigId"] = "btc-5m-twap-60"
+    payload["cryptoMarketConfig"] = {
+        "asset": "btc",
+        "duration": "5m",
+        "id": "btc-5m-twap-60",
+        "twapEnabled": True,
+        "twapLookbackSeconds": 60,
+    }
+
+    market = parse_polymarket_five_minute_market(payload)
+
+    assert market.resolution_source == payload["resolutionSource"]
+    payload["cryptoMarketConfig"]["id"] = "btc-5m-twap-30"
     with pytest.raises(ValueError, match="TWAP resolution contract"):
         parse_polymarket_five_minute_market(payload)
 

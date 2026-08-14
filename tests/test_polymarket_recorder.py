@@ -19,12 +19,14 @@ from simple_ai_trading.polymarket_coverage import inspect_polymarket_feed_covera
 from simple_ai_trading.polymarket_recorder import (
     MarketEvidence,
     POLYMARKET_RTDS_CHAINLINK_TWAP_30_TOPIC,
+    POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC,
     PolymarketEvidenceStore,
     PolymarketPublicRecorder,
     RawStreamMessage,
     RecorderReport,
     StreamGap,
     _validate_chainlink_twap_30_frame,
+    _validate_chainlink_twap_60_frame,
 )
 
 
@@ -1589,6 +1591,53 @@ def test_rtds_twap_mode_uses_exact_topic_and_validator(tmp_path, monkeypatch) ->
             }
         )
     )
+
+
+def test_rtds_twap_60_mode_uses_exact_topic_and_validator(tmp_path, monkeypatch) -> None:
+    recorder = PolymarketPublicRecorder(
+        tmp_path / "twap-60-subscription.duckdb",
+        assets=("BTC",),
+        include_binance_spot=False,
+        include_rtds_binance=False,
+        chainlink_price_mode="twap_60s",
+    )
+    captured: list[dict[str, object]] = []
+
+    async def _capture_simple_stream(**options: object) -> None:
+        captured.append(options)
+
+    monkeypatch.setattr(recorder, "_simple_stream", _capture_simple_stream)
+    asyncio.run(recorder._rtds_stream(asyncio.Queue(), asyncio.Event()))
+
+    assert recorder.rtds_topics == (POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC,)
+    assert len(captured) == 1
+    call = captured[0]
+    assert call["lane"] == "rtds:chainlink-twap-60:btc"
+    subscription = json.loads(str(call["subscription"]))["subscriptions"][0]
+    assert subscription == {
+        "filters": '{"symbol":"btc/usd"}',
+        "topic": POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC,
+        "type": "update",
+    }
+    validator = call["frame_validator"]
+    assert callable(validator)
+    frame = {
+        "payload": {
+            "full_accuracy_value": "65000500000000000000000",
+            "symbol": "btc/usd",
+            "timestamp": EPOCH * 1_000,
+            "value": 65000.5,
+            "window_s": 60,
+        },
+        "timestamp": EPOCH * 1_000 + 123,
+        "topic": POLYMARKET_RTDS_CHAINLINK_TWAP_60_TOPIC,
+        "type": "update",
+    }
+    validator(_canonical(frame))
+    _validate_chainlink_twap_60_frame(_canonical(frame), expected_symbol="btc/usd")
+    frame["payload"]["window_s"] = 30
+    with pytest.raises(ValueError, match="Chainlink TWAP"):
+        validator(_canonical(frame))
 
 
 @pytest.mark.parametrize(
