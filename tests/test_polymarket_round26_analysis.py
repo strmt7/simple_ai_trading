@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -15,6 +16,7 @@ from simple_ai_trading.polymarket_round26_analysis import (
     _configuration_result,
     _execute_taker_trade,
     _maximum_drawdown,
+    _price_points,
     _return_bps,
 )
 
@@ -123,6 +125,27 @@ def test_return_bps_is_causal_and_rejects_stale_receipts() -> None:
         )
         is None
     )
+
+
+def test_price_points_use_prevalidated_segmented_source_reconstruction() -> None:
+    class Store:
+        def iter_public_events(self, run_id, **controls):
+            assert run_id == "round26"
+            assert controls["verified_source"] is False
+            yield SimpleNamespace(
+                stream="binance_spot",
+                event_type="trade",
+                symbol="BTC",
+                received_monotonic_ns=1_000,
+                received_wall_ms=1,
+                event={"data": {"p": "100"}},
+            )
+
+    spot, futures, event_count = _price_points(Store(), "round26")
+
+    assert len(spot) == 1
+    assert futures == ()
+    assert event_count == 1
 
 
 def test_book_lookup_enforces_maximum_observation_delay() -> None:
