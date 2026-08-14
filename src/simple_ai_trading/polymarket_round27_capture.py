@@ -37,6 +37,14 @@ ROUND27_CAPTURE_RESULT_SCHEMA_VERSION = (
     "polymarket-round27-documented-source-smoke-result-v1"
 )
 ROUND27_CAPTURE_DURATION_SECONDS = 600
+ROUND27_STAGE0_CONTRACT_SCHEMA_VERSION = (
+    "polymarket-round27-stage0-mechanics-capture-contract-v1"
+)
+ROUND27_STAGE0_RESULT_SCHEMA_VERSION = (
+    "polymarket-round27-stage0-mechanics-capture-result-v1"
+)
+ROUND27_STAGE0_DURATION_SECONDS = 18_000
+ROUND27_STAGE0_MAXIMUM_RESOLVED_MARKETS = 60
 ROUND27_DATABASE_CAP_BYTES = 2 * 1024**3
 ROUND27_DATABASE_STOP_RESERVE_BYTES = 128 * 1024**2
 ROUND27_MINIMUM_FREE_BYTES = 32 * 1024**3
@@ -56,6 +64,7 @@ ROUND27_SOURCE_RELATIVES = (
     Path("src/simple_ai_trading/polymarket_source_quality.py"),
     Path("src/simple_ai_trading/polymarket_round27_capture.py"),
     Path("tools/run_polymarket_round27_capture.py"),
+    Path("tools/run_polymarket_round27_stage0_capture.py"),
 )
 _AUTHORITY = {
     "credentials_used": False,
@@ -93,6 +102,27 @@ _RESOURCE_POLICY = {
     "database_threads": 2,
     "queue_capacity": ROUND27_QUEUE_CAPACITY,
     "progress_interval_seconds": ROUND27_PROGRESS_INTERVAL_SECONDS,
+}
+_SMOKE_SUCCESS_GATE = {
+    "terminal_recorder_status": "complete",
+    "required_stream_message_count_positive": True,
+    "stream_gap_count": 0,
+    "recorder_error_count": 0,
+    "integrity_error_count": 0,
+    "documented_spot_and_futures_trade_quality_passed": True,
+    "database_footprint_at_or_below_cap": True,
+}
+_STAGE0_SUCCESS_GATE = {
+    "terminal_recorder_status": "complete_or_gap_degraded",
+    "required_stream_message_count_positive": True,
+    "transport_gap_policy": "condition_local_exclusion",
+    "recorder_error_count": 0,
+    "integrity_error_count": 0,
+    "documented_spot_and_futures_trade_quality_passed": True,
+    "database_footprint_at_or_below_cap": True,
+    "maximum_resolved_markets_for_analysis": (
+        ROUND27_STAGE0_MAXIMUM_RESOLVED_MARKETS
+    ),
 }
 
 
@@ -196,14 +226,52 @@ def create_round27_capture_contract(
             field="preregistration_sha256",
             label="Round 27 execution hypothesis preregistration",
         ),
-        "success_gate": {
-            "terminal_recorder_status": "complete",
-            "required_stream_message_count_positive": True,
-            "stream_gap_count": 0,
-            "recorder_error_count": 0,
-            "integrity_error_count": 0,
-            "documented_spot_and_futures_trade_quality_passed": True,
-            "database_footprint_at_or_below_cap": True,
+        "success_gate": copy.deepcopy(_SMOKE_SUCCESS_GATE),
+        "authority": copy.deepcopy(_AUTHORITY),
+    }
+    payload["contract_sha256"] = _canonical_sha256(payload)
+    return payload
+
+
+def create_round27_stage0_capture_contract(
+    repository: str | Path,
+    *,
+    created_at_ms: int,
+) -> dict[str, object]:
+    root = Path(repository).resolve()
+    created = int(created_at_ms)
+    if not root.is_dir() or created <= 0:
+        raise ValueError("Round 27 Stage 0 capture contract inputs are invalid")
+    source_hashes = {
+        relative.as_posix(): _text_sha256(root / relative)
+        for relative in ROUND27_SOURCE_RELATIVES
+    }
+    payload: dict[str, object] = {
+        "schema_version": ROUND27_STAGE0_CONTRACT_SCHEMA_VERSION,
+        "created_at_ms": created,
+        "phase": "mechanics_stage0",
+        "capture_duration_seconds": ROUND27_STAGE0_DURATION_SECONDS,
+        "capture_scope": copy.deepcopy(_CAPTURE_SCOPE),
+        "resource_policy": copy.deepcopy(_RESOURCE_POLICY),
+        "repository_commit": _repository_head(root),
+        "source_text_sha256": source_hashes,
+        "source_qualification_sha256": _verified_artifact_claim(
+            root / ROUND27_SOURCE_QUALIFICATION_RELATIVE,
+            field="qualification_sha256",
+            label="Binance USD-M aggregate-trade source qualification",
+        ),
+        "hypothesis_preregistration_sha256": _verified_artifact_claim(
+            root / ROUND27_HYPOTHESIS_PREREGISTRATION_RELATIVE,
+            field="preregistration_sha256",
+            label="Round 27 execution hypothesis preregistration",
+        ),
+        "success_gate": copy.deepcopy(_STAGE0_SUCCESS_GATE),
+        "analysis_policy": {
+            "maximum_resolved_markets": ROUND27_STAGE0_MAXIMUM_RESOLVED_MARKETS,
+            "target_access_during_capture": False,
+            "condition_local_transport_audit_required": True,
+            "parameter_selection_allowed": False,
+            "economic_claim_allowed": False,
         },
         "authority": copy.deepcopy(_AUTHORITY),
     }
@@ -213,8 +281,10 @@ def create_round27_capture_contract(
 
 @dataclass(frozen=True, slots=True)
 class Round27CaptureContract:
+    schema_version: str
     contract_sha256: str
     created_at_ms: int
+    phase: str
     capture_duration_seconds: int
     repository_commit: str
     source_text_sha256: dict[str, str]
@@ -222,10 +292,15 @@ class Round27CaptureContract:
     hypothesis_preregistration_sha256: str
 
 
-def validate_round27_capture_contract(
+def _validate_round27_contract(
     payload: Mapping[str, object],
     *,
     repository: str | Path,
+    schema_version: str,
+    phase: str,
+    duration_seconds: int,
+    success_gate: Mapping[str, object],
+    analysis_policy: Mapping[str, object] | None,
 ) -> Round27CaptureContract:
     root = Path(repository).resolve()
     raw = dict(payload)
@@ -234,21 +309,13 @@ def validate_round27_capture_contract(
     if (
         not re.fullmatch(r"[0-9a-f]{64}", claim)
         or not hmac.compare_digest(claim, _canonical_sha256(raw))
-        or raw.get("schema_version") != ROUND27_CAPTURE_CONTRACT_SCHEMA_VERSION
-        or raw.get("phase") != "documented_source_smoke"
-        or raw.get("capture_duration_seconds") != ROUND27_CAPTURE_DURATION_SECONDS
+        or raw.get("schema_version") != schema_version
+        or raw.get("phase") != phase
+        or raw.get("capture_duration_seconds") != duration_seconds
         or raw.get("capture_scope") != _CAPTURE_SCOPE
         or raw.get("resource_policy") != _RESOURCE_POLICY
-        or raw.get("success_gate")
-        != {
-            "terminal_recorder_status": "complete",
-            "required_stream_message_count_positive": True,
-            "stream_gap_count": 0,
-            "recorder_error_count": 0,
-            "integrity_error_count": 0,
-            "documented_spot_and_futures_trade_quality_passed": True,
-            "database_footprint_at_or_below_cap": True,
-        }
+        or raw.get("success_gate") != success_gate
+        or raw.get("analysis_policy") != analysis_policy
         or raw.get("authority") != _AUTHORITY
         or type(raw.get("created_at_ms")) is not int
         or int(raw["created_at_ms"]) <= 0
@@ -296,13 +363,53 @@ def validate_round27_capture_contract(
     ):
         raise ValueError("Round 27 capture evidence binding differs")
     return Round27CaptureContract(
+        schema_version=schema_version,
         contract_sha256=claim,
         created_at_ms=int(raw["created_at_ms"]),
-        capture_duration_seconds=ROUND27_CAPTURE_DURATION_SECONDS,
+        phase=phase,
+        capture_duration_seconds=duration_seconds,
         repository_commit=str(raw["repository_commit"]),
         source_text_sha256=normalized_hashes,
         source_qualification_sha256=source_claim,
         hypothesis_preregistration_sha256=hypothesis_claim,
+    )
+
+
+def validate_round27_capture_contract(
+    payload: Mapping[str, object],
+    *,
+    repository: str | Path,
+) -> Round27CaptureContract:
+    return _validate_round27_contract(
+        payload,
+        repository=repository,
+        schema_version=ROUND27_CAPTURE_CONTRACT_SCHEMA_VERSION,
+        phase="documented_source_smoke",
+        duration_seconds=ROUND27_CAPTURE_DURATION_SECONDS,
+        success_gate=_SMOKE_SUCCESS_GATE,
+        analysis_policy=None,
+    )
+
+
+def validate_round27_stage0_capture_contract(
+    payload: Mapping[str, object],
+    *,
+    repository: str | Path,
+) -> Round27CaptureContract:
+    return _validate_round27_contract(
+        payload,
+        repository=repository,
+        schema_version=ROUND27_STAGE0_CONTRACT_SCHEMA_VERSION,
+        phase="mechanics_stage0",
+        duration_seconds=ROUND27_STAGE0_DURATION_SECONDS,
+        success_gate=_STAGE0_SUCCESS_GATE,
+        analysis_policy={
+            "maximum_resolved_markets": ROUND27_STAGE0_MAXIMUM_RESOLVED_MARKETS,
+            "target_access_during_capture": False,
+            "condition_local_transport_audit_required": True,
+            "parameter_selection_allowed": False,
+            "economic_claim_allowed": False,
+        },
     )
 
 
@@ -313,6 +420,17 @@ def load_round27_capture_contract(
 ) -> Round27CaptureContract:
     return validate_round27_capture_contract(
         _read_json(Path(path), label="Round 27 capture contract"),
+        repository=repository,
+    )
+
+
+def load_round27_stage0_capture_contract(
+    path: str | Path,
+    *,
+    repository: str | Path,
+) -> Round27CaptureContract:
+    return validate_round27_stage0_capture_contract(
+        _read_json(Path(path), label="Round 27 Stage 0 capture contract"),
         repository=repository,
     )
 
@@ -468,12 +586,12 @@ def _manifest(
     started_at_ms: int,
 ) -> dict[str, object]:
     payload: dict[str, object] = {
-        "schema_version": ROUND27_CAPTURE_CONTRACT_SCHEMA_VERSION,
+        "schema_version": contract.schema_version,
         "contract_sha256": contract.contract_sha256,
         "run_id": run_id,
         "created_at_ms": started_at_ms,
         "capture_duration_seconds": contract.capture_duration_seconds,
-        "phase": "documented_source_smoke",
+        "phase": contract.phase,
         "required_assets": ["BTC"],
         "required_streams": list(_CAPTURE_SCOPE["required_streams"]),
         "required_clob_lanes": list(_CAPTURE_SCOPE["required_clob_lanes"]),
@@ -506,15 +624,20 @@ def _result_payload(
     *,
     database_footprint_bytes: int,
     resource_stop_reason: str,
+    result_schema_version: str = ROUND27_CAPTURE_RESULT_SCHEMA_VERSION,
+    accepted_recorder_statuses: tuple[str, ...] = ("complete",),
+    require_zero_stream_gaps: bool = True,
+    maximum_resolved_markets_for_analysis: int | None = None,
 ) -> dict[str, object]:
     required_counts_positive = all(
         int(report.stream_counts.get(stream, 0)) > 0
         for stream in _CAPTURE_SCOPE["required_streams"]
     )
     checks = {
-        "terminal_recorder_status_complete": report.status == "complete",
+        "terminal_recorder_status_accepted": (
+            report.status in accepted_recorder_statuses
+        ),
         "required_stream_message_count_positive": required_counts_positive,
-        "stream_gap_count_zero": report.stream_gap_count == 0,
         "recorder_error_count_zero": not report.errors,
         "integrity_error_count_zero": not report.integrity_errors,
         "documented_spot_and_futures_trade_quality_passed": (
@@ -525,9 +648,11 @@ def _result_payload(
         ),
         "resource_stop_not_triggered": not resource_stop_reason,
     }
+    if require_zero_stream_gaps:
+        checks["stream_gap_count_zero"] = report.stream_gap_count == 0
     failure_reasons = [name for name, passed in checks.items() if not passed]
     payload: dict[str, object] = {
-        "schema_version": ROUND27_CAPTURE_RESULT_SCHEMA_VERSION,
+        "schema_version": result_schema_version,
         "contract_sha256": contract.contract_sha256,
         "status": "passed" if not failure_reasons else "failed",
         "run_id": report.run_id,
@@ -538,26 +663,46 @@ def _result_payload(
         "database_footprint_bytes": database_footprint_bytes,
         "database_cap_bytes": ROUND27_DATABASE_CAP_BYTES,
         "resource_stop_reason": resource_stop_reason,
-        "conclusion": (
+        "conclusion": "",
+        "authority": _AUTHORITY,
+    }
+    if maximum_resolved_markets_for_analysis is None:
+        payload["conclusion"] = (
             "documented public source smoke passed; no model or economic claim"
             if not failure_reasons
             else "documented public source smoke failed; larger capture remains blocked"
-        ),
-        "authority": _AUTHORITY,
-    }
+        )
+    else:
+        payload["analysis_policy"] = {
+            "maximum_resolved_markets": maximum_resolved_markets_for_analysis,
+            "captured_condition_count": len(report.conditions),
+            "condition_local_transport_audit_required": True,
+            "stream_gap_count": report.stream_gap_count,
+            "model_data_eligible_before_condition_audit": False,
+        }
+        payload["conclusion"] = (
+            "Stage 0 capture passed its source gate; condition-local audit remains required"
+            if not failure_reasons
+            else "Stage 0 capture failed its source gate; analysis remains blocked"
+        )
     payload["result_sha256"] = _canonical_sha256(payload)
     return payload
 
 
-async def run_round27_capture(
+async def _run_round27_capture(
     config: Round27CaptureConfig,
     *,
+    contract_loader: Callable[..., Round27CaptureContract],
+    result_schema_version: str,
+    accepted_recorder_statuses: tuple[str, ...],
+    require_zero_stream_gaps: bool,
+    maximum_resolved_markets_for_analysis: int | None,
     progress: Callable[[str, Mapping[str, object]], None] | None = None,
     recorder_factory: Callable[[Path], PolymarketPublicRecorder] = _create_recorder,
     source_audit: Callable[[Path, str], Mapping[str, object]] = _audit_sources,
 ) -> dict[str, object]:
     selected = config.validated()
-    contract = load_round27_capture_contract(
+    contract = contract_loader(
         selected.contract_path,
         repository=selected.repository,
     )
@@ -608,6 +753,12 @@ async def run_round27_capture(
             quality,
             database_footprint_bytes=footprint,
             resource_stop_reason=resource_stop_reason,
+            result_schema_version=result_schema_version,
+            accepted_recorder_statuses=accepted_recorder_statuses,
+            require_zero_stream_gaps=require_zero_stream_gaps,
+            maximum_resolved_markets_for_analysis=(
+                maximum_resolved_markets_for_analysis
+            ),
         )
         write_bytes_atomic(
             selected.result_path,
@@ -626,14 +777,62 @@ async def run_round27_capture(
         return result
 
 
+async def run_round27_capture(
+    config: Round27CaptureConfig,
+    *,
+    progress: Callable[[str, Mapping[str, object]], None] | None = None,
+    recorder_factory: Callable[[Path], PolymarketPublicRecorder] = _create_recorder,
+    source_audit: Callable[[Path, str], Mapping[str, object]] = _audit_sources,
+) -> dict[str, object]:
+    return await _run_round27_capture(
+        config,
+        contract_loader=load_round27_capture_contract,
+        result_schema_version=ROUND27_CAPTURE_RESULT_SCHEMA_VERSION,
+        accepted_recorder_statuses=("complete",),
+        require_zero_stream_gaps=True,
+        maximum_resolved_markets_for_analysis=None,
+        progress=progress,
+        recorder_factory=recorder_factory,
+        source_audit=source_audit,
+    )
+
+
+async def run_round27_stage0_capture(
+    config: Round27CaptureConfig,
+    *,
+    progress: Callable[[str, Mapping[str, object]], None] | None = None,
+    recorder_factory: Callable[[Path], PolymarketPublicRecorder] = _create_recorder,
+    source_audit: Callable[[Path, str], Mapping[str, object]] = _audit_sources,
+) -> dict[str, object]:
+    return await _run_round27_capture(
+        config,
+        contract_loader=load_round27_stage0_capture_contract,
+        result_schema_version=ROUND27_STAGE0_RESULT_SCHEMA_VERSION,
+        accepted_recorder_statuses=("complete", "degraded"),
+        require_zero_stream_gaps=False,
+        maximum_resolved_markets_for_analysis=(
+            ROUND27_STAGE0_MAXIMUM_RESOLVED_MARKETS
+        ),
+        progress=progress,
+        recorder_factory=recorder_factory,
+        source_audit=source_audit,
+    )
+
+
 __all__ = [
     "ROUND27_CAPTURE_DURATION_SECONDS",
     "ROUND27_CAPTURE_RESULT_SCHEMA_VERSION",
+    "ROUND27_STAGE0_DURATION_SECONDS",
+    "ROUND27_STAGE0_MAXIMUM_RESOLVED_MARKETS",
+    "ROUND27_STAGE0_RESULT_SCHEMA_VERSION",
     "Round27CaptureConfig",
     "Round27CaptureContract",
     "create_round27_capture_contract",
+    "create_round27_stage0_capture_contract",
     "load_round27_capture_contract",
     "run_round27_capture",
+    "run_round27_stage0_capture",
     "validate_round27_capture_contract",
+    "validate_round27_stage0_capture_contract",
     "write_round27_capture_contract",
 ]
