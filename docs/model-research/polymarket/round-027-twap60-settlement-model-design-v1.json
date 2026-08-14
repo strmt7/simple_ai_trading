@@ -1,0 +1,174 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "candidate": {
+    "actions": [
+      "buy_up_taker_and_hold_to_official_resolution",
+      "buy_down_taker_and_hold_to_official_resolution",
+      "abstain"
+    ],
+    "asset": "BTC",
+    "early_exit_role": "separate secondary policy charged a second taker fee and independently validated; excluded from the primary candidate",
+    "horizon": "5m",
+    "maker_role": "excluded because public depth and trade direction do not identify the bot's queue position or fill",
+    "primary_objective": "calibrated after-cost settlement value, not direction accuracy alone",
+    "resolution_source": "https://data.chain.link/streams/btc-usd-twap-60s-streams",
+    "twap_window_seconds": 60
+  },
+  "created_at_ms": 1786738260000,
+  "data_contract": {
+    "boundary_audit": {
+      "exact_e18_values_required": true,
+      "official_market_resolved_outcome_is_label_authority": true,
+      "qualification_required_before_training": true,
+      "tie_rule_must_be_verified_from_first_party_rules_before_use": true
+    },
+    "causality": {
+      "all_features_available_on_one_monotonic_receipt_clock": true,
+      "feed_staleness_is_a_feature_and_a_fail_closed_gate": true,
+      "future_source_timestamps_forbidden": true,
+      "market_level_chronological_partitioning": true,
+      "purge_by_complete_market_between_partitions": true
+    },
+    "minimum_research_cohort": {
+      "calendar_days": 20,
+      "resolved_markets": 2000,
+      "sealed_executable_trades": 200
+    },
+    "required_sources": [
+      "official Gamma market identity and resolution contract",
+      "official CLOB market_resolved outcome",
+      "exact Chainlink TWAP60 E18 RTDS observations",
+      "Binance BTCUSDT spot public trades",
+      "Binance BTCUSDT perpetual public trades",
+      "Polymarket CLOB L2 public market channel"
+    ]
+  },
+  "design_sha256": "52f684eba182ef01231bd5b0add1833c2314a184877f5795e003e3577ba49dff",
+  "economic_simulation": {
+    "entry": "first executable ask after the recorded 250 ms taker delay, capped by displayed depth",
+    "fee": "exact per-market quantity * rate * price * (1-price), conservatively rounded to five decimals",
+    "payout": "official resolved outcome token pays one USDC and the losing token pays zero",
+    "primary_position_size_shares": 5,
+    "rebate": "zero",
+    "slippage": "observed book traversal only; no midpoint fills",
+    "unavailable_or_stale_book_action": "abstain"
+  },
+  "feature_families": {
+    "binance_receipt_time": [
+      "spot and perpetual log returns at 100, 250, 500, 1000, 2000 ms",
+      "spot and perpetual aggressor signed notional imbalance",
+      "spot-perpetual innovation disagreement",
+      "receipt rate and source-to-receipt delay state"
+    ],
+    "polymarket_book": [
+      "executable up and down bid, ask, spread and depth",
+      "microprice and depth imbalance",
+      "book age, connection segment and recent quote response",
+      "market-implied up probability as the mandatory baseline offset"
+    ],
+    "settlement_state": [
+      "exact current TWAP60 minus exact opening TWAP60",
+      "seconds remaining",
+      "trailing TWAP60 change variance and path efficiency",
+      "TWAP60 publisher and receipt delay",
+      "distance-to-strike interacted with time remaining"
+    ]
+  },
+  "gates": {
+    "calibration": {
+      "expected_calibration_error_maximum": 0.05,
+      "sealed_brier_better_than_market_prior": true,
+      "sealed_log_loss_better_than_market_prior": true
+    },
+    "economics": {
+      "after_cost_net_pnl_positive": true,
+      "allocated_capital_maximum_drawdown_fraction": 0.05,
+      "market_block_bootstrap_95pct_lower_net_pnl_positive": true,
+      "maximum_single_day_share_of_total_positive_pnl": 0.25,
+      "positive_in_low_mid_and_high_volatility_regimes": true,
+      "positive_in_multiple_time_to_close_bands": true
+    },
+    "minimum_sample": {
+      "calendar_days": 20,
+      "resolved_markets": 2000,
+      "sealed_executable_trades": 200
+    },
+    "promotion": {
+      "ai_uplift_required_before_ai_promotion": true,
+      "development_sample_can_claim_edge": false,
+      "paper_shadow_required_before_any_execution_authority": true,
+      "sealed_out_of_sample_only": true
+    }
+  },
+  "hypotheses": {
+    "primary": "exact TWAP60 settlement state plus fast CEX innovations contains incremental calibrated settlement value beyond the executable Polymarket book prior",
+    "secondary": "the incremental value is concentrated in stale-book response states and late-window TWAP states rather than continuously available",
+    "null": "the Polymarket book already incorporates the public inputs quickly enough that no after-cost executable value remains"
+  },
+  "model_ladder": [
+    {
+      "family": "market_prior_only",
+      "role": "mandatory economic and probability baseline"
+    },
+    {
+      "family": "regularized_logistic_offset_model",
+      "role": "first auditable incremental model"
+    },
+    {
+      "family": "monotonic_gradient_boosted_trees",
+      "role": "allowed only if the logistic model demonstrably underfits development data"
+    },
+    {
+      "family": "causal_sequence_model",
+      "role": "allowed only after simpler models pass data and execution sanity checks"
+    },
+    {
+      "family": "local_multibillion_parameter_ai_veto_or_reranker",
+      "role": "never the base price forecaster; must add sealed after-cost uplift and may only abstain or reduce risk until independently promoted"
+    }
+  ],
+  "predecessor": {
+    "round26_capture_contract_sha256": "0349f7b688609de4ebc0fc84b755e5943b976753e7771b7f76f5a40a13eae43a",
+    "round26_role": "development pilot and settlement-mechanism audit only",
+    "round26_terminal_result_available_when_frozen": false,
+    "round26_training_eligible": false
+  },
+  "research_evidence": [
+    {
+      "finding": "A 727 million row synchronized Polymarket-Binance study found quote response after large Binance moves but no tradable out-of-sample edge after costs; incremental value must beat the book prior, not only predict direction.",
+      "url": "https://arxiv.org/abs/2607.26245"
+    },
+    {
+      "finding": "Deep limit-order-book forecast accuracy does not necessarily imply actionable trading signals, motivating transaction-level economic evaluation.",
+      "url": "https://arxiv.org/abs/2403.09267"
+    },
+    {
+      "finding": "Crypto price discovery is materially driven by limit submissions and cancellations, so trade returns alone are an incomplete signal family.",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4867599"
+    },
+    {
+      "finding": "Polymarket crypto taker fees follow the exact symmetric probability curve used by this design.",
+      "url": "https://docs.polymarket.com/trading/fees"
+    },
+    {
+      "finding": "The official market channel exposes L2 books, price changes and resolution events used as public evidence.",
+      "url": "https://docs.polymarket.com/api-reference/wss/market"
+    }
+  ],
+  "schema_version": "polymarket-round27-twap60-settlement-model-design-v1",
+  "selection_policy": {
+    "ai_or_ml_accuracy_without_after_cost_profit_is_rejected": true,
+    "hyperparameters_selected_on_development_only": true,
+    "one_final_sealed_evaluation_per_frozen_candidate": true,
+    "profitability_without_probability_uplift_is_rejected_as_luck_risk": true,
+    "unprofitable_or_unstable_candidate_is_rejected": true
+  }
+}
