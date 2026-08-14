@@ -1,0 +1,7 @@
+metric,market_prior,selected_model
+balanced_accuracy,0.714285714286,0.714285714286
+condition_equal_brier_score,0.17092252567,0.17092252567
+condition_equal_log_loss,0.502193656587,0.502193656587
+direction_accuracy,0.714285714286,0.714285714286
+expected_calibration_error,0.0915959821429,0.0915959821429
+roc_auc,0.822185905612,0.822185905612
