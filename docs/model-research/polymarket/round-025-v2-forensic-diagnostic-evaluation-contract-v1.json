@@ -1,0 +1,157 @@
+{
+  "schema_version": "polymarket-round25-v2-forensic-diagnostic-evaluation-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-14T18:24:00Z",
+  "status": "frozen_target_and_model_score_blind_before_feature_store_publication",
+  "parents": {
+    "condition_salvage_contract_sha256": "f46c9c629427ab5e2ce5582bdec9be7f6e67bc8f69831fc27ebde1b1f13eafcb",
+    "joint_feature_materialization_contract_sha256": "57fb2cf088bdd64e3b6e05d087d5d4aa3d77cc484b8611be77b02cd12a34a6c2",
+    "predictive_evaluation_contract_sha256": "4e5036103cfb11319b68908a09fa9acdb93a02f4ff1cede9dec9e9a81f491077"
+  },
+  "corrected_access_order": {
+    "reason": "predictions from fitted candidates cannot be frozen before fitting targets exist",
+    "condition_salvage_contract_access_order_superseded": true,
+    "feature_materialization_rules_changed": false,
+    "steps": [
+      "freeze_and_deep_audit_target_free_feature_store",
+      "freeze_chronological_condition_partition_manifest",
+      "access_train_and_calibration_official_resolutions_only",
+      "fit_frozen_candidates_and_select_using_calibration_only",
+      "freeze_selection_predictions_trade_policy_and_cost_parameters",
+      "access_selection_official_resolutions_once",
+      "publish_predictive_and_after_cost_diagnostic"
+    ],
+    "selection_resolution_requested_before_prediction_freeze": false,
+    "selection_target_reuse_for_candidate_selection": false
+  },
+  "condition_partition": {
+    "schema_version": "polymarket-round25-forensic-diagnostic-partition-v1",
+    "sort": "event_start_ms_then_condition_id",
+    "train_fraction": 0.6,
+    "calibration_fraction": 0.2,
+    "selection_fraction": 0.2,
+    "boundary_rule": "integer_floor_at_sixty_and_eighty_percent",
+    "purge_rule": "one_condition_on_each_side_of_each_boundary",
+    "minimum_admitted_conditions": 50,
+    "minimum_selection_conditions_after_purge": 8
+  },
+  "frozen_candidate_family": [
+    {
+      "candidate_id": "market-prior-v1",
+      "role": "control"
+    },
+    {
+      "candidate_id": "phase-isotonic-market-prior-v1",
+      "role": "calibrated_control"
+    },
+    {
+      "candidate_id": "l2-logistic-residual-v1",
+      "role": "linear_residual",
+      "l2_c_grid": [
+        0.01,
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "candidate_id": "lightgbm-residual-depth3-v1",
+      "role": "nonlinear_residual"
+    },
+    {
+      "candidate_id": "lightgbm-residual-depth5-v1",
+      "role": "nonlinear_residual"
+    }
+  ],
+  "fit_boundary": {
+    "unit": "five_minute_condition",
+    "endpoints_per_condition": 16,
+    "endpoint_weight": 0.0625,
+    "feature_transform_fit_role": "train_only",
+    "candidate_fit_roles": [
+      "train"
+    ],
+    "candidate_selection_role": "calibration",
+    "final_diagnostic_role": "selection",
+    "selection_predictions_frozen_before_selection_target_access": true,
+    "candidate_reselection_after_selection_target_access": false,
+    "target_classes_required_in_calibration_and_selection": true,
+    "nonfinite_feature_or_probability_behavior": "fail_closed"
+  },
+  "predictive_metrics": {
+    "primary": [
+      "condition_equal_log_loss",
+      "condition_equal_brier_score"
+    ],
+    "descriptive": [
+      "balanced_accuracy",
+      "roc_auc",
+      "expected_calibration_error",
+      "direction_accuracy"
+    ],
+    "market_prior_control_required": true,
+    "diagnostic_predictive_pass": "selected_candidate_strictly_improves_both_primary_metrics_over_market_prior",
+    "formal_statistical_edge_claim": false
+  },
+  "after_cost_replay": {
+    "position_policy": "at_most_one_entry_per_condition_then_hold_to_official_resolution",
+    "endpoint_policy": "highest_positive_stressed_expected_value_among_frozen_endpoints",
+    "direction_policy": "higher_expected_value_of_up_or_down",
+    "quantity_shares": 5,
+    "minimum_top_level_displayed_depth_shares": 5,
+    "entry_price": "recorded_best_ask_plus_one_tick_adverse_stress",
+    "tick_size": 0.01,
+    "maximum_stressed_entry_price": 0.99,
+    "fee_rate": 0.07,
+    "fee_exponent": 1,
+    "fee_formula": "ceil_to_0.00001(quantity*rate*(price*(1-price))^exponent)",
+    "minimum_expected_edge_per_share": 0.01,
+    "unfilled_or_insufficient_depth_behavior": "abstain",
+    "same_condition_reentry_allowed": false,
+    "leverage_allowed": false,
+    "capital_reinvestment_allowed": false,
+    "latency_claim": "one_tick_adverse_stress_is_diagnostic_not_a_measured_latency_distribution",
+    "annualized_roi_reported": false
+  },
+  "diagnostic_economic_metrics": [
+    "net_profit_quote",
+    "return_on_committed_capital",
+    "trade_count",
+    "win_rate",
+    "profit_factor",
+    "maximum_drawdown_quote",
+    "maximum_drawdown_fraction_of_committed_capital",
+    "abstention_rate"
+  ],
+  "diagnostic_pass_gate": {
+    "minimum_selection_conditions": 8,
+    "minimum_closed_trades": 3,
+    "net_profit_quote_strictly_positive": true,
+    "profit_factor_strictly_above": 1.0,
+    "predictive_gate_passed": true,
+    "maximum_drawdown_quote_at_most_one_maximum_trade_loss": true,
+    "grants_financial_edge_claim": false,
+    "grants_profitability_claim": false,
+    "grants_trading_authority": false
+  },
+  "excluded_candidates": {
+    "causal_multitask_tcn_residual_v1": "too_few_independent_conditions_for_a_high_capacity_sequence_fit",
+    "multibillion_parameter_language_model": "no causal text_or_structured_context_with_honest_historical_availability_is_present_in_this_short_capture",
+    "exclusion_is_ai_uplift_conclusion": false
+  },
+  "truth_state": {
+    "feature_store_published": false,
+    "partition_manifest_frozen": false,
+    "train_or_calibration_targets_accessed": false,
+    "selection_targets_accessed": false,
+    "models_fitted": false,
+    "selection_predictions_frozen": false,
+    "after_cost_replay_completed": false,
+    "diagnostic_viability_established": false,
+    "predictive_edge_established": false,
+    "after_cost_profitability_established": false,
+    "ai_uplift_established": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "contract_sha256": "f80d0396d7b51afdc63868a1e259099c2621ef45af7a3a31ab28b64967534896"
+}
