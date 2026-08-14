@@ -19,6 +19,7 @@ from typing import Mapping, Protocol, Sequence
 import uuid
 
 import duckdb
+import requests
 import zstandard
 from websockets.asyncio.client import connect
 
@@ -98,6 +99,8 @@ _SIMPLE_STREAM_MAX_QUEUE_FRAMES = 1_024
 _OUTPUT_PUT_TIMEOUT_SECONDS = 5.0
 _STREAM_INACTIVITY_SECONDS = 30.0
 _STABLE_CONNECTION_SECONDS = 30.0
+_INITIAL_DISCOVERY_MAX_WAIT_SECONDS = 300.0
+_DISCOVERY_BACKOFF_MAX_SECONDS = 30.0
 _RAW_CHUNK_FRAME_FORMAT = "length-prefixed-utf8-v1"
 _RAW_CHUNK_CODEC = "zstd"
 _RAW_CHUNK_COMPRESSION_LEVEL = 1
@@ -6360,7 +6363,11 @@ def _event_index(
 
 
 class _MarketRegistry:
-    def __init__(self) -> None:
+    def __init__(self, *, subscription_grace_ms: int = 900_000) -> None:
+        grace = int(subscription_grace_ms)
+        if grace < 0 or grace > 900_000:
+            raise ValueError("market subscription grace must lie in [0, 900000]")
+        self.subscription_grace_ms = grace
         self.markets: dict[str, PolymarketFiveMinuteMarket] = {}
         self.changed = asyncio.Event()
 
@@ -6374,7 +6381,7 @@ class _MarketRegistry:
         retained = {
             condition: market
             for condition, market in self.markets.items()
-            if market.end_ms + 900_000 > now_ms
+            if market.end_ms + self.subscription_grace_ms > now_ms
         }
         new_markets = tuple(
             market for market in discovered if market.condition_id not in self.markets
@@ -6412,6 +6419,7 @@ class PolymarketPublicRecorder:
         clob_lane_ids: Sequence[str] = ("clob",),
         include_polymarket_core: bool = True,
         binance_book_ticker_profile: bool = False,
+        market_subscription_grace_seconds: int = 900,
     ) -> None:
         self.database = Path(database)
         self.client = client or PolymarketPublicClient()
@@ -6466,6 +6474,12 @@ class PolymarketPublicRecorder:
         self.include_rtds_binance = include_rtds_binance
         self.include_polymarket_core = include_polymarket_core
         self.binance_book_ticker_profile = binance_book_ticker_profile
+        subscription_grace_seconds = int(market_subscription_grace_seconds)
+        if not 0 <= subscription_grace_seconds <= 900:
+            raise ValueError(
+                "market_subscription_grace_seconds must lie in [0, 900]"
+            )
+        self.market_subscription_grace_seconds = subscription_grace_seconds
         self.clob_lane_ids = selected_clob_lanes
         if not include_polymarket_core and (
             selected_assets != ("BTC",)
@@ -6504,7 +6518,9 @@ class PolymarketPublicRecorder:
         if include_polymarket_core:
             required_streams.extend(("clob_market", "polymarket_rtds"))
         self.required_streams = tuple(required_streams)
-        self.registry = _MarketRegistry()
+        self.registry = _MarketRegistry(
+            subscription_grace_ms=self.market_subscription_grace_seconds * 1_000
+        )
         self.errors: list[str] = []
         self._written_message_count = 0
         self._written_market_snapshot_count = 0
@@ -6608,7 +6624,9 @@ class PolymarketPublicRecorder:
         progress_interval = int(progress_interval_seconds)
         if progress_interval < 5 or progress_interval > 300:
             raise ValueError("progress_interval_seconds must lie in [5, 300]")
-        self.registry = _MarketRegistry()
+        self.registry = _MarketRegistry(
+            subscription_grace_ms=self.market_subscription_grace_seconds * 1_000
+        )
         self.errors = []
         self._written_message_count = 0
         self._written_market_snapshot_count = 0
@@ -6743,9 +6761,14 @@ class PolymarketPublicRecorder:
             try:
                 if self.include_polymarket_core:
                     try:
-                        await asyncio.wait_for(
-                            self._discover(run_id, output, now_ms=started),
-                            timeout=min(30.0, float(duration)),
+                        await self._initial_discover(
+                            run_id,
+                            output,
+                            stop,
+                            maximum_wait_seconds=min(
+                                _INITIAL_DISCOVERY_MAX_WAIT_SECONDS,
+                                float(duration),
+                            ),
                         )
                     except Exception as exc:
                         self.errors.append(
@@ -7032,6 +7055,88 @@ class PolymarketPublicRecorder:
                     ),
                 )
 
+    @staticmethod
+    def _retryable_discovery_error(exc: BaseException) -> bool:
+        if isinstance(
+            exc,
+            (
+                TimeoutError,
+                requests.Timeout,
+                requests.ConnectionError,
+            ),
+        ):
+            return True
+        if isinstance(exc, requests.HTTPError):
+            response = exc.response
+            return response is None or response.status_code in {
+                408,
+                425,
+                429,
+                500,
+                502,
+                503,
+                504,
+            }
+        return False
+
+    async def _record_discovery_gap(
+        self,
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
+        *,
+        connection_id: str,
+        sequence: int,
+        exc: BaseException,
+    ) -> None:
+        await self._emit_output(
+            output,
+            StreamGap(
+                stream="clob_rest_book",
+                connection_id=connection_id,
+                opened_at_ms=_wall_ms(),
+                reason=f"{exc.__class__.__name__}:{exc}",
+                last_sequence_number=sequence,
+            ),
+        )
+
+    async def _initial_discover(
+        self,
+        run_id: str,
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
+        stop: asyncio.Event,
+        *,
+        maximum_wait_seconds: float,
+    ) -> None:
+        maximum_wait = float(maximum_wait_seconds)
+        if maximum_wait <= 0.0:
+            raise ValueError("initial discovery wait must be positive")
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + maximum_wait
+        backoff = 1.0
+        attempt = 0
+        connection_id = f"discovery:{uuid.uuid4().hex}"
+        while not stop.is_set():
+            try:
+                await self._discover(run_id, output, now_ms=_wall_ms())
+                return
+            except Exception as exc:
+                if not self._retryable_discovery_error(exc):
+                    raise
+                attempt += 1
+                await self._record_discovery_gap(
+                    output,
+                    connection_id=connection_id,
+                    sequence=attempt,
+                    exc=exc,
+                )
+                remaining = deadline - loop.time()
+                if remaining <= 0.0:
+                    raise TimeoutError(
+                        "initial Polymarket discovery retry budget exhausted"
+                    ) from exc
+                await _bounded_backoff(stop, min(backoff, remaining))
+                backoff = min(_DISCOVERY_BACKOFF_MAX_SECONDS, backoff * 2.0)
+        raise RuntimeError("initial Polymarket discovery stopped")
+
     def _fetch_market_evidence(
         self,
         market: PolymarketFiveMinuteMarket,
@@ -7092,6 +7197,9 @@ class PolymarketPublicRecorder:
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
         stop: asyncio.Event,
     ) -> None:
+        backoff = 1.0
+        failure_sequence = 0
+        connection_id = f"discovery:{uuid.uuid4().hex}"
         while not stop.is_set():
             try:
                 await asyncio.wait_for(
@@ -7099,7 +7207,24 @@ class PolymarketPublicRecorder:
                 )
                 return
             except TimeoutError:
-                await self._discover(run_id, output, now_ms=_wall_ms())
+                pass
+            while not stop.is_set():
+                try:
+                    await self._discover(run_id, output, now_ms=_wall_ms())
+                    backoff = 1.0
+                    break
+                except Exception as exc:
+                    if not self._retryable_discovery_error(exc):
+                        raise
+                    failure_sequence += 1
+                    await self._record_discovery_gap(
+                        output,
+                        connection_id=connection_id,
+                        sequence=failure_sequence,
+                        exc=exc,
+                    )
+                    await _bounded_backoff(stop, backoff)
+                    backoff = min(_DISCOVERY_BACKOFF_MAX_SECONDS, backoff * 2.0)
 
     async def _writer(
         self,
