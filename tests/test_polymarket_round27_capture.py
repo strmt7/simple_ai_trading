@@ -1,0 +1,218 @@
+from __future__ import annotations
+
+import asyncio
+from dataclasses import replace
+import hashlib
+import json
+from pathlib import Path
+
+import pytest
+
+from simple_ai_trading.polymarket_recorder import RecorderReport
+from simple_ai_trading.polymarket_round27_capture import (
+    ROUND27_CAPTURE_DURATION_SECONDS,
+    ROUND27_DATABASE_CAP_BYTES,
+    Round27CaptureConfig,
+    _create_recorder,
+    _database_footprint_bytes,
+    _manifest,
+    create_round27_capture_contract,
+    run_round27_capture,
+    validate_round27_capture_contract,
+    write_round27_capture_contract,
+)
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+
+
+def _report(*, status: str = "complete") -> RecorderReport:
+    return RecorderReport(
+        schema_version="test",
+        run_id="a" * 32,
+        status=status,
+        database="test.duckdb",
+        started_at_ms=1_000,
+        ended_at_ms=601_000,
+        duration_seconds=600.0,
+        market_snapshot_count=4,
+        raw_message_count=100,
+        normalized_event_count=90,
+        stream_gap_count=0,
+        stream_counts={
+            "binance_futures": 20,
+            "binance_spot": 20,
+            "clob_market": 20,
+            "polymarket_rtds": 20,
+        },
+        assets=("BTC",),
+        conditions=("condition",),
+        integrity_errors=(),
+        errors=(),
+        evidence_manifest_sha256="b" * 64,
+        report_sha256="c" * 64,
+    )
+
+
+def test_round27_capture_contract_is_hash_bound_and_non_authorizing() -> None:
+    payload = create_round27_capture_contract(ROOT, created_at_ms=1_000)
+    contract = validate_round27_capture_contract(payload, repository=ROOT)
+    manifest = _manifest(contract, run_id="a" * 32, started_at_ms=2_000)
+    manifest_claim = manifest.pop("manifest_sha256")
+
+    assert contract.capture_duration_seconds == ROUND27_CAPTURE_DURATION_SECONDS
+    assert payload["capture_scope"]["binance_futures_profile"] == (
+        "documented_aggregate_trades"
+    )
+    assert payload["authority"]["model_data_eligible"] is False
+    assert payload["authority"]["live_trading_authority"] is False
+    assert manifest_claim == _canonical_sha256(manifest)
+
+
+def test_round27_capture_contract_rejects_rehashed_semantic_drift() -> None:
+    payload = create_round27_capture_contract(ROOT, created_at_ms=1_000)
+    payload["resource_policy"]["database_cap_bytes"] += 1
+    unhashed = dict(payload)
+    unhashed.pop("contract_sha256")
+    payload["contract_sha256"] = _canonical_sha256(unhashed)
+
+    with pytest.raises(ValueError, match="contract differs"):
+        validate_round27_capture_contract(payload, repository=ROOT)
+
+
+def test_round27_recorder_uses_documented_aggregate_trade_profile() -> None:
+    recorder = _create_recorder(ROOT / "data" / "unused-round27-test.duckdb")
+
+    assert recorder.assets == ("BTC",)
+    assert recorder.binance_futures_aggregate_trades is True
+    assert recorder.binance_book_ticker_profile is False
+    assert recorder.include_binance_futures is True
+    assert recorder.include_binance_spot is True
+    assert recorder.chainlink_price_mode == "twap_60s"
+    assert recorder.memory_limit == "1GB"
+    assert recorder.database_threads == 2
+
+
+def test_round27_database_footprint_includes_wal_and_temp(tmp_path: Path) -> None:
+    database = tmp_path / "capture.duckdb"
+    database.write_bytes(b"a" * 3)
+    Path(f"{database}.wal").write_bytes(b"b" * 5)
+    temporary = Path(f"{database}.tmp")
+    temporary.mkdir()
+    (temporary / "spill.bin").write_bytes(b"c" * 7)
+
+    assert _database_footprint_bytes(database) == 15
+    assert _database_footprint_bytes(database) < ROUND27_DATABASE_CAP_BYTES
+
+
+def test_round27_run_rejects_stale_database_before_recorder(
+    tmp_path: Path,
+) -> None:
+    contract_path = tmp_path / "contract.json"
+    database_path = tmp_path / "capture.duckdb"
+    write_round27_capture_contract(
+        contract_path,
+        create_round27_capture_contract(ROOT, created_at_ms=1_000),
+    )
+    database_path.write_bytes(b"stale")
+
+    with pytest.raises(RuntimeError, match="requires fresh"):
+        asyncio.run(
+            run_round27_capture(
+                Round27CaptureConfig(
+                    repository=ROOT,
+                    contract_path=contract_path,
+                    database_path=database_path,
+                    result_path=tmp_path / "result.json",
+                    lock_path=tmp_path / "capture.lock",
+                ),
+                recorder_factory=lambda _path: pytest.fail("recorder was invoked"),
+            )
+        )
+
+
+def test_round27_run_passes_only_after_automatic_source_gate(
+    tmp_path: Path,
+) -> None:
+    contract_path = tmp_path / "contract.json"
+    write_round27_capture_contract(
+        contract_path,
+        create_round27_capture_contract(ROOT, created_at_ms=1_000),
+    )
+    calls: dict[str, object] = {}
+
+    class Recorder:
+        async def run(self, **options):
+            calls.update(options)
+            return _report()
+
+    result = asyncio.run(
+        run_round27_capture(
+            Round27CaptureConfig(
+                repository=ROOT,
+                contract_path=contract_path,
+                database_path=tmp_path / "capture.duckdb",
+                result_path=tmp_path / "result.json",
+                lock_path=tmp_path / "capture.lock",
+            ),
+            recorder_factory=lambda _path: Recorder(),
+            source_audit=lambda _path, run_id: {
+                "passed": run_id == "a" * 32,
+                "source_quality_sha256": "d" * 64,
+            },
+        )
+    )
+
+    assert calls["duration_seconds"] == ROUND27_CAPTURE_DURATION_SECONDS
+    assert calls["progress_interval_seconds"] == 30
+    assert callable(calls["stop_requested"])
+    assert result["status"] == "passed"
+    assert result["gate_checks"][
+        "documented_spot_and_futures_trade_quality_passed"
+    ] is True
+    assert result["authority"]["edge_claim"] is False
+
+
+def test_round27_run_fails_on_gap_even_when_source_types_pass(
+    tmp_path: Path,
+) -> None:
+    contract_path = tmp_path / "contract.json"
+    write_round27_capture_contract(
+        contract_path,
+        create_round27_capture_contract(ROOT, created_at_ms=1_000),
+    )
+    report = replace(_report(status="degraded"), stream_gap_count=1)
+
+    class Recorder:
+        async def run(self, **_options):
+            return report
+
+    result = asyncio.run(
+        run_round27_capture(
+            Round27CaptureConfig(
+                repository=ROOT,
+                contract_path=contract_path,
+                database_path=tmp_path / "capture.duckdb",
+                result_path=tmp_path / "result.json",
+                lock_path=tmp_path / "capture.lock",
+            ),
+            recorder_factory=lambda _path: Recorder(),
+            source_audit=lambda _path, _run_id: {"passed": True},
+        )
+    )
+
+    assert result["status"] == "failed"
+    assert "terminal_recorder_status_complete" in result["failure_reasons"]
+    assert "stream_gap_count_zero" in result["failure_reasons"]
