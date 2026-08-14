@@ -17,10 +17,21 @@ Futures trade frames whose reported price and quantity were both zero. Those
 frames are preserved as source-integrity evidence and are not treated as price
 observations.
 
+Round 27 then screened execution mechanics on the 11 condition-eligible v2
+markets. Applying each exact exchange message before pairing outcomes left four
+after-fee complete-set episodes. None survived the recorded 250 ms taker delay,
+and none survived an optimistic 500 ms sequential two-leg floor. The best
+delayed and sequential costs were 1.012066 and 1.002744 pUSD per complete set,
+respectively, before network latency. Extreme-price and late-favorite states
+remain prospective model-value hypotheses; public quotes do not prove fills.
+
+![Round 27 mechanics diagnostic](round-027-mechanics-diagnostic/mechanics-diagnostic.svg)
+
 ![Round 26 target-free replay eligibility](round-026-twap60-condition-audit/condition-replay-eligibility.svg)
 
 The [canonical Round 26 audit](round-026-twap60-condition-audit/condition-replay-audit.json),
 [v3 analysis failure](../round-026-twap60-development-analysis-failure-v2.json),
+the [Round 27 mechanics data](round-027-mechanics-diagnostic/mechanics-diagnostic.json),
 and [untrusted execution-hypothesis preregistration](../round-027-execution-hypothesis-preregistration-v3.json)
 preserve the exact boundaries. No market edge or after-cost profitability has
 been found yet.

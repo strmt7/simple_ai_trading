@@ -1,0 +1,14 @@
+{
+  "diagnostic_only": true,
+  "edge_claim": false,
+  "files": {
+    "README.md": "7da952158ff64f91e7efc0f495fa9d22d93230cd4b748808f52e612a3855faf0",
+    "complete-set-latency.csv": "788d0729de3e3d122222d4efafc5bd9a4d8c521f386c95d2e03511d4ef378c6c",
+    "mechanics-diagnostic.json": "8313746a258d8b30886958eb7c55fc68714b891b780056f94fc7b3bfb1747e27",
+    "mechanics-diagnostic.svg": "141b09d26053ad25bc21b63280c8fbf238d33ed6cee22b1028855cc7f5986b9e"
+  },
+  "manifest_sha256": "52cbf439bfd0e3588ef528828363ba781d4eb2f1d541ec51b8b67021c50260fb",
+  "mechanics_sha256": "53ce947590eeee84eec97b33a86ebb112bcd7f66ee19787331995653e630fbcb",
+  "profitability_claim": false,
+  "schema_version": "polymarket-round27-mechanics-publication-v1"
+}

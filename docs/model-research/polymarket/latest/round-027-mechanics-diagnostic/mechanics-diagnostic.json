@@ -1,0 +1,201 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "model_data_eligible": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false
+  },
+  "candidate_counts": {
+    "complete_set_after_fee": {
+      "market_count": 4,
+      "state_count": 4
+    },
+    "extreme_settlement_value": {
+      "market_count": 11,
+      "state_count": 15806
+    },
+    "late_strong_favorite": {
+      "market_count": 6,
+      "state_count": 1034
+    },
+    "split_sell_after_fee": {
+      "market_count": 1,
+      "state_count": 1
+    }
+  },
+  "complete_set_latency": {
+    "minimum_sequential_survivor_count": 0,
+    "p50_order_response": "not available",
+    "p95_order_response": "not available",
+    "p99_order_response": "not available",
+    "same_state_episode_count": 4,
+    "segment_benchmarks": [
+      {
+        "best_minimum_sequential_cost": null,
+        "best_same_state_cost": null,
+        "best_venue_delay_cost": null,
+        "condition_id": "0x0be96f715bad60903eb0d2f4e1ab1e138e1abbaf36a832f7011a85ceee5a710f",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 0,
+        "segment_id": "86aa54e4c9ae5d00cb3f1474bfa9aea23592305452d6ad689345d6addca6a91f",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": null,
+        "best_same_state_cost": null,
+        "best_venue_delay_cost": null,
+        "condition_id": "0x2aa3aa7586e38774ad8c455908ed44e5c63d16c143657e612d137286622cf0a3",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 0,
+        "segment_id": "0811f9d69ed0fd93f4e8ce632a684f3091998f7d0e9121585360fadbcd2efdc2",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": null,
+        "best_same_state_cost": null,
+        "best_venue_delay_cost": null,
+        "condition_id": "0x2aa3aa7586e38774ad8c455908ed44e5c63d16c143657e612d137286622cf0a3",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 0,
+        "segment_id": "3e1d9aa37b7cfa9f912dac45afa3cb3dd204da118a7b19ca1a06ca660c20a79a",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": "1.043454",
+        "best_same_state_cost": "0.984630",
+        "best_venue_delay_cost": "1.043454",
+        "condition_id": "0x2b23b94415f70ee763efebc94aad36db66a3f69241e8f4c5fd62cc03f71e12e0",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 1,
+        "segment_id": "b8c3ea5ec922b6c52259ff3500661c5c01c63a6a64dad3576a3287ec4df9c1ca",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": null,
+        "best_same_state_cost": null,
+        "best_venue_delay_cost": null,
+        "condition_id": "0x44d2bc94331ec1646f456fb5acdb9920ee50c30a49b62a449d608b425ca671f0",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 0,
+        "segment_id": "880686443928d325c45f49506c8ace9e343ccd866609dc6a4f0a6264e47f9f3f",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": null,
+        "best_same_state_cost": null,
+        "best_venue_delay_cost": null,
+        "condition_id": "0x6802fd826274ac7d53604900993eaa629ffefed9ecd381c06b703648ecbbcef1",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 0,
+        "segment_id": "cf4795a3471a7d397d175b40201f4022701b8fbb5493359a1fb6d41f8a14de7a",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": "1.014726",
+        "best_same_state_cost": "0.999710",
+        "best_venue_delay_cost": "1.014726",
+        "condition_id": "0x740c8d0b3b0dba5e5fa124f394dccf59803bd6d47676061f8866ce3ea60312f7",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 1,
+        "segment_id": "7f65e71d27b6a8d8f254bb3df563accbea4bc6878b04aa6309986b02fd10c845",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": "1.030210",
+        "best_same_state_cost": "0.988306",
+        "best_venue_delay_cost": "1.030210",
+        "condition_id": "0x8fd419e75208b421818a813424919a73a08f74ef19467dfb4e33217c9e56009e",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 1,
+        "segment_id": "b508c5a5a3ab8f0abc13ddb39a92868408f040677460abb3aaf580265a4bcd67",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": null,
+        "best_same_state_cost": null,
+        "best_venue_delay_cost": null,
+        "condition_id": "0x94a73c96728f3a2ce967f9d65e56f8d616fb8052e254916b55815bc6674d45b8",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 0,
+        "segment_id": "a1182b1d36081a25d7e06e544db64b7448eee409bcd56b11abe865d5908ba3fe",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": null,
+        "best_same_state_cost": null,
+        "best_venue_delay_cost": null,
+        "condition_id": "0xc17918d5cb7d4dbc2d03f1db605c1a856d607eae633a0601ce93e1b6e8cce288",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 0,
+        "segment_id": "c050ad619845cfb7af7686840cff23d050fa7105b09a62adc7f1ef4338cd57f1",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": null,
+        "best_same_state_cost": null,
+        "best_venue_delay_cost": null,
+        "condition_id": "0xdcf03ea95640ce6e4a394f507c15f8b4834888121b4530e73145514d4b460be3",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 0,
+        "segment_id": "00a2c02b221e29990a63041f5de44cfa56dc14817957eb7bc77701c3aad05a15",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": null,
+        "best_same_state_cost": null,
+        "best_venue_delay_cost": null,
+        "condition_id": "0xdcf03ea95640ce6e4a394f507c15f8b4834888121b4530e73145514d4b460be3",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 0,
+        "segment_id": "d3f680c746d428e049c1c375d20a4564094cd4d079b74ba0b48b99b6a098487a",
+        "venue_delay_survivor_count": 0
+      },
+      {
+        "best_minimum_sequential_cost": "1.002744",
+        "best_same_state_cost": "0.993410",
+        "best_venue_delay_cost": "1.012066",
+        "condition_id": "0xea336edb13bf55112774482d390cd7012b4e8b4cb6564a145ee41a40e05a2538",
+        "minimum_sequential_survivor_count": 0,
+        "same_state_episode_count": 1,
+        "segment_id": "53db9c1e3cb6a858055f8e3e468385de58b2ce384ec919f24deb924e7bcc66e7",
+        "venue_delay_survivor_count": 0
+      }
+    ],
+    "venue_delay_survivor_count": 0
+  },
+  "coverage": {
+    "eligible_market_count": 11,
+    "eligible_segment_count": 13,
+    "materialized_book_count": 119585,
+    "paired_quote_state_count": 54983
+  },
+  "interpretation": {
+    "edge_claim": false,
+    "mechanics_only": true,
+    "profitability_claim": false,
+    "promotion_eligible": false,
+    "reason": "the source cohort predates the preregistration and was excluded by its data contract"
+  },
+  "lineage": {
+    "cohort_role": "superseded_round26_v2_diagnostic_only",
+    "condition_audit_sha256": "e12d83c876e9e5dcb069fda68ff9172c10bcf6ac0fe606f5c6f0e4c2eefedcaa",
+    "preregistered_stage_0": false,
+    "preregistration_sha256": "76f924e66883a589336ba0c527810e04a0bd98baab660130010ee8b2ad19b264",
+    "run_id": "5543a49ffff24716b37f719fee43abbb"
+  },
+  "mechanics_sha256": "53ce947590eeee84eec97b33a86ebb112bcd7f66ee19787331995653e630fbcb",
+  "method": {
+    "book_sample_interval_ms": 50,
+    "exact_message_batches_applied_before_pair_evaluation": true,
+    "fee": "recorded market fee schedule with 0.00001 pUSD ceiling",
+    "maximum_pair_receipt_skew_ms": 250,
+    "minimum_sequential_delay": "two recorded taker delays; network and response latency excluded",
+    "research_quantity_shares": "5",
+    "settlement_labels_loaded": false,
+    "target_free": true,
+    "venue_delay": "recorded itode flag mapped through the protocol-defined delay"
+  },
+  "schema_version": "polymarket-round27-mechanics-diagnostic-v1"
+}
