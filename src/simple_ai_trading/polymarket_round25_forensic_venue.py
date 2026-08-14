@@ -62,9 +62,18 @@ def validate_round25_forensic_venue_parameter_audit(
         or payload.get("schema_version")
         != POLYMARKET_ROUND25_FORENSIC_VENUE_PARAMETER_SCHEMA_VERSION
         or payload.get("round") != 25
+        or payload.get("created_at_utc") != "2026-08-14T18:47:19Z"
         or payload.get("status")
         != "target_blind_venue_parameters_match_frozen_economic_replay"
         or not isinstance(source, Mapping)
+        or set(source)
+        != {
+            "evidence_manifest_sha256",
+            "forensic_audit_sha256",
+            "recorder_report_sha256",
+            "run_id",
+            "salvage_contract_sha256",
+        }
         or source.get("forensic_audit_sha256")
         != "8ee546844fada87ab4a542f6620bc5e83654b635b6a72145a338c02431c41276"
         or source.get("recorder_report_sha256")
@@ -75,6 +84,17 @@ def validate_round25_forensic_venue_parameter_audit(
         != "f46c9c629427ab5e2ce5582bdec9be7f6e67bc8f69831fc27ebde1b1f13eafcb"
         or source.get("run_id") != "f96a24bdaa2d4f5f8cdad3f06193a0ce"
         or not isinstance(boundary, Mapping)
+        or set(boundary)
+        != {
+            "database_mode",
+            "database_mutated",
+            "distinct_condition_count",
+            "model_scores_read",
+            "outcomes_or_resolutions_read",
+            "run_filter_applied",
+            "snapshot_row_count",
+            "table",
+        }
         or boundary.get("database_mode") != "read_only_inactive_wal_free"
         or boundary.get("table") != "polymarket_market_snapshot"
         or boundary.get("snapshot_row_count") != 111
@@ -89,6 +109,7 @@ def validate_round25_forensic_venue_parameter_audit(
             )
         )
         or not isinstance(observations, Mapping)
+        or set(observations) != {"fee_parameter_groups", "tick_size_groups"}
         or observations.get("tick_size_groups")
         != [
             {
@@ -107,6 +128,16 @@ def validate_round25_forensic_venue_parameter_audit(
             }
         ]
         or not isinstance(economics, Mapping)
+        or set(economics)
+        != {
+            "abort_if_admitted_population_differs",
+            "all_captured_conditions_match",
+            "fee_curve_exponent",
+            "fee_formula",
+            "per_market_parameter_assumption_allowed",
+            "stressed_tick_size",
+            "taker_fee_rate",
+        }
         or economics.get("all_captured_conditions_match") is not True
         or economics.get("stressed_tick_size") != "0.01"
         or economics.get("taker_fee_rate") != "0.07"
@@ -116,6 +147,16 @@ def validate_round25_forensic_venue_parameter_audit(
         or economics.get("per_market_parameter_assumption_allowed") is not False
         or economics.get("abort_if_admitted_population_differs") is not True
         or not isinstance(truth, Mapping)
+        or set(truth)
+        != {
+            "feature_store_published",
+            "live_trading_authority",
+            "paper_trading_authority",
+            "partition_manifest_published",
+            "profitability_claim",
+            "selection_predictions_frozen",
+            "targets_accessed",
+        }
         or any(value is not False for value in truth.values())
     ):
         raise ValueError("Round 25 forensic venue-parameter audit differs")
