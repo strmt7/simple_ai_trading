@@ -1,0 +1,131 @@
+{
+  "schema_version": "polymarket-round25-v2-condition-salvage-contract-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-14T17:18:00Z",
+  "status": "frozen_target_and_model_score_blind_before_forensic_materialization",
+  "parents": {
+    "transport_failure_forensic_audit_artifact_sha256": "8ee546844fada87ab4a542f6620bc5e83654b635b6a72145a338c02431c41276",
+    "transport_failure_forensic_audit_file_sha256": "91268c2964f49dcdeaff84426ab396815fab842e0c070808858030c495318578",
+    "joint_feature_materialization_contract_sha256": "57fb2cf088bdd64e3b6e05d087d5d4aa3d77cc484b8611be77b02cd12a34a6c2",
+    "campaign_plan_sha256": "a0b5525697c3c1e1b175bd0f0ac724fdb62845638d2040e9964221031d3e7b20"
+  },
+  "admissible_source": {
+    "run_id": "f96a24bdaa2d4f5f8cdad3f06193a0ce",
+    "segment_index": 2,
+    "recorder_status_must_remain": "failed",
+    "recorder_report_sha256": "45a613588f15ef45f57c51931d1b01e19f7cb7b0d6b08e7be0b0dd5b8d49631d",
+    "evidence_manifest_sha256": "9d45a88606239646302af3d0c8b3c1ffdbf824ea3836b73418bdaaad35f045d9",
+    "required_terminal_error_class": "retryable_clob_discovery_connection_timeout",
+    "required_integrity_errors": [],
+    "required_asset": "BTC",
+    "required_resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+    "required_streams": [
+      "clob_market",
+      "polymarket_rtds"
+    ],
+    "clob_rest_book_allowed_as_model_input": false,
+    "source_database_read_only": true,
+    "source_database_wal_allowed": false,
+    "receipt_scan_count": 1
+  },
+  "condition_admission": {
+    "unique_condition_id_required": true,
+    "market_snapshot_required": true,
+    "market_snapshot_must_precede_event_start": true,
+    "event_duration_ms": 300000,
+    "slug_format": "btc-updown-5m-{event_start_seconds}",
+    "source_window_lookback_ms": 120000,
+    "source_window_terminal_grace_ms": 5000,
+    "full_source_window_must_be_inside_run": true,
+    "gap_intersection_behavior": "reject_entire_condition",
+    "streams_whose_gaps_reject_condition": [
+      "clob_market",
+      "polymarket_rtds"
+    ],
+    "unledgered_connection_change_behavior": "reject_entire_condition",
+    "receipt_sequence_start_or_gap_behavior": "reject_entire_condition",
+    "clock_regression_or_offset_drift_behavior": "abort_materialization",
+    "duplicate_condition_behavior": "reject_materialization",
+    "partial_condition_rows_allowed": false
+  },
+  "causal_feature_policy": {
+    "authoritative_clob_lane_count": 1,
+    "clob_book_rebuild": "strict_full_book_and_price_change_events_top_20",
+    "rtds_topic": "crypto_prices_twap_thirty",
+    "rtds_symbol": "btc/usd",
+    "twap_window_seconds": 30,
+    "exact_e18_twap_required": true,
+    "point_price_substitution_allowed": false,
+    "binance_price_substitution_allowed": false,
+    "forward_or_backward_fill_allowed": false,
+    "decision_cadence_ms": 250,
+    "expected_decisions_per_condition": 1200,
+    "future_local_receipt_allowed": false,
+    "future_source_timestamp_allowed": false,
+    "future_publisher_timestamp_allowed": false,
+    "unavailable_joint_row_used_as_model_input": false
+  },
+  "bounded_persistence": {
+    "endpoint_selection": "four_target_blind_hash_ranked_available_rows_per_quarter_phase",
+    "endpoint_count_per_admitted_condition": 16,
+    "sequence_steps_per_endpoint": 64,
+    "sequence_cadence_ms": 250,
+    "persisted_rows": "deduplicated_selected_endpoints_and_condition_local_histories",
+    "condition_materialization_self_hash_required": true,
+    "persisted_snapshot_source_hashes_required": true,
+    "output_store_must_differ_from_source_database": true
+  },
+  "diagnostic_partition_policy": {
+    "applies_after_target_free_feature_store_is_frozen": true,
+    "unit": "admitted_condition_sorted_by_event_start_ms_then_condition_id",
+    "train_fraction": 0.6,
+    "calibration_fraction": 0.2,
+    "selection_fraction": 0.2,
+    "boundary_rule": "floor_fractional_condition_counts_then_assign_remainder_to_selection",
+    "purge_conditions_at_each_boundary": 2,
+    "chronological_order_preserved": true,
+    "minimum_total_admitted_conditions": 50,
+    "minimum_selection_conditions": 8,
+    "selection_access": "single_use_after_predictions_and_cost_replay_parameters_are_frozen",
+    "formal_round25_selection_partition_replaced": false,
+    "diagnostic_only": true
+  },
+  "access_order": [
+    "validate_transport_failure_and_source_hashes",
+    "load_target_free_condition_identities",
+    "freeze_condition_identity_manifest",
+    "scan_hash_checked_receipts_once_and_materialize_features",
+    "freeze_feature_store_and_diagnostic_partition_manifest",
+    "freeze_candidates_predictions_and_after_cost_replay_parameters",
+    "access_official_resolutions_once",
+    "publish_predictive_and_after_cost_diagnostic"
+  ],
+  "prohibited": {
+    "targets_or_resolutions_before_feature_freeze": true,
+    "model_scores_before_feature_freeze": true,
+    "candidate_reselection_after_selection_access": true,
+    "manual_condition_or_endpoint_selection": true,
+    "status_reclassification": true,
+    "source_database_mutation": true,
+    "paper_or_live_order_submission": true
+  },
+  "claims_and_authority": {
+    "predictive_edge_claim_allowed": false,
+    "profitability_claim_allowed": false,
+    "ai_uplift_claim_allowed": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "purpose": "short_horizon_viability_diagnostic_only"
+  },
+  "truth_state": {
+    "conditions_loaded": false,
+    "feature_store_created": false,
+    "targets_or_resolutions_accessed": false,
+    "models_fitted": false,
+    "after_cost_replay_completed": false,
+    "diagnostic_viability_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "contract_sha256": "f46c9c629427ab5e2ce5582bdec9be7f6e67bc8f69831fc27ebde1b1f13eafcb"
+}
