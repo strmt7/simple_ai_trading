@@ -207,6 +207,11 @@ def _render(result: Mapping[str, object], destination: Path) -> None:
         metadata={"Creator": "simple-ai-trading evidence renderer", "Date": None},
     )
     plt.close(figure)
+    svg = destination.read_text(encoding="utf-8")
+    _write_text(
+        destination,
+        "\n".join(line.rstrip() for line in svg.splitlines()) + "\n",
+    )
 
 
 def _parser() -> argparse.ArgumentParser:

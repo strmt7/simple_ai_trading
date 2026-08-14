@@ -67,6 +67,10 @@ def test_forensic_figure_manifest_matches_every_source_file() -> None:
         assert hashlib.sha256((PUBLICATION / filename).read_bytes()).hexdigest() == (
             expected
         )
+    svg = (PUBLICATION / "round25-selection-diagnostic.svg").read_text(
+        encoding="ascii"
+    )
+    assert all(line == line.rstrip() for line in svg.splitlines())
 
 
 def test_forensic_readme_states_the_failed_gates_and_utc_window() -> None:
