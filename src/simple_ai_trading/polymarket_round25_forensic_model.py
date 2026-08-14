@@ -972,6 +972,7 @@ def evaluate_round25_forensic_selection(
             {
                 "condition_id": target.condition_id,
                 "entry_cost_quote": float(cost),
+                "event_start_ms": target.event_start_ms,
                 "fee_quote": float(fee),
                 "net_pnl_quote": trade_pnl,
                 "outcome": str(trade["outcome"]),
@@ -1144,6 +1145,7 @@ def validate_round25_forensic_result(
                 "condition_id",
                 "cumulative_net_pnl_quote",
                 "entry_cost_quote",
+                "event_start_ms",
                 "fee_quote",
                 "net_pnl_quote",
                 "outcome",
@@ -1152,6 +1154,10 @@ def validate_round25_forensic_result(
             or _CONDITION_ID.fullmatch(str(trade.get("condition_id") or "")) is None
             or trade.get("outcome") not in {"Up", "Down"}
             or type(trade.get("resolved_up")) is not bool
+            or type(trade.get("event_start_ms")) is not int
+            or not body["selection_start_ms"]
+            <= trade["event_start_ms"]
+            < body["selection_end_ms"]
             or any(
                 not isinstance(trade.get(field), (int, float))
                 or isinstance(trade.get(field), bool)

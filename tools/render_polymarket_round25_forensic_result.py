@@ -49,6 +49,8 @@ def _trade_csv(result: Mapping[str, object]) -> str:
     columns = (
         "trade_index",
         "condition_id",
+        "event_start_ms",
+        "event_start_utc",
         "outcome",
         "resolved_up",
         "entry_cost_quote",
@@ -69,7 +71,14 @@ def _trade_csv(result: Mapping[str, object]) -> str:
     assert isinstance(trades, list)
     for index, trade in enumerate(trades, start=1):
         assert isinstance(trade, Mapping)
-        writer.writerow({"trade_index": index, **trade})
+        event_start = datetime.fromtimestamp(int(trade["event_start_ms"]) / 1_000, tz=UTC)
+        writer.writerow(
+            {
+                "trade_index": index,
+                **trade,
+                "event_start_utc": event_start.isoformat(),
+            }
+        )
     return "".join(lines)
 
 
@@ -109,7 +118,10 @@ def _render(result: Mapping[str, object], destination: Path) -> None:
     pnl_axis = axes[0]
     pnl_axis.axhline(0.0, color="#9aa7b0", linewidth=1.0, zorder=0)
     if trades:
-        x = np.arange(1, len(trades) + 1)
+        x = [
+            datetime.fromtimestamp(int(trade["event_start_ms"]) / 1_000, tz=UTC)
+            for trade in trades
+        ]
         cumulative = np.asarray(
             [float(trade["cumulative_net_pnl_quote"]) for trade in trades]
         )
@@ -123,7 +135,7 @@ def _render(result: Mapping[str, object], destination: Path) -> None:
             color="#16697a",
             fontweight="bold",
         )
-        pnl_axis.set_xlim(0.5, len(trades) + 0.8)
+        pnl_axis.tick_params(axis="x", rotation=20)
     else:
         pnl_axis.text(
             0.5,
@@ -137,7 +149,7 @@ def _render(result: Mapping[str, object], destination: Path) -> None:
         )
         pnl_axis.set_xticks([])
     pnl_axis.set_title("After-cost cumulative P&L", loc="left", fontweight="bold")
-    pnl_axis.set_xlabel("Closed trade")
+    pnl_axis.set_xlabel("Market start (UTC)")
     pnl_axis.set_ylabel("Net P&L (USDC)")
     pnl_axis.grid(axis="y", color="#dce3e7", linewidth=0.8)
     pnl_axis.spines[["top", "right"]].set_visible(False)
