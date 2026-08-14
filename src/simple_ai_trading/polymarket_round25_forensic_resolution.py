@@ -325,10 +325,24 @@ def initialize_round25_forensic_resolution_collection(
         raise ValueError("Round 25 forensic resolution destination differs")
     if destination.exists():
         with duckdb.connect(str(destination), read_only=True) as connection:
-            existing, _conditions = _load_collection(connection)
-            if existing != claim:
+            existing, existing_conditions = _load_collection(connection)
+            expected_existing_body = {
+                **body,
+                "created_at_ms": existing["created_at_ms"],
+            }
+            expected_existing = _validate_claim(
+                {
+                    **expected_existing_body,
+                    "claim_sha256": _canonical_sha256(expected_existing_body),
+                }
+            )
+            if (
+                existing != expected_existing
+                or _condition_population_sha256(existing_conditions)
+                != population_sha256
+            ):
                 raise ValueError("Round 25 forensic resolution claim drifted")
-        return destination, claim
+        return destination, existing
     destination.parent.mkdir(parents=True, exist_ok=True)
     initializing = destination.with_name(f".{destination.name}.initializing")
     if initializing.exists() or Path(f"{initializing}.wal").exists():
