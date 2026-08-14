@@ -1064,11 +1064,22 @@ class PolymarketEvidenceReplay:
                         arrival_delay,
                     )
                     if (
-                        source_skew > _CAUSAL_REORDER_MAX_SOURCE_SKEW_MS
-                        or not 0 <= arrival_delay <= _CAUSAL_REORDER_MAX_ARRIVAL_NS
+                        arrival_delay != 0
+                        and (
+                            source_skew > _CAUSAL_REORDER_MAX_SOURCE_SKEW_MS
+                            or not 0
+                            <= arrival_delay
+                            <= _CAUSAL_REORDER_MAX_ARRIVAL_NS
+                        )
                     ):
                         raise ValueError(
-                            "CLOB event exceeded the bounded causal reorder window"
+                            "CLOB event exceeded the bounded causal reorder window: "
+                            f"condition={condition} event_id={row.event_id} "
+                            f"event_type={row.event_type} connection={row.connection_id} "
+                            f"source_time_ms={source_time} "
+                            f"maximum_source_time_ms={maximum_source_time} "
+                            f"source_skew_ms={source_skew} "
+                            f"arrival_delay_ns={arrival_delay}"
                         )
                 else:
                     source_watermarks[segment_key] = (

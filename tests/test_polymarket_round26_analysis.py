@@ -18,6 +18,7 @@ from simple_ai_trading.polymarket_round26_analysis import (
     _configuration_result,
     _execute_settlement_trade,
     _execute_taker_trade,
+    _executable_event_scope,
     _maximum_drawdown,
     _return_bps,
     _settlement_configuration_result,
@@ -171,6 +172,26 @@ def test_source_points_use_prevalidated_segmented_source_reconstruction() -> Non
     assert futures == ()
     assert twap == ()
     assert event_count == 1
+
+
+def test_executable_scope_excludes_books_at_documented_close() -> None:
+    class Connection:
+        def execute(self, query, arguments):
+            assert "polymarket_market_snapshot" in query
+            assert arguments == ["round26"]
+            return self
+
+        def fetchall(self):
+            return [("Condition-B", 2_000), ("condition-a", 1_000)]
+
+    class Store:
+        def connect(self):
+            return Connection()
+
+    assert _executable_event_scope(Store(), "round26") == {
+        "condition-a": 999,
+        "condition-b": 1_999,
+    }
 
 
 def test_twap_point_preserves_exact_e18_value() -> None:
