@@ -32,7 +32,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data/round26-twap60-development-analysis-v1.json"),
+        default=Path("data/round26-twap60-development-analysis-v2.json"),
     )
     return parser
 
