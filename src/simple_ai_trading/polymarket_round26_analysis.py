@@ -22,6 +22,10 @@ from .polymarket_round26_pilot import (
     Round26PilotContract,
     load_round26_pilot_contract,
 )
+from .polymarket_twap60 import (
+    PolymarketTwap60Tick,
+    parse_polymarket_twap60_tick,
+)
 from .storage import write_bytes_atomic
 
 
@@ -99,15 +103,6 @@ class _PricePoint:
 
 
 @dataclass(frozen=True, slots=True)
-class _TwapPoint:
-    source_time_ms: int
-    publisher_time_ms: int
-    received_wall_ms: int
-    received_monotonic_ns: int
-    exact_e18: int
-
-
-@dataclass(frozen=True, slots=True)
 class _Signal:
     received_monotonic_ns: int
     received_wall_ms: int
@@ -151,42 +146,13 @@ class _Trade:
     net_pnl: Decimal
 
 
-def _twap_point(event: DecodedPublicEvent) -> _TwapPoint | None:
+def _twap_point(event: DecodedPublicEvent) -> PolymarketTwap60Tick | None:
     if event.event_type != "crypto_prices_twap_sixty:update":
         return None
-    message = event.event
-    payload = message.get("payload")
-    if (
-        message.get("topic") != "crypto_prices_twap_sixty"
-        or message.get("type") != "update"
-        or not isinstance(payload, Mapping)
-    ):
-        raise ValueError("Round 26 TWAP60 event identity differs")
-    source_time = payload.get("timestamp")
-    publisher_time = message.get("timestamp")
-    exact_text = payload.get("full_accuracy_value")
-    if (
-        isinstance(source_time, bool)
-        or not isinstance(source_time, int)
-        or source_time <= 0
-        or source_time % 1_000 != 0
-        or isinstance(publisher_time, bool)
-        or not isinstance(publisher_time, int)
-        or publisher_time < source_time
-        or payload.get("symbol") != "btc/usd"
-        or payload.get("window_s") != 60
-        or not isinstance(exact_text, str)
-        or not exact_text.isascii()
-        or not exact_text.isdigit()
-        or int(exact_text) <= 0
-    ):
-        raise ValueError("Round 26 TWAP60 payload differs")
-    return _TwapPoint(
-        source_time_ms=source_time,
-        publisher_time_ms=publisher_time,
+    return parse_polymarket_twap60_tick(
+        event.event,
         received_wall_ms=event.received_wall_ms,
         received_monotonic_ns=event.received_monotonic_ns,
-        exact_e18=int(exact_text),
     )
 
 
@@ -196,7 +162,7 @@ def _source_points(
 ) -> tuple[
     tuple[_PricePoint, ...],
     tuple[_PricePoint, ...],
-    tuple[_TwapPoint, ...],
+    tuple[PolymarketTwap60Tick, ...],
     int,
 ]:
     """Load CEX trades and TWAP60 after validating the complete replay.
@@ -211,7 +177,7 @@ def _source_points(
         "binance_spot": [],
         "binance_futures": [],
     }
-    twap: list[_TwapPoint] = []
+    twap: list[PolymarketTwap60Tick] = []
     event_count = 0
     for event in store.iter_public_events(
         run_id,
@@ -256,9 +222,9 @@ def _source_points(
 def _settlement_mechanism_audit(
     markets: Sequence[PolymarketFiveMinuteMarket],
     resolutions: Sequence[PolymarketResolutionEvidence],
-    twap_points: Sequence[_TwapPoint],
+    twap_points: Sequence[PolymarketTwap60Tick],
 ) -> dict[str, object]:
-    by_source_time: dict[int, _TwapPoint] = {}
+    by_source_time: dict[int, PolymarketTwap60Tick] = {}
     duplicate_count = 0
     for point in twap_points:
         existing = by_source_time.get(point.source_time_ms)
