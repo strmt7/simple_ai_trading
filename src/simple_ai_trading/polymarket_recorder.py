@@ -7613,73 +7613,94 @@ class PolymarketPublicRecorder:
                     heartbeat_task = asyncio.create_task(
                         _periodic_text_heartbeat(websocket, stop, "PING", 10.0)
                     )
-                    receive = asyncio.create_task(websocket.recv())
-                    changed = asyncio.create_task(self.registry.changed.wait())
+                    async def receive_frames() -> None:
+                        nonlocal sequence
+                        while not stop.is_set():
+                            async with asyncio.timeout(_STREAM_INACTIVITY_SECONDS):
+                                raw = await websocket.recv()
+                            next_sequence = sequence + 1
+                            await self._emit_raw_message(
+                                output,
+                                RawStreamMessage(
+                                    "clob_market",
+                                    connection_id,
+                                    next_sequence,
+                                    _wall_ms(),
+                                    _monotonic_ns(),
+                                    _text_frame(raw),
+                                ),
+                            )
+                            sequence = next_sequence
+
+                    async def update_subscriptions() -> None:
+                        nonlocal current
+                        while not stop.is_set():
+                            await self.registry.changed.wait()
+                            if stop.is_set():
+                                return
+                            self.registry.changed.clear()
+                            desired = set(self.registry.token_ids())
+                            additions = sorted(desired - current)
+                            removals = sorted(current - desired)
+                            if additions:
+                                await websocket.send(
+                                    _canonical_json(
+                                        {
+                                            "assets_ids": additions,
+                                            "operation": "subscribe",
+                                            "custom_feature_enabled": True,
+                                        }
+                                    )
+                                )
+                            if removals:
+                                await websocket.send(
+                                    _canonical_json(
+                                        {
+                                            "assets_ids": removals,
+                                            "operation": "unsubscribe",
+                                        }
+                                    )
+                                )
+                            current = desired
+
+                    receiver_task = asyncio.create_task(receive_frames())
+                    subscription_task = asyncio.create_task(update_subscriptions())
                     stopping = asyncio.create_task(stop.wait())
                     try:
-                        while not stop.is_set():
-                            done, _ = await asyncio.wait(
-                                {receive, changed, stopping, heartbeat_task},
-                                timeout=_STREAM_INACTIVITY_SECONDS,
-                                return_when=asyncio.FIRST_COMPLETED,
-                            )
-                            if not done:
-                                raise RuntimeError(
-                                    "CLOB market stream exceeded the inactivity bound"
-                                )
-                            if heartbeat_task in done:
-                                heartbeat_task.result()
-                                if stop.is_set():
-                                    return
-                                raise RuntimeError("CLOB heartbeat stopped early")
-                            if stopping in done and stopping.result():
+                        watched: set[asyncio.Task[object]] = {
+                            receiver_task,
+                            subscription_task,
+                            stopping,
+                            heartbeat_task,
+                        }
+                        done, _ = await asyncio.wait(
+                            watched,
+                            return_when=asyncio.FIRST_COMPLETED,
+                        )
+                        if stopping in done and stopping.result():
+                            return
+                        if heartbeat_task in done:
+                            heartbeat_task.result()
+                            if stop.is_set():
                                 return
-                            if receive in done:
-                                raw = receive.result()
-                                next_sequence = sequence + 1
-                                await self._emit_raw_message(
-                                    output,
-                                    RawStreamMessage(
-                                        "clob_market",
-                                        connection_id,
-                                        next_sequence,
-                                        _wall_ms(),
-                                        _monotonic_ns(),
-                                        _text_frame(raw),
-                                    ),
-                                )
-                                sequence = next_sequence
-                                receive = asyncio.create_task(websocket.recv())
-                            if changed in done and changed.result():
-                                self.registry.changed.clear()
-                                desired = set(self.registry.token_ids())
-                                additions = sorted(desired - current)
-                                removals = sorted(current - desired)
-                                if additions:
-                                    await websocket.send(
-                                        _canonical_json(
-                                            {
-                                                "assets_ids": additions,
-                                                "operation": "subscribe",
-                                                "custom_feature_enabled": True,
-                                            }
-                                        )
-                                    )
-                                if removals:
-                                    await websocket.send(
-                                        _canonical_json(
-                                            {
-                                                "assets_ids": removals,
-                                                "operation": "unsubscribe",
-                                            }
-                                        )
-                                    )
-                                current = desired
-                                changed = asyncio.create_task(
-                                    self.registry.changed.wait()
+                            raise RuntimeError("CLOB heartbeat stopped early")
+                        if receiver_task in done:
+                            receiver_task.result()
+                            if not stop.is_set():
+                                raise RuntimeError("CLOB receiver stopped early")
+                        if subscription_task in done:
+                            subscription_task.result()
+                            if not stop.is_set():
+                                raise RuntimeError(
+                                    "CLOB subscription updater stopped early"
                                 )
                     finally:
-                        tasks = (receive, changed, stopping, heartbeat_task)
+                        tasks = (
+                            receiver_task,
+                            subscription_task,
+                            stopping,
+                            heartbeat_task,
+                        )
                         for task in tasks:
                             if not task.done():
                                 task.cancel()

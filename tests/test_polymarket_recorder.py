@@ -1825,6 +1825,17 @@ def test_busy_clob_stream_reuses_control_waiters_and_updates_subscriptions(
     monkeypatch,
 ) -> None:
     recorder = PolymarketPublicRecorder(tmp_path / "clob-hot-path.duckdb")
+    original_create_task = asyncio.create_task
+    receive_task_creations = 0
+
+    def _tracked_create_task(coroutine, *args, **kwargs):
+        nonlocal receive_task_creations
+        code = getattr(coroutine, "cr_code", None)
+        if code is not None and code.co_name == "recv":
+            receive_task_creations += 1
+        return original_create_task(coroutine, *args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "create_task", _tracked_create_task)
 
     class _CountingEvent:
         def __init__(self) -> None:
@@ -1903,6 +1914,7 @@ def test_busy_clob_stream_reuses_control_waiters_and_updates_subscriptions(
     assert message_count == 64
     assert any(message.get("operation") == "subscribe" for message in subscriptions)
     assert changed_wait_calls == 2
+    assert receive_task_creations == 0
 
 
 def test_busy_simple_stream_reuses_one_stop_waiter(tmp_path, monkeypatch) -> None:
