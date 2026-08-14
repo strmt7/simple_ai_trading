@@ -646,7 +646,9 @@ def fit_and_freeze_round25_forensic_models(
         **prediction_body,
         "prediction_artifact_sha256": _canonical_sha256(prediction_body),
     }
-    return model_fit, validate_round25_forensic_prediction_artifact(prediction)
+    return validate_round25_forensic_model_fit(model_fit), (
+        validate_round25_forensic_prediction_artifact(prediction)
+    )
 
 
 def _freeze_trade_policy(rows: _Rows, probability: np.ndarray) -> list[dict[str, object]]:
@@ -718,9 +720,123 @@ def write_round25_forensic_model_artifacts(
     model_fit: Mapping[str, object],
     prediction: Mapping[str, object],
 ) -> tuple[Path, Path]:
-    return _write_once(model_fit_path, model_fit), _write_once(
-        prediction_path, prediction
+    return _write_once(
+        model_fit_path,
+        validate_round25_forensic_model_fit(model_fit),
+    ), _write_once(
+        prediction_path,
+        validate_round25_forensic_prediction_artifact(prediction),
     )
+
+
+def validate_round25_forensic_model_fit(
+    value: Mapping[str, object],
+) -> dict[str, object]:
+    if not isinstance(value, Mapping):
+        raise TypeError("Round 25 forensic model-fit artifact type differs")
+    body = dict(value)
+    claimed = str(body.pop("model_fit_sha256", "")).strip().lower()
+    expected = {
+        "calibration_condition_count",
+        "candidate_metrics",
+        "candidates",
+        "evaluation_contract_sha256",
+        "feature_store_manifest_sha256",
+        "fit_resolution_claim_sha256",
+        "live_trading_authority",
+        "paper_trading_authority",
+        "partition_sha256",
+        "profitability_claim",
+        "schema_version",
+        "selected_candidate_id",
+        "selection_targets_accessed",
+        "train_condition_count",
+    }
+    candidates = body.get("candidates")
+    metrics = body.get("candidate_metrics")
+    selected = body.get("selected_candidate_id")
+    metric_names = {
+        "balanced_accuracy",
+        "condition_equal_brier_score",
+        "condition_equal_log_loss",
+        "direction_accuracy",
+        "expected_calibration_error",
+        "roc_auc",
+    }
+    if (
+        set(body) != expected
+        or claimed != _canonical_sha256(body)
+        or _SHA256.fullmatch(claimed) is None
+        or body.get("schema_version")
+        != POLYMARKET_ROUND25_FORENSIC_MODEL_FIT_SCHEMA_VERSION
+        or body.get("evaluation_contract_sha256")
+        != POLYMARKET_ROUND25_FORENSIC_EVALUATION_CONTRACT_SHA256
+        or any(
+            _SHA256.fullmatch(str(body.get(field) or "")) is None
+            for field in (
+                "feature_store_manifest_sha256",
+                "fit_resolution_claim_sha256",
+                "partition_sha256",
+            )
+        )
+        or type(body.get("train_condition_count")) is not int
+        or body["train_condition_count"] < 1
+        or type(body.get("calibration_condition_count")) is not int
+        or body["calibration_condition_count"] < 1
+        or not isinstance(candidates, Mapping)
+        or set(candidates) != set(_CANDIDATES)
+        or not isinstance(metrics, Mapping)
+        or not {"market-prior-v1", str(selected)} <= set(metrics)
+        or not set(metrics) <= set(_CANDIDATES)
+        or selected not in _CANDIDATES
+        or any(
+            not isinstance(metric, Mapping)
+            or set(metric) != metric_names
+            or any(
+                not isinstance(item, (int, float))
+                or isinstance(item, bool)
+                or not math.isfinite(float(item))
+                for item in metric.values()
+            )
+            for metric in metrics.values()
+        )
+        or any(
+            body.get(field) is not False
+            for field in (
+                "live_trading_authority",
+                "paper_trading_authority",
+                "profitability_claim",
+                "selection_targets_accessed",
+            )
+        )
+    ):
+        raise ValueError("Round 25 forensic model-fit artifact differs")
+    prior = metrics["market-prior-v1"]
+    admissible = [
+        candidate_id
+        for candidate_id, candidate_metric in metrics.items()
+        if candidate_id != "market-prior-v1"
+        and candidate_metric["condition_equal_log_loss"]
+        < prior["condition_equal_log_loss"]
+        and candidate_metric["condition_equal_brier_score"]
+        < prior["condition_equal_brier_score"]
+    ]
+    expected_selected = min(
+        admissible,
+        key=lambda candidate_id: (
+            metrics[candidate_id]["condition_equal_log_loss"],
+            metrics[candidate_id]["condition_equal_brier_score"],
+            _CANDIDATES.index(candidate_id),
+        ),
+        default="market-prior-v1",
+    )
+    if (
+        selected != expected_selected
+        or not isinstance(candidates[selected], Mapping)
+        or candidates[selected].get("status") not in {"fitted", "fitted_control"}
+    ):
+        raise ValueError("Round 25 forensic candidate nomination differs")
+    return {**body, "model_fit_sha256": claimed}
 
 
 def validate_round25_forensic_prediction_artifact(
@@ -1210,6 +1326,7 @@ __all__ = [
     "POLYMARKET_ROUND25_FORENSIC_RESULT_SCHEMA_VERSION",
     "evaluate_round25_forensic_selection",
     "fit_and_freeze_round25_forensic_models",
+    "validate_round25_forensic_model_fit",
     "validate_round25_forensic_result",
     "validate_round25_forensic_prediction_artifact",
     "write_round25_forensic_model_artifacts",

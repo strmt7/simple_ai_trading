@@ -11,6 +11,7 @@ import time
 from simple_ai_trading.polymarket_round25_forensic_model import (
     evaluate_round25_forensic_selection,
     fit_and_freeze_round25_forensic_models,
+    validate_round25_forensic_model_fit,
     validate_round25_forensic_prediction_artifact,
     write_round25_forensic_model_artifacts,
     write_round25_forensic_result,
@@ -107,6 +108,11 @@ def _selection(
     prediction = validate_round25_forensic_prediction_artifact(
         _mapping(args.predictions, label="prediction artifact")
     )
+    model_fit = validate_round25_forensic_model_fit(
+        _mapping(args.model_fit, label="model-fit artifact")
+    )
+    if model_fit["model_fit_sha256"] != prediction["model_fit_sha256"]:
+        raise ValueError("Round 25 forensic fitted model and prediction differ")
     access = prediction["access_freeze"]
     if not isinstance(access, Mapping):
         raise ValueError("Round 25 forensic selection freeze is unavailable")
