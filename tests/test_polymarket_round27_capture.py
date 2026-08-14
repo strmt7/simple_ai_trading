@@ -12,13 +12,18 @@ from simple_ai_trading.polymarket_recorder import RecorderReport
 from simple_ai_trading.polymarket_round27_capture import (
     ROUND27_CAPTURE_DURATION_SECONDS,
     ROUND27_DATABASE_CAP_BYTES,
+    ROUND27_STAGE0_DURATION_SECONDS,
+    ROUND27_STAGE0_MAXIMUM_RESOLVED_MARKETS,
     Round27CaptureConfig,
     _create_recorder,
     _database_footprint_bytes,
     _manifest,
     create_round27_capture_contract,
+    create_round27_stage0_capture_contract,
     run_round27_capture,
+    run_round27_stage0_capture,
     validate_round27_capture_contract,
+    validate_round27_stage0_capture_contract,
     write_round27_capture_contract,
 )
 
@@ -97,6 +102,25 @@ def test_round27_capture_contract_rejects_rehashed_semantic_drift() -> None:
 
     with pytest.raises(ValueError, match="contract differs"):
         validate_round27_capture_contract(payload, repository=ROOT)
+
+
+def test_round27_stage0_contract_caps_analysis_without_granting_authority() -> None:
+    payload = create_round27_stage0_capture_contract(ROOT, created_at_ms=1_000)
+    contract = validate_round27_stage0_capture_contract(payload, repository=ROOT)
+
+    assert contract.phase == "mechanics_stage0"
+    assert contract.capture_duration_seconds == ROUND27_STAGE0_DURATION_SECONDS
+    assert payload["analysis_policy"] == {
+        "maximum_resolved_markets": ROUND27_STAGE0_MAXIMUM_RESOLVED_MARKETS,
+        "target_access_during_capture": False,
+        "condition_local_transport_audit_required": True,
+        "parameter_selection_allowed": False,
+        "economic_claim_allowed": False,
+    }
+    assert payload["success_gate"]["transport_gap_policy"] == (
+        "condition_local_exclusion"
+    )
+    assert payload["authority"]["model_data_eligible"] is False
 
 
 def test_round27_published_source_smoke_is_self_hashed_and_non_authorizing() -> None:
@@ -241,5 +265,46 @@ def test_round27_run_fails_on_gap_even_when_source_types_pass(
     )
 
     assert result["status"] == "failed"
-    assert "terminal_recorder_status_complete" in result["failure_reasons"]
+    assert "terminal_recorder_status_accepted" in result["failure_reasons"]
     assert "stream_gap_count_zero" in result["failure_reasons"]
+
+
+def test_round27_stage0_accepts_gap_degraded_capture_for_local_audit(
+    tmp_path: Path,
+) -> None:
+    contract_path = tmp_path / "contract.json"
+    write_round27_capture_contract(
+        contract_path,
+        create_round27_stage0_capture_contract(ROOT, created_at_ms=1_000),
+    )
+    report = replace(_report(status="degraded"), stream_gap_count=1)
+
+    class Recorder:
+        async def run(self, **options):
+            assert options["duration_seconds"] == ROUND27_STAGE0_DURATION_SECONDS
+            return report
+
+    result = asyncio.run(
+        run_round27_stage0_capture(
+            Round27CaptureConfig(
+                repository=ROOT,
+                contract_path=contract_path,
+                database_path=tmp_path / "capture.duckdb",
+                result_path=tmp_path / "result.json",
+                lock_path=tmp_path / "capture.lock",
+            ),
+            recorder_factory=lambda _path: Recorder(),
+            source_audit=lambda _path, _run_id: {"passed": True},
+        )
+    )
+
+    assert result["status"] == "passed"
+    assert "stream_gap_count_zero" not in result["gate_checks"]
+    assert result["analysis_policy"] == {
+        "maximum_resolved_markets": 60,
+        "captured_condition_count": 1,
+        "condition_local_transport_audit_required": True,
+        "stream_gap_count": 1,
+        "model_data_eligible_before_condition_audit": False,
+    }
+    assert result["authority"]["model_data_eligible"] is False
