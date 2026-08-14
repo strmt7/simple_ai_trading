@@ -454,6 +454,10 @@ class Round25ClobFeatureEngine:
         self.event_end_ms = event_start_ms + POLYMARKET_ROUND25_CONDITION_DURATION_MS
         self._series = {up: _RollingBookSeries(), down: _RollingBookSeries()}
         self._last_token_monotonic_ns = {up: 0, down: 0}
+        self._last_token_identity: dict[str, tuple[int, str] | None] = {
+            up: None,
+            down: None,
+        }
         self._source_chain = _EMPTY_SHA256
         self._last_monotonic_ns = 0
         self._gap_detected = False
@@ -468,7 +472,12 @@ class Round25ClobFeatureEngine:
             or snapshot.asset_id not in self._series
             or point.received_monotonic_ns < self._last_monotonic_ns
             or point.received_monotonic_ns
-            <= self._last_token_monotonic_ns[snapshot.asset_id]
+            < self._last_token_monotonic_ns[snapshot.asset_id]
+            or (
+                point.received_monotonic_ns,
+                point.source_payload_sha256,
+            )
+            == self._last_token_identity[snapshot.asset_id]
             or not self.event_start_ms <= point.source_time_ms <= self.event_end_ms
         ):
             raise ValueError("Round 25 CLOB snapshot identity or chronology differs")
@@ -484,6 +493,10 @@ class Round25ClobFeatureEngine:
             },
         )
         self._last_token_monotonic_ns[snapshot.asset_id] = point.received_monotonic_ns
+        self._last_token_identity[snapshot.asset_id] = (
+            point.received_monotonic_ns,
+            point.source_payload_sha256,
+        )
         self._last_monotonic_ns = point.received_monotonic_ns
 
     def _unavailable(

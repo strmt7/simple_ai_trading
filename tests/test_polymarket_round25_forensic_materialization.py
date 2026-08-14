@@ -10,6 +10,9 @@ from simple_ai_trading.polymarket_recorder import RawStreamMessage, StreamGap
 from simple_ai_trading.polymarket_round21_core_features import (
     build_round21_execution_books,
 )
+from simple_ai_trading.polymarket_round25_clob_features import (
+    Round25ClobFeatureEngine,
+)
 from simple_ai_trading.polymarket_round25_campaign import (
     POLYMARKET_ROUND25_RESOLUTION_SOURCE,
 )
@@ -129,6 +132,20 @@ def test_single_clob_frame_can_carry_multiple_book_events_for_one_token() -> Non
     assert len(books) == 2
     assert books[0].received_wall_ms == books[1].received_wall_ms
     assert books[0].source_payload_sha256 != books[1].source_payload_sha256
+    assert [book.source_time_ms for book in books] == [
+        EVENT_START_MS + 900,
+        EVENT_START_MS + 950,
+    ]
+    engine = Round25ClobFeatureEngine(
+        condition_id=CONDITION_ID,
+        up_token_id=token,
+        down_token_id=other,
+        event_start_ms=EVENT_START_MS,
+    )
+    engine.ingest(books[0])
+    engine.ingest(books[1])
+    with pytest.raises(ValueError, match="chronology"):
+        engine.ingest(books[1])
 
 
 def test_forensic_materializer_publishes_atomic_non_authorizing_store(
