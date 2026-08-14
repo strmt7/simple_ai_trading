@@ -258,14 +258,23 @@ class _RollingBookSeries:
         top_signed, top_gross, imbalance, level_signed, level_gross = (
             prefix[right] - prefix[left] for prefix in self.prefixes
         )
-        gross_tolerance = 1e-12 * max(1.0, top_gross, level_gross)
-        if (
-            top_gross < -gross_tolerance
-            or level_gross < -gross_tolerance
-            or abs(top_signed) > top_gross + gross_tolerance
-            or abs(level_signed) > level_gross + gross_tolerance
-            or abs(imbalance) > count + 1e-12 * max(1, count)
-        ):
+        def inconsistent() -> bool:
+            gross_tolerance = 1e-12 * max(1.0, top_gross, level_gross)
+            return (
+                top_gross < -gross_tolerance
+                or level_gross < -gross_tolerance
+                or abs(top_signed) > top_gross + gross_tolerance
+                or abs(level_signed) > level_gross + gross_tolerance
+                or abs(imbalance) > count + 1e-12 * max(1, count)
+            )
+
+        if inconsistent():
+            top_signed = math.fsum(self.top_ofi[left:right])
+            top_gross = math.fsum(self.top_gross[left:right])
+            imbalance = math.fsum(self.top_imbalance[left:right])
+            level_signed = math.fsum(self.level_pressure[left:right])
+            level_gross = math.fsum(self.level_gross[left:right])
+        if inconsistent():
             raise RuntimeError("Round 25 CLOB flow accounting differs")
         top_gross = max(0.0, top_gross)
         level_gross = max(0.0, level_gross)
