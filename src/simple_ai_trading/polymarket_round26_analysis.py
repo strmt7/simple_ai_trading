@@ -9,7 +9,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Callable, Mapping, Sequence
 
 from .polymarket import PolymarketFiveMinuteMarket
 from .polymarket_recorder import DecodedPublicEvent, PolymarketEvidenceStore
@@ -217,8 +217,10 @@ def _source_points(
             price = float(payload.get("p"))
         except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError("Round 26 Binance trade price differs") from exc
-        if not math.isfinite(price) or price <= 0:
-            raise ValueError("Round 26 Binance trade price differs")
+        if not math.isfinite(price):
+            raise ValueError("Round 26 Binance trade price is non-finite")
+        if price <= 0:
+            raise ValueError("Round 26 Binance trade price is non-positive")
         points = by_stream[event.stream]
         point = _PricePoint(
             received_monotonic_ns=event.received_monotonic_ns,
@@ -771,13 +773,19 @@ def run_round26_pilot_analysis(
     database_path: str | Path,
     capture_result_path: str | Path,
     output_path: str | Path,
+    progress: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> dict[str, object]:
+    def notify(phase: str, **payload: object) -> None:
+        if progress is not None:
+            progress(phase, payload)
+
     root = Path(repository).resolve()
     contract = load_round26_pilot_contract(contract_path, repository=root)
     capture = _load_capture_result(Path(capture_result_path), contract)
     if capture["integrity_errors"]:
         raise ValueError("Round 26 pilot has terminal integrity errors")
     run_id = str(capture.get("run_id") or "")
+    notify("replay_started", run_id=run_id)
     with PolymarketEvidenceStore(
         database_path,
         read_only=True,
@@ -795,7 +803,19 @@ def run_round26_pilot_analysis(
             materialized_minimum_depth_levels=1,
             cap_materialized_depth_to_minimum_order_size=True,
         )
+        notify(
+            "replay_complete",
+            market_count=len(replay.markets),
+            materialized_book_count=len(replay.books),
+        )
         spot, futures, twap_points, source_event_count = _source_points(store, run_id)
+        notify(
+            "source_reconstruction_complete",
+            source_event_count=source_event_count,
+            binance_spot_trade_count=len(spot),
+            binance_futures_trade_count=len(futures),
+            twap_point_count=len(twap_points),
+        )
     markets = tuple(sorted(replay.markets, key=lambda market: market.event_start_ms))
     starts = tuple(market.event_start_ms for market in markets)
     series_by_token = _book_series(replay)
@@ -814,7 +834,7 @@ def run_round26_pilot_analysis(
         resolution.condition_id: resolution for resolution in replay.resolutions
     }
     signal_count_by_lookback: dict[str, int] = {}
-    for lookback_ms in ROUND26_LOOKBACK_MS:
+    for lookback_index, lookback_ms in enumerate(ROUND26_LOOKBACK_MS, start=1):
         signals = _signals(spot, futures, lookback_ms=lookback_ms)
         signal_count_by_lookback[str(lookback_ms)] = len(signals)
         for threshold_bps in ROUND26_THRESHOLDS_BPS:
@@ -858,6 +878,14 @@ def run_round26_pilot_analysis(
                             hold_ms,
                         )
                         trades_by_key[key] = trades
+        notify(
+            "configuration_grid_progress",
+            completed_lookback_count=lookback_index,
+            lookback_count=len(ROUND26_LOOKBACK_MS),
+            lookback_ms=lookback_ms,
+            configuration_count=len(configurations),
+            settlement_configuration_count=len(settlement_configurations),
+        )
     ranked = sorted(
         configurations,
         key=lambda item: (
@@ -994,6 +1022,14 @@ def run_round26_pilot_analysis(
     write_bytes_atomic(
         Path(output_path),
         (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("ascii"),
+    )
+    notify(
+        "complete",
+        analysis_sha256=payload["analysis_sha256"],
+        pilot_passed=payload["pilot_passed"],
+        selected_trade_count=(
+            0 if best is None else int(best["trade_count"])
+        ),
     )
     return payload
 

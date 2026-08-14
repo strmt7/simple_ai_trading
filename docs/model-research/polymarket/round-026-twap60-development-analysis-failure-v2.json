@@ -1,0 +1,98 @@
+{
+  "analysis_failure_sha256": "2f777bd2f1f527cbbcf58e0eba951985cf056ef601665b108be621528ed48b67",
+  "authority": {
+    "analysis_produced": false,
+    "edge_claim": false,
+    "live_trading_authority": false,
+    "model_data_eligible": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "capture": {
+    "condition_count": 13,
+    "contract_sha256": "ea5d3d64b3fbb73fd7b1c581c4be34f9d7dcf6ab4cd974ed73417d2e5ffb15f5",
+    "duration_seconds": 3603.048,
+    "ended_at_ms": 1786744203064,
+    "market_snapshot_count": 13,
+    "raw_message_count": 1442594,
+    "report_sha256": "58ff0e4b168a3788914ee96c6bdce6ceecfd416abe67629e94c8b3de36014704",
+    "result_file_sha256": "14a9676a795e188ee63403dbcbfc9f2402ea82201b7679d6cf45f5ab7680fdda",
+    "result_sha256": "5150dcc91324548a365fac0e33fa23a1464154db79526bad80d3250d65d0bfff",
+    "run_id": "02a948019cf14b68a7f81d836170dc85",
+    "started_at_ms": 1786740600016,
+    "status": "degraded",
+    "stream_counts": {
+      "binance_futures": 60527,
+      "binance_spot": 47108,
+      "clob_market": 1327975,
+      "clob_rest_book": 2,
+      "polymarket_rtds": 6982
+    },
+    "stream_gap_count": 5
+  },
+  "created_at_ms": 1786744997158,
+  "failure_classification": {
+    "analysis_status": "source_integrity_ineligible",
+    "economic_result_status": "not_computed",
+    "primary_reason": "87 Binance Futures trade frames reported both price and quantity as zero",
+    "promotion_gate_passed": false
+  },
+  "replay_attempt": {
+    "materialized_book_count": 132368,
+    "market_count": 13,
+    "progress_log_sha256": "0552b181654b3d8cda259105c5eee42f1c339bc113190a1f36f8dea9a5998866",
+    "replay_completed": true,
+    "stderr_sha256": "2ae9eeb68969b192ebb4a8d39b6821a4269e2faeb3f0e3cf3b884b1fc4f5831",
+    "terminal_exception": "ValueError: Round 26 Binance trade price differs"
+  },
+  "source_audit": {
+    "binance_futures": {
+      "invalid_non_numeric_trade_count": 0,
+      "maximum_valid_trade_price": 62912.2,
+      "minimum_valid_trade_price": 62846.7,
+      "non_positive_trade_count": 87,
+      "total_trade_count": 32659,
+      "valid_positive_trade_count": 32572
+    },
+    "binance_spot": {
+      "invalid_non_numeric_trade_count": 0,
+      "maximum_valid_trade_price": 62937.22,
+      "minimum_valid_trade_price": 62873.25,
+      "non_positive_trade_count": 0,
+      "total_trade_count": 43648,
+      "valid_positive_trade_count": 43648
+    },
+    "first_non_positive_frame": {
+      "event_sha256": "de71c4ad735192ff9e5d9871338ec678559c12c0ea35759558bdf56151ab011e",
+      "message_id": "ffaac627fca2d49041d151d88fd77ef3fd121393e6c972b5024f20ab50c1b0bc",
+      "received_monotonic_ns": 55121359000000,
+      "received_wall_ms": 1786740615478,
+      "sequence_number": 126,
+      "source_time_ms": 1786740615265
+    },
+    "last_non_positive_frame": {
+      "event_sha256": "bd4932fc23da80d18e260b1562e568e32048d3c13174cee114013d939e5c48a1",
+      "message_id": "bd86a560ef59baff3dec42d18160ce1363e89eef67ec23882b195db3e8610169",
+      "received_monotonic_ns": 58652890000000,
+      "received_wall_ms": 1786744147012,
+      "sequence_number": 59654,
+      "source_time_ms": 1786744146787
+    },
+    "non_positive_frame_manifest_sha256": "3d2648519ce86f1d599f7b53e6b3844e09316c14592849ed630328f814e5e0b4",
+    "scope": "BTC trade events reconstructed from the Binance spot and USD-M Futures streams"
+  },
+  "remediation_state": {
+    "implemented": [
+      "fail-closed rejection of non-positive Binance trade prices",
+      "explicit progress checkpoints around replay and source reconstruction"
+    ],
+    "not_permitted": [
+      "silent deletion or interpolation of the zero-valued frames",
+      "fabricated or zero-filled economic results",
+      "model fitting on this capture",
+      "promotion from a degraded development capture"
+    ],
+    "required_next_evidence": "prove the zero-valued frame semantics or reject them during a preregistered successor capture with explicit source-quality counters"
+  },
+  "schema_version": "polymarket-round26-twap60-development-analysis-failure-v2"
+}

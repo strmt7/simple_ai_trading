@@ -1,0 +1,714 @@
+{
+  "audit_sha256": "e12d83c876e9e5dcb069fda68ff9172c10bcf6ac0fe606f5c6f0e4c2eefedcaa",
+  "condition_count": 13,
+  "conditions": [
+    {
+      "condition_id": "0xdcf03ea95640ce6e4a394f507c15f8b4834888121b4530e73145514d4b460be3",
+      "eligible": true,
+      "end_ms": 1786737300000,
+      "event_start_ms": 1786737000000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 9708,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 210632,
+        "causally_ordered_event_count": 168220,
+        "clob_connection_segment_count": 3,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 166317,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "7615fdb9797d9dc2fdd134db1a40ba2d7f6cc6645afc73c07786f7d60b9b8301",
+        "excluded_after_event_scope_count": 1590,
+        "late_event_count": 830,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 9708,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000040,
+        "maximum_late_arrival_delay_ns": 31000000,
+        "maximum_source_regression_ms": 7,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 2,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 200924,
+        "total_event_count": 171551
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 2083,
+            "Up": 2083
+          },
+          "connection_id": "clob:4b0c760f774b4960aae17f75e3e5459a",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 124285,
+          "interval_end_ms": 1786737126050,
+          "interval_start_ms": 1786737001765,
+          "segment_id": "00a2c02b221e29990a63041f5de44cfa56dc14817957eb7bc77701c3aad05a15"
+        },
+        {
+          "book_count_by_outcome": {
+            "Down": 1,
+            "Up": 1
+          },
+          "connection_id": "rest-5543a49ffff24716b37f719fee43abbb-0xdcf03ea95640ce6e4a394f507c15f8b4834888121b4530e73145514d4b460be3",
+          "eligible": false,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 0,
+          "interval_end_ms": null,
+          "interval_start_ms": 1786737000708,
+          "segment_id": "40ad20462be99f2e2eb27646cca61437e0b022b76688705d14ddf575b6343603"
+        },
+        {
+          "book_count_by_outcome": {
+            "Down": 2770,
+            "Up": 2770
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 172652,
+          "interval_end_ms": 1786737299999,
+          "interval_start_ms": 1786737127347,
+          "segment_id": "d3f680c746d428e049c1c375d20a4564094cd4d079b74ba0b48b99b6a098487a"
+        }
+      ],
+      "slug": "btc-updown-5m-1786737000"
+    },
+    {
+      "condition_id": "0x2b23b94415f70ee763efebc94aad36db66a3f69241e8f4c5fd62cc03f71e12e0",
+      "eligible": true,
+      "end_ms": 1786737600000,
+      "event_start_ms": 1786737300000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 11080,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 181796,
+        "causally_ordered_event_count": 135683,
+        "clob_connection_segment_count": 2,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 132281,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "14549fd0a7acbb09d2d1e497dbd6db22e9d2825b99589ecece8925ca515c99b1",
+        "excluded_after_event_scope_count": 1718,
+        "late_event_count": 626,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 11080,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000044,
+        "maximum_late_arrival_delay_ns": 63000000,
+        "maximum_source_regression_ms": 326,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 1,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 170716,
+        "total_event_count": 138740
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 192,
+            "Up": 192
+          },
+          "connection_id": "clob:4b0c760f774b4960aae17f75e3e5459a",
+          "eligible": false,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 0,
+          "interval_end_ms": 1786737126050,
+          "interval_start_ms": 1786737300000,
+          "segment_id": "7a00c540ec3eaa6b66f391aeaa2736b4780661b8b8186e63464cff8f23bfda2a"
+        },
+        {
+          "book_count_by_outcome": {
+            "Down": 5348,
+            "Up": 5348
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 299999,
+          "interval_end_ms": 1786737599999,
+          "interval_start_ms": 1786737300000,
+          "segment_id": "b8c3ea5ec922b6c52259ff3500661c5c01c63a6a64dad3576a3287ec4df9c1ca"
+        }
+      ],
+      "slug": "btc-updown-5m-1786737300"
+    },
+    {
+      "condition_id": "0xea336edb13bf55112774482d390cd7012b4e8b4cb6564a145ee41a40e05a2538",
+      "eligible": true,
+      "end_ms": 1786737900000,
+      "event_start_ms": 1786737600000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 11242,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 132336,
+        "causally_ordered_event_count": 90453,
+        "clob_connection_segment_count": 1,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 85620,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "e2bb4a6f2a8c9e29d1ec11cbaa59179ffcc7d459f65690943cbf6163a0d21163",
+        "excluded_after_event_scope_count": 1745,
+        "late_event_count": 514,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 11242,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 17000006,
+        "maximum_late_arrival_delay_ns": 32000000,
+        "maximum_source_regression_ms": 7,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 0,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 121094,
+        "total_event_count": 93271
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 5620,
+            "Up": 5622
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 299999,
+          "interval_end_ms": 1786737899999,
+          "interval_start_ms": 1786737600000,
+          "segment_id": "53db9c1e3cb6a858055f8e3e468385de58b2ce384ec919f24deb924e7bcc66e7"
+        }
+      ],
+      "slug": "btc-updown-5m-1786737600"
+    },
+    {
+      "condition_id": "0x8b159598eebf041d1ff3bfaafb67596be912581c3105ff03005c1b33a3cc6ea3",
+      "eligible": false,
+      "end_ms": 1786738200000,
+      "event_start_ms": 1786737900000,
+      "failure": "price_change best bid/ask checksum disagrees with atomic depth: condition=0x8b159598eebf041d1ff3bfaafb67596be912581c3105ff03005c1b33a3cc6ea3 token=19876371298745586385336614826487454936503432984651728105826226207334378608330 source_time_ms=1786737977952 reported=(Decimal('0.37'), Decimal('0.39')) expected=(Decimal('0.38'), Decimal('0.39')) events=['7bc04dae330dd33b97ca5376bbc351e7d55150e92f35de895301327589c626b2', '8cec4ed5d7fe14d2d9d909216a5ef9432b3bb362dd1591745d1e45e25f6e9acc', '021dade35e65aa093f578200f9857e9a94eb00fa6cf3adec237323626d643544', 'e3a7ac82e8392f2ab10f448348be0be95b01aec78617c6c4b62d1d5959a94ee9', '75e06506f0e74ff3feeab26ce47adc37737df85d7c201319fa558e33bd12cbc7']",
+      "failure_class": "book_integrity",
+      "segments": [],
+      "slug": "btc-updown-5m-1786737900"
+    },
+    {
+      "condition_id": "0x740c8d0b3b0dba5e5fa124f394dccf59803bd6d47676061f8866ce3ea60312f7",
+      "eligible": true,
+      "end_ms": 1786738500000,
+      "event_start_ms": 1786738200000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 11045,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 149480,
+        "causally_ordered_event_count": 107843,
+        "clob_connection_segment_count": 1,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 103565,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "38505b49c0ecc4b430f183a3e4c6ac92544b736159e07725c043a04d651b09fe",
+        "excluded_after_event_scope_count": 1635,
+        "late_event_count": 464,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 11045,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000027,
+        "maximum_late_arrival_delay_ns": 32000000,
+        "maximum_source_regression_ms": 277,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 0,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 138435,
+        "total_event_count": 110618
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 5523,
+            "Up": 5522
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 299999,
+          "interval_end_ms": 1786738499999,
+          "interval_start_ms": 1786738200000,
+          "segment_id": "7f65e71d27b6a8d8f254bb3df563accbea4bc6878b04aa6309986b02fd10c845"
+        }
+      ],
+      "slug": "btc-updown-5m-1786738200"
+    },
+    {
+      "condition_id": "0xc17918d5cb7d4dbc2d03f1db605c1a856d607eae633a0601ce93e1b6e8cce288",
+      "eligible": true,
+      "end_ms": 1786738800000,
+      "event_start_ms": 1786738500000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 10962,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 137200,
+        "causally_ordered_event_count": 100402,
+        "clob_connection_segment_count": 1,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 95359,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "ab3ebea400ef21aab51a59a92ce521718b10b9b89e1a5195c33e148d2500c41e",
+        "excluded_after_event_scope_count": 1631,
+        "late_event_count": 494,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 10962,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000041,
+        "maximum_late_arrival_delay_ns": 16000000,
+        "maximum_source_regression_ms": 14,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 0,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 126238,
+        "total_event_count": 103191
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 5481,
+            "Up": 5481
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 299999,
+          "interval_end_ms": 1786738799999,
+          "interval_start_ms": 1786738500000,
+          "segment_id": "c050ad619845cfb7af7686840cff23d050fa7105b09a62adc7f1ef4338cd57f1"
+        }
+      ],
+      "slug": "btc-updown-5m-1786738500"
+    },
+    {
+      "condition_id": "0x44d2bc94331ec1646f456fb5acdb9920ee50c30a49b62a449d608b425ca671f0",
+      "eligible": true,
+      "end_ms": 1786739100000,
+      "event_start_ms": 1786738800000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 10974,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 135388,
+        "causally_ordered_event_count": 98599,
+        "clob_connection_segment_count": 1,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 93852,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "5c1f985c80ee04d4a555f9cda5928d0f6b50f2c4fde328b7b6e20979ebf9314c",
+        "excluded_after_event_scope_count": 1713,
+        "late_event_count": 480,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 10974,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000043,
+        "maximum_late_arrival_delay_ns": 16000000,
+        "maximum_source_regression_ms": 1,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 0,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 124414,
+        "total_event_count": 101355
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 5487,
+            "Up": 5487
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 299999,
+          "interval_end_ms": 1786739099999,
+          "interval_start_ms": 1786738800000,
+          "segment_id": "880686443928d325c45f49506c8ace9e343ccd866609dc6a4f0a6264e47f9f3f"
+        }
+      ],
+      "slug": "btc-updown-5m-1786738800"
+    },
+    {
+      "condition_id": "0x8fd419e75208b421818a813424919a73a08f74ef19467dfb4e33217c9e56009e",
+      "eligible": true,
+      "end_ms": 1786739400000,
+      "event_start_ms": 1786739100000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 10939,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 121886,
+        "causally_ordered_event_count": 84643,
+        "clob_connection_segment_count": 1,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 79682,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "511ae2935162e4ade6c77eff33a78366838c4f883c9afee366a49966a42f62c5",
+        "excluded_after_event_scope_count": 1578,
+        "late_event_count": 569,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 10939,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000010,
+        "maximum_late_arrival_delay_ns": 31000000,
+        "maximum_source_regression_ms": 2,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 0,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 110947,
+        "total_event_count": 87441
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 5469,
+            "Up": 5470
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 299999,
+          "interval_end_ms": 1786739399999,
+          "interval_start_ms": 1786739100000,
+          "segment_id": "b508c5a5a3ab8f0abc13ddb39a92868408f040677460abb3aaf580265a4bcd67"
+        }
+      ],
+      "slug": "btc-updown-5m-1786739100"
+    },
+    {
+      "condition_id": "0x0be96f715bad60903eb0d2f4e1ab1e138e1abbaf36a832f7011a85ceee5a710f",
+      "eligible": true,
+      "end_ms": 1786739700000,
+      "event_start_ms": 1786739400000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 10954,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 146120,
+        "causally_ordered_event_count": 105526,
+        "clob_connection_segment_count": 1,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 101370,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "42a853effb53cbb73c0d13ae05f990b978bf57b5b23655cdd5adcba1c991bad2",
+        "excluded_after_event_scope_count": 1634,
+        "late_event_count": 519,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 10954,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000024,
+        "maximum_late_arrival_delay_ns": 31000000,
+        "maximum_source_regression_ms": 1,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 0,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 135166,
+        "total_event_count": 108406
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 5477,
+            "Up": 5477
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 299999,
+          "interval_end_ms": 1786739699999,
+          "interval_start_ms": 1786739400000,
+          "segment_id": "86aa54e4c9ae5d00cb3f1474bfa9aea23592305452d6ad689345d6addca6a91f"
+        }
+      ],
+      "slug": "btc-updown-5m-1786739400"
+    },
+    {
+      "condition_id": "0x6802fd826274ac7d53604900993eaa629ffefed9ecd381c06b703648ecbbcef1",
+      "eligible": true,
+      "end_ms": 1786740000000,
+      "event_start_ms": 1786739700000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 10831,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 126926,
+        "causally_ordered_event_count": 89696,
+        "clob_connection_segment_count": 1,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 84917,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "ddcb9f04cea30296223ccdf7bbd69b0585433e2df24989689620fa97d4feedd4",
+        "excluded_after_event_scope_count": 1542,
+        "late_event_count": 474,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 10831,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000022,
+        "maximum_late_arrival_delay_ns": 16000000,
+        "maximum_source_regression_ms": 1,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 0,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 116095,
+        "total_event_count": 92268
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 5415,
+            "Up": 5416
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 299999,
+          "interval_end_ms": 1786739999999,
+          "interval_start_ms": 1786739700000,
+          "segment_id": "cf4795a3471a7d397d175b40201f4022701b8fbb5493359a1fb6d41f8a14de7a"
+        }
+      ],
+      "slug": "btc-updown-5m-1786739700"
+    },
+    {
+      "condition_id": "0x94a73c96728f3a2ce967f9d65e56f8d616fb8052e254916b55815bc6674d45b8",
+      "eligible": true,
+      "end_ms": 1786740300000,
+      "event_start_ms": 1786740000000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 10801,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 137846,
+        "causally_ordered_event_count": 96766,
+        "clob_connection_segment_count": 1,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 92540,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "dd7a0aa0d02ee7e86a8cb5886cd88ddf1ee7c4c2dbb0fd63060f4cb787bb41f5",
+        "excluded_after_event_scope_count": 1389,
+        "late_event_count": 498,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 10801,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000035,
+        "maximum_late_arrival_delay_ns": 47000000,
+        "maximum_source_regression_ms": 470,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 0,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 127045,
+        "total_event_count": 99384
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 5401,
+            "Up": 5400
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 299999,
+          "interval_end_ms": 1786740299999,
+          "interval_start_ms": 1786740000000,
+          "segment_id": "a1182b1d36081a25d7e06e544db64b7448eee409bcd56b11abe865d5908ba3fe"
+        }
+      ],
+      "slug": "btc-updown-5m-1786740000"
+    },
+    {
+      "condition_id": "0x2aa3aa7586e38774ad8c455908ed44e5c63d16c143657e612d137286622cf0a3",
+      "eligible": true,
+      "end_ms": 1786740600000,
+      "event_start_ms": 1786740300000,
+      "failure": null,
+      "failure_class": null,
+      "materialized_book_count": 11049,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 154726,
+        "causally_ordered_event_count": 114997,
+        "clob_connection_segment_count": 2,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 111065,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "ea55c88a8fe56547165aeca89821da5f4979b7d62e8abde44c45ee11028c43eb",
+        "excluded_after_event_scope_count": 2,
+        "late_event_count": 671,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 11049,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 16000023,
+        "maximum_late_arrival_delay_ns": 31000000,
+        "maximum_source_regression_ms": 1,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 1,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 143677,
+        "total_event_count": 116514
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 2206,
+            "Up": 2206
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 98324,
+          "interval_end_ms": 1786740398324,
+          "interval_start_ms": 1786740300000,
+          "segment_id": "0811f9d69ed0fd93f4e8ce632a684f3091998f7d0e9121585360fadbcd2efdc2"
+        },
+        {
+          "book_count_by_outcome": {
+            "Down": 3318,
+            "Up": 3319
+          },
+          "connection_id": "clob:70aa01470f124abab0a7ed8fe15d21d3",
+          "eligible": true,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 200397,
+          "interval_end_ms": 1786740599999,
+          "interval_start_ms": 1786740399602,
+          "segment_id": "3e1d9aa37b7cfa9f912dac45afa3cb3dd204da118a7b19ca1a06ca660c20a79a"
+        }
+      ],
+      "slug": "btc-updown-5m-1786740300"
+    },
+    {
+      "condition_id": "0xbb58dd6abbf8c7d9b6df634a920e1f92fd57571bda0dfd92184aa63c3da08a81",
+      "eligible": false,
+      "end_ms": 1786740900000,
+      "event_start_ms": 1786740600000,
+      "failure": null,
+      "failure_class": "no_executable_interval",
+      "materialized_book_count": 1080,
+      "replay_diagnostics": {
+        "book_sample_interval_ms": 50,
+        "book_state_transition_count": 3774,
+        "causally_ordered_event_count": 3038,
+        "clob_connection_segment_count": 2,
+        "continuity_mode": "segmented",
+        "deferred_event_count": 2454,
+        "discarded_uncorroborated_best_count": 0,
+        "event_scope_mode": "condition_received_wall_upper_bound",
+        "event_scope_sha256": "e10cdab0afcea52e20e1bdbb578778aef24caaec2699e97d1fdc74fcdb8f6e6e",
+        "excluded_after_event_scope_count": 0,
+        "late_event_count": 16,
+        "materialization_policy_sha256": "576521a55aedbedd59b41e4d236b194878e45920081945549be2e52a63d41d41",
+        "materialized_book_count": 1080,
+        "materialized_depth_quantity_cap": true,
+        "materialized_minimum_depth_levels": 1,
+        "maximum_availability_delay_ns": 15000018,
+        "maximum_late_arrival_delay_ns": 0,
+        "maximum_source_regression_ms": 1,
+        "schema_version": "polymarket-replay-diagnostics-v3",
+        "state_reset_count": 1,
+        "stream_gap_count": 2,
+        "suppressed_book_count": 2694,
+        "total_event_count": 3104
+      },
+      "segments": [
+        {
+          "book_count_by_outcome": {
+            "Down": 162,
+            "Up": 162
+          },
+          "connection_id": "clob:c878ff7b33a54270b0b1654b64ea89a6",
+          "eligible": false,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 0,
+          "interval_end_ms": 1786740398324,
+          "interval_start_ms": 1786740600000,
+          "segment_id": "06ef53f0d8e98e9ff28656c932455bae08682bc8815ba84bad5a728f657556a4"
+        },
+        {
+          "book_count_by_outcome": {
+            "Down": 378,
+            "Up": 378
+          },
+          "connection_id": "clob:70aa01470f124abab0a7ed8fe15d21d3",
+          "eligible": false,
+          "has_two_outcome_baseline": true,
+          "interval_duration_ms": 34,
+          "interval_end_ms": 1786740600034,
+          "interval_start_ms": 1786740600000,
+          "segment_id": "b383dbcf52cd5e9dccb4ac1be7edfa809eba295ec83ed75b9884323b9b2e2612"
+        }
+      ],
+      "slug": "btc-updown-5m-1786740600"
+    }
+  ],
+  "edge_claim": false,
+  "eligible_condition_count": 11,
+  "eligible_condition_ids": [
+    "0xdcf03ea95640ce6e4a394f507c15f8b4834888121b4530e73145514d4b460be3",
+    "0x2b23b94415f70ee763efebc94aad36db66a3f69241e8f4c5fd62cc03f71e12e0",
+    "0xea336edb13bf55112774482d390cd7012b4e8b4cb6564a145ee41a40e05a2538",
+    "0x740c8d0b3b0dba5e5fa124f394dccf59803bd6d47676061f8866ce3ea60312f7",
+    "0xc17918d5cb7d4dbc2d03f1db605c1a856d607eae633a0601ce93e1b6e8cce288",
+    "0x44d2bc94331ec1646f456fb5acdb9920ee50c30a49b62a449d608b425ca671f0",
+    "0x8fd419e75208b421818a813424919a73a08f74ef19467dfb4e33217c9e56009e",
+    "0x0be96f715bad60903eb0d2f4e1ab1e138e1abbaf36a832f7011a85ceee5a710f",
+    "0x6802fd826274ac7d53604900993eaa629ffefed9ecd381c06b703648ecbbcef1",
+    "0x94a73c96728f3a2ce967f9d65e56f8d616fb8052e254916b55815bc6674d45b8",
+    "0x2aa3aa7586e38774ad8c455908ed44e5c63d16c143657e612d137286622cf0a3"
+  ],
+  "failed_condition_count": 2,
+  "failed_condition_ids": [
+    "0x8b159598eebf041d1ff3bfaafb67596be912581c3105ff03005c1b33a3cc6ea3",
+    "0xbb58dd6abbf8c7d9b6df634a920e1f92fd57571bda0dfd92184aa63c3da08a81"
+  ],
+  "live_trading_authority": false,
+  "minimum_executable_interval_ms": 250,
+  "model_data_eligible": false,
+  "paper_trading_authority": false,
+  "profitability_claim": false,
+  "run_ended_at_ms": 1786740603053,
+  "run_id": "5543a49ffff24716b37f719fee43abbb",
+  "run_report_sha256": "271ecdb323288689a90c9a45298f5facd541fb8730a4f543d3d488a3e75a2ce9",
+  "run_started_at_ms": 1786737000006,
+  "run_status": "degraded",
+  "schema_version": "polymarket-condition-replay-audit-v1",
+  "stream_gap_count": 2,
+  "target_free": true
+}

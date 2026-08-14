@@ -2,6 +2,29 @@
 
 > **Beta research software. No paper or live trading authority exists.**
 
+## Current evidence
+
+Round 26 tested the current BTC five-minute 60-second TWAP source on two
+one-hour credential-free captures. Neither capture is model-eligible. The first
+recorded 1,519,316 messages and two CLOB gaps; a target-free isolated replay
+admitted 11 of 13 conditions, excluded one checksum-corrupted condition and one
+34 ms trailing stub, and produced no P&L. The second recorded 1,442,594 messages
+and five transport gaps. These results reject whole-capture zero-gap repetition
+as the next data strategy; future admission is condition-local and requires a
+fresh two-outcome baseline plus a connection-bounded executable interval.
+The second capture's economic analyzer also failed closed on 87 Binance
+Futures trade frames whose reported price and quantity were both zero. Those
+frames are preserved as source-integrity evidence and are not treated as price
+observations.
+
+![Round 26 target-free replay eligibility](round-026-twap60-condition-audit/condition-replay-eligibility.svg)
+
+The [canonical Round 26 audit](round-026-twap60-condition-audit/condition-replay-audit.json),
+[v3 analysis failure](../round-026-twap60-development-analysis-failure-v2.json),
+and [untrusted execution-hypothesis preregistration](../round-027-execution-hypothesis-preregistration-v3.json)
+preserve the exact boundaries. No market edge or after-cost profitability has
+been found yet.
+
 On 2026-08-10, a credential-free production read probe validated CLOB protocol
 V2, two exact BTC five-minute markets using the required Chainlink 30-second
 TWAP source, matching Gamma/CLOB identities and fees, and all four token books.

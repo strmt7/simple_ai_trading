@@ -1,0 +1,15 @@
+{
+  "audit_sha256": "e12d83c876e9e5dcb069fda68ff9172c10bcf6ac0fe606f5c6f0e4c2eefedcaa",
+  "diagnostic_only": true,
+  "edge_claim": false,
+  "files": {
+    "README.md": "cdb1edfdb25807b438056e50a6627255a42ffdb1cd10b629c52d9f6bd5f4158a",
+    "condition-replay-audit.json": "345ff7b6c2147b4612fb6320b720f50d362ee8405cef58f30c6ed6876fc0dfda",
+    "condition-replay-conditions.csv": "cadeedf1cdada72b800c4786268ec5241cffc3dc3edcdcbe6ef64fe8cb3bacde",
+    "condition-replay-eligibility.svg": "70d20d3c9bda3baab4954c267f90a64aebc05f5f7066b47e743c551b0393d8d0",
+    "condition-replay-segments.csv": "95d8cf94f131d84cc288669678df8eb9b119ffe59876092098b927bba6bc1238"
+  },
+  "manifest_sha256": "4e2e0cce7b8a940fba172ca01f973e1be7be64a92f884f2f28a731b789b9bb5c",
+  "profitability_claim": false,
+  "schema_version": "polymarket-condition-replay-publication-v1"
+}
