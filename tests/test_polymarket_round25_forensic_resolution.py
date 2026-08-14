@@ -15,6 +15,9 @@ from simple_ai_trading.polymarket_round25_forensic_partition import (
     POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION,
     partition_round25_forensic_conditions,
 )
+from simple_ai_trading.polymarket_round25_forensic_venue import (
+    POLYMARKET_ROUND25_FORENSIC_VENUE_PARAMETER_AUDIT_SHA256,
+)
 from simple_ai_trading.polymarket_round25_campaign import (
     POLYMARKET_ROUND25_RESOLUTION_SOURCE,
 )
@@ -87,6 +90,9 @@ def _partition() -> dict[str, object]:
         "schema_version": POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION,
         "selection_accessed": False,
         "target_accessed": False,
+        "venue_parameter_audit_sha256": (
+            POLYMARKET_ROUND25_FORENSIC_VENUE_PARAMETER_AUDIT_SHA256
+        ),
     }
     return {**body, "partition_sha256": _sha(body)}
 

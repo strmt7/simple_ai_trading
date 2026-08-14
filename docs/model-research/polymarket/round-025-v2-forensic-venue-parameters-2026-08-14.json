@@ -1,0 +1,59 @@
+{
+  "schema_version": "polymarket-round25-v2-forensic-venue-parameter-audit-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-14T18:47:19Z",
+  "status": "target_blind_venue_parameters_match_frozen_economic_replay",
+  "source_bindings": {
+    "forensic_audit_sha256": "8ee546844fada87ab4a542f6620bc5e83654b635b6a72145a338c02431c41276",
+    "recorder_report_sha256": "45a613588f15ef45f57c51931d1b01e19f7cb7b0d6b08e7be0b0dd5b8d49631d",
+    "evidence_manifest_sha256": "9d45a88606239646302af3d0c8b3c1ffdbf824ea3836b73418bdaaad35f045d9",
+    "salvage_contract_sha256": "f46c9c629427ab5e2ce5582bdec9be7f6e67bc8f69831fc27ebde1b1f13eafcb",
+    "run_id": "f96a24bdaa2d4f5f8cdad3f06193a0ce"
+  },
+  "query_boundary": {
+    "database_mode": "read_only_inactive_wal_free",
+    "table": "polymarket_market_snapshot",
+    "run_filter_applied": true,
+    "snapshot_row_count": 111,
+    "distinct_condition_count": 111,
+    "outcomes_or_resolutions_read": false,
+    "model_scores_read": false,
+    "database_mutated": false
+  },
+  "observations": {
+    "tick_size_groups": [
+      {
+        "tick_size": "0.01",
+        "snapshot_count": 111,
+        "distinct_condition_count": 111
+      }
+    ],
+    "fee_parameter_groups": [
+      {
+        "fees_enabled": true,
+        "fee_rate": "0.07",
+        "snapshot_count": 111,
+        "distinct_condition_count": 111
+      }
+    ]
+  },
+  "economic_replay_binding": {
+    "all_captured_conditions_match": true,
+    "stressed_tick_size": "0.01",
+    "taker_fee_rate": "0.07",
+    "fee_curve_exponent": 1,
+    "fee_formula": "ceil_to_0.00001(quantity*rate*(price*(1-price))^exponent)",
+    "per_market_parameter_assumption_allowed": false,
+    "abort_if_admitted_population_differs": true
+  },
+  "truth_state": {
+    "feature_store_published": false,
+    "partition_manifest_published": false,
+    "targets_accessed": false,
+    "selection_predictions_frozen": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "artifact_sha256": "244ad6bc32149315ca0a47c9c1d49473c3c54a068f23d3c345c4a1d630bbe3c2"
+}
