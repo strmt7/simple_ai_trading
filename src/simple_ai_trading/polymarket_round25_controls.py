@@ -589,7 +589,12 @@ def fit_round25_feature_transform(
     lower = np.quantile(values, 0.25, axis=0, method="linear")
     upper = np.quantile(values, 0.75, axis=0, method="linear")
     scale = upper - lower
-    scale[scale == 0.0] = 1.0
+    numerical_zero = (
+        16.0
+        * np.finfo(np.float64).eps
+        * np.maximum(np.abs(center), 1.0)
+    )
+    scale[scale <= numerical_zero] = 1.0
     for index in _BINARY_AVAILABILITY_INDICES:
         if not np.all((values[:, index] == 0.0) | (values[:, index] == 1.0)):
             raise ValueError("Round 25 availability feature is not binary")

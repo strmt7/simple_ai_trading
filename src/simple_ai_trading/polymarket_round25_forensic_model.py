@@ -309,10 +309,13 @@ def _fit_logistic(
         np.zeros(normalized.shape[1] + 1, dtype=np.float64),
         method="L-BFGS-B",
         jac=True,
-        options={"maxiter": 512, "ftol": 1e-11, "gtol": 1e-8},
+        options={"maxiter": 4096, "ftol": 1e-11, "gtol": 1e-8},
     )
     if not result.success or not np.all(np.isfinite(result.x)):
-        raise RuntimeError("Round 25 forensic logistic fit failed")
+        raise RuntimeError(
+            "Round 25 forensic logistic fit failed: "
+            f"status={result.status}; message={result.message}"
+        )
     return float(result.x[0]), np.asarray(result.x[1:], dtype=np.float64)
 
 

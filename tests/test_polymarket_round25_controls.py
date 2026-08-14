@@ -34,6 +34,7 @@ from simple_ai_trading.polymarket_round25_controls import (
     round25_bounded_residual_linear,
     round25_condition_equal_scores,
     round25_market_prior_predictions,
+    transform_round25_features,
 )
 from simple_ai_trading.polymarket_round25_dataset import (
     POLYMARKET_ROUND25_CAMPAIGN_START_MS,
@@ -187,6 +188,21 @@ def test_training_transform_uses_iqr_and_leaves_availability_unscaled() -> None:
     matrix[0, binary_indices[0]] = 0.5
     with pytest.raises(ValueError, match="not binary"):
         fit_round25_feature_transform(matrix)
+
+
+def test_training_transform_rejects_float_noise_as_a_scale() -> None:
+    width = len(POLYMARKET_ROUND25_JOINT_FEATURE_NAMES)
+    matrix = np.zeros((12, width), dtype=np.float64)
+    matrix[:, 0] = np.asarray(
+        [0.01] * 9 + [0.01 + 1e-17, 0.2, 0.3]
+    )
+
+    center, scale = fit_round25_feature_transform(matrix)
+    normalized = transform_round25_features(matrix, center, scale)
+
+    assert center[0] == pytest.approx(0.01)
+    assert scale[0] == 1.0
+    assert np.max(np.abs(normalized[:, 0])) < 1.0
 
 
 def test_bounded_logistic_improves_synthetic_signal_without_exceeding_bound() -> None:
