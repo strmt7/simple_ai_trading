@@ -1,0 +1,65 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "model_data_eligible": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "capture_duration_seconds": 600,
+  "capture_scope": {
+    "asset": "BTC",
+    "binance_futures_event_type": "aggTrade",
+    "binance_futures_profile": "documented_aggregate_trades",
+    "market": "Polymarket BTC five-minute Up/Down",
+    "required_clob_lanes": [
+      "clob"
+    ],
+    "required_rtds_topics": [
+      "crypto_prices",
+      "crypto_prices_twap_sixty"
+    ],
+    "required_streams": [
+      "binance_futures",
+      "binance_spot",
+      "clob_market",
+      "polymarket_rtds"
+    ],
+    "resolution_source": "https://data.chain.link/streams/btc-usd-twap-60s-streams"
+  },
+  "contract_sha256": "cc319d8f0d180171401919a9b2edda2cbd20d92332dc79f7380b6d758616a671",
+  "created_at_ms": 1786747355502,
+  "hypothesis_preregistration_sha256": "76f924e66883a589336ba0c527810e04a0bd98baab660130010ee8b2ad19b264",
+  "phase": "documented_source_smoke",
+  "repository_commit": "657687091f97df3577d8c2f438a8b3e6fd31bd8a",
+  "resource_policy": {
+    "database_cap_bytes": 2147483648,
+    "database_stop_reserve_bytes": 134217728,
+    "database_threads": 2,
+    "memory_limit": "1GB",
+    "minimum_free_bytes": 34359738368,
+    "progress_interval_seconds": 30,
+    "queue_capacity": 100000
+  },
+  "schema_version": "polymarket-round27-documented-source-smoke-contract-v1",
+  "source_qualification_sha256": "9ae8d12c2f38fcb8aca341a632a24f7999cacc7ad4af5d8fde4e6f3201094d7b",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket.py": "8b4890e1291c2902f43b075f8b3b183484bb60e8e9df485da11e186372cbff36",
+    "src/simple_ai_trading/polymarket_recorder.py": "2fd7f495e46760fc3cc36d0f0a2391c93288fc06d6c7d6fc3b593bfcc4f82534",
+    "src/simple_ai_trading/polymarket_round27_capture.py": "4361c58144a692e15fe6ce6012943f2f599a151d82083f4afbe66d0fd817e1d5",
+    "src/simple_ai_trading/polymarket_source_quality.py": "7083bfdd2ee0758e47714a8e900095ecbc9d4b4d46c53f9dace20c8710ccd712",
+    "tools/run_polymarket_round27_capture.py": "d1d64534fea13193160bf18f2edaaa368b950ce47db08c9acf985a638aad9263"
+  },
+  "success_gate": {
+    "database_footprint_at_or_below_cap": true,
+    "documented_spot_and_futures_trade_quality_passed": true,
+    "integrity_error_count": 0,
+    "recorder_error_count": 0,
+    "required_stream_message_count_positive": true,
+    "stream_gap_count": 0,
+    "terminal_recorder_status": "complete"
+  }
+}
