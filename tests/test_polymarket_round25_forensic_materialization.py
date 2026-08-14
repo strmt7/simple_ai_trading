@@ -28,6 +28,9 @@ from simple_ai_trading.polymarket_round25_forensic_partition import (
     partition_round25_forensic_conditions,
     validate_round25_forensic_partition_manifest,
 )
+from simple_ai_trading.polymarket_round25_forensic_venue import (
+    POLYMARKET_ROUND25_FORENSIC_VENUE_PARAMETER_AUDIT_SHA256,
+)
 from simple_ai_trading.polymarket_round25_joint_materialization import (
     Round25JointReceiptCondition,
     Round25SingleLaneClobDecoder,
@@ -159,6 +162,9 @@ def test_forensic_partition_manifest_recomputes_roles_and_hash() -> None:
         "schema_version": POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION,
         "selection_accessed": False,
         "target_accessed": False,
+        "venue_parameter_audit_sha256": (
+            POLYMARKET_ROUND25_FORENSIC_VENUE_PARAMETER_AUDIT_SHA256
+        ),
     }
     manifest = {**body, "partition_sha256": _canonical_sha256(body)}
 

@@ -18,6 +18,9 @@ DEFAULT_AUDIT = (
     RESEARCH / "round-025-v2-transport-failure-forensic-audit-2026-08-14.json"
 )
 DEFAULT_CONTRACT = RESEARCH / "round-025-v2-condition-salvage-contract-v1.json"
+DEFAULT_VENUE_PARAMETERS = (
+    RESEARCH / "round-025-v2-forensic-venue-parameters-2026-08-14.json"
+)
 
 
 def _mapping(path: Path) -> dict[str, object]:
@@ -58,6 +61,9 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--audit", type=Path, default=DEFAULT_AUDIT)
     parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
+    parser.add_argument(
+        "--venue-parameters", type=Path, default=DEFAULT_VENUE_PARAMETERS
+    )
     parser.add_argument("--observed-at-ms", type=int)
     return parser
 
@@ -68,6 +74,7 @@ def main(argv: list[str] | None = None) -> int:
         feature_store=args.feature_store,
         forensic_audit=_mapping(args.audit),
         salvage_contract=_mapping(args.contract),
+        venue_parameter_audit=_mapping(args.venue_parameters),
         observed_at_ms=args.observed_at_ms,
     )
     _write_once(args.output, manifest)

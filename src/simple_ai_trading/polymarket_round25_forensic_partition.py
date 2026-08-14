@@ -15,6 +15,10 @@ from .polymarket_round25_forensic_materialization import (
     validate_round25_forensic_sources,
 )
 from .polymarket_round25_joint_store import load_round25_joint_endpoint_inputs
+from .polymarket_round25_forensic_venue import (
+    POLYMARKET_ROUND25_FORENSIC_VENUE_PARAMETER_AUDIT_SHA256,
+    validate_round25_forensic_venue_parameter_audit,
+)
 
 
 POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION = (
@@ -95,6 +99,7 @@ def build_round25_forensic_partition_manifest(
     feature_store: str | Path,
     forensic_audit: Mapping[str, object],
     salvage_contract: Mapping[str, object],
+    venue_parameter_audit: Mapping[str, object],
     observed_at_ms: int | None = None,
 ) -> dict[str, object]:
     """Deep-audit the frozen feature store, then bind diagnostic roles."""
@@ -103,6 +108,7 @@ def build_round25_forensic_partition_manifest(
         forensic_audit=forensic_audit,
         salvage_contract=salvage_contract,
     )
+    venue = validate_round25_forensic_venue_parameter_audit(venue_parameter_audit)
     store_manifest, endpoints = load_round25_joint_endpoint_inputs(feature_store)
     if (
         store_manifest.get("diagnostic_only") is not True
@@ -162,6 +168,7 @@ def build_round25_forensic_partition_manifest(
         "schema_version": POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION,
         "selection_accessed": False,
         "target_accessed": False,
+        "venue_parameter_audit_sha256": venue["artifact_sha256"],
     }
     return {**body, "partition_sha256": _canonical_sha256(body)}
 
@@ -192,6 +199,7 @@ def validate_round25_forensic_partition_manifest(
         "schema_version",
         "selection_accessed",
         "target_accessed",
+        "venue_parameter_audit_sha256",
     }
     rows = payload.get("conditions")
     role_counts = payload.get("role_counts")
@@ -203,6 +211,8 @@ def validate_round25_forensic_partition_manifest(
         != POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION
         or payload.get("salvage_contract_sha256")
         != POLYMARKET_ROUND25_SALVAGE_CONTRACT_SHA256
+        or payload.get("venue_parameter_audit_sha256")
+        != POLYMARKET_ROUND25_FORENSIC_VENUE_PARAMETER_AUDIT_SHA256
         or _SHA256.fullmatch(
             str(payload.get("feature_store_manifest_sha256") or "")
         )
