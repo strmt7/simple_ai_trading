@@ -78,6 +78,9 @@ BINANCE_SPOT_WEBSOCKET = (
 )
 BINANCE_SPOT_STREAM_BASE = "wss://stream.binance.com:9443/stream?streams="
 BINANCE_FUTURES_STREAM_BASE = "wss://fstream.binance.com/stream?streams="
+BINANCE_FUTURES_AGG_TRADE_STREAM_BASE = (
+    "wss://fstream.binance.com/market/stream?streams="
+)
 ROUND21_BINANCE_SPOT_WEBSOCKET = (
     BINANCE_SPOT_STREAM_BASE + "btcusdt@bookTicker/btcusdt@trade"
 )
@@ -191,6 +194,11 @@ def _round14_binance_futures_websocket(assets: Sequence[str]) -> str:
         )
     ]
     return BINANCE_FUTURES_STREAM_BASE + "/".join(streams)
+
+
+def _documented_binance_futures_trade_websocket(assets: Sequence[str]) -> str:
+    streams = [f"{asset.lower()}usdt@aggTrade" for asset in assets]
+    return BINANCE_FUTURES_AGG_TRADE_STREAM_BASE + "/".join(streams)
 
 _LEGACY_RAW_MESSAGE_INSERT_SQL = """
     INSERT INTO polymarket_raw_message (
@@ -6640,6 +6648,7 @@ class PolymarketPublicRecorder:
         clob_lane_ids: Sequence[str] = ("clob",),
         include_polymarket_core: bool = True,
         binance_book_ticker_profile: bool = False,
+        binance_futures_aggregate_trades: bool = False,
         market_subscription_grace_seconds: int = 900,
     ) -> None:
         self.database = Path(database)
@@ -6675,6 +6684,7 @@ class PolymarketPublicRecorder:
             or type(include_rtds_binance) is not bool
             or type(include_polymarket_core) is not bool
             or type(binance_book_ticker_profile) is not bool
+            or type(binance_futures_aggregate_trades) is not bool
         ):
             raise ValueError("recorder source selectors must be boolean")
         selected_chainlink_mode = str(chainlink_price_mode or "").strip().lower()
@@ -6700,6 +6710,7 @@ class PolymarketPublicRecorder:
         self.include_rtds_binance = include_rtds_binance
         self.include_polymarket_core = include_polymarket_core
         self.binance_book_ticker_profile = binance_book_ticker_profile
+        self.binance_futures_aggregate_trades = binance_futures_aggregate_trades
         subscription_grace_seconds = int(market_subscription_grace_seconds)
         if not 0 <= subscription_grace_seconds <= 900:
             raise ValueError(
@@ -6736,6 +6747,13 @@ class PolymarketPublicRecorder:
         ):
             raise ValueError(
                 "Binance book-ticker profile requires BTC spot and futures"
+            )
+        if binance_futures_aggregate_trades and (
+            not include_binance_futures or binance_book_ticker_profile
+        ):
+            raise ValueError(
+                "documented Binance aggregate trades require futures without "
+                "the frozen book-ticker profile"
             )
         self.required_assets = selected_assets if include_polymarket_core else ()
         self.rtds_topics = (
@@ -6908,6 +6926,7 @@ class PolymarketPublicRecorder:
                 or self.clob_lane_ids != ("clob",)
                 or not self.include_polymarket_core
                 or self.binance_book_ticker_profile
+                or self.binance_futures_aggregate_trades
             )
             if scoped_capture and preregistration_manifest is None:
                 raise ValueError(
@@ -7849,12 +7868,20 @@ class PolymarketPublicRecorder:
     ) -> None:
         await self._simple_stream(
             stream="binance_futures",
-            lane="binance:futures:"
+            lane=(
+                "binance:futures-aggregate:"
+                if self.binance_futures_aggregate_trades
+                else "binance:futures:"
+            )
             + "-".join(asset.lower() for asset in self.assets),
             url=(
-                ROUND21_BINANCE_FUTURES_WEBSOCKET
-                if self.binance_book_ticker_profile
-                else _round14_binance_futures_websocket(self.assets)
+                _documented_binance_futures_trade_websocket(self.assets)
+                if self.binance_futures_aggregate_trades
+                else (
+                    ROUND21_BINANCE_FUTURES_WEBSOCKET
+                    if self.binance_book_ticker_profile
+                    else _round14_binance_futures_websocket(self.assets)
+                )
             ),
             subscription=None,
             heartbeat=None,
