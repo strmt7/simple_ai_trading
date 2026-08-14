@@ -334,6 +334,112 @@ def test_terminal_capture_replay_exposes_exact_receipts_and_gap_ledger(
     assert gaps[0].reason == "fixture_disconnect"
 
 
+def test_transport_failed_capture_replay_accepts_only_retryable_discovery_io(
+    tmp_path,
+) -> None:
+    def preregistration(run_id: str) -> dict[str, object]:
+        body: dict[str, object] = {
+            "schema_version": "transport-failed-replay-fixture-v1",
+            "run_id": run_id,
+            "created_at_ms": EPOCH * 1_000,
+            "required_assets": ["BTC"],
+            "required_streams": ["clob_market", "polymarket_rtds"],
+        }
+        return {**body, "manifest_sha256": _sha(_canonical(body))}
+
+    database = tmp_path / "transport-failed-replay.duckdb"
+    run_id = "transport-failed-replay"
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run(
+            run_id,
+            EPOCH * 1_000,
+            preregistration_manifest=preregistration(run_id),
+        )
+        store.record_market_evidence(run_id, _evidence("BTC"))
+        store.append_messages(
+            run_id,
+            [
+                _message(
+                    "clob_market",
+                    [
+                        {
+                            "event_type": "book",
+                            "market": "0x" + "7" * 64,
+                            "asset_id": "7" * 40,
+                            "timestamp": EPOCH * 1_000,
+                        }
+                    ],
+                ),
+                _message(
+                    "polymarket_rtds",
+                    {
+                        "topic": "crypto_prices",
+                        "type": "update",
+                        "timestamp": EPOCH * 1_000,
+                        "payload": {
+                            "symbol": "btcusdt",
+                            "timestamp": EPOCH * 1_000,
+                            "value": "2.5",
+                        },
+                    },
+                ),
+            ],
+        )
+        report = store.finish_run(
+            run_id,
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=("discovery:ConnectionError:temporary outage",),
+        )
+        qualified = store.inspect_transport_failed_capture(run_id)
+        receipts = tuple(store.iter_transport_failed_capture_messages(run_id))
+        gaps = tuple(store.iter_transport_failed_stream_gaps(run_id))
+
+    assert report.status == "failed"
+    assert report.integrity_errors == ()
+    assert qualified["report_sha256"] == report.report_sha256
+    assert len(receipts) == 2
+    assert gaps == ()
+
+    rejected = tmp_path / "unrelated-failure.duckdb"
+    with PolymarketEvidenceStore(rejected) as store:
+        store.start_run(
+            "unrelated",
+            EPOCH * 1_000,
+            preregistration_manifest=preregistration("unrelated"),
+        )
+        store.record_market_evidence("unrelated", _evidence("BTC"))
+        store.append_messages(
+            "unrelated",
+            [
+                _message("clob_market", '{"event_type":"book"}'),
+                _message(
+                    "polymarket_rtds",
+                    {
+                        "topic": "crypto_prices",
+                        "type": "update",
+                        "timestamp": EPOCH * 1_000,
+                        "payload": {
+                            "symbol": "btcusdt",
+                            "timestamp": EPOCH * 1_000,
+                            "value": "2.5",
+                        },
+                    },
+                ),
+            ],
+        )
+        store.finish_run(
+            "unrelated",
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(rejected),
+            errors=("writer:RuntimeError:stopped",),
+        )
+        with pytest.raises(ValueError, match="report differs"):
+            store.inspect_transport_failed_capture("unrelated")
+
+
 def test_evidence_store_honors_preregistered_btc_futures_scope(tmp_path) -> None:
     run_id = "btc-futures-scope"
     manifest: dict[str, object] = {

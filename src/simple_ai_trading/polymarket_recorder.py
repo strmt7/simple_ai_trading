@@ -2657,6 +2657,123 @@ class PolymarketEvidenceStore:
             )
         )
 
+    @staticmethod
+    def _is_retryable_discovery_failure_text(value: str) -> bool:
+        selected = str(value or "")
+        if re.match(
+            r"^discovery:(?:ConnectionError|ConnectTimeout|ReadTimeout|"
+            r"Timeout|TimeoutError):",
+            selected,
+        ):
+            return True
+        match = re.match(r"^discovery:HTTPError:([0-9]{3})\b", selected)
+        return match is not None and int(match.group(1)) in {
+            408,
+            425,
+            429,
+            500,
+            502,
+            503,
+            504,
+        }
+
+    def inspect_transport_failed_capture(self, run_id: str) -> dict[str, object]:
+        """Validate a failed run whose only failure was retryable discovery I/O."""
+
+        selected = str(run_id or "").strip()
+        row = self.connect().execute(
+            """
+            SELECT status, report_json, report_sha256, error
+            FROM polymarket_recorder_run WHERE run_id = ?
+            """,
+            [selected],
+        ).fetchone()
+        if row is None or str(row[0]) != "failed":
+            raise ValueError("transport-failed Polymarket capture is unavailable")
+        try:
+            report = _strict_json_loads(str(row[1]))
+        except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
+            raise ValueError("transport-failed Polymarket report is invalid") from exc
+        if not isinstance(report, Mapping):
+            raise ValueError("transport-failed Polymarket report is invalid")
+        payload = dict(report)
+        embedded_sha256 = str(payload.pop("report_sha256", ""))
+        errors = report.get("errors")
+        stream_counts = report.get("stream_counts")
+        conditions = report.get("conditions")
+        sql_error = str(row[3] or "")
+        if (
+            not selected
+            or report.get("run_id") != selected
+            or report.get("status") != "failed"
+            or _canonical_json(report) != str(row[1])
+            or not hmac.compare_digest(embedded_sha256, str(row[2]))
+            or not hmac.compare_digest(_canonical_sha256(payload), str(row[2]))
+            or report.get("integrity_errors") != []
+            or not isinstance(errors, list)
+            or errors != [sql_error]
+            or not self._is_retryable_discovery_failure_text(sql_error)
+            or not isinstance(stream_counts, Mapping)
+            or int(stream_counts.get("clob_market", 0)) < 1
+            or int(stream_counts.get("polymarket_rtds", 0)) < 1
+            or report.get("assets") != ["BTC"]
+            or not isinstance(conditions, list)
+            or not conditions
+            or type(report.get("raw_message_count")) is not int
+            or int(report["raw_message_count"]) < 1
+            or not hmac.compare_digest(
+                str(report.get("evidence_manifest_sha256") or ""),
+                self._capture_manifest_sha256(selected),
+            )
+        ):
+            raise ValueError("transport-failed Polymarket report differs")
+        return dict(report)
+
+    def iter_transport_failed_capture_messages(
+        self,
+        run_id: str,
+        *,
+        streams: tuple[str, ...] | None = None,
+    ) -> Iterator[RawStreamMessage]:
+        """Yield hash-checked receipts from a narrowly qualified transport failure."""
+
+        selected = str(run_id or "").strip()
+        self.inspect_transport_failed_capture(selected)
+        yield from (
+            stored.message
+            for stored in self._iter_capture_messages(
+                selected,
+                streams=streams,
+            )
+        )
+
+    def iter_transport_failed_stream_gaps(
+        self,
+        run_id: str,
+    ) -> Iterator[StreamGap]:
+        """Yield the gap ledger for a narrowly qualified transport failure."""
+
+        selected = str(run_id or "").strip()
+        self.inspect_transport_failed_capture(selected)
+        cursor = self.connect().execute(
+            """
+            SELECT stream, connection_id, opened_at_ms, reason,
+                   last_sequence_number
+            FROM polymarket_stream_gap
+            WHERE run_id = ? ORDER BY opened_at_ms, gap_id
+            """,
+            [selected],
+        )
+        while rows := cursor.fetchmany(_INTEGRITY_FETCH_SIZE):
+            for stream, connection, opened, reason, sequence in rows:
+                yield StreamGap(
+                    stream=str(stream),
+                    connection_id=str(connection),
+                    opened_at_ms=int(opened),
+                    reason=str(reason),
+                    last_sequence_number=int(sequence),
+                ).validated()
+
     def iter_terminal_stream_gaps(self, run_id: str) -> Iterator[StreamGap]:
         """Yield the immutable gap ledger for one terminal capture."""
 
