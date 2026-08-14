@@ -128,12 +128,45 @@ def _trade_rows(result: Mapping[str, object]) -> list[dict[str, object]]:
     return rows
 
 
+def _settlement_trade_rows(result: Mapping[str, object]) -> list[dict[str, object]]:
+    diagnostic = result.get("settlement_diagnostic")
+    if not isinstance(diagnostic, Mapping):
+        return []
+    trades = diagnostic.get("best_in_sample_trades")
+    if not isinstance(trades, list):
+        raise ValueError("Round 26 settlement trade table differs")
+    cumulative = 0.0
+    rows: list[dict[str, object]] = []
+    for index, trade in enumerate(trades, start=1):
+        if not isinstance(trade, Mapping):
+            raise ValueError("Round 26 settlement trade row differs")
+        cumulative += float(trade["net_pnl_quote"])
+        rows.append(
+            {
+                "trade_index": index,
+                **trade,
+                "decision_utc": _utc(int(trade["decision_wall_ms"])).isoformat(),
+                "entry_utc": _utc(int(trade["entry_wall_ms"])).isoformat(),
+                "settled_utc": _utc(int(trade["settled_at_ms"])).isoformat(),
+                "cumulative_net_pnl_quote": f"{cumulative:.12g}",
+            }
+        )
+    return rows
+
+
 def _render(result: Mapping[str, object], destination: Path) -> None:
     started = _utc(int(result["capture_started_at_ms"]))
     ended = _utc(int(result["capture_ended_at_ms"]))
     trade_rows = _trade_rows(result)
+    settlement_trade_rows = _settlement_trade_rows(result)
     configurations = result["taker_results"]
     assert isinstance(configurations, list)
+    settlement = result.get("settlement_diagnostic")
+    settlement_configurations = (
+        settlement.get("results", []) if isinstance(settlement, Mapping) else []
+    )
+    if not isinstance(settlement_configurations, list):
+        raise ValueError("Round 26 settlement result table differs")
     plt.rcParams.update(
         {
             "axes.edgecolor": "#25333d",
@@ -146,7 +179,7 @@ def _render(result: Mapping[str, object], destination: Path) -> None:
             "ytick.color": "#52616b",
         }
     )
-    figure, axes = plt.subplots(2, 1, figsize=(11.4, 7.7), constrained_layout=True)
+    figure, axes = plt.subplots(3, 1, figsize=(11.4, 10.2), constrained_layout=True)
     figure.patch.set_facecolor("#ffffff")
     figure.suptitle(
         "Round 26 TWAP60 development pilot",
@@ -155,7 +188,57 @@ def _render(result: Mapping[str, object], destination: Path) -> None:
         color="#15232d",
     )
 
-    pnl_axis = axes[0]
+    settlement_axis = axes[0]
+    settlement_axis.axhline(0.0, color="#94a1aa", linewidth=1.0, zorder=0)
+    settlement_axis.set_xlim(started, ended)
+    if settlement_trade_rows:
+        settlement_times = [
+            _utc(int(row["settled_at_ms"])) for row in settlement_trade_rows
+        ]
+        settlement_cumulative = np.asarray(
+            [float(row["cumulative_net_pnl_quote"]) for row in settlement_trade_rows]
+        )
+        settlement_axis.step(
+            settlement_times,
+            settlement_cumulative,
+            where="post",
+            color="#2a7f62",
+            linewidth=2.2,
+        )
+        settlement_axis.scatter(
+            settlement_times, settlement_cumulative, color="#2a7f62", s=20, zorder=3
+        )
+        settlement_axis.annotate(
+            f"Final {settlement_cumulative[-1]:+.4f} USDC",
+            (settlement_times[-1], settlement_cumulative[-1]),
+            xytext=(8, 8),
+            textcoords="offset points",
+            color="#2a7f62",
+            fontweight="bold",
+        )
+    else:
+        settlement_axis.text(
+            0.5,
+            0.5,
+            "No executable settlement trades in the selected configuration",
+            transform=settlement_axis.transAxes,
+            ha="center",
+            va="center",
+            color="#65737c",
+            fontweight="bold",
+        )
+    settlement_axis.set_title(
+        "In-sample settlement diagnostic: cumulative after-cost P&L",
+        loc="left",
+        fontweight="bold",
+    )
+    settlement_axis.set_ylabel("Net P&L (USDC)")
+    settlement_axis.set_xlabel("Official market end (UTC)")
+    settlement_axis.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=UTC))
+    settlement_axis.grid(axis="y", color="#dce3e7", linewidth=0.8)
+    settlement_axis.spines[["top", "right"]].set_visible(False)
+
+    pnl_axis = axes[1]
     pnl_axis.axhline(0.0, color="#94a1aa", linewidth=1.0, zorder=0)
     pnl_axis.set_xlim(started, ended)
     if trade_rows:
@@ -195,7 +278,7 @@ def _render(result: Mapping[str, object], destination: Path) -> None:
     pnl_axis.grid(axis="y", color="#dce3e7", linewidth=0.8)
     pnl_axis.spines[["top", "right"]].set_visible(False)
 
-    robustness_axis = axes[1]
+    robustness_axis = axes[2]
     trade_counts = np.asarray([int(item["trade_count"]) for item in configurations])
     net_pnl = np.asarray([float(item["net_pnl_quote"]) for item in configurations])
     drawdown = np.asarray(
@@ -211,7 +294,24 @@ def _render(result: Mapping[str, object], destination: Path) -> None:
         s=sizes,
         alpha=0.58,
         edgecolors="none",
+        label="Two-leg markout",
     )
+    if settlement_configurations:
+        settlement_trade_counts = np.asarray(
+            [int(item["trade_count"]) for item in settlement_configurations]
+        )
+        settlement_net_pnl = np.asarray(
+            [float(item["net_pnl_quote"]) for item in settlement_configurations]
+        )
+        robustness_axis.scatter(
+            settlement_trade_counts,
+            settlement_net_pnl,
+            marker="x",
+            color="#2a7f62",
+            s=28,
+            alpha=0.6,
+            label="Settlement",
+        )
     best = result.get("best_in_sample_taker_configuration")
     if isinstance(best, Mapping):
         robustness_axis.scatter(
@@ -223,9 +323,9 @@ def _render(result: Mapping[str, object], destination: Path) -> None:
             zorder=4,
             label="Selected in sample",
         )
-        robustness_axis.legend(frameon=False, loc="best")
+    robustness_axis.legend(frameon=False, loc="best")
     robustness_axis.set_title(
-        "Frozen 960-configuration robustness scan",
+        "Frozen configuration scans",
         loc="left",
         fontweight="bold",
     )
@@ -263,6 +363,14 @@ def _readme(result: Mapping[str, object]) -> str:
     best = result.get("best_in_sample_taker_configuration")
     if not isinstance(best, Mapping):
         best = {}
+    settlement = result.get("settlement_diagnostic")
+    settlement_best = (
+        settlement.get("best_in_sample_configuration")
+        if isinstance(settlement, Mapping)
+        else None
+    )
+    if not isinstance(settlement_best, Mapping):
+        settlement_best = {}
     pilot_passed = bool(result["pilot_passed"])
     gap_count = int(result["capture_stream_gap_count"])
     return f"""# Round 26 TWAP60 pilot
@@ -277,17 +385,18 @@ def _readme(result: Mapping[str, object]) -> str:
 | Capture duration | {int(result['capture_duration_seconds'])} seconds |
 | Resolved BTC 5-minute markets | {int(result['resolved_market_count'])} |
 | Frozen configurations | {int(result['configuration_count'])} |
-| Selected round trips | {int(best.get('trade_count', 0))} |
-| Selected after-cost P&L | {float(best.get('net_pnl_quote', 0.0)):+.6f} USDC |
-| Selected maximum drawdown | {float(best.get('maximum_drawdown_quote', 0.0)):.6f} USDC |
+| Selected settlement trades | {int(settlement_best.get('trade_count', 0))} |
+| Selected settlement after-cost P&L | {float(settlement_best.get('net_pnl_quote', 0.0)):+.6f} USDC |
+| Selected two-leg round trips | {int(best.get('trade_count', 0))} |
+| Selected two-leg after-cost P&L | {float(best.get('net_pnl_quote', 0.0)):+.6f} USDC |
 | Recorded stream gaps | {gap_count} |
 | Pilot gate | {'Passed' if pilot_passed else 'Failed'} |
 
 The configuration was selected and measured on the same one-hour development
 sample. It is hypothesis generation, not out-of-sample evidence. A stream gap
 also invalidates the pilot whenever the recorded gap count is nonzero. Exact
-numeric data are in `round26-analysis.json`, `round26-configurations.csv`, and
-`round26-selected-trades.csv`; the SVG is never the source of truth.
+numeric data are in `round26-analysis.json` and the four CSV tables; the SVG is
+never the source of truth.
 """
 
 
@@ -339,6 +448,45 @@ def publish(analysis_path: Path, output_dir: Path) -> dict[str, object]:
     )
     trade_path = output_dir / "round26-selected-trades.csv"
     _write_text(trade_path, _csv_text(trade_columns, _trade_rows(result)))
+    settlement = result.get("settlement_diagnostic")
+    settlement_configurations = (
+        settlement.get("results", []) if isinstance(settlement, Mapping) else []
+    )
+    if not isinstance(settlement_configurations, list):
+        raise ValueError("Round 26 settlement result table differs")
+    settlement_configuration_path = (
+        output_dir / "round26-settlement-configurations.csv"
+    )
+    _write_text(
+        settlement_configuration_path,
+        _csv_text(
+            tuple(column for column in configuration_columns if column != "hold_ms"),
+            settlement_configurations,
+        ),
+    )
+    settlement_trade_columns = (
+        "trade_index",
+        "condition_id",
+        "outcome",
+        "winning_outcome",
+        "decision_wall_ms",
+        "decision_utc",
+        "entry_wall_ms",
+        "entry_utc",
+        "settled_at_ms",
+        "settled_utc",
+        "entry_price",
+        "payout_per_share",
+        "gross_pnl_quote",
+        "fees_quote",
+        "net_pnl_quote",
+        "cumulative_net_pnl_quote",
+    )
+    settlement_trade_path = output_dir / "round26-selected-settlement-trades.csv"
+    _write_text(
+        settlement_trade_path,
+        _csv_text(settlement_trade_columns, _settlement_trade_rows(result)),
+    )
     chart_path = output_dir / "round26-development-result.svg"
     _render(result, chart_path)
     readme_path = output_dir / "README.md"
@@ -350,6 +498,8 @@ def publish(analysis_path: Path, output_dir: Path) -> dict[str, object]:
             analysis_copy,
             configuration_path,
             trade_path,
+            settlement_configuration_path,
+            settlement_trade_path,
             chart_path,
             readme_path,
         )
