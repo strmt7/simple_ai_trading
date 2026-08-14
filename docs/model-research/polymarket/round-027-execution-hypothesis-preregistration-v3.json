@@ -1,0 +1,196 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786742059435,
+  "data_eligibility": {
+    "round26_v2": "forbidden because the in-market CLOB state is not causally reconstructable",
+    "round26_v3": "forbidden for promotion because a CLOB transport gap was already observed",
+    "selection_data": "prospective captures that begin after this preregistration is frozen",
+    "sealed_data": "a later untouched market-block partition collected after candidate freeze"
+  },
+  "efficiency_policy": {
+    "stage_0_mechanics": {
+      "maximum_resolved_markets": 60,
+      "purpose": "verify action frequency, book reconstruction, fee arithmetic, timing semantics and settlement labels; no parameter selection or economic claim"
+    },
+    "stage_1_development": {
+      "minimum_calendar_days": 3,
+      "minimum_resolved_markets": 300,
+      "purpose": "estimate effect direction and reject infeasible candidates cheaply"
+    },
+    "stage_2_selection": {
+      "minimum_calendar_days": 7,
+      "minimum_resolved_markets": 1000,
+      "purpose": "select at most one specification per candidate family with market-block purging"
+    },
+    "stage_3_sealed": {
+      "minimum_calendar_days": 20,
+      "minimum_executable_trades": 200,
+      "minimum_resolved_markets": 2000,
+      "purpose": "one final after-cost out-of-sample evaluation per frozen candidate"
+    },
+    "stop_early_when": [
+      "the mechanics cohort contains no executable action",
+      "a claimed strategy requires unavailable order-specific fill or queue evidence",
+      "the development result is nonpositive after exact fees and displayed-depth execution",
+      "the candidate fails probability calibration or is dominated by the executable market prior",
+      "a capture has an unrecoverable in-market book-integrity failure"
+    ]
+  },
+  "execution_contract": {
+    "book_price": "consume recorded displayed depth; midpoint and last-trade fills are forbidden",
+    "complete_set_value_quote": 1.0,
+    "fee": "read the exact feeSchedule or verified per-market fee fields; apply the current venue formula and rounding; never hard-code the forum's 0.072 approximation",
+    "latency": "evaluate recorded host receipt-to-decision latency plus venue taker delay and empirical order-response distributions at p50, p95 and p99",
+    "maker_fee": "zero only when a post-only order is proven to have rested and its own fill is observed",
+    "maker_fill": "no economic maker result from public books, public trades, touch assumptions or queue-position guesses",
+    "maker_rebate": "zero in the primary result; only an actual market-specific paid rebate may be added in a separately reported attribution",
+    "market_liquidity_reward": "zero unless the market exposes an active allocation and the exact order satisfies its size, spread, sidedness and duration requirements",
+    "order_atomicity": "CLOB batch responses are independent; two separate outcome orders are never modeled as an atomic pair",
+    "resolution": "official market-resolved winner and verified BTC TWAP60 market contract",
+    "slippage": "book traversal plus the observed post-decision book at executable receipt; no fixed cents assumption",
+    "unavailable_or_stale_input_action": "abstain"
+  },
+  "hypotheses": [
+    {
+      "candidate_id": "extreme_settlement_value",
+      "forum_claim": "buying near 0.01-0.05 or 0.95-0.99 may capture panic liquidity or mispriced near-certain outcomes",
+      "primary_test": "one taker entry held to official settlement after exact fee and latency",
+      "fixed_price_bands": [
+        "0.01_to_0.03",
+        "above_0.03_to_0.05",
+        "0.95_to_below_0.97",
+        "0.97_to_0.99"
+      ],
+      "required_controls": [
+        "executable market probability",
+        "time to close",
+        "TWAP60 distance to strike",
+        "recent realized volatility",
+        "displayed depth",
+        "book and feed age"
+      ],
+      "rejection_rule": "reject if the market-block bootstrap lower bound of after-cost PnL is not positive or calibration is worse than the executable market prior"
+    },
+    {
+      "candidate_id": "late_strong_favorite",
+      "forum_claim": "a sub-100ms selector may find late strong-but-not-certain favorites whose true settlement odds exceed their ask",
+      "primary_test": "calibrated settlement-value model with the executable book prior as offset; enter only when model value exceeds ask plus exact fee and a frozen safety margin",
+      "fixed_time_to_close_bands_seconds": [
+        "5_to_below_15",
+        "15_to_below_30",
+        "30_to_60"
+      ],
+      "minimum_price": 0.95,
+      "latency_statement": "sub-100ms is a hypothesis, not an assumption; venue delay and measured end-to-end latency remain binding",
+      "rejection_rule": "reject accuracy that does not improve both calibrated probability loss and after-cost PnL versus the executable market prior"
+    },
+    {
+      "candidate_id": "complete_set_acquisition_and_merge",
+      "forum_claim": "buy both outcomes below one dollar and merge the complete set",
+      "primary_test": "submit two independently modeled FOK legs, then merge only the matched common quantity; charge exact fees and value every orphan immediately at executable liquidation depth",
+      "benchmarks": [
+        "same-receipt simultaneous-book upper bound",
+        "p50 sequential order response",
+        "p95 sequential order response",
+        "p99 sequential order response"
+      ],
+      "not_arbitrage_until": "the full sequence remains positive after both independent order outcomes, fees, latency, partial or failed legs, orphan liquidation and merge completion",
+      "rejection_rule": "reject if realistic sequential execution is nonpositive even when the same-receipt upper bound is positive"
+    },
+    {
+      "candidate_id": "split_sell_market_making",
+      "forum_claim": "split one dollar into both outcomes, sell both above one dollar total, and earn spread or rebates",
+      "public_data_role": "measure quote opportunity frequency, duration, depth, subsequent adverse-selection markouts and orphan-loss bounds only",
+      "economic_result_requires": [
+        "order-specific post-only acceptance",
+        "known queue position or conservative queue-ahead reconstruction",
+        "authenticated fill lifecycle",
+        "confirmed token and pUSD balances",
+        "both-leg inventory ledger",
+        "actual rebate attribution"
+      ],
+      "orphan_policy": "never average down; cap inventory before quoting; cancel stale complements; value and flatten only bot-owned unmatched exposure under a frozen loss budget",
+      "rejection_rule": "no profitability result is permitted from public-book touch or assumed dual fills"
+    },
+    {
+      "candidate_id": "extended_move_reversal",
+      "forum_claim": "a 20-minute extended move may reverse in the next five-minute window",
+      "primary_test": "add frozen multi-horizon path-efficiency and reversal features to settlement value, then compare against the same executable market-prior baseline",
+      "reason_for_inclusion": "directional reversal frequency alone is insufficient because the Polymarket ask may already price it",
+      "rejection_rule": "reject unless incremental calibrated settlement value remains positive after exact execution costs"
+    }
+  ],
+  "multiple_testing": {
+    "development_role": "hypothesis generation only",
+    "family_count": 5,
+    "selection_limit": "at most one frozen specification per family",
+    "sealed_confidence": "market-block bootstrap 95 percent lower bound above zero after costs",
+    "sealed_reuse": "forbidden after one evaluation; any redesign requires a new future cohort"
+  },
+  "risk_boundaries": {
+    "capital_compounding": false,
+    "cross_market_netting": false,
+    "martingale": false,
+    "maximum_one_entry_per_candidate_per_market": true,
+    "position_size": "fixed five-share research unit, also report per-share economics",
+    "profit_reinvestment": false,
+    "stale_or_untracked_positions": "not applicable because this contract grants no execution authority"
+  },
+  "schema_version": "polymarket-round27-execution-hypothesis-preregistration-v3",
+  "source_assessment": {
+    "attachment_sha256": "145e6e0876e2291fb8123b78a6c3e8057698a6950da831ad1df3b4d119f934b3",
+    "forum_url": "https://www.reddit.com/r/PredictionsMarkets/comments/1uoqskg/how_efficient_are_polymarkets_5min_crypto_markets/",
+    "status": "untrusted_hypothesis_source",
+    "usable": [
+      "specific price bands and execution hypotheses",
+      "warnings about maker adverse selection and orphan inventory",
+      "claims that can be independently replayed on prospective receipt-time books"
+    ],
+    "not_evidence": [
+      "self-reported profitability",
+      "unpublished datasets or wallet anecdotes",
+      "directional tests based on candles rather than executable books",
+      "maker fills inferred from public quotes",
+      "the stale 0.072 fee approximation",
+      "claims of riskless two-leg execution"
+    ]
+  },
+  "source_research": [
+    {
+      "finding": "Current crypto taker fees use a market-specific schedule with a 0.07 category rate, while maker fees are zero and rebate percentages may change.",
+      "url": "https://docs.polymarket.com/programs/maker-rebates"
+    },
+    {
+      "finding": "Selected crypto Up/Down markets can impose a 250 ms taker delay, which must be read from the market rather than assumed away.",
+      "url": "https://docs.polymarket.com/concepts/order-lifecycle"
+    },
+    {
+      "finding": "A complete Yes/No set merges atomically to one pUSD, but acquiring the two legs through separate CLOB orders is not an atomic pair.",
+      "url": "https://docs.polymarket.com/trading/ctf/merge"
+    },
+    {
+      "finding": "Polymarket explicitly recommends two-sided quoting, inventory skew, stale-quote cancellation, fill monitoring and a kill switch for market making.",
+      "url": "https://docs.polymarket.com/trading/market-making"
+    },
+    {
+      "finding": "Liquidity rewards are market-specific, relative to other makers, and require exact market settings; they are not a fixed spread subsidy.",
+      "url": "https://docs.polymarket.com/programs/liquidity-rewards"
+    }
+  ],
+  "preregistration_sha256": "76f924e66883a589336ba0c527810e04a0bd98baab660130010ee8b2ad19b264",
+  "terminal_claim_policy": {
+    "positive_mechanics_result": "not an edge claim",
+    "positive_development_result": "not an edge or profitability claim",
+    "positive_selection_result": "candidate only",
+    "positive_sealed_result": "evidence of sample-bound after-cost edge, not guaranteed future profitability",
+    "negative_result": "preserve and publish without parameter rescue on sealed data"
+  }
+}
