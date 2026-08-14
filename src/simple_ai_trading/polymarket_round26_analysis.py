@@ -142,6 +142,14 @@ def _price_points(
     store: PolymarketEvidenceStore,
     run_id: str,
 ) -> tuple[tuple[_PricePoint, ...], tuple[_PricePoint, ...], int]:
+    """Load CEX trades after the caller has validated the complete replay.
+
+    ``verified_source=True`` intentionally requires a gap-free terminal audit.
+    Round 26 admits segmented CLOB gaps for diagnostics, so the enclosing replay
+    first verifies manifests, hashes, recorder errors, and gap structure; this
+    iterator then reconstructs the independent Binance streams from that store.
+    """
+
     by_stream: dict[str, list[_PricePoint]] = {
         "binance_spot": [],
         "binance_futures": [],
@@ -151,7 +159,7 @@ def _price_points(
         run_id,
         streams=("binance_spot", "binance_futures"),
         ordered=True,
-        verified_source=True,
+        verified_source=False,
     ):
         event_count += 1
         if event.event_type != "trade" or event.symbol != "BTC":
