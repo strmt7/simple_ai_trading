@@ -6,7 +6,10 @@ from pathlib import Path
 import pytest
 
 from simple_ai_trading import polymarket_round25_forensic_materialization as forensic
-from simple_ai_trading.polymarket_recorder import StreamGap
+from simple_ai_trading.polymarket_recorder import RawStreamMessage, StreamGap
+from simple_ai_trading.polymarket_round21_core_features import (
+    build_round21_execution_books,
+)
 from simple_ai_trading.polymarket_round25_campaign import (
     POLYMARKET_ROUND25_RESOLUTION_SOURCE,
 )
@@ -18,6 +21,7 @@ from simple_ai_trading.polymarket_round25_forensic_materialization import (
 )
 from simple_ai_trading.polymarket_round25_joint_materialization import (
     Round25JointReceiptCondition,
+    Round25SingleLaneClobDecoder,
 )
 from simple_ai_trading.polymarket_round25_joint_store import (
     POLYMARKET_ROUND25_FORENSIC_JOINT_STORE_MANIFEST_SCHEMA_VERSION,
@@ -79,6 +83,52 @@ def test_forensic_source_contracts_are_self_hashed_and_fail_closed() -> None:
             forensic_audit=audit,
             salvage_contract=tampered,
         )
+
+
+def test_single_clob_frame_can_carry_multiple_book_events_for_one_token() -> None:
+    token = "1" * 40
+    other = "2" * 40
+
+    def book(timestamp: int, bid: str, ask: str) -> dict[str, object]:
+        return {
+            "asks": [{"price": ask, "size": "9"}],
+            "asset_id": token,
+            "bids": [{"price": bid, "size": "8"}],
+            "event_type": "book",
+            "hash": str(timestamp),
+            "market": CONDITION_ID,
+            "timestamp": str(timestamp),
+        }
+
+    message = RawStreamMessage(
+        stream="clob_market",
+        connection_id="clob:" + "b" * 32,
+        sequence_number=1,
+        received_wall_ms=EVENT_START_MS + 1_000,
+        received_monotonic_ns=(EVENT_START_MS + 1_000) * 1_000_000,
+        raw_text=json.dumps(
+            [
+                book(EVENT_START_MS + 900, "0.49", "0.51"),
+                book(EVENT_START_MS + 950, "0.50", "0.52"),
+            ],
+            separators=(",", ":"),
+            sort_keys=True,
+        ),
+    )
+    decoder = Round25SingleLaneClobDecoder()
+    events = tuple(event for event, _ in decoder.add(message))
+
+    books = build_round21_execution_books(
+        condition_id=CONDITION_ID,
+        up_token_id=token,
+        down_token_id=other,
+        union_events=events,
+        admitted_gap_free=True,
+    )
+
+    assert len(books) == 2
+    assert books[0].received_wall_ms == books[1].received_wall_ms
+    assert books[0].source_payload_sha256 != books[1].source_payload_sha256
 
 
 def test_forensic_materializer_publishes_atomic_non_authorizing_store(
