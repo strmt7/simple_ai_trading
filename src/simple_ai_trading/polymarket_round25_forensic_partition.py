@@ -21,6 +21,8 @@ POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION = (
     "polymarket-round25-forensic-diagnostic-partition-v1"
 )
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_ROLES = ("train", "calibration", "selection", "purged")
 
 
 def _canonical_json(value: object) -> str:
@@ -164,8 +166,104 @@ def build_round25_forensic_partition_manifest(
     return {**body, "partition_sha256": _canonical_sha256(body)}
 
 
+def validate_round25_forensic_partition_manifest(
+    value: Mapping[str, object],
+    *,
+    expected_feature_store_manifest_sha256: str | None = None,
+) -> dict[str, object]:
+    """Recompute every role and hash before a target-access boundary is opened."""
+
+    if not isinstance(value, Mapping):
+        raise TypeError("Round 25 forensic partition manifest type differs")
+    payload = dict(value)
+    claimed = str(payload.pop("partition_sha256", "")).strip().lower()
+    expected = {
+        "condition_count",
+        "conditions",
+        "created_at_ms",
+        "feature_store_manifest_sha256",
+        "live_trading_authority",
+        "model_scores_consulted",
+        "outcomes_consulted",
+        "paper_trading_authority",
+        "profitability_claim",
+        "role_counts",
+        "salvage_contract_sha256",
+        "schema_version",
+        "selection_accessed",
+        "target_accessed",
+    }
+    rows = payload.get("conditions")
+    role_counts = payload.get("role_counts")
+    if (
+        set(payload) != expected
+        or claimed != _canonical_sha256(payload)
+        or _SHA256.fullmatch(claimed) is None
+        or payload.get("schema_version")
+        != POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION
+        or payload.get("salvage_contract_sha256")
+        != POLYMARKET_ROUND25_SALVAGE_CONTRACT_SHA256
+        or _SHA256.fullmatch(
+            str(payload.get("feature_store_manifest_sha256") or "")
+        )
+        is None
+        or type(payload.get("condition_count")) is not int
+        or payload["condition_count"] < 50
+        or type(payload.get("created_at_ms")) is not int
+        or payload["created_at_ms"] <= 0
+        or not isinstance(rows, list)
+        or len(rows) != payload["condition_count"]
+        or not isinstance(role_counts, Mapping)
+        or set(role_counts) != set(_ROLES)
+        or any(type(role_counts.get(role)) is not int for role in _ROLES)
+        or any(
+            payload.get(field) is not False
+            for field in (
+                "live_trading_authority",
+                "model_scores_consulted",
+                "outcomes_consulted",
+                "paper_trading_authority",
+                "profitability_claim",
+                "selection_accessed",
+                "target_accessed",
+            )
+        )
+    ):
+        raise ValueError("Round 25 forensic partition manifest differs")
+    decoded: list[tuple[str, int, str]] = []
+    for row in rows:
+        if (
+            not isinstance(row, Mapping)
+            or set(row) != {"condition_id", "event_start_ms", "role"}
+            or _CONDITION_ID.fullmatch(str(row.get("condition_id") or "")) is None
+            or type(row.get("event_start_ms")) is not int
+            or row.get("role") not in _ROLES
+        ):
+            raise ValueError("Round 25 forensic partition condition differs")
+        decoded.append(
+            (str(row["condition_id"]), int(row["event_start_ms"]), str(row["role"]))
+        )
+    recomputed = partition_round25_forensic_conditions(
+        tuple((condition_id, event_start_ms) for condition_id, event_start_ms, _ in decoded)
+    )
+    observed_counts = Counter(role for _, _, role in decoded)
+    if (
+        tuple(decoded) != recomputed
+        or dict(role_counts) != {role: observed_counts[role] for role in _ROLES}
+        or payload["created_at_ms"] <= max(event_start_ms for _, event_start_ms, _ in decoded)
+        or (
+            expected_feature_store_manifest_sha256 is not None
+            and payload["feature_store_manifest_sha256"]
+            != expected_feature_store_manifest_sha256
+        )
+    ):
+        raise ValueError("Round 25 forensic partition binding differs")
+    return {**payload, "partition_sha256": claimed}
+
+
 __all__ = [
     "POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION",
     "build_round25_forensic_partition_manifest",
     "partition_round25_forensic_conditions",
+    "validate_round25_forensic_partition_manifest",
 ]
