@@ -22,6 +22,9 @@ from simple_ai_trading.polymarket_round25_forensic_materialization import (
     materialize_round25_forensic_joint_feature_store,
     validate_round25_forensic_sources,
 )
+from simple_ai_trading.polymarket_round25_forensic_partition import (
+    partition_round25_forensic_conditions,
+)
 from simple_ai_trading.polymarket_round25_joint_materialization import (
     Round25JointReceiptCondition,
     Round25SingleLaneClobDecoder,
@@ -86,6 +89,29 @@ def test_forensic_source_contracts_are_self_hashed_and_fail_closed() -> None:
             forensic_audit=audit,
             salvage_contract=tampered,
         )
+
+
+def test_forensic_partition_is_chronological_purged_and_target_blind() -> None:
+    population = tuple(
+        (f"0x{index + 1:064x}", EVENT_START_MS + index * 300_000)
+        for index in range(50)
+    )
+
+    partition = partition_round25_forensic_conditions(population)
+    roles = [role for _, _, role in partition]
+
+    assert roles.count("train") == 29
+    assert roles.count("calibration") == 8
+    assert roles.count("selection") == 9
+    assert roles.count("purged") == 4
+    assert [index for index, role in enumerate(roles) if role == "purged"] == [
+        29,
+        30,
+        39,
+        40,
+    ]
+    with pytest.raises(ValueError, match="population differs"):
+        partition_round25_forensic_conditions(tuple(reversed(population)))
 
 
 def test_single_clob_frame_can_carry_multiple_book_events_for_one_token() -> None:
