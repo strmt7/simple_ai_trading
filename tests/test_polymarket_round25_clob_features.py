@@ -159,12 +159,14 @@ def test_one_batch_may_update_both_tokens_at_same_monotonic_receipt() -> None:
     assert engine.build(START_MS + 250).available is True
 
 
-def test_same_token_duplicate_or_global_regression_is_rejected() -> None:
+def test_exact_duplicate_or_global_regression_is_rejected() -> None:
     engine = _engine()
-    engine.ingest(_book(UP_TOKEN, monotonic_ns=5_000))
+    first = _book(UP_TOKEN, monotonic_ns=5_000)
+    engine.ingest(first)
 
     with pytest.raises(ValueError, match="chronology"):
-        engine.ingest(_book(UP_TOKEN, offset_ms=150, monotonic_ns=5_000))
+        engine.ingest(first)
+    engine.ingest(_book(UP_TOKEN, offset_ms=150, monotonic_ns=5_000))
     with pytest.raises(ValueError, match="chronology"):
         engine.ingest(_book(DOWN_TOKEN, offset_ms=150, monotonic_ns=4_999))
 

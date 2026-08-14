@@ -977,17 +977,7 @@ def build_round21_execution_books(
             )
     if not output:
         raise ValueError("Round 21 execution-book population is empty")
-    return tuple(
-        sorted(
-            output,
-            key=lambda value: (
-                value.received_wall_ms,
-                value.received_monotonic_ns,
-                value.asset_id,
-                value.source_payload_sha256,
-            ),
-        )
-    )
+    return tuple(output)
 
 
 @dataclass(frozen=True, slots=True)
