@@ -25,7 +25,7 @@ from .polymarket_round26_pilot import (
 from .storage import write_bytes_atomic
 
 
-ROUND26_ANALYSIS_SCHEMA_VERSION = "polymarket-round26-twap60-analysis-v1"
+ROUND26_ANALYSIS_SCHEMA_VERSION = "polymarket-round26-twap60-analysis-v2"
 ROUND26_DECISION_STEP_MS = 100
 ROUND26_BOOK_SAMPLE_INTERVAL_MS = 50
 ROUND26_MAXIMUM_BOOK_OBSERVATION_DELAY_MS = 250
