@@ -208,7 +208,7 @@ def _source_points(
             if point is not None:
                 twap.append(point)
             continue
-        if event.event_type != "trade" or event.symbol != "BTC":
+        if event.event_type not in {"aggTrade", "trade"} or event.symbol != "BTC":
             continue
         payload = event.event.get("data")
         if not isinstance(payload, Mapping):

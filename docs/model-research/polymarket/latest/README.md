@@ -25,6 +25,12 @@ delayed and sequential costs were 1.012066 and 1.002744 pUSD per complete set,
 respectively, before network latency. Extreme-price and late-favorite states
 remain prospective model-value hypotheses; public quotes do not prove fills.
 
+The next capture uses Binance's documented USD-M `@aggTrade` market stream.
+A live 33.719-second source probe recorded 29/29 finite positive trades, while
+the new source gate independently rejects the legacy v3 feed. The
+[source qualification](../binance-usdm-aggregate-trade-source-qualification-v1-2026-08-15.json)
+is conditional until a complete prospective capture passes the same gate.
+
 ![Round 27 mechanics diagnostic](round-027-mechanics-diagnostic/mechanics-diagnostic.svg)
 
 ![Round 26 target-free replay eligibility](round-026-twap60-condition-audit/condition-replay-eligibility.svg)

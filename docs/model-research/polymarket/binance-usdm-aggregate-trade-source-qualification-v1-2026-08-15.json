@@ -1,0 +1,70 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "model_data_eligible": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786746763118,
+  "decision": {
+    "endpoint": "wss://fstream.binance.com/market/stream?streams=",
+    "next_capture_profile": "documented_aggregate_trades",
+    "status": "conditionally_qualified_for_prospective_capture",
+    "stream": "{symbol}@aggTrade",
+    "update_speed_ms": 100
+  },
+  "live_probe": {
+    "duration_seconds": 33.719,
+    "event_type": "aggTrade",
+    "fields": [
+      "E",
+      "T",
+      "a",
+      "e",
+      "f",
+      "l",
+      "m",
+      "nq",
+      "p",
+      "q",
+      "s",
+      "st"
+    ],
+    "invalid_numeric_count": 0,
+    "message_count": 29,
+    "non_positive_count": 0,
+    "symbol": "BTCUSDT",
+    "symbol_type": 1,
+    "valid_positive_count": 29
+  },
+  "official_source": {
+    "aggregate_trade_finding": "USD-M aggregate trades are published on the market stream, update every 100 ms, and include p, q, nq, T, E, and st fields",
+    "aggregate_trade_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market",
+    "book_ticker_finding": "real-time individual book tickers are published separately on the public stream",
+    "book_ticker_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public",
+    "retrieved_at_ms": 1786746763118
+  },
+  "prior_capture_audit": {
+    "accepted_documented_futures_trade_count": 0,
+    "accepted_spot_trade_count": 43648,
+    "futures_legacy_trade_count": 32659,
+    "futures_non_positive_count": 87,
+    "run_id": "02a948019cf14b68a7f81d836170dc85",
+    "source_quality_sha256": "0f273b71f4939814fc6c3b0bee5ce12a4f41cfae3e29ec60ffdc6664671fa290",
+    "status": "failed"
+  },
+  "qualification_sha256": "9ae8d12c2f38fcb8aca341a632a24f7999cacc7ad4af5d8fde4e6f3201094d7b",
+  "required_successor_gate": {
+    "accepted_spot_trade_count_positive": true,
+    "accepted_usdm_aggregate_trade_count_positive": true,
+    "invalid_numeric_count": 0,
+    "legacy_futures_trade_count": 0,
+    "non_positive_trade_count": 0,
+    "target_free_audit_required": true
+  },
+  "schema_version": "binance-usdm-aggregate-trade-source-qualification-v1"
+}

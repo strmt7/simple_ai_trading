@@ -165,13 +165,21 @@ def test_source_points_use_prevalidated_segmented_source_reconstruction() -> Non
                 received_wall_ms=1,
                 event={"data": {"p": "100"}},
             )
+            yield SimpleNamespace(
+                stream="binance_futures",
+                event_type="aggTrade",
+                symbol="BTC",
+                received_monotonic_ns=2_000,
+                received_wall_ms=2,
+                event={"data": {"p": "101"}},
+            )
 
     spot, futures, twap, event_count = _source_points(Store(), "round26")
 
     assert len(spot) == 1
-    assert futures == ()
+    assert len(futures) == 1
     assert twap == ()
-    assert event_count == 1
+    assert event_count == 2
 
 
 def test_source_points_reject_non_positive_binance_trade_prices() -> None:

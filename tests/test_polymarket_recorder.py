@@ -1768,6 +1768,54 @@ def test_btc_scoped_recorder_uses_live_validated_bounded_binance_lanes(
     assert "ethusdt" not in str(futures["url"])
 
 
+def test_documented_futures_profile_uses_aggregate_trade_market_stream(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    recorder = PolymarketPublicRecorder(
+        tmp_path / "btc-aggregate.duckdb",
+        assets=("BTC",),
+        include_binance_futures=True,
+        binance_futures_aggregate_trades=True,
+    )
+    captured: list[dict[str, object]] = []
+
+    async def _capture_simple_stream(**options: object) -> None:
+        captured.append(dict(options))
+
+    monkeypatch.setattr(recorder, "_simple_stream", _capture_simple_stream)
+    asyncio.run(recorder._binance_futures_stream(asyncio.Queue(), asyncio.Event()))
+
+    assert len(captured) == 1
+    futures = captured[0]
+    assert futures["stream"] == "binance_futures"
+    assert futures["lane"] == "binance:futures-aggregate:btc"
+    assert str(futures["url"]).startswith(
+        "wss://fstream.binance.com/market/stream?streams="
+    )
+    assert "btcusdt@aggTrade" in str(futures["url"])
+    assert "btcusdt@trade" not in str(futures["url"])
+    assert "@depth" not in str(futures["url"])
+
+
+def test_documented_futures_profile_requires_futures_without_frozen_profile(
+    tmp_path,
+) -> None:
+    with pytest.raises(ValueError, match="aggregate trades require futures"):
+        PolymarketPublicRecorder(
+            tmp_path / "no-futures.duckdb",
+            binance_futures_aggregate_trades=True,
+        )
+    with pytest.raises(ValueError, match="aggregate trades require futures"):
+        PolymarketPublicRecorder(
+            tmp_path / "conflicting-futures.duckdb",
+            assets=("BTC",),
+            include_binance_futures=True,
+            binance_book_ticker_profile=True,
+            binance_futures_aggregate_trades=True,
+        )
+
+
 def test_every_recorder_output_type_has_a_bounded_queue_deadline(
     tmp_path,
     monkeypatch,
