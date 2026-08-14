@@ -7889,30 +7889,11 @@ class PolymarketPublicRecorder:
                         if heartbeat is not None
                         else None
                     )
-                    receive = asyncio.create_task(websocket.recv())
-                    stopping = asyncio.create_task(stop.wait())
-                    try:
+                    async def receive_frames() -> None:
+                        nonlocal sequence
                         while not stop.is_set():
-                            watched: set[asyncio.Task[object]] = {receive, stopping}
-                            if heartbeat_task is not None:
-                                watched.add(heartbeat_task)
-                            done, _ = await asyncio.wait(
-                                watched,
-                                timeout=_STREAM_INACTIVITY_SECONDS,
-                                return_when=asyncio.FIRST_COMPLETED,
-                            )
-                            if not done:
-                                raise RuntimeError(
-                                    f"{stream} exceeded the inactivity bound"
-                                )
-                            if heartbeat_task is not None and heartbeat_task in done:
-                                heartbeat_task.result()
-                                if stop.is_set():
-                                    return
-                                raise RuntimeError(f"{stream} heartbeat stopped early")
-                            if stopping in done and stopping.result():
-                                return
-                            raw = receive.result()
+                            async with asyncio.timeout(_STREAM_INACTIVITY_SECONDS):
+                                raw = await websocket.recv()
                             next_sequence = sequence + 1
                             text = _text_frame(raw)
                             if frame_validator is not None:
@@ -7931,9 +7912,32 @@ class PolymarketPublicRecorder:
                             sequence = next_sequence
                             if text == "PING":
                                 await websocket.send("PONG")
-                            receive = asyncio.create_task(websocket.recv())
+
+                    receiver_task = asyncio.create_task(receive_frames())
+                    stopping = asyncio.create_task(stop.wait())
+                    try:
+                        watched: set[asyncio.Task[object]] = {
+                            receiver_task,
+                            stopping,
+                        }
+                        if heartbeat_task is not None:
+                            watched.add(heartbeat_task)
+                        done, _ = await asyncio.wait(
+                            watched,
+                            return_when=asyncio.FIRST_COMPLETED,
+                        )
+                        if stopping in done and stopping.result():
+                            return
+                        if heartbeat_task is not None and heartbeat_task in done:
+                            heartbeat_task.result()
+                            if stop.is_set():
+                                return
+                            raise RuntimeError(f"{stream} heartbeat stopped early")
+                        receiver_task.result()
+                        if not stop.is_set():
+                            raise RuntimeError(f"{stream} receiver stopped early")
                     finally:
-                        tasks = [receive, stopping]
+                        tasks = [receiver_task, stopping]
                         if heartbeat_task is not None:
                             tasks.append(heartbeat_task)
                         for task in tasks:
