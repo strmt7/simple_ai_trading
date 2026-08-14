@@ -1027,14 +1027,175 @@ def evaluate_round25_forensic_selection(
         "trade_results": trade_results,
         "win_rate": 0.0 if not pnl else sum(value > 0.0 for value in pnl) / len(pnl),
     }
-    return {**result_body, "result_sha256": _canonical_sha256(result_body)}
+    return validate_round25_forensic_result(
+        {**result_body, "result_sha256": _canonical_sha256(result_body)}
+    )
+
+
+def validate_round25_forensic_result(
+    value: Mapping[str, object],
+) -> dict[str, object]:
+    if not isinstance(value, Mapping):
+        raise TypeError("Round 25 forensic result type differs")
+    body = dict(value)
+    claimed = str(body.pop("result_sha256", "")).strip().lower()
+    expected = {
+        "abstention_rate",
+        "after_cost_profitability_established",
+        "closed_trade_count",
+        "created_at_ms",
+        "diagnostic_economic_gate_passed",
+        "diagnostic_predictive_gate_passed",
+        "evaluation_contract_sha256",
+        "market_prior_metrics",
+        "maximum_drawdown_quote",
+        "net_profit_quote",
+        "prediction_artifact_sha256",
+        "profit_factor",
+        "profit_factor_infinite",
+        "profitability_claim",
+        "return_on_committed_capital",
+        "schema_version",
+        "selected_candidate_id",
+        "selected_metrics",
+        "selection_condition_count",
+        "selection_end_ms",
+        "selection_resolution_claim_sha256",
+        "selection_start_ms",
+        "statistical_edge_established",
+        "trade_results",
+        "win_rate",
+    }
+    trades = body.get("trade_results")
+    metric_names = {
+        "balanced_accuracy",
+        "condition_equal_brier_score",
+        "condition_equal_log_loss",
+        "direction_accuracy",
+        "expected_calibration_error",
+        "roc_auc",
+    }
+    if (
+        set(body) != expected
+        or claimed != _canonical_sha256(body)
+        or _SHA256.fullmatch(claimed) is None
+        or body.get("schema_version")
+        != POLYMARKET_ROUND25_FORENSIC_RESULT_SCHEMA_VERSION
+        or body.get("evaluation_contract_sha256")
+        != POLYMARKET_ROUND25_FORENSIC_EVALUATION_CONTRACT_SHA256
+        or body.get("selected_candidate_id") not in _CANDIDATES
+        or type(body.get("created_at_ms")) is not int
+        or type(body.get("selection_start_ms")) is not int
+        or type(body.get("selection_end_ms")) is not int
+        or body["selection_end_ms"] <= body["selection_start_ms"]
+        or type(body.get("selection_condition_count")) is not int
+        or body["selection_condition_count"] < 8
+        or type(body.get("closed_trade_count")) is not int
+        or not 0 <= body["closed_trade_count"] <= body["selection_condition_count"]
+        or not isinstance(trades, list)
+        or len(trades) != body["closed_trade_count"]
+        or any(
+            _SHA256.fullmatch(str(body.get(field) or "")) is None
+            for field in (
+                "prediction_artifact_sha256",
+                "selection_resolution_claim_sha256",
+            )
+        )
+        or not isinstance(body.get("selected_metrics"), Mapping)
+        or set(body["selected_metrics"]) != metric_names
+        or not isinstance(body.get("market_prior_metrics"), Mapping)
+        or set(body["market_prior_metrics"]) != metric_names
+        or any(
+            not isinstance(body.get(field), (int, float))
+            or isinstance(body.get(field), bool)
+            or not math.isfinite(float(body[field]))
+            for field in (
+                "abstention_rate",
+                "maximum_drawdown_quote",
+                "net_profit_quote",
+                "return_on_committed_capital",
+                "win_rate",
+            )
+        )
+        or any(
+            body.get(field) is not False
+            for field in (
+                "after_cost_profitability_established",
+                "profitability_claim",
+                "statistical_edge_established",
+            )
+        )
+        or any(
+            type(body.get(field)) is not bool
+            for field in (
+                "diagnostic_economic_gate_passed",
+                "diagnostic_predictive_gate_passed",
+                "profit_factor_infinite",
+            )
+        )
+    ):
+        raise ValueError("Round 25 forensic result differs")
+    cumulative = 0.0
+    for trade in trades:
+        if (
+            not isinstance(trade, Mapping)
+            or set(trade)
+            != {
+                "condition_id",
+                "cumulative_net_pnl_quote",
+                "entry_cost_quote",
+                "fee_quote",
+                "net_pnl_quote",
+                "outcome",
+                "resolved_up",
+            }
+            or _CONDITION_ID.fullmatch(str(trade.get("condition_id") or "")) is None
+            or trade.get("outcome") not in {"Up", "Down"}
+            or type(trade.get("resolved_up")) is not bool
+            or any(
+                not isinstance(trade.get(field), (int, float))
+                or isinstance(trade.get(field), bool)
+                or not math.isfinite(float(trade[field]))
+                for field in (
+                    "cumulative_net_pnl_quote",
+                    "entry_cost_quote",
+                    "fee_quote",
+                    "net_pnl_quote",
+                )
+            )
+        ):
+            raise ValueError("Round 25 forensic result trade differs")
+        cumulative += float(trade["net_pnl_quote"])
+        if not math.isclose(
+            cumulative,
+            float(trade["cumulative_net_pnl_quote"]),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            raise ValueError("Round 25 forensic result trade accounting differs")
+    if (
+        not math.isclose(
+            cumulative,
+            float(body["net_profit_quote"]),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
+        or not math.isclose(
+            float(body["abstention_rate"]),
+            1.0 - len(trades) / int(body["selection_condition_count"]),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
+    ):
+        raise ValueError("Round 25 forensic result accounting differs")
+    return {**body, "result_sha256": claimed}
 
 
 def write_round25_forensic_result(
     path: str | Path,
     result: Mapping[str, object],
 ) -> Path:
-    return _write_once(path, result)
+    return _write_once(path, validate_round25_forensic_result(result))
 
 
 __all__ = [
@@ -1043,6 +1204,7 @@ __all__ = [
     "POLYMARKET_ROUND25_FORENSIC_RESULT_SCHEMA_VERSION",
     "evaluate_round25_forensic_selection",
     "fit_and_freeze_round25_forensic_models",
+    "validate_round25_forensic_result",
     "validate_round25_forensic_prediction_artifact",
     "write_round25_forensic_model_artifacts",
     "write_round25_forensic_result",
