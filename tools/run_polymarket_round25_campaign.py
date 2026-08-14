@@ -16,7 +16,7 @@ from simple_ai_trading.polymarket_round25_campaign import (
 )
 
 
-ACKNOWLEDGEMENT = "start-frozen-round25-twap-core-capture"
+ACKNOWLEDGEMENT = "start-frozen-round25-twap-core-capture-v2"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -27,17 +27,17 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--plan",
         type=Path,
-        default=Path("data/round25-twap-core-campaign-plan.json"),
+        default=Path("data/round25-twap-core-v2-campaign-plan.json"),
     )
     parser.add_argument(
         "--database",
         type=Path,
-        default=Path("data/round25-twap-core.duckdb"),
+        default=Path("data/round25-twap-core-v2.duckdb"),
     )
     parser.add_argument(
         "--state-root",
         type=Path,
-        default=Path("data/round25-twap-core-state"),
+        default=Path("data/round25-twap-core-v2-state"),
     )
     commands = parser.add_subparsers(dest="command", required=True)
     build = commands.add_parser("build-plan")
@@ -46,7 +46,7 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path(
             "docs/model-research/polymarket/"
-            "round-025-twap-source-qualification-2026-08-10.json"
+            "round-025-twap-wire-source-qualification-v2-2026-08-10.json"
         ),
     )
     commands.add_parser("inspect")

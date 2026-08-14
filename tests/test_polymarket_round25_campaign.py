@@ -113,6 +113,8 @@ def test_design_and_plan_are_hash_bound_and_non_authoritative() -> None:
 
     assert design["design_sha256"] == POLYMARKET_ROUND25_DESIGN_SHA256
     assert design["source_regime"]["legacy_and_twap_conditions_may_be_pooled"] is False
+    assert design["source_regime"]["rtds_topic"] == "crypto_prices_twap_thirty"
+    assert design["source_regime"]["exact_e18_value_required"] is True
     assert validate_round25_campaign_plan(plan).scheduled_end_ms == (
         POLYMARKET_ROUND25_END_MS
     )
@@ -123,6 +125,47 @@ def test_design_and_plan_are_hash_bound_and_non_authoritative() -> None:
     tampered["resolution_source"] = "https://data.chain.link/streams/btc-usd"
     with pytest.raises(ValueError, match="plan differs"):
         validate_round25_campaign_plan(tampered)
+
+
+def test_campaign_recorder_uses_exact_twap_wire_mode(tmp_path) -> None:
+    recorder = round25._create_recorder(tmp_path / "capture.duckdb")
+
+    assert recorder.assets == ("BTC",)
+    assert recorder.include_binance_spot is False
+    assert recorder.include_rtds_binance is False
+    assert recorder.chainlink_price_mode == "twap_30s"
+    assert recorder.rtds_topics == ("crypto_prices_twap_thirty",)
+
+
+def test_twap_wire_source_qualification_is_hash_bound() -> None:
+    path = (
+        ROOT
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-025-twap-wire-source-qualification-v2-2026-08-10.json"
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    claimed = payload.pop("qualification_sha256")
+
+    assert round25._canonical_sha256(payload) == claimed
+    assert payload["status"] == "passed"
+    assert payload["required_rtds_topic"] == "crypto_prices_twap_thirty"
+    assert payload["twap_window_seconds"] == 30
+    assert payload["exact_e18_value_observed"] is True
+    assert payload["wire_probe"]["empty_control_frames"] == 1
+    assert len(payload["wire_probe"]["observations"]) == 2
+    assert all(
+        observation["window_s"] == 30
+        and observation["symbol"] == "btc/usd"
+        and observation["topic"] == "crypto_prices_twap_thirty"
+        for observation in payload["wire_probe"]["observations"]
+    )
+    assert payload["credentials_used"] is False
+    assert payload["execution_connected"] is False
+    assert payload["orders_submitted"] == 0
+    assert payload["model_data_eligible"] is False
+    assert payload["live_trading_authority"] is False
 
 
 def test_source_qualification_binds_two_consecutive_twap_markets() -> None:
