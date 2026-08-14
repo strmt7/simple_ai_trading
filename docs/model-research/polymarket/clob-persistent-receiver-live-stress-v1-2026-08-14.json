@@ -1,0 +1,36 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "implementation_commit": "90311db71d77b1f0914ba119cee85c492f0caa72",
+  "limitations": [
+    "The probe lasted two minutes and cannot prove indefinite connection reliability.",
+    "The probe drained the CLOB queue without database persistence, so it isolates receiver throughput rather than full-recorder throughput.",
+    "The result does not rehabilitate captures made with the predecessor receiver implementation.",
+    "The result contains no model, prediction, execution, edge or profitability evidence."
+  ],
+  "observed_at_ms": 1786738699083,
+  "probe": {
+    "assets": [
+      "BTC"
+    ],
+    "database_writes": false,
+    "duration_seconds": 120.016,
+    "frame_count": 51464,
+    "frames_per_second": 428.81,
+    "maximum_queue_size": 54,
+    "public_data_only": true,
+    "stream": "Polymarket CLOB market WebSocket",
+    "subscribed_market_scope": "current and next BTC five-minute TWAP60 markets",
+    "written_gap_count": 0
+  },
+  "result_sha256": "16d925e19af718a767b89c1f444521a8aba32fa2b60a0146846d8513e627c9a7",
+  "schema_version": "polymarket-clob-persistent-receiver-live-stress-v1",
+  "status": "passed"
+}
