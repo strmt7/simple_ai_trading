@@ -166,6 +166,14 @@ def test_fit_and_selection_access_are_physically_separate(
         created_at_ms=START + 100 * 300_000,
     )
     assert fit_claim["role_counts"] == {"calibration": 8, "train": 29}
+    _, resumed_claim = resolution.initialize_round25_forensic_resolution_collection(
+        feature_database=tmp_path / "feature.duckdb",
+        partition_manifest=partition,
+        destination_database=fit,
+        stage="fit",
+        created_at_ms=START + 101 * 300_000,
+    )
+    assert resumed_claim == fit_claim
     assert resolution.collect_round25_forensic_resolutions_once(
         collection_database=fit,
         client=_Client(conditions),
