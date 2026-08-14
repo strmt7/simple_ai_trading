@@ -60,6 +60,24 @@ def _analysis() -> dict[str, object]:
         "fees_quote": "0.02",
         "net_pnl_quote": "0.03",
     }
+    settlement_configuration = {
+        key: value for key, value in configuration.items() if key != "hold_ms"
+    }
+    settlement_trade = {
+        "condition_id": "condition-1",
+        "outcome": "Up",
+        "winning_outcome": "Up",
+        "decision_wall_ms": 1_786_737_010_000,
+        "decision_monotonic_ns": 1_000_000_000,
+        "entry_wall_ms": 1_786_737_010_500,
+        "entry_monotonic_ns": 1_500_000_000,
+        "settled_at_ms": 1_786_737_300_000,
+        "entry_price": "0.50",
+        "payout_per_share": "1",
+        "gross_pnl_quote": "2.50",
+        "fees_quote": "0.0875",
+        "net_pnl_quote": "2.4125",
+    }
     body: dict[str, object] = {
         "schema_version": MODULE.SCHEMA_VERSION,
         "contract_sha256": "1" * 64,
@@ -77,6 +95,11 @@ def _analysis() -> dict[str, object]:
         "taker_results": [configuration],
         "best_in_sample_taker_configuration": configuration,
         "best_in_sample_trades": [trade],
+        "settlement_diagnostic": {
+            "results": [settlement_configuration],
+            "best_in_sample_configuration": settlement_configuration,
+            "best_in_sample_trades": [settlement_trade],
+        },
         "pilot_passed": False,
         "edge_claim": False,
         "profitability_claim": False,
@@ -106,6 +129,10 @@ def test_publication_is_derived_from_hash_bound_analysis(tmp_path: Path) -> None
     assert rows[0]["net_pnl_quote"] == "0.03"
     trades = (output / "round26-selected-trades.csv").read_text(encoding="ascii")
     assert "2026-08-14T19:50:12+00:00" in trades
+    settlement_trades = (
+        output / "round26-selected-settlement-trades.csv"
+    ).read_text(encoding="ascii")
+    assert "2.4125" in settlement_trades
     readme = (output / "README.md").read_text(encoding="ascii")
     assert "No edge, profitability" in readme
     assert "2026-08-14 19:50:00 to 2026-08-14 20:50:00" in readme

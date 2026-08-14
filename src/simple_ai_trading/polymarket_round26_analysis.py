@@ -155,6 +155,7 @@ class _SettlementTrade:
     decision_monotonic_ns: int
     entry_wall_ms: int
     entry_monotonic_ns: int
+    settled_at_ms: int
     entry_price: Decimal
     payout_per_share: Decimal
     gross_pnl: Decimal
@@ -536,6 +537,7 @@ def _execute_settlement_trade(
         decision_monotonic_ns=signal.received_monotonic_ns,
         entry_wall_ms=entry.received_wall_ms,
         entry_monotonic_ns=entry.received_monotonic_ns,
+        settled_at_ms=market.end_ms,
         entry_price=ask.price,
         payout_per_share=payout,
         gross_pnl=gross,
@@ -685,6 +687,7 @@ def _trade_payload(trade: _Trade) -> dict[str, object]:
         "decision_monotonic_ns": trade.decision_monotonic_ns,
         "entry_wall_ms": trade.entry_wall_ms,
         "entry_monotonic_ns": trade.entry_monotonic_ns,
+        "settled_at_ms": trade.settled_at_ms,
         "exit_wall_ms": trade.exit_wall_ms,
         "exit_monotonic_ns": trade.exit_monotonic_ns,
         "entry_price": str(trade.entry_price),
