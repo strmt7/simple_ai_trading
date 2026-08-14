@@ -1,0 +1,91 @@
+{
+  "schema_version": "polymarket-round25-v2-transport-failure-forensic-audit-v1",
+  "round": 25,
+  "created_at_utc": "2026-08-14T17:13:08Z",
+  "status": "forensic_audit_passed_capture_remains_globally_failed",
+  "source_bindings": {
+    "campaign_plan_sha256": "a0b5525697c3c1e1b175bd0f0ac724fdb62845638d2040e9964221031d3e7b20",
+    "campaign_state_artifact_sha256": "827655168339cfb7fae34fa8a2b06770e58134667c0d1a845d32fa72559a27b7",
+    "campaign_state_file_sha256": "b30cb7360162d31960171cad7bbb2f4033db71448f0787a36b97c2c4e9a9a131",
+    "segment_manifest_artifact_sha256": "48746009016610f3e7bda8e693b48b2eff2cc98c378d6d658b4f4a953da8fd0f",
+    "segment_manifest_file_sha256": "930728c6742ec019815d2d4e2cc9c26c09cf19df46ebbe110fcf4afc00b615b8",
+    "segment_result_artifact_sha256": "2ae376e754fd2de1a4741efc9569a311a6aeed8f905e3ae8289b8c794256729f",
+    "segment_result_file_sha256": "e8ea1922fc4c7868f737585cfe8151c8fc6ef78f74586fc9ee6f88906fdc9560",
+    "run_id": "f96a24bdaa2d4f5f8cdad3f06193a0ce",
+    "segment_index": 2,
+    "recorder_report_sha256": "45a613588f15ef45f57c51931d1b01e19f7cb7b0d6b08e7be0b0dd5b8d49631d",
+    "evidence_manifest_sha256": "9d45a88606239646302af3d0c8b3c1ffdbf824ea3836b73418bdaaad35f045d9",
+    "forensic_reader_commit_oid": "ab53e1e2"
+  },
+  "campaign_facts": {
+    "campaign_status": "campaign_failed",
+    "terminal_segment_count": 5,
+    "status_counts": {
+      "failed": 3,
+      "interrupted": 2
+    },
+    "model_data_eligible": false,
+    "condition_admission_pending": true
+  },
+  "capture_facts": {
+    "asset": "BTC",
+    "resolution_source": "https://data.chain.link/streams/btc-usd-twap-30s-streams",
+    "started_at_ms": 1786515141041,
+    "ended_at_ms": 1786548091054,
+    "duration_seconds": 32950.013,
+    "condition_snapshot_count": 111,
+    "raw_message_count": 13816367,
+    "decoded_event_count": 13813224,
+    "stream_counts": {
+      "clob_market": 13785024,
+      "clob_rest_book": 2,
+      "polymarket_rtds": 31341
+    },
+    "stream_gap_count": 16
+  },
+  "terminal_failure": {
+    "error_count": 1,
+    "classification": "retryable_clob_discovery_connection_timeout",
+    "capture_writer_failure": false,
+    "database_integrity_failure": false,
+    "model_failure": false,
+    "market_data_failure": false,
+    "global_run_status_changed": false
+  },
+  "deep_read_only_audit": {
+    "method": "full_stored_receipt_hash_chain_and_decoded_event_integrity_scan",
+    "source_database_mode": "read_only_inactive_wal_free",
+    "elapsed_seconds": 450.8,
+    "raw_messages_verified": 13816367,
+    "decoded_events_verified": 13813224,
+    "out_of_window_message_count": 0,
+    "integrity_errors": [],
+    "database_mutated": false,
+    "report_status_mutated": false
+  },
+  "forensic_replay_boundary": {
+    "qualified_transport_failure_only": true,
+    "non_retryable_failure_accepted": false,
+    "hash_checked_receipts_only": true,
+    "gap_ledger_required": true,
+    "source_database_read_only": true,
+    "source_database_path_published": false,
+    "condition_population_defined": false,
+    "condition_features_materialized": false,
+    "targets_or_resolutions_accessed": false,
+    "model_scores_consulted": false,
+    "requires_separate_target_blind_salvage_contract": true
+  },
+  "claims_and_authority": {
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "after_cost_profitability_established": false,
+    "ai_uplift_established": false,
+    "model_data_eligibility_granted": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "credentials_used": false
+  },
+  "artifact_sha256": "8ee546844fada87ab4a542f6620bc5e83654b635b6a72145a338c02431c41276"
+}
