@@ -8,11 +8,16 @@ import pytest
 
 from simple_ai_trading import polymarket_round25_forensic_model as forensic_model
 from simple_ai_trading.polymarket_round25_forensic_model import (
+    POLYMARKET_ROUND25_FORENSIC_RESULT_SCHEMA_VERSION,
     _Rows,
     _fit_logistic,
     _metrics,
     _predict_logistic,
     _weighted_isotonic,
+    validate_round25_forensic_result,
+)
+from simple_ai_trading.polymarket_round25_forensic_resolution import (
+    POLYMARKET_ROUND25_FORENSIC_EVALUATION_CONTRACT_SHA256,
 )
 from simple_ai_trading.polymarket_round25_forensic_materialization import (
     POLYMARKET_ROUND25_SALVAGE_CONTRACT_SHA256,
@@ -205,3 +210,62 @@ def test_full_fit_freezes_selection_without_selection_targets(
     assert prediction["selection_targets_accessed"] is False
     assert prediction["access_freeze"]["condition_count"] == 9
     assert len(prediction["prediction_rows"]) == 9 * 16
+
+
+def test_forensic_result_recomputes_trade_accounting() -> None:
+    metrics = {
+        "balanced_accuracy": 0.6,
+        "condition_equal_brier_score": 0.24,
+        "condition_equal_log_loss": 0.68,
+        "direction_accuracy": 0.6,
+        "expected_calibration_error": 0.1,
+        "roc_auc": 0.6,
+    }
+    trades = [
+        {
+            "condition_id": f"0x{index + 1:064x}",
+            "cumulative_net_pnl_quote": cumulative,
+            "entry_cost_quote": 2.0,
+            "event_start_ms": 1_786_515_300_000 + index * 300_000,
+            "fee_quote": 0.01,
+            "net_pnl_quote": pnl,
+            "outcome": "Up",
+            "resolved_up": pnl > 0,
+        }
+        for index, (pnl, cumulative) in enumerate(((1.0, 1.0), (-0.5, 0.5), (1.0, 1.5)))
+    ]
+    body = {
+        "abstention_rate": 5 / 8,
+        "after_cost_profitability_established": False,
+        "closed_trade_count": 3,
+        "created_at_ms": 1_786_520_000_000,
+        "diagnostic_economic_gate_passed": True,
+        "diagnostic_predictive_gate_passed": True,
+        "evaluation_contract_sha256": POLYMARKET_ROUND25_FORENSIC_EVALUATION_CONTRACT_SHA256,
+        "market_prior_metrics": {**metrics, "condition_equal_log_loss": 0.7},
+        "maximum_drawdown_quote": 0.5,
+        "net_profit_quote": 1.5,
+        "prediction_artifact_sha256": "6" * 64,
+        "profit_factor": 4.0,
+        "profit_factor_infinite": False,
+        "profitability_claim": False,
+        "return_on_committed_capital": 0.25,
+        "schema_version": POLYMARKET_ROUND25_FORENSIC_RESULT_SCHEMA_VERSION,
+        "selected_candidate_id": "l2-logistic-residual-v1",
+        "selected_metrics": metrics,
+        "selection_condition_count": 8,
+        "selection_end_ms": 1_786_518_000_000,
+        "selection_resolution_claim_sha256": "7" * 64,
+        "selection_start_ms": 1_786_515_300_000,
+        "statistical_edge_established": False,
+        "trade_results": trades,
+        "win_rate": 2 / 3,
+    }
+    result = {**body, "result_sha256": _canonical_sha256(body)}
+
+    assert validate_round25_forensic_result(result) == result
+
+    tampered = {**body, "net_profit_quote": 9.0}
+    tampered["result_sha256"] = _canonical_sha256(tampered)
+    with pytest.raises(ValueError, match="accounting differs"):
+        validate_round25_forensic_result(tampered)
