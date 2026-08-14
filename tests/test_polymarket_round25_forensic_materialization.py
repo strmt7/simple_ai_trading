@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -23,7 +24,9 @@ from simple_ai_trading.polymarket_round25_forensic_materialization import (
     validate_round25_forensic_sources,
 )
 from simple_ai_trading.polymarket_round25_forensic_partition import (
+    POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION,
     partition_round25_forensic_conditions,
+    validate_round25_forensic_partition_manifest,
 )
 from simple_ai_trading.polymarket_round25_joint_materialization import (
     Round25JointReceiptCondition,
@@ -42,6 +45,17 @@ CONTRACT = RESEARCH / "round-025-v2-condition-salvage-contract-v1.json"
 RUN_ID = "f96a24bdaa2d4f5f8cdad3f06193a0ce"
 EVENT_START_MS = 1_786_515_300_000
 CONDITION_ID = "0x" + "1" * 64
+
+
+def _canonical_sha256(value: object) -> str:
+    encoded = json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _sources() -> tuple[dict[str, object], dict[str, object]]:
@@ -112,6 +126,54 @@ def test_forensic_partition_is_chronological_purged_and_target_blind() -> None:
     ]
     with pytest.raises(ValueError, match="population differs"):
         partition_round25_forensic_conditions(tuple(reversed(population)))
+
+
+def test_forensic_partition_manifest_recomputes_roles_and_hash() -> None:
+    population = tuple(
+        (f"0x{index + 1:064x}", EVENT_START_MS + index * 300_000)
+        for index in range(50)
+    )
+    rows = [
+        {"condition_id": condition_id, "event_start_ms": event_start_ms, "role": role}
+        for condition_id, event_start_ms, role in partition_round25_forensic_conditions(
+            population
+        )
+    ]
+    body = {
+        "condition_count": 50,
+        "conditions": rows,
+        "created_at_ms": population[-1][1] + 300_000,
+        "feature_store_manifest_sha256": "a" * 64,
+        "live_trading_authority": False,
+        "model_scores_consulted": False,
+        "outcomes_consulted": False,
+        "paper_trading_authority": False,
+        "profitability_claim": False,
+        "role_counts": {
+            "train": 29,
+            "calibration": 8,
+            "selection": 9,
+            "purged": 4,
+        },
+        "salvage_contract_sha256": POLYMARKET_ROUND25_SALVAGE_CONTRACT_SHA256,
+        "schema_version": POLYMARKET_ROUND25_FORENSIC_PARTITION_SCHEMA_VERSION,
+        "selection_accessed": False,
+        "target_accessed": False,
+    }
+    manifest = {**body, "partition_sha256": _canonical_sha256(body)}
+
+    assert validate_round25_forensic_partition_manifest(
+        manifest,
+        expected_feature_store_manifest_sha256="a" * 64,
+    ) == manifest
+
+    tampered = json.loads(json.dumps(manifest))
+    tampered["conditions"][0]["role"] = "selection"
+    tampered_body = dict(tampered)
+    tampered_body.pop("partition_sha256")
+    tampered["partition_sha256"] = _canonical_sha256(tampered_body)
+    with pytest.raises(ValueError, match="binding differs"):
+        validate_round25_forensic_partition_manifest(tampered)
 
 
 def test_single_clob_frame_can_carry_multiple_book_events_for_one_token() -> None:
