@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 
-SCHEMA_VERSION = "polymarket-round26-twap60-analysis-v2"
+SCHEMA_VERSION = "polymarket-round26-twap60-analysis-v3"
 MANIFEST_SCHEMA_VERSION = "polymarket-round26-publication-manifest-v1"
 
 

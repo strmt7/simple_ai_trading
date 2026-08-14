@@ -29,7 +29,7 @@ from .polymarket_twap60 import (
 from .storage import write_bytes_atomic
 
 
-ROUND26_ANALYSIS_SCHEMA_VERSION = "polymarket-round26-twap60-analysis-v2"
+ROUND26_ANALYSIS_SCHEMA_VERSION = "polymarket-round26-twap60-analysis-v3"
 ROUND26_DECISION_STEP_MS = 100
 ROUND26_BOOK_SAMPLE_INTERVAL_MS = 50
 ROUND26_MAXIMUM_BOOK_OBSERVATION_DELAY_MS = 250
@@ -141,6 +141,22 @@ class _Trade:
     exit_monotonic_ns: int
     entry_price: Decimal
     exit_price: Decimal
+    gross_pnl: Decimal
+    fees: Decimal
+    net_pnl: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class _SettlementTrade:
+    condition_id: str
+    outcome: str
+    winning_outcome: str
+    decision_wall_ms: int
+    decision_monotonic_ns: int
+    entry_wall_ms: int
+    entry_monotonic_ns: int
+    entry_price: Decimal
+    payout_per_share: Decimal
     gross_pnl: Decimal
     fees: Decimal
     net_pnl: Decimal
@@ -474,6 +490,127 @@ def _maximum_drawdown(pnls: Sequence[Decimal]) -> Decimal:
     return drawdown
 
 
+def _execute_settlement_trade(
+    signal: _Signal,
+    market: PolymarketFiveMinuteMarket,
+    resolution: PolymarketResolutionEvidence,
+    series: _BookSeries,
+    *,
+    mode: str,
+    delay_ms: int,
+) -> _SettlementTrade | None:
+    direction = 1 if signal.score_bps > 0 else -1
+    if mode == "reversion":
+        direction *= -1
+    outcome = "Up" if direction > 0 else "Down"
+    token = market.up_token_id if outcome == "Up" else market.down_token_id
+    if (
+        resolution.condition_id != market.condition_id
+        or resolution.winning_outcome not in {"Up", "Down"}
+        or not series.books
+        or series.books[0].token_id != token
+    ):
+        raise ValueError("Round 26 settlement evidence differs")
+    entry = series.first_at_or_after(
+        signal.received_monotonic_ns + delay_ms * 1_000_000,
+        maximum_delay_ms=ROUND26_MAXIMUM_BOOK_OBSERVATION_DELAY_MS,
+    )
+    if (
+        entry is None
+        or not entry.snapshot.asks
+        or entry.market.condition_id != market.condition_id
+        or entry.received_wall_ms >= market.end_ms
+    ):
+        return None
+    ask = entry.snapshot.asks[0]
+    if ask.quantity < ROUND26_QUANTITY:
+        return None
+    fee = market.fee_schedule.fee_model()(ask.price, ROUND26_QUANTITY, "taker")
+    payout = Decimal("1") if outcome == resolution.winning_outcome else Decimal("0")
+    gross = ROUND26_QUANTITY * (payout - ask.price)
+    return _SettlementTrade(
+        condition_id=market.condition_id,
+        outcome=outcome,
+        winning_outcome=resolution.winning_outcome,
+        decision_wall_ms=signal.received_wall_ms,
+        decision_monotonic_ns=signal.received_monotonic_ns,
+        entry_wall_ms=entry.received_wall_ms,
+        entry_monotonic_ns=entry.received_monotonic_ns,
+        entry_price=ask.price,
+        payout_per_share=payout,
+        gross_pnl=gross,
+        fees=fee,
+        net_pnl=gross - fee,
+    )
+
+
+def _settlement_configuration_result(
+    signals: Sequence[_Signal],
+    markets: Sequence[PolymarketFiveMinuteMarket],
+    starts: Sequence[int],
+    resolutions: Mapping[str, PolymarketResolutionEvidence],
+    series_by_token: Mapping[str, _BookSeries],
+    *,
+    lookback_ms: int,
+    threshold_bps: float,
+    mode: str,
+    delay_ms: int,
+) -> tuple[dict[str, object], tuple[_SettlementTrade, ...]]:
+    trades: list[_SettlementTrade] = []
+    entered_conditions: set[str] = set()
+    eligible_signal_count = 0
+    for signal in signals:
+        if abs(signal.score_bps) < threshold_bps:
+            continue
+        market = _market_for_time(markets, starts, signal.received_wall_ms)
+        if market is None or market.condition_id in entered_conditions:
+            continue
+        resolution = resolutions.get(market.condition_id)
+        if resolution is None:
+            continue
+        eligible_signal_count += 1
+        direction = 1 if signal.score_bps > 0 else -1
+        if mode == "reversion":
+            direction *= -1
+        token = market.up_token_id if direction > 0 else market.down_token_id
+        series = series_by_token.get(token)
+        if series is None:
+            continue
+        trade = _execute_settlement_trade(
+            signal,
+            market,
+            resolution,
+            series,
+            mode=mode,
+            delay_ms=delay_ms,
+        )
+        if trade is not None:
+            trades.append(trade)
+            entered_conditions.add(market.condition_id)
+    gross = sum((trade.gross_pnl for trade in trades), Decimal("0"))
+    fees = sum((trade.fees for trade in trades), Decimal("0"))
+    net = sum((trade.net_pnl for trade in trades), Decimal("0"))
+    wins = sum(trade.net_pnl > 0 for trade in trades)
+    result = {
+        "lookback_ms": lookback_ms,
+        "threshold_bps": threshold_bps,
+        "signal_mode": mode,
+        "taker_delay_ms": delay_ms,
+        "eligible_signal_count": eligible_signal_count,
+        "trade_count": len(trades),
+        "unique_condition_count": len({trade.condition_id for trade in trades}),
+        "gross_pnl_quote": float(gross),
+        "fees_quote": float(fees),
+        "net_pnl_quote": float(net),
+        "mean_net_pnl_quote": float(net / len(trades)) if trades else 0.0,
+        "win_rate": wins / len(trades) if trades else 0.0,
+        "maximum_drawdown_quote": float(
+            _maximum_drawdown(tuple(trade.net_pnl for trade in trades))
+        ),
+    }
+    return result, tuple(trades)
+
+
 def _configuration_result(
     signals: Sequence[_Signal],
     markets: Sequence[PolymarketFiveMinuteMarket],
@@ -558,6 +695,23 @@ def _trade_payload(trade: _Trade) -> dict[str, object]:
     }
 
 
+def _settlement_trade_payload(trade: _SettlementTrade) -> dict[str, object]:
+    return {
+        "condition_id": trade.condition_id,
+        "outcome": trade.outcome,
+        "winning_outcome": trade.winning_outcome,
+        "decision_wall_ms": trade.decision_wall_ms,
+        "decision_monotonic_ns": trade.decision_monotonic_ns,
+        "entry_wall_ms": trade.entry_wall_ms,
+        "entry_monotonic_ns": trade.entry_monotonic_ns,
+        "entry_price": str(trade.entry_price),
+        "payout_per_share": str(trade.payout_per_share),
+        "gross_pnl_quote": str(trade.gross_pnl),
+        "fees_quote": str(trade.fees),
+        "net_pnl_quote": str(trade.net_pnl),
+    }
+
+
 def _load_capture_result(
     path: Path,
     contract: Round26PilotContract,
@@ -616,6 +770,13 @@ def run_round26_pilot_analysis(
     )
     configurations: list[dict[str, object]] = []
     trades_by_key: dict[tuple[object, ...], tuple[_Trade, ...]] = {}
+    settlement_configurations: list[dict[str, object]] = []
+    settlement_trades_by_key: dict[
+        tuple[object, ...], tuple[_SettlementTrade, ...]
+    ] = {}
+    resolutions_by_condition = {
+        resolution.condition_id: resolution for resolution in replay.resolutions
+    }
     signal_count_by_lookback: dict[str, int] = {}
     for lookback_ms in ROUND26_LOOKBACK_MS:
         signals = _signals(spot, futures, lookback_ms=lookback_ms)
@@ -623,6 +784,23 @@ def run_round26_pilot_analysis(
         for threshold_bps in ROUND26_THRESHOLDS_BPS:
             for mode in ROUND26_SIGNAL_MODES:
                 for delay_ms in ROUND26_TAKER_DELAYS_MS:
+                    settlement_result, settlement_trades = (
+                        _settlement_configuration_result(
+                            signals,
+                            markets,
+                            starts,
+                            resolutions_by_condition,
+                            series_by_token,
+                            lookback_ms=lookback_ms,
+                            threshold_bps=threshold_bps,
+                            mode=mode,
+                            delay_ms=delay_ms,
+                        )
+                    )
+                    settlement_configurations.append(settlement_result)
+                    settlement_trades_by_key[
+                        (lookback_ms, threshold_bps, mode, delay_ms)
+                    ] = settlement_trades
                     for hold_ms in ROUND26_HOLD_MS:
                         result, trades = _configuration_result(
                             signals,
@@ -665,6 +843,26 @@ def run_round26_pilot_analysis(
             best["hold_ms"],
         )
         best_trades = trades_by_key[best_key]
+    ranked_settlement = sorted(
+        settlement_configurations,
+        key=lambda item: (
+            int(item["trade_count"]) >= 8,
+            float(item["net_pnl_quote"]),
+            float(item["mean_net_pnl_quote"]),
+            int(item["trade_count"]),
+        ),
+        reverse=True,
+    )
+    best_settlement = ranked_settlement[0] if ranked_settlement else None
+    best_settlement_trades: tuple[_SettlementTrade, ...] = ()
+    if best_settlement is not None:
+        best_settlement_key = (
+            best_settlement["lookback_ms"],
+            best_settlement["threshold_bps"],
+            best_settlement["signal_mode"],
+            best_settlement["taker_delay_ms"],
+        )
+        best_settlement_trades = settlement_trades_by_key[best_settlement_key]
     continuity_clean = int(capture.get("stream_gap_count", 0)) == 0
     pilot_conditions = {
         "minimum_action_count_met": bool(best and int(best["trade_count"]) >= 20),
@@ -719,6 +917,32 @@ def run_round26_pilot_analysis(
         },
         "pilot_pass_conditions": pilot_conditions,
         "pilot_passed": all(pilot_conditions.values()),
+        "settlement_diagnostic": {
+            "accounting": (
+                "one observed taker entry fee and official binary payout; no "
+                "redemption gas, capital reuse, or maker fill is claimed"
+            ),
+            "configuration_count": len(settlement_configurations),
+            "results": ranked_settlement,
+            "best_in_sample_configuration": best_settlement,
+            "best_in_sample_trades": [
+                _settlement_trade_payload(trade)
+                for trade in best_settlement_trades
+            ],
+            "diagnostic_conditions": {
+                "minimum_eight_trades_met": bool(
+                    best_settlement and int(best_settlement["trade_count"]) >= 8
+                ),
+                "positive_after_cost_pnl": bool(
+                    best_settlement
+                    and float(best_settlement["net_pnl_quote"]) > 0
+                ),
+                "no_stream_gaps": continuity_clean,
+            },
+            "selection_role": "same-sample_hypothesis_generation_only",
+            "edge_claim": False,
+            "profitability_claim": False,
+        },
         "selection_bias_warning": (
             "The best configuration was selected on the same one-hour development "
             "sample; it is hypothesis generation, not edge evidence."

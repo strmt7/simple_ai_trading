@@ -18,21 +18,23 @@ def _parser() -> argparse.ArgumentParser:
         "--contract",
         type=Path,
         default=Path(
-            "docs/model-research/polymarket/round-026-twap60-development-pilot-v2.json"
+            "docs/model-research/polymarket/round-026-twap60-development-pilot-v3.json"
         ),
     )
     parser.add_argument(
-        "--database", type=Path, default=Path("data/round26-twap60-development-pilot-v2.duckdb")
+        "--database",
+        type=Path,
+        default=Path("data/round26-twap60-development-pilot-v3.duckdb"),
     )
     parser.add_argument(
         "--capture-result",
         type=Path,
-        default=Path("data/round26-twap60-development-pilot-v2-result.json"),
+        default=Path("data/round26-twap60-development-pilot-v3-result.json"),
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data/round26-twap60-development-analysis-v2.json"),
+        default=Path("data/round26-twap60-development-analysis-v3.json"),
     )
     return parser
 
