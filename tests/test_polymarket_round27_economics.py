@@ -212,7 +212,10 @@ def test_round27_economics_walks_depth_and_passes_every_fixed_delay() -> None:
         assert bootstrap["method"] == (
             "stationary_bootstrap_block_length_sensitivity_envelope"
         )
-        assert bootstrap["expected_block_lengths_conditions"] == [1, 4]
+        assert set(bootstrap["fixed_expected_block_lengths_conditions"]) == {1, 4}
+        assert bootstrap["automatic_expected_block_length_conditions"] in bootstrap[
+            "expected_block_lengths_conditions"
+        ]
         assert bootstrap["ci95_lower"] == min(
             item["ci95_lower"] for item in bootstrap["block_intervals"]
         )
