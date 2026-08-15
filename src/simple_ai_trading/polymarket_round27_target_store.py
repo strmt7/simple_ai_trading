@@ -21,6 +21,10 @@ from .polymarket_round27_experiment import (
 )
 from .polymarket_round27_features import Round27FeatureRow
 from .polymarket_round27_model import Round27RoleInterval
+from .polymarket_round27_model_amendment import (
+    POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD,
+    POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256,
+)
 from .polymarket_round27_model_contract import (
     POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION,
     POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256,
@@ -378,6 +382,10 @@ class Round27TargetStore:
         )
         contract_body = dict(contract)
         contract_body.pop("contract_sha256", None)
+        model_amendment_sha256 = contract_body.pop(
+            POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD,
+            None,
+        )
         feature_audit_sha256 = _sha256(
             feature_store_audit_sha256,
             name="feature-store audit",
@@ -394,6 +402,8 @@ class Round27TargetStore:
             or contract_sha256 != POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256
             or contract.get("schema_version")
             != POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION
+            or model_amendment_sha256
+            != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
             or contract_sha256 != _canonical_sha256(contract_body)
             or type(opened_at_ms) is not int
             or opened_at_ms <= 0

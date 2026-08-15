@@ -152,12 +152,17 @@ class _Client:
         return _envelope(gamma, _OPENED_MS + 2)
 
 
-def _open(store: Round27TargetStore, *, role: str = "train") -> bool:
+def _open(
+    store: Round27TargetStore,
+    *,
+    role: str = "train",
+    contract: dict[str, object] | None = None,
+) -> bool:
     return store.open_role(
         role=role,
         slot_id="stage1-a",
         run_id="stage1-a-run",
-        contract=load_round27_model_contract(_ROOT),
+        contract=contract or load_round27_model_contract(_ROOT),
         feature_store_audit_sha256="b" * 64,
         role_intervals=(
             {
@@ -203,3 +208,12 @@ def test_target_store_rejects_sealed_access_without_exact_artifacts(
     with Round27TargetStore(tmp_path / "targets.duckdb") as store:
         with pytest.raises(ValueError, match="sealed target artifacts are required"):
             _open(store, role="sealed")
+
+
+def test_target_store_rejects_a_changed_model_amendment(tmp_path: Path) -> None:
+    contract = load_round27_model_contract(_ROOT)
+    contract["model_implementation_amendment_sha256"] = "0" * 64
+
+    with Round27TargetStore(tmp_path / "targets.duckdb") as store:
+        with pytest.raises(ValueError, match="target role population differs"):
+            _open(store, contract=contract)

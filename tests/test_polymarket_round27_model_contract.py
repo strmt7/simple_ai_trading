@@ -10,6 +10,10 @@ from simple_ai_trading.polymarket_round27_model_contract import (
     load_round27_model_contract,
     validate_round27_model_contract,
 )
+from simple_ai_trading.polymarket_round27_model_amendment import (
+    POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD,
+    POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256,
+)
 
 
 _ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +23,10 @@ def test_round27_model_contract_is_frozen_and_source_bound() -> None:
     contract = load_round27_model_contract(_ROOT)
 
     assert contract["contract_sha256"] == POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256
+    assert (
+        contract[POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD]
+        == POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+    )
     assert contract["knowledge_at_freeze"] == {
         "ai_assist_economic_metrics_computed": False,
         "campaign_capture_started": False,

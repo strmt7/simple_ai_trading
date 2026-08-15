@@ -1,7 +1,7 @@
 # Round 27 Stage 1 model design
 
-Status: **frozen before Stage 1 capture and outcome access**. No market edge or
-profitability is claimed.
+Status: **frozen experiment; Stage 1-A capture active; no Stage 1 feature or
+outcome access**. No market edge or profitability is claimed.
 
 ```mermaid
 flowchart LR
@@ -34,7 +34,8 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused Round 27 tests | 103 passed |
+| Focused Round 27 tests | 107 passed |
+| Corrected LightGBM host backend | AMD OpenCL (`opencl:auto`) |
 | Qwen3.5-9B cold / warm structured inference | 5.13 s / 0.52 s |
 | Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
 | Qwen3.5-9B host runtime | Qualified for later matched ablation only |
@@ -59,6 +60,16 @@ most one trade per condition. The pre-capture
 corrects both evidence gates to 60. This is a minimum sample-size requirement,
 not a quota: no risk gate may be weakened and fewer than 60 fills means
 insufficient evidence, not permission to manufacture activity or claim edge.
+
+A second review before any Stage 1 feature or outcome access found that the
+LightGBM candidate was documented as a market-prior residual but trained as a
+standalone classifier. The frozen
+[offset correction amendment](../../round-027-lightgbm-offset-correction-amendment-v1.json)
+now requires the row-specific market logit as LightGBM `init_score` and restores
+it around the persisted raw tree margin during inference. It binds the old and
+corrected source hashes and a new model schema. A live AMD OpenCL synthetic
+check and the 107-test domain checkpoint validate mechanics only; neither is
+market-edge evidence.
 
 The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
 binds both candidates to exact Ollama, upstream, and quantized-artifact hashes,

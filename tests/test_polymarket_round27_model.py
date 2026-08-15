@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 
+import lightgbm as lgb
 import numpy as np
 import pytest
 
@@ -154,12 +155,21 @@ def test_shallow_lightgbm_is_bounded_and_cpu_portable() -> None:
         seed=27,
     )
     prediction = model.predict(partition.features, partition.offsets)
+    raw_correction = np.asarray(
+        lgb.Booster(model_str=model.model_text).predict(
+            partition.features,
+            raw_score=True,
+        ),
+        dtype=np.float64,
+    )
+    expected = 1.0 / (1.0 + np.exp(-(partition.offsets + raw_correction)))
 
     assert model.backend_kind == "cpu"
     assert model.backend_device == "cpu"
     assert len(model.model_sha256) == 64
     assert np.all(np.isfinite(prediction))
     assert np.all((prediction > 0.0) & (prediction < 1.0))
+    assert np.allclose(prediction, expected, rtol=0.0, atol=1e-15)
 
     payload = model.asdict()
     assert payload["model_text"] == model.model_text

@@ -55,6 +55,7 @@ def _samples() -> tuple[Round27ModelSample, ...]:
 def _contract() -> dict[str, object]:
     return {
         "contract_sha256": "a" * 64,
+        "model_implementation_amendment_sha256": "d" * 64,
         "minimum_population": {
             "train_conditions": 20,
             "calibration_conditions": 20,
@@ -120,6 +121,7 @@ def test_selection_claim_precedes_sealed_evaluation() -> None:
     assert claim["sealed_partition_accessed"] is False
     assert claim["economic_metrics_computed"] is False
     assert claim["edge_claim"] is False
+    assert claim["model_implementation_amendment_sha256"] == "d" * 64
 
     restored = load_round27_selected_model(
         selection_claim=persisted,
@@ -170,6 +172,34 @@ def test_sealed_evaluation_rejects_a_tampered_selection_claim() -> None:
             selection_economic_claim=economic_claim,
             selection_economic_report=economic_report,
             selected_model=model,
+        )
+
+
+def test_selected_model_rejects_a_missing_model_amendment_binding() -> None:
+    claim, _model = run_round27_development_selection(
+        samples=_samples(),
+        contract=_contract(),
+        claim_writer=lambda value: value["claim_sha256"],
+        compute_backend="cpu",
+    )
+    missing = copy.deepcopy(claim)
+    missing.pop("model_implementation_amendment_sha256")
+    body = dict(missing)
+    body.pop("claim_sha256")
+    missing["claim_sha256"] = hashlib.sha256(
+        json.dumps(
+            body,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+
+    with pytest.raises(ValueError, match="selection claim differs"):
+        load_round27_selected_model(
+            selection_claim=missing,
+            contract=_contract(),
         )
 
 
