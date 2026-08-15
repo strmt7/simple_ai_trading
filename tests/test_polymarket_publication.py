@@ -235,6 +235,11 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round28_ai_preregistration_frozen"] is True
     assert manifest["round28_ai_core_implementation_source_bound"] is True
     assert manifest["round28_ai_operator_implementation_source_bound"] is True
+    assert (
+        manifest["round28_ai_sealed_evaluation_implementation_source_bound"]
+        is True
+    )
+    assert manifest["round28_ai_sealed_result_available"] is False
     assert manifest["round28_ai_result_available"] is False
     assert manifest["profitability_claim"] is False
     assert manifest["paper_authority"] is False
@@ -244,6 +249,10 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert "round-023-lead-lag-results-v1.json" in artifact_paths
     assert (
         "round-028-sealed-evaluation-implementation-amendment-v1.json"
+        in artifact_paths
+    )
+    assert (
+        "round-028-ai-sealed-evaluation-implementation-amendment-v1.json"
         in artifact_paths
     )
     assert "round-023-lead-lag-performance.svg" in artifact_paths
