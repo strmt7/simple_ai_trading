@@ -527,7 +527,10 @@ def _ai_pretest_qualification(
     selection: Round74ActionPolicySelection,
     *,
     manifests: tuple[str, str] = ("a" * 64, "b" * 64),
+    failed_model_indexes: frozenset[int] = frozenset(),
 ) -> Round74AIPretestQualificationPanel:
+    if not failed_model_indexes <= {0, 1}:
+        raise ValueError("test AI model index differs")
     selected = [
         evaluation
         for evaluation in selection.evaluations
@@ -563,7 +566,9 @@ def _ai_pretest_qualification(
         reviews = []
         executions = []
         for index, baseline_net_bps in enumerate(trace.net_payoff_bps):
-            retained = baseline_net_bps >= 0.0
+            retained = (
+                True if model_index in failed_model_indexes else baseline_net_bps >= 0.0
+            )
             multiplier = 10_000 if retained else 0
             decision = Round74AIReviewDecision(
                 verdict="allow_unchanged" if retained else "veto",
@@ -657,10 +662,12 @@ def _ai_pretest_qualification(
             qualification_trace=trace,
             qualification_candidate_sha256=("d" * 64,),
         )
-        assert report.development_gate_passed
+        assert report.development_gate_passed == (
+            model_index not in failed_model_indexes
+        )
         reports.append(report)
     qualification = build_round74_ai_pretest_qualification(tuple(reports))
-    assert qualification.qualification_passed
+    assert qualification.qualification_passed == (len(failed_model_indexes) < 2)
     return qualification
 
 
@@ -1306,6 +1313,76 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert instructions[0].pre_replay_status == "historical_review_expired"
     assert instructions[0].requested_size_multiplier_bps == 10_000
     assert not instructions[0].action_latency_eligible
+
+
+def test_sealed_evaluator_advances_only_individually_qualified_ai_model(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+    batch = _test_batch()
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    candidates = ("c" * 64, "e" * 64)
+    qualification = _ai_pretest_qualification(
+        selection,
+        manifests=candidates,
+        failed_model_indexes=frozenset({1}),
+    )
+    admitted = (candidates[0],)
+    assert qualification.candidate_model_manifest_sha256 == candidates
+    assert qualification.model_manifest_sha256 == admitted
+    policy = {
+        "policy_sha256": selection.pretest_policy_sha256,
+        "model_artifact": {"sha256": "d" * 64},
+        "development_data": {
+            "partition_sha256": batch.partition_sha256,
+            "scaler_sha256": batch.scaler_sha256,
+            "window_representation": batch.window_representation,
+        },
+    }
+    monkeypatch.setattr(
+        sealed_subject,
+        "load_round74_pretest_policy",
+        lambda _path: (_Model(), policy),
+    )
+    reviews = _reviews(batch, calibration, selection, manifest=admitted[0])
+    replays = _execution_replays(reviews, partition_sha256=batch.partition_sha256)
+    observed: list[tuple[str, ...]] = []
+
+    def review_provider(*, claim, manifests, **_kwargs):
+        assert claim.ai_manifest_sha256 == admitted
+        observed.append(tuple(manifests))
+        return {admitted[0]: reviews}
+
+    def replay_provider(*, claim, instructions_by_manifest):
+        assert claim.ai_manifest_sha256 == admitted
+        observed.append(tuple(instructions_by_manifest))
+        return {admitted[0]: replays}
+
+    outcome = evaluate_round74_sealed_once(
+        build_round74_sealed_dataset_identity((batch,)),
+        test_batch_loader=lambda **_kwargs: (batch,),
+        final_action_configuration=_configuration(selection),
+        probability_calibration=calibration,
+        pretest_policy_path=tmp_path / "policy.json",
+        ai_pretest_qualification=qualification,
+        ai_review_provider=review_provider,
+        ai_execution_replay_provider=replay_provider,
+        ledger=ledger,
+        compute_backend="cpu",
+    )
+
+    assert observed == [admitted, admitted]
+    assert outcome.finalized_claim.ai_manifest_sha256 == admitted
+    assert (
+        tuple(overlay.model_manifest_sha256 for overlay in outcome.report.ai_overlays)
+        == admitted
+    )
 
 
 def test_predictive_gate_requires_familywise_skill_for_every_forecast_task() -> None:
@@ -2065,6 +2142,51 @@ def test_prepared_review_provider_binds_reserved_claim_and_model_panel(
             inference=inference,
             action_selection=selection,
         )
+
+
+def test_prepared_review_provider_accepts_only_qualified_model(
+    tmp_path: Path,
+) -> None:
+    batch = _test_batch()
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    inference = _candidate_inference(batch, calibration, selection)
+    candidates = round74_default_ai_review_model_panel()
+    candidate_manifests = tuple(value.manifest.manifest_sha256 for value in candidates)
+    qualification = _ai_pretest_qualification(
+        selection,
+        manifests=candidate_manifests,
+        failed_model_indexes=frozenset({1}),
+    )
+    admitted_bindings = (candidates[0],)
+    admitted_manifests = (candidate_manifests[0],)
+    ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+    claim = ledger.reserve(
+        test_batches=(batch,),
+        final_action_configuration=_configuration(selection),
+        ai_pretest_qualification=qualification,
+    )
+    provider = Round74PreparedSealedAIReviewProvider(
+        probability_calibration=calibration,
+        model_bindings=admitted_bindings,
+        ai_pretest_qualification=qualification,
+        review_runner=_blocked_review,
+        wall_time_ns=lambda: 1_900_000_000_000_000_000,
+    )
+
+    reviews = provider(
+        claim=claim,
+        manifests=admitted_manifests,
+        inference=inference,
+        action_selection=selection,
+    )
+
+    assert tuple(reviews) == admitted_manifests
+    assert claim.ai_manifest_sha256 == admitted_manifests
 
 
 def test_store_replay_provider_reconciles_each_run_and_restores_order(

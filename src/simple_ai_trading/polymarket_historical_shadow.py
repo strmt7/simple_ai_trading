@@ -18,8 +18,8 @@ from typing import Mapping
 
 import numpy as np
 
-# Private helpers are intentional: the artifact loader pins their source hash so
-# live shadow features cannot silently drift from the frozen training transform.
+# Private helpers are intentional. The loader separately verifies the frozen
+# evidence implementation and this compatibility adapter's current source set.
 from .polymarket_historical_dataset import (
     FEATURE_NAMES,
     _log_returns,
@@ -56,6 +56,16 @@ _REQUIRED_TEST_GATES = frozenset(
         "paired_log_loss_improvement_lower_positive",
     }
 )
+_FROZEN_HISTORICAL_IMPLEMENTATION_SHA256 = {
+    "model": "f1485af8a6eece82b814e99ea46a6b480cfd97626d2fa26d3f283e2c6424e5ef",
+    "dataset": "062a648a84138424dc10a0fa3e4807d1a204724eb6737249ad8950c9ff56dccf",
+    "screen": "3f6cc8623c4780b23071446794df41d20ca86c0afff7f91b600f6e9e71f4f460",
+}
+_SHADOW_COMPATIBILITY_IMPLEMENTATION_SHA256 = {
+    "model": "292302cc1fdc824830837a3455fdc2ae3ffe693e5c9820bf6e56aca103f97e5c",
+    "dataset": "739adb9c5b019c73254b419531a930a8a89d5842d9b3dca789992aeee06f1064",
+    "screen": "9aff8a4e6d2c2aefb8510e4cf5a1bbeb70902f3220495ea712e1fe5e7f2a3e1e",
+}
 
 
 def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -702,14 +712,17 @@ def load_verified_historical_shadow_predictor(
         pretest.get("implementation_sha256"),
         name="historical implementation",
     )
+    if dict(implementation) != _FROZEN_HISTORICAL_IMPLEMENTATION_SHA256:
+        raise ValueError("historical shadow frozen implementation hash differs")
+
     source_root = Path(__file__).parent
-    expected_implementation = {
+    current_implementation = {
         "model": _file_sha256(source_root / "polymarket_historical_model.py"),
         "dataset": _file_sha256(source_root / "polymarket_historical_dataset.py"),
         "screen": _file_sha256(source_root / "polymarket_historical_screen.py"),
     }
-    if dict(implementation) != expected_implementation:
-        raise ValueError("historical shadow implementation hash differs")
+    if current_implementation != _SHADOW_COMPATIBILITY_IMPLEMENTATION_SHA256:
+        raise ValueError("historical shadow compatibility implementation hash differs")
 
     gates = _mapping(evaluation.get("gates"), name="historical evaluation gates")
     scope = _mapping(evaluation.get("scope"), name="historical evaluation scope")

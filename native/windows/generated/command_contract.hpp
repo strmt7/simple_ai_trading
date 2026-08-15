@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"a5d2d08764fc3e06c0a59ef7631ccb6c92db4bef0e1ce300cc882f8023331c23";
+inline constexpr const wchar_t* kCommandContractSha256 = L"8bef383df62f5909b0bc9f5a7bb82b89e5cd09b66ffb9dc591e74c949fa573e8";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -197,6 +197,56 @@ inline constexpr CommandOptionSpec kOptions_backtest_panel[] = {
     {L"--starting-cash", L"starting_cash", L"", L"1000.0", L"", L"1", false, true, false},
     {L"--compute-backend", L"compute_backend", L"auto, cpu, cuda, rocm, xpu, mps, directml", L"", L"feature/scoring backend override; default uses saved runtime compute_backend", L"1", false, true, false},
     {L"--execution-db", L"execution_db", L"", L"", L"optional SQLite market-data DB for symbol-specific top-of-book fill stress", L"1", false, true, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_binance_round74_develop[] = {
+    {L"--repository", L"repository", L"", L".", L"repository root", L"1", false, true, false},
+    {L"--database", L"database", L"", L"", L"completed Round 74 event database; repeat for every shard that may contain an admitted training or tuning run", L"1", true, true, true},
+    {L"--plan", L"plan", L"", L"docs/model-research/action-value/round-074-segmented-event-cohort-plan-v3.json", L"frozen segmented campaign plan", L"1", false, true, false},
+    {L"--state-root", L"state_root", L"", L"data/round74-segmented-event-cohort-v3-state", L"terminal segmented campaign state", L"1", false, true, false},
+    {L"--recovery-outcomes", L"recovery_outcomes", L"", L"data/round74-segmented-event-cohort-v3-recovery", L"immutable missing-slot recovery evidence", L"1", false, true, false},
+    {L"--target-assemblies", L"target_assemblies", L"", L"", L"directory containing only admitted development target manifests", L"1", true, true, false},
+    {L"--source-artifacts", L"source_artifacts", L"", L"", L"root containing target-manifest source artifacts", L"1", true, true, false},
+    {L"--model-output", L"model_output", L"", L"", L"new directory for immutable model and development-policy artifacts", L"1", true, true, false},
+    {L"--qualification-output", L"qualification_output", L"", L"", L"new directory for profile-specific local-AI qualification artifacts", L"1", true, true, false},
+    {L"--compute-backend", L"compute_backend", L"auto, cpu, cuda, rocm, xpu, mps, directml", L"auto", L"required training and inference backend", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"4GB", L"per-open DuckDB memory ceiling", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"bounded workers for the one currently open shard", L"1", false, true, false},
+    {L"--inference-minibatch-rows", L"inference_minibatch_rows", L"", L"128", L"bounded inference minibatch rows", L"1", false, true, false},
+    {L"--supervised-device-group-policy", L"supervised_device_group_policy", L"auto, fixed", L"auto", L"select per-candidate supervised groups with a target-free host probe, or use one fixed group", L"1", false, true, false},
+    {L"--supervised-device-run-group-size", L"supervised_device_run_group_size", L"", L"8", L"fixed supervised device group size from 1 through 32", L"1", false, true, false},
+    {L"--device-group-preflight-timeout-seconds", L"device_group_preflight_timeout_seconds", L"", L"300.0", L"hard timeout for the isolated target-free host probe", L"1", false, true, false},
+    {L"--progress-interval-seconds", L"progress_interval_seconds", L"", L"30.0", L"heartbeat interval during long model work", L"1", false, true, false},
+    {L"--terminal-observed-wall-ns", L"terminal_observed_wall_ns", L"", L"", L"optional fixed terminal observation time", L"1", false, true, false},
+    {L"--disable-ai", L"disable_ai", L"", L"false", L"train ML only and skip local-AI qualification", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_binance_round74_recover_sealed[] = {
+    {L"--one-use-store", L"one_use_store", L"", L"", L"completed Round 74 terminal one-use store", L"1", true, true, false},
+    {L"--output", L"output", L"", L"", L"new immutable recovered result JSON", L"1", true, true, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_binance_round74_sealed_evaluate[] = {
+    {L"--repository", L"repository", L"", L".", L"repository root", L"1", false, true, false},
+    {L"--database", L"database", L"", L"", L"completed Round 74 event database; repeat for every shard that may contain an admitted sealed-test run", L"1", true, true, true},
+    {L"--plan", L"plan", L"", L"docs/model-research/action-value/round-074-segmented-event-cohort-plan-v3.json", L"frozen segmented campaign plan", L"1", false, true, false},
+    {L"--state-root", L"state_root", L"", L"data/round74-segmented-event-cohort-v3-state", L"terminal segmented campaign state", L"1", false, true, false},
+    {L"--recovery-outcomes", L"recovery_outcomes", L"", L"data/round74-segmented-event-cohort-v3-recovery", L"immutable missing-slot recovery evidence", L"1", false, true, false},
+    {L"--test-target-assemblies", L"test_target_assemblies", L"", L"", L"directory containing only the admitted sealed-test manifests", L"1", true, true, false},
+    {L"--source-artifacts", L"source_artifacts", L"", L"", L"root containing target-manifest source artifacts", L"1", true, true, false},
+    {L"--development-bundle", L"development_bundle", L"", L"", L"immutable Round 74 development-policy bundle", L"1", true, true, false},
+    {L"--pretest-policy", L"pretest_policy", L"", L"", L"immutable pretest policy JSON beside its model and scaler", L"1", true, true, false},
+    {L"--ai-qualification", L"ai_qualification", L"", L"", L"passing two-model pretest qualification JSON", L"1", true, true, false},
+    {L"--one-use-store", L"one_use_store", L"", L"", L"new durable pre-access and full-result SQLite store", L"1", true, true, false},
+    {L"--sealed-ledger", L"sealed_ledger", L"", L"", L"Round 74 sealed evaluation ledger", L"1", true, true, false},
+    {L"--output", L"output", L"", L"", L"new immutable terminal result JSON", L"1", true, true, false},
+    {L"--profile", L"profile", L"conservative, regular, aggressive", L"conservative", L"risk profile frozen by the development qualification", L"1", false, true, false},
+    {L"--compute-backend", L"compute_backend", L"auto, cpu, cuda, rocm, xpu, mps, directml", L"auto", L"required inference backend", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"4GB", L"DuckDB memory ceiling", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"bounded DuckDB worker count", L"1", false, true, false},
+    {L"--inference-minibatch-rows", L"inference_minibatch_rows", L"", L"2048", L"bounded inference minibatch rows", L"1", false, true, false},
+    {L"--terminal-observed-wall-ns", L"terminal_observed_wall_ns", L"", L"", L"optional fixed terminal observation time", L"1", false, true, false},
+    {L"--acknowledge-one-use-test-access", L"acknowledge_one_use_test_access", L"", L"false", L"confirm that reservation permanently consumes sealed-test access", L"0", true, false, false},
 };
 
 inline constexpr CommandOptionSpec kOptions_close[] = {
@@ -646,7 +696,7 @@ inline constexpr CommandOptionSpec kOptions_polymarket_features[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_polymarket_live[] = {
-    {L"--action", L"action", L"status, preflight, reconcile, supervise, autonomous, cancel-owned, stop, recover-redemptions, redeem", L"status", L"", L"1", false, true, false},
+    {L"--action", L"action", L"status, preflight, reconcile, supervise, prepare-autonomous, autonomous, pause, resume, cancel-owned, stop, recover-redemptions, redeem", L"status", L"", L"1", false, true, false},
     {L"--ledger", L"ledger", L"", L"data\\polymarket\\live-ownership.sqlite3", L"durable hash-bound Polymarket ownership ledger", L"1", false, true, false},
     {L"--risk-level", L"risk_level", L"conservative, regular, aggressive", L"conservative", L"hard Polymarket execution ceiling profile; conservative is default", L"1", false, true, false},
     {L"--duration-seconds", L"duration_seconds", L"", L"0.0", L"supervision duration; zero runs until interrupted", L"1", false, true, false},
@@ -655,13 +705,18 @@ inline constexpr CommandOptionSpec kOptions_polymarket_live[] = {
     {L"--condition-id", L"condition_id", L"", L"", L"optional exact condition ID for one redemption", L"1", false, true, false},
     {L"--confirm-redemption", L"confirm_redemption", L"", L"false", L"confirm one settlement transaction after a fresh read-only preflight", L"0", false, false, false},
     {L"--automatic-redemption", L"automatic_redemption", L"", L"false", L"allow supervision to redeem proven resolved inventory one condition at a time", L"0", false, false, false},
+    {L"--activation", L"activation", L"", L"", L"portable hash-bound activation bundle used by autonomous mode", L"1", false, true, false},
+    {L"--activation-output", L"activation_output", L"", L"data\\polymarket\\live-activation.json", L"non-secret activation bundle written by prepare-autonomous", L"1", false, true, false},
+    {L"--replace-activation", L"replace_activation", L"", L"false", L"explicitly replace an existing activation bundle after revalidation", L"0", false, false, false},
     {L"--promotion", L"promotion", L"", L"", L"hash-bound live-promotion JSON required by autonomous mode", L"1", false, true, false},
     {L"--evidence-root", L"evidence_root", L"", L"", L"root containing the exact promotion-bound evidence files", L"1", false, true, false},
-    {L"--round16-contract", L"round16_contract", L"", L"docs/model-research/polymarket/round-016-btc-15m-horizon-comparison-v2.json", L"frozen BTC fifteen-minute contract used by autonomous mode", L"1", false, true, false},
-    {L"--pretest-envelope-sha256", L"pretest_envelope_sha256", L"", L"", L"operator-pinned canonical SHA-256 of the promoted pretest envelope", L"1", false, true, false},
-    {L"--evaluation-envelope-sha256", L"evaluation_envelope_sha256", L"", L"", L"operator-pinned canonical SHA-256 of the promoted evaluation envelope", L"1", false, true, false},
+    {L"--lifecycle-qualification", L"lifecycle_qualification", L"", L"", L"canonical authenticated lifecycle qualification required by autonomous mode", L"1", false, true, false},
+    {L"--lifecycle-qualification-sha256", L"lifecycle_qualification_sha256", L"", L"", L"exact file SHA-256 of the authenticated lifecycle qualification", L"1", false, true, false},
+    {L"--round16-contract", L"round16_contract", L"", L"docs/model-research/polymarket/round-016-btc-15m-horizon-comparison-v2.json", L"frozen contract required only by a fifteen-minute promotion", L"1", false, true, false},
+    {L"--pretest-envelope-sha256", L"pretest_envelope_sha256", L"", L"", L"fifteen-minute-only promoted pretest-envelope SHA-256 pin", L"1", false, true, false},
+    {L"--evaluation-envelope-sha256", L"evaluation_envelope_sha256", L"", L"", L"fifteen-minute-only promoted evaluation-envelope SHA-256 pin", L"1", false, true, false},
     {L"--requested-quantity", L"requested_quantity", L"", L"5", L"maximum requested outcome-token quantity before deterministic risk gates", L"1", false, true, false},
-    {L"--disable-binance-bbo-safeguard", L"disable_binance_bbo_safeguard", L"", L"false", L"disable the extra credential-free BTC BBO veto/reduction loop; Round 16 predictor flow remains public and read-only", L"0", false, false, false},
+    {L"--risk-capital-quote", L"risk_capital_quote", L"", L"", L"explicit dedicated-wallet capital basis required by autonomous daily-loss and drawdown gates", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -792,6 +847,45 @@ inline constexpr CommandOptionSpec kOptions_polymarket_round13_publish[] = {
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_ablate_basis[] = {
+    {L"--source-database", L"source_database", L"", L"", L"closed Polymarket evidence DuckDB containing official resolutions", L"1", true, true, false},
+    {L"--terminal-transport-manifest", L"terminal_transport_manifest", L"", L"", L"exact terminal transport manifest used for corpus publication", L"1", true, true, false},
+    {L"--publication-directory", L"publication_directory", L"", L"", L"validated Round 21 core corpus publication", L"1", true, true, false},
+    {L"--repository", L"repository", L"", L".", L"repository root containing the preregistered ablation design", L"1", false, true, false},
+    {L"--output", L"output", L"", L"", L"new immutable probability-basis ablation result JSON path", L"1", true, true, false},
+    {L"--json", L"json", L"", L"false", L"emit the compact source-bound operator result", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_ai_development[] = {
+    {L"--source-database", L"source_database", L"", L"", L"", L"1", true, true, false},
+    {L"--terminal-transport-manifest", L"terminal_transport_manifest", L"", L"", L"", L"1", true, true, false},
+    {L"--publication-directory", L"publication_directory", L"", L"", L"", L"1", true, true, false},
+    {L"--model-artifact", L"model_artifact", L"", L"", L"", L"1", true, true, false},
+    {L"--selected-layer", L"selected_layer", L"core, core_spot, core_spot_usdm", L"core", L"", L"1", false, true, false},
+    {L"--sidecar-database", L"sidecar_database", L"", L"", L"", L"1", false, true, false},
+    {L"--sidecar-terminal-manifest", L"sidecar_terminal_manifest", L"", L"", L"", L"1", false, true, false},
+    {L"--risk-benchmark-evidence", L"risk_benchmark_evidence", L"", L"", L"immutable local-AI adversarial risk benchmark file", L"1", true, true, false},
+    {L"--qwen3-5-9b-digest", L"qwen3_5_9b_digest", L"", L"", L"expected exact Ollama manifest digest for qwen3.5:9b", L"1", true, true, false},
+    {L"--fin-r1-8b-digest", L"fin_r1_8b_digest", L"", L"", L"expected exact Ollama manifest digest for fin-r1:8b", L"1", true, true, false},
+    {L"--fino1-8b-digest", L"fino1_8b_digest", L"", L"", L"expected exact Ollama manifest digest for fino1:8b", L"1", true, true, false},
+    {L"--ai-cache-database", L"ai_cache_database", L"", L"", L"separate resumable AI-response cache; never the source database", L"1", true, true, false},
+    {L"--ollama-url", L"ollama_url", L"", L"http://127.0.0.1:11434", L"loopback Ollama endpoint", L"1", false, true, false},
+    {L"--ai-timeout-seconds", L"ai_timeout_seconds", L"", L"30.0", L"", L"1", false, true, false},
+    {L"--ai-minimum-confidence", L"ai_minimum_confidence", L"", L"0.65", L"", L"1", false, true, false},
+    {L"--ai-maximum-latency-seconds", L"ai_maximum_latency_seconds", L"", L"15.0", L"", L"1", false, true, false},
+    {L"--initial-capital-quote", L"initial_capital_quote", L"", L"10000", L"", L"1", false, true, false},
+    {L"--minimum-edge-per-share", L"minimum_edge_per_share", L"", L"0.02", L"", L"1", false, true, false},
+    {L"--builder-taker-fee-bps", L"builder_taker_fee_bps", L"", L"0", L"", L"1", false, true, false},
+    {L"--output", L"output", L"", L"", L"new hash-bound development AI program report JSON", L"1", true, true, false},
+    {L"--acknowledge-one-use-test-access", L"acknowledge_one_use_test_access", L"", L"false", L"consume the frozen sealed test exactly once after development completes", L"0", false, false, false},
+    {L"--repository", L"repository", L"", L".", L"clean repository root bound into the optional pretest seal", L"1", false, true, false},
+    {L"--one-use-store", L"one_use_store", L"", L"", L"", L"1", false, true, false},
+    {L"--pretest-output", L"pretest_output", L"", L"", L"", L"1", false, true, false},
+    {L"--claim-output", L"claim_output", L"", L"", L"", L"1", false, true, false},
+    {L"--sealed-output", L"sealed_output", L"", L"", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"emit a compact completion summary", L"0", false, false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_polymarket_round21_corpus[] = {
     {L"--source-database", L"source_database", L"", L"", L"closed Polymarket Round 21 evidence DuckDB", L"1", true, true, false},
     {L"--terminal-transport-manifest", L"terminal_transport_manifest", L"", L"", L"hash-valid terminal Round 21 transport manifest JSON", L"1", true, true, false},
@@ -799,6 +893,81 @@ inline constexpr CommandOptionSpec kOptions_polymarket_round21_corpus[] = {
     {L"--repository", L"repository", L"", L".", L"repository root containing the frozen Round 21 design", L"1", false, true, false},
     {L"--observed-at-ms", L"observed_at_ms", L"", L"", L"optional fixed audit timestamp for reproducible controlled runs", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"emit the complete canonical publication manifest", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_evaluate_development[] = {
+    {L"--source-database", L"source_database", L"", L"", L"", L"1", true, true, false},
+    {L"--terminal-transport-manifest", L"terminal_transport_manifest", L"", L"", L"", L"1", true, true, false},
+    {L"--publication-directory", L"publication_directory", L"", L"", L"", L"1", true, true, false},
+    {L"--model-artifact", L"model_artifact", L"", L"", L"", L"1", true, true, false},
+    {L"--selected-layer", L"selected_layer", L"core, core_spot, core_spot_usdm", L"core", L"", L"1", false, true, false},
+    {L"--sidecar-database", L"sidecar_database", L"", L"", L"closed public Binance sidecar DuckDB required by matched artifacts", L"1", false, true, false},
+    {L"--sidecar-terminal-manifest", L"sidecar_terminal_manifest", L"", L"", L"independent sidecar terminal manifest required by matched artifacts", L"1", false, true, false},
+    {L"--initial-capital-quote", L"initial_capital_quote", L"", L"10000", L"", L"1", false, true, false},
+    {L"--minimum-edge-per-share", L"minimum_edge_per_share", L"", L"0.02", L"", L"1", false, true, false},
+    {L"--builder-taker-fee-bps", L"builder_taker_fee_bps", L"", L"0", L"", L"1", false, true, false},
+    {L"--output", L"output", L"", L"", L"new compact hash-bound development economic report JSON", L"1", true, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_fit_core[] = {
+    {L"--source-database", L"source_database", L"", L"", L"closed Polymarket evidence DuckDB containing official resolutions", L"1", true, true, false},
+    {L"--terminal-transport-manifest", L"terminal_transport_manifest", L"", L"", L"exact terminal transport manifest used for corpus publication", L"1", true, true, false},
+    {L"--publication-directory", L"publication_directory", L"", L"", L"validated Round 21 development/sealed-test corpus publication", L"1", true, true, false},
+    {L"--basis-ablation-result", L"basis_ablation_result", L"", L"", L"accepted source-bound probability-basis ablation result", L"1", true, true, false},
+    {L"--output", L"output", L"", L"", L"atomic core-baseline model artifact JSON path", L"1", true, true, false},
+    {L"--compute-backend", L"compute_backend", L"auto, cpu, cuda, rocm, xpu, mps, directml", L"auto", L"host-neutral training backend; explicit accelerators fail if unavailable", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"emit the compact source-bound operator result", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_fit_matched[] = {
+    {L"--source-database", L"source_database", L"", L"", L"closed Polymarket evidence DuckDB containing official resolutions", L"1", true, true, false},
+    {L"--terminal-transport-manifest", L"terminal_transport_manifest", L"", L"", L"exact Polymarket terminal manifest used for corpus publication", L"1", true, true, false},
+    {L"--publication-directory", L"publication_directory", L"", L"", L"validated Round 21 core corpus publication", L"1", true, true, false},
+    {L"--sidecar-database", L"sidecar_database", L"", L"", L"closed WAL-free public Binance sidecar DuckDB", L"1", true, true, false},
+    {L"--sidecar-terminal-manifest", L"sidecar_terminal_manifest", L"", L"", L"exact independent Binance sidecar terminal manifest", L"1", true, true, false},
+    {L"--basis-ablation-result", L"basis_ablation_result", L"", L"", L"accepted source-bound probability-basis ablation result", L"1", true, true, false},
+    {L"--output", L"output", L"", L"", L"new matched development model artifact JSON path", L"1", true, true, false},
+    {L"--compute-backend", L"compute_backend", L"auto, cpu, cuda, rocm, xpu, mps, directml", L"auto", L"host-neutral training backend; explicit accelerators fail if unavailable", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"emit the compact source-bound operator result", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_recover_sealed[] = {
+    {L"--one-use-store", L"one_use_store", L"", L"", L"completed durable Round 21 one-use SQLite ledger", L"1", true, true, false},
+    {L"--output", L"output", L"", L"", L"new sealed-result bundle JSON path", L"1", true, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_shadow[] = {
+    {L"--action", L"action", L"run, audit", L"audit", L"", L"1", false, true, false},
+    {L"--shadow-database", L"shadow_database", L"", L"", L"dedicated append-only Round 21 shadow SQLite database", L"1", true, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"exact 32-hex run ID; optional for a new run and for audit only when the database contains exactly one verified run", L"1", false, true, false},
+    {L"--model-artifact", L"model_artifact", L"", L"", L"accepted Round 21 development artifact required for run", L"1", false, true, false},
+    {L"--model-file-sha256", L"model_file_sha256", L"", L"", L"expected exact model-file SHA-256 required for run", L"1", false, true, false},
+    {L"--evaluation-report", L"evaluation_report", L"", L"", L"accepted sealed Round 21 evaluation bundle required for run", L"1", false, true, false},
+    {L"--evaluation-file-sha256", L"evaluation_file_sha256", L"", L"", L"expected exact evaluation-file SHA-256 required for run", L"1", false, true, false},
+    {L"--duration-seconds", L"duration_seconds", L"", L"3600.0", L"fixed prospective run duration in [5, 2592000] seconds", L"1", false, true, false},
+    {L"--discovery-seconds", L"discovery_seconds", L"", L"1.0", L"public Gamma discovery interval in [0.25, 30] seconds", L"1", false, true, false},
+    {L"--poll-seconds", L"poll_seconds", L"", L"0.05", L"in-memory score polling interval in [0.01, 0.25] seconds", L"1", false, true, false},
+    {L"--queue-capacity", L"queue_capacity", L"", L"20000", L"bounded public-feed queue capacity in [1000, 100000]", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_sidecar_terminal[] = {
+    {L"--campaign-plan", L"campaign_plan", L"", L"", L"frozen Round 21 Binance-sidecar campaign plan JSON", L"1", true, true, false},
+    {L"--state-root", L"state_root", L"", L"", L"terminal sidecar state directory containing segment evidence", L"1", true, true, false},
+    {L"--output", L"output", L"", L"", L"new or replaceable sidecar terminal manifest JSON path", L"1", true, true, false},
+    {L"--observed-at-ms", L"observed_at_ms", L"", L"", L"optional fixed terminal timestamp for reproducible controlled runs", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"emit the complete canonical sidecar terminal manifest", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_round21_terminal[] = {
+    {L"--campaign-plan", L"campaign_plan", L"", L"", L"frozen Round 20/21 continuous-campaign plan JSON", L"1", true, true, false},
+    {L"--state-root", L"state_root", L"", L"", L"terminal campaign state directory containing segment evidence", L"1", true, true, false},
+    {L"--output", L"output", L"", L"", L"new or replaceable terminal transport manifest JSON path", L"1", true, true, false},
+    {L"--repository", L"repository", L"", L".", L"repository root containing the frozen Round 21 design", L"1", false, true, false},
+    {L"--observed-at-ms", L"observed_at_ms", L"", L"", L"optional fixed terminal timestamp for reproducible controlled runs", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"emit the complete canonical terminal transport manifest", L"0", false, false, false},
 };
 
 inline constexpr CommandOptionSpec kOptions_polymarket_verify[] = {
@@ -1212,6 +1381,9 @@ inline constexpr CommandSpec kCommands[] = {
     {L"backtest", L"usage: simple-ai-trading backtest [-h] [--input INPUT] [--model MODEL]                                   [--start-cash START_CASH]                                   [--compute-backend {auto,cpu,cuda,rocm,xpu,mps,directml}]                                   [--score-batch-size SCORE_BATCH_SIZE]                                   [--execution-db EXECUTION_DB]", kOptions_backtest, 6},
     {L"backtest-chart", L"usage: simple-ai-trading backtest-chart [-h] [--input INPUT] [--model MODEL]                                         [--output OUTPUT]                                         [--start-cash START_CASH]                                         [--compute-backend {auto,cpu,cuda,rocm,xpu,mps,directml}]                                         [--score-batch-size SCORE_BATCH_SIZE]                                         [--execution-db EXECUTION_DB]", kOptions_backtest_chart, 7},
     {L"backtest-panel", L"usage: simple-ai-trading backtest-panel [-h] --interval INTERVAL                                         [--market MARKET]                                         [--from-date FROM_DATE]                                         [--to-date TO_DATE] [--input INPUT]                                         [--model MODEL]                                         [--objective OBJECTIVE] [--tag TAG]                                         [--notes NOTES]                                         [--starting-cash STARTING_CASH]                                         [--compute-backend {auto,cpu,cuda,rocm,xpu,mps,directml}]                                         [--execution-db EXECUTION_DB]", kOptions_backtest_panel, 12},
+    {L"binance-round74-develop", L"Route every admitted training and tuning run across completed event database shards before reading target manifests, train the frozen ML family, and optionally qualify the local-AI veto. This development-only command never accesses the sealed test or grants trading authority.", kOptions_binance_round74_develop, 19},
+    {L"binance-round74-recover-sealed", L"Export the complete validated result from its one-use store. This command does not reopen the event database, targets, or AI models.", kOptions_binance_round74_recover_sealed, 2},
+    {L"binance-round74-sealed-evaluate", L"Reserve the terminal test before reading target artifacts, run the frozen ML and two-model AI family, perform exact delayed L2 replay, and persist a recoverable result. This command grants no trading authority and cannot be retried after access is reserved.", kOptions_binance_round74_sealed_evaluate, 20},
     {L"close", L"usage: simple-ai-trading close [-h] position_id", kOptions_close, 1},
     {L"compute", L"usage: simple-ai-trading compute [-h]                                  [--backend {auto,cpu,cuda,rocm,xpu,mps,directml}]", kOptions_compute, 1},
     {L"configure", L"usage: simple-ai-trading configure [-h]", nullptr, 0},
@@ -1259,7 +1431,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-action-value", L"Build hash-bound BTC/ETH/SOL action-value evidence in resumable synchronized market batches. A sealed Round 13 run additionally materializes label-free treatment, control, and stress decisions before official outcomes can be requested.", kOptions_polymarket_action_value, 9},
     {L"polymarket-continuity", L"Evaluate recorder errors, stream gaps, connection segments, market snapshot timing, and fresh CLOB baselines without consulting outcomes, labels, utilities, or model scores.", kOptions_polymarket_continuity, 5},
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one validated prospective Polymarket recorder run. Strict gap-free replay is the default. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 9},
-    {L"polymarket-live", L"Inspect or supervise the independent BTC Polymarket CLOB V2 boundary. It never shares Binance orders, balances, positions, or risk state. Autonomous opening remains blocked unless an unexpired, hash-bound promotion grants live authority.", kOptions_polymarket_live, 17},
+    {L"polymarket-live", L"Inspect or supervise the independent BTC Polymarket CLOB V2 boundary. It never shares Binance orders, balances, positions, or risk state. Autonomous opening remains blocked unless an unexpired, hash-bound promotion and exact authenticated lifecycle qualification both pass.", kOptions_polymarket_live, 22},
     {L"polymarket-mlp", L"Load one fully materialized, development-passed Round 9 ridge report; fit the preregistered condition-balanced MLP ensemble; open its test partition only after the validation gates pass; and persist weights, traces, predictions, actions, equity, and market PnL. This command grants no foundation-AI, trading, or profitability authority.", kOptions_polymarket_mlp, 6},
     {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 25},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 23},
@@ -1269,7 +1441,16 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-ridge", L"Reconstruct hash-bound causal actions from one confirmation-eligible Round 9 pipeline, select the frozen ridge and threshold candidates on validation, evaluate the untouched test partition exactly once, and persist the complete audit trail. This command grants no trading or profitability authority.", kOptions_polymarket_ridge, 5},
     {L"polymarket-round13-evaluate", L"Revalidate the complete recorder and label-free action pipeline, commit the one-use claim, then fetch dual-source official resolutions and score all frozen execution stresses. This command never places an order.", kOptions_polymarket_round13_evaluate, 9},
     {L"polymarket-round13-publish", L"Atomically replace the latest Polymarket research view from one immutable stored evaluation report. Manual chart editing is prohibited.", kOptions_polymarket_round13_publish, 6},
+    {L"polymarket-round21-ablate-basis", L"Run the preregistered paired six-fit screen on audited Polymarket development rows before any full model fit. Both log-loss and Brier improvement intervals must clear zero. This opens no Binance account, credential, position, order, sealed target, or execution authority.", kOptions_polymarket_round21_ablate_basis, 6},
+    {L"polymarket-round21-ai-development", L"Build one immutable historical AI case per development condition, benchmark the three preregistered local models, replay all candidates through the same 81 after-cost ledgers in one second source pass, and nominate at most one sealed-test challenger. This independent Polymarket workflow uses no Binance account or execution state and grants no paper or live authority.", kOptions_polymarket_round21_ai_development, 27},
     {L"polymarket-round21-corpus", L"After the independent Polymarket capture is terminal, reconcile its exact receipts and atomically publish physically separate development and sealed-test core feature stores. This command reads no outcomes, models, Binance data, credentials, accounts, or orders.", kOptions_polymarket_round21_corpus, 6},
+    {L"polymarket-round21-evaluate-development", L"Rebuild exact Polymarket books from the terminal receipt audit and stream the frozen development population through every captured fee, latency, depth, adverse-price, and risk-profile scenario. Binance remains an optional public predictor only. This command has no credential, account, order, paper, or live authority.", kOptions_polymarket_round21_evaluate_development, 12},
+    {L"polymarket-round21-fit-core", L"Load one audited terminal publication, attach independently cross-checked official outcomes, and fit the frozen core baseline across train, calibration, and selection roles. This is not the optional Binance-layer comparison or a trading-authority decision.", kOptions_polymarket_round21_fit_core, 7},
+    {L"polymarket-round21-fit-matched", L"Replay the independent public Binance sidecar once at exact Polymarket decision times, attach the same official outcomes and frozen roles, and fit the core plus optional predictor candidates. This is predictive development evidence, not profitability or trading authority.", kOptions_polymarket_round21_fit_matched, 9},
+    {L"polymarket-round21-recover-sealed", L"Export the complete validated sealed result retained in a completed one-use ledger. This recovery path does not reopen test access, rerun a model, access an account, or grant trading authority.", kOptions_polymarket_round21_recover_sealed, 3},
+    {L"polymarket-round21-shadow", L"Run target-free BTC five-minute scoring from exact accepted model and sealed-evaluation files, or audit a terminal shadow ledger. This workflow has no credentials, account, promotion, or order authority.", kOptions_polymarket_round21_shadow, 12},
+    {L"polymarket-round21-sidecar-terminal", L"After the independent public Binance sidecar reaches its scheduled end, bind every segment result into a terminal manifest. This command opens no capture payload, outcome, model, credential, account, Polymarket execution state, or order.", kOptions_polymarket_round21_sidecar_terminal, 5},
+    {L"polymarket-round21-terminal", L"After the independent Polymarket capture reaches its scheduled end, bind every completed, degraded, interrupted, and failed segment into one hash-valid terminal transport manifest. This command opens no capture database, outcome, model, credential, account, or order.", kOptions_polymarket_round21_terminal, 6},
     {L"polymarket-verify", L"Independently rebuild features, the chronological split, deterministic model fit, held-out predictions, and every execution-latency scenario from the immutable recorder database. This command has no trading authority.", kOptions_polymarket_verify, 6},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},
     {L"prepare", L"usage: simple-ai-trading prepare [-h] [--historical HISTORICAL]                                  [--model MODEL] [--limit LIMIT]                                  [--batch-size BATCH_SIZE]                                  [--preset {balanced,custom,quick,thorough}]                                  [--epochs EPOCHS]                                  [--learning-rate LEARNING_RATE]                                  [--l2-penalty L2_PENALTY] [--seed SEED]                                  [--start-cash START_CASH] [--walk-forward]                                  [--no-walk-forward]                                  [--walk-forward-train WALK_FORWARD_TRAIN]                                  [--walk-forward-test WALK_FORWARD_TEST]                                  [--walk-forward-step WALK_FORWARD_STEP]                                  [--calibrate-threshold]                                  [--no-calibrate-threshold] [--online-doctor]", kOptions_prepare, 18},
@@ -1313,8 +1494,17 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Research", L"Polymarket evidence", L"polymarket-continuity"},
     {L"Research", L"Polymarket evidence", L"polymarket-features"},
     {L"Research", L"Polymarket evidence", L"polymarket-action-value"},
+    {L"Research", L"Polymarket evidence", L"polymarket-round21-terminal"},
+    {L"Research", L"Polymarket evidence", L"polymarket-round21-sidecar-terminal"},
     {L"Research", L"Polymarket evidence", L"polymarket-round21-corpus"},
+    {L"Research", L"Polymarket evidence", L"polymarket-round21-recover-sealed"},
+    {L"Research", L"Polymarket evidence", L"polymarket-round21-shadow"},
     {L"Research", L"Polymarket models", L"polymarket-model"},
+    {L"Research", L"Polymarket models", L"polymarket-round21-ablate-basis"},
+    {L"Research", L"Polymarket models", L"polymarket-round21-fit-core"},
+    {L"Research", L"Polymarket models", L"polymarket-round21-fit-matched"},
+    {L"Research", L"Polymarket models", L"polymarket-round21-evaluate-development"},
+    {L"Research", L"Polymarket models", L"polymarket-round21-ai-development"},
     {L"Research", L"Polymarket models", L"polymarket-ridge"},
     {L"Research", L"Polymarket models", L"polymarket-mlp"},
     {L"Research", L"Polymarket models", L"polymarket-verify"},
@@ -1338,6 +1528,9 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Research", L"Impact study preparation", L"impact-target-build"},
     {L"Research", L"Impact study preparation", L"impact-target-v2-build"},
     {L"Research", L"Impact study preparation", L"impact-target-v2-seal"},
+    {L"Research", L"Impact model development", L"binance-round74-develop"},
+    {L"Research", L"Impact holdout confirmation", L"binance-round74-sealed-evaluate"},
+    {L"Research", L"Impact holdout confirmation", L"binance-round74-recover-sealed"},
     {L"Research", L"Impact holdout confirmation", L"impact-role-target-stage"},
     {L"Research", L"Impact holdout confirmation", L"impact-model-fit"},
     {L"Research", L"Impact holdout confirmation", L"impact-test-unlock"},

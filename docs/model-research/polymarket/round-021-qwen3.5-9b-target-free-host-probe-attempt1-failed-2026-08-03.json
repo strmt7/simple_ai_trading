@@ -1,0 +1,182 @@
+{
+  "artifact_sha256": "03c65414ae32259a64a0e9c0c177a510f0c67cd002fec5e8baf3b9367408ca57",
+  "case": {
+    "asset": "BTC",
+    "case_id": "be53274d6de14b60798e4265618c9a4e59c56b98d06b73e0aa1be363a07414a0",
+    "case_sha256": "b0d29ec3fcaf8f126b3de0b66ce03ac1ead9db13e01d511792c9820fa56bcb7e",
+    "condition_id": "0x53c8b02c9eb88bf20734701f00808e2e9f0d57a7a67fd1621d8f13072ffbb843",
+    "decision_received_monotonic_ns": 120000000000,
+    "decision_received_wall_ms": 1800000120000,
+    "event_start_ms": 1800000000000,
+    "prompt_payload": {
+      "candidate_action": {
+        "deterministic_policy_action": "open_up",
+        "may_increase_or_reverse_risk": false,
+        "minimum_edge_quote_per_share": 0.02,
+        "requested_contracts": 5.0
+      },
+      "hard_constraints": {
+        "cannot_create_or_reverse_trade": true,
+        "cannot_increase_size_or_limit": true,
+        "invalid_or_uncertain_response_means_veto": true
+      },
+      "liquidity_context": {
+        "market_liquidity_quote": 250000.0,
+        "market_volume_quote": 1000000.0,
+        "proposed_outcome_ask_depth_3_contracts": 2500.0
+      },
+      "market": {
+        "asset": "BTC",
+        "horizon_minutes": 5,
+        "seconds_remaining": 180,
+        "selected_outcome": "Up"
+      },
+      "market_microstructure": {
+        "down_best_ask": 0.49,
+        "down_best_bid": 0.48,
+        "executable_ask_pair_premium_bps": 0.0,
+        "executable_bid_pair_discount_bps": 200.0,
+        "outcome_midpoint_sum_error_bps": 0.0,
+        "up_best_ask": 0.51,
+        "up_best_bid": 0.5
+      },
+      "market_target_or_resolution": null,
+      "probability_context": {
+        "calibrated_probability_up": 0.525,
+        "market_probability_up": 0.51,
+        "model_probability_up": 0.53
+      },
+      "probe": "target_free_provider_and_gpu_compatibility_only",
+      "source_freshness_ms": {
+        "chainlink_anchor_gap_ms": 5.0,
+        "chainlink_arrival_age_ms": 85.0,
+        "chainlink_source_age_ms": 80.0,
+        "direct_binance_age_ms": 55.0,
+        "down_book_age_ms": 42.0,
+        "up_book_age_ms": 40.0
+      },
+      "validation_only_model_evidence": {
+        "log_loss_delta": 0.003,
+        "market_baseline_log_loss": 0.693,
+        "residual_model_log_loss": 0.69,
+        "validation_market_count": 1800
+      }
+    },
+    "sample_id": "7d8254be7cf3d4d3ab47cddb2d2f6fddd663322c16dd6ab7447b0d6b2825b711",
+    "schema_version": "polymarket-ai-veto-case-v3"
+  },
+  "checks": {
+    "exact_model_digest_matched": true,
+    "gpu_residency_passed": false,
+    "parameter_floor_passed": true,
+    "provider_failure_count_passed": false,
+    "target_free_payload_passed": true,
+    "valid_typed_response_count_passed": false
+  },
+  "created_at_utc": "2026-08-03T02:06:05.175408+00:00",
+  "passed": false,
+  "purpose": "provider_schema_and_gpu_compatibility_only",
+  "report": {
+    "advisory_only": true,
+    "approval_count": 0,
+    "average_inference_latency_seconds": 6.130115200008731,
+    "average_latency_seconds": 6.130115201,
+    "average_queue_delay_seconds": 0.0,
+    "case_count": 1,
+    "case_set_sha256": "9967e9f951389d8997ad01b8f8684f4aac35485effa538a43c80ed3c3b8fbc2f",
+    "config": {
+      "base_url": "http://127.0.0.1:11434",
+      "maximum_advisory_latency_seconds": 30,
+      "minimum_approval_confidence": 0.65,
+      "model": "qwen3.5:9b",
+      "seed": 4701,
+      "timeout_seconds": 60
+    },
+    "cooldown_count": 0,
+    "market_permission_sha256": "27fef69e69f75f8fea3079826920995a64a669205810f4b43a3cf1757c41ffb5",
+    "market_permissions": {
+      "0x53c8b02c9eb88bf20734701f00808e2e9f0d57a7a67fd1621d8f13072ffbb843": false
+    },
+    "maximum_inference_latency_seconds": 6.130115200008731,
+    "maximum_latency_seconds": 6.130115201,
+    "maximum_output_token_count": 0,
+    "maximum_prompt_token_count": 0,
+    "maximum_queue_delay_seconds": 0.0,
+    "model_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+    "model_metadata_sha256": "0f4e917fffd9051ca6497ff99b9f1b9ab5221c3fff1ca192f3af6e8a393074f7",
+    "model_parameters_b": 9.0,
+    "profitability_claim": false,
+    "provider_failure_count": 1,
+    "provider_telemetry_count": 0,
+    "report_sha256": "eae22e7965831adc2c2db092c2107c271adce77bd9c9db7bb1da604152ba2c6a",
+    "results": [
+      {
+        "case_id": "be53274d6de14b60798e4265618c9a4e59c56b98d06b73e0aa1be363a07414a0",
+        "condition_id": "0x53c8b02c9eb88bf20734701f00808e2e9f0d57a7a67fd1621d8f13072ffbb843",
+        "decision": {
+          "action": "veto",
+          "confidence": 0.0,
+          "failure_reason": "provider_or_schema_failure:ValueError:3ea72abb87ebf158cb34ab1e01cfb93eb863126a10b83bfc47406905deab2fb0",
+          "permits_entry": false,
+          "reason_codes": [
+            "insufficient_evidence"
+          ],
+          "summary": "Provider, schema, confidence, or latency failure; fail-closed veto.",
+          "valid": false
+        },
+        "inference_latency_seconds": 6.130115200008731,
+        "latency_seconds": 6.130115201,
+        "model": "qwen3.5:9b",
+        "provider_runtime": null,
+        "queue_delay_seconds": 0.0,
+        "response_payload": {
+          "error_sha256": "3ea72abb87ebf158cb34ab1e01cfb93eb863126a10b83bfc47406905deab2fb0",
+          "error_type": "ValueError",
+          "provider_response": {
+            "created_at": "2026-08-03T02:06:05.1230916Z",
+            "done": true,
+            "done_reason": "stop",
+            "eval_count": 94,
+            "eval_duration": 1530017000,
+            "load_duration": 4391846600,
+            "message": {
+              "content": "{\n  \"action\": \"approve\",\n  \"confidence\": 0.75,\n  \"reason_codes\": [\n    \"model_calibration_risk\",\n    \"liquidity_stress\"\n  ],\n  \"summary\": \"Model uplift (log_loss_delta=0.003) and direct-market movement are coherent with order-book state; volatility is low, liquidity sufficient for proposed size.\"\n}",
+              "role": "assistant"
+            },
+            "model": "qwen3.5:9b",
+            "prompt_eval_count": 556,
+            "prompt_eval_duration": 201350000,
+            "total_duration": 6128412000
+          },
+          "provider_response_received": true,
+          "provider_response_sha256": "7bccbc4b0a193616c309a1a921cbbd9c41bd956263f1fb4dedf95bd836682779",
+          "schema_version": "polymarket-ai-veto-failure-v2"
+        },
+        "response_sha256": "0d535d6bcaeac0d64c442d4fe3c0f769bf8f4527c552b8509b2132fed585ce59"
+      }
+    ],
+    "risk_benchmark_evidence_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+    "schema_version": "polymarket-ai-veto-report-v7",
+    "selection_sha256": "12f027df7dd8b241a509293cbee7874daf54f61e3f86f5dadb317b0526deb0de",
+    "total_output_token_count": 0,
+    "total_prompt_token_count": 0,
+    "trading_authority": false,
+    "valid_response_count": 0,
+    "veto_count": 1
+  },
+  "risk_benchmark_evidence": {
+    "path": "docs/ai/risk-review/latest/comparison.json",
+    "sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd"
+  },
+  "schema_version": "polymarket-round21-target-free-ai-host-probe-v1",
+  "selection_design_sha256": "12f027df7dd8b241a509293cbee7874daf54f61e3f86f5dadb317b0526deb0de",
+  "semantics": {
+    "capture_data_accessed": false,
+    "live_trading_authority": false,
+    "market_target_or_outcome_accessed": false,
+    "model_selected": false,
+    "paper_trading_authority": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false
+  }
+}

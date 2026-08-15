@@ -1,0 +1,119 @@
+{
+  "activation_gates": {
+    "campaign_activated": true,
+    "hidden_window_monitor_passed": true,
+    "host_storage_and_process_preflight_passed": true,
+    "scheduled_supervisor_registered_and_observed": true,
+    "v136_model_binding_verified": true
+  },
+  "artifact_sha256": "d7befbb64f209d65fa4b278df8025f51cb75903734c6cfde1c23f674fc1fd309",
+  "contract": {
+    "artifact_sha256": "eca592acb4c3f37c6d043d37664614d35994d6e9b3ebea2e801351c287a49bbf",
+    "file_sha256": "7f740984395490113af53c304b3d7c649e4f6e593543a6ebdcf02a1a14becefe",
+    "path": "docs/model-research/action-value/round-075-continuous-capture-contract-v4.json"
+  },
+  "created_at_utc": "2026-08-10T13:46:54.256417+00:00",
+  "evidence_boundary": {
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "market_capture_started": false,
+    "predictive_accuracy_established": false,
+    "profitability_established": false,
+    "representative_training_completed": false,
+    "sealed_test_accessed": false
+  },
+  "live_service": {
+    "campaign_database_count": 0,
+    "campaign_regular_file_count": 0,
+    "campaign_wal_count": 0,
+    "capture_child_process_count": 0,
+    "heartbeat_age_ns": 2437135800,
+    "inspection_sha256": "9e638f1b53e550181f153ad6440a2e7975563c602644afcd2674b070931a9c3f",
+    "logical_service_count": 1,
+    "phase": "waiting_for_campaign_start",
+    "physical_service_process_count": 2,
+    "state_sha256": "07cf3621cb9c6eb7439379a33dea00d16ec63d7005c187df3fdf88e32ace2772",
+    "verified_venv_launcher_count": 1
+  },
+  "model_binding": {
+    "continuous_loss_dimensions": "unmasked_continuous_features_only",
+    "design_sha256": "2016c8ff6b06ec5a007e501f42aef9c35a9a82ddbad262b3822a4a90cbaa93be",
+    "file_sha256": "511897f9c6f7357934a2ee5bda385389404213e1155589a3f90435164d378681",
+    "masked_continuous_target_policy": "exclude_from_loss_not_zero_impute",
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v136.json",
+    "pretraining_schema_version": "round-074-causal-next-event-pretraining-v5"
+  },
+  "prestart_transition": {
+    "contained_contract_mismatch_count": 2,
+    "terminated_process_count": 0,
+    "v3_terminal_state_file_sha256": "76f1f6eb101857a99f32a885c9edf3767267fe02cb06ed39ddab9caab65e1fe6",
+    "v3_terminal_state_path": "data/round75-prospective-event-cohort-service-state-v3-terminal.json",
+    "v3_terminal_state_sha256": "fb74a6dbad960b1fa32dd59b621ee5267a98505dffe2b9ea91f7f8b4f6c1f7df"
+  },
+  "prospective_plan": {
+    "file_sha256": "fdfd131b7edcf66d4d523a332e50caea45d448c15bf2c21e27a72544a9d02f97",
+    "path": "docs/model-research/action-value/round-075-prospective-event-cohort-plan-v1.json",
+    "plan_sha256": "68358178d9182dbfa62ced97c274709bc156903c830d6d53a0171e028e102514",
+    "scheduled_campaign_boundary_wall_ns": 1787486400000000000,
+    "scheduled_start_wall_ns": 1786406400000000000,
+    "total_slots": 720
+  },
+  "resource_preflight": {
+    "database_opened": false,
+    "free_bytes": 2461772742656,
+    "free_space_gate_passed": true,
+    "minimum_free_bytes": 107374182400,
+    "training_or_backtest_running": false
+  },
+  "scheduled_supervisor": {
+    "delete_expired_task_after": "PT1H",
+    "end_boundary_wall_ns": 1787486400000000000,
+    "execution_time_limit": "PT1M",
+    "hidden": true,
+    "hidden_launcher_file_sha256": "36090b7a4ddd6242f85120ad3b21c004c32de70994820d538a7ab7c6e56901d5",
+    "hidden_launcher_filename": "run_round75_supervisor_hidden.vbs",
+    "hidden_window_monitor": {
+      "baseline_visible_window_count": 39,
+      "duration_seconds": 15.0,
+      "new_visible_window_count": 0,
+      "physical_service_process_count_after": 2,
+      "physical_service_process_count_before": 2,
+      "physical_service_process_identity_unchanged": true,
+      "poll_interval_seconds": 0.25
+    },
+    "last_run_utc": "2026-08-10T13:46:35.0000000Z",
+    "last_task_result": 0,
+    "logon_type": "Interactive",
+    "multiple_instances": "IgnoreNew",
+    "next_run_utc": "2026-08-10T13:47:14.0000000Z",
+    "observed_healthy_run_count": 9,
+    "observed_run_result_sha256": "efc5fe95f4bf82423bb22101c0ef669c7dd3118a31e6524fb066db064e411ae0",
+    "repetition_interval": "PT2M",
+    "run_level": "Limited",
+    "start_when_available": true,
+    "task_action_sha256": "cf1c7549335469b1c730341072f25e9358f5534f3df9c678a31ce0b756a07e17",
+    "task_name": "SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1",
+    "task_state": "Ready",
+    "trigger_classes": [
+      "MSFT_TaskLogonTrigger",
+      "MSFT_TaskTimeTrigger"
+    ]
+  },
+  "schema_version": "round-075-host-activation-receipt-v2",
+  "scope": {
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "model_training_performed": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "source_database_access": "not_opened",
+    "target_data_accessed": false
+  },
+  "status": "v4_service_healthy_waiting_for_frozen_campaign_start",
+  "supersedes": {
+    "artifact_sha256": "d4fd3c7443101b6dd008a219e57c3bf73a2728a9e15d84eedc3f0214ad106a87",
+    "file_sha256": "1bbb9e18c929b8c5bc8eb3a97a6b39b36500d4914350fc9fab699d0c3026988e",
+    "path": "docs/model-research/action-value/round-075-host-activation-receipt-2026-08-10.json",
+    "reason": "activate_v136_target_free_pretraining_correction"
+  }
+}

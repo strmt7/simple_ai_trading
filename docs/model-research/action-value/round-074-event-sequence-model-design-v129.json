@@ -1,0 +1,194 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v129",
+  "artifact_kind": "sharded_development_runtime_integration",
+  "created_utc": "2026-08-03T10:00:27.4658716Z",
+  "supersedes_artifact_sha256": "44c901b72c21a6cfca674e1687a8ed33c74c986c6d7dd9421bbf1d214311e367",
+  "implementation_git_commit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "source_binding": {
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/round74_segmented_development_runtime.py",
+        "sha256": "305bf23afc35bb7765da50cf0883cfd9599bd5f9671ee9f1ccb80c38747ddaae"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_segmented_development_cli.py",
+        "sha256": "aa29d7cb905716907db3ea4ece5d491968c61d1c3b99a0b546676351f82adb55"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_segmented_development_operator.py",
+        "sha256": "e363e5d3d5866933d0af1d8f50385175b26753b4c199bb2b25b69d51e57ea87b"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_event_development_operator.py",
+        "sha256": "1f49bf192c1d69677d8aa95361262a01ad3a766201f6b9e56d5e19ad66d96cc8"
+      },
+      {
+        "path": "src/simple_ai_trading/entrypoint.py",
+        "sha256": "dd73ccc7e8d72bb115f0281d583b55c67a8a40f32cc95af7465720b94c8538f8"
+      },
+      {
+        "path": "src/simple_ai_trading/command_contract.py",
+        "sha256": "d45b6a9d355ad6ad487f217966ae84139503b11e96d54d49cea1991ed0733e48"
+      },
+      {
+        "path": "native/windows/generated/command_contract.hpp",
+        "sha256": "8ccd7f65ea68cf775103f80f881e3b1cadfb4568a13dcfa2eb625345275671a9"
+      },
+      {
+        "path": "tools/run_round74_segmented_development.py",
+        "sha256": "4a6b80f76be825f55666701ad6c65a69e08f495a897f05c9ec081c0f87d7d53f"
+      }
+    ],
+    "affected_tests": [
+      {
+        "path": "tests/test_round74_segmented_development_runtime.py",
+        "sha256": "46d215505374e4b38bd4b4b1c46e86bf0daf95da0b11e2e39a5fe4a7de4994ec"
+      },
+      {
+        "path": "tests/test_round74_segmented_development_cli.py",
+        "sha256": "89747d979dd6a0904977a104e25c45d5e42b92f48368c56982727b82529dd08b"
+      },
+      {
+        "path": "tests/test_round74_segmented_development_tool.py",
+        "sha256": "f5a073e485462cfa60e44972d94b9083ae20c3ca7c819e5bcf222f82defbef81"
+      },
+      {
+        "path": "tests/test_round74_segmented_model_operator.py",
+        "sha256": "d2a924ee0d3d75c2477050a1b513ceb4395f7c4b6f6e9a1d8cd14d2446d2ad54"
+      },
+      {
+        "path": "tests/test_round74_event_development_operator.py",
+        "sha256": "ca127eba52807a89115fa52bae6022b06b99a992b8fef86fee4ff0bcecbe74bb"
+      },
+      {
+        "path": "tests/test_ai_runtime_and_parity.py",
+        "sha256": "5575e6f93707378c190b8fe18d147d71d01a583c5c65cbfd09226d4d474bd5d9"
+      }
+    ],
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v128.json",
+      "sha256": "5efac5c39fdc14984bea2a1dc398e1871d65cc5e61e07d2834dfdb3e6e112bdc"
+    }
+  },
+  "schema_contract": {
+    "segmented_development_run": "round-074-segmented-development-run-v5",
+    "segmented_development_database_route": "round-074-segmented-development-database-route-v1",
+    "segmented_development_inputs": "round-074-segmented-development-inputs-v1",
+    "segmented_terminal_coverage": "round-074-segmented-terminal-coverage-v1"
+  },
+  "defect": {
+    "production_capture_topology": "multiple_completed_duckdb_shards",
+    "prior_development_runtime_topology": "one_database",
+    "complete_training_population_assemblable_before_delta": false,
+    "complete_tuning_population_assemblable_before_delta": false,
+    "complete_development_bundle_producible_before_delta": false
+  },
+  "declared_delta": {
+    "summary": "Replace the invalid single-store development assumption with target-blind exact routing and one-store-at-a-time training, tuning, execution, and AI replay over the completed Round 74 shards.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "feature_definition_changed": false,
+    "scaler_sampling_policy_changed": false,
+    "window_selection_policy_changed": false,
+    "probability_calibration_changed": false,
+    "action_policy_changed": false,
+    "predictive_gate_changed": false,
+    "financial_gate_changed": false,
+    "ai_uplift_gate_changed": false,
+    "development_storage_topology_changed": true,
+    "cli_and_windows_metadata_changed": true,
+    "runtime_trading_path_changed": false
+  },
+  "database_route_contract": {
+    "operator_supplies_one_or_more_completed_databases": true,
+    "absolute_paths_enter_model_identity": false,
+    "development_run_route_discovered_without_target_artifact_access": true,
+    "every_development_run_must_exist_in_exactly_one_database": true,
+    "missing_development_run_rejected_before_target_loading": true,
+    "duplicate_development_run_rejected_before_target_loading": true,
+    "route_digest_is_independent_of_supplied_database_order": true,
+    "all_supplied_databases_idle_and_wal_free_before_routing": true,
+    "each_database_rechecked_immediately_before_open": true,
+    "database_open_mode": "read_only_one_at_a_time",
+    "capture_database_copy_created": false,
+    "merged_database_created": false,
+    "overlapping_feature_or_target_cache_created": false
+  },
+  "model_data_contract": {
+    "scaler_fit_population": "frozen_optimization_training_run_order",
+    "scaler_global_event_order_preserved_across_shards": true,
+    "scaler_chunk_invariant_sampler_retained": true,
+    "training_batch_order_restored_to_frozen_partition": true,
+    "tuning_batch_order_restored_to_frozen_partition": true,
+    "fresh_epoch_and_frame_audit_required_per_run": true,
+    "policy_selection_delayed_l2_order_restored": true,
+    "ai_qualification_instruction_order_restored": true,
+    "sealed_test_target_or_batch_accessed": false
+  },
+  "frontend_parity_contract": {
+    "installed_command": "binance-round74-develop",
+    "repository_tool_delegates_to_installed_command": true,
+    "database_option_required": true,
+    "database_option_repeatable": true,
+    "windows_workflow_page": "Research",
+    "windows_workflow_group": "Impact model development",
+    "generated_contract_updated": true,
+    "installed_help_smoke_passed": true
+  },
+  "implementation_status": {
+    "single_database_default_removed": true,
+    "target_free_development_route_completed": true,
+    "deterministic_multi_shard_route_completed": true,
+    "duplicate_and_missing_route_fail_closed": true,
+    "one_store_at_a_time_scaler_replay_completed": true,
+    "one_store_at_a_time_batch_assembly_completed": true,
+    "one_store_at_a_time_policy_execution_replay_completed": true,
+    "one_store_at_a_time_ai_execution_replay_completed": true,
+    "repeatable_database_cli_and_windows_contract_completed": true,
+    "representative_development_run": false,
+    "sealed_test_accessed": false
+  },
+  "verification": {
+    "affected_checkpoint_tests_passed": 110,
+    "target_free_route_before_target_loading_tested": true,
+    "route_order_independence_tested": true,
+    "duplicate_route_rejection_tested": true,
+    "missing_route_rejection_tested": true,
+    "wal_rejection_tested": true,
+    "single_store_source_builder_guard_compatibility_tested": true,
+    "target_source_builder_import_smoke_passed": true,
+    "target_assembly_chain_tests_passed": true,
+    "chronological_scaler_replay_tested": true,
+    "one_store_at_a_time_execution_replay_tested": true,
+    "one_store_at_a_time_ai_replay_tested": true,
+    "cli_repeatable_database_parsing_tested": true,
+    "repository_tool_delegation_tested": true,
+    "generated_windows_contract_parity_tested": true,
+    "native_windows_release_build_passed": true,
+    "native_windows_ui_dry_run_smoke_passed": true,
+    "ruff_lint_passed": true,
+    "ruff_format_passed": true,
+    "representative_market_training_run": false,
+    "representative_market_backtest_run": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "representative_configuration_selected": false,
+    "representative_ai_qualification_completed": false,
+    "representative_sealed_evaluation_completed": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "f76640dc652b0f79c4d8a5807f574ba0540661590ed7ea7d863351586ca8cec8"
+}

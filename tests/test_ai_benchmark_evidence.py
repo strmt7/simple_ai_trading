@@ -21,7 +21,28 @@ ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "ai" / "risk-review" / "latest"
 REPORT_PATH = LATEST / "comparison.json"
 QWEN3_14B_PREREGISTRATION = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v13-preregistration.json"
+)
+QWEN3_14B_V12_PREREGISTRATION = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v12-preregistration.json"
+)
+QWEN3_14B_V12_INVALIDATION = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v12-invalidation.json"
+)
+QWEN3_14B_V11_PREREGISTRATION = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v11-preregistration.json"
+)
+QWEN3_14B_V11_FAILURE = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v11-benchmark.failure.json"
+)
+QWEN3_14B_V11_INCIDENT = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v11-infrastructure-failure.json"
+)
+QWEN3_14B_V10_PREREGISTRATION = (
     ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v10-preregistration.json"
+)
+QWEN3_14B_V10_INVALIDATION = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v10-invalidation.json"
 )
 QWEN3_14B_V9_PREREGISTRATION = (
     ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v9-preregistration.json"
@@ -52,14 +73,14 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(payload.encode("ascii")).hexdigest()
 
 
-def test_qwen3_14b_v10_preregistration_binds_source_and_case_suite() -> None:
+def test_qwen3_14b_v13_preregistration_binds_source_and_case_suite() -> None:
     preregistration = _json(QWEN3_14B_PREREGISTRATION)
     source = ROOT / "src" / "simple_ai_trading" / "ai_model_benchmark.py"
     suite = [asdict(case) for case in default_finance_ai_test_cases()]
 
     assert preregistration["benchmark_contract"] == AI_MODEL_BENCHMARK_CONTRACT
     assert preregistration["schema_version"] == (
-        "finance-risk-review-candidate-preregistration-v5"
+        "finance-risk-review-candidate-preregistration-v8"
     )
     assert preregistration["benchmark_source_sha256"] == _sha256(source)
     assert preregistration["test_suite_sha256"] == _canonical_sha256(suite)
@@ -68,12 +89,15 @@ def test_qwen3_14b_v10_preregistration_binds_source_and_case_suite() -> None:
     assert preregistration["superseded_predecessor"]["sha256"] == (  # type: ignore[index]
         _sha256(predecessor)
     )
-    incident = ROOT / preregistration["superseded_predecessor"][  # type: ignore[index]
-        "infrastructure_incident_path"
-    ]
+    invalidation = (
+        ROOT
+        / preregistration["superseded_predecessor"][  # type: ignore[index]
+            "invalidation_path"
+        ]
+    )
     assert preregistration["superseded_predecessor"][  # type: ignore[index]
-        "infrastructure_incident_file_sha256"
-    ] == _sha256(incident)
+        "invalidation_file_sha256"
+    ] == _sha256(invalidation)
     assert preregistration["frozen_run"]["run_count"] == 1  # type: ignore[index]
     assert preregistration["frozen_run"]["prompt_or_case_changes_allowed"] is False  # type: ignore[index]
     assert preregistration["frozen_run"]["minimum_capture_duration_seconds"] == 54_000  # type: ignore[index]
@@ -101,17 +125,95 @@ def test_qwen3_14b_v10_preregistration_binds_source_and_case_suite() -> None:
     )
 
 
+def test_qwen3_14b_v12_is_immutable_unconsumed_invalidation_evidence() -> None:
+    preregistration = _json(QWEN3_14B_V12_PREREGISTRATION)
+    invalidation = _json(QWEN3_14B_V12_INVALIDATION)
+
+    assert invalidation["preregistration"]["sha256"] == _sha256(  # type: ignore[index]
+        QWEN3_14B_V12_PREREGISTRATION
+    )
+    assert (
+        invalidation["preregistration"]["benchmark_contract"]
+        == (  # type: ignore[index]
+            preregistration["benchmark_contract"]
+        )
+    )
+    assert invalidation["preregistration"]["state"] == (  # type: ignore[index]
+        "invalidated_unconsumed"
+    )
+    assert invalidation["source_binding"]["semantic_case_changes"] is False  # type: ignore[index]
+    assert (
+        invalidation["confirmation_evidence"]["v12_claim_present_at_audit"] is False  # type: ignore[index]
+    )
+    assert invalidation["interpretation"]["model_inference_started"] is False  # type: ignore[index]
+    assert invalidation["interpretation"]["trading_authority"] is False  # type: ignore[index]
+
+
+def test_qwen3_14b_v11_is_immutable_consumed_infrastructure_evidence() -> None:
+    preregistration = _json(QWEN3_14B_V11_PREREGISTRATION)
+    failure = _json(QWEN3_14B_V11_FAILURE)
+    incident = _json(QWEN3_14B_V11_INCIDENT)
+
+    assert incident["benchmark"]["preregistration_file_sha256"] == _sha256(  # type: ignore[index]
+        QWEN3_14B_V11_PREREGISTRATION
+    )
+    assert incident["benchmark"]["failure_file_sha256"] == _sha256(  # type: ignore[index]
+        QWEN3_14B_V11_FAILURE
+    )
+    assert (
+        incident["benchmark"]["contract"]
+        == preregistration[  # type: ignore[index]
+            "benchmark_contract"
+        ]
+    )
+    assert incident["claim"]["state"] == "failed"  # type: ignore[index]
+    assert incident["claim"]["benchmark_passed"] is None  # type: ignore[index]
+    assert failure["partial_benchmark_report"] is None
+    assert incident["provider_evidence"]["model_completions_evidenced"] == 0  # type: ignore[index]
+    assert incident["interpretation"]["reasoning_score_available"] is False  # type: ignore[index]
+    assert incident["interpretation"]["trading_authority"] is False  # type: ignore[index]
+
+
+def test_qwen3_14b_v10_is_immutable_unconsumed_invalidation_evidence() -> None:
+    preregistration = _json(QWEN3_14B_V10_PREREGISTRATION)
+    invalidation = _json(QWEN3_14B_V10_INVALIDATION)
+
+    assert invalidation["preregistration"]["sha256"] == _sha256(  # type: ignore[index]
+        QWEN3_14B_V10_PREREGISTRATION
+    )
+    assert (
+        invalidation["preregistration"]["benchmark_contract"]
+        == (  # type: ignore[index]
+            preregistration["benchmark_contract"]
+        )
+    )
+    assert invalidation["preregistration"]["state"] == (  # type: ignore[index]
+        "invalidated_unconsumed"
+    )
+    assert invalidation["source_binding"]["semantic_case_changes"] is False  # type: ignore[index]
+    assert invalidation["confirmation_evidence"]["v10_claim_present_at_audit"] is False  # type: ignore[index]
+    assert invalidation["interpretation"]["model_inference_started"] is False  # type: ignore[index]
+    assert invalidation["interpretation"]["reasoning_score_available"] is False  # type: ignore[index]
+    assert invalidation["interpretation"]["trading_authority"] is False  # type: ignore[index]
+
+
 def test_qwen3_14b_v9_is_immutable_consumed_infrastructure_evidence() -> None:
     preregistration = _json(QWEN3_14B_V9_PREREGISTRATION)
     incident = _json(QWEN3_14B_V9_INCIDENT)
     body = dict(incident)
     embedded_sha256 = str(body.pop("artifact_sha256"))
 
-    assert _sha256(QWEN3_14B_V9_PREREGISTRATION) == (
-        incident["benchmark"]["preregistration_file_sha256"]  # type: ignore[index]
+    assert (
+        _sha256(QWEN3_14B_V9_PREREGISTRATION)
+        == (
+            incident["benchmark"]["preregistration_file_sha256"]  # type: ignore[index]
+        )
     )
-    assert preregistration["benchmark_contract"] == (
-        incident["benchmark"]["contract"]  # type: ignore[index]
+    assert (
+        preregistration["benchmark_contract"]
+        == (
+            incident["benchmark"]["contract"]  # type: ignore[index]
+        )
     )
     assert incident["claim"]["state"] == "failed"  # type: ignore[index]
     assert incident["claim"]["benchmark_passed"] is None  # type: ignore[index]

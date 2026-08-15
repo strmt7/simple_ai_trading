@@ -10,17 +10,26 @@ import pytest
 
 import simple_ai_trading.polymarket_round21_tcn as tcn_module
 
-from polymarket_round21_support import round21_panel, round21_replay_condition, sha
+from polymarket_round21_support import (
+    round21_accepted_basis_ablation,
+    round21_panel,
+    round21_replay_condition,
+    sha,
+)
 import simple_ai_trading.polymarket_round21_sealed as sealed_module
 from simple_ai_trading.polymarket_round21_model import fit_round21_development
 from simple_ai_trading.polymarket_round21_replay import replay_round21_full_matrix
 from simple_ai_trading.polymarket_round21_sealed import (
     POLYMARKET_ROUND21_SEALED_DESIGN_SHA256,
     build_round21_sealed_evaluation_result,
+    build_round21_sealed_result_bundle,
     evaluate_round21_sealed_economics,
     evaluate_round21_sealed_predictions,
     load_round21_sealed_design,
+    load_round21_sealed_result_bundle,
+    load_verified_round21_sealed_result_bundle,
     validate_round21_sealed_design,
+    validate_round21_sealed_result_bundle,
 )
 
 
@@ -30,7 +39,7 @@ DESIGN_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-021-terminal-sealed-evaluation-design-v1.json"
+    / "round-021-terminal-sealed-evaluation-design-v7.json"
 )
 
 
@@ -44,17 +53,25 @@ def _bounded_tcn_test_epochs():
 
 @pytest.fixture(scope="module")
 def artifact() -> dict[str, object]:
+    train = round21_panel("train", first_condition=0, condition_count=100)
+    calibration = round21_panel(
+        "tune_calibration",
+        first_condition=106,
+        condition_count=120,
+    )
+    selection = round21_panel(
+        "tune_selection",
+        first_condition=226,
+        condition_count=80,
+    )
     return fit_round21_development(
-        train=round21_panel("train", first_condition=0, condition_count=100),
-        tune_calibration=round21_panel(
-            "tune_calibration",
-            first_condition=106,
-            condition_count=120,
-        ),
-        tune_selection=round21_panel(
-            "tune_selection",
-            first_condition=226,
-            condition_count=80,
+        train=train,
+        tune_calibration=calibration,
+        tune_selection=selection,
+        basis_ablation_result=round21_accepted_basis_ablation(
+            train,
+            calibration,
+            selection,
         ),
         compute_backend="cpu",
     )
@@ -70,9 +87,23 @@ def predictive(artifact: dict[str, object]):
 
 
 @pytest.fixture(scope="module")
-def economic():
+def economic(predictive):
     matrix = replay_round21_full_matrix((round21_replay_condition(),))
-    return evaluate_round21_sealed_economics(matrix)
+    result = evaluate_round21_sealed_economics(
+        matrix,
+        test_dataset_sha256=predictive.test_dataset_sha256,
+        test_target_manifest_sha256=predictive.test_target_manifest_sha256,
+    )
+    result = replace(
+        result,
+        condition_count=predictive.resolved_condition_count,
+        condition_population_sha256=predictive.condition_population_sha256,
+        result_sha256=sha("placeholder"),
+    )
+    return replace(
+        result,
+        result_sha256=sealed_module._canonical_sha256(result.identity_payload()),
+    ).validated()
 
 
 def test_round21_sealed_design_is_canonical_and_has_no_authority() -> None:
@@ -90,9 +121,7 @@ def test_round21_sealed_design_is_canonical_and_has_no_authority() -> None:
 
     assert claimed == actual == POLYMARKET_ROUND21_SEALED_DESIGN_SHA256
     assert load_round21_sealed_design(REPOSITORY)["design_sha256"] == claimed
-    assert raw["one_use_state_machine"][
-        "result_binds_predeclared_test_population"
-    ]
+    assert raw["one_use_state_machine"]["result_binds_predeclared_test_population"]
     assert not any(raw["authority"].values())
 
     tampered = {**raw, "round": 22, "design_sha256": claimed}
@@ -148,7 +177,11 @@ def test_round21_sealed_economic_gate_requires_all_81_ledgers(economic) -> None:
     assert economic.paper_trading_authority is False
 
     with pytest.raises(ValueError, match="economic matrix differs"):
-        evaluate_round21_sealed_economics(())
+        evaluate_round21_sealed_economics(
+            (),
+            test_dataset_sha256=economic.test_dataset_sha256,
+            test_target_manifest_sha256=economic.test_target_manifest_sha256,
+        )
 
 
 def test_round21_sealed_result_binds_population_and_never_promotes(
@@ -173,6 +206,103 @@ def test_round21_sealed_result_binds_population_and_never_promotes(
     assert result.live_trading_authority is False
     with pytest.raises(ValueError, match="sealed evaluation result differs"):
         replace(result, candidate_accepted=True).validated()
+    mismatched = replace(
+        economic,
+        test_dataset_sha256=sha("different-test-dataset"),
+        result_sha256=sha("placeholder"),
+    )
+    mismatched = replace(
+        mismatched,
+        result_sha256=sealed_module._canonical_sha256(mismatched.identity_payload()),
+    ).validated()
+    with pytest.raises(ValueError, match="populations differ"):
+        build_round21_sealed_evaluation_result(
+            claim_sha256=sha("claim"),
+            test_access_sha256=sha("access"),
+            selected_population_layer="core",
+            sealed_test_population_manifest_sha256=sha("sealed-test-population"),
+            predictive=predictive,
+            economic=mismatched,
+        )
+
+
+def test_round21_sealed_bundle_round_trips_nested_restart_state(
+    predictive,
+    economic,
+    tmp_path: Path,
+) -> None:
+    result = build_round21_sealed_evaluation_result(
+        claim_sha256=sha("bundle-claim"),
+        test_access_sha256=sha("bundle-access"),
+        selected_population_layer="core",
+        sealed_test_population_manifest_sha256=sha("bundle-population"),
+        predictive=predictive,
+        economic=economic,
+    )
+    bundle = build_round21_sealed_result_bundle(result)
+
+    assert validate_round21_sealed_result_bundle(bundle) == result
+    path = tmp_path / "sealed-result.json"
+    path.write_text(
+        json.dumps(bundle, separators=(",", ":"), sort_keys=True),
+        encoding="ascii",
+    )
+    assert load_round21_sealed_result_bundle(path) == result
+
+    tampered = json.loads(path.read_text(encoding="ascii"))
+    tampered["economic"]["qualified_ledger_count"] = 81
+    body = dict(tampered)
+    body.pop("bundle_sha256")
+    tampered["bundle_sha256"] = sealed_module._canonical_sha256(body)
+    with pytest.raises(ValueError, match="bundle differs"):
+        validate_round21_sealed_result_bundle(tampered)
+
+    path.write_text('{"a":1,"a":2}', encoding="ascii")
+    with pytest.raises(ValueError, match="duplicate keys"):
+        load_round21_sealed_result_bundle(path)
+
+
+def test_round21_verified_sealed_bundle_binds_exact_file(
+    predictive,
+    economic,
+    tmp_path,
+) -> None:
+    result = build_round21_sealed_evaluation_result(
+        claim_sha256=sha("claim"),
+        test_access_sha256=sha("access"),
+        selected_population_layer="core",
+        sealed_test_population_manifest_sha256=sha("test-population"),
+        predictive=predictive,
+        economic=economic,
+    )
+    payload = build_round21_sealed_result_bundle(result)
+    path = tmp_path / "sealed-result.json"
+    path.write_text(
+        json.dumps(
+            payload,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        )
+        + "\n",
+        encoding="ascii",
+    )
+    expected = hashlib.sha256(path.read_bytes()).hexdigest()
+
+    verified = load_verified_round21_sealed_result_bundle(
+        path,
+        expected_file_sha256=expected,
+    )
+    assert verified.result == result
+    assert verified.path == path.resolve()
+    assert verified.file_sha256 == expected
+
+    with pytest.raises(ValueError, match="evidence hash differs"):
+        load_verified_round21_sealed_result_bundle(
+            path,
+            expected_file_sha256=sha("different-file"),
+        )
 
 
 def test_round21_sealed_design_loader_rejects_malformed_sources(tmp_path) -> None:
@@ -184,7 +314,7 @@ def test_round21_sealed_design_loader_rejects_malformed_sources(tmp_path) -> Non
         / "docs"
         / "model-research"
         / "polymarket"
-        / "round-021-terminal-sealed-evaluation-design-v1.json"
+        / "round-021-terminal-sealed-evaluation-design-v7.json"
     )
     path.parent.mkdir(parents=True)
     path.write_text('{"a":1,"a":2}', encoding="ascii")
@@ -230,6 +360,13 @@ def test_round21_sealed_economics_accepts_only_fully_qualified_matrix(
             self.profile = profile
             self.scenario = scenario
             self.replay_sha256 = sha(f"qualified-ledger-{index}")
+            self.conditions = (
+                SimpleNamespace(
+                    condition_id="0x" + "1" * 64,
+                    event_start_ms=1_800_000_000_000,
+                    outcome_sha256=sha("outcome"),
+                ),
+            )
 
         def validated(self):
             return self
@@ -248,10 +385,27 @@ def test_round21_sealed_economics_accepts_only_fully_qualified_matrix(
         lambda _matrix: sha("qualified-matrix"),
     )
 
-    result = evaluate_round21_sealed_economics(matrix)
+    result = evaluate_round21_sealed_economics(
+        matrix,
+        test_dataset_sha256=sha("test-dataset"),
+        test_target_manifest_sha256=sha("test-targets"),
+    )
     assert result.qualified_ledger_count == 81
     assert result.gate_passed is True
     assert result.reasons == ()
+    matrix[1].conditions = (
+        SimpleNamespace(
+            condition_id="0x" + "2" * 64,
+            event_start_ms=1_800_000_300_000,
+            outcome_sha256=sha("different-outcome"),
+        ),
+    )
+    with pytest.raises(ValueError, match="economic populations differ"):
+        evaluate_round21_sealed_economics(
+            matrix,
+            test_dataset_sha256=sha("test-dataset"),
+            test_target_manifest_sha256=sha("test-targets"),
+        )
 
 
 def test_round21_sealed_builder_checks_optional_and_ai_bindings(
@@ -280,8 +434,8 @@ def test_round21_sealed_builder_checks_optional_and_ai_bindings(
         baseline_matrix_sha256=economic.matrix_sha256,
         development_qualified=True,
         comparison_sha256=sha("ai-comparison"),
-        model="qwen3:8b",
-        model_digest=sha("qwen3:8b"),
+        model="qwen3.5:9b",
+        model_digest=sha("qwen3.5:9b"),
     )
     ai.validated = lambda: ai
 
@@ -297,8 +451,8 @@ def test_round21_sealed_builder_checks_optional_and_ai_bindings(
     )
     assert result.optional_uplift_gate_passed is True
     assert result.ai_uplift_gate_passed is True
-    assert result.ai_model == "qwen3:8b"
-    assert result.ai_model_digest == sha("qwen3:8b")
+    assert result.ai_model == "qwen3.5:9b"
+    assert result.ai_model_digest == sha("qwen3.5:9b")
 
     with pytest.raises(ValueError, match="selected layer differs"):
         build_round21_sealed_evaluation_result(

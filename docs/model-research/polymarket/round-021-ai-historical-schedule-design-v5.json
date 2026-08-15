@@ -1,0 +1,47 @@
+{
+  "schema_version": "polymarket-round21-ai-historical-schedule-design-v5",
+  "round": 21,
+  "status": "preregistered_during_capture_before_capture_target_or_model_outcome_access",
+  "parents": {
+    "round21_ai_historical_schedule_design_v4_sha256": "b07f940f99ec395635c8efe05e8159d7afc1132f0100747269453d7d5499529f",
+    "round21_ai_veto_design_v5_sha256": "e056abc92f9ec6a45b9ea583c8b6a22d4de7ee5f366b2129c1ca417d3e497d9d",
+    "round21_economic_replay_design_sha256": "a24eea9cf6b474cb82e57cb540396447c4198b1a1b4d9d8952cc020f0f029f9c"
+  },
+  "supersession": {
+    "change": "bind_unchanged_virtual_timing_to_round21_ai_veto_design_v5",
+    "clock_or_latency_semantics_changed": false,
+    "candidate_count_changed": false,
+    "capture_data_used_for_change": false,
+    "targets_used_for_change": false,
+    "market_outcomes_used_for_change": false
+  },
+  "purpose": "historical_development_and_one_use_sealed_ai_ablation_only",
+  "clock": {
+    "mode": "virtual_event_time_zero_dispatch_delay",
+    "dispatch_wall_ms": "earliest_frozen_candidate_decision_time_ms",
+    "dispatch_monotonic_ns": "dispatch_wall_ms_times_1000000",
+    "historical_host_receipt_claim": false,
+    "historical_provider_load_claim": false,
+    "market_data_receipts": "exact_captured_host_receipts_only",
+    "provider_queue_and_inference_latency": "measured_current_local_model_runtime_shifted_onto_virtual_event_time",
+    "network_and_execution_latency": "all_frozen_economic_replay_scenarios",
+    "same_schedule_for_every_ai_candidate": true
+  },
+  "causality": {
+    "target_free": true,
+    "future_books": false,
+    "outcomes_or_pnl": false,
+    "one_case_per_condition": true,
+    "case_order": "decision_time_then_condition_id",
+    "source_evidence_hash_required": true
+  },
+  "semantics": {
+    "virtual_schedule_is_simulation_not_observation": true,
+    "prospective_exact_receipt_path_unchanged": true,
+    "virtual_and_exact_receipts_are_distinct_case_schemas": true,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "4fdbc556326142594ec9f9a6536dbfdcab16f344ad7ec33309bfb0aefd7c875c"
+}

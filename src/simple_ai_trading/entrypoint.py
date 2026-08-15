@@ -8,6 +8,12 @@ import sys
 from . import cli
 from .polymarket_live_cli import register_polymarket_live_command
 from .polymarket_round21_cli import register_polymarket_round21_commands
+from .round74_segmented_development_cli import (
+    register_round74_segmented_development_command,
+)
+from .round74_segmented_terminal_cli import (
+    register_round74_segmented_terminal_commands,
+)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -26,6 +32,8 @@ def _build_parser() -> argparse.ArgumentParser:
         raise RuntimeError("CLI parser has no command registry")
     register_polymarket_live_command(subparsers)
     register_polymarket_round21_commands(subparsers)
+    register_round74_segmented_development_command(subparsers)
+    register_round74_segmented_terminal_commands(subparsers)
     return parser
 
 

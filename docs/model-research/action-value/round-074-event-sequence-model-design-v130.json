@@ -1,0 +1,104 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v130",
+  "artifact_kind": "development_population_binding_hardening",
+  "created_utc": "2026-08-03T10:18:45.0918620Z",
+  "supersedes_artifact_sha256": "f76640dc652b0f79c4d8a5807f574ba0540661590ed7ea7d863351586ca8cec8",
+  "implementation_git_commit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "source_binding": {
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/round74_event_development_operator.py",
+        "sha256": "4ed85035328ac6411868de37ed07db46105c5e9726d058546ddab2fc62fa9b45"
+      }
+    ],
+    "affected_tests": [
+      {
+        "path": "tests/test_round74_event_development_operator.py",
+        "sha256": "e629c05da4ef3e4183867ebd37cca38cdec750da09f1644b4e76ec96a884d764"
+      },
+      {
+        "path": "tests/test_round74_event_model_design_v129.py",
+        "sha256": "b4533f2e83d56dee91e4d616a309253ce68dc1865eb0ae65b8aeeb9840e07597"
+      }
+    ],
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v129.json",
+      "sha256": "3f8bf88121c4b055696c5bf0a8278b71bb5deac7b31041f6795bcbf87d6799bd"
+    }
+  },
+  "schema_contract": {
+    "development_operator": "round-074-development-policy-operator-v7",
+    "development_policy_bundle": "round-074-development-policy-bundle-v8"
+  },
+  "defect": {
+    "prior_training_batch_count_assumption": 120,
+    "prior_tuning_subrole_count_assumption": {
+      "model_selection": 12,
+      "calibration": 6,
+      "policy_selection": 6
+    },
+    "current_cohort_uses_transport_adjudicated_variable_populations": true,
+    "completed_segmented_development_bundle_producible_before_delta": false
+  },
+  "declared_delta": {
+    "summary": "Remove obsolete fixed population cardinalities and bind calibration plus the immutable development bundle to the exact prepared training hashes and frozen tuning subroles.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "feature_definition_changed": false,
+    "scaler_sampling_policy_changed": false,
+    "window_selection_policy_changed": false,
+    "probability_calibration_changed": false,
+    "action_policy_changed": false,
+    "predictive_gate_changed": false,
+    "financial_gate_changed": false,
+    "ai_uplift_gate_changed": false,
+    "development_population_binding_changed": true,
+    "runtime_trading_path_changed": false
+  },
+  "population_binding_contract": {
+    "expected_training_hashes_derived_from_prepared_training_batches": true,
+    "pretest_policy_training_hashes_must_match_exact_order": true,
+    "training_hashes_persisted_in_development_bundle": true,
+    "training_population_nonempty_unique_and_sha256_bound": true,
+    "model_selection_population_nonempty_unique_and_sha256_bound": true,
+    "calibration_population_nonempty_unique_and_sha256_bound": true,
+    "policy_selection_population_nonempty_unique_and_sha256_bound": true,
+    "cross_role_batch_reuse_rejected": true,
+    "variable_transport_adjudicated_role_counts_supported": true,
+    "legacy_120_training_and_12_6_6_tuning_population_supported": true,
+    "sealed_test_target_or_batch_accessed": false
+  },
+  "verification": {
+    "affected_checkpoint_tests_passed": 25,
+    "variable_137_training_population_tested": true,
+    "variable_17_8_7_tuning_subroles_tested": true,
+    "training_population_mismatch_rejected": true,
+    "legacy_120_and_12_6_6_case_tested": true,
+    "immutable_bundle_round_trip_tested": true,
+    "sharded_development_runtime_tests_passed": true,
+    "representation_comparison_tests_passed": true,
+    "ruff_lint_passed": true,
+    "representative_market_training_run": false,
+    "representative_market_backtest_run": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "representative_configuration_selected": false,
+    "representative_ai_qualification_completed": false,
+    "representative_sealed_evaluation_completed": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "1537b663c96fb21d3b63664cd227b3c3d837717d6bc5f08d1efee32822244340"
+}

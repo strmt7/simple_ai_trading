@@ -12,13 +12,13 @@ Simple AI Trading now targets BTC, ETH, and SOL high-liquidity day trading on Bi
 - Official Binance `bookTicker` archives: supply exact 100 ms best-bid/offer paths for execution replay.
 - Binance USD-M futures leverage endpoints: read exchange brackets, then apply the app-level `20x` cap.
 - Signed Binance testnet/demo account endpoints: reconcile bot-owned orders, fills, balances, and positions before opens or closes.
-- DirectML / `torch-directml`: Windows GPU acceleration for AMD, NVIDIA, and Intel GPUs.
 
 ## Planned Integrations
 
 - Event-level depth diff streams for queue-aware order-book research; sampled aggregate-depth archives are insufficient for queue position or maker-fill claims.
 - User-data stream reconciliation as a lower-latency complement to the signed REST reconciliation path.
-- ONNX/Windows ML packaging for future local inference.
+- ONNX Runtime DirectML / Windows ML execution after model export, numerical
+  parity, provider discovery, and fault-isolation tests pass.
 - Asset-specific news/sentiment providers beyond broad crypto macro feeds.
 
 ## Out Of Scope Until Reconciliation Is Complete

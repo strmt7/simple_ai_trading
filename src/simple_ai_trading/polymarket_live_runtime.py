@@ -25,6 +25,8 @@ from .polymarket_live_v2 import PolymarketLiveCredentials
 
 POLYMARKET_USER_STREAM_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/user"
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
+_USER_ORDER_ACTIVE_STATUSES = frozenset({"LIVE", "MATCHED", "DELAYED", "UNMATCHED"})
+_USER_ORDER_TERMINAL_STATUSES = frozenset({"CANCELED"})
 
 
 class PolymarketOpeningInterlock(Protocol):
@@ -68,6 +70,7 @@ class PolymarketLiveRuntimeGuard:
         self._opening_interlock = opening_interlock
         self._lock = RLock()
         self._stream_connected = False
+        self._stream_epoch = 0
         self._last_stream_ns: int | None = None
         self._last_reconciliation_ns: int | None = None
         self._reconciliation_can_open = False
@@ -78,19 +81,23 @@ class PolymarketLiveRuntimeGuard:
 
     def note_stream_liveness(self) -> None:
         with self._lock:
+            if not self._stream_connected:
+                self._stream_epoch += 1
+                self._last_reconciliation_ns = None
+                self._reconciliation_can_open = False
+                self._reconciliation_can_close = False
             self._stream_connected = True
             self._last_stream_ns = self._monotonic_ns()
-            if self._soft_fault in {
-                "runtime_booting",
-                "stream_disconnected",
-                "stream_timeout",
-            }:
-                self._soft_fault = ""
+            if self._last_reconciliation_ns is None:
+                self._soft_fault = "reconciliation_required_after_stream_connect"
 
     def note_stream_disconnected(self, failure_code: str) -> None:
         code = str(failure_code or "").strip() or "stream_disconnected"
         with self._lock:
             self._stream_connected = False
+            self._last_reconciliation_ns = None
+            self._reconciliation_can_open = False
+            self._reconciliation_can_close = False
             self._soft_fault = code
 
     def note_hard_fault(self, failure_code: str) -> None:
@@ -100,8 +107,21 @@ class PolymarketLiveRuntimeGuard:
         with self._lock:
             self._hard_faults.add(code)
 
-    def note_reconciliation(self, result: PolymarketReconciliation) -> None:
+    def reconciliation_checkpoint(self) -> int:
         with self._lock:
+            return self._stream_epoch
+
+    def note_reconciliation(
+        self,
+        result: PolymarketReconciliation,
+        *,
+        checkpoint: int | None = None,
+    ) -> None:
+        with self._lock:
+            selected = self._stream_epoch if checkpoint is None else int(checkpoint)
+            if selected != self._stream_epoch:
+                self._soft_fault = "reconciliation_superseded_by_stream_epoch"
+                return
             self._last_reconciliation_ns = self._monotonic_ns()
             self._reconciliation_can_open = result.can_open
             self._reconciliation_can_close = result.can_close
@@ -110,9 +130,17 @@ class PolymarketLiveRuntimeGuard:
             elif self._stream_connected:
                 self._soft_fault = ""
 
-    def note_reconciliation_failure(self, failure_code: str) -> None:
+    def note_reconciliation_failure(
+        self,
+        failure_code: str,
+        *,
+        checkpoint: int | None = None,
+    ) -> None:
         code = str(failure_code or "").strip() or "unknown"
         with self._lock:
+            selected = self._stream_epoch if checkpoint is None else int(checkpoint)
+            if selected != self._stream_epoch:
+                return
             self._last_reconciliation_ns = None
             self._reconciliation_can_open = False
             self._reconciliation_can_close = False
@@ -249,6 +277,25 @@ class PolymarketUserStreamConsumer:
             )
             return
         event_type = str(payload.get("type") or "").strip().upper()
+        remote_status = str(payload.get("status") or "").strip().upper()
+        documented_statuses = (
+            _USER_ORDER_ACTIVE_STATUSES | _USER_ORDER_TERMINAL_STATUSES
+        )
+        if remote_status and remote_status not in documented_statuses:
+            self.runtime_guard.note_hard_fault("owned_order_stream_unsupported_status")
+            return
+        if (
+            event_type == "CANCELLATION"
+            and remote_status
+            and remote_status not in _USER_ORDER_TERMINAL_STATUSES
+        ) or (
+            event_type in {"PLACEMENT", "UPDATE"}
+            and remote_status in _USER_ORDER_TERMINAL_STATUSES
+        ):
+            self.runtime_guard.note_hard_fault(
+                "owned_order_stream_event_status_mismatch"
+            )
+            return
         if record.state not in {
             "prepared",
             "submitting",
@@ -290,7 +337,7 @@ class PolymarketUserStreamConsumer:
             expected_states=(record.state,),
             state=next_state,
             observed_at_ms=_observed_at_ms(payload.get("timestamp")),
-            remote_status=event_type,
+            remote_status=remote_status or event_type,
             matched_quantity=matched_quantity,
         )
 

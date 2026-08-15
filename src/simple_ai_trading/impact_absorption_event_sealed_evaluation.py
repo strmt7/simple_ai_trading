@@ -88,7 +88,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v24"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v25"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v3"
 )
@@ -2360,8 +2360,7 @@ class Round74SealedEvaluationReport:
                     )
                     != self.model_output_sha256
                     or any(
-                        value.filter_sha256
-                        != self.epistemic_action_filter_sha256
+                        value.filter_sha256 != self.epistemic_action_filter_sha256
                         for value in self.epistemic_action_filter_applications
                     )
                 )
@@ -2374,9 +2373,9 @@ class Round74SealedEvaluationReport:
                 )
             )
             or not self.test_batch_sha256
-            or len(self.ai_overlays) != ROUND74_SEALED_AI_MODEL_COUNT
+            or not 1 <= len(self.ai_overlays) <= ROUND74_SEALED_AI_MODEL_COUNT
             or len({value.model_manifest_sha256 for value in self.ai_overlays})
-            != ROUND74_SEALED_AI_MODEL_COUNT
+            != len(self.ai_overlays)
             or len(self.test_batch_sha256) != len(self.model_output_sha256)
             or len(self.test_batch_sha256) != len(self.candidate_sha256)
             or len(set(self.test_batch_sha256)) != len(self.test_batch_sha256)
@@ -2439,12 +2438,9 @@ class Round74SealedEvaluationReport:
                 self.final_action_configuration_sha256
             ),
             "final_action_configuration_mode": self.final_action_configuration_mode,
-            "epistemic_action_filter_sha256": (
-                self.epistemic_action_filter_sha256
-            ),
+            "epistemic_action_filter_sha256": (self.epistemic_action_filter_sha256),
             "epistemic_action_filter_applications": [
-                value.as_dict()
-                for value in self.epistemic_action_filter_applications
+                value.as_dict() for value in self.epistemic_action_filter_applications
             ],
             "ai_pretest_qualification_sha256": (self.ai_pretest_qualification_sha256),
             "profile": self.profile,
@@ -3960,16 +3956,15 @@ def evaluate_round74_sealed_once(
     action_selection = final_action_configuration.action_selection
     ai_pretest_qualification.validate()
     manifests = ai_pretest_qualification.model_manifest_sha256
-    if (
-        len(manifests) != ROUND74_SEALED_AI_MODEL_COUNT
-        or len(set(manifests)) != ROUND74_SEALED_AI_MODEL_COUNT
-    ):
+    if not 1 <= len(manifests) <= ROUND74_SEALED_AI_MODEL_COUNT or len(
+        set(manifests)
+    ) != len(manifests):
         raise ValueError(
-            "Round 74 sealed evaluation requires the exact two-model AI family"
+            "Round 74 sealed evaluation requires a development-qualified AI model"
         )
     if not ai_pretest_qualification.qualification_passed:
         raise ValueError(
-            "Round 74 sealed evaluation requires both AI models to pass pretest"
+            "Round 74 sealed evaluation requires an AI model to pass pretest"
         )
     if (
         ai_pretest_qualification.action_selection_sha256

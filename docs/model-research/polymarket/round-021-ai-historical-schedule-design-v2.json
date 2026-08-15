@@ -1,0 +1,47 @@
+{
+  "schema_version": "polymarket-round21-ai-historical-schedule-design-v2",
+  "round": 21,
+  "status": "preregistered_during_capture_before_capture_target_or_model_outcome_access",
+  "parents": {
+    "round21_ai_historical_schedule_design_v1_sha256": "2ace23ba8d8d6a6e0da058315a9e891ed7d59dd1d37a85aa1588e2dfc5fe71b7",
+    "round21_ai_veto_design_v2_sha256": "83b6049bafc9c94d7cab463350b8e69662f7d430ede8efcf9f4f0c60d54cae14",
+    "round21_economic_replay_design_sha256": "ce19f8722801f359220818be58e2da715fc3be4e8c28d6c37993566d97863763"
+  },
+  "supersession": {
+    "change": "bind_virtual_timing_to_the_qwen3_5_finite_ai_program",
+    "clock_or_latency_semantics_changed": false,
+    "candidate_count_changed": false,
+    "capture_data_used_for_change": false,
+    "targets_used_for_change": false,
+    "market_outcomes_used_for_change": false
+  },
+  "purpose": "historical_development_and_one_use_sealed_ai_ablation_only",
+  "clock": {
+    "mode": "virtual_event_time_zero_dispatch_delay",
+    "dispatch_wall_ms": "earliest_frozen_candidate_decision_time_ms",
+    "dispatch_monotonic_ns": "dispatch_wall_ms_times_1000000",
+    "historical_host_receipt_claim": false,
+    "historical_provider_load_claim": false,
+    "market_data_receipts": "exact_captured_host_receipts_only",
+    "provider_queue_and_inference_latency": "measured_current_local_model_runtime_shifted_onto_virtual_event_time",
+    "network_and_execution_latency": "all_frozen_economic_replay_scenarios",
+    "same_schedule_for_every_ai_candidate": true
+  },
+  "causality": {
+    "target_free": true,
+    "future_books": false,
+    "outcomes_or_pnl": false,
+    "one_case_per_condition": true,
+    "case_order": "decision_time_then_condition_id",
+    "source_evidence_hash_required": true
+  },
+  "semantics": {
+    "virtual_schedule_is_simulation_not_observation": true,
+    "prospective_exact_receipt_path_unchanged": true,
+    "virtual_and_exact_receipts_are_distinct_case_schemas": true,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "e063f8c7c73e052a11f9d673ba4806d01bf4595e85733dc1b08cdf30f7f6f9a4"
+}

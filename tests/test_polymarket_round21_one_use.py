@@ -16,11 +16,13 @@ from simple_ai_trading.polymarket_round21_one_use import (
     build_round21_pretest_manifest,
     create_round21_one_use_claim,
     execute_round21_one_use,
+    load_round21_completed_sealed_bundle,
 )
 from simple_ai_trading.polymarket_round21_sealed import (
     Round21SealedEconomicResult,
     Round21SealedPredictiveResult,
     build_round21_sealed_evaluation_result,
+    validate_round21_sealed_result_bundle,
 )
 
 
@@ -110,6 +112,7 @@ def _predictive() -> Round21SealedPredictiveResult:
         test_target_manifest_sha256=_sha("test-targets"),
         probability_batch_sha256=_sha("probabilities"),
         resolved_condition_count=1_800,
+        condition_population_sha256=_sha("condition-population"),
         calendar_day_count=7,
         candidate_metrics=diagnostics,
         control_metrics={name: diagnostics for name in CONTROL_IDS},
@@ -129,6 +132,10 @@ def _predictive() -> Round21SealedPredictiveResult:
 
 def _economic() -> Round21SealedEconomicResult:
     provisional = Round21SealedEconomicResult(
+        test_dataset_sha256=_sha("test-dataset"),
+        test_target_manifest_sha256=_sha("test-targets"),
+        condition_count=1_800,
+        condition_population_sha256=_sha("condition-population"),
         matrix_sha256=_sha("sealed-economic-matrix"),
         ledger_count=81,
         qualified_ledger_count=81,
@@ -193,6 +200,9 @@ def test_round21_one_use_success_is_durable_and_cannot_reopen(tmp_path) -> None:
     assert snapshot["status"] == "completed"
     assert snapshot["test_access_consumed"] is True
     assert snapshot["event_count"] == 3
+    bundle = load_round21_completed_sealed_bundle(store_path)
+    assert snapshot["result_bundle"] == bundle
+    assert validate_round21_sealed_result_bundle(bundle) == result
 
     with pytest.raises(RuntimeError, match="cannot be reopened"):
         execute_round21_one_use(
@@ -227,6 +237,8 @@ def test_round21_one_use_failure_is_terminal(tmp_path) -> None:
     assert snapshot["status"] == "failed"
     assert snapshot["test_access_consumed"] is True
     assert snapshot["event_count"] == 3
+    with pytest.raises(ValueError, match="completed sealed bundle is unavailable"):
+        load_round21_completed_sealed_bundle(store_path)
 
     with pytest.raises(RuntimeError, match="cannot be reopened"):
         execute_round21_one_use(
@@ -239,7 +251,7 @@ def test_round21_one_use_failure_is_terminal(tmp_path) -> None:
 
 def test_round21_one_use_rejects_wrong_population_or_ai_identity(tmp_path) -> None:
     claim = create_round21_one_use_claim(
-        _pretest(ai_model="qwen3:8b"),
+        _pretest(ai_model="qwen3.5:9b"),
         opened_at_ms=1_700_000_000_001,
     )
     with Round21OneUseStore(tmp_path / "binding.sqlite3") as store:
@@ -345,12 +357,12 @@ def test_round21_pretest_builder_binds_qualified_development(
         def validated(self):
             return self
 
-    matrix = tuple(Replay(profile, scenario) for profile in profiles for scenario in scenarios)
+    matrix = tuple(
+        Replay(profile, scenario) for profile in profiles for scenario in scenarios
+    )
     artifact = {
         "artifact_sha256": _sha("artifact"),
-        "layers": {
-            "core": {"comparison": {"predictive_development_accepted": True}}
-        },
+        "layers": {"core": {"comparison": {"predictive_development_accepted": True}}},
     }
     ai = SimpleNamespace(
         selection_sha256=_sha("ai-selection"),
@@ -381,10 +393,7 @@ def test_round21_pretest_builder_binds_qualified_development(
         lambda _root: (
             "a" * 40,
             "b" * 40,
-            {
-                relative: _sha(relative)
-                for relative in one_use_module._REQUIRED_FILES
-            },
+            {relative: _sha(relative) for relative in one_use_module._REQUIRED_FILES},
         ),
     )
 
@@ -541,14 +550,14 @@ def test_round21_pretest_builder_rejects_selection_drift(monkeypatch, tmp_path) 
         def validated(self):
             return self
 
-    matrix = tuple(Replay(profile, scenario) for profile in profiles for scenario in scenarios)
+    matrix = tuple(
+        Replay(profile, scenario) for profile in profiles for scenario in scenarios
+    )
     artifact = {
         "artifact_sha256": _sha("artifact"),
         "layers": {
             "core": {"comparison": {"predictive_development_accepted": True}},
-            "core_spot": {
-                "comparison": {"predictive_development_accepted": True}
-            },
+            "core_spot": {"comparison": {"predictive_development_accepted": True}},
         },
     }
     ai = SimpleNamespace(
@@ -575,10 +584,7 @@ def test_round21_pretest_builder_rejects_selection_drift(monkeypatch, tmp_path) 
         lambda _root: (
             "a" * 40,
             "b" * 40,
-            {
-                relative: _sha(relative)
-                for relative in one_use_module._REQUIRED_FILES
-            },
+            {relative: _sha(relative) for relative in one_use_module._REQUIRED_FILES},
         ),
     )
 
@@ -596,9 +602,7 @@ def test_round21_pretest_builder_rejects_selection_drift(monkeypatch, tmp_path) 
             development_optional_comparison=None,
             **common,
         )
-    artifact["layers"]["core"]["comparison"][
-        "predictive_development_accepted"
-    ] = False
+    artifact["layers"]["core"]["comparison"]["predictive_development_accepted"] = False
     with pytest.raises(RuntimeError, match="predictive layer did not qualify"):
         build_round21_pretest_manifest(
             tmp_path,
@@ -607,9 +611,7 @@ def test_round21_pretest_builder_rejects_selection_drift(monkeypatch, tmp_path) 
             development_optional_comparison=None,
             **common,
         )
-    artifact["layers"]["core"]["comparison"][
-        "predictive_development_accepted"
-    ] = True
+    artifact["layers"]["core"]["comparison"]["predictive_development_accepted"] = True
     with pytest.raises(ValueError, match="optional comparison differs"):
         build_round21_pretest_manifest(
             tmp_path,
@@ -636,7 +638,9 @@ def test_round21_pretest_builder_rejects_selection_drift(monkeypatch, tmp_path) 
         )
 
 
-def test_round21_repository_and_store_detect_persisted_drift(monkeypatch, tmp_path) -> None:
+def test_round21_repository_and_store_detect_persisted_drift(
+    monkeypatch, tmp_path
+) -> None:
     monkeypatch.setattr(one_use_module, "_git", lambda _repository, *_args: "")
     with pytest.raises(ValueError, match="file is unavailable"):
         one_use_module._repository_attestation(tmp_path)
@@ -668,7 +672,9 @@ def test_round21_repository_and_store_detect_persisted_drift(monkeypatch, tmp_pa
             store.snapshot()
 
 
-def test_round21_store_rejects_result_failure_and_status_drift(monkeypatch, tmp_path) -> None:
+def test_round21_store_rejects_result_failure_and_status_drift(
+    monkeypatch, tmp_path
+) -> None:
     claim = create_round21_one_use_claim(
         _pretest(),
         opened_at_ms=1_700_000_000_001,

@@ -1,0 +1,86 @@
+{
+  "schema_version": "finance-risk-review-candidate-preregistration-v6",
+  "created_at_utc": "2026-08-03T16:28:31.521Z",
+  "parent_git_commit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "benchmark_contract": "finance-risk-review-adversarial-v11",
+  "benchmark_source_sha256": "25ca7aa47c12ec926fc7f4819105c0f9717ae58b497991c7f5a40de20865766f",
+  "test_suite_sha256": "b46f5832405cbb10a0a81f4bd14d0c59720410ef07c4c578092a5435686e6ffb",
+  "prior_comparison_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+  "superseded_predecessor": {
+    "path": "docs/ai/risk-review/qwen3-14b-v10-preregistration.json",
+    "sha256": "317fabf1d9f53f5604f62a618e7255f620e540e0852bd0d88087e8967a5aa534",
+    "benchmark_contract": "finance-risk-review-adversarial-v10",
+    "terminal_state": "invalidated_unconsumed",
+    "invalidation_path": "docs/ai/risk-review/qwen3-14b-v10-invalidation.json",
+    "invalidation_file_sha256": "9b4b17b3451129a8a6e1119c8680fd8c0eb33ab098f55960c7e31d0de7dc77af",
+    "reason": "V10 was never opened because its frozen source and exact runtime metadata no longer matched. No v10 model inference occurred and no v10 test case was exposed."
+  },
+  "candidate": {
+    "model": "qwen3:14b",
+    "source": "https://ollama.com/library/qwen3:14b",
+    "selection_reason": "V9 failed before sampling and v10 was invalidated before claim creation. V11 is the separately frozen one-shot evaluation of the same prospectively selected candidate against the unchanged semantic case suite.",
+    "installed_at_preregistration": true,
+    "ollama_manifest_digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+    "model_metadata_sha256": "f1b1a3ca7afc4d2776416861de6d409d7a1a1e90417cde0dba5b21a3db233d72"
+  },
+  "implementation_change": {
+    "semantic_case_changes": false,
+    "case_labels_or_expected_actions_exposed_to_model": false,
+    "v9_or_v10_model_outputs_available_for_tuning": false,
+    "v10_benchmark_source_sha256": "62a21eb3e60f1a0ec6de80cf72811c903d037341f2792b5e7fb805da91a35b3b",
+    "v11_benchmark_source_sha256": "25ca7aa47c12ec926fc7f4819105c0f9717ae58b497991c7f5a40de20865766f",
+    "change_scope": "The benchmark module gained a deferred research-only candidate catalog entry and deterministic catalog ordering. Qwen3 14B prompts, cases, scoring, transport, and admission rules are unchanged.",
+    "provider_format": "json",
+    "strict_schema_validation_location": "post_parse"
+  },
+  "frozen_run": {
+    "case_count": 11,
+    "minimum_score": 0.78,
+    "timeout_seconds": 60,
+    "temperature": 0,
+    "thinking": false,
+    "prompt_or_case_changes_allowed": false,
+    "run_count": 1,
+    "run_after_valid_confirmation_recorder_finalization": true,
+    "admissible_recorder_statuses": [
+      "complete",
+      "degraded"
+    ],
+    "minimum_capture_duration_seconds": 54000,
+    "minimum_capture_started_at_ms": 1784143695000,
+    "required_storage_schema_version": "polymarket-evidence-storage-v4",
+    "required_continuity_schema_version": "polymarket-round9-continuity-eligibility-v1",
+    "minimum_eligible_synchronized_groups": 30,
+    "global_gap_free_required": false,
+    "gaps_inside_eligible_windows_allowed": false,
+    "required_provider_response_contract": "finance-risk-review-ollama-response-v2",
+    "provider_format": "json",
+    "strict_post_parse_schema_required": true,
+    "bounded_http_failure_evidence_required": true,
+    "failure_sidecar_required": true,
+    "exact_returned_model_required": true,
+    "terminal_stop_required": true,
+    "positive_prompt_and_output_token_counts_required": true
+  },
+  "admission": {
+    "top_level_json_object_only": true,
+    "duplicate_keys_forbidden": true,
+    "exact_required_fields_and_types": true,
+    "finite_numeric_ranges_required": true,
+    "all_actions_exact": true,
+    "all_risk_ranges_exact": true,
+    "all_required_terms_present": true,
+    "minimum_score_required": 0.78,
+    "raw_provider_response_hash_bound": true,
+    "provider_usage_recomputed_from_raw_response": true,
+    "all_cases_require_positive_provider_telemetry": true,
+    "provider_failure_sidecar_cannot_grant_a_score": true
+  },
+  "interpretation": {
+    "governance_pass_is_trading_edge": false,
+    "governance_pass_grants_order_authority": false,
+    "paired_same-period_after-cost-ai-vs-ml-uplift-still-required": true,
+    "failed_candidate_may_be_tuned_on_v11_cases": false,
+    "v11_may_reopen_v9_or_v10": false
+  }
+}

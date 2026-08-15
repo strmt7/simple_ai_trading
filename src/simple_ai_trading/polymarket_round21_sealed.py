@@ -11,13 +11,23 @@ from pathlib import Path
 import re
 
 from .polymarket_round21_ai_comparison import Round21AIMatchedComparison
+from .polymarket_round21_ai import (
+    POLYMARKET_ROUND21_AI_HISTORICAL_SCHEDULE_DESIGN_SHA256,
+    POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256,
+)
+from .polymarket_round21_ai_selection import (
+    POLYMARKET_ROUND21_AI_CANDIDATES,
+    POLYMARKET_ROUND21_AI_SELECTION_DESIGN_SHA256,
+)
 from .polymarket_round21_comparison import (
+    POLYMARKET_ROUND21_MATCHED_COMPARISON_DESIGN_SHA256,
     Round21MatchedEconomicComparison,
     round21_replay_matrix_sha256,
 )
 from .polymarket_round21_contract import POLYMARKET_ROUND21_CONTRACT_SHA256
 from .polymarket_round21_execution import POLYMARKET_ROUND21_EXECUTION_SCENARIOS
 from .polymarket_round21_model import (
+    POLYMARKET_ROUND21_MODEL_DESIGN_SHA256,
     Round21DevelopmentPanel,
     predict_round21_controls,
     predict_round21_probability_batch,
@@ -25,30 +35,38 @@ from .polymarket_round21_model import (
     round21_predictive_diagnostics,
     validate_round21_development_artifact,
 )
-from .polymarket_round21_policy import POLYMARKET_ROUND21_RISK_PROFILES
-from .polymarket_round21_replay import Round21EconomicReplay
+from .polymarket_round21_policy import (
+    POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SHA256,
+    POLYMARKET_ROUND21_RISK_PROFILES,
+)
+from .polymarket_round21_replay import (
+    POLYMARKET_ROUND21_ECONOMIC_REPLAY_DESIGN_SHA256,
+    Round21EconomicReplay,
+)
 
 
 POLYMARKET_ROUND21_SEALED_DESIGN_SCHEMA_VERSION = (
-    "polymarket-round21-terminal-sealed-evaluation-design-v1"
+    "polymarket-round21-terminal-sealed-evaluation-design-v7"
 )
 POLYMARKET_ROUND21_SEALED_DESIGN_SHA256 = (
-    "07f9855c78a7907dadba7cf2725894fc78c941a946adb378ea5d66a9b1faef27"
+    "57780ffd28fcbf8f9f1be0c9ce41d89c5f1b4a45635d257d32c5cdda30746abf"
 )
 POLYMARKET_ROUND21_SEALED_PREDICTIVE_SCHEMA_VERSION = (
-    "polymarket-round21-sealed-predictive-result-v1"
+    "polymarket-round21-sealed-predictive-result-v7"
 )
 POLYMARKET_ROUND21_SEALED_ECONOMIC_SCHEMA_VERSION = (
-    "polymarket-round21-sealed-economic-result-v1"
+    "polymarket-round21-sealed-economic-result-v7"
 )
 POLYMARKET_ROUND21_SEALED_RESULT_SCHEMA_VERSION = (
-    "polymarket-round21-one-use-sealed-result-v1"
+    "polymarket-round21-one-use-sealed-result-v7"
+)
+POLYMARKET_ROUND21_SEALED_BUNDLE_SCHEMA_VERSION = (
+    "polymarket-round21-sealed-result-bundle-v7"
 )
 POLYMARKET_ROUND21_MINIMUM_SEALED_CONDITIONS = 1_800
 POLYMARKET_ROUND21_MINIMUM_SEALED_DAYS = 7
 _DESIGN_RELATIVE = (
-    "docs/model-research/polymarket/"
-    "round-021-terminal-sealed-evaluation-design-v1.json"
+    "docs/model-research/polymarket/round-021-terminal-sealed-evaluation-design-v7.json"
 )
 _LAYERS = ("core", "core_spot", "core_spot_usdm")
 _CONTROL_IDS = (
@@ -78,6 +96,7 @@ _METRIC_NAMES = (
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
+_VERIFIED_BUNDLE_CAPABILITY = object()
 
 
 def _canonical_json(value: object) -> str:
@@ -92,6 +111,40 @@ def _canonical_json(value: object) -> str:
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _condition_population_sha256(
+    condition_ids: Sequence[object],
+    event_starts_ms: Sequence[object],
+) -> tuple[int, str]:
+    if len(condition_ids) != len(event_starts_ms) or not condition_ids:
+        raise ValueError("Round 21 sealed condition population differs")
+    population: dict[str, int] = {}
+    for raw_condition, raw_start in zip(
+        condition_ids,
+        event_starts_ms,
+        strict=True,
+    ):
+        condition_id = str(raw_condition or "").strip()
+        event_start_ms = int(raw_start)
+        prior = population.get(condition_id)
+        if (
+            not condition_id
+            or event_start_ms <= 0
+            or (prior is not None and prior != event_start_ms)
+        ):
+            raise ValueError("Round 21 sealed condition population differs")
+        population[condition_id] = event_start_ms
+    ordered = tuple(sorted(population.items(), key=lambda value: (value[1], value[0])))
+    return len(ordered), _canonical_sha256(
+        {
+            "schema_version": "polymarket-round21-sealed-condition-population-v1",
+            "conditions": [
+                {"condition_id": condition_id, "event_start_ms": event_start_ms}
+                for condition_id, event_start_ms in ordered
+            ],
+        }
+    )
 
 
 def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -111,6 +164,7 @@ def validate_round21_sealed_design(value: Mapping[str, object]) -> dict[str, obj
     design = dict(value)
     claimed = str(design.pop("design_sha256", "")).strip().lower()
     benchmark = design.get("external_null_benchmark")
+    parents = design.get("parents")
     development = design.get("development_seal")
     one_use = design.get("one_use_state_machine")
     predictive = design.get("sealed_predictive_gate")
@@ -122,6 +176,23 @@ def validate_round21_sealed_design(value: Mapping[str, object]) -> dict[str, obj
         or design.get("schema_version")
         != POLYMARKET_ROUND21_SEALED_DESIGN_SCHEMA_VERSION
         or design.get("round") != 21
+        or not isinstance(parents, Mapping)
+        or parents.get("round21_ai_veto_design_sha256")
+        != POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256
+        or parents.get("round21_ai_historical_schedule_design_sha256")
+        != POLYMARKET_ROUND21_AI_HISTORICAL_SCHEDULE_DESIGN_SHA256
+        or parents.get("round21_ai_selection_design_sha256")
+        != POLYMARKET_ROUND21_AI_SELECTION_DESIGN_SHA256
+        or parents.get("round21_model_design_sha256")
+        != POLYMARKET_ROUND21_MODEL_DESIGN_SHA256
+        or parents.get("round21_multi_action_policy_sha256")
+        != POLYMARKET_ROUND21_MULTI_ACTION_POLICY_SHA256
+        or parents.get("round21_economic_replay_design_sha256")
+        != POLYMARKET_ROUND21_ECONOMIC_REPLAY_DESIGN_SHA256
+        or parents.get("round21_matched_comparison_design_sha256")
+        != POLYMARKET_ROUND21_MATCHED_COMPARISON_DESIGN_SHA256
+        or parents.get("round21_terminal_sealed_evaluation_design_v6_sha256")
+        != "26a2e83466525351ea680f0106d4e93eaa9409282d51fb55f958149dc1d0f7ee"
         or not isinstance(benchmark, Mapping)
         or benchmark.get("finding")
         != (
@@ -134,11 +205,15 @@ def validate_round21_sealed_design(value: Mapping[str, object]) -> dict[str, obj
         or benchmark.get("market_prior_control_required") is not True
         or not isinstance(development, Mapping)
         or development.get("optional_sidecar_failure_blocks_core") is not False
+        or tuple(development.get("ai_candidates_finite_and_development_only", ()))
+        != POLYMARKET_ROUND21_AI_CANDIDATES
         or development.get("no_test_refit_recalibration_threshold_or_policy_change")
         is not True
         or development.get(
             "sealed_result_ai_identity_must_equal_development_nomination"
         )
+        is not True
+        or development.get("feature_support_contract_validated_before_test_access")
         is not True
         or not isinstance(one_use, Mapping)
         or one_use.get("claim_persisted_before_test_feature_target_execution_access")
@@ -151,9 +226,13 @@ def validate_round21_sealed_design(value: Mapping[str, object]) -> dict[str, obj
         or predictive.get("minimum_calendar_days")
         != POLYMARKET_ROUND21_MINIMUM_SEALED_DAYS
         or tuple(predictive.get("controls", ())) != _DESIGN_CONTROL_IDS
+        or predictive.get("unsupported_rows_remain_in_all_proper_scoring_metrics")
+        is not True
         or not isinstance(economic, Mapping)
         or economic.get("ledger_count") != 81
         or economic.get("every_ledger_must_pass") is not True
+        or economic.get("feature_support_gate_applied_identically_to_all_81_ledgers")
+        is not True
         or not isinstance(authority, Mapping)
         or any(value is not False for value in authority.values())
     ):
@@ -226,6 +305,7 @@ class Round21SealedPredictiveResult:
     test_target_manifest_sha256: str
     probability_batch_sha256: str
     resolved_condition_count: int
+    condition_population_sha256: str
     calendar_day_count: int
     candidate_metrics: Mapping[str, float | int]
     control_metrics: Mapping[str, Mapping[str, float | int]]
@@ -248,6 +328,7 @@ class Round21SealedPredictiveResult:
             "test_target_manifest_sha256": self.test_target_manifest_sha256,
             "probability_batch_sha256": self.probability_batch_sha256,
             "resolved_condition_count": self.resolved_condition_count,
+            "condition_population_sha256": self.condition_population_sha256,
             "calendar_day_count": self.calendar_day_count,
             "candidate_metrics": dict(self.candidate_metrics),
             "control_metrics": {
@@ -278,6 +359,7 @@ class Round21SealedPredictiveResult:
                     self.test_dataset_sha256,
                     self.test_target_manifest_sha256,
                     self.probability_batch_sha256,
+                    self.condition_population_sha256,
                     self.result_sha256,
                 )
             )
@@ -396,7 +478,10 @@ def evaluate_round21_sealed_predictions(
             sorted(selected_controls.items())
         )
     }
-    resolved_conditions = len(set(str(value) for value in condition_ids.tolist()))
+    resolved_conditions, condition_population_sha256 = _condition_population_sha256(
+        condition_ids.tolist(),
+        panel.event_start_ms[indices].tolist(),
+    )
     calendar_days = len(
         set(int(value) // 86_400_000 for value in panel.event_start_ms[indices])
     )
@@ -418,6 +503,7 @@ def evaluate_round21_sealed_predictions(
         test_target_manifest_sha256=panel.target_manifest_sha256,
         probability_batch_sha256=batch.prediction_sha256,
         resolved_condition_count=resolved_conditions,
+        condition_population_sha256=condition_population_sha256,
         calendar_day_count=calendar_days,
         candidate_metrics=candidate_metrics,
         control_metrics=control_metrics,
@@ -434,6 +520,10 @@ def evaluate_round21_sealed_predictions(
 
 @dataclass(frozen=True, slots=True)
 class Round21SealedEconomicResult:
+    test_dataset_sha256: str
+    test_target_manifest_sha256: str
+    condition_count: int
+    condition_population_sha256: str
     matrix_sha256: str
     ledger_count: int
     qualified_ledger_count: int
@@ -450,6 +540,10 @@ class Round21SealedEconomicResult:
             "schema_version": POLYMARKET_ROUND21_SEALED_ECONOMIC_SCHEMA_VERSION,
             "design_sha256": POLYMARKET_ROUND21_SEALED_DESIGN_SHA256,
             "contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
+            "test_dataset_sha256": self.test_dataset_sha256,
+            "test_target_manifest_sha256": self.test_target_manifest_sha256,
+            "condition_count": self.condition_count,
+            "condition_population_sha256": self.condition_population_sha256,
             "matrix_sha256": self.matrix_sha256,
             "ledger_count": self.ledger_count,
             "qualified_ledger_count": self.qualified_ledger_count,
@@ -468,8 +562,16 @@ class Round21SealedEconomicResult:
         expected_gate = self.ledger_count == 81 and self.qualified_ledger_count == 81
         expected_reasons = () if expected_gate else ("not_all_81_ledgers_qualified",)
         if (
-            _SHA256.fullmatch(self.matrix_sha256) is None
-            or self.matrix_sha256 == _EMPTY_SHA256
+            any(
+                _SHA256.fullmatch(value) is None or value == _EMPTY_SHA256
+                for value in (
+                    self.test_dataset_sha256,
+                    self.test_target_manifest_sha256,
+                    self.condition_population_sha256,
+                    self.matrix_sha256,
+                )
+            )
+            or self.condition_count < 1
             or self.ledger_count != 81
             or len(self.ledger_sha256) != 81
             or len(set(self.ledger_sha256)) != 81
@@ -492,6 +594,9 @@ class Round21SealedEconomicResult:
 
 def evaluate_round21_sealed_economics(
     matrix: Sequence[Round21EconomicReplay],
+    *,
+    test_dataset_sha256: str,
+    test_target_manifest_sha256: str,
 ) -> Round21SealedEconomicResult:
     """Remove only the preregistered sealed-test blocker from 81 replays."""
 
@@ -511,6 +616,31 @@ def evaluate_round21_sealed_economics(
         )
     ):
         raise ValueError("Round 21 sealed economic matrix differs")
+    reference_population = tuple(
+        (
+            condition.condition_id,
+            condition.event_start_ms,
+            condition.outcome_sha256,
+        )
+        for condition in selected[0].conditions
+    )
+    if not reference_population or any(
+        tuple(
+            (
+                condition.condition_id,
+                condition.event_start_ms,
+                condition.outcome_sha256,
+            )
+            for condition in replay.conditions
+        )
+        != reference_population
+        for replay in selected[1:]
+    ):
+        raise ValueError("Round 21 sealed economic populations differ")
+    condition_count, condition_population_sha256 = _condition_population_sha256(
+        tuple(value[0] for value in reference_population),
+        tuple(value[1] for value in reference_population),
+    )
     qualified = sum(
         value.economic_gate_passed
         and value.qualification_reasons == ("sealed_test_evidence_unavailable",)
@@ -518,6 +648,12 @@ def evaluate_round21_sealed_economics(
     )
     reasons = () if qualified == 81 else ("not_all_81_ledgers_qualified",)
     provisional = Round21SealedEconomicResult(
+        test_dataset_sha256=str(test_dataset_sha256 or "").strip().lower(),
+        test_target_manifest_sha256=str(test_target_manifest_sha256 or "")
+        .strip()
+        .lower(),
+        condition_count=condition_count,
+        condition_population_sha256=condition_population_sha256,
         matrix_sha256=round21_replay_matrix_sha256(selected),
         ledger_count=81,
         qualified_ledger_count=qualified,
@@ -609,10 +745,13 @@ class Round21SealedEvaluationResult:
                 )
             )
             or self.selected_population_layer != predictive.population_layer
-            or (
-                optional_required
-                != (self.optional_comparison_sha256 is not None)
-            )
+            or economic.test_dataset_sha256 != predictive.test_dataset_sha256
+            or economic.test_target_manifest_sha256
+            != predictive.test_target_manifest_sha256
+            or economic.condition_count != predictive.resolved_condition_count
+            or economic.condition_population_sha256
+            != predictive.condition_population_sha256
+            or (optional_required != (self.optional_comparison_sha256 is not None))
             or (
                 self.optional_comparison_sha256 is not None
                 and (
@@ -635,10 +774,7 @@ class Round21SealedEvaluationResult:
                     or self.ai_comparison_sha256 == _EMPTY_SHA256
                 )
             )
-            or (
-                self.ai_model is not None
-                and not str(self.ai_model).strip()
-            )
+            or (self.ai_model is not None and not str(self.ai_model).strip())
             or (
                 self.ai_model_digest is not None
                 and (
@@ -685,6 +821,16 @@ def build_round21_sealed_evaluation_result(
     layer = str(selected_population_layer or "").strip()
     if layer not in _LAYERS:
         raise ValueError("Round 21 sealed selected layer differs")
+    if (
+        selected_economic.test_dataset_sha256 != selected_predictive.test_dataset_sha256
+        or selected_economic.test_target_manifest_sha256
+        != selected_predictive.test_target_manifest_sha256
+        or selected_economic.condition_count
+        != selected_predictive.resolved_condition_count
+        or selected_economic.condition_population_sha256
+        != selected_predictive.condition_population_sha256
+    ):
+        raise ValueError("Round 21 sealed predictive and economic populations differ")
     if (layer == "core") != (optional is None):
         raise ValueError("Round 21 sealed optional comparison differs")
     if optional is not None and (
@@ -730,6 +876,246 @@ def build_round21_sealed_evaluation_result(
     ).validated()
 
 
+def build_round21_sealed_result_bundle(
+    result: Round21SealedEvaluationResult,
+) -> dict[str, object]:
+    """Serialize a restart-safe sealed result without granting promotion."""
+
+    selected = result.validated()
+    body = {
+        "schema_version": POLYMARKET_ROUND21_SEALED_BUNDLE_SCHEMA_VERSION,
+        "result": selected.asdict(),
+        "predictive": selected.predictive.asdict(),
+        "economic": selected.economic.asdict(),
+        "automatic_promotion": False,
+        "paper_trading_authority": False,
+        "live_trading_authority": False,
+    }
+    return {**body, "bundle_sha256": _canonical_sha256(body)}
+
+
+def _bundle_mapping(value: object, *, name: str) -> Mapping[str, object]:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"Round 21 sealed bundle {name} is not an object")
+    return value
+
+
+def validate_round21_sealed_result_bundle(
+    value: Mapping[str, object],
+) -> Round21SealedEvaluationResult:
+    """Reconstruct and verify every nested sealed verdict from one bundle."""
+
+    payload = dict(value)
+    claimed = str(payload.pop("bundle_sha256", "")).strip().lower()
+    if (
+        set(payload)
+        != {
+            "schema_version",
+            "result",
+            "predictive",
+            "economic",
+            "automatic_promotion",
+            "paper_trading_authority",
+            "live_trading_authority",
+        }
+        or payload.get("schema_version")
+        != POLYMARKET_ROUND21_SEALED_BUNDLE_SCHEMA_VERSION
+        or payload.get("automatic_promotion") is not False
+        or payload.get("paper_trading_authority") is not False
+        or payload.get("live_trading_authority") is not False
+        or _SHA256.fullmatch(claimed) is None
+        or claimed != _canonical_sha256(payload)
+    ):
+        raise ValueError("Round 21 sealed result bundle differs")
+    predictive_payload = _bundle_mapping(
+        payload["predictive"],
+        name="predictive result",
+    )
+    economic_payload = _bundle_mapping(
+        payload["economic"],
+        name="economic result",
+    )
+    result_payload = _bundle_mapping(payload["result"], name="result")
+    try:
+        predictive = Round21SealedPredictiveResult(
+            population_layer=str(predictive_payload["population_layer"]),
+            model_artifact_sha256=str(predictive_payload["model_artifact_sha256"]),
+            test_dataset_sha256=str(predictive_payload["test_dataset_sha256"]),
+            test_target_manifest_sha256=str(
+                predictive_payload["test_target_manifest_sha256"]
+            ),
+            probability_batch_sha256=str(
+                predictive_payload["probability_batch_sha256"]
+            ),
+            resolved_condition_count=int(
+                predictive_payload["resolved_condition_count"]
+            ),
+            condition_population_sha256=str(
+                predictive_payload["condition_population_sha256"]
+            ),
+            calendar_day_count=int(predictive_payload["calendar_day_count"]),
+            candidate_metrics=_bundle_mapping(
+                predictive_payload["candidate_metrics"],
+                name="candidate metrics",
+            ),
+            control_metrics=_bundle_mapping(
+                predictive_payload["control_metrics"],
+                name="control metrics",
+            ),
+            paired_improvements=_bundle_mapping(
+                predictive_payload["paired_improvements"],
+                name="paired improvements",
+            ),
+            gate_passed=predictive_payload["gate_passed"],  # type: ignore[arg-type]
+            reasons=tuple(predictive_payload["reasons"]),  # type: ignore[arg-type]
+            result_sha256=str(predictive_payload["result_sha256"]),
+            profitability_claim=predictive_payload["profitability_claim"],  # type: ignore[arg-type]
+            paper_trading_authority=predictive_payload["paper_trading_authority"],  # type: ignore[arg-type]
+            live_trading_authority=predictive_payload["live_trading_authority"],  # type: ignore[arg-type]
+        ).validated()
+        economic = Round21SealedEconomicResult(
+            test_dataset_sha256=str(economic_payload["test_dataset_sha256"]),
+            test_target_manifest_sha256=str(
+                economic_payload["test_target_manifest_sha256"]
+            ),
+            condition_count=int(economic_payload["condition_count"]),
+            condition_population_sha256=str(
+                economic_payload["condition_population_sha256"]
+            ),
+            matrix_sha256=str(economic_payload["matrix_sha256"]),
+            ledger_count=int(economic_payload["ledger_count"]),
+            qualified_ledger_count=int(economic_payload["qualified_ledger_count"]),
+            ledger_sha256=tuple(economic_payload["ledger_sha256"]),  # type: ignore[arg-type]
+            gate_passed=economic_payload["gate_passed"],  # type: ignore[arg-type]
+            reasons=tuple(economic_payload["reasons"]),  # type: ignore[arg-type]
+            result_sha256=str(economic_payload["result_sha256"]),
+            profitability_claim=economic_payload["profitability_claim"],  # type: ignore[arg-type]
+            paper_trading_authority=economic_payload["paper_trading_authority"],  # type: ignore[arg-type]
+            live_trading_authority=economic_payload["live_trading_authority"],  # type: ignore[arg-type]
+        ).validated()
+        selected = Round21SealedEvaluationResult(
+            claim_sha256=str(result_payload["claim_sha256"]),
+            test_access_sha256=str(result_payload["test_access_sha256"]),
+            selected_population_layer=str(result_payload["selected_population_layer"]),
+            sealed_test_population_manifest_sha256=str(
+                result_payload["sealed_test_population_manifest_sha256"]
+            ),
+            predictive=predictive,
+            economic=economic,
+            optional_comparison_sha256=result_payload["optional_comparison_sha256"],  # type: ignore[arg-type]
+            optional_uplift_gate_passed=result_payload["optional_uplift_gate_passed"],  # type: ignore[arg-type]
+            ai_comparison_sha256=result_payload["ai_comparison_sha256"],  # type: ignore[arg-type]
+            ai_model=result_payload["ai_model"],  # type: ignore[arg-type]
+            ai_model_digest=result_payload["ai_model_digest"],  # type: ignore[arg-type]
+            ai_uplift_gate_passed=result_payload["ai_uplift_gate_passed"],  # type: ignore[arg-type]
+            ai_enabled_candidate=result_payload["ai_enabled_candidate"],  # type: ignore[arg-type]
+            candidate_accepted=result_payload["candidate_accepted"],  # type: ignore[arg-type]
+            result_sha256=str(result_payload["result_sha256"]),
+            automatic_promotion=result_payload["automatic_promotion"],  # type: ignore[arg-type]
+            profitability_claim=result_payload["profitability_claim"],  # type: ignore[arg-type]
+            paper_trading_authority=result_payload["paper_trading_authority"],  # type: ignore[arg-type]
+            live_trading_authority=result_payload["live_trading_authority"],  # type: ignore[arg-type]
+        ).validated()
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Round 21 sealed result bundle differs") from exc
+    if (
+        dict(predictive_payload) != predictive.asdict()
+        or dict(economic_payload) != economic.asdict()
+        or dict(result_payload) != selected.asdict()
+        or selected.predictive.result_sha256
+        != str(result_payload.get("predictive_result_sha256") or "")
+        or selected.economic.result_sha256
+        != str(result_payload.get("economic_result_sha256") or "")
+    ):
+        raise ValueError("Round 21 sealed result bundle differs")
+    return selected
+
+
+def load_round21_sealed_result_bundle(
+    path: str | Path,
+) -> Round21SealedEvaluationResult:
+    """Load one bounded, strict-JSON, restart-safe sealed result bundle."""
+
+    source = Path(path).expanduser()
+    if source.is_symlink():
+        raise ValueError("Round 21 sealed result bundle is unavailable")
+    selected = source.resolve()
+    if not selected.is_file():
+        raise ValueError("Round 21 sealed result bundle is unavailable")
+    try:
+        with selected.open("rb") as handle:
+            raw = handle.read(4 * 1024 * 1024 + 1)
+        if not 2 <= len(raw) <= 4 * 1024 * 1024:
+            raise ValueError("Round 21 sealed result bundle is unavailable")
+        value = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_strict_object,
+            parse_constant=_reject_nonfinite,
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Round 21 sealed result bundle is invalid") from exc
+    if not isinstance(value, Mapping):
+        raise ValueError("Round 21 sealed result bundle is invalid")
+    return validate_round21_sealed_result_bundle(value)
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedRound21SealedResultBundle:
+    """File- and content-verified Round 21 sealed-result capability."""
+
+    result: Round21SealedEvaluationResult
+    path: Path
+    file_sha256: str
+    _capability: object
+
+    def __post_init__(self) -> None:
+        if self._capability is not _VERIFIED_BUNDLE_CAPABILITY:
+            raise ValueError("Round 21 sealed result bundle was not verified")
+
+
+def load_verified_round21_sealed_result_bundle(
+    path: str | Path,
+    *,
+    expected_file_sha256: str,
+) -> VerifiedRound21SealedResultBundle:
+    """Bind exact bundle bytes to every reconstructed nested verdict."""
+
+    expected = str(expected_file_sha256 or "").strip().lower()
+    if _SHA256.fullmatch(expected) is None:
+        raise ValueError("Round 21 sealed bundle evidence hash is invalid")
+    source = Path(path).expanduser()
+    if source.is_symlink():
+        raise ValueError("Round 21 sealed result bundle is unavailable")
+    selected = source.resolve()
+    try:
+        with selected.open("rb") as handle:
+            raw = handle.read(4 * 1024 * 1024 + 1)
+    except OSError as exc:
+        raise ValueError("Round 21 sealed result bundle is unavailable") from exc
+    if not 2 <= len(raw) <= 4 * 1024 * 1024:
+        raise ValueError("Round 21 sealed result bundle is unavailable")
+    actual = hashlib.sha256(raw).hexdigest()
+    if actual != expected:
+        raise ValueError("Round 21 sealed bundle evidence hash differs")
+    try:
+        value = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_strict_object,
+            parse_constant=_reject_nonfinite,
+        )
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Round 21 sealed result bundle is invalid") from exc
+    if not isinstance(value, Mapping):
+        raise ValueError("Round 21 sealed result bundle is invalid")
+    result = validate_round21_sealed_result_bundle(value)
+    return VerifiedRound21SealedResultBundle(
+        result=result,
+        path=selected,
+        file_sha256=actual,
+        _capability=_VERIFIED_BUNDLE_CAPABILITY,
+    )
+
+
 credentials_used = False
 account_connected = False
 binance_execution_connected = False
@@ -741,6 +1127,7 @@ live_trading_authority = False
 __all__ = [
     "POLYMARKET_ROUND21_MINIMUM_SEALED_CONDITIONS",
     "POLYMARKET_ROUND21_MINIMUM_SEALED_DAYS",
+    "POLYMARKET_ROUND21_SEALED_BUNDLE_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_SEALED_DESIGN_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_SEALED_DESIGN_SHA256",
     "POLYMARKET_ROUND21_SEALED_ECONOMIC_SCHEMA_VERSION",
@@ -749,9 +1136,14 @@ __all__ = [
     "Round21SealedEconomicResult",
     "Round21SealedEvaluationResult",
     "Round21SealedPredictiveResult",
+    "VerifiedRound21SealedResultBundle",
+    "build_round21_sealed_result_bundle",
     "build_round21_sealed_evaluation_result",
     "evaluate_round21_sealed_economics",
     "evaluate_round21_sealed_predictions",
     "load_round21_sealed_design",
+    "load_round21_sealed_result_bundle",
+    "load_verified_round21_sealed_result_bundle",
+    "validate_round21_sealed_result_bundle",
     "validate_round21_sealed_design",
 ]

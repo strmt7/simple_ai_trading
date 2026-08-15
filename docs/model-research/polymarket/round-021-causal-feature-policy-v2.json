@@ -1,0 +1,135 @@
+{
+  "schema_version": "polymarket-round21-causal-feature-policy-v2",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba",
+    "round21_sidecar_design_sha256": "c802b13e169f868c7a37619669cdc957862a1cb58c6d3299c0aae63ff0d86d4a",
+    "round20_campaign_plan_sha256": "2c1d87577de566bd4934c9678bcbded5bf156b671a413b83fa6d463372db1d71"
+  },
+  "clock_and_causality": {
+    "condition_duration_ms": 300000,
+    "decision_cadence_ms": 250,
+    "maximum_lookback_ms": 120000,
+    "windows_ms": [
+      250,
+      1000,
+      5000,
+      15000,
+      30000,
+      60000,
+      120000
+    ],
+    "inference_clock": "local_utc_receipt_time",
+    "source_timestamp_use": "audit_only",
+    "future_receipts": "rejected",
+    "forward_or_backward_fill": false,
+    "cross_connection_gap_carry": false,
+    "condition_transport_admission_required": true,
+    "window_endpoint_anchor": "latest_valid_receipt_at_or_before_window_start",
+    "window_return_population": "returns_ending_strictly_after_window_start_and_at_or_before_decision_time",
+    "window_bipower_population": "adjacent_returns_both_ending_strictly_after_window_start_and_at_or_before_decision_time",
+    "window_count_population": "receipts_at_or_after_window_start_and_at_or_before_decision_time",
+    "missing_previous_tick": "first_in_window_receipt_is_anchor_with_zero_preceding_return"
+  },
+  "chainlink_baseline": {
+    "source": "polymarket_rtds_crypto_prices_chainlink_btc_usd",
+    "event_open_reference": "first_valid_receipt_at_or_after_event_start_in_the_same_uninterrupted_connection_epoch",
+    "event_terminal_reference": "latest_valid_receipt_at_or_before_decision_time",
+    "minimum_returns": 20,
+    "minimum_coverage_ms": 30000,
+    "maximum_source_age_ms": 1500,
+    "variance_rate_upper_bound_per_second": 0.0001,
+    "variance_rate_numerical_floor_per_second": 1e-12,
+    "structural_model": "zero_drift_log_price_diffusion_normal_cdf",
+    "probability_bound": "binary64_open_interval_only_no_economic_clipping",
+    "mid_condition_reconnect": "condition_ineligible",
+    "interpretation": "calibrated_control_candidate_not_ground_truth"
+  },
+  "polymarket_clob": {
+    "source": "earliest_valid_receipt_from_redundant_clob_union",
+    "required_outcomes": [
+      "up",
+      "down"
+    ],
+    "book_depth_levels": 20,
+    "maximum_source_age_ms": 1500,
+    "state_initialization": "full_book_required_before_price_changes",
+    "price_change_semantics": "buy_updates_bids_sell_updates_asks",
+    "reported_best_prices": "must_match_reconstructed_book_when_nonzero",
+    "crossed_empty_or_contradictory_book": "invalid_until_fresh_full_book",
+    "best_bid_ask_events": "corroborative_only_not_state_authority",
+    "static_families": [
+      "executable_top_of_book",
+      "relative_spread_and_microprice",
+      "quantity_imbalance",
+      "displayed_depth_and_slope",
+      "complement_buy_overround",
+      "complement_sell_underround",
+      "receipt_skew"
+    ],
+    "flow_families": [
+      "normalized_top_order_flow_imbalance",
+      "mean_top_quantity_imbalance",
+      "microprice_log_return",
+      "normalized_level_quantity_flow_pressure",
+      "gross_level_quantity_change",
+      "book_update_count"
+    ],
+    "flow_accounting": "signed_magnitude_must_not_exceed_gross_magnitude_except_binary64_roundoff"
+  },
+  "optional_binance": {
+    "role": "independent_credential_free_read_only_predictor",
+    "symbols": {
+      "spot": "btcusdt",
+      "usdm_futures": "btcusdt"
+    },
+    "credentials": false,
+    "account_access": false,
+    "orders": false,
+    "execution": false,
+    "risk_or_stop_dependency": false,
+    "optional_rows_may_change_core_admission": false,
+    "optional_rows_may_expand_core_population": false,
+    "missing_values": "exact_zero_vector_plus_false_availability",
+    "spot_required_before_usdm": true,
+    "connection_epoch_reset": "explicit_and_no_cross_gap_state"
+  },
+  "feature_schema": {
+    "core_width": 162,
+    "spot_width": 77,
+    "usdm_width": 86,
+    "total_width": 325,
+    "core_names_sha256": "1a00a29c23245a7428e9c6d99bfa2cbf9c17e10604d96087a43fce177e3a123d",
+    "spot_names_sha256": "caf162c0da0fd187d74ef3606ef37c47e0ee656dfc124ec33bac97d928c97210",
+    "usdm_names_sha256": "98b66e1887bca3701a604076fe3e2a42a8da127510f943126e6eb5599c09e7b9"
+  },
+  "anti_leakage": {
+    "future_books": "rejected",
+    "future_reference_prices": "rejected",
+    "outcomes_or_resolution": "rejected",
+    "fees_fills_orders_or_pnl": "rejected",
+    "test_role_access_during_development": "rejected",
+    "feature_availability_may_use_target": false
+  },
+  "authority": {
+    "model_data_eligible": false,
+    "model_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "supersession": {
+    "round21_causal_feature_policy_v1_sha256": "a55408ebb99180cdfd21b443a924002ffd9cc1443b54ae1f882b49a38ae8ce70",
+    "change": "bind_return_and_variation_windows_to_causal_previous_tick_asof_anchors",
+    "feature_names_or_widths_changed": false,
+    "receipt_time_causality_changed": false,
+    "capture_data_used_for_change": false,
+    "targets_used_for_change": false,
+    "market_outcomes_used_for_change": false,
+    "edge_or_profitability_inferred_from_change": false
+  },
+  "design_sha256": "04bc591f4875559d1b7a5e75cc676d47d57b888b255ee3b1369eee06e32d49ef"
+}

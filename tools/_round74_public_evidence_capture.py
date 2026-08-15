@@ -11,6 +11,7 @@ import subprocess
 import time
 from typing import Mapping, Sequence
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
@@ -37,9 +38,7 @@ def _reject_duplicate_keys(
     result: dict[str, object] = {}
     for key, value in pairs:
         if key in result:
-            raise ValueError(
-                "Round 74 public response contains duplicate JSON keys"
-            )
+            raise ValueError("Round 74 public response contains duplicate JSON keys")
         result[key] = value
     return result
 
@@ -56,9 +55,7 @@ def strict_json_loads(body: bytes) -> object:
             parse_constant=_reject_nonfinite_json,
         )
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ValueError(
-            "Round 74 public response is not strict JSON"
-        ) from exc
+        raise ValueError("Round 74 public response is not strict JSON") from exc
 
 
 def git_commit() -> str:
@@ -84,9 +81,7 @@ def require_clean_tracked_worktree() -> None:
         text=True,
     )
     if result.stdout.strip():
-        raise ValueError(
-            "Round 74 public evidence requires a clean tracked worktree"
-        )
+        raise ValueError("Round 74 public evidence requires a clean tracked worktree")
 
 
 def _safe_header(headers: Mapping[str, str], name: str) -> str | None:
@@ -127,8 +122,19 @@ def bounded_json_get(
 ) -> BoundedJsonResponse:
     timeout = float(timeout_seconds)
     maximum = int(maximum_response_bytes)
+    parsed_url = urlparse(url)
+    try:
+        port = parsed_url.port
+    except ValueError as exc:
+        raise ValueError("Round 74 public request URL is invalid") from exc
     if (
-        not url.startswith("https://")
+        url != url.strip()
+        or parsed_url.scheme != "https"
+        or not parsed_url.hostname
+        or parsed_url.username is not None
+        or parsed_url.password is not None
+        or parsed_url.fragment
+        or (port is not None and not 1 <= port <= 65_535)
         or not 1.0 <= timeout <= 60.0
         or maximum <= 0
         or maximum > 64 * 1024 * 1024
@@ -146,7 +152,9 @@ def bounded_json_get(
         },
     )
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with urlopen(  # nosec B310 - URL is validated as credential-free HTTPS.
+            request, timeout=timeout
+        ) as response:
             if response.status != 200 or response.geturl() != url:
                 raise ValueError("Round 74 public response identity differs")
             content_type = response.headers.get_content_type()
@@ -171,9 +179,7 @@ def bounded_json_get(
                 ),
             )
     except (HTTPError, URLError, TimeoutError) as exc:
-        raise RuntimeError(
-            "Round 74 public request failed without retry"
-        ) from exc
+        raise RuntimeError("Round 74 public request failed without retry") from exc
     received_monotonic_ns = time.monotonic_ns()
     received_wall_ns = time.time_ns()
     return BoundedJsonResponse(

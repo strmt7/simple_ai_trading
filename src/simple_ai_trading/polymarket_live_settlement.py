@@ -1516,10 +1516,11 @@ class PolymarketSettlementService:
                 await self.run_once()
             except asyncio.CancelledError:
                 raise
-            except Exception:
-                # The runtime authority is already fail-closed. Keep recovery
-                # alive instead of terminating the independent supervisor.
-                pass
+            except Exception as exc:
+                self.runtime_authority.note_reconciliation_failure(
+                    f"settlement_iteration_failure:{exc.__class__.__name__}"
+                )
+                # Keep recovery alive after latching new exposure closed.
             try:
                 await asyncio.wait_for(
                     stop.wait(),

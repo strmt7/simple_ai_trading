@@ -46,6 +46,8 @@ $AiId = 114
 $ReinvestId = 115
 $ModeId = 116
 $PolymarketStopId = 117
+$PolymarketPauseId = 118
+$PolymarketStartId = 119
 $QuickBaseId = 200
 
 function Wait-Until([scriptblock]$Predicate, [string]$Description, [int]$TimeoutMs = 15000) {
@@ -142,6 +144,9 @@ try {
     Assert-Text $reinvest "Reinvest off" "reinvestment toggle"
     Assert-Text (Get-Control $window $BinanceStopId) "Stop Binance" "Binance stop control"
     Assert-Text (Get-Control $window $PolymarketStopId) "Stop Polymarket" "Polymarket stop control"
+    Assert-Text (Get-Control $window $PauseId) "Pause Binance" "Binance pause control"
+    Assert-Text (Get-Control $window $PolymarketStartId) "Start Polymarket" "Polymarket start control"
+    Assert-Text (Get-Control $window $PolymarketPauseId) "Pause Polymarket" "Polymarket pause control"
 
     Select-Combo $window $profile $ProfileId "Regular"
     Assert-Text $leverage "10x" "regular profile leverage"
@@ -156,6 +161,8 @@ try {
     Assert-OutputContains $output $startCommand 5000
     Assert-OutputContains $output "simple-ai-trading strategy --profile regular --leverage 10 --reinvest-profits" 5000
     Assert-OutputContains $output "simple-ai-trading ai --disable" 5000
+    Click-Control (Get-Control $window $PolymarketStartId)
+    Assert-OutputContains $output "simple-ai-trading polymarket-live --action autonomous --activation data/polymarket/live-activation.json" 3000
 
     Click-Control (Get-Control $window $PauseId)
     Assert-OutputContains $output "simple-ai-trading autonomous pause" 3000
@@ -165,6 +172,14 @@ try {
         $pauseResult = $text.IndexOf("dry-run: simple-ai-trading autonomous pause", $pause + 1)
         $pause -ge 0 -and $pauseResult -gt $pause
     } "pause control completion" 3000
+    Click-Control (Get-Control $window $PolymarketPauseId)
+    Assert-OutputContains $output "simple-ai-trading polymarket-live --action pause" 3000
+    Wait-Until {
+        $text = Get-ControlText $output
+        $pause = $text.IndexOf("> simple-ai-trading polymarket-live --action pause")
+        $pauseResult = $text.IndexOf("dry-run: simple-ai-trading polymarket-live --action pause", $pause + 1)
+        $pause -ge 0 -and $pauseResult -gt $pause
+    } "Polymarket pause control completion" 3000
     Click-Control (Get-Control $window $BinanceStopId)
     Click-Control (Get-Control $window $PolymarketStopId)
     Assert-OutputContains $output "simple-ai-trading autonomous stop" 3000
@@ -175,15 +190,19 @@ try {
         $pause = $text.IndexOf("> simple-ai-trading autonomous pause", $start + 1)
         $stop = $text.IndexOf("> simple-ai-trading autonomous stop", $start + 1)
         $polymarketStop = $text.IndexOf("> simple-ai-trading polymarket-live --action stop", $start + 1)
+        $polymarketStart = $text.IndexOf("> simple-ai-trading polymarket-live --action autonomous --activation data/polymarket/live-activation.json", $start + 1)
         $stopResult = $text.IndexOf("dry-run: simple-ai-trading autonomous stop", $stop + 1)
         $polymarketStopResult = $text.IndexOf(
             "dry-run: simple-ai-trading polymarket-live --action stop",
             $polymarketStop + 1)
         $startResult = $text.IndexOf("dry-run: simple-ai-trading autonomous start --objective regular --live", $start + 1)
-        $start -ge 0 -and $pause -gt $start -and $stop -gt $pause -and
+        $polymarketStartResult = $text.IndexOf("dry-run: simple-ai-trading polymarket-live --action autonomous --activation data/polymarket/live-activation.json", $polymarketStart + 1)
+        $start -ge 0 -and $polymarketStart -gt $start -and
+        $polymarketStart -lt $startResult -and $pause -gt $start -and $stop -gt $pause -and
         $polymarketStop -gt $pause -and $stopResult -gt $stop -and
-        $polymarketStopResult -gt $polymarketStop -and $startResult -gt $pause
-    } "independent venue stop completion before blocking start returns" 7000
+        $polymarketStopResult -gt $polymarketStop -and
+        $polymarketStartResult -gt $polymarketStart -and $startResult -gt $pause
+    } "independent venue starts and stops" 7000
     if ((Get-ControlText $output).Contains("simple-ai-trading close all")) {
         throw "Stop control invoked unsafe ledger-only close all"
     }

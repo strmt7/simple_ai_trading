@@ -657,7 +657,7 @@ simple-ai-trading tape-depth-train `
   --decision-cadence-seconds 5 `
   --model-profile regularized `
   --feature-set full `
-  --compute-backend directml
+  --compute-backend auto
 ```
 
 The row limit, DuckDB memory limit, thread count, progress phases, and optional
@@ -732,7 +732,7 @@ simple-ai-trading tape-depth-prequential `
 
 simple-ai-trading tape-depth-prequential `
   --symbols BTCUSDT,ETHUSDT,SOLUSDT `
-  --compute-backend directml `
+  --compute-backend auto `
   --resume `
   --output-dir data/tape-depth-prequential-full
 ```
@@ -774,7 +774,7 @@ simple-ai-trading tape-depth-design `
 simple-ai-trading tape-depth-study `
   --design data/tape-depth-experiment-design.json `
   --symbols BTCUSDT,ETHUSDT,SOLUSDT `
-  --compute-backend directml `
+  --compute-backend auto `
   --resume `
   --output-dir data/tape-depth-study
 
@@ -831,8 +831,8 @@ inspection outside the application remain outside what a local artifact can
 cryptographically prove. Both outputs remain forecast evidence, not executable
 PnL, trading authority, or profitability claims.
 
-For non-CPU LightGBM work, DirectML remains the general Windows tensor backend
-while LightGBM itself uses its OpenCL trainer. Automatic selection now delegates
+For non-CPU LightGBM work, the tensor backend and LightGBM's OpenCL trainer are
+probed independently. Automatic OpenCL selection delegates
 to the installed OpenCL driver instead of assuming platform/device `0:0`.
 Explicit overrides are accepted only when both
 `SIMPLE_AI_TRADING_OPENCL_PLATFORM_ID` and
@@ -1089,10 +1089,11 @@ rows, validation rows, and best training/validation edge, signal, and hit-rate
 statistics so graph/table regeneration can audit whether a replay candidate was
 selected by stable forward evidence or by a small-sample fallback.
 Order-flow and higher-timeframe templates receive serialized offsets into the
-advanced feature vector, so CPU, DirectML, CLI, Windows app, backtest, and
-live/autonomous inference use the same microstructure and broad-regime inputs.
+advanced feature vector, so every resolved compute backend, the CLI, Windows
+app, backtest, and live/autonomous inference use the same microstructure and
+broad-regime inputs.
 CPU/live rule-alpha scoring now preserves the full serialized feature vector
-instead of truncating before the advanced blocks, and DirectML parity is covered
+instead of truncating before the advanced blocks, and backend parity is covered
 by tests. Each template is tested with normal and inverted
 probability orientation plus bounded threshold/stop/take/hold profiles.
 Rule-alpha models serialize as `rule_alpha` hybrid experts, so a promoted

@@ -9,7 +9,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from simple_ai_trading.advanced_model import advanced_feature_signature, default_config_for
+from simple_ai_trading.advanced_model import (
+    advanced_feature_signature,
+    default_config_for,
+)
 from simple_ai_trading.autonomous import (
     AutonomousConfig,
     Decision,
@@ -44,14 +47,20 @@ _FEATURE_SIGNATURE = advanced_feature_signature(
 
 
 def test_exact_case_window_accounts_for_submission_and_revisit_polls() -> None:
-    assert minimum_exact_case_window_seconds(
-        poll_seconds=30.0,
-        provider_timeout_seconds=10.0,
-    ) == 60.0
-    assert minimum_exact_case_window_seconds(
-        poll_seconds=10.0,
-        provider_timeout_seconds=45.0,
-    ) == 60.0
+    assert (
+        minimum_exact_case_window_seconds(
+            poll_seconds=30.0,
+            provider_timeout_seconds=10.0,
+        )
+        == 60.0
+    )
+    assert (
+        minimum_exact_case_window_seconds(
+            poll_seconds=10.0,
+            provider_timeout_seconds=45.0,
+        )
+        == 60.0
+    )
     with pytest.raises(ValueError, match="poll interval"):
         minimum_exact_case_window_seconds(
             poll_seconds=0.0,
@@ -461,9 +470,7 @@ def test_invalid_meta_label_bucket_never_consumes_provider_tokens(
             meta_label_validation_bootstrap_samples=2_000,
             meta_label_validation_bootstrap_confidence=0.95,
             meta_label_validation_bootstrap_block_length=6,
-            meta_label_validation_bootstrap_lower_after_cost_return=(
-                bootstrap_lower
-            ),
+            meta_label_validation_bootstrap_lower_after_cost_return=(bootstrap_lower),
         )
 
     base_decision._model_artifact = _validated_model_artifact()
@@ -498,12 +505,10 @@ def test_nonpositive_current_payoff_never_consumes_provider_tokens(
     model_artifact = _validated_model_artifact()
     negative_payoff = _payoff_proposal_evidence()
     negative_payoff["weighted_proposal_expected_after_cost_bps"] = -0.1
-    model_artifact.predict_payoff_evidence = (
-        lambda _features, *, proposed_side: {
-            **negative_payoff,
-            "proposal_side": proposed_side,
-        }
-    )
+    model_artifact.predict_payoff_evidence = lambda _features, *, proposed_side: {
+        **negative_payoff,
+        "proposal_side": proposed_side,
+    }
 
     def base_decision(*_args):
         return Decision(
@@ -711,10 +716,13 @@ def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
     assert requests[0]["options"]["num_ctx"] == 4_096
     assert requests[0]["options"]["num_predict"] == 128
     assert "live-ai-entry-risk-review-v2" in requests[0]["messages"][1]["content"]
-    assert sum(
-        len(message["content"].encode("utf-8"))
-        for message in requests[0]["messages"]
-    ) <= live_ai_assist_module._MAX_PROVIDER_MESSAGE_BYTES
+    assert (
+        sum(
+            len(message["content"].encode("utf-8"))
+            for message in requests[0]["messages"]
+        )
+        <= live_ai_assist_module._MAX_PROVIDER_MESSAGE_BYTES
+    )
 
     with pytest.raises(ValueError, match="case differs"):
         provider(_case(observed_at_ms=2_000, model_digest="c" * 64))
@@ -744,6 +752,26 @@ def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
     )
     with pytest.raises(ValueError, match="approved GPU-resident model"):
         provider(_case(observed_at_ms=3_000))
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "https://127.0.0.1:11434",
+        "http://example.com:11434",
+        "http://user:secret@localhost:11434",  # pragma: allowlist secret
+        "http://localhost:11434/api",
+    ],
+)
+def test_ollama_provider_rejects_non_loopback_or_ambiguous_endpoint(
+    base_url: str,
+) -> None:
+    with pytest.raises(ValueError, match="local HTTP endpoint"):
+        OllamaLiveAIEntryProvider(
+            model="qwen3:14b",
+            expected_model_digest=_DIGEST,
+            base_url=base_url,
+        )
 
 
 def test_ai_decision_rejects_combined_context_overrun() -> None:
@@ -818,18 +846,20 @@ def test_shadow_reviewer_defers_only_entry_then_preserves_ml_side_and_size(
 
     records = [
         json.loads(line)
-        for line in (tmp_path / "ai-entry.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / "ai-entry.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
     ]
     assert len(records) == 1
     assert records[0]["mode"] == "shadow_only"
     assert records[0]["trading_authority"] is False
     assert records[0]["case"]["case_id"] == completed.ai_assist_case_id
-    assert records[0]["case"]["prompt_contract"] == (
-        "live-ai-entry-risk-review-v2"
-    )
+    assert records[0]["case"]["prompt_contract"] == ("live-ai-entry-risk-review-v2")
 
 
-def test_provider_failure_is_recorded_without_execution_authority(tmp_path: Path) -> None:
+def test_provider_failure_is_recorded_without_execution_authority(
+    tmp_path: Path,
+) -> None:
     def failed_provider(_case):
         raise TimeoutError("provider deadline")
 
@@ -901,7 +931,9 @@ def test_completed_review_cannot_be_replayed_after_freshness_window(
     assert assisted.close(1.0)
 
 
-def test_shadow_contract_failure_blocks_only_entry_not_the_ml_decision(tmp_path: Path) -> None:
+def test_shadow_contract_failure_blocks_only_entry_not_the_ml_decision(
+    tmp_path: Path,
+) -> None:
     reviewer = AsyncLiveAIEntryReviewer(
         lambda _case: _approval(),
         audit_path=tmp_path / "ai-entry.jsonl",

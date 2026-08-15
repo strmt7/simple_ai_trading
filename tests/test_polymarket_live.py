@@ -12,9 +12,11 @@ from typing import Callable, Sequence
 
 import pytest
 
+import simple_ai_trading.polymarket_live as polymarket_live_module
 from simple_ai_trading.polymarket_live import (
     PolymarketCancelResult,
     PolymarketCloseQuote,
+    PolymarketConditionAccounting,
     PolymarketFundingPreflight,
     PolymarketLiveBlocked,
     PolymarketLiveCoordinator,
@@ -33,16 +35,22 @@ from simple_ai_trading.polymarket_live import (
     PolymarketSubmission,
     PolymarketVenuePreflight,
     PolymarketVenueRejected,
+    PolymarketVenueTemporarilyUnavailable,
 )
 from simple_ai_trading.polymarket_live_runtime import (
     PolymarketLiveRuntimeGuard,
     PolymarketUserStreamConsumer,
+)
+from simple_ai_trading.polymarket_live_risk import (
+    PolymarketLiveRiskService,
+    polymarket_live_risk_profile,
 )
 from simple_ai_trading.polymarket_live_v2 import PolymarketLiveCredentials
 from simple_ai_trading.polymarket_runtime_control import (
     PolymarketRuntimeControl,
     PolymarketRuntimeLeaseInterlock,
 )
+from simple_ai_trading.polymarket_round21_policy import round21_risk_profile
 
 
 NOW_MS = int(time.time() * 1_000)
@@ -56,6 +64,31 @@ RISK_LIMITS = PolymarketLiveRiskLimits(
     maximum_active_markets=1,
     maximum_intent_age_ms=30_000,
 )
+
+
+@pytest.fixture(autouse=True)
+def _refresh_test_wall_clock() -> None:
+    global NOW_MS
+    NOW_MS = int(time.time() * 1_000)
+
+
+@pytest.mark.parametrize("profile_name", ["conservative", "regular", "aggressive"])
+def test_live_and_round21_risk_profiles_cannot_drift(profile_name: str) -> None:
+    live = polymarket_live_risk_profile(profile_name)
+    research = round21_risk_profile(profile_name)
+
+    assert live.maximum_event_loss_capital_fraction == (
+        research.maximum_event_loss_capital_fraction
+    )
+    assert live.maximum_daily_loss_capital_fraction == (
+        research.maximum_daily_loss_capital_fraction
+    )
+    assert live.maximum_drawdown_capital_fraction == (
+        research.maximum_drawdown_capital_fraction
+    )
+    assert live.loss_cluster_cooldown_minutes == (
+        research.loss_cluster_cooldown_minutes
+    )
 
 
 def _order_id(seed: int) -> str:
@@ -276,6 +309,9 @@ class FakeVenue:
     def positions(self) -> tuple[PolymarketRemotePosition, ...]:
         return self.remote_positions
 
+    def collateral_balance(self) -> Decimal:
+        return self.funding_balance
+
     def funding(
         self,
         intent: PolymarketLiveOrderIntent,
@@ -388,6 +424,322 @@ def test_owned_lot_cannot_reserve_more_than_it_owns() -> None:
         )
 
 
+def test_condition_accounting_rebuilds_cumulative_realized_event_loss(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "condition-accounting.sqlite3")
+    venue = FakeVenue()
+    parent = replace(
+        _intent(quantity="2"),
+        limit_price=Decimal("0.50"),
+        fee_reserve_quote=Decimal("0.02"),
+    )
+    parent_prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(
+        replace(
+            _fill(
+                parent,
+                parent_prepared.expected_order_id,
+                quantity="2",
+                price="0.50",
+            ),
+            reported_fee_rate_bps=100,
+            fee_rate=Decimal("0.01"),
+            fee_quote=Decimal("0.02"),
+        )
+    )
+    ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 2,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("2"),
+    )
+    close = replace(
+        _intent(2, quantity="2", side="SELL", closing_only=True),
+        limit_price=Decimal("0.40"),
+        fee_reserve_quote=Decimal("0.01"),
+    )
+    close_prepared = _seed_live_order(ledger, venue, close)
+    ledger.record_fill(
+        replace(
+            _fill(
+                close,
+                close_prepared.expected_order_id,
+                seed=2,
+                quantity="2",
+                price="0.40",
+            ),
+            reported_fee_rate_bps=100,
+            fee_rate=Decimal("0.01"),
+            fee_quote=Decimal("0.01"),
+        )
+    )
+    ledger.transition(
+        close.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 3,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("2"),
+    )
+
+    accounting = ledger.condition_accounting(MARKET_ID)
+
+    assert isinstance(accounting, PolymarketConditionAccounting)
+    assert accounting.gross_buy_cost_quote == Decimal("1.02")
+    assert accounting.gross_sell_proceeds_quote == Decimal("0.79")
+    assert accounting.net_cash_outflow_quote == Decimal("0.23")
+    assert accounting.up_quantity == 0
+    assert accounting.down_quantity == 0
+    assert accounting.maximum_loss_quote == Decimal("0.23")
+    realized = ledger.realized_pnl_events()
+    assert len(realized) == 1
+    assert realized[0].source == "sell_fill"
+    assert realized[0].proceeds_quote == Decimal("0.79")
+    assert realized[0].consumed_cost_basis_quote == Decimal("1.02")
+    assert realized[0].pnl_quote == Decimal("-0.23")
+    assert ledger.revision().sequence > 0
+
+
+def test_live_risk_rebuilds_daily_drawdown_and_loss_cluster_cooldown(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "live-risk.sqlite3")
+    venue = FakeVenue()
+
+    def seed_loss(*, condition_id: str, token_id: str, seed: int) -> None:
+        parent = replace(
+            _intent(seed),
+            market_id=condition_id,
+            token_id=token_id,
+            limit_price=Decimal("0.50"),
+            fee_reserve_quote=Decimal("0"),
+        )
+        prepared = _seed_live_order(ledger, venue, parent)
+        ledger.record_fill(
+            _fill(
+                parent,
+                prepared.expected_order_id,
+                seed=seed,
+                price="0.50",
+            )
+        )
+        ledger.transition(
+            parent.intent_id,
+            expected_states=("live",),
+            state="filled",
+            observed_at_ms=NOW_MS + seed * 10,
+            remote_status="MATCHED",
+            matched_quantity=Decimal("1"),
+        )
+        close = replace(
+            _intent(seed + 1, side="SELL", closing_only=True),
+            market_id=condition_id,
+            token_id=token_id,
+            parent_intent_id=parent.intent_id,
+            limit_price=Decimal("0.40"),
+            fee_reserve_quote=Decimal("0"),
+        )
+        close_prepared = _seed_live_order(ledger, venue, close)
+        ledger.record_fill(
+            _fill(
+                close,
+                close_prepared.expected_order_id,
+                seed=seed + 1,
+                price="0.40",
+            )
+        )
+        ledger.transition(
+            close.intent_id,
+            expected_states=("live",),
+            state="filled",
+            observed_at_ms=NOW_MS + (seed + 1) * 10,
+            remote_status="MATCHED",
+            matched_quantity=Decimal("1"),
+        )
+
+    seed_loss(
+        condition_id="0x" + "2" * 64,
+        token_id="2" * 40,
+        seed=10,
+    )
+    seed_loss(
+        condition_id="0x" + "3" * 64,
+        token_id="3" * 40,
+        seed=20,
+    )
+    observed_at_ms = NOW_MS + 1_000
+    capture = PolymarketLiveRiskService(
+        ledger,
+        risk_capital_quote=Decimal("1000"),
+        risk_profile="conservative",
+    ).capture(
+        "0x" + "4" * 64,
+        observed_at_ms=observed_at_ms,
+    )
+
+    assert capture.state.daily_realized_pnl_quote == Decimal("-0.2")
+    assert capture.state.lifetime_realized_pnl_quote == Decimal("-0.2")
+    assert capture.state.drawdown_capital_fraction == Decimal("0.0002")
+    assert capture.state.consecutive_losing_conditions == 2
+    assert capture.state.cooldown_active is True
+    assert capture.state.entry_allowed is False
+    assert capture.state.entry_block_reasons == ("loss_cluster_cooldown_active",)
+    assert capture.condition_accounting.confirmed_fill_count == 0
+
+    breached = PolymarketLiveRiskService(
+        ledger,
+        risk_capital_quote=Decimal("10"),
+        risk_profile="conservative",
+    ).capture(
+        "0x" + "4" * 64,
+        observed_at_ms=observed_at_ms,
+    )
+    assert breached.state.maximum_current_condition_downside_quote == 0
+    assert breached.state.entry_block_reasons == (
+        "daily_loss_limit_reached",
+        "drawdown_limit_reached",
+        "loss_cluster_cooldown_active",
+        "event_or_portfolio_risk_headroom_exhausted",
+    )
+
+
+def test_condition_accounting_blocks_provisional_fill_economics(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "condition-provisional.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    ledger.record_fill(
+        _fill(
+            intent,
+            prepared.expected_order_id,
+            status="MINED",
+        )
+    )
+    ledger.transition(
+        intent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 2,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("1"),
+    )
+
+    with pytest.raises(PolymarketLiveBlocked, match="confirmed fee-verified"):
+        ledger.condition_accounting(MARKET_ID)
+
+
+def test_risk_ceiling_recognizes_a_loss_reducing_opposite_outcome_buy(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "paired-risk.sqlite3")
+    venue = FakeVenue()
+    up = replace(_intent(), fee_reserve_quote=Decimal("0"))
+    prepared = _seed_live_order(ledger, venue, up)
+    ledger.record_fill(_fill(up, prepared.expected_order_id))
+    ledger.transition(
+        up.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 2,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("1"),
+    )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1"),
+            redeemable=False,
+        ),
+    )
+    limits = PolymarketLiveRiskLimits(
+        maximum_order_quote=Decimal("0.55"),
+        maximum_token_quantity=Decimal("2"),
+        maximum_total_at_risk_quote=Decimal("0.55"),
+        maximum_active_markets=1,
+        maximum_intent_age_ms=30_000,
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=limits)
+    down = replace(
+        _intent(2),
+        token_id="2" * 40,
+        outcome="Down",
+        fee_reserve_quote=Decimal("0"),
+    )
+
+    record = coordinator.submit(
+        down,
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+    )
+
+    assert record.state == "live"
+    assert venue.submit_calls == 1
+
+
+def test_realized_event_loss_cannot_disappear_before_same_event_reentry(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "reentry-risk.sqlite3")
+    venue = FakeVenue()
+    parent = replace(_intent(), fee_reserve_quote=Decimal("0"))
+    parent_prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, parent_prepared.expected_order_id))
+    ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 2,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("1"),
+    )
+    close = replace(
+        _intent(2, side="SELL", closing_only=True),
+        limit_price=Decimal("0.40"),
+        fee_reserve_quote=Decimal("0"),
+    )
+    close_prepared = _seed_live_order(ledger, venue, close)
+    ledger.record_fill(
+        _fill(
+            close,
+            close_prepared.expected_order_id,
+            seed=2,
+            price="0.40",
+        )
+    )
+    ledger.transition(
+        close.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 3,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("1"),
+    )
+    limits = PolymarketLiveRiskLimits(
+        maximum_order_quote=Decimal("0.55"),
+        maximum_token_quantity=Decimal("2"),
+        maximum_total_at_risk_quote=Decimal("0.60"),
+        maximum_active_markets=1,
+        maximum_intent_age_ms=30_000,
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=limits)
+
+    with pytest.raises(PolymarketLiveBlocked, match="capital-at-risk ceiling"):
+        coordinator.submit(
+            replace(_intent(3), fee_reserve_quote=Decimal("0")),
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+
+    assert ledger.condition_accounting(MARKET_ID).maximum_loss_quote == Decimal("0.11")
+    assert venue.submit_calls == 0
+
+
 def test_submission_reserves_expected_hash_before_network_and_stores_no_signature(
     tmp_path: Path,
 ) -> None:
@@ -408,6 +760,34 @@ def test_submission_reserves_expected_hash_before_network_and_stores_no_signatur
     assert observed_states == ["submitting"]
     database = (tmp_path / "live.sqlite3").read_bytes()
     assert b"signed-order-must-never-enter-the-ledger" not in database
+
+
+def test_dispatch_mode_is_rechecked_inside_final_guard_before_reservation(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "dispatch-mode.sqlite3")
+    venue = FakeVenue()
+    checks = 0
+
+    def assert_dispatch_available() -> None:
+        nonlocal checks
+        checks += 1
+        if checks == 2:
+            raise PolymarketLiveBlocked("venue entered post-only mode")
+
+    venue.assert_order_dispatch_available = assert_dispatch_available  # type: ignore[attr-defined]
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    with pytest.raises(PolymarketLiveBlocked, match="post-only mode"):
+        coordinator.submit(
+            _intent(),
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+
+    assert checks == 2
+    assert venue.submit_calls == 0
+    assert ledger.records() == ()
 
 
 def test_fill_price_cannot_violate_signed_limit_economics(tmp_path: Path) -> None:
@@ -537,6 +917,28 @@ def test_foreign_order_and_position_block_without_being_touched(tmp_path: Path) 
     assert gate.foreign_order_ids == (_order_id(99),)
     assert gate.foreign_position_token_ids == (TOKEN_ID,)
     assert venue.cancel_calls == []
+
+
+def test_proven_temporary_cancel_unavailability_preserves_owned_order_state(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "cancel-restart.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    venue.open = (_remote_order(intent, prepared.expected_order_id),)
+    venue.cancel_error = PolymarketVenueTemporarilyUnavailable(
+        "matching engine restart"
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    with pytest.raises(PolymarketLiveBlocked, match="cancellation was deferred"):
+        coordinator.cancel_owned_open_orders()
+
+    record = ledger.record(intent.intent_id)
+    assert record.state == "live"
+    assert record.failure_code == "cancel_deferred_venue_unavailable"
+    assert venue.cancel_calls == [(prepared.expected_order_id,)]
 
 
 def test_cancellation_targets_only_exact_owned_open_order_ids(tmp_path: Path) -> None:
@@ -1355,9 +1757,7 @@ def test_v1_fill_ledger_migrates_without_inventing_fee_accounting(
             )
             """
         )
-        for row in connection.execute(
-            "SELECT * FROM polymarket_live_fills"
-        ).fetchall():
+        for row in connection.execute("SELECT * FROM polymarket_live_fills").fetchall():
             payload = {
                 "trade_id": str(row["trade_id"]),
                 "order_id": str(row["order_id"]),
@@ -1388,8 +1788,7 @@ def test_v1_fill_ledger_migrates_without_inventing_fee_accounting(
             )
         connection.execute("DROP TABLE polymarket_live_fills")
         connection.execute(
-            "ALTER TABLE polymarket_live_fills_v1 "
-            "RENAME TO polymarket_live_fills"
+            "ALTER TABLE polymarket_live_fills_v1 RENAME TO polymarket_live_fills"
         )
         connection.execute(
             """
@@ -1529,6 +1928,59 @@ def test_hard_risk_limits_block_stale_and_oversized_open_intents(
         )
 
     assert ledger.records() == ()
+
+
+@pytest.mark.parametrize(
+    ("expires_after_ms", "signing_delay_ms", "expected_error"),
+    (
+        (120_000, RISK_LIMITS.maximum_intent_age_ms + 1, "execution TTL"),
+        (1_000, 1_001, "already expired"),
+    ),
+)
+def test_intent_is_rechecked_after_signing_before_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    expires_after_ms: int,
+    signing_delay_ms: int,
+    expected_error: str,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "signing-delay.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(
+        venue,
+        ledger,
+        risk_limits=RISK_LIMITS,
+    )
+    clock_ms = [NOW_MS]
+    monkeypatch.setattr(
+        polymarket_live_module.time,
+        "time",
+        lambda: clock_ms[0] / 1_000,
+    )
+    prepare = venue.prepare_order
+
+    def delayed_prepare(
+        intent: PolymarketLiveOrderIntent,
+        *,
+        tick_size: Decimal,
+        neg_risk: bool,
+    ) -> PolymarketPreparedOrder:
+        prepared = prepare(intent, tick_size=tick_size, neg_risk=neg_risk)
+        clock_ms[0] += signing_delay_ms
+        return prepared
+
+    venue.prepare_order = delayed_prepare  # type: ignore[method-assign]
+    intent = replace(_intent(), expires_at_ms=NOW_MS + expires_after_ms)
+
+    with pytest.raises(PolymarketLiveBlocked, match=expected_error):
+        coordinator.submit(
+            intent,
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+
+    assert ledger.records() == ()
+    assert venue.submit_calls == 0
 
 
 def test_aggregate_capital_at_risk_blocks_repeated_small_orders(
@@ -1910,6 +2362,84 @@ def test_owned_close_uses_fresh_polymarket_quote_for_exact_parent_lot(
     assert close.state == "live"
 
 
+def test_targeted_close_binds_exact_parent_quantity_and_policy_hash(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "targeted-close.sqlite3")
+    venue = FakeVenue()
+    parent = _intent(1, quantity="5")
+    prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, prepared.expected_order_id, quantity="5"))
+    ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 10,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("5"),
+    )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("5"),
+            redeemable=False,
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    record, quote = coordinator.submit_owned_close_order(
+        parent_intent_id=parent.intent_id,
+        quantity=Decimal("2"),
+        action_binding_sha256="b" * 64,
+        maximum_book_age_ms=500,
+    )
+
+    assert venue.close_quote_calls == [(MARKET_ID, TOKEN_ID, Decimal("2"), 500)]
+    assert record.intent.intent_id.startswith("policy-close-")
+    assert record.intent.parent_intent_id == parent.intent_id
+    assert record.intent.quantity == Decimal("2")
+    assert record.intent.closing_only is True
+    assert quote.quantity == Decimal("2")
+
+
+def test_targeted_close_never_exceeds_exact_owned_parent(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "targeted-close-bound.sqlite3")
+    venue = FakeVenue()
+    parent = _intent(1, quantity="1")
+    prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, prepared.expected_order_id, quantity="1"))
+    ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 10,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("1"),
+    )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1"),
+            redeemable=False,
+        ),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+
+    with pytest.raises(PolymarketLiveBlocked, match="confirmed unreserved"):
+        coordinator.submit_owned_close_order(
+            parent_intent_id=parent.intent_id,
+            quantity=Decimal("1.000001"),
+            action_binding_sha256="b" * 64,
+        )
+
+    assert venue.close_quote_calls == []
+    assert venue.submit_calls == 0
+
+
 def test_owned_close_rejects_stale_or_mismatched_quote_without_signing(
     tmp_path: Path,
 ) -> None:
@@ -2085,12 +2615,104 @@ def test_runtime_guard_requires_fresh_stream_for_open_but_not_owned_close() -> N
     guard.assert_submission_allowed(closing_only=True)
 
     guard.note_stream_liveness()
+    guard.note_reconciliation(
+        clean,
+        checkpoint=guard.reconciliation_checkpoint(),
+    )
     guard.assert_submission_allowed(closing_only=False)
     clock[0] = 16_000_000_000
 
     with pytest.raises(PolymarketLiveBlocked, match="user stream"):
         guard.assert_submission_allowed(closing_only=False)
     guard.assert_submission_allowed(closing_only=True)
+
+
+def test_runtime_guard_requires_post_connect_reconciliation() -> None:
+    guard = PolymarketLiveRuntimeGuard()
+    clean = PolymarketReconciliation(
+        ok=True,
+        can_open=True,
+        can_close=True,
+        foreign_order_ids=(),
+        foreign_position_token_ids=(),
+        missing_position_token_ids=(),
+        blocking_intent_ids=(),
+        errors=(),
+    )
+    checkpoint = guard.reconciliation_checkpoint()
+    guard.note_reconciliation(clean, checkpoint=checkpoint)
+    guard.note_stream_liveness()
+
+    with pytest.raises(PolymarketLiveBlocked, match="reconciliation is stale"):
+        guard.assert_submission_allowed(closing_only=False)
+    guard.note_reconciliation(clean, checkpoint=checkpoint)
+    with pytest.raises(PolymarketLiveBlocked, match="reconciliation is stale"):
+        guard.assert_submission_allowed(closing_only=True)
+
+    guard.note_reconciliation(
+        clean,
+        checkpoint=guard.reconciliation_checkpoint(),
+    )
+    guard.assert_submission_allowed(closing_only=False)
+    guard.assert_submission_allowed(closing_only=True)
+
+
+def test_runtime_guard_requires_post_reconnect_reconciliation() -> None:
+    guard = PolymarketLiveRuntimeGuard()
+    clean = PolymarketReconciliation(
+        ok=True,
+        can_open=True,
+        can_close=True,
+        foreign_order_ids=(),
+        foreign_position_token_ids=(),
+        missing_position_token_ids=(),
+        blocking_intent_ids=(),
+        errors=(),
+    )
+    guard.note_stream_liveness()
+    guard.note_reconciliation(
+        clean,
+        checkpoint=guard.reconciliation_checkpoint(),
+    )
+    stale_checkpoint = guard.reconciliation_checkpoint()
+    guard.note_stream_disconnected("network_loss")
+    guard.note_stream_liveness()
+    guard.note_reconciliation(clean, checkpoint=stale_checkpoint)
+
+    with pytest.raises(PolymarketLiveBlocked, match="reconciliation is stale"):
+        guard.assert_submission_allowed(closing_only=False)
+    with pytest.raises(PolymarketLiveBlocked, match="reconciliation is stale"):
+        guard.assert_submission_allowed(closing_only=True)
+
+
+def test_coordinator_rejects_reconciliation_that_straddles_reconnect(
+    tmp_path: Path,
+) -> None:
+    guard = PolymarketLiveRuntimeGuard()
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(
+        venue,
+        PolymarketLiveOrderLedger(tmp_path / "stream-epoch-race.sqlite3"),
+        risk_limits=RISK_LIMITS,
+        runtime_authority=guard,
+    )
+    guard.note_stream_liveness()
+    coordinator.reconcile()
+    guard.assert_submission_allowed(closing_only=False)
+
+    def reconnect_during_reconciliation() -> None:
+        guard.note_stream_disconnected("network_loss")
+        guard.note_stream_liveness()
+
+    venue.before_open_orders = reconnect_during_reconciliation
+    result = coordinator.reconcile()
+
+    assert result.ok is True
+    assert guard.snapshot().soft_fault == "reconciliation_superseded_by_stream_epoch"
+    with pytest.raises(PolymarketLiveBlocked, match="reconciliation is stale"):
+        guard.assert_submission_allowed(closing_only=False)
+    with pytest.raises(PolymarketLiveBlocked, match="reconciliation is stale"):
+        guard.assert_submission_allowed(closing_only=True)
 
 
 def test_runtime_hard_fault_blocks_open_and_close() -> None:
@@ -2255,6 +2877,118 @@ def test_user_stream_applies_only_exact_owned_order_and_fill_events(
     assert evidence.quantity == Decimal("0.25")
     assert evidence.all_active_fills_confirmed is True
     assert ledger.unverified_fill_accounting_count() == 1
+    assert guard.snapshot().hard_faults == ()
+
+
+@pytest.mark.parametrize("status", ["DELAYED", "UNMATCHED"])
+def test_user_stream_keeps_documented_nonterminal_order_status_open(
+    tmp_path: Path,
+    status: str,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / f"{status.lower()}.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    guard = PolymarketLiveRuntimeGuard()
+    consumer = PolymarketUserStreamConsumer(ledger, guard)
+    event = {
+        "event_type": "order",
+        "type": "UPDATE",
+        "status": status,
+        "id": prepared.expected_order_id,
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "side": "BUY",
+        "original_size": "1",
+        "size_matched": "0",
+        "timestamp": str(int(time.time())),
+    }
+
+    assert consumer.handle(json.dumps(event)) == 1
+
+    record = ledger.record(intent.intent_id)
+    assert record.state == "live"
+    assert record.remote_status == status
+    assert record.blocks_new_exposure is True
+    assert guard.snapshot().hard_faults == ()
+
+
+@pytest.mark.parametrize(
+    ("event_type", "status", "expected_fault"),
+    [
+        ("UPDATE", "FUTURE_STATUS", "owned_order_stream_unsupported_status"),
+        ("UPDATE", "CANCELED", "owned_order_stream_event_status_mismatch"),
+        ("CANCELLATION", "LIVE", "owned_order_stream_event_status_mismatch"),
+    ],
+)
+def test_user_stream_fails_closed_on_invalid_order_status_semantics(
+    tmp_path: Path,
+    event_type: str,
+    status: str,
+    expected_fault: str,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(
+        tmp_path / f"{event_type.lower()}-{status.lower()}.sqlite3"
+    )
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    guard = PolymarketLiveRuntimeGuard()
+    consumer = PolymarketUserStreamConsumer(ledger, guard)
+    event = {
+        "event_type": "order",
+        "type": event_type,
+        "status": status,
+        "id": prepared.expected_order_id,
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "side": "BUY",
+        "original_size": "1",
+        "size_matched": "0",
+        "timestamp": str(int(time.time())),
+    }
+
+    assert consumer.handle(json.dumps(event)) == 1
+
+    record = ledger.record(intent.intent_id)
+    assert record.state == "live"
+    assert record.remote_status == "LIVE"
+    assert guard.snapshot().hard_faults == (expected_fault,)
+
+
+def test_user_stream_accepts_matched_not_broadcasted_until_finality(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "matched-not-broadcast.sqlite3")
+    venue = FakeVenue()
+    intent = _intent()
+    prepared = _seed_live_order(ledger, venue, intent)
+    guard = PolymarketLiveRuntimeGuard()
+    consumer = PolymarketUserStreamConsumer(ledger, guard)
+    event = {
+        "event_type": "trade",
+        "type": "TRADE",
+        "id": "stream-trade-prebroadcast-0001",
+        "taker_order_id": prepared.expected_order_id,
+        "market": MARKET_ID,
+        "asset_id": TOKEN_ID,
+        "side": "BUY",
+        "size": "0.25",
+        "price": "0.50",
+        "status": "TRADE_STATUS_MATCHED_NOT_BROADCASTED",
+        "last_update": str(int(time.time())),
+        "trader_side": "TAKER",
+        "fee_rate_bps": "0",
+        "transaction_hash": None,
+        "maker_orders": [],
+    }
+
+    assert consumer.handle(json.dumps(event)) == 1
+
+    evidence = ledger.order_fill_evidence(prepared.expected_order_id)
+    assert evidence.quantity == Decimal("0.25")
+    assert evidence.has_active_fills is True
+    assert evidence.all_active_fills_confirmed is False
     assert guard.snapshot().hard_faults == ()
 
 

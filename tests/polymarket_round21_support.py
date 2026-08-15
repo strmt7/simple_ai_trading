@@ -1,31 +1,107 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal
 import hashlib
 
 import numpy as np
 
 from simple_ai_trading.paper_execution import BookLevel, PaperBookSnapshot
-from simple_ai_trading.polymarket import PolymarketFeeSchedule, PolymarketFiveMinuteMarket
-from simple_ai_trading.polymarket_round21_dataset import Round21OfficialOutcome
-from simple_ai_trading.polymarket_round21_execution import Round21MarketExecutionEvidence
+from simple_ai_trading.polymarket import (
+    PolymarketFeeSchedule,
+    PolymarketFiveMinuteMarket,
+)
+from simple_ai_trading.polymarket_round21_core_features import (
+    POLYMARKET_ROUND21_FEATURE_SCHEMA,
+)
+from simple_ai_trading.polymarket_round21_dataset import (
+    Round21CausalFeatureRow,
+    Round21OfficialOutcome,
+)
+from simple_ai_trading.polymarket_round21_execution import (
+    Round21MarketExecutionEvidence,
+)
 from simple_ai_trading.polymarket_round21_model import (
     POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
     Round21DevelopmentPanel,
 )
 from simple_ai_trading.polymarket_round21_policy import Round21ProbabilityEnvelope
+from simple_ai_trading.polymarket_round21_ablation import (
+    evaluate_round21_probability_basis_ablation,
+)
+from simple_ai_trading.polymarket_round21_prospective import (
+    Round21ProspectivePrediction,
+)
 from simple_ai_trading.polymarket_round21_replay import Round21ReplayCondition
 
 
 START_MS = 1_800_000_000_000
 DECISION_MS = START_MS + 120_000
 CONDITION_ID = "0x" + "7" * 64
+SHADOW_CONDITION_ID = "0x" + "2" * 64
+SHADOW_MODEL_SHA = hashlib.sha256(b"round21-shadow-model").hexdigest()
+SHADOW_SEALED_SHA = hashlib.sha256(b"round21-shadow-sealed").hexdigest()
 UP_TOKEN = "1" * 40
 DOWN_TOKEN = "2" * 40
 
 
 def sha(value: str) -> str:
     return hashlib.sha256(value.encode("ascii")).hexdigest()
+
+
+def round21_shadow_prediction(
+    offset_ms: int = 1_000,
+    *,
+    latency_ns: int = 40,
+    observed: bool = True,
+) -> Round21ProspectivePrediction:
+    decision = START_MS + offset_ms
+    schema = POLYMARKET_ROUND21_FEATURE_SCHEMA
+    row = Round21CausalFeatureRow.create(
+        condition_id=SHADOW_CONDITION_ID,
+        event_start_ms=START_MS,
+        decision_time_ms=decision,
+        structural_probability=0.51,
+        market_prior_probability=0.49,
+        core_values=(0.0,) * len(schema.core_names),
+        spot_values=(0.0,) * len(schema.spot_names),
+        usdm_values=(0.0,) * len(schema.usdm_names),
+        spot_available=True,
+        usdm_available=True,
+        feature_schema=schema,
+        core_source_chain_sha256=sha(f"core-{offset_ms}"),
+        spot_source_chain_sha256=sha(f"spot-{offset_ms}"),
+        usdm_source_chain_sha256=sha(f"usdm-{offset_ms}"),
+        core_maximum_receipt_ms=decision,
+        spot_maximum_receipt_ms=decision,
+        usdm_maximum_receipt_ms=decision,
+    )
+    envelope = None
+    if observed:
+        envelope = Round21ProbabilityEnvelope.create(
+            condition_id=SHADOW_CONDITION_ID,
+            decision_time_ms=decision,
+            probability_up=Decimal("0.54"),
+            lower_up=Decimal("0.51"),
+            upper_up=Decimal("0.57"),
+            model_layer="core",
+            source_model_artifact_sha256=SHADOW_MODEL_SHA,
+            source_probability_batch_sha256=sha(f"batch-{offset_ms}"),
+            feature_row_sha256=sha(f"panel-row-{offset_ms}"),
+        )
+    return Round21ProspectivePrediction.create(
+        status="observed" if observed else "abstain",
+        reason="" if observed else "selected_optional_feature_layer_unavailable",
+        reset_reason="initial" if offset_ms == 1_000 else "none",
+        row=row,
+        observed_at_ms=decision + 5,
+        history_row_count=1 if offset_ms == 1_000 else 2,
+        population_layer="core",
+        source_model_artifact_sha256=SHADOW_MODEL_SHA,
+        sealed_result_sha256=SHADOW_SEALED_SHA,
+        inference_latency_ns=latency_ns,
+        envelope=envelope,
+    ).validated()
 
 
 def round21_panel(
@@ -75,9 +151,9 @@ def round21_panel(
         event_start_ms=event_start,
         decision_time_ms=event_start + 150_000,
         labels=labels,
-        structural_probability=(
-            0.5 + 0.02 * np.sin(condition_numbers * 0.17)
-        ).astype(np.float64),
+        structural_probability=(0.5 + 0.02 * np.sin(condition_numbers * 0.17)).astype(
+            np.float64
+        ),
         market_prior_probability=(
             0.5 + 0.015 * np.cos(condition_numbers * 0.11)
         ).astype(np.float64),
@@ -92,6 +168,30 @@ def round21_panel(
         dataset_sha256=sha(f"dataset-{role}"),
         target_manifest_sha256=sha(f"targets-{role}"),
         dataset_design_sha256=POLYMARKET_ROUND21_DATASET_DESIGN_SHA256,
+    )
+
+
+def round21_accepted_basis_ablation(
+    train: Round21DevelopmentPanel,
+    calibration: Round21DevelopmentPanel,
+    selection: Round21DevelopmentPanel,
+) -> dict[str, object]:
+    """Build a mechanically accepted synthetic gate for model-boundary tests."""
+
+    def predictive(panel: Round21DevelopmentPanel) -> Round21DevelopmentPanel:
+        return replace(
+            panel,
+            structural_probability=np.full(len(panel.labels), 0.5, dtype=np.float64),
+            market_prior_probability=np.where(panel.labels == 1.0, 0.9, 0.1),
+            core_features=np.zeros_like(panel.core_features),
+        ).validate()
+
+    return evaluate_round21_probability_basis_ablation(
+        train=predictive(train),
+        tune_calibration=predictive(calibration),
+        tune_selection=predictive(selection),
+        publication_manifest_sha256=sha("test-publication"),
+        terminal_transport_manifest_sha256=sha("test-terminal"),
     )
 
 

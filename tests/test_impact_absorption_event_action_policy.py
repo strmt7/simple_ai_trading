@@ -504,7 +504,9 @@ def _execution_panel(
         for batch, candidate in zip(batches, candidates, strict=True)
         for row_index in range(batch.rows)
     )
-    run_ids = _subpartition().policy_selection_run_ids
+    run_ids = tuple(
+        dict.fromkeys(run_id for batch in batches for run_id in batch.run_id)
+    )
     result = Round74ActionExecutionPanel(
         profile="conservative",
         partition_sha256=PARTITION_SHA256,
@@ -743,7 +745,8 @@ def test_epistemic_runtime_filter_only_removes_and_zeroes_candidates() -> None:
 
 
 def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
-    combined = _batch(payoff_sign=1.0)
+    subpartition = _segmented_subpartition()
+    combined = _batch(payoff_sign=1.0, subpartition=subpartition)
     batches = _run_batch_panel(combined)
 
     def output_with_diagnostics(
@@ -804,7 +807,7 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
         )
         for index, batch in enumerate(batches)
     )
-    calibration = _calibration()
+    calibration = _calibration(subpartition)
     candidates = tuple(
         derive_round74_action_candidates(
             output,
@@ -841,7 +844,7 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
     baseline = select_round74_action_policy_batches(
         batches,
         candidates,
-        _subpartition(),
+        subpartition,
         execution_panel=execution_panel,
     )
     assert baseline.accepted
@@ -857,7 +860,7 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
         risk_coverage_report_sha256="e" * 64,
         tuning_subpartition_sha256=calibration.tuning_subpartition_sha256,
         probability_calibration_sha256=calibration.calibration_sha256,
-        source_run_ids=_subpartition().policy_selection_run_ids,
+        source_run_ids=subpartition.policy_selection_run_ids,
         source_batch_sha256=tuple(batch.batch_sha256 for batch in batches),
         source_model_output_sha256=tuple(
             candidate.model_output_sha256 for candidate in candidates
@@ -916,12 +919,10 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
     assert configuration.action_filter_sha256 == action_filter.filter_sha256
     assert configuration.sealed_test_accessed is False
     assert configuration.trading_authority is False
-    filtered_candidates, sealed_applications = (
-        apply_round74_final_action_configuration(
-            candidates,
-            outputs,
-            configuration,
-        )
+    filtered_candidates, sealed_applications = apply_round74_final_action_configuration(
+        candidates,
+        outputs,
+        configuration,
     )
     assert len(filtered_candidates) == len(candidates)
     assert len(sealed_applications) == len(candidates)
@@ -957,9 +958,7 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
     with pytest.raises(ValueError, match="configuration differs"):
         Round74FinalActionConfiguration.from_dict(invalid_mode)
     invalid_contract_type = json.loads(json.dumps(configuration_payload))
-    invalid_contract_type["selection_contract"][
-        "single_final_ml_configuration"
-    ] = 1
+    invalid_contract_type["selection_contract"]["single_final_ml_configuration"] = 1
     unsigned_contract = dict(invalid_contract_type)
     unsigned_contract.pop("configuration_sha256")
     invalid_contract_type["configuration_sha256"] = hashlib.sha256(
@@ -1037,7 +1036,7 @@ def test_epistemic_challenge_measures_delayed_l2_replacement_trades() -> None:
     harmful_baseline = select_round74_action_policy_batches(
         batches,
         candidates,
-        _subpartition(),
+        subpartition,
         execution_panel=harmful_panel,
     )
     assert harmful_baseline.accepted

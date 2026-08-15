@@ -1,0 +1,120 @@
+{
+  "artifact_sha256": "154427b440b3af868e1caf98a6db83acd159060f6670f98e05a1999bca5b5f78",
+  "candidate_selection_design_sha256": "5a5b9e38322cdb7031e3eff2d5b3b4e5d00218c20d838efcaf68fde7461ce81a",
+  "checks": {
+    "case_constraint_semantics_passed": true,
+    "exact_model_digest_present": true,
+    "gpu_residency_passed": true,
+    "parameter_floor_passed": true,
+    "provider_failure_count_passed": true,
+    "target_free_source_preserved": true,
+    "valid_typed_response_count_passed": true
+  },
+  "created_at_utc": "2026-08-03T16:15:15.744468+00:00",
+  "model": "qwen3.5:9b",
+  "passed": true,
+  "purpose": "provider_schema_latency_and_gpu_compatibility_only",
+  "report": {
+    "advisory_only": true,
+    "approval_count": 0,
+    "average_inference_latency_seconds": 8.322238399996422,
+    "average_latency_seconds": 8.3222384,
+    "average_queue_delay_seconds": 0.0,
+    "case_count": 1,
+    "case_set_sha256": "be24a875dde2e45e310a494df97454653536f1b55400177791e8119d021cea2f",
+    "config": {
+      "base_url": "http://127.0.0.1:11434",
+      "maximum_advisory_latency_seconds": 30.0,
+      "minimum_approval_confidence": 0.65,
+      "model": "qwen3.5:9b",
+      "seed": 4701,
+      "timeout_seconds": 60.0
+    },
+    "cooldown_count": 0,
+    "market_permission_sha256": "936f3e54c2941d6b2980b1e814875ebbb680ba8e515165adb1f97cf5a23c4862",
+    "market_permissions": {
+      "0x385317e8058776b4648bd5e0139acfdeeac2b1a526e5463e864513e81acdfcff": false
+    },
+    "maximum_inference_latency_seconds": 8.322238399996422,
+    "maximum_latency_seconds": 8.3222384,
+    "maximum_output_token_count": 68,
+    "maximum_prompt_token_count": 974,
+    "maximum_queue_delay_seconds": 0.0,
+    "model_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+    "model_metadata_sha256": "0f4e917fffd9051ca6497ff99b9f1b9ab5221c3fff1ca192f3af6e8a393074f7",
+    "model_parameters_b": 9.0,
+    "profitability_claim": false,
+    "provider_failure_count": 0,
+    "provider_telemetry_count": 1,
+    "report_sha256": "02159745e2d3890909e9840e9269516b637088172b186a946e8f7a53da2e849d",
+    "results": [
+      {
+        "case_id": "c21900c759ba882ac373f46a30fa0c16f4e36a827ee2db95727094e2424ec6c5",
+        "condition_id": "0x385317e8058776b4648bd5e0139acfdeeac2b1a526e5463e864513e81acdfcff",
+        "decision": {
+          "action": "veto",
+          "confidence": 0.95,
+          "failure_reason": "",
+          "permits_entry": false,
+          "reason_codes": [
+            "insufficient_evidence"
+          ],
+          "summary": "Edge (1%) below minimum required (2%); insufficient evidence for approval.",
+          "valid": true
+        },
+        "inference_latency_seconds": 8.322238399996422,
+        "latency_seconds": 8.3222384,
+        "model": "qwen3.5:9b",
+        "provider_runtime": {
+          "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+          "gpu_resident": true,
+          "loaded": true,
+          "loaded_model": "qwen3.5:9b",
+          "requested_model": "qwen3.5:9b",
+          "size_bytes": 5641055763,
+          "size_vram_bytes": 5641055763,
+          "status": "gpu_resident",
+          "vram_to_model_ratio": 1.0
+        },
+        "queue_delay_seconds": 0.0,
+        "response_payload": {
+          "created_at": "2026-08-03T16:15:15.693117Z",
+          "done": true,
+          "done_reason": "stop",
+          "eval_count": 68,
+          "eval_duration": 1064540000,
+          "load_duration": 6928564700,
+          "message": {
+            "content": "{\n  \"action\": \"veto\",\n  \"confidence\": 0.95,\n  \"reason_codes\": [\n    \"insufficient_evidence\"\n  ],\n  \"summary\": \"Edge (1%) below minimum required (2%); insufficient evidence for approval.\"\n}",
+            "role": "assistant"
+          },
+          "model": "qwen3.5:9b",
+          "prompt_eval_count": 974,
+          "prompt_eval_duration": 308222000,
+          "total_duration": 8306358600
+        },
+        "response_sha256": "533a53c663cbf0f69a5124968035102cf2c345702f41ac595e57d3d3e7b4eb05"
+      }
+    ],
+    "risk_benchmark_evidence_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+    "schema_version": "polymarket-ai-veto-report-v7",
+    "selection_sha256": "5a5b9e38322cdb7031e3eff2d5b3b4e5d00218c20d838efcaf68fde7461ce81a",
+    "total_output_token_count": 68,
+    "total_prompt_token_count": 974,
+    "trading_authority": false,
+    "valid_response_count": 1,
+    "veto_count": 1
+  },
+  "schema_version": "polymarket-round21-target-free-ai-candidate-host-probe-v2",
+  "semantics": {
+    "capture_data_accessed": false,
+    "live_trading_authority": false,
+    "market_target_or_outcome_accessed": false,
+    "model_selected": false,
+    "paper_trading_authority": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false
+  },
+  "source_case_sha256": "cae4ab37ea16d74f140028305bca14a559160a6c72d8bbb31c9c6fb6b2bcd675",
+  "source_target_free_probe_sha256": "ec4a29598f2577b31c0cda057e5c39d211967a33efd1181213348efe3f1940f5"
+}

@@ -1,4 +1,4 @@
-"""Target-free two-model AI review preparation for Round 74 sealed evaluation."""
+"""Target-free AI review preparation for Round 74 sealed evaluation."""
 
 from __future__ import annotations
 
@@ -227,9 +227,8 @@ def round74_ai_review_challenger_model_panel() -> tuple[
     }
     if any(value.manifest.manifest_sha256 in default_manifests for value in panel):
         raise ValueError("Round 74 AI challenger duplicates qualification model")
-    if (
-        len({value.manifest.manifest_sha256 for value in panel}) != len(panel)
-        or any(not value.manifest.finance_specialized for value in panel)
+    if len({value.manifest.manifest_sha256 for value in panel}) != len(panel) or any(
+        not value.manifest.finance_specialized for value in panel
     ):
         raise ValueError("Round 74 AI challenger panel differs")
     return panel
@@ -524,7 +523,7 @@ def prepare_round74_target_free_ai_reviews(
     progress_callback: ProgressCallback | None = None,
     wall_time_ns: Callable[[], int] = time.time_ns,
 ) -> Round74AIReviewPanel:
-    """Review every frozen target-free candidate for both pinned local models."""
+    """Review every frozen target-free candidate for the supplied pinned models."""
 
     inference.validate()
     action_selection.validate()
@@ -544,11 +543,12 @@ def prepare_round74_target_free_ai_reviews(
         if model_bindings is not None
         else round74_default_ai_review_model_panel()
     )
-    if len(bindings) != 2 or tuple(value.role for value in bindings) != (
-        "finance_primary",
-        "general_control",
-    ):
-        raise ValueError("Round 74 AI review requires the two-model panel")
+    roles = tuple(value.role for value in bindings)
+    canonical_roles = tuple(
+        role for role in ("finance_primary", "general_control") if role in roles
+    )
+    if not 1 <= len(bindings) <= 2 or roles != canonical_roles:
+        raise ValueError("Round 74 AI review model panel differs")
     for value in bindings:
         value.validate()
     threshold = action_selection.selected_threshold_score
@@ -722,7 +722,7 @@ def prepare_round74_target_free_ai_reviews(
 
 @dataclass(frozen=True)
 class Round74PreparedSealedAIReviewProvider:
-    """Run the pinned target-free two-model panel for a reserved test claim."""
+    """Run only development-qualified AI models for a reserved test claim."""
 
     probability_calibration: Round74ProbabilityCalibration
     ai_pretest_qualification: Round74AIPretestQualificationPanel
@@ -743,10 +743,13 @@ class Round74PreparedSealedAIReviewProvider:
         bound_manifests = tuple(
             sorted(value.manifest.manifest_sha256 for value in bindings)
         )
+        roles = tuple(value.role for value in bindings)
+        canonical_roles = tuple(
+            role for role in ("finance_primary", "general_control") if role in roles
+        )
         if (
-            len(bindings) != 2
-            or tuple(value.role for value in bindings)
-            != ("finance_primary", "general_control")
+            not 1 <= len(bindings) <= 2
+            or roles != canonical_roles
             or not callable(self.review_runner)
             or (
                 self.model_batch_preparer is not None

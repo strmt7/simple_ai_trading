@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
+from decimal import Decimal
 import hashlib
 import json
 import re
@@ -21,8 +22,7 @@ from .polymarket_round21_dataset import (
 )
 from .polymarket_round21_model import (
     Round21InferencePanel,
-    predict_round21_probability_batch,
-    validate_round21_development_artifact,
+    compile_round21_probability_predictor,
 )
 from .polymarket_round21_policy import Round21ProbabilityEnvelope
 from .polymarket_round21_sealed import Round21SealedEvaluationResult
@@ -30,7 +30,7 @@ from .polymarket_round21_tcn import ROUND21_TCN_SEQUENCE_LENGTH
 
 
 POLYMARKET_ROUND21_PROSPECTIVE_SCHEMA_VERSION = (
-    "polymarket-round21-prospective-prediction-v1"
+    "polymarket-round21-prospective-prediction-v2"
 )
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -273,6 +273,7 @@ class Round21ProspectivePrediction:
                 "probability_up": format(self.envelope.probability_up, "f"),
                 "lower_up": format(self.envelope.lower_up, "f"),
                 "upper_up": format(self.envelope.upper_up, "f"),
+                "feature_support_eligible": (self.envelope.feature_support_eligible),
                 "source_probability_batch_sha256": (
                     self.envelope.source_probability_batch_sha256
                 ),
@@ -356,6 +357,142 @@ class Round21ProspectivePrediction:
         return self
 
 
+def validate_round21_prospective_prediction(
+    value: Mapping[str, object],
+) -> Round21ProspectivePrediction:
+    """Reconstruct one exact serialized prediction without widening its contract."""
+
+    if not isinstance(value, Mapping):
+        raise TypeError("Round 21 prospective prediction payload is not an object")
+    selected = dict(value)
+    expected_keys = {
+        "schema_version",
+        "status",
+        "reason",
+        "reset_reason",
+        "condition_id",
+        "event_start_ms",
+        "decision_time_ms",
+        "observed_at_ms",
+        "source_maximum_receipt_ms",
+        "history_row_count",
+        "population_layer",
+        "source_causal_row_sha256",
+        "source_model_artifact_sha256",
+        "sealed_result_sha256",
+        "inference_latency_ns",
+        "probability_evidence_sha256",
+        "target_accessed",
+        "credentials_used",
+        "account_connected",
+        "binance_execution_connected",
+        "grants_execution_authority",
+        "profitability_claim",
+        "paper_trading_authority",
+        "live_trading_authority",
+        "probability_evidence",
+        "prediction_sha256",
+    }
+    if set(selected) != expected_keys:
+        raise ValueError("Round 21 prospective prediction keys differ")
+    if selected["schema_version"] != POLYMARKET_ROUND21_PROSPECTIVE_SCHEMA_VERSION:
+        raise ValueError("Round 21 prospective prediction schema differs")
+
+    evidence = selected["probability_evidence"]
+    envelope: Round21ProbabilityEnvelope | None = None
+    if evidence is None:
+        if selected["probability_evidence_sha256"] is not None:
+            raise ValueError("Round 21 prospective probability evidence differs")
+    else:
+        if not isinstance(evidence, Mapping):
+            raise TypeError(
+                "Round 21 prospective probability evidence is not an object"
+            )
+        evidence_payload = dict(evidence)
+        if (
+            set(evidence_payload)
+            != {
+                "probability_up",
+                "lower_up",
+                "upper_up",
+                "feature_support_eligible",
+                "source_probability_batch_sha256",
+                "feature_row_sha256",
+                "evidence_sha256",
+            }
+            or any(
+                not isinstance(evidence_payload[name], str)
+                for name in (
+                    "probability_up",
+                    "lower_up",
+                    "upper_up",
+                    "source_probability_batch_sha256",
+                    "feature_row_sha256",
+                    "evidence_sha256",
+                )
+            )
+            or type(evidence_payload["feature_support_eligible"]) is not bool
+        ):
+            raise ValueError("Round 21 prospective probability evidence differs")
+        try:
+            envelope = Round21ProbabilityEnvelope.create(
+                condition_id=selected["condition_id"],
+                decision_time_ms=selected["decision_time_ms"],
+                probability_up=Decimal(evidence_payload["probability_up"]),
+                lower_up=Decimal(evidence_payload["lower_up"]),
+                upper_up=Decimal(evidence_payload["upper_up"]),
+                model_layer=selected["population_layer"],
+                source_model_artifact_sha256=selected["source_model_artifact_sha256"],
+                source_probability_batch_sha256=evidence_payload[
+                    "source_probability_batch_sha256"
+                ],
+                feature_row_sha256=evidence_payload["feature_row_sha256"],
+                feature_support_eligible=evidence_payload["feature_support_eligible"],
+            ).validated()
+        except (ArithmeticError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 21 prospective probability evidence differs"
+            ) from exc
+        if (
+            selected["probability_evidence_sha256"] != envelope.evidence_sha256
+            or evidence_payload["evidence_sha256"] != envelope.evidence_sha256
+        ):
+            raise ValueError("Round 21 prospective probability evidence differs")
+
+    try:
+        prediction = Round21ProspectivePrediction(
+            status=selected["status"],
+            reason=selected["reason"],
+            reset_reason=selected["reset_reason"],
+            condition_id=selected["condition_id"],
+            event_start_ms=selected["event_start_ms"],
+            decision_time_ms=selected["decision_time_ms"],
+            observed_at_ms=selected["observed_at_ms"],
+            source_maximum_receipt_ms=selected["source_maximum_receipt_ms"],
+            history_row_count=selected["history_row_count"],
+            population_layer=selected["population_layer"],
+            source_causal_row_sha256=selected["source_causal_row_sha256"],
+            source_model_artifact_sha256=selected["source_model_artifact_sha256"],
+            sealed_result_sha256=selected["sealed_result_sha256"],
+            inference_latency_ns=selected["inference_latency_ns"],
+            envelope=envelope,
+            prediction_sha256=selected["prediction_sha256"],
+            target_accessed=selected["target_accessed"],
+            credentials_used=selected["credentials_used"],
+            account_connected=selected["account_connected"],
+            binance_execution_connected=selected["binance_execution_connected"],
+            grants_execution_authority=selected["grants_execution_authority"],
+            profitability_claim=selected["profitability_claim"],
+            paper_trading_authority=selected["paper_trading_authority"],
+            live_trading_authority=selected["live_trading_authority"],
+        ).validated()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Round 21 prospective prediction differs") from exc
+    if selected != prediction.asdict():
+        raise ValueError("Round 21 prospective prediction serialization differs")
+    return prediction
+
+
 class Round21ProspectiveScorer:
     """Score one accepted sealed candidate without credentials or order authority."""
 
@@ -374,32 +511,38 @@ class Round21ProspectiveScorer:
     ) -> None:
         if not isinstance(sealed_result, Round21SealedEvaluationResult):
             raise TypeError("Round 21 prospective sealed result type differs")
-        selected_artifact = validate_round21_development_artifact(artifact)
         selected_result = sealed_result.validated()
         if not selected_result.candidate_accepted:
             raise ValueError("Round 21 prospective candidate was not accepted")
-        model_sha = str(selected_artifact["artifact_sha256"])
-        if selected_result.predictive.model_artifact_sha256 != model_sha:
-            raise ValueError("Round 21 prospective model and sealed result differ")
         layer = selected_result.selected_population_layer
-        dataset_identity = selected_artifact.get("dataset_and_partition")
-        schema = POLYMARKET_ROUND21_FEATURE_SCHEMA.validated()
-        if not isinstance(dataset_identity, Mapping) or any(
-            dataset_identity.get(name) != expected
-            for name, expected in (
-                ("core_feature_names_sha256", schema.core_names_sha256),
-                ("spot_feature_names_sha256", schema.spot_names_sha256),
-                ("usdm_feature_names_sha256", schema.usdm_names_sha256),
-            )
-        ):
-            raise ValueError("Round 21 prospective feature schema differs")
         if layer not in _LAYERS:
             raise ValueError("Round 21 prospective population layer differs")
+        predictor = compile_round21_probability_predictor(
+            artifact,
+            population_layer=layer,
+        )
+        model_sha = predictor.artifact_sha256
+        if selected_result.predictive.model_artifact_sha256 != model_sha:
+            raise ValueError("Round 21 prospective model and sealed result differ")
+        schema = POLYMARKET_ROUND21_FEATURE_SCHEMA.validated()
+        if (
+            predictor.core_feature_names_sha256 != schema.core_names_sha256
+            or predictor.spot_feature_names_sha256 != schema.spot_names_sha256
+            or predictor.usdm_feature_names_sha256 != schema.usdm_names_sha256
+        ):
+            raise ValueError("Round 21 prospective feature schema differs")
         if not callable(monotonic_ns):
             raise TypeError("Round 21 prospective monotonic clock is invalid")
-        self.artifact = selected_artifact
         self.sealed_result = selected_result
         self.population_layer = layer
+        self.source_model_artifact_sha256 = model_sha
+        self.tcn_training_backend_kind = predictor.tcn_training_backend_kind
+        self.tcn_training_backend_device = predictor.tcn_training_backend_device
+        self.tcn_runtime_backend_kind = predictor.tcn_runtime_backend_kind
+        self.tcn_runtime_backend_device = predictor.tcn_runtime_backend_device
+        self.tcn_backend_substituted = predictor.tcn_backend_substituted
+        self.tcn_accelerator_fallback = predictor.tcn_accelerator_fallback
+        self._predictor = predictor
         self._monotonic_ns = monotonic_ns
         self._history: deque[Round21CausalFeatureRow] = deque(
             maxlen=ROUND21_TCN_SEQUENCE_LENGTH
@@ -464,11 +607,7 @@ class Round21ProspectiveScorer:
                 reason = "selected_optional_feature_layer_unavailable"
             else:
                 panel = build_round21_inference_panel(tuple(self._history))
-                batch = predict_round21_probability_batch(
-                    self.artifact,
-                    population_layer=self.population_layer,
-                    panel=panel,
-                )
+                batch = self._predictor.predict(panel)
                 envelope = Round21ProbabilityEnvelope.from_probability_batch(
                     batch=batch,
                     panel=panel,
@@ -485,7 +624,7 @@ class Round21ProspectiveScorer:
                 observed_at_ms=observed,
                 history_row_count=len(self._history),
                 population_layer=self.population_layer,
-                source_model_artifact_sha256=str(self.artifact["artifact_sha256"]),
+                source_model_artifact_sha256=self._predictor.artifact_sha256,
                 sealed_result_sha256=self.sealed_result.result_sha256,
                 inference_latency_ns=finished - started,
                 envelope=envelope,
@@ -507,4 +646,5 @@ __all__ = [
     "Round21ProspectivePrediction",
     "Round21ProspectiveScorer",
     "build_round21_inference_panel",
+    "validate_round21_prospective_prediction",
 ]

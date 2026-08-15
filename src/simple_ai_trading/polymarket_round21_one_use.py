@@ -27,35 +27,45 @@ from .polymarket_round21_sealed import (
     POLYMARKET_ROUND21_SEALED_DESIGN_SHA256,
     POLYMARKET_ROUND21_SEALED_RESULT_SCHEMA_VERSION,
     Round21SealedEvaluationResult,
+    build_round21_sealed_result_bundle,
     load_round21_sealed_design,
+    validate_round21_sealed_result_bundle,
 )
 
 
 POLYMARKET_ROUND21_PRETEST_MANIFEST_SCHEMA_VERSION = (
-    "polymarket-round21-pretest-manifest-v2"
+    "polymarket-round21-pretest-manifest-v4"
 )
-POLYMARKET_ROUND21_ONE_USE_CLAIM_SCHEMA_VERSION = (
-    "polymarket-round21-one-use-claim-v1"
-)
-POLYMARKET_ROUND21_ONE_USE_STORE_SCHEMA_VERSION = (
-    "polymarket-round21-one-use-store-v1"
-)
-POLYMARKET_ROUND21_TEST_ACCESS_SCHEMA_VERSION = (
-    "polymarket-round21-test-access-v1"
-)
+POLYMARKET_ROUND21_ONE_USE_CLAIM_SCHEMA_VERSION = "polymarket-round21-one-use-claim-v1"
+POLYMARKET_ROUND21_ONE_USE_STORE_SCHEMA_VERSION = "polymarket-round21-one-use-store-v2"
+POLYMARKET_ROUND21_TEST_ACCESS_SCHEMA_VERSION = "polymarket-round21-test-access-v1"
 _LAYERS = ("core", "core_spot", "core_spot_usdm")
 _STATUSES = frozenset({"claim_open", "test_access_consumed", "completed", "failed"})
 _REQUIRED_FILES = (
+    "docs/model-research/polymarket/round-021-causal-feature-policy-v3.json",
+    "docs/model-research/polymarket/round-021-ai-veto-design-v7.json",
+    "docs/model-research/polymarket/round-021-ai-candidate-selection-design-v7.json",
+    "docs/model-research/polymarket/round-021-ai-historical-schedule-design-v7.json",
     "docs/model-research/polymarket/"
-    "round-021-core-corpus-materialization-design-v1.json",
+    "round-021-core-corpus-materialization-design-v3.json",
+    "docs/model-research/polymarket/round-021-executable-action-policy-v2.json",
     "docs/model-research/polymarket/"
     "round-021-independent-matched-edge-contract-v1.json",
+    "docs/model-research/polymarket/round-021-matched-model-design-v9.json",
     "docs/model-research/polymarket/"
-    "round-021-terminal-sealed-evaluation-design-v1.json",
+    "round-021-probability-basis-ablation-design-v1.json",
+    "docs/model-research/polymarket/round-021-probability-envelope-design-v6.json",
+    "docs/model-research/polymarket/round-021-multi-action-policy-design-v8.json",
+    "docs/model-research/polymarket/round-021-economic-replay-design-v6.json",
+    "docs/model-research/polymarket/"
+    "round-021-matched-economic-comparison-design-v6.json",
+    "docs/model-research/polymarket/"
+    "round-021-terminal-sealed-evaluation-design-v7.json",
     "docs/model-research/polymarket/"
     "round-021-terminal-transport-manifest-design-v1.json",
     "src/simple_ai_trading/polymarket_round21_ai.py",
     "src/simple_ai_trading/polymarket_round21_ai_comparison.py",
+    "src/simple_ai_trading/polymarket_round21_ai_operator.py",
     "src/simple_ai_trading/polymarket_round21_ai_selection.py",
     "src/simple_ai_trading/polymarket_round21_comparison.py",
     "src/simple_ai_trading/polymarket_round21_core_features.py",
@@ -63,18 +73,29 @@ _REQUIRED_FILES = (
     "src/simple_ai_trading/polymarket_round21_corpus_store.py",
     "src/simple_ai_trading/polymarket_round21_dataset.py",
     "src/simple_ai_trading/polymarket_round21_execution.py",
+    "src/simple_ai_trading/polymarket_round21_economic_operator.py",
+    "src/simple_ai_trading/polymarket_round21_ablation.py",
     "src/simple_ai_trading/polymarket_round21_model.py",
     "src/simple_ai_trading/polymarket_round21_one_use.py",
+    "src/simple_ai_trading/polymarket_round21_operator.py",
     "src/simple_ai_trading/polymarket_round21_policy.py",
     "src/simple_ai_trading/polymarket_round21_replay.py",
     "src/simple_ai_trading/polymarket_round21_sealed.py",
+    "src/simple_ai_trading/polymarket_round21_sealed_operator.py",
+    "src/simple_ai_trading/polymarket_round21_sidecar_replay.py",
+    "src/simple_ai_trading/polymarket_round21_sidecar_terminal.py",
     "src/simple_ai_trading/polymarket_round21_terminal.py",
+    "src/simple_ai_trading/polymarket_round21_tcn.py",
+    "src/simple_ai_trading/polymarket_ai_veto.py",
     "tests/test_polymarket_round21_core_features.py",
     "tests/test_polymarket_round21_corpus.py",
     "tests/test_polymarket_round21_corpus_store.py",
+    "tests/test_polymarket_round21_ablation.py",
     "tests/test_polymarket_round21_one_use.py",
     "tests/test_polymarket_round21_sealed.py",
+    "tests/test_polymarket_round21_sealed_operator.py",
     "tests/test_polymarket_round21_terminal.py",
+    "tests/test_polymarket_round21_tcn.py",
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _GIT_OID = re.compile(r"^[0-9a-f]{40,64}$")
@@ -224,14 +245,10 @@ class Round21PretestManifest:
             "development_optional_comparison_sha256": (
                 self.development_optional_comparison_sha256
             ),
-            "development_ai_selection_sha256": (
-                self.development_ai_selection_sha256
-            ),
+            "development_ai_selection_sha256": (self.development_ai_selection_sha256),
             "nominated_ai_model": self.nominated_ai_model,
             "nominated_ai_model_digest": self.nominated_ai_model_digest,
-            "nominated_ai_comparison_sha256": (
-                self.nominated_ai_comparison_sha256
-            ),
+            "nominated_ai_comparison_sha256": (self.nominated_ai_comparison_sha256),
             "repository_commit_oid": self.repository_commit_oid,
             "repository_tree_oid": self.repository_tree_oid,
             "repository_file_sha256": dict(sorted(self.repository_file_sha256.items())),
@@ -268,8 +285,7 @@ class Round21PretestManifest:
                     self.manifest_sha256,
                 )
             )
-            or optional_required
-            != (self.optional_campaign_terminal_sha256 is not None)
+            or optional_required != (self.optional_campaign_terminal_sha256 is not None)
             or optional_required
             != (self.development_optional_comparison_sha256 is not None)
             or any(
@@ -471,7 +487,9 @@ class Round21OneUseClaim:
             or (ai_pair[0] is not None and not str(ai_pair[0]).strip())
             or (
                 ai_pair[1] is not None
-                and (_SHA256.fullmatch(ai_pair[1]) is None or ai_pair[1] == _EMPTY_SHA256)
+                and (
+                    _SHA256.fullmatch(ai_pair[1]) is None or ai_pair[1] == _EMPTY_SHA256
+                )
             )
             or self.opened_at_ms <= 0
             or self.claim_sha256 != _canonical_sha256(self.identity_payload())
@@ -542,8 +560,7 @@ def _claim_from_mapping(value: Mapping[str, object]) -> Round21OneUseClaim:
         set(value) != expected
         or value.get("schema_version")
         != POLYMARKET_ROUND21_ONE_USE_CLAIM_SCHEMA_VERSION
-        or value.get("sealed_design_sha256")
-        != POLYMARKET_ROUND21_SEALED_DESIGN_SHA256
+        or value.get("sealed_design_sha256") != POLYMARKET_ROUND21_SEALED_DESIGN_SHA256
         or any(value.get(name) is not False for name in false_fields)
     ):
         raise ValueError("Round 21 one-use claim schema differs")
@@ -570,6 +587,25 @@ def _claim_from_mapping(value: Mapping[str, object]) -> Round21OneUseClaim:
         ).validated()
     except (KeyError, TypeError, ValueError, OverflowError) as exc:
         raise ValueError("Round 21 one-use claim schema differs") from exc
+
+
+def load_round21_one_use_claim(path: str | Path) -> Round21OneUseClaim:
+    """Load one strict, bounded, non-symlink claim artifact."""
+
+    selected = Path(path)
+    if selected.is_symlink() or not selected.is_file():
+        raise ValueError("Round 21 one-use claim is unavailable")
+    try:
+        raw = selected.read_bytes()
+    except OSError as exc:
+        raise ValueError("Round 21 one-use claim is unavailable") from exc
+    if not raw or len(raw) > _MAXIMUM_JSON_BYTES:
+        raise ValueError("Round 21 one-use claim is unavailable")
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeError as exc:
+        raise ValueError("Round 21 one-use claim is invalid") from exc
+    return _claim_from_mapping(_strict_json(text, label="Round 21 one-use claim"))
 
 
 def _test_access_payload(
@@ -748,14 +784,20 @@ class Round21OneUseStore:
         observed_at_ms: int | None = None,
     ) -> str:
         selected = claim.validated()
-        now = time.time_ns() // 1_000_000 if observed_at_ms is None else int(observed_at_ms)
+        now = (
+            time.time_ns() // 1_000_000
+            if observed_at_ms is None
+            else int(observed_at_ms)
+        )
         if now < selected.opened_at_ms:
             raise ValueError("Round 21 test access time differs")
         self.connection.execute("BEGIN IMMEDIATE")
         try:
             row = self._row(selected)
             if row["status"] != "claim_open" or row["test_access_sha256"] is not None:
-                raise RuntimeError("Round 21 test access is already consumed or terminal")
+                raise RuntimeError(
+                    "Round 21 test access is already consumed or terminal"
+                )
             payload = _test_access_payload(selected, now)
             access_sha256 = _canonical_sha256(payload)
             self.connection.execute(
@@ -814,7 +856,11 @@ class Round21OneUseStore:
     ) -> Round21SealedEvaluationResult:
         selected = claim.validated()
         sealed = result.validated()
-        now = time.time_ns() // 1_000_000 if observed_at_ms is None else int(observed_at_ms)
+        now = (
+            time.time_ns() // 1_000_000
+            if observed_at_ms is None
+            else int(observed_at_ms)
+        )
         if (
             now <= 0
             or sealed.claim_sha256 != selected.claim_sha256
@@ -825,7 +871,8 @@ class Round21OneUseStore:
             != (selected.nominated_ai_model, selected.nominated_ai_model_digest)
         ):
             raise ValueError("Round 21 sealed result claim differs")
-        raw = _canonical_json(sealed.asdict())
+        bundle = build_round21_sealed_result_bundle(sealed)
+        raw = _canonical_json(bundle)
         if len(raw.encode("ascii")) > _MAXIMUM_JSON_BYTES:
             raise ValueError("Round 21 sealed result is too large")
         self.connection.execute("BEGIN IMMEDIATE")
@@ -866,8 +913,16 @@ class Round21OneUseStore:
     ) -> None:
         selected = claim.validated()
         selected_reason = str(reason or "").strip()
-        now = time.time_ns() // 1_000_000 if observed_at_ms is None else int(observed_at_ms)
-        if not selected_reason or len(selected_reason) > 500 or now < selected.opened_at_ms:
+        now = (
+            time.time_ns() // 1_000_000
+            if observed_at_ms is None
+            else int(observed_at_ms)
+        )
+        if (
+            not selected_reason
+            or len(selected_reason) > 500
+            or now < selected.opened_at_ms
+        ):
             raise ValueError("Round 21 one-use failure differs")
         failure = {
             "schema_version": "polymarket-round21-one-use-failure-v1",
@@ -996,7 +1051,9 @@ class Round21OneUseStore:
         previous_time = 0
         event_payloads: list[dict[str, object]] = []
         for event in events:
-            payload = _strict_json(str(event["event_json"]), label="stored Round 21 event")
+            payload = _strict_json(
+                str(event["event_json"]), label="stored Round 21 event"
+            )
             if (
                 set(payload)
                 != {
@@ -1021,11 +1078,20 @@ class Round21OneUseStore:
             previous_time = int(payload["observed_at_ms"])
             previous = str(event["event_sha256"])
             event_payloads.append(payload)
-        result = (
+        result_bundle = (
             None
             if row["result_json"] is None
-            else _strict_json(str(row["result_json"]), label="stored Round 21 result")
+            else _strict_json(
+                str(row["result_json"]),
+                label="stored Round 21 result bundle",
+            )
         )
+        stored_result = (
+            None
+            if result_bundle is None
+            else validate_round21_sealed_result_bundle(result_bundle)
+        )
+        result = None if stored_result is None else stored_result.asdict()
         failure = (
             None
             if row["failure_json"] is None
@@ -1064,8 +1130,7 @@ class Round21OneUseStore:
                 != POLYMARKET_ROUND21_SEALED_RESULT_SCHEMA_VERSION
                 or result.get("design_sha256")
                 != POLYMARKET_ROUND21_SEALED_DESIGN_SHA256
-                or result.get("contract_sha256")
-                != POLYMARKET_ROUND21_CONTRACT_SHA256
+                or result.get("contract_sha256") != POLYMARKET_ROUND21_CONTRACT_SHA256
                 or claimed != row["result_sha256"]
                 or claimed != _canonical_sha256(body)
                 or result.get("claim_sha256") != claim.claim_sha256
@@ -1096,8 +1161,7 @@ class Round21OneUseStore:
                 "reason",
                 "return_to_development",
             }
-            or failure.get("schema_version")
-            != "polymarket-round21-one-use-failure-v1"
+            or failure.get("schema_version") != "polymarket-round21-one-use-failure-v1"
             or failure.get("claim_sha256") != claim.claim_sha256
             or failure.get("return_to_development") is not False
             or not str(failure.get("reason") or "").strip()
@@ -1123,8 +1187,7 @@ class Round21OneUseStore:
                 and (
                     event_payloads[1]["details"]
                     != {"test_access_sha256": row["test_access_sha256"]}
-                    or event_payloads[1]["observed_at_ms"]
-                    != row["access_started_ms"]
+                    or event_payloads[1]["observed_at_ms"] != row["access_started_ms"]
                 )
             )
             or (
@@ -1137,8 +1200,7 @@ class Round21OneUseStore:
                 and (
                     event_payloads[-1]["details"]
                     != {"failure_sha256": _canonical_sha256(failure)}
-                    or event_payloads[-1]["observed_at_ms"]
-                    != failure["failed_at_ms"]
+                    or event_payloads[-1]["observed_at_ms"] != failure["failed_at_ms"]
                 )
             )
         ):
@@ -1150,6 +1212,7 @@ class Round21OneUseStore:
             "test_access_sha256": row["test_access_sha256"],
             "test_access_consumed": row["test_access_sha256"] is not None,
             "result": result,
+            "result_bundle": result_bundle,
             "failure": failure,
             "event_count": len(events),
             "event_chain_head_sha256": previous,
@@ -1184,6 +1247,20 @@ def execute_round21_one_use(
             raise
 
 
+def load_round21_completed_sealed_bundle(
+    store_path: str | Path,
+) -> dict[str, object]:
+    """Recover a completed bundle without reopening sealed-test access."""
+
+    with Round21OneUseStore(store_path) as store:
+        snapshot = store.snapshot()
+    bundle = snapshot.get("result_bundle")
+    if snapshot.get("status") != "completed" or not isinstance(bundle, Mapping):
+        raise ValueError("Round 21 completed sealed bundle is unavailable")
+    validate_round21_sealed_result_bundle(bundle)
+    return dict(bundle)
+
+
 credentials_used = False
 account_connected = False
 binance_execution_connected = False
@@ -1203,4 +1280,6 @@ __all__ = [
     "build_round21_pretest_manifest",
     "create_round21_one_use_claim",
     "execute_round21_one_use",
+    "load_round21_completed_sealed_bundle",
+    "load_round21_one_use_claim",
 ]

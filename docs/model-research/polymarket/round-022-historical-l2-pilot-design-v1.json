@@ -1,0 +1,194 @@
+{
+  "authority": {
+    "ai_edge_claim": false,
+    "execution_calibration": false,
+    "live_trading": false,
+    "model_data_eligible": false,
+    "paper_trading": false,
+    "profitability_claim": false,
+    "promotion": false
+  },
+  "data_contract": {
+    "asset": "BTC",
+    "condition_duration_seconds": 300,
+    "excluded_slugs_source": "round-022-historical-l2-source-qualification-2026-08-03.json",
+    "feature_cadence_ms": 1000,
+    "full_book_source": "https://clob.polymarket.com/orderbook-history",
+    "maximum_book_staleness_ms": 1000,
+    "minimum_closed_age_ms": 600000,
+    "polymarket_series_id": "10684",
+    "required_outcomes": [
+      "Up",
+      "Down"
+    ],
+    "sequence_cadence_ms": 250,
+    "sequence_length": 16,
+    "settlement_target": "official_fixed_resolution_binary_outcome",
+    "target_separation": "separate_target_schema_unavailable_to_feature_materialization"
+  },
+  "economics": {
+    "adverse_execution_scenarios": {
+      "additional_adverse_ticks": [
+        0,
+        1
+      ],
+      "displayed_depth_haircuts": [
+        0.0,
+        0.25
+      ],
+      "server_state_delays_ms": [
+        250,
+        500,
+        1000
+      ]
+    },
+    "execution": "FAK displayed-depth walk at the delayed full-book state",
+    "fees": "exact market-specific fee schedule from source-bound market identity",
+    "inventory_actions": [
+      "abstain",
+      "buy_up",
+      "buy_down",
+      "sell_bot_owned_up",
+      "sell_bot_owned_down",
+      "lock_paired_payout"
+    ],
+    "maker_fill_or_queue_claim": false,
+    "midpoint_fill_allowed": false,
+    "short_without_inventory_allowed": false,
+    "stress_grid_interpretation": "sensitivity scenarios, not measured transport latency"
+  },
+  "expansion_gate": {
+    "full_backfill_before_pilot_pass": false,
+    "required_development_predictive_gates": {
+      "market_cluster_bootstrap_improvement_probability_minimum": 0.95,
+      "out_of_sample_brier_score_better_than_executable_market_prior": true,
+      "out_of_sample_log_loss_better_than_executable_market_prior": true
+    },
+    "required_tune_selection_economic_gates_for_every_stress_scenario": {
+      "closed_position_count_minimum": 48,
+      "maximum_drawdown_fraction_maximum": 0.02,
+      "net_pnl_positive": true,
+      "profit_factor_minimum": 1.1
+    },
+    "round20_transport_calibration_required_before_promotion": true,
+    "sealed_test_access_before_development_pass": false
+  },
+  "feature_policy": {
+    "core_polymarket_only": [
+      "executable_up_probability_prior",
+      "up_down_complement_consistency",
+      "spread_by_outcome",
+      "microprice_by_outcome",
+      "top_1_5_10_20_depth_imbalance",
+      "depth_slope_and_convexity",
+      "fixed_notional_price_impact",
+      "state_delta_add_cancel_intensity_without_trade_direction",
+      "implied_probability_return_and_volatility",
+      "book_age",
+      "time_to_settlement"
+    ],
+    "future_books_allowed": false,
+    "inferred_trade_direction_allowed": false,
+    "optional_binance_predictor": {
+      "account_or_execution_data_allowed": false,
+      "absence_blocks_core": false,
+      "credentials_allowed": false,
+      "public_btcusdt_spot_and_usdm_only": true,
+      "separate_matched_ablation_required": true
+    },
+    "source_timestamp_rule": "latest strict-prior full-book state at each causal row",
+    "target_or_resolution_features_allowed": false
+  },
+  "models": {
+    "calibration": "market-clustered isotonic or Platt selected on tune_calibration only",
+    "candidates": [
+      "market_executable_probability_prior",
+      "regularized_logistic_residual",
+      "shallow_lightgbm_residual",
+      "compact_causal_tcn_residual"
+    ],
+    "losses": [
+      "market_cluster_weighted_log_loss",
+      "market_cluster_weighted_brier_score"
+    ],
+    "market_prior_is_mandatory_control": true,
+    "model_selection": "one-standard-error rule on tune_selection market clusters",
+    "row_as_independent_sample_allowed": false
+  },
+  "parents": {
+    "historical_l2_source_qualification_sha256": "3564d59d97899f9defae77c19655e942062342ac96f0f2365b6f9a75f5d7f050"
+  },
+  "pilot_population": {
+    "hours_utc_per_day": [
+      0,
+      6,
+      12,
+      18
+    ],
+    "market_count_expected": 576,
+    "partitions": {
+      "sealed_test": {
+        "days_utc": [
+          "2026-07-20",
+          "2026-07-27"
+        ],
+        "market_count_expected": 96,
+        "one_use": true
+      },
+      "train": {
+        "days_utc": [
+          "2026-04-27",
+          "2026-05-04",
+          "2026-05-11",
+          "2026-05-18",
+          "2026-05-25",
+          "2026-06-08"
+        ],
+        "market_count_expected": 288
+      },
+      "tune_calibration": {
+        "days_utc": [
+          "2026-06-15",
+          "2026-06-29"
+        ],
+        "market_count_expected": 96
+      },
+      "tune_selection": {
+        "days_utc": [
+          "2026-07-06",
+          "2026-07-13"
+        ],
+        "market_count_expected": 96
+      }
+    },
+    "selection_rule": "all twelve five-minute conditions beginning in each selected UTC hour",
+    "stratification": "four UTC clock blocks per selected day"
+  },
+  "research_basis": {
+    "openmarket_null_result": "https://arxiv.org/abs/2607.26245",
+    "polymarket_microstructure": "https://arxiv.org/abs/2604.24366",
+    "settlement_manipulation": "https://arxiv.org/abs/2606.31675"
+  },
+  "risk_policy": {
+    "cooldown_after_consecutive_losing_conditions": 3,
+    "cooldown_minutes": 30,
+    "daily_loss_fraction_maximum": 0.005,
+    "drawdown_halt_fraction": 0.02,
+    "leverage_allowed": false,
+    "maximum_condition_worst_case_fraction": 0.0025,
+    "maximum_total_worst_case_fraction": 0.01,
+    "profile": "conservative"
+  },
+  "round": 22,
+  "schema_version": "polymarket-round22-historical-l2-pilot-design-v1",
+  "status": "frozen_before_bulk_ingestion_or_target_access",
+  "storage": {
+    "atomic_condition_commits": true,
+    "database": "one DuckDB for this pilot with separate feature and target schemas",
+    "duplicate_raw_payload_copies": false,
+    "resume_by_hash_bound_condition_manifest": true,
+    "snapshot_codec": "canonical-json-zstd-3",
+    "write_policy": "single sequential writer with bounded in-memory pages and checkpoint on clean close"
+  },
+  "design_sha256": "b37a9475d8b6ad0b4d2e9c53de3756baf44341f6e6d5097579052db7b99d1d2a"
+}

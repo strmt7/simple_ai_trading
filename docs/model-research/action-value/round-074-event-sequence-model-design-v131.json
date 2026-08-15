@@ -1,0 +1,105 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v131",
+  "artifact_kind": "variable_epistemic_population_integration",
+  "created_utc": "2026-08-03T10:25:54.2745970Z",
+  "supersedes_artifact_sha256": "1537b663c96fb21d3b63664cd227b3c3d837717d6bc5f08d1efee32822244340",
+  "implementation_git_commit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "source_binding": {
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_epistemic_evaluation.py",
+        "sha256": "5d7a829b44dd95bfab0bcfb43d3144a0457fa8eaac153636a304f3a196eb6463"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_epistemic_policy.py",
+        "sha256": "7b53ccd5702427d18ed45babbeb95a167cf8032110b190d45069de1432e623e9"
+      }
+    ],
+    "affected_tests": [
+      {
+        "path": "tests/test_impact_absorption_event_epistemic_evaluation.py",
+        "sha256": "eeb548742fe5dedc565ca2690b6bdb7246668c4412df096bb6f677ae41bd4ca7"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_action_policy.py",
+        "sha256": "e25cf7645c9dfd9e91c77214447e17c0401f887a0404bd13bbe90589f0c34b9d"
+      }
+    ],
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v130.json",
+      "sha256": "2273799821f27e832ad76189512c0c1a14b26d9f8610b18006dce58009bbdc87"
+    }
+  },
+  "schema_contract": {
+    "epistemic_risk_coverage": "round-074-epistemic-risk-coverage-v2",
+    "epistemic_action_filter": "round-074-epistemic-action-filter-v2",
+    "epistemic_action_filter_application": "round-074-epistemic-action-filter-application-v1",
+    "epistemic_action_replay_challenge": "round-074-epistemic-action-replay-challenge-v2"
+  },
+  "defect": {
+    "prior_epistemic_policy_selection_population_required_exactly": 6,
+    "segmented_policy_selection_population_is_transport_adjudicated": true,
+    "complete_segmented_epistemic_evaluation_producible_before_delta": false,
+    "complete_segmented_epistemic_challenge_producible_before_delta": false
+  },
+  "declared_delta": {
+    "summary": "Treat six policy-selection runs as the statistical minimum while requiring every supplied frozen run through risk-coverage evaluation, filter fitting, application, and exact delayed-L2 challenge replay.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "feature_definition_changed": false,
+    "uncertainty_metric_changed": false,
+    "bootstrap_method_changed": false,
+    "familywise_confidence_changed": false,
+    "filter_rejection_budgets_changed": false,
+    "action_policy_thresholds_changed": false,
+    "financial_gate_changed": false,
+    "ai_uplift_gate_changed": false,
+    "epistemic_population_binding_changed": true,
+    "runtime_trading_path_changed": false
+  },
+  "epistemic_population_contract": {
+    "minimum_policy_selection_runs": 6,
+    "minimum_is_not_an_exact_population_size": true,
+    "expected_run_order_must_match_observed_batches": true,
+    "every_expected_run_must_have_one_batch": true,
+    "risk_coverage_report_persists_complete_run_population": true,
+    "filter_source_must_equal_report_population": true,
+    "filter_applications_must_equal_filter_population": true,
+    "challenge_batches_outputs_and_candidates_must_equal_filter_population": true,
+    "duplicate_run_batch_or_model_output_identity_rejected": true,
+    "target_free_filter_fit_retained": true,
+    "exact_delayed_l2_challenge_retained": true,
+    "sealed_test_target_or_batch_accessed": false
+  },
+  "verification": {
+    "affected_checkpoint_tests_passed": 29,
+    "seven_run_risk_coverage_report_tested": true,
+    "seven_run_target_free_filter_fit_tested": true,
+    "nineteen_run_segmented_delayed_l2_challenge_tested": true,
+    "six_run_legacy_population_tested": true,
+    "five_run_population_rejected": true,
+    "report_filter_and_challenge_round_trips_tested": true,
+    "representative_market_training_run": false,
+    "representative_market_backtest_run": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "representative_configuration_selected": false,
+    "representative_ai_qualification_completed": false,
+    "representative_sealed_evaluation_completed": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "3157c0c0646ec57e1b49ba12fc7487c5d2a66e17b81154462ad41b353f49e4eb"
+}

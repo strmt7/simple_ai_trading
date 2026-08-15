@@ -1,0 +1,129 @@
+{
+  "schema_version": "polymarket-round21-terminal-sealed-evaluation-design-v4",
+  "round": 21,
+  "status": "preregistered_during_capture_before_terminal_capture_target_or_model_outcome_access",
+  "parents": {
+    "round21_terminal_sealed_evaluation_design_v2_sha256": "3e4625907637f7f5cc987292ed93a679bf5c82a15b8e2942e2ffdc054aa22c45",
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba",
+    "round21_feature_policy_sha256": "a55408ebb99180cdfd21b443a924002ffd9cc1443b54ae1f882b49a38ae8ce70",
+    "round21_model_design_sha256": "3b90f4fb0940dccccd5dd673c27257882531685a2c7a1181659924cadc4ffab0",
+    "round21_multi_action_policy_sha256": "ceb359a486790d55d85fd19f7f1d5a6a62068af15e9429df39d95b77f6120f35",
+    "round21_execution_policy_sha256": "c49e6eef0642a68810d8aefafc6a303b2ec9c8a7bbce703b8f05167baba69bd9",
+    "round21_economic_replay_design_sha256": "b29cb8edb600fe74c7642b071504b461e928a7f39aefab7981f0eabf80e08316",
+    "round21_matched_comparison_design_sha256": "1f5aeb1c08b677060043248ad9e663d2eda0b1e74defd3fb741a9364272c53f6",
+    "round21_ai_veto_design_sha256": "2ce78e959d902201a1d4e050d521f1a9ff072b0800575e95e1b92ce1f80661fc",
+    "round21_ai_historical_schedule_design_sha256": "b07f940f99ec395635c8efe05e8159d7afc1132f0100747269453d7d5499529f",
+    "round21_ai_selection_design_sha256": "162cc4d035a39eb39b49c4f0453af3bb2c0201708c8b2afae8cc453dd867ce11",
+    "round21_sidecar_campaign_design_sha256": "f29f272c7e1d072f5723b029d8c867c9ceb26b9a70eef3603e81360faae5c27c",
+    "round21_terminal_sealed_evaluation_design_v3_sha256": "bfada49d51e2d63a47935babbb6046da4dd82c583100247915151015b5acd71b"
+  },
+  "supersession": {
+    "change": "bind_sealed_evaluation_to_target_blind_round21_model_design_v6_chain",
+    "candidate_count_changed": false,
+    "predictive_model_families_changed": false,
+    "execution_or_economic_gate_changed": false,
+    "capture_data_used_for_change": false,
+    "targets_used_for_change": false,
+    "market_outcomes_used_for_change": false
+  },
+  "external_null_benchmark": {
+    "source": "https://arxiv.org/abs/2607.26245",
+    "source_version_date": "2026-07-31",
+    "finding": "no_out_of_sample_tradable_edge_for_published_15_minute_logistic_baseline_after_stated_costs",
+    "use": "negative_control_and_no_edge_prior_not_training_data",
+    "source_clock_offset_ambiguity_must_not_define_causal_order": true,
+    "collector_receipt_clock_sensitivity_required": true,
+    "market_prior_control_required": true,
+    "after_cost_execution_required": true,
+    "observed_quote_response_median_ms": 347,
+    "frozen_submission_delay_stress_ms": [
+      250,
+      500,
+      1000
+    ]
+  },
+  "development_seal": {
+    "terminal_core_campaign_required": true,
+    "optional_sidecar_failure_blocks_core": false,
+    "whole_condition_role_assignment_before_outcome_access": true,
+    "development_artifact_validated_before_test_claim": true,
+    "selected_layer_fixed_from_development_only": true,
+    "all_81_profile_scenario_ledgers_bound": true,
+    "ai_candidates_finite_and_development_only": [
+      "qwen3.5:9b",
+      "fin-r1:8b",
+      "fino1:8b"
+    ],
+    "no_test_refit_recalibration_threshold_or_policy_change": true,
+    "sealed_result_ai_identity_must_equal_development_nomination": true
+  },
+  "one_use_state_machine": {
+    "states": [
+      "empty",
+      "claim_open",
+      "test_access_consumed",
+      "completed",
+      "failed"
+    ],
+    "claim_persisted_before_test_feature_target_execution_access": true,
+    "single_claim_per_store": true,
+    "append_only_hash_chained_events": true,
+    "process_failure_after_access_is_terminal": true,
+    "failed_or_completed_claim_reopens_test": false,
+    "return_to_development_after_test_access": false,
+    "result_binds_predeclared_test_population": true
+  },
+  "sealed_predictive_gate": {
+    "minimum_resolved_conditions": 1800,
+    "minimum_calendar_days": 7,
+    "condition_equal_weighting": true,
+    "controls": [
+      "structural_probability_raw",
+      "structural_probability_calibrated",
+      "executable_market_prior_raw",
+      "executable_market_prior_calibrated",
+      "training_prevalence"
+    ],
+    "required_scores": [
+      "condition_equal_log_loss",
+      "condition_equal_brier_score",
+      "calibration_intercept",
+      "calibration_slope",
+      "expected_calibration_error",
+      "balanced_accuracy",
+      "matthews_correlation_coefficient"
+    ],
+    "paired_bootstrap_samples": 2000,
+    "acceptance": "candidate_log_loss_and_brier_strictly_better_than_every_control_with_positive_paired_lower_95"
+  },
+  "sealed_economic_gate": {
+    "ledger_count": 81,
+    "profiles": [
+      "conservative",
+      "regular",
+      "aggressive"
+    ],
+    "execution_scenarios": "all_frozen_delay_depth_and_adverse_tick_combinations",
+    "every_ledger_must_pass": true,
+    "unknown_execution_or_risk_violation_count": 0,
+    "optional_uplift_uses_exact_matched_population": true,
+    "ai_uplift_uses_only_development_nominated_model_or_none": true
+  },
+  "promotion": {
+    "automatic": false,
+    "sealed_acceptance_is_live_authority": false,
+    "prospective_shadow_required": true,
+    "authenticated_execution_qualification_required": true,
+    "offchain_fill_without_finalized_ownership_is_terminal_inventory": false
+  },
+  "authority": {
+    "targets_accessed": false,
+    "model_scores_accessed": false,
+    "automatic_promotion": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "050cde2253be244e690170ab67cd99ba51da57ba41b3a6864e8943ca05e359d1"
+}

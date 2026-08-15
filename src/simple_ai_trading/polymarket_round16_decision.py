@@ -16,7 +16,10 @@ from .polymarket import (
     validate_clob_order_book,
 )
 from .polymarket_autonomous import PolymarketAutonomousOpenProposal
-from .polymarket_autonomous_runtime import PolymarketAutonomousDecision
+from .polymarket_autonomous_runtime import (
+    PolymarketAutonomousDecision,
+    PolymarketAutonomousPortfolio,
+)
 from .polymarket_live import PolymarketLiveBlocked
 from .polymarket_live_promotion import VerifiedPolymarketLivePromotion
 from .polymarket_round16 import ROUND16_DECISION_OFFSETS_SECONDS
@@ -127,6 +130,7 @@ class PolymarketRound16PromotedDecisionProvider:
         *,
         decision_time_ms: int,
         observed_at_ms: int,
+        portfolio: PolymarketAutonomousPortfolio,
     ) -> PolymarketAutonomousDecision:
         shadow = self.scorer.evaluate(
             event_start_ms=market.event_start_ms,
@@ -187,6 +191,11 @@ class PolymarketRound16PromotedDecisionProvider:
             self.requested_quantity,
             "taker",
         )
+        projected_inventory_downside = worst_price * self.requested_quantity + worst_fee
+        if projected_inventory_downside > (
+            portfolio.risk_state.maximum_current_condition_downside_quote
+        ):
+            return self._no_proposal("live_risk_headroom_insufficient")
         edge = selected_probability - worst_price - worst_fee / self.requested_quantity
         if edge < self.promotion.promotion.minimum_expected_edge_quote_per_share:
             return self._no_proposal("insufficient_after_cost_edge")
@@ -213,6 +222,12 @@ class PolymarketRound16PromotedDecisionProvider:
                     self.requested_quantity,
                     "f",
                 ),
+                "portfolio_sha256": portfolio.portfolio_sha256,
+                "risk_state_sha256": portfolio.risk_state.risk_state_sha256,
+                "maximum_projected_inventory_downside_quote": format(
+                    portfolio.risk_state.maximum_current_condition_downside_quote,
+                    "f",
+                ),
                 "decision_time_ms": decision_time_ms,
                 "book_requested_at_ms": requested_at_ms,
                 "book_received_at_ms": received_at_ms,
@@ -232,6 +247,10 @@ class PolymarketRound16PromotedDecisionProvider:
             outcome=outcome,
             selected_outcome_probability=selected_probability,
             requested_quantity=self.requested_quantity,
+            risk_state_sha256=portfolio.risk_state.risk_state_sha256,
+            maximum_projected_inventory_downside_quote=(
+                portfolio.risk_state.maximum_current_condition_downside_quote
+            ),
             event_start_time_ms=market.event_start_ms,
             event_end_time_ms=market.end_ms,
             decision_time_ms=decision_time_ms,
@@ -244,6 +263,7 @@ class PolymarketRound16PromotedDecisionProvider:
         *,
         markets: tuple[PolymarketFiveMinuteMarket, ...],
         observed_at_ms: int,
+        portfolio: PolymarketAutonomousPortfolio | None = None,
     ) -> PolymarketAutonomousDecision:
         now = int(observed_at_ms)
         self.promotion.assert_live_authority(observed_at_ms=now)
@@ -254,6 +274,26 @@ class PolymarketRound16PromotedDecisionProvider:
         market = markets[0]
         if market.asset != "BTC" or market.horizon_minutes != 15:
             raise PolymarketLiveBlocked("Round 16 decision market identity differs")
+        if (
+            not isinstance(portfolio, PolymarketAutonomousPortfolio)
+            or portfolio.condition_id != market.condition_id
+        ):
+            raise PolymarketLiveBlocked(
+                "Round 16 decision requires the bound live-risk portfolio"
+            )
+        if (
+            portfolio.lots
+            or portfolio.accounting.confirmed_fill_count
+            or portfolio.accounting.gross_buy_cost_quote > 0
+        ):
+            return self._no_proposal("round16_existing_or_historical_event_exposure")
+        if not portfolio.risk_state.entry_allowed:
+            reason = (
+                portfolio.risk_state.entry_block_reasons[0]
+                if portfolio.risk_state.entry_block_reasons
+                else "live_risk_entry_blocked"
+            )
+            return self._no_proposal(reason)
         decision_time = self._scheduled_decision(
             market,
             observed_at_ms=now,
@@ -270,6 +310,7 @@ class PolymarketRound16PromotedDecisionProvider:
                 market,
                 decision_time_ms=decision_time,
                 observed_at_ms=now,
+                portfolio=portfolio,
             )
         except BaseException:
             with self._lock:

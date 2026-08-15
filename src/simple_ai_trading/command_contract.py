@@ -87,7 +87,11 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
             "polymarket-continuity",
             "polymarket-features",
             "polymarket-action-value",
+            "polymarket-round21-terminal",
+            "polymarket-round21-sidecar-terminal",
             "polymarket-round21-corpus",
+            "polymarket-round21-recover-sealed",
+            "polymarket-round21-shadow",
         ),
     ),
     (
@@ -95,6 +99,11 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         "Polymarket models",
         (
             "polymarket-model",
+            "polymarket-round21-ablate-basis",
+            "polymarket-round21-fit-core",
+            "polymarket-round21-fit-matched",
+            "polymarket-round21-evaluate-development",
+            "polymarket-round21-ai-development",
             "polymarket-ridge",
             "polymarket-mlp",
             "polymarket-verify",
@@ -141,8 +150,15 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ),
     (
         "Research",
+        "Impact model development",
+        ("binance-round74-develop",),
+    ),
+    (
+        "Research",
         "Impact holdout confirmation",
         (
+            "binance-round74-sealed-evaluate",
+            "binance-round74-recover-sealed",
             "impact-role-target-stage",
             "impact-model-fit",
             "impact-test-unlock",

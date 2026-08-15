@@ -44,17 +44,17 @@ from .polymarket_round21_terminal import (
 
 
 POLYMARKET_ROUND21_CORE_CORPUS_DESIGN_SCHEMA_VERSION = (
-    "polymarket-round21-core-corpus-materialization-design-v1"
+    "polymarket-round21-core-corpus-materialization-design-v3"
 )
 POLYMARKET_ROUND21_CORE_CORPUS_DESIGN_SHA256 = (
-    "a5ef5445ec0381540dd675784d711873b0d644dd0ef44462f12e71d131e133eb"
+    "0ec926fce06713bd022d493952c53ac8d9bb960fa912a1435d1a3d39cca2de2f"
 )
 POLYMARKET_ROUND21_CONDITION_ADMISSION_SCHEMA_VERSION = (
     "polymarket-round21-condition-admission-v1"
 )
 _DESIGN_RELATIVE = (
     "docs/model-research/polymarket/"
-    "round-021-core-corpus-materialization-design-v1.json"
+    "round-021-core-corpus-materialization-design-v3.json"
 )
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _RUN_ID = re.compile(r"^[0-9a-f]{32}$")
@@ -123,17 +123,34 @@ def load_round21_core_corpus_design(repository: str | Path) -> dict[str, object]
     parents = payload.get("parents")
     source = payload.get("source_boundary")
     authority = payload.get("authority")
+    supersession = payload.get("supersession")
     if (
-        claimed != POLYMARKET_ROUND21_CORE_CORPUS_DESIGN_SHA256
+        set(payload)
+        != {
+            "schema_version",
+            "round",
+            "status",
+            "parents",
+            "source_boundary",
+            "condition_clock",
+            "condition_admission",
+            "continuous_chainlink_slice",
+            "feature_materialization",
+            "storage",
+            "authority",
+            "supersedes",
+            "supersession",
+        }
+        or claimed != POLYMARKET_ROUND21_CORE_CORPUS_DESIGN_SHA256
         or claimed != _canonical_sha256(payload)
         or payload.get("schema_version")
         != POLYMARKET_ROUND21_CORE_CORPUS_DESIGN_SCHEMA_VERSION
         or payload.get("round") != 21
+        or payload.get("supersedes")
+        != "polymarket-round21-core-corpus-materialization-design-v2"
         or not isinstance(parents, Mapping)
-        or parents.get("round20_contract_sha256")
-        != POLYMARKET_ROUND20_CONTRACT_SHA256
-        or parents.get("round21_contract_sha256")
-        != POLYMARKET_ROUND21_CONTRACT_SHA256
+        or parents.get("round20_contract_sha256") != POLYMARKET_ROUND20_CONTRACT_SHA256
+        or parents.get("round21_contract_sha256") != POLYMARKET_ROUND21_CONTRACT_SHA256
         or parents.get("round21_dataset_design_sha256")
         != POLYMARKET_ROUND21_DATASET_DESIGN_SHA256
         or parents.get("round21_feature_policy_sha256")
@@ -144,6 +161,18 @@ def load_round21_core_corpus_design(repository: str | Path) -> dict[str, object]
         or source.get("outcomes_consulted") is not False
         or source.get("model_scores_consulted") is not False
         or source.get("optional_binance_consulted") is not False
+        or supersession
+        != {
+            "round21_core_corpus_materialization_design_v2_sha256": (
+                "ea1b7ac68aa6dda9bcc94468ef1265815e3ef3957c40977c0e9bceb2a0e240b4"
+            ),
+            "change": "bind_materialized_rows_to_causal_receipt_age_features",
+            "condition_admission_changed": False,
+            "storage_layout_changed": False,
+            "capture_data_used_for_change": False,
+            "targets_used_for_change": False,
+            "market_outcomes_used_for_change": False,
+        }
         or not isinstance(authority, Mapping)
         or any(
             authority.get(field) is not False
@@ -212,8 +241,14 @@ class Round21ConditionSource:
                 or tuple(sorted(values)) != values
                 for values in self.lane_event_wall_ms.values()
             )
-            or any(not isinstance(event, PolymarketUnionEvent) for event in self.union_events)
-            or any(not isinstance(record, CaptureFrameRecord) for record in self.chainlink_records)
+            or any(
+                not isinstance(event, PolymarketUnionEvent)
+                for event in self.union_events
+            )
+            or any(
+                not isinstance(record, CaptureFrameRecord)
+                for record in self.chainlink_records
+            )
             or any(not isinstance(gap, StreamGap) for gap in self.stream_gaps)
         ):
             raise ValueError("Round 21 condition source differs")
@@ -244,12 +279,14 @@ class Round21CoreConditionMaterialization:
                 or count <= 0
                 for reason, count in self.unavailable_reason_counts.items()
             )
-            or (not admitted and (self.available_features or self.unavailable_reason_counts))
+            or (
+                not admitted
+                and (self.available_features or self.unavailable_reason_counts)
+            )
             or type(self.unavailable_feature_row_count) is not int
             or self.unavailable_feature_row_count < 0
             or (not admitted and self.unavailable_feature_row_count != 0)
-            or admission["available_feature_row_count"]
-            != len(self.available_features)
+            or admission["available_feature_row_count"] != len(self.available_features)
             or admission["unavailable_feature_row_count"]
             != self.unavailable_feature_row_count
         ):
@@ -291,9 +328,7 @@ def _unhealthy_intervals(
                 min(current, ended_at_ms),
             )
         )
-    intervals.append(
-        (max(events[-1] + _FRESH_EVENT_MS, started_at_ms), ended_at_ms)
-    )
+    intervals.append((max(events[-1] + _FRESH_EVENT_MS, started_at_ms), ended_at_ms))
     for gap in gaps:
         later = next(
             (receipt for receipt in events if receipt >= gap.opened_at_ms),
@@ -756,7 +791,10 @@ def validate_round21_condition_admission(
             "test",
             "outside_campaign",
         }
-        or any(type(payload.get(field)) is not int or payload[field] < 0 for field in count_fields)
+        or any(
+            type(payload.get(field)) is not int or payload[field] < 0
+            for field in count_fields
+        )
         or not isinstance(lane_counts, Mapping)
         or set(lane_counts) != set(_LANES)
         or any(type(value) is not int or value < 0 for value in lane_counts.values())
@@ -774,10 +812,7 @@ def validate_round21_condition_admission(
         or not isinstance(lane_gaps, Mapping)
         or set(lane_gaps) != set(_LANES)
         or any(type(value) is not int or value < 0 for value in lane_gaps.values())
-        or _SHA256.fullmatch(
-            str(payload.get("union_event_chain_sha256") or "")
-        )
-        is None
+        or _SHA256.fullmatch(str(payload.get("union_event_chain_sha256") or "")) is None
         or reasons is None
         or type(admitted) is not bool
         or admitted != (not reasons)
@@ -927,8 +962,10 @@ def load_round21_core_conditions(
         threads=2,
     ) as store:
         for run_id, segment_index in eligible.items():
-            rows = store.connect().execute(
-                """
+            rows = (
+                store.connect()
+                .execute(
+                    """
                 SELECT snapshot_id, run_id, observed_wall_ms,
                        observed_monotonic_ns, asset, condition_id,
                        event_start_ms, end_ms, up_token_id, down_token_id,
@@ -940,11 +977,12 @@ def load_round21_core_conditions(
                 WHERE run_id = ?
                 ORDER BY event_start_ms, condition_id
                 """,
-                [run_id],
-            ).fetchall()
+                    [run_id],
+                )
+                .fetchall()
+            )
             conditions.extend(
-                _snapshot_condition(row, segment_index=segment_index)
-                for row in rows
+                _snapshot_condition(row, segment_index=segment_index) for row in rows
             )
     identities = [condition.condition_id for condition in conditions]
     if not conditions or len(set(identities)) != len(identities):
@@ -979,13 +1017,18 @@ class Round21CoreCorpusObserver:
         *,
         conditions: Sequence[Round21CoreCondition],
         partition_policy: Round21PartitionPolicy,
-        sink: Callable[[Round21CoreConditionMaterialization], None],
+        sink: Callable[[Round21CoreConditionMaterialization], None] | None,
+        source_sink: (
+            Callable[[Round21CoreCondition, Round21ConditionSource], None] | None
+        ) = None,
     ) -> None:
         selected = tuple(condition.validated() for condition in conditions)
         if (
             not selected
             or len({condition.condition_id for condition in selected}) != len(selected)
-            or not callable(sink)
+            or (sink is None and source_sink is None)
+            or (sink is not None and not callable(sink))
+            or (source_sink is not None and not callable(source_sink))
         ):
             raise ValueError("Round 21 core observer conditions differ")
         self.conditions = tuple(
@@ -1000,6 +1043,7 @@ class Round21CoreCorpusObserver:
         )
         self.partition_policy = partition_policy.validated()
         self.sink = sink
+        self.source_sink = source_sink
         self._run_conditions: tuple[Round21CoreCondition, ...] = ()
         self._condition_by_id: dict[str, Round21CoreCondition] = {}
         self._active: dict[str, _ConditionAccumulator] = {}
@@ -1058,7 +1102,9 @@ class Round21CoreCorpusObserver:
         if condition is None:
             return
         if condition_id in self._finalized:
-            raise ValueError("Round 21 union event arrived after condition finalization")
+            raise ValueError(
+                "Round 21 union event arrived after condition finalization"
+            )
         accumulator = self._active.get(condition_id)
         if accumulator is None:
             raise ValueError("Round 21 union event condition was not activated")
@@ -1089,17 +1135,19 @@ class Round21CoreCorpusObserver:
                 union_events=tuple(accumulator.union_events),
                 chainlink_records=tuple(accumulator.chainlink_records),
                 lane_event_wall_ms={
-                    lane: tuple(accumulator.lane_event_wall_ms[lane])
-                    for lane in _LANES
+                    lane: tuple(accumulator.lane_event_wall_ms[lane]) for lane in _LANES
                 },
                 stream_gaps=self._gaps,
             )
-            result = build_round21_core_condition_materialization(
-                condition=accumulator.condition,
-                source=source,
-                partition_policy=self.partition_policy,
-            )
-            self.sink(result)
+            if self.sink is not None:
+                result = build_round21_core_condition_materialization(
+                    condition=accumulator.condition,
+                    source=source,
+                    partition_policy=self.partition_policy,
+                )
+                self.sink(result)
+            if self.source_sink is not None:
+                self.source_sink(accumulator.condition, source)
             self._finalized.add(condition_id)
             self.materialized_condition_count += 1
 
@@ -1117,8 +1165,7 @@ class Round21CoreCorpusObserver:
         ):
             raise ValueError("Round 21 terminal receipt clock regressed")
         offset_ns = (
-            selected.received_wall_ms * 1_000_000
-            - selected.received_monotonic_ns
+            selected.received_wall_ms * 1_000_000 - selected.received_monotonic_ns
         )
         if self._initial_clock_offset_ns is None:
             self._initial_clock_offset_ns = offset_ns

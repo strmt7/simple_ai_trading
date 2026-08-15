@@ -9,6 +9,7 @@ from simple_ai_trading.foundation_forecast import (
     KRONOS_MAX_CONTEXT,
     KRONOS_MODEL_ARTIFACTS,
     KRONOS_TOKENIZER_ARTIFACT,
+    PinnedHuggingFaceArtifact,
     KronosForecastEngine,
     verify_huggingface_artifact_file,
 )
@@ -26,17 +27,50 @@ def test_kronos_artifact_contracts_are_revision_and_hash_pinned() -> None:
     assert KRONOS_MAX_CONTEXT == 512
 
 
-def test_huggingface_file_verifier_rejects_size_and_digest_mismatch(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("repository", "single-component"),
+        ("revision", "main"),
+        ("config_sha256", "0" * 63),
+        ("weights_sha256", "g" * 64),
+        ("weights_size", 0),
+        ("expected_parameters", True),
+    ],
+)
+def test_pinned_artifact_rejects_mutable_or_malformed_identity(
+    field: str, value: object
+) -> None:
+    contract: dict[str, object] = {
+        "repository": "owner/model",
+        "revision": "a" * 40,
+        "config_size": 1,
+        "config_sha256": "b" * 64,
+        "weights_size": 1,
+        "weights_sha256": "c" * 64,
+        "expected_parameters": 1,
+    }
+    contract[field] = value
+    with pytest.raises(ValueError, match="artifact contract"):
+        PinnedHuggingFaceArtifact(**contract)  # type: ignore[arg-type]
+
+
+def test_huggingface_file_verifier_rejects_size_and_digest_mismatch(
+    tmp_path: Path,
+) -> None:
     target = tmp_path / "model.safetensors"
     target.write_bytes(b"verified payload")
     digest = hashlib.sha256(target.read_bytes()).hexdigest()
 
-    assert verify_huggingface_artifact_file(
-        target,
-        expected_size=target.stat().st_size,
-        expected_sha256=digest,
-        label="fixture",
-    ) == target
+    assert (
+        verify_huggingface_artifact_file(
+            target,
+            expected_size=target.stat().st_size,
+            expected_sha256=digest,
+            label="fixture",
+        )
+        == target
+    )
     with pytest.raises(RuntimeError, match="size mismatch"):
         verify_huggingface_artifact_file(
             target,

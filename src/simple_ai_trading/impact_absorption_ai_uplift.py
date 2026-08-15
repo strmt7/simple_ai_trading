@@ -52,7 +52,7 @@ ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION = (
     "round-074-ai-qualification-population-v1"
 )
 ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION = (
-    "round-074-ai-pretest-qualification-v5"
+    "round-074-ai-pretest-qualification-v6"
 )
 ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION = (
     "round-074-ai-execution-replay-evidence-v2"
@@ -1554,9 +1554,7 @@ class Round74AIUpliftDevelopmentReport:
                 self.final_action_configuration_sha256
             ),
             "final_action_configuration_mode": self.final_action_configuration_mode,
-            "epistemic_action_filter_sha256": (
-                self.epistemic_action_filter_sha256
-            ),
+            "epistemic_action_filter_sha256": (self.epistemic_action_filter_sha256),
             "epistemic_action_filter_application_sha256": list(
                 self.epistemic_action_filter_application_sha256
             ),
@@ -1723,9 +1721,7 @@ class Round74AIUpliftDevelopmentReport:
                 ),
                 epistemic_action_filter_application_sha256=tuple(
                     str(item)
-                    for item in payload[
-                        "epistemic_action_filter_application_sha256"
-                    ]
+                    for item in payload["epistemic_action_filter_application_sha256"]
                 ),
                 candidate_sha256=tuple(
                     str(item) for item in payload["candidate_sha256"]
@@ -1772,9 +1768,33 @@ class Round74AIUpliftDevelopmentReport:
         return selected
 
 
+def _qualified_ai_development_reports(
+    reports: Sequence[Round74AIUpliftDevelopmentReport],
+) -> tuple[Round74AIUpliftDevelopmentReport, ...]:
+    return tuple(report for report in reports if report.development_gate_passed)
+
+
+def _ai_panel_gate_reasons(
+    reports: Sequence[Round74AIUpliftDevelopmentReport],
+) -> tuple[str, ...]:
+    if _qualified_ai_development_reports(reports):
+        return ()
+    return tuple(
+        sorted(
+            f"model:{report.model_manifest_sha256}:{reason}"
+            for report in reports
+            for reason in (
+                report.gate_reasons
+                if report.gate_reasons
+                else ("development_gate_not_met",)
+            )
+        )
+    )
+
+
 @dataclass(frozen=True)
 class Round74AIPretestQualificationPanel:
-    """Bind two real development reports before any sealed-test reservation."""
+    """Screen two real development reports before any sealed-test reservation."""
 
     development_reports: tuple[Round74AIUpliftDevelopmentReport, ...]
     qualification_passed: bool
@@ -1806,27 +1826,21 @@ class Round74AIPretestQualificationPanel:
             )
             for report in reports
         }
-        manifests = tuple(report.model_manifest_sha256 for report in reports)
-        expected_reasons = tuple(
-            sorted(
-                f"model:{report.model_manifest_sha256}:{reason}"
-                for report in reports
-                if not report.development_gate_passed
-                for reason in (
-                    report.gate_reasons
-                    if report.gate_reasons
-                    else ("development_gate_not_met",)
-                )
-            )
+        candidate_manifests = tuple(report.model_manifest_sha256 for report in reports)
+        qualified_manifests = tuple(
+            report.model_manifest_sha256
+            for report in _qualified_ai_development_reports(reports)
         )
+        expected_reasons = _ai_panel_gate_reasons(reports)
         if (
             self.schema_version != ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION
             or len(reports) != 2
             or len(identities) != 1
-            or manifests != tuple(sorted(manifests))
-            or len(set(manifests)) != 2
+            or candidate_manifests != tuple(sorted(candidate_manifests))
+            or len(set(candidate_manifests)) != 2
+            or len(qualified_manifests) > ROUND74_AI_UPLIFT_MODEL_COMPARISONS
             or self.gate_reasons != expected_reasons
-            or self.qualification_passed != (not expected_reasons)
+            or self.qualification_passed != bool(qualified_manifests)
             or not isinstance(self.qualification_passed, bool)
             or any(
                 not isinstance(value, bool)
@@ -1877,6 +1891,19 @@ class Round74AIPretestQualificationPanel:
 
     @property
     def model_manifest_sha256(self) -> tuple[str, ...]:
+        """Return only candidates admitted to the untouched sealed test."""
+
+        self.validate()
+        return tuple(
+            report.model_manifest_sha256
+            for report in self.development_reports
+            if report.development_gate_passed
+        )
+
+    @property
+    def candidate_model_manifest_sha256(self) -> tuple[str, ...]:
+        """Return the complete preregistered development candidate family."""
+
         self.validate()
         return tuple(
             report.model_manifest_sha256 for report in self.development_reports
@@ -1897,6 +1924,9 @@ class Round74AIPretestQualificationPanel:
             "qualification_passed": self.qualification_passed,
             "gate_reasons": list(self.gate_reasons),
             "model_manifest_sha256": list(self.model_manifest_sha256),
+            "candidate_model_manifest_sha256": list(
+                self.candidate_model_manifest_sha256
+            ),
             "final_action_configuration_sha256": (
                 self.final_action_configuration_sha256
             ),
@@ -1904,6 +1934,13 @@ class Round74AIPretestQualificationPanel:
                 report.report_sha256 for report in self.development_reports
             ],
             "development_data_scope": "ai_qualification_tuning_runs_only",
+            "candidate_screen_policy": (
+                "advance_each_individually_passing_candidate_with_"
+                "two_model_familywise_control"
+            ),
+            "sealed_familywise_ai_model_comparisons": (
+                ROUND74_AI_UPLIFT_MODEL_COMPARISONS
+            ),
             "sealed_test_accessed": False,
             "model_selection_performed": False,
             "promotion_authority": False,
@@ -1937,15 +1974,25 @@ class Round74AIPretestQualificationPanel:
         )
         expected_policy = {
             "model_manifest_sha256": [
+                report.model_manifest_sha256
+                for report in reports
+                if report.development_gate_passed
+            ],
+            "candidate_model_manifest_sha256": [
                 report.model_manifest_sha256 for report in reports
             ],
             "final_action_configuration_sha256": (
-                reports[0].final_action_configuration_sha256
-                if reports
-                else ""
+                reports[0].final_action_configuration_sha256 if reports else ""
             ),
             "development_report_sha256": [report.report_sha256 for report in reports],
             "development_data_scope": "ai_qualification_tuning_runs_only",
+            "candidate_screen_policy": (
+                "advance_each_individually_passing_candidate_with_"
+                "two_model_familywise_control"
+            ),
+            "sealed_familywise_ai_model_comparisons": (
+                ROUND74_AI_UPLIFT_MODEL_COMPARISONS
+            ),
             "sealed_test_accessed": False,
             "model_selection_performed": False,
             "promotion_authority": False,
@@ -1980,21 +2027,11 @@ def build_round74_ai_pretest_qualification(
     )
     for report in selected_reports:
         report.validate()
-    reasons = tuple(
-        sorted(
-            f"model:{report.model_manifest_sha256}:{reason}"
-            for report in selected_reports
-            if not report.development_gate_passed
-            for reason in (
-                report.gate_reasons
-                if report.gate_reasons
-                else ("development_gate_not_met",)
-            )
-        )
-    )
+    reasons = _ai_panel_gate_reasons(selected_reports)
+    qualified_reports = _qualified_ai_development_reports(selected_reports)
     selected = Round74AIPretestQualificationPanel(
         development_reports=selected_reports,
-        qualification_passed=not reasons,
+        qualification_passed=bool(qualified_reports),
         gate_reasons=reasons,
     )
     selected.validate()
@@ -2100,10 +2137,7 @@ def evaluate_round74_ai_overlay_development(
         or not policy_run_ids.issubset(set(qualification_population.prior_run_ids))
         or policy_run_ids.intersection(qualification_population.run_ids)
         or trace.threshold_score != action_selection.selected_threshold_score
-        or (
-            final_action_configuration.mode == "baseline"
-            and filter_application_sha256
-        )
+        or (final_action_configuration.mode == "baseline" and filter_application_sha256)
         or (
             final_action_configuration.mode == "epistemic_filter"
             and len(filter_application_sha256) != len(selected_candidate_sha256)

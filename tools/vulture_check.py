@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,35 @@ from pathlib import Path, PurePosixPath
 DEFAULT_MIN_CONFIDENCE = 100
 TRACKED_PYTHON_PATHSPEC = "*.py"
 EXCLUDED_TOP_LEVEL_DIRS: frozenset[str] = frozenset({"docs", "tests"})
+IGNORED_FINDINGS: frozenset[tuple[str, int, str]] = frozenset(
+    {
+        (
+            "src/simple_ai_trading/polymarket_round25_resolution_store.py",
+            116,
+            "unused variable 'allow_redirects'",
+        ),
+        (
+            "src/simple_ai_trading/polymarket_historical_l2.py",
+            108,
+            "unused variable 'allow_redirects'",
+        ),
+        (
+            "src/simple_ai_trading/polymarket_round22_ingestion.py",
+            94,
+            "unused variable 'allow_redirects'",
+        ),
+        (
+            "src/simple_ai_trading/polymarket_round22_targets.py",
+            90,
+            "unused variable 'allow_redirects'",
+        ),
+        (
+            "src/simple_ai_trading/polymarket_round23_binance.py",
+            76,
+            "unused variable 'allow_redirects'",
+        ),
+    }
+)
 
 
 def resolve_required_executable(name: str) -> str:
@@ -107,13 +137,75 @@ def build_vulture_command(paths: list[str], *, min_confidence: int) -> list[str]
     ]
 
 
+def _filter_known_false_positives(output: str) -> str:
+    """Remove exact compatibility-signature findings from Vulture output."""
+
+    kept: list[str] = []
+    for line in output.splitlines():
+        normalized = line.replace("\\", "/")
+        ignored = any(
+            normalized.startswith(f"{path}:{line_number}: {message} (")
+            for path, line_number, message in IGNORED_FINDINGS
+        )
+        if not ignored:
+            kept.append(line)
+    return "\n".join(kept) + ("\n" if kept else "")
+
+
+def _report_vulture_api(
+    repo_root: Path,
+    paths: list[str],
+    *,
+    min_confidence: int,
+) -> int:
+    """Run Vulture through its API when Windows cannot spawn the full command."""
+
+    module = importlib.import_module("vulture")
+    scanner = module.Vulture()
+    scanner.scavenge(paths)
+    findings = []
+    for item in scanner.get_unused_code(min_confidence=min_confidence):
+        filename = Path(item.filename)
+        if filename.is_absolute():
+            filename = filename.resolve().relative_to(repo_root)
+        key = (filename.as_posix(), int(item.first_lineno), str(item.message))
+        if key not in IGNORED_FINDINGS:
+            findings.append(item)
+    for item in findings:
+        sys.stdout.write(
+            f"{item.filename}:{item.first_lineno}: {item.message} "
+            f"({item.confidence}% confidence)\n"
+        )
+    return int(bool(findings))
+
+
 def run_vulture(repo_root: Path, paths: list[str], *, min_confidence: int) -> int:
     """Vulture from the repository root.
 
     Inputs: `repo_root`, `paths`, `min_confidence`. Output: `int`.
     """
     command = build_vulture_command(paths, min_confidence=min_confidence)
-    completed = subprocess.run(command, cwd=repo_root, check=False)
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=repo_root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError as exc:
+        if getattr(exc, "winerror", None) != 206:
+            raise
+        return _report_vulture_api(
+            repo_root,
+            paths,
+            min_confidence=min_confidence,
+        )
+    filtered = _filter_known_false_positives(completed.stdout)
+    sys.stdout.write(filtered)
+    sys.stderr.write(completed.stderr)
+    if completed.returncode == 1 and not filtered and not completed.stderr:
+        return 0
     return completed.returncode
 
 

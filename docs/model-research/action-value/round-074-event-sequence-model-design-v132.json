@@ -1,0 +1,157 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v132",
+  "artifact_kind": "individual_ai_candidate_advancement_integration",
+  "created_utc": "2026-08-03T14:13:33.7288711Z",
+  "supersedes_artifact_sha256": "3157c0c0646ec57e1b49ba12fc7487c5d2a66e17b81154462ad41b353f49e4eb",
+  "implementation_git_commit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "source_binding": {
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+        "sha256": "3fd13076d4f340a65232cb649a861c2fdc9d2b5f3a25ebee9023ee207cdf3eab"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+        "sha256": "c976284876b62f322dc553947f75ff1e5efa064aff2b5b15e884a8b22880289b"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+        "sha256": "1ea11e4caa2cf55c8d9f7219300b095a1b37e1704b44f85c068d885cef2d1480"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_sealed_ledger.py",
+        "sha256": "5df3b7bd7af641878044b66682321fe99a80c3f1dd759a0c9bef387cb61afa96"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_ai_qualification_operator.py",
+        "sha256": "ef64f442080a96ea3ebc8c83b65f285c453dee7da07d71dea50493b415082c58"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_segmented_terminal_runtime.py",
+        "sha256": "bf7c5195413e86d87ef5f7712d8cc4f811177743f0426c20ddf4234b7bd9a617"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_terminal_one_use.py",
+        "sha256": "fe3546b1d5975766f1eba6a141278a3e9d1a4e20d20aeaa28021da0f1587801f"
+      }
+    ],
+    "affected_tests": [
+      {
+        "path": "tests/test_impact_absorption_ai_uplift.py",
+        "sha256": "7cc1f61581b6b7b39ec48eca6d9890d5b87919eaea6d3895821ec5a073879d62"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_sealed_ledger.py",
+        "sha256": "30b2fe84b1689b70fe5ff4ef0201ed24d5bef22ff5997dff63eaeed3bb6dafbf"
+      },
+      {
+        "path": "tests/test_round74_segmented_terminal_runtime.py",
+        "sha256": "5217722b217b239c716fce952bc21beb0e475b5d8d1ea6dbdfd8f8381cd9c7d4"
+      },
+      {
+        "path": "tests/test_round74_terminal_one_use.py",
+        "sha256": "7e588548ea7d6b79b7412d8824f89b5f837efc42e45a2fa8fa7d912a9c292b01"
+      }
+    ],
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v131.json",
+      "sha256": "e8a50ff7c2285a7fcf55c4288adf720c4d73cf135444db24b78ad4704f24abbc"
+    }
+  },
+  "schema_contract": {
+    "ai_review_panel": "round-074-ai-review-panel-v17",
+    "ai_pretest_qualification": "round-074-ai-pretest-qualification-v6",
+    "ai_qualification_operator": "round-074-ai-qualification-operator-v5",
+    "sealed_evaluation": "round-074-sealed-evaluation-v25",
+    "sealed_ledger": "round-074-sealed-ledger-v4",
+    "sealed_claim": "round-074-sealed-claim-v4",
+    "terminal_preaccess": "round-074-terminal-preaccess-v3"
+  },
+  "defect": {
+    "preregistered_development_candidate_count": 2,
+    "prior_panel_pass_required_every_candidate_to_pass": true,
+    "passing_candidate_could_be_discarded_when_control_failed": true,
+    "prior_rule_conflated_family_definition_with_individual_qualification": true,
+    "sealed_test_accessed_during_correction": false
+  },
+  "declared_delta": {
+    "summary": "Advance every preregistered AI candidate that independently passes all development gates while retaining the original two-model familywise correction at the untouched sealed test.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "feature_definition_changed": false,
+    "candidate_family_changed": false,
+    "candidate_advancement_policy_changed": true,
+    "tuning_rank_winner_selection_added": false,
+    "bootstrap_method_changed": false,
+    "familywise_confidence_changed": false,
+    "sealed_familywise_denominator_changed": false,
+    "financial_gate_changed": false,
+    "ai_uplift_gate_changed": false,
+    "runtime_trading_path_changed": false
+  },
+  "candidate_advancement_contract": {
+    "fixed_development_candidate_count": 2,
+    "minimum_individually_qualified_candidates_for_sealed_access": 1,
+    "maximum_individually_qualified_candidates_for_sealed_access": 2,
+    "zero_qualified_candidates_block_sealed_access": true,
+    "failed_candidate_reports_remain_in_qualification_evidence": true,
+    "admitted_manifest_set_contains_only_individual_gate_passes": true,
+    "terminal_preflight_filters_runtime_bindings_to_admitted_manifests": true,
+    "sealed_ledger_binds_only_admitted_manifests": true,
+    "sealed_report_contains_only_admitted_overlays": true,
+    "sealed_familywise_ai_model_comparisons": 2,
+    "sealed_test_reuse_permitted": false,
+    "sealed_test_target_or_batch_accessed": false
+  },
+  "research_basis": [
+    {
+      "title": "On Over-fitting in Model Selection and Subsequent Selection Bias in Performance Evaluation",
+      "publisher": "Journal of Machine Learning Research",
+      "url": "https://www.jmlr.org/papers/v11/cawley10a.html",
+      "application": "Avoid an additional noisy winner-selection step on the same tuning observations."
+    },
+    {
+      "title": "Bias in error estimation when using cross-validation for model selection",
+      "publisher": "BMC Bioinformatics",
+      "url": "https://link.springer.com/article/10.1186/1471-2105-7-91",
+      "application": "Keep development screening disjoint from the one-use sealed evaluation."
+    },
+    {
+      "title": "Approximate Statistical Tests for Comparing Supervised Classification Learning Algorithms",
+      "publisher": "Neural Computation",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/9744903/",
+      "application": "Retain explicit multiplicity control for the preregistered comparison family."
+    }
+  ],
+  "verification": {
+    "focused_checkpoint_tests_passed": 74,
+    "two_pass_candidates_advance_tested": true,
+    "one_pass_one_fail_advancement_tested": true,
+    "two_failed_candidates_block_tested": true,
+    "one_model_sealed_reservation_review_replay_and_report_tested": true,
+    "one_model_terminal_preflight_tested": true,
+    "one_use_manifest_cardinality_binding_tested": true,
+    "representative_market_training_run": false,
+    "representative_market_backtest_run": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "representative_configuration_selected": false,
+    "representative_ai_qualification_completed": false,
+    "representative_sealed_evaluation_completed": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "39544e2f0c3593d346532a5364b12fbb886f53c84b8081485704c4033753d236"
+}

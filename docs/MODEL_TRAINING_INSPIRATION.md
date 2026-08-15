@@ -286,9 +286,9 @@ weakening risk controls.
   autonomous AI can review or veto, but hard pre-trade limits, stops, kill
   switches, and accountability logs remain deterministic and apply before order
   routing.
-- DirectML remains the Windows-first AMD/NVIDIA-compatible research path for
-  PyTorch experiments, with ONNX Runtime DirectML available for inference
-  parity checks. ONNX Runtime DirectML has practical packaging constraints:
+- Native PyTorch accelerators and LightGBM OpenCL are the current training
+  paths. ONNX Runtime DirectML is packaged for a future Windows inference path
+  after numerical parity is implemented. It has practical constraints:
   prefer fixed tensor shapes, avoid shared multi-threaded `Run` calls on one
   DirectML session, and record provider/fallback details. Every accelerated run
   must still persist backend package versions, selected device, VRAM/RAM
@@ -512,16 +512,17 @@ Sources:
 ## GPU Direction
 
 The repo uses runtime capability discovery rather than a Windows or vendor
-default. DirectML remains a compatibility path for supported DirectX 12 hosts;
-Microsoft now describes it as sustained engineering and directs new Windows
-ONNX deployments toward Windows ML.
+default. The obsolete Torch-DirectML training adapter is not packaged. DirectML
+is reserved for a future ONNX inference path after numerical parity and fault
+isolation are proven.
 
 Implementation direction:
 
 - PyTorch training/scoring: modern `torch.accelerator` when available, then
-  capability-tested CUDA, ROCm, XPU, MPS, or DirectML adapters.
-- ONNX inference: no claimed path until Windows ML/ONNX provider discovery and
-  numerical parity are implemented and tested.
+  capability-tested CUDA, ROCm, XPU, MPS, or CPU.
+- ONNX inference: the Windows DirectML runtime is packaged, but no path is
+  claimed until provider discovery and numerical parity are implemented and
+  tested.
 - LightGBM tabular candidates: OpenCL GPU path when available.
 - CPU mode: allowed, slower, and no AI approval.
 - Every model family must have a CPU reference plus a capability artifact that

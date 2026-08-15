@@ -44,6 +44,11 @@ IMMUTABLE_EVIDENCE_TEXT_EXCLUSIONS = {
     "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json",
     "docs/model-research/action-value/round-048-minute-logistic-mixture-tcn-design.json",
     "docs/model-research/action-value/round-049-cost-aware-action-hurdle-tcn-design.json",
+    "docs/model-research/action-value/round-074-event-sequence-model-design-v108.json",
+    "docs/model-research/action-value/round-074-event-sequence-model-design-v116.json",
+    "src/simple_ai_trading/impact_absorption_ai_contract_screen.py",
+    "src/simple_ai_trading/polymarket_round17_publication.py",
+    "src/simple_ai_trading/round74_ai_qualification_operator.py",
 }
 
 # Build phrases from fragments so this enforcement module cannot flag itself.

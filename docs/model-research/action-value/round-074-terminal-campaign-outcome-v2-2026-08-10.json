@@ -1,0 +1,107 @@
+{
+  "artifact_sha256": "22187535286009efca9c55c6281eb8f858b33c71f05bed4a517768d9f2b1cde0",
+  "corrections": [
+    {
+      "adjudication_file": "slot-013/recovery-adjudication.json",
+      "adjudication_file_sha256": "6dd92547c4b10a5846a7f8833f0577b1e3a6c97df5f760f4c136a2639281c6b9",
+      "adjudication_sha256": "34a9978b6d4465078cb01503108cd9db291e63fa7890414440aa82b9e3d6b369",
+      "binding_sha256": "6a1a8cf95250c9ad60f5db0746b54d2485f3be562bb77119f367917907e6152a",
+      "corrected_reason_code": "admitted",
+      "corrected_status": "admitted",
+      "prior_reason_code": "host_slot_missed",
+      "prior_status": "missed",
+      "recovery_receipt_file": "013.json",
+      "recovery_receipt_file_sha256": "0693bb4bc3c2649a7c61fe7927f1660916760671e3569f3ccefb1d0ddb328223",
+      "recovery_receipt_sha256": "acff6ee95808c8493ea42d758bdfab56f6a8e8b4a3e00330fb35d47b17700bde",
+      "role": "training",
+      "slot_ordinal": 13
+    }
+  ],
+  "decision": {
+    "model_data_eligible": false,
+    "predictive_edge_established": false,
+    "profitability_established": false,
+    "reason": "training_eligible_anchor_quota_failed",
+    "representative_training_performed": false,
+    "sealed_target_manifests_read": false,
+    "sealed_test_access_reserved_or_consumed": false,
+    "status": "campaign_cannot_qualify_model"
+  },
+  "observed_at_utc": "2026-08-10T10:12:23.675950+00:00",
+  "schema_version": "round-074-terminal-campaign-outcome-v2",
+  "scope": {
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "source_database_access": "not_opened",
+    "target_data_accessed": false
+  },
+  "source_bindings": {
+    "corrected_outcome_panel_sha256": "9d5bff26effe1b82b3ab1b0ed25e5891bbc007052194c1e06919a4b2e390bb75",
+    "correction_panel_sha256": "84b6587681faae1a266d1dfe227e1aaf6b4c8c0642cc05abf681fad07eaaa44f",
+    "plan_file_sha256": "2a67f9637cb64e2a865ce94679beffa201a28095d0557a0553a59da6ce446913",
+    "plan_path": "docs/model-research/action-value/round-074-segmented-event-cohort-plan-v3.json",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "prior_outcome_panel_sha256": "f93c1422f85f1e485a47596edc9907b6a044f9f447a681597be2bf4f4078eda0",
+    "prior_slot_evidence_panel_sha256": "85b3a35da2e479092ad72be13a90e0cdeab501c4c3cd2bd52d4fd43609e1b267",
+    "state_and_recovery_location": "local_data_artifacts_not_committed",
+    "state_metadata_evidence": {
+      "storage-shard-schedule.json": "495b7de91a5a8b8a7161d35bcaa6a1edf769a8faa8736328dfd0b22cce25961d"
+    }
+  },
+  "supersedes": {
+    "artifact_file_sha256": "744d0231c9c3d309a914b622caa49bc6fa3170aad0f43e0fffd42fb1315b9bdf",
+    "artifact_path": "docs/model-research/action-value/round-074-terminal-campaign-outcome-2026-08-10.json",
+    "artifact_sha256": "67cba6caf728d0ae2d0271e290d1dd7fe9ab4a7fa35f861683ebf16f080a2612",
+    "reason": "conservative_receipt_bound_valid_prior_adjudication"
+  },
+  "terminal_coverage": {
+    "outcome_status_counts": {
+      "admitted": 460,
+      "missed": 238,
+      "transport_excluded": 22
+    },
+    "partition_entry_count": 460,
+    "partition_sha256": "cd3274192bf6351306b910f62fc0df9eee8e90c17ec754102ee09dfd017e1f25",
+    "role_quotas": {
+      "test": {
+        "admitted_count": 99,
+        "deficit_eligible_anchor_ns": 0,
+        "missed_count": 0,
+        "observed_eligible_anchor_ns": 87661953492800,
+        "planned_slot_count": 103,
+        "quota_passed": true,
+        "required_eligible_anchor_ns": 78948000000000,
+        "transport_excluded_count": 4
+      },
+      "training": {
+        "admitted_count": 267,
+        "deficit_eligible_anchor_ns": 161433186210300,
+        "missed_count": 233,
+        "observed_eligible_anchor_ns": 233306813789700,
+        "planned_slot_count": 514,
+        "quota_passed": false,
+        "required_eligible_anchor_ns": 394740000000000,
+        "transport_excluded_count": 14
+      },
+      "tuning": {
+        "admitted_count": 94,
+        "deficit_eligible_anchor_ns": 0,
+        "missed_count": 5,
+        "observed_eligible_anchor_ns": 83211472422200,
+        "planned_slot_count": 103,
+        "quota_passed": true,
+        "required_eligible_anchor_ns": 78948000000000,
+        "transport_excluded_count": 4
+      }
+    },
+    "slot_evidence_kind_counts": {
+      "late_adjudication": 7,
+      "recovery": 238,
+      "result": 474,
+      "supplemental_adjudication": 1
+    },
+    "total_slots": 720
+  }
+}

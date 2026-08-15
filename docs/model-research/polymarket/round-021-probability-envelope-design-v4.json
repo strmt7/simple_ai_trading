@@ -1,0 +1,85 @@
+{
+  "schema_version": "polymarket-round21-probability-envelope-design-v4",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "supersedes": "polymarket-round21-probability-envelope-design-v3",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_model_design_sha256": "d4066d09f420c39f149a97243745d9ac62f35b6950e141ef8654739d225087dd",
+    "round21_action_policy_sha256": "2276ddfce8e5efac809ecf5c0d821eb0cc1470f3c3e287e3393486b15fba7b64"
+  },
+  "inference": {
+    "targets_present": false,
+    "target_manifest_present": false,
+    "condition_and_decision_time_required": true,
+    "feature_arrays_hash_bound": true,
+    "feature_column_identity_hash_bound": true,
+    "source_dataset_identity_hash_bound": true,
+    "optional_binance_missingness_explicit": true,
+    "feature_support_mask_hash_bound": true,
+    "feature_support_derived_from_train_features_only": true
+  },
+  "point_probability": {
+    "source": "development_selected_calibrated_candidate",
+    "test_access": false,
+    "future_state": false
+  },
+  "bounds": {
+    "semantics": "calibrated_candidate_disagreement_hull",
+    "core_contributors": "all_six_preregistered_core_candidates",
+    "optional_contributors": "all_six_optional_candidates_plus_all_six_exact_population_matched_core_candidates",
+    "lower": "minimum_contributor_probability",
+    "upper": "maximum_contributor_probability",
+    "formal_frequentist_coverage_claim": false,
+    "formal_bayesian_credible_interval_claim": false,
+    "empty_or_mismatched_population": "reject",
+    "narrower_posthoc_bound": "forbidden"
+  },
+  "action_use": {
+    "directional_buy": "lower_probability_only",
+    "inventory_reduction": "upper_probability_only",
+    "candidate_disagreement": "can_only_reduce_or_remove_actionable_edge",
+    "increase_risk": false,
+    "unsupported_new_directional_entry": "blocked",
+    "unsupported_risk_reducing_action": "remains_available",
+    "unsupported_rows_remain_in_proper_scoring": true,
+    "sequence_support_contamination_rows": 16
+  },
+  "future_calibration": {
+    "sealed_reliability_and_cutoff_calibration_diagnostics_required": true,
+    "coverage_language_requires_separate_preregistered_method_and_evidence": true
+  },
+  "research_basis": [
+    {
+      "url": "https://proceedings.mlr.press/v206/mortier23a.html",
+      "use": "calibration_of_probabilistic_classifier_sets_and_epistemic_set_width"
+    },
+    {
+      "url": "https://proceedings.mlr.press/v291/rossellini25a.html",
+      "use": "testable_and_actionable_cutoff_calibration"
+    },
+    {
+      "url": "https://www.jmlr.org/papers/v23/22-0658.html",
+      "use": "calibration_diagnostics_without_unqualified_binning_claims"
+    },
+    {
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2019/hash/8558cb408c1d76621371888657d2eb1d-Abstract.html",
+      "use": "input_distribution_shift_requires_explicit_uncertainty_controls"
+    },
+    {
+      "url": "https://proceedings.mlr.press/v97/geifman19a.html",
+      "use": "reject_option_for_selective_prediction"
+    }
+  ],
+  "authority": {
+    "capture_data_accessed": false,
+    "targets_accessed": false,
+    "formal_coverage_claim": false,
+    "model_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "218647f01f9404984d94917962e9e81144579aafa4deae8725b625bf9be52842"
+}

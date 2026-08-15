@@ -27,6 +27,9 @@ from simple_ai_trading.ai_factor_programs import (  # noqa: E402
     parse_factor_response_ledger,
 )
 from simple_ai_trading.storage import write_json_atomic  # noqa: E402
+from simple_ai_trading.transport_security import (  # noqa: E402
+    validate_local_http_base_url,
+)
 
 
 ROUND = 55
@@ -133,7 +136,9 @@ def _load_feature_metadata(path: Path) -> tuple[tuple[str, ...], dict[str, objec
     }
 
 
-def _post_json(url: str, payload: Mapping[str, object], timeout: float) -> dict[str, object]:
+def _post_json(
+    url: str, payload: Mapping[str, object], timeout: float
+) -> dict[str, object]:
     body = json.dumps(payload, ensure_ascii=True, allow_nan=False).encode("utf-8")
     message = request.Request(
         url,
@@ -142,7 +147,9 @@ def _post_json(url: str, payload: Mapping[str, object], timeout: float) -> dict[
         method="POST",
     )
     try:
-        with request.urlopen(message, timeout=timeout) as response:  # noqa: S310
+        with request.urlopen(  # nosec B310 - caller validates loopback base.
+            message, timeout=timeout
+        ) as response:
             result = json.loads(response.read().decode("utf-8"))
     except (OSError, error.URLError, UnicodeError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"local Ollama request failed: {url}") from exc
@@ -154,7 +161,9 @@ def _post_json(url: str, payload: Mapping[str, object], timeout: float) -> dict[
 def _get_json(url: str, timeout: float) -> dict[str, object]:
     message = request.Request(url, headers={"Accept": "application/json"})
     try:
-        with request.urlopen(message, timeout=timeout) as response:  # noqa: S310
+        with request.urlopen(  # nosec B310 - caller validates loopback base.
+            message, timeout=timeout
+        ) as response:
             result = json.loads(response.read().decode("utf-8"))
     except (OSError, error.URLError, UnicodeError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"local Ollama request failed: {url}") from exc
@@ -300,7 +309,9 @@ def run(arguments: argparse.Namespace) -> int:
     models = tuple(str(model) for model in contract["models"])
     factors = int(contract["factors_requested_per_model"])
     system_prompt, user_prompt = _prompt(feature_names, factors)
-    base_url = arguments.ollama_url.rstrip("/")
+    base_url = validate_local_http_base_url(
+        arguments.ollama_url, label="Round 55 Ollama"
+    )
     tags = _get_json(f"{base_url}/api/tags", arguments.timeout)
     inventory_rows = tags.get("models")
     if not isinstance(inventory_rows, list):
@@ -371,9 +382,7 @@ def run(arguments: argparse.Namespace) -> int:
             )
         except ValueError as exc:
             programs = ()
-            program_rejections = (
-                {"index": None, "name": None, "reason": str(exc)},
-            )
+            program_rejections = ({"index": None, "name": None, "reason": str(exc)},)
         inventory_row = inventory[model]
         parameter_billions = _parameter_billions(inventory_row)
         parameter_eligible = parameter_billions >= float(
@@ -390,9 +399,7 @@ def run(arguments: argparse.Namespace) -> int:
             )
             programs = ()
         accepted.extend(programs)
-        rejected.extend(
-            {"model": model, **dict(item)} for item in program_rejections
-        )
+        rejected.extend({"model": model, **dict(item)} for item in program_rejections)
         model_evidence[model] = {
             "inventory": dict(inventory_row),
             "parameter_billions": parameter_billions,

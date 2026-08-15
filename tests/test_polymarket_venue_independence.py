@@ -11,8 +11,9 @@ import textwrap
 SOURCE_ROOT = Path(__file__).resolve().parents[1] / "src" / "simple_ai_trading"
 LIVE_BOUNDARY_IMPORTS = {
     "polymarket_live.py": frozenset(),
+    "polymarket_live_activation.py": frozenset({"polymarket_live"}),
     "polymarket_live_v2.py": frozenset(
-        {"paper_execution", "polymarket", "polymarket_live"}
+        {"polymarket", "polymarket_fees", "polymarket_live"}
     ),
     "polymarket_live_runtime.py": frozenset({"polymarket_live", "polymarket_live_v2"}),
     "polymarket_live_stop.py": frozenset(
@@ -21,29 +22,38 @@ LIVE_BOUNDARY_IMPORTS = {
     "polymarket_live_settlement.py": frozenset(
         {"polymarket_live", "polymarket_live_v2"}
     ),
-    "polymarket_live_promotion.py": frozenset({"polymarket_live"}),
-    "polymarket_autonomous.py": frozenset(
+    "polymarket_live_promotion.py": frozenset(
+        {"polymarket_live", "polymarket_live_manifest"}
+    ),
+    "polymarket_live_risk.py": frozenset({"polymarket_live"}),
+    "polymarket_live_qualification.py": frozenset(
         {
-            "paper_execution",
-            "polymarket_external_signal",
             "polymarket_live",
             "polymarket_live_promotion",
+            "polymarket_live_v2",
+        }
+    ),
+    "polymarket_autonomous.py": frozenset(
+        {
+            "polymarket_external_signal",
+            "polymarket_fees",
+            "polymarket_live",
+            "polymarket_live_promotion",
+            "polymarket_live_qualification",
         }
     ),
     "polymarket_autonomous_runtime.py": frozenset(
         {
             "polymarket",
             "polymarket_autonomous",
-            "polymarket_external_signal",
             "polymarket_live",
             "polymarket_live_promotion",
+            "polymarket_live_qualification",
+            "polymarket_live_risk",
             "polymarket_live_runtime",
             "polymarket_live_settlement",
             "polymarket_live_stop",
         }
-    ),
-    "polymarket_binance_signal.py": frozenset(
-        {"polymarket_autonomous", "polymarket_external_signal"}
     ),
     "polymarket_round16_shadow.py": frozenset(
         {
@@ -52,6 +62,7 @@ LIVE_BOUNDARY_IMPORTS = {
             "polymarket_round16_dataset",
             "polymarket_round16_evaluation",
             "polymarket_round16_model",
+            "polymarket_round16_targets",
         }
     ),
     "polymarket_round16_decision.py": frozenset(
@@ -171,32 +182,15 @@ def test_live_polymarket_local_import_graph_is_explicitly_isolated() -> None:
     )
 
 
-def test_public_binance_advisor_has_no_execution_surface() -> None:
-    path = SOURCE_ROOT / "polymarket_binance_signal.py"
+def test_polymarket_live_cli_has_no_direct_binance_dependency() -> None:
+    path = SOURCE_ROOT / "polymarket_live_cli.py"
     tree = ast.parse(path.read_text(encoding="utf-8"))
-    provider = next(
-        node
-        for node in tree.body
-        if isinstance(node, ast.ClassDef)
-        and node.name == "BinanceBtcPublicSignalProvider"
-    )
-    public_methods = {
-        node.name
-        for node in provider.body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-        and not node.name.startswith("_")
-    }
 
-    assert public_methods == {"evaluate", "run", "snapshot"}
-    assert not public_methods & {
-        "buy",
-        "cancel",
-        "close_position",
-        "open_position",
-        "order",
-        "sell",
-        "submit",
-    }
+    assert all(
+        "binance" not in str(node.module or "").lower()
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom)
+    )
 
 
 def test_operator_status_imports_without_optional_advisory_stack(
@@ -204,10 +198,10 @@ def test_operator_status_imports_without_optional_advisory_stack(
 ) -> None:
     blocked_modules = (
         "simple_ai_trading.polymarket_autonomous_runtime",
-        "simple_ai_trading.polymarket_binance_signal",
         "simple_ai_trading.polymarket_historical_shadow",
         "simple_ai_trading.polymarket_historical_shadow_feed",
         "simple_ai_trading.polymarket_live_promotion",
+        "simple_ai_trading.polymarket_live_qualification",
         "simple_ai_trading.polymarket_round16_decision",
         "simple_ai_trading.polymarket_round16_shadow",
     )

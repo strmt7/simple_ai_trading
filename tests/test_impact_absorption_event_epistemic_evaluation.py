@@ -152,8 +152,8 @@ def test_epistemic_report_requires_every_conditional_stratum(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(subject, "ROUND74_EPISTEMIC_BOOTSTRAP_SAMPLES", 200)
-    batches = tuple(_evaluation_batch(index) for index in range(1, 7))
-    run_ids = tuple(f"{index:032x}" for index in range(1, 7))
+    batches = tuple(_evaluation_batch(index) for index in range(1, 8))
+    run_ids = tuple(f"{index:032x}" for index in range(1, 8))
 
     report = subject.evaluate_round74_epistemic_risk_coverage(
         batches,
@@ -166,6 +166,11 @@ def test_epistemic_report_requires_every_conditional_stratum(
     assert report.aggregate_ordering_supported is True
     assert report.conditional_ordering_supported is True
     assert report.policy_challenge_eligible is True
+    assert len(report.policy_selection_run_ids) == 7
+    assert (
+        report.as_dict()["evaluation_contract"]["minimum_required_capture_runs"]
+        == subject.ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS
+    )
     assert all(metric.ordering_supported for metric in report.metrics)
     payload = json.loads(json.dumps(report.as_dict()))
     assert subject.Round74EpistemicRiskCoverageReport.from_dict(payload) == report
@@ -181,11 +186,11 @@ def test_epistemic_action_filter_is_profile_specific_and_target_free(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(subject, "ROUND74_EPISTEMIC_BOOTSTRAP_SAMPLES", 200)
-    batches = tuple(_evaluation_batch(index) for index in range(1, 7))
+    batches = tuple(_evaluation_batch(index) for index in range(1, 8))
     report = subject.evaluate_round74_epistemic_risk_coverage(
         batches,
         expected_policy_selection_run_ids=tuple(
-            f"{index:032x}" for index in range(1, 7)
+            f"{index:032x}" for index in range(1, 8)
         ),
     )
 
@@ -212,6 +217,7 @@ def test_epistemic_action_filter_is_profile_specific_and_target_free(
     assert np.all(regular.action_thresholds <= aggressive.action_thresholds)
     assert np.all(conservative.regime_thresholds <= regular.regime_thresholds)
     assert np.all(regular.regime_thresholds <= aggressive.regime_thresholds)
+    assert len(conservative.source_run_ids) == 7
     payload = json.loads(json.dumps(conservative.as_dict()))
     assert Round74EpistemicActionFilter.from_dict(payload).filter_sha256 == (
         conservative.filter_sha256
@@ -235,9 +241,7 @@ def test_epistemic_action_filter_is_profile_specific_and_target_free(
             batches[0],
             net_payoff_bps=_readonly(-batches[0].net_payoff_bps),
             adverse_selection=_readonly(1.0 - batches[0].adverse_selection),
-            regime_unpredictability=_readonly(
-                1.0 - batches[0].regime_unpredictability
-            ),
+            regime_unpredictability=_readonly(1.0 - batches[0].regime_unpredictability),
         ),
         *batches[1:],
     )
@@ -247,6 +251,18 @@ def test_epistemic_action_filter_is_profile_specific_and_target_free(
         profile="conservative",
     )
     assert target_invariant.filter_sha256 == conservative.filter_sha256
+
+
+def test_epistemic_report_rejects_fewer_than_minimum_runs() -> None:
+    batches = tuple(_evaluation_batch(index) for index in range(1, 6))
+
+    with pytest.raises(ValueError, match="policy-selection panel differs"):
+        subject.evaluate_round74_epistemic_risk_coverage(
+            batches,
+            expected_policy_selection_run_ids=tuple(
+                f"{index:032x}" for index in range(1, 6)
+            ),
+        )
 
 
 def test_missing_outcome_classes_fail_closed(

@@ -10,6 +10,7 @@ from importlib.metadata import PackageNotFoundError, version as package_version
 import json
 import os
 import re
+from threading import Lock
 import time
 from typing import Mapping, Sequence
 
@@ -32,8 +33,9 @@ from .polymarket_live import (
     PolymarketSubmission,
     PolymarketVenuePreflight,
     PolymarketVenueRejected,
+    PolymarketVenueTemporarilyUnavailable,
 )
-from .paper_execution import PolymarketFeeModel
+from .polymarket_fees import PolymarketFeeModel
 
 
 POLYMARKET_LIVE_SDK_VERSION = "1.1.0"
@@ -46,6 +48,16 @@ _ADDRESS = re.compile(r"^0x[0-9a-fA-F]{40}$")
 _ORDER_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _TOKEN_ID = re.compile(r"^[0-9]{20,80}$")
 _SAFE_REJECTION_STATUSES = frozenset({401, 403, 404, 422})
+_CANCEL_ONLY_ERROR = (
+    "Trading is currently cancel-only. New orders are not accepted, but cancels "
+    "are allowed."
+)
+_POST_ONLY_ERROR = "post-only mode: only post-only orders and cancels are allowed"
+_INITIAL_RESTART_BACKOFF_SECONDS = 2.0
+_MAXIMUM_RESTART_BACKOFF_SECONDS = 30.0
+_CANCEL_ONLY_COOLDOWN_SECONDS = 30.0
+_RATE_LIMIT_COOLDOWN_SECONDS = 30.0
+_MAXIMUM_POST_ONLY_COOLDOWN_SECONDS = 120
 _TOKEN_SCALE = Decimal("1000000")
 
 
@@ -183,6 +195,12 @@ class OfficialPolymarketV2Venue:
         self.timeout_seconds = max(1.0, min(30.0, float(timeout_seconds)))
         self.maximum_response_bytes = 8 * 1024 * 1024
         self._client = client or self._build_client()
+        self._dispatch_mode_lock = Lock()
+        self._dispatch_blocked_until = 0.0
+        self._dispatch_block_reason = ""
+        self._cancel_blocked_until = 0.0
+        self._cancel_block_reason = ""
+        self._next_restart_backoff_seconds = _INITIAL_RESTART_BACKOFF_SECONDS
 
     @property
     def wallet_address(self) -> str:
@@ -210,14 +228,26 @@ class OfficialPolymarketV2Venue:
             api_secret=self.credentials.api_secret,
             api_passphrase=self.credentials.api_passphrase,
         )
-        client = ClobClient(
+
+        class _ImmediateResponseClobClient(ClobClient):
+            def _resolve_transactions_hashes(self, response: object) -> object:
+                # SDK 1.1.0 may poll for 30 seconds after the CLOB has accepted a
+                # matched order. Fill authority comes from the authenticated user
+                # stream and exact reconciliation, so preserve deferExec=false while
+                # returning the initial server response to the action loop.
+                return response
+
+        client = _ImmediateResponseClobClient(
             host=CLOB_BASE_URL,
             chain_id=POLYGON_CHAIN_ID,
             key=self.credentials.private_key,
             creds=creds,
             signature_type=self.credentials.signature_type,
             funder=self.credentials.funder_address,
-            use_server_time=True,
+            # The coordinator performs a fresh server-clock preflight before every
+            # submission. Avoid another blocking /time request between the final
+            # intent-age check and the order POST.
+            use_server_time=False,
             retry_on_error=False,
         )
         funder = str(getattr(client.builder, "funder", "")).lower()
@@ -735,6 +765,30 @@ class OfficialPolymarketV2Venue:
             raise ValueError(f"Polymarket {name} is not an integer token amount")
         return Decimal(text) / _TOKEN_SCALE
 
+    def collateral_balance(self) -> Decimal:
+        """Read dedicated-wallet collateral once for autonomous risk binding."""
+
+        try:
+            from py_clob_client_v2 import AssetType, BalanceAllowanceParams
+        except ImportError as exc:
+            raise RuntimeError(
+                "Polymarket live execution requires the 'polymarket-live' extra"
+            ) from exc
+        response = _mapping(
+            self._client.get_balance_allowance(
+                BalanceAllowanceParams(
+                    asset_type=AssetType.COLLATERAL,
+                    token_id=None,
+                    signature_type=self.credentials.signature_type,
+                )
+            ),
+            name="balance-allowance response",
+        )
+        return self._asset_amount(
+            response.get("balance"),
+            name="balance",
+        )
+
     def funding(
         self,
         intent: PolymarketLiveOrderIntent,
@@ -912,22 +966,165 @@ class OfficialPolymarketV2Venue:
     @staticmethod
     def _api_status(error: Exception) -> int | None:
         status = getattr(error, "status_code", None)
-        return int(status) if isinstance(status, int) else None
+        return (
+            int(status)
+            if isinstance(status, int) and not isinstance(status, bool)
+            else None
+        )
+
+    @staticmethod
+    def _api_payload(error: Exception) -> Mapping[str, object]:
+        payload = getattr(error, "error_msg", None)
+        if isinstance(payload, Mapping):
+            return payload
+        if not isinstance(payload, str):
+            return {}
+        try:
+            decoded = json.loads(payload)
+        except json.JSONDecodeError:
+            return {}
+        return decoded if isinstance(decoded, Mapping) else {}
+
+    def _latch_dispatch_cooldown(self, *, reason: str, seconds: float) -> None:
+        blocked_until = time.monotonic() + seconds
+        with self._dispatch_mode_lock:
+            if blocked_until >= self._dispatch_blocked_until:
+                self._dispatch_blocked_until = blocked_until
+                self._dispatch_block_reason = reason
+
+    def _latch_cancel_cooldown(self, *, reason: str, seconds: float) -> None:
+        blocked_until = time.monotonic() + seconds
+        with self._dispatch_mode_lock:
+            if blocked_until >= self._cancel_blocked_until:
+                self._cancel_blocked_until = blocked_until
+                self._cancel_block_reason = reason
+
+    def _latch_matching_engine_restart(self) -> None:
+        now = time.monotonic()
+        with self._dispatch_mode_lock:
+            delay = self._next_restart_backoff_seconds
+            self._next_restart_backoff_seconds = min(
+                delay * 2,
+                _MAXIMUM_RESTART_BACKOFF_SECONDS,
+            )
+            blocked_until = now + delay
+            if blocked_until >= self._dispatch_blocked_until:
+                self._dispatch_blocked_until = blocked_until
+                self._dispatch_block_reason = "matching_engine_restart"
+            if blocked_until >= self._cancel_blocked_until:
+                self._cancel_blocked_until = blocked_until
+                self._cancel_block_reason = "matching_engine_restart"
+
+    def _restricted_mode_rejection(
+        self,
+        error: Exception,
+    ) -> PolymarketSubmission | None:
+        status = self._api_status(error)
+        if status == 425:
+            self._latch_matching_engine_restart()
+            return PolymarketSubmission(
+                accepted=False,
+                order_id="",
+                status="rejected",
+                rejection_code="matching_engine_restart",
+            )
+        if status == 429:
+            self._latch_dispatch_cooldown(
+                reason="order_rate_limited",
+                seconds=_RATE_LIMIT_COOLDOWN_SECONDS,
+            )
+            return PolymarketSubmission(
+                accepted=False,
+                order_id="",
+                status="rejected",
+                rejection_code="order_rate_limited",
+            )
+        if status != 503:
+            return None
+        payload = self._api_payload(error)
+        if payload.get("error") == _CANCEL_ONLY_ERROR and len(payload) == 1:
+            self._latch_dispatch_cooldown(
+                reason="cancel_only_mode",
+                seconds=_CANCEL_ONLY_COOLDOWN_SECONDS,
+            )
+            return PolymarketSubmission(
+                accepted=False,
+                order_id="",
+                status="rejected",
+                rejection_code="cancel_only_mode",
+            )
+        retry_after = payload.get("retry_after_seconds")
+        if (
+            payload.get("error") == _POST_ONLY_ERROR
+            and payload.get("code") == "post_only_mode"
+            and len(payload) == 3
+            and isinstance(retry_after, int)
+            and not isinstance(retry_after, bool)
+            and 1 <= retry_after <= _MAXIMUM_POST_ONLY_COOLDOWN_SECONDS
+        ):
+            self._latch_dispatch_cooldown(
+                reason="post_only_mode",
+                seconds=float(retry_after),
+            )
+            return PolymarketSubmission(
+                accepted=False,
+                order_id="",
+                status="rejected",
+                rejection_code="post_only_mode",
+            )
+        return None
+
+    def assert_order_dispatch_available(self) -> None:
+        now = time.monotonic()
+        with self._dispatch_mode_lock:
+            remaining = self._dispatch_blocked_until - now
+            if remaining <= 0:
+                self._dispatch_blocked_until = 0.0
+                self._dispatch_block_reason = ""
+                return
+            reason = self._dispatch_block_reason
+        raise PolymarketLiveBlocked(
+            f"Polymarket order dispatch is cooling down after {reason}; "
+            f"retry after {max(1, int(remaining + 0.999))} seconds"
+        )
+
+    def assert_cancel_dispatch_available(self) -> None:
+        now = time.monotonic()
+        with self._dispatch_mode_lock:
+            remaining = self._cancel_blocked_until - now
+            if remaining <= 0:
+                self._cancel_blocked_until = 0.0
+                self._cancel_block_reason = ""
+                return
+            reason = self._cancel_block_reason
+        raise PolymarketLiveBlocked(
+            f"Polymarket cancel dispatch is cooling down after {reason}; "
+            f"retry after {max(1, int(remaining + 0.999))} seconds"
+        )
+
+    def _note_order_dispatch_success(self) -> None:
+        with self._dispatch_mode_lock:
+            self._next_restart_backoff_seconds = _INITIAL_RESTART_BACKOFF_SECONDS
 
     def submit_order(self, prepared: PolymarketPreparedOrder) -> PolymarketSubmission:
+        self.assert_order_dispatch_available()
         try:
             response = self._client.post_order(
                 prepared.opaque_signed_order,
                 order_type=prepared.intent.order_type,
-                defer_exec=True,
+                defer_exec=False,
             )
         except Exception as exc:
             status = self._api_status(exc)
+            restricted = self._restricted_mode_rejection(exc)
+            if restricted is not None:
+                return restricted
             if status in _SAFE_REJECTION_STATUSES:
                 raise PolymarketVenueRejected(
                     f"Polymarket rejected the order with HTTP {status}"
                 ) from exc
             raise
+        self._note_order_dispatch_success()
         payload = _mapping(response, name="order submission response")
         success = payload.get("success")
         if success is False:
@@ -968,9 +1165,7 @@ class OfficialPolymarketV2Venue:
         normalized_role = str(role or "").strip().upper()
         reported_fee_rate = trade.get("fee_rate_bps")
         reported_fee_rate_bps = (
-            -1
-            if reported_fee_rate in {None, ""}
-            else int(str(reported_fee_rate))
+            -1 if reported_fee_rate in {None, ""} else int(str(reported_fee_rate))
         )
         return PolymarketRemoteFill(
             trade_id=str(trade.get("id") or ""),
@@ -1018,11 +1213,9 @@ class OfficialPolymarketV2Venue:
                 self._client.get_clob_market_info(market_id),
                 name="fill market info",
             )
-            fee_model, fee_rate, fee_exponent, fee_schedule_sha256 = (
-                self._fee_schedule(
-                    market_info,
-                    condition_id=market_id,
-                )
+            fee_model, fee_rate, fee_exponent, fee_schedule_sha256 = self._fee_schedule(
+                market_info,
+                condition_id=market_id,
             )
             rows = self._client.get_trades(TradeParams(market=market_id))
             if not isinstance(rows, list):
@@ -1090,10 +1283,25 @@ class OfficialPolymarketV2Venue:
         requested = tuple(dict.fromkeys(str(value).lower() for value in order_ids))
         if not requested:
             return PolymarketCancelResult((), ())
+        self.assert_cancel_dispatch_available()
         try:
             response = self._client.cancel_orders(list(requested))
-        except Exception:
+        except Exception as exc:
+            if self._api_status(exc) == 425:
+                self._latch_matching_engine_restart()
+                raise PolymarketVenueTemporarilyUnavailable(
+                    "Polymarket matching engine is restarting"
+                ) from exc
+            if self._api_status(exc) == 429:
+                self._latch_cancel_cooldown(
+                    reason="cancel_rate_limited",
+                    seconds=_RATE_LIMIT_COOLDOWN_SECONDS,
+                )
+                raise PolymarketVenueTemporarilyUnavailable(
+                    "Polymarket cancel bucket is rate limited"
+                ) from exc
             raise
+        self._note_order_dispatch_success()
         payload = _mapping(response, name="cancel response")
         cancelled_raw = payload.get("canceled") or []
         failed_raw = payload.get("not_canceled") or {}

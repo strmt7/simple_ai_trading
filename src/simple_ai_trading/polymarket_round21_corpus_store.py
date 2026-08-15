@@ -872,6 +872,7 @@ def _audit_round21_core_partition(
     expected_manifest: Mapping[str, object],
     *,
     allow_sealed_test: bool,
+    feature_sink: list[Round21CoreFeatureSnapshot] | None = None,
 ) -> dict[str, object]:
     expected = validate_round21_core_partition_manifest(expected_manifest)
     if expected["partition"] == "sealed_test" and not allow_sealed_test:
@@ -1011,6 +1012,8 @@ def _audit_round21_core_partition(
                 decoded = _decode_feature_chunk(bytes(compressed), chunk_body)
                 if len(decoded) != admission["available_feature_row_count"]:
                     raise ValueError("Round 21 core chunk feature count differs")
+                if feature_sink is not None:
+                    feature_sink.extend(decoded)
                 feature_chunk_count += 1
                 feature_row_count += len(decoded)
             logical_root = _hash_chain(
@@ -1064,16 +1067,31 @@ def audit_round21_core_partition(
     )
 
 
-def audit_round21_sealed_core_partition(
+def load_round21_core_partition_snapshots(
     database: str | Path,
+    expected_manifest: Mapping[str, object],
+) -> tuple[Round21CoreFeatureSnapshot, ...]:
+    """Load an audited development partition in one ordered storage pass."""
+
+    snapshots: list[Round21CoreFeatureSnapshot] = []
+    audit = _audit_round21_core_partition(
+        database,
+        expected_manifest,
+        allow_sealed_test=False,
+        feature_sink=snapshots,
+    )
+    if len(snapshots) != audit["feature_row_count"]:
+        raise ValueError("Round 21 core partition loaded feature count differs")
+    return tuple(snapshots)
+
+
+def _authorize_round21_sealed_core_partition(
     expected_manifest: Mapping[str, object],
     *,
     one_use_store_path: str | Path,
     claim: object,
     test_access_sha256: str,
-) -> dict[str, object]:
-    """Audit sealed features only through the durable one-use access ledger."""
-
+) -> tuple[dict[str, object], dict[str, object]]:
     from .polymarket_round21_one_use import (  # local import avoids a module cycle
         Round21OneUseClaim,
         Round21OneUseStore,
@@ -1094,12 +1112,59 @@ def audit_round21_sealed_core_partition(
             selected,
             test_access_sha256=test_access_sha256,
         )
+    return expected, authorization
+
+
+def audit_round21_sealed_core_partition(
+    database: str | Path,
+    expected_manifest: Mapping[str, object],
+    *,
+    one_use_store_path: str | Path,
+    claim: object,
+    test_access_sha256: str,
+) -> dict[str, object]:
+    """Audit sealed features only through the durable one-use access ledger."""
+
+    expected, authorization = _authorize_round21_sealed_core_partition(
+        expected_manifest,
+        one_use_store_path=one_use_store_path,
+        claim=claim,
+        test_access_sha256=test_access_sha256,
+    )
     audit = _audit_round21_core_partition(
         database,
         expected,
         allow_sealed_test=True,
     )
     return {**audit, **authorization}
+
+
+def load_round21_sealed_core_partition_snapshots(
+    database: str | Path,
+    expected_manifest: Mapping[str, object],
+    *,
+    one_use_store_path: str | Path,
+    claim: object,
+    test_access_sha256: str,
+) -> tuple[Round21CoreFeatureSnapshot, ...]:
+    """Load sealed snapshots once through the consumed one-use access record."""
+
+    expected, _authorization = _authorize_round21_sealed_core_partition(
+        expected_manifest,
+        one_use_store_path=one_use_store_path,
+        claim=claim,
+        test_access_sha256=test_access_sha256,
+    )
+    snapshots: list[Round21CoreFeatureSnapshot] = []
+    audit = _audit_round21_core_partition(
+        database,
+        expected,
+        allow_sealed_test=True,
+        feature_sink=snapshots,
+    )
+    if len(snapshots) != audit["feature_row_count"]:
+        raise ValueError("Round 21 sealed partition loaded feature count differs")
+    return tuple(snapshots)
 
 
 def publish_round21_core_corpus(
@@ -1237,11 +1302,11 @@ def load_round21_core_publication_manifest(
     return validate_round21_core_publication_manifest(value)
 
 
-def validate_round21_core_publication_boundary(
+def _validate_round21_core_publication_boundary(
     publication_directory: str | Path,
+    *,
+    development_feature_sink: list[Round21CoreFeatureSnapshot] | None = None,
 ) -> dict[str, object]:
-    """Validate a publication without opening sealed-test feature chunks."""
-
     selected_root = Path(publication_directory)
     if selected_root.is_symlink():
         raise ValueError("Round 21 core publication is unavailable")
@@ -1256,7 +1321,12 @@ def validate_round21_core_publication_boundary(
     sealed_manifest = validate_round21_core_partition_manifest(
         manifest["sealed_test_partition"]
     )
-    audit_round21_core_partition(development_path, development_manifest)
+    _audit_round21_core_partition(
+        development_path,
+        development_manifest,
+        allow_sealed_test=False,
+        feature_sink=development_feature_sink,
+    )
     if _load_stored_partition_manifest(sealed_path) != sealed_manifest:
         raise ValueError("Round 21 sealed partition metadata differs")
     terminal_audit = dict(
@@ -1289,13 +1359,42 @@ def validate_round21_core_publication_boundary(
     return manifest
 
 
+def validate_round21_core_publication_boundary(
+    publication_directory: str | Path,
+) -> dict[str, object]:
+    """Validate a publication without opening sealed-test feature chunks."""
+
+    return _validate_round21_core_publication_boundary(publication_directory)
+
+
+def load_round21_core_development_publication(
+    publication_directory: str | Path,
+) -> tuple[dict[str, object], tuple[Round21CoreFeatureSnapshot, ...]]:
+    """Validate and load development snapshots in one ordered storage pass."""
+
+    snapshots: list[Round21CoreFeatureSnapshot] = []
+    manifest = _validate_round21_core_publication_boundary(
+        publication_directory,
+        development_feature_sink=snapshots,
+    )
+    development = validate_round21_core_partition_manifest(
+        manifest["development_partition"]
+    )
+    if len(snapshots) != development["feature_row_count"]:
+        raise ValueError("Round 21 development publication feature count differs")
+    return manifest, tuple(snapshots)
+
+
 __all__ = [
     "POLYMARKET_ROUND21_CORE_CHUNK_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_CORE_PARTITION_SCHEMA_VERSION",
     "POLYMARKET_ROUND21_CORE_PUBLICATION_SCHEMA_VERSION",
     "audit_round21_core_partition",
     "audit_round21_sealed_core_partition",
+    "load_round21_core_development_publication",
     "load_round21_core_publication_manifest",
+    "load_round21_core_partition_snapshots",
+    "load_round21_sealed_core_partition_snapshots",
     "publish_round21_core_corpus",
     "validate_round21_core_publication_boundary",
     "validate_round21_core_partition_manifest",

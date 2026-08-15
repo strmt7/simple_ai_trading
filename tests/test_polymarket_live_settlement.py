@@ -2455,10 +2455,25 @@ class FakeRuntimeAuthority:
         self.assertions: list[bool] = []
         self.failures: list[str] = []
 
-    def note_reconciliation(self, result: object) -> None:
-        del result
+    def reconciliation_checkpoint(self) -> int:
+        return 0
 
-    def note_reconciliation_failure(self, failure_code: str) -> None:
+    def note_reconciliation(
+        self,
+        result: object,
+        *,
+        checkpoint: int | None = None,
+    ) -> None:
+        del result
+        del checkpoint
+
+    def note_reconciliation_failure(
+        self,
+        failure_code: str,
+        *,
+        checkpoint: int | None = None,
+    ) -> None:
+        del checkpoint
         self.failures.append(failure_code)
 
     def assert_submission_allowed(self, *, closing_only: bool) -> None:
@@ -2555,6 +2570,8 @@ def test_settlement_service_supervisor_survives_iteration_failures(
         await task
 
     asyncio.run(run_failing())
+    assert authority.failures
+    assert set(authority.failures) == {"settlement_iteration_failure:RuntimeError"}
 
 
 @pytest.mark.parametrize(

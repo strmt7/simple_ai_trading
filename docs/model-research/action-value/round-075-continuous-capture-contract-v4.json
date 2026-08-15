@@ -1,0 +1,258 @@
+{
+  "activated_plan": {
+    "plan_file_sha256": "fdfd131b7edcf66d4d523a332e50caea45d448c15bf2c21e27a72544a9d02f97",
+    "plan_path": "docs/model-research/action-value/round-075-prospective-event-cohort-plan-v1.json",
+    "plan_publication_file_sha256": "d3bef902ffc93305510131698121030dcad025a22719d58ce0ed91beb8507544",
+    "plan_publication_path": "docs/model-research/action-value/round-075-prospective-plan-publication-v1.json",
+    "plan_publication_sha256": "79c318f05f28a5b6ca1d72f4ccb03a918d28909df0e9e0e86334efa0ae6e824c",
+    "plan_sha256": "68358178d9182dbfa62ced97c274709bc156903c830d6d53a0171e028e102514",
+    "scheduled_start_utc": "2026-08-11T00:00:00+00:00",
+    "scheduled_start_wall_ns": 1786406400000000000,
+    "total_slots": 720
+  },
+  "activation_gates": {
+    "campaign_activated": false,
+    "campaign_storage_empty_before_v4_contract_freeze": true,
+    "host_storage_and_process_preflight_passed": false,
+    "plan_uses_capture_source_commit_bound_here": true,
+    "prestart_v2_supervisor_failure_contained_and_bound": true,
+    "prospective_plan_published_before_v2_and_retained_by_v4": true,
+    "scheduled_supervisor_registered_and_observed": false,
+    "start_time_frozen_before_service_start": true,
+    "v3_service_stopped_before_v4_contract_freeze": true,
+    "v3_terminal_state_bound": true
+  },
+  "ai_contract": {
+    "ai_enabled_candidate_family_changed": false,
+    "ai_may_create_side_increase_risk_set_leverage_or_submit_order": false,
+    "ai_promotion_before_matched_after_cost_uplift": false,
+    "ai_role": "target_free_veto_or_reduce_only",
+    "ai_uplift_established": false,
+    "carry_forward_design_sha256": "d41aad8e7755f0f073edd3aa0267a25a290a912ce8acbde087d846405eba866f",
+    "paired_same_candidate_same_cost_same_timing_evaluation_required": true
+  },
+  "artifact_sha256": "eca592acb4c3f37c6d043d37664614d35994d6e9b3ebea2e801351c287a49bbf",
+  "created_at_utc": "2026-08-10T13:30:44.817042+00:00",
+  "evidence_boundary": {
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "predictive_accuracy_established": false,
+    "profitability_established": false,
+    "representative_training_completed": false,
+    "sealed_test_accessed": false
+  },
+  "exchange_connection_contract": {
+    "connection_duration_is_below_exchange_24h_limit": true,
+    "connection_maximum_hours": 24,
+    "depth_continuity_fields": [
+      "U",
+      "u",
+      "pu"
+    ],
+    "depth_update_interval_milliseconds": 100,
+    "documentation_last_modified_utc_date": "2026-08-08",
+    "incoming_control_message_limit_per_second": 10,
+    "market_endpoint": "wss://fstream.binance.com/market",
+    "maximum_streams_per_connection": 1024,
+    "official_connect_documentation_url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/Connect",
+    "official_documentation_checked_at_utc": "2026-08-10T13:30:44.818039+00:00",
+    "official_public_stream_documentation_url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams",
+    "pong_deadline_minutes": 10,
+    "private_endpoint_used": false,
+    "public_endpoint": "wss://fstream.binance.com/public",
+    "retail_price_improvement_orders_visible_in_standard_depth": false,
+    "server_ping_interval_minutes": 3
+  },
+  "implementation": {
+    "continuous_service_file_sha256": "090704bd5bacfe6104efd9245d1fb17792594f8eba4bd8e7359208a24ab7c5dd",
+    "continuous_service_path": "src/simple_ai_trading/round75_continuous_capture.py",
+    "operator_file_sha256": "17d0e3d8de3d13997037e567d2f19f3c5524223df0be7a4a9b5eee3d90e90822",
+    "operator_path": "tools/run_round75_continuous_capture.py",
+    "supervisor_file_sha256": "ac7b74689c9957baf162f486bdd25ab4b0134ec988598bcc277b77cbcad9b8a6",
+    "supervisor_operator_file_sha256": "44e194589f886695de7ecda9aa0d8edbab0a6f7b73e57752d8c041a25ea3eb2b",
+    "supervisor_operator_path": "tools/supervise_round75_continuous_capture.py",
+    "supervisor_path": "src/simple_ai_trading/round75_capture_supervisor.py"
+  },
+  "model_contract": {
+    "after_cost_delayed_l2_execution_gate_required": true,
+    "architecture_changed_for_round75": false,
+    "candidate_ids_in_frozen_complexity_order": [
+      "event_pooling_linear",
+      "event_pooling_mlp",
+      "causal_event_tcn",
+      "causal_event_attention"
+    ],
+    "causal_next_event_pretraining_schema_version": "round-074-causal-next-event-pretraining-v5",
+    "continuous_loss_dimensions": "unmasked_continuous_features_only",
+    "event_model_schema_version": "round-074-event-payoff-model-v13",
+    "leverage_can_create_edge": false,
+    "masked_continuous_target_policy": "exclude_from_loss_not_zero_impute",
+    "operational_complete_transaction_metrics_required": true,
+    "predictive_accuracy_alone_can_promote": false,
+    "reason": "Masked continuous feature views previously contributed artificial zero targets to the auxiliary-loss denominator; v136 scores only dimensions available to that feature view.",
+    "sealed_one_use_test_retained": true,
+    "superseding_design_sha256": "2016c8ff6b06ec5a007e501f42aef9c35a9a82ddbad262b3822a4a90cbaa93be",
+    "target_blind_causal_pretraining_retained": true,
+    "target_free_pretraining_objective_changed_for_round75": true,
+    "whole_epoch_chronological_roles_retained": true
+  },
+  "research_basis": [
+    {
+      "title": "LOBERT: Generative AI Foundation Model for Limit Order Book Messages",
+      "url": "https://arxiv.org/abs/2511.12563",
+      "use": "Retain message-level next-event self-supervision while preserving continuous price, volume, and time representations."
+    },
+    {
+      "title": "Self-Supervised Pretext Tasks for Event Sequence Data from Detecting Misalignment",
+      "url": "https://openreview.net/forum?id=zc101QzXtw",
+      "use": "Keep event-time and event-type self-supervision target-free and separate from downstream financial outcomes."
+    },
+    {
+      "title": "TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data",
+      "url": "https://arxiv.org/abs/2502.15757",
+      "use": "Retain simple controls and after-cost complexity promotion because predictive architecture gains can deteriorate after spread costs."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "High predictive metrics need not produce actionable complete transactions; retain operational economic gates."
+    },
+    {
+      "title": "LiT: limit order book transformer",
+      "url": "https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2025.1616485/full",
+      "use": "Compact causal attention remains a preregistered challenger, not a complexity-privileged default."
+    },
+    {
+      "title": "Limit Order Book Event Stream Prediction with Diffusion Model",
+      "url": "https://arxiv.org/abs/2412.09631",
+      "use": "Event-time/type generation remains research-only and is not added to the sealed financial candidate family."
+    }
+  ],
+  "resource_contract": {
+    "any_campaign_wal_blocks_next_slot": true,
+    "campaign_size_cap_bytes": 42949672960,
+    "database_opened_by_resource_preflight": false,
+    "duckdb_memory_limit": "2GB",
+    "duckdb_threads": 2,
+    "minimum_free_bytes": 107374182400,
+    "shard_size_cap_bytes": 2147483648,
+    "shard_slot_count": 24,
+    "slot_growth_cap_bytes": 536870912,
+    "training_or_backtest_during_capture": false
+  },
+  "round": 75,
+  "round74_diagnosis": {
+    "admitted_fraction_of_started_slots": 0.9108910891089109,
+    "admitted_slots": 460,
+    "campaign_continuity_failure_indicated": true,
+    "exact_host_cause_established": false,
+    "missed_slots": 238,
+    "model_architecture_failure_established": false,
+    "never_started_slots": 215,
+    "never_started_slots_in_two_major_gaps": 212,
+    "slot_directories_created": 505,
+    "total_slots": 720,
+    "training_hours_observed": 64.80744827491667,
+    "training_hours_required": 109.65,
+    "transport_excluded_slots": 22
+  },
+  "schema_version": "round-075-continuous-capture-contract-v4",
+  "scope": {
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "model_training_performed": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "source_database_access": "not_opened",
+    "target_data_accessed": false
+  },
+  "service_contract": {
+    "ambiguous_process_inventory_fails_closed": true,
+    "duplicate_logical_service_families_fail_closed": true,
+    "heartbeat_interval_seconds": 5.0,
+    "lease_is_process_lifetime_file_lock": true,
+    "missed_schema_version": "round-075-continuous-capture-missed-slot-v1",
+    "service_schema_version": "round-075-continuous-capture-service-v1",
+    "stale_after_ns": 90000000000,
+    "startup_grace_ns": 90000000000,
+    "state_schema_version": "round-075-continuous-capture-state-v1",
+    "stop_during_slot_finishes_current_public_capture": true,
+    "stop_request_starts_no_new_slot": true,
+    "supervisor_process_match_uses_exact_tool_plan_contract_and_database": true,
+    "supervisor_reinspects_before_termination": true,
+    "supervisor_schema_version": "round-075-capture-supervisor-v2",
+    "supervisor_terminates_exact_child_before_exact_parent": true,
+    "verified_venv_launchers_retained_for_physical_child_first_repair": true,
+    "windows_venv_redirect_pair_requires_exact_launcher_base_argv_ancestry_and_creation_time": true
+  },
+  "source_bindings": {
+    "ai_design_file_sha256": "7f37ad620e9978f8834a5da367ab01b667cee7c916270c4f48a3c07974797133",
+    "ai_design_path": "docs/model-research/action-value/round-074-local-ai-review-design-v49.json",
+    "ai_design_sha256": "d41aad8e7755f0f073edd3aa0267a25a290a912ce8acbde087d846405eba866f",
+    "capture_source_git_base_commit": "d2ff8e75a7a00bd44394f2664eb9880f42581dfd",
+    "frozen_capture_source_file_sha256": {
+      "src/simple_ai_trading/impact_absorption_capture.py": "60bb82c400ea75efbf2d7407e02bdd17d86528519f906822f559f5f1cf08cba1",
+      "src/simple_ai_trading/impact_absorption_event_dataset.py": "ba18dd07352f42c6d4f437d3bd0b6728f2c5e624d2f0b2b33578c877dbad8be1",
+      "src/simple_ai_trading/impact_absorption_event_segmented_cohort.py": "3cdad1797cc80fff3dd4a43ec4c55faa861dcc145298c8b70d18e5e8795f314d",
+      "src/simple_ai_trading/impact_absorption_event_sequence.py": "4f5b063b1321e12d6b410f0798439ca811706c288ce63e8cc123cbf01168114f",
+      "src/simple_ai_trading/impact_absorption_store.py": "389ec4cef5bed761658ead72563d17a348767c354eda6513477e73dbac3252d5",
+      "src/simple_ai_trading/round74_segmented_campaign_runner.py": "747b6958a7631c38b2560be1d43c555294e4ca890b3658d7e2efa1d5aa6b4254",
+      "src/simple_ai_trading/round74_segmented_capture.py": "a2f099acc0834921e2cb9cfee45d49ab28a5c6c278f0c06e6128fa3e263ac8eb",
+      "src/simple_ai_trading/round74_segmented_cohort_operator.py": "270b8fd37ac74d08a5e0e2906bb656f65b5466370a8327a3b971c02380c2422c",
+      "tools/run_round74_segmented_campaign_slot.py": "303eec06cf4ded4fb5518868697f6fe99555d2403a7cf95c9cc57495f204a9ae",
+      "tools/run_round74_segmented_capture.py": "d80b1389c0581c9c7aef1197af836debff26c30641e4dc084902b4b47ada3a2f"
+    },
+    "model_design_file_sha256": "511897f9c6f7357934a2ee5bda385389404213e1155589a3f90435164d378681",
+    "model_design_path": "docs/model-research/action-value/round-074-event-sequence-model-design-v136.json",
+    "model_design_sha256": "2016c8ff6b06ec5a007e501f42aef9c35a9a82ddbad262b3822a4a90cbaa93be",
+    "prestart_supervisor_failure_artifact_sha256": "389d620107c17341375eee7a8d438fb30e7940a2f064c79f91939849a40b6b6e",
+    "prestart_supervisor_failure_file_sha256": "c54be30a448d36ea23d817bf32646d97c1b2317efaa2e7c7cdb731f1bcd1522c",
+    "prestart_supervisor_failure_path": "docs/model-research/action-value/round-075-prestart-supervisor-activation-failure-2026-08-10.json",
+    "prior_v3_terminal_state_file_sha256": "76f1f6eb101857a99f32a885c9edf3767267fe02cb06ed39ddab9caab65e1fe6",
+    "prior_v3_terminal_state_path": "data/round75-prospective-event-cohort-service-state-v3-terminal.json",
+    "prior_v3_terminal_state_sha256": "fb74a6dbad960b1fa32dd59b621ee5267a98505dffe2b9ea91f7f8b4f6c1f7df",
+    "prospective_plan_file_sha256": "fdfd131b7edcf66d4d523a332e50caea45d448c15bf2c21e27a72544a9d02f97",
+    "prospective_plan_sha256": "68358178d9182dbfa62ced97c274709bc156903c830d6d53a0171e028e102514",
+    "round74_failure_analysis_artifact_sha256": "f03d8b885318c8a783b251f6f38368808480219a2fe0c96147d208f0dd671da1",
+    "round74_failure_analysis_file_sha256": "86522ac242035254e63c97820e90093a864a3c90cd0a62210ebcb2457b1b694b",
+    "round74_failure_analysis_path": "docs/model-research/action-value/round-074-terminal-failure-analysis-2026-08-10.json"
+  },
+  "status": "contract_and_plan_refrozen_after_target_free_pretraining_objective_correction_campaign_not_started",
+  "supersedes": {
+    "contract_artifact_sha256": "0497b323ff6b344ffb6c2a1d9ba995596819cd00fa8f94df9e3d8ae69fb84544",
+    "contract_file_sha256": "82443d90ea29c8d4c226aeb9445c4dfcc0130b341cdced8891f5ed3fc6b4af84",
+    "contract_path": "docs/model-research/action-value/round-075-continuous-capture-contract-v3.json",
+    "reason": "exclude_masked_continuous_dimensions_from_target_free_pretraining_loss_without_changing_capture_or_financial_gates"
+  },
+  "transport_contract": {
+    "activation_is_separate_hash_bound_step": true,
+    "automatic_retry_or_time_shift_permitted": false,
+    "capture_duration_ns": 1200000000000,
+    "cross_epoch_features_or_targets_permitted": false,
+    "every_elapsed_unreserved_slot_gets_immutable_missed_receipt": true,
+    "independent_connection_per_slot": true,
+    "independent_windows_task_per_slot": false,
+    "market_or_model_dependent_replacement_permitted": false,
+    "one_long_lived_leased_scheduler": true,
+    "plan_start_time_assigned": true,
+    "provider": "Binance USD-M public production market data",
+    "role_counts": {
+      "test": 103,
+      "training": 514,
+      "tuning": 103
+    },
+    "role_required_eligible_anchor_ns": {
+      "test": 78948000000000,
+      "training": 394740000000000,
+      "tuning": 78948000000000
+    },
+    "slot_period_ns": 1500000000000,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "target_or_activity_data_used_for_admission": false,
+    "total_predeclared_slots": 720
+  }
+}

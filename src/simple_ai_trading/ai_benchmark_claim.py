@@ -34,12 +34,10 @@ from .storage import write_json_atomic
 
 AI_BENCHMARK_CLAIM_SCHEMA_VERSION = "preregistered-ai-benchmark-claim-v3"
 AI_BENCHMARK_PREREGISTRATION_SCHEMA_VERSION = (
-    "finance-risk-review-candidate-preregistration-v5"
+    "finance-risk-review-candidate-preregistration-v8"
 )
 AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION = "preregistered-ai-benchmark-runtime-v3"
-AI_BENCHMARK_FAILURE_EVIDENCE_SCHEMA_VERSION = (
-    "preregistered-ai-benchmark-failure-v1"
-)
+AI_BENCHMARK_FAILURE_EVIDENCE_SCHEMA_VERSION = "preregistered-ai-benchmark-failure-v1"
 ClaimProgress = Callable[[str, Mapping[str, object]], None]
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _MAX_JSON_BYTES = 32 * 1024 * 1024
@@ -48,7 +46,7 @@ _MINIMUM_CONFIRMATION_DURATION_SECONDS = 54_000
 _MINIMUM_CONTINUITY_GROUPS = 30
 _PROVIDER_DURATION_TOLERANCE_SECONDS = 0.001
 _APPROVED_PREREGISTRATION_SHA256 = {
-    "qwen3:14b": "317fabf1d9f53f5604f62a618e7255f620e540e0852bd0d88087e8967a5aa534",
+    "qwen3:14b": "0c82a1a6a72d76f7186e60e69ab780f9ec8c8837e9e202ba80e3945033a75d71",
 }
 
 

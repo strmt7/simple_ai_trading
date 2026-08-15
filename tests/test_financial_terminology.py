@@ -28,12 +28,22 @@ def test_audit_accepts_established_financial_terms() -> None:
 
 def test_audit_preserves_exact_frozen_evidence_bytes() -> None:
     frozen_term = "policy" + " replay"
+    frozen_overlay_term = "ai" + " reviewer"
     findings = audit_entries(
         [
             (
                 "docs/model-research/action-value/"
                 "round-049-cost-aware-action-hurdle-tcn-design.json",
                 f'"uses": ["fixed-{frozen_term}"]',
+            ),
+            (
+                "docs/model-research/action-value/"
+                "round-074-event-sequence-model-design-v116.json",
+                f'"role": "{frozen_overlay_term}"',
+            ),
+            (
+                "src/simple_ai_trading/impact_absorption_ai_contract_screen.py",
+                f'"""Frozen {frozen_overlay_term} contract."""',
             ),
             ("docs/current.json", f'"uses": ["fixed-{frozen_term}"]'),
         ]

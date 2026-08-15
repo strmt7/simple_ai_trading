@@ -1,0 +1,115 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v133",
+  "artifact_kind": "segmented_pretraining_population_correction",
+  "created_utc": "2026-08-03T14:33:16.5033530Z",
+  "supersedes_artifact_sha256": "39544e2f0c3593d346532a5364b12fbb886f53c84b8081485704c4033753d236",
+  "implementation_git_commit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "source_binding": {
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_pretraining.py",
+        "sha256": "916944496cdb2273a85dc9d658c3acdc1abbdfd23af256c7d408176263720021"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+        "sha256": "296834f37b7308acf2aed58ee084838c87dda93b11619ec8204cafa214ac3059"
+      }
+    ],
+    "affected_tests": [
+      {
+        "path": "tests/test_impact_absorption_event_training.py",
+        "sha256": "c1f274f843eba70b4665f18587ec6bb58ec7c5c7f78cb7d2aa4cacb994529691"
+      }
+    ],
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v132.json",
+      "sha256": "4f9c86ac081bedb66b8871939d466ad7b7b63f604464e08afad40af3ce5a7471"
+    },
+    "internal_contract_basis": [
+      {
+        "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v76.json",
+        "sha256": "4239a1d5289c44082d801db0f47a24bab82823598f1817096748c8ad9f355f00",
+        "role": "duration_normalized_segmented_supervised_population_contract"
+      },
+      {
+        "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v88.json",
+        "sha256": "64cdf3106621b453bf91fb4e3b98503001b6d775309ed13a2bb1a15adcd7ad49",
+        "role": "superseded_equal_run_pretraining_contract"
+      }
+    ]
+  },
+  "schema_contract": {
+    "causal_next_event_pretraining": "round-074-causal-next-event-pretraining-v4",
+    "event_training": "round-074-event-training-v37",
+    "pretest_policy": "round-074-event-pretest-policy-v36"
+  },
+  "defect": {
+    "affected_execution_mode": "segmented_cohort",
+    "prior_objective_weighting": "equal_capture_run",
+    "prior_shorter_run_policy": "deterministic_epoch_rotated_cycling",
+    "short_capture_overweighting_possible": true,
+    "duration_normalized_segmented_population_contract_violated": true,
+    "supervised_targets_accessed_during_pretraining": false,
+    "tuning_or_test_data_accessed_during_correction": false
+  },
+  "declared_delta": {
+    "summary": "Make segmented causal pretraining visit every eligible training row exactly once per epoch and weight its objective by the observed event population instead of cycling short transport epochs.",
+    "cohort_execution_mode_changed": false,
+    "segmented_execution_mode_changed": true,
+    "model_architecture_changed": false,
+    "pretext_targets_changed": false,
+    "supervised_objective_changed": false,
+    "candidate_family_changed": false,
+    "feature_definition_changed": false,
+    "split_definition_changed": false,
+    "optimizer_hyperparameters_changed": false,
+    "runtime_trading_path_changed": false
+  },
+  "segmented_pretraining_contract": {
+    "training_population": "all_eligible_training_rows_in_admitted_transport_epochs",
+    "objective_weighting": "eligible_row_duration_proportional",
+    "each_training_row_visited_once_per_epoch": true,
+    "short_epoch_cycling_permitted": false,
+    "optimizer_step_policy": "one_accumulated_step_per_epoch",
+    "bounded_device_grouping_retained": true,
+    "validation_objective_weighting": "eligible_row_duration_proportional",
+    "per_run_validation_diagnostics_retained": true,
+    "policy_reload_recomputes_population_contract": true,
+    "random_initialization_peer_binds_same_population_contract": true
+  },
+  "legacy_cohort_contract": {
+    "objective_weighting": "equal_capture_run",
+    "shorter_run_policy": "deterministic_epoch_rotated_cycling",
+    "behavior_changed": false
+  },
+  "verification": {
+    "complete_event_training_module_tests_passed": 35,
+    "single_visit_schedule_tested": true,
+    "unequal_run_pooled_gradient_equivalence_tested": true,
+    "segmented_optimizer_step_count_tested": true,
+    "population_policy_reload_tamper_rejection_tested": true,
+    "ruff_check_passed": true,
+    "representative_market_training_run": false,
+    "representative_market_backtest_run": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "representative_configuration_selected": false,
+    "representative_training_completed": false,
+    "representative_sealed_evaluation_completed": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "1b1dd0d1f937a315d1688b98ab642cd6eb035f5fca703fdcdecc45ea723bac19"
+}

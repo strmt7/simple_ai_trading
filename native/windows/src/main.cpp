@@ -63,6 +63,8 @@ enum ControlId : int {
     kReinvestToggleId = 115,
     kModeComboId = 116,
     kPolymarketStopId = 117,
+    kPolymarketPauseId = 118,
+    kPolymarketStartId = 119,
     kQuickBaseId = 200,
 };
 
@@ -219,6 +221,8 @@ class MainWindow {
     HWND selected_help_{};
     HWND stop_binance_{};
     HWND stop_polymarket_{};
+    HWND start_polymarket_{};
+    HWND pause_polymarket_{};
     HWND ai_preflight_{};
     HWND risk_report_{};
     HWND model_lab_{};
@@ -247,9 +251,10 @@ class MainWindow {
     std::mutex api_budget_mutex_;
     std::mutex operator_status_mutex_;
     std::atomic_bool running_{false};
+    std::atomic_bool polymarket_start_running_{false};
     std::atomic_bool binance_control_running_{false};
     std::atomic_bool polymarket_control_running_{false};
-    std::atomic_bool pause_control_running_{false};
+    std::atomic_bool binance_pause_control_running_{false};
     std::atomic_bool api_budget_running_{false};
     std::atomic_bool operator_status_running_{false};
     std::atomic_bool command_contract_synced_{false};
@@ -258,7 +263,8 @@ class MainWindow {
     std::atomic_uint64_t workflow_generation_{0};
     std::atomic_uint64_t settings_revision_{0};
     std::wstring environment_state_{L"Environment pending"};
-    std::wstring bot_state_{L"State pending"};
+    std::wstring bot_state_{L"Binance pending"};
+    std::wstring polymarket_state_{L"Polymarket live pending"};
     std::wstring persisted_profile_{L"Conservative"};
     std::wstring persisted_leverage_{L"5x"};
     std::wstring persisted_execution_{L"Paper"};
@@ -428,6 +434,44 @@ class MainWindow {
         return MulDiv(value, dpi_, 96);
     }
 
+    struct OverviewActionLayout {
+        int binance_start_left;
+        int binance_start_width;
+        int binance_pause_left;
+        int binance_pause_width;
+        int binance_stop_left;
+        int binance_stop_width;
+        int polymarket_start_left;
+        int polymarket_start_width;
+        int polymarket_pause_left;
+        int polymarket_pause_width;
+        int polymarket_stop_left;
+        int polymarket_stop_width;
+    };
+
+    OverviewActionLayout overview_action_layout(int right) const {
+        const int action_gap = scale(8);
+        OverviewActionLayout result{};
+        result.binance_start_width = scale(118);
+        result.binance_pause_width = scale(126);
+        result.binance_stop_width = scale(122);
+        result.polymarket_start_width = scale(142);
+        result.polymarket_pause_width = scale(148);
+        result.polymarket_stop_width = scale(148);
+        result.polymarket_stop_left = right - result.polymarket_stop_width;
+        result.polymarket_pause_left =
+            result.polymarket_stop_left - action_gap - result.polymarket_pause_width;
+        result.polymarket_start_left =
+            result.polymarket_pause_left - action_gap - result.polymarket_start_width;
+        result.binance_stop_left =
+            result.polymarket_start_left - action_gap - result.binance_stop_width;
+        result.binance_pause_left =
+            result.binance_stop_left - action_gap - result.binance_pause_width;
+        result.binance_start_left =
+            result.binance_pause_left - action_gap - result.binance_start_width;
+        return result;
+    }
+
     HFONT make_font(int dip_height, int weight = FW_NORMAL, const wchar_t* face = L"Segoe UI") const {
         return CreateFontW(
             -scale(dip_height),
@@ -473,7 +517,7 @@ class MainWindow {
             title_,       subtitle_,      safety_,       page_title_,    page_summary_,  status_bar_,
             page_list_,   command_label_, command_combo_, args_label_,   args_edit_,     help_label_,
             quick_label_, tools_label_,   output_label_,
-            output_edit_, run_selected_, selected_help_, stop_binance_, stop_polymarket_,
+            output_edit_, run_selected_, selected_help_, stop_binance_, stop_polymarket_, start_polymarket_, pause_polymarket_,
             ai_preflight_, risk_report_, model_lab_, backtest_chart_,
             profile_combo_, leverage_combo_, mode_combo_, ai_toggle_, reinvest_toggle_,
         };
@@ -541,7 +585,17 @@ class MainWindow {
             L"Stop Polymarket",
             BS_OWNERDRAW | WS_TABSTOP,
             kPolymarketStopId);
-        ai_preflight_ = create_control(L"BUTTON", L"Pause", BS_OWNERDRAW | WS_TABSTOP, kAiPreflightId);
+        start_polymarket_ = create_control(
+            L"BUTTON",
+            L"Start Polymarket",
+            BS_OWNERDRAW | WS_TABSTOP,
+            kPolymarketStartId);
+        pause_polymarket_ = create_control(
+            L"BUTTON",
+            L"Pause Polymarket",
+            BS_OWNERDRAW | WS_TABSTOP,
+            kPolymarketPauseId);
+        ai_preflight_ = create_control(L"BUTTON", L"Pause Binance", BS_OWNERDRAW | WS_TABSTOP, kAiPreflightId);
         risk_report_ = create_control(L"BUTTON", L"Risk Review", BS_OWNERDRAW | WS_TABSTOP, kRiskReportId);
         model_lab_ = create_control(L"BUTTON", L"Positions", BS_OWNERDRAW | WS_TABSTOP, kModelLabId);
         backtest_chart_ = create_control(L"BUTTON", L"Reconcile", BS_OWNERDRAW | WS_TABSTOP, kBacktestChartId);
@@ -618,44 +672,62 @@ class MainWindow {
         const int right = client.right - pad;
         const int footer_top = client.bottom - footer_h;
         const int settings_top = footer_top - scale(62);
+        const int action_top = header_h + scale(82);
 
         MoveWindow(title_, scale(58), scale(13), sidebar - scale(76), scale(34), TRUE);
         MoveWindow(page_list_, scale(10), header_h + scale(18), sidebar - scale(20), footer_top - header_h - scale(36), TRUE);
         MoveWindow(status_bar_, scale(148), footer_top + scale(18), scale(190), scale(30), TRUE);
 
-        const int polymarket_stop_w = scale(164);
-        const int binance_stop_w = scale(142);
-        const int pause_w = scale(94);
-        const int start_w = scale(112);
-        const int action_gap = scale(10);
-        const int polymarket_stop_left = right - polymarket_stop_w;
-        const int binance_stop_left =
-            polymarket_stop_left - action_gap - binance_stop_w;
-        const int pause_left = binance_stop_left - action_gap - pause_w;
-        const int start_left = pause_left - action_gap - start_w;
-        MoveWindow(run_selected_, start_left, header_h + scale(18), start_w, scale(48), TRUE);
-        MoveWindow(ai_preflight_, pause_left, header_h + scale(18), pause_w, scale(48), TRUE);
+        const OverviewActionLayout actions = overview_action_layout(right);
+        MoveWindow(
+            run_selected_,
+            actions.binance_start_left,
+            action_top,
+            actions.binance_start_width,
+            scale(48),
+            TRUE);
+        MoveWindow(
+            ai_preflight_,
+            actions.binance_pause_left,
+            action_top,
+            actions.binance_pause_width,
+            scale(48),
+            TRUE);
         MoveWindow(
             stop_binance_,
-            binance_stop_left,
-            header_h + scale(18),
-            binance_stop_w,
+            actions.binance_stop_left,
+            action_top,
+            actions.binance_stop_width,
+            scale(48),
+            TRUE);
+        MoveWindow(
+            start_polymarket_,
+            actions.polymarket_start_left,
+            action_top,
+            actions.polymarket_start_width,
+            scale(48),
+            TRUE);
+        MoveWindow(
+            pause_polymarket_,
+            actions.polymarket_pause_left,
+            action_top,
+            actions.polymarket_pause_width,
             scale(48),
             TRUE);
         MoveWindow(
             stop_polymarket_,
-            polymarket_stop_left,
-            header_h + scale(18),
-            polymarket_stop_w,
+            actions.polymarket_stop_left,
+            action_top,
+            actions.polymarket_stop_width,
             scale(48),
             TRUE);
 
         const int control_top = settings_top + scale(10);
-        MoveWindow(mode_combo_, main_left + scale(42), control_top, scale(120), scale(220), TRUE);
-        MoveWindow(profile_combo_, main_left + scale(222), control_top, scale(160), scale(220), TRUE);
-        MoveWindow(leverage_combo_, main_left + scale(468), control_top, scale(120), scale(220), TRUE);
-        MoveWindow(ai_toggle_, main_left + scale(630), control_top, scale(150), scale(40), TRUE);
-        MoveWindow(reinvest_toggle_, main_left + scale(810), control_top, scale(180), scale(40), TRUE);
+        MoveWindow(mode_combo_, main_left + scale(84), control_top, scale(120), scale(220), TRUE);
+        MoveWindow(profile_combo_, main_left + scale(270), control_top, scale(160), scale(220), TRUE);
+        MoveWindow(leverage_combo_, main_left + scale(514), control_top, scale(120), scale(220), TRUE);
+        MoveWindow(ai_toggle_, main_left + scale(670), control_top, scale(150), scale(40), TRUE);
+        MoveWindow(reinvest_toggle_, main_left + scale(850), control_top, scale(180), scale(40), TRUE);
 
         for (HWND control : {subtitle_, safety_, page_title_, page_summary_, command_label_, command_combo_,
                              args_label_, args_edit_, help_label_, quick_label_, tools_label_, output_label_,
@@ -666,12 +738,15 @@ class MainWindow {
             set_visible(button, false);
         }
         for (HWND control : {title_, page_list_, run_selected_, ai_preflight_, stop_binance_,
+                             start_polymarket_, pause_polymarket_,
                              stop_polymarket_, status_bar_,
                              profile_combo_, leverage_combo_, mode_combo_, ai_toggle_, reinvest_toggle_}) {
             set_visible(control, true);
         }
-        SetWindowTextW(run_selected_, L"Start");
-        SetWindowTextW(ai_preflight_, L"Pause");
+        SetWindowTextW(run_selected_, L"Start Binance");
+        SetWindowTextW(ai_preflight_, L"Pause Binance");
+        SetWindowTextW(start_polymarket_, L"Start Polymarket");
+        SetWindowTextW(pause_polymarket_, L"Pause Polymarket");
         SetWindowTextW(stop_binance_, L"Stop Binance");
         SetWindowTextW(stop_polymarket_, L"Stop Polymarket");
         (void)gap;
@@ -688,15 +763,17 @@ class MainWindow {
         for (HWND control : {title_, subtitle_, safety_, page_title_, page_summary_, page_list_, command_label_,
                              command_combo_, args_label_, args_edit_, help_label_, quick_label_, tools_label_,
                              output_label_, output_edit_, run_selected_, selected_help_, stop_binance_,
-                             stop_polymarket_, ai_preflight_,
+                             stop_polymarket_, pause_polymarket_, ai_preflight_,
                              risk_report_, model_lab_, backtest_chart_, status_bar_}) {
             set_visible(control, true);
         }
-        for (HWND control : {profile_combo_, leverage_combo_, mode_combo_, ai_toggle_, reinvest_toggle_}) {
+        for (HWND control : {profile_combo_, leverage_combo_, mode_combo_, ai_toggle_, reinvest_toggle_,
+                             start_polymarket_}) {
             set_visible(control, false);
         }
         SetWindowTextW(run_selected_, L"Run Command");
-        SetWindowTextW(ai_preflight_, L"Pause");
+        SetWindowTextW(ai_preflight_, L"Pause Binance");
+        SetWindowTextW(pause_polymarket_, L"Pause Polymarket");
         SetWindowTextW(stop_binance_, L"Stop Binance");
         SetWindowTextW(stop_polymarket_, L"Stop Polymarket");
         const int pad = scale(20);
@@ -761,13 +838,16 @@ class MainWindow {
         MoveWindow(tools_label_, main_left, tools_label_top, main_width, scale(26), TRUE);
         const int tools_top = tools_label_top + scale(34);
         const int tool_gap = scale(12);
-        const int tool_w = (main_width - (tool_gap * 5)) / 6;
-        MoveWindow(stop_binance_, main_left, tools_top, tool_w, scale(62), TRUE);
-        MoveWindow(stop_polymarket_, main_left + (tool_w + tool_gap), tools_top, tool_w, scale(62), TRUE);
-        MoveWindow(ai_preflight_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
-        MoveWindow(backtest_chart_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
-        MoveWindow(model_lab_, main_left + (4 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
-        MoveWindow(risk_report_, main_left + (5 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
+        const int tool_w = (main_width - (tool_gap * 3)) / 4;
+        const int tool_h = scale(46);
+        MoveWindow(ai_preflight_, main_left, tools_top, tool_w, tool_h, TRUE);
+        MoveWindow(stop_binance_, main_left + (tool_w + tool_gap), tools_top, tool_w, tool_h, TRUE);
+        MoveWindow(pause_polymarket_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, tool_h, TRUE);
+        MoveWindow(stop_polymarket_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, tool_h, TRUE);
+        const int diagnostic_top = tools_top + tool_h + tool_gap;
+        MoveWindow(backtest_chart_, main_left, diagnostic_top, tool_w, tool_h, TRUE);
+        MoveWindow(model_lab_, main_left + (tool_w + tool_gap), diagnostic_top, tool_w, tool_h, TRUE);
+        MoveWindow(risk_report_, main_left + (2 * (tool_w + tool_gap)), diagnostic_top, tool_w, tool_h, TRUE);
 
         const int output_top = tools_top + scale(116);
         MoveWindow(output_label_, main_left + scale(18), output_top - scale(34), main_width - scale(36), scale(28), TRUE);
@@ -795,14 +875,15 @@ class MainWindow {
         RECT logo{scale(24), scale(17), scale(47), scale(40)};
         draw_simple_icon(dc, logo, RGB(67, 214, 211), 2);
 
-        const int polymarket_stop_left = right - scale(164);
-        const int binance_stop_left = polymarket_stop_left - scale(152);
-        const int pause_left = binance_stop_left - scale(104);
-        const int start_left = pause_left - scale(124);
-        RECT state_band{main_left, header_h + scale(18), start_left - scale(16), header_h + scale(66)};
+        RECT state_band{
+            main_left,
+            header_h + scale(18),
+            right,
+            header_h + scale(66)};
         round_rect(dc, state_band, RGB(22, 31, 36), RGB(49, 65, 73), scale(4));
         std::wstring environment_state;
         std::wstring bot_state;
+        std::wstring polymarket_state;
         std::wstring compute_state;
         std::wstring ai_runtime_state;
         std::wstring ai_assist_state;
@@ -816,6 +897,7 @@ class MainWindow {
             std::lock_guard lock(operator_status_mutex_);
             environment_state = environment_state_;
             bot_state = bot_state_;
+            polymarket_state = polymarket_state_;
             compute_state = compute_state_;
             ai_runtime_state = ai_runtime_state_;
             ai_assist_state = ai_assist_state_;
@@ -853,8 +935,12 @@ class MainWindow {
                 ai_state = ai_model_state + L" / gated";
             }
         }
-        const std::array<std::wstring, 4> states{
-            environment_state, bot_state, command_contract_state, ai_state};
+        const std::array<std::wstring, 5> states{
+            environment_state,
+            bot_state,
+            polymarket_state,
+            command_contract_state,
+            ai_state};
         const int ai_state_index = static_cast<int>(states.size()) - 1;
         const int state_width = static_cast<int>(state_band.right - state_band.left) / static_cast<int>(states.size());
         for (int index = 0; index < static_cast<int>(states.size()); ++index) {
@@ -873,7 +959,7 @@ class MainWindow {
                       DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
         }
 
-        const int workspace_top = header_h + scale(86);
+        const int workspace_top = header_h + scale(154);
         const int available_height = std::max(scale(420), settings_top - workspace_top - scale(14));
         const int chart_height = std::max(scale(240), std::min(scale(330), available_height * 54 / 100));
         const int chart_width = content_width * 64 / 100;
@@ -932,11 +1018,11 @@ class MainWindow {
         RECT empty{positions.left + scale(20), header_top + scale(34), positions.right - scale(20), positions.bottom - scale(12)};
         draw_text(dc, L"No bot-owned positions", empty, body_font_, kMuted, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
-        draw_text(dc, L"Mode", RECT{main_left, settings_top + scale(18), main_left + scale(38), settings_top + scale(44)}, small_font_, kMuted,
+        draw_text(dc, L"Binance mode", RECT{main_left, settings_top + scale(18), main_left + scale(80), settings_top + scale(44)}, small_font_, kMuted,
                    DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-        draw_text(dc, L"Profile", RECT{main_left + scale(172), settings_top + scale(18), main_left + scale(218), settings_top + scale(44)}, small_font_, kMuted,
+        draw_text(dc, L"Profile", RECT{main_left + scale(216), settings_top + scale(18), main_left + scale(266), settings_top + scale(44)}, small_font_, kMuted,
                    DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-        draw_text(dc, L"Leverage", RECT{main_left + scale(394), settings_top + scale(18), main_left + scale(464), settings_top + scale(44)}, small_font_, kMuted,
+        draw_text(dc, L"Leverage", RECT{main_left + scale(440), settings_top + scale(18), main_left + scale(510), settings_top + scale(44)}, small_font_, kMuted,
                    DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 
         const std::array<std::wstring, 4> telemetry_names{
@@ -1163,18 +1249,18 @@ class MainWindow {
         const bool disabled = (item->itemState & ODS_DISABLED) != 0;
         const bool focused = (item->itemState & ODS_FOCUS) != 0;
         const bool danger = id == kBinanceStopId || id == kPolymarketStopId;
-        const bool primary = id == kRunSelectedId;
+        const bool primary = id == kRunSelectedId || id == kPolymarketStartId;
         const bool toggle = id == kAiToggleId || id == kReinvestToggleId;
         const bool checked = id == kAiToggleId ? ai_enabled_ : (id == kReinvestToggleId ? reinvest_enabled_ : false);
         const bool workflow_card = id >= kQuickBaseId;
         const bool safety_card =
             id == kBinanceStopId || id == kPolymarketStopId ||
-            id == kAiPreflightId || id == kRiskReportId ||
+            id == kAiPreflightId || id == kPolymarketPauseId || id == kRiskReportId ||
             id == kModelLabId || id == kBacktestChartId;
         const bool compact_overview_action =
             page_index_ == 0 &&
             (primary || id == kBinanceStopId ||
-             id == kPolymarketStopId || id == kAiPreflightId);
+             id == kPolymarketStopId || id == kAiPreflightId || id == kPolymarketPauseId);
         COLORREF fill = danger ? RGB(57, 31, 36) : (primary ? RGB(29, 86, 80) : (checked ? RGB(24, 76, 72) : RGB(28, 36, 42)));
         if (selected) {
             fill = danger ? RGB(80, 38, 43) : (primary ? RGB(38, 103, 96) : RGB(36, 46, 53));
@@ -1357,28 +1443,46 @@ class MainWindow {
             run_control_sequence(
                 binance_control_running_,
                 L"Binance",
+                true,
                 {L"autonomous stop"});
             return;
         case kPolymarketStopId:
             {
                 std::lock_guard lock(operator_status_mutex_);
-                bot_state_ = L"Polymarket Stop requested";
+                polymarket_state_ = L"Polymarket live Stop requested";
             }
             InvalidateRect(hwnd_, nullptr, FALSE);
             run_control_sequence(
                 polymarket_control_running_,
                 L"Polymarket",
+                false,
                 {L"polymarket-live --action stop"});
+            return;
+        case kPolymarketStartId:
+            run_polymarket_start();
+            return;
+        case kPolymarketPauseId:
+            {
+                std::lock_guard lock(operator_status_mutex_);
+                polymarket_state_ = L"Polymarket live Pause requested";
+            }
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            run_control_sequence(
+                polymarket_control_running_,
+                L"Polymarket",
+                false,
+                {L"polymarket-live --action pause"});
             return;
         case kAiPreflightId:
             {
                 std::lock_guard lock(operator_status_mutex_);
-                bot_state_ = L"Pause requested";
+                bot_state_ = L"Binance Pause requested";
             }
             InvalidateRect(hwnd_, nullptr, FALSE);
             run_control_sequence(
-                pause_control_running_,
+                binance_pause_control_running_,
                 L"Binance",
+                true,
                 {L"autonomous pause"});
             return;
         case kRiskReportId:
@@ -1622,7 +1726,7 @@ class MainWindow {
         strategy_command += reinvest ? L" --reinvest-profits" : L" --no-reinvest-profits";
         {
             std::lock_guard lock(operator_status_mutex_);
-            bot_state_ = L"Start requested";
+            bot_state_ = L"Binance Start requested";
         }
         InvalidateRect(hwnd_, nullptr, FALSE);
         run_sequence({
@@ -1630,6 +1734,26 @@ class MainWindow {
             ai_enabled ? L"ai --enable" : L"ai --disable",
             L"autonomous start --objective " + profile + (testnet_live ? L" --live" : L" --paper"),
         });
+    }
+
+    void run_polymarket_start() {
+        if (!dry_run_enabled()) {
+            const int answer = MessageBoxW(
+                hwnd_,
+                L"Polymarket autonomous mode can submit real orders from its dedicated wallet. "
+                L"Start only with a current hash-verified activation bundle?",
+                L"Start Polymarket trading",
+                MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2);
+            if (answer != IDYES) {
+                return;
+            }
+        }
+        {
+            std::lock_guard lock(operator_status_mutex_);
+            polymarket_state_ = L"Polymarket live Start requested";
+        }
+        InvalidateRect(hwnd_, nullptr, FALSE);
+        run_polymarket_start_sequence();
     }
 
     void run_selected() {
@@ -1782,9 +1906,10 @@ class MainWindow {
         }
         if (
             active_workers_.load() != 0 || running_.load() ||
+            polymarket_start_running_.load() ||
             binance_control_running_.load() ||
             polymarket_control_running_.load() ||
-            pause_control_running_.load() ||
+            binance_pause_control_running_.load() ||
             api_budget_running_.load() ||
             operator_status_running_.load()) {
             return;
@@ -1804,6 +1929,11 @@ class MainWindow {
             return;
         }
         if (!smoke_ && !command_contract_synced_.load()) {
+            {
+                std::lock_guard lock(operator_status_mutex_);
+                bot_state_ = L"Workflow blocked - command contract differs";
+            }
+            InvalidateRect(hwnd_, nullptr, FALSE);
             append_output(
                 L"\r\nWorkflow blocked: the native app and Python backend command contracts "
                 L"are not verified as identical. Pause and Stop remain available.\r\n");
@@ -1817,6 +1947,7 @@ class MainWindow {
         EnableWindow(run_selected_, FALSE);
         SetWindowTextW(output_label_, L"Output - running");
         launch_worker(running_, WM_APP + 1, [this, commands = std::move(commands), generation] {
+            bool workflow_failed = false;
             for (const std::wstring& command : commands) {
                 if (workflow_generation_.load() != generation) {
                     append_output(
@@ -1831,6 +1962,17 @@ class MainWindow {
                 }
                 append_output(result.output);
                 if (result.exit_code != 0) {
+                    {
+                        std::lock_guard lock(operator_status_mutex_);
+                        if (command.starts_with(L"polymarket-live")) {
+                            polymarket_state_ =
+                                L"Polymarket live blocked - open Trading for details";
+                        } else {
+                            bot_state_ = L"Workflow failed - open its page for details";
+                        }
+                    }
+                    InvalidateRect(hwnd_, nullptr, FALSE);
+                    workflow_failed = true;
                     append_output(
                         L"\r\nWorkflow stopped after failed command (exit " +
                         std::to_wstring(result.exit_code) + L"). No later command was started.\r\n");
@@ -1838,7 +1980,9 @@ class MainWindow {
                 }
             }
             refresh_api_budget_async(true);
-            refresh_operator_status_async();
+            if (!workflow_failed) {
+                refresh_operator_status_async();
+            }
             if (smoke_) {
                 write_smoke_log();
             }
@@ -1849,11 +1993,62 @@ class MainWindow {
         });
     }
 
+    void run_polymarket_start_sequence() {
+        const std::wstring command =
+            L"polymarket-live --action autonomous --activation "
+            L"data/polymarket/live-activation.json";
+        if (close_requested_.load()) {
+            append_output(L"\r\nThe app is closing; Polymarket was not started.\r\n");
+            return;
+        }
+        if (!smoke_ && !command_contract_synced_.load()) {
+            {
+                std::lock_guard lock(operator_status_mutex_);
+                polymarket_state_ = L"Polymarket live blocked - command contract differs";
+            }
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            append_output(
+                L"\r\nPolymarket Start blocked: the native app and Python backend command "
+                L"contracts are not verified as identical. Pause and Stop remain available.\r\n");
+            return;
+        }
+        if (polymarket_start_running_.exchange(true)) {
+            append_output(L"\r\nPolymarket autonomous start is already running.\r\n");
+            return;
+        }
+        EnableWindow(start_polymarket_, FALSE);
+        launch_worker(polymarket_start_running_, WM_APP + 1, [this, command] {
+            append_output(L"\r\n> simple-ai-trading " + command + L"\r\n");
+            CommandResult result = execute_cli(command);
+            append_output(result.output);
+            if (result.exit_code != 0) {
+                {
+                    std::lock_guard lock(operator_status_mutex_);
+                    polymarket_state_ =
+                        L"Polymarket live blocked - open Trading for details";
+                }
+                InvalidateRect(hwnd_, nullptr, FALSE);
+                append_output(
+                    L"\r\nPolymarket Start failed (exit " +
+                    std::to_wstring(result.exit_code) + L").\r\n");
+            } else {
+                refresh_operator_status_async();
+            }
+            refresh_api_budget_async(true);
+            if (smoke_) {
+                write_smoke_log();
+            }
+        });
+    }
+
     void run_control_sequence(
         std::atomic_bool& control_gate,
         const std::wstring& venue,
+        bool cancel_regular_workflow,
         std::vector<std::wstring> commands) {
-        workflow_generation_.fetch_add(1);
+        if (cancel_regular_workflow) {
+            workflow_generation_.fetch_add(1);
+        }
         if (commands.empty()) {
             return;
         }
@@ -1902,6 +2097,7 @@ class MainWindow {
         SendMessageW(output_edit_, EM_SETSEL, static_cast<WPARAM>(-1), static_cast<LPARAM>(-1));
         SendMessageW(output_edit_, EM_SCROLLCARET, 0, 0);
         EnableWindow(run_selected_, !running_);
+        EnableWindow(start_polymarket_, !polymarket_start_running_);
         SetWindowTextW(output_label_, running_ ? L"Activity Log - running" : L"Activity Log");
     }
 
@@ -1984,8 +2180,12 @@ class MainWindow {
         const std::uint64_t settings_revision = settings_revision_.load();
         launch_worker(operator_status_running_, WM_APP + 3, [this, settings_revision] {
             const std::wstring line = execute_cli_first_line(L"status --compact");
+            const std::wstring polymarket_line =
+                execute_cli_first_line(L"polymarket-live --action status");
             const std::wstring environment = compact_status_value(line, L"environment");
             const std::wstring state = compact_status_value(line, L"bot_state");
+            const std::wstring polymarket_runtime =
+                compact_status_value(polymarket_line, L"runtime_state");
             const std::wstring profile = compact_status_value(line, L"risk");
             const std::wstring leverage = compact_status_value(line, L"leverage");
             const std::wstring ai = compact_status_value(line, L"ai");
@@ -2002,7 +2202,21 @@ class MainWindow {
             {
                 std::lock_guard lock(operator_status_mutex_);
                 environment_state_ = environment.empty() ? L"Environment unavailable" : display_token(environment);
-                bot_state_ = state.empty() ? L"State unavailable" : L"Bot " + display_token(state);
+                bot_state_ = state.empty()
+                    ? L"Binance unavailable"
+                    : L"Binance " + display_token(state);
+                if (!polymarket_runtime.empty()) {
+                    const bool preserve_blocked =
+                        polymarket_runtime == L"unconfigured" &&
+                        polymarket_state_.starts_with(L"Polymarket live blocked");
+                    const bool preserve_starting =
+                        polymarket_runtime == L"unconfigured" &&
+                        polymarket_start_running_.load();
+                    if (!preserve_blocked && !preserve_starting) {
+                        polymarket_state_ =
+                            L"Polymarket live " + display_token(polymarket_runtime);
+                    }
+                }
                 if (!profile.empty()) persisted_profile_ = display_token(profile);
                 if (!leverage.empty()) persisted_leverage_ = leverage + L"x";
                 if (!ai.empty()) persisted_ai_enabled_ = ai == L"enabled";

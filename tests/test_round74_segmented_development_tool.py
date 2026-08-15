@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
@@ -8,27 +7,16 @@ import pytest
 import tools.run_round74_segmented_development as subject
 
 
-def test_segmented_tool_reports_dependency_failure_without_authority(
+def test_segmented_tool_delegates_to_installed_contract(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
 ) -> None:
     repository = tmp_path / "repository"
-    repository.mkdir()
-    database = repository / "cohort.duckdb"
-    database.write_bytes(b"database")
-    assemblies = repository / "assemblies"
-    assemblies.mkdir()
-    sources = repository / "sources"
-    sources.mkdir()
-    model_output = repository / "model-output"
-    qualification_output = repository / "qualification-output"
+    observed: list[str] = []
     monkeypatch.setattr(
         subject,
-        "run_round74_segmented_development",
-        lambda **_kwargs: (_ for _ in ()).throw(
-            ImportError("model dependency unavailable")
-        ),
+        "cli_main",
+        lambda argv: observed.extend(argv) or 17,
     )
 
     result = subject.main(
@@ -36,22 +24,53 @@ def test_segmented_tool_reports_dependency_failure_without_authority(
             "--repository",
             str(repository),
             "--database",
-            str(database),
+            "one.duckdb",
+            "--database",
+            "two.duckdb",
             "--target-assemblies",
-            str(assemblies),
+            "targets",
             "--source-artifacts",
-            str(sources),
+            "sources",
             "--model-output",
-            str(model_output),
+            "model",
             "--qualification-output",
-            str(qualification_output),
+            "qualification",
         ]
     )
 
-    assert result == 2
-    payload = json.loads(capsys.readouterr().err)
-    assert payload["status"] == "failed"
-    assert payload["error_type"] == "ImportError"
-    assert payload["sealed_test_accessed"] is False
-    assert payload["trading_authority"] is False
-    assert payload["profitability_claim"] is False
+    assert result == 17
+    assert observed == [
+        "binance-round74-develop",
+        "--repository",
+        str(repository),
+        "--database",
+        "one.duckdb",
+        "--database",
+        "two.duckdb",
+        "--target-assemblies",
+        "targets",
+        "--source-artifacts",
+        "sources",
+        "--model-output",
+        "model",
+        "--qualification-output",
+        "qualification",
+    ]
+
+
+def test_segmented_tool_injects_repository_when_omitted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[str] = []
+    monkeypatch.setattr(
+        subject,
+        "cli_main",
+        lambda argv: observed.extend(argv) or 0,
+    )
+
+    assert subject.main(["--database", "one.duckdb"]) == 0
+    assert observed[:3] == [
+        "binance-round74-develop",
+        "--repository",
+        str(subject.REPOSITORY),
+    ]

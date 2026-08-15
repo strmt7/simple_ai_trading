@@ -282,14 +282,13 @@ https://github.com/shiyu-coder/Kronos
 
 ## Why AI Stays Gated
 
-DirectML is not treated as a universal current Windows answer. Microsoft marks
-the project as maintenance mode and recommends Windows ML for ONNX inference
-on Windows 11 24H2 and newer. This repository retains `torch-directml` only for
-training operators that pass a live finite forward/backward/update preflight;
-it captures framework warnings and rejects any hidden DirectML-to-CPU operator
-fallback. Other hosts may resolve to CUDA, ROCm, XPU, MPS, or explicit CPU
-instead. New installations default to `auto`; DirectML is never inferred from
-Windows or an AMD vendor label.
+DirectML is not treated as a universal current Windows answer. The packaged
+DirectML profile uses ONNX Runtime DirectML for future, numerically verified
+inference. The old `torch-directml` training adapter is no longer installed:
+Microsoft documents support only through an obsolete PyTorch line that has
+unpatched dependency advisories. Current training resolves through CUDA, ROCm,
+XPU, MPS, or explicit CPU. New installations default to `auto`; no accelerator
+is inferred from Windows or an AMD vendor label.
 
 Local multibillion-parameter review uses Ollama, whose current Windows and GPU
 documentation covers AMD Radeon and additional Vulkan support. Ollama model

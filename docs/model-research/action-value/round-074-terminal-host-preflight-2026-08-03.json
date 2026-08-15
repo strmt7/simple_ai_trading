@@ -1,0 +1,58 @@
+{
+  "artifact_sha256": "ee8363becd7abf51ae6008fdf8e7481afadb7bb916ba5b60aa6872d59c04b57d",
+  "backend": {
+    "accelerated": true,
+    "device": "privateuseone:0",
+    "kind": "directml",
+    "request_satisfied": true,
+    "requested": "auto",
+    "selection": "runtime_current_device",
+    "vendor": "AMD Radeon RX 9070 XT"
+  },
+  "capture_database_opened": false,
+  "credentials_used": false,
+  "model_data_eligible": false,
+  "model_inference_performed": false,
+  "observed_at_utc": "2026-08-03T09:09:05.597433+00:00",
+  "ollama": {
+    "endpoint": "http://127.0.0.1:11434",
+    "models": [
+      {
+        "audited_runtime_floor": "0.32.4",
+        "gpu_resident": false,
+        "loaded": false,
+        "model_artifact_sha256": "083c6422a2dd90d62ec33638ab84271edddd2cf1fa6a9841898ea18a35e27b87",
+        "model_manifest_sha256": "1ff8c426cb668e57fb8d6ed660e6a482bce58f51a6bde016e6616c3849325b95",
+        "model_name": "fino1:8b",
+        "model_probe_sha256": "52aef4ccac57dc02eeb2826ddaa20b5e6d318f748254d521c5b29a3d670e8969",
+        "observed_runtime_version": "0.32.5",
+        "provider_metadata_sha256": "f170a767d32e869d3953e4dcc401f31311521ef9b3bb5b1922e6ca3848132240",
+        "residency_status": "unloaded",
+        "role": "finance_primary"
+      },
+      {
+        "audited_runtime_floor": "0.32.4",
+        "gpu_resident": false,
+        "loaded": false,
+        "model_artifact_sha256": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+        "model_manifest_sha256": "f825ca400d2ccbc5d2315cd117486edd3657a63af9b91acbc99fc5059063c869",
+        "model_name": "qwen3:8b",
+        "model_probe_sha256": "e3f512d8f20efa38850e7cf948e462bf8569d6d72e498051851ee7c0dc5b7ab6",
+        "observed_runtime_version": "0.32.5",
+        "provider_metadata_sha256": "381493b332a349746d4d5d0a206d64a6e9d275b0d635c3618ecef4fde5938a34",
+        "residency_status": "unloaded",
+        "role": "general_control"
+      }
+    ],
+    "observed_runtime_version": "0.32.5",
+    "terminal_preflight_receipt_sha256": [
+      "bdbda4ee845eb654fdb3af51988fb1d546c2305bfff966546875c41fed91532c",
+      "0339f5ab27651a875589055b81913b9fb02e15046a13c1e2454f7743213cc46f"
+    ]
+  },
+  "orders_submitted": false,
+  "profitability_claim": false,
+  "schema_version": "round-074-terminal-host-preflight-v1",
+  "sealed_targets_read": false,
+  "trading_authority": false
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": "polymarket-round21-core-corpus-materialization-design-v2",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture_before_terminal_receipt_access",
+  "parents": {
+    "round20_contract_sha256": "90e837edc9bb8071f966f9d27335983e24c6060c4ba0d36fc3d2060913c421ad",
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_dataset_design_sha256": "089f046fd611e32950381ec4f33a1e6b54a0a0a4d6be161de0643ade94590eba",
+    "round21_feature_policy_sha256": "04bc591f4875559d1b7a5e75cc676d47d57b888b255ee3b1369eee06e32d49ef",
+    "round21_terminal_transport_design_sha256": "7e2f294e20e3ce6425026a31f3bc63a50cf39e6e0ab51c25eafb20e7ca67b551"
+  },
+  "source_boundary": {
+    "eligible_terminal_runs_only": true,
+    "interrupted_or_failed_receipts_read": false,
+    "one_exact_receipt_pass_combines_receipt_audit_union_and_features": true,
+    "redundant_union_resets_per_terminal_segment": true,
+    "market_snapshots_reconciled_to_their_canonical_payloads": true,
+    "duplicate_condition_across_segments": "reject",
+    "outcomes_consulted": false,
+    "model_scores_consulted": false,
+    "optional_binance_consulted": false
+  },
+  "condition_clock": {
+    "duration_ms": 300000,
+    "decision_cadence_ms": 250,
+    "chainlink_terminal_reference_grace_ms": 5000,
+    "redundant_pairing_window_ms": 2000,
+    "maximum_wall_monotonic_offset_drift_ms": 1000,
+    "receipt_wall_clock_regression": "reject_segment",
+    "source_timestamps": "transport_and_open_close_identity_audit_only",
+    "feature_clock": "local_utc_receipt_time"
+  },
+  "condition_admission": {
+    "asset": "BTC",
+    "aligned_five_minute_identity_required": true,
+    "whole_condition_role_assignment_before_outcomes": true,
+    "minimum_lane_coverage_fraction": 0.9,
+    "minimum_shared_fraction": 0.9,
+    "maximum_joint_unhealthy_ms": 2000,
+    "both_token_full_books_required": true,
+    "exact_chainlink_open_and_close_source_times_required": true,
+    "chainlink_reference_receipt_must_not_precede_source_time": true,
+    "contradictory_exact_chainlink_reference_prices": "reject",
+    "chainlink_reconnect_inside_condition": "reject",
+    "single_clob_lane_gap": "preserve_and_apply_joint_health_gate",
+    "joint_clob_gap": "reject_affected_condition_only",
+    "optional_predictor_coverage_changes_admission": false
+  },
+  "continuous_chainlink_slice": {
+    "first_condition_record_may_start_mid_connection_epoch": true,
+    "first_observed_sequence_number_is_bound_not_renumbered": true,
+    "synthetic_prior_record_or_sequence": false,
+    "later_sequence_gap_or_connection_change": "reject_condition",
+    "cross_connection_state_carry": false
+  },
+  "feature_materialization": {
+    "engine": "round21_core_feature_engine",
+    "decision_range": "event_start_inclusive_to_event_end_exclusive",
+    "unavailable_rows": "count_and_reason_ledger_only",
+    "available_rows": "persist_exact_binary64_values_and_source_hashes",
+    "future_receipts": "reject",
+    "chainlink_close_price_in_features": false,
+    "condition_admission_fields_in_features": false,
+    "test_features_accessed_by_development": false
+  },
+  "storage": {
+    "derived_source_database_mutated": false,
+    "raw_payloads_copied": false,
+    "development_and_sealed_test_artifacts": "physically_separate_atomic_duckdb_files",
+    "feature_chunk_unit": "one_condition",
+    "feature_chunk_codec": "zstd_level_3",
+    "memory_limit": "1GB",
+    "database_threads": 2,
+    "partial_or_failed_publication": "discard",
+    "canonical_manifests_and_hash_chains": true
+  },
+  "authority": {
+    "condition_admission_pending_until_terminal_materialization": true,
+    "model_data_eligible": false,
+    "model_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "supersedes": "polymarket-round21-core-corpus-materialization-design-v1",
+  "supersession": {
+    "round21_core_corpus_materialization_design_v1_sha256": "a5ef5445ec0381540dd675784d711873b0d644dd0ef44462f12e71d131e133eb",
+    "change": "bind_materialized_rows_to_causal_previous_tick_feature_policy",
+    "condition_admission_changed": false,
+    "storage_layout_changed": false,
+    "capture_data_used_for_change": false,
+    "targets_used_for_change": false,
+    "market_outcomes_used_for_change": false
+  },
+  "design_sha256": "ea1b7ac68aa6dda9bcc94468ef1265815e3ef3957c40977c0e9bceb2a0e240b4"
+}

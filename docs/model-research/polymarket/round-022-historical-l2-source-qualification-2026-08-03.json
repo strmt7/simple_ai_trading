@@ -1,0 +1,103 @@
+{
+  "artifact_sha256": "3564d59d97899f9defae77c19655e942062342ac96f0f2365b6f9a75f5d7f050",
+  "authority": {
+    "execution_calibration": false,
+    "fill_claim": false,
+    "live_trading": false,
+    "model_data_eligible": false,
+    "paper_trading": false,
+    "profitability_claim": false,
+    "queue_position_calibration": false,
+    "transport_latency_calibration": false
+  },
+  "binance_boundary": {
+    "account_data_used": false,
+    "credentials_used": false,
+    "execution_data_used": false,
+    "public_predictor_data_used": false
+  },
+  "implementation": {
+    "codec": "canonical-json-zstd-3",
+    "module": "src/simple_ai_trading/polymarket_historical_l2.py",
+    "network_tests": false,
+    "raw_response_persisted": false,
+    "test": "tests/test_polymarket_historical_l2.py"
+  },
+  "observed_at_utc": "2026-08-03T18:30:15.955Z",
+  "official_source_audit": {
+    "clob_openapi_url": "https://docs.polymarket.com/api-spec/clob-openapi.yaml",
+    "endpoint": "https://clob.polymarket.com/orderbook-history",
+    "endpoint_listed_in_clob_openapi": false,
+    "endpoint_listed_in_documentation_index": false,
+    "error_reference_lists_endpoint": true,
+    "error_reference_url": "https://docs.polymarket.com/resources/error-codes",
+    "rate_limit_reference_url": "https://docs.polymarket.com/api-reference/rate-limits"
+  },
+  "qualification_exclusions": {
+    "reason": "source behavior or closed outcome metadata was directly inspected before this qualification was frozen",
+    "slugs": [
+      "btc-updown-5m-1766031900",
+      "btc-updown-5m-1766034000",
+      "btc-updown-5m-1766034300",
+      "btc-updown-5m-1766034600",
+      "btc-updown-5m-1766034900",
+      "btc-updown-5m-1773972000",
+      "btc-updown-5m-1775001600",
+      "btc-updown-5m-1776211200",
+      "btc-updown-5m-1776643200",
+      "btc-updown-5m-1776729600",
+      "btc-updown-5m-1776816000",
+      "btc-updown-5m-1776902400",
+      "btc-updown-5m-1776988800",
+      "btc-updown-5m-1777075200",
+      "btc-updown-5m-1777334400",
+      "btc-updown-5m-1777593600",
+      "btc-updown-5m-1780272000",
+      "btc-updown-5m-1782086400",
+      "btc-updown-5m-1782864000",
+      "btc-updown-5m-1785780900"
+    ]
+  },
+  "retention_point_probes": {
+    "available": {
+      "history_count": 1104,
+      "slug": "btc-updown-5m-1776816000"
+    },
+    "interpretation": "point samples only; not proof of a global retention boundary or future availability",
+    "unavailable": {
+      "history_count": 0,
+      "slug": "btc-updown-5m-1776729600"
+    }
+  },
+  "round": 22,
+  "schema_version": "polymarket-round22-historical-l2-source-qualification-v1",
+  "source_limitations": {
+    "authenticated_order_events_present": false,
+    "client_arrival_timestamps_present": false,
+    "full_book_state_present": true,
+    "individual_order_queue_identity_present": false,
+    "market_data_gap_evidence_present": false,
+    "server_timestamps_present": true,
+    "transport_latency_present": false
+  },
+  "status": "development_feature_source_qualified_with_limitations",
+  "validated_closed_window": {
+    "asset_id": "90625310420064645846761681869416842470623488003646261544945154225790287117344",
+    "compressed_sha256": "066b08a052a1d0ac16393ce757f04f747cd13db0bd0a97f807ed9c391ee8e0a1",
+    "compressed_size_bytes": 217977,
+    "compression_ratio": 23.068,
+    "condition_id": "0xcf42a526d225bd799a7ce3e4498d13e0625c03492e553538df5349115eed14ac",
+    "event_end_ms": 1782086700000,
+    "event_start_ms": 1782086400000,
+    "first_timestamp_ms": 1782086400256,
+    "last_timestamp_ms": 1782086699841,
+    "median_interarrival_ms": 206,
+    "p95_interarrival_ms": 312,
+    "raw_sha256": "3950291cf4b34cdf4f94392ebb3a372da96a93fd7797f3a10571901a991d943d",
+    "raw_size_bytes": 5028315,
+    "record_count": 1398,
+    "slug": "btc-updown-5m-1782086400",
+    "source_chain_sha256": "e8a7f7edad8432c5ba24bba18aff694ad424f78418c3a0d4b48f256bc9bf3c99",
+    "strictly_monotonic": true
+  }
+}

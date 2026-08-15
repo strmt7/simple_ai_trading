@@ -7,12 +7,21 @@ from pathlib import Path
 
 import pytest
 
+from polymarket_live_support import write_polymarket_live_implementation_manifest
 from simple_ai_trading.polymarket import (
     PolymarketFeeSchedule,
     PolymarketFifteenMinuteMarket,
     PolymarketPublicClient,
 )
-from simple_ai_trading.polymarket_live import PolymarketLiveBlocked
+from simple_ai_trading.polymarket_autonomous_runtime import (
+    PolymarketAutonomousPortfolio,
+)
+from simple_ai_trading.polymarket_live import (
+    PolymarketConditionAccounting,
+    PolymarketLedgerRevision,
+    PolymarketLiveBlocked,
+)
+from simple_ai_trading.polymarket_live_risk import PolymarketLiveRiskState
 from simple_ai_trading.polymarket_live_promotion import (
     VerifiedPolymarketLivePromotion,
     load_polymarket_live_promotion,
@@ -68,11 +77,21 @@ def _promotion(root: Path) -> VerifiedPolymarketLivePromotion:
     root.mkdir(parents=True, exist_ok=True)
     paths: dict[str, Path] = {}
     evidence: dict[str, dict[str, str]] = {}
-    for name in ("model", "evaluation", "implementation"):
+    for name in ("model", "evaluation"):
         path = root / f"{name}.json"
         path.write_text(_canonical({name: "frozen"}), encoding="ascii")
         paths[name] = path
         evidence[name] = {"path": path.name, "sha256": _file_sha(path)}
+    implementation = root / "implementation.json"
+    write_polymarket_live_implementation_manifest(
+        implementation,
+        source_commit="b" * 40,
+    )
+    paths["implementation"] = implementation
+    evidence["implementation"] = {
+        "path": implementation.name,
+        "sha256": _file_sha(implementation),
+    }
     body: dict[str, object] = {
         "schema_version": "polymarket-live-promotion-v1",
         "promotion_id": "a" * 64,
@@ -132,6 +151,48 @@ def _market() -> PolymarketFifteenMinuteMarket:
         resolution_source="https://data.chain.link/streams/btc-usd",
         gamma_payload_sha256="3" * 64,
         gamma_payload_json="{}",
+    )
+
+
+def _portfolio() -> PolymarketAutonomousPortfolio:
+    return PolymarketAutonomousPortfolio(
+        condition_id=MARKET_ID,
+        lots=(),
+        accounting=PolymarketConditionAccounting(
+            condition_id=MARKET_ID,
+            gross_buy_cost_quote=Decimal("0"),
+            gross_sell_proceeds_quote=Decimal("0"),
+            confirmed_redemption_payout_quote=Decimal("0"),
+            up_quantity=Decimal("0"),
+            down_quantity=Decimal("0"),
+            up_cost_basis_quote=Decimal("0"),
+            down_cost_basis_quote=Decimal("0"),
+            confirmed_fill_count=0,
+        ),
+        risk_state=PolymarketLiveRiskState(
+            condition_id=MARKET_ID,
+            risk_profile="conservative",
+            risk_capital_quote=Decimal("10000"),
+            observed_at_ms=NOW_MS,
+            utc_day_index=NOW_MS // 86_400_000,
+            ledger_revision=PolymarketLedgerRevision(0, "0" * 64),
+            realized_event_count=0,
+            realized_condition_count=0,
+            daily_realized_pnl_quote=Decimal("0"),
+            lifetime_realized_pnl_quote=Decimal("0"),
+            settled_equity_quote=Decimal("10000"),
+            settled_peak_equity_quote=Decimal("10000"),
+            drawdown_capital_fraction=Decimal("0"),
+            consecutive_losing_conditions=0,
+            cooldown_until_ms=0,
+            cooldown_active=False,
+            current_condition_inventory_downside_quote=Decimal("0"),
+            other_condition_inventory_downside_quote=Decimal("0"),
+            total_inventory_downside_quote=Decimal("0"),
+            maximum_current_condition_downside_quote=Decimal("10"),
+            entry_allowed=True,
+            entry_block_reasons=(),
+        ),
     )
 
 
@@ -221,8 +282,12 @@ def test_promoted_round16_provider_builds_one_polymarket_only_proposal(
         monotonic_ns=lambda: 1,
     )
 
-    first = provider.decide(markets=(_market(),), observed_at_ms=NOW_MS)
-    second = provider.decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    first = provider.decide(
+        markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio()
+    )
+    second = provider.decide(
+        markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio()
+    )
 
     assert len(first.proposals) == 1
     proposal = first.proposals[0]
@@ -252,9 +317,15 @@ def test_round16_provider_retries_timestamp_after_preproposal_failure(
     )
 
     with pytest.raises(TimeoutError, match="transient public book timeout"):
-        provider.decide(markets=(_market(),), observed_at_ms=NOW_MS)
-    recovered = provider.decide(markets=(_market(),), observed_at_ms=NOW_MS)
-    duplicate = provider.decide(markets=(_market(),), observed_at_ms=NOW_MS)
+        provider.decide(
+            markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio()
+        )
+    recovered = provider.decide(
+        markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio()
+    )
+    duplicate = provider.decide(
+        markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio()
+    )
 
     assert len(recovered.proposals) == 1
     assert duplicate.reasons == ("model_timestamp_already_consumed",)
@@ -272,7 +343,7 @@ def test_round16_provider_rejects_edge_and_evidence_drift(
         requested_quantity=Decimal("5"),
         clock_ms=lambda: NOW_MS,
         monotonic_ns=lambda: 1,
-    ).decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    ).decide(markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio())
 
     assert low_edge.proposals == ()
     assert low_edge.reasons == ("insufficient_after_cost_edge",)
@@ -299,7 +370,7 @@ def test_round16_provider_selects_down_and_rejects_unsafe_books(
         requested_quantity=Decimal("5"),
         clock_ms=lambda: NOW_MS,
         monotonic_ns=lambda: 1,
-    ).decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    ).decide(markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio())
     stale = PolymarketRound16PromotedDecisionProvider(
         public_client=_PublicClient(source_time_ms=NOW_MS - 1_001),
         scorer=_Scorer(promotion=promotion, probability_up=0.7),
@@ -307,7 +378,7 @@ def test_round16_provider_selects_down_and_rejects_unsafe_books(
         requested_quantity=Decimal("5"),
         clock_ms=lambda: NOW_MS,
         monotonic_ns=lambda: 1,
-    ).decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    ).decide(markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio())
     shallow = PolymarketRound16PromotedDecisionProvider(
         public_client=_PublicClient(ask_size="4.999999"),
         scorer=_Scorer(promotion=promotion, probability_up=0.7),
@@ -315,7 +386,7 @@ def test_round16_provider_selects_down_and_rejects_unsafe_books(
         requested_quantity=Decimal("5"),
         clock_ms=lambda: NOW_MS,
         monotonic_ns=lambda: 1,
-    ).decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    ).decide(markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio())
 
     assert down.proposals[0].outcome == "Down"
     assert down.proposals[0].token_id == DOWN_TOKEN
@@ -337,7 +408,7 @@ def test_round16_provider_counts_book_fetch_time_against_prediction_ttl(
         requested_quantity=Decimal("5"),
         clock_ms=lambda: next(times),
         monotonic_ns=lambda: 1,
-    ).decide(markets=(_market(),), observed_at_ms=NOW_MS)
+    ).decide(markets=(_market(),), observed_at_ms=NOW_MS, portfolio=_portfolio())
 
     assert expired.proposals == ()
     assert expired.reasons == ("proposal_expired_during_book_fetch",)

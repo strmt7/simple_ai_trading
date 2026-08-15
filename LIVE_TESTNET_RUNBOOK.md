@@ -1,62 +1,64 @@
-# Non-Mainnet Day-Trading Runbook
+# Binance Non-Mainnet Runbook
 
-This runbook is for Binance testnet or Demo Trading only.
+This runbook covers paper, Binance testnet, and Demo Trading only. It does not
+authorize mainnet or claim that a model is profitable.
 
 ## Preflight
 
 ```powershell
-simple-ai-trading compute
-simple-ai-trading ai
-simple-ai-trading status
-simple-ai-trading universe
-simple-ai-trading risk --paper
-simple-ai-trading audit
+uv run simple-ai-trading doctor
+uv run simple-ai-trading compute
+uv run simple-ai-trading ai
+uv run simple-ai-trading status --compact
+uv run simple-ai-trading universe
+uv run simple-ai-trading reconcile
+uv run simple-ai-trading risk --paper
+uv run simple-ai-trading api-budget --compact
 ```
 
-Required state:
+Proceed only when the selected venue is non-mainnet, the supported BTC/ETH/SOL
+universe passes current liquidity checks, ownership reconciles, risk is clear,
+and every known API window is below 80% use. CPU mode requires AI off.
 
-- `testnet=true` or `demo=true`
-- `dry_run=true` for paper mode
-- DirectML/GPU active if AI is enabled
-- CPU-only mode accepted only with AI disabled
-- at least `min_diversified_assets` eligible symbols from `universe`
-- leverage <= `10x`
-- reinvest profits disabled unless operator explicitly accepted the warning
-
-## Prepare
+## Prepare Evidence
 
 ```powershell
-simple-ai-trading fetch --symbol BTCUSDC --limit 1000
-simple-ai-trading train --preset balanced --compute-backend directml
-simple-ai-trading evaluate
-simple-ai-trading backtest --compute-backend directml
-simple-ai-trading backtest-chart
+uv run simple-ai-trading data-health --json
+uv run simple-ai-trading model-lab --market futures --quote-asset USDT --interval 1s
+uv run simple-ai-trading backtest-chart --output data/backtest-performance.svg
 ```
 
-Repeat data/training/backtest workflows for each eligible symbol or use the panel workflow as it expands.
+A command completing successfully is not model promotion. Check the generated
+report's source cutoff, gaps, costs, holdout status, trade count, drawdown, and
+authority fields.
 
-## Autonomous Paper Run
+## Run Paper Mode
 
 ```powershell
-simple-ai-trading autonomous start --paper
-simple-ai-trading autonomous status
-simple-ai-trading autonomous stop
+uv run simple-ai-trading autonomous start --paper
+uv run simple-ai-trading autonomous status
+uv run simple-ai-trading autonomous pause
+uv run simple-ai-trading autonomous stop
+uv run simple-ai-trading reconcile
 ```
 
-`autonomous stop` writes `STOPPING` and closes locally tracked open autonomous positions. If no current quote is available, it uses entry price to prevent stale local ledger exposure.
+Pause blocks new entries. Stop requests venue-specific closure of bot-owned
+positions only. It never invents a fill from an entry price or cached mark. If
+fresh quotes, ownership, broker acknowledgement, or the active worker are
+unavailable, Stop returns a visible failure and the position remains explicitly
+open for reconciliation.
 
-## Blockers
+## Interruptions
 
-Do not proceed when any of these are true:
+After a process, network, or venue interruption:
 
-- `universe` cannot prove enough liquid symbols.
-- `risk` reports a block.
-- model/audit checks fail.
-- DirectML/GPU is unavailable while AI is enabled.
-- leverage request exceeds `10x`.
-- signed execution is pointed at mainnet.
-- local open positions do not reconcile with the exchange account.
+1. Block new exposure.
+2. Restore connectivity without replaying ambiguous submissions.
+3. Reconcile exact bot order IDs, fills, balances, and positions.
+4. Refresh market data and API-budget telemetry.
+5. Observe the configured cooldown before any new decision.
 
-## Notes
-
-Authenticated autonomous exchange-order execution is intentionally disabled until exchange reconciliation and order-close recovery are fully implemented and tested. Use paper mode and signed testnet/demo smoke tests only.
+Do not continue when exchange-only exposure, local-only exposure, quantity
+drift, unknown orders, stale books, malformed ledgers, or unresolved fills are
+present. Use [Live-market simulation](docs/LIVE_MARKET_SIMULATION.md) for the
+full execution and outage contract.

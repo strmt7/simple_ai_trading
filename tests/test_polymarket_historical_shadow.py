@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+import simple_ai_trading.polymarket_historical_shadow as shadow_module
 from simple_ai_trading.polymarket_historical_dataset import (
     FEATURE_NAMES,
     build_historical_feature_row,
@@ -316,6 +317,19 @@ def test_artifact_tampering_is_rejected(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="historical pretest integrity failed"):
         load_verified_historical_shadow_predictor(
             pretest_path=tampered,
+            evaluation_path=EVALUATION,
+            support_path=SUPPORT,
+        )
+
+
+def test_shadow_compatibility_source_drift_is_rejected(monkeypatch) -> None:
+    monkeypatch.setattr(shadow_module, "_file_sha256", lambda _path: "0" * 64)
+    with pytest.raises(
+        ValueError,
+        match="historical shadow compatibility implementation hash differs",
+    ):
+        load_verified_historical_shadow_predictor(
+            pretest_path=PRETEST,
             evaluation_path=EVALUATION,
             support_path=SUPPORT,
         )

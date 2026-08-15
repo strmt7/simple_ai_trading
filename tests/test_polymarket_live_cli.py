@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import asyncio
 import json
 from pathlib import Path
@@ -60,10 +61,16 @@ def test_entrypoint_registers_independent_polymarket_live_command() -> None:
     assert args.risk_level == "conservative"
     assert args.automatic_redemption is False
     assert args.stop_timeout_seconds == 30
+    assert args.activation is None
+    assert args.activation_output == str(live_cli.DEFAULT_POLYMARKET_LIVE_ACTIVATION)
+    assert args.replace_activation is False
     assert args.promotion is None
     assert args.evidence_root is None
+    assert args.lifecycle_qualification is None
+    assert args.lifecycle_qualification_sha256 is None
     assert args.requested_quantity == Decimal("5")
-    assert args.disable_binance_bbo_safeguard is False
+    assert args.risk_capital_quote is None
+    assert not hasattr(args, "disable_binance_bbo_safeguard")
     assert args.func is live_cli.command_polymarket_live
 
 
@@ -83,6 +90,11 @@ def test_installed_cli_native_app_and_contract_share_entrypoint() -> None:
     )
     assert "-m simple_ai_trading.entrypoint" in native
     assert 'L"polymarket-live --action stop"' in native
+    assert 'L"polymarket-live --action pause"' in native
+    assert 'L"polymarket-live --action autonomous --activation "' in native
+    assert 'L"data/polymarket/live-activation.json"' in native
+    assert 'L"Start Polymarket"' in native
+    assert 'L"Pause Polymarket"' in native
     assert "from .entrypoint import _build_parser" in contract
 
 
@@ -130,10 +142,26 @@ def test_local_status_does_not_create_missing_ledger(
     )
 
     payload = json.loads(capsys.readouterr().out)
+    assert payload["schema_version"] == "polymarket-live-operator-status-v2"
     assert payload["venue"] == "polymarket"
+    assert payload["execution_mode"] == "authenticated_live_clob_v2"
+    assert payload["execution_venue"] == "polymarket_clob_v2"
+    assert payload["settlement_venue"] == "polymarket_polygon"
     assert payload["symbol"] == "BTC"
+    assert payload["paper_execution"] is False
+    assert payload["paper_fallback_allowed"] is False
+    assert payload["binance_required_for_core_model"] is False
+    assert payload["binance_public_predictor_optional"] is True
+    assert payload["binance_public_predictor_data_allowed"] is True
+    assert payload["binance_public_predictor_trading_authority"] is False
+    assert payload["binance_credentials_allowed"] is False
+    assert payload["binance_account_authority"] is False
+    assert payload["binance_execution_authority"] is False
+    assert payload["binance_position_authority"] is False
+    assert payload["binance_risk_or_stop_authority"] is False
     assert payload["can_open"] is False
     assert payload["ledger_exists"] is False
+    assert payload["runtime_state"] == "unconfigured"
     assert not ledger.exists()
 
 
@@ -154,7 +182,43 @@ def test_local_status_audits_existing_empty_ledger(
     rendered = capsys.readouterr().out
     assert "ledger_exists=True" in rendered
     assert "owned_position_quantity=0" in rendered
+    assert "runtime_state=" in rendered
     assert "can_open=False" in rendered
+
+
+def test_pause_and_resume_are_durable_and_do_not_require_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path = tmp_path / "live.sqlite3"
+    control = PolymarketRuntimeControl(path)
+    control.acquire(owner_process_id=101)
+    monkeypatch.setattr(
+        live_cli,
+        "_credentials_and_venue",
+        lambda: pytest.fail("pause and resume must not create an execution client"),
+    )
+
+    assert (
+        live_cli.command_polymarket_live(
+            _args("--action", "pause", "--ledger", str(path), "--json")
+        )
+        == 0
+    )
+    paused = json.loads(capsys.readouterr().out)
+    assert paused["runtime_control"]["paused"] is True
+    assert control.snapshot().paused is True
+
+    assert (
+        live_cli.command_polymarket_live(
+            _args("--action", "resume", "--ledger", str(path), "--json")
+        )
+        == 0
+    )
+    resumed = json.loads(capsys.readouterr().out)
+    assert resumed["runtime_control"]["paused"] is False
+    assert control.snapshot().paused is False
 
 
 def test_authenticated_action_fails_without_credentials_and_never_echoes_values(
@@ -253,7 +317,7 @@ def test_reconcile_propagates_failed_gate_and_text_rendering(
     assert "unknown_order_state" in rendered
 
 
-def test_cancel_owned_refuses_foreign_state_before_cancel(
+def test_cancel_owned_cancels_exact_owned_orders_despite_foreign_state(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -270,17 +334,17 @@ def test_cancel_owned_refuses_foreign_state_before_cancel(
         def __init__(self, *_args, **_kwargs):
             pass
 
-        def preflight(self):
+        def cancel_owned_open_orders(self):
+            calls.append("cancel")
+            return PolymarketCancelResult((), ())
+
+        def reconcile(self):
             return _reconciliation(
                 ok=False,
                 can_open=False,
                 can_close=False,
                 errors=("foreign_positions",),
             )
-
-        def cancel_owned_open_orders(self):
-            calls.append("cancel")
-            return PolymarketCancelResult((), ())
 
     monkeypatch.setattr(live_cli, "PolymarketLiveCoordinator", Coordinator)
 
@@ -294,8 +358,8 @@ def test_cancel_owned_refuses_foreign_state_before_cancel(
     )
 
     assert result == 2
-    assert calls == []
-    assert "foreign_positions" in capsys.readouterr().err
+    assert calls == ["cancel"]
+    assert "foreign_positions" in capsys.readouterr().out
 
 
 def test_cancel_owned_reports_exact_result_and_final_gate(
@@ -879,6 +943,38 @@ def test_polymarket_operator_module_has_no_binance_execution_dependency() -> Non
     assert "PolymarketSettlementService" in source
 
 
+def test_polymarket_authority_modules_import_only_polymarket_local_boundaries() -> None:
+    authority_modules = (
+        "polymarket_live.py",
+        "polymarket_live_v2.py",
+        "polymarket_live_runtime.py",
+        "polymarket_live_settlement.py",
+        "polymarket_live_stop.py",
+        "polymarket_runtime_control.py",
+        "polymarket_autonomous.py",
+        "polymarket_autonomous_runtime.py",
+    )
+    package_root = Path(live_cli.__file__).parent
+
+    for filename in authority_modules:
+        path = package_root / filename
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.level:
+                assert node.module is not None
+                assert node.module.startswith("polymarket"), (
+                    f"{filename} imports non-Polymarket local module "
+                    f"{node.module!r}; keep venue authority independent"
+                )
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name.startswith("simple_ai_trading."):
+                        assert alias.name.startswith("simple_ai_trading.polymarket"), (
+                            f"{filename} imports non-Polymarket package module "
+                            f"{alias.name!r}; keep venue authority independent"
+                        )
+
+
 def test_supervision_argument_bounds_fail_before_network_tasks() -> None:
     with pytest.raises(ValueError, match="duration-seconds"):
         asyncio.run(
@@ -1116,13 +1212,84 @@ def test_autonomous_requires_explicit_hash_bound_evidence() -> None:
                 automatic_redemption=False,
                 promotion_path=None,
                 evidence_root=None,
+                lifecycle_qualification_path=None,
+                lifecycle_qualification_sha256=None,
                 round16_contract="contract.json",
                 pretest_envelope_sha256=None,
                 evaluation_envelope_sha256=None,
                 requested_quantity=Decimal("5"),
-                binance_bbo_safeguard=True,
+                risk_level="conservative",
+                risk_capital_quote=Decimal("10000"),
             )
         )
+
+
+def test_autonomous_requires_explicit_positive_risk_capital() -> None:
+    with pytest.raises(
+        PolymarketLiveBlocked,
+        match=r"requires positive --risk-capital-quote",
+    ):
+        asyncio.run(
+            live_cli._autonomous(
+                credentials=SimpleNamespace(),
+                venue=SimpleNamespace(),
+                ledger=SimpleNamespace(),
+                risk_limits=live_cli._risk_limits("conservative"),
+                duration_seconds=1,
+                reconciliation_seconds=5,
+                stop_timeout_seconds=30,
+                automatic_redemption=False,
+                promotion_path="promotion.json",
+                evidence_root="evidence",
+                lifecycle_qualification_path="lifecycle.json",
+                lifecycle_qualification_sha256="7" * 64,
+                round16_contract="contract.json",
+                pretest_envelope_sha256=None,
+                evaluation_envelope_sha256=None,
+                requested_quantity=Decimal("5"),
+                risk_level="conservative",
+                risk_capital_quote=None,
+            )
+        )
+
+
+def test_five_minute_autonomous_stack_does_not_require_round16_pins() -> None:
+    public_client = object()
+    promotion = SimpleNamespace(promotion=SimpleNamespace(market_variant="fiveminute"))
+    data_service = object()
+    decision_provider = object()
+    components = SimpleNamespace(
+        build_polymarket_round21_runtime_stack=lambda **kwargs: (
+            SimpleNamespace(
+                data_service=data_service,
+                decision_provider=decision_provider,
+            )
+            if kwargs
+            == {
+                "public_client": public_client,
+                "promotion": promotion,
+                "requested_quantity": Decimal("2.5"),
+                "risk_level": "aggressive",
+            }
+            else pytest.fail("unexpected Round 21 stack arguments")
+        ),
+        load_verified_round16_shadow_predictor=lambda **_kwargs: pytest.fail(
+            "Round 16 evidence must remain unopened"
+        ),
+    )
+
+    actual = live_cli._build_autonomous_decision_stack(
+        components=components,
+        public_client=public_client,
+        promotion=promotion,
+        round16_contract=None,
+        pretest_envelope_sha256=None,
+        evaluation_envelope_sha256=None,
+        requested_quantity=Decimal("2.5"),
+        risk_level="aggressive",
+    )
+
+    assert actual == (data_service, decision_provider)
 
 
 def test_autonomous_assembles_independent_promoted_runtime(
@@ -1141,6 +1308,10 @@ def test_autonomous_assembles_independent_promoted_runtime(
         promotion=promotion_policy,
         model_artifact_path=model_path,
         evaluation_report_path=evaluation_path,
+    )
+    lifecycle_qualification = SimpleNamespace(
+        qualification=SimpleNamespace(qualification_sha256="6" * 64),
+        assert_runtime_binding=lambda **_kwargs: events.append("lifecycle-bound"),
     )
     predictor = object()
     flow = object()
@@ -1240,7 +1411,6 @@ def test_autonomous_assembles_independent_promoted_runtime(
         requested_closes=1,
         completed_closes=1,
         last_fault="",
-        external_signal_enabled=False,
         binance_execution_connected=False,
     )
     captured: dict[str, object] = {}
@@ -1262,6 +1432,12 @@ def test_autonomous_assembles_independent_promoted_runtime(
             if path == "promotion.json"
             and kwargs["evidence_root"] == str(tmp_path)
             and kwargs["require_live_authority"] is True
+            and kwargs["expected_file_sha256"] == "8" * 64
+            else pytest.fail()
+        ),
+        load_polymarket_lifecycle_qualification=lambda path, **kwargs: (
+            lifecycle_qualification
+            if path == "lifecycle.json" and kwargs["expected_file_sha256"] == "7" * 64
             else pytest.fail()
         ),
         load_verified_round16_shadow_predictor=lambda **kwargs: (
@@ -1270,6 +1446,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
             and kwargs["evaluation_path"] == evaluation_path
             and kwargs["expected_pretest_envelope_sha256"] == "3" * 64
             and kwargs["expected_evaluation_envelope_sha256"] == "4" * 64
+            and kwargs["expected_contract_file_sha256"] == "9" * 64
             else pytest.fail()
         ),
         PolymarketPublicClient=PublicClient,
@@ -1288,7 +1465,6 @@ def test_autonomous_assembles_independent_promoted_runtime(
         PolymarketRound16PromotedDecisionProvider=(
             lambda **kwargs: "decision-provider"
         ),
-        BinanceBtcPublicSignalProvider=lambda: pytest.fail(),
         PolymarketAutonomousSupervisor=Supervisor,
     )
     monkeypatch.setattr(live_cli, "_load_autonomous_components", lambda: components)
@@ -1348,24 +1524,105 @@ def test_autonomous_assembles_independent_promoted_runtime(
             automatic_redemption=True,
             promotion_path="promotion.json",
             evidence_root=str(tmp_path),
+            lifecycle_qualification_path="lifecycle.json",
+            lifecycle_qualification_sha256="7" * 64,
             round16_contract="contract.json",
             pretest_envelope_sha256="3" * 64,
             evaluation_envelope_sha256="4" * 64,
             requested_quantity=Decimal("5"),
-            binance_bbo_safeguard=False,
+            risk_level="conservative",
+            risk_capital_quote=Decimal("10000"),
+            promotion_file_sha256="8" * 64,
+            round16_contract_file_sha256="9" * 64,
         )
     )
 
     assert captured["decision_data_service"].trading_authority is False
+    assert captured["lifecycle_qualification"] is lifecycle_qualification
     assert captured["durable_control_service"].trading_authority is False
-    assert captured["external_signal_provider"] is None
+    assert "external_signal_provider" not in captured
     assert captured["stop_timeout_seconds"] == 19
+    assert captured["risk_capital_quote"] == Decimal("10000")
+    assert captured["risk_level"] == "conservative"
     assert payload["opened_exposure"] is True
     assert payload["binance_credentials_used"] is False
     assert payload["binance_execution_connected"] is False
     assert events == [
+        "lifecycle-bound",
         "run",
         "reconcile",
+        "settlement-close",
+        "public-close",
+    ]
+
+
+def test_autonomous_cleanup_surfaces_failed_stop_latch_after_closing_resources() -> (
+    None
+):
+    events: list[str] = []
+
+    class Control:
+        def request_stop(self, *, reason: str) -> None:
+            events.append(f"stop:{reason}")
+            raise RuntimeError("durable stop latch failed")
+
+        def release(self, *_args: object, **_kwargs: object) -> None:
+            pytest.fail("owned exposure must never release the runtime lease")
+
+    ledger = SimpleNamespace(owned_inventory=lambda: (object(),))
+    settlement = SimpleNamespace(close=lambda: events.append("settlement-close"))
+    public = SimpleNamespace(
+        session=SimpleNamespace(close=lambda: events.append("public-close"))
+    )
+
+    with pytest.raises(RuntimeError, match="durable stop latch failed"):
+        live_cli._finalize_autonomous_resources(
+            runtime_control=Control(),
+            runtime_lease="lease",
+            runtime_released=False,
+            ledger=ledger,
+            settlement_venue=settlement,
+            public_client=public,
+        )
+
+    assert events == [
+        "stop:autonomous_exit_with_owned_exposure",
+        "settlement-close",
+        "public-close",
+    ]
+
+
+def test_autonomous_cleanup_latches_stop_when_inventory_is_unknown() -> None:
+    events: list[str] = []
+
+    class Control:
+        def request_stop(self, *, reason: str) -> None:
+            events.append(f"stop:{reason}")
+
+        def release(self, *_args: object, **_kwargs: object) -> None:
+            pytest.fail("unknown inventory must never release the runtime lease")
+
+    def unreadable_inventory() -> tuple[object, ...]:
+        raise OSError("ownership ledger unavailable")
+
+    ledger = SimpleNamespace(owned_inventory=unreadable_inventory)
+    settlement = SimpleNamespace(close=lambda: events.append("settlement-close"))
+    public = SimpleNamespace(
+        session=SimpleNamespace(close=lambda: events.append("public-close"))
+    )
+
+    with pytest.raises(OSError, match="ownership ledger unavailable"):
+        live_cli._finalize_autonomous_resources(
+            runtime_control=Control(),
+            runtime_lease="lease",
+            runtime_released=False,
+            ledger=ledger,
+            settlement_venue=settlement,
+            public_client=public,
+        )
+
+    assert events == [
+        "stop:autonomous_exit_inventory_unknown",
         "settlement-close",
         "public-close",
     ]
@@ -1391,8 +1648,11 @@ def test_autonomous_command_dispatches_explicit_operator_pins(
     async def autonomous(**kwargs: object) -> dict[str, object]:
         assert kwargs["promotion_path"] == "promotion.json"
         assert kwargs["evidence_root"] == "evidence"
+        assert kwargs["lifecycle_qualification_path"] == "lifecycle.json"
+        assert kwargs["lifecycle_qualification_sha256"] == "7" * 64
         assert kwargs["requested_quantity"] == Decimal("6.5")
-        assert kwargs["binance_bbo_safeguard"] is False
+        assert kwargs["risk_level"] == "conservative"
+        assert kwargs["risk_capital_quote"] == Decimal("10000")
         return {
             "schema_version": "polymarket-live-autonomous-v1",
             "opened_exposure": False,
@@ -1409,13 +1669,18 @@ def test_autonomous_command_dispatches_explicit_operator_pins(
             "promotion.json",
             "--evidence-root",
             "evidence",
+            "--lifecycle-qualification",
+            "lifecycle.json",
+            "--lifecycle-qualification-sha256",
+            "7" * 64,
             "--pretest-envelope-sha256",
             "3" * 64,
             "--evaluation-envelope-sha256",
             "4" * 64,
             "--requested-quantity",
             "6.5",
-            "--disable-binance-bbo-safeguard",
+            "--risk-capital-quote",
+            "10000",
             "--json",
         )
     )
@@ -1424,6 +1689,153 @@ def test_autonomous_command_dispatches_explicit_operator_pins(
     assert result == 0
     assert payload["action"] == "autonomous"
     assert payload["opened_exposure"] is False
+
+
+def test_prepare_autonomous_writes_verified_non_secret_activation(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    promotion_path = evidence / "promotion.json"
+    lifecycle_path = evidence / "lifecycle.json"
+    promotion_path.write_text('{"promotion":true}\n', encoding="utf-8")
+    lifecycle_path.write_text('{"qualification":true}\n', encoding="utf-8")
+    binding_calls: list[dict[str, object]] = []
+
+    class Lifecycle:
+        def assert_runtime_binding(self, **kwargs: object) -> None:
+            binding_calls.append(dict(kwargs))
+
+    promotion = SimpleNamespace(promotion=SimpleNamespace(market_variant="fiveminute"))
+    components = SimpleNamespace(
+        load_polymarket_live_promotion=lambda *_args, **_kwargs: promotion,
+        load_polymarket_lifecycle_qualification=(lambda *_args, **_kwargs: Lifecycle()),
+    )
+    credentials = SimpleNamespace(funder_address="0x" + "1" * 40)
+    monkeypatch.setattr(live_cli, "_load_autonomous_components", lambda: components)
+    monkeypatch.setattr(
+        live_cli,
+        "PolymarketLiveCredentials",
+        SimpleNamespace(from_environment=lambda: credentials),
+    )
+    output = tmp_path / "activation" / "live.json"
+    args = _args(
+        "--action",
+        "prepare-autonomous",
+        "--activation-output",
+        str(output),
+        "--promotion",
+        str(promotion_path),
+        "--evidence-root",
+        str(evidence),
+        "--lifecycle-qualification",
+        str(lifecycle_path),
+        "--risk-level",
+        "regular",
+        "--risk-capital-quote",
+        "500",
+        "--requested-quantity",
+        "7.5",
+    )
+
+    result = live_cli._prepare_autonomous_activation(args)
+
+    assert result["activation_path"] == str(output.resolve())
+    assert result["risk_level"] == "regular"
+    assert result["risk_capital_quote"] == "500"
+    assert result["credentials_stored"] is False
+    assert result["orders_submitted"] is False
+    assert binding_calls and binding_calls[0]["credentials"] is credentials
+    serialized = output.read_text(encoding="utf-8").lower()
+    assert "funder_address" not in serialized
+    assert "private_key" not in serialized
+
+
+def test_activation_bundle_overrides_default_risk_inputs_and_rejects_mixing(
+    tmp_path: Path,
+) -> None:
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    promotion = evidence / "promotion.json"
+    lifecycle = evidence / "lifecycle.json"
+    promotion.write_text("promotion", encoding="utf-8")
+    lifecycle.write_text("lifecycle", encoding="utf-8")
+    activation = live_cli.write_polymarket_live_activation(
+        tmp_path / "activation.json",
+        market_variant="fiveminute",
+        risk_level="aggressive",
+        risk_capital_quote=Decimal("900"),
+        requested_quantity=Decimal("8"),
+        promotion_path=promotion,
+        evidence_root=evidence,
+        lifecycle_qualification_path=lifecycle,
+        round16_contract_path=None,
+        pretest_envelope_sha256="",
+        evaluation_envelope_sha256="",
+    )
+
+    resolved = live_cli._activation_autonomous_arguments(
+        _args("--action", "autonomous", "--activation", str(activation.path))
+    )
+
+    assert resolved["risk_level"] == "aggressive"
+    assert resolved["risk_capital_quote"] == Decimal("900")
+    assert resolved["requested_quantity"] == Decimal("8")
+    assert resolved["activation_sha256"] == activation.activation.activation_sha256
+    assert resolved["promotion_path"] == str(promotion.resolve())
+    assert (
+        resolved["promotion_file_sha256"] == activation.activation.promotion.file_sha256
+    )
+    assert resolved["round16_contract_file_sha256"] == ""
+
+    with pytest.raises(PolymarketLiveBlocked, match="cannot be mixed"):
+        live_cli._activation_autonomous_arguments(
+            _args(
+                "--action",
+                "autonomous",
+                "--activation",
+                str(activation.path),
+                "--risk-capital-quote",
+                "1",
+            )
+        )
+
+
+def test_prepare_autonomous_never_constructs_live_venue(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    expected = {
+        "schema_version": "polymarket-live-operator-result-v1",
+        "action": "prepare-autonomous",
+        "venue": "polymarket",
+        "orders_submitted": False,
+    }
+    monkeypatch.setattr(
+        live_cli,
+        "_prepare_autonomous_activation",
+        lambda _args: expected,
+    )
+    monkeypatch.setattr(
+        live_cli,
+        "_credentials_and_venue",
+        lambda: pytest.fail("prepare-autonomous constructed a live venue"),
+    )
+
+    result = live_cli.command_polymarket_live(
+        _args(
+            "--action",
+            "prepare-autonomous",
+            "--activation-output",
+            str(tmp_path / "activation.json"),
+            "--json",
+        )
+    )
+
+    assert result == 0
+    assert json.loads(capsys.readouterr().out) == expected
 
 
 def test_cancel_result_fixture_remains_strict() -> None:

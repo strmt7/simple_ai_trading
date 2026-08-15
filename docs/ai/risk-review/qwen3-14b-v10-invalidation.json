@@ -1,0 +1,39 @@
+{
+  "schema_version": "finance-risk-review-preregistration-invalidation-v1",
+  "recorded_at_utc": "2026-08-03T16:28:31.521Z",
+  "git_commit_at_audit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "preregistration": {
+    "path": "docs/ai/risk-review/qwen3-14b-v10-preregistration.json",
+    "sha256": "317fabf1d9f53f5604f62a618e7255f620e540e0852bd0d88087e8967a5aa534",
+    "benchmark_contract": "finance-risk-review-adversarial-v10",
+    "state": "invalidated_unconsumed"
+  },
+  "source_binding": {
+    "frozen_benchmark_source_sha256": "62a21eb3e60f1a0ec6de80cf72811c903d037341f2792b5e7fb805da91a35b3b",
+    "observed_benchmark_source_sha256_before_v11": "1a1c296ee9e8f9d2c28eea555d0c9dae0aa91666ebb9dcd1631cd66ba3cb6a71",
+    "semantic_case_changes": false,
+    "test_suite_sha256": "b46f5832405cbb10a0a81f4bd14d0c59720410ef07c4c578092a5435686e6ffb",
+    "reason": "A later finance-candidate catalog change modified the hash-bound benchmark module after v10 was frozen. The protected benchmark correctly refused to open a claim."
+  },
+  "model_provenance": {
+    "model": "qwen3:14b",
+    "manifest_digest_frozen": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+    "manifest_digest_observed": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+    "metadata_sha256_frozen": "b939f562272424c2099242c1ec4070a10dc85e1599bba88686280e1513256d0e",
+    "metadata_sha256_observed": "f1b1a3ca7afc4d2776416861de6d409d7a1a1e90417cde0dba5b21a3db233d72",
+    "exact_runtime_metadata_unchanged": false
+  },
+  "confirmation_evidence": {
+    "run_id": "e34d349771da4c35bcc8ae436c2fe9f6",
+    "report_sha256": "2e7193ffd48c5008453765402cea3a6d4e5eda2f3989df19c005d9d444793b28",
+    "recorder_status": "degraded",
+    "v10_claim_present_at_audit": false
+  },
+  "interpretation": {
+    "model_inference_started": false,
+    "test_cases_exposed": false,
+    "reasoning_score_available": false,
+    "financial_edge_tested": false,
+    "trading_authority": false
+  }
+}

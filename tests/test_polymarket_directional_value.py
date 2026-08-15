@@ -188,13 +188,13 @@ def test_policy_state_machine_charges_unknown_entry_and_fails_closed() -> None:
     assert "selected_unknown_entry" in metrics["gate_reasons"]
 
 
-def test_latest_round11_csv_reconstructs_reported_equity() -> None:
+def test_archived_round11_csv_reconstructs_reported_equity() -> None:
     report = json.loads(
         (POLYMARKET / "round-011-single-leg-directional-value-report.json").read_text(
             encoding="utf-8"
         )
     )
-    with (POLYMARKET / "latest/tables/round11-equity.csv").open(
+    with (POLYMARKET / "evidence/round-011-equity.csv").open(
         encoding="utf-8", newline=""
     ) as handle:
         rows = list(csv.DictReader(handle))

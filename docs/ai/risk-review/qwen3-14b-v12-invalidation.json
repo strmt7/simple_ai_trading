@@ -1,0 +1,29 @@
+{
+  "schema_version": "finance-risk-review-preregistration-invalidation-v1",
+  "recorded_at_utc": "2026-08-03T17:08:31.199Z",
+  "git_commit_at_audit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "preregistration": {
+    "path": "docs/ai/risk-review/qwen3-14b-v12-preregistration.json",
+    "sha256": "089ab111ee63a676e663cc4e9ad97344dcf97012900a21ebcdf547bc230dcce2",
+    "benchmark_contract": "finance-risk-review-adversarial-v12",
+    "state": "invalidated_unconsumed"
+  },
+  "source_binding": {
+    "frozen_benchmark_source_sha256": "90047ddb906445e5c4d5986d19fdcfca696b73a44c45ca06e05092ad2fe68f91",
+    "observed_benchmark_source_sha256_before_v13": "ab07ef6e0e1f10f2ac1bbcafdf9a23e8e38f3c816695db03c11987c26f74ab21",
+    "semantic_case_changes": false,
+    "test_suite_sha256": "b46f5832405cbb10a0a81f4bd14d0c59720410ef07c4c578092a5435686e6ffb",
+    "reason": "Repository formatting was applied after v12 was frozen. The source hash changed without changing prompts, cases, transport, scoring, or admission. V12 was invalidated instead of editing its immutable preregistration."
+  },
+  "confirmation_evidence": {
+    "run_id": "e34d349771da4c35bcc8ae436c2fe9f6",
+    "v12_claim_present_at_audit": false
+  },
+  "interpretation": {
+    "model_inference_started": false,
+    "test_cases_exposed": false,
+    "reasoning_score_available": false,
+    "financial_edge_tested": false,
+    "trading_authority": false
+  }
+}

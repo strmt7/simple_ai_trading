@@ -1,0 +1,439 @@
+"""Probe the v136 target-free pretraining objective on DirectML."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+import gc
+import hashlib
+from importlib.metadata import PackageNotFoundError, version
+import json
+import math
+from pathlib import Path
+import sys
+import time
+import warnings
+
+import torch
+
+
+REPOSITORY = Path(__file__).resolve().parents[1]
+SOURCE = REPOSITORY / "src"
+if str(SOURCE) not in sys.path:
+    sys.path.insert(0, str(SOURCE))
+
+from simple_ai_trading.distributional_tcn_model import ExplicitAdamW  # noqa: E402
+from simple_ai_trading.impact_absorption_event_features import (  # noqa: E402
+    ROUND74_EVENT_FEATURE_VIEW_MASKED_INDICES,
+)
+from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
+    build_round74_event_model,
+    round74_event_encoder_parameters,
+    round74_event_model_pretraining_channels,
+)
+from simple_ai_trading.impact_absorption_event_pretraining import (  # noqa: E402
+    ROUND74_EVENT_PRETRAINING_EVENT_TYPE_COUNT,
+    ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION,
+    _Round74NextEventHead,
+    _continuous_target_indices,
+    _next_event_loss,
+    _next_event_row_losses,
+)
+from simple_ai_trading.impact_absorption_event_scaling import (  # noqa: E402
+    ROUND74_EVENT_BINARY_FEATURE_COUNT,
+)
+from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
+    ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_SEQUENCE_LENGTH,
+)
+from simple_ai_trading.storage import write_json_atomic  # noqa: E402
+
+
+SCHEMA_VERSION = "round-074-v136-directml-pretraining-host-preflight-v1"
+OUTPUT_PATH = Path(
+    "docs/model-research/action-value/"
+    "round-074-v136-directml-pretraining-host-preflight-2026-08-10.json"
+)
+MODEL_DESIGN_PATH = Path(
+    "docs/model-research/action-value/round-074-event-sequence-model-design-v136.json"
+)
+CANDIDATE_IDS = ("causal_event_tcn", "causal_event_attention")
+ROWS = 8
+SEED = 74_136
+LEARNING_RATE = 0.0003
+WEIGHT_DECAY = 0.01
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+
+
+def _canonical_file_sha256(path: Path) -> str:
+    return hashlib.sha256(
+        path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    ).hexdigest()
+
+
+def _package_version(name: str) -> str:
+    try:
+        return version(name)
+    except PackageNotFoundError:
+        return "not-installed"
+
+
+def _is_fallback_warning(message: str) -> bool:
+    lowered = message.casefold()
+    return (
+        "not currently supported on the dml backend" in lowered
+        or "fall back to run on the cpu" in lowered
+        or "fallback to run on the cpu" in lowered
+    )
+
+
+def _synthetic_values() -> torch.Tensor:
+    generator = torch.Generator(device="cpu")
+    generator.manual_seed(SEED)
+    values = (
+        torch.randn(
+            ROWS,
+            ROUND74_EVENT_SEQUENCE_LENGTH,
+            len(ROUND74_EVENT_FEATURE_NAMES),
+            generator=generator,
+            dtype=torch.float32,
+        )
+        * 0.05
+    )
+    values[:, :, :ROUND74_EVENT_BINARY_FEATURE_COUNT] = 0.0
+    event_ids = (
+        torch.arange(ROWS).reshape(-1, 1)
+        + torch.arange(ROUND74_EVENT_SEQUENCE_LENGTH).reshape(1, -1)
+    ) % ROUND74_EVENT_PRETRAINING_EVENT_TYPE_COUNT
+    values[:, :, :ROUND74_EVENT_PRETRAINING_EVENT_TYPE_COUNT].scatter_(
+        2,
+        event_ids.unsqueeze(2),
+        1.0,
+    )
+    for index in range(
+        ROUND74_EVENT_PRETRAINING_EVENT_TYPE_COUNT,
+        ROUND74_EVENT_BINARY_FEATURE_COUNT,
+    ):
+        values[:, :, index] = (
+            (
+                torch.arange(ROWS).reshape(-1, 1)
+                + torch.arange(ROUND74_EVENT_SEQUENCE_LENGTH).reshape(1, -1)
+                + index
+            )
+            % 2
+        ).to(torch.float32)
+    return values.contiguous()
+
+
+def _zero_head(hidden_channels: int) -> _Round74NextEventHead:
+    head = _Round74NextEventHead(hidden_channels)
+    with torch.no_grad():
+        for parameter in head.parameters():
+            parameter.zero_()
+    return head
+
+
+def _finite_gradients(parameters: tuple[torch.nn.Parameter, ...]) -> bool:
+    return all(
+        parameter.grad is not None and bool(torch.isfinite(parameter.grad).all())
+        for parameter in parameters
+    )
+
+
+def _probe_view(
+    candidate_id: str,
+    feature_view: str,
+    masked_indices: tuple[int, ...],
+    *,
+    device: object,
+    cpu_values: torch.Tensor,
+) -> dict[str, object]:
+    started = time.perf_counter_ns()
+    model = build_round74_event_model(candidate_id).to(device).eval()
+    hidden_channels = round74_event_model_pretraining_channels(model)
+    if hidden_channels is None:
+        raise ValueError("Round 74 pretraining candidate lacks a causal encoder")
+    values = cpu_values.to(device)
+    continuous_target_indices = _continuous_target_indices(masked_indices)
+    masked_continuous = tuple(
+        index for index in masked_indices if index >= ROUND74_EVENT_BINARY_FEATURE_COUNT
+    )
+    active_continuous = tuple(
+        index
+        for index in range(
+            ROUND74_EVENT_BINARY_FEATURE_COUNT,
+            len(ROUND74_EVENT_FEATURE_NAMES),
+        )
+        if index not in masked_indices
+    )
+    if not active_continuous:
+        raise ValueError("Round 74 DirectML probe has no active continuous output")
+
+    baseline_head = _zero_head(hidden_channels).to(device).eval()
+    baseline = (
+        _next_event_row_losses(
+            model,
+            baseline_head,
+            values,
+            masked_feature_indices=masked_indices,
+        )[2]
+        .detach()
+        .cpu()
+    )
+
+    masked_delta = None
+    if masked_continuous:
+        masked_head = _zero_head(hidden_channels)
+        with torch.no_grad():
+            masked_head.continuous_delta.bias[
+                masked_continuous[0] - ROUND74_EVENT_BINARY_FEATURE_COUNT
+            ] = 100.0
+        masked_loss = (
+            _next_event_row_losses(
+                model,
+                masked_head.to(device).eval(),
+                values,
+                masked_feature_indices=masked_indices,
+            )[2]
+            .detach()
+            .cpu()
+        )
+        masked_delta = float((masked_loss - baseline).abs().max())
+        if masked_delta != 0.0:
+            raise RuntimeError("Masked DirectML output changed the v136 objective")
+
+    active_head = _zero_head(hidden_channels)
+    with torch.no_grad():
+        active_head.continuous_delta.bias[
+            active_continuous[0] - ROUND74_EVENT_BINARY_FEATURE_COUNT
+        ] = 100.0
+    active_loss = (
+        _next_event_row_losses(
+            model,
+            active_head.to(device).eval(),
+            values,
+            masked_feature_indices=masked_indices,
+        )[2]
+        .detach()
+        .cpu()
+    )
+    active_delta = active_loss - baseline
+    active_minimum_delta = float(active_delta.min())
+    if not math.isfinite(active_minimum_delta) or active_minimum_delta <= 0.0:
+        raise RuntimeError("Active DirectML output did not change the v136 objective")
+
+    del model, baseline_head, active_head
+    training_model = build_round74_event_model(candidate_id).to(device).train()
+    training_channels = round74_event_model_pretraining_channels(training_model)
+    if training_channels != hidden_channels:
+        raise RuntimeError("Round 74 DirectML pretraining channel identity differs")
+    training_head = _Round74NextEventHead(hidden_channels).to(device).train()
+    optimized_parameters = (
+        *round74_event_encoder_parameters(training_model),
+        *tuple(training_head.parameters()),
+    )
+    optimizer = ExplicitAdamW(
+        optimized_parameters,
+        learning_rate=LEARNING_RATE,
+        weight_decay=WEIGHT_DECAY,
+    )
+    optimizer.zero_grad(set_to_none=True)
+    loss, event_loss, continuous_loss = _next_event_loss(
+        training_model,
+        training_head,
+        values,
+        masked_feature_indices=masked_indices,
+    )
+    loss.backward()
+    if not _finite_gradients(optimized_parameters):
+        raise RuntimeError("Round 74 DirectML pretraining gradient differs")
+    gradient_norm = torch.nn.utils.clip_grad_norm_(
+        optimized_parameters,
+        max_norm=1.0,
+        foreach=False,
+    )
+    gradient_norm_value = float(gradient_norm.detach().cpu())
+    if not math.isfinite(gradient_norm_value) or gradient_norm_value <= 0.0:
+        raise RuntimeError("Round 74 DirectML pretraining gradient norm differs")
+    optimizer.step()
+    if not all(
+        bool(torch.isfinite(parameter).all()) for parameter in optimized_parameters
+    ):
+        raise RuntimeError("Round 74 DirectML optimizer state differs")
+    terminal_loss = float(loss.detach().cpu())
+    terminal_event_loss = float(event_loss.detach().cpu())
+    terminal_continuous_loss = float(continuous_loss.detach().cpu())
+    if not all(
+        math.isfinite(value)
+        for value in (terminal_loss, terminal_event_loss, terminal_continuous_loss)
+    ):
+        raise RuntimeError("Round 74 DirectML pretraining loss differs")
+    elapsed_seconds = (time.perf_counter_ns() - started) / 1e9
+    del training_model, training_head, optimizer, values
+    gc.collect()
+    return {
+        "candidate_id": candidate_id,
+        "feature_view": feature_view,
+        "rows": ROWS,
+        "sequence_length": ROUND74_EVENT_SEQUENCE_LENGTH,
+        "feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
+        "masked_feature_count": len(masked_indices),
+        "masked_continuous_output_count": len(masked_continuous),
+        "active_continuous_output_count": len(active_continuous),
+        "continuous_target_output_indices": list(continuous_target_indices),
+        "masked_perturbation_applicable": bool(masked_continuous),
+        "masked_perturbation_max_abs_loss_delta": masked_delta,
+        "active_perturbation_minimum_loss_delta": active_minimum_delta,
+        "terminal_loss": terminal_loss,
+        "terminal_event_loss": terminal_event_loss,
+        "terminal_continuous_loss": terminal_continuous_loss,
+        "gradient_norm_before_clip": gradient_norm_value,
+        "optimized_parameter_tensor_count": len(optimized_parameters),
+        "all_optimized_gradients_finite": True,
+        "optimizer_step_completed": True,
+        "elapsed_seconds": elapsed_seconds,
+    }
+
+
+def main() -> int:
+    output = REPOSITORY / OUTPUT_PATH
+    try:
+        if output.exists() or output.is_symlink() or output.parent.is_symlink():
+            raise ValueError("Round 74 v136 DirectML preflight output already exists")
+        import torch_directml
+
+        device = torch_directml.device()
+        device_name = str(torch_directml.device_name(0)).rstrip("\x00")
+        if not device_name or str(device) != "privateuseone:0":
+            raise RuntimeError("DirectML device identity differs")
+        model_design = json.loads(
+            (REPOSITORY / MODEL_DESIGN_PATH).read_text(encoding="utf-8")
+        )
+        if (
+            not isinstance(model_design, dict)
+            or model_design.get("schema_version")
+            != "round-074-event-sequence-model-design-v136"
+            or model_design.get("design_sha256")
+            != "2016c8ff6b06ec5a007e501f42aef9c35a9a82ddbad262b3822a4a90cbaa93be"
+            or ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION
+            != "round-074-causal-next-event-pretraining-v5"
+        ):
+            raise ValueError("Round 74 v136 model design identity differs")
+        cpu_values = _synthetic_values()
+        results: list[dict[str, object]] = []
+        started = time.perf_counter_ns()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            for candidate_id in CANDIDATE_IDS:
+                for feature_view, masked_indices in sorted(
+                    ROUND74_EVENT_FEATURE_VIEW_MASKED_INDICES.items()
+                ):
+                    results.append(
+                        _probe_view(
+                            candidate_id,
+                            feature_view,
+                            tuple(masked_indices),
+                            device=device,
+                            cpu_values=cpu_values,
+                        )
+                    )
+        warning_messages = tuple(str(item.message) for item in caught)
+        fallback_messages = tuple(
+            message for message in warning_messages if _is_fallback_warning(message)
+        )
+        if fallback_messages:
+            raise RuntimeError("DirectML emitted a CPU fallback warning")
+        source_root = REPOSITORY / "src/simple_ai_trading"
+        payload: dict[str, object] = {
+            "schema_version": SCHEMA_VERSION,
+            "created_at_utc": datetime.now(UTC).isoformat(),
+            "status": "passed_target_free_directml_forward_backward_optimizer_probe",
+            "backend": {
+                "kind": "directml",
+                "accelerated": True,
+                "device": str(device),
+                "vendor": device_name,
+                "torch_version": torch.__version__,
+                "torch_directml_version": _package_version("torch-directml"),
+                "cpu_fallback_warning_count": len(fallback_messages),
+                "warning_count": len(warning_messages),
+            },
+            "protocol": {
+                "candidate_ids": list(CANDIDATE_IDS),
+                "feature_views": sorted(ROUND74_EVENT_FEATURE_VIEW_MASKED_INDICES),
+                "candidate_feature_view_combinations": len(results),
+                "rows": ROWS,
+                "sequence_length": ROUND74_EVENT_SEQUENCE_LENGTH,
+                "feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
+                "seed": SEED,
+                "objective_schema_version": ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION,
+                "loss_path": "production_next_event_loss_backward_and_explicit_adamw",
+                "masked_target_policy": "exclude_from_loss_not_zero_impute",
+                "continuous_loss_dimensions": "unmasked_continuous_features_only",
+                "market_data_used": False,
+                "realized_financial_target_used": False,
+            },
+            "results": results,
+            "elapsed_seconds": (time.perf_counter_ns() - started) / 1e9,
+            "source_binding": {
+                "model_design_path": str(MODEL_DESIGN_PATH).replace("\\", "/"),
+                "model_design_file_sha256": _canonical_file_sha256(
+                    REPOSITORY / MODEL_DESIGN_PATH
+                ),
+                "model_design_sha256": model_design["design_sha256"],
+                "impact_absorption_event_pretraining.py": _canonical_file_sha256(
+                    source_root / "impact_absorption_event_pretraining.py"
+                ),
+                "impact_absorption_event_model.py": _canonical_file_sha256(
+                    source_root / "impact_absorption_event_model.py"
+                ),
+                "impact_absorption_event_features.py": _canonical_file_sha256(
+                    source_root / "impact_absorption_event_features.py"
+                ),
+                "distributional_tcn_model.py": _canonical_file_sha256(
+                    source_root / "distributional_tcn_model.py"
+                ),
+                "probe_round74_v136_pretraining_directml.py": _canonical_file_sha256(
+                    Path(__file__).resolve()
+                ),
+            },
+            "evidence_boundary": {
+                "database_opened": False,
+                "market_data_used": False,
+                "realized_financial_target_used": False,
+                "model_selection_output_used": False,
+                "predictive_accuracy_tested": False,
+                "financial_edge_tested": False,
+                "profitability_claim": False,
+                "ai_uplift_tested": False,
+                "trading_authority": False,
+            },
+        }
+        payload["preflight_sha256"] = _canonical_sha256(payload)
+        write_json_atomic(output, payload, indent=2, sort_keys=True)
+        reloaded = json.loads(output.read_text(encoding="utf-8"))
+        if reloaded != payload:
+            raise RuntimeError("Round 74 v136 DirectML preflight reload differs")
+    except (ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        output.unlink(missing_ok=True)
+        print(
+            f"Round 74 v136 DirectML preflight failed: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    print(json.dumps(payload, allow_nan=False, ensure_ascii=True, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -184,6 +185,8 @@ def test_segmented_recovery_is_terminal_only_and_hashes_every_surviving_file(
     directory.mkdir()
     (directory / "reservation.json").write_bytes(b"reserved")
     (directory / "state.json").write_bytes(b"incomplete")
+    (directory / "recovery-adjudication.json").write_bytes(b"legacy evidence")
+    (directory / "recovery-audit-error.log").write_bytes(b"audit failure\n")
     terminal = _terminal_wall_ns(plan)
 
     with pytest.raises(ValueError, match="recovery outcome differs"):
@@ -245,3 +248,194 @@ def test_segmented_recovery_is_terminal_only_and_hashes_every_surviving_file(
             observed_wall_ns=terminal,
             slot_directory=directory,
         )
+    (directory / "result.json").unlink()
+    (directory / "unexpected.tmp").write_bytes(b"not campaign evidence")
+    with pytest.raises(ValueError, match="recovery slot file panel differs"):
+        subject.build_round74_segmented_recovery_outcome(
+            plan,
+            slot_ordinal=17,
+            observed_wall_ns=terminal,
+            slot_directory=directory,
+        )
+
+
+def test_late_adjudication_preserves_original_nonmissed_outcome_without_retry(
+    tmp_path: Path,
+) -> None:
+    plan = _plan()
+    directory, _result_sha256 = _write_terminal_slot(
+        tmp_path,
+        plan,
+        slot_ordinal=17,
+    )
+    (directory / "result.json").unlink()
+    supervisor = json.loads(
+        (directory / "capture.stdout.json").read_text(encoding="utf-8")
+    )
+    adjudication = adjudicate_round74_segmented_supervisor(
+        plan,
+        slot_ordinal=17,
+        supervisor_payload=supervisor,
+        epoch_audit=None,
+    )
+    terminal = _terminal_wall_ns(plan)
+
+    with pytest.raises(ValueError, match="late adjudication differs"):
+        subject.build_round74_segmented_late_adjudication(
+            plan,
+            slot_ordinal=17,
+            observed_wall_ns=terminal - 1,
+            slot_directory=directory,
+            adjudication=adjudication,
+        )
+    late = subject.build_round74_segmented_late_adjudication(
+        plan,
+        slot_ordinal=17,
+        observed_wall_ns=terminal,
+        slot_directory=directory,
+        adjudication=adjudication,
+    )
+    restored = subject.Round74SegmentedLateAdjudication.from_dict(
+        plan,
+        late.as_dict(),
+    )
+
+    restored.verify_slot_directory(plan, directory)
+    assert restored.late_adjudication_sha256 == late.late_adjudication_sha256
+    assert restored.outcome.status == "transport_excluded"
+    assert restored.outcome.reason_code == "startup_transport"
+    assert restored.outcome.status != "missed"
+    assert restored.as_dict()["automatic_retry_permitted"] is False
+    assert restored.as_dict()["target_data_accessed"] is False
+    output = tmp_path / "late" / "017.json"
+    subject.write_round74_segmented_late_adjudication(
+        restored,
+        plan=plan,
+        path=output,
+    )
+    subject.write_round74_segmented_late_adjudication(
+        restored,
+        plan=plan,
+        path=output,
+    )
+    loaded_outcome, loaded_digest, loaded_kind = subject._load_resultless_slot_evidence(
+        plan,
+        slot_ordinal=17,
+        slot_directory=directory,
+        recovery_path=output,
+    )
+    assert loaded_outcome.as_dict() == restored.outcome.as_dict()
+    assert loaded_digest == restored.late_adjudication_sha256
+    assert loaded_kind == "late_adjudication"
+    (directory / "capture.stderr.log").write_bytes(b"changed\n")
+    with pytest.raises(ValueError, match="slot evidence differs"):
+        restored.verify_slot_directory(plan, directory)
+
+
+def test_terminal_coverage_loader_does_not_require_or_read_target_manifests(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plan = _plan()
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(
+        json.dumps(plan.as_dict(), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    state_root = tmp_path / "state"
+    recovery_root = tmp_path / "recovery"
+    state_root.mkdir()
+    recovery_root.mkdir()
+    outcomes = tuple(
+        subject.Round74SegmentedCohortSlotOutcome(
+            plan_sha256=plan.plan_sha256,
+            slot_ordinal=slot.ordinal,
+            role=slot.role,
+            status="missed",
+            reason_code=subject.ROUND74_SEGMENTED_COHORT_MISSED_REASON,
+            evidence_sha256=f"{slot.ordinal + 1:064x}",
+        )
+        for slot in (plan.slot(index) for index in range(plan.total_slots))
+    )
+    evidence = tuple(
+        (slot.ordinal, "recovery", f"{slot.ordinal + 1:064x}")
+        for slot in (plan.slot(index) for index in range(plan.total_slots))
+    )
+    monkeypatch.setattr(
+        subject,
+        "_load_complete_campaign_outcomes",
+        lambda *_args, **_kwargs: (outcomes, evidence, ()),
+    )
+    fake_partition = SimpleNamespace(partition_sha256="f" * 64, entries=())
+    fake_coverage = SimpleNamespace(
+        plan_sha256=plan.plan_sha256,
+        coverage_sha256="e" * 64,
+        partition=fake_partition,
+        outcomes=outcomes,
+        validate=lambda _plan: None,
+    )
+    monkeypatch.setattr(
+        subject.Round74SegmentedCohortCoverage,
+        "build",
+        lambda *_args, **_kwargs: fake_coverage,
+    )
+
+    coverage = subject.load_round74_segmented_terminal_coverage(
+        plan_path=plan_path,
+        state_root=state_root,
+        recovery_outcome_directory=recovery_root,
+        terminal_observed_wall_ns=_terminal_wall_ns(plan),
+    )
+
+    assert coverage.plan.plan_sha256 == plan.plan_sha256
+    assert coverage.as_dict()["target_manifests_read"] is False
+    assert coverage.as_dict()["source_database_access"] == "not_opened"
+    assert coverage.as_dict()["state_metadata_evidence"] == {}
+    assert coverage.as_dict()["admitted_role_counts"] == {
+        "training": 0,
+        "tuning": 0,
+        "test": 0,
+    }
+
+
+def test_storage_shard_schedule_is_strictly_validated_and_hashed(
+    tmp_path: Path,
+) -> None:
+    plan = _plan()
+    payload: dict[str, object] = {
+        "schema_version": "round-074-segmented-storage-shard-schedule-v1",
+        "campaign_plan_sha256": plan.plan_sha256,
+        "capture_implementation_git_commit": "d" * 40,
+        "created_at_utc": "2026-08-10T00:00:00Z",
+        "decision_boundary": {
+            "failed_slots_reclassified_or_salvaged": False,
+            "model_targets_labels_predictions_and_economic_outcomes_accessed": False,
+        },
+        "invariants": {
+            "capture_transport_and_admission_source_unchanged": True,
+            "database_selection_uses_slot_ordinal_only": True,
+            "one_database_writer_process_at_a_time": True,
+            "shared_plan_roles_schedule_state_root_and_zero_retry_policy": True,
+        },
+        "shards": [
+            {
+                "database": "data/round74-test.duckdb",
+                "first_slot_ordinal": 0,
+                "last_slot_ordinal": plan.total_slots - 1,
+                "scheduled_start": "2026-08-01T00:00:00Z",
+                "scheduled_end_exclusive": "2026-08-02T00:00:00Z",
+                "status": "closed",
+            }
+        ],
+    }
+    payload["manifest_sha256"] = _canonical_sha256(payload)
+    path = tmp_path / "storage-shard-schedule.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    digest = subject._load_storage_shard_schedule_evidence(plan, path)
+
+    assert digest == hashlib.sha256(path.read_bytes()).hexdigest()
+    payload["campaign_plan_sha256"] = "e" * 64
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="storage shard schedule differs"):
+        subject._load_storage_shard_schedule_evidence(plan, path)

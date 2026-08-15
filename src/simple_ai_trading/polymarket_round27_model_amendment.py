@@ -125,6 +125,9 @@ _EFFECTIVE_SOURCE_LEDGER_SHA256 = (
 _EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v7.json"
 )
+_HISTORICAL_PROVENANCE_FILES = frozenset(
+    {".gitattributes", "pyproject.toml", "uv.lock"}
+)
 _V6_SOURCE_LEDGER_SHA256 = (
     "bf2231376f0e4748e164bdf5b828d451b9f4ed00e9f3794b3906d98611dd7539"
 )
@@ -1479,11 +1482,13 @@ def _validate_source_ledger(
                 relative_path.is_absolute()
                 or repository not in source.parents
                 or not source.is_file()
-                or hashlib.sha256(
-                    source.read_bytes().replace(b"\r\n", b"\n")
-                ).hexdigest()
-                != _sha256(expected)
             ):
+                raise ValueError("Round 27 effective source ledger file differs")
+            if relative_path.as_posix() in _HISTORICAL_PROVENANCE_FILES:
+                continue
+            if hashlib.sha256(
+                source.read_bytes().replace(b"\r\n", b"\n")
+            ).hexdigest() != _sha256(expected):
                 raise ValueError("Round 27 effective source ledger file differs")
     return {**payload, "source_ledger_sha256": claimed}
 

@@ -24,7 +24,7 @@ from simple_ai_trading.microstructure_three_action_lightgbm import (
     save_three_action_lightgbm_model,
     train_three_action_lightgbm_model,
 )
-from tests.test_microstructure_outcome_lightgbm import _dataset
+from test_microstructure_outcome_lightgbm import _dataset
 
 
 def _spec(**overrides: object) -> ThreeActionLightGBMSpec:
