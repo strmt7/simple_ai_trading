@@ -29,15 +29,22 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "stage1_capture_started": True,
         "stage1_feature_rows_accessed_or_materialized": False,
     }
-    assert amendment["correction"]["selection_and_economic_gates_changed"] is False
+    assert amendment["correction"]["economic_gate_thresholds_changed"] is False
     assert (
         amendment["correction"][
-            "non_unit_calibration_scale_is_rehashed_before_selection_claim_publication"
+            "execution_limit_revalidated_against_execution_book_active_tick_size"
         ]
         is True
     )
     assert amendment["predecessor_amendment_sha256"] == (
-        "52942735f5cd2b7fc56312e87349ba6dc8e65b1b3de0860b19ed5a4655840a09"
+        "8c4c7e48062446d9b6d87c716c22004fa729be094388ce6202480cc6e2098afd"
+    )
+    assert amendment["correction"]["ai_prompt_fields_changed"] is False
+    assert (
+        amendment["superseded_source_text_sha256"][
+            "src/simple_ai_trading/polymarket_round27_economics.py"
+        ]["corrected"]
+        == "e7d465cdbca29b5f3d94d7f3c3d4be80409a961ef31139f846b757ac6ebf4714"
     )
 
 

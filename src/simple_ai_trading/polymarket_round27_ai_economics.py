@@ -24,6 +24,7 @@ from .polymarket_round27_economic_amendment import (
     POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_SHA256,
 )
 from .polymarket_round27_economics import (
+    POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION,
     Round27EconomicBookBatch,
     Round27EconomicConfig,
     Round27EconomicTrade,
@@ -76,7 +77,7 @@ def _strict_baseline_report(
     scenarios = report.get("scenarios")
     if (
         claimed != _canonical_sha256(report)
-        or report.get("schema_version") != "polymarket-round27-economic-replay-v1"
+        or report.get("schema_version") != POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION
         or report.get("partition_role") != panel.partition_role
         or report.get("model_name") != panel.model_name
         or report.get("model_sha256") != panel.model_sha256
@@ -117,6 +118,7 @@ def _candidate_from_case(case: Round27AICase) -> object:
         predicted_probability=selected.predicted_probability,
         quantity=Decimal(selected.quantity),
         limit_price=Decimal(selected.limit_price),
+        decision_tick_size=Decimal(selected.decision_tick_size),
         decision_average_price=Decimal(selected.decision_average_price),
         decision_fee_quote=Decimal(selected.decision_fee_quote),
         expected_edge_per_contract=Decimal(selected.expected_edge_per_contract),

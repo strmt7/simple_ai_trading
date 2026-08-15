@@ -34,7 +34,7 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused Round 27 tests | 107 passed |
+| Focused Round 27 tests | 110 passed |
 | Corrected LightGBM host backend | AMD OpenCL (`opencl:auto`) |
 | Qwen3.5-9B cold / warm structured inference | 5.13 s / 0.52 s |
 | Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
@@ -52,6 +52,13 @@ candidate per condition, walks captured ask depth and fee schedules, and settles
 only from official outcomes. Missing, stale, one-sided, reconnected, or shallow
 books receive no fill credit. The AI layer may only veto or reduce a
 mechanically valid action.
+
+The cumulative
+[active-tick amendment](../../round-027-active-tick-execution-correction-amendment-v3.json)
+also binds Polymarket's dynamic tick-size mechanics into baseline and matched
+AI replay. Limits are quantized on the decision-book lattice and rejected if
+they no longer conform to the execution-book lattice. No prompt, model,
+threshold, or authority changed.
 
 The immutable base contract accidentally required 100 executed trades from
 each 90-condition evaluation role even though candidate selection permits at

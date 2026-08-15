@@ -8,6 +8,9 @@ from typing import Callable, Mapping, Sequence
 
 import numpy as np
 
+from .polymarket_round27_economics import (
+    POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION,
+)
 from .polymarket_round27_model import (
     Round27L2OffsetModel,
     Round27LightGbmOffsetModel,
@@ -193,7 +196,7 @@ def _validate_economic_report(value: Mapping[str, object]) -> dict[str, object]:
     claimed = str(report.pop("report_sha256", ""))
     if (
         claimed != _canonical_sha256(report)
-        or report.get("schema_version") != "polymarket-round27-economic-replay-v1"
+        or report.get("schema_version") != POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION
         or report.get("partition_role") != "selection"
         or report.get("orders_submitted") is not False
         or report.get("trading_authority") is not False
