@@ -1,0 +1,80 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786813978236,
+  "evidence_classification": {
+    "community_post_is_model_or_profitability_evidence": false,
+    "dataset_available_for_independent_audit": false,
+    "exact_artifact_hashes_available": false,
+    "exact_sampling_and_selection_code_available": false,
+    "receipt_synchronized_cross_feed_replay_available": false,
+    "status": "hypothesis_source_only"
+  },
+  "hypotheses": [
+    {
+      "disposition": "already_tested_by_frozen_round28_receipt_time_bbo_ablation",
+      "hypothesis": "binance_receipts_lead_fillable_polymarket_prices",
+      "required_evidence": "same-host receipt timestamps, exact Binance spot and USD-M events, exact Polymarket books, captured fee and tick parameters, recorded depth, and fixed execution delays"
+    },
+    {
+      "disposition": "covered_without_new_threshold_by_frozen_one_second_decision_cadence_through_five_seconds_before_close",
+      "hypothesis": "late_strong_but_not_certain_favorites_can_be_selected_safely",
+      "required_evidence": "condition-disjoint after-cost selection and one-use sealed confirmation with no manually chosen favorite band"
+    },
+    {
+      "disposition": "defer_dedicated_ablation_until_round28_terminal_evidence",
+      "hypothesis": "extended_short_horizon_moves_mean_revert",
+      "required_evidence": "preregistered condition-level split, current TWAP settlement, actual executable prices, fees, depth, latency, and confidence intervals"
+    },
+    {
+      "disposition": "reject_as_standalone_rule",
+      "hypothesis": "one_to_three_cent_or_ninety_five_to_ninety_seven_cent_price_bands_are_intrinsically_mispriced",
+      "required_evidence": "calibration and after-cost uplift beyond the executable market prior, not raw win rate or price-band anecdotes"
+    },
+    {
+      "disposition": "future_independent_market_making_experiment_only",
+      "hypothesis": "maker_split_merge_or_complement_locking_can_outperform_directional_taker_entries",
+      "required_evidence": "receipt-time queue position bounds, partial fills, cancel acknowledgement latency, split and merge latency, gas and allowance state, inventory reservation, orphan-leg loss, adverse selection, current maker rebates, current liquidity-reward settings, and a hard orphan-risk budget"
+    }
+  ],
+  "official_current_product_corrections": {
+    "crypto_taker_fee_rate": "0.07",
+    "crypto_taker_fee_source": "https://docs.polymarket.com/trading/fees",
+    "fee_formula": "shares_times_fee_rate_times_price_times_one_minus_price",
+    "liquidity_rewards_are_dynamic_program_configuration": true,
+    "liquidity_rewards_source": "https://docs.polymarket.com/programs/liquidity-rewards",
+    "maker_rebate_pool_fraction_for_crypto": "0.20",
+    "maker_rebates_source": "https://docs.polymarket.com/programs/maker-rebates",
+    "settlement_price_source_for_active_study": "chainlink_computed_60_second_twap",
+    "twap_source": "https://docs.polymarket.com/market-data/chainlink-twap"
+  },
+  "product_regime_mismatch": {
+    "community_post_assumption": "single_chainlink_price_at_window_open_and_close",
+    "current_active_study": "btc_five_minute_twap_60",
+    "historical_results_transferable_without_retest": false,
+    "reason": "settlement target, fee parameters, incentives, and execution conditions are time-varying product state"
+  },
+  "review_sha256": "e95c18ffb7972e0b785799f109fb8c38f2e7d6ee5671622218b739aa210ab859",
+  "schema_version": "polymarket-round28-community-hypothesis-review-v1",
+  "side_effect_policy": {
+    "active_model_contract_changed": false,
+    "historical_cutoff_changed": false,
+    "model_threshold_changed": false,
+    "prospective_capture_changed": false,
+    "prospective_service_stopped_or_restarted": false,
+    "reusable_historical_data_opened_or_rewritten": false,
+    "repository_historical_cutoff_exclusive_utc": "2026-08-14T00:00:00Z"
+  },
+  "source": {
+    "community_post": "https://www.reddit.com/r/PredictionsMarkets/s/JIB3xSWJuW",
+    "treatment": "unverified_food_for_thought_only"
+  },
+  "verdict": "No active-model, threshold, data, or execution change. Preserve the frozen Round 28 test; treat maker inventory and orphan management as a separately preregistered future mechanism only after current terminal evidence."
+}

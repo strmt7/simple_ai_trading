@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 60865,
+      "bytes": 61332,
       "path": "latest/README.md",
-      "sha256": "8deed7c65c80e2a3f0789417ed5a7be3e81dca4d69f26c18d40ca6bc8feefb87"
+      "sha256": "7fff0fefede24b6a765fe0e751652715b2858ce8d336df58c4b33c566d2b31c2"
     },
     {
       "bytes": 77606,
@@ -552,6 +552,11 @@
       "sha256": "2d516d88a57c97a5ae897f1c65a423653717ced7c4b724fc5243b8c6cb1f344b"
     },
     {
+      "bytes": 4513,
+      "path": "round-028-community-hypothesis-review-v1.json",
+      "sha256": "2a87cf798cd7b19a0722e6b91280b3e8e9601a57302c332c76ab2d4459350e74"
+    },
+    {
       "bytes": 2548,
       "path": "round-028-economic-implementation-amendment-v1.json",
       "sha256": "1bd8e433fc4fb17a7b68a38fa2e806d24a4a2bbca22dfa32f4adfce5e9f8247c"
@@ -584,7 +589,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 28,
   "live_trading_authority": false,
-  "manifest_sha256": "369e6fd0e0b02e8f1bfcc72d792a4dd5c6de9ebb7f0209a31e14afda2423c228",
+  "manifest_sha256": "c5c93ada7870cc409de3bbd4e74304d722e4af2bc3ddddd00e013d5fb01193c6",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -688,6 +693,8 @@
   "round28_ai_sealed_evaluation_implementation_source_bound": true,
   "round28_ai_sealed_result_available": false,
   "round28_bbo_preregistration_frozen": true,
+  "round28_community_hypotheses_promoted": false,
+  "round28_community_hypotheses_reviewed": true,
   "round28_loaded_contract_binding_corrected": true,
   "round28_loaded_contract_binding_revision": 2,
   "round28_model_result_available": false,

@@ -106,6 +106,13 @@ or PnL path. It also requires a five-second, fully GPU-resident probe using the
 actual 278-feature prompt shape before inference. These are source-bound safety
 mechanics only, not AI performance or trading evidence.
 
+The [community-strategy review](../round-028-community-hypothesis-review-v1.json)
+treats the supplied Reddit analysis as hypotheses, not data. Its open/close
+settlement assumption does not match the current 60-second TWAP product, and
+its dataset and code are unavailable for audit. Binance lead, late-favorite,
+and mean-reversion ideas therefore receive no new threshold; maker split/merge
+is deferred to an independent future queue, rebate, and orphan-risk study.
+
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
 Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order
