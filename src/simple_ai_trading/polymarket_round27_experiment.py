@@ -10,6 +10,7 @@ import numpy as np
 
 from .polymarket_round27_economics import (
     POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION,
+    Round27EconomicConfig,
 )
 from .polymarket_round27_model import (
     Round27L2OffsetModel,
@@ -191,7 +192,52 @@ def load_round27_selected_model(
     return selected_model
 
 
-def _validate_economic_report(value: Mapping[str, object]) -> dict[str, object]:
+def _selection_economic_config_from_contract(
+    contract: Mapping[str, object],
+) -> dict[str, object]:
+    economics = contract.get("economic_evaluation")
+    prediction = contract.get("prediction_evaluation")
+    if not isinstance(economics, Mapping) or not isinstance(prediction, Mapping):
+        raise ValueError("Round 27 selection economic contract differs")
+    try:
+        config = Round27EconomicConfig(
+            delays_ms=tuple(economics["fixed_delay_scenarios_ms"]),  # type: ignore[arg-type]
+            primary_delay_ms=int(economics["primary_delay_ms"]),
+            maximum_execution_observation_delay_ms=int(
+                economics["maximum_execution_observation_delay_ms"]
+            ),
+            maximum_decision_book_age_ms=int(
+                economics["maximum_decision_book_age_ms"]
+            ),
+            maximum_conditions_per_book_batch=int(
+                economics["maximum_conditions_per_book_batch"]
+            ),
+            markout_horizon_ms=int(economics["markout_horizon_ms"]),
+            minimum_expected_edge_per_contract=economics[  # type: ignore[arg-type]
+                "minimum_expected_edge_per_contract"
+            ],
+            maximum_entry_cost_quote=economics[  # type: ignore[arg-type]
+                "maximum_entry_cost_quote"
+            ],
+            initial_capital_quote=economics["initial_capital_quote"],  # type: ignore[arg-type]
+            minimum_executed_trades=int(
+                economics["minimum_selection_executed_trades"]
+            ),
+            minimum_profitable_conditions=int(
+                economics["minimum_profitable_conditions"]
+            ),
+            bootstrap_draws=int(prediction["bootstrap_draws"]),
+        ).validated()
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Round 27 selection economic contract differs") from exc
+    return config.asdict()
+
+
+def _validate_economic_report(
+    value: Mapping[str, object],
+    *,
+    contract: Mapping[str, object],
+) -> dict[str, object]:
     report = dict(value)
     claimed = str(report.pop("report_sha256", ""))
     if (
@@ -202,6 +248,7 @@ def _validate_economic_report(value: Mapping[str, object]) -> dict[str, object]:
         or report.get("trading_authority") is not False
         or report.get("edge_claim") is not False
         or report.get("profitability_claim") is not False
+        or report.get("config") != _selection_economic_config_from_contract(contract)
     ):
         raise ValueError("Round 27 selection economic report differs")
     return {**report, "report_sha256": claimed}
@@ -424,7 +471,7 @@ def build_round27_selection_economic_claim(
         contract=contract,
         selected_model=selected_model,
     )
-    report = _validate_economic_report(economic_report)
+    report = _validate_economic_report(economic_report, contract=contract)
     model_name = str(validated_claim["selected_model_name"])
     if (
         report.get("model_name") != model_name
@@ -509,7 +556,10 @@ def validate_round27_sealed_access_artifacts(
         model_name=str(claim["selected_model_name"]),
         model_sha256=model_sha256,
     )
-    economic_report = _validate_economic_report(selection_economic_report)
+    economic_report = _validate_economic_report(
+        selection_economic_report,
+        contract=contract,
+    )
     if (
         economic_report.get("report_sha256")
         != economic_claim.get("economic_report_sha256")
@@ -544,7 +594,10 @@ def run_round27_sealed_evaluation(
         model_name=str(claim["selected_model_name"]),
         model_sha256=model_sha256,
     )
-    economic_report = _validate_economic_report(selection_economic_report)
+    economic_report = _validate_economic_report(
+        selection_economic_report,
+        contract=contract,
+    )
     if (
         economic_report.get("report_sha256")
         != economic_claim.get("economic_report_sha256")
