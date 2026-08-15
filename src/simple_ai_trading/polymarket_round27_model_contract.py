@@ -24,7 +24,7 @@ POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION = (
     "polymarket-round27-stage1-model-contract-v1"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256 = (
-    "fa22f2d56ec8c60caaeb626c9213fd9fe35d0415dd68c9b9e4bb696a0bc56d0d"
+    "40f4a505aba2ec78f2425dbbdce1779f25224ac357cf9c2c014c21e31277805f"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
@@ -135,6 +135,25 @@ def validate_round27_model_contract(
         or prediction.get("primary_metric") != "condition_weighted_log_loss"
         or prediction.get("row_level_accuracy_alone_can_promote") is not False
         or not isinstance(economics, Mapping)
+        or economics.get("candidate_selection")
+        != "first_target_blind_positive_after_cost_candidate_per_condition"
+        or economics.get("entry_price")
+        != "fok_walk_of_actual_polymarket_clob_ask_depth_after_observed_delay"
+        or economics.get("exit_value")
+        != "official_binary_condition_resolution_payout"
+        or economics.get("fixed_delay_scenarios_ms") != [250, 500, 1000, 2000]
+        or economics.get("primary_delay_ms") != 500
+        or economics.get("maximum_execution_observation_delay_ms") != 500
+        or economics.get("maximum_decision_book_age_ms") != 1500
+        or economics.get("markout_horizon_ms") != 1000
+        or economics.get("minimum_expected_edge_per_contract") != "0.01"
+        or economics.get("maximum_entry_cost_quote") != "10"
+        or economics.get("position_quantity")
+        != "captured_condition_minimum_order_size_shares"
+        or economics.get("order_type") != "fill_or_kill_taker_buy"
+        or economics.get("minimum_selection_executed_trades") != 100
+        or economics.get("minimum_sealed_executed_trades") != 100
+        or economics.get("minimum_profitable_conditions") != 20
         or economics.get("rate_limit_or_account_authority") is not False
         or not isinstance(ai, Mapping)
         or ai.get("maximum_authority") != "veto_or_reduce"

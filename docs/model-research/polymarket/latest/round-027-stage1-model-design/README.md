@@ -14,8 +14,9 @@ flowchart LR
     E --> G
     F --> G
     G --> H["Frozen model claim"]
-    H --> I["Sealed after-cost replay"]
-    I --> J["AI veto/reduce ablation"]
+    H --> I["FOK depth walk at 250 / 500 / 1,000 / 2,000 ms"]
+    I --> K["Official binary payout and condition bootstrap"]
+    K --> J["AI veto/reduce ablation"]
 ```
 
 | Live-host check | Result |
@@ -25,12 +26,18 @@ flowchart LR
 | Real source-smoke TWAP60 ticks | 577 |
 | Compact trade storage | 131,175 bytes |
 | Real audited condition feature rows | 173 |
-| Focused tests | 14 passed |
+| Fixed execution delays | 250 / 500 / 1,000 / 2,000 ms |
+| Maximum entry cost | 10 USDC per condition |
+| Focused tests | 19 passed |
 
 The executable control is Polymarket's market probability. Learned models must
 beat it on condition-weighted log loss and Brier score with paired confidence
 bounds, then remain profitable after observed fees, spread, depth, and latency.
-The AI layer may only veto or reduce a mechanically valid action.
+The economic replay selects at most one target-blind positive-after-cost FOK
+candidate per condition, walks captured ask depth and fee schedules, and settles
+only from official outcomes. Missing, stale, one-sided, reconnected, or shallow
+books receive no fill credit. The AI layer may only veto or reduce a
+mechanically valid action.
 
 The canonical numeric design is
 [`round-027-stage1-model-contract-v1.json`](../../round-027-stage1-model-contract-v1.json).
