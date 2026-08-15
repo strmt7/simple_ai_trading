@@ -4,17 +4,15 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Mapping, Sequence
 
 import numpy as np
 
 from simple_ai_trading.polymarket_recorder import PolymarketEvidenceStore
 from simple_ai_trading.polymarket_replay import PolymarketEvidenceReplay
 from simple_ai_trading.polymarket_round27_economics import (
-    Round27EconomicBookBatch,
     Round27EconomicConfig,
     evaluate_round27_economic_scenarios,
 )
@@ -26,14 +24,19 @@ from simple_ai_trading.polymarket_round27_experiment import (
 from simple_ai_trading.polymarket_round27_feature_store import Round27FeatureStore
 from simple_ai_trading.polymarket_round27_model import (
     Round27Partition,
-    Round27ProbabilityModel,
     build_round27_model_samples,
 )
 from simple_ai_trading.polymarket_round27_model_contract import (
     load_round27_model_contract,
 )
 from simple_ai_trading.polymarket_round27_target_store import Round27TargetStore
-from simple_ai_trading.storage import write_json_atomic
+from simple_ai_trading.polymarket_round27_operator import (
+    artifact_writer as _writer,
+    canonical_sha256 as _canonical_sha256,
+    economic_book_batches as _batches,
+    load_mapping as _load_mapping,
+    model_identity as _model_identity,
+)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -50,109 +53,8 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _canonical_json(value: object) -> str:
-    return json.dumps(
-        value,
-        allow_nan=False,
-        ensure_ascii=True,
-        separators=(",", ":"),
-        sort_keys=True,
-    )
-
-
-def _canonical_sha256(value: object) -> str:
-    return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
-
-
 def _resolve(root: Path, value: Path) -> Path:
     return value if value.is_absolute() else root / value
-
-
-def _writer(path: Path, hash_field: str):
-    def write(value: Mapping[str, object]) -> str:
-        payload = dict(value)
-        claimed = str(payload.get(hash_field) or "")
-        body = dict(payload)
-        body.pop(hash_field, None)
-        if claimed != _canonical_sha256(body):
-            raise ValueError("Round 27 selection artifact hash differs")
-        if path.exists():
-            persisted = _load_mapping(path)
-        else:
-            write_json_atomic(path, payload, indent=2, sort_keys=True)
-            persisted = _load_mapping(path)
-        if persisted != payload:
-            raise ValueError("Round 27 selection artifact persistence differs")
-        return claimed
-
-    return write
-
-
-def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
-    output: dict[str, object] = {}
-    for key, value in pairs:
-        if key in output:
-            raise ValueError("Round 27 selection artifact contains duplicate keys")
-        output[key] = value
-    return output
-
-
-def _load_mapping(path: Path) -> dict[str, object]:
-    try:
-        value = json.loads(
-            path.resolve(strict=True).read_text(encoding="ascii"),
-            object_pairs_hook=_strict_object,
-        )
-    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
-        raise ValueError("Round 27 selection artifact is not strict JSON") from exc
-    if not isinstance(value, dict):
-        raise ValueError("Round 27 selection artifact must be an object")
-    return value
-
-
-def _model_identity(
-    model: Round27ProbabilityModel | None,
-    *,
-    contract_sha256: str,
-) -> tuple[str, str]:
-    if model is None:
-        return (
-            "market_prior",
-            _canonical_sha256(
-                {
-                    "model_name": "market_prior",
-                    "contract_sha256": contract_sha256,
-                }
-            ),
-        )
-    payload = model.asdict()
-    return model.model_name, str(payload["model_sha256"])
-
-
-def _batches(
-    store: PolymarketEvidenceStore,
-    *,
-    run_id: str,
-    condition_ids: Sequence[str],
-    maximum_conditions: int,
-) -> Iterable[Round27EconomicBookBatch]:
-    for start in range(0, len(condition_ids), maximum_conditions):
-        batch_ids = tuple(condition_ids[start : start + maximum_conditions])
-        replay = PolymarketEvidenceReplay.load(
-            store,
-            run_id=run_id,
-            allow_segmented_gaps=True,
-            include_resolutions=False,
-            condition_ids=batch_ids,
-            materialized_minimum_depth_levels=0,
-            cap_materialized_depth_to_minimum_order_size=True,
-        )
-        if {market.condition_id for market in replay.markets} != set(batch_ids):
-            raise ValueError("Round 27 selection replay market population differs")
-        yield Round27EconomicBookBatch(
-            condition_ids=batch_ids,
-            books=replay.books,
-        ).validated()
 
 
 def main(argv: Sequence[str] | None = None) -> int:

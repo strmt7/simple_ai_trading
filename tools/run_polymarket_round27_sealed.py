@@ -28,14 +28,14 @@ from simple_ai_trading.polymarket_round27_model import (
 from simple_ai_trading.polymarket_round27_model_contract import (
     load_round27_model_contract,
 )
-from simple_ai_trading.polymarket_round27_target_store import Round27TargetStore
-from tools.run_polymarket_round27_selection import (
-    _batches,
-    _canonical_sha256,
-    _load_mapping,
-    _model_identity,
-    _writer,
+from simple_ai_trading.polymarket_round27_operator import (
+    artifact_writer as _writer,
+    canonical_sha256 as _canonical_sha256,
+    economic_book_batches as _batches,
+    load_mapping as _load_mapping,
+    model_identity as _model_identity,
 )
+from simple_ai_trading.polymarket_round27_target_store import Round27TargetStore
 
 
 _TERMINAL_SCHEMA_VERSION = "polymarket-round27-terminal-sealed-result-v1"
