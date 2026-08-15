@@ -34,7 +34,7 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused Round 27 tests | 110 passed |
+| Focused Round 27 tests | 114 passed |
 | Corrected LightGBM host backend | AMD OpenCL (`opencl:auto`) |
 | Qwen3.5-9B cold / warm structured inference | 5.13 s / 0.52 s |
 | Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
@@ -77,6 +77,13 @@ it around the persisted raw tree margin during inference. It binds the old and
 corrected source hashes and a new model schema. A live AMD OpenCL synthetic
 check and the 107-test domain checkpoint validate mechanics only; neither is
 market-edge evidence.
+
+The [walk-forward amendment](../../round-027-embargoed-walk-forward-correction-amendment-v4.json)
+removes future-to-past contamination from L2 penalty selection. Five expanding
+condition-level validation blocks now train only on earlier conditions and
+apply the frozen campaign's ten-minute pre-validation embargo. Candidate
+families, model payloads, economics, AI authority, and promotion thresholds did
+not change. This is a validation correction, not evidence of edge.
 
 The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
 binds both candidates to exact Ollama, upstream, and quantized-artifact hashes,
