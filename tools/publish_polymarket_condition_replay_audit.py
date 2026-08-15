@@ -8,6 +8,7 @@ import csv
 from datetime import UTC, datetime
 import hashlib
 import json
+import math
 from pathlib import Path
 import shutil
 
@@ -98,6 +99,19 @@ def _csv(columns: Sequence[str], rows: Sequence[Mapping[str, object]]) -> str:
 
 def _utc(milliseconds: int) -> datetime:
     return datetime.fromtimestamp(milliseconds / 1000, tz=UTC)
+
+
+def _sparse_ticks(labels: Sequence[str], *, maximum: int = 12) -> tuple[list[int], list[str]]:
+    if maximum < 2:
+        raise ValueError("sparse tick maximum is invalid")
+    if len(labels) <= maximum:
+        positions = list(range(len(labels)))
+    else:
+        stride = math.ceil((len(labels) - 1) / (maximum - 1))
+        positions = list(range(0, len(labels), stride))
+        if positions[-1] != len(labels) - 1:
+            positions.append(len(labels) - 1)
+    return positions, [labels[index] for index in positions]
 
 
 def _tables(
@@ -227,7 +241,8 @@ def _render(report: Mapping[str, object], path: Path, *, title: str) -> None:
         )
         excluded_label_available = False
     timeline.set_xlim(started, ended)
-    timeline.set_yticks(range(len(labels)), labels)
+    timeline_ticks, timeline_labels = _sparse_ticks(labels)
+    timeline.set_yticks(timeline_ticks, timeline_labels)
     timeline.invert_yaxis()
     timeline.set_title("Checksum-valid executable intervals", loc="left", fontweight="bold")
     timeline.set_xlabel("Receipt time (UTC)")
@@ -241,7 +256,13 @@ def _render(report: Mapping[str, object], path: Path, *, title: str) -> None:
     coverage.bar(range(len(percentages)), percentages, color=colors, width=0.7)
     coverage.axhline(100, color="#8f9aa2", linewidth=0.8)
     coverage.set_ylim(0, 105)
-    coverage.set_xticks(range(len(labels)), labels, rotation=45, ha="right")
+    coverage_ticks, coverage_labels = _sparse_ticks(labels)
+    coverage.set_xticks(
+        coverage_ticks,
+        coverage_labels,
+        rotation=45,
+        ha="right",
+    )
     coverage.set_ylabel("Eligible market time (%)")
     coverage.set_title("Condition-isolated coverage", loc="left", fontweight="bold")
     coverage.grid(axis="y", color="#dce3e7", linewidth=0.8)

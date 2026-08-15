@@ -25,7 +25,7 @@ delayed and sequential costs were 1.012066 and 1.002744 pUSD per complete set,
 respectively, before network latency. Extreme-price and late-favorite states
 remain prospective model-value hypotheses; public quotes do not prove fills.
 
-The next capture uses Binance's documented USD-M `@aggTrade` market stream.
+Round 27 uses Binance's documented USD-M `@aggTrade` market stream.
 A live 33.719-second source probe recorded 29/29 finite positive trades, while
 the new source gate independently rejects the legacy v3 feed. The subsequent
 one-use 600-second prospective smoke recorded 194,980 raw public messages
@@ -38,6 +38,21 @@ and [prospective smoke result](../round-027-documented-source-smoke-result-v1-20
 qualify this public source profile for a larger prospective capture only; they
 grant no model-data, edge, profitability, paper-trading, or live authority.
 
+The subsequent five-hour Stage 0 capture recorded 6,099,812 raw public
+messages and 62 market snapshots. Exactly 59 markets had their complete
+five-minute interval inside the recorder bounds; the partial opening and two
+trailing markets were excluded without replay. The capture recorded four CLOB
+and five RTDS reconnect boundaries, zero recorder or integrity errors, 61,304
+valid USD-M aggregate trades, and 161,128 valid spot trades. Isolated replay
+admitted 53/59 complete markets through 57 connection-bounded intervals and
+excluded six: five atomic-depth checksum disagreements and one uncorroborated
+best-book sequence. Eligible coverage ranged from 297.667 to 299.999 seconds.
+The [capture result](../round-027-stage0-mechanics-capture-result-v1-2026-08-15.json)
+and [target-free condition audit](round-027-stage0-condition-audit/condition-replay-audit.json)
+contain no outcome, model, P&L, or trading authority.
+
+![Round 27 Stage 0 target-free replay eligibility](round-027-stage0-condition-audit/condition-replay-eligibility.svg)
+
 ![Round 27 mechanics diagnostic](round-027-mechanics-diagnostic/mechanics-diagnostic.svg)
 
 ![Round 26 target-free replay eligibility](round-026-twap60-condition-audit/condition-replay-eligibility.svg)
@@ -46,6 +61,7 @@ The [canonical Round 26 audit](round-026-twap60-condition-audit/condition-replay
 [v3 analysis failure](../round-026-twap60-development-analysis-failure-v2.json),
 the [Round 27 mechanics data](round-027-mechanics-diagnostic/mechanics-diagnostic.json),
 the [documented-source smoke contract](../round-027-documented-source-smoke-v1.json),
+the [Stage 0 capture contract](../round-027-stage0-mechanics-capture-v1.json),
 and [untrusted execution-hypothesis preregistration](../round-027-execution-hypothesis-preregistration-v3.json)
 preserve the exact boundaries. No market edge or after-cost profitability has
 been found yet.

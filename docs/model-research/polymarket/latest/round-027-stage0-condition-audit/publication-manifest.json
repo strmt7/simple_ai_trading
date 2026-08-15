@@ -1,0 +1,16 @@
+{
+  "audit_sha256": "e0c54e14d0dc45f1399ee462fe9c38f4e13c0320b7628a65fade7b36add80ab7",
+  "diagnostic_only": true,
+  "edge_claim": false,
+  "files": {
+    "README.md": "fee2dc215f29f5e82293f92e7e90463d34f6b8f33f54c153be5510bfb2f347f3",
+    "condition-replay-audit.json": "afa990644f2d3a244f00d9f6ea951d76704847e177d399f68017a2959bdd30dc",
+    "condition-replay-conditions.csv": "59eb4770cd8f7a55d902917d6818cc3c3d0e0bbb85b142ffdeb62e179ba7b1f8",
+    "condition-replay-eligibility.svg": "1555029d795cffc3480dac0b89043efcc83f06a570856aa8680954f01ef74d53",
+    "condition-replay-segments.csv": "a686ae2879a4dca5b03ddaac0d4c53bc4f888319776bfb9a71cfc923b8e335a5"
+  },
+  "manifest_sha256": "084718fe28ef22173d3b413d1c5aa1650f2bfdfc291265769454e7681d77640f",
+  "profitability_claim": false,
+  "schema_version": "polymarket-condition-replay-publication-v2",
+  "title": "Round 27 Stage 0"
+}
