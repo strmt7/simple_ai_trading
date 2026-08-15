@@ -17,7 +17,7 @@ from simple_ai_trading.polymarket_round27_model_amendment import (
 _ROOT = Path(__file__).resolve().parents[1]
 _SOURCE_LEDGER = (
     _ROOT
-    / "docs/model-research/polymarket/round-027-effective-source-ledger-v6.json"
+    / "docs/model-research/polymarket/round-027-effective-source-ledger-v7.json"
 )
 
 
@@ -36,29 +36,37 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "stage1_feature_rows_accessed_or_materialized": False,
     }
     assert amendment["correction"] == {
-        "decision_time_settlement_hazard_gate_retained": True,
-        "economic_report_schema_version_from": (
-            "polymarket-round27-economic-replay-v5"
-        ),
-        "economic_report_schema_version_to": (
-            "polymarket-round27-economic-replay-v6"
-        ),
-        "execution_receipt_settlement_hazard_gate_added": True,
-        "feature_model_ai_candidates_changed": False,
-        "minimum_new_entry_time_to_settlement_ms": 60_000,
-        "settlement_hazard_gate_may_be_overridden": False,
+        "all_primary_target_free_audits_required": True,
+        "campaign_admission_artifact_required": True,
+        "contingency_role_assignment_changed": False,
+        "exact_role_feature_populations_bound": True,
+        "feature_model_economic_or_ai_candidates_changed": False,
+        "minimum_campaign_eligible_conditions": 300,
+        "model_role_minima_required": True,
         "source_ledger_advanced": True,
+        "target_access_schema_version_from": (
+            "polymarket-round27-role-target-access-v1"
+        ),
+        "target_access_schema_version_to": (
+            "polymarket-round27-role-target-access-v2"
+        ),
+        "target_store_schema_version_from": (
+            "polymarket-round27-role-gated-target-store-v1"
+        ),
+        "target_store_schema_version_to": (
+            "polymarket-round27-role-gated-target-store-v2"
+        ),
     }
     assert amendment["predecessor_amendment_sha256"] == (
-        "a7015cfe099a287e96f9399b9305ad99a5a41b4619b468798fb94fed8e7b9526"
+        "754bec3c86d36a1f88feaa806780c65ecf71e815d90dd149be8cef2cb8c6367a"
     )
     assert amendment["source_ledger"] == {
         "relative_path": (
             "docs/model-research/polymarket/"
-            "round-027-effective-source-ledger-v6.json"
+            "round-027-effective-source-ledger-v7.json"
         ),
         "sha256": (
-            "bf2231376f0e4748e164bdf5b828d451b9f4ed00e9f3794b3906d98611dd7539"
+            "f38396df1bb3f8dba662370401b562ab431f6514f0fad58210079e7d6a059581"
         ),
     }
     assert set(amendment["superseded_source_text_sha256"]) == {
@@ -69,6 +77,8 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "src/simple_ai_trading/polymarket_round27_features.py",
         "src/simple_ai_trading/polymarket_round27_model.py",
         "src/simple_ai_trading/polymarket_round27_operator.py",
+        "src/simple_ai_trading/polymarket_round27_target_store.py",
+        "tools/collect_polymarket_round27_targets.py",
         "tools/run_polymarket_round27_ai_sealed.py",
         "tools/run_polymarket_round27_ai_selection.py",
     }

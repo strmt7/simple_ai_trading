@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 59186,
+      "bytes": 59519,
       "path": "latest/README.md",
-      "sha256": "d3757c057b6872d218052a14063ae080cb75871d4824d022c27d3c215c70f9c2"
+      "sha256": "f8cbaf4ecab31dc30ff79258be0f146c3b978622d4c5ff000142bc25056ccd45"
     },
     {
       "bytes": 77606,
@@ -497,6 +497,16 @@
       "sha256": "e5bb338db3e57c0cb891b5117c8feb8b91176f16bebba7f31d9349bbe6548cc4"
     },
     {
+      "bytes": 6325,
+      "path": "round-027-campaign-admission-gate-correction-amendment-v16.json",
+      "sha256": "1d3590fcd353b80f4c33a88b081ef1c2aca9a502bf9a7215a7fbac1bf7ba4926"
+    },
+    {
+      "bytes": 14186,
+      "path": "round-027-effective-source-ledger-v7.json",
+      "sha256": "3094ff2ddd1fb0cfdb3d56f0b570f463298addb38776dcd7ce0dd99dabe13545"
+    },
+    {
       "bytes": 5416,
       "path": "round-027-live-product-regime-audit-v1-2026-08-15.json",
       "sha256": "91140b1e401cc9f4c2541c56064819f381ccd8c3f1448d88ab31c008dd68cc02"
@@ -537,6 +547,11 @@
       "sha256": "1bd8e433fc4fb17a7b68a38fa2e806d24a4a2bbca22dfa32f4adfce5e9f8247c"
     },
     {
+      "bytes": 4681,
+      "path": "round-028-loaded-contract-binding-correction-v2.json",
+      "sha256": "70f097639d47f1a57d76abf5cf76ad5d4897c143c015851ab8d73adcdc2fe5ea"
+    },
+    {
       "bytes": 2638,
       "path": "round-028-operator-implementation-amendment-v1.json",
       "sha256": "6585dd69e47681828d414b7677cee41cc6113147acef97ecfcec4e5e97106d0b"
@@ -554,7 +569,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 28,
   "live_trading_authority": false,
-  "manifest_sha256": "122f0a86ed7dc0b288964a85e9c583bb878e2c1bd780f7bb8b84b5bb089fc32e",
+  "manifest_sha256": "ce5ef3e02482bdb0784b9518aec2e6cdfa0997b58e2609a4d74fe0969e571ff2",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -642,14 +657,19 @@
   "round25_v2_campaign_end_utc": "2026-08-29T23:40:00Z",
   "round25_v2_campaign_start_utc": "2026-08-11T00:00:00Z",
   "round25_v2_capture_evidence_published": true,
+  "round27_campaign_admission_gate_implemented": true,
+  "round27_campaign_admitted": false,
   "round27_stage1_campaign_contract_frozen": true,
   "round27_stage1_capture_running": true,
   "round27_stage1_result_available": false,
+  "round27_target_access_allowed": false,
   "round28_ai_core_implementation_source_bound": true,
   "round28_ai_operator_implementation_source_bound": true,
   "round28_ai_preregistration_frozen": true,
   "round28_ai_result_available": false,
   "round28_bbo_preregistration_frozen": true,
+  "round28_loaded_contract_binding_corrected": true,
+  "round28_loaded_contract_binding_revision": 2,
   "round28_model_result_available": false,
   "schema_version": "polymarket-current-status-publication-v1",
   "source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0",

@@ -19,6 +19,10 @@ from .polymarket_round25_resolution_store import Round25OfficialPublicPayload
 from .polymarket_round27_experiment import (
     validate_round27_sealed_access_artifacts,
 )
+from .polymarket_round27_campaign_admission import (
+    round27_campaign_role_population_sha256,
+    validate_round27_campaign_admission,
+)
 from .polymarket_round27_features import Round27FeatureRow
 from .polymarket_round27_model import Round27RoleInterval
 from .polymarket_round27_model_amendment import (
@@ -32,10 +36,10 @@ from .polymarket_round27_model_contract import (
 
 
 POLYMARKET_ROUND27_TARGET_STORE_SCHEMA_VERSION = (
-    "polymarket-round27-role-gated-target-store-v1"
+    "polymarket-round27-role-gated-target-store-v2"
 )
 POLYMARKET_ROUND27_TARGET_ACCESS_SCHEMA_VERSION = (
-    "polymarket-round27-role-target-access-v1"
+    "polymarket-round27-role-target-access-v2"
 )
 POLYMARKET_ROUND27_TARGET_EVIDENCE_SCHEMA_VERSION = (
     "polymarket-round27-official-target-evidence-v1"
@@ -302,6 +306,7 @@ class Round27TargetStore:
                 run_id VARCHAR NOT NULL,
                 contract_sha256 VARCHAR NOT NULL,
                 feature_store_audit_sha256 VARCHAR NOT NULL,
+                campaign_admission_sha256 VARCHAR NOT NULL,
                 opened_at_ms BIGINT NOT NULL,
                 condition_count INTEGER NOT NULL,
                 condition_population_sha256 VARCHAR NOT NULL,
@@ -363,6 +368,7 @@ class Round27TargetStore:
         run_id: str,
         contract: Mapping[str, object],
         feature_store_audit_sha256: str,
+        campaign_admission: Mapping[str, object],
         role_intervals: Sequence[Mapping[str, object]],
         feature_rows: Sequence[Round27FeatureRow],
         markets: Sequence[tuple[PolymarketFiveMinuteMarket, str]],
@@ -390,10 +396,19 @@ class Round27TargetStore:
             feature_store_audit_sha256,
             name="feature-store audit",
         )
+        admission = validate_round27_campaign_admission(
+            campaign_admission,
+            contract=contract,
+            feature_store_audit_sha256=feature_audit_sha256,
+        )
+        admission_sha256 = str(admission["admission_sha256"])
         intervals = tuple(
             Round27RoleInterval.from_mapping(item) for item in role_intervals
         )
         row_chains = _row_chains(feature_rows)
+        role_population_sha256 = round27_campaign_role_population_sha256(
+            feature_rows
+        )
         market_by_id = {market.condition_id: (market, snapshot) for market, snapshot in markets}
         if (
             selected_role not in _TARGET_ROLES
@@ -410,6 +425,8 @@ class Round27TargetStore:
             or len(market_by_id) != len(markets)
             or set(market_by_id) != set(row_chains)
             or any(row.validated().run_id != selected_run for row in feature_rows)
+            or admission["role_population_sha256"].get(selected_role)
+            != role_population_sha256
         ):
             raise ValueError("Round 27 target role population differs")
         artifacts = (
@@ -482,6 +499,7 @@ class Round27TargetStore:
             "run_id": selected_run,
             "contract_sha256": contract_sha256,
             "feature_store_audit_sha256": feature_audit_sha256,
+            "campaign_admission_sha256": admission_sha256,
             "opened_at_ms": opened_at_ms,
             "condition_count": len(condition_payloads),
             "condition_population_sha256": population_chain,
@@ -521,7 +539,7 @@ class Round27TargetStore:
             self.connection.execute(
                 """
                 INSERT INTO round27_target_access VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, false, NULL
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, false, NULL
                 )
                 """,
                 [
@@ -530,6 +548,7 @@ class Round27TargetStore:
                     selected_run,
                     contract_sha256,
                     feature_audit_sha256,
+                    admission_sha256,
                     opened_at_ms,
                     len(condition_payloads),
                     population_chain,
@@ -734,7 +753,8 @@ class Round27TargetStore:
         accesses = self.connection.execute(
             """
             SELECT role, slot_id, run_id, contract_sha256,
-                   feature_store_audit_sha256, opened_at_ms, condition_count,
+                   feature_store_audit_sha256, campaign_admission_sha256,
+                   opened_at_ms, condition_count,
                    condition_population_sha256, selection_claim_sha256,
                    selection_economic_claim_sha256,
                    selection_economic_report_sha256, claim_json, claim_sha256,
@@ -743,14 +763,15 @@ class Round27TargetStore:
             """
         ).fetchall()
         role_reports: list[dict[str, object]] = []
+        admission_sha256: str | None = None
         total_conditions = 0
         total_resolved = 0
         for access in accesses:
             role = str(access[0])
-            claim = _strict_json(access[11], name="access claim")
+            claim = _strict_json(access[12], name="access claim")
             claimed = _sha256(claim.pop("claim_sha256", ""), name="access claim")
             if (
-                claimed != access[12]
+                claimed != access[13]
                 or claimed != _canonical_sha256(claim)
                 or claim.get("schema_version")
                 != POLYMARKET_ROUND27_TARGET_ACCESS_SCHEMA_VERSION
@@ -759,11 +780,12 @@ class Round27TargetStore:
                 or claim.get("run_id") != access[2]
                 or claim.get("contract_sha256") != access[3]
                 or claim.get("feature_store_audit_sha256") != access[4]
-                or claim.get("opened_at_ms") != int(access[5])
-                or claim.get("condition_count") != int(access[6])
-                or claim.get("selection_claim_sha256") != access[8]
-                or claim.get("selection_economic_claim_sha256") != access[9]
-                or claim.get("selection_economic_report_sha256") != access[10]
+                or claim.get("campaign_admission_sha256") != access[5]
+                or claim.get("opened_at_ms") != int(access[6])
+                or claim.get("condition_count") != int(access[7])
+                or claim.get("selection_claim_sha256") != access[9]
+                or claim.get("selection_economic_claim_sha256") != access[10]
+                or claim.get("selection_economic_report_sha256") != access[11]
                 or claim.get("target_access_opened") is not True
                 or any(
                     claim.get(field) is not False
@@ -776,6 +798,10 @@ class Round27TargetStore:
                 )
             ):
                 raise ValueError("Round 27 target access claim differs")
+            if admission_sha256 is None:
+                admission_sha256 = str(access[5])
+            elif admission_sha256 != access[5]:
+                raise ValueError("Round 27 target campaign admission differs")
             conditions = self.connection.execute(
                 """
                 SELECT condition_id, event_start_ms, market_json, market_sha256
@@ -831,7 +857,7 @@ class Round27TargetStore:
                     "schema_version": (
                         POLYMARKET_ROUND27_TARGET_EVIDENCE_SCHEMA_VERSION
                     ),
-                    "access_claim_sha256": str(access[12]),
+                    "access_claim_sha256": str(access[13]),
                     "condition_id": str(condition_id),
                     "observed_wall_ms": int(evidence[0]),
                     "observed_monotonic_ns": int(evidence[1]),
@@ -844,19 +870,19 @@ class Round27TargetStore:
                     winner != (str(evidence[2]), str(evidence[3]))
                     or evidence_payload != expected_evidence
                     or _canonical_sha256(evidence_payload) != evidence[9]
-                    or int(evidence[0]) < int(access[5])
+                    or int(evidence[0]) < int(access[6])
                     or not math.isfinite(float(evidence[0]))
                 ):
                     raise ValueError("Round 27 target evidence differs")
                 evidence_chain = _hash_chain(evidence_chain, str(evidence[9]))
                 resolved += 1
             if (
-                len(conditions) != int(access[6])
-                or population_chain != access[7]
-                or claim.get("condition_population_sha256") != access[7]
-                or (access[13] is True and resolved != len(conditions))
-                or (access[13] is False and access[14] is not None)
-                or (access[13] is True and evidence_chain != access[14])
+                len(conditions) != int(access[7])
+                or population_chain != access[8]
+                or claim.get("condition_population_sha256") != access[8]
+                or (access[14] is True and resolved != len(conditions))
+                or (access[14] is False and access[15] is not None)
+                or (access[14] is True and evidence_chain != access[15])
             ):
                 raise ValueError("Round 27 target role manifest differs")
             role_reports.append(
@@ -865,11 +891,12 @@ class Round27TargetStore:
                     "slot_id": access[1],
                     "condition_count": len(conditions),
                     "resolved_condition_count": resolved,
-                    "finalized": bool(access[13]),
-                    "claim_sha256": access[12],
+                    "finalized": bool(access[14]),
+                    "claim_sha256": access[13],
+                    "campaign_admission_sha256": access[5],
                     "condition_population_sha256": population_chain,
                     "evidence_chain_sha256": (
-                        evidence_chain if access[13] is True else None
+                        evidence_chain if access[14] is True else None
                     ),
                 }
             )
@@ -881,6 +908,7 @@ class Round27TargetStore:
             "condition_count": total_conditions,
             "resolved_condition_count": total_resolved,
             "roles": role_reports,
+            "campaign_admission_sha256": admission_sha256,
             "feature_targets_co_located": False,
             "edge_claim": False,
             "profitability_claim": False,

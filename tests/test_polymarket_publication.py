@@ -220,10 +220,15 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_post_capture_runner_waiting_mode_host_verified"] is True
     assert manifest["round25_post_capture_runner_source_database_opened"] is False
     assert manifest["round25_post_capture_runner_orders_submitted"] == 0
+    assert manifest["round27_campaign_admission_gate_implemented"] is True
+    assert manifest["round27_campaign_admitted"] is False
     assert manifest["round27_stage1_campaign_contract_frozen"] is True
     assert manifest["round27_stage1_capture_running"] is True
     assert manifest["round27_stage1_result_available"] is False
+    assert manifest["round27_target_access_allowed"] is False
     assert manifest["round28_bbo_preregistration_frozen"] is True
+    assert manifest["round28_loaded_contract_binding_corrected"] is True
+    assert manifest["round28_loaded_contract_binding_revision"] == 2
     assert manifest["round28_model_result_available"] is False
     assert manifest["round28_ai_preregistration_frozen"] is True
     assert manifest["round28_ai_core_implementation_source_bound"] is True
@@ -309,6 +314,12 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
         "round-025-twap-wire-source-qualification-v2-2026-08-10.json"
         in artifact_paths
     )
+    assert (
+        "round-027-campaign-admission-gate-correction-amendment-v16.json"
+        in artifact_paths
+    )
+    assert "round-027-effective-source-ledger-v7.json" in artifact_paths
+    assert "round-028-loaded-contract-binding-correction-v2.json" in artifact_paths
     root = RESEARCH.resolve()
     for entry in manifest["artifacts"]:
         path = (RESEARCH / entry["path"]).resolve()

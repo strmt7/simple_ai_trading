@@ -16,6 +16,9 @@ from simple_ai_trading.polymarket_round25_resolution_store import (
 )
 from simple_ai_trading.polymarket_round27_feature_store import Round27FeatureStore
 from simple_ai_trading.polymarket_round27_features import Round27FeatureRow
+from simple_ai_trading.polymarket_round27_campaign_admission import (
+    load_round27_campaign_admission,
+)
 from simple_ai_trading.polymarket_round27_model import Round27RoleInterval
 from simple_ai_trading.polymarket_round27_model_contract import (
     load_round27_model_contract,
@@ -32,6 +35,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--source-database", type=Path, required=True)
     parser.add_argument("--feature-store", type=Path, required=True)
     parser.add_argument("--target-store", type=Path, required=True)
+    parser.add_argument("--campaign-admission", type=Path, required=True)
     parser.add_argument("--slot-id", required=True)
     parser.add_argument("--role", choices=_ROLES, required=True)
     parser.add_argument("--selection-claim", type=Path)
@@ -135,6 +139,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     with Round27FeatureStore(feature_database, read_only=True) as feature_store:
         feature_audit = feature_store.audit()
         slot_rows = feature_store.load_rows(slot_id=arguments.slot_id)
+    campaign_admission = load_round27_campaign_admission(
+        _resolve(repository, arguments.campaign_admission),
+        contract=contract,
+        feature_store_audit_sha256=str(feature_audit["audit_sha256"]),
+    )
     role_rows = _role_rows(
         slot_rows,
         slot_id=arguments.slot_id,
@@ -194,6 +203,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             run_id=run_id,
             contract=contract,
             feature_store_audit_sha256=str(feature_audit["audit_sha256"]),
+            campaign_admission=campaign_admission,
             role_intervals=[
                 item for item in partitions if isinstance(item, Mapping)
             ],
@@ -215,6 +225,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "condition_count": len(condition_ids),
                 "newly_opened": opened,
                 "feature_store_audit_sha256": feature_audit["audit_sha256"],
+                "campaign_admission_sha256": campaign_admission[
+                    "admission_sha256"
+                ],
                 "orders_submitted": False,
                 "trading_authority": False,
             },

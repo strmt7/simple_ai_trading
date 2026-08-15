@@ -19,6 +19,9 @@ from simple_ai_trading.polymarket_round27_model_contract import (
 from simple_ai_trading.polymarket_round28_book_ticker import (
     POLYMARKET_ROUND28_FEATURE_NAMES,
 )
+from simple_ai_trading.polymarket_round28_contract_binding import (
+    load_round28_contract_binding_correction,
+)
 from simple_ai_trading.polymarket_round28_economics import (
     POLYMARKET_ROUND28_ECONOMIC_SCHEMA_VERSION,
     POLYMARKET_ROUND28_PAIRED_SCENARIO_SCHEMA_VERSION,
@@ -70,13 +73,7 @@ def _operator_amendment() -> dict[str, object]:
 
 
 def _contract_binding_correction() -> dict[str, object]:
-    return json.loads(
-        (
-            ROOT
-            / "docs/model-research/polymarket/"
-            "round-028-loaded-contract-binding-correction-v1.json"
-        ).read_text(encoding="ascii")
-    )
+    return load_round28_contract_binding_correction(ROOT)
 
 
 def _sample(index: int, role: str) -> Round28ModelSample:
