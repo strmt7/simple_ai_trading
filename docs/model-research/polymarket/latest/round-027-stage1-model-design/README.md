@@ -34,7 +34,7 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused Round 27 tests | 74 passed |
+| Focused Round 27 tests | 80 passed |
 | Qwen3.5-9B cold / warm structured inference | 5.13 s / 0.52 s |
 | Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
 | Qwen3.5-9B host runtime | Qualified for later matched ablation only |
@@ -51,6 +51,14 @@ candidate per condition, walks captured ask depth and fee schedules, and settles
 only from official outcomes. Missing, stale, one-sided, reconnected, or shallow
 books receive no fill credit. The AI layer may only veto or reduce a
 mechanically valid action.
+
+The immutable base contract accidentally required 100 executed trades from
+each 90-condition evaluation role even though candidate selection permits at
+most one trade per condition. The pre-capture
+[population amendment](../../round-027-economic-population-amendment-v1.json)
+corrects both evidence gates to 60. This is a minimum sample-size requirement,
+not a quota: no risk gate may be weakened and fewer than 60 fills means
+insufficient evidence, not permission to manufacture activity or claim edge.
 
 The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
 binds both candidates to exact Ollama, upstream, and quantized-artifact hashes,

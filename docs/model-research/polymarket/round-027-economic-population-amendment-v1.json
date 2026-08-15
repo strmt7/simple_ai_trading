@@ -1,0 +1,41 @@
+{
+  "amendment_sha256": "b977ba0e7e199edff1bfbb95163d4efcec49f9e92c6c4fe04bdb5e3dd80698de",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "profitability_claim": false
+  },
+  "base_model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+  "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+  "created_at_ms": 1786781908981,
+  "evidence_gate_semantics": {
+    "failure_behavior": "insufficient_evidence_no_edge_or_profitability_claim",
+    "minimum_executed_trades_is_a_trade_quota": false,
+    "may_force_or_relax_a_risk_gate_to_reach_minimum": false,
+    "minimum_profitable_conditions": 20
+  },
+  "mathematical_audit": {
+    "candidate_selection": "first_target_blind_positive_after_cost_candidate_per_condition",
+    "maximum_candidates_per_condition": 1,
+    "original_minimum_selection_executed_trades": 100,
+    "original_minimum_sealed_executed_trades": 100,
+    "selection_conditions": 90,
+    "selection_original_gate_reachable": false,
+    "sealed_conditions": 90,
+    "sealed_original_gate_reachable": false
+  },
+  "rationale": "The base contract permits at most one attempted trade per condition. Requiring 100 executed trades from either 90-condition evaluation role is mathematically impossible. The replacement preserves a demanding two-thirds maximum-condition fill requirement without encouraging forced trades.",
+  "replacement": {
+    "minimum_selection_executed_trades": 60,
+    "minimum_sealed_executed_trades": 60
+  },
+  "schema_version": "polymarket-round27-economic-population-amendment-v1",
+  "status": "frozen_before_stage1_capture_market_state_or_outcome_access",
+  "superseded_fields": [
+    "economic_evaluation.minimum_selection_executed_trades",
+    "economic_evaluation.minimum_sealed_executed_trades"
+  ]
+}

@@ -36,6 +36,13 @@ The [campaign contract](../round-027-stage1-campaign-contract-v1.json) forbids
 target access, fitting, adaptive replacement, and economic claims before the
 campaign gate.
 
+The immutable model contract also contained one mathematically unreachable
+economic evidence gate: at most one candidate may be selected for each of 90
+conditions, but the original minimum was 100 executions. A frozen
+[pre-capture amendment](../round-027-economic-population-amendment-v1.json)
+sets the selection and sealed minimums to 60. It is not a trade quota; risk
+checks remain unchanged, and fewer fills must yield insufficient evidence.
+
 Round 27 uses Binance's documented USD-M `@aggTrade` market stream.
 A live 33.719-second source probe recorded 29/29 finite positive trades, while
 the new source gate independently rejects the legacy v3 feed. The subsequent

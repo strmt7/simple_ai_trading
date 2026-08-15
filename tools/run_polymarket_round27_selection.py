@@ -16,6 +16,12 @@ from simple_ai_trading.polymarket_round27_economics import (
     Round27EconomicConfig,
     evaluate_round27_economic_scenarios,
 )
+from simple_ai_trading.polymarket_round27_economic_amendment import (
+    POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_BINDING_FIELD,
+    POLYMARKET_ROUND27_SELECTION_MINIMUM_EXECUTED_TRADES,
+    bind_round27_economic_amendment,
+    load_round27_economic_amendment,
+)
 from simple_ai_trading.polymarket_round27_experiment import (
     build_round27_selection_economic_claim,
     load_round27_selected_model,
@@ -57,6 +63,14 @@ def _resolve(root: Path, value: Path) -> Path:
     return value if value.is_absolute() else root / value
 
 
+def _selection_economic_config() -> Round27EconomicConfig:
+    return Round27EconomicConfig(
+        minimum_executed_trades=(
+            POLYMARKET_ROUND27_SELECTION_MINIMUM_EXECUTED_TRADES
+        )
+    ).validated()
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
     repository = arguments.repository.resolve()
@@ -88,6 +102,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     ):
         raise ValueError("Round 27 selection requires terminal unique inputs and outputs")
     contract = load_round27_model_contract(repository)
+    amendment = load_round27_economic_amendment(repository)
+    amendment_sha256 = str(amendment["amendment_sha256"])
     partitions = contract.get("partitions")
     economics = contract.get("economic_evaluation")
     if not isinstance(partitions, list) or not isinstance(economics, Mapping):
@@ -158,7 +174,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "probabilities": [format(float(value), ".17g") for value in probabilities],
         }
     )
-    economic_config = Round27EconomicConfig()
+    economic_config = _selection_economic_config()
     if outputs["economic_report"].exists():
         economic_report = _load_mapping(outputs["economic_report"])
         if (
@@ -171,6 +187,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             or economic_report.get("probability_input_sha256")
             != probability_input_sha256
             or economic_report.get("config") != economic_config.asdict()
+            or economic_report.get(
+                POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_BINDING_FIELD
+            )
+            != amendment_sha256
             or any(
                 economic_report.get(field) is not False
                 for field in (
@@ -194,24 +214,27 @@ def main(argv: Sequence[str] | None = None) -> int:
                 run_id=selection_run_id,
                 condition_ids=selection_conditions,
             )
-            economic_report = evaluate_round27_economic_scenarios(
-                partition=selection,
-                predictions=probabilities,
-                markets=markets,
-                outcomes_up=selection_outcomes,
-                model_name=model_name,
-                model_sha256=model_sha256,
-                source_audit_sha256=str(feature_audit["audit_sha256"]),
-                resolution_evidence_sha256=resolution_evidence_sha256,
-                config=economic_config,
-                book_batches=_batches(
-                    source,
-                    run_id=selection_run_id,
-                    condition_ids=selection_conditions,
-                    maximum_conditions=int(
-                        economics["maximum_conditions_per_book_batch"]
+            economic_report = bind_round27_economic_amendment(
+                evaluate_round27_economic_scenarios(
+                    partition=selection,
+                    predictions=probabilities,
+                    markets=markets,
+                    outcomes_up=selection_outcomes,
+                    model_name=model_name,
+                    model_sha256=model_sha256,
+                    source_audit_sha256=str(feature_audit["audit_sha256"]),
+                    resolution_evidence_sha256=resolution_evidence_sha256,
+                    config=economic_config,
+                    book_batches=_batches(
+                        source,
+                        run_id=selection_run_id,
+                        condition_ids=selection_conditions,
+                        maximum_conditions=int(
+                            economics["maximum_conditions_per_book_batch"]
+                        ),
                     ),
                 ),
+                hash_field="report_sha256",
             )
     _writer(outputs["economic_report"], "report_sha256")(economic_report)
     economic_claim = build_round27_selection_economic_claim(
@@ -219,8 +242,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         selection_claim=selection_claim,
         selected_model=selected_model,
         economic_report=economic_report,
-        claim_writer=_writer(outputs["economic_claim"], "claim_sha256"),
+        claim_writer=lambda value: str(value["claim_sha256"]),
     )
+    economic_claim = bind_round27_economic_amendment(
+        economic_claim,
+        hash_field="claim_sha256",
+    )
+    _writer(outputs["economic_claim"], "claim_sha256")(economic_claim)
     print(
         json.dumps(
             {
