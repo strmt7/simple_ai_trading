@@ -6,6 +6,7 @@ import hashlib
 import json
 
 import pytest
+import simple_ai_trading.polymarket_round27_experiment as round27_experiment
 
 from simple_ai_trading.polymarket_round27_experiment import (
     build_round27_selection_economic_claim,
@@ -151,6 +152,35 @@ def test_selection_claim_precedes_sealed_evaluation() -> None:
     assert sealed["prediction_edge_gate_passed"] is True
     assert sealed["economic_edge_gate_evaluated"] is False
     assert sealed["profitability_claim"] is False
+
+
+def test_non_unit_calibration_scale_survives_selection_claim_reload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        round27_experiment,
+        "select_round27_correction_scale",
+        lambda _model, _partition: (
+            0.5,
+            {"0.0": 1.0, "0.25": 0.8, "0.5": 0.7, "0.75": 0.8, "1.0": 1.0},
+        ),
+    )
+
+    claim, model = run_round27_development_selection(
+        samples=_samples(),
+        contract=_contract(),
+        claim_writer=lambda value: value["claim_sha256"],
+        compute_backend="cpu",
+    )
+
+    assert model is not None
+    assert model.correction_scale == 0.5
+    restored = load_round27_selected_model(
+        selection_claim=claim,
+        contract=_contract(),
+    )
+    assert restored is not None
+    assert restored.asdict() == model.asdict()
 
 
 def test_sealed_evaluation_rejects_a_tampered_selection_claim() -> None:

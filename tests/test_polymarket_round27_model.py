@@ -19,6 +19,7 @@ from simple_ai_trading.polymarket_round27_model import (
     paired_round27_condition_bootstrap,
     round27_model_from_payload,
     round27_probability_metrics,
+    scale_round27_probability_model,
     select_round27_correction_scale,
     select_round27_l2_penalty,
 )
@@ -129,6 +130,18 @@ def test_correction_scale_can_fail_closed_to_the_market_prior() -> None:
     assert scores["0.0"] < scores["1.0"]
 
 
+def test_calibration_scale_is_bound_into_l2_model_identity() -> None:
+    partition = Round27Partition.from_samples(_samples(), role="train")
+    model = fit_round27_l2_offset(partition, penalty=1.0)
+
+    scaled = scale_round27_probability_model(model, 0.5)
+    restored = round27_model_from_payload(scaled.asdict())
+
+    assert scaled.correction_scale == 0.5
+    assert scaled.model_sha256 != model.model_sha256
+    assert restored.asdict() == scaled.asdict()
+
+
 def test_condition_bootstrap_reports_paired_log_loss_delta() -> None:
     partition = Round27Partition.from_samples(_samples(), role="train")
     prior = 1.0 / (1.0 + np.exp(-partition.offsets))
@@ -183,3 +196,15 @@ def test_shallow_lightgbm_is_bounded_and_cpu_portable() -> None:
     tampered["model_text"] = f"{payload['model_text']}#"
     with pytest.raises(ValueError, match="persisted LightGBM model differs"):
         round27_model_from_payload(tampered)
+
+
+def test_calibration_scale_is_bound_into_lightgbm_model_identity() -> None:
+    partition = Round27Partition.from_samples(_samples(), role="train")
+    model = fit_round27_lightgbm_offset(partition, compute_backend="cpu", seed=27)
+
+    scaled = scale_round27_probability_model(model, 0.25)
+    restored = round27_model_from_payload(scaled.asdict())
+
+    assert scaled.correction_scale == 0.25
+    assert scaled.model_sha256 != model.model_sha256
+    assert restored.asdict() == scaled.asdict()

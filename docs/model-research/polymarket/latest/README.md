@@ -64,6 +64,14 @@ binds the old and corrected source hashes, trains with the market logit as
 `init_score`, and restores that logit around the raw tree margin at inference.
 Its synthetic AMD OpenCL check is implementation evidence, not performance or
 profitability evidence.
+The subsequent
+[calibration-identity amendment](../round-027-calibration-identity-correction-amendment-v2.json)
+also fixes the persisted identity of a model whose calibration scale is not
+`1.0`. The prior scaler changed predictions without recomputing the model
+SHA-256, so a non-unit selected model could not be reloaded exactly. Every
+allowed scale is now rehashed and round-trip validated before a selection claim
+can bind it. This changes no model family, threshold, or economic gate and is
+implementation evidence only.
 The separate [matched AI contract](../round-027-ai-matched-ablation-contract-v1.json)
 also freezes target-free, latency-charged Qwen-versus-ODA selection and a
 one-use sealed confirmation. Host compatibility alone is not AI uplift.

@@ -30,6 +30,15 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "stage1_feature_rows_accessed_or_materialized": False,
     }
     assert amendment["correction"]["selection_and_economic_gates_changed"] is False
+    assert (
+        amendment["correction"][
+            "non_unit_calibration_scale_is_rehashed_before_selection_claim_publication"
+        ]
+        is True
+    )
+    assert amendment["predecessor_amendment_sha256"] == (
+        "52942735f5cd2b7fc56312e87349ba6dc8e65b1b3de0860b19ed5a4655840a09"
+    )
 
 
 def test_round27_model_amendment_rejects_tampering() -> None:
