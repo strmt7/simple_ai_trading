@@ -259,6 +259,45 @@ def test_round27_economics_blocks_new_entries_in_settlement_hazard_window() -> N
         }
 
 
+def test_round27_economics_blocks_execution_arriving_in_hazard_window() -> None:
+    markets, partition, probabilities, _books, outcomes = _population(1)
+    market = markets[0]
+    boundary_sample = replace(
+        partition.samples[0],
+        decision_time_ms=market.end_ms - 60_500,
+    ).validated()
+    boundary_partition = Round27Partition.from_samples(
+        (boundary_sample,),
+        role="selection",
+    )
+    books = (
+        _book(market, outcome="Up", offset_ms=239_499),
+        _book(market, outcome="Down", offset_ms=239_499),
+        _book(market, outcome="Up", offset_ms=239_751),
+        _book(market, outcome="Up", offset_ms=240_001),
+        _book(market, outcome="Up", offset_ms=240_501),
+        _book(market, outcome="Up", offset_ms=241_501),
+    )
+
+    report = _evaluate(
+        markets,
+        boundary_partition,
+        probabilities,
+        books,
+        outcomes,
+    )
+
+    assert report["candidate_condition_count"] == 1
+    scenarios = {item["delay_ms"]: item for item in report["scenarios"]}
+    assert scenarios[250]["trades"][0]["execution_state"] == "FILLED"
+    for delay in (500, 1_000, 2_000):
+        trade = scenarios[delay]["trades"][0]
+        assert trade["execution_state"] == "REJECTED"
+        assert trade["execution_reason"] == (
+            "settlement_manipulation_hazard_window_at_execution"
+        )
+
+
 def test_round27_economics_fok_refuses_insufficient_displayed_depth() -> None:
     markets, partition, probabilities, books, outcomes = _population(1)
     target = markets[0]

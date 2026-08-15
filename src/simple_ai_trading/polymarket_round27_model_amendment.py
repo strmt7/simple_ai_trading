@@ -9,11 +9,11 @@ from typing import Mapping
 
 
 POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256 = (
-    "a7015cfe099a287e96f9399b9305ad99a5a41b4619b468798fb94fed8e7b9526"
+    "754bec3c86d36a1f88feaa806780c65ecf71e815d90dd149be8cef2cb8c6367a"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
-    "round-027-settlement-hazard-correction-amendment-v14.json"
+    "round-027-execution-settlement-hazard-correction-amendment-v15.json"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD = (
     "model_implementation_amendment_sha256"
@@ -81,6 +81,13 @@ _V13_PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
     "round-027-source-recomputation-correction-amendment-v13.json"
 )
+_V14_PREDECESSOR_AMENDMENT_SHA256 = (
+    "a7015cfe099a287e96f9399b9305ad99a5a41b4619b468798fb94fed8e7b9526"
+)
+_V14_PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/"
+    "round-027-settlement-hazard-correction-amendment-v14.json"
+)
 _V1_SOURCE_LEDGER_SHA256 = (
     "af847fbe265d58dc0a40f6d011a8060822fdf5a98719880d041398a527d27d92"
 )
@@ -106,9 +113,15 @@ _V4_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v4.json"
 )
 _EFFECTIVE_SOURCE_LEDGER_SHA256 = (
-    "700d89d8220f4a888d38ce67546fa7726083547c9507b7fd15f47beaef9472f2"
+    "bf2231376f0e4748e164bdf5b828d451b9f4ed00e9f3794b3906d98611dd7539"
 )
 _EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/round-027-effective-source-ledger-v6.json"
+)
+_V5_SOURCE_LEDGER_SHA256 = (
+    "700d89d8220f4a888d38ce67546fa7726083547c9507b7fd15f47beaef9472f2"
+)
+_V5_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v5.json"
 )
 _WALK_FORWARD_PREDECESSOR_AMENDMENT_SHA256 = (
@@ -1347,6 +1360,7 @@ def _validate_source_ledger(
     operator_ledger = expected_schema_version in {
         "polymarket-round27-effective-source-ledger-v4",
         "polymarket-round27-effective-source-ledger-v5",
+        "polymarket-round27-effective-source-ledger-v6",
     }
     expected_file_count = 85 if operator_ledger else 68
     expected_dependency_resolution = (
@@ -2121,12 +2135,12 @@ def _validate_v13_predecessor(
     return {**payload, "amendment_sha256": claimed}
 
 
-def validate_round27_model_amendment(
+def _validate_v14_predecessor(
     value: Mapping[str, object],
     *,
     repository: str | Path | None = None,
 ) -> dict[str, object]:
-    """Validate the current settlement-hazard correction and source ledger."""
+    """Validate the immutable v14 decision-time settlement-hazard correction."""
 
     payload = dict(value)
     claimed = _sha256(payload.pop("amendment_sha256", ""))
@@ -2261,7 +2275,7 @@ def validate_round27_model_amendment(
             "status",
             "superseded_source_text_sha256",
         }
-        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _V14_PREDECESSOR_AMENDMENT_SHA256
         or claimed != _canonical_sha256(payload)
         or payload.get("schema_version")
         != "polymarket-round27-settlement-hazard-correction-amendment-v14"
@@ -2291,10 +2305,133 @@ def validate_round27_model_amendment(
     _validate_source_ledger(
         root,
         payload.get("source_ledger"),
-        expected_path=_EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH,
-        expected_sha256=_EFFECTIVE_SOURCE_LEDGER_SHA256,
+        expected_path=_V5_SOURCE_LEDGER_RELATIVE_PATH,
+        expected_sha256=_V5_SOURCE_LEDGER_SHA256,
         expected_schema_version="polymarket-round27-effective-source-ledger-v5",
         predecessor_sha256=_V4_SOURCE_LEDGER_SHA256,
+        verify_current_files=False,
+    )
+    return {**payload, "amendment_sha256": claimed}
+
+
+def validate_round27_model_amendment(
+    value: Mapping[str, object],
+    *,
+    repository: str | Path | None = None,
+) -> dict[str, object]:
+    """Validate the current execution-time settlement-hazard correction."""
+
+    root = (
+        Path(__file__).resolve().parents[2]
+        if repository is None
+        else Path(repository).resolve()
+    )
+    predecessor = _validate_v14_predecessor(
+        _load_strict(root / _V14_PREDECESSOR_AMENDMENT_RELATIVE_PATH),
+        repository=root,
+    )
+    predecessor_replacements = predecessor.get("superseded_source_text_sha256")
+    if not isinstance(predecessor_replacements, Mapping):
+        raise ValueError("Round 27 predecessor replacement map differs")
+    expected_replacements = dict(predecessor_replacements)
+    expected_replacements["src/simple_ai_trading/polymarket_round27_economics.py"] = {
+        "corrected": (
+            "fd34be8bb07bf16a528d1daae67a46dedc62e98c8fc865a6c240471a3234ec24"
+        ),
+        "frozen": (
+            "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54"
+        ),
+    }
+    payload = dict(value)
+    claimed = _sha256(payload.pop("amendment_sha256", ""))
+    created_at_ms = payload.get("created_at_ms")
+    expected_correction = {
+        "decision_time_settlement_hazard_gate_retained": True,
+        "economic_report_schema_version_from": (
+            "polymarket-round27-economic-replay-v5"
+        ),
+        "economic_report_schema_version_to": (
+            "polymarket-round27-economic-replay-v6"
+        ),
+        "execution_receipt_settlement_hazard_gate_added": True,
+        "feature_model_ai_candidates_changed": False,
+        "minimum_new_entry_time_to_settlement_ms": 60_000,
+        "settlement_hazard_gate_may_be_overridden": False,
+        "source_ledger_advanced": True,
+    }
+    expected_discovery = {
+        "execution_latency_could_cross_blocked_window": True,
+        "official_outcomes_accessed": False,
+        "stage1_feature_rows_accessed_or_materialized": False,
+        "v14_checked_decision_timestamp_only": True,
+    }
+    expected_predecessor_sources = {
+        "src/simple_ai_trading/polymarket_round27_economics.py": (
+            "a9f78fac647caf5eafcc7221d498545f39a7bb1fa8d3ad5bc9458f3bb2c861db"
+        )
+    }
+    expected_research = [
+        {
+            "purpose": "five_minute_bitcoin_settlement_manipulation_hazard",
+            "url": "https://arxiv.org/abs/2606.31675",
+        },
+        {
+            "purpose": "live_source_contract_for_binance_and_chainlink",
+            "url": "https://docs.polymarket.com/market-data/websocket/rtds",
+        },
+        {
+            "purpose": "chainlink_btc_usd_stream_identity",
+            "url": "https://data.chain.link/streams/btc-usd-cexprice-streams",
+        },
+    ]
+    if (
+        set(payload)
+        != {
+            "authority",
+            "base_model_contract_sha256",
+            "campaign_contract_sha256",
+            "correction",
+            "created_at_ms",
+            "discovery_audit",
+            "knowledge_at_freeze",
+            "predecessor_amendment_sha256",
+            "predecessor_source_text_sha256",
+            "rationale",
+            "research_basis",
+            "schema_version",
+            "source_ledger",
+            "status",
+            "superseded_source_text_sha256",
+        }
+        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _canonical_sha256(payload)
+        or payload.get("schema_version")
+        != "polymarket-round27-execution-settlement-hazard-correction-amendment-v15"
+        or payload.get("status")
+        != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
+        or type(created_at_ms) is not int
+        or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
+        or payload.get("predecessor_amendment_sha256")
+        != _V14_PREDECESSOR_AMENDMENT_SHA256
+        or payload.get("predecessor_source_text_sha256")
+        != expected_predecessor_sources
+        or payload.get("authority") != _EXPECTED_AUTHORITY
+        or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
+        or payload.get("correction") != expected_correction
+        or payload.get("discovery_audit") != expected_discovery
+        or payload.get("research_basis") != expected_research
+        or payload.get("superseded_source_text_sha256") != expected_replacements
+    ):
+        raise ValueError("Round 27 model amendment differs")
+    _validate_source_ledger(
+        root,
+        payload.get("source_ledger"),
+        expected_path=_EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH,
+        expected_sha256=_EFFECTIVE_SOURCE_LEDGER_SHA256,
+        expected_schema_version="polymarket-round27-effective-source-ledger-v6",
+        predecessor_sha256=_V5_SOURCE_LEDGER_SHA256,
         verify_current_files=True,
     )
     return {**payload, "amendment_sha256": claimed}

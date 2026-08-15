@@ -17,7 +17,7 @@ from simple_ai_trading.polymarket_round27_model_amendment import (
 _ROOT = Path(__file__).resolve().parents[1]
 _SOURCE_LEDGER = (
     _ROOT
-    / "docs/model-research/polymarket/round-027-effective-source-ledger-v5.json"
+    / "docs/model-research/polymarket/round-027-effective-source-ledger-v6.json"
 )
 
 
@@ -36,27 +36,29 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "stage1_feature_rows_accessed_or_materialized": False,
     }
     assert amendment["correction"] == {
+        "decision_time_settlement_hazard_gate_retained": True,
         "economic_report_schema_version_from": (
-            "polymarket-round27-economic-replay-v4"
-        ),
-        "economic_report_schema_version_to": (
             "polymarket-round27-economic-replay-v5"
         ),
+        "economic_report_schema_version_to": (
+            "polymarket-round27-economic-replay-v6"
+        ),
+        "execution_receipt_settlement_hazard_gate_added": True,
         "feature_model_ai_candidates_changed": False,
         "minimum_new_entry_time_to_settlement_ms": 60_000,
         "settlement_hazard_gate_may_be_overridden": False,
         "source_ledger_advanced": True,
     }
     assert amendment["predecessor_amendment_sha256"] == (
-        "759bedfbc395dab37f32d78c54433b6441ff4a231a71f9a018d1e9e80d922369"
+        "a7015cfe099a287e96f9399b9305ad99a5a41b4619b468798fb94fed8e7b9526"
     )
     assert amendment["source_ledger"] == {
         "relative_path": (
             "docs/model-research/polymarket/"
-            "round-027-effective-source-ledger-v5.json"
+            "round-027-effective-source-ledger-v6.json"
         ),
         "sha256": (
-            "700d89d8220f4a888d38ce67546fa7726083547c9507b7fd15f47beaef9472f2"
+            "bf2231376f0e4748e164bdf5b828d451b9f4ed00e9f3794b3906d98611dd7539"
         ),
     }
     assert set(amendment["superseded_source_text_sha256"]) == {
@@ -74,7 +76,7 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         amendment["superseded_source_text_sha256"][
             "src/simple_ai_trading/polymarket_round27_economics.py"
         ]["corrected"]
-        == "a9f78fac647caf5eafcc7221d498545f39a7bb1fa8d3ad5bc9458f3bb2c861db"
+        == "fd34be8bb07bf16a528d1daae67a46dedc62e98c8fc865a6c240471a3234ec24"
     )
 
 

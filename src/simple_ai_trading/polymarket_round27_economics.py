@@ -24,7 +24,7 @@ from .polymarket_round27_model import (
 )
 
 
-POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v5"
+POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v6"
 POLYMARKET_ROUND27_FIXED_DELAYS_MS = (250, 500, 1_000, 2_000)
 POLYMARKET_ROUND27_MINIMUM_NEW_ENTRY_TIME_TO_SETTLEMENT_MS = 60_000
 _SHA256_CHARACTERS = frozenset("0123456789abcdef")
@@ -688,7 +688,13 @@ def _execute_candidate_trades(
                 name="execution source payload",
             )
             execution_event_id = execution.event_id
-            if candidate.limit_price % execution_tick_size != 0:
+            if (
+                market.end_ms - execution.received_wall_ms
+                < config.minimum_new_entry_time_to_settlement_ms
+            ):
+                state = "REJECTED"
+                reason = "settlement_manipulation_hazard_window_at_execution"
+            elif candidate.limit_price % execution_tick_size != 0:
                 state = "REJECTED"
                 reason = "limit_price_not_aligned_to_execution_tick_size"
             else:
