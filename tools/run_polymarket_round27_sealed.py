@@ -16,6 +16,14 @@ from simple_ai_trading.polymarket_round27_economics import (
     Round27EconomicConfig,
     evaluate_round27_economic_scenarios,
 )
+from simple_ai_trading.polymarket_round27_economic_amendment import (
+    POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_BINDING_FIELD,
+    POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_SHA256,
+    POLYMARKET_ROUND27_SEALED_MINIMUM_EXECUTED_TRADES,
+    bind_round27_economic_amendment,
+    load_round27_economic_amendment,
+    validate_round27_economic_amendment_binding,
+)
 from simple_ai_trading.polymarket_round27_experiment import (
     run_round27_sealed_evaluation,
     validate_round27_sealed_access_artifacts,
@@ -61,20 +69,34 @@ def _resolve(root: Path, value: Path) -> Path:
     return value if value.is_absolute() else root / value
 
 
+def _sealed_economic_config() -> Round27EconomicConfig:
+    return Round27EconomicConfig(
+        minimum_executed_trades=(
+            POLYMARKET_ROUND27_SEALED_MINIMUM_EXECUTED_TRADES
+        )
+    ).validated()
+
+
 def _terminal_result(
     *,
     contract_sha256: str,
+    economic_amendment_sha256: str,
     selection_claim: Mapping[str, object],
     selection_economic_claim: Mapping[str, object],
     selection_economic_report: Mapping[str, object],
     sealed_prediction: Mapping[str, object],
     sealed_economics: Mapping[str, object],
 ) -> dict[str, object]:
+    if economic_amendment_sha256 != POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_SHA256:
+        raise ValueError("Round 27 terminal economic amendment differs")
     prediction_passed = sealed_prediction.get("prediction_edge_gate_passed") is True
     economics_passed = sealed_economics.get("economic_edge_gate_passed") is True
     body: dict[str, object] = {
         "schema_version": _TERMINAL_SCHEMA_VERSION,
         "contract_sha256": contract_sha256,
+        POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_BINDING_FIELD: (
+            economic_amendment_sha256
+        ),
         "selection_claim_sha256": selection_claim["claim_sha256"],
         "selection_economic_claim_sha256": selection_economic_claim["claim_sha256"],
         "selection_economic_report_sha256": selection_economic_report[
@@ -140,6 +162,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     ):
         raise ValueError("Round 27 sealed evaluation paths differ")
     contract = load_round27_model_contract(repository)
+    amendment = load_round27_economic_amendment(repository)
+    amendment_sha256 = str(amendment["amendment_sha256"])
     partitions = contract.get("partitions")
     economics = contract.get("economic_evaluation")
     if not isinstance(partitions, list) or not isinstance(economics, Mapping):
@@ -147,6 +171,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     selection_claim = _load_mapping(input_artifacts["selection"])
     selection_economic_claim = _load_mapping(input_artifacts["economic_claim"])
     selection_economic_report = _load_mapping(input_artifacts["economic_report"])
+    selection_economic_claim = validate_round27_economic_amendment_binding(
+        selection_economic_claim,
+        hash_field="claim_sha256",
+    )
+    selection_economic_report = validate_round27_economic_amendment_binding(
+        selection_economic_report,
+        hash_field="report_sha256",
+    )
     selected_model = validate_round27_sealed_access_artifacts(
         contract=contract,
         selection_claim=selection_claim,
@@ -214,7 +246,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "probabilities": [format(float(value), ".17g") for value in probabilities],
         }
     )
-    economic_config = Round27EconomicConfig()
+    economic_config = _sealed_economic_config()
     if outputs["economics"].exists():
         sealed_economics = _load_mapping(outputs["economics"])
         if (
@@ -228,6 +260,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             or sealed_economics.get("probability_input_sha256")
             != probability_input_sha256
             or sealed_economics.get("config") != economic_config.asdict()
+            or sealed_economics.get(
+                POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_BINDING_FIELD
+            )
+            != amendment_sha256
             or any(
                 sealed_economics.get(field) is not False
                 for field in (
@@ -251,28 +287,32 @@ def main(argv: Sequence[str] | None = None) -> int:
                 run_id=sealed_run_id,
                 condition_ids=sealed_conditions,
             )
-            sealed_economics = evaluate_round27_economic_scenarios(
-                partition=sealed,
-                predictions=probabilities,
-                markets=markets,
-                outcomes_up=sealed_outcomes,
-                model_name=model_name,
-                model_sha256=model_sha256,
-                source_audit_sha256=str(feature_audit["audit_sha256"]),
-                resolution_evidence_sha256=resolution_evidence_sha256,
-                config=economic_config,
-                book_batches=_batches(
-                    source,
-                    run_id=sealed_run_id,
-                    condition_ids=sealed_conditions,
-                    maximum_conditions=int(
-                        economics["maximum_conditions_per_book_batch"]
+            sealed_economics = bind_round27_economic_amendment(
+                evaluate_round27_economic_scenarios(
+                    partition=sealed,
+                    predictions=probabilities,
+                    markets=markets,
+                    outcomes_up=sealed_outcomes,
+                    model_name=model_name,
+                    model_sha256=model_sha256,
+                    source_audit_sha256=str(feature_audit["audit_sha256"]),
+                    resolution_evidence_sha256=resolution_evidence_sha256,
+                    config=economic_config,
+                    book_batches=_batches(
+                        source,
+                        run_id=sealed_run_id,
+                        condition_ids=sealed_conditions,
+                        maximum_conditions=int(
+                            economics["maximum_conditions_per_book_batch"]
+                        ),
                     ),
                 ),
+                hash_field="report_sha256",
             )
     _writer(outputs["economics"], "report_sha256")(sealed_economics)
     terminal = _terminal_result(
         contract_sha256=str(contract["contract_sha256"]),
+        economic_amendment_sha256=amendment_sha256,
         selection_claim=selection_claim,
         selection_economic_claim=selection_economic_claim,
         selection_economic_report=selection_economic_report,

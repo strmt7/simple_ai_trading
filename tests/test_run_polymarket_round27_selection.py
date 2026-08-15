@@ -7,6 +7,7 @@ import pytest
 from tools.run_polymarket_round27_selection import (
     _canonical_sha256,
     _model_identity,
+    _selection_economic_config,
     _writer,
 )
 
@@ -37,3 +38,10 @@ def test_market_prior_identity_is_contract_bound() -> None:
     assert first[0] == "market_prior"
     assert len(first[1]) == 64
     assert first[1] != second[1]
+
+
+def test_selection_operator_uses_reachable_amended_population_gate() -> None:
+    config = _selection_economic_config()
+
+    assert config.minimum_executed_trades == 60
+    assert config.minimum_profitable_conditions == 20
