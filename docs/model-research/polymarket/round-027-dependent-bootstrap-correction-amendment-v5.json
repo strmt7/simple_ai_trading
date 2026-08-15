@@ -1,0 +1,95 @@
+{
+  "amendment_sha256": "4efe95538114bfd814a25867b8a933b2c19b01433b953a3ee7cd57ac019c8a81",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "profitability_claim": false
+  },
+  "base_model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+  "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+  "correction": {
+    "ai_matched_uplift_uses_same_corrected_bootstrap": true,
+    "candidate_families_or_ai_prompts_changed": false,
+    "condition_order": "event_start_ms_then_condition_id",
+    "confidence_interval_method": "stationary_bootstrap_block_length_sensitivity_envelope",
+    "economic_or_prediction_gate_thresholds_changed": false,
+    "economic_report_schema_version": "polymarket-round27-economic-replay-v3",
+    "expected_block_durations_ms": [
+      300000,
+      1200000,
+      3600000
+    ],
+    "expected_block_lengths_conditions": [
+      1,
+      4,
+      12
+    ],
+    "lower_bound_aggregation": "minimum_across_block_lengths",
+    "minimum_bootstrap_conditions": 20,
+    "upper_bound_aggregation": "maximum_across_block_lengths"
+  },
+  "created_at_ms": 1786788899009,
+  "discovery_audit": {
+    "frozen_economic_bootstrap_resampled_conditions_independently": true,
+    "frozen_prediction_bootstrap_ordered_conditions_by_opaque_id": true,
+    "frozen_prediction_bootstrap_resampled_conditions_independently": true,
+    "iid_condition_resampling_was_justified_for_adjacent_five_minute_markets": false,
+    "synthetic_host_check_is_edge_or_profitability_evidence": false
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "stage1_capture_started": true,
+    "stage1_feature_rows_accessed_or_materialized": false
+  },
+  "predecessor_amendment_sha256": "e3ce6285cea10337f50383cdd2b89dd048d8f015f889adaa9cc0045088a44833",
+  "predecessor_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_ai_cases.py": "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a",
+    "src/simple_ai_trading/polymarket_round27_ai_economics.py": "372564ee247d0211adcdc5a112ac7bbce1e9a9fb5057e63a24430fe42a953aae",
+    "src/simple_ai_trading/polymarket_round27_economics.py": "e7d465cdbca29b5f3d94d7f3c3d4be80409a961ef31139f846b757ac6ebf4714",
+    "src/simple_ai_trading/polymarket_round27_experiment.py": "2573966ecf39a5a05a34050ceed436f8e91f7e3aac90bcab0125cbd09d6dfc0c",
+    "src/simple_ai_trading/polymarket_round27_model.py": "ad7d9ef2d9cdd44671ea2dc5cd8cd1f09d134d722b03f5ba8f0f78abf8412fd6"
+  },
+  "rationale": "The frozen prediction and after-cost confidence intervals independently resampled adjacent five-minute conditions. That ignores serial dependence and can promote a clustered winning regime as if every market were an independent observation. Prediction conditions were also ordered by opaque condition ID, which destroys time structure. The correction orders by market start, applies the stationary bootstrap at one-, four-, and twelve-condition expected block lengths, and uses the widest 95 percent envelope. The block lengths represent five-minute, twenty-minute, and one-hour sensitivity horizons; no one length is asserted to be the true dependence process. Candidate families, AI prompts, trade selection, fees, execution replay, and gate thresholds remain unchanged.",
+  "research_basis": [
+    {
+      "purpose": "primary_stationary_bootstrap_for_weakly_dependent_observations",
+      "url": "https://doi.org/10.1080/01621459.1994.10476870"
+    },
+    {
+      "purpose": "primary_financial_backtest_overfitting_analysis",
+      "url": "https://doi.org/10.21314/JCF.2016.322"
+    }
+  ],
+  "schema_version": "polymarket-round27-dependent-bootstrap-correction-amendment-v5",
+  "status": "frozen_after_capture_start_before_stage1_feature_or_outcome_access",
+  "superseded_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_ai_cases.py": {
+      "corrected": "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a",
+      "frozen": "2e95562f3611842ecb801920f9cf6876eba2d11b2e0b89a76625f3a59be97bc2"
+    },
+    "src/simple_ai_trading/polymarket_round27_ai_economics.py": {
+      "corrected": "372564ee247d0211adcdc5a112ac7bbce1e9a9fb5057e63a24430fe42a953aae",
+      "frozen": "a222dd9c4d6246aeccf90e62ff7157697c52636aed4261c532337f5016e78fe6"
+    },
+    "src/simple_ai_trading/polymarket_round27_economics.py": {
+      "corrected": "764f912b0d97134c732c023ccb7c81f14bfc6ce6c6252de0aa20cee0a2857b47",
+      "frozen": "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54"
+    },
+    "src/simple_ai_trading/polymarket_round27_experiment.py": {
+      "corrected": "2573966ecf39a5a05a34050ceed436f8e91f7e3aac90bcab0125cbd09d6dfc0c",
+      "frozen": "9a97a253668e9ef2487c042c3574b4bea2f5cf7e6fcd5267a1f6e6fc1ed5321e"
+    },
+    "src/simple_ai_trading/polymarket_round27_model.py": {
+      "corrected": "b01a98cfa846aa98882ba381610256029a9d4e05aaec4d4a4c4c0531142987c8",
+      "frozen": "5eedf0a5e6f7c0317c795d99ad7425ff2e262c2d527c519d4f9d9cee7f8e8740"
+    }
+  }
+}

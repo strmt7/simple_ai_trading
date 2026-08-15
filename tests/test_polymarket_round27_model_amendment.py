@@ -36,18 +36,22 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         is False
     )
     assert (
-        amendment["correction"]["future_conditions_may_train_a_past_validation_fold"]
-        is False
+        amendment["correction"]["confidence_interval_method"]
+        == "stationary_bootstrap_block_length_sensitivity_envelope"
     )
     assert amendment["predecessor_amendment_sha256"] == (
-        "e4890d02d355f8a4f5f3054232b24cdf08d3348031826415ef5a8bc9b210f4d8"
+        "e3ce6285cea10337f50383cdd2b89dd048d8f015f889adaa9cc0045088a44833"
     )
-    assert amendment["correction"]["pre_validation_embargo_ms"] == 600_000
+    assert amendment["correction"]["expected_block_lengths_conditions"] == [
+        1,
+        4,
+        12,
+    ]
     assert (
         amendment["superseded_source_text_sha256"][
             "src/simple_ai_trading/polymarket_round27_model.py"
         ]["corrected"]
-        == "ad7d9ef2d9cdd44671ea2dc5cd8cd1f09d134d722b03f5ba8f0f78abf8412fd6"
+        == "b01a98cfa846aa98882ba381610256029a9d4e05aaec4d4a4c4c0531142987c8"
     )
 
 

@@ -18,10 +18,13 @@ from .paper_execution import PaperOrderIntent, simulate_aggressive_order
 from .polymarket import PolymarketFiveMinuteMarket
 from .polymarket_fees import PolymarketFeeModel
 from .polymarket_replay import PolymarketRecordedBook
-from .polymarket_round27_model import Round27Partition
+from .polymarket_round27_model import (
+    Round27Partition,
+    round27_stationary_bootstrap_mean_interval,
+)
 
 
-POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v2"
+POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v3"
 POLYMARKET_ROUND27_FIXED_DELAYS_MS = (250, 500, 1_000, 2_000)
 _SHA256_CHARACTERS = frozenset("0123456789abcdef")
 
@@ -601,23 +604,22 @@ def _condition_bootstrap(
             "eligible": False,
             "condition_count": int(values.size),
             "draw_count": 0,
+            "method": "stationary_bootstrap_block_length_sensitivity_envelope",
+            "expected_block_lengths_conditions": [],
+            "block_intervals": [],
             "mean_net_pnl_quote": float(np.mean(values)) if values.size else 0.0,
             "ci95_lower": None,
             "ci95_upper": None,
         }
-    rng = np.random.default_rng(seed)
-    means = np.empty(draws, dtype=np.float64)
-    for start in range(0, draws, 500):
-        count = min(500, draws - start)
-        samples = rng.integers(0, values.size, size=(count, values.size))
-        means[start : start + count] = np.mean(values[samples], axis=1)
     return {
         "eligible": True,
         "condition_count": int(values.size),
-        "draw_count": draws,
         "mean_net_pnl_quote": float(np.mean(values)),
-        "ci95_lower": float(np.quantile(means, 0.025)),
-        "ci95_upper": float(np.quantile(means, 0.975)),
+        **round27_stationary_bootstrap_mean_interval(
+            values,
+            draws=draws,
+            seed=seed,
+        ),
     }
 
 
@@ -778,7 +780,12 @@ def _scenario_report(
     reasons: Mapping[str, int],
     config: Round27EconomicConfig,
 ) -> dict[str, object]:
-    filled_trades = tuple(item for item in trades if item.execution_state == "FILLED")
+    filled_trades = tuple(
+        sorted(
+            (item for item in trades if item.execution_state == "FILLED"),
+            key=lambda item: (item.event_start_ms, item.condition_id),
+        )
+    )
     pnl_values = tuple(item.net_pnl_quote for item in filled_trades)
     net_pnl = sum(pnl_values, start=Decimal("0"))
     deployed = sum(

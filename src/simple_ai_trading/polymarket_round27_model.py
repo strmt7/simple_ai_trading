@@ -24,6 +24,7 @@ POLYMARKET_ROUND27_MODEL_SCHEMA_VERSION = "polymarket-round27-offset-model-v2"
 POLYMARKET_ROUND27_METRICS_SCHEMA_VERSION = "polymarket-round27-probability-metrics-v1"
 POLYMARKET_ROUND27_L2_PENALTIES = (0.01, 0.1, 1.0, 10.0, 100.0)
 POLYMARKET_ROUND27_CORRECTION_SCALES = (0.0, 0.25, 0.5, 0.75, 1.0)
+POLYMARKET_ROUND27_BOOTSTRAP_EXPECTED_BLOCK_LENGTHS = (1, 4, 12)
 POLYMARKET_ROUND27_ROLE_NAMES = (
     "train",
     "calibration",
@@ -838,7 +839,7 @@ def paired_round27_condition_bootstrap(
     *,
     draws: int = 5_000,
     seed: int = 2702,
-) -> dict[str, float]:
+) -> dict[str, object]:
     baseline_probability = np.clip(
         np.asarray(baseline, dtype=np.float64), 1e-7, 1.0 - 1e-7
     )
@@ -850,8 +851,23 @@ def paired_round27_condition_bootstrap(
         or candidate_probability.shape != partition.targets.shape
     ):
         raise ValueError("Round 27 bootstrap prediction population differs")
+    event_start_by_condition: dict[str, int] = {}
+    for sample in partition.samples:
+        prior = event_start_by_condition.setdefault(
+            sample.condition_id,
+            sample.event_start_ms,
+        )
+        if prior != sample.event_start_ms:
+            raise ValueError("Round 27 bootstrap condition time differs")
+    ordered_conditions = tuple(
+        condition
+        for condition, _event_start_ms in sorted(
+            event_start_by_condition.items(),
+            key=lambda item: (item[1], item[0]),
+        )
+    )
     condition_values: list[float] = []
-    for condition in sorted(set(str(value) for value in partition.conditions)):
+    for condition in ordered_conditions:
         selected = partition.conditions == condition
         target = partition.targets[selected]
         baseline_loss = -(
@@ -866,22 +882,79 @@ def paired_round27_condition_bootstrap(
     values = np.asarray(condition_values, dtype=np.float64)
     if values.size < 20 or draws < 1_000:
         raise ValueError("Round 27 bootstrap population is insufficient")
-    rng = np.random.default_rng(seed)
-    samples = np.empty(draws, dtype=np.float64)
-    for start in range(0, draws, 500):
-        count = min(500, draws - start)
-        indices = rng.integers(0, values.size, size=(count, values.size))
-        samples[start : start + count] = np.mean(values[indices], axis=1)
     return {
         "mean_candidate_minus_prior_log_loss": float(np.mean(values)),
-        "ci95_lower": float(np.quantile(samples, 0.025)),
-        "ci95_upper": float(np.quantile(samples, 0.975)),
         "condition_count": int(values.size),
+        **round27_stationary_bootstrap_mean_interval(
+            values,
+            draws=draws,
+            seed=seed,
+        ),
+    }
+
+
+def round27_stationary_bootstrap_mean_interval(
+    values: Sequence[float] | NDArray[np.float64],
+    *,
+    draws: int,
+    seed: int,
+) -> dict[str, object]:
+    """Return a conservative envelope over chronological stationary bootstraps."""
+
+    selected = np.asarray(values, dtype=np.float64)
+    if (
+        selected.ndim != 1
+        or selected.size < 20
+        or draws < 1_000
+        or not np.all(np.isfinite(selected))
+    ):
+        raise ValueError("Round 27 stationary bootstrap population differs")
+    maximum_block = max(1, selected.size // 4)
+    block_lengths = tuple(
+        length
+        for length in POLYMARKET_ROUND27_BOOTSTRAP_EXPECTED_BLOCK_LENGTHS
+        if length <= maximum_block
+    )
+    intervals: list[dict[str, object]] = []
+    for expected_block_length in block_lengths:
+        rng = np.random.default_rng(seed + 1_000_003 * expected_block_length)
+        means = np.empty(draws, dtype=np.float64)
+        restart_probability = 1.0 / expected_block_length
+        for start in range(0, draws, 500):
+            count = min(500, draws - start)
+            indices = np.empty((count, selected.size), dtype=np.int64)
+            indices[:, 0] = rng.integers(0, selected.size, size=count)
+            for offset in range(1, selected.size):
+                restart = rng.random(count) < restart_probability
+                replacement = rng.integers(0, selected.size, size=count)
+                indices[:, offset] = np.where(
+                    restart,
+                    replacement,
+                    (indices[:, offset - 1] + 1) % selected.size,
+                )
+            means[start : start + count] = np.mean(selected[indices], axis=1)
+        intervals.append(
+            {
+                "expected_block_length_conditions": expected_block_length,
+                "expected_block_duration_ms": expected_block_length * 300_000,
+                "ci95_lower": float(np.quantile(means, 0.025)),
+                "ci95_upper": float(np.quantile(means, 0.975)),
+            }
+        )
+    return {
+        "method": "stationary_bootstrap_block_length_sensitivity_envelope",
         "draw_count": draws,
+        "draw_count_per_block_length": draws,
+        "effective_draw_count": draws * len(intervals),
+        "expected_block_lengths_conditions": list(block_lengths),
+        "block_intervals": intervals,
+        "ci95_lower": min(float(item["ci95_lower"]) for item in intervals),
+        "ci95_upper": max(float(item["ci95_upper"]) for item in intervals),
     }
 
 
 __all__ = [
+    "POLYMARKET_ROUND27_BOOTSTRAP_EXPECTED_BLOCK_LENGTHS",
     "POLYMARKET_ROUND27_CORRECTION_SCALES",
     "POLYMARKET_ROUND27_L2_PENALTIES",
     "POLYMARKET_ROUND27_METRICS_SCHEMA_VERSION",
@@ -897,6 +970,7 @@ __all__ = [
     "paired_round27_condition_bootstrap",
     "round27_model_from_payload",
     "round27_probability_metrics",
+    "round27_stationary_bootstrap_mean_interval",
     "scale_round27_probability_model",
     "select_round27_correction_scale",
     "select_round27_l2_penalty",

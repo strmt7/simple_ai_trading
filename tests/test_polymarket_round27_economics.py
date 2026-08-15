@@ -208,6 +208,14 @@ def test_round27_economics_walks_depth_and_passes_every_fixed_delay() -> None:
     for scenario in report["scenarios"]:
         assert scenario["filled_order_count"] == 20
         assert scenario["scenario_edge_gate_passed"] is True
+        bootstrap = scenario["condition_bootstrap"]
+        assert bootstrap["method"] == (
+            "stationary_bootstrap_block_length_sensitivity_envelope"
+        )
+        assert bootstrap["expected_block_lengths_conditions"] == [1, 4]
+        assert bootstrap["ci95_lower"] == min(
+            item["ci95_lower"] for item in bootstrap["block_intervals"]
+        )
         trade = scenario["trades"][0]
         assert trade["average_fill_price"] == "0.466"
         assert Decimal(trade["fee_quote"]) > 0
