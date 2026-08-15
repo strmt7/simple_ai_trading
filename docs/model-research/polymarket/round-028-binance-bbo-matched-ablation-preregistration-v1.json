@@ -1,0 +1,172 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786798475450,
+  "data_lineage": {
+    "round21_sidecar_campaign_design_sha256": "f29f272c7e1d072f5723b029d8c867c9ceb26b9a70eef3603e81360faae5c27c",
+    "round21_sidecar_campaign_plan_sha256": "a0a0508c5e1b5c0d55d66cf98186b0e815e674d9a95c4318f3303337378fa518",
+    "round21_sidecar_capture_design_sha256": "c802b13e169f868c7a37619669cdc957862a1cb58c6d3299c0aae63ff0d86d4a",
+    "round27_campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+    "round27_model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439"
+  },
+  "feature_contract": {
+    "augmented_feature_count": 278,
+    "base_feature_count": 182,
+    "incremental_bbo_feature_count": 96,
+    "incremental_families": [
+      "spot_and_usdm_bbo_mid_returns",
+      "spot_and_usdm_bbo_microprice_returns",
+      "spot_and_usdm_mean_relative_spread",
+      "spot_and_usdm_mean_top_quantity_imbalance",
+      "spot_and_usdm_mean_log1p_top_quote_depth",
+      "spot_and_usdm_bbo_update_count",
+      "spot_and_usdm_bbo_receipt_age",
+      "usdm_minus_spot_mid_and_microprice_basis",
+      "spot_minus_usdm_bbo_receipt_skew",
+      "spot_minus_usdm_bbo_mid_return"
+    ],
+    "receipt_windows_ms": [
+      250,
+      1000,
+      5000,
+      15000,
+      30000,
+      60000,
+      120000
+    ],
+    "round27_base_feature_names_sha256": "369b48002186f8536a276d0912d297c3a240b7f3a6f03ea54695ae647a433ca2",
+    "round28_augmented_feature_names_sha256": "5f6d5b0f963e385c2ea67b057975bcd7f4cf60c8c60525927f2a9bff050d066d",
+    "round28_bbo_feature_names_sha256": "10172e1ed8f3e0eec6fa93d8ee5a7d42e0d42514935e08ee2f721bdfbf412776",
+    "source_values_excluded": [
+      "duplicate_sidecar_trade_features",
+      "exchange_source_time_as_a_cross_venue_clock",
+      "future_or_at_decision_receipts",
+      "hidden_or_unobserved_liquidity",
+      "targets_resolutions_fills_and_pnl"
+    ]
+  },
+  "hypothesis": {
+    "alternative": "Receipt-time Binance spot and USD-M BBO dynamics add out-of-sample probability and after-cost economic value beyond the Round 27 Polymarket prior, Chainlink TWAP60, CLOB, and trade-only features.",
+    "null": "The incremental Binance BBO overlay does not improve the matched out-of-sample model or executable after-cost economics beyond the Round 27 base feature view.",
+    "prior": "Strong null. A large synchronized Polymarket-Binance study reported measurable quote response but no tradable out-of-sample edge after fees and slippage."
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "round21_sidecar_terminal_manifest_exists": false,
+    "round27_stage1_capture_started": true,
+    "round27_stage1_feature_rows_accessed_or_materialized": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false
+  },
+  "matched_ablation": {
+    "base_view": "the first 182 Round 27 values",
+    "candidate_pairs": [
+      {
+        "augmented": "round28_bbo_augmented_l2_offset_logistic",
+        "base": "round27_base_l2_offset_logistic",
+        "correction_scales": [
+          0.0,
+          0.25,
+          0.5,
+          0.75,
+          1.0
+        ],
+        "l2_penalties": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0
+        ]
+      },
+      {
+        "augmented": "round28_bbo_augmented_shallow_lightgbm_offset",
+        "base": "round27_base_shallow_lightgbm_offset",
+        "fixed_hyperparameters": {
+          "bagging_fraction": 0.8,
+          "feature_fraction": 0.8,
+          "lambda_l1": 0.1,
+          "lambda_l2": 5.0,
+          "learning_rate": 0.03,
+          "max_depth": 3,
+          "num_boost_round": 120,
+          "num_leaves": 7
+        }
+      }
+    ],
+    "exclusion_policy": "A decision with unavailable or older-than-1000ms spot or USD-M BBO state is removed from both the base and augmented candidate populations.",
+    "identity_policy": "Each candidate pair must use byte-identical decision rows, condition labels, condition weights, market-prior offsets, role assignments, and execution scenarios.",
+    "selection_policy": "Hyperparameters use train and calibration only; model-family choice uses selection only; sealed access remains one-time and unchanged from Round 27.",
+    "view_under_test": "the 96 incremental BBO fields only"
+  },
+  "promotion_gates": {
+    "accuracy": "Condition-weighted accuracy and balanced accuracy are reported; neither can promote alone.",
+    "economic": "The augmented candidate must improve source-bound after-cost net PnL and preserve every Round 27 execution, concentration, delay, drawdown, and confidence gate.",
+    "minimum_population": "All Round 27 train, calibration, selection, and sealed condition minima must still pass after matched BBO exclusions.",
+    "probability": "The augmented candidate must beat its same-family base candidate on condition-weighted log loss and Brier score, with paired condition-bootstrap 95 percent upper bounds below zero.",
+    "robustness": "Report ROC-AUC, calibration error, accepted coverage, source gaps, and latency sensitivity; positive point estimates without confidence and economic gates are rejected.",
+    "sealed": "No sealed access unless one exact persisted selection candidate passes all probability and economic gates."
+  },
+  "preregistration_sha256": "8239488145f0ffe331cf9823e5517120dda0d12eb5f366cf00c5e106318d4668",
+  "research_basis": [
+    {
+      "finding": "Spot individual-symbol bookTicker pushes each best-bid or best-ask price or quantity update in real time but does not provide an exchange event timestamp, so only the local receipt clock is admissible for causal joining.",
+      "url": "https://developers.binance.com/en/docs/products/spot/market-data/web-socket-streams#individual-symbol-book-ticker-streams"
+    },
+    {
+      "finding": "USD-M individual-symbol bookTicker is real time and carries event and transaction timestamps, best prices, and best quantities; RPI orders are excluded. Cross-venue joins still use the collector receipt clock.",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public#individual-symbol-book-ticker-streams"
+    },
+    {
+      "finding": "A 2026 crypto microstructure study reports stable predictive importance for order flow, spread, and adverse-selection features, with conservative top-of-book taker and maker validation.",
+      "url": "https://arxiv.org/abs/2602.00776"
+    },
+    {
+      "finding": "OpenMarket reports a 727-million-row synchronized Polymarket-Binance corpus, measurable quote response, and a null tradable out-of-sample result after stated costs; the market prior and matched economic gate therefore remain primary.",
+      "url": "https://arxiv.org/abs/2607.26245"
+    },
+    {
+      "finding": "High forecasting scores for limit-order-book models do not necessarily imply actionable transactions, requiring execution-aware economic evaluation rather than prediction metrics alone.",
+      "url": "https://arxiv.org/abs/2403.09267"
+    }
+  ],
+  "schema_version": "polymarket-round28-binance-bbo-matched-ablation-preregistration-v1",
+  "source_clock_policy": {
+    "causal_cutoff": "strictly received before the one-second decision timestamp",
+    "cross_venue_clock": "single collector wall receipt time",
+    "futures_exchange_timestamps": "audited metadata only; never used to order against spot or Polymarket",
+    "maximum_bbo_receipt_age_ms": 1000,
+    "reconnect_or_gap": "invalidate the affected venue epoch until a fresh valid BBO is observed",
+    "spot_exchange_timestamp": "unavailable by documented payload contract"
+  },
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round21_binance_features.py": "4ecefd09ab294bfd6929f777c55af36e3bd36cba032351e567f4b1c0d7e1c906",
+    "src/simple_ai_trading/polymarket_round21_sidecar_replay.py": "c7b72d03bc97f046d6985ecac8c262a16d97e5db6b9843753b1375ad153466b9",
+    "src/simple_ai_trading/polymarket_round21_sidecar_terminal.py": "d97ad1d35a638b37c041ff2d31cce3ffd24aec5d4d81e6de32d00758f4b96453",
+    "src/simple_ai_trading/polymarket_round27_feature_store.py": "367e7b0126f047df636877e4e46099d6db6bf4064ad82d85aa6e206d6a2c139b",
+    "src/simple_ai_trading/polymarket_round27_features.py": "d74d97b9bab0dba46d2b207b845da1d4b8028972bc636e0674f759cecb22f027",
+    "src/simple_ai_trading/polymarket_round28_book_ticker.py": "f8081a46cb661654fcbcea3b900ca07db7986c8ff68fda1864a05af1008969a4",
+    "src/simple_ai_trading/polymarket_round28_model.py": "bfb37d58f5db979f4560c83dc500c8b02ae893645ce7e0eecbaa3590334783dc",
+    "tests/test_polymarket_round28_book_ticker.py": "502f150a9872b82032e9a99ef2b75074140b3c9f9dae2260c64e8a9c510892dd",
+    "tests/test_polymarket_round28_model.py": "d1485ba956584073770ce0d51ac1ecfa816545a36f270eb0d77f8833bcdd00e2",
+    "tools/run_polymarket_round28_book_ticker.py": "775c3761cea46add52dcde0f47e3f4c47746e34618333f6787074d2bcf9dbc67"
+  },
+  "status": "frozen_after_capture_start_before_stage1_feature_or_outcome_access",
+  "storage_policy": {
+    "base_feature_duplication": false,
+    "database": "one atomic DuckDB overlay containing only the 96 incremental values and exact provenance",
+    "progress_heartbeat_seconds": 30,
+    "read_requires_terminal_wal_free_sidecar": true,
+    "write_requires_fresh_output_path": true
+  }
+}

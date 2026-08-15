@@ -38,6 +38,17 @@ The [campaign contract](../round-027-stage1-campaign-contract-v1.json) forbids
 target access, fitting, adaptive replacement, and economic claims before the
 campaign gate.
 
+Round 28 is a preregistered, target-blind BBO ablation over that same campaign,
+not a new result. The independent Round 21 sidecar already overlaps the Stage 1
+windows and records real-time BTCUSDT spot and USD-M best bid, ask, and top
+quantities. Its [frozen contract](../round-028-binance-bbo-matched-ablation-preregistration-v1.json)
+adds only 96 BBO-derived fields to the 182 Round 27 fields, stores them as a
+small overlay instead of duplicating the base corpus, and excludes every stale
+or unavailable BBO decision from both candidates. Base and augmented models
+must use identical rows, labels, weights, market-prior offsets, and execution
+scenarios. The large OpenMarket null result remains the prior; prediction
+uplift alone cannot establish after-cost edge or profitability.
+
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
 Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order
