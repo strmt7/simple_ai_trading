@@ -19,6 +19,51 @@ POLYMARKET_CONDITION_REPLAY_AUDIT_SCHEMA_VERSION = (
 POLYMARKET_CONDITION_REPLAY_MINIMUM_INTERVAL_MS = 250
 
 
+def select_fully_observed_condition_ids(
+    store: PolymarketEvidenceStore,
+    *,
+    run_id: str,
+    maximum_conditions: int,
+) -> tuple[str, ...]:
+    """Select only full market intervals by target-free recorder timestamps."""
+
+    selected = str(run_id or "").strip()
+    maximum = int(maximum_conditions)
+    if not selected or not 1 <= maximum <= 10_000:
+        raise ValueError("fully observed condition selection is invalid")
+    run = store.connect().execute(
+        """
+        SELECT status, error, started_at_ms, ended_at_ms
+        FROM polymarket_recorder_run WHERE run_id = ?
+        """,
+        [selected],
+    ).fetchone()
+    if (
+        run is None
+        or str(run[0]) not in {"complete", "degraded"}
+        or str(run[1] or "").strip()
+        or run[3] is None
+    ):
+        raise ValueError("fully observed condition selection requires a terminal run")
+    rows = store.connect().execute(
+        """
+        SELECT condition_id
+        FROM polymarket_market_snapshot
+        WHERE run_id = ? AND event_start_ms >= ? AND end_ms <= ?
+        ORDER BY event_start_ms, condition_id
+        """,
+        [selected, int(run[2]), int(run[3])],
+    ).fetchall()
+    condition_ids = tuple(str(row[0]) for row in rows)
+    if not condition_ids:
+        raise ValueError("fully observed condition selection is empty")
+    if len(condition_ids) > maximum:
+        raise ValueError(
+            "fully observed condition selection exceeds its frozen maximum"
+        )
+    return condition_ids
+
+
 def _canonical_json(value: object) -> str:
     return json.dumps(
         value,
@@ -307,5 +352,6 @@ __all__ = [
     "POLYMARKET_CONDITION_REPLAY_AUDIT_SCHEMA_VERSION",
     "POLYMARKET_CONDITION_REPLAY_MINIMUM_INTERVAL_MS",
     "audit_polymarket_condition_replay",
+    "select_fully_observed_condition_ids",
     "write_polymarket_condition_replay_audit",
 ]

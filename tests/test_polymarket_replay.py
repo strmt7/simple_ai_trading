@@ -49,6 +49,7 @@ from simple_ai_trading.polymarket_continuity import (
 )
 from simple_ai_trading.polymarket_condition_replay_audit import (
     audit_polymarket_condition_replay,
+    select_fully_observed_condition_ids,
 )
 from simple_ai_trading.polymarket_model import (
     POLYMARKET_MODEL_FEATURE_NAMES,
@@ -4019,6 +4020,52 @@ def test_condition_replay_audit_is_target_free_and_segment_bounded(tmp_path) -> 
     body = dict(report)
     claimed = body.pop("audit_sha256")
     assert claimed == hashlib.sha256(_canonical(body).encode("ascii")).hexdigest()
+
+
+def test_fully_observed_condition_selection_uses_terminal_run_boundaries() -> None:
+    class Result:
+        def __init__(self, value):
+            self.value = value
+
+        def fetchone(self):
+            return self.value
+
+        def fetchall(self):
+            return self.value
+
+    class Connection:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def execute(self, sql, parameters):
+            self.calls += 1
+            if self.calls == 1:
+                assert "started_at_ms" in sql
+                assert parameters == ["run"]
+                return Result(("degraded", "", 1_000, 10_000))
+            assert "event_start_ms >= ?" in sql
+            assert parameters == ["run", 1_000, 10_000]
+            return Result((("condition-a",), ("condition-b",)))
+
+    class Store:
+        def __init__(self) -> None:
+            self.connection = Connection()
+
+        def connect(self):
+            return self.connection
+
+    store = Store()
+    assert select_fully_observed_condition_ids(
+        store,
+        run_id="run",
+        maximum_conditions=2,
+    ) == ("condition-a", "condition-b")
+    with pytest.raises(ValueError, match="exceeds"):
+        select_fully_observed_condition_ids(
+            Store(),
+            run_id="run",
+            maximum_conditions=1,
+        )
 
 
 def test_condition_replay_audit_isolates_checksum_failure(tmp_path) -> None:
