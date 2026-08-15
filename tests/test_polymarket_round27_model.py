@@ -221,6 +221,36 @@ def test_corrected_politis_white_block_length_detects_dependence() -> None:
     assert round27_corrected_politis_white_block_length(np.ones(80)) == 1
 
 
+def test_corrected_politis_white_block_length_uses_zero_lag_normalization() -> None:
+    values = np.asarray(
+        [
+            -1.6493935042604193,
+            1.6425697554841436,
+            -0.630002128503826,
+            -0.1795759970488514,
+            -0.24063517635548326,
+            -0.9164082118356397,
+            0.5672666777648145,
+            -2.146209994267965,
+            1.334679108721933,
+            -0.2768077689952386,
+            -0.46677400340914366,
+            0.1862402668425526,
+            0.0324608718045159,
+            -0.3986900201408391,
+            1.018135012868527,
+            0.363140086428707,
+            0.4107350917022881,
+            0.3208702710449848,
+            2.0042064611947557,
+            -2.0268834874950112,
+        ],
+        dtype=np.float64,
+    )
+
+    assert round27_corrected_politis_white_block_length(values) == 7
+
+
 def test_shallow_lightgbm_is_bounded_and_cpu_portable() -> None:
     partition = Round27Partition.from_samples(_samples(), role="train")
 
