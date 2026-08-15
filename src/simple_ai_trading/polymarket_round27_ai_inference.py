@@ -380,6 +380,207 @@ def _inventory_has_only_candidate(
     )
 
 
+def round27_ai_response_from_mapping(
+    value: Mapping[str, object],
+) -> Round27AIResponse:
+    """Reconstruct one strict persisted inference response."""
+
+    payload = dict(value)
+    expected = {
+        "schema_version",
+        "ablation_contract_sha256",
+        "model_id",
+        "runtime_model",
+        "runtime_digest",
+        "case_sha256",
+        "prompt_sha256",
+        "status",
+        "decision",
+        "reason_codes",
+        "wall_latency_ms",
+        "provider_total_ms",
+        "provider_load_ms",
+        "prompt_tokens",
+        "output_tokens",
+        "error_type",
+        "error_message",
+        "target_accessed",
+        "outcome_accessed",
+        "future_books_accessed",
+        "pnl_accessed",
+        "credentials_used",
+        "orders_submitted",
+        "trading_authority",
+        "response_sha256",
+    }
+    flags = (
+        "target_accessed",
+        "outcome_accessed",
+        "future_books_accessed",
+        "pnl_accessed",
+        "credentials_used",
+        "orders_submitted",
+        "trading_authority",
+    )
+    integer_fields = (
+        "wall_latency_ms",
+        "provider_total_ms",
+        "provider_load_ms",
+        "prompt_tokens",
+        "output_tokens",
+    )
+    if (
+        set(payload) != expected
+        or payload.get("schema_version")
+        != POLYMARKET_ROUND27_AI_RESPONSE_SCHEMA_VERSION
+        or payload.get("ablation_contract_sha256")
+        != POLYMARKET_ROUND27_AI_ABLATION_CONTRACT_SHA256
+        or any(payload.get(field) is not False for field in flags)
+        or not isinstance(payload.get("reason_codes"), list)
+        or any(not isinstance(item, str) for item in payload["reason_codes"])
+        or any(
+            payload.get(field) is not None
+            and type(payload.get(field)) is not int
+            for field in integer_fields
+        )
+    ):
+        raise ValueError("Round 27 persisted AI response differs")
+    return Round27AIResponse(
+        model_id=str(payload["model_id"]),
+        runtime_model=str(payload["runtime_model"]),
+        runtime_digest=str(payload["runtime_digest"]),
+        case_sha256=str(payload["case_sha256"]),
+        prompt_sha256=str(payload["prompt_sha256"]),
+        status=str(payload["status"]),
+        decision=str(payload["decision"]),
+        reason_codes=tuple(payload["reason_codes"]),
+        wall_latency_ms=int(payload["wall_latency_ms"]),
+        provider_total_ms=payload["provider_total_ms"],
+        provider_load_ms=payload["provider_load_ms"],
+        prompt_tokens=payload["prompt_tokens"],
+        output_tokens=payload["output_tokens"],
+        error_type=(
+            None if payload["error_type"] is None else str(payload["error_type"])
+        ),
+        error_message=(
+            None
+            if payload["error_message"] is None
+            else str(payload["error_message"])
+        ),
+        response_sha256=str(payload["response_sha256"]),
+    ).validated()
+
+
+def round27_ai_inference_report_from_mapping(
+    value: Mapping[str, object],
+) -> Round27AIInferenceReport:
+    """Reconstruct one strict persisted candidate inference report."""
+
+    payload = dict(value)
+    expected = {
+        "schema_version",
+        "ablation_contract_sha256",
+        "candidate",
+        "case_panel_sha256",
+        "prompt_population_sha256",
+        "warmup_wall_ms",
+        "residency",
+        "response_sha256",
+        "status_counts",
+        "case_count",
+        "changed_action_count",
+        "rejected_fraction",
+        "candidate_eligible_for_matched_evaluation",
+        "unload_observed",
+        "unload_failure",
+        "target_accessed",
+        "outcome_accessed",
+        "future_books_accessed",
+        "pnl_accessed",
+        "credentials_used",
+        "orders_submitted",
+        "trading_authority",
+        "edge_claim",
+        "profitability_claim",
+        "responses",
+        "report_sha256",
+    }
+    false_fields = (
+        "target_accessed",
+        "outcome_accessed",
+        "future_books_accessed",
+        "pnl_accessed",
+        "credentials_used",
+        "orders_submitted",
+        "trading_authority",
+        "edge_claim",
+        "profitability_claim",
+    )
+    raw_responses = payload.get("responses")
+    if (
+        set(payload) != expected
+        or payload.get("schema_version")
+        != POLYMARKET_ROUND27_AI_INFERENCE_REPORT_SCHEMA_VERSION
+        or payload.get("ablation_contract_sha256")
+        != POLYMARKET_ROUND27_AI_ABLATION_CONTRACT_SHA256
+        or any(payload.get(field) is not False for field in false_fields)
+        or not isinstance(payload.get("candidate"), Mapping)
+        or not isinstance(payload.get("residency"), Mapping)
+        or not isinstance(payload.get("status_counts"), Mapping)
+        or not isinstance(raw_responses, list)
+        or not isinstance(payload.get("response_sha256"), list)
+        or type(payload.get("warmup_wall_ms")) is not int
+        or type(payload.get("case_count")) is not int
+        or type(payload.get("changed_action_count")) is not int
+        or isinstance(payload.get("rejected_fraction"), bool)
+        or not isinstance(payload.get("rejected_fraction"), (int, float))
+        or type(payload.get("candidate_eligible_for_matched_evaluation")) is not bool
+        or type(payload.get("unload_observed")) is not bool
+        or (
+            payload.get("unload_failure") is not None
+            and not isinstance(payload.get("unload_failure"), Mapping)
+        )
+    ):
+        raise ValueError("Round 27 persisted AI inference report differs")
+    responses = tuple(
+        round27_ai_response_from_mapping(item)
+        for item in raw_responses
+        if isinstance(item, Mapping)
+    )
+    if (
+        len(responses) != len(raw_responses)
+        or payload["case_count"] != len(responses)
+        or payload["response_sha256"]
+        != [response.response_sha256 for response in responses]
+    ):
+        raise ValueError("Round 27 persisted AI response population differs")
+    failure = payload["unload_failure"]
+    if failure is not None and (
+        set(failure) != {"type", "message"}
+        or any(not isinstance(failure.get(field), str) for field in ("type", "message"))
+    ):
+        raise ValueError("Round 27 persisted AI unload failure differs")
+    return Round27AIInferenceReport(
+        candidate=dict(payload["candidate"]),
+        case_panel_sha256=str(payload["case_panel_sha256"]),
+        prompt_population_sha256=str(payload["prompt_population_sha256"]),
+        warmup_wall_ms=int(payload["warmup_wall_ms"]),
+        residency=dict(payload["residency"]),
+        responses=responses,
+        status_counts={
+            str(key): int(count) for key, count in payload["status_counts"].items()
+        },
+        changed_action_count=int(payload["changed_action_count"]),
+        rejected_fraction=float(payload["rejected_fraction"]),
+        candidate_eligible_for_matched_evaluation=bool(
+            payload["candidate_eligible_for_matched_evaluation"]
+        ),
+        unload_observed=bool(payload["unload_observed"]),
+        unload_failure=(None if failure is None else dict(failure)),
+        report_sha256=str(payload["report_sha256"]),
+    ).validated()
+
+
 @dataclass(frozen=True, slots=True)
 class Round27AIInferenceReport:
     candidate: dict[str, object]
@@ -412,6 +613,7 @@ class Round27AIInferenceReport:
             "response_sha256": [
                 response.response_sha256 for response in self.responses
             ],
+            "responses": [response.asdict() for response in self.responses],
             "status_counts": dict(self.status_counts),
             "case_count": len(self.responses),
             "changed_action_count": self.changed_action_count,
@@ -477,11 +679,7 @@ class Round27AIInferenceReport:
         return self
 
     def asdict(self) -> dict[str, object]:
-        return {
-            **self.identity_payload(),
-            "responses": [response.asdict() for response in self.responses],
-            "report_sha256": self.report_sha256,
-        }
+        return {**self.identity_payload(), "report_sha256": self.report_sha256}
 
 
 def run_round27_ai_inference(
@@ -648,5 +846,7 @@ __all__ = [
     "Round27AIResponse",
     "round27_ai_ablation_request",
     "round27_ai_ablation_response_schema",
+    "round27_ai_inference_report_from_mapping",
+    "round27_ai_response_from_mapping",
     "run_round27_ai_inference",
 ]

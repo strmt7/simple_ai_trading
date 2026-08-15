@@ -8,6 +8,7 @@ import pytest
 
 from simple_ai_trading.polymarket_round27_ai_cases import (
     materialize_round27_ai_cases,
+    round27_ai_case_panel_from_mapping,
     round27_ai_case_prompt,
 )
 from simple_ai_trading.polymarket_round27_economics import (
@@ -15,6 +16,7 @@ from simple_ai_trading.polymarket_round27_economics import (
     Round27EconomicConfig,
     evaluate_round27_economic_scenarios,
 )
+from simple_ai_trading.polymarket_round27_operator import canonical_sha256
 from simple_ai_trading.polymarket_round27_features import Round27FeatureRow
 from test_polymarket_round27_economics import _population
 
@@ -162,3 +164,28 @@ def test_round27_ai_case_integrity_rejects_feature_tampering() -> None:
 
     with pytest.raises(ValueError, match="case differs"):
         replace(case, causal_features=tuple(tampered_features)).validated()
+
+
+def test_round27_ai_case_panel_round_trip_rejects_persisted_drift() -> None:
+    markets, partition, _probabilities, books, _outcomes = _population(1)
+    panel = materialize_round27_ai_cases(
+        role="selection",
+        rows=_rows(partition),
+        selected_model=_FixedModel(),
+        model_name=_FixedModel.model_name,
+        model_sha256=_MODEL_SHA256,
+        markets=markets,
+        books=books,
+        source_audit_sha256="c" * 64,
+        config=Round27EconomicConfig(),
+    )
+
+    assert round27_ai_case_panel_from_mapping(panel.asdict()) == panel
+    persisted = panel.asdict()
+    claimed = persisted.pop("panel_sha256")
+    assert claimed == canonical_sha256(persisted)
+
+    tampered = panel.asdict()
+    tampered["cases"][0]["decision_time_ms"] += 250
+    with pytest.raises(ValueError, match="AI case differs"):
+        round27_ai_case_panel_from_mapping(tampered)
