@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==83.0.0"]
+requires = ["setuptools==84.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11,<3.15"
 dependencies = [
     "defusedxml>=0.7.1,<1",
-    "duckdb==1.5.4",
+    "duckdb==1.5.5",
     "lightgbm==4.6.0",
     "numba==0.66.0",
     "numpy==2.2.6",
@@ -41,23 +41,23 @@ reporting = [
     "matplotlib==3.11.1",
 ]
 polymarket-live = [
-    "polymarket-client==0.2.0",
+    "polymarket-client==0.5.0",
     "py-clob-client-v2==1.1.0",
 ]
 foundation-ai = [
     "einops==0.8.2",
-    "huggingface_hub==1.24.0",
+    "huggingface_hub==1.27.0",
     "pandas>=2.2,<4",
     "safetensors==0.8.0",
-    "tqdm>=4.67,<5",
+    "tqdm>=4.70.0,<5",
 ]
 
 [dependency-groups]
 test = [
-    "coverage==7.15.2",
-    "diff-cover==10.3.0",
+    "coverage==7.15.4",
+    "diff-cover==10.5.0",
     "pytest==9.1.1",
-    "ruff==0.15.22",
+    "ruff==0.16.2",
 ]
 release = [
     "build==1.5.0",
