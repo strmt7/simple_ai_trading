@@ -72,6 +72,14 @@ SHA-256, so a non-unit selected model could not be reloaded exactly. Every
 allowed scale is now rehashed and round-trip validated before a selection claim
 can bind it. This changes no model family, threshold, or economic gate and is
 implementation evidence only.
+The cumulative
+[active-tick amendment](../round-027-active-tick-execution-correction-amendment-v3.json)
+then corrects the after-cost replay for Polymarket's documented dynamic tick
+changes. Candidate limits use the reconstructed decision-book tick; every book
+price must align to its active lattice; and a limit that is invalid on the
+execution-book lattice receives no fill credit. The matched AI path carries the
+same tick identity without changing its frozen prompt. This is execution-model
+correctness evidence, not edge or profitability evidence.
 The separate [matched AI contract](../round-027-ai-matched-ablation-contract-v1.json)
 also freezes target-free, latency-charged Qwen-versus-ODA selection and a
 one-use sealed confirmation. Host compatibility alone is not AI uplift.

@@ -21,7 +21,7 @@ from .polymarket_replay import PolymarketRecordedBook
 from .polymarket_round27_model import Round27Partition
 
 
-POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v1"
+POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v2"
 POLYMARKET_ROUND27_FIXED_DELAYS_MS = (250, 500, 1_000, 2_000)
 _SHA256_CHARACTERS = frozenset("0123456789abcdef")
 
@@ -161,6 +161,7 @@ class _DecisionCandidate:
     predicted_probability: float
     quantity: Decimal
     limit_price: Decimal
+    decision_tick_size: Decimal
     decision_average_price: Decimal
     decision_fee_quote: Decimal
     expected_edge_per_contract: Decimal
@@ -182,6 +183,8 @@ class Round27EconomicTrade:
     predicted_probability: float
     quantity: Decimal
     limit_price: Decimal
+    decision_tick_size: Decimal
+    execution_tick_size: Decimal | None
     decision_average_price: Decimal
     expected_edge_per_contract: Decimal
     execution_state: str
@@ -209,6 +212,12 @@ class Round27EconomicTrade:
             "predicted_probability": self.predicted_probability,
             "quantity": _decimal_text(self.quantity),
             "limit_price": _decimal_text(self.limit_price),
+            "decision_tick_size": _decimal_text(self.decision_tick_size),
+            "execution_tick_size": (
+                None
+                if self.execution_tick_size is None
+                else _decimal_text(self.execution_tick_size)
+            ),
             "decision_average_price": _decimal_text(self.decision_average_price),
             "expected_edge_per_contract": _decimal_text(
                 self.expected_edge_per_contract
@@ -258,7 +267,7 @@ class _BookIndex:
         grouped: dict[str, list[PolymarketRecordedBook]] = {}
         for raw in books:
             book = raw
-            book.snapshot.validated()
+            _validated_active_tick_size(book)
             grouped.setdefault(book.token_id, []).append(book)
         self.books = {
             token: tuple(
@@ -338,6 +347,30 @@ def _two_sided(book: PolymarketRecordedBook) -> bool:
         and snapshot.asks
         and snapshot.bids[0].price < snapshot.asks[0].price
     )
+
+
+def _validated_active_tick_size(book: PolymarketRecordedBook) -> Decimal:
+    snapshot = book.snapshot.validated()
+    tick = _decimal(book.tick_size, name="active tick size", positive=True)
+    expected_token = (
+        book.market.up_token_id
+        if book.outcome == "Up"
+        else book.market.down_token_id
+        if book.outcome == "Down"
+        else ""
+    )
+    if (
+        tick >= 1
+        or snapshot.venue != "polymarket"
+        or snapshot.market_id != book.market.condition_id
+        or snapshot.asset_id != expected_token
+        or any(
+            level.price % tick != 0
+            for level in (*snapshot.bids, *snapshot.asks)
+        )
+    ):
+        raise ValueError("Round 27 active book tick lattice differs")
+    return tick
 
 
 def _midpoint(book: PolymarketRecordedBook) -> Decimal:
@@ -479,10 +512,11 @@ def _build_candidates(
                 ("Up", probability_up, books[0], market.up_token_id),
                 ("Down", 1.0 - probability_up, books[1], market.down_token_id),
             ):
+                active_tick_size = _validated_active_tick_size(book)
                 limit = _maximum_economic_limit(
                     fair_probability=probability,
                     quantity=quantity,
-                    tick_size=market.tick_size,
+                    tick_size=active_tick_size,
                     minimum_edge_per_contract=(
                         config.minimum_expected_edge_per_contract
                     ),
@@ -525,6 +559,7 @@ def _build_candidates(
                         predicted_probability=probability,
                         quantity=quantity,
                         limit_price=limit,
+                        decision_tick_size=active_tick_size,
                         decision_average_price=average,
                         decision_fee_quote=fees,
                         expected_edge_per_contract=edge,
@@ -625,48 +660,54 @@ def _execute_candidate_trades(
         average = Decimal("0")
         entry_notional = Decimal("0")
         fee_quote = Decimal("0")
+        execution_tick_size: Decimal | None = None
         source_sha = candidate.decision_source_payload_sha256
         if execution is not None:
+            execution_tick_size = _validated_active_tick_size(execution)
             effective_latency_ms = execution.received_wall_ms - candidate.decision_time_ms
             source_sha = _sha256(
                 execution.snapshot.source_payload_sha256,
                 name="execution source payload",
             )
             execution_event_id = execution.event_id
-            intent = PaperOrderIntent(
-                intent_id=_canonical_sha256(
-                    {
-                        "condition_id": candidate.condition_id,
-                        "decision_time_ms": candidate.decision_time_ms,
-                        "delay_ms": delay_ms,
-                    }
-                ),
-                venue="polymarket",
-                market_id=market.condition_id,
-                asset_id=candidate.token_id,
-                symbol="BTC",
-                outcome=candidate.outcome,
-                side="BUY",
-                order_type="FOK",
-                limit_price=candidate.limit_price,
-                quantity=candidate.quantity,
-                created_at_ms=candidate.decision_time_ms,
-                expires_at_ms=market.end_ms,
-            ).validated()
-            result = simulate_aggressive_order(
-                intent,
-                execution.snapshot,
-                execution_time_ms=execution.received_wall_ms,
-                submission_latency_ms=delay_ms,
-                maximum_book_age_ms=0,
-                fee=market.fee_schedule.fee_model(),
-            )
-            state = result.state
-            reason = result.reason
-            filled = result.filled_quantity
-            average = result.average_fill_price
-            entry_notional = average * filled
-            fee_quote = result.fee_quote
+            if candidate.limit_price % execution_tick_size != 0:
+                state = "REJECTED"
+                reason = "limit_price_not_aligned_to_execution_tick_size"
+            else:
+                intent = PaperOrderIntent(
+                    intent_id=_canonical_sha256(
+                        {
+                            "condition_id": candidate.condition_id,
+                            "decision_time_ms": candidate.decision_time_ms,
+                            "delay_ms": delay_ms,
+                        }
+                    ),
+                    venue="polymarket",
+                    market_id=market.condition_id,
+                    asset_id=candidate.token_id,
+                    symbol="BTC",
+                    outcome=candidate.outcome,
+                    side="BUY",
+                    order_type="FOK",
+                    limit_price=candidate.limit_price,
+                    quantity=candidate.quantity,
+                    created_at_ms=candidate.decision_time_ms,
+                    expires_at_ms=market.end_ms,
+                ).validated()
+                result = simulate_aggressive_order(
+                    intent,
+                    execution.snapshot,
+                    execution_time_ms=execution.received_wall_ms,
+                    submission_latency_ms=delay_ms,
+                    maximum_book_age_ms=0,
+                    fee=market.fee_schedule.fee_model(),
+                )
+                state = result.state
+                reason = result.reason
+                filled = result.filled_quantity
+                average = result.average_fill_price
+                entry_notional = average * filled
+                fee_quote = result.fee_quote
         payout = Decimal("0")
         pnl = Decimal("0")
         markout: Decimal | None = None
@@ -702,6 +743,8 @@ def _execute_candidate_trades(
             predicted_probability=candidate.predicted_probability,
             quantity=candidate.quantity,
             limit_price=candidate.limit_price,
+            decision_tick_size=candidate.decision_tick_size,
+            execution_tick_size=execution_tick_size,
             decision_average_price=candidate.decision_average_price,
             expected_edge_per_contract=candidate.expected_edge_per_contract,
             execution_state=state,

@@ -69,6 +69,7 @@ def _book(
     segment: str = "segment-1",
     ask_quantity: Decimal = Decimal("10"),
     ask: Decimal | None = None,
+    tick_size: Decimal | None = None,
 ) -> PolymarketRecordedBook:
     selected_ask = ask or (Decimal("0.46") if outcome == "Up" else Decimal("0.54"))
     bid = selected_ask - Decimal("0.01")
@@ -107,7 +108,7 @@ def _book(
         sub_index=0,
         market=market,
         outcome=outcome,
-        tick_size=market.tick_size,
+        tick_size=tick_size or market.tick_size,
         snapshot=snapshot,
     )
 
@@ -263,6 +264,123 @@ def test_round27_economics_fails_closed_across_connection_segment() -> None:
         if book.outcome == "Up"
         and book.received_wall_ms == target.event_start_ms + 30_000
     )
+
+
+def test_round27_economics_uses_the_active_decision_tick_lattice() -> None:
+    markets, partition, probabilities, books, outcomes = _population(1)
+    market = markets[0]
+    revised_books = tuple(
+        _book(
+            market,
+            outcome=book.outcome,
+            offset_ms=book.received_wall_ms - market.event_start_ms,
+            ask=Decimal("0.461") if book.outcome == "Up" else Decimal("0.539"),
+            tick_size=Decimal("0.001"),
+        )
+        for book in books
+    )
+    prior = float(Decimal("0.456") / (Decimal("0.456") + Decimal("0.534")))
+    revised_sample = replace(
+        partition.samples[0],
+        market_prior_probability=prior,
+    )
+    revised_partition = Round27Partition.from_samples(
+        (revised_sample,),
+        role="selection",
+    )
+
+    report = _evaluate(
+        markets,
+        revised_partition,
+        probabilities,
+        revised_books,
+        outcomes,
+    )
+    primary = next(item for item in report["scenarios"] if item["delay_ms"] == 500)
+    trade = primary["trades"][0]
+
+    assert trade["execution_state"] == "FILLED"
+    assert Decimal(trade["limit_price"]) % Decimal("0.001") == 0
+    assert Decimal(trade["limit_price"]) % Decimal("0.01") != 0
+    assert trade["decision_tick_size"] == "0.001"
+    assert trade["execution_tick_size"] == "0.001"
+
+
+def test_round27_economics_rejects_an_execution_tick_lattice_change() -> None:
+    markets, partition, probabilities, books, outcomes = _population(1)
+    market = markets[0]
+    revised_books = []
+    for book in books:
+        offset = book.received_wall_ms - market.event_start_ms
+        if book.outcome == "Up" and offset == 30_000:
+            revised_books.append(
+                _book(
+                    market,
+                    outcome="Up",
+                    offset_ms=offset,
+                    ask=Decimal("0.461"),
+                    tick_size=Decimal("0.001"),
+                )
+            )
+        elif book.outcome == "Down" and offset == 30_000:
+            revised_books.append(
+                _book(
+                    market,
+                    outcome="Down",
+                    offset_ms=offset,
+                    ask=Decimal("0.539"),
+                    tick_size=Decimal("0.001"),
+                )
+            )
+        else:
+            revised_books.append(book)
+    prior = float(Decimal("0.456") / (Decimal("0.456") + Decimal("0.534")))
+    revised_partition = Round27Partition.from_samples(
+        (
+            replace(
+                partition.samples[0],
+                market_prior_probability=prior,
+            ),
+        ),
+        role="selection",
+    )
+
+    report = _evaluate(
+        markets,
+        revised_partition,
+        probabilities,
+        tuple(revised_books),
+        outcomes,
+    )
+    primary = next(item for item in report["scenarios"] if item["delay_ms"] == 500)
+    trade = primary["trades"][0]
+
+    assert trade["execution_state"] == "REJECTED"
+    assert trade["execution_reason"] == (
+        "limit_price_not_aligned_to_execution_tick_size"
+    )
+    assert trade["decision_tick_size"] == "0.001"
+    assert trade["execution_tick_size"] == "0.01"
+
+
+def test_round27_economics_rejects_a_book_off_its_active_tick_lattice() -> None:
+    markets, partition, probabilities, books, outcomes = _population(1)
+    market = markets[0]
+    malformed = tuple(
+        _book(
+            market,
+            outcome=book.outcome,
+            offset_ms=book.received_wall_ms - market.event_start_ms,
+            ask=Decimal("0.461") if book.outcome == "Up" else Decimal("0.539"),
+            tick_size=Decimal("0.01"),
+        )
+        if book.received_wall_ms == market.event_start_ms + 30_000
+        else book
+        for book in books
+    )
+
+    with pytest.raises(ValueError, match="active book tick lattice"):
+        _evaluate(markets, partition, probabilities, malformed, outcomes)
 
 
 def test_round27_economics_rejects_feature_book_prior_drift() -> None:

@@ -29,9 +29,9 @@ from .polymarket_round27_features import (
 from .polymarket_round27_model import Round27ProbabilityModel
 
 
-POLYMARKET_ROUND27_AI_CASE_SCHEMA_VERSION = "polymarket-round27-ai-case-v1"
+POLYMARKET_ROUND27_AI_CASE_SCHEMA_VERSION = "polymarket-round27-ai-case-v2"
 POLYMARKET_ROUND27_AI_CASE_PANEL_SCHEMA_VERSION = (
-    "polymarket-round27-ai-case-panel-v1"
+    "polymarket-round27-ai-case-panel-v2"
 )
 _SHA256_CHARACTERS = frozenset("0123456789abcdef")
 
@@ -92,6 +92,7 @@ class Round27AICase:
     market_prior_probability_up: float
     quantity: str
     limit_price: str
+    decision_tick_size: str
     decision_average_price: str
     decision_fee_quote: str
     expected_edge_per_contract: str
@@ -124,6 +125,7 @@ class Round27AICase:
             "market_prior_probability_up": self.market_prior_probability_up,
             "quantity": self.quantity,
             "limit_price": self.limit_price,
+            "decision_tick_size": self.decision_tick_size,
             "decision_average_price": self.decision_average_price,
             "decision_fee_quote": self.decision_fee_quote,
             "expected_edge_per_contract": self.expected_edge_per_contract,
@@ -168,12 +170,16 @@ class Round27AICase:
             or any(not Decimal(value).is_finite() for value in (
                 self.quantity,
                 self.limit_price,
+                self.decision_tick_size,
                 self.decision_average_price,
                 self.decision_fee_quote,
                 self.expected_edge_per_contract,
             ))
             or Decimal(self.quantity) <= 0
             or Decimal(self.limit_price) <= 0
+            or Decimal(self.decision_tick_size) <= 0
+            or Decimal(self.decision_tick_size) >= 1
+            or Decimal(self.limit_price) % Decimal(self.decision_tick_size) != 0
             or Decimal(self.decision_average_price) <= 0
             or Decimal(self.decision_fee_quote) < 0
             or Decimal(self.expected_edge_per_contract) <= 0
@@ -347,6 +353,7 @@ def round27_ai_case_from_mapping(value: Mapping[str, object]) -> Round27AICase:
         "market_prior_probability_up",
         "quantity",
         "limit_price",
+        "decision_tick_size",
         "decision_average_price",
         "decision_fee_quote",
         "expected_edge_per_contract",
@@ -427,6 +434,7 @@ def round27_ai_case_from_mapping(value: Mapping[str, object]) -> Round27AICase:
         market_prior_probability_up=float(payload["market_prior_probability_up"]),
         quantity=str(payload["quantity"]),
         limit_price=str(payload["limit_price"]),
+        decision_tick_size=str(payload["decision_tick_size"]),
         decision_average_price=str(payload["decision_average_price"]),
         decision_fee_quote=str(payload["decision_fee_quote"]),
         expected_edge_per_contract=str(payload["expected_edge_per_contract"]),
@@ -631,6 +639,7 @@ def _case_from_candidate(
         market_prior_probability_up=sample.market_prior_probability,
         quantity=_decimal_text(candidate.quantity),
         limit_price=_decimal_text(candidate.limit_price),
+        decision_tick_size=_decimal_text(candidate.decision_tick_size),
         decision_average_price=_decimal_text(candidate.decision_average_price),
         decision_fee_quote=_decimal_text(candidate.decision_fee_quote),
         expected_edge_per_contract=_decimal_text(

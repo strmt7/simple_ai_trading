@@ -278,6 +278,17 @@ def validate_round27_model_contract(
             or _file_sha256(path) != _sha256(effective_expected)
         ):
             raise ValueError("Round 27 model contract source binding differs")
+    for relative, replacement in replacement_sources.items():
+        relative_path = Path(str(relative))
+        path = (root / relative_path).resolve()
+        if (
+            not isinstance(replacement, Mapping)
+            or relative_path.is_absolute()
+            or root not in path.parents
+            or not path.is_file()
+            or _file_sha256(path) != _sha256(replacement.get("corrected"))
+        ):
+            raise ValueError("Round 27 model amendment source binding differs")
     stage1 = load_round27_stage1_contract(
         root / _STAGE1_CONTRACT_RELATIVE_PATH,
         repository=root,
