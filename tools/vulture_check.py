@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 
 
 DEFAULT_MIN_CONFIDENCE = 100
+VULTURE_DEAD_CODE_EXIT = 3
 TRACKED_PYTHON_PATHSPEC = "*.py"
 EXCLUDED_TOP_LEVEL_DIRS: frozenset[str] = frozenset({"docs", "tests"})
 IGNORED_FINDINGS: frozenset[tuple[str, int, str]] = frozenset(
@@ -204,8 +205,8 @@ def run_vulture(repo_root: Path, paths: list[str], *, min_confidence: int) -> in
     filtered = _filter_known_false_positives(completed.stdout)
     sys.stdout.write(filtered)
     sys.stderr.write(completed.stderr)
-    if completed.returncode == 1 and not filtered and not completed.stderr:
-        return 0
+    if completed.returncode == VULTURE_DEAD_CODE_EXIT:
+        return int(bool(filtered or completed.stderr))
     return completed.returncode
 
 
