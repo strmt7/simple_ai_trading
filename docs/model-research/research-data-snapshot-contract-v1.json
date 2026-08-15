@@ -1,0 +1,85 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "contract_sha256": "c9493771fa966c4935b182bff8e29c2cb3cde05e25e96e430426388429c374ee",
+  "created_at_utc": "2026-08-15T14:52:00Z",
+  "cutoff": {
+    "epoch_milliseconds": 1786665600000,
+    "epoch_nanoseconds": 1786665600000000000,
+    "event_time_rule": "event_timestamp_utc_strictly_less_than_cutoff",
+    "exclusive_utc": "2026-08-14T00:00:00Z",
+    "last_included_utc_date": "2026-08-13"
+  },
+  "governance": {
+    "automatic_latest_extension_allowed": false,
+    "cutoff_change_in_place_allowed": false,
+    "dynamic_current_date_used_by_research_ingestion": false,
+    "future_snapshot_requires_new_contract_and_source_audit": true,
+    "historical_snapshot_is_append_only": false,
+    "historical_snapshot_is_immutable": true,
+    "missing_data_may_be_fabricated_or_forward_filled": false,
+    "new_columns_or_tables_may_reuse_same_cutoff": true,
+    "partial_or_missing_source_coverage_must_be_reported": true,
+    "snapshot_cutoff_implies_complete_coverage_through_cutoff": false
+  },
+  "prospective_evidence": {
+    "automatic_merge_into_historical_training_allowed": false,
+    "may_have_event_time_at_or_after_cutoff": true,
+    "must_bind_a_frozen_campaign_or_experiment_identifier": true,
+    "must_remain_partitioned_from_reusable_historical_training": true,
+    "reusable_historical_training_eligible": false
+  },
+  "registered_prospective_experiments": [
+    {
+      "contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+      "cutoff_filter_applied_to_frozen_campaign": false,
+      "experiment_id": "polymarket-round27-stage1",
+      "frozen_internal_fit_and_evaluation_permitted": true,
+      "historical_snapshot_automatically_extended": false,
+      "reusable_historical_training_eligible": false
+    },
+    {
+      "contract_sha256": "8239488145f0ffe331cf9823e5517120dda0d12eb5f366cf00c5e106318d4668",
+      "cutoff_filter_applied_to_frozen_campaign": false,
+      "experiment_id": "polymarket-round28-binance-bbo",
+      "frozen_internal_fit_and_evaluation_permitted": true,
+      "historical_snapshot_automatically_extended": false,
+      "reusable_historical_training_eligible": false
+    },
+    {
+      "contract_sha256": "eca592acb4c3f37c6d043d37664614d35994d6e9b3ebea2e801351c287a49bbf",
+      "cutoff_filter_applied_to_frozen_campaign": false,
+      "experiment_id": "action-value-round75-continuous-capture",
+      "frozen_internal_fit_and_evaluation_permitted": true,
+      "historical_snapshot_automatically_extended": false,
+      "reusable_historical_training_eligible": false
+    }
+  ],
+  "schema_version": "research-data-snapshot-contract-v1",
+  "snapshot_id": "historical-through-2026-08-13-utc-v1",
+  "scope": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "historical_research_data_repo_wide": true,
+    "markets": [
+      "Binance spot",
+      "Binance USD-M futures",
+      "Polymarket"
+    ],
+    "timestamp_basis": "event_time_utc"
+  },
+  "user_decision": {
+    "requested_cutoff_wording": "midnight of august 14, 2026",
+    "resolved_timezone": "UTC",
+    "resolved_utc": "2026-08-14T00:00:00Z"
+  }
+}
