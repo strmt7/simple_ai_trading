@@ -11,6 +11,9 @@ import pytest
 from simple_ai_trading.polymarket_round27_features import (
     POLYMARKET_ROUND27_FEATURE_NAMES,
 )
+from simple_ai_trading.polymarket_round27_model_contract import (
+    load_round27_model_contract,
+)
 from simple_ai_trading.polymarket_round28_book_ticker import (
     POLYMARKET_ROUND28_BOOK_TICKER_FEATURE_NAMES,
 )
@@ -241,9 +244,7 @@ def test_round28_selected_pair_loader_rejects_model_tampering() -> None:
             for index in range(100, 190)
         ]
     )
-    contract = _artifact(
-        "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
-    )
+    contract = load_round27_model_contract(ROOT)
     preregistration = _artifact(
         "docs/model-research/polymarket/"
         "round-028-binance-bbo-matched-ablation-preregistration-v1.json"
@@ -264,6 +265,9 @@ def test_round28_selected_pair_loader_rejects_model_tampering() -> None:
 
     assert selected == expected
     assert selected is not None
+    assert claim["round27_model_implementation_amendment_sha256"] == contract[
+        "model_implementation_amendment_sha256"
+    ]
     tampered = json.loads(json.dumps(claim))
     selected_report = next(
         report

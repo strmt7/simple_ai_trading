@@ -19,6 +19,9 @@ from .polymarket_round27_model import (
 from .polymarket_round28_book_ticker import (
     POLYMARKET_ROUND28_FEATURE_NAMES_SHA256,
 )
+from .polymarket_round28_contract_binding import (
+    validate_loaded_round27_model_contract,
+)
 from .polymarket_round28_model import (
     POLYMARKET_ROUND28_L2_PENALTIES,
     Round28FeatureView,
@@ -40,7 +43,7 @@ POLYMARKET_ROUND28_BOOTSTRAP_SCHEMA_VERSION = (
 POLYMARKET_ROUND28_PAIR_SELECTION_SCHEMA_VERSION = (
     "polymarket-round28-pair-selection-v1"
 )
-POLYMARKET_ROUND28_SELECTION_SCHEMA_VERSION = "polymarket-round28-selection-v1"
+POLYMARKET_ROUND28_SELECTION_SCHEMA_VERSION = "polymarket-round28-selection-v2"
 POLYMARKET_ROUND28_WALK_FORWARD_EMBARGO_MS = 600_000
 POLYMARKET_ROUND28_WALK_FORWARD_FOLDS = 5
 _AUTHORITY = {
@@ -510,11 +513,7 @@ def _validate_selection_inputs(
     contract: Mapping[str, object],
     preregistration: Mapping[str, object],
 ) -> tuple[dict[str, object], dict[str, object]]:
-    selected_contract = _validated_claim(
-        contract,
-        hash_field="contract_sha256",
-        label="Round 28 inherited model contract",
-    )
+    selected_contract = validate_loaded_round27_model_contract(contract)
     selected_preregistration = _validated_claim(
         preregistration,
         hash_field="preregistration_sha256",
@@ -749,6 +748,9 @@ def run_round28_matched_selection(
     body: dict[str, object] = {
         "schema_version": POLYMARKET_ROUND28_SELECTION_SCHEMA_VERSION,
         "round27_model_contract_sha256": selected_contract["contract_sha256"],
+        "round27_model_implementation_amendment_sha256": selected_contract[
+            "model_implementation_amendment_sha256"
+        ],
         "round28_preregistration_sha256": selected_preregistration[
             "preregistration_sha256"
         ],
@@ -800,6 +802,8 @@ def load_round28_selected_pair(
         != POLYMARKET_ROUND28_SELECTION_SCHEMA_VERSION
         or selected_claim.get("round27_model_contract_sha256")
         != selected_contract["contract_sha256"]
+        or selected_claim.get("round27_model_implementation_amendment_sha256")
+        != selected_contract["model_implementation_amendment_sha256"]
         or selected_claim.get("round28_preregistration_sha256")
         != selected_preregistration["preregistration_sha256"]
         or not isinstance(reports, list)
