@@ -24,7 +24,7 @@ POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION = (
     "polymarket-round27-stage1-model-contract-v1"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256 = (
-    "40f4a505aba2ec78f2425dbbdce1779f25224ac357cf9c2c014c21e31277805f"
+    "352fac731425ec4a41c610c6148f87e3a17cb63bfee8163c5dcce54ca9d9e256"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
@@ -155,6 +155,12 @@ def validate_round27_model_contract(
         or economics.get("minimum_sealed_executed_trades") != 100
         or economics.get("minimum_profitable_conditions") != 20
         or economics.get("rate_limit_or_account_authority") is not False
+        or economics.get("sealed_access_requires")
+        != [
+            "exact_persisted_selected_model_payload",
+            "source_bound_selection_economic_report",
+            "persisted_passing_selection_economic_claim",
+        ]
         or not isinstance(ai, Mapping)
         or ai.get("maximum_authority") != "veto_or_reduce"
         or ai.get("may_create_or_increase_position") is not False

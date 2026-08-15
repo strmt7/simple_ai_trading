@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import replace
+import hashlib
+import json
 
 import pytest
 
 from simple_ai_trading.polymarket_round27_experiment import (
+    build_round27_selection_economic_claim,
     run_round27_development_selection,
     run_round27_sealed_evaluation,
 )
@@ -63,6 +67,38 @@ def _contract() -> dict[str, object]:
     }
 
 
+def _economic_claim(contract, claim, model, *, passed: bool = True):
+    assert model is not None
+    report = {
+        "schema_version": "polymarket-round27-economic-replay-v1",
+        "partition_role": "selection",
+        "model_name": model.model_name,
+        "model_sha256": model.asdict()["model_sha256"],
+        "economic_edge_gate_passed": passed,
+        "orders_submitted": False,
+        "trading_authority": False,
+        "edge_claim": False,
+        "profitability_claim": False,
+    }
+    report["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            report,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+    claim = build_round27_selection_economic_claim(
+        contract=contract,
+        selection_claim=claim,
+        selected_model=model,
+        economic_report=report,
+        claim_writer=lambda value: value["claim_sha256"],
+    )
+    return claim, report
+
+
 def test_selection_claim_precedes_sealed_evaluation() -> None:
     persisted: dict[str, object] = {}
 
@@ -83,10 +119,13 @@ def test_selection_claim_precedes_sealed_evaluation() -> None:
     assert claim["economic_metrics_computed"] is False
     assert claim["edge_claim"] is False
 
+    economic_claim, economic_report = _economic_claim(_contract(), claim, model)
     sealed = run_round27_sealed_evaluation(
         samples=_samples(),
         contract=_contract(),
         selection_claim=claim,
+        selection_economic_claim=economic_claim,
+        selection_economic_report=economic_report,
         selected_model=model,
     )
 
@@ -104,11 +143,61 @@ def test_sealed_evaluation_rejects_a_tampered_selection_claim() -> None:
     )
     tampered = copy.deepcopy(claim)
     tampered["selected_model_name"] = "market_prior"
+    economic_claim, economic_report = _economic_claim(_contract(), claim, model)
 
     with pytest.raises(ValueError, match="selection claim differs"):
         run_round27_sealed_evaluation(
             samples=_samples(),
             contract=_contract(),
             selection_claim=tampered,
+            selection_economic_claim=economic_claim,
+            selection_economic_report=economic_report,
+            selected_model=model,
+        )
+
+
+def test_sealed_evaluation_rejects_same_name_different_model_artifact() -> None:
+    claim, model = run_round27_development_selection(
+        samples=_samples(),
+        contract=_contract(),
+        claim_writer=lambda value: value["claim_sha256"],
+        compute_backend="cpu",
+    )
+    assert model is not None
+    economic_claim, economic_report = _economic_claim(_contract(), claim, model)
+    different_model = replace(model, correction_scale=model.correction_scale + 0.01)
+
+    with pytest.raises(ValueError, match="selection claim differs"):
+        run_round27_sealed_evaluation(
+            samples=_samples(),
+            contract=_contract(),
+            selection_claim=claim,
+            selection_economic_claim=economic_claim,
+            selection_economic_report=economic_report,
+            selected_model=different_model,
+        )
+
+
+def test_sealed_evaluation_requires_passing_selection_economics() -> None:
+    claim, model = run_round27_development_selection(
+        samples=_samples(),
+        contract=_contract(),
+        claim_writer=lambda value: value["claim_sha256"],
+        compute_backend="cpu",
+    )
+    failed_economic_claim, failed_economic_report = _economic_claim(
+        _contract(),
+        claim,
+        model,
+        passed=False,
+    )
+
+    with pytest.raises(ValueError, match="selection economic claim differs"):
+        run_round27_sealed_evaluation(
+            samples=_samples(),
+            contract=_contract(),
+            selection_claim=claim,
+            selection_economic_claim=failed_economic_claim,
+            selection_economic_report=failed_economic_report,
             selected_model=model,
         )

@@ -28,7 +28,7 @@ flowchart LR
 | Real audited condition feature rows | 173 |
 | Fixed execution delays | 250 / 500 / 1,000 / 2,000 ms |
 | Maximum entry cost | 10 USDC per condition |
-| Focused tests | 19 passed |
+| Focused tests | 21 passed |
 
 The executable control is Polymarket's market probability. Learned models must
 beat it on condition-weighted log loss and Brier score with paired confidence
@@ -38,6 +38,10 @@ candidate per condition, walks captured ask depth and fee schedules, and settles
 only from official outcomes. Missing, stale, one-sided, reconnected, or shallow
 books receive no fill credit. The AI layer may only veto or reduce a
 mechanically valid action.
+
+The sealed role stays inaccessible until the exact selected model payload, its
+source-bound economic report, and a persisted passing economic claim all
+revalidate. A matching model name alone is insufficient.
 
 The canonical numeric design is
 [`round-027-stage1-model-contract-v1.json`](../../round-027-stage1-model-contract-v1.json).
