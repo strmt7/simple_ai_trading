@@ -1,4 +1,6 @@
 from decimal import Decimal
+import hashlib
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -17,6 +19,26 @@ from tools.publish_polymarket_round27_mechanics import _svg
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PUBLISHED_MECHANICS = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "latest"
+    / "round-027-mechanics-diagnostic"
+)
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
 
 
 def _artifact(relative: str, claim: str) -> dict[str, object]:
@@ -199,3 +221,36 @@ def test_mechanics_graph_uses_result_coverage_instead_of_hard_coded_cohort() -> 
 
     assert "53 BTC five-minute markets | 123,456 paired states" in svg
     assert "11 BTC five-minute markets | 54,983 paired states" not in svg
+
+
+def test_published_stage0_mechanics_binds_exact_latency_rejection() -> None:
+    manifest = json.loads(
+        (PUBLISHED_MECHANICS / "publication-manifest.json").read_text(
+            encoding="ascii"
+        )
+    )
+    manifest_claim = manifest.pop("manifest_sha256")
+    result = json.loads(
+        (PUBLISHED_MECHANICS / "mechanics-diagnostic.json").read_text(
+            encoding="ascii"
+        )
+    )
+    mechanics_claim = result.pop("mechanics_sha256")
+
+    assert manifest_claim == _canonical_sha256(manifest)
+    assert all(
+        hashlib.sha256((PUBLISHED_MECHANICS / name).read_bytes()).hexdigest()
+        == expected
+        for name, expected in manifest["files"].items()
+    )
+    assert mechanics_claim == _canonical_sha256(result)
+    assert result["lineage"]["cohort_role"] == "preregistered_stage0_mechanics"
+    assert result["coverage"]["eligible_market_count"] == 53
+    assert result["coverage"]["paired_quote_state_count"] == 268_393
+    assert result["complete_set_latency"]["same_state_episode_count"] == 6
+    assert result["complete_set_latency"]["venue_delay_survivor_count"] == 0
+    assert result["complete_set_latency"][
+        "minimum_sequential_survivor_count"
+    ] == 0
+    assert result["interpretation"]["edge_claim"] is False
+    assert result["interpretation"]["profitability_claim"] is False

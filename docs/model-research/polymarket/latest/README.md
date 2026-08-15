@@ -17,13 +17,15 @@ Futures trade frames whose reported price and quantity were both zero. Those
 frames are preserved as source-integrity evidence and are not treated as price
 observations.
 
-Round 27 then screened execution mechanics on the 11 condition-eligible v2
-markets. Applying each exact exchange message before pairing outcomes left four
-after-fee complete-set episodes. None survived the recorded 250 ms taker delay,
-and none survived an optimistic 500 ms sequential two-leg floor. The best
-delayed and sequential costs were 1.012066 and 1.002744 pUSD per complete set,
-respectively, before network latency. Extreme-price and late-favorite states
-remain prospective model-value hypotheses; public quotes do not prove fills.
+Round 27 screened execution mechanics on the 53 condition-eligible Stage 0
+markets. Applying each exact exchange message before pairing outcomes left six
+after-fee complete-set episodes. None survived the recorded venue delay, and
+none survived the optimistic two-delay sequential floor. The best delayed and
+sequential costs were 1.014726 and 1.002034 pUSD per complete set,
+respectively, before network or order-response latency. The screen observed
+60,863 extreme-price states across all 53 markets and 11,884 late-favorite
+states across 44 markets. These remain prospective model-value hypotheses;
+public quotes do not prove fills, settlement value, or profitability.
 
 Round 27 uses Binance's documented USD-M `@aggTrade` market stream.
 A live 33.719-second source probe recorded 29/29 finite positive trades, while

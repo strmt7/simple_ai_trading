@@ -2,13 +2,13 @@
   "diagnostic_only": true,
   "edge_claim": false,
   "files": {
-    "README.md": "7da952158ff64f91e7efc0f495fa9d22d93230cd4b748808f52e612a3855faf0",
-    "complete-set-latency.csv": "788d0729de3e3d122222d4efafc5bd9a4d8c521f386c95d2e03511d4ef378c6c",
-    "mechanics-diagnostic.json": "8313746a258d8b30886958eb7c55fc68714b891b780056f94fc7b3bfb1747e27",
-    "mechanics-diagnostic.svg": "141b09d26053ad25bc21b63280c8fbf238d33ed6cee22b1028855cc7f5986b9e"
+    "README.md": "20e9c70f3edd75076cd57320255afb501b975254a261c14c39b8e84446ecf462",
+    "complete-set-latency.csv": "af364401cafacf53afc91f47bc42fc05e651cc3d3ad77f8c896416d87a9f96a9",
+    "mechanics-diagnostic.json": "6fd8585514819c2f954048d05016573280eff87bfaa8af14c89e02f36456a8ca",
+    "mechanics-diagnostic.svg": "9144c234d8af7a7a6ca4706cff35b621e0f0f712bef507d000270034b5c7c0fd"
   },
-  "manifest_sha256": "52cbf439bfd0e3588ef528828363ba781d4eb2f1d541ec51b8b67021c50260fb",
-  "mechanics_sha256": "53ce947590eeee84eec97b33a86ebb112bcd7f66ee19787331995653e630fbcb",
+  "manifest_sha256": "b6195056d37bf03941308e45a03f4d5f2adcc739917862dd2095bf7f37a50c86",
+  "mechanics_sha256": "6dd77942d14b56dce8d81c2a8f52da1489ebc5a97396dc5745231683b627751a",
   "profitability_claim": false,
-  "schema_version": "polymarket-round27-mechanics-publication-v1"
+  "schema_version": "polymarket-round27-mechanics-publication-v2"
 }
