@@ -1,0 +1,57 @@
+{
+  "amendment_sha256": "005caf15e94b5f43faaa451b9f12754b7f5c6dd88b1b09fea5a8d3182eb7e306",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "base_preregistration_sha256": "8239488145f0ffe331cf9823e5517120dda0d12eb5f366cf00c5e106318d4668",
+  "correction": {
+    "defect": "Floating linspace calibration boundaries could omit a prediction numerically adjacent to an exact decimal boundary such as 0.60 from every ECE bin.",
+    "fix": "Map every finite clipped probability to exactly one integer bin with min(int(probability * 10), 9).",
+    "metric_scope": "expected_calibration_error_only",
+    "selection_thresholds_changed": false,
+    "targets_or_results_used_to_discover_or_choose_fix": false
+  },
+  "created_at_ms": 1786799719053,
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "round27_stage1_feature_rows_accessed_or_materialized": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false
+  },
+  "schema_version": "polymarket-round28-selection-implementation-amendment-v1",
+  "selection_implementation": {
+    "calibration": "Correction scale is selected on calibration only after the fitted correction and feature view are fixed.",
+    "family_choice": "At most one probability candidate is selected on the selection partition; after-cost economics remain mandatory and unevaluated.",
+    "l2_penalty": "Five declared penalties are compared with five expanding whole-condition training folds and a 600000 ms pre-validation embargo.",
+    "matched_ablation": "Base and augmented candidates use identical rows, targets, condition weights, market-prior offsets, and selection observations.",
+    "persistence": "Full model payloads and canonical identities are embedded in the selection claim and reconstructed fail closed.",
+    "uncertainty": "Time-ordered condition-level stationary bootstrap intervals compare augmented versus base and augmented versus market prior.",
+    "unavailable_or_failed_gate": "select no learned candidate"
+  },
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_model.py": "ccc8590be349cc64515e268149b66463ca31ccb8431e4d9bdecf7f84ea9412db",
+    "src/simple_ai_trading/polymarket_round28_selection.py": "a21b1ce02f5db70e58c10ae6d9724cfda6ad1ba01492ebdf9ab344cacaa2e5d6",
+    "tests/test_polymarket_round28_model.py": "b27be13b818f28dcf64c9c5b8c76b50f71012eeb5f6dd4346389a80b115a64f2",
+    "tests/test_polymarket_round28_preregistration.py": "4f936d19de6a69d18c1659b948347b1e5ef8b2eb87e3d0bda5af51dff543ef2a",
+    "tests/test_polymarket_round28_selection.py": "e2eef23457b5cacca38f6bc18ff4a16a75416ce638f3cc8ec5020275c300a3fc"
+  },
+  "status": "frozen_before_stage1_feature_or_outcome_access",
+  "superseded_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_model.py": "bfb37d58f5db979f4560c83dc500c8b02ae893645ce7e0eecbaa3590334783dc",
+    "tests/test_polymarket_round28_model.py": "d1485ba956584073770ce0d51ac1ecfa816545a36f270eb0d77f8833bcdd00e2"
+  },
+  "test_scope": {
+    "financial_result": false,
+    "stage1_data_used": false,
+    "synthetic_mechanics_only": true
+  }
+}

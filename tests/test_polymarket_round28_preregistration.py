@@ -21,6 +21,10 @@ PREREGISTRATION = (
     ROOT / "docs/model-research/polymarket/"
     "round-028-binance-bbo-matched-ablation-preregistration-v1.json"
 )
+IMPLEMENTATION_AMENDMENT = (
+    ROOT / "docs/model-research/polymarket/"
+    "round-028-selection-implementation-amendment-v1.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -43,6 +47,7 @@ def _text_sha256(path: Path) -> str:
 
 def test_round28_preregistration_is_hash_and_source_bound_before_targets() -> None:
     value = json.loads(PREREGISTRATION.read_text(encoding="ascii"))
+    amendment = json.loads(IMPLEMENTATION_AMENDMENT.read_text(encoding="ascii"))
     claimed = value.pop("preregistration_sha256")
 
     assert claimed == _canonical_sha256(value)
@@ -65,10 +70,17 @@ def test_round28_preregistration_is_hash_and_source_bound_before_targets() -> No
         "paper_trading_authority": False,
         "profitability_claim": False,
     }
-    assert value["source_text_sha256"] == {
-        relative: _text_sha256(ROOT / relative)
-        for relative in value["source_text_sha256"]
-    }
+    superseded = amendment["superseded_source_text_sha256"]
+    assert set(superseded) <= set(value["source_text_sha256"])
+    assert all(
+        value["source_text_sha256"][relative] == expected
+        for relative, expected in superseded.items()
+    )
+    assert all(
+        expected == _text_sha256(ROOT / relative)
+        for relative, expected in value["source_text_sha256"].items()
+        if relative not in superseded
+    )
 
 
 def test_round28_preregistration_binds_exact_incremental_feature_contract() -> None:
@@ -96,3 +108,39 @@ def test_round28_preregistration_binds_exact_incremental_feature_contract() -> N
         "the 96 incremental BBO fields only"
     )
     assert value["promotion_gates"]["accuracy"].endswith("neither can promote alone.")
+
+
+def test_round28_selection_amendment_is_hash_and_current_source_bound() -> None:
+    value = json.loads(IMPLEMENTATION_AMENDMENT.read_text(encoding="ascii"))
+    claimed = value.pop("amendment_sha256")
+
+    assert claimed == _canonical_sha256(value)
+    assert (
+        value["base_preregistration_sha256"]
+        == json.loads(PREREGISTRATION.read_text(encoding="ascii"))[
+            "preregistration_sha256"
+        ]
+    )
+    assert value["status"] == "frozen_before_stage1_feature_or_outcome_access"
+    assert value["knowledge_at_freeze"] == {
+        "ai_assist_economic_metrics_computed": False,
+        "model_fitted_on_stage1": False,
+        "official_outcomes_accessed": False,
+        "performance_metrics_computed": False,
+        "round27_stage1_feature_rows_accessed_or_materialized": False,
+        "sealed_partition_accessed": False,
+        "selection_partition_accessed": False,
+    }
+    assert value["authority"] == {
+        "credentials_used": False,
+        "edge_claim": False,
+        "execution_connected": False,
+        "live_trading_authority": False,
+        "orders_submitted": False,
+        "paper_trading_authority": False,
+        "profitability_claim": False,
+    }
+    assert value["source_text_sha256"] == {
+        relative: _text_sha256(ROOT / relative)
+        for relative in value["source_text_sha256"]
+    }

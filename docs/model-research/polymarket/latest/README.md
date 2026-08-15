@@ -49,6 +49,12 @@ must use identical rows, labels, weights, market-prior offsets, and execution
 scenarios. The large OpenMarket null result remains the prior; prediction
 uplift alone cannot establish after-cost edge or profitability.
 
+The pre-target [selection implementation amendment](../round-028-selection-implementation-amendment-v1.json)
+adds chronological whole-condition folds, a 10-minute embargo, calibration-only
+scaling, paired stationary bootstrap gates, and fail-closed model persistence.
+It also corrects an ECE boundary-binning defect discovered with synthetic tests.
+No Stage 1 feature, outcome, selection, economic, or sealed result was used.
+
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
 Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order

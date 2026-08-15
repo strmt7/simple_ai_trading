@@ -164,6 +164,21 @@ def test_round28_metrics_reject_single_class_and_ablation_rejects_wrong_views() 
         )
 
 
+def test_round28_calibration_bins_include_exact_decimal_boundaries() -> None:
+    samples = tuple(
+        replace(
+            _sample(index, role="selection", target=index % 2),
+            market_prior_probability=0.6,
+        ).validated()
+        for index in range(20)
+    )
+    partition = Round28Partition.from_samples(samples, role="selection")
+
+    metrics = round28_probability_metrics(partition, [0.6] * len(samples))
+
+    assert metrics.expected_calibration_error == pytest.approx(0.1)
+
+
 def test_round28_model_sample_rejects_base_augmented_drift() -> None:
     sample = _sample(0, role="train", target=0)
     with pytest.raises(ValueError, match="model sample differs"):

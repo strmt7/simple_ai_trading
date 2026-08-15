@@ -372,11 +372,9 @@ def round28_probability_metrics(
             )
         )
     ece = 0.0
-    for lower in np.linspace(0.0, 0.9, 10):
-        upper = lower + 0.1
-        selected = (probability >= lower) & (
-            probability <= upper if upper >= 1.0 else probability < upper
-        )
+    calibration_bins = np.minimum((probability * 10.0).astype(np.int64), 9)
+    for bin_index in range(10):
+        selected = calibration_bins == bin_index
         bucket_weight = float(np.sum(weight[selected]))
         if bucket_weight <= 0.0:
             continue
