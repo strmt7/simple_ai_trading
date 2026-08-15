@@ -1,6 +1,9 @@
 # Hash-bound evidence must retain the exact bytes recorded in its manifest.
+.gitattributes text eol=lf
 *.py text eol=lf
 *.sh text eol=lf
+pyproject.toml text eol=lf
+uv.lock text eol=lf
 docs/ai/foundation/latest/* text eol=lf
 docs/ai/risk-review/** text eol=lf
 src/simple_ai_trading/ai_model_benchmark.py text eol=lf
@@ -46,3 +49,4 @@ docs/model-research/polymarket/round-025-target-free-sequence-inference-contract
 docs/model-research/polymarket/round-025-terminal-receipt-materialization-design-v1.json text eol=lf
 docs/model-research/polymarket/round-025-twap-core-campaign-plan-publication-2026-08-10.json text eol=lf
 docs/model-research/polymarket/round-025-twap-wire-schema-correction-v1.json text eol=lf
+docs/model-research/polymarket/round-027-*.json text eol=lf
