@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 
 AUDIT_SCHEMA_VERSION = "polymarket-condition-replay-audit-v1"
-MANIFEST_SCHEMA_VERSION = "polymarket-condition-replay-publication-v1"
+MANIFEST_SCHEMA_VERSION = "polymarket-condition-replay-publication-v2"
 
 
 def _canonical_json(value: object) -> str:
@@ -159,7 +159,7 @@ def _tables(
     return conditions, segments
 
 
-def _render(report: Mapping[str, object], path: Path) -> None:
+def _render(report: Mapping[str, object], path: Path, *, title: str) -> None:
     conditions, segments = _tables(report)
     started = _utc(int(report["run_started_at_ms"]))
     ended = _utc(int(report["run_ended_at_ms"]))
@@ -185,7 +185,7 @@ def _render(report: Mapping[str, object], path: Path) -> None:
     )
     figure.patch.set_facecolor("white")
     figure.suptitle(
-        "Round 26 target-free replay eligibility",
+        f"{title} target-free replay eligibility",
         fontsize=16,
         fontweight="bold",
         color="#17242d",
@@ -268,7 +268,15 @@ def _render(report: Mapping[str, object], path: Path) -> None:
     _write(path, "\n".join(line.rstrip() for line in svg.splitlines()) + "\n")
 
 
-def publish(source: Path, output_dir: Path) -> dict[str, object]:
+def publish(
+    source: Path,
+    output_dir: Path,
+    *,
+    title: str = "Polymarket",
+) -> dict[str, object]:
+    selected_title = str(title or "").strip()
+    if not selected_title or len(selected_title) > 80:
+        raise ValueError("condition replay publication title is invalid")
     report = _load(source)
     output_dir.mkdir(parents=True, exist_ok=True)
     report_path = output_dir / "condition-replay-audit.json"
@@ -286,11 +294,11 @@ def publish(source: Path, output_dir: Path) -> dict[str, object]:
     segment_columns = tuple(segments[0]) if segments else ()
     _write(segments_path, _csv(segment_columns, segments))
     chart_path = output_dir / "condition-replay-eligibility.svg"
-    _render(report, chart_path)
+    _render(report, chart_path, title=selected_title)
     readme_path = output_dir / "README.md"
     _write(
         readme_path,
-        f"""# Round 26 replay eligibility
+        f"""# {selected_title} replay eligibility
 
 > Target-free data-integrity evidence only. No P&L, edge, profitability, paper-trading, or live-trading claim.
 
@@ -323,6 +331,7 @@ the numeric sources of truth; the SVG is derived from them.
     }
     body: dict[str, object] = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
+        "title": selected_title,
         "audit_sha256": report["audit_sha256"],
         "diagnostic_only": True,
         "edge_claim": False,
@@ -341,8 +350,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--audit", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--title", default="Polymarket")
     args = parser.parse_args(argv)
-    print(json.dumps(publish(args.audit, args.output_dir), indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            publish(args.audit, args.output_dir, title=args.title),
+            indent=2,
+            sort_keys=True,
+        )
+    )
     return 0
 
 
