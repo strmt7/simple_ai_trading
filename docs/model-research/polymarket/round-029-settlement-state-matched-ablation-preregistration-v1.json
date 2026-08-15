@@ -1,0 +1,146 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786833025834,
+  "data_lineage": {
+    "round27_campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+    "round27_model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+    "round28_bbo_preregistration_sha256": "8239488145f0ffe331cf9823e5517120dda0d12eb5f366cf00c5e106318d4668",
+    "live_product_regime_audit_sha256": "b5a38ce4c562762f056c435a527f882b003e5659330f3ce0a1d313b5697167a0"
+  },
+  "experiment": {
+    "diagnostic_pair": {
+      "augmented": "round29_settlement_augmented_l2_offset_logistic",
+      "base": "round27_base_l2_offset_logistic",
+      "purpose": "measure the six settlement interactions without Binance BBO fields"
+    },
+    "primary_pair": {
+      "augmented": "round29_bbo_settlement_augmented_l2_offset_logistic",
+      "base": "round28_bbo_augmented_l2_offset_logistic",
+      "purpose": "test incremental settlement-state value after the frozen BBO overlay"
+    },
+    "shared_controls": {
+      "correction_scales": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "l2_penalties": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0
+      ],
+      "market_prior_logit_offset_required": true,
+      "same_rows_labels_weights_offsets_and_execution_scenarios": true
+    },
+    "tree_candidate_change": "none; the test is deliberately limited to whether explicit interactions repair the linear residual candidate",
+    "view_selection": "the primary pair controls promotion; the diagnostic pair is reported and cannot promote alone"
+  },
+  "feature_contract": {
+    "bbo_base_feature_count": 278,
+    "combined_feature_count": 284,
+    "combined_feature_names_sha256": "4c9757449e373e8a536783d6062b6694516e6ac3db2235804461a0e3d34d8510",
+    "round27_base_feature_count": 182,
+    "settlement_augmented_feature_count": 188,
+    "settlement_augmented_feature_names_sha256": "e927dfdffd20fa924d4942b61eaff9e632c1aa1d2e0af73ddfa51afe577a7a07",
+    "settlement_feature_count": 6,
+    "settlement_feature_names": [
+      "settlement.twap_current_side",
+      "settlement.twap_margin_per_sqrt_remaining_second",
+      "settlement.twap_margin_per_remaining_second",
+      "settlement.twap_diffusion_state_asinh",
+      "settlement.twap_signed_path_efficiency",
+      "settlement.twap_margin_x_elapsed_fraction"
+    ],
+    "settlement_feature_names_sha256": "37fba18e57d555b2ed82972fbc1981e4eadd01f45a40faa69a0820acc22de6f2",
+    "source_fields": [
+      "phase.elapsed_fraction",
+      "phase.remaining_seconds",
+      "twap.log_distance_from_open",
+      "twap.variance_rate_per_second",
+      "twap.path_efficiency"
+    ],
+    "storage": "deterministic hash-bound overlay only; no raw or base feature duplication",
+    "transform_definitions": {
+      "diffusion_state": "asinh(log_margin / max(sqrt(variance_rate_per_second * remaining_seconds), binary64_ulp_at_one))",
+      "margin_per_remaining": "log_margin / remaining_seconds",
+      "margin_per_sqrt_remaining": "log_margin / sqrt(remaining_seconds)",
+      "margin_x_elapsed": "log_margin * elapsed_fraction",
+      "signed_path_efficiency": "sign(log_margin) * path_efficiency",
+      "twap_current_side": "-1 for negative log margin, 0 for an exact tie, and 1 for positive log margin"
+    }
+  },
+  "hypothesis": {
+    "alternative": "Explicit causal interactions between exact observed TWAP60 margin, time remaining, realized TWAP variance, and path efficiency improve calibrated settlement probability and after-cost value beyond the same market-prior residual without those transforms.",
+    "contract_gap": "The Round 27 design named distance-to-strike interacted with time remaining, but the frozen 182-field corpus stores margin and remaining time only as separate inputs. A linear residual cannot express that interaction without explicit transforms.",
+    "null": "The six transforms add no matched out-of-sample probability or after-cost value after the executable Polymarket prior and the Round 28 Binance BBO overlay.",
+    "prior": "Strong null. Public high-frequency studies report forecast discrimination or quote response without corresponding executable after-cost edge."
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "round27_stage1_feature_rows_accessed_or_materialized": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "settlement_overlay_synthetic_tests_passed": true
+  },
+  "oracle_boundary": {
+    "chainlink_twap_is_observed_state_only": true,
+    "custom_sampling_boundaries_weighting_rounding_and_missing_input_behavior_are_unknown": true,
+    "independent_twap_reconstruction_forbidden": true,
+    "normal_or_diffusion_settlement_probability_claim": false,
+    "official_resolved_outcome_remains_label_authority": true,
+    "signed_e18_value_preserved_by_the_parent_feature_pipeline": true
+  },
+  "preregistration_sha256": "0f07350ceb946e6665415a9d3cce400bc2ed4d0483cf743b4b592b15ba8dec34",
+  "promotion_gates": {
+    "accuracy": "Condition-weighted accuracy and balanced accuracy are reported; neither can promote alone.",
+    "economic": "The primary augmented arm must improve source-bound after-cost net PnL and preserve every Round 27 execution, delay, concentration, drawdown, and confidence gate.",
+    "minimum_population": "Every inherited Round 27 role and economic population minimum remains unchanged.",
+    "probability": "The primary augmented arm must improve condition-weighted log loss and Brier score, with paired condition-bootstrap 95 percent upper bounds below zero.",
+    "robustness": "Report calibration, ROC-AUC, accepted coverage, source age, latency, and volatility/time-to-close strata; positive point estimates without statistical and economic gates are rejected.",
+    "sealed": "No sealed access unless one persisted primary pair passes all selection probability and economic gates."
+  },
+  "research_basis": [
+    {
+      "finding": "Polymarket documents the feed as a Chainlink-computed 60-second lookback TWAP and requires exact fixed-point values and observation-time freshness.",
+      "url": "https://docs.polymarket.com/market-data/chainlink-twap"
+    },
+    {
+      "finding": "Polymarket states that the custom feed sampling boundaries, weighting, rounding, and missing-input behavior are not public and warns against independent reproduction.",
+      "url": "https://docs.polymarket.com/market-data/chainlink-twap"
+    },
+    {
+      "finding": "OpenMarket reports a measurable Polymarket response to large Binance moves but a null out-of-sample model and negative simulated economics after stated costs.",
+      "url": "https://arxiv.org/abs/2607.26245"
+    },
+    {
+      "finding": "Deep order-book forecasting research warns that predictive metrics do not necessarily imply actionable transactions.",
+      "url": "https://arxiv.org/abs/2403.09267"
+    },
+    {
+      "finding": "A recent five-minute Polymarket study reports that the currently leading side had high direction accuracy but explicitly lacks executable books, spreads, and cost evidence; current-side state is therefore only a candidate feature.",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6863546"
+    }
+  ],
+  "schema_version": "polymarket-round29-settlement-state-matched-ablation-preregistration-v1",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_features.py": "d74d97b9bab0dba46d2b207b845da1d4b8028972bc636e0674f759cecb22f027",
+    "src/simple_ai_trading/polymarket_round28_book_ticker.py": "f8081a46cb661654fcbcea3b900ca07db7986c8ff68fda1864a05af1008969a4",
+    "src/simple_ai_trading/polymarket_round29_settlement_features.py": "566cfa38bd959763c1dbd4180c00a9d073dd158124e38ca32663899f8c676f0a"
+  },
+  "status": "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
+}
