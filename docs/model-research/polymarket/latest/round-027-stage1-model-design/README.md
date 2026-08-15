@@ -34,11 +34,13 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused Round 27 tests | 72 passed |
-| Qwen3.5-9B cold / warm structured inference | 5.36 s / 0.53 s |
+| Focused Round 27 tests | 74 passed |
+| Qwen3.5-9B cold / warm structured inference | 5.13 s / 0.52 s |
 | Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
 | Qwen3.5-9B host runtime | Qualified for later matched ablation only |
-| ODA-Fin-SFT-8B host runtime | Not installed or qualified |
+| ODA-Fin-SFT-8B cold / warm structured inference | 7.94 s / 0.44 s |
+| ODA-Fin-SFT-8B AMD GPU residency | 6.61 / 6.61 GB (100%) |
+| ODA-Fin-SFT-8B host runtime | Qualified for later matched ablation only |
 | AI promotion / edge / profitability | No / no / no |
 
 The executable control is Polymarket's market probability. Learned models must
@@ -51,11 +53,15 @@ books receive no fill credit. The AI layer may only veto or reduce a
 mechanically valid action.
 
 The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
-binds Qwen3.5-9B to its exact Ollama digest and verifies strict structured
-output with `think=false` and full RX 9070 XT residency. This is a compatibility
-result, not an intelligence or performance result. ODA still requires an exact
-artifact qualification, and neither candidate can be promoted unless the later
-target-free matched ablation improves after-cost selection results.
+binds both candidates to exact Ollama, upstream, and quantized-artifact hashes,
+and verifies strict structured output with `think=false`, one-model-at-a-time
+full RX 9070 XT residency, and observed unload after each probe. This is a
+compatibility result, not an intelligence or performance result. Neither
+candidate can be promoted unless the later target-free matched ablation
+improves after-cost selection results.
+The ODA Q6 artifact is a third-party quantization pinned by repository revision
+and file SHA-256; this receipt does not claim an independently reproduced
+conversion from the official upstream weights.
 
 The current feature contract includes 5, 10, and 20-minute spot and futures
 context. Decisions without at least 99.5% of the 20-minute receipt span, or with
