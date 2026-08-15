@@ -1,0 +1,44 @@
+{
+  "amendment_sha256": "9fc117a479f931d54e31bd2db494b039d081ded9ce6c4478d2c08c7d39d61d04",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "base_preregistration_sha256": "8239488145f0ffe331cf9823e5517120dda0d12eb5f366cf00c5e106318d4668",
+  "created_at_ms": 1786800564590,
+  "economic_implementation": {
+    "abstention_accounting": "Every evaluated condition contributes zero PnL when its model abstains or receives no fill.",
+    "book_residency": "A caller-supplied batch factory is replayed once per model so recorded books remain bounded in memory and are never duplicated on disk.",
+    "execution_identity": "Base and augmented probabilities are evaluated through the frozen Round 27 fee, depth, FOK, latency, outcome, and confidence implementation.",
+    "matched_population": "The Round 28 partition is projected to Round 27 only after exact sample, feature-row, offset, target, weight, and condition identity checks.",
+    "promotion": "Every fixed delay requires the augmented Round 27 scenario gate, strictly greater after-cost net PnL, positive paired mean and stationary-bootstrap lower bound, and no worse maximum drawdown.",
+    "sealed_policy": "Selection economics cannot access the sealed role and cannot grant paper or live order authority.",
+    "unavailable_or_failed_gate": "reject the augmented candidate"
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "round27_stage1_feature_rows_accessed_or_materialized": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false
+  },
+  "schema_version": "polymarket-round28-economic-implementation-amendment-v1",
+  "selection_implementation_amendment_sha256": "005caf15e94b5f43faaa451b9f12754b7f5c6dd88b1b09fea5a8d3182eb7e306",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_economics.py": "c895c416ff5f73ae45bde1094b23fe5ce9e2c0b739fd8b8612dd099bddda47c1",
+    "tests/test_polymarket_round28_economics.py": "64ca596819661c3920cfdc6b98d7f9971982ab832671b0be253eb764dacf2310"
+  },
+  "status": "frozen_before_stage1_feature_or_outcome_access",
+  "test_scope": {
+    "financial_result": false,
+    "stage1_data_used": false,
+    "synthetic_mechanics_only": true
+  }
+}
