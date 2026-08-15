@@ -1,0 +1,66 @@
+{
+  "ai_contract_sha256": "6f0084370cd8302fe09df5f9d1caec627aaea2fe219ef435216f95a213fcf117",
+  "ai_implementation_amendment_sha256": "c158dd5a5a7e7956eab4eba7b04420da5518fce380ad99e727bf3c3bf321b681",
+  "amendment_sha256": "41f92d0625ee9fb4c53a4d66c8decdb3f5c053c44ce146316778e7431ba2b04d",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786804514980,
+  "implemented_controls": [
+    "streamed_exact_artifact_size_and_sha256_verification_with_bounded_memory",
+    "sanitized_tamper_evident_host_failure_receipts_without_raw_paths_urls_or_credentials",
+    "restart_validation_for_host_case_inference_economic_and_selection_artifacts",
+    "target_free_case_process_has_no_target_store_outcome_or_economic_report_argument",
+    "one_immutable_prompt_population_shared_by_every_qualified_candidate",
+    "measured_per_case_wall_latency_and_fail_closed_inference_receipts",
+    "mandatory_model_unload_and_exclusive_full_gpu_residency_gate",
+    "single_bounded_order_book_scan_shared_by_all_qualified_ai_candidates",
+    "zero_order_book_scan_restart_when_all_economic_reports_pass_lineage_validation",
+    "complete_three_candidate_accounting_with_host_rejection_or_economic_evaluation",
+    "minimum_two_economically_evaluated_candidates_before_nomination",
+    "nomination_only_after_positive_matched_after_cost_gates_at_every_frozen_delay",
+    "no_order_account_credential_paper_or_live_trading_authority"
+  ],
+  "knowledge_at_freeze": {
+    "ai_candidate_economic_metrics_computed": false,
+    "official_outcomes_accessed_by_ai_operator": false,
+    "round28_case_panel_materialized": false,
+    "round28_feature_rows_accessed_or_materialized": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed_by_ai_operator": false,
+    "stage1_a_capture_running": true
+  },
+  "limitations": [
+    "ODA-Fin-RL-8B_has_not_been_downloaded_or_host_qualified",
+    "no_real_round28_case_panel_inference_or_economic_report_exists",
+    "no_ai_uplift_edge_or_profitability_claim_exists",
+    "one_use_sealed_ai_confirmation_operator_remains_to_be_implemented",
+    "stage1_primary_capture_slots_are_not_terminal"
+  ],
+  "schema_version": "polymarket-round28-ai-operator-implementation-amendment-v1",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_ai_batch_economics.py": "b26f0afce827c898bb2a801150714de399c9a6bcb132ab5ad4203145d7bb726e",
+    "src/simple_ai_trading/polymarket_round28_ai_selection.py": "148ee8578921040916c6aa35df0331ed7ecec28e9358a3f5478528bec2ff1b48",
+    "tests/test_polymarket_round28_ai_batch_economics.py": "f437119fcc5a4e21a0d5694bc08715a1793762fc66af9ed7c2f96945fcfc90c4",
+    "tests/test_polymarket_round28_ai_selection.py": "36762f22a6eb0fb6ca3f7f14f1acec366427a02d17bfcfa4cce5dafb611a6031",
+    "tools/materialize_polymarket_round28_ai_cases.py": "184cc48bc701f3cd45bac4247964f0fdd725dc0a449b0ea57946e584961f8330",
+    "tools/probe_polymarket_round28_ai_host.py": "690537f08e079c07185fcaf7b54b07f6d86d8b6c53722a50779bd6d06b2ffc03",
+    "tools/run_polymarket_round28_ai_batch_economics.py": "dc553dc18723a4064f0a801dee8e497411963dedb6104610678b4c89a0ced9e0",
+    "tools/run_polymarket_round28_ai_inference.py": "e8b979ffce9d8ae7ded61e5af6189feba4002ea51ae06c908d60c923accdf544",
+    "tools/select_polymarket_round28_ai_candidate.py": "570ea080bc563b1181ca0ee44be1988f212b2abef38c1a9dbf7ca18bfea5e282"
+  },
+  "status": "source_bound_target_free_operator_before_stage1_outcome_access",
+  "test_scope": {
+    "command_import_and_help_surfaces_checked": 5,
+    "financial_result": false,
+    "focused_tests_passed": 18,
+    "stage1_data_used": false,
+    "synthetic_mechanics_only": true
+  }
+}
