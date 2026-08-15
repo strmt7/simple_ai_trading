@@ -27,8 +27,10 @@ respectively, before network or order-response latency. The screen observed
 states across 44 markets. These remain prospective model-value hypotheses;
 public quotes do not prove fills, settlement value, or profitability.
 
-Stage 1 is now frozen before capture. Its three fixed 10.5-hour primary
-windows rotate across 09:00, 16:00, and 23:00 UTC starts and schedule 378 BTC
+Stage 1 is frozen and its Stage 1-A capture started on schedule at 09:00 UTC on
+2026-08-15. No Stage 1 feature row or outcome has been accessed. Its three
+fixed 10.5-hour primary windows rotate across 09:00, 16:00, and 23:00 UTC
+starts and schedule 378 BTC
 five-minute intervals across at least three UTC dates. Each slot uses a
 separate 2.5 GiB-capped database. A fourth fixed contingency window is allowed
 only if target-free replay of all primary slots admits fewer than 300 markets.
@@ -42,6 +44,14 @@ conditions, but the original minimum was 100 executions. A frozen
 [pre-capture amendment](../round-027-economic-population-amendment-v1.json)
 sets the selection and sealed minimums to 60. It is not a trade quota; risk
 checks remain unchanged, and fewer fills must yield insufficient evidence.
+Before any Stage 1 feature or outcome access, a source audit also found that
+the LightGBM candidate was implemented as a standalone classifier rather than
+the frozen market-prior residual. The
+[offset correction amendment](../round-027-lightgbm-offset-correction-amendment-v1.json)
+binds the old and corrected source hashes, trains with the market logit as
+`init_score`, and restores that logit around the raw tree margin at inference.
+Its synthetic AMD OpenCL check is implementation evidence, not performance or
+profitability evidence.
 The separate [matched AI contract](../round-027-ai-matched-ablation-contract-v1.json)
 also freezes target-free, latency-charged Qwen-versus-ODA selection and a
 one-use sealed confirmation. Host compatibility alone is not AI uplift.

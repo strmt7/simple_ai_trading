@@ -32,6 +32,9 @@ POLYMARKET_ROUND27_SELECTION_ECONOMIC_SCHEMA_VERSION = (
     "polymarket-round27-selection-economic-claim-v1"
 )
 POLYMARKET_ROUND27_SEALED_SCHEMA_VERSION = "polymarket-round27-sealed-evaluation-v1"
+POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD = (
+    "model_implementation_amendment_sha256"
+)
 
 
 def _canonical_json(value: object) -> str:
@@ -112,12 +115,20 @@ def _validate_selection_claim(
     claimed_model_payload = (
         selected_reports[0].get("model") if len(selected_reports) == 1 else None
     )
+    expected_amendment = contract.get(POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD)
+    amendment_matches = (
+        POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD not in claim
+        if expected_amendment is None
+        else claim.get(POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD)
+        == expected_amendment
+    )
     if (
         claimed_sha256 != _canonical_sha256(claim)
         or claim.get("schema_version") != POLYMARKET_ROUND27_SELECTION_SCHEMA_VERSION
         or claim.get("contract_sha256") != contract_sha256
         or claim.get("sealed_partition_accessed") is not False
         or claim.get("selected_model_name") != model_name
+        or not amendment_matches
         or (model_payload is not None and len(selected_reports) != 1)
         or (
             model_payload is not None
@@ -373,6 +384,11 @@ def run_round27_development_selection(
         "profitability_claim": False,
         "trading_authority": False,
     }
+    implementation_amendment = contract.get(
+        POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD
+    )
+    if implementation_amendment is not None:
+        body[POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD] = implementation_amendment
     body["claim_sha256"] = _canonical_sha256(body)
     written = claim_writer(body)
     if written != body["claim_sha256"]:

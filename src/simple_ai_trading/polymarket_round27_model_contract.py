@@ -21,6 +21,10 @@ from .polymarket_round27_model import (
     POLYMARKET_ROUND27_L2_PENALTIES,
     Round27RoleInterval,
 )
+from .polymarket_round27_model_amendment import (
+    POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD,
+    load_round27_model_amendment,
+)
 from .polymarket_round27_stage1_capture import load_round27_stage1_contract
 
 
@@ -251,14 +255,27 @@ def validate_round27_model_contract(
         if interval.start_ms < previous_end:
             raise ValueError("Round 27 model contract partitions overlap")
         previous_end = interval.end_ms
+    amendment = load_round27_model_amendment(root)
+    replacement_sources = amendment.get("superseded_source_text_sha256")
+    if not isinstance(replacement_sources, Mapping):
+        raise ValueError("Round 27 model amendment source binding differs")
     for relative, expected in sources.items():
         relative_path = Path(str(relative))
         path = (root / relative_path).resolve()
+        replacement = replacement_sources.get(str(relative))
+        effective_expected = expected
+        if replacement is not None:
+            if (
+                not isinstance(replacement, Mapping)
+                or replacement.get("frozen") != expected
+            ):
+                raise ValueError("Round 27 model amendment source binding differs")
+            effective_expected = replacement.get("corrected")
         if (
             relative_path.is_absolute()
             or root not in path.parents
             or not path.is_file()
-            or _file_sha256(path) != _sha256(expected)
+            or _file_sha256(path) != _sha256(effective_expected)
         ):
             raise ValueError("Round 27 model contract source binding differs")
     stage1 = load_round27_stage1_contract(
@@ -267,7 +284,11 @@ def validate_round27_model_contract(
     )
     if stage1.contract_sha256 != _STAGE1_CONTRACT_SHA256:
         raise ValueError("Round 27 model contract campaign binding differs")
-    return {**payload, "contract_sha256": claimed}
+    return {
+        **payload,
+        "contract_sha256": claimed,
+        POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD: amendment["amendment_sha256"],
+    }
 
 
 def load_round27_model_contract(

@@ -20,7 +20,7 @@ from .polymarket_round27_features import (
 )
 
 
-POLYMARKET_ROUND27_MODEL_SCHEMA_VERSION = "polymarket-round27-offset-model-v1"
+POLYMARKET_ROUND27_MODEL_SCHEMA_VERSION = "polymarket-round27-offset-model-v2"
 POLYMARKET_ROUND27_METRICS_SCHEMA_VERSION = "polymarket-round27-probability-metrics-v1"
 POLYMARKET_ROUND27_L2_PENALTIES = (0.01, 0.1, 1.0, 10.0, 100.0)
 POLYMARKET_ROUND27_CORRECTION_SCALES = (0.0, 0.25, 0.5, 0.75, 1.0)
@@ -454,12 +454,13 @@ class Round27LightGbmOffsetModel:
         self, features: NDArray[np.float64], offsets: NDArray[np.float64]
     ) -> NDArray[np.float64]:
         booster = lgb.Booster(model_str=self.model_text)
-        raw = np.asarray(
-            booster.predict(np.asarray(features, dtype=np.float64)), dtype=np.float64
-        )
         correction = np.asarray(
-            [_logit(value) for value in raw], dtype=np.float64
-        ) - np.asarray(offsets, dtype=np.float64)
+            booster.predict(
+                np.asarray(features, dtype=np.float64),
+                raw_score=True,
+            ),
+            dtype=np.float64,
+        )
         return _sigmoid(
             np.asarray(offsets, dtype=np.float64) + self.correction_scale * correction
         )
@@ -515,6 +516,7 @@ def fit_round27_lightgbm_offset(
         partition.features,
         label=partition.targets,
         weight=partition.weights,
+        init_score=partition.offsets,
         feature_name=list(POLYMARKET_ROUND27_FEATURE_NAMES),
         free_raw_data=False,
     )

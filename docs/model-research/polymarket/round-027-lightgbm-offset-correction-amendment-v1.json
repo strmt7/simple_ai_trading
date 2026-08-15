@@ -1,0 +1,62 @@
+{
+  "amendment_sha256": "52942735f5cd2b7fc56312e87349ba6dc8e65b1b3de0860b19ed5a4655840a09",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "profitability_claim": false
+  },
+  "base_model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+  "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+  "correction": {
+    "inference": "sigmoid(market_prior_logit + correction_scale * lightgbm_raw_margin)",
+    "lightgbm_init_score": "market_prior_logit",
+    "model_schema_version": "polymarket-round27-offset-model-v2",
+    "selection_and_economic_gates_changed": false
+  },
+  "created_at_ms": 1786785204610,
+  "discovery_audit": {
+    "correct_offset_log_loss": 0.31512953226896784,
+    "installed_lightgbm_version": "4.6.0",
+    "market_prior_log_loss": 0.34488331976869585,
+    "old_standalone_interpretation_log_loss": 0.677261369555998,
+    "old_training_used_market_prior_as_init_score": false,
+    "old_tree_prediction_was_a_market_prior_residual": false,
+    "synthetic_host_check_is_edge_or_profitability_evidence": false
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "stage1_capture_started": true,
+    "stage1_feature_rows_accessed_or_materialized": false
+  },
+  "rationale": "The frozen candidate was described as a bounded market-prior residual, but it trained a standalone classifier and subtracted the prior only after prediction. LightGBM does not persist a Dataset init_score in model text. Offset training must therefore use the market logit as init_score and inference must add that same row-specific logit to the persisted raw tree margin.",
+  "research_basis": [
+    {
+      "purpose": "official_lightgbm_dataset_init_score_api",
+      "url": "https://lightgbm.readthedocs.io/en/stable/pythonapi/lightgbm.Dataset.html"
+    },
+    {
+      "purpose": "official_lightgbm_raw_score_prediction_api",
+      "url": "https://lightgbm.readthedocs.io/en/stable/pythonapi/lightgbm.Booster.html"
+    }
+  ],
+  "schema_version": "polymarket-round27-lightgbm-offset-correction-amendment-v1",
+  "status": "frozen_after_capture_start_before_stage1_feature_or_outcome_access",
+  "superseded_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_experiment.py": {
+      "corrected": "aef524a2a1e986946d007fcaf1290c81428a2a4e820809d2f7f6bcffb7c83653",
+      "frozen": "9a97a253668e9ef2487c042c3574b4bea2f5cf7e6fcd5267a1f6e6fc1ed5321e"
+    },
+    "src/simple_ai_trading/polymarket_round27_model.py": {
+      "corrected": "a035e6b1cb777a83e396aa2aae66e3dc48ce4712b3c2209d62804405243f85c1",
+      "frozen": "5eedf0a5e6f7c0317c795d99ad7425ff2e262c2d527c519d4f9d9cee7f8e8740"
+    }
+  }
+}
