@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from simple_ai_trading.ai_runtime import OllamaResidencyReport
 from simple_ai_trading.polymarket_round27_ai import (
     POLYMARKET_ROUND27_ODA_HOST_CANDIDATE,
@@ -11,6 +13,7 @@ from simple_ai_trading.polymarket_round27_ai_cases import (
     materialize_round27_ai_cases,
 )
 from simple_ai_trading.polymarket_round27_ai_inference import (
+    round27_ai_inference_report_from_mapping,
     round27_ai_ablation_request,
     run_round27_ai_inference,
 )
@@ -18,6 +21,7 @@ from simple_ai_trading.polymarket_round27_economics import (
     Round27EconomicBookBatch,
     Round27EconomicConfig,
 )
+from simple_ai_trading.polymarket_round27_operator import canonical_sha256
 from test_polymarket_round27_ai_cases import _FixedModel, _rows
 from test_polymarket_round27_economics import _population
 
@@ -210,3 +214,60 @@ def test_round27_ai_invalid_semantics_fail_closed_and_disqualify() -> None:
     assert report.responses[0].status == "invalid_response"
     assert report.responses[0].decision == "reject"
     assert report.candidate_eligible_for_matched_evaluation is False
+
+
+def test_round27_ai_inference_report_round_trip_rejects_persisted_drift() -> None:
+    panel = _panel(1)
+    candidate = POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE
+
+    def post_json(_url, payload, _timeout):
+        prompt = payload.get("prompt")
+        if prompt is None:
+            return {}
+        if str(prompt).startswith("Runtime conformance probe"):
+            return _raw(candidate.runtime_model, "reject", "missing_liquidity")
+        return _raw(candidate.runtime_model, "unchanged", "no_material_risk")
+
+    residency_calls = 0
+
+    def inspect_residency(*_args, **_kwargs):
+        nonlocal residency_calls
+        residency_calls += 1
+        loaded = residency_calls == 1
+        return OllamaResidencyReport(
+            requested_model=candidate.runtime_model,
+            status="gpu_resident" if loaded else "unloaded",
+            loaded_model=candidate.runtime_model if loaded else None,
+            digest=candidate.runtime_digest if loaded else None,
+            size_bytes=100 if loaded else None,
+            size_vram_bytes=100 if loaded else None,
+            vram_to_model_ratio=1.0 if loaded else None,
+        ).validated()
+
+    clock = 0
+
+    def monotonic_ns():
+        nonlocal clock
+        clock += 100_000_000
+        return clock
+
+    report = run_round27_ai_inference(
+        panel=panel,
+        candidate=candidate,
+        post_json=post_json,
+        residency_inspector=inspect_residency,
+        inventory_getter=lambda _url, _timeout: {
+            "models": [{"digest": candidate.runtime_digest}]
+        },
+        monotonic_ns=monotonic_ns,
+    )
+
+    assert round27_ai_inference_report_from_mapping(report.asdict()) == report
+    persisted = report.asdict()
+    claimed = persisted.pop("report_sha256")
+    assert claimed == canonical_sha256(persisted)
+
+    tampered = report.asdict()
+    tampered["responses"][0]["wall_latency_ms"] += 1
+    with pytest.raises(ValueError, match="response differs"):
+        round27_ai_inference_report_from_mapping(tampered)

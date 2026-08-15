@@ -37,6 +37,20 @@ POLYMARKET_ROUND27_AI_SELECTION_SCHEMA_VERSION = (
     "polymarket-round27-ai-candidate-selection-v1"
 )
 _FIXED_DELAYS_MS = (250, 500, 1_000, 2_000)
+_UPLIFT_GATE_NAMES = frozenset(
+    {
+        "inference_candidate_eligible",
+        "baseline_scenario_gate_passed",
+        "minimum_ai_filled_conditions_met",
+        "minimum_profitable_ai_conditions_met",
+        "ai_net_pnl_positive",
+        "paired_mean_net_pnl_delta_positive",
+        "paired_condition_bootstrap_lower_bound_positive",
+        "maximum_drawdown_not_worse",
+        "mean_adverse_markout_not_worse",
+        "no_unknown_execution_state",
+    }
+)
 
 
 def _canonical_json(value: object) -> str:
@@ -452,6 +466,93 @@ def evaluate_round27_ai_matched_economics(
     return body
 
 
+def validate_round27_ai_economic_report(
+    value: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate one complete persisted matched economic report."""
+
+    report = dict(value)
+    claimed = str(report.pop("report_sha256", ""))
+    candidate = report.get("candidate")
+    scenarios = report.get("paired_scenarios")
+    expected_candidates = {
+        item.model_id: asdict(item)
+        for item in POLYMARKET_ROUND27_AI_HOST_CANDIDATES
+    }
+    scenarios_valid = bool(
+        isinstance(scenarios, list)
+        and len(scenarios) == len(_FIXED_DELAYS_MS)
+    )
+    if scenarios_valid:
+        for item, delay in zip(scenarios, _FIXED_DELAYS_MS, strict=True):
+            if not isinstance(item, Mapping):
+                scenarios_valid = False
+                break
+            paired_body = dict(item)
+            paired_claimed = str(paired_body.pop("paired_scenario_sha256", ""))
+            checks = item.get("gate_checks")
+            baseline = item.get("baseline")
+            ai = item.get("ai")
+            if not isinstance(baseline, Mapping) or not isinstance(ai, Mapping):
+                scenarios_valid = False
+                break
+            baseline_body = dict(baseline)
+            baseline_claimed = str(baseline_body.pop("scenario_sha256", ""))
+            ai_body = dict(ai)
+            ai_claimed = str(ai_body.pop("scenario_sha256", ""))
+            if (
+                item.get("base_delay_ms") != delay
+                or not isinstance(checks, Mapping)
+                or set(checks) != _UPLIFT_GATE_NAMES
+                or any(type(value) is not bool for value in checks.values())
+                or item.get("scenario_uplift_gate_passed")
+                is not all(value is True for value in checks.values())
+                or paired_claimed != _canonical_sha256(paired_body)
+                or baseline_claimed != _canonical_sha256(baseline_body)
+                or ai_claimed != _canonical_sha256(ai_body)
+            ):
+                scenarios_valid = False
+                break
+    all_pass = bool(
+        scenarios_valid
+        and all(item["scenario_uplift_gate_passed"] is True for item in scenarios)
+    )
+    if (
+        claimed != _canonical_sha256(report)
+        or report.get("schema_version")
+        != POLYMARKET_ROUND27_AI_ECONOMIC_REPORT_SCHEMA_VERSION
+        or report.get("ablation_contract_sha256")
+        != POLYMARKET_ROUND27_AI_ABLATION_CONTRACT_SHA256
+        or report.get(POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_BINDING_FIELD)
+        != POLYMARKET_ROUND27_ECONOMIC_AMENDMENT_SHA256
+        or report.get("partition_role") not in {"selection", "sealed"}
+        or not isinstance(candidate, Mapping)
+        or candidate != expected_candidates.get(str(candidate.get("model_id")))
+        or not scenarios_valid
+        or [
+            item.get("base_delay_ms")
+            for item in scenarios
+            if isinstance(item, Mapping)
+        ]
+        != list(_FIXED_DELAYS_MS)
+        or report.get("primary_500ms_uplift_gate_passed")
+        is not bool(scenarios[1].get("scenario_uplift_gate_passed"))
+        or report.get("all_delay_scenarios_uplift_gate_passed") is not all_pass
+        or report.get("matched_after_cost_uplift_gate_passed") is not all_pass
+        or any(
+            report.get(field) is not False
+            for field in (
+                "edge_claim",
+                "profitability_claim",
+                "orders_submitted",
+                "trading_authority",
+            )
+        )
+    ):
+        raise ValueError("Round 27 AI matched economic report differs")
+    return {**report, "report_sha256": claimed}
+
+
 @dataclass(frozen=True, slots=True)
 class Round27AICandidateSelection:
     case_panel_sha256: str
@@ -531,19 +632,10 @@ def select_round27_ai_candidate(
 ) -> Round27AICandidateSelection:
     """Nominate at most one development candidate under the frozen ranking."""
 
-    selected = tuple(dict(report) for report in reports)
+    selected = tuple(validate_round27_ai_economic_report(report) for report in reports)
     if len(selected) != 2:
         raise ValueError("Round 27 AI selection requires both candidate reports")
-    for report in selected:
-        claimed = str(report.get("report_sha256") or "")
-        body = dict(report)
-        body.pop("report_sha256", None)
-        if (
-            claimed != _canonical_sha256(body)
-            or report.get("schema_version")
-            != POLYMARKET_ROUND27_AI_ECONOMIC_REPORT_SCHEMA_VERSION
-            or report.get("partition_role") != "selection"
-        ):
+    if any(report.get("partition_role") != "selection" for report in selected):
             raise ValueError("Round 27 AI selection report differs")
     expected_candidates = {
         candidate.model_id: asdict(candidate)
@@ -608,4 +700,5 @@ __all__ = [
     "Round27AICandidateSelection",
     "evaluate_round27_ai_matched_economics",
     "select_round27_ai_candidate",
+    "validate_round27_ai_economic_report",
 ]

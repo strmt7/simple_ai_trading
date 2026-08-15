@@ -18,6 +18,7 @@ from simple_ai_trading.polymarket_round27_ai_cases import (
 from simple_ai_trading.polymarket_round27_ai_economics import (
     evaluate_round27_ai_matched_economics,
     select_round27_ai_candidate,
+    validate_round27_ai_economic_report,
 )
 from simple_ai_trading.polymarket_round27_ai_inference import (
     run_round27_ai_inference,
@@ -198,6 +199,7 @@ def _matched_fixture(candidate=POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE):
 def test_round27_ai_matched_economics_charges_measured_inference_latency() -> None:
     report = _matched_fixture()
 
+    assert validate_round27_ai_economic_report(report) == report
     assert report["matched_candidate_condition_count"] == 60
     assert report["matched_after_cost_uplift_gate_passed"] is True
     assert report["edge_claim"] is False
@@ -212,6 +214,11 @@ def test_round27_ai_matched_economics_charges_measured_inference_latency() -> No
         if scenario["base_delay_ms"] == 500
     )
     assert {trade["delay_ms"] for trade in primary["ai"]["trades"]} == {600}
+
+    tampered = copy.deepcopy(report)
+    tampered["paired_scenarios"][0]["ai"]["filled_order_count"] -= 1
+    with pytest.raises(ValueError, match="matched economic report differs"):
+        validate_round27_ai_economic_report(tampered)
 
 
 def test_round27_ai_selection_uses_frozen_tie_break_and_grants_no_authority() -> None:

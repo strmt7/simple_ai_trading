@@ -7,7 +7,7 @@ from decimal import Decimal
 import hashlib
 import json
 import math
-from typing import Iterable, Sequence
+from typing import Iterable, Mapping, Sequence
 
 import numpy as np
 
@@ -63,6 +63,7 @@ def _decimal_text(value: Decimal) -> str:
 
 @dataclass(frozen=True, slots=True)
 class _TargetFreeSample:
+    run_id: str
     condition_id: str
     event_start_ms: int
     decision_time_ms: int
@@ -201,6 +202,7 @@ class Round27AICase:
 @dataclass(frozen=True, slots=True)
 class Round27AICasePanel:
     partition_role: str
+    source_run_id: str
     model_name: str
     model_sha256: str
     source_audit_sha256: str
@@ -219,6 +221,7 @@ class Round27AICasePanel:
                 POLYMARKET_ROUND27_AI_ABLATION_CONTRACT_SHA256
             ),
             "partition_role": self.partition_role,
+            "source_run_id": self.source_run_id,
             "model_name": self.model_name,
             "model_sha256": self.model_sha256,
             "source_audit_sha256": self.source_audit_sha256,
@@ -233,6 +236,7 @@ class Round27AICasePanel:
             "selection_reason_counts": dict(self.selection_reason_counts),
             "case_sha256": [case.case_sha256 for case in self.cases],
             "case_count": len(self.cases),
+            "cases": [case.asdict() for case in self.cases],
             "prompt_population_sha256": _canonical_sha256(
                 [round27_ai_case_prompt(case) for case in self.cases]
             ),
@@ -260,6 +264,7 @@ class Round27AICasePanel:
         )
         if (
             self.partition_role not in {"selection", "sealed"}
+            or not self.source_run_id
             or not self.model_name
             or _sha256(self.model_sha256, name="model") != self.model_sha256
             or _sha256(self.source_audit_sha256, name="source audit")
@@ -289,11 +294,7 @@ class Round27AICasePanel:
         return self
 
     def asdict(self) -> dict[str, object]:
-        return {
-            **self.identity_payload(),
-            "cases": [case.asdict() for case in self.cases],
-            "panel_sha256": self.panel_sha256,
-        }
+        return {**self.identity_payload(), "panel_sha256": self.panel_sha256}
 
 
 def round27_ai_case_prompt(case: Round27AICase) -> str:
@@ -328,6 +329,222 @@ def round27_ai_case_prompt(case: Round27AICase) -> str:
     )
 
 
+def round27_ai_case_from_mapping(value: Mapping[str, object]) -> Round27AICase:
+    """Reconstruct one exact persisted target-free case."""
+
+    payload = dict(value)
+    expected = {
+        "schema_version",
+        "ablation_contract_sha256",
+        "partition_role",
+        "condition_id",
+        "event_start_ms",
+        "market_end_ms",
+        "decision_time_ms",
+        "proposed_side",
+        "token_id",
+        "predicted_probability",
+        "market_prior_probability_up",
+        "quantity",
+        "limit_price",
+        "decision_average_price",
+        "decision_fee_quote",
+        "expected_edge_per_contract",
+        "segment_id",
+        "connection_id",
+        "decision_book_event_id",
+        "decision_source_payload_sha256",
+        "feature_row_sha256",
+        "feature_source_chain_sha256",
+        "feature_names_sha256",
+        "model_name",
+        "model_sha256",
+        "causal_features",
+        "target_accessed",
+        "outcome_accessed",
+        "future_books_accessed",
+        "pnl_accessed",
+        "credentials_used",
+        "orders_submitted",
+        "trading_authority",
+        "source_evidence_sha256",
+        "case_sha256",
+    }
+    features = payload.get("causal_features")
+    flags = (
+        "target_accessed",
+        "outcome_accessed",
+        "future_books_accessed",
+        "pnl_accessed",
+        "credentials_used",
+        "orders_submitted",
+        "trading_authority",
+    )
+    if (
+        set(payload) != expected
+        or payload.get("schema_version") != POLYMARKET_ROUND27_AI_CASE_SCHEMA_VERSION
+        or payload.get("ablation_contract_sha256")
+        != POLYMARKET_ROUND27_AI_ABLATION_CONTRACT_SHA256
+        or payload.get("feature_names_sha256")
+        != POLYMARKET_ROUND27_FEATURE_NAMES_SHA256
+        or any(payload.get(field) is not False for field in flags)
+        or not isinstance(features, list)
+        or any(
+            not isinstance(item, Mapping)
+            or set(item) != {"name", "value"}
+            or not isinstance(item.get("name"), str)
+            or isinstance(item.get("value"), bool)
+            or not isinstance(item.get("value"), (int, float))
+            for item in features
+        )
+        or any(
+            type(payload.get(field)) is not int
+            for field in (
+                "event_start_ms",
+                "market_end_ms",
+                "decision_time_ms",
+            )
+        )
+        or any(
+            isinstance(payload.get(field), bool)
+            or not isinstance(payload.get(field), (int, float))
+            for field in (
+                "predicted_probability",
+                "market_prior_probability_up",
+            )
+        )
+    ):
+        raise ValueError("Round 27 persisted AI case differs")
+    return Round27AICase(
+        partition_role=str(payload["partition_role"]),
+        condition_id=str(payload["condition_id"]),
+        event_start_ms=int(payload["event_start_ms"]),
+        market_end_ms=int(payload["market_end_ms"]),
+        decision_time_ms=int(payload["decision_time_ms"]),
+        proposed_side=str(payload["proposed_side"]),
+        token_id=str(payload["token_id"]),
+        predicted_probability=float(payload["predicted_probability"]),
+        market_prior_probability_up=float(payload["market_prior_probability_up"]),
+        quantity=str(payload["quantity"]),
+        limit_price=str(payload["limit_price"]),
+        decision_average_price=str(payload["decision_average_price"]),
+        decision_fee_quote=str(payload["decision_fee_quote"]),
+        expected_edge_per_contract=str(payload["expected_edge_per_contract"]),
+        segment_id=str(payload["segment_id"]),
+        connection_id=str(payload["connection_id"]),
+        decision_book_event_id=str(payload["decision_book_event_id"]),
+        decision_source_payload_sha256=str(
+            payload["decision_source_payload_sha256"]
+        ),
+        feature_row_sha256=str(payload["feature_row_sha256"]),
+        feature_source_chain_sha256=str(payload["feature_source_chain_sha256"]),
+        model_name=str(payload["model_name"]),
+        model_sha256=str(payload["model_sha256"]),
+        causal_features=tuple(
+            (str(item["name"]), float(item["value"])) for item in features
+        ),
+        source_evidence_sha256=str(payload["source_evidence_sha256"]),
+        case_sha256=str(payload["case_sha256"]),
+    ).validated()
+
+
+def round27_ai_case_panel_from_mapping(
+    value: Mapping[str, object],
+) -> Round27AICasePanel:
+    """Reconstruct an exact persisted target-free case panel."""
+
+    payload = dict(value)
+    expected = {
+        "schema_version",
+        "ablation_contract_sha256",
+        "partition_role",
+        "source_run_id",
+        "model_name",
+        "model_sha256",
+        "source_audit_sha256",
+        "economic_config",
+        "evaluated_condition_count",
+        "evaluated_condition_ids_sha256",
+        "baseline_candidate_population_sha256",
+        "selection_reason_counts",
+        "case_sha256",
+        "case_count",
+        "prompt_population_sha256",
+        "target_accessed",
+        "outcome_accessed",
+        "future_books_accessed",
+        "pnl_accessed",
+        "credentials_used",
+        "orders_submitted",
+        "trading_authority",
+        "cases",
+        "panel_sha256",
+    }
+    raw_cases = payload.get("cases")
+    flags = (
+        "target_accessed",
+        "outcome_accessed",
+        "future_books_accessed",
+        "pnl_accessed",
+        "credentials_used",
+        "orders_submitted",
+        "trading_authority",
+    )
+    if (
+        set(payload) != expected
+        or payload.get("schema_version")
+        != POLYMARKET_ROUND27_AI_CASE_PANEL_SCHEMA_VERSION
+        or payload.get("ablation_contract_sha256")
+        != POLYMARKET_ROUND27_AI_ABLATION_CONTRACT_SHA256
+        or any(payload.get(field) is not False for field in flags)
+        or not isinstance(raw_cases, list)
+        or not isinstance(payload.get("economic_config"), Mapping)
+        or not isinstance(payload.get("selection_reason_counts"), Mapping)
+        or type(payload.get("evaluated_condition_count")) is not int
+        or type(payload.get("case_count")) is not int
+        or not isinstance(payload.get("case_sha256"), list)
+    ):
+        raise ValueError("Round 27 persisted AI case panel differs")
+    cases = tuple(
+        round27_ai_case_from_mapping(item)
+        for item in raw_cases
+        if isinstance(item, Mapping)
+    )
+    if (
+        len(cases) != len(raw_cases)
+        or payload["case_count"] != len(cases)
+        or payload["case_sha256"] != [case.case_sha256 for case in cases]
+    ):
+        raise ValueError("Round 27 persisted AI case population differs")
+    panel = Round27AICasePanel(
+        partition_role=str(payload["partition_role"]),
+        source_run_id=str(payload["source_run_id"]),
+        model_name=str(payload["model_name"]),
+        model_sha256=str(payload["model_sha256"]),
+        source_audit_sha256=str(payload["source_audit_sha256"]),
+        economic_config=dict(payload["economic_config"]),
+        evaluated_condition_count=int(payload["evaluated_condition_count"]),
+        evaluated_condition_ids_sha256=str(
+            payload["evaluated_condition_ids_sha256"]
+        ),
+        baseline_candidate_population_sha256=str(
+            payload["baseline_candidate_population_sha256"]
+        ),
+        selection_reason_counts={
+            str(key): int(count)
+            for key, count in payload["selection_reason_counts"].items()
+        },
+        cases=cases,
+        panel_sha256=str(payload["panel_sha256"]),
+    ).validated()
+    if (
+        payload["prompt_population_sha256"]
+        != panel.identity_payload()["prompt_population_sha256"]
+    ):
+        raise ValueError("Round 27 persisted AI prompt population differs")
+    return panel
+
+
 def _target_free_samples(
     rows: Sequence[Round27FeatureRow],
 ) -> tuple[_TargetFreeSample, ...]:
@@ -339,6 +556,7 @@ def _target_free_samples(
         raise ValueError("Round 27 AI feature population is duplicated")
     return tuple(
         _TargetFreeSample(
+            run_id=row.run_id,
             condition_id=row.condition_id,
             event_start_ms=row.event_start_ms,
             decision_time_ms=row.decision_time_ms,
@@ -457,6 +675,9 @@ def materialize_round27_ai_cases(
         raise ValueError("Round 27 AI case role differs")
     cfg = config.validated()
     samples = _target_free_samples(rows)
+    run_ids = {sample.run_id for sample in samples}
+    if len(run_ids) != 1:
+        raise ValueError("Round 27 AI feature source run differs")
     if selected_model is None:
         if model_name != "market_prior":
             raise ValueError("Round 27 AI model identity differs")
@@ -584,6 +805,7 @@ def materialize_round27_ai_cases(
     )
     provisional = Round27AICasePanel(
         partition_role=role,
+        source_run_id=next(iter(run_ids)),
         model_name=str(model_name),
         model_sha256=_sha256(model_sha256, name="model"),
         source_audit_sha256=_sha256(source_audit_sha256, name="source audit"),
@@ -609,5 +831,7 @@ __all__ = [
     "Round27AICase",
     "Round27AICasePanel",
     "materialize_round27_ai_cases",
+    "round27_ai_case_from_mapping",
+    "round27_ai_case_panel_from_mapping",
     "round27_ai_case_prompt",
 ]
