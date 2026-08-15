@@ -29,8 +29,8 @@
     "profitability_claim": false
   },
   "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
-  "contract_sha256": "fa22f2d56ec8c60caaeb626c9213fd9fe35d0415dd68c9b9e4bb696a0bc56d0d",
-  "created_at_ms": 1786775241351,
+  "contract_sha256": "40f4a505aba2ec78f2425dbbdce1779f25224ac357cf9c2c014c21e31277805f",
+  "created_at_ms": 1786776213860,
   "data_policy": {
     "assets": [
       "BTC"
@@ -51,7 +51,9 @@
     "target_access_during_capture_or_feature_materialization": false
   },
   "economic_evaluation": {
-    "entry_and_exit_prices": "walk_actual_polymarket_clob_depth_after_observed_delay",
+    "candidate_selection": "first_target_blind_positive_after_cost_candidate_per_condition",
+    "entry_price": "fok_walk_of_actual_polymarket_clob_ask_depth_after_observed_delay",
+    "exit_value": "official_binary_condition_resolution_payout",
     "fee_source": "per_condition_captured_clob_fee_evidence",
     "fixed_delay_scenarios_ms": [
       250,
@@ -59,7 +61,14 @@
       1000,
       2000
     ],
+    "initial_capital_quote": "1000",
     "inventory_constraint": "no_overlapping_unreconciled_condition_inventory",
+    "markout_horizon_ms": 1000,
+    "maximum_decision_book_age_ms": 1500,
+    "maximum_entry_cost_quote": "10",
+    "maximum_execution_observation_delay_ms": 500,
+    "minimum_expected_edge_per_contract": "0.01",
+    "minimum_profitable_conditions": 20,
     "minimum_selection_executed_trades": 100,
     "minimum_sealed_executed_trades": 100,
     "must_report": [
@@ -81,7 +90,10 @@
       "profit_concentrated_in_fewer_than_20_conditions",
       "risk_limit_or_data_integrity_gate_triggered"
     ],
+    "order_type": "fill_or_kill_taker_buy",
     "position_sizing": "fixed_small_notional_for_model_comparison_only",
+    "position_quantity": "captured_condition_minimum_order_size_shares",
+    "primary_delay_ms": 500,
     "rate_limit_or_account_authority": false
   },
   "knowledge_at_freeze": {
@@ -243,6 +255,7 @@
   "schema_version": "polymarket-round27-stage1-model-contract-v1",
   "source_text_sha256": {
     "src/simple_ai_trading/polymarket_condition_replay_audit.py": "efd51afecad5e4c2ca5f253f39f62b02488df5a4290055ddbe9c1319374c5a1b",
+    "src/simple_ai_trading/polymarket_round27_economics.py": "f73fee80ac0efaf2db5b0bdc1c8987d7fd570364cb3fc682bc52d6ece8ee51c3",
     "src/simple_ai_trading/polymarket_round27_experiment.py": "e2e8a651a06bd8426d9d1e772a5527d7fe0bd61a5db5b936798d6dbf45b96ef1",
     "src/simple_ai_trading/polymarket_round27_features.py": "fcc316f56d57c3dfb0dac2adb5c89ede036a66b70ee4d97fb4492957d6f07203",
     "src/simple_ai_trading/polymarket_round27_model.py": "314d0724802ec3881cc1b7a4af1b0c5a24c1cb61437c18b6e8fbfd76527bb854"

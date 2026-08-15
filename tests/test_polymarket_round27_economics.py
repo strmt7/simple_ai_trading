@@ -1,0 +1,284 @@
+from __future__ import annotations
+
+from dataclasses import replace
+from decimal import Decimal
+import hashlib
+
+import numpy as np
+import pytest
+
+from simple_ai_trading.paper_execution import BookLevel, PaperBookSnapshot
+from simple_ai_trading.polymarket import (
+    PolymarketFeeSchedule,
+    PolymarketFiveMinuteMarket,
+)
+from simple_ai_trading.polymarket_replay import PolymarketRecordedBook
+from simple_ai_trading.polymarket_round27_economics import (
+    Round27EconomicConfig,
+    evaluate_round27_economic_scenarios,
+)
+from simple_ai_trading.polymarket_round27_features import (
+    POLYMARKET_ROUND27_FEATURE_NAMES,
+)
+from simple_ai_trading.polymarket_round27_model import (
+    Round27ModelSample,
+    Round27Partition,
+)
+
+
+_START_MS = 1_786_784_400_000
+_HASH = "a" * 64
+
+
+def _market(index: int) -> PolymarketFiveMinuteMarket:
+    start = _START_MS + index * 300_000
+    condition = "0x" + format(index + 1, "064x")
+    return PolymarketFiveMinuteMarket(
+        asset="BTC",
+        market_id=f"market-{index}",
+        condition_id=condition,
+        slug=f"btc-updown-5m-{start // 1000}",
+        question="BTC Up or Down",
+        event_start_ms=start,
+        end_ms=start + 300_000,
+        up_token_id=f"up-{index}",
+        down_token_id=f"down-{index}",
+        tick_size=Decimal("0.01"),
+        minimum_order_size=Decimal("5"),
+        fee_schedule=PolymarketFeeSchedule(
+            enabled=True,
+            rate=Decimal("0.07"),
+            exponent=1,
+            taker_only=True,
+            rebate_rate=Decimal("0.20"),
+        ),
+        liquidity_quote=Decimal("20000"),
+        volume_quote=Decimal("50000"),
+        resolution_source="chainlink-btc-usd-twap-60s",
+        gamma_payload_sha256=_HASH,
+        gamma_payload_json="{}",
+    )
+
+
+def _book(
+    market: PolymarketFiveMinuteMarket,
+    *,
+    outcome: str,
+    offset_ms: int,
+    segment: str = "segment-1",
+    ask_quantity: Decimal = Decimal("10"),
+    ask: Decimal | None = None,
+) -> PolymarketRecordedBook:
+    selected_ask = ask or (Decimal("0.46") if outcome == "Up" else Decimal("0.54"))
+    bid = selected_ask - Decimal("0.01")
+    token = market.up_token_id if outcome == "Up" else market.down_token_id
+    wall_ms = market.event_start_ms + offset_ms
+    payload_sha = hashlib.sha256(
+        f"{market.condition_id}:{outcome}:{offset_ms}:{segment}:{ask_quantity}".encode(
+            "ascii"
+        )
+    ).hexdigest()
+    snapshot = PaperBookSnapshot(
+        venue="polymarket",
+        market_id=market.condition_id,
+        asset_id=token,
+        bids=(BookLevel(bid, Decimal("20")),),
+        asks=(
+            BookLevel(selected_ask, min(Decimal("2"), ask_quantity)),
+            *(
+                (BookLevel(selected_ask + Decimal("0.01"), ask_quantity - 2),)
+                if ask_quantity > 2
+                else ()
+            ),
+        ),
+        source_time_ms=wall_ms,
+        received_wall_ms=wall_ms,
+        received_monotonic_ns=(market.event_start_ms + offset_ms) * 1_000_000,
+        source_payload_sha256=payload_sha,
+    ).validated()
+    return PolymarketRecordedBook(
+        run_id="round27-stage1-test",
+        event_id=f"event-{market.market_id}-{outcome}-{offset_ms}-{segment}",
+        event_type="book",
+        connection_id=f"connection-{segment}",
+        segment_id=segment,
+        sequence_number=offset_ms,
+        sub_index=0,
+        market=market,
+        outcome=outcome,
+        tick_size=market.tick_size,
+        snapshot=snapshot,
+    )
+
+
+def _population(
+    count: int,
+) -> tuple[
+    tuple[PolymarketFiveMinuteMarket, ...],
+    Round27Partition,
+    np.ndarray,
+    tuple[PolymarketRecordedBook, ...],
+    dict[str, int],
+]:
+    markets = tuple(_market(index) for index in range(count))
+    books: list[PolymarketRecordedBook] = []
+    samples: list[Round27ModelSample] = []
+    outcomes: dict[str, int] = {}
+    execution_offsets = (30_250, 30_500, 31_000, 31_250, 31_500, 32_000, 33_000)
+    for index, market in enumerate(markets):
+        decision = market.event_start_ms + 30_000
+        books.extend(
+            (
+                _book(market, outcome="Up", offset_ms=30_000),
+                _book(market, outcome="Down", offset_ms=30_000),
+            )
+        )
+        books.extend(
+            _book(market, outcome="Up", offset_ms=offset)
+            for offset in execution_offsets
+        )
+        prior = float(
+            Decimal("0.455") / (Decimal("0.455") + Decimal("0.535"))
+        )
+        samples.append(
+            Round27ModelSample(
+                slot_id="stage1-b",
+                role="selection",
+                condition_id=market.condition_id,
+                event_start_ms=market.event_start_ms,
+                decision_time_ms=decision,
+                market_prior_probability=prior,
+                values=(0.0,) * len(POLYMARKET_ROUND27_FEATURE_NAMES),
+                target_up=1,
+                condition_weight=1.0,
+                feature_row_sha256=hashlib.sha256(
+                    f"feature-{index}".encode("ascii")
+                ).hexdigest(),
+            ).validated()
+        )
+        outcomes[market.condition_id] = 1
+    partition = Round27Partition.from_samples(samples, role="selection")
+    return markets, partition, np.full(count, 0.80), tuple(books), outcomes
+
+
+def _evaluate(
+    markets: tuple[PolymarketFiveMinuteMarket, ...],
+    partition: Round27Partition,
+    probabilities: np.ndarray,
+    books: tuple[PolymarketRecordedBook, ...],
+    outcomes: dict[str, int],
+    *,
+    config: Round27EconomicConfig | None = None,
+) -> dict[str, object]:
+    return evaluate_round27_economic_scenarios(
+        partition=partition,
+        predictions=probabilities,
+        markets=markets,
+        books=books,
+        outcomes_up=outcomes,
+        model_name="test-model",
+        model_sha256="b" * 64,
+        source_audit_sha256="c" * 64,
+        resolution_evidence_sha256="d" * 64,
+        config=config,
+    )
+
+
+def test_round27_economics_walks_depth_and_passes_every_fixed_delay() -> None:
+    markets, partition, probabilities, books, outcomes = _population(20)
+    report = _evaluate(
+        markets,
+        partition,
+        probabilities,
+        books,
+        outcomes,
+        config=Round27EconomicConfig(
+            minimum_executed_trades=20,
+            minimum_profitable_conditions=20,
+            bootstrap_draws=1_000,
+        ),
+    )
+
+    assert report["candidate_condition_count"] == 20
+    assert report["economic_edge_gate_passed"] is True
+    assert report["edge_claim"] is False
+    assert report["orders_submitted"] is False
+    for scenario in report["scenarios"]:
+        assert scenario["filled_order_count"] == 20
+        assert scenario["scenario_edge_gate_passed"] is True
+        trade = scenario["trades"][0]
+        assert trade["average_fill_price"] == "0.466"
+        assert Decimal(trade["fee_quote"]) > 0
+        assert trade["trade_sha256"] != trade["source_payload_sha256"]
+
+
+def test_round27_economics_fok_refuses_insufficient_displayed_depth() -> None:
+    markets, partition, probabilities, books, outcomes = _population(1)
+    target = markets[0]
+    reduced = tuple(
+        _book(
+            target,
+            outcome="Up",
+            offset_ms=book.received_wall_ms - target.event_start_ms,
+            ask_quantity=Decimal("4"),
+        )
+        if book.outcome == "Up" and book.received_wall_ms > target.event_start_ms + 30_000
+        else book
+        for book in books
+    )
+    report = _evaluate(markets, partition, probabilities, reduced, outcomes)
+
+    primary = next(item for item in report["scenarios"] if item["delay_ms"] == 500)
+    assert primary["filled_order_count"] == 0
+    assert primary["trades"][0]["execution_state"] == "CANCELLED"
+    assert (
+        primary["trades"][0]["execution_reason"]
+        == "insufficient_displayed_depth_for_fok"
+    )
+
+
+def test_round27_economics_fails_closed_across_connection_segment() -> None:
+    markets, partition, probabilities, books, outcomes = _population(1)
+    target = markets[0]
+    changed = tuple(
+        _book(
+            target,
+            outcome="Up",
+            offset_ms=book.received_wall_ms - target.event_start_ms,
+            segment="segment-2",
+        )
+        if book.outcome == "Up" and book.received_wall_ms > target.event_start_ms + 30_000
+        else book
+        for book in books
+    )
+    report = _evaluate(markets, partition, probabilities, changed, outcomes)
+
+    primary = next(item for item in report["scenarios"] if item["delay_ms"] == 500)
+    assert primary["unknown_order_count"] == 1
+    assert primary["trades"][0]["execution_state"] == "UNKNOWN"
+    assert primary["trades"][0]["source_payload_sha256"] == next(
+        book.snapshot.source_payload_sha256
+        for book in books
+        if book.outcome == "Up"
+        and book.received_wall_ms == target.event_start_ms + 30_000
+    )
+
+
+def test_round27_economics_rejects_feature_book_prior_drift() -> None:
+    markets, partition, probabilities, books, outcomes = _population(1)
+    bad_sample = replace(
+        partition.samples[0],
+        market_prior_probability=partition.samples[0].market_prior_probability + 0.01,
+    )
+    drifted = Round27Partition.from_samples((bad_sample,), role="selection")
+
+    with pytest.raises(ValueError, match="feature prior and decision books"):
+        _evaluate(markets, drifted, probabilities, books, outcomes)
+
+
+def test_round27_economics_requires_exact_outcome_population() -> None:
+    markets, partition, probabilities, books, outcomes = _population(1)
+    outcomes["0x" + "f" * 64] = 1
+
+    with pytest.raises(ValueError, match="outcome population"):
+        _evaluate(markets, partition, probabilities, books, outcomes)
