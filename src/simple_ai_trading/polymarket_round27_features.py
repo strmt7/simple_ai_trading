@@ -8,7 +8,7 @@ by a later, separately frozen experiment runner.
 from __future__ import annotations
 
 from array import array
-from bisect import bisect_left, bisect_right
+from bisect import bisect_left
 from dataclasses import dataclass
 import hashlib
 import json
@@ -415,7 +415,7 @@ def _trade_metrics(
     window_ms: int,
 ) -> _TradeMetrics:
     selected = series.validated()
-    end = int(np.searchsorted(selected.received_wall_ms, decision_ms, side="right"))
+    end = int(np.searchsorted(selected.received_wall_ms, decision_ms, side="left"))
     window_start_ms = decision_ms - window_ms
     start = int(
         np.searchsorted(
@@ -543,7 +543,7 @@ def _book_flow(
     decision_ms: int,
     window_ms: int,
 ) -> _BookFlow:
-    end = bisect_right(times, decision_ms)
+    end = bisect_left(times, decision_ms)
     start = max(0, bisect_left(times, decision_ms - window_ms, 0, end) - 1)
     selected = books[start:end]
     if len(selected) < 2:
@@ -674,7 +674,7 @@ class Round27FeatureRow:
             or len(self.values) != len(POLYMARKET_ROUND27_FEATURE_NAMES)
             or any(not math.isfinite(value) for value in self.values)
             or self.feature_names_sha256 != POLYMARKET_ROUND27_FEATURE_NAMES_SHA256
-            or not 0 < self.maximum_receipt_wall_ms <= self.decision_time_ms
+            or not 0 < self.maximum_receipt_wall_ms < self.decision_time_ms
             or len(self.source_chain_sha256) != 64
             or self.target_accessed
             or self.trading_authority
@@ -685,7 +685,7 @@ class Round27FeatureRow:
 
 
 def _latest_index(times: Sequence[int], decision_ms: int) -> int:
-    return bisect_right(times, decision_ms) - 1
+    return bisect_left(times, decision_ms) - 1
 
 
 def _eligible_decision_times(
@@ -790,7 +790,7 @@ def build_round27_condition_features(
         latest_twap = selected_source.twap[latest_twap_index]
         twap = twap_state.features(
             market,
-            observed_wall_ms=decision,
+            observed_wall_ms=decision - 1,
             observed_monotonic_ns=max(
                 current_books["Up"].received_monotonic_ns,
                 current_books["Down"].received_monotonic_ns,
@@ -799,6 +799,7 @@ def build_round27_condition_features(
         )
         if not twap.available:
             continue
+        assert twap.current_source_age_ms is not None
         values: list[float] = [
             (decision - market.event_start_ms) / 300_000.0,
             (market.end_ms - decision) / 1_000.0,
@@ -830,7 +831,7 @@ def build_round27_condition_features(
             float(twap.log_distance_from_open),
             float(twap.realized_variance_rate_per_second),
             float(twap.path_efficiency),
-            float(twap.current_source_age_ms),
+            float(twap.current_source_age_ms + 1),
         ]
         market_returns: dict[int, float] = {}
         for outcome in ("Up", "Down"):

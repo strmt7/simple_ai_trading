@@ -21,7 +21,7 @@ def _row(index: int) -> Round27FeatureRow:
         decision_time_ms=event_start_ms + 30_000,
         market_prior_probability=0.5,
         values=[0.0] * len(POLYMARKET_ROUND27_FEATURE_NAMES),
-        maximum_receipt_wall_ms=event_start_ms + 30_000,
+        maximum_receipt_wall_ms=event_start_ms + 29_999,
         source_chain_sha256="a" * 64,
     )
 

@@ -48,7 +48,7 @@ def _rows() -> tuple[Round27FeatureRow, ...]:
                     values=(float(condition_index),) * len(
                         POLYMARKET_ROUND27_FEATURE_NAMES
                     ),
-                    maximum_receipt_wall_ms=event_start + offset,
+                    maximum_receipt_wall_ms=event_start + offset - 1,
                     source_chain_sha256=hashlib.sha256(
                         f"source-{condition_index}-{offset}".encode("ascii")
                     ).hexdigest(),
