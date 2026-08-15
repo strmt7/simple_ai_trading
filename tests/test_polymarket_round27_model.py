@@ -6,6 +6,7 @@ import lightgbm as lgb
 import numpy as np
 import pytest
 
+import simple_ai_trading.polymarket_round27_model as subject
 from simple_ai_trading.polymarket_round27_features import (
     POLYMARKET_ROUND27_FEATURE_NAMES,
     Round27FeatureRow,
@@ -110,6 +111,26 @@ def test_l2_offset_model_improves_a_causal_synthetic_signal() -> None:
         restored.predict(partition.features, partition.offsets),
         prediction,
     )
+
+
+def test_l2_penalty_folds_are_embargoed_and_strictly_walk_forward() -> None:
+    partition = Round27Partition.from_samples(_samples(), role="train")
+
+    folds = subject._walk_forward_condition_folds(partition, fold_count=5)
+
+    assert len(folds) == 5
+    validation_conditions: set[str] = set()
+    for train, validation in folds:
+        train_ids = {str(value) for value in train.conditions}
+        held_ids = {str(value) for value in validation.conditions}
+        assert train_ids.isdisjoint(held_ids)
+        assert validation_conditions.isdisjoint(held_ids)
+        validation_conditions.update(held_ids)
+        assert (
+            max(sample.event_start_ms + 300_000 for sample in train.samples)
+            + 600_000
+            <= min(sample.event_start_ms for sample in validation.samples)
+        )
 
 
 def test_correction_scale_can_fail_closed_to_the_market_prior() -> None:

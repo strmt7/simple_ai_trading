@@ -1,0 +1,83 @@
+{
+  "amendment_sha256": "e3ce6285cea10337f50383cdd2b89dd048d8f015f889adaa9cc0045088a44833",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "profitability_claim": false
+  },
+  "base_model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+  "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+  "correction": {
+    "candidate_families_changed": false,
+    "economic_or_prediction_gate_thresholds_changed": false,
+    "future_conditions_may_train_a_past_validation_fold": false,
+    "l2_penalty_selection": "five_fold_expanding_condition_grouped_walk_forward",
+    "model_payload_schema_changed": false,
+    "pre_validation_embargo_ms": 600000,
+    "validation_block_count": 5,
+    "validation_loss_weighting": "equal_weight_per_condition_across_all_walk_forward_validation_blocks"
+  },
+  "created_at_ms": 1786788377713,
+  "discovery_audit": {
+    "frozen_condition_hash_folds_grouped_rows_by_condition": true,
+    "frozen_condition_hash_folds_preserved_temporal_direction": false,
+    "frozen_condition_hash_folds_permitted_future_training_conditions": true,
+    "synthetic_host_check_is_edge_or_profitability_evidence": false
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "stage1_capture_started": true,
+    "stage1_feature_rows_accessed_or_materialized": false
+  },
+  "predecessor_amendment_sha256": "e4890d02d355f8a4f5f3054232b24cdf08d3348031826415ef5a8bc9b210f4d8",
+  "predecessor_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_ai_cases.py": "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a",
+    "src/simple_ai_trading/polymarket_round27_ai_economics.py": "372564ee247d0211adcdc5a112ac7bbce1e9a9fb5057e63a24430fe42a953aae",
+    "src/simple_ai_trading/polymarket_round27_economics.py": "e7d465cdbca29b5f3d94d7f3c3d4be80409a961ef31139f846b757ac6ebf4714",
+    "src/simple_ai_trading/polymarket_round27_experiment.py": "9f75fe4546de0350a5fb0cee9ff7652daf0bdb77373f9bdb9faf471878161865",
+    "src/simple_ai_trading/polymarket_round27_model.py": "e2d0ebb3055529d45e18593f4d9e006ec1bcc9724b05ef9461daa4803efc51f7"
+  },
+  "rationale": "The frozen L2 selector grouped rows by condition but assigned conditions to folds by condition-ID hash. A validation condition could therefore be scored by a model trained on later conditions, which is not a prospective trading simulation and understates regime-shift risk. The correction uses five expanding chronological validation blocks, excludes the first seed block from validation, and applies the same ten-minute embargo used between the frozen campaign roles. Candidate families, model payloads, economic replay, AI authority, and every promotion threshold remain unchanged.",
+  "research_basis": [
+    {
+      "purpose": "official_time_series_cross_validation_temporal_direction",
+      "url": "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html"
+    },
+    {
+      "purpose": "primary_financial_backtest_overfitting_analysis",
+      "url": "https://doi.org/10.21314/JCF.2016.322"
+    }
+  ],
+  "schema_version": "polymarket-round27-embargoed-walk-forward-correction-amendment-v4",
+  "status": "frozen_after_capture_start_before_stage1_feature_or_outcome_access",
+  "superseded_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_ai_cases.py": {
+      "corrected": "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a",
+      "frozen": "2e95562f3611842ecb801920f9cf6876eba2d11b2e0b89a76625f3a59be97bc2"
+    },
+    "src/simple_ai_trading/polymarket_round27_ai_economics.py": {
+      "corrected": "372564ee247d0211adcdc5a112ac7bbce1e9a9fb5057e63a24430fe42a953aae",
+      "frozen": "a222dd9c4d6246aeccf90e62ff7157697c52636aed4261c532337f5016e78fe6"
+    },
+    "src/simple_ai_trading/polymarket_round27_economics.py": {
+      "corrected": "e7d465cdbca29b5f3d94d7f3c3d4be80409a961ef31139f846b757ac6ebf4714",
+      "frozen": "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54"
+    },
+    "src/simple_ai_trading/polymarket_round27_experiment.py": {
+      "corrected": "2573966ecf39a5a05a34050ceed436f8e91f7e3aac90bcab0125cbd09d6dfc0c",
+      "frozen": "9a97a253668e9ef2487c042c3574b4bea2f5cf7e6fcd5267a1f6e6fc1ed5321e"
+    },
+    "src/simple_ai_trading/polymarket_round27_model.py": {
+      "corrected": "ad7d9ef2d9cdd44671ea2dc5cd8cd1f09d134d722b03f5ba8f0f78abf8412fd6",
+      "frozen": "5eedf0a5e6f7c0317c795d99ad7425ff2e262c2d527c519d4f9d9cee7f8e8740"
+    }
+  }
+}

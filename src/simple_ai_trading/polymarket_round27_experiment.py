@@ -323,8 +323,10 @@ def run_round27_development_selection(
         contract=contract,
         calibration_scale_scores=l2_scale_scores,
         training_detail={
-            "condition_group_cv_log_loss": penalty_scores,
+            "embargoed_walk_forward_cv_log_loss": penalty_scores,
+            "pre_validation_embargo_ms": 600_000,
             "selected_l2_penalty": penalty,
+            "validation_fold_count": 5,
         },
     )
 

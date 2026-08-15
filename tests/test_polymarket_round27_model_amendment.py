@@ -29,22 +29,25 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "stage1_capture_started": True,
         "stage1_feature_rows_accessed_or_materialized": False,
     }
-    assert amendment["correction"]["economic_gate_thresholds_changed"] is False
     assert (
         amendment["correction"][
-            "execution_limit_revalidated_against_execution_book_active_tick_size"
+            "economic_or_prediction_gate_thresholds_changed"
         ]
-        is True
+        is False
+    )
+    assert (
+        amendment["correction"]["future_conditions_may_train_a_past_validation_fold"]
+        is False
     )
     assert amendment["predecessor_amendment_sha256"] == (
-        "8c4c7e48062446d9b6d87c716c22004fa729be094388ce6202480cc6e2098afd"
+        "e4890d02d355f8a4f5f3054232b24cdf08d3348031826415ef5a8bc9b210f4d8"
     )
-    assert amendment["correction"]["ai_prompt_fields_changed"] is False
+    assert amendment["correction"]["pre_validation_embargo_ms"] == 600_000
     assert (
         amendment["superseded_source_text_sha256"][
-            "src/simple_ai_trading/polymarket_round27_economics.py"
+            "src/simple_ai_trading/polymarket_round27_model.py"
         ]["corrected"]
-        == "e7d465cdbca29b5f3d94d7f3c3d4be80409a961ef31139f846b757ac6ebf4714"
+        == "ad7d9ef2d9cdd44671ea2dc5cd8cd1f09d134d722b03f5ba8f0f78abf8412fd6"
     )
 
 

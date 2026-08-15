@@ -703,9 +703,85 @@ def round27_model_from_payload(
     raise ValueError("Round 27 persisted model family differs")
 
 
-def _condition_fold(condition_id: str, fold_count: int) -> int:
-    digest = hashlib.sha256(condition_id.encode("ascii")).hexdigest()
-    return int(digest[:16], 16) % fold_count
+def _walk_forward_condition_folds(
+    partition: Round27Partition,
+    *,
+    fold_count: int,
+    embargo_ms: int = 600_000,
+) -> tuple[tuple[Round27Partition, Round27Partition], ...]:
+    """Build expanding condition-level folds without training on the future."""
+
+    if fold_count < 2 or embargo_ms < 0 or embargo_ms % 300_000:
+        raise ValueError("Round 27 walk-forward controls differ")
+    event_start_by_condition: dict[str, int] = {}
+    for sample in partition.samples:
+        prior = event_start_by_condition.setdefault(
+            sample.condition_id,
+            sample.event_start_ms,
+        )
+        if prior != sample.event_start_ms:
+            raise ValueError("Round 27 condition start time differs")
+    ordered_conditions = tuple(
+        condition
+        for condition, _event_start_ms in sorted(
+            event_start_by_condition.items(),
+            key=lambda item: (item[1], item[0]),
+        )
+    )
+    block_count = fold_count + 1
+    if len(ordered_conditions) < block_count:
+        raise ValueError("Round 27 walk-forward population is insufficient")
+    minimum_size, larger_blocks = divmod(len(ordered_conditions), block_count)
+    block_sizes = tuple(
+        minimum_size + (1 if index < larger_blocks else 0)
+        for index in range(block_count)
+    )
+    blocks: list[tuple[str, ...]] = []
+    cursor = 0
+    for size in block_sizes:
+        blocks.append(ordered_conditions[cursor : cursor + size])
+        cursor += size
+    folds: list[tuple[Round27Partition, Round27Partition]] = []
+    for validation_index in range(1, block_count):
+        validation_conditions = frozenset(blocks[validation_index])
+        validation_start_ms = min(
+            event_start_by_condition[condition]
+            for condition in validation_conditions
+        )
+        preceding_conditions = {
+            condition
+            for block in blocks[:validation_index]
+            for condition in block
+            if event_start_by_condition[condition] + 300_000 + embargo_ms
+            <= validation_start_ms
+        }
+        train_samples = tuple(
+            sample
+            for sample in partition.samples
+            if sample.condition_id in preceding_conditions
+        )
+        validation_samples = tuple(
+            sample
+            for sample in partition.samples
+            if sample.condition_id in validation_conditions
+        )
+        if not train_samples or not validation_samples:
+            raise ValueError("Round 27 embargoed walk-forward fold is empty")
+        train = Round27Partition.from_samples(train_samples, role=partition.role)
+        validation = Round27Partition.from_samples(
+            validation_samples,
+            role=partition.role,
+        )
+        if (
+            max(sample.event_start_ms + 300_000 for sample in train.samples)
+            + embargo_ms
+            > min(sample.event_start_ms for sample in validation.samples)
+        ):
+            raise RuntimeError("Round 27 walk-forward embargo differs")
+        folds.append((train, validation))
+    if len(folds) != fold_count:
+        raise RuntimeError("Round 27 walk-forward fold count differs")
+    return tuple(folds)
 
 
 def select_round27_l2_penalty(
@@ -713,46 +789,25 @@ def select_round27_l2_penalty(
     *,
     fold_count: int = 5,
 ) -> tuple[float, dict[str, float]]:
-    conditions = tuple(sorted(set(str(value) for value in partition.conditions)))
-    folds = {
-        condition: _condition_fold(condition, fold_count) for condition in conditions
-    }
-    if set(folds.values()) != set(range(fold_count)):
-        raise ValueError("Round 27 condition folds are incomplete")
+    folds = _walk_forward_condition_folds(
+        partition,
+        fold_count=fold_count,
+    )
     scores: dict[str, float] = {}
     for penalty in POLYMARKET_ROUND27_L2_PENALTIES:
-        fold_losses: list[float] = []
-        for fold in range(fold_count):
-            held_out = np.asarray(
-                [folds[str(value)] == fold for value in partition.conditions]
-            )
-            train_samples = tuple(
-                sample
-                for sample, held in zip(partition.samples, held_out, strict=True)
-                if not held
-            )
-            held_samples = tuple(
-                sample
-                for sample, held in zip(partition.samples, held_out, strict=True)
-                if held
-            )
-            train = Round27Partition.from_samples(train_samples, role=partition.role)
-            held = Round27Partition.from_samples(held_samples, role=partition.role)
+        weighted_losses: list[float] = []
+        validation_condition_count = 0
+        for train, validation in folds:
             model = fit_round27_l2_offset(train, penalty=penalty)
-            probability = model.predict(held.features, held.offsets)
-            weight = held.weights / np.sum(held.weights)
-            fold_losses.append(
-                float(
-                    np.sum(
-                        weight
-                        * -(
-                            held.targets * np.log(probability)
-                            + (1.0 - held.targets) * np.log1p(-probability)
-                        )
-                    )
-                )
+            probability = model.predict(validation.features, validation.offsets)
+            metrics = round27_probability_metrics(validation, probability)
+            weighted_losses.append(
+                metrics.log_loss * metrics.condition_count
             )
-        scores[str(penalty)] = math.fsum(fold_losses) / len(fold_losses)
+            validation_condition_count += metrics.condition_count
+        scores[str(penalty)] = (
+            math.fsum(weighted_losses) / validation_condition_count
+        )
     selected = min(
         POLYMARKET_ROUND27_L2_PENALTIES, key=lambda value: (scores[str(value)], value)
     )
