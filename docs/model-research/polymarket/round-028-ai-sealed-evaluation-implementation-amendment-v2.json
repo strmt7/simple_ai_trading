@@ -1,0 +1,82 @@
+{
+  "ai_contract_sha256": "6f0084370cd8302fe09df5f9d1caec627aaea2fe219ef435216f95a213fcf117",
+  "amendment_sha256": "84b6d4bcf767f12c53bef87ddbf8458606cb24487ced0f8a703a6dcf1f6d2681",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786813306342,
+  "correction": {
+    "defect": "The v1 lower-level sealed case tool accepted a selection economic report path even though it did not place realized values in prompts. That process surface contradicted the stated target-free process boundary and allowed future accidental leakage.",
+    "replacement": "A separate authorizer validates the frozen probability and after-cost selection gates and emits a sanitized receipt containing hashes, identities, nomination fields, gate booleans, and explicit non-authority flags only. The replacement case process accepts that receipt but no target, outcome, resolution, economic, or PnL path.",
+    "superseded_operator": "tools/run_polymarket_round28_ai_sealed_cases.py",
+    "authoritative_operator": "tools/run_polymarket_round28_ai_sealed_cases_enveloped.py"
+  },
+  "implemented_controls": [
+    "actual_278_feature_prompt_shape_is_serialized_and_tokenized_before_any_candidate_inference",
+    "production_five_second_case_timeout_is_exercised_on_the_actual_width_prompt_envelope",
+    "prompt_plus_frozen_output_budget_must_fit_the_8192_token_context",
+    "exclusive_full_gpu_residency_and_mandatory_unload_are_rechecked_for_the_actual_prompt_shape",
+    "selection_gate_authorization_isolated_from_target_free_case_materialization",
+    "authorization_receipt_contains_no_selection_metric_values",
+    "case_process_parser_has_no_target_outcome_resolution_economic_or_pnl_input",
+    "persisted_authorization_is_rederived_from_current_inputs_on_every_authorizer_restart",
+    "selection_ai_panel_is_bound_to_the_validated_selection_input_manifest",
+    "sealed_source_binding_v2_includes_the_sanitized_access_receipt",
+    "no_order_account_credential_paper_or_live_trading_authority"
+  ],
+  "knowledge_at_freeze": {
+    "actual_shape_host_prompt_probe_run": false,
+    "ai_assist_economic_metrics_computed": false,
+    "ai_candidate_nominated_from_stage1": false,
+    "official_outcomes_accessed_by_ai_operator": false,
+    "round27_stage1_a_capture_running": true,
+    "round28_ai_case_panel_materialized_from_stage1": false,
+    "round28_model_fitted_on_stage1": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false
+  },
+  "limitations": [
+    "stage1_primary_capture_slots_are_not_terminal",
+    "ODA-Fin-RL-8B_has_not_been_downloaded_or_host_qualified",
+    "the_prompt_envelope_uses_extreme_finite_serialization_values_and_is_capacity_evidence_not_semantic_or_trading_evidence",
+    "the_receipt_sha256_detects_accidental_or_unrecomputed_tampering_but_is_not_an_external_signature_or_remote_attestation",
+    "no_real_round28_case_panel_inference_or_economic_report_exists",
+    "no_ai_uplift_predictive_edge_after_cost_edge_or_profitability_claim_exists"
+  ],
+  "parents": {
+    "round28_ai_operator_implementation_amendment_sha256": "41f92d0625ee9fb4c53a4d66c8decdb3f5c053c44ce146316778e7431ba2b04d",
+    "round28_ai_sealed_evaluation_implementation_amendment_v1_sha256": "925fc1274dd199648672bcab6f33013ec51a97a239cb2ccac0580dbf167a137d"
+  },
+  "schema_version": "polymarket-round28-ai-sealed-evaluation-implementation-amendment-v2",
+  "side_effect_policy": {
+    "historical_cutoff_changed": false,
+    "prospective_capture_changed": false,
+    "prospective_service_stopped_or_restarted": false,
+    "reusable_historical_data_opened_or_rewritten": false,
+    "repository_historical_cutoff_exclusive_utc": "2026-08-14T00:00:00Z"
+  },
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_ai_prompt_envelope.py": "347e60cc47272abe494a4280b0731b6c0944bc40751f4befa31a29b8bc78de09",
+    "src/simple_ai_trading/polymarket_round28_ai_sealed_access.py": "d07b7b52601bfde4a1db17c70ef521d3948b705720f6cd7f532e7a7a772680c6",
+    "tests/test_polymarket_round28_ai_prompt_envelope.py": "eee0903cea83c43a2afe2967ba79cd5cf4f964e4112cde31d670c94ea75f372a",
+    "tests/test_polymarket_round28_ai_sealed_access.py": "797c0c164daeb16bfbefd2aa4ca5ecdfdd038a95c8cb32876995c866ad5ef825",
+    "tools/authorize_polymarket_round28_ai_sealed_cases.py": "1f8941e4404061df2509c5994c927eee9af3be9eed32a4cdb3030dff6bb85179",
+    "tools/probe_polymarket_round28_ai_prompt_envelope.py": "dfbe3d6caf2e255f23402c316791b408bc20bc0f6f367ff504ed376b7dfce269",
+    "tools/run_polymarket_round28_ai_inference_enveloped.py": "245b78740f4b98e6a1f2421f794e25265fa9c81ef40735d564498f981a2dab6c",
+    "tools/run_polymarket_round28_ai_sealed_cases_enveloped.py": "97de6c3d8a19dccafe8b2092c8aa63a35a97c3730efca5bcb3fd69e71ec1b92b"
+  },
+  "status": "source_bound_process_boundary_correction_before_stage1_feature_or_target_access",
+  "test_scope": {
+    "financial_result": false,
+    "focused_tests_passed": 43,
+    "stage1_data_used": false,
+    "synthetic_mechanics_only": true,
+    "target_store_opened": false
+  }
+}

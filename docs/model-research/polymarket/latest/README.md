@@ -98,6 +98,14 @@ reuses a valid terminal result without reopening the target store. No Round 28
 AI model has yet been run on Stage 1 data, and no AI uplift, edge, or
 profitability result exists.
 
+The [v2 sealed-process correction](../round-028-ai-sealed-evaluation-implementation-amendment-v2.json)
+supersedes the direct v1 case tool for future runs. A separate authorizer now
+reduces passing selection evidence to a metrics-free receipt; the authoritative
+case runner accepts that receipt but no target, outcome, resolution, economic,
+or PnL path. It also requires a five-second, fully GPU-resident probe using the
+actual 278-feature prompt shape before inference. These are source-bound safety
+mechanics only, not AI performance or trading evidence.
+
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
 Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order

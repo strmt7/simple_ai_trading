@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 60308,
+      "bytes": 60865,
       "path": "latest/README.md",
-      "sha256": "35714b58364c1658be245c2467fea9f4e3f98a378d55773350f70fe0751efc29"
+      "sha256": "8deed7c65c80e2a3f0789417ed5a7be3e81dca4d69f26c18d40ca6bc8feefb87"
     },
     {
       "bytes": 77606,
@@ -542,6 +542,11 @@
       "sha256": "a9599f57eb8663a1a0e80f7438d17a691a7ce2a2552b26aa1817dddfe5a16515"
     },
     {
+      "bytes": 5254,
+      "path": "round-028-ai-sealed-evaluation-implementation-amendment-v2.json",
+      "sha256": "a023f881d7859721c3b2a6132b9b9684c369b654d3aa945af2278c56fcede4ab"
+    },
+    {
       "bytes": 9765,
       "path": "round-028-binance-bbo-matched-ablation-preregistration-v1.json",
       "sha256": "2d516d88a57c97a5ae897f1c65a423653717ced7c4b724fc5243b8c6cb1f344b"
@@ -579,7 +584,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 28,
   "live_trading_authority": false,
-  "manifest_sha256": "5226ab630ec295bc41c3b485eddf6446f770ecdc12e4dc4df28b7cc104c0d7cd",
+  "manifest_sha256": "369e6fd0e0b02e8f1bfcc72d792a4dd5c6de9ebb7f0209a31e14afda2423c228",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -674,9 +679,12 @@
   "round27_stage1_result_available": false,
   "round27_target_access_allowed": false,
   "round28_ai_core_implementation_source_bound": true,
+  "round28_ai_direct_v1_case_operator_superseded": true,
   "round28_ai_operator_implementation_source_bound": true,
   "round28_ai_preregistration_frozen": true,
+  "round28_ai_prompt_envelope_implemented": true,
   "round28_ai_result_available": false,
+  "round28_ai_sanitized_sealed_access_implemented": true,
   "round28_ai_sealed_evaluation_implementation_source_bound": true,
   "round28_ai_sealed_result_available": false,
   "round28_bbo_preregistration_frozen": true,
