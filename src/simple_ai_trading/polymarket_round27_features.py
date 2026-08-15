@@ -416,10 +416,11 @@ def _trade_metrics(
 ) -> _TradeMetrics:
     selected = series.validated()
     end = int(np.searchsorted(selected.received_wall_ms, decision_ms, side="right"))
+    window_start_ms = decision_ms - window_ms
     start = int(
         np.searchsorted(
             selected.received_wall_ms[:end],
-            decision_ms - window_ms,
+            window_start_ms,
             side="left",
         )
     )
@@ -430,17 +431,38 @@ def _trade_metrics(
     gross = float(np.sum(quote, dtype=np.float64))
     signs = np.where(selected.buyer_is_maker[start:end], -1.0, 1.0)
     signed = float(np.sum(quote * signs, dtype=np.float64))
-    returns = np.diff(np.log(prices))
+    anchor_index = int(
+        np.searchsorted(
+            selected.received_wall_ms[:end],
+            window_start_ms,
+            side="right",
+        )
+    ) - 1
+    path_prices = (
+        np.concatenate(
+            (
+                selected.price[anchor_index : anchor_index + 1],
+                selected.price[max(start, anchor_index + 1) : end],
+            )
+        )
+        if anchor_index >= 0
+        else prices
+    )
+    returns = np.diff(np.log(path_prices))
     receipt_times = selected.received_wall_ms[start:end]
     boundary_times = np.concatenate(
         (
-            np.asarray([decision_ms - window_ms], dtype=np.int64),
+            np.asarray([window_start_ms], dtype=np.int64),
             receipt_times,
             np.asarray([decision_ms], dtype=np.int64),
         )
     )
     return _TradeMetrics(
-        log_return=(0.0 if prices.size < 2 else math.log(prices[-1] / prices[0])),
+        log_return=(
+            0.0
+            if path_prices.size < 2
+            else math.log(path_prices[-1] / path_prices[0])
+        ),
         realized_variance=float(np.sum(returns * returns, dtype=np.float64)),
         signed_quote_imbalance=0.0 if gross <= 0.0 else signed / gross,
         log1p_quote_notional=math.log1p(gross),

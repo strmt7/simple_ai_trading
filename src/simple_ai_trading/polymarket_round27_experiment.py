@@ -241,6 +241,10 @@ def _candidate_gate(
         <= float(prior_metrics["expected_calibration_error"])
         + float(evaluation["calibration_ece_maximum_degradation"]),
         "paired_log_loss_confidence_gate_met": float(bootstrap["ci95_upper"]) < 0.0,
+        "paired_brier_confidence_gate_met": float(
+            bootstrap["brier_score"]["ci95_upper"]  # type: ignore[index]
+        )
+        < 0.0,
     }
     return checks
 

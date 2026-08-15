@@ -9,11 +9,11 @@ from typing import Mapping
 
 
 POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256 = (
-    "3d23b811f964df8d91f2f08fc5e5088293770ec2d758f4aff252173d30a425c0"
+    "6dc1fd872ade724df0af5fc8f41382cb4681baefba01dd220b25f98ccec10fb6"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
-    "round-027-opportunity-bootstrap-correction-amendment-v6.json"
+    "round-027-boundary-return-and-brier-confidence-correction-amendment-v7.json"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD = (
     "model_implementation_amendment_sha256"
@@ -24,6 +24,13 @@ _PREDECESSOR_AMENDMENT_SHA256 = (
 _PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
     "round-027-dependent-bootstrap-correction-amendment-v5.json"
+)
+_V6_PREDECESSOR_AMENDMENT_SHA256 = (
+    "3d23b811f964df8d91f2f08fc5e5088293770ec2d758f4aff252173d30a425c0"
+)
+_V6_PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/"
+    "round-027-opportunity-bootstrap-correction-amendment-v6.json"
 )
 _WALK_FORWARD_PREDECESSOR_AMENDMENT_SHA256 = (
     "e3ce6285cea10337f50383cdd2b89dd048d8f015f889adaa9cc0045088a44833"
@@ -667,7 +674,7 @@ def _validate_predecessor(
     return None
 
 
-def validate_round27_model_amendment(
+def _validate_v6_predecessor(
     value: Mapping[str, object],
 ) -> dict[str, object]:
     payload = dict(value)
@@ -694,7 +701,7 @@ def validate_round27_model_amendment(
     }
     if (
         set(payload) != expected_fields
-        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _V6_PREDECESSOR_AMENDMENT_SHA256
         or claimed != _canonical_sha256(payload)
         or payload.get("schema_version")
         != "polymarket-round27-opportunity-bootstrap-correction-amendment-v6"
@@ -767,6 +774,173 @@ def validate_round27_model_amendment(
     return {**payload, "amendment_sha256": claimed}
 
 
+def validate_round27_model_amendment(
+    value: Mapping[str, object],
+) -> dict[str, object]:
+    payload = dict(value)
+    claimed = _sha256(payload.pop("amendment_sha256", ""))
+    correction = payload.get("correction")
+    discovery = payload.get("discovery_audit")
+    research = payload.get("research_basis")
+    created_at_ms = payload.get("created_at_ms")
+    expected_fields = {
+        "authority",
+        "base_model_contract_sha256",
+        "campaign_contract_sha256",
+        "correction",
+        "created_at_ms",
+        "discovery_audit",
+        "knowledge_at_freeze",
+        "predecessor_amendment_sha256",
+        "predecessor_source_text_sha256",
+        "rationale",
+        "research_basis",
+        "schema_version",
+        "status",
+        "superseded_source_text_sha256",
+    }
+    expected_predecessor_sources = {
+        "src/simple_ai_trading/polymarket_round27_ai_cases.py": (
+            "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a"
+        ),
+        "src/simple_ai_trading/polymarket_round27_ai_economics.py": (
+            "a4763089881c6475dce2ee56bb4e38ddcc4e71c89871e147d83b3eeaf0fb556b"
+        ),
+        "src/simple_ai_trading/polymarket_round27_economics.py": (
+            "913fd020f65a66c69dc6e0ff36d99c3842f82d17d17e73907974cd54fbd0fbff"
+        ),
+        "src/simple_ai_trading/polymarket_round27_experiment.py": (
+            "2573966ecf39a5a05a34050ceed436f8e91f7e3aac90bcab0125cbd09d6dfc0c"
+        ),
+        "src/simple_ai_trading/polymarket_round27_features.py": (
+            "032f249028418d7a479c014874a374b1dc6e68de80350b68dad83ca5aae58316"
+        ),
+        "src/simple_ai_trading/polymarket_round27_model.py": (
+            "2c124d761045d787014580852b55e82416738f1316e8928df66e5e5f799cd9fc"
+        ),
+    }
+    expected_replacements = {
+        "src/simple_ai_trading/polymarket_round27_ai_cases.py": {
+            "corrected": (
+                "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a"
+            ),
+            "frozen": (
+                "2e95562f3611842ecb801920f9cf6876eba2d11b2e0b89a76625f3a59be97bc2"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_ai_economics.py": {
+            "corrected": (
+                "a4763089881c6475dce2ee56bb4e38ddcc4e71c89871e147d83b3eeaf0fb556b"
+            ),
+            "frozen": (
+                "a222dd9c4d6246aeccf90e62ff7157697c52636aed4261c532337f5016e78fe6"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_economics.py": {
+            "corrected": (
+                "913fd020f65a66c69dc6e0ff36d99c3842f82d17d17e73907974cd54fbd0fbff"
+            ),
+            "frozen": (
+                "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_experiment.py": {
+            "corrected": (
+                "123e2f1955b612ed16e88dcfa9fa6277c06f062498bda54cfa2fcfdd658a4ba9"
+            ),
+            "frozen": (
+                "9a97a253668e9ef2487c042c3574b4bea2f5cf7e6fcd5267a1f6e6fc1ed5321e"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_features.py": {
+            "corrected": (
+                "854fdbfe0a2ba0e8e914f3b8d6381f15222baace2b31e46c7e9cc966fc5d32f0"
+            ),
+            "frozen": (
+                "032f249028418d7a479c014874a374b1dc6e68de80350b68dad83ca5aae58316"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_model.py": {
+            "corrected": (
+                "200b95a41b984625e80da840b0db3695a44896763581ce1b59cc93bac7cd3177"
+            ),
+            "frozen": (
+                "5eedf0a5e6f7c0317c795d99ad7425ff2e262c2d527c519d4f9d9cee7f8e8740"
+            ),
+        },
+    }
+    if (
+        set(payload) != expected_fields
+        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _canonical_sha256(payload)
+        or payload.get("schema_version")
+        != (
+            "polymarket-round27-boundary-return-and-brier-confidence-"
+            "correction-amendment-v7"
+        )
+        or payload.get("status")
+        != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
+        or type(created_at_ms) is not int
+        or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
+        or payload.get("base_model_contract_sha256")
+        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
+        or payload.get("predecessor_amendment_sha256")
+        != _V6_PREDECESSOR_AMENDMENT_SHA256
+        or payload.get("predecessor_source_text_sha256")
+        != expected_predecessor_sources
+        or payload.get("authority") != _EXPECTED_AUTHORITY
+        or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
+        or payload.get("superseded_source_text_sha256") != expected_replacements
+        or not isinstance(correction, Mapping)
+        or correction.get("ai_prompts_or_candidate_families_changed") is not False
+        or correction.get("brier_score_confidence_gate_added") is not True
+        or correction.get("economic_gate_changed") is not False
+        or correction.get("feature_count_or_names_changed") is not False
+        or correction.get("fixed_window_flow_population")
+        != "receipts_at_or_after_window_start_through_decision"
+        or correction.get("fixed_window_price_path_anchor")
+        != "last_receipt_at_or_before_window_start_when_available"
+        or correction.get("log_loss_confidence_gate_retained") is not True
+        or correction.get("model_payload_schema_changed") is not False
+        or correction.get("prediction_gate_became_stricter") is not True
+        or correction.get("prediction_gate_numeric_thresholds_changed") is not False
+        or correction.get("realized_variance_includes_boundary_to_first_in_window_return")
+        is not True
+        or correction.get("trade_count_notional_and_imbalance_exclude_boundary_anchor")
+        is not True
+        or not isinstance(discovery, Mapping)
+        or discovery.get("frozen_brier_improvement_had_dependence_aware_confidence_bound")
+        is not False
+        or discovery.get("frozen_fixed_window_return_included_boundary_to_first_trade_move")
+        is not False
+        or discovery.get("frozen_trade_count_or_notional_included_pre_window_receipts")
+        is not False
+        or discovery.get("official_outcomes_accessed") is not False
+        or discovery.get("synthetic_host_check_is_edge_or_profitability_evidence")
+        is not False
+        or research
+        != [
+            {
+                "purpose": "primary_short_horizon_price_change_and_order_flow_measurement",
+                "url": "https://arxiv.org/abs/1011.6402",
+            },
+            {
+                "purpose": "primary_probability_forecast_scoring_rule_evaluation",
+                "url": "https://arxiv.org/abs/1202.5140",
+            },
+            {
+                "purpose": (
+                    "primary_stationary_bootstrap_for_weakly_dependent_observations"
+                ),
+                "url": "https://doi.org/10.1080/01621459.1994.10476870",
+            },
+        ]
+    ):
+        raise ValueError("Round 27 model amendment differs")
+    return {**payload, "amendment_sha256": claimed}
+
+
 def load_round27_model_amendment(
     repository: str | Path,
     path: str | Path | None = None,
@@ -790,6 +964,9 @@ def load_round27_model_amendment(
         _load_strict(root / _WALK_FORWARD_PREDECESSOR_AMENDMENT_RELATIVE_PATH)
     )
     _validate_predecessor(_load_strict(root / _PREDECESSOR_AMENDMENT_RELATIVE_PATH))
+    _validate_v6_predecessor(
+        _load_strict(root / _V6_PREDECESSOR_AMENDMENT_RELATIVE_PATH)
+    )
     return validate_round27_model_amendment(_load_strict(selected))
 
 
