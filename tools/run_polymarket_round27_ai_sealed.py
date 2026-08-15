@@ -36,6 +36,7 @@ from simple_ai_trading.polymarket_round27_operator import (
     canonical_sha256,
     economic_book_batches,
     load_mapping,
+    source_recomputed_artifact,
 )
 from simple_ai_trading.polymarket_round27_target_store import Round27TargetStore
 
@@ -194,39 +195,30 @@ def main(argv: Sequence[str] | None = None) -> int:
             run_id=panel.source_run_id,
             condition_ids=condition_ids,
         )
-        if outputs["economics"].exists():
-            report = validate_round27_ai_economic_report(
-                load_mapping(outputs["economics"])
-            )
-            if (
-                report.get("partition_role") != "sealed"
-                or report.get("case_panel_sha256") != panel.panel_sha256
-                or report.get("inference_report_sha256")
-                != inference.report_sha256
-                or report.get("baseline_economic_report_sha256")
-                != baseline.get("report_sha256")
-                or report.get("resolution_evidence_sha256")
-                != resolution_evidence_sha256
-            ):
-                raise ValueError("Round 27 persisted sealed AI economics differ")
-        else:
-            report = evaluate_round27_ai_matched_economics(
-                panel=panel,
-                inference_report=inference,
-                baseline_economic_report=baseline,
-                markets=markets,
-                outcomes_up=outcomes,
-                resolution_evidence_sha256=resolution_evidence_sha256,
-                book_batches=economic_book_batches(
-                    source,
-                    run_id=panel.source_run_id,
-                    condition_ids=condition_ids,
-                    maximum_conditions=int(
-                        panel.economic_config["maximum_conditions_per_book_batch"]
+        report = source_recomputed_artifact(
+            outputs["economics"],
+            "report_sha256",
+            lambda: validate_round27_ai_economic_report(
+                evaluate_round27_ai_matched_economics(
+                    panel=panel,
+                    inference_report=inference,
+                    baseline_economic_report=baseline,
+                    markets=markets,
+                    outcomes_up=outcomes,
+                    resolution_evidence_sha256=resolution_evidence_sha256,
+                    book_batches=economic_book_batches(
+                        source,
+                        run_id=panel.source_run_id,
+                        condition_ids=condition_ids,
+                        maximum_conditions=int(
+                            panel.economic_config[
+                                "maximum_conditions_per_book_batch"
+                            ]
+                        ),
                     ),
                 ),
-            )
-    artifact_writer(outputs["economics"], "report_sha256")(report)
+            ),
+        )
     terminal = _terminal_result(
         ai_selection_sha256=selection.selection_sha256,
         nominated_model_id=selection.nominated_model_id,

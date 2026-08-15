@@ -17,7 +17,7 @@ from simple_ai_trading.polymarket_round27_model_amendment import (
 _ROOT = Path(__file__).resolve().parents[1]
 _SOURCE_LEDGER = (
     _ROOT
-    / "docs/model-research/polymarket/round-027-effective-source-ledger-v3.json"
+    / "docs/model-research/polymarket/round-027-effective-source-ledger-v4.json"
 )
 
 
@@ -35,25 +35,28 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "stage1_capture_started": True,
         "stage1_feature_rows_accessed_or_materialized": False,
     }
-    assert amendment["correction"]["lag_zero_excluded_from_insignificance_scan"] is True
-    assert amendment["correction"]["fixed_expected_block_lengths_conditions_retained"] == [
-        1,
-        4,
-        12,
-    ]
+    assert amendment["correction"][
+        "ai_economic_reports_recomputed_from_source_before_acceptance"
+    ] is True
+    assert amendment["correction"][
+        "ai_economic_restart_checkpoints_must_match_source_recomputation"
+    ] is True
+    assert amendment["correction"][
+        "operational_round27_entrypoints_added_to_source_ledger"
+    ] is True
     assert amendment["correction"][
         "economic_or_prediction_gate_numeric_thresholds_changed"
     ] is False
     assert amendment["predecessor_amendment_sha256"] == (
-        "5dc338fbd521e02bdecd6e90df185e6d8276276556fa6c4d2425faccf809c731"
+        "7cbc5e39f8a7c663282ca2a6b34ec5a219477faed9ba7d03230cfd655f7aa8ca"
     )
     assert amendment["source_ledger"] == {
         "relative_path": (
             "docs/model-research/polymarket/"
-            "round-027-effective-source-ledger-v3.json"
+            "round-027-effective-source-ledger-v4.json"
         ),
         "sha256": (
-            "972ef3e49f16ced1706a3ff0b91dae72033ae48dee9f4b15794585de26fa9493"
+            "850cfb612d86e1aebafb271ffbea3281d771f922153bd2a6d41e2d567a844475"
         ),
     }
     assert set(amendment["superseded_source_text_sha256"]) == {
@@ -63,22 +66,15 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "src/simple_ai_trading/polymarket_round27_experiment.py",
         "src/simple_ai_trading/polymarket_round27_features.py",
         "src/simple_ai_trading/polymarket_round27_model.py",
+        "src/simple_ai_trading/polymarket_round27_operator.py",
+        "tools/run_polymarket_round27_ai_sealed.py",
+        "tools/run_polymarket_round27_ai_selection.py",
     }
     assert (
         amendment["superseded_source_text_sha256"][
-            "src/simple_ai_trading/polymarket_round27_model.py"
+            "src/simple_ai_trading/polymarket_round27_operator.py"
         ]["corrected"]
-        == "76360e4541ab7118e9ea29561d20d18dcc97dd32fffff07fce6d11af2452d4bf"
-    )
-    assert amendment["superseded_source_text_sha256"][
-        "src/simple_ai_trading/polymarket_round27_features.py"
-    ]["corrected"] == (
-        "d74d97b9bab0dba46d2b207b845da1d4b8028972bc636e0674f759cecb22f027"
-    )
-    assert amendment["superseded_source_text_sha256"][
-        "src/simple_ai_trading/polymarket_round27_experiment.py"
-    ]["corrected"] == (
-        "51b9077781cabb6d3f8fd7033894b41a0b5ed2d7cf911eb4b573df6f902c63c1"
+        == "184be01f8c3f45e2f225c07201608290f0bed37c6177c5f0b48b8fe922a07a13"
     )
 
 
@@ -113,6 +109,7 @@ def test_round27_effective_source_ledger_covers_static_import_closure() -> None:
     assert ledger["scope"]["hash_normalization"] == (
         "replace_crlf_with_lf_before_sha256"
     )
+    assert ledger["scope"]["operator_entrypoints_included"] is True
     locked = set(ledger["files_sha256"])
     excluded = set(ledger["excluded_files"])
     pending = [Path(relative) for relative in ledger["scope"]["entrypoint_files"]]
@@ -126,10 +123,26 @@ def test_round27_effective_source_ledger_covers_static_import_closure() -> None:
         closure.add(normalized)
         tree = ast.parse((_ROOT / relative).read_text(encoding="utf-8"))
         for node in ast.walk(tree):
-            if not isinstance(node, ast.ImportFrom) or node.level != 1 or not node.module:
-                continue
-            dependency = Path("src/simple_ai_trading") / f"{node.module}.py"
-            if (_ROOT / dependency).is_file():
-                pending.append(dependency)
+            modules: list[str] = []
+            if isinstance(node, ast.ImportFrom) and node.module:
+                if node.level == 1:
+                    dependency = Path("src/simple_ai_trading") / f"{node.module}.py"
+                    if (_ROOT / dependency).is_file():
+                        pending.append(dependency)
+                    continue
+                if node.level == 0:
+                    modules.append(node.module)
+            elif isinstance(node, ast.Import):
+                modules.extend(alias.name for alias in node.names)
+            for module in modules:
+                parts = module.split(".")
+                if parts[0] == "simple_ai_trading":
+                    dependency = Path("src", *parts).with_suffix(".py")
+                elif parts[0] == "tools":
+                    dependency = Path(*parts).with_suffix(".py")
+                else:
+                    continue
+                if (_ROOT / dependency).is_file():
+                    pending.append(dependency)
 
     assert closure | {".gitattributes", "pyproject.toml", "uv.lock"} == locked
