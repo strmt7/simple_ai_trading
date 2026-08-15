@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 59519,
+      "bytes": 60016,
       "path": "latest/README.md",
-      "sha256": "f8cbaf4ecab31dc30ff79258be0f146c3b978622d4c5ff000142bc25056ccd45"
+      "sha256": "ae5e3fcd2f37247628b5c023d5994b9914b9424bb6e0860b88e08e851100b47e"
     },
     {
       "bytes": 77606,
@@ -557,6 +557,11 @@
       "sha256": "6585dd69e47681828d414b7677cee41cc6113147acef97ecfcec4e5e97106d0b"
     },
     {
+      "bytes": 3466,
+      "path": "round-028-sealed-evaluation-implementation-amendment-v1.json",
+      "sha256": "5b45f6d338edd0cedae9ab3027ffab5f98c4e44f1a597b8ca301af9b8989c3e6"
+    },
+    {
       "bytes": 3444,
       "path": "round-028-selection-implementation-amendment-v1.json",
       "sha256": "f9a81b1848e4f37b3201f4115268dab0ddbe329c9da20f89bd33dda110c3113d"
@@ -569,7 +574,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 28,
   "live_trading_authority": false,
-  "manifest_sha256": "ce5ef3e02482bdb0784b9518aec2e6cdfa0997b58e2609a4d74fe0969e571ff2",
+  "manifest_sha256": "f7307f3907c0706589f949a14157c3e04a25c91cf061d1bd0a6ed487dc1bba0f",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -671,6 +676,8 @@
   "round28_loaded_contract_binding_corrected": true,
   "round28_loaded_contract_binding_revision": 2,
   "round28_model_result_available": false,
+  "round28_sealed_evaluation_implementation_source_bound": true,
+  "round28_sealed_result_available": false,
   "schema_version": "polymarket-current-status-publication-v1",
   "source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0",
   "source_dataset_sha256": "a6fd7f55ec7705d391a035b923c4440c3f92ddfb5b1b169ee6b7df3d67aa7665",
