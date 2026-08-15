@@ -102,12 +102,8 @@ def _side(value: float) -> float:
 
 def _settlement_values(base: Round27FeatureRow) -> tuple[float, ...]:
     row = base.validated()
-    margin = float(
-        row.values[_ROUND27_INDEX["twap.log_distance_from_open"]]
-    )
-    variance_rate = float(
-        row.values[_ROUND27_INDEX["twap.variance_rate_per_second"]]
-    )
+    margin = float(row.values[_ROUND27_INDEX["twap.log_distance_from_open"]])
+    variance_rate = float(row.values[_ROUND27_INDEX["twap.variance_rate_per_second"]])
     path_efficiency = float(row.values[_ROUND27_INDEX["twap.path_efficiency"]])
     remaining = float(row.values[_ROUND27_INDEX["phase.remaining_seconds"]])
     elapsed_fraction = float(row.values[_ROUND27_INDEX["phase.elapsed_fraction"]])
@@ -182,8 +178,7 @@ class Round29SettlementOverlayRow:
             "base_row_sha256": self.base_row_sha256,
         }
         if (
-            self.schema_version
-            != POLYMARKET_ROUND29_SETTLEMENT_OVERLAY_SCHEMA_VERSION
+            self.schema_version != POLYMARKET_ROUND29_SETTLEMENT_OVERLAY_SCHEMA_VERSION
             or type(self.decision_time_ms) is not int
             or self.decision_time_ms <= 0
             or self.decision_time_ms % 1_000

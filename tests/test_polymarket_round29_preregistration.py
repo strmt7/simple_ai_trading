@@ -22,8 +22,7 @@ from simple_ai_trading.polymarket_round29_settlement_features import (
 
 ROOT = Path(__file__).resolve().parents[1]
 PREREGISTRATION = (
-    ROOT
-    / "docs/model-research/polymarket/"
+    ROOT / "docs/model-research/polymarket/"
     "round-029-settlement-state-matched-ablation-preregistration-v1.json"
 )
 
@@ -113,6 +112,4 @@ def test_round29_preregistration_binds_exact_feature_and_comparison_contracts() 
             "test incremental settlement-state value after the frozen BBO overlay"
         ),
     }
-    assert value["promotion_gates"]["accuracy"].endswith(
-        "neither can promote alone."
-    )
+    assert value["promotion_gates"]["accuracy"].endswith("neither can promote alone.")
