@@ -21,6 +21,11 @@ BASE_CONTRACT = (
     ROOT
     / "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
 )
+PREDECESSOR_CORRECTION = (
+    ROOT
+    / "docs/model-research/polymarket/"
+    "round-028-loaded-contract-binding-correction-v1.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -66,3 +71,21 @@ def test_round28_contract_correction_is_canonical_and_source_bound() -> None:
     )
     with pytest.raises(ValueError, match="corrected source binding differs"):
         validate_round28_contract_binding_correction(tampered, repository=ROOT)
+
+
+def test_round28_predecessor_correction_remains_hash_and_source_bound() -> None:
+    predecessor = json.loads(PREDECESSOR_CORRECTION.read_text(encoding="ascii"))
+    current = load_round28_contract_binding_correction(ROOT)
+    claimed = predecessor.pop("amendment_sha256")
+
+    assert claimed == _canonical_sha256(predecessor)
+    replacements = current["superseded_source_text_sha256"]
+    for relative, expected in predecessor["source_text_sha256"].items():
+        if relative in replacements:
+            assert replacements[relative]["frozen"] == expected
+        else:
+            path = ROOT / relative
+            actual = hashlib.sha256(
+                path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+            ).hexdigest()
+            assert actual == expected

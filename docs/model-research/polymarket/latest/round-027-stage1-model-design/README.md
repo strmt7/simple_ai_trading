@@ -184,6 +184,14 @@ only when CLOB and Gamma agree for every admitted condition. The sealed role
 cannot open without the exact selected model, passing economic claim, and the
 claim-bound economic report.
 
+The [campaign-admission correction](../../round-027-campaign-admission-gate-correction-amendment-v16.json)
+adds the missing campaign-level boundary. Target access now requires one
+canonical receipt proving all three primary target-free audits, at least 300
+eligible conditions, every role-specific population floor, the exact feature
+rows assigned to each role, and the unchanged purged contingency policy. Every
+target role stores the same admission hash; a partial or mismatched campaign
+fails before any outcome request.
+
 The sealed role stays inaccessible until the exact selected model payload, its
 source-bound economic report, and a persisted passing economic claim all
 revalidate. A matching model name alone is insufficient.

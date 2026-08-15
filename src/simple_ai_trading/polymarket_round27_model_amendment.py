@@ -9,11 +9,11 @@ from typing import Mapping
 
 
 POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256 = (
-    "754bec3c86d36a1f88feaa806780c65ecf71e815d90dd149be8cef2cb8c6367a"
+    "819fcce228d873005defec3cabe7ac6033f9f53fa9e810d9a65b69dc24a2a590"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
-    "round-027-execution-settlement-hazard-correction-amendment-v15.json"
+    "round-027-campaign-admission-gate-correction-amendment-v16.json"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD = (
     "model_implementation_amendment_sha256"
@@ -88,6 +88,13 @@ _V14_PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
     "round-027-settlement-hazard-correction-amendment-v14.json"
 )
+_V15_PREDECESSOR_AMENDMENT_SHA256 = (
+    "754bec3c86d36a1f88feaa806780c65ecf71e815d90dd149be8cef2cb8c6367a"
+)
+_V15_PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/"
+    "round-027-execution-settlement-hazard-correction-amendment-v15.json"
+)
 _V1_SOURCE_LEDGER_SHA256 = (
     "af847fbe265d58dc0a40f6d011a8060822fdf5a98719880d041398a527d27d92"
 )
@@ -113,9 +120,15 @@ _V4_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v4.json"
 )
 _EFFECTIVE_SOURCE_LEDGER_SHA256 = (
-    "bf2231376f0e4748e164bdf5b828d451b9f4ed00e9f3794b3906d98611dd7539"
+    "f38396df1bb3f8dba662370401b562ab431f6514f0fad58210079e7d6a059581"
 )
 _EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/round-027-effective-source-ledger-v7.json"
+)
+_V6_SOURCE_LEDGER_SHA256 = (
+    "bf2231376f0e4748e164bdf5b828d451b9f4ed00e9f3794b3906d98611dd7539"
+)
+_V6_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v6.json"
 )
 _V5_SOURCE_LEDGER_SHA256 = (
@@ -1361,8 +1374,15 @@ def _validate_source_ledger(
         "polymarket-round27-effective-source-ledger-v4",
         "polymarket-round27-effective-source-ledger-v5",
         "polymarket-round27-effective-source-ledger-v6",
+        "polymarket-round27-effective-source-ledger-v7",
     }
-    expected_file_count = 85 if operator_ledger else 68
+    expected_file_count = (
+        87
+        if expected_schema_version == "polymarket-round27-effective-source-ledger-v7"
+        else 85
+        if operator_ledger
+        else 68
+    )
     expected_dependency_resolution = (
         "recursive_local_project_import_closure"
         if operator_ledger
@@ -2314,12 +2334,12 @@ def _validate_v14_predecessor(
     return {**payload, "amendment_sha256": claimed}
 
 
-def validate_round27_model_amendment(
+def _validate_v15_predecessor(
     value: Mapping[str, object],
     *,
     repository: str | Path | None = None,
 ) -> dict[str, object]:
-    """Validate the current execution-time settlement-hazard correction."""
+    """Validate the immutable v15 execution-time settlement-hazard correction."""
 
     root = (
         Path(__file__).resolve().parents[2]
@@ -2403,7 +2423,7 @@ def validate_round27_model_amendment(
             "status",
             "superseded_source_text_sha256",
         }
-        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _V15_PREDECESSOR_AMENDMENT_SHA256
         or claimed != _canonical_sha256(payload)
         or payload.get("schema_version")
         != "polymarket-round27-execution-settlement-hazard-correction-amendment-v15"
@@ -2428,10 +2448,160 @@ def validate_round27_model_amendment(
     _validate_source_ledger(
         root,
         payload.get("source_ledger"),
-        expected_path=_EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH,
-        expected_sha256=_EFFECTIVE_SOURCE_LEDGER_SHA256,
+        expected_path=_V6_SOURCE_LEDGER_RELATIVE_PATH,
+        expected_sha256=_V6_SOURCE_LEDGER_SHA256,
         expected_schema_version="polymarket-round27-effective-source-ledger-v6",
         predecessor_sha256=_V5_SOURCE_LEDGER_SHA256,
+        verify_current_files=False,
+    )
+    return {**payload, "amendment_sha256": claimed}
+
+
+def validate_round27_model_amendment(
+    value: Mapping[str, object],
+    *,
+    repository: str | Path | None = None,
+) -> dict[str, object]:
+    """Validate the current campaign-admission target-access correction."""
+
+    root = (
+        Path(__file__).resolve().parents[2]
+        if repository is None
+        else Path(repository).resolve()
+    )
+    predecessor = _validate_v15_predecessor(
+        _load_strict(root / _V15_PREDECESSOR_AMENDMENT_RELATIVE_PATH),
+        repository=root,
+    )
+    predecessor_replacements = predecessor.get("superseded_source_text_sha256")
+    if not isinstance(predecessor_replacements, Mapping):
+        raise ValueError("Round 27 predecessor replacement map differs")
+    expected_replacements = dict(predecessor_replacements)
+    expected_replacements.update(
+        {
+            "src/simple_ai_trading/polymarket_round27_target_store.py": {
+                "corrected": (
+                    "7a4fd1a48ce06bc0a5ce785090457f83563514f8daec03eb8f063a8531aa553b"
+                ),
+                "frozen": (
+                    "8d8b3bca60d89dba108d3ebd379bddf465a481bdd36418587a1b43a78b8e088e"
+                ),
+            },
+            "tools/collect_polymarket_round27_targets.py": {
+                "corrected": (
+                    "5a308c2b6aebbec6950e1da94eb35e2a89873804e0331c52830468dba0863db7"
+                ),
+                "frozen": (
+                    "3591a9b483c7ed0b658e5825152d19e5a43e25e8d15fb2d77e20772a780b46fc"
+                ),
+            },
+        }
+    )
+    expected_correction = {
+        "all_primary_target_free_audits_required": True,
+        "campaign_admission_artifact_required": True,
+        "contingency_role_assignment_changed": False,
+        "exact_role_feature_populations_bound": True,
+        "feature_model_economic_or_ai_candidates_changed": False,
+        "minimum_campaign_eligible_conditions": 300,
+        "model_role_minima_required": True,
+        "source_ledger_advanced": True,
+        "target_access_schema_version_from": (
+            "polymarket-round27-role-target-access-v1"
+        ),
+        "target_access_schema_version_to": (
+            "polymarket-round27-role-target-access-v2"
+        ),
+        "target_store_schema_version_from": (
+            "polymarket-round27-role-gated-target-store-v1"
+        ),
+        "target_store_schema_version_to": (
+            "polymarket-round27-role-gated-target-store-v2"
+        ),
+    }
+    expected_discovery = {
+        "campaign_contract_gate_was_not_enforced_at_target_store_boundary": True,
+        "official_outcomes_accessed": False,
+        "single_role_target_access_was_possible_before_complete_campaign_admission": (
+            True
+        ),
+        "stage1_feature_rows_accessed_or_materialized": False,
+    }
+    expected_predecessor_sources = {
+        "src/simple_ai_trading/polymarket_round27_target_store.py": (
+            "8d8b3bca60d89dba108d3ebd379bddf465a481bdd36418587a1b43a78b8e088e"
+        ),
+        "tools/collect_polymarket_round27_targets.py": (
+            "3591a9b483c7ed0b658e5825152d19e5a43e25e8d15fb2d77e20772a780b46fc"
+        ),
+    }
+    expected_research = [
+        {
+            "purpose": "frozen_campaign_gate",
+            "relative_path": (
+                "docs/model-research/polymarket/"
+                "round-027-stage1-campaign-contract-v1.json"
+            ),
+        },
+        {
+            "purpose": "frozen_model_population_gate",
+            "relative_path": (
+                "docs/model-research/polymarket/"
+                "round-027-stage1-model-contract-v1.json"
+            ),
+        },
+    ]
+    payload = dict(value)
+    claimed = _sha256(payload.pop("amendment_sha256", ""))
+    created_at_ms = payload.get("created_at_ms")
+    if (
+        set(payload)
+        != {
+            "authority",
+            "base_model_contract_sha256",
+            "campaign_contract_sha256",
+            "correction",
+            "created_at_ms",
+            "discovery_audit",
+            "knowledge_at_freeze",
+            "predecessor_amendment_sha256",
+            "predecessor_source_text_sha256",
+            "rationale",
+            "research_basis",
+            "schema_version",
+            "source_ledger",
+            "status",
+            "superseded_source_text_sha256",
+        }
+        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _canonical_sha256(payload)
+        or payload.get("schema_version")
+        != "polymarket-round27-campaign-admission-gate-correction-amendment-v16"
+        or payload.get("status")
+        != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
+        or type(created_at_ms) is not int
+        or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
+        or payload.get("predecessor_amendment_sha256")
+        != _V15_PREDECESSOR_AMENDMENT_SHA256
+        or payload.get("predecessor_source_text_sha256")
+        != expected_predecessor_sources
+        or payload.get("authority") != _EXPECTED_AUTHORITY
+        or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
+        or payload.get("correction") != expected_correction
+        or payload.get("discovery_audit") != expected_discovery
+        or payload.get("research_basis") != expected_research
+        or payload.get("superseded_source_text_sha256") != expected_replacements
+    ):
+        raise ValueError("Round 27 model amendment differs")
+    _validate_source_ledger(
+        root,
+        payload.get("source_ledger"),
+        expected_path=_EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH,
+        expected_sha256=_EFFECTIVE_SOURCE_LEDGER_SHA256,
+        expected_schema_version="polymarket-round27-effective-source-ledger-v7",
+        predecessor_sha256=_V6_SOURCE_LEDGER_SHA256,
         verify_current_files=True,
     )
     return {**payload, "amendment_sha256": claimed}

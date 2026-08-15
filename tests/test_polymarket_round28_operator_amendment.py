@@ -26,6 +26,10 @@ CONTRACT_BINDING_CORRECTION = (
     ROOT / "docs/model-research/polymarket/"
     "round-028-loaded-contract-binding-correction-v1.json"
 )
+CURRENT_CONTRACT_BINDING_CORRECTION = (
+    ROOT / "docs/model-research/polymarket/"
+    "round-028-loaded-contract-binding-correction-v2.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -49,6 +53,9 @@ def _text_sha256(path: Path) -> str:
 def test_round28_operator_amendment_is_hash_and_superseded_source_bound() -> None:
     value = json.loads(AMENDMENT.read_text(encoding="ascii"))
     correction = json.loads(CONTRACT_BINDING_CORRECTION.read_text(encoding="ascii"))
+    current = json.loads(
+        CURRENT_CONTRACT_BINDING_CORRECTION.read_text(encoding="ascii")
+    )
     claimed = value.pop("amendment_sha256")
 
     assert claimed == _canonical_sha256(value)
@@ -94,10 +101,16 @@ def test_round28_operator_amendment_is_hash_and_superseded_source_bound() -> Non
         relative: replacements[relative]["frozen"]
         for relative in value["source_text_sha256"]
     }
-    assert all(
-        replacements[relative]["corrected"] == _text_sha256(ROOT / relative)
-        for relative in value["source_text_sha256"]
-    )
+    current_replacements = current["superseded_source_text_sha256"]
+    for relative in value["source_text_sha256"]:
+        corrected = replacements[relative]["corrected"]
+        if relative in current_replacements:
+            assert current_replacements[relative] == {
+                "frozen": corrected,
+                "corrected": _text_sha256(ROOT / relative),
+            }
+        else:
+            assert corrected == _text_sha256(ROOT / relative)
     assert value["test_scope"] == {
         "financial_result": False,
         "stage1_data_used": False,

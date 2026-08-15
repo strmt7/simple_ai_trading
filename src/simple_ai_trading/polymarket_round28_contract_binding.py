@@ -18,11 +18,14 @@ from .polymarket_round27_model_contract import (
 
 
 POLYMARKET_ROUND28_CONTRACT_BINDING_CORRECTION_SCHEMA_VERSION = (
-    "polymarket-round28-loaded-contract-binding-correction-v1"
+    "polymarket-round28-loaded-contract-binding-correction-v2"
 )
 POLYMARKET_ROUND28_CONTRACT_BINDING_CORRECTION_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
-    "round-028-loaded-contract-binding-correction-v1.json"
+    "round-028-loaded-contract-binding-correction-v2.json"
+)
+_PREDECESSOR_CORRECTION_SHA256 = (
+    "daabe6acbe7c55159d6f2971845a415978efad0879c8e264fc994c077cf42f7d"
 )
 _SELECTION_AMENDMENT_SHA256 = (
     "005caf15e94b5f43faaa451b9f12754b7f5c6dd88b1b09fea5a8d3182eb7e306"
@@ -61,14 +64,10 @@ _CORRECTION = {
         "loader appended the current implementation-amendment identity."
     ),
     "feature_model_target_or_economic_logic_changed": False,
-    "input_manifest_schema_version_from": (
-        "polymarket-round28-selection-input-manifest-v1"
-    ),
-    "input_manifest_schema_version_to": (
-        "polymarket-round28-selection-input-manifest-v2"
-    ),
-    "selection_claim_schema_version_from": "polymarket-round28-selection-v1",
-    "selection_claim_schema_version_to": "polymarket-round28-selection-v2",
+    "input_manifest_schema_version": "polymarket-round28-selection-input-manifest-v2",
+    "round27_campaign_admission_correction_bound": True,
+    "round27_model_amendment_advanced": True,
+    "selection_claim_schema_version": "polymarket-round28-selection-v2",
     "separate_model_amendment_binding_required": True,
 }
 _DISCOVERY_AUDIT = {
@@ -84,23 +83,17 @@ _TEST_SCOPE = {
     "synthetic_mechanics_only": False,
 }
 _EXPECTED_FROZEN_REPLACEMENTS = {
-    "src/simple_ai_trading/polymarket_round28_operator.py": (
-        "24045ce7cf206b81567dedfa36f63d835ecbfc69f3ea4eeebf33c25105c845fb"
-    ),
-    "src/simple_ai_trading/polymarket_round28_selection.py": (
-        "a21b1ce02f5db70e58c10ae6d9724cfda6ad1ba01492ebdf9ab344cacaa2e5d6"
+    "src/simple_ai_trading/polymarket_round28_contract_binding.py": (
+        "3e8edf4d7ff528a40b381a47696c6c47f55a74f540855979f88e6b2217654e24"
     ),
     "tests/test_polymarket_round28_operator.py": (
-        "d543a72afcace576e709c5c9f08bee9f20c9e81d5b79b917e913ecbfd6f4e215"
+        "531667589ce50106822892d3b23b63abbda9e473bfb7d051180d3d0fb18799b9"
     ),
-    "tests/test_polymarket_round28_preregistration.py": (
-        "4f936d19de6a69d18c1659b948347b1e5ef8b2eb87e3d0bda5af51dff543ef2a"
+    "tests/test_polymarket_round28_operator_amendment.py": (
+        "efd01e17b9378c758b6dcece6eff155bfd102125943bcea953e73c02ebad2ed6"
     ),
-    "tests/test_polymarket_round28_selection.py": (
-        "e2eef23457b5cacca38f6bc18ff4a16a75416ce638f3cc8ec5020275c300a3fc"
-    ),
-    "tools/run_polymarket_round28_selection.py": (
-        "d429045c84f9551c98456b5c25181ebb90eb91d12489a1710d360e90136c4008"
+    "tests/test_polymarket_round28_contract_binding.py": (
+        "23193d2f9723f4ca8fc6c448856cdb7e3e4426eb5e80f29cc7bb5ba6a27ddd74"
     ),
 }
 _EXPECTED_SOURCE_PATHS = frozenset(
@@ -198,6 +191,7 @@ def validate_round28_contract_binding_correction(
             "discovery_audit",
             "knowledge_at_freeze",
             "predecessor_operator_amendment_sha256",
+            "predecessor_correction_amendment_sha256",
             "predecessor_selection_amendment_sha256",
             "round27_model_amendment_sha256",
             "round27_model_contract_sha256",
@@ -217,6 +211,8 @@ def validate_round28_contract_binding_correction(
         != _SELECTION_AMENDMENT_SHA256
         or payload.get("predecessor_operator_amendment_sha256")
         != _OPERATOR_AMENDMENT_SHA256
+        or payload.get("predecessor_correction_amendment_sha256")
+        != _PREDECESSOR_CORRECTION_SHA256
         or payload.get("round27_model_contract_sha256")
         != POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256
         or payload.get("round27_model_amendment_sha256")

@@ -37,6 +37,10 @@ only if target-free replay of all primary slots admits fewer than 300 markets.
 The [campaign contract](../round-027-stage1-campaign-contract-v1.json) forbids
 target access, fitting, adaptive replacement, and economic claims before the
 campaign gate.
+The [v16 admission correction](../round-027-campaign-admission-gate-correction-amendment-v16.json)
+enforces that gate at the target-store API: one persisted receipt must bind all
+primary audits, the total and role-specific population floors, and each role's
+exact target-free feature population before any outcome request can begin.
 
 Round 28 is a preregistered, target-blind BBO ablation over that same campaign,
 not a new result. The independent Round 21 sidecar already overlaps the Stage 1
