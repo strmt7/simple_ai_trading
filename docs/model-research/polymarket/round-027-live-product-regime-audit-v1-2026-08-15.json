@@ -1,0 +1,132 @@
+{
+  "audit_sha256": "b5a38ce4c562762f056c435a527f882b003e5659330f3ce0a1d313b5697167a0",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "live_trading_authority": false,
+    "model_promotion_authority": false,
+    "orders_submitted": false,
+    "profitability_claim": false
+  },
+  "campaign_binding": {
+    "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+    "capture_source_changed": false,
+    "economic_gate_changed": false,
+    "model_contract_changed": false,
+    "target_or_outcome_accessed": false
+  },
+  "conclusions": [
+    "the_round27_exact_60_second_twap_source_filter_matches_the_observed_live_btc_five_minute_product",
+    "the_live_market_enables_taker_order_delay_but_the_public_market_info_does_not_publish_a_numeric_crypto_delay_duration",
+    "the_february_to_april_single_instant_settlement_results_are_not_direct_evidence_for_the_current_60_second_twap_regime",
+    "settlement_window_flow_and_post_close_reversal_remain_descriptive_manipulation_risk_diagnostics_only",
+    "no_observed_metadata_or_external_paper_establishes_a_current_after_cost_trading_edge"
+  ],
+  "created_at_ms": 1786786052076,
+  "external_research_comparison": {
+    "paper": {
+      "authors": [
+        "David Dai",
+        "Ruizhe Jia",
+        "Shihao Yu"
+      ],
+      "current_version_date": "2026-08-11",
+      "identifier": "arXiv:2606.31675v1",
+      "sample_end": "2026-04-08",
+      "sample_start": "2025-07-01",
+      "studied_five_minute_live_period_end": "2026-04-08",
+      "studied_five_minute_live_period_start": "2026-02-12",
+      "studied_settlement_reference": "single_chainlink_price_at_open_compared_with_single_chainlink_price_at_close",
+      "url": "https://arxiv.org/html/2606.31675"
+    },
+    "portability_assessment": {
+      "current_reference": "chainlink_btc_usd_twap_60_seconds",
+      "direct_performance_transfer_allowed": false,
+      "paper_identifies_time_averaging_as_a_manipulation_cost_increasing_design_lever": true,
+      "paper_sample_overlaps_current_reference_regime": false,
+      "reason": "The paper's empirical sample and mechanism use a single-instant close. The observed live contract averages the reference over 60 seconds, so both pivotal-flow timing and manipulation cost changed."
+    },
+    "retained_target_blind_diagnostics": [
+      "final_60_second_signed_binance_spot_flow_and_return",
+      "final_30_second_signed_binance_spot_flow_and_return",
+      "final_10_second_signed_binance_spot_flow_and_return",
+      "first_10_second_post_close_return_reversal",
+      "preclose_polymarket_probability_strata",
+      "polymarket_and_binance_liquidity_state"
+    ]
+  },
+  "live_observation": {
+    "condition_id": "0x086314c8ddf207cbcc15db9857b391ff74329c799328f6cee322d30fcaf40339",
+    "gamma": {
+      "crypto_market_config": {
+        "asset": "btc",
+        "duration": "5m",
+        "id": "btc-5m-twap-60",
+        "twap_enabled": true,
+        "twap_lookback_seconds": 60
+      },
+      "endpoint": "https://gamma-api.polymarket.com/events?slug=btc-updown-5m-1786785600",
+      "fee_schedule": {
+        "exponent": 1,
+        "rate": 0.07,
+        "rebate_rate": 0.2,
+        "taker_only": true
+      },
+      "fees_enabled": true,
+      "http_status": 200,
+      "market_end_utc": "2026-08-15T09:25:00Z",
+      "minimum_order_size": 5,
+      "minimum_tick_size": 0.001,
+      "observed_at_ms": 1786786017851,
+      "raw_response_bytes": 7194,
+      "raw_response_sha256": "02e3c324c79dbb4fe2e6d033ee5678f4ccc55acdfb45de1f33f8517787baaab9",
+      "resolution_source": "https://data.chain.link/streams/btc-usd-twap-60s-streams"
+    },
+    "market_slug": "btc-updown-5m-1786785600",
+    "polymarket_clob_market_info": {
+      "endpoint": "https://clob.polymarket.com/clob-markets/0x086314c8ddf207cbcc15db9857b391ff74329c799328f6cee322d30fcaf40339",
+      "fee_curve": {
+        "exponent": 1,
+        "rate": 0.07,
+        "taker_only": true
+      },
+      "http_status": 200,
+      "maker_base_fee": 1000,
+      "minimum_order_size": 5,
+      "minimum_tick_size": 0.001,
+      "observed_at_ms": 1786786052076,
+      "outcomes": [
+        "Up",
+        "Down"
+      ],
+      "raw_response_bytes": 421,
+      "raw_response_sha256": "17b04b42c89d78aa2d517ef6d1a2de02071d61a39c73800d1a6039504b20bc28",
+      "taker_base_fee": 1000,
+      "taker_order_delay_enabled": true
+    }
+  },
+  "primary_sources": [
+    {
+      "purpose": "current_market_identity_resolution_source_and_fee_schedule",
+      "url": "https://gamma-api.polymarket.com/events?slug=btc-updown-5m-1786785600"
+    },
+    {
+      "purpose": "current_clob_market_parameters_and_taker_delay_flag",
+      "url": "https://clob.polymarket.com/clob-markets/0x086314c8ddf207cbcc15db9857b391ff74329c799328f6cee322d30fcaf40339"
+    },
+    {
+      "purpose": "official_fee_formula_and_category_parameters",
+      "url": "https://docs.polymarket.com/trading/fees"
+    },
+    {
+      "purpose": "official_clob_market_info_schema",
+      "url": "https://docs.polymarket.com/api-reference/markets/get-clob-market-info"
+    },
+    {
+      "purpose": "historical_single_instant_settlement_manipulation_evidence",
+      "url": "https://arxiv.org/html/2606.31675"
+    }
+  ],
+  "schema_version": "polymarket-round27-live-product-regime-audit-v1",
+  "status": "frozen_after_stage1_capture_start_before_stage1_feature_or_outcome_access"
+}

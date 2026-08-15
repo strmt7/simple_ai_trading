@@ -38,6 +38,18 @@ The [campaign contract](../round-027-stage1-campaign-contract-v1.json) forbids
 target access, fitting, adaptive replacement, and economic claims before the
 campaign gate.
 
+A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
+hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
+Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order
+delay flag. This matches Round 27's source filter. It also prevents a category
+error in the research program: the February-April settlement-manipulation
+study used a single price at the open and close, whereas the current product
+averages the reference across 60 seconds. Its historical profit figures are
+not current edge evidence. A separate target-blind
+[risk diagnostic](../round-027-settlement-regime-risk-preregistration-v1.json)
+will report final-window flow and post-close reversal without changing the
+model, policy, thresholds, or economic gates.
+
 The immutable model contract also contained one mathematically unreachable
 economic evidence gate: at most one candidate may be selected for each of 90
 conditions, but the original minimum was 100 executions. A frozen
@@ -108,11 +120,12 @@ preserve the exact boundaries. No market edge or after-cost profitability has
 been found yet.
 
 On 2026-08-10, a credential-free production read probe validated CLOB protocol
-V2, two exact BTC five-minute markets using the required Chainlink 30-second
+V2, two exact BTC five-minute markets using the then-current Chainlink 30-second
 TWAP source, matching Gamma/CLOB identities and fees, and all four token books.
 The [machine-readable probe](public-clob-live-probe-2026-08-10.json) submitted
 no order, accessed no wallet, and proves neither predictive edge,
-profitability, nor live readiness.
+profitability, nor live readiness. That source regime is retained as historical
+transport evidence and is not treated as current after the 60-second audit.
 
 ![Round 23 lead-lag performance](../round-023-lead-lag-performance.svg)
 
