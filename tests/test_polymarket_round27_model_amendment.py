@@ -35,14 +35,17 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         ]
         is False
     )
-    assert amendment["correction"]["brier_score_confidence_gate_added"] is True
+    assert amendment["correction"]["automatic_block_length_rounded_up"] is True
+    assert amendment["correction"][
+        "economic_pnl_bootstrap_uses_same_selector"
+    ] is True
     assert amendment["correction"]["prediction_gate_became_stricter"] is True
     assert amendment["predecessor_amendment_sha256"] == (
-        "3d23b811f964df8d91f2f08fc5e5088293770ec2d758f4aff252173d30a425c0"
+        "6dc1fd872ade724df0af5fc8f41382cb4681baefba01dd220b25f98ccec10fb6"
     )
     assert amendment["correction"][
-        "fixed_window_price_path_anchor"
-    ] == "last_receipt_at_or_before_window_start_when_available"
+        "fixed_expected_block_lengths_conditions_retained"
+    ] == [1, 4, 12]
     assert set(amendment["superseded_source_text_sha256"]) == {
         "src/simple_ai_trading/polymarket_round27_ai_cases.py",
         "src/simple_ai_trading/polymarket_round27_ai_economics.py",
@@ -55,7 +58,7 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         amendment["superseded_source_text_sha256"][
             "src/simple_ai_trading/polymarket_round27_model.py"
         ]["corrected"]
-        == "200b95a41b984625e80da840b0db3695a44896763581ce1b59cc93bac7cd3177"
+        == "73de58ec5c5a1c1b79119779ff2035c7d73eabca3807aff83c07755f14123774"
     )
 
 

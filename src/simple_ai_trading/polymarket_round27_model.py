@@ -911,6 +911,91 @@ def paired_round27_condition_bootstrap(
     }
 
 
+def round27_corrected_politis_white_block_length(
+    values: Sequence[float] | NDArray[np.float64],
+) -> int:
+    """Estimate a conservative integer stationary-bootstrap block length."""
+
+    selected = np.asarray(values, dtype=np.float64)
+    if (
+        selected.ndim != 1
+        or selected.size < 20
+        or not np.all(np.isfinite(selected))
+    ):
+        raise ValueError("Round 27 automatic block population differs")
+    observation_count = int(selected.size)
+    centered = selected - float(np.mean(selected))
+    if float(centered @ centered) <= np.finfo(np.float64).tiny:
+        return 1
+    maximum_candidate = int(
+        math.ceil(min(3.0 * math.sqrt(observation_count), observation_count / 3.0))
+    )
+    consecutive_lags = max(5, int(math.log10(observation_count)))
+    maximum_lag = min(
+        observation_count - 2,
+        int(math.ceil(math.sqrt(observation_count))) + consecutive_lags,
+    )
+    significance_band = 2.0 * math.sqrt(
+        math.log10(observation_count) / observation_count
+    )
+    autocovariance = np.zeros(maximum_lag + 1, dtype=np.float64)
+    absolute_autocorrelation = np.full(
+        maximum_lag + 1,
+        np.inf,
+        dtype=np.float64,
+    )
+    first_insignificant_lag: int | None = None
+    for lag in range(maximum_lag + 1):
+        cross_product = float(centered[lag:] @ centered[: observation_count - lag])
+        autocovariance[lag] = cross_product / observation_count
+        leading = centered[lag + 1 :]
+        trailing = centered[: -(lag + 1)]
+        denominator = math.sqrt(float(leading @ leading) * float(trailing @ trailing))
+        if denominator > np.finfo(np.float64).tiny:
+            absolute_autocorrelation[lag] = abs(cross_product) / denominator
+        if (
+            lag >= consecutive_lags
+            and first_insignificant_lag is None
+            and np.all(
+                absolute_autocorrelation[
+                    lag - consecutive_lags : lag
+                ]
+                < significance_band
+            )
+        ):
+            first_insignificant_lag = lag - consecutive_lags
+    truncation_lag = (
+        maximum_lag
+        if first_insignificant_lag is None
+        else min(2 * max(first_insignificant_lag, 1), maximum_lag)
+    )
+    weighted_lag_covariance = 0.0
+    long_run_covariance = float(autocovariance[0])
+    for lag in range(1, truncation_lag + 1):
+        ratio = lag / truncation_lag
+        flat_top_weight = 1.0 if ratio <= 0.5 else 2.0 * (1.0 - ratio)
+        weighted_lag_covariance += (
+            2.0 * flat_top_weight * lag * float(autocovariance[lag])
+        )
+        long_run_covariance += (
+            2.0 * flat_top_weight * float(autocovariance[lag])
+        )
+    variance_constant = 2.0 * long_run_covariance**2
+    if (
+        variance_constant <= np.finfo(np.float64).tiny
+        or not math.isfinite(variance_constant)
+    ):
+        return 1
+    estimate = (
+        (2.0 * weighted_lag_covariance**2 / variance_constant)
+        ** (1.0 / 3.0)
+        * observation_count ** (1.0 / 3.0)
+    )
+    if not math.isfinite(estimate) or estimate <= 1.0:
+        return 1
+    return min(maximum_candidate, max(1, int(math.ceil(estimate))))
+
+
 def round27_stationary_bootstrap_mean_interval(
     values: Sequence[float] | NDArray[np.float64],
     *,
@@ -928,10 +1013,17 @@ def round27_stationary_bootstrap_mean_interval(
     ):
         raise ValueError("Round 27 stationary bootstrap population differs")
     maximum_block = max(1, selected.size // 4)
-    block_lengths = tuple(
+    fixed_block_lengths = tuple(
         length
         for length in POLYMARKET_ROUND27_BOOTSTRAP_EXPECTED_BLOCK_LENGTHS
         if length <= maximum_block
+    )
+    automatic_block_length = min(
+        maximum_block,
+        round27_corrected_politis_white_block_length(selected),
+    )
+    block_lengths = tuple(
+        sorted({*fixed_block_lengths, automatic_block_length})
     )
     intervals: list[dict[str, object]] = []
     for expected_block_length in block_lengths:
@@ -963,6 +1055,11 @@ def round27_stationary_bootstrap_mean_interval(
         "draw_count": draws,
         "draw_count_per_block_length": draws,
         "effective_draw_count": draws * len(intervals),
+        "automatic_block_length_method": (
+            "corrected_politis_white_2004_2009_ceiling_capped_at_population_quarter"
+        ),
+        "automatic_expected_block_length_conditions": automatic_block_length,
+        "fixed_expected_block_lengths_conditions": list(fixed_block_lengths),
         "expected_block_lengths_conditions": list(block_lengths),
         "block_intervals": intervals,
         "ci95_lower": min(float(item["ci95_lower"]) for item in intervals),
@@ -985,6 +1082,7 @@ __all__ = [
     "fit_round27_l2_offset",
     "fit_round27_lightgbm_offset",
     "paired_round27_condition_bootstrap",
+    "round27_corrected_politis_white_block_length",
     "round27_model_from_payload",
     "round27_probability_metrics",
     "round27_stationary_bootstrap_mean_interval",

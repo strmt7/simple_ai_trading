@@ -18,6 +18,7 @@ from simple_ai_trading.polymarket_round27_model import (
     fit_round27_l2_offset,
     fit_round27_lightgbm_offset,
     paired_round27_condition_bootstrap,
+    round27_corrected_politis_white_block_length,
     round27_model_from_payload,
     round27_probability_metrics,
     round27_stationary_bootstrap_mean_interval,
@@ -185,7 +186,10 @@ def test_condition_bootstrap_reports_paired_log_loss_delta() -> None:
     assert result["method"] == (
         "stationary_bootstrap_block_length_sensitivity_envelope"
     )
-    assert result["expected_block_lengths_conditions"] == [1, 4]
+    assert set(result["fixed_expected_block_lengths_conditions"]) == {1, 4}
+    assert result["automatic_expected_block_length_conditions"] in result[
+        "expected_block_lengths_conditions"
+    ]
     intervals = result["block_intervals"]
     assert result["ci95_lower"] == min(item["ci95_lower"] for item in intervals)
     assert result["ci95_upper"] == max(item["ci95_upper"] for item in intervals)
@@ -201,9 +205,20 @@ def test_stationary_bootstrap_rejects_clustered_synthetic_profit() -> None:
     )
 
     assert float(np.mean(values)) > 0.0
-    assert result["expected_block_lengths_conditions"] == [1, 4, 12]
+    assert result["fixed_expected_block_lengths_conditions"] == [1, 4, 12]
+    assert result["automatic_expected_block_length_conditions"] == 11
+    assert result["expected_block_lengths_conditions"] == [1, 4, 11, 12]
     assert result["block_intervals"][0]["ci95_lower"] > 0.0
     assert result["ci95_lower"] < 0.0
+
+
+def test_corrected_politis_white_block_length_detects_dependence() -> None:
+    independent = np.asarray([float(index % 2) for index in range(80)])
+    dependent = np.repeat(np.asarray([-2.0, 2.0], dtype=np.float64), 40)
+
+    assert round27_corrected_politis_white_block_length(independent) >= 1
+    assert round27_corrected_politis_white_block_length(dependent) > 1
+    assert round27_corrected_politis_white_block_length(np.ones(80)) == 1
 
 
 def test_shallow_lightgbm_is_bounded_and_cpu_portable() -> None:

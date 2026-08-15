@@ -109,6 +109,13 @@ It also requires dependence-aware Brier-score improvement in addition to the
 existing log-loss confidence gate. No candidate, numeric threshold, economic
 rule, prompt, or authority was relaxed.
 
+The [automatic block-length amendment](../../round-027-automatic-block-length-correction-amendment-v8.json)
+adds the corrected Politis-White stationary-bootstrap selector to the fixed
+1/4/12-condition sensitivity envelope. Each score and P&L series selects its
+own dependence horizon; the estimate is rounded up and capped at one quarter
+of the population. Fixed horizons remain, and the widest interval is retained,
+so this can only preserve or tighten promotion.
+
 The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
 binds both candidates to exact Ollama, upstream, and quantized-artifact hashes,
 and verifies strict structured output with `think=false`, one-model-at-a-time
