@@ -133,12 +133,11 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
 
     assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
     assert manifest["schema_version"] == "polymarket-current-status-publication-v1"
-    assert manifest["latest_research_round"] == 25
+    assert manifest["latest_research_round"] == 28
     assert manifest["latest_evaluated_round"] == 23
     assert manifest["latest_graph_round"] == 23
     assert (
-        manifest["status"]
-        == "round25_v2_waiting_capture_post_capture_runner_verified_no_result"
+        manifest["status"] == "round28_stage1_capture_running_no_result"
     )
     assert manifest["round21_result_available"] is False
     assert manifest["round23_result_available"] is True
@@ -221,6 +220,15 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_post_capture_runner_waiting_mode_host_verified"] is True
     assert manifest["round25_post_capture_runner_source_database_opened"] is False
     assert manifest["round25_post_capture_runner_orders_submitted"] == 0
+    assert manifest["round27_stage1_campaign_contract_frozen"] is True
+    assert manifest["round27_stage1_capture_running"] is True
+    assert manifest["round27_stage1_result_available"] is False
+    assert manifest["round28_bbo_preregistration_frozen"] is True
+    assert manifest["round28_model_result_available"] is False
+    assert manifest["round28_ai_preregistration_frozen"] is True
+    assert manifest["round28_ai_core_implementation_source_bound"] is True
+    assert manifest["round28_ai_operator_implementation_source_bound"] is True
+    assert manifest["round28_ai_result_available"] is False
     assert manifest["profitability_claim"] is False
     assert manifest["paper_authority"] is False
     assert manifest["live_trading_authority"] is False

@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 58980,
+      "bytes": 59186,
       "path": "latest/README.md",
-      "sha256": "db8b3d6e7afab8a1341a9cedb66771d1e02f4e757ad19e63caf5cac854a66f19"
+      "sha256": "d3757c057b6872d218052a14063ae080cb75871d4824d022c27d3c215c70f9c2"
     },
     {
       "bytes": 77606,
@@ -495,6 +495,56 @@
       "bytes": 17545,
       "path": "round-025-twap-wire-source-qualification-v2-2026-08-10.json",
       "sha256": "e5bb338db3e57c0cb891b5117c8feb8b91176f16bebba7f31d9349bbe6548cc4"
+    },
+    {
+      "bytes": 5416,
+      "path": "round-027-live-product-regime-audit-v1-2026-08-15.json",
+      "sha256": "91140b1e401cc9f4c2541c56064819f381ccd8c3f1448d88ab31c008dd68cc02"
+    },
+    {
+      "bytes": 2322,
+      "path": "round-027-settlement-regime-risk-preregistration-v1.json",
+      "sha256": "bcc30281f40e483600e65fb1e81a5bf4fc332e720ef39df804a39b95a94d40ac"
+    },
+    {
+      "bytes": 4668,
+      "path": "round-027-stage1-campaign-contract-v1.json",
+      "sha256": "75b99c2c7b65e5ed412c55259d1cd6b1bf33aaa99f43259490200e13ad311caa"
+    },
+    {
+      "bytes": 3882,
+      "path": "round-028-ai-operator-implementation-amendment-v1.json",
+      "sha256": "a339e19ba05abc638ccc558297e45c4d8ebf5b01406066fab588e26bc2e91f9f"
+    },
+    {
+      "bytes": 3516,
+      "path": "round-028-ai-risk-veto-implementation-amendment-v1.json",
+      "sha256": "25b821a5c8fb34689ec047f17819118a39bf2991d6681ed0377841e8da2856fd"
+    },
+    {
+      "bytes": 11094,
+      "path": "round-028-ai-risk-veto-preregistration-v1.json",
+      "sha256": "7f86b9a6fbb3f833a4d4a7e440823a9da381da63fa3353ecf606074c126f4f6e"
+    },
+    {
+      "bytes": 9765,
+      "path": "round-028-binance-bbo-matched-ablation-preregistration-v1.json",
+      "sha256": "2d516d88a57c97a5ae897f1c65a423653717ced7c4b724fc5243b8c6cb1f344b"
+    },
+    {
+      "bytes": 2548,
+      "path": "round-028-economic-implementation-amendment-v1.json",
+      "sha256": "1bd8e433fc4fb17a7b68a38fa2e806d24a4a2bbca22dfa32f4adfce5e9f8247c"
+    },
+    {
+      "bytes": 2638,
+      "path": "round-028-operator-implementation-amendment-v1.json",
+      "sha256": "6585dd69e47681828d414b7677cee41cc6113147acef97ecfcec4e5e97106d0b"
+    },
+    {
+      "bytes": 3444,
+      "path": "round-028-selection-implementation-amendment-v1.json",
+      "sha256": "f9a81b1848e4f37b3201f4115268dab0ddbe329c9da20f89bd33dda110c3113d"
     }
   ],
   "asset": "BTC",
@@ -502,9 +552,9 @@
   "evaluated_test_start_utc": "2026-07-06T00:00:00Z",
   "latest_evaluated_round": 23,
   "latest_graph_round": 23,
-  "latest_research_round": 25,
+  "latest_research_round": 28,
   "live_trading_authority": false,
-  "manifest_sha256": "35623dce56e804ed1bc474e9621ba64d9128aa2a6ac122bd4b727cd6a8b46ccb",
+  "manifest_sha256": "122f0a86ed7dc0b288964a85e9c583bb878e2c1bd780f7bb8b84b5bb089fc32e",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -592,10 +642,19 @@
   "round25_v2_campaign_end_utc": "2026-08-29T23:40:00Z",
   "round25_v2_campaign_start_utc": "2026-08-11T00:00:00Z",
   "round25_v2_capture_evidence_published": true,
+  "round27_stage1_campaign_contract_frozen": true,
+  "round27_stage1_capture_running": true,
+  "round27_stage1_result_available": false,
+  "round28_ai_core_implementation_source_bound": true,
+  "round28_ai_operator_implementation_source_bound": true,
+  "round28_ai_preregistration_frozen": true,
+  "round28_ai_result_available": false,
+  "round28_bbo_preregistration_frozen": true,
+  "round28_model_result_available": false,
   "schema_version": "polymarket-current-status-publication-v1",
   "source_contract_sha256": "9275cfb5cb95427ee9565e3196c87b1c91ce114f713eae2561ad8f6144ddc6f0",
   "source_dataset_sha256": "a6fd7f55ec7705d391a035b923c4440c3f92ddfb5b1b169ee6b7df3d67aa7665",
   "source_evaluation_artifact_sha256": "c3385d4894ca430a91442d1023bf01f61c650f6d208a4d0f89d11007ee5a11c0",
   "source_pretest_artifact_sha256": "03e4fae64f34f835cac338dee111701c73419929e97a22939e12037eba8dfec9",
-  "status": "round25_v2_waiting_capture_post_capture_runner_verified_no_result"
+  "status": "round28_stage1_capture_running_no_result"
 }
