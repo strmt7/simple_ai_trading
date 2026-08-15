@@ -55,6 +55,15 @@ scaling, paired stationary bootstrap gates, and fail-closed model persistence.
 It also corrects an ECE boundary-binning defect discovered with synthetic tests.
 No Stage 1 feature, outcome, selection, economic, or sealed result was used.
 
+The pre-target [matched economics amendment](../round-028-economic-implementation-amendment-v1.json)
+now projects both persisted models onto the exact frozen Round 27 fee, depth,
+FOK, and latency replay. Promotion requires after-cost uplift at every fixed
+delay, a positive paired condition-bootstrap lower bound, all original
+execution gates, and no worse maximum drawdown. Books are scanned twice through
+a bounded batch factory rather than copied in memory or on disk. This is tested
+implementation evidence only; no Round 28 P&L, graph, edge, or profitability
+result exists yet.
+
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
 Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order
