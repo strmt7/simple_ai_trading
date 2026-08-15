@@ -11,6 +11,10 @@ from .polymarket_round27_features import (
     POLYMARKET_ROUND27_DECISION_STEP_MS,
     POLYMARKET_ROUND27_FEATURE_NAMES,
     POLYMARKET_ROUND27_FEATURE_NAMES_SHA256,
+    POLYMARKET_ROUND27_LONG_CONTEXT_MAXIMUM_RECEIPT_GAP_MS,
+    POLYMARKET_ROUND27_LONG_CONTEXT_MINIMUM_COVERAGE,
+    POLYMARKET_ROUND27_LONG_CONTEXT_WINDOW_MS,
+    POLYMARKET_ROUND27_TRADE_WINDOWS_MS,
 )
 from .polymarket_round27_model import (
     POLYMARKET_ROUND27_CORRECTION_SCALES,
@@ -24,7 +28,7 @@ POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION = (
     "polymarket-round27-stage1-model-contract-v1"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256 = (
-    "2210441b97ea9c77c7dab754dc554c12aba8380fbbd86f05b3fa07e20142992c"
+    "30f5224f92b1cdabd71b34ead9561b6adb5696cd904810847acd0707dd743827"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
@@ -116,6 +120,13 @@ def validate_round27_model_contract(
         or data.get("decision_cadence_ms") != POLYMARKET_ROUND27_DECISION_STEP_MS
         or data.get("feature_count") != len(POLYMARKET_ROUND27_FEATURE_NAMES)
         or data.get("feature_names_sha256") != POLYMARKET_ROUND27_FEATURE_NAMES_SHA256
+        or data.get("trade_windows_ms") != list(POLYMARKET_ROUND27_TRADE_WINDOWS_MS)
+        or data.get("long_context_window_ms")
+        != POLYMARKET_ROUND27_LONG_CONTEXT_WINDOW_MS
+        or data.get("long_context_minimum_coverage")
+        != POLYMARKET_ROUND27_LONG_CONTEXT_MINIMUM_COVERAGE
+        or data.get("long_context_maximum_receipt_gap_ms")
+        != POLYMARKET_ROUND27_LONG_CONTEXT_MAXIMUM_RECEIPT_GAP_MS
         or data.get("target_access_during_capture_or_feature_materialization")
         is not False
         or data.get("official_outcome_access_before_contract_freeze") is not False

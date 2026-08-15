@@ -29,18 +29,21 @@
     "profitability_claim": false
   },
   "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
-  "contract_sha256": "2210441b97ea9c77c7dab754dc554c12aba8380fbbd86f05b3fa07e20142992c",
-  "created_at_ms": 1786776777876,
+  "contract_sha256": "30f5224f92b1cdabd71b34ead9561b6adb5696cd904810847acd0707dd743827",
+  "created_at_ms": 1786777710134,
   "data_policy": {
     "assets": [
       "BTC"
     ],
     "condition_weight": 1.0,
     "decision_cadence_ms": 1000,
-    "feature_count": 117,
-    "feature_names_sha256": "f28b51081d1146238fc5a08aa0897f684b71937c4204169e5e8aa5cc3583e5d8",
+    "feature_count": 182,
+    "feature_names_sha256": "369b48002186f8536a276d0912d297c3a240b7f3a6f03ea54695ae647a433ca2",
     "first_decision_offset_ms": 30000,
     "last_decision_before_close_ms": 5000,
+    "long_context_maximum_receipt_gap_ms": 5000,
+    "long_context_minimum_coverage": 0.995,
+    "long_context_window_ms": 1200000,
     "maximum_book_receipt_age_ms": 1500,
     "maximum_trade_receipt_age_ms": 1500,
     "official_outcome_access_before_contract_freeze": false,
@@ -48,7 +51,17 @@
     "predictor_unit": "one_second_receipt_time_state",
     "required_target_free_audit": "polymarket-condition-replay-audit-v1",
     "selection_unit": "whole_condition",
-    "target_access_during_capture_or_feature_materialization": false
+    "target_access_during_capture_or_feature_materialization": false,
+    "trade_windows_ms": [
+      250,
+      1000,
+      5000,
+      15000,
+      60000,
+      300000,
+      600000,
+      1200000
+    ]
   },
   "economic_evaluation": {
     "candidate_selection": "first_target_blind_positive_after_cost_candidate_per_condition",
@@ -264,7 +277,7 @@
     "src/simple_ai_trading/polymarket_condition_replay_audit.py": "efd51afecad5e4c2ca5f253f39f62b02488df5a4290055ddbe9c1319374c5a1b",
     "src/simple_ai_trading/polymarket_round27_economics.py": "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54",
     "src/simple_ai_trading/polymarket_round27_experiment.py": "e22119f06bf156454c7cace11a8902642c243e6d13a5be4ece9f4ff048feb33a",
-    "src/simple_ai_trading/polymarket_round27_features.py": "fcc316f56d57c3dfb0dac2adb5c89ede036a66b70ee4d97fb4492957d6f07203",
+    "src/simple_ai_trading/polymarket_round27_features.py": "032f249028418d7a479c014874a374b1dc6e68de80350b68dad83ca5aae58316",
     "src/simple_ai_trading/polymarket_round27_model.py": "314d0724802ec3881cc1b7a4af1b0c5a24c1cb61437c18b6e8fbfd76527bb854"
   },
   "status": "frozen_before_stage1_capture_and_outcome_access"

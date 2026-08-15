@@ -124,7 +124,7 @@ def _trade(stream: str, offset_ms: int, price: float) -> Round27TradePoint:
     return Round27TradePoint(
         stream=stream,
         received_wall_ms=_START_MS + offset_ms,
-        received_monotonic_ns=offset_ms * 1_000_000 + 1,
+        received_monotonic_ns=(offset_ms + 2_000_000) * 1_000_000 + 1,
         price=price,
         quantity=0.25,
         buyer_is_maker=offset_ms % 2 == 0,
@@ -135,12 +135,13 @@ def _trade(stream: str, offset_ms: int, price: float) -> Round27TradePoint:
 
 
 def _source() -> Round27PublicSourceSeries:
-    offsets = tuple(range(0, 30_001, 250))
+    offsets = tuple(range(-1_200_000, 30_001, 250))
     spot = tuple(
-        _trade("binance_spot", offset, 100_000.0 + offset / 100.0) for offset in offsets
+        _trade("binance_spot", offset, 100_000.0 + offset / 10_000.0)
+        for offset in offsets
     )
     usdm = tuple(
-        _trade("binance_futures", offset, 100_010.0 + offset / 110.0)
+        _trade("binance_futures", offset, 100_010.0 + offset / 11_000.0)
         for offset in offsets
     )
     twap = tuple(
@@ -195,6 +196,54 @@ def test_build_round27_condition_features_is_complete_and_target_blind() -> None
     assert row.target_accessed is False
     assert row.trading_authority is False
     assert row.maximum_receipt_wall_ms <= row.decision_time_ms
+
+
+def test_round27_condition_features_require_complete_twenty_minute_context() -> None:
+    market = _market()
+    complete = _source()
+    offsets = tuple(range(0, 30_001, 250))
+    short = Round27PublicSourceSeries(
+        run_id="round27",
+        spot=Round27TradeSeries.from_points(
+            "binance_spot",
+            tuple(
+                _trade("binance_spot", offset, 100_000.0 + offset / 10_000.0)
+                for offset in offsets
+            ),
+        ),
+        usdm=Round27TradeSeries.from_points(
+            "binance_futures",
+            tuple(
+                _trade(
+                    "binance_futures",
+                    offset,
+                    100_010.0 + offset / 11_000.0,
+                )
+                for offset in offsets
+            ),
+        ),
+        twap=complete.twap,
+        source_chain_sha256="b" * 64,
+    ).validated()
+    books = (
+        _book(market, outcome="Up", offset_ms=30_000, bid="0.49", ask="0.51"),
+        _book(market, outcome="Down", offset_ms=30_000, bid="0.49", ask="0.51"),
+    )
+
+    rows = build_round27_condition_features(
+        market=market,
+        books=books,
+        source=short,
+        eligible_intervals=(
+            {
+                "eligible": True,
+                "interval_start_ms": _START_MS + 30_000,
+                "interval_end_ms": _START_MS + 30_000,
+            },
+        ),
+    )
+
+    assert rows == ()
 
 
 def test_book_flow_does_not_cross_connection_segments() -> None:
