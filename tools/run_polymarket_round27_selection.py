@@ -248,6 +248,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         contract_sha256=str(contract["contract_sha256"]),
     )
     resolution_evidence_sha256 = str(selection_target["evidence_chain_sha256"])
+    probability_input_sha256 = _canonical_sha256(
+        {
+            "feature_row_sha256": [
+                sample.feature_row_sha256 for sample in selection.samples
+            ],
+            "probabilities": [format(float(value), ".17g") for value in probabilities],
+        }
+    )
+    economic_config = Round27EconomicConfig()
     if outputs["economic_report"].exists():
         economic_report = _load_mapping(outputs["economic_report"])
         if (
@@ -257,6 +266,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             != feature_audit["audit_sha256"]
             or economic_report.get("resolution_evidence_sha256")
             != resolution_evidence_sha256
+            or economic_report.get("probability_input_sha256")
+            != probability_input_sha256
+            or economic_report.get("config") != economic_config.asdict()
+            or any(
+                economic_report.get(field) is not False
+                for field in (
+                    "edge_claim",
+                    "profitability_claim",
+                    "orders_submitted",
+                    "trading_authority",
+                )
+            )
         ):
             raise ValueError("Round 27 persisted selection economics differ")
     else:
@@ -280,7 +301,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 model_sha256=model_sha256,
                 source_audit_sha256=str(feature_audit["audit_sha256"]),
                 resolution_evidence_sha256=resolution_evidence_sha256,
-                config=Round27EconomicConfig(),
+                config=economic_config,
                 book_batches=_batches(
                     source,
                     run_id=selection_run_id,
@@ -290,7 +311,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     ),
                 ),
             )
-        _writer(outputs["economic_report"], "report_sha256")(economic_report)
+    _writer(outputs["economic_report"], "report_sha256")(economic_report)
     economic_claim = build_round27_selection_economic_claim(
         contract=contract,
         selection_claim=selection_claim,
