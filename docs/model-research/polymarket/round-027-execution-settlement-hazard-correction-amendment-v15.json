@@ -1,0 +1,103 @@
+{
+  "amendment_sha256": "754bec3c86d36a1f88feaa806780c65ecf71e815d90dd149be8cef2cb8c6367a",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "profitability_claim": false
+  },
+  "base_model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+  "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+  "correction": {
+    "decision_time_settlement_hazard_gate_retained": true,
+    "economic_report_schema_version_from": "polymarket-round27-economic-replay-v5",
+    "economic_report_schema_version_to": "polymarket-round27-economic-replay-v6",
+    "execution_receipt_settlement_hazard_gate_added": true,
+    "feature_model_ai_candidates_changed": false,
+    "minimum_new_entry_time_to_settlement_ms": 60000,
+    "settlement_hazard_gate_may_be_overridden": false,
+    "source_ledger_advanced": true
+  },
+  "created_at_ms": 1786796429647,
+  "discovery_audit": {
+    "execution_latency_could_cross_blocked_window": true,
+    "official_outcomes_accessed": false,
+    "stage1_feature_rows_accessed_or_materialized": false,
+    "v14_checked_decision_timestamp_only": true
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "stage1_capture_started": true,
+    "stage1_feature_rows_accessed_or_materialized": false
+  },
+  "predecessor_amendment_sha256": "a7015cfe099a287e96f9399b9305ad99a5a41b4619b468798fb94fed8e7b9526",
+  "predecessor_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_economics.py": "a9f78fac647caf5eafcc7221d498545f39a7bb1fa8d3ad5bc9458f3bb2c861db"
+  },
+  "rationale": "The v14 correction checked the decision timestamp, but observed execution occurs after the configured submission and source latency. A decision outside the final 60 seconds could therefore fill inside the blocked settlement-hazard window. Every delay scenario now rejects an observed execution receipt inside that window, while retaining the earlier decision-time gate. Existing position handling is unchanged. No captured feature row, target, official outcome, performance metric, model, AI candidate, prompt, or trading authority was accessed or changed.",
+  "research_basis": [
+    {
+      "purpose": "five_minute_bitcoin_settlement_manipulation_hazard",
+      "url": "https://arxiv.org/abs/2606.31675"
+    },
+    {
+      "purpose": "live_source_contract_for_binance_and_chainlink",
+      "url": "https://docs.polymarket.com/market-data/websocket/rtds"
+    },
+    {
+      "purpose": "chainlink_btc_usd_stream_identity",
+      "url": "https://data.chain.link/streams/btc-usd-cexprice-streams"
+    }
+  ],
+  "schema_version": "polymarket-round27-execution-settlement-hazard-correction-amendment-v15",
+  "source_ledger": {
+    "relative_path": "docs/model-research/polymarket/round-027-effective-source-ledger-v6.json",
+    "sha256": "bf2231376f0e4748e164bdf5b828d451b9f4ed00e9f3794b3906d98611dd7539"
+  },
+  "status": "frozen_after_capture_start_before_stage1_feature_or_outcome_access",
+  "superseded_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_ai_cases.py": {
+      "corrected": "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a",
+      "frozen": "2e95562f3611842ecb801920f9cf6876eba2d11b2e0b89a76625f3a59be97bc2"
+    },
+    "src/simple_ai_trading/polymarket_round27_ai_economics.py": {
+      "corrected": "a4763089881c6475dce2ee56bb4e38ddcc4e71c89871e147d83b3eeaf0fb556b",
+      "frozen": "a222dd9c4d6246aeccf90e62ff7157697c52636aed4261c532337f5016e78fe6"
+    },
+    "src/simple_ai_trading/polymarket_round27_economics.py": {
+      "corrected": "fd34be8bb07bf16a528d1daae67a46dedc62e98c8fc865a6c240471a3234ec24",
+      "frozen": "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54"
+    },
+    "src/simple_ai_trading/polymarket_round27_experiment.py": {
+      "corrected": "51b9077781cabb6d3f8fd7033894b41a0b5ed2d7cf911eb4b573df6f902c63c1",
+      "frozen": "9a97a253668e9ef2487c042c3574b4bea2f5cf7e6fcd5267a1f6e6fc1ed5321e"
+    },
+    "src/simple_ai_trading/polymarket_round27_features.py": {
+      "corrected": "d74d97b9bab0dba46d2b207b845da1d4b8028972bc636e0674f759cecb22f027",
+      "frozen": "032f249028418d7a479c014874a374b1dc6e68de80350b68dad83ca5aae58316"
+    },
+    "src/simple_ai_trading/polymarket_round27_model.py": {
+      "corrected": "76360e4541ab7118e9ea29561d20d18dcc97dd32fffff07fce6d11af2452d4bf",
+      "frozen": "5eedf0a5e6f7c0317c795d99ad7425ff2e262c2d527c519d4f9d9cee7f8e8740"
+    },
+    "src/simple_ai_trading/polymarket_round27_operator.py": {
+      "corrected": "184be01f8c3f45e2f225c07201608290f0bed37c6177c5f0b48b8fe922a07a13",
+      "frozen": "acf3a666db7b220e2cfe74b3c9c4d8bfcda845731d7f62fbae43c7baefec87e0"
+    },
+    "tools/run_polymarket_round27_ai_sealed.py": {
+      "corrected": "915afba087c2b36749a2dded499efa69d4190aa85d7b2c45903056c5e802a86b",
+      "frozen": "a3bb98f4807de0247b848b8a5b0356baef7a2385830553783c70e3374d435519"
+    },
+    "tools/run_polymarket_round27_ai_selection.py": {
+      "corrected": "fa094c5d0d06f289f0303e75ae3bbb68ba10f7f73856104992cee1c4dd078b7d",
+      "frozen": "cbbb4d523fe7a7fe169ecd38b3cd928b6843a7b0f4c76ee36311a90d4c26b2c0"
+    }
+  }
+}

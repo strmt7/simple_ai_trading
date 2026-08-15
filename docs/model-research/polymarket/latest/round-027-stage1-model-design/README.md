@@ -59,9 +59,11 @@ reports concentrated signed BTC spot flow in the final roughly 50 seconds of
 Polymarket's five-minute contracts, with the sharpest spike in the last ten
 seconds and subsequent reversal. The
 [pre-outcome safety amendment](../../round-027-settlement-hazard-correction-amendment-v14.json)
-therefore blocks every new entry in the final 60 seconds. This is a
-deterministic risk gate, not a performance-tuned threshold, and neither AI nor
-a model may waive it.
+therefore blocks every new entry in the final 60 seconds. The
+[cumulative v15 correction](../../round-027-execution-settlement-hazard-correction-amendment-v15.json)
+applies that rule to the observed execution receipt, not only the earlier
+decision timestamp. This is a deterministic risk gate, not a performance-tuned
+threshold, and neither AI nor a model may waive it.
 
 The cumulative
 [active-tick amendment](../../round-027-active-tick-execution-correction-amendment-v3.json)

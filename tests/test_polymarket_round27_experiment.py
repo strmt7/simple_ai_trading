@@ -88,7 +88,7 @@ def _contract() -> dict[str, object]:
 def _economic_claim(contract, claim, model, *, passed: bool = True):
     assert model is not None
     report = {
-        "schema_version": "polymarket-round27-economic-replay-v5",
+        "schema_version": "polymarket-round27-economic-replay-v6",
         "partition_role": "selection",
         "model_name": model.model_name,
         "model_sha256": model.asdict()["model_sha256"],
