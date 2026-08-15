@@ -34,7 +34,7 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused Round 27 tests | 99 passed |
+| Focused Round 27 tests | 103 passed |
 | Qwen3.5-9B cold / warm structured inference | 5.13 s / 0.52 s |
 | Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
 | Qwen3.5-9B host runtime | Qualified for later matched ablation only |
@@ -84,6 +84,10 @@ case panel and both measured inference reports. The second process receives
 those immutable receipts plus the target store and baseline economic report.
 This prevents the local models and their prompt builder from receiving an
 outcome, resolution, or P&L path, including on restart.
+If development nominates a candidate, the sealed path repeats that separation:
+one target-free process freezes sealed cases and measured responses, then a
+different process performs the one-use outcome join. No nomination produces a
+self-hashed skip receipt and no sealed AI invocation.
 
 The current feature contract includes 5, 10, and 20-minute spot and futures
 context. Decisions without at least 99.5% of the 20-minute receipt span, or with
