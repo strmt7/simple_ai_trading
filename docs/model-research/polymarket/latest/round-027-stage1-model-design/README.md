@@ -29,7 +29,8 @@ flowchart LR
 | Fixed execution delays | 250 / 500 / 1,000 / 2,000 ms |
 | Maximum entry cost | 10 USDC per condition |
 | Maximum replay batch | 32 conditions |
-| Focused tests | 24 passed |
+| Feature store | One DuckDB, canonical zstd condition chunks |
+| Focused tests | 31 passed |
 
 The executable control is Polymarket's market probability. Learned models must
 beat it on condition-weighted log loss and Brier score with paired confidence
@@ -43,6 +44,10 @@ mechanically valid action.
 Each audited condition batch is loaded once, evaluated across all four delays,
 and released. A role with more than 32 conditions cannot use the all-resident
 path.
+
+Target-free rows persist transactionally in a single campaign database. The
+store has no outcome column, rejects diagnostic subsets and duplicate condition
+ownership, and independently replays every row and manifest on audit.
 
 The sealed role stays inaccessible until the exact selected model payload, its
 source-bound economic report, and a persisted passing economic claim all
