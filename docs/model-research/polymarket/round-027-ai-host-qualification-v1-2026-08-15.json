@@ -1,0 +1,186 @@
+{
+  "candidate_results": [
+    {
+      "candidate": {
+        "maximum_authority": "veto_or_reduce",
+        "model_id": "Qwen/Qwen3.5-9B",
+        "response_schema_version": "polymarket-round27-ai-risk-veto-response-v1",
+        "role": "general_reasoning_risk_review_control",
+        "runtime_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+        "runtime_model": "qwen3.5:9b",
+        "upstream_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a"
+      },
+      "checks": {
+        "cold_structured_response": true,
+        "cold_within_host_qualification_limit": true,
+        "credentials_and_trading_authority_absent": true,
+        "exact_model_digest": true,
+        "full_gpu_residency": true,
+        "provider_unloaded_after_probe": true,
+        "target_outcome_and_market_data_absent": true,
+        "think_channel_disabled": true,
+        "warm_structured_response": true,
+        "warm_within_host_qualification_limit": true
+      },
+      "claims": {
+        "after_cost_uplift": false,
+        "edge": false,
+        "host_runtime_qualified": true,
+        "latency_critical_probability_predictor": false,
+        "live_trading_authority": false,
+        "offline_matched_ablation_eligible": true,
+        "predictive_uplift": false,
+        "profitability": false
+      },
+      "measurements": [
+        {
+          "load_seconds": 5.0559866,
+          "output_tokens": 17,
+          "output_tokens_per_second": 81.04229931304732,
+          "phase": "cold",
+          "prompt_tokens": 62,
+          "prompt_tokens_per_second": 636.7660500991096,
+          "response": {
+            "decision": "reject",
+            "reason_codes": [
+              "missing_liquidity"
+            ]
+          },
+          "total_seconds": 5.3674744,
+          "wall_seconds": 5.359
+        },
+        {
+          "load_seconds": 0.2133511,
+          "output_tokens": 17,
+          "output_tokens_per_second": 82.1367141449085,
+          "phase": "warm",
+          "prompt_tokens": 62,
+          "prompt_tokens_per_second": 787.001777100787,
+          "response": {
+            "decision": "reject",
+            "reason_codes": [
+              "missing_liquidity"
+            ]
+          },
+          "total_seconds": 0.5036222,
+          "wall_seconds": 0.531
+        }
+      ],
+      "passed": true,
+      "post_unload_residency": {
+        "digest": null,
+        "gpu_resident": false,
+        "loaded": false,
+        "loaded_model": null,
+        "requested_model": "qwen3.5:9b",
+        "size_bytes": null,
+        "size_vram_bytes": null,
+        "status": "unloaded",
+        "vram_to_model_ratio": null
+      },
+      "residency": {
+        "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+        "gpu_resident": true,
+        "loaded": true,
+        "loaded_model": "qwen3.5:9b",
+        "requested_model": "qwen3.5:9b",
+        "size_bytes": 5420875774,
+        "size_vram_bytes": 5420875774,
+        "status": "gpu_resident",
+        "vram_to_model_ratio": 1.0
+      },
+      "unload_failure": null
+    },
+    {
+      "candidate": {
+        "maximum_authority": "veto_or_reduce",
+        "model_id": "OpenDataArena/ODA-Fin-SFT-8B",
+        "role": "finance_specialized_risk_review_challenger",
+        "upstream_revision": "66940100ebc647846cdba7e7a4e15b94c1ab13ef"
+      },
+      "claims": {
+        "after_cost_uplift": false,
+        "edge": false,
+        "host_runtime_qualified": false,
+        "live_trading_authority": false,
+        "offline_matched_ablation_eligible": false,
+        "predictive_uplift": false,
+        "profitability": false
+      },
+      "passed": false,
+      "status": "not_installed_or_host_qualified"
+    }
+  ],
+  "created_at": "2026-08-15T08:05:19.287928+00:00",
+  "data_authority": {
+    "credentials_used": false,
+    "market_data_rows": 0,
+    "orders_submitted": false,
+    "outcomes": 0,
+    "resolutions": 0,
+    "targets": 0,
+    "trading_authority": false
+  },
+  "evidence_sha256": "54a022789fdcb343ffc05dbfaf81fe17b8462c41cdc735352a27d3271e7653c9",
+  "host": {
+    "machine": "AMD64",
+    "ollama": "0.32.13",
+    "python": "3.12.10",
+    "release": "11",
+    "system": "Windows"
+  },
+  "model_contract_ai_assist": {
+    "candidate_models": [
+      {
+        "model_id": "Qwen/Qwen3.5-9B",
+        "role": "general_reasoning_risk_review_control"
+      },
+      {
+        "model_id": "OpenDataArena/ODA-Fin-SFT-8B",
+        "role": "finance_specialized_risk_review_challenger"
+      }
+    ],
+    "decision_role": "bounded_pretrade_risk_veto_only",
+    "latency_critical_probability_prediction": false,
+    "maximum_authority": "veto_or_reduce",
+    "may_create_or_increase_position": false,
+    "may_override_hard_risk_gate": false,
+    "promotion_requires_matched_after_cost_uplift": true,
+    "target_free_prompt_and_output_schema_required": true
+  },
+  "model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+  "qualification": {
+    "ai_promoted": false,
+    "all_preregistered_candidates_host_qualified": false,
+    "matched_after_cost_ai_ablation_complete": false,
+    "qwen_host_runtime_qualified": true,
+    "reason": "Qwen is eligible only for the later target-free matched ablation. ODA is not host-qualified and no Stage 1 outcomes were accessed."
+  },
+  "schema_version": "polymarket-round27-ai-host-qualification-v1",
+  "source_sha256": {
+    "src/simple_ai_trading/polymarket_round27_ai.py": "d2358aa1ef33a614133d788f568465bdbf7e5b686d6cf30864fe6f4a1d946a02",
+    "tools/probe_polymarket_round27_ai_host.py": "27b3da731d33e0002f0e914f64ae1268571c0abfa61162f6c2af8784f77e682b"
+  },
+  "sources": [
+    {
+      "title": "Ollama generate API",
+      "url": "https://docs.ollama.com/api/generate"
+    },
+    {
+      "title": "Ollama Windows GPU support",
+      "url": "https://github.com/ollama/ollama/blob/main/docs/windows.mdx"
+    },
+    {
+      "title": "Ollama GPU support",
+      "url": "https://github.com/ollama/ollama/blob/main/docs/gpu.mdx"
+    },
+    {
+      "title": "Qwen3.5-9B model card",
+      "url": "https://huggingface.co/Qwen/Qwen3.5-9B"
+    },
+    {
+      "title": "ODA-Fin-SFT-8B model card",
+      "url": "https://huggingface.co/OpenDataArena/ODA-Fin-SFT-8B"
+    }
+  ]
+}

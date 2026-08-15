@@ -34,7 +34,12 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused tests | 38 passed |
+| Focused Round 27 tests | 72 passed |
+| Qwen3.5-9B cold / warm structured inference | 5.36 s / 0.53 s |
+| Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
+| Qwen3.5-9B host runtime | Qualified for later matched ablation only |
+| ODA-Fin-SFT-8B host runtime | Not installed or qualified |
+| AI promotion / edge / profitability | No / no / no |
 
 The executable control is Polymarket's market probability. Learned models must
 beat it on condition-weighted log loss and Brier score with paired confidence
@@ -44,6 +49,13 @@ candidate per condition, walks captured ask depth and fee schedules, and settles
 only from official outcomes. Missing, stale, one-sided, reconnected, or shallow
 books receive no fill credit. The AI layer may only veto or reduce a
 mechanically valid action.
+
+The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
+binds Qwen3.5-9B to its exact Ollama digest and verifies strict structured
+output with `think=false` and full RX 9070 XT residency. This is a compatibility
+result, not an intelligence or performance result. ODA still requires an exact
+artifact qualification, and neither candidate can be promoted unless the later
+target-free matched ablation improves after-cost selection results.
 
 The current feature contract includes 5, 10, and 20-minute spot and futures
 context. Decisions without at least 99.5% of the 20-minute receipt span, or with
