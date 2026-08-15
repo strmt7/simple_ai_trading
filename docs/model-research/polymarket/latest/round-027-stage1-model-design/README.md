@@ -34,7 +34,7 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused Round 27 tests | 80 passed |
+| Focused Round 27 tests | 92 passed |
 | Qwen3.5-9B cold / warm structured inference | 5.13 s / 0.52 s |
 | Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
 | Qwen3.5-9B host runtime | Qualified for later matched ablation only |
@@ -70,6 +70,14 @@ improves after-cost selection results.
 The ODA Q6 artifact is a third-party quantization pinned by repository revision
 and file SHA-256; this receipt does not claim an independently reproduced
 conversion from the official upstream weights.
+
+The [matched AI ablation contract](../../round-027-ai-matched-ablation-contract-v1.json)
+freezes byte-identical target-free cases for both models. It charges measured
+inference time on top of each 250/500/1,000/2,000 ms execution delay, treats a
+minimum-size `reduce` as abstention, disqualifies any timeout or malformed
+response, and requires positive paired after-cost bootstrap bounds with no
+worse drawdown at every delay. Development may nominate one candidate or none;
+sealed evaluation remains one-use and no result grants order authority.
 
 The current feature contract includes 5, 10, and 20-minute spot and futures
 context. Decisions without at least 99.5% of the 20-minute receipt span, or with
