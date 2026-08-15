@@ -257,9 +257,11 @@ def test_preflight_closes_venue_and_returns_gate_status(
 
     class Coordinator:
         def __init__(self, *_args, **_kwargs):
-            pass
+            self.args = _args
+            self.kwargs = _kwargs
 
-        def preflight(self):
+        @staticmethod
+        def preflight():
             return _reconciliation()
 
     monkeypatch.setattr(live_cli, "PolymarketLiveCoordinator", Coordinator)
@@ -293,9 +295,11 @@ def test_reconcile_propagates_failed_gate_and_text_rendering(
 
     class Coordinator:
         def __init__(self, *_args, **_kwargs):
-            pass
+            self.args = _args
+            self.kwargs = _kwargs
 
-        def reconcile(self):
+        @staticmethod
+        def reconcile():
             return _reconciliation(
                 ok=False,
                 can_open=False,
@@ -335,13 +339,15 @@ def test_cancel_owned_cancels_exact_owned_orders_despite_foreign_state(
 
     class Coordinator:
         def __init__(self, *_args, **_kwargs):
-            pass
+            self.args = _args
+            self.kwargs = _kwargs
 
         def cancel_owned_open_orders(self):
             calls.append("cancel")
             return PolymarketCancelResult((), ())
 
-        def reconcile(self):
+        @staticmethod
+        def reconcile():
             return _reconciliation(
                 ok=False,
                 can_open=False,
@@ -380,15 +386,19 @@ def test_cancel_owned_reports_exact_result_and_final_gate(
 
     class Coordinator:
         def __init__(self, *_args, **_kwargs):
-            pass
+            self.args = _args
+            self.kwargs = _kwargs
 
-        def preflight(self):
+        @staticmethod
+        def preflight():
             return _reconciliation()
 
-        def cancel_owned_open_orders(self):
+        @staticmethod
+        def cancel_owned_open_orders():
             return PolymarketCancelResult((order_id,), ())
 
-        def reconcile(self):
+        @staticmethod
+        def reconcile():
             return _reconciliation(
                 ok=False,
                 can_open=False,
@@ -426,17 +436,20 @@ def test_stop_owned_exposure_closes_only_local_inventory() -> None:
     ]
 
     class Ledger:
-        def owned_inventory(self):
+        @staticmethod
+        def owned_inventory():
             return tuple(inventory)
 
         def open_owned_order_ids(self):
             return ()
 
     class Coordinator:
-        def cancel_owned_open_orders(self):
+        @staticmethod
+        def cancel_owned_open_orders():
             return PolymarketCancelResult((order_id,), ())
 
-        def reconcile(self):
+        @staticmethod
+        def reconcile():
             return _reconciliation(
                 ok=False,
                 can_open=False,
@@ -444,7 +457,8 @@ def test_stop_owned_exposure_closes_only_local_inventory() -> None:
                 errors=("foreign_positions",),
             )
 
-        def submit_owned_close_orders(self, *, maximum_book_age_ms: int):
+        @staticmethod
+        def submit_owned_close_orders(*, maximum_book_age_ms: int):
             assert maximum_book_age_ms == 1_500
             inventory.clear()
             return (
@@ -480,23 +494,27 @@ def test_stop_owned_exposure_reports_blocked_inventory_without_claiming_close() 
     cancelled = False
 
     class Ledger:
-        def owned_inventory(self):
+        @staticmethod
+        def owned_inventory():
             return inventory
 
         def open_owned_order_ids(self):
             return ()
 
     class Coordinator:
-        def cancel_owned_open_orders(self):
+        @staticmethod
+        def cancel_owned_open_orders():
             nonlocal cancelled
             cancelled = True
             return PolymarketCancelResult((), ())
 
-        def reconcile(self):
+        @staticmethod
+        def reconcile():
             return _reconciliation()
 
-        def submit_owned_close_orders(self, *, maximum_book_age_ms: int):
-            del maximum_book_age_ms
+        @staticmethod
+        def submit_owned_close_orders(*, maximum_book_age_ms: int):
+            assert maximum_book_age_ms == 1_500
             raise PolymarketLiveBlocked(
                 "bot-owned close quantity is below the venue minimum"
             )
@@ -540,7 +558,7 @@ def test_stop_owned_exposure_validates_timeout_and_reports_no_close() -> None:
     )
     coordinator = SimpleNamespace(
         cancel_owned_open_orders=lambda: PolymarketCancelResult((), ()),
-        reconcile=lambda: _reconciliation(),
+        reconcile=_reconciliation,
         submit_owned_close_orders=lambda **_kwargs: (),
     )
 
@@ -571,11 +589,18 @@ def test_stop_owned_exposure_polls_open_order_then_times_out(
     )
     coordinator = SimpleNamespace(
         cancel_owned_open_orders=lambda: PolymarketCancelResult((), ()),
-        reconcile=lambda: _reconciliation(),
+        reconcile=_reconciliation,
     )
     clock = iter((0.0, 0.0, 0.0, 2.0, 2.0, 2.0))
     sleeps: list[float] = []
-    monkeypatch.setattr(live_cli.time, "monotonic", lambda: next(clock))
+
+    def next_clock_value() -> float:
+        try:
+            return next(clock)
+        except StopIteration:
+            pytest.fail("monotonic test clock exhausted")
+
+    monkeypatch.setattr(live_cli.time, "monotonic", next_clock_value)
     monkeypatch.setattr(live_cli.time, "sleep", sleeps.append)
 
     payload, status = live_cli._stop_owned_exposure(
@@ -601,15 +626,20 @@ def test_stop_owned_exposure_detects_concurrent_inventory_after_empty_snapshot()
     snapshots = iter(((), (), (item,), (item,)))
 
     class Ledger:
-        def owned_inventory(self):
-            return next(snapshots)
+        @staticmethod
+        def owned_inventory():
+            try:
+                return next(snapshots)
+            except StopIteration:
+                pytest.fail("inventory snapshots exhausted")
 
-        def open_owned_order_ids(self):
+        @staticmethod
+        def open_owned_order_ids():
             return ()
 
     coordinator = SimpleNamespace(
         cancel_owned_open_orders=lambda: PolymarketCancelResult((), ()),
-        reconcile=lambda: _reconciliation(),
+        reconcile=_reconciliation,
     )
 
     payload, status = live_cli._stop_owned_exposure(
@@ -1043,7 +1073,8 @@ def test_supervision_runs_independent_services_and_stops_cleanly(
             events.append("preflight")
             return clean
 
-        def reconcile(self):
+        @staticmethod
+        def reconcile():
             events.append("reconcile")
             return clean
 
@@ -1329,7 +1360,8 @@ def test_autonomous_assembles_independent_promoted_runtime(
         def __init__(self, *, flow: object) -> None:
             assert flow is globals_flow
 
-        def health(self) -> PolymarketShadowFeedHealth:
+        @staticmethod
+        def health() -> PolymarketShadowFeedHealth:
             return PolymarketShadowFeedHealth(
                 running=False,
                 queue_size=0,
@@ -1370,7 +1402,8 @@ def test_autonomous_assembles_independent_promoted_runtime(
             self.ledger = selected_ledger
             self.runtime_authority = runtime_authority
 
-        def reconcile(self) -> PolymarketReconciliation:
+        @staticmethod
+        def reconcile() -> PolymarketReconciliation:
             events.append("reconcile")
             return clean
 
@@ -1426,69 +1459,85 @@ def test_autonomous_assembles_independent_promoted_runtime(
             assert duration_seconds == 3
             events.append("run")
 
-        def snapshot(self) -> PolymarketAutonomousRuntimeSnapshot:
+        @staticmethod
+        def snapshot() -> PolymarketAutonomousRuntimeSnapshot:
             return snapshot
 
+    def load_live_promotion(path, **kwargs):
+        assert path == "promotion.json"
+        assert kwargs["evidence_root"] == str(tmp_path)
+        assert kwargs["require_live_authority"] is True
+        assert kwargs["expected_file_sha256"] == "8" * 64
+        return promotion
+
+    def load_lifecycle_qualification(path, **kwargs):
+        assert path == "lifecycle.json"
+        assert kwargs["expected_file_sha256"] == "7" * 64
+        return lifecycle_qualification
+
+    def load_shadow_predictor(**kwargs):
+        assert kwargs["pretest_path"] == model_path
+        assert kwargs["evaluation_path"] == evaluation_path
+        assert kwargs["expected_pretest_envelope_sha256"] == "3" * 64
+        assert kwargs["expected_evaluation_envelope_sha256"] == "4" * 64
+        assert kwargs["expected_contract_file_sha256"] == "9" * 64
+        return predictor
+
+    def build_flow(*, retention_seconds):
+        assert retention_seconds == 1_200
+        return flow
+
+    def build_feature(selected_flow):
+        assert selected_flow is flow
+        return "builder"
+
+    def build_scorer(**kwargs):
+        assert kwargs == {"predictor": predictor, "feature_builder": "builder"}
+        return "scorer"
+
+    def build_decision_provider(**_kwargs):
+        return "decision-provider"
+
+    def build_runtime_guard(**kwargs):
+        assert kwargs["maximum_reconciliation_age_ms"] == 21_000
+        assert kwargs["opening_interlock"].lease_id
+        return guard
+
+    def build_user_stream_consumer(selected_ledger, selected_guard):
+        return SimpleNamespace(
+            ledger=selected_ledger,
+            runtime_guard=selected_guard,
+        )
+
+    def build_settlement_service(*args, **kwargs):
+        assert args == ("redemption", guard)
+        assert kwargs["automatic_redemption_enabled"] is True
+        assert kwargs["interval_seconds"] == 7
+        return "settlement"
+
     components = SimpleNamespace(
-        load_polymarket_live_promotion=lambda path, **kwargs: (
-            promotion
-            if path == "promotion.json"
-            and kwargs["evidence_root"] == str(tmp_path)
-            and kwargs["require_live_authority"] is True
-            and kwargs["expected_file_sha256"] == "8" * 64
-            else pytest.fail()
-        ),
-        load_polymarket_lifecycle_qualification=lambda path, **kwargs: (
-            lifecycle_qualification
-            if path == "lifecycle.json" and kwargs["expected_file_sha256"] == "7" * 64
-            else pytest.fail()
-        ),
-        load_verified_round16_shadow_predictor=lambda **kwargs: (
-            predictor
-            if kwargs["pretest_path"] == model_path
-            and kwargs["evaluation_path"] == evaluation_path
-            and kwargs["expected_pretest_envelope_sha256"] == "3" * 64
-            and kwargs["expected_evaluation_envelope_sha256"] == "4" * 64
-            and kwargs["expected_contract_file_sha256"] == "9" * 64
-            else pytest.fail()
-        ),
+        load_polymarket_live_promotion=load_live_promotion,
+        load_polymarket_lifecycle_qualification=load_lifecycle_qualification,
+        load_verified_round16_shadow_predictor=load_shadow_predictor,
         PolymarketPublicClient=PublicClient,
-        PolymarketBtcFlowBuffer=lambda *, retention_seconds: (
-            flow if retention_seconds == 1_200 else pytest.fail()
-        ),
+        PolymarketBtcFlowBuffer=build_flow,
         PolymarketHistoricalShadowFeed=Feed,
-        PolymarketRound16LiveFeatureBuilder=lambda selected_flow: (
-            "builder" if selected_flow is flow else pytest.fail()
-        ),
-        PolymarketRound16ShadowScorer=lambda **kwargs: (
-            "scorer"
-            if kwargs == {"predictor": predictor, "feature_builder": "builder"}
-            else pytest.fail()
-        ),
-        PolymarketRound16PromotedDecisionProvider=(
-            lambda **kwargs: "decision-provider"
-        ),
+        PolymarketRound16LiveFeatureBuilder=build_feature,
+        PolymarketRound16ShadowScorer=build_scorer,
+        PolymarketRound16PromotedDecisionProvider=build_decision_provider,
         PolymarketAutonomousSupervisor=Supervisor,
     )
     monkeypatch.setattr(live_cli, "_load_autonomous_components", lambda: components)
     monkeypatch.setattr(
         live_cli,
         "PolymarketLiveRuntimeGuard",
-        lambda **kwargs: (
-            guard
-            if kwargs["maximum_reconciliation_age_ms"] == 21_000
-            and kwargs["opening_interlock"].lease_id
-            else pytest.fail()
-        ),
+        build_runtime_guard,
     )
     monkeypatch.setattr(live_cli, "PolymarketLiveCoordinator", Coordinator)
     monkeypatch.setattr(
         live_cli,
         "PolymarketUserStreamConsumer",
-        lambda selected_ledger, selected_guard: SimpleNamespace(
-            ledger=selected_ledger,
-            runtime_guard=selected_guard,
-        ),
+        build_user_stream_consumer,
     )
     monkeypatch.setattr(live_cli, "PolymarketAuthenticatedUserStream", Stream)
     monkeypatch.setattr(
@@ -1504,13 +1553,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
     monkeypatch.setattr(
         live_cli,
         "PolymarketSettlementService",
-        lambda *args, **kwargs: (
-            "settlement"
-            if args == ("redemption", guard)
-            and kwargs["automatic_redemption_enabled"] is True
-            and kwargs["interval_seconds"] == 7
-            else pytest.fail()
-        ),
+        build_settlement_service,
     )
     credentials_object = SimpleNamespace()
     venue_object = SimpleNamespace()
@@ -1569,7 +1612,8 @@ def test_autonomous_cleanup_surfaces_failed_stop_latch_after_closing_resources()
             events.append(f"stop:{reason}")
             raise RuntimeError("durable stop latch failed")
 
-        def release(self, *_args: object, **_kwargs: object) -> None:
+        @staticmethod
+        def release(*_args: object, **_kwargs: object) -> None:
             pytest.fail("owned exposure must never release the runtime lease")
 
     ledger = SimpleNamespace(owned_inventory=lambda: (object(),))
@@ -1599,10 +1643,12 @@ def test_autonomous_cleanup_latches_stop_when_inventory_is_unknown() -> None:
     events: list[str] = []
 
     class Control:
-        def request_stop(self, *, reason: str) -> None:
+        @staticmethod
+        def request_stop(*, reason: str) -> None:
             events.append(f"stop:{reason}")
 
-        def release(self, *_args: object, **_kwargs: object) -> None:
+        @staticmethod
+        def release(*_args: object, **_kwargs: object) -> None:
             pytest.fail("unknown inventory must never release the runtime lease")
 
     def unreadable_inventory() -> tuple[object, ...]:
@@ -1707,7 +1753,8 @@ def test_prepare_autonomous_writes_verified_non_secret_activation(
     binding_calls: list[dict[str, object]] = []
 
     class Lifecycle:
-        def assert_runtime_binding(self, **kwargs: object) -> None:
+        @staticmethod
+        def assert_runtime_binding(**kwargs: object) -> None:
             binding_calls.append(dict(kwargs))
 
     promotion = SimpleNamespace(promotion=SimpleNamespace(market_variant="fiveminute"))
