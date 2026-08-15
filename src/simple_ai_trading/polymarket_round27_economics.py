@@ -24,8 +24,9 @@ from .polymarket_round27_model import (
 )
 
 
-POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v4"
+POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v5"
 POLYMARKET_ROUND27_FIXED_DELAYS_MS = (250, 500, 1_000, 2_000)
+POLYMARKET_ROUND27_MINIMUM_NEW_ENTRY_TIME_TO_SETTLEMENT_MS = 60_000
 _SHA256_CHARACTERS = frozenset("0123456789abcdef")
 
 
@@ -74,6 +75,9 @@ class Round27EconomicConfig:
     primary_delay_ms: int = 500
     maximum_execution_observation_delay_ms: int = 500
     maximum_decision_book_age_ms: int = 1_500
+    minimum_new_entry_time_to_settlement_ms: int = (
+        POLYMARKET_ROUND27_MINIMUM_NEW_ENTRY_TIME_TO_SETTLEMENT_MS
+    )
     maximum_conditions_per_book_batch: int = 32
     markout_horizon_ms: int = 1_000
     minimum_expected_edge_per_contract: Decimal = Decimal("0.01")
@@ -105,6 +109,8 @@ class Round27EconomicConfig:
             or int(self.primary_delay_ms) != 500
             or not 0 <= int(self.maximum_execution_observation_delay_ms) <= 5_000
             or not 0 <= int(self.maximum_decision_book_age_ms) <= 5_000
+            or int(self.minimum_new_entry_time_to_settlement_ms)
+            != POLYMARKET_ROUND27_MINIMUM_NEW_ENTRY_TIME_TO_SETTLEMENT_MS
             or not 1 <= int(self.maximum_conditions_per_book_batch) <= 32
             or not 100 <= int(self.markout_horizon_ms) <= 60_000
             or not Decimal("0") <= edge <= Decimal("0.10")
@@ -134,6 +140,9 @@ class Round27EconomicConfig:
                 self.maximum_execution_observation_delay_ms
             ),
             "maximum_decision_book_age_ms": self.maximum_decision_book_age_ms,
+            "minimum_new_entry_time_to_settlement_ms": (
+                self.minimum_new_entry_time_to_settlement_ms
+            ),
             "maximum_conditions_per_book_batch": (
                 self.maximum_conditions_per_book_batch
             ),
@@ -505,6 +514,13 @@ def _build_candidates(
             sample_indices,
             key=lambda value: partition.samples[value].decision_time_ms,
         ):
+            sample = partition.samples[sample_index]
+            if (
+                market.end_ms - sample.decision_time_ms
+                < config.minimum_new_entry_time_to_settlement_ms
+            ):
+                reasons["settlement_manipulation_hazard_window"] += 1
+                continue
             books = _decision_books(sample_index, partition, market, index, config)
             if books is None:
                 reasons["decision_book_unavailable_or_unsafe"] += 1
@@ -1117,6 +1133,7 @@ def evaluate_round27_economic_scenarios(
 __all__ = [
     "POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION",
     "POLYMARKET_ROUND27_FIXED_DELAYS_MS",
+    "POLYMARKET_ROUND27_MINIMUM_NEW_ENTRY_TIME_TO_SETTLEMENT_MS",
     "Round27EconomicBookBatch",
     "Round27EconomicConfig",
     "Round27EconomicTrade",
