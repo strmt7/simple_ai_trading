@@ -99,10 +99,11 @@ def _inference(panel, candidate):
         if str(prompt).startswith("Runtime conformance probe"):
             return _raw(candidate.runtime_model, "reject", "missing_liquidity")
         case_count += 1
+        rejects_risky_case = (case_count - 1) % 3 == 0
         return _raw(
             candidate.runtime_model,
-            "reject" if case_count <= 20 else "unchanged",
-            "liquidity_thin" if case_count <= 20 else "no_material_risk",
+            "reject" if rejects_risky_case else "unchanged",
+            "liquidity_thin" if rejects_risky_case else "no_material_risk",
         )
 
     residency_calls = 0
@@ -143,7 +144,7 @@ def _inference(panel, candidate):
 def _matched_fixture(candidate=POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE):
     markets, partition, probabilities, books, outcomes = _population(60)
     outcomes = {
-        market.condition_id: int(index >= 20)
+        market.condition_id: int(index % 3 != 0)
         for index, market in enumerate(markets)
     }
     extra_books = tuple(

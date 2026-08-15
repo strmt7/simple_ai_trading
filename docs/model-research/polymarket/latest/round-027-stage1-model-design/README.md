@@ -34,7 +34,7 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused Round 27 tests | 114 passed |
+| Focused Round 27 tests | 115 passed |
 | Corrected LightGBM host backend | AMD OpenCL (`opencl:auto`) |
 | Qwen3.5-9B cold / warm structured inference | 5.13 s / 0.52 s |
 | Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
@@ -84,6 +84,14 @@ condition-level validation blocks now train only on earlier conditions and
 apply the frozen campaign's ten-minute pre-validation embargo. Candidate
 families, model payloads, economics, AI authority, and promotion thresholds did
 not change. This is a validation correction, not evidence of edge.
+
+The [dependent-bootstrap amendment](../../round-027-dependent-bootstrap-correction-amendment-v5.json)
+orders conditions by market start and replaces IID confidence intervals with
+stationary-bootstrap sensitivity at 5-minute, 20-minute, and 1-hour expected
+block lengths. Promotion uses the widest 95% interval across those horizons.
+The same method governs prediction, after-cost economics, and matched AI uplift;
+the economic report schema is now v3. A positive mean that exists only in one
+cluster is therefore rejected rather than reported as an edge.
 
 The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
 binds both candidates to exact Ollama, upstream, and quantized-artifact hashes,

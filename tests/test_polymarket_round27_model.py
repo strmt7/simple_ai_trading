@@ -20,6 +20,7 @@ from simple_ai_trading.polymarket_round27_model import (
     paired_round27_condition_bootstrap,
     round27_model_from_payload,
     round27_probability_metrics,
+    round27_stationary_bootstrap_mean_interval,
     scale_round27_probability_model,
     select_round27_correction_scale,
     select_round27_l2_penalty,
@@ -178,6 +179,28 @@ def test_condition_bootstrap_reports_paired_log_loss_delta() -> None:
     assert result["condition_count"] == 40
     assert result["mean_candidate_minus_prior_log_loss"] < 0.0
     assert result["ci95_upper"] < 0.0
+    assert result["method"] == (
+        "stationary_bootstrap_block_length_sensitivity_envelope"
+    )
+    assert result["expected_block_lengths_conditions"] == [1, 4]
+    intervals = result["block_intervals"]
+    assert result["ci95_lower"] == min(item["ci95_lower"] for item in intervals)
+    assert result["ci95_upper"] == max(item["ci95_upper"] for item in intervals)
+
+
+def test_stationary_bootstrap_rejects_clustered_synthetic_profit() -> None:
+    values = np.asarray([-2.4] * 20 + [2.6] * 40, dtype=np.float64)
+
+    result = round27_stationary_bootstrap_mean_interval(
+        values,
+        draws=1_000,
+        seed=27,
+    )
+
+    assert float(np.mean(values)) > 0.0
+    assert result["expected_block_lengths_conditions"] == [1, 4, 12]
+    assert result["block_intervals"][0]["ci95_lower"] > 0.0
+    assert result["ci95_lower"] < 0.0
 
 
 def test_shallow_lightgbm_is_bounded_and_cpu_portable() -> None:
