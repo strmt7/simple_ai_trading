@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Callable, Iterable, Mapping, Sequence
 
 from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_replay import PolymarketEvidenceReplay
@@ -70,6 +70,18 @@ def artifact_writer(path: Path, hash_field: str):
     return write
 
 
+def source_recomputed_artifact(
+    path: Path,
+    hash_field: str,
+    build: Callable[[], Mapping[str, object]],
+) -> dict[str, object]:
+    """Recompute a source-derived artifact before accepting a restart checkpoint."""
+
+    recomputed = dict(build())
+    artifact_writer(path, hash_field)(recomputed)
+    return recomputed
+
+
 def model_identity(
     model: Round27ProbabilityModel | None,
     *,
@@ -122,4 +134,5 @@ __all__ = [
     "economic_book_batches",
     "load_mapping",
     "model_identity",
+    "source_recomputed_artifact",
 ]

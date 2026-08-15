@@ -35,6 +35,7 @@ from simple_ai_trading.polymarket_round27_operator import (
     canonical_sha256,
     economic_book_batches,
     load_mapping,
+    source_recomputed_artifact,
 )
 from simple_ai_trading.polymarket_round27_target_store import Round27TargetStore
 
@@ -152,40 +153,32 @@ def main(argv: Sequence[str] | None = None) -> int:
             ("qwen", "qwen_inference"),
             ("oda", "oda_inference"),
         ):
-            if outputs[output_key].exists():
-                report = validate_round27_ai_economic_report(
-                    load_mapping(outputs[output_key])
-                )
-                if (
-                    report.get("case_panel_sha256") != panel.panel_sha256
-                    or report.get("inference_report_sha256")
-                    != inference_reports[inference_key].report_sha256
-                    or report.get("baseline_economic_report_sha256")
-                    != baseline.get("report_sha256")
-                    or report.get("resolution_evidence_sha256")
-                    != resolution_evidence_sha256
-                ):
-                    raise ValueError("Round 27 persisted AI economics differ")
-            else:
-                report = evaluate_round27_ai_matched_economics(
-                    panel=panel,
-                    inference_report=inference_reports[inference_key],
-                    baseline_economic_report=baseline,
-                    markets=markets,
-                    outcomes_up=outcomes,
-                    resolution_evidence_sha256=resolution_evidence_sha256,
-                    book_batches=economic_book_batches(
-                        source,
-                        run_id=panel.source_run_id,
-                        condition_ids=condition_ids,
-                        maximum_conditions=int(
-                            panel.economic_config[
-                                "maximum_conditions_per_book_batch"
-                            ]
-                        ),
+            report = source_recomputed_artifact(
+                outputs[output_key],
+                "report_sha256",
+                lambda inference_report=inference_reports[inference_key]: (
+                    validate_round27_ai_economic_report(
+                        evaluate_round27_ai_matched_economics(
+                            panel=panel,
+                            inference_report=inference_report,
+                            baseline_economic_report=baseline,
+                            markets=markets,
+                            outcomes_up=outcomes,
+                            resolution_evidence_sha256=resolution_evidence_sha256,
+                            book_batches=economic_book_batches(
+                                source,
+                                run_id=panel.source_run_id,
+                                condition_ids=condition_ids,
+                                maximum_conditions=int(
+                                    panel.economic_config[
+                                        "maximum_conditions_per_book_batch"
+                                    ]
+                                ),
+                            ),
+                        )
                     ),
-                )
-            artifact_writer(outputs[output_key], "report_sha256")(report)
+                ),
+            )
             reports[output_key] = report
     selection = select_round27_ai_candidate((reports["qwen"], reports["oda"]))
     artifact_writer(outputs["selection"], "selection_sha256")(selection.asdict())
