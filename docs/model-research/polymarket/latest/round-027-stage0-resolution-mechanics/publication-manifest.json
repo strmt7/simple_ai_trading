@@ -1,0 +1,14 @@
+{
+  "audit_sha256": "78cacdbb645f6cf295eb4fb96a0355a8ab2d502675ade66ee3be10fb7d104c6b",
+  "diagnostic_only": true,
+  "edge_claim": false,
+  "files": {
+    "README.md": "68529968776aea48f976820ab730a8d98469450352ec83ca8cd72a2c2947b5c0",
+    "settlement-labels.csv": "e1a0d48f6d157bf0b196e4f5979eb463a25a3904af96987decfa141086896623",
+    "settlement-mechanics-audit.json": "4aef317e6f16eea4369aa836b278b2ea103b5d446d4bc2d333d0d22f06ee39d6",
+    "settlement-mechanics.svg": "a22bde07502f665dfab450c529b5839246f9ee903aee304971cf2cfc36911b9d"
+  },
+  "manifest_sha256": "bdd926a272e0b44faef11e2bca94e803ed5480b529539567a812eec1deef0872",
+  "profitability_claim": false,
+  "schema_version": "polymarket-round27-resolution-publication-v1"
+}

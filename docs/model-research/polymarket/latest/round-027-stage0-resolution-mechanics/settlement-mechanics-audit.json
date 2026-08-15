@@ -1,0 +1,22 @@
+{
+  "access_claim_sha256": "46c1e518cccfeafa3b2dc89055691bcf1f5695572a3fd50f1cfb4be2dfbe10d5",
+  "audit_sha256": "78cacdbb645f6cf295eb4fb96a0355a8ab2d502675ade66ee3be10fb7d104c6b",
+  "condition_count": 53,
+  "dual_source_agreement_count": 53,
+  "edge_claim": false,
+  "evidence_chain_sha256": "2df618e0aa897ef41c9045dc133c11588c6993202c6d5586968808f2e7ef73e3",
+  "live_trading_authority": false,
+  "mechanics_validation_complete": true,
+  "paper_trading_authority": false,
+  "pending_condition_count": 0,
+  "profitability_claim": false,
+  "resolution_count": 53,
+  "run_id": "bdd8e7ed23124bd3ae72144dbe8c98b1",
+  "schema_version": "polymarket-round27-stage0-resolution-mechanics-audit-v1",
+  "source_disagreement_count": 0,
+  "target_use": "mechanics_validation_only",
+  "winner_counts": {
+    "Down": 27,
+    "Up": 26
+  }
+}
