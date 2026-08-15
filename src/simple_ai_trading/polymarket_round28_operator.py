@@ -14,11 +14,15 @@ from .polymarket_round28_economics import (
     POLYMARKET_ROUND28_ECONOMIC_SCHEMA_VERSION,
     POLYMARKET_ROUND28_PAIRED_SCENARIO_SCHEMA_VERSION,
 )
+from .polymarket_round28_contract_binding import (
+    POLYMARKET_ROUND28_CONTRACT_BINDING_CORRECTION_SCHEMA_VERSION,
+    validate_loaded_round27_model_contract,
+)
 from .polymarket_round28_model import Round28ModelSample
 
 
 POLYMARKET_ROUND28_SELECTION_INPUT_SCHEMA_VERSION = (
-    "polymarket-round28-selection-input-manifest-v1"
+    "polymarket-round28-selection-input-manifest-v2"
 )
 _OPERATOR_AMENDMENT_SCHEMA_VERSION = (
     "polymarket-round28-operator-implementation-amendment-v1"
@@ -103,6 +107,7 @@ def build_round28_selection_input_manifest(
     selection_implementation_amendment: Mapping[str, object],
     economic_implementation_amendment: Mapping[str, object],
     operator_implementation_amendment: Mapping[str, object],
+    contract_binding_correction: Mapping[str, object],
 ) -> dict[str, object]:
     """Bind exact development inputs before model fitting starts."""
 
@@ -121,11 +126,7 @@ def build_round28_selection_input_manifest(
         hash_field="audit_sha256",
         name="target-store audit",
     )
-    model_contract = _validated_claim(
-        contract,
-        hash_field="contract_sha256",
-        name="model contract",
-    )
+    model_contract = validate_loaded_round27_model_contract(contract)
     prereg = _validated_claim(
         preregistration,
         hash_field="preregistration_sha256",
@@ -146,12 +147,28 @@ def build_round28_selection_input_manifest(
         hash_field="amendment_sha256",
         name="operator implementation amendment",
     )
+    contract_correction = _validated_claim(
+        contract_binding_correction,
+        hash_field="amendment_sha256",
+        name="contract binding correction",
+    )
     if (
         operator_amendment.get("schema_version") != _OPERATOR_AMENDMENT_SCHEMA_VERSION
         or operator_amendment.get("status")
         != "frozen_before_stage1_feature_or_outcome_access"
     ):
         raise ValueError("Round 28 operator implementation amendment differs")
+    if (
+        contract_correction.get("schema_version")
+        != POLYMARKET_ROUND28_CONTRACT_BINDING_CORRECTION_SCHEMA_VERSION
+        or contract_correction.get("status")
+        != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
+        or contract_correction.get("round27_model_contract_sha256")
+        != model_contract["contract_sha256"]
+        or contract_correction.get("round27_model_amendment_sha256")
+        != model_contract["model_implementation_amendment_sha256"]
+    ):
+        raise ValueError("Round 28 contract binding correction differs")
     selected_samples = tuple(sample.validated() for sample in samples)
     if not selected_samples or {sample.role for sample in selected_samples} != set(
         _ROLES
@@ -209,6 +226,9 @@ def build_round28_selection_input_manifest(
         "round28_overlay_report_sha256": overlay["report_sha256"],
         "round27_target_store_audit_sha256": target_audit["audit_sha256"],
         "round27_model_contract_sha256": model_contract["contract_sha256"],
+        "round27_model_implementation_amendment_sha256": model_contract[
+            "model_implementation_amendment_sha256"
+        ],
         "round28_preregistration_sha256": prereg["preregistration_sha256"],
         "round28_selection_implementation_amendment_sha256": (
             selection_amendment["amendment_sha256"]
@@ -219,6 +239,9 @@ def build_round28_selection_input_manifest(
         "round28_operator_implementation_amendment_sha256": operator_amendment[
             "amendment_sha256"
         ],
+        "round28_contract_binding_correction_amendment_sha256": (
+            contract_correction["amendment_sha256"]
+        ),
         "roles": role_reports,
         "condition_roles_disjoint": True,
         "matched_base_and_augmented_rows": True,
@@ -269,10 +292,12 @@ def validate_round28_selection_input_manifest(
                 "round28_overlay_report_sha256",
                 "round27_target_store_audit_sha256",
                 "round27_model_contract_sha256",
+                "round27_model_implementation_amendment_sha256",
                 "round28_preregistration_sha256",
                 "round28_selection_implementation_amendment_sha256",
                 "round28_economic_implementation_amendment_sha256",
                 "round28_operator_implementation_amendment_sha256",
+                "round28_contract_binding_correction_amendment_sha256",
             )
         )
         or manifest.get("condition_roles_disjoint") is not True
@@ -405,6 +430,10 @@ def validate_round28_economic_report(
         or report.get("selected_model_family") != selection.get("selected_model_family")
         or report.get("round27_model_contract_sha256")
         != manifest["round27_model_contract_sha256"]
+        or selection.get("round27_model_contract_sha256")
+        != manifest["round27_model_contract_sha256"]
+        or selection.get("round27_model_implementation_amendment_sha256")
+        != manifest["round27_model_implementation_amendment_sha256"]
         or report.get("round28_preregistration_sha256")
         != manifest["round28_preregistration_sha256"]
         or report.get("round28_selection_implementation_amendment_sha256")

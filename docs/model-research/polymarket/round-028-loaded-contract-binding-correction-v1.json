@@ -1,0 +1,88 @@
+{
+  "amendment_sha256": "daabe6acbe7c55159d6f2971845a415978efad0879c8e264fc994c077cf42f7d",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "correction": {
+    "base_contract_hash_recomputation": "exclude_loader_added_model_implementation_amendment_sha256",
+    "defect": "Round 28 recomputed the frozen base contract hash after the Round 27 loader appended the current implementation-amendment identity.",
+    "feature_model_target_or_economic_logic_changed": false,
+    "input_manifest_schema_version_from": "polymarket-round28-selection-input-manifest-v1",
+    "input_manifest_schema_version_to": "polymarket-round28-selection-input-manifest-v2",
+    "selection_claim_schema_version_from": "polymarket-round28-selection-v1",
+    "selection_claim_schema_version_to": "polymarket-round28-selection-v2",
+    "separate_model_amendment_binding_required": true
+  },
+  "created_at_ms": 1786806337941,
+  "discovery_audit": {
+    "official_outcomes_accessed": false,
+    "real_loaded_contract_preflight_failed_before_correction": true,
+    "stage1_feature_rows_accessed_or_materialized": false,
+    "synthetic_fixture_omitted_loader_added_amendment": true
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "stage1_capture_started": true,
+    "stage1_feature_rows_accessed_or_materialized": false
+  },
+  "predecessor_operator_amendment_sha256": "0cec84ec6dd50ee8f14d6ab236e2ae886351886eccbae696a2b73d0cbcb7f826",
+  "predecessor_selection_amendment_sha256": "005caf15e94b5f43faaa451b9f12754b7f5c6dd88b1b09fea5a8d3182eb7e306",
+  "round27_model_amendment_sha256": "754bec3c86d36a1f88feaa806780c65ecf71e815d90dd149be8cef2cb8c6367a",
+  "round27_model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+  "schema_version": "polymarket-round28-loaded-contract-binding-correction-v1",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_contract_binding.py": "3e8edf4d7ff528a40b381a47696c6c47f55a74f540855979f88e6b2217654e24",
+    "src/simple_ai_trading/polymarket_round28_operator.py": "f4cdb987bee0c78b1d9e0f585eb6890365daf16086034d8f7f009211ad70e7da",
+    "src/simple_ai_trading/polymarket_round28_selection.py": "d429f442aa8838956b195f3c6f879624e335fcb41da7107da9e99d6228fe599c",
+    "tests/test_polymarket_round28_contract_binding.py": "23193d2f9723f4ca8fc6c448856cdb7e3e4426eb5e80f29cc7bb5ba6a27ddd74",
+    "tests/test_polymarket_round28_operator.py": "531667589ce50106822892d3b23b63abbda9e473bfb7d051180d3d0fb18799b9",
+    "tests/test_polymarket_round28_operator_amendment.py": "efd01e17b9378c758b6dcece6eff155bfd102125943bcea953e73c02ebad2ed6",
+    "tests/test_polymarket_round28_preregistration.py": "33b581016d2c211441c23515652a714c637df2305e5e4815ac942f83620f5b6c",
+    "tests/test_polymarket_round28_selection.py": "00bd14b10146aa22951641c11d6e8c2e98258ab9c589894eb40f534b779cdcf9",
+    "tools/run_polymarket_round28_selection.py": "f34729efe9b573178c39aa3fb35abdbe585a1e28acab40ceff240e9508f5a873"
+  },
+  "status": "frozen_after_capture_start_before_stage1_feature_or_outcome_access",
+  "superseded_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_operator.py": {
+      "corrected": "f4cdb987bee0c78b1d9e0f585eb6890365daf16086034d8f7f009211ad70e7da",
+      "frozen": "24045ce7cf206b81567dedfa36f63d835ecbfc69f3ea4eeebf33c25105c845fb"
+    },
+    "src/simple_ai_trading/polymarket_round28_selection.py": {
+      "corrected": "d429f442aa8838956b195f3c6f879624e335fcb41da7107da9e99d6228fe599c",
+      "frozen": "a21b1ce02f5db70e58c10ae6d9724cfda6ad1ba01492ebdf9ab344cacaa2e5d6"
+    },
+    "tests/test_polymarket_round28_operator.py": {
+      "corrected": "531667589ce50106822892d3b23b63abbda9e473bfb7d051180d3d0fb18799b9",
+      "frozen": "d543a72afcace576e709c5c9f08bee9f20c9e81d5b79b917e913ecbfd6f4e215"
+    },
+    "tests/test_polymarket_round28_preregistration.py": {
+      "corrected": "33b581016d2c211441c23515652a714c637df2305e5e4815ac942f83620f5b6c",
+      "frozen": "4f936d19de6a69d18c1659b948347b1e5ef8b2eb87e3d0bda5af51dff543ef2a"
+    },
+    "tests/test_polymarket_round28_selection.py": {
+      "corrected": "00bd14b10146aa22951641c11d6e8c2e98258ab9c589894eb40f534b779cdcf9",
+      "frozen": "e2eef23457b5cacca38f6bc18ff4a16a75416ce638f3cc8ec5020275c300a3fc"
+    },
+    "tools/run_polymarket_round28_selection.py": {
+      "corrected": "f34729efe9b573178c39aa3fb35abdbe585a1e28acab40ceff240e9508f5a873",
+      "frozen": "d429045c84f9551c98456b5c25181ebb90eb91d12489a1710d360e90136c4008"
+    }
+  },
+  "test_scope": {
+    "financial_result": false,
+    "real_loaded_contract_preflight": true,
+    "stage1_data_used": false,
+    "synthetic_mechanics_only": false
+  }
+}

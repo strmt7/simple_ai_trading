@@ -25,6 +25,10 @@ IMPLEMENTATION_AMENDMENT = (
     ROOT / "docs/model-research/polymarket/"
     "round-028-selection-implementation-amendment-v1.json"
 )
+CONTRACT_BINDING_CORRECTION = (
+    ROOT / "docs/model-research/polymarket/"
+    "round-028-loaded-contract-binding-correction-v1.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -110,8 +114,9 @@ def test_round28_preregistration_binds_exact_incremental_feature_contract() -> N
     assert value["promotion_gates"]["accuracy"].endswith("neither can promote alone.")
 
 
-def test_round28_selection_amendment_is_hash_and_current_source_bound() -> None:
+def test_round28_selection_amendment_is_hash_and_superseded_source_bound() -> None:
     value = json.loads(IMPLEMENTATION_AMENDMENT.read_text(encoding="ascii"))
+    correction = json.loads(CONTRACT_BINDING_CORRECTION.read_text(encoding="ascii"))
     claimed = value.pop("amendment_sha256")
 
     assert claimed == _canonical_sha256(value)
@@ -140,7 +145,12 @@ def test_round28_selection_amendment_is_hash_and_current_source_bound() -> None:
         "paper_trading_authority": False,
         "profitability_claim": False,
     }
-    assert value["source_text_sha256"] == {
-        relative: _text_sha256(ROOT / relative)
-        for relative in value["source_text_sha256"]
-    }
+    replacements = correction["superseded_source_text_sha256"]
+    for relative, expected in value["source_text_sha256"].items():
+        if relative in replacements:
+            assert replacements[relative] == {
+                "frozen": expected,
+                "corrected": _text_sha256(ROOT / relative),
+            }
+        else:
+            assert expected == _text_sha256(ROOT / relative)

@@ -32,6 +32,9 @@ from simple_ai_trading.polymarket_round28_book_ticker import (
 from simple_ai_trading.polymarket_round28_economics import (
     evaluate_round28_matched_economics,
 )
+from simple_ai_trading.polymarket_round28_contract_binding import (
+    load_round28_contract_binding_correction,
+)
 from simple_ai_trading.polymarket_round28_model import (
     Round28Partition,
     build_round28_model_samples,
@@ -135,6 +138,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     selection_amendment = load_mapping(repository / _SELECTION_AMENDMENT)
     economic_amendment = load_mapping(repository / _ECONOMIC_AMENDMENT)
     operator_amendment = load_mapping(repository / _OPERATOR_AMENDMENT)
+    contract_binding_correction = load_round28_contract_binding_correction(repository)
     partitions = contract.get("partitions")
     economics_contract = contract.get("economic_evaluation")
     if not isinstance(partitions, list) or not isinstance(
@@ -191,6 +195,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         selection_implementation_amendment=selection_amendment,
         economic_implementation_amendment=economic_amendment,
         operator_implementation_amendment=operator_amendment,
+        contract_binding_correction=contract_binding_correction,
     )
     artifact_writer(outputs["manifest"], "manifest_sha256")(input_manifest)
     _progress(

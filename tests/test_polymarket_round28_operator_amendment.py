@@ -22,6 +22,10 @@ ECONOMIC_AMENDMENT = (
     ROOT / "docs/model-research/polymarket/"
     "round-028-economic-implementation-amendment-v1.json"
 )
+CONTRACT_BINDING_CORRECTION = (
+    ROOT / "docs/model-research/polymarket/"
+    "round-028-loaded-contract-binding-correction-v1.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -42,8 +46,9 @@ def _text_sha256(path: Path) -> str:
     ).hexdigest()
 
 
-def test_round28_operator_amendment_is_hash_and_current_source_bound() -> None:
+def test_round28_operator_amendment_is_hash_and_superseded_source_bound() -> None:
     value = json.loads(AMENDMENT.read_text(encoding="ascii"))
+    correction = json.loads(CONTRACT_BINDING_CORRECTION.read_text(encoding="ascii"))
     claimed = value.pop("amendment_sha256")
 
     assert claimed == _canonical_sha256(value)
@@ -84,10 +89,15 @@ def test_round28_operator_amendment_is_hash_and_current_source_bound() -> None:
         "paper_trading_authority": False,
         "profitability_claim": False,
     }
+    replacements = correction["superseded_source_text_sha256"]
     assert value["source_text_sha256"] == {
-        relative: _text_sha256(ROOT / relative)
+        relative: replacements[relative]["frozen"]
         for relative in value["source_text_sha256"]
     }
+    assert all(
+        replacements[relative]["corrected"] == _text_sha256(ROOT / relative)
+        for relative in value["source_text_sha256"]
+    )
     assert value["test_scope"] == {
         "financial_result": False,
         "stage1_data_used": False,

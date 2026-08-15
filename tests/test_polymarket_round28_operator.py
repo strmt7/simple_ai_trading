@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 
 import pytest
 
@@ -11,6 +12,9 @@ from simple_ai_trading.polymarket_round27_economics import (
 )
 from simple_ai_trading.polymarket_round27_features import (
     POLYMARKET_ROUND27_FEATURE_NAMES,
+)
+from simple_ai_trading.polymarket_round27_model_contract import (
+    load_round27_model_contract,
 )
 from simple_ai_trading.polymarket_round28_book_ticker import (
     POLYMARKET_ROUND28_FEATURE_NAMES,
@@ -28,6 +32,7 @@ from simple_ai_trading.polymarket_round28_operator import (
 
 
 _START_MS = 1_786_784_400_000
+ROOT = Path(__file__).resolve().parents[1]
 _AUTHORITY = {
     "edge_claim": False,
     "profitability_claim": False,
@@ -62,6 +67,16 @@ def _operator_amendment() -> dict[str, object]:
     }
     body["amendment_sha256"] = _canonical_sha256(body)
     return body
+
+
+def _contract_binding_correction() -> dict[str, object]:
+    return json.loads(
+        (
+            ROOT
+            / "docs/model-research/polymarket/"
+            "round-028-loaded-contract-binding-correction-v1.json"
+        ).read_text(encoding="ascii")
+    )
 
 
 def _sample(index: int, role: str) -> Round28ModelSample:
@@ -103,7 +118,7 @@ def _input_manifest() -> dict[str, object]:
         feature_store_audit=_artifact("audit_sha256", "feature"),
         overlay_report=_artifact("report_sha256", "overlay"),
         target_store_audit=_artifact("audit_sha256", "target"),
-        contract=_artifact("contract_sha256", "contract"),
+        contract=load_round27_model_contract(ROOT),
         preregistration=_artifact("preregistration_sha256", "prereg"),
         selection_implementation_amendment=_artifact(
             "amendment_sha256",
@@ -114,6 +129,7 @@ def _input_manifest() -> dict[str, object]:
             "economic-amendment",
         ),
         operator_implementation_amendment=_operator_amendment(),
+        contract_binding_correction=_contract_binding_correction(),
     )
 
 
@@ -155,10 +171,16 @@ def _round27_report(
     return body
 
 
-def _selection_claim() -> dict[str, object]:
+def _selection_claim(manifest: dict[str, object]) -> dict[str, object]:
     body: dict[str, object] = {
         "status": "matched_probability_candidate_selected",
         "selected_model_family": "l2_offset_logistic",
+        "round27_model_contract_sha256": manifest[
+            "round27_model_contract_sha256"
+        ],
+        "round27_model_implementation_amendment_sha256": manifest[
+            "round27_model_implementation_amendment_sha256"
+        ],
     }
     body["claim_sha256"] = _canonical_sha256(body)
     return body
@@ -239,6 +261,11 @@ def test_round28_selection_input_manifest_binds_roles_and_sources() -> None:
     ]
     assert manifest["sealed_partition_accessed"] is False
     assert manifest["matched_base_and_augmented_rows"] is True
+    assert manifest["round27_model_implementation_amendment_sha256"] == (
+        load_round27_model_contract(ROOT)[
+            "model_implementation_amendment_sha256"
+        ]
+    )
 
     tampered = json.loads(json.dumps(manifest))
     tampered["roles"][0]["row_count"] += 1
@@ -248,7 +275,7 @@ def test_round28_selection_input_manifest_binds_roles_and_sources() -> None:
 
 def test_round28_restart_report_requires_exact_nested_lineage_and_gates() -> None:
     manifest = _input_manifest()
-    selection = _selection_claim()
+    selection = _selection_claim(manifest)
     resolution_sha256 = "d" * 64
     report = _economic_report(manifest, selection, resolution_sha256)
 
@@ -277,7 +304,7 @@ def test_round28_restart_report_requires_exact_nested_lineage_and_gates() -> Non
 
 def test_round28_restart_report_rejects_rehashed_wrong_source_manifest() -> None:
     manifest = _input_manifest()
-    selection = _selection_claim()
+    selection = _selection_claim(manifest)
     resolution_sha256 = "d" * 64
     report = _economic_report(manifest, selection, resolution_sha256)
     wrong_manifest = json.loads(json.dumps(manifest))
