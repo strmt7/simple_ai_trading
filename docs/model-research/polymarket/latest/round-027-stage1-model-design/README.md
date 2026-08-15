@@ -34,7 +34,7 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused tests | 35 passed |
+| Focused tests | 37 passed |
 
 The executable control is Polymarket's market probability. Learned models must
 beat it on condition-weighted log loss and Brier score with paired confidence
@@ -71,6 +71,12 @@ revalidate. A matching model name alone is insufficient.
 Both learned-model families are restart-safe: the selection claim contains the
 complete L2 parameters or complete LightGBM model text plus its hash, and the
 runtime reconstructs only an exact schema- and feature-bound payload.
+
+The development operator reads only finalized train, calibration, and selection
+targets. It persists the model claim before replaying Stage 1-B books, processes
+at most 32 conditions at a time, and writes an idempotent after-cost claim. A
+restart revalidates existing artifacts instead of retraining or duplicating the
+replay.
 
 The canonical numeric design is
 [`round-027-stage1-model-contract-v1.json`](../../round-027-stage1-model-contract-v1.json).
