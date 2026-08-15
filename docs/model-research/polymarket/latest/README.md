@@ -53,15 +53,25 @@ The [capture result](../round-027-stage0-mechanics-capture-result-v1-2026-08-15.
 and [target-free condition audit](round-027-stage0-condition-audit/condition-replay-audit.json)
 contain no outcome, model, P&L, or trading authority.
 
+After the mechanics result was frozen, a separate target-access claim opened
+the exact 53-condition settlement population. Credential-free Gamma and CLOB
+terminal responses agreed on all 53 winners: 26 Up and 27 Down, with zero
+pending or disagreement. Raw responses are compressed and hash-bound outside
+the capture database. This validates settlement mechanics only; Stage 0 is not
+model-fitting data and creates no edge or profitability claim.
+
 ![Round 27 Stage 0 target-free replay eligibility](round-027-stage0-condition-audit/condition-replay-eligibility.svg)
 
 ![Round 27 mechanics diagnostic](round-027-mechanics-diagnostic/mechanics-diagnostic.svg)
+
+![Round 27 settlement mechanics](round-027-stage0-resolution-mechanics/settlement-mechanics.svg)
 
 ![Round 26 target-free replay eligibility](round-026-twap60-condition-audit/condition-replay-eligibility.svg)
 
 The [canonical Round 26 audit](round-026-twap60-condition-audit/condition-replay-audit.json),
 [v3 analysis failure](../round-026-twap60-development-analysis-failure-v2.json),
 the [Round 27 mechanics data](round-027-mechanics-diagnostic/mechanics-diagnostic.json),
+the [Round 27 settlement audit](round-027-stage0-resolution-mechanics/settlement-mechanics-audit.json),
 the [documented-source smoke contract](../round-027-documented-source-smoke-v1.json),
 the [Stage 0 capture contract](../round-027-stage0-mechanics-capture-v1.json),
 and [untrusted execution-hypothesis preregistration](../round-027-execution-hypothesis-preregistration-v3.json)

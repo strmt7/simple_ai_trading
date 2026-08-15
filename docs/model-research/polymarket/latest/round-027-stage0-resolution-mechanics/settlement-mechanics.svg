@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="500" viewBox="0 0 1120 500">
+<style>
+  .title { font: 700 30px "Segoe UI", Arial, sans-serif; fill: #111827; }
+  .subtitle { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #4b5563; }
+  .heading { font: 700 18px "Segoe UI", Arial, sans-serif; fill: #111827; }
+  .label { font: 600 14px "Segoe UI", Arial, sans-serif; fill: #374151; }
+  .value { font: 700 16px Consolas, monospace; fill: #111827; }
+  .note { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #4b5563; }
+</style>
+<rect width="1120" height="500" fill="#ffffff"/>
+<text x="56" y="58" class="title">Round 27 settlement mechanics</text>
+<text x="56" y="86" class="subtitle">2026-08-14T23:00:00Z to 2026-08-15T03:50:00Z | BTC five-minute markets</text>
+<line x1="56" y1="112" x2="1064" y2="112" stroke="#d1d5db"/>
+<text x="70" y="158" class="heading">Official source validation</text>
+<text x="70" y="194" class="label">Eligible markets</text>
+<rect x="70" y="210" width="500" height="30" rx="3" fill="#e5e7eb"/>
+<rect x="70" y="210" width="500.00" height="30" rx="3" fill="#2563eb"/>
+<text x="590" y="232" class="value">53</text>
+<text x="70" y="284" class="label">Gamma and CLOB agree</text>
+<rect x="70" y="300" width="500" height="30" rx="3" fill="#e5e7eb"/>
+<rect x="70" y="300" width="500.00" height="30" rx="3" fill="#0f766e"/>
+<text x="590" y="322" class="value">53</text>
+<line x1="660" y1="148" x2="660" y2="370" stroke="#e5e7eb"/>
+<text x="720" y="158" class="heading">Observed settlement labels</text>
+<text x="720" y="194" class="label">Up</text>
+<rect x="720" y="210" width="245.28" height="30" rx="3" fill="#0f766e"/>
+<text x="985.28" y="232" class="value">26</text>
+<text x="720" y="284" class="label">Down</text>
+<rect x="720" y="300" width="254.72" height="30" rx="3" fill="#d97706"/>
+<text x="994.72" y="322" class="value">27</text>
+<line x1="56" y1="402" x2="1064" y2="402" stroke="#d1d5db"/>
+<text x="56" y="432" class="note">Dual-source terminal-state and winner validation; raw receipts are compressed and hash-bound.</text>
+<text x="56" y="458" class="note">Settlement mechanics only. No model, trade, edge, profitability, paper-trading, or live-trading claim.</text>
+</svg>
