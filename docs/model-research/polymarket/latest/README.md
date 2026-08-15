@@ -42,6 +42,9 @@ conditions, but the original minimum was 100 executions. A frozen
 [pre-capture amendment](../round-027-economic-population-amendment-v1.json)
 sets the selection and sealed minimums to 60. It is not a trade quota; risk
 checks remain unchanged, and fewer fills must yield insufficient evidence.
+The separate [matched AI contract](../round-027-ai-matched-ablation-contract-v1.json)
+also freezes target-free, latency-charged Qwen-versus-ODA selection and a
+one-use sealed confirmation. Host compatibility alone is not AI uplift.
 
 Round 27 uses Binance's documented USD-M `@aggTrade` market stream.
 A live 33.719-second source probe recorded 29/29 finite positive trades, while
