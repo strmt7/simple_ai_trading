@@ -335,7 +335,7 @@ def test_vulture_scan_ignores_only_bound_protocol_keyword_false_positive() -> No
         f"{path.replace('/', chr(92))}:{line}: {message} (100% confidence)\n"
         for path, line, message in sorted(expected)
     )
-    completed = mock.Mock(returncode=1, stdout=findings, stderr="")
+    completed = mock.Mock(returncode=3, stdout=findings, stderr="")
 
     with mock.patch("tools.vulture_check.subprocess.run", return_value=completed):
         assert (
@@ -345,6 +345,20 @@ def test_vulture_scan_ignores_only_bound_protocol_keyword_false_positive() -> No
                 min_confidence=100,
             )
             == 0
+        )
+
+
+def test_vulture_scan_preserves_invalid_input_failure() -> None:
+    completed = mock.Mock(returncode=1, stdout="", stderr="")
+
+    with mock.patch("tools.vulture_check.subprocess.run", return_value=completed):
+        assert (
+            vulture_check.run_vulture(
+                ROOT,
+                ["src/simple_ai_trading/risk_controls.py"],
+                min_confidence=100,
+            )
+            == 1
         )
 
 
