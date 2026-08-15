@@ -35,8 +35,20 @@ POLYMARKET_ROUND27_DECISION_STEP_MS = 1_000
 POLYMARKET_ROUND27_FIRST_DECISION_OFFSET_MS = 30_000
 POLYMARKET_ROUND27_LAST_DECISION_OFFSET_MS = 5_000
 POLYMARKET_ROUND27_MAXIMUM_BOOK_AGE_MS = 1_500
-POLYMARKET_ROUND27_TRADE_WINDOWS_MS = (250, 1_000, 5_000, 15_000, 60_000)
+POLYMARKET_ROUND27_TRADE_WINDOWS_MS = (
+    250,
+    1_000,
+    5_000,
+    15_000,
+    60_000,
+    300_000,
+    600_000,
+    1_200_000,
+)
 POLYMARKET_ROUND27_BOOK_WINDOWS_MS = (1_000, 5_000, 15_000, 60_000)
+POLYMARKET_ROUND27_LONG_CONTEXT_WINDOW_MS = 1_200_000
+POLYMARKET_ROUND27_LONG_CONTEXT_MINIMUM_COVERAGE = 0.995
+POLYMARKET_ROUND27_LONG_CONTEXT_MAXIMUM_RECEIPT_GAP_MS = 5_000.0
 _EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 
 _STATIC_FEATURE_NAMES = (
@@ -84,6 +96,8 @@ _TRADE_FEATURE_NAMES = tuple(
         "signed_quote_imbalance",
         "log1p_quote_notional",
         "trade_count",
+        "receipt_coverage_fraction",
+        "maximum_receipt_gap_ms",
     )
 )
 _CROSS_FEATURE_NAMES = (
@@ -390,6 +404,8 @@ class _TradeMetrics:
     signed_quote_imbalance: float
     log1p_quote_notional: float
     count: int
+    receipt_coverage_fraction: float
+    maximum_receipt_gap_ms: float
 
 
 def _trade_metrics(
@@ -408,19 +424,39 @@ def _trade_metrics(
         )
     )
     if start == end:
-        return _TradeMetrics(0.0, 0.0, 0.0, 0.0, 0)
+        return _TradeMetrics(0.0, 0.0, 0.0, 0.0, 0, 0.0, float(window_ms))
     prices = selected.price[start:end]
     quote = prices * selected.quantity[start:end]
     gross = float(np.sum(quote, dtype=np.float64))
     signs = np.where(selected.buyer_is_maker[start:end], -1.0, 1.0)
     signed = float(np.sum(quote * signs, dtype=np.float64))
     returns = np.diff(np.log(prices))
+    receipt_times = selected.received_wall_ms[start:end]
+    boundary_times = np.concatenate(
+        (
+            np.asarray([decision_ms - window_ms], dtype=np.int64),
+            receipt_times,
+            np.asarray([decision_ms], dtype=np.int64),
+        )
+    )
     return _TradeMetrics(
         log_return=(0.0 if prices.size < 2 else math.log(prices[-1] / prices[0])),
         realized_variance=float(np.sum(returns * returns, dtype=np.float64)),
         signed_quote_imbalance=0.0 if gross <= 0.0 else signed / gross,
         log1p_quote_notional=math.log1p(gross),
         count=int(prices.size),
+        receipt_coverage_fraction=(
+            0.0
+            if prices.size < 2
+            else min(
+                1.0,
+                max(
+                    0.0,
+                    float(receipt_times[-1] - receipt_times[0]) / float(window_ms),
+                ),
+            )
+        ),
+        maximum_receipt_gap_ms=float(np.max(np.diff(boundary_times))),
     )
 
 
@@ -795,6 +831,7 @@ def build_round27_condition_features(
                     market_returns[window] = flow.mid_log_return
         trade_returns: dict[str, dict[int, float]] = {"spot": {}, "usdm": {}}
         latest_points: dict[str, int] = {}
+        long_context_complete = True
         for name in ("spot", "usdm"):
             latest = _latest_index(trade_times[name], decision)
             if latest < 0 or decision - trade_times[name][latest] > 1_500:
@@ -807,6 +844,13 @@ def build_round27_condition_features(
                     window_ms=window,
                 )
                 trade_returns[name][window] = metrics.log_return
+                if window == POLYMARKET_ROUND27_LONG_CONTEXT_WINDOW_MS and (
+                    metrics.receipt_coverage_fraction
+                    < POLYMARKET_ROUND27_LONG_CONTEXT_MINIMUM_COVERAGE
+                    or metrics.maximum_receipt_gap_ms
+                    > POLYMARKET_ROUND27_LONG_CONTEXT_MAXIMUM_RECEIPT_GAP_MS
+                ):
+                    long_context_complete = False
                 values.extend(
                     (
                         metrics.log_return,
@@ -814,9 +858,11 @@ def build_round27_condition_features(
                         metrics.signed_quote_imbalance,
                         metrics.log1p_quote_notional,
                         float(metrics.count),
+                        metrics.receipt_coverage_fraction,
+                        metrics.maximum_receipt_gap_ms,
                     )
                 )
-        if set(latest_points) != {"spot", "usdm"}:
+        if set(latest_points) != {"spot", "usdm"} or not long_context_complete:
             continue
         values.extend(
             (
@@ -999,6 +1045,9 @@ __all__ = [
     "POLYMARKET_ROUND27_FEATURE_NAMES",
     "POLYMARKET_ROUND27_FEATURE_NAMES_SHA256",
     "POLYMARKET_ROUND27_FEATURE_SCHEMA_VERSION",
+    "POLYMARKET_ROUND27_LONG_CONTEXT_MAXIMUM_RECEIPT_GAP_MS",
+    "POLYMARKET_ROUND27_LONG_CONTEXT_MINIMUM_COVERAGE",
+    "POLYMARKET_ROUND27_LONG_CONTEXT_WINDOW_MS",
     "POLYMARKET_ROUND27_TRADE_WINDOWS_MS",
     "Round27FeatureRow",
     "Round27PublicSourceSeries",
