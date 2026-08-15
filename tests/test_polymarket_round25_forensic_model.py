@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -73,6 +74,47 @@ def test_logistic_residual_improves_a_real_signal_without_target_shortcuts() -> 
         rows, rows.prior
     )["condition_equal_log_loss"]
     assert coefficients[0] > 0.0
+
+
+def test_logistic_accepts_an_independently_stationary_line_search_exit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = _rows()
+    scipy_minimize = forensic_model.minimize
+
+    def abnormal_after_stationarity(*args, **kwargs):
+        result = scipy_minimize(*args, **kwargs)
+        assert result.success
+        result.success = False
+        result.status = 2
+        result.message = "ABNORMAL:"
+        return result
+
+    monkeypatch.setattr(forensic_model, "minimize", abnormal_after_stationarity)
+
+    intercept, coefficients = _fit_logistic(rows, rows.features, l2=0.1)
+
+    assert np.isfinite(intercept)
+    assert np.all(np.isfinite(coefficients))
+
+
+def test_logistic_rejects_a_nonstationary_line_search_exit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = _rows()
+    monkeypatch.setattr(
+        forensic_model,
+        "minimize",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            success=False,
+            status=2,
+            message="ABNORMAL:",
+            x=np.zeros(rows.features.shape[1] + 1, dtype=np.float64),
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="gradient_infinity_norm"):
+        _fit_logistic(rows, rows.features, l2=0.1)
 
 
 def test_weighted_isotonic_pools_only_monotonicity_violations() -> None:

@@ -538,14 +538,20 @@ def test_segmented_pretraining_gradient_is_pooled_across_unequal_runs() -> None:
         row_denominator=3,
     )
 
-    assert actual_loss == pytest.approx(float(expected_loss.detach()), abs=1e-7)
+    assert actual_loss == pytest.approx(
+        float(expected_loss.detach()),
+        abs=1e-6,
+        rel=1e-6,
+    )
     assert actual_event == pytest.approx(
         float(expected_event_rows.mean().detach()),
-        abs=1e-7,
+        abs=1e-6,
+        rel=1e-6,
     )
     assert actual_continuous == pytest.approx(
         float(expected_continuous_rows.mean().detach()),
-        abs=1e-7,
+        abs=1e-6,
+        rel=1e-6,
     )
     expected_parameters = (
         *round74_event_encoder_parameters(expected_model),

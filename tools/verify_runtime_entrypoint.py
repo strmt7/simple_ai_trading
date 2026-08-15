@@ -28,7 +28,8 @@ def _installed_entrypoints() -> tuple[str, ...]:
 
 
 def _launcher_path() -> Path:
-    scripts = Path(sys.executable).resolve().parent
+    # Resolving a POSIX venv's Python symlink can escape its bin directory.
+    scripts = Path(sys.executable).parent
     candidates = (
         scripts / f"{_CONSOLE_SCRIPT}.exe",
         scripts / _CONSOLE_SCRIPT,

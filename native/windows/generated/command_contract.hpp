@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"8bef383df62f5909b0bc9f5a7bb82b89e5cd09b66ffb9dc591e74c949fa573e8";
+inline constexpr const wchar_t* kCommandContractSha256 = L"aaba170fa07b6351e0363e4cfc764f6bc57b779c4ab32ca849607fb0de4b3f40";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -697,7 +697,7 @@ inline constexpr CommandOptionSpec kOptions_polymarket_features[] = {
 
 inline constexpr CommandOptionSpec kOptions_polymarket_live[] = {
     {L"--action", L"action", L"status, preflight, reconcile, supervise, prepare-autonomous, autonomous, pause, resume, cancel-owned, stop, recover-redemptions, redeem", L"status", L"", L"1", false, true, false},
-    {L"--ledger", L"ledger", L"", L"data\\polymarket\\live-ownership.sqlite3", L"durable hash-bound Polymarket ownership ledger", L"1", false, true, false},
+    {L"--ledger", L"ledger", L"", L"data/polymarket/live-ownership.sqlite3", L"durable hash-bound Polymarket ownership ledger", L"1", false, true, false},
     {L"--risk-level", L"risk_level", L"conservative, regular, aggressive", L"conservative", L"hard Polymarket execution ceiling profile; conservative is default", L"1", false, true, false},
     {L"--duration-seconds", L"duration_seconds", L"", L"0.0", L"supervision duration; zero runs until interrupted", L"1", false, true, false},
     {L"--reconciliation-seconds", L"reconciliation_seconds", L"", L"5.0", L"authenticated reconciliation interval", L"1", false, true, false},
@@ -706,7 +706,7 @@ inline constexpr CommandOptionSpec kOptions_polymarket_live[] = {
     {L"--confirm-redemption", L"confirm_redemption", L"", L"false", L"confirm one settlement transaction after a fresh read-only preflight", L"0", false, false, false},
     {L"--automatic-redemption", L"automatic_redemption", L"", L"false", L"allow supervision to redeem proven resolved inventory one condition at a time", L"0", false, false, false},
     {L"--activation", L"activation", L"", L"", L"portable hash-bound activation bundle used by autonomous mode", L"1", false, true, false},
-    {L"--activation-output", L"activation_output", L"", L"data\\polymarket\\live-activation.json", L"non-secret activation bundle written by prepare-autonomous", L"1", false, true, false},
+    {L"--activation-output", L"activation_output", L"", L"data/polymarket/live-activation.json", L"non-secret activation bundle written by prepare-autonomous", L"1", false, true, false},
     {L"--replace-activation", L"replace_activation", L"", L"false", L"explicitly replace an existing activation bundle after revalidation", L"0", false, false, false},
     {L"--promotion", L"promotion", L"", L"", L"hash-bound live-promotion JSON required by autonomous mode", L"1", false, true, false},
     {L"--evidence-root", L"evidence_root", L"", L"", L"root containing the exact promotion-bound evidence files", L"1", false, true, false},
