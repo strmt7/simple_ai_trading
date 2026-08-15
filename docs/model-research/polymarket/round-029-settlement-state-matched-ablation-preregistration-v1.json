@@ -105,7 +105,7 @@
     "official_resolved_outcome_remains_label_authority": true,
     "signed_e18_value_preserved_by_the_parent_feature_pipeline": true
   },
-  "preregistration_sha256": "0f07350ceb946e6665415a9d3cce400bc2ed4d0483cf743b4b592b15ba8dec34",
+  "preregistration_sha256": "bff028ff0d6d665d44ae8e476723ba26607a61d03e5a874b284379ff048f5b5c",
   "promotion_gates": {
     "accuracy": "Condition-weighted accuracy and balanced accuracy are reported; neither can promote alone.",
     "economic": "The primary augmented arm must improve source-bound after-cost net PnL and preserve every Round 27 execution, delay, concentration, drawdown, and confidence gate.",
@@ -140,7 +140,7 @@
   "source_text_sha256": {
     "src/simple_ai_trading/polymarket_round27_features.py": "d74d97b9bab0dba46d2b207b845da1d4b8028972bc636e0674f759cecb22f027",
     "src/simple_ai_trading/polymarket_round28_book_ticker.py": "f8081a46cb661654fcbcea3b900ca07db7986c8ff68fda1864a05af1008969a4",
-    "src/simple_ai_trading/polymarket_round29_settlement_features.py": "566cfa38bd959763c1dbd4180c00a9d073dd158124e38ca32663899f8c676f0a"
+    "src/simple_ai_trading/polymarket_round29_settlement_features.py": "28b93030efeb1da701c03bf84fcdf9c757661b161b2e9a691c50178ccbca2752"
   },
   "status": "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
 }
