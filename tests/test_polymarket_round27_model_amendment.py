@@ -17,7 +17,7 @@ from simple_ai_trading.polymarket_round27_model_amendment import (
 _ROOT = Path(__file__).resolve().parents[1]
 _SOURCE_LEDGER = (
     _ROOT
-    / "docs/model-research/polymarket/round-027-effective-source-ledger-v1.json"
+    / "docs/model-research/polymarket/round-027-effective-source-ledger-v2.json"
 )
 
 
@@ -35,21 +35,20 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "stage1_capture_started": True,
         "stage1_feature_rows_accessed_or_materialized": False,
     }
-    assert amendment["correction"]["prediction_gate_changed"] is False
     assert amendment["correction"][
-        "effective_source_dependency_closure_added"
+        "economic_report_config_exactly_contract_bound"
     ] is True
-    assert amendment["correction"]["effective_source_files_bound"] == 68
+    assert amendment["correction"]["economic_gate_numeric_thresholds_changed"] is False
     assert amendment["predecessor_amendment_sha256"] == (
-        "79a4282de6aaa42802dadeeee2c2405aa74f2f27974f90067e89eb722a258e83"
+        "538526dafd9d84a831a57a456aa35d50cedb387c33684fbaac4770ea6ced456b"
     )
     assert amendment["source_ledger"] == {
         "relative_path": (
             "docs/model-research/polymarket/"
-            "round-027-effective-source-ledger-v1.json"
+            "round-027-effective-source-ledger-v2.json"
         ),
         "sha256": (
-            "af847fbe265d58dc0a40f6d011a8060822fdf5a98719880d041398a527d27d92"
+            "75e0f74d68e1cbf87c9edd23f55bf9e79512b17b2c284ef58c01d7e89da72d91"
         ),
     }
     assert set(amendment["superseded_source_text_sha256"]) == {
@@ -70,6 +69,11 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "src/simple_ai_trading/polymarket_round27_features.py"
     ]["corrected"] == (
         "d74d97b9bab0dba46d2b207b845da1d4b8028972bc636e0674f759cecb22f027"
+    )
+    assert amendment["superseded_source_text_sha256"][
+        "src/simple_ai_trading/polymarket_round27_experiment.py"
+    ]["corrected"] == (
+        "51b9077781cabb6d3f8fd7033894b41a0b5ed2d7cf911eb4b573df6f902c63c1"
     )
 
 

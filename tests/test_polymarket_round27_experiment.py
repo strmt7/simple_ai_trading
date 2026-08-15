@@ -15,6 +15,7 @@ from simple_ai_trading.polymarket_round27_experiment import (
     run_round27_sealed_evaluation,
     validate_round27_sealed_access_artifacts,
 )
+from simple_ai_trading.polymarket_round27_economics import Round27EconomicConfig
 from simple_ai_trading.polymarket_round27_features import (
     POLYMARKET_ROUND27_FEATURE_NAMES,
 )
@@ -68,6 +69,19 @@ def _contract() -> dict[str, object]:
             "bootstrap_draws": 1_000,
             "calibration_ece_maximum_degradation": 0.01,
         },
+        "economic_evaluation": {
+            "fixed_delay_scenarios_ms": [250, 500, 1_000, 2_000],
+            "initial_capital_quote": "1000",
+            "markout_horizon_ms": 1_000,
+            "maximum_conditions_per_book_batch": 32,
+            "maximum_decision_book_age_ms": 1_500,
+            "maximum_entry_cost_quote": "10",
+            "maximum_execution_observation_delay_ms": 500,
+            "minimum_expected_edge_per_contract": "0.01",
+            "minimum_profitable_conditions": 20,
+            "minimum_selection_executed_trades": 20,
+            "primary_delay_ms": 500,
+        },
     }
 
 
@@ -79,6 +93,11 @@ def _economic_claim(contract, claim, model, *, passed: bool = True):
         "model_name": model.model_name,
         "model_sha256": model.asdict()["model_sha256"],
         "economic_edge_gate_passed": passed,
+        "config": Round27EconomicConfig(
+            minimum_executed_trades=20,
+            minimum_profitable_conditions=20,
+            bootstrap_draws=1_000,
+        ).validated().asdict(),
         "orders_submitted": False,
         "trading_authority": False,
         "edge_claim": False,
@@ -101,6 +120,40 @@ def _economic_claim(contract, claim, model, *, passed: bool = True):
         claim_writer=lambda value: value["claim_sha256"],
     )
     return claim, report
+
+
+def test_selection_economic_claim_rejects_noncontract_config() -> None:
+    contract = _contract()
+    selection_claim, model = run_round27_development_selection(
+        samples=_samples(),
+        contract=contract,
+        claim_writer=lambda value: value["claim_sha256"],
+        compute_backend="cpu",
+    )
+    assert model is not None
+    _economic, report = _economic_claim(contract, selection_claim, model)
+    tampered = copy.deepcopy(report)
+    tampered["config"]["maximum_decision_book_age_ms"] = 5_000
+    body = dict(tampered)
+    body.pop("report_sha256")
+    tampered["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            body,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+
+    with pytest.raises(ValueError, match="selection economic report differs"):
+        build_round27_selection_economic_claim(
+            contract=contract,
+            selection_claim=selection_claim,
+            selected_model=model,
+            economic_report=tampered,
+            claim_writer=lambda value: value["claim_sha256"],
+        )
 
 
 def test_selection_claim_precedes_sealed_evaluation() -> None:
