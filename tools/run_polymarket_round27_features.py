@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import time
@@ -13,6 +14,7 @@ from simple_ai_trading.polymarket_round27_features import (
     load_round27_public_source_series,
     materialize_round27_target_blind_features,
 )
+from simple_ai_trading.polymarket_round27_feature_store import Round27FeatureStore
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -20,6 +22,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("database", type=Path)
     parser.add_argument("--audit", type=Path)
     parser.add_argument("--maximum-conditions", type=int, default=0)
+    parser.add_argument("--feature-store", type=Path)
+    parser.add_argument("--slot-id", choices=("stage1-a", "stage1-b", "stage1-c", "stage1-d"))
     parser.add_argument("--memory-limit", default="1GB")
     parser.add_argument("--threads", type=int, default=2)
     return parser
@@ -41,10 +45,26 @@ def _progress(phase: str, detail: Mapping[str, object]) -> None:
     )
 
 
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+
+
 def _load_audit(path: Path, maximum: int) -> dict[str, object]:
     value = json.loads(path.read_text(encoding="ascii"))
     if not isinstance(value, dict):
         raise ValueError("Round 27 feature audit must be an object")
+    body = dict(value)
+    claimed = str(body.pop("audit_sha256", "")).lower()
+    if claimed != _canonical_sha256(body):
+        raise ValueError("Round 27 feature audit hash differs")
     if maximum:
         if not 1 <= maximum <= 10_000:
             raise ValueError("maximum conditions must lie in [1, 10000]")
@@ -62,11 +82,19 @@ def _load_audit(path: Path, maximum: int) -> dict[str, object]:
         value["failed_condition_count"] = 0
         value["eligible_condition_ids"] = [item["condition_id"] for item in eligible]
         value["failed_condition_ids"] = []
+        value["diagnostic_scope"] = "eligible_condition_prefix"
+        value["source_audit_sha256"] = claimed
+        value.pop("audit_sha256")
+        value["audit_sha256"] = _canonical_sha256(value)
     return value
 
 
 def main() -> int:
     args = _parser().parse_args()
+    if (args.feature_store is None) != (args.slot_id is None):
+        raise ValueError("Round 27 feature store and slot ID must be supplied together")
+    if args.feature_store is not None and args.maximum_conditions:
+        raise ValueError("Round 27 diagnostic subsets cannot enter the feature store")
     database = args.database.resolve(strict=True)
     if (
         database.is_symlink()
@@ -139,6 +167,27 @@ def main() -> int:
                 "admitted_condition_count": report["admitted_condition_count"],
             },
         )
+        if args.feature_store is not None:
+            with Round27FeatureStore(args.feature_store) as feature_store:
+                inserted = feature_store.put_slot(
+                    slot_id=args.slot_id,
+                    run_id=run_id,
+                    rows=rows,
+                    condition_audit=audit,
+                    feature_report=report,
+                )
+                storage_audit = feature_store.audit()
+            _progress(
+                "feature-store-complete",
+                {
+                    "slot_id": args.slot_id,
+                    "inserted": inserted,
+                    "stored_slot_count": storage_audit["slot_count"],
+                    "stored_condition_count": storage_audit["condition_count"],
+                    "stored_feature_row_count": storage_audit["row_count"],
+                    "storage_audit_sha256": storage_audit["audit_sha256"],
+                },
+            )
     return 0
 
 
