@@ -24,7 +24,7 @@ POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION = (
     "polymarket-round27-stage1-model-contract-v1"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256 = (
-    "352fac731425ec4a41c610c6148f87e3a17cb63bfee8163c5dcce54ca9d9e256"
+    "2210441b97ea9c77c7dab754dc554c12aba8380fbbd86f05b3fa07e20142992c"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
@@ -146,6 +146,7 @@ def validate_round27_model_contract(
         or economics.get("maximum_execution_observation_delay_ms") != 500
         or economics.get("maximum_decision_book_age_ms") != 1500
         or economics.get("markout_horizon_ms") != 1000
+        or economics.get("maximum_conditions_per_book_batch") != 32
         or economics.get("minimum_expected_edge_per_contract") != "0.01"
         or economics.get("maximum_entry_cost_quote") != "10"
         or economics.get("position_quantity")
@@ -155,6 +156,8 @@ def validate_round27_model_contract(
         or economics.get("minimum_sealed_executed_trades") != 100
         or economics.get("minimum_profitable_conditions") != 20
         or economics.get("rate_limit_or_account_authority") is not False
+        or economics.get("replay_residency")
+        != "condition_batched_single_pass_all_delay_scenarios"
         or economics.get("sealed_access_requires")
         != [
             "exact_persisted_selected_model_payload",
