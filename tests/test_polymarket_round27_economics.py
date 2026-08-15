@@ -14,6 +14,7 @@ from simple_ai_trading.polymarket import (
 )
 from simple_ai_trading.polymarket_replay import PolymarketRecordedBook
 from simple_ai_trading.polymarket_round27_economics import (
+    Round27EconomicBookBatch,
     Round27EconomicConfig,
     evaluate_round27_economic_scenarios,
 )
@@ -281,4 +282,81 @@ def test_round27_economics_requires_exact_outcome_population() -> None:
     outcomes["0x" + "f" * 64] = 1
 
     with pytest.raises(ValueError, match="outcome population"):
+        _evaluate(markets, partition, probabilities, books, outcomes)
+
+
+def test_round27_economics_condition_batches_match_single_resident_replay() -> None:
+    markets, partition, probabilities, books, outcomes = _population(20)
+    config = Round27EconomicConfig(
+        minimum_executed_trades=20,
+        minimum_profitable_conditions=20,
+        bootstrap_draws=1_000,
+    )
+    direct = _evaluate(
+        markets,
+        partition,
+        probabilities,
+        books,
+        outcomes,
+        config=config,
+    )
+    condition_ids = [market.condition_id for market in markets]
+    batches = tuple(
+        Round27EconomicBookBatch(
+            condition_ids=tuple(condition_ids[start : start + 3]),
+            books=tuple(
+                book
+                for book in books
+                if book.market.condition_id in condition_ids[start : start + 3]
+            ),
+        )
+        for start in range(0, len(condition_ids), 3)
+    )
+    batched = evaluate_round27_economic_scenarios(
+        partition=partition,
+        predictions=probabilities,
+        markets=markets,
+        outcomes_up=outcomes,
+        model_name="test-model",
+        model_sha256="b" * 64,
+        source_audit_sha256="c" * 64,
+        resolution_evidence_sha256="d" * 64,
+        config=config,
+        book_batches=(batch for batch in batches),
+    )
+
+    assert batched == direct
+
+
+def test_round27_economics_rejects_incomplete_book_batch_coverage() -> None:
+    markets, partition, probabilities, books, outcomes = _population(2)
+    first_condition = markets[0].condition_id
+
+    with pytest.raises(ValueError, match="do not cover the role"):
+        evaluate_round27_economic_scenarios(
+            partition=partition,
+            predictions=probabilities,
+            markets=markets,
+            outcomes_up=outcomes,
+            model_name="test-model",
+            model_sha256="b" * 64,
+            source_audit_sha256="c" * 64,
+            resolution_evidence_sha256="d" * 64,
+            book_batches=(
+                Round27EconomicBookBatch(
+                    condition_ids=(first_condition,),
+                    books=tuple(
+                        book
+                        for book in books
+                        if book.market.condition_id == first_condition
+                    ),
+                ),
+            ),
+        )
+
+
+def test_round27_economics_requires_batching_above_residency_ceiling() -> None:
+    markets, partition, probabilities, books, outcomes = _population(33)
+
+    with pytest.raises(ValueError, match="book batch scope differs"):
         _evaluate(markets, partition, probabilities, books, outcomes)

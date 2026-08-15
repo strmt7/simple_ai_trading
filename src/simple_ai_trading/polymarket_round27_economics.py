@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from bisect import bisect_left, bisect_right
+from collections.abc import Iterable
 from collections import Counter
 from dataclasses import dataclass, replace
 from decimal import Decimal, ROUND_FLOOR
@@ -70,6 +71,7 @@ class Round27EconomicConfig:
     primary_delay_ms: int = 500
     maximum_execution_observation_delay_ms: int = 500
     maximum_decision_book_age_ms: int = 1_500
+    maximum_conditions_per_book_batch: int = 32
     markout_horizon_ms: int = 1_000
     minimum_expected_edge_per_contract: Decimal = Decimal("0.01")
     maximum_entry_cost_quote: Decimal = Decimal("10")
@@ -100,6 +102,7 @@ class Round27EconomicConfig:
             or int(self.primary_delay_ms) != 500
             or not 0 <= int(self.maximum_execution_observation_delay_ms) <= 5_000
             or not 0 <= int(self.maximum_decision_book_age_ms) <= 5_000
+            or not 1 <= int(self.maximum_conditions_per_book_batch) <= 32
             or not 100 <= int(self.markout_horizon_ms) <= 60_000
             or not Decimal("0") <= edge <= Decimal("0.10")
             or not Decimal("1") <= maximum_cost <= Decimal("100")
@@ -128,6 +131,9 @@ class Round27EconomicConfig:
                 self.maximum_execution_observation_delay_ms
             ),
             "maximum_decision_book_age_ms": self.maximum_decision_book_age_ms,
+            "maximum_conditions_per_book_batch": (
+                self.maximum_conditions_per_book_batch
+            ),
             "markout_horizon_ms": self.markout_horizon_ms,
             "minimum_expected_edge_per_contract": _decimal_text(
                 self.minimum_expected_edge_per_contract
@@ -224,6 +230,27 @@ class Round27EconomicTrade:
             "source_payload_sha256": self.source_payload_sha256,
             "trade_sha256": self.trade_sha256,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class Round27EconomicBookBatch:
+    """One independently audited, bounded condition batch."""
+
+    condition_ids: tuple[str, ...]
+    books: tuple[PolymarketRecordedBook, ...]
+
+    def validated(self) -> "Round27EconomicBookBatch":
+        conditions = tuple(str(value).lower() for value in self.condition_ids)
+        if (
+            not conditions
+            or len(conditions) != len(set(conditions))
+            or any(not value.startswith("0x") or len(value) != 66 for value in conditions)
+            or any(book.market.condition_id not in conditions for book in self.books)
+        ):
+            raise ValueError("Round 27 economic book batch differs")
+        for book in self.books:
+            book.snapshot.validated()
+        return replace(self, condition_ids=conditions, books=tuple(self.books))
 
 
 class _BookIndex:
@@ -565,7 +592,7 @@ def _trade_payload(trade: Round27EconomicTrade) -> dict[str, object]:
     return payload
 
 
-def _execute_scenario(
+def _execute_candidate_trades(
     *,
     candidates: Sequence[_DecisionCandidate],
     delay_ms: int,
@@ -573,10 +600,8 @@ def _execute_scenario(
     outcomes_up: Mapping[str, int],
     index: _BookIndex,
     config: Round27EconomicConfig,
-    evaluated_condition_count: int,
-    selection_reasons: Mapping[str, int],
-) -> dict[str, object]:
-    reasons: Counter[str] = Counter(selection_reasons)
+) -> tuple[tuple[Round27EconomicTrade, ...], dict[str, int]]:
+    reasons: Counter[str] = Counter()
     trades: list[Round27EconomicTrade] = []
     for candidate in candidates:
         market = market_by_condition[candidate.condition_id]
@@ -698,6 +723,18 @@ def _execute_scenario(
                 trade_sha256=_canonical_sha256(_trade_payload(provisional)),
             )
         )
+    return tuple(trades), dict(sorted(reasons.items()))
+
+
+def _scenario_report(
+    *,
+    trades: Sequence[Round27EconomicTrade],
+    candidate_count: int,
+    delay_ms: int,
+    evaluated_condition_count: int,
+    reasons: Mapping[str, int],
+    config: Round27EconomicConfig,
+) -> dict[str, object]:
     filled_trades = tuple(item for item in trades if item.execution_state == "FILLED")
     pnl_values = tuple(item.net_pnl_quote for item in filled_trades)
     net_pnl = sum(pnl_values, start=Decimal("0"))
@@ -745,11 +782,11 @@ def _execute_scenario(
     body: dict[str, object] = {
         "delay_ms": delay_ms,
         "evaluated_condition_count": evaluated_condition_count,
-        "signal_condition_count": len(candidates),
+        "signal_condition_count": candidate_count,
         "attempted_order_count": len(trades),
         "filled_order_count": len(filled_trades),
         "unknown_order_count": unknown_count,
-        "abstained_condition_count": evaluated_condition_count - len(candidates),
+        "abstained_condition_count": evaluated_condition_count - candidate_count,
         "profitable_condition_count": profitable_conditions,
         "reason_counts": dict(sorted(reasons.items())),
         "gross_deployed_capital_quote": _decimal_text(deployed),
@@ -794,15 +831,16 @@ def evaluate_round27_economic_scenarios(
     partition: Round27Partition,
     predictions: Sequence[float] | np.ndarray,
     markets: Sequence[PolymarketFiveMinuteMarket],
-    books: Sequence[PolymarketRecordedBook],
+    books: Sequence[PolymarketRecordedBook] | None = None,
     outcomes_up: Mapping[str, int],
     model_name: str,
     model_sha256: str,
     source_audit_sha256: str,
     resolution_evidence_sha256: str,
     config: Round27EconomicConfig | None = None,
+    book_batches: Iterable[Round27EconomicBookBatch] | None = None,
 ) -> dict[str, object]:
-    """Replay one frozen candidate population across every latency scenario."""
+    """Replay one frozen candidate population with bounded book residency."""
 
     cfg = (config or Round27EconomicConfig()).validated()
     probability = np.asarray(predictions, dtype=np.float64)
@@ -834,29 +872,114 @@ def evaluate_round27_economic_scenarios(
             < market.end_ms
         ):
             raise ValueError("Round 27 economic sample metadata differs")
-    index = _BookIndex(
-        tuple(book for book in books if book.market.condition_id in conditions)
-    )
-    candidates, selection_reasons = _build_candidates(
-        partition,
-        probability,
-        market_by_condition,
-        index,
-        cfg,
-    )
-    scenarios = [
-        _execute_scenario(
-            candidates=candidates,
-            delay_ms=delay,
-            market_by_condition=market_by_condition,
-            outcomes_up=outcomes_up,
-            index=index,
-            config=cfg,
-            evaluated_condition_count=len(conditions),
-            selection_reasons=selection_reasons,
+    if (books is None) == (book_batches is None):
+        raise ValueError("Round 27 economics requires exactly one book source")
+    batches: Iterable[Round27EconomicBookBatch] = (
+        (
+            Round27EconomicBookBatch(
+                condition_ids=tuple(sorted(conditions)),
+                books=tuple(
+                    book
+                    for book in books or ()
+                    if book.market.condition_id in conditions
+                ),
+            ),
         )
-        for delay in cfg.delays_ms
-    ]
+        if books is not None
+        else book_batches or ()
+    )
+    sample_indices_by_condition: dict[str, list[int]] = {}
+    for sample_index, sample in enumerate(partition.samples):
+        sample_indices_by_condition.setdefault(sample.condition_id, []).append(
+            sample_index
+        )
+    seen_conditions: set[str] = set()
+    candidates: list[_DecisionCandidate] = []
+    selection_reasons: Counter[str] = Counter()
+    trades_by_delay: dict[int, list[Round27EconomicTrade]] = {
+        delay: [] for delay in cfg.delays_ms
+    }
+    execution_reasons_by_delay: dict[int, Counter[str]] = {
+        delay: Counter() for delay in cfg.delays_ms
+    }
+    for raw_batch in batches:
+        if not isinstance(raw_batch, Round27EconomicBookBatch):
+            raise ValueError("Round 27 economic book batch type differs")
+        batch = raw_batch.validated()
+        batch_conditions = set(batch.condition_ids)
+        if (
+            not batch_conditions <= conditions
+            or batch_conditions & seen_conditions
+            or len(batch_conditions) > cfg.maximum_conditions_per_book_batch
+        ):
+            raise ValueError("Round 27 economic book batch scope differs")
+        seen_conditions.update(batch_conditions)
+        sample_indices = sorted(
+            index
+            for condition in batch.condition_ids
+            for index in sample_indices_by_condition[condition]
+        )
+        batch_partition = Round27Partition.from_samples(
+            tuple(partition.samples[index] for index in sample_indices),
+            role=partition.role,
+        )
+        batch_probability = probability[np.asarray(sample_indices, dtype=np.int64)]
+        batch_market_by_condition = {
+            condition: market_by_condition[condition]
+            for condition in batch.condition_ids
+        }
+        book_index = _BookIndex(batch.books)
+        batch_candidates, batch_selection_reasons = _build_candidates(
+            batch_partition,
+            batch_probability,
+            batch_market_by_condition,
+            book_index,
+            cfg,
+        )
+        candidates.extend(batch_candidates)
+        selection_reasons.update(batch_selection_reasons)
+        for delay in cfg.delays_ms:
+            batch_trades, batch_execution_reasons = _execute_candidate_trades(
+                candidates=batch_candidates,
+                delay_ms=delay,
+                market_by_condition=batch_market_by_condition,
+                outcomes_up=outcomes_up,
+                index=book_index,
+                config=cfg,
+            )
+            trades_by_delay[delay].extend(batch_trades)
+            execution_reasons_by_delay[delay].update(batch_execution_reasons)
+    if seen_conditions != conditions:
+        raise ValueError("Round 27 economic book batches do not cover the role")
+    candidates.sort(
+        key=lambda item: (
+            item.event_start_ms,
+            item.condition_id,
+            item.decision_time_ms,
+        )
+    )
+    scenarios = []
+    for delay in cfg.delays_ms:
+        selected_trades = sorted(
+            trades_by_delay[delay],
+            key=lambda item: (
+                item.event_start_ms,
+                item.condition_id,
+                item.decision_time_ms,
+            ),
+        )
+        reasons = Counter(selection_reasons)
+        reasons.update(execution_reasons_by_delay[delay])
+        scenarios.append(
+            _scenario_report(
+                trades=selected_trades,
+                candidate_count=len(candidates),
+                delay_ms=delay,
+                evaluated_condition_count=len(conditions),
+                reasons=dict(sorted(reasons.items())),
+                config=cfg,
+            )
+        )
     scenario_by_delay = {int(item["delay_ms"]): item for item in scenarios}
     all_scenarios_pass = all(
         bool(item["scenario_edge_gate_passed"]) for item in scenarios
@@ -915,6 +1038,7 @@ def evaluate_round27_economic_scenarios(
 __all__ = [
     "POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION",
     "POLYMARKET_ROUND27_FIXED_DELAYS_MS",
+    "Round27EconomicBookBatch",
     "Round27EconomicConfig",
     "Round27EconomicTrade",
     "evaluate_round27_economic_scenarios",
