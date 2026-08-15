@@ -28,7 +28,7 @@ POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION = (
     "polymarket-round27-stage1-model-contract-v1"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256 = (
-    "639543bdc3102d7090b66019434a961d19533cc1d882778013ce60aadf05208a"
+    "3077da2c34f4b4a6fd9328ce67022e8d78bb3608066b742f92fe41eaee14543b"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
@@ -195,6 +195,8 @@ def validate_round27_model_contract(
         or models[1].get("l2_penalties") != list(POLYMARKET_ROUND27_L2_PENALTIES)
         or models[1].get("correction_scales")
         != list(POLYMARKET_ROUND27_CORRECTION_SCALES)
+        or models[2].get("selection_claim_payload")
+        != "full_model_text_and_sha256"
         or not isinstance(partitions, list)
         or not isinstance(sources, Mapping)
     ):

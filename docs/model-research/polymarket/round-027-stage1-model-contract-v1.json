@@ -29,8 +29,8 @@
     "profitability_claim": false
   },
   "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
-  "contract_sha256": "639543bdc3102d7090b66019434a961d19533cc1d882778013ce60aadf05208a",
-  "created_at_ms": 1786777952205,
+  "contract_sha256": "3077da2c34f4b4a6fd9328ce67022e8d78bb3608066b742f92fe41eaee14543b",
+  "created_at_ms": 1786778393809,
   "data_policy": {
     "assets": [
       "BTC"
@@ -167,7 +167,8 @@
       "model_name": "shallow_lightgbm_offset",
       "num_boost_round": 120,
       "num_leaves": 7,
-      "role": "bounded_nonlinear_market_prior_residual"
+      "role": "bounded_nonlinear_market_prior_residual",
+      "selection_claim_payload": "full_model_text_and_sha256"
     }
   ],
   "partitions": [
@@ -278,7 +279,7 @@
     "src/simple_ai_trading/polymarket_round27_economics.py": "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54",
     "src/simple_ai_trading/polymarket_round27_experiment.py": "e22119f06bf156454c7cace11a8902642c243e6d13a5be4ece9f4ff048feb33a",
     "src/simple_ai_trading/polymarket_round27_features.py": "032f249028418d7a479c014874a374b1dc6e68de80350b68dad83ca5aae58316",
-    "src/simple_ai_trading/polymarket_round27_model.py": "314d0724802ec3881cc1b7a4af1b0c5a24c1cb61437c18b6e8fbfd76527bb854"
+    "src/simple_ai_trading/polymarket_round27_model.py": "5eedf0a5e6f7c0317c795d99ad7425ff2e262c2d527c519d4f9d9cee7f8e8740"
   },
   "status": "frozen_before_stage1_capture_and_outcome_access",
   "supplemental_hypothesis_preregistration_sha256": "2cb8f7068fb9673c1d1c94af0a8a6d1d53a4ac382c3b5e336278a9a10543b7df"

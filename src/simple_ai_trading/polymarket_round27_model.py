@@ -472,6 +472,7 @@ class Round27LightGbmOffsetModel:
             "correction_scale": self.correction_scale,
             "backend_kind": self.backend_kind,
             "backend_device": self.backend_device,
+            "model_text": self.model_text,
             "model_text_sha256": hashlib.sha256(
                 self.model_text.encode("utf-8")
             ).hexdigest(),
@@ -535,6 +536,118 @@ def fit_round27_lightgbm_offset(
         backend_device=device,
         model_sha256=_canonical_sha256(body),
     )
+
+
+def round27_model_from_payload(
+    value: Mapping[str, object],
+) -> Round27L2OffsetModel | Round27LightGbmOffsetModel:
+    """Reconstruct only an exact, self-contained frozen model payload."""
+
+    payload = dict(value)
+    model_name = payload.get("model_name")
+    if (
+        payload.get("schema_version") != POLYMARKET_ROUND27_MODEL_SCHEMA_VERSION
+        or payload.get("feature_names_sha256")
+        != POLYMARKET_ROUND27_FEATURE_NAMES_SHA256
+    ):
+        raise ValueError("Round 27 persisted model schema differs")
+    if model_name == "l2_offset_logistic":
+        expected = {
+            "schema_version",
+            "model_name",
+            "feature_names_sha256",
+            "mean",
+            "scale",
+            "coefficients",
+            "penalty",
+            "correction_scale",
+            "model_sha256",
+        }
+        try:
+            mean = tuple(float(item) for item in payload["mean"])  # type: ignore[union-attr]
+            scale = tuple(float(item) for item in payload["scale"])  # type: ignore[union-attr]
+            coefficients = tuple(
+                float(item) for item in payload["coefficients"]  # type: ignore[union-attr]
+            )
+            penalty = float(payload["penalty"])
+            correction_scale = float(payload["correction_scale"])
+            claimed = str(payload["model_sha256"])
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("Round 27 persisted L2 model differs") from exc
+        feature_count = len(POLYMARKET_ROUND27_FEATURE_NAMES)
+        body = dict(payload)
+        body.pop("model_sha256", None)
+        if (
+            set(payload) != expected
+            or len(mean) != feature_count
+            or len(scale) != feature_count
+            or len(coefficients) != feature_count + 1
+            or any(not math.isfinite(item) for item in (*mean, *scale, *coefficients))
+            or any(item <= 0.0 for item in scale)
+            or not math.isfinite(penalty)
+            or penalty <= 0.0
+            or correction_scale not in POLYMARKET_ROUND27_CORRECTION_SCALES
+            or claimed != _canonical_sha256(body)
+        ):
+            raise ValueError("Round 27 persisted L2 model differs")
+        return Round27L2OffsetModel(
+            mean=mean,
+            scale=scale,
+            coefficients=coefficients,
+            penalty=penalty,
+            correction_scale=correction_scale,
+            model_sha256=claimed,
+        )
+    if model_name == "shallow_lightgbm_offset":
+        expected = {
+            "schema_version",
+            "model_name",
+            "feature_names_sha256",
+            "correction_scale",
+            "backend_kind",
+            "backend_device",
+            "model_text",
+            "model_text_sha256",
+            "model_sha256",
+        }
+        model_text = payload.get("model_text")
+        model_text_sha256 = str(payload.get("model_text_sha256") or "")
+        claimed = str(payload.get("model_sha256") or "")
+        backend_kind = str(payload.get("backend_kind") or "")
+        backend_device = str(payload.get("backend_device") or "")
+        try:
+            correction_scale = float(payload["correction_scale"])
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("Round 27 persisted LightGBM model differs") from exc
+        body = dict(payload)
+        body.pop("model_sha256", None)
+        body.pop("model_text", None)
+        if (
+            set(payload) != expected
+            or not isinstance(model_text, str)
+            or not model_text
+            or hashlib.sha256(model_text.encode("utf-8")).hexdigest()
+            != model_text_sha256
+            or not backend_kind
+            or not backend_device
+            or correction_scale not in POLYMARKET_ROUND27_CORRECTION_SCALES
+            or claimed != _canonical_sha256(body)
+        ):
+            raise ValueError("Round 27 persisted LightGBM model differs")
+        try:
+            booster = lgb.Booster(model_str=model_text)
+        except (TypeError, ValueError, lgb.basic.LightGBMError) as exc:
+            raise ValueError("Round 27 persisted LightGBM model is invalid") from exc
+        if booster.num_feature() != len(POLYMARKET_ROUND27_FEATURE_NAMES):
+            raise ValueError("Round 27 persisted LightGBM width differs")
+        return Round27LightGbmOffsetModel(
+            model_text=model_text,
+            correction_scale=correction_scale,
+            backend_kind=backend_kind,
+            backend_device=backend_device,
+            model_sha256=claimed,
+        )
+    raise ValueError("Round 27 persisted model family differs")
 
 
 def _condition_fold(condition_id: str, fold_count: int) -> int:
@@ -693,6 +806,7 @@ __all__ = [
     "fit_round27_l2_offset",
     "fit_round27_lightgbm_offset",
     "paired_round27_condition_bootstrap",
+    "round27_model_from_payload",
     "round27_probability_metrics",
     "select_round27_correction_scale",
     "select_round27_l2_penalty",

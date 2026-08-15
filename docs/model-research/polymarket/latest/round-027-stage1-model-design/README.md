@@ -61,6 +61,9 @@ ownership, and independently replays every row and manifest on audit.
 The sealed role stays inaccessible until the exact selected model payload, its
 source-bound economic report, and a persisted passing economic claim all
 revalidate. A matching model name alone is insufficient.
+Both learned-model families are restart-safe: the selection claim contains the
+complete L2 parameters or complete LightGBM model text plus its hash, and the
+runtime reconstructs only an exact schema- and feature-bound payload.
 
 The canonical numeric design is
 [`round-027-stage1-model-contract-v1.json`](../../round-027-stage1-model-contract-v1.json).
