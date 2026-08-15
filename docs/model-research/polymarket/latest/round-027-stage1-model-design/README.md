@@ -30,6 +30,7 @@ flowchart LR
 | Long-context minimum receipt coverage | 99.5% |
 | Long-context maximum receipt gap | 5 seconds |
 | Fixed execution delays | 250 / 500 / 1,000 / 2,000 ms |
+| New-entry settlement hazard window | Final 60 seconds blocked |
 | Maximum entry cost | 10 USDC per condition |
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
@@ -52,6 +53,15 @@ candidate per condition, walks captured ask depth and fee schedules, and settles
 only from official outcomes. Missing, stale, one-sided, reconnected, or shallow
 books receive no fill credit. The AI layer may only veto or reduce a
 mechanically valid action.
+
+An August 2026 [settlement-manipulation study](https://arxiv.org/abs/2606.31675)
+reports concentrated signed BTC spot flow in the final roughly 50 seconds of
+Polymarket's five-minute contracts, with the sharpest spike in the last ten
+seconds and subsequent reversal. The
+[pre-outcome safety amendment](../../round-027-settlement-hazard-correction-amendment-v14.json)
+therefore blocks every new entry in the final 60 seconds. This is a
+deterministic risk gate, not a performance-tuned threshold, and neither AI nor
+a model may waive it.
 
 The cumulative
 [active-tick amendment](../../round-027-active-tick-execution-correction-amendment-v3.json)

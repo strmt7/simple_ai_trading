@@ -225,6 +225,40 @@ def test_round27_economics_walks_depth_and_passes_every_fixed_delay() -> None:
         assert trade["trade_sha256"] != trade["source_payload_sha256"]
 
 
+def test_round27_economics_blocks_new_entries_in_settlement_hazard_window() -> None:
+    markets, partition, probabilities, _books, outcomes = _population(1)
+    market = markets[0]
+    late_sample = replace(
+        partition.samples[0],
+        decision_time_ms=market.end_ms - 50_000,
+    ).validated()
+    late_partition = Round27Partition.from_samples(
+        (late_sample,),
+        role="selection",
+    )
+    books = (
+        _book(market, outcome="Up", offset_ms=249_999),
+        _book(market, outcome="Down", offset_ms=249_999),
+    )
+
+    report = _evaluate(
+        markets,
+        late_partition,
+        probabilities,
+        books,
+        outcomes,
+    )
+
+    assert report["config"]["minimum_new_entry_time_to_settlement_ms"] == 60_000
+    assert report["candidate_condition_count"] == 0
+    for scenario in report["scenarios"]:
+        assert scenario["attempted_order_count"] == 0
+        assert scenario["reason_counts"] == {
+            "no_positive_after_cost_candidate": 1,
+            "settlement_manipulation_hazard_window": 1,
+        }
+
+
 def test_round27_economics_fok_refuses_insufficient_displayed_depth() -> None:
     markets, partition, probabilities, books, outcomes = _population(1)
     target = markets[0]

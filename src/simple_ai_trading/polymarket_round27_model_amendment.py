@@ -9,11 +9,11 @@ from typing import Mapping
 
 
 POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256 = (
-    "759bedfbc395dab37f32d78c54433b6441ff4a231a71f9a018d1e9e80d922369"
+    "a7015cfe099a287e96f9399b9305ad99a5a41b4619b468798fb94fed8e7b9526"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
-    "round-027-source-recomputation-correction-amendment-v13.json"
+    "round-027-settlement-hazard-correction-amendment-v14.json"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD = (
     "model_implementation_amendment_sha256"
@@ -74,6 +74,13 @@ _V12_PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
     "round-027-autocorrelation-normalization-correction-amendment-v12.json"
 )
+_V13_PREDECESSOR_AMENDMENT_SHA256 = (
+    "759bedfbc395dab37f32d78c54433b6441ff4a231a71f9a018d1e9e80d922369"
+)
+_V13_PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/"
+    "round-027-source-recomputation-correction-amendment-v13.json"
+)
 _V1_SOURCE_LEDGER_SHA256 = (
     "af847fbe265d58dc0a40f6d011a8060822fdf5a98719880d041398a527d27d92"
 )
@@ -92,11 +99,17 @@ _V3_SOURCE_LEDGER_SHA256 = (
 _V3_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v3.json"
 )
-_EFFECTIVE_SOURCE_LEDGER_SHA256 = (
+_V4_SOURCE_LEDGER_SHA256 = (
     "850cfb612d86e1aebafb271ffbea3281d771f922153bd2a6d41e2d567a844475"
 )
-_EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH = Path(
+_V4_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v4.json"
+)
+_EFFECTIVE_SOURCE_LEDGER_SHA256 = (
+    "700d89d8220f4a888d38ce67546fa7726083547c9507b7fd15f47beaef9472f2"
+)
+_EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/round-027-effective-source-ledger-v5.json"
 )
 _WALK_FORWARD_PREDECESSOR_AMENDMENT_SHA256 = (
     "e3ce6285cea10337f50383cdd2b89dd048d8f015f889adaa9cc0045088a44833"
@@ -1331,9 +1344,10 @@ def _validate_source_ledger(
     predecessor_sha256: str | None,
     verify_current_files: bool,
 ) -> dict[str, object]:
-    operator_ledger = expected_schema_version == (
-        "polymarket-round27-effective-source-ledger-v4"
-    )
+    operator_ledger = expected_schema_version in {
+        "polymarket-round27-effective-source-ledger-v4",
+        "polymarket-round27-effective-source-ledger-v5",
+    }
     expected_file_count = 85 if operator_ledger else 68
     expected_dependency_resolution = (
         "recursive_local_project_import_closure"
@@ -1903,17 +1917,17 @@ def _validate_v12_predecessor(
         expected_sha256=_V3_SOURCE_LEDGER_SHA256,
         expected_schema_version="polymarket-round27-effective-source-ledger-v3",
         predecessor_sha256=_V2_SOURCE_LEDGER_SHA256,
-        verify_current_files=True,
+        verify_current_files=False,
     )
     return {**payload, "amendment_sha256": claimed}
 
 
-def validate_round27_model_amendment(
+def _validate_v13_predecessor(
     value: Mapping[str, object],
     *,
     repository: str | Path | None = None,
 ) -> dict[str, object]:
-    """Validate the current source-recomputation correction and source ledger."""
+    """Validate the immutable v13 source-recomputation correction."""
 
     payload = dict(value)
     claimed = _sha256(payload.pop("amendment_sha256", ""))
@@ -2068,7 +2082,7 @@ def validate_round27_model_amendment(
             "status",
             "superseded_source_text_sha256",
         }
-        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _V13_PREDECESSOR_AMENDMENT_SHA256
         or claimed != _canonical_sha256(payload)
         or payload.get("schema_version")
         != "polymarket-round27-source-recomputation-correction-amendment-v13"
@@ -2098,10 +2112,189 @@ def validate_round27_model_amendment(
     _validate_source_ledger(
         root,
         payload.get("source_ledger"),
-        expected_path=_EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH,
-        expected_sha256=_EFFECTIVE_SOURCE_LEDGER_SHA256,
+        expected_path=_V4_SOURCE_LEDGER_RELATIVE_PATH,
+        expected_sha256=_V4_SOURCE_LEDGER_SHA256,
         expected_schema_version="polymarket-round27-effective-source-ledger-v4",
         predecessor_sha256=_V3_SOURCE_LEDGER_SHA256,
+        verify_current_files=False,
+    )
+    return {**payload, "amendment_sha256": claimed}
+
+
+def validate_round27_model_amendment(
+    value: Mapping[str, object],
+    *,
+    repository: str | Path | None = None,
+) -> dict[str, object]:
+    """Validate the current settlement-hazard correction and source ledger."""
+
+    payload = dict(value)
+    claimed = _sha256(payload.pop("amendment_sha256", ""))
+    created_at_ms = payload.get("created_at_ms")
+    expected_correction = {
+        "economic_report_schema_version_from": (
+            "polymarket-round27-economic-replay-v4"
+        ),
+        "economic_report_schema_version_to": (
+            "polymarket-round27-economic-replay-v5"
+        ),
+        "feature_model_ai_candidates_changed": False,
+        "minimum_new_entry_time_to_settlement_ms": 60_000,
+        "settlement_hazard_gate_may_be_overridden": False,
+        "source_ledger_advanced": True,
+    }
+    expected_discovery = {
+        "official_outcomes_accessed": False,
+        "prior_policy_permitted_new_entries_until_final_five_seconds": True,
+        "research_revision_published_at": "2026-08-11",
+        "stage1_feature_rows_accessed_or_materialized": False,
+    }
+    expected_predecessor_sources = {
+        "src/simple_ai_trading/polymarket_round27_economics.py": (
+            "17743f3b178d656d88dd35e4614900e0bbacfe0e4decf494bb4fbd3127bffa8a"
+        )
+    }
+    expected_replacements = {
+        "src/simple_ai_trading/polymarket_round27_ai_cases.py": {
+            "corrected": (
+                "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a"
+            ),
+            "frozen": (
+                "2e95562f3611842ecb801920f9cf6876eba2d11b2e0b89a76625f3a59be97bc2"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_ai_economics.py": {
+            "corrected": (
+                "a4763089881c6475dce2ee56bb4e38ddcc4e71c89871e147d83b3eeaf0fb556b"
+            ),
+            "frozen": (
+                "a222dd9c4d6246aeccf90e62ff7157697c52636aed4261c532337f5016e78fe6"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_economics.py": {
+            "corrected": (
+                "a9f78fac647caf5eafcc7221d498545f39a7bb1fa8d3ad5bc9458f3bb2c861db"
+            ),
+            "frozen": (
+                "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_experiment.py": {
+            "corrected": (
+                "51b9077781cabb6d3f8fd7033894b41a0b5ed2d7cf911eb4b573df6f902c63c1"
+            ),
+            "frozen": (
+                "9a97a253668e9ef2487c042c3574b4bea2f5cf7e6fcd5267a1f6e6fc1ed5321e"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_features.py": {
+            "corrected": (
+                "d74d97b9bab0dba46d2b207b845da1d4b8028972bc636e0674f759cecb22f027"
+            ),
+            "frozen": (
+                "032f249028418d7a479c014874a374b1dc6e68de80350b68dad83ca5aae58316"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_model.py": {
+            "corrected": (
+                "76360e4541ab7118e9ea29561d20d18dcc97dd32fffff07fce6d11af2452d4bf"
+            ),
+            "frozen": (
+                "5eedf0a5e6f7c0317c795d99ad7425ff2e262c2d527c519d4f9d9cee7f8e8740"
+            ),
+        },
+        "src/simple_ai_trading/polymarket_round27_operator.py": {
+            "corrected": (
+                "184be01f8c3f45e2f225c07201608290f0bed37c6177c5f0b48b8fe922a07a13"
+            ),
+            "frozen": (
+                "acf3a666db7b220e2cfe74b3c9c4d8bfcda845731d7f62fbae43c7baefec87e0"
+            ),
+        },
+        "tools/run_polymarket_round27_ai_sealed.py": {
+            "corrected": (
+                "915afba087c2b36749a2dded499efa69d4190aa85d7b2c45903056c5e802a86b"
+            ),
+            "frozen": (
+                "a3bb98f4807de0247b848b8a5b0356baef7a2385830553783c70e3374d435519"
+            ),
+        },
+        "tools/run_polymarket_round27_ai_selection.py": {
+            "corrected": (
+                "fa094c5d0d06f289f0303e75ae3bbb68ba10f7f73856104992cee1c4dd078b7d"
+            ),
+            "frozen": (
+                "cbbb4d523fe7a7fe169ecd38b3cd928b6843a7b0f4c76ee36311a90d4c26b2c0"
+            ),
+        },
+    }
+    expected_research = [
+        {
+            "purpose": "five_minute_bitcoin_settlement_manipulation_hazard",
+            "url": "https://arxiv.org/abs/2606.31675",
+        },
+        {
+            "purpose": "live_source_contract_for_binance_and_chainlink",
+            "url": "https://docs.polymarket.com/market-data/websocket/rtds",
+        },
+        {
+            "purpose": "chainlink_btc_usd_stream_identity",
+            "url": "https://data.chain.link/streams/btc-usd-cexprice-streams",
+        },
+    ]
+    if (
+        set(payload)
+        != {
+            "authority",
+            "base_model_contract_sha256",
+            "campaign_contract_sha256",
+            "correction",
+            "created_at_ms",
+            "discovery_audit",
+            "knowledge_at_freeze",
+            "predecessor_amendment_sha256",
+            "predecessor_source_text_sha256",
+            "rationale",
+            "research_basis",
+            "schema_version",
+            "source_ledger",
+            "status",
+            "superseded_source_text_sha256",
+        }
+        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _canonical_sha256(payload)
+        or payload.get("schema_version")
+        != "polymarket-round27-settlement-hazard-correction-amendment-v14"
+        or payload.get("status")
+        != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
+        or type(created_at_ms) is not int
+        or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
+        or payload.get("predecessor_amendment_sha256")
+        != _V13_PREDECESSOR_AMENDMENT_SHA256
+        or payload.get("predecessor_source_text_sha256")
+        != expected_predecessor_sources
+        or payload.get("authority") != _EXPECTED_AUTHORITY
+        or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
+        or payload.get("correction") != expected_correction
+        or payload.get("discovery_audit") != expected_discovery
+        or payload.get("research_basis") != expected_research
+        or payload.get("superseded_source_text_sha256") != expected_replacements
+    ):
+        raise ValueError("Round 27 model amendment differs")
+    root = (
+        Path(__file__).resolve().parents[2]
+        if repository is None
+        else Path(repository).resolve()
+    )
+    _validate_source_ledger(
+        root,
+        payload.get("source_ledger"),
+        expected_path=_EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH,
+        expected_sha256=_EFFECTIVE_SOURCE_LEDGER_SHA256,
+        expected_schema_version="polymarket-round27-effective-source-ledger-v5",
+        predecessor_sha256=_V4_SOURCE_LEDGER_SHA256,
         verify_current_files=True,
     )
     return {**payload, "amendment_sha256": claimed}
@@ -2152,6 +2345,10 @@ def load_round27_model_amendment(
     )
     _validate_v12_predecessor(
         _load_strict(root / _V12_PREDECESSOR_AMENDMENT_RELATIVE_PATH),
+        repository=root,
+    )
+    _validate_v13_predecessor(
+        _load_strict(root / _V13_PREDECESSOR_AMENDMENT_RELATIVE_PATH),
         repository=root,
     )
     return validate_round27_model_amendment(
