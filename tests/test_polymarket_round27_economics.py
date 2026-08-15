@@ -247,6 +247,38 @@ def test_round27_economics_fok_refuses_insufficient_displayed_depth() -> None:
     )
 
 
+def test_round27_economics_bootstraps_every_evaluated_condition() -> None:
+    markets, partition, probabilities, books, outcomes = _population(20)
+    probabilities[10:] = np.asarray(
+        [sample.market_prior_probability for sample in partition.samples[10:]],
+        dtype=np.float64,
+    )
+
+    report = _evaluate(
+        markets,
+        partition,
+        probabilities,
+        books,
+        outcomes,
+        config=Round27EconomicConfig(
+            minimum_executed_trades=10,
+            minimum_profitable_conditions=10,
+            bootstrap_draws=1_000,
+        ),
+    )
+    primary = next(item for item in report["scenarios"] if item["delay_ms"] == 500)
+
+    assert primary["filled_order_count"] == 10
+    assert primary["evaluated_condition_count"] == 20
+    assert primary["condition_bootstrap"]["condition_count"] == 20
+    assert primary["condition_bootstrap_population"] == (
+        "all_evaluated_conditions_zero_pnl_for_no_fill"
+    )
+    assert primary["condition_bootstrap"]["mean_net_pnl_quote"] == pytest.approx(
+        float(Decimal(primary["net_pnl_quote"]) / 20)
+    )
+
+
 def test_round27_economics_fails_closed_across_connection_segment() -> None:
     markets, partition, probabilities, books, outcomes = _population(1)
     target = markets[0]

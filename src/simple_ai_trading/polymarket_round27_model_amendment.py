@@ -9,19 +9,26 @@ from typing import Mapping
 
 
 POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256 = (
-    "4efe95538114bfd814a25867b8a933b2c19b01433b953a3ee7cd57ac019c8a81"
+    "3d23b811f964df8d91f2f08fc5e5088293770ec2d758f4aff252173d30a425c0"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
-    "round-027-dependent-bootstrap-correction-amendment-v5.json"
+    "round-027-opportunity-bootstrap-correction-amendment-v6.json"
 )
 POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD = (
     "model_implementation_amendment_sha256"
 )
 _PREDECESSOR_AMENDMENT_SHA256 = (
-    "e3ce6285cea10337f50383cdd2b89dd048d8f015f889adaa9cc0045088a44833"
+    "4efe95538114bfd814a25867b8a933b2c19b01433b953a3ee7cd57ac019c8a81"
 )
 _PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/"
+    "round-027-dependent-bootstrap-correction-amendment-v5.json"
+)
+_WALK_FORWARD_PREDECESSOR_AMENDMENT_SHA256 = (
+    "e3ce6285cea10337f50383cdd2b89dd048d8f015f889adaa9cc0045088a44833"
+)
+_WALK_FORWARD_PREDECESSOR_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
     "round-027-embargoed-walk-forward-correction-amendment-v4.json"
 )
@@ -72,6 +79,45 @@ _EXPECTED_KNOWLEDGE = {
     "selection_partition_accessed": False,
     "stage1_capture_started": True,
     "stage1_feature_rows_accessed_or_materialized": False,
+}
+_EXPECTED_FINAL_REPLACEMENTS = {
+    "src/simple_ai_trading/polymarket_round27_ai_cases.py": {
+        "corrected": "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a",
+        "frozen": "2e95562f3611842ecb801920f9cf6876eba2d11b2e0b89a76625f3a59be97bc2",
+    },
+    "src/simple_ai_trading/polymarket_round27_ai_economics.py": {
+        "corrected": "a4763089881c6475dce2ee56bb4e38ddcc4e71c89871e147d83b3eeaf0fb556b",
+        "frozen": "a222dd9c4d6246aeccf90e62ff7157697c52636aed4261c532337f5016e78fe6",
+    },
+    "src/simple_ai_trading/polymarket_round27_economics.py": {
+        "corrected": "913fd020f65a66c69dc6e0ff36d99c3842f82d17d17e73907974cd54fbd0fbff",
+        "frozen": "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54",
+    },
+    "src/simple_ai_trading/polymarket_round27_experiment.py": {
+        "corrected": "2573966ecf39a5a05a34050ceed436f8e91f7e3aac90bcab0125cbd09d6dfc0c",
+        "frozen": "9a97a253668e9ef2487c042c3574b4bea2f5cf7e6fcd5267a1f6e6fc1ed5321e",
+    },
+    "src/simple_ai_trading/polymarket_round27_model.py": {
+        "corrected": "2c124d761045d787014580852b55e82416738f1316e8928df66e5e5f799cd9fc",
+        "frozen": "5eedf0a5e6f7c0317c795d99ad7425ff2e262c2d527c519d4f9d9cee7f8e8740",
+    },
+}
+_EXPECTED_FINAL_PREDECESSOR_SOURCES = {
+    "src/simple_ai_trading/polymarket_round27_ai_cases.py": (
+        "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a"
+    ),
+    "src/simple_ai_trading/polymarket_round27_ai_economics.py": (
+        "372564ee247d0211adcdc5a112ac7bbce1e9a9fb5057e63a24430fe42a953aae"
+    ),
+    "src/simple_ai_trading/polymarket_round27_economics.py": (
+        "764f912b0d97134c732c023ccb7c81f14bfc6ce6c6252de0aa20cee0a2857b47"
+    ),
+    "src/simple_ai_trading/polymarket_round27_experiment.py": (
+        "2573966ecf39a5a05a34050ceed436f8e91f7e3aac90bcab0125cbd09d6dfc0c"
+    ),
+    "src/simple_ai_trading/polymarket_round27_model.py": (
+        "b01a98cfa846aa98882ba381610256029a9d4e05aaec4d4a4c4c0531142987c8"
+    ),
 }
 _EXPECTED_LATEST_REPLACEMENTS = {
     "src/simple_ai_trading/polymarket_round27_ai_cases.py": {
@@ -429,7 +475,7 @@ def _validate_active_tick_predecessor(
     return None
 
 
-def _validate_predecessor(
+def _validate_walk_forward_predecessor(
     value: Mapping[str, object],
 ) -> None:
     payload = dict(value)
@@ -456,7 +502,7 @@ def _validate_predecessor(
     }
     if (
         set(payload) != expected_fields
-        or claimed != _PREDECESSOR_AMENDMENT_SHA256
+        or claimed != _WALK_FORWARD_PREDECESSOR_AMENDMENT_SHA256
         or claimed != _canonical_sha256(payload)
         or payload.get("schema_version")
         != "polymarket-round27-embargoed-walk-forward-correction-amendment-v4"
@@ -518,9 +564,9 @@ def _validate_predecessor(
     return None
 
 
-def validate_round27_model_amendment(
+def _validate_predecessor(
     value: Mapping[str, object],
-) -> dict[str, object]:
+) -> None:
     payload = dict(value)
     claimed = _sha256(payload.pop("amendment_sha256", ""))
     correction = payload.get("correction")
@@ -545,7 +591,7 @@ def validate_round27_model_amendment(
     }
     if (
         set(payload) != expected_fields
-        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _PREDECESSOR_AMENDMENT_SHA256
         or claimed != _canonical_sha256(payload)
         or payload.get("schema_version")
         != "polymarket-round27-dependent-bootstrap-correction-amendment-v5"
@@ -557,7 +603,7 @@ def validate_round27_model_amendment(
         != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
-        != _PREDECESSOR_AMENDMENT_SHA256
+        != _WALK_FORWARD_PREDECESSOR_AMENDMENT_SHA256
         or payload.get("predecessor_source_text_sha256")
         != _EXPECTED_LATEST_PREDECESSOR_SOURCES
         or payload.get("authority") != _EXPECTED_AUTHORITY
@@ -618,6 +664,106 @@ def validate_round27_model_amendment(
         ]
     ):
         raise ValueError("Round 27 model amendment differs")
+    return None
+
+
+def validate_round27_model_amendment(
+    value: Mapping[str, object],
+) -> dict[str, object]:
+    payload = dict(value)
+    claimed = _sha256(payload.pop("amendment_sha256", ""))
+    correction = payload.get("correction")
+    discovery = payload.get("discovery_audit")
+    research = payload.get("research_basis")
+    created_at_ms = payload.get("created_at_ms")
+    expected_fields = {
+        "authority",
+        "base_model_contract_sha256",
+        "campaign_contract_sha256",
+        "correction",
+        "created_at_ms",
+        "discovery_audit",
+        "knowledge_at_freeze",
+        "predecessor_amendment_sha256",
+        "predecessor_source_text_sha256",
+        "rationale",
+        "research_basis",
+        "schema_version",
+        "status",
+        "superseded_source_text_sha256",
+    }
+    if (
+        set(payload) != expected_fields
+        or claimed != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or claimed != _canonical_sha256(payload)
+        or payload.get("schema_version")
+        != "polymarket-round27-opportunity-bootstrap-correction-amendment-v6"
+        or payload.get("status")
+        != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
+        or type(created_at_ms) is not int
+        or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
+        or payload.get("base_model_contract_sha256")
+        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
+        or payload.get("predecessor_amendment_sha256")
+        != _PREDECESSOR_AMENDMENT_SHA256
+        or payload.get("predecessor_source_text_sha256")
+        != _EXPECTED_FINAL_PREDECESSOR_SOURCES
+        or payload.get("authority") != _EXPECTED_AUTHORITY
+        or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
+        or payload.get("superseded_source_text_sha256")
+        != _EXPECTED_FINAL_REPLACEMENTS
+        or not isinstance(correction, Mapping)
+        or correction.get("ai_replay_uses_same_all_condition_population")
+        is not True
+        or correction.get("block_length_unit")
+        != "chronologically_ordered_observed_conditions"
+        or correction.get("candidate_families_or_ai_prompts_changed") is not False
+        or correction.get("economic_bootstrap_no_fill_value_quote") != "0"
+        or correction.get("economic_bootstrap_population")
+        != "all_evaluated_conditions"
+        or correction.get("economic_or_prediction_gate_thresholds_changed")
+        is not False
+        or correction.get("economic_report_schema_version")
+        != "polymarket-round27-economic-replay-v4"
+        or correction.get(
+            "fixed_elapsed_duration_claim_for_irregular_condition_sequence"
+        )
+        is not False
+        or correction.get("minimum_fill_and_profitable_condition_gates_retained")
+        is not True
+        or correction.get("prediction_bootstrap_population")
+        != "all_eligible_labeled_conditions"
+        or correction.get("stationary_bootstrap_expected_block_lengths_conditions")
+        != [1, 4, 12]
+        or not isinstance(discovery, Mapping)
+        or discovery.get(
+            "frozen_economic_bootstrap_dropped_abstained_and_unfilled_conditions"
+        )
+        is not True
+        or discovery.get(
+            "frozen_expected_block_duration_assumed_no_missing_conditions"
+        )
+        is not True
+        or discovery.get("frozen_fill_rate_gate_prevented_low_activity_from_passing")
+        is not True
+        or discovery.get("synthetic_host_check_is_edge_or_profitability_evidence")
+        is not False
+        or research
+        != [
+            {
+                "purpose": (
+                    "primary_stationary_bootstrap_for_weakly_dependent_observations"
+                ),
+                "url": "https://doi.org/10.1080/01621459.1994.10476870",
+            },
+            {
+                "purpose": "primary_financial_backtest_overfitting_analysis",
+                "url": "https://doi.org/10.21314/JCF.2016.322",
+            },
+        ]
+    ):
+        raise ValueError("Round 27 model amendment differs")
     return {**payload, "amendment_sha256": claimed}
 
 
@@ -639,6 +785,9 @@ def load_round27_model_amendment(
     )
     _validate_active_tick_predecessor(
         _load_strict(root / _ACTIVE_TICK_PREDECESSOR_AMENDMENT_RELATIVE_PATH)
+    )
+    _validate_walk_forward_predecessor(
+        _load_strict(root / _WALK_FORWARD_PREDECESSOR_AMENDMENT_RELATIVE_PATH)
     )
     _validate_predecessor(_load_strict(root / _PREDECESSOR_AMENDMENT_RELATIVE_PATH))
     return validate_round27_model_amendment(_load_strict(selected))

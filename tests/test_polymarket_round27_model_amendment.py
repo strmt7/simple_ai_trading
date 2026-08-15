@@ -36,13 +36,15 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         is False
     )
     assert (
-        amendment["correction"]["confidence_interval_method"]
-        == "stationary_bootstrap_block_length_sensitivity_envelope"
+        amendment["correction"]["economic_bootstrap_population"]
+        == "all_evaluated_conditions"
     )
     assert amendment["predecessor_amendment_sha256"] == (
-        "e3ce6285cea10337f50383cdd2b89dd048d8f015f889adaa9cc0045088a44833"
+        "4efe95538114bfd814a25867b8a933b2c19b01433b953a3ee7cd57ac019c8a81"
     )
-    assert amendment["correction"]["expected_block_lengths_conditions"] == [
+    assert amendment["correction"][
+        "stationary_bootstrap_expected_block_lengths_conditions"
+    ] == [
         1,
         4,
         12,
@@ -51,7 +53,7 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         amendment["superseded_source_text_sha256"][
             "src/simple_ai_trading/polymarket_round27_model.py"
         ]["corrected"]
-        == "b01a98cfa846aa98882ba381610256029a9d4e05aaec4d4a4c4c0531142987c8"
+        == "2c124d761045d787014580852b55e82416738f1316e8928df66e5e5f799cd9fc"
     )
 
 

@@ -34,7 +34,7 @@ flowchart LR
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
 | Target store | Separate role-gated DuckDB with dual-source receipts |
-| Focused Round 27 tests | 115 passed |
+| Focused Round 27 tests | 116 passed |
 | Corrected LightGBM host backend | AMD OpenCL (`opencl:auto`) |
 | Qwen3.5-9B cold / warm structured inference | 5.13 s / 0.52 s |
 | Qwen3.5-9B AMD GPU residency | 5.42 / 5.42 GB (100%) |
@@ -87,11 +87,19 @@ not change. This is a validation correction, not evidence of edge.
 
 The [dependent-bootstrap amendment](../../round-027-dependent-bootstrap-correction-amendment-v5.json)
 orders conditions by market start and replaces IID confidence intervals with
-stationary-bootstrap sensitivity at 5-minute, 20-minute, and 1-hour expected
-block lengths. Promotion uses the widest 95% interval across those horizons.
+stationary-bootstrap sensitivity at 1, 4, and 12 observed-condition expected
+block lengths. Promotion uses the widest 95% interval across those scales.
 The same method governs prediction, after-cost economics, and matched AI uplift;
-the economic report schema is now v3. A positive mean that exists only in one
-cluster is therefore rejected rather than reported as an edge.
+the economic report schema is now v4. A positive mean that exists only in one
+cluster is therefore rejected rather than reported as an edge. Because audited
+condition sequences can contain gaps, those block lengths are not mislabeled as
+fixed elapsed durations.
+
+The [opportunity-population amendment](../../round-027-opportunity-bootstrap-correction-amendment-v6.json)
+also keeps every evaluated market in the after-cost confidence population.
+Abstentions and orders without a fill contribute zero P&L instead of
+disappearing; minimum fills, profitable conditions, fill rate, unknown-state,
+and capital controls remain independent gates.
 
 The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
 binds both candidates to exact Ollama, upstream, and quantized-artifact hashes,

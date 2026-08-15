@@ -936,7 +936,6 @@ def round27_stationary_bootstrap_mean_interval(
         intervals.append(
             {
                 "expected_block_length_conditions": expected_block_length,
-                "expected_block_duration_ms": expected_block_length * 300_000,
                 "ci95_lower": float(np.quantile(means, 0.025)),
                 "ci95_upper": float(np.quantile(means, 0.975)),
             }
