@@ -1,0 +1,250 @@
+{
+  "ai_assist": {
+    "candidate_models": [
+      {
+        "model_id": "Qwen/Qwen3.5-9B",
+        "role": "general_reasoning_risk_review_control"
+      },
+      {
+        "model_id": "OpenDataArena/ODA-Fin-SFT-8B",
+        "role": "finance_specialized_risk_review_challenger"
+      }
+    ],
+    "decision_role": "bounded_pretrade_risk_veto_only",
+    "latency_critical_probability_prediction": false,
+    "may_create_or_increase_position": false,
+    "may_override_hard_risk_gate": false,
+    "maximum_authority": "veto_or_reduce",
+    "promotion_requires_matched_after_cost_uplift": true,
+    "target_free_prompt_and_output_schema_required": true
+  },
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "model_data_eligible": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+  "contract_sha256": "729ecaf5888817dd921f72040a0d910d3f22d5888e8b718953825e046d94e41e",
+  "created_at_ms": 1786774679082,
+  "data_policy": {
+    "assets": [
+      "BTC"
+    ],
+    "condition_weight": 1.0,
+    "decision_cadence_ms": 1000,
+    "feature_count": 117,
+    "feature_names_sha256": "f28b51081d1146238fc5a08aa0897f684b71937c4204169e5e8aa5cc3583e5d8",
+    "first_decision_offset_ms": 30000,
+    "last_decision_before_close_ms": 5000,
+    "maximum_book_receipt_age_ms": 1500,
+    "maximum_trade_receipt_age_ms": 1500,
+    "official_outcome_access_before_contract_freeze": false,
+    "outcome_unit": "official_polymarket_condition_resolution",
+    "predictor_unit": "one_second_receipt_time_state",
+    "required_target_free_audit": "polymarket-condition-replay-audit-v1",
+    "selection_unit": "whole_condition",
+    "target_access_during_capture_or_feature_materialization": false
+  },
+  "economic_evaluation": {
+    "entry_and_exit_prices": "walk_actual_polymarket_clob_depth_after_observed_delay",
+    "fee_source": "per_condition_captured_clob_fee_evidence",
+    "fixed_delay_scenarios_ms": [
+      250,
+      500,
+      1000,
+      2000
+    ],
+    "inventory_constraint": "no_overlapping_unreconciled_condition_inventory",
+    "minimum_selection_executed_trades": 100,
+    "minimum_sealed_executed_trades": 100,
+    "must_report": [
+      "net_pnl",
+      "return_on_deployed_capital",
+      "maximum_drawdown",
+      "profit_factor",
+      "win_rate",
+      "turnover",
+      "fill_rate",
+      "adverse_selection",
+      "latency_sensitivity",
+      "condition_bootstrap_confidence_interval"
+    ],
+    "no_edge_if": [
+      "net_pnl_not_positive_after_all_observed_fees_spread_depth_and_delay",
+      "condition_bootstrap_lower_bound_not_positive",
+      "profit_disappears_at_500ms_delay",
+      "profit_concentrated_in_fewer_than_20_conditions",
+      "risk_limit_or_data_integrity_gate_triggered"
+    ],
+    "position_sizing": "fixed_small_notional_for_model_comparison_only",
+    "rate_limit_or_account_authority": false
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "campaign_capture_started": false,
+    "model_fitted": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "stage1_market_states_accessed": false
+  },
+  "minimum_population": {
+    "calibration_conditions": 25,
+    "campaign_eligible_conditions": 300,
+    "sealed_conditions": 90,
+    "selection_conditions": 90,
+    "train_conditions": 75
+  },
+  "model_candidates": [
+    {
+      "model_name": "market_prior",
+      "role": "executable_control"
+    },
+    {
+      "condition_grouped_folds": 5,
+      "correction_scales": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "l2_penalties": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0
+      ],
+      "model_name": "l2_offset_logistic",
+      "role": "low_variance_market_prior_residual"
+    },
+    {
+      "bagging_fraction": 0.8,
+      "feature_fraction": 0.8,
+      "lambda_l1": 0.1,
+      "lambda_l2": 5.0,
+      "learning_rate": 0.03,
+      "max_depth": 3,
+      "model_name": "shallow_lightgbm_offset",
+      "num_boost_round": 120,
+      "num_leaves": 7,
+      "role": "bounded_nonlinear_market_prior_residual"
+    }
+  ],
+  "partitions": [
+    {
+      "end_ms": 1786811400000,
+      "role": "train",
+      "slot_id": "stage1-a",
+      "start_ms": 1786784400000
+    },
+    {
+      "end_ms": 1786812000000,
+      "role": "purged",
+      "slot_id": "stage1-a",
+      "start_ms": 1786811400000
+    },
+    {
+      "end_ms": 1786822200000,
+      "role": "calibration",
+      "slot_id": "stage1-a",
+      "start_ms": 1786812000000
+    },
+    {
+      "end_ms": 1786896600000,
+      "role": "purged",
+      "slot_id": "stage1-b",
+      "start_ms": 1786896000000
+    },
+    {
+      "end_ms": 1786933800000,
+      "role": "selection",
+      "slot_id": "stage1-b",
+      "start_ms": 1786896600000
+    },
+    {
+      "end_ms": 1787008200000,
+      "role": "purged",
+      "slot_id": "stage1-c",
+      "start_ms": 1787007600000
+    },
+    {
+      "end_ms": 1787045400000,
+      "role": "sealed",
+      "slot_id": "stage1-c",
+      "start_ms": 1787008200000
+    },
+    {
+      "end_ms": 1787157000000,
+      "role": "purged",
+      "slot_id": "stage1-d",
+      "start_ms": 1787119200000
+    }
+  ],
+  "prediction_evaluation": {
+    "balanced_accuracy_floor": 0.51,
+    "bootstrap_draws": 5000,
+    "calibration_ece_maximum_degradation": 0.01,
+    "candidate_must_beat_market_prior_on": [
+      "condition_weighted_log_loss",
+      "condition_weighted_brier_score"
+    ],
+    "confidence_gate": "paired_condition_bootstrap_95pct_upper_bound_below_zero",
+    "primary_metric": "condition_weighted_log_loss",
+    "reported_metrics": [
+      "condition_weighted_log_loss",
+      "condition_weighted_brier_score",
+      "balanced_accuracy",
+      "expected_calibration_error"
+    ],
+    "row_level_accuracy_alone_can_promote": false
+  },
+  "research_basis": [
+    {
+      "purpose": "multi_level_order_flow_imbalance",
+      "url": "https://arxiv.org/abs/1907.06230"
+    },
+    {
+      "purpose": "short_horizon_order_flow_imbalance_and_depth",
+      "url": "https://arxiv.org/abs/1011.6402"
+    },
+    {
+      "purpose": "cross_asset_order_flow_lead_lag",
+      "url": "https://arxiv.org/abs/2112.13213"
+    },
+    {
+      "purpose": "deep_lob_control_family",
+      "url": "https://arxiv.org/abs/1808.03668"
+    },
+    {
+      "purpose": "uncertainty_and_abstention",
+      "url": "https://arxiv.org/abs/1811.10041"
+    },
+    {
+      "purpose": "official_qwen_general_reasoning_candidate",
+      "url": "https://huggingface.co/Qwen/Qwen3.5-9B"
+    },
+    {
+      "purpose": "finance_specialized_ai_challenger",
+      "url": "https://huggingface.co/OpenDataArena/ODA-Fin-SFT-8B"
+    },
+    {
+      "purpose": "windows_vendor_agnostic_ai_inference",
+      "url": "https://learn.microsoft.com/en-us/windows/ai/directml/dml-get-started"
+    }
+  ],
+  "schema_version": "polymarket-round27-stage1-model-contract-v1",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_condition_replay_audit.py": "efd51afecad5e4c2ca5f253f39f62b02488df5a4290055ddbe9c1319374c5a1b",
+    "src/simple_ai_trading/polymarket_round27_features.py": "fcc316f56d57c3dfb0dac2adb5c89ede036a66b70ee4d97fb4492957d6f07203",
+    "src/simple_ai_trading/polymarket_round27_model.py": "a8222ba839ac8b483b9288c942444c147ffaacf6408e2e959e605b82f7b3d93f"
+  },
+  "status": "frozen_before_stage1_capture_and_outcome_access"
+}
