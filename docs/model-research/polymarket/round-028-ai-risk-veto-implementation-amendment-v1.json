@@ -1,0 +1,58 @@
+{
+  "ai_contract_sha256": "6f0084370cd8302fe09df5f9d1caec627aaea2fe219ef435216f95a213fcf117",
+  "amendment_sha256": "c158dd5a5a7e7956eab4eba7b04420da5518fce380ad99e727bf3c3bf321b681",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786803245971,
+  "implemented_controls": [
+    "strict_canonical_preregistration_loader_and_semantic_validator",
+    "exact_three_candidate_program_with_pending_challenger_runtime_digest",
+    "nested_artifact_hash_and_size_verification_before_host_qualification",
+    "loopback_only_structured_inference_with_bounded_context_and_output",
+    "cold_and_warm_conformance_measurement_with_exact_runtime_digest",
+    "full_gpu_residency_and_exclusive_loaded_model_gate",
+    "mandatory_unload_with_cleanup_failure_as_disqualifying_evidence",
+    "target_free_278_feature_case_materialization_from_augmented_candidates",
+    "byte_stable_prompt_population_and_persisted_case_round_trip",
+    "fail_closed_timeout_provider_and_schema_error_responses",
+    "measured_case_latency_added_to_every_execution_delay",
+    "matched_augmented_baseline_replay_with_zero_pnl_for_ai_abstention",
+    "positive_after_cost_paired_bootstrap_drawdown_markout_and_fill_gates",
+    "no_order_account_credential_paper_or_live_trading_authority"
+  ],
+  "knowledge_at_freeze": {
+    "official_outcomes_accessed": false,
+    "round28_feature_rows_accessed_or_materialized": false,
+    "round28_model_fitted": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "stage1_a_capture_running": true
+  },
+  "limitations": [
+    "ODA-Fin-RL-8B_has_not_been_downloaded_or_host_qualified",
+    "no_real_round28_case_panel_inference_or_economic_report_exists",
+    "no_predictive_after_cost_edge_or_profitability_claim_exists",
+    "candidate_nomination_and_one_use_sealed_operator_remain_to_be_implemented"
+  ],
+  "schema_version": "polymarket-round28-ai-risk-veto-implementation-amendment-v1",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_ai_cases.py": "ca1e6ff17856d7df59e52c6ea13a67de7d7e9c75ee8b8e64a9db454b1801cdcf",
+    "src/simple_ai_trading/polymarket_round28_ai_contract.py": "fa32656190dfcafdb5f1c8c584f6c620b89fc41fcc22e00920917c909a536eb7",
+    "src/simple_ai_trading/polymarket_round28_ai_economics.py": "574d77ef094b27ae6afd09beb6e09083a9cd56aa48e6a621b4922a23c8492b79",
+    "src/simple_ai_trading/polymarket_round28_ai_host.py": "0904ad688531743aeaeefb74d08830400435b280331771cb09d068a4c32bb852",
+    "src/simple_ai_trading/polymarket_round28_ai_inference.py": "5e4788b5dbe307b25fb475a436ccdb9631e5483c104bb0067c0c73820d289aa0",
+    "tests/test_polymarket_round28_ai_cases.py": "e29e301156b1e82834c5619483436aefcb63f9ac4264f4527b204fa74a5c447c",
+    "tests/test_polymarket_round28_ai_contract.py": "1f516f6fcef6c1972c209bd0b0e14b128ea489e5cc0c960589616a3ea6d89f0c",
+    "tests/test_polymarket_round28_ai_economics.py": "01674d2ea7aea3afea1e347ed33897eaf4144b4e260115c6d6e28d2d89ece6e6",
+    "tests/test_polymarket_round28_ai_host.py": "de1fa31aa224d3d45c5a3883f0a3548fba488ba20df2faffaf12b9af8f48aca7",
+    "tests/test_polymarket_round28_ai_inference.py": "046b1a4f852c3fd61d1e9c67725565c1ed39d97a8dec52e4da8ea5a905b3c428"
+  },
+  "status": "source_bound_target_free_implementation_before_stage1_outcome_access"
+}

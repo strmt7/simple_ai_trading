@@ -71,6 +71,16 @@ without another database scan; a failed probability gate stops before economic
 replay. It remains unavailable until the prospective stores are terminal and
 contains no result or trading authority.
 
+The [Round 28 AI preregistration](../round-028-ai-risk-veto-preregistration-v1.json)
+and [source-bound implementation](../round-028-ai-risk-veto-implementation-amendment-v1.json)
+replace the old 182-feature prompt with the exact 278-feature augmented case.
+Qwen3.5-9B and ODA-Fin-SFT-8B remain controls; ODA-Fin-RL-8B is a pending
+challenger, not a selected model. Every model is limited to reject, reduce, or
+leave unchanged, must be fully GPU-resident under an exact digest, and is
+charged measured wall latency in the matched replay. No Round 28 AI model has
+yet been run on Stage 1 data, and no AI uplift, edge, or profitability result
+exists.
+
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
 Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order

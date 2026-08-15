@@ -1,0 +1,227 @@
+{
+  "authority": {
+    "account_connected": false,
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "candidate_program": [
+    {
+      "artifact_revision": "sha256:dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c",
+      "artifact_sha256": "dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c",
+      "artifact_size_bytes": 6594462816,
+      "artifact_source": "ollama-library/qwen3.5:9b",
+      "host_qualification": "passed_round27_exact_artifact",
+      "model_id": "Qwen/Qwen3.5-9B",
+      "quantization": "Q4_K_M",
+      "role": "general_reasoning_risk_review_control",
+      "runtime_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+      "runtime_model": "qwen3.5:9b",
+      "upstream_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a"
+    },
+    {
+      "artifact_revision": "b7af28162eb67d771edeeb77067141d3bbdcab04",
+      "artifact_sha256": "7053bcade78e8698627715df9315e87cc1f880c24e73f01dc09f4d7b7fec4dc3",
+      "artifact_size_bytes": 6725900384,
+      "artifact_source": "mradermacher/ODA-Fin-SFT-8B-GGUF",
+      "host_qualification": "passed_round27_exact_artifact",
+      "model_id": "OpenDataArena/ODA-Fin-SFT-8B",
+      "quantization": "Q6_K",
+      "role": "finance_specialized_sft_risk_review_control",
+      "runtime_digest": "7f310e6fa4537b88432260aab5f7be68de819df5a3c94df4ee26d41d0c593a5b",
+      "runtime_model": "hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q6_K",
+      "upstream_revision": "66940100ebc647846cdba7e7a4e15b94c1ab13ef"
+    },
+    {
+      "artifact_revision": "fb986718fcec8c8c559f0ebd5d50e6cf9f4ac67f",
+      "artifact_sha256": "d40d1dd4105be8d85cbb444cb58e92c4882623f0baa4dea5d296745d6bc13861",
+      "artifact_size_bytes": 5027784512,
+      "artifact_source": "alexsabaka/ODA-Fin-RL-8B-GGUF",
+      "host_qualification": "pending_exact_artifact_download_and_amd_gpu_probe",
+      "model_id": "OpenDataArena/ODA-Fin-RL-8B",
+      "quantization": "Q4_K_M",
+      "role": "finance_specialized_rl_risk_review_challenger",
+      "runtime_digest": null,
+      "runtime_model": "hf.co/alexsabaka/ODA-Fin-RL-8B-GGUF:Q4_K_M",
+      "upstream_revision": "948c22ea48f9bf93e5747f4211657fcad9cb0295"
+    }
+  ],
+  "case_materialization": {
+    "baseline": "exact_persisted_round28_augmented_selection_model_and_economic_candidate_population",
+    "case_population": "every_and_only_first_target_blind_positive_after_cost_augmented_candidate_per_selection_condition",
+    "case_source_process_may_open_target_store": false,
+    "case_source_process_may_receive_outcome_resolution_or_economic_report_path": false,
+    "condition_order": "event_start_ms_then_condition_id_then_decision_time_ms",
+    "feature_count": 278,
+    "feature_names_sha256": "5f6d5b0f963e385c2ea67b057975bcd7f4cf60c8c60525927f2a9bff050d066d",
+    "future_books_accessed": false,
+    "maximum_cases_per_model_batch": 1,
+    "one_case_per_condition": true,
+    "outcomes_accessed": false,
+    "prompt_bytes_identical_between_candidates_for_each_case": true,
+    "target_accessed": false
+  },
+  "contract_sha256": "6f0084370cd8302fe09df5f9d1caec627aaea2fe219ef435216f95a213fcf117",
+  "created_at_ms": 1786801896245,
+  "evaluation": {
+    "ai_latency_treatment": "base_delay_ms_plus_case_measured_wall_latency_ms_ceiling",
+    "baseline_and_ai_condition_population_identical": true,
+    "bootstrap_draws": 5000,
+    "bootstrap_seed_formula": "28028_plus_delay_ms_with_common_resamples_for_all_candidates",
+    "delay_scenarios_ms": [
+      250,
+      500,
+      1000,
+      2000
+    ],
+    "host_failure_policy": "persist_failure_evidence_and_exclude_candidate_before_case_inference",
+    "invalid_timeout_provider_or_residency_failure_policy": "risk_reject_and_candidate_disqualification",
+    "maximum_rejected_fraction": 0.5,
+    "minimum_ai_filled_conditions_each_delay": 30,
+    "minimum_baseline_candidate_conditions": 60,
+    "minimum_changed_action_conditions": 20,
+    "minimum_profitable_ai_conditions_each_delay": 20,
+    "paired_condition_delta": "ai_net_pnl_quote_minus_round28_augmented_baseline_net_pnl_quote_with_zero_for_abstention_or_unfilled_attempt",
+    "primary_delay_ms": 500,
+    "promotion_gates": [
+      "round28_augmented_probability_and_economic_gates_passed",
+      "exact_case_prompt_model_artifact_and_runtime_digest_bindings_pass",
+      "full_gpu_residency_before_first_case_and_unload_after_candidate_pass",
+      "zero_invalid_timeout_provider_or_residency_failures",
+      "minimum_changed_action_conditions_and_maximum_rejected_fraction_pass",
+      "minimum_ai_filled_and_profitable_condition_counts_pass_at_every_delay",
+      "ai_net_pnl_positive_and_strictly_greater_than_augmented_baseline_at_every_delay",
+      "paired_mean_net_pnl_delta_and_bootstrap_ci95_lower_positive_at_every_delay",
+      "maximum_drawdown_and_mean_adverse_markout_not_worse_at_every_delay",
+      "no_unknown_execution_state",
+      "all_deterministic_risk_and_integrity_gates_pass"
+    ],
+    "rejected_or_reduced_case_execution": "abstain_with_zero_pnl_and_zero_capital_deployed",
+    "selection_ranking": [
+      "maximum_primary_delay_paired_bootstrap_ci95_lower",
+      "maximum_worst_delay_mean_net_pnl_delta",
+      "minimum_worst_delay_maximum_drawdown_delta",
+      "ascending_model_id"
+    ],
+    "selection_result": "one_development_nominated_ai_candidate_or_none",
+    "unchanged_case_execution": "same_token_quantity_limit_and_decision_book_binding_as_augmented_baseline_at_latency_adjusted_execution_time"
+  },
+  "inference_runtime": {
+    "case_timeout_seconds": 5,
+    "endpoint": "http://127.0.0.1:11434/api/generate",
+    "keep_alive": "30s",
+    "maximum_output_tokens": 96,
+    "model_preload": "target_free_conformance_request_before_first_case",
+    "models_resident_concurrently": false,
+    "num_ctx": 8192,
+    "seed": 28,
+    "stream": false,
+    "temperature": 0,
+    "think": false,
+    "timing_clock": "monotonic_ns",
+    "unload_after_each_candidate": true,
+    "warmup_latency_excluded_only_when_exact_digest_is_confirmed_fully_gpu_resident_before_first_case": true
+  },
+  "knowledge_at_freeze": {
+    "official_outcomes_accessed": false,
+    "round28_feature_rows_accessed_or_materialized": false,
+    "round28_model_fitted": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "stage1_a_capture_running": true
+  },
+  "parents": {
+    "round27_ai_ablation_contract_sha256": "ac264326f28e501ce355795dbd4bb89ac0c6ac2ca1b454d2a290b12167b93d15",
+    "round27_campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+    "round28_bbo_preregistration_sha256": "8239488145f0ffe331cf9823e5517120dda0d12eb5f366cf00c5e106318d4668",
+    "round28_economic_implementation_amendment_sha256": "9fc117a479f931d54e31bd2db494b039d081ded9ce6c4478d2c08c7d39d61d04",
+    "round28_operator_implementation_amendment_sha256": "0cec84ec6dd50ee8f14d6ab236e2ae886351886eccbae696a2b73d0cbcb7f826",
+    "round28_selection_implementation_amendment_sha256": "005caf15e94b5f43faaa451b9f12754b7f5c6dd88b1b09fea5a8d3182eb7e306"
+  },
+  "prompt_contract": {
+    "action": "risk_veto_only",
+    "allowed_decisions": [
+      "reject",
+      "reduce",
+      "unchanged"
+    ],
+    "allowed_reason_codes": [
+      "bbo_source_stale_or_gapped",
+      "cross_venue_disagreement",
+      "insufficient_evidence",
+      "late_horizon_risk",
+      "liquidity_thin",
+      "model_market_disagreement",
+      "no_material_risk",
+      "spread_or_cost_risk",
+      "spot_usdm_disagreement",
+      "volatility_or_jump_risk"
+    ],
+    "causal_input_groups": [
+      "phase_and_remaining_time",
+      "proposed_outcome_probability_limit_quantity_and_expected_edge",
+      "polymarket_spread_depth_imbalance_overround_and_receipt_skew",
+      "chainlink_twap_distance_variance_efficiency_and_source_age",
+      "spot_and_usdm_trade_multihorizon_returns_variance_flow_activity_coverage_and_gaps",
+      "spot_and_usdm_bbo_mid_microprice_spread_depth_imbalance_update_activity_and_receipt_age",
+      "spot_usdm_trade_and_bbo_basis_receipt_skew_and_return_disagreement"
+    ],
+    "credentials_allowed": false,
+    "free_form_external_text_allowed": false,
+    "future_book_allowed": false,
+    "model_id_in_prompt": false,
+    "outcome_or_resolution_allowed": false,
+    "pnl_or_profitability_allowed": false,
+    "response_additional_properties": false,
+    "response_fields": [
+      "decision",
+      "reason_codes"
+    ],
+    "target_allowed": false,
+    "unchanged_requires_reason_codes": [
+      "no_material_risk"
+    ]
+  },
+  "reduce_semantics": {
+    "baseline_quantity": "captured_condition_minimum_order_size_shares",
+    "lower_valid_quantity_exists": false,
+    "reduce_execution_semantics": "abstain",
+    "rationale": "The augmented baseline uses the venue minimum quantity, so a smaller compliant order cannot be represented without violating market rules."
+  },
+  "research_basis": [
+    {
+      "constraint": "Benchmark uplift is not evidence of trading or after-cost uplift; the model remains a challenger until matched economic gates pass.",
+      "finding": "ODA-Fin-RL-8B applies GRPO after supervised fine-tuning on 12,000 hard verifiable finance tasks and reports a 74.6 percent mean across nine finance benchmarks.",
+      "url": "https://huggingface.co/OpenDataArena/ODA-Fin-RL-8B"
+    },
+    {
+      "constraint": "The third-party quantization must be hash-bound and host-qualified before use.",
+      "finding": "A Q4_K_M GGUF for the 8B Qwen3 model is available for local Ollama inference and is approximately 5.03 GB.",
+      "url": "https://huggingface.co/alexsabaka/ODA-Fin-RL-8B-GGUF"
+    },
+    {
+      "constraint": "Structured output and keep-alive are transport controls, not model correctness evidence.",
+      "finding": "Ollama generate supports a JSON schema format and explicit keep_alive behavior.",
+      "url": "https://docs.ollama.com/api/generate"
+    },
+    {
+      "constraint": "The null remains strong and every claimed AI uplift must survive measured latency, venue fees, depth, fill, and bootstrap gates.",
+      "finding": "A large synchronized Polymarket-Binance study reported measurable quote response but no tradable out-of-sample edge after stated costs.",
+      "url": "https://arxiv.org/abs/2607.26245"
+    }
+  ],
+  "sealed_evaluation": {
+    "candidate": "exact_selection_nominated_ai_model_or_none",
+    "development_retuning_after_nomination": false,
+    "economic_and_latency_gates": "identical_to_selection",
+    "model_or_prompt_changed_after_selection": false,
+    "sealed_result_authority": "observed_after_cost_ai_uplift_evidence_only",
+    "sealed_target_access": "one_use_after_exact_round28_model_economic_and_ai_selection_claims_are_persisted"
+  },
+  "status": "frozen_during_stage1_a_before_round28_feature_or_target_access",
+  "schema_version": "polymarket-round28-ai-risk-veto-preregistration-v1"
+}
