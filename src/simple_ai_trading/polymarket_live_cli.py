@@ -87,7 +87,7 @@ def register_polymarket_live_command(
     parser.add_argument("--action", choices=_ACTIONS, default="status")
     parser.add_argument(
         "--ledger",
-        default=str(DEFAULT_POLYMARKET_LIVE_LEDGER),
+        default=DEFAULT_POLYMARKET_LIVE_LEDGER.as_posix(),
         help="durable hash-bound Polymarket ownership ledger",
     )
     parser.add_argument(
@@ -136,7 +136,7 @@ def register_polymarket_live_command(
     )
     parser.add_argument(
         "--activation-output",
-        default=str(DEFAULT_POLYMARKET_LIVE_ACTIVATION),
+        default=DEFAULT_POLYMARKET_LIVE_ACTIVATION.as_posix(),
         help="non-secret activation bundle written by prepare-autonomous",
     )
     parser.add_argument(

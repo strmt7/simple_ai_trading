@@ -267,6 +267,7 @@ def test_campaign_persists_manifest_progress_and_terminal_result(
     recorder = _Recorder(clock)
     monkeypatch.setattr(round25, "load_round25_design", lambda _repository: {})
     monkeypatch.setattr(round25, "_verify_repository", lambda _repository, _plan: None)
+    monkeypatch.setattr(round25, "_resource_block", lambda _config: None)
     monkeypatch.setattr(round25.time, "time_ns", lambda: clock[0] * 1_000_000)
 
     result = asyncio.run(
@@ -292,6 +293,7 @@ def test_campaign_does_not_retry_a_source_regime_change(
     recorder = _Recorder(clock, source_failure=True)
     monkeypatch.setattr(round25, "load_round25_design", lambda _repository: {})
     monkeypatch.setattr(round25, "_verify_repository", lambda _repository, _plan: None)
+    monkeypatch.setattr(round25, "_resource_block", lambda _config: None)
     monkeypatch.setattr(round25.time, "time_ns", lambda: clock[0] * 1_000_000)
 
     result = asyncio.run(

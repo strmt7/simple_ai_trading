@@ -309,14 +309,26 @@ def _fit_logistic(
         np.zeros(normalized.shape[1] + 1, dtype=np.float64),
         method="L-BFGS-B",
         jac=True,
-        options={"maxiter": 4096, "ftol": 1e-11, "gtol": 1e-8},
+        options={"maxiter": 4096, "maxls": 100, "ftol": 1e-11, "gtol": 1e-8},
     )
-    if not result.success or not np.all(np.isfinite(result.x)):
+    candidate = np.asarray(result.x, dtype=np.float64)
+    candidate_loss, candidate_gradient = objective(candidate)
+    finite_candidate = (
+        np.all(np.isfinite(candidate))
+        and math.isfinite(candidate_loss)
+        and np.all(np.isfinite(candidate_gradient))
+    )
+    gradient_infinity_norm = (
+        float(np.max(np.abs(candidate_gradient))) if finite_candidate else math.inf
+    )
+    independently_stationary = gradient_infinity_norm <= 1e-7
+    if not finite_candidate or (not result.success and not independently_stationary):
         raise RuntimeError(
             "Round 25 forensic logistic fit failed: "
-            f"status={result.status}; message={result.message}"
+            f"status={result.status}; message={result.message}; "
+            f"gradient_infinity_norm={gradient_infinity_norm:.12g}"
         )
-    return float(result.x[0]), np.asarray(result.x[1:], dtype=np.float64)
+    return float(candidate[0]), candidate[1:]
 
 
 def _predict_logistic(
