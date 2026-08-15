@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import hashlib
 import json
 from pathlib import Path
@@ -8,8 +9,10 @@ import pytest
 
 from simple_ai_trading.ai_runtime import OllamaResidencyReport
 from simple_ai_trading.polymarket_round27_ai import (
-    POLYMARKET_ROUND27_AI_MODEL,
-    POLYMARKET_ROUND27_AI_MODEL_DIGEST,
+    POLYMARKET_ROUND27_ODA_HOST_CANDIDATE,
+    POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE,
+    Round27AIHostCandidate,
+    probe_round27_oda_host,
     probe_round27_qwen_host,
     round27_ai_conformance_request,
 )
@@ -38,9 +41,11 @@ def _file_sha256(path: Path) -> str:
     return hasher.hexdigest()
 
 
-def _provider_response() -> dict[str, object]:
+def _provider_response(
+    candidate: Round27AIHostCandidate = POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE,
+) -> dict[str, object]:
     return {
-        "model": POLYMARKET_ROUND27_AI_MODEL,
+        "model": candidate.runtime_model,
         "response": json.dumps(
             {"decision": "reject", "reason_codes": ["missing_liquidity"]}
         ),
@@ -55,13 +60,17 @@ def _provider_response() -> dict[str, object]:
     }
 
 
-def _residency(*_args: object, **kwargs: object) -> OllamaResidencyReport:
-    assert kwargs["expected_digest"] == POLYMARKET_ROUND27_AI_MODEL_DIGEST
+def _residency(
+    candidate: Round27AIHostCandidate,
+    *_args: object,
+    **kwargs: object,
+) -> OllamaResidencyReport:
+    assert kwargs["expected_digest"] == candidate.runtime_digest
     return OllamaResidencyReport(
-        requested_model=POLYMARKET_ROUND27_AI_MODEL,
+        requested_model=candidate.runtime_model,
         status="gpu_resident",
-        loaded_model=POLYMARKET_ROUND27_AI_MODEL,
-        digest=POLYMARKET_ROUND27_AI_MODEL_DIGEST,
+        loaded_model=candidate.runtime_model,
+        digest=candidate.runtime_digest,
         size_bytes=5_400_000_000,
         size_vram_bytes=5_400_000_000,
         vram_to_model_ratio=1.0,
@@ -69,12 +78,13 @@ def _residency(*_args: object, **kwargs: object) -> OllamaResidencyReport:
 
 
 def _unloaded_residency(
+    candidate: Round27AIHostCandidate,
     *_args: object,
     **kwargs: object,
 ) -> OllamaResidencyReport:
-    assert kwargs["expected_digest"] == POLYMARKET_ROUND27_AI_MODEL_DIGEST
+    assert kwargs["expected_digest"] == candidate.runtime_digest
     return OllamaResidencyReport(
-        requested_model=POLYMARKET_ROUND27_AI_MODEL,
+        requested_model=candidate.runtime_model,
         status="unloaded",
         loaded_model=None,
         digest=None,
@@ -84,9 +94,19 @@ def _unloaded_residency(
     ).validated()
 
 
-def test_round27_ai_request_is_target_free_and_disables_thinking() -> None:
-    request = round27_ai_conformance_request(keep_alive="30s")
+@pytest.mark.parametrize(
+    "candidate",
+    (
+        POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE,
+        POLYMARKET_ROUND27_ODA_HOST_CANDIDATE,
+    ),
+)
+def test_round27_ai_request_is_target_free_and_disables_thinking(
+    candidate: Round27AIHostCandidate,
+) -> None:
+    request = round27_ai_conformance_request(candidate, keep_alive="30s")
 
+    assert request["model"] == candidate.runtime_model
     assert request["think"] is False
     assert request["stream"] is False
     assert request["options"] == {
@@ -101,14 +121,25 @@ def test_round27_ai_request_is_target_free_and_disables_thinking() -> None:
     assert "pnl" not in serialized
 
 
-def test_round27_qwen_host_probe_requires_exact_gpu_residency() -> None:
+@pytest.mark.parametrize(
+    ("candidate", "probe"),
+    (
+        (POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE, probe_round27_qwen_host),
+        (POLYMARKET_ROUND27_ODA_HOST_CANDIDATE, probe_round27_oda_host),
+    ),
+)
+def test_round27_ai_host_probe_requires_exact_gpu_residency(
+    candidate: Round27AIHostCandidate,
+    probe: Callable[..., dict[str, object]],
+) -> None:
     requests: list[dict[str, object]] = []
     ticks = iter((0, 900_000_000, 1_000_000_000, 1_700_000_000))
     residencies = iter(
         (
-            _residency(expected_digest=POLYMARKET_ROUND27_AI_MODEL_DIGEST),
+            _residency(candidate, expected_digest=candidate.runtime_digest),
             _unloaded_residency(
-                expected_digest=POLYMARKET_ROUND27_AI_MODEL_DIGEST
+                candidate,
+                expected_digest=candidate.runtime_digest,
             ),
         )
     )
@@ -121,9 +152,9 @@ def test_round27_qwen_host_probe_requires_exact_gpu_residency() -> None:
         requests.append(payload)
         if payload.get("keep_alive") == 0:
             return {"done": True}
-        return _provider_response()
+        return _provider_response(candidate)
 
-    report = probe_round27_qwen_host(
+    report = probe(
         post_json=post,
         residency_inspector=lambda *_args, **_kwargs: next(residencies),
         monotonic_ns=lambda: next(ticks),
@@ -163,7 +194,11 @@ def test_round27_qwen_host_probe_rejects_nonconforming_output() -> None:
     with pytest.raises(ValueError, match="conformance decision"):
         probe_round27_qwen_host(
             post_json=post,
-            residency_inspector=_residency,
+            residency_inspector=lambda *args, **kwargs: _residency(
+                POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE,
+                *args,
+                **kwargs,
+            ),
             monotonic_ns=lambda: next(ticks),
         )
 
@@ -182,12 +217,13 @@ def test_round27_ai_host_publication_is_source_bound_and_nonpromotional() -> Non
     assert claimed == _canonical_sha256(report)
     assert report["qualification"] == {
         "qwen_host_runtime_qualified": True,
-        "all_preregistered_candidates_host_qualified": False,
+        "oda_host_runtime_qualified": True,
+        "all_preregistered_candidates_host_qualified": True,
         "matched_after_cost_ai_ablation_complete": False,
         "ai_promoted": False,
         "reason": (
-            "Qwen is eligible only for the later target-free matched ablation. "
-            "ODA is not host-qualified and no Stage 1 outcomes were accessed."
+            "Both candidates are eligible only for the later target-free "
+            "matched ablation. No Stage 1 outcomes were accessed."
         ),
     }
     assert report["data_authority"] == {

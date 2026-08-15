@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 import json
 import math
 import time
+from typing import Any
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
@@ -25,21 +26,92 @@ POLYMARKET_ROUND27_AI_RESPONSE_SCHEMA_VERSION = (
 POLYMARKET_ROUND27_AI_BASE_URL = "http://127.0.0.1:11434"
 POLYMARKET_ROUND27_AI_COLD_LIMIT_SECONDS = 30.0
 POLYMARKET_ROUND27_AI_WARM_LIMIT_SECONDS = 5.0
-POLYMARKET_ROUND27_AI_MODEL = "qwen3.5:9b"
-POLYMARKET_ROUND27_AI_MODEL_DIGEST = (
-    "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
-)
-POLYMARKET_ROUND27_AI_UPSTREAM_REVISION = (
-    "c202236235762e1c871ad0ccb60c8ee5ba337b9a"
-)
-POLYMARKET_ROUND27_ODA_UPSTREAM_REVISION = (
-    "66940100ebc647846cdba7e7a4e15b94c1ab13ef"
-)
 _MAXIMUM_RESPONSE_BYTES = 2_000_000
 
 
 JsonPoster = Callable[[str, Mapping[str, object], float], object]
 ResidencyInspector = Callable[..., OllamaResidencyReport]
+
+
+@dataclass(frozen=True, slots=True)
+class Round27AIHostCandidate:
+    model_id: str
+    runtime_model: str
+    runtime_digest: str
+    upstream_revision: str
+    role: str
+    quantization: str
+    artifact_source: str
+    artifact_revision: str
+    artifact_sha256: str
+    artifact_size_bytes: int
+
+    def __post_init__(self) -> None:
+        hashes = (self.runtime_digest, self.artifact_sha256)
+        if (
+            not self.model_id
+            or not self.runtime_model
+            or any(
+                len(value) != 64
+                or any(character not in "0123456789abcdef" for character in value)
+                for value in hashes
+            )
+            or len(self.upstream_revision) != 40
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.upstream_revision
+            )
+            or self.role
+            not in {
+                "general_reasoning_risk_review_control",
+                "finance_specialized_risk_review_challenger",
+            }
+            or not self.quantization
+            or not self.artifact_source
+            or not self.artifact_revision
+            or self.artifact_size_bytes <= 0
+        ):
+            raise ValueError("Round 27 AI host candidate specification is invalid")
+
+
+POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE = Round27AIHostCandidate(
+    model_id="Qwen/Qwen3.5-9B",
+    runtime_model="qwen3.5:9b",
+    runtime_digest=(
+        "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
+    ),
+    upstream_revision="c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    role="general_reasoning_risk_review_control",
+    quantization="Q4_K_M",
+    artifact_source="ollama-library/qwen3.5:9b",
+    artifact_revision=(
+        "sha256:dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c"
+    ),
+    artifact_sha256=(
+        "dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c"
+    ),
+    artifact_size_bytes=6_594_462_816,
+)
+POLYMARKET_ROUND27_ODA_HOST_CANDIDATE = Round27AIHostCandidate(
+    model_id="OpenDataArena/ODA-Fin-SFT-8B",
+    runtime_model="hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q6_K",
+    runtime_digest=(
+        "7f310e6fa4537b88432260aab5f7be68de819df5a3c94df4ee26d41d0c593a5b"
+    ),
+    upstream_revision="66940100ebc647846cdba7e7a4e15b94c1ab13ef",
+    role="finance_specialized_risk_review_challenger",
+    quantization="Q6_K",
+    artifact_source="mradermacher/ODA-Fin-SFT-8B-GGUF",
+    artifact_revision="b7af28162eb67d771edeeb77067141d3bbdcab04",
+    artifact_sha256=(
+        "7053bcade78e8698627715df9315e87cc1f880c24e73f01dc09f4d7b7fec4dc3"
+    ),
+    artifact_size_bytes=6_725_900_384,
+)
+POLYMARKET_ROUND27_AI_HOST_CANDIDATES = (
+    POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE,
+    POLYMARKET_ROUND27_ODA_HOST_CANDIDATE,
+)
 
 
 def _strict_json_value(text: str) -> object:
@@ -117,13 +189,19 @@ def round27_ai_response_schema() -> dict[str, object]:
     }
 
 
-def round27_ai_conformance_request(*, keep_alive: str) -> dict[str, object]:
+def round27_ai_conformance_request(
+    candidate: Round27AIHostCandidate = POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE,
+    *,
+    keep_alive: str,
+) -> dict[str, object]:
     """Build a target-free request that cannot authorize or enlarge risk."""
 
     if keep_alive not in {"30s", "0"}:
         raise ValueError("Round 27 AI keep-alive differs")
+    if candidate not in POLYMARKET_ROUND27_AI_HOST_CANDIDATES:
+        raise ValueError("Round 27 AI host candidate differs")
     return {
-        "model": POLYMARKET_ROUND27_AI_MODEL,
+        "model": candidate.runtime_model,
         "prompt": (
             "Runtime conformance probe only. No market data, target, outcome, "
             "position, order, credential, or trading recommendation is present. "
@@ -171,6 +249,7 @@ class Round27AIInferenceMeasurement:
 def _parse_measurement(
     raw: object,
     *,
+    candidate: Round27AIHostCandidate,
     phase: str,
     wall_seconds: float,
 ) -> Round27AIInferenceMeasurement:
@@ -191,7 +270,7 @@ def _parse_measurement(
     if not required.issubset(raw):
         raise ValueError("Round 27 AI inference response fields are incomplete")
     if (
-        raw["model"] != POLYMARKET_ROUND27_AI_MODEL
+        raw["model"] != candidate.runtime_model
         or raw["done"] is not True
         or raw["done_reason"] != "stop"
         or not isinstance(raw["response"], str)
@@ -242,15 +321,16 @@ def _parse_measurement(
     )
 
 
-def _unload_request() -> dict[str, object]:
+def _unload_request(candidate: Round27AIHostCandidate) -> dict[str, object]:
     return {
-        "model": POLYMARKET_ROUND27_AI_MODEL,
+        "model": candidate.runtime_model,
         "keep_alive": 0,
         "stream": False,
     }
 
 
-def probe_round27_qwen_host(
+def probe_round27_ai_candidate_host(
+    candidate: Round27AIHostCandidate,
     *,
     post_json: JsonPoster = _post_json,
     residency_inspector: ResidencyInspector = inspect_ollama_model_residency,
@@ -258,8 +338,10 @@ def probe_round27_qwen_host(
 ) -> dict[str, object]:
     """Measure exact cold/warm structured inference and GPU residency."""
 
+    if candidate not in POLYMARKET_ROUND27_AI_HOST_CANDIDATES:
+        raise ValueError("Round 27 AI host candidate differs")
     endpoint = f"{POLYMARKET_ROUND27_AI_BASE_URL}/api/generate"
-    post_json(endpoint, _unload_request(), 5.0)
+    post_json(endpoint, _unload_request(candidate), 5.0)
     measurements: list[Round27AIInferenceMeasurement] = []
     unload_failure: dict[str, str] | None = None
     post_unload_residency: OllamaResidencyReport | None = None
@@ -268,27 +350,32 @@ def probe_round27_qwen_host(
             started = monotonic_ns()
             raw = post_json(
                 endpoint,
-                round27_ai_conformance_request(keep_alive="30s"),
+                round27_ai_conformance_request(candidate, keep_alive="30s"),
                 POLYMARKET_ROUND27_AI_COLD_LIMIT_SECONDS + 5.0,
             )
             elapsed = (monotonic_ns() - started) / 1_000_000_000
             measurements.append(
-                _parse_measurement(raw, phase=phase, wall_seconds=elapsed)
+                _parse_measurement(
+                    raw,
+                    candidate=candidate,
+                    phase=phase,
+                    wall_seconds=elapsed,
+                )
             )
         residency = residency_inspector(
             POLYMARKET_ROUND27_AI_BASE_URL,
-            POLYMARKET_ROUND27_AI_MODEL,
+            candidate.runtime_model,
             2.0,
-            expected_digest=POLYMARKET_ROUND27_AI_MODEL_DIGEST,
+            expected_digest=candidate.runtime_digest,
         ).validated()
     finally:
         try:
-            post_json(endpoint, _unload_request(), 5.0)
+            post_json(endpoint, _unload_request(candidate), 5.0)
             post_unload_residency = residency_inspector(
                 POLYMARKET_ROUND27_AI_BASE_URL,
-                POLYMARKET_ROUND27_AI_MODEL,
+                candidate.runtime_model,
                 2.0,
-                expected_digest=POLYMARKET_ROUND27_AI_MODEL_DIGEST,
+                expected_digest=candidate.runtime_digest,
             ).validated()
             if post_unload_residency.status != "unloaded":
                 raise RuntimeError("Round 27 AI model remained loaded after cleanup")
@@ -301,8 +388,7 @@ def probe_round27_qwen_host(
         raise RuntimeError("Round 27 AI host probe did not complete both phases")
     cold, warm = measurements
     checks = {
-        "exact_model_digest": residency.digest
-        == POLYMARKET_ROUND27_AI_MODEL_DIGEST,
+        "exact_model_digest": residency.digest == candidate.runtime_digest,
         "full_gpu_residency": residency.fully_gpu_resident,
         "cold_structured_response": cold.response
         == {"decision": "reject", "reason_codes": ["missing_liquidity"]},
@@ -323,11 +409,7 @@ def probe_round27_qwen_host(
     }
     return {
         "candidate": {
-            "model_id": "Qwen/Qwen3.5-9B",
-            "runtime_model": POLYMARKET_ROUND27_AI_MODEL,
-            "runtime_digest": POLYMARKET_ROUND27_AI_MODEL_DIGEST,
-            "upstream_revision": POLYMARKET_ROUND27_AI_UPSTREAM_REVISION,
-            "role": "general_reasoning_risk_review_control",
+            **asdict(candidate),
             "maximum_authority": "veto_or_reduce",
             "response_schema_version": (
                 POLYMARKET_ROUND27_AI_RESPONSE_SCHEMA_VERSION
@@ -354,3 +436,25 @@ def probe_round27_qwen_host(
             "live_trading_authority": False,
         },
     }
+
+
+def probe_round27_qwen_host(
+    **kwargs: Any,
+) -> dict[str, object]:
+    """Qualify the exact Qwen control artifact."""
+
+    return probe_round27_ai_candidate_host(
+        POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE,
+        **kwargs,
+    )
+
+
+def probe_round27_oda_host(
+    **kwargs: Any,
+) -> dict[str, object]:
+    """Qualify the exact ODA finance challenger artifact."""
+
+    return probe_round27_ai_candidate_host(
+        POLYMARKET_ROUND27_ODA_HOST_CANDIDATE,
+        **kwargs,
+    )

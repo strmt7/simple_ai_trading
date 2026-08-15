@@ -2,8 +2,13 @@
   "candidate_results": [
     {
       "candidate": {
+        "artifact_revision": "sha256:dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c",
+        "artifact_sha256": "dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c",
+        "artifact_size_bytes": 6594462816,
+        "artifact_source": "ollama-library/qwen3.5:9b",
         "maximum_authority": "veto_or_reduce",
         "model_id": "Qwen/Qwen3.5-9B",
+        "quantization": "Q4_K_M",
         "response_schema_version": "polymarket-round27-ai-risk-veto-response-v1",
         "role": "general_reasoning_risk_review_control",
         "runtime_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
@@ -34,36 +39,36 @@
       },
       "measurements": [
         {
-          "load_seconds": 5.0559866,
+          "load_seconds": 4.8055707,
           "output_tokens": 17,
-          "output_tokens_per_second": 81.04229931304732,
+          "output_tokens_per_second": 81.50193686955855,
           "phase": "cold",
           "prompt_tokens": 62,
-          "prompt_tokens_per_second": 636.7660500991096,
+          "prompt_tokens_per_second": 670.147108099052,
           "response": {
             "decision": "reject",
             "reason_codes": [
               "missing_liquidity"
             ]
           },
-          "total_seconds": 5.3674744,
-          "wall_seconds": 5.359
+          "total_seconds": 5.1102193,
+          "wall_seconds": 5.125
         },
         {
-          "load_seconds": 0.2133511,
+          "load_seconds": 0.20859,
           "output_tokens": 17,
-          "output_tokens_per_second": 82.1367141449085,
+          "output_tokens_per_second": 82.76130665498272,
           "phase": "warm",
           "prompt_tokens": 62,
-          "prompt_tokens_per_second": 787.001777100787,
+          "prompt_tokens_per_second": 960.109033698418,
           "response": {
             "decision": "reject",
             "reason_codes": [
               "missing_liquidity"
             ]
           },
-          "total_seconds": 0.5036222,
-          "wall_seconds": 0.531
+          "total_seconds": 0.482753,
+          "wall_seconds": 0.516
         }
       ],
       "passed": true,
@@ -93,25 +98,102 @@
     },
     {
       "candidate": {
+        "artifact_revision": "b7af28162eb67d771edeeb77067141d3bbdcab04",
+        "artifact_sha256": "7053bcade78e8698627715df9315e87cc1f880c24e73f01dc09f4d7b7fec4dc3",
+        "artifact_size_bytes": 6725900384,
+        "artifact_source": "mradermacher/ODA-Fin-SFT-8B-GGUF",
         "maximum_authority": "veto_or_reduce",
         "model_id": "OpenDataArena/ODA-Fin-SFT-8B",
+        "quantization": "Q6_K",
+        "response_schema_version": "polymarket-round27-ai-risk-veto-response-v1",
         "role": "finance_specialized_risk_review_challenger",
+        "runtime_digest": "7f310e6fa4537b88432260aab5f7be68de819df5a3c94df4ee26d41d0c593a5b",
+        "runtime_model": "hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q6_K",
         "upstream_revision": "66940100ebc647846cdba7e7a4e15b94c1ab13ef"
+      },
+      "checks": {
+        "cold_structured_response": true,
+        "cold_within_host_qualification_limit": true,
+        "credentials_and_trading_authority_absent": true,
+        "exact_model_digest": true,
+        "full_gpu_residency": true,
+        "provider_unloaded_after_probe": true,
+        "target_outcome_and_market_data_absent": true,
+        "think_channel_disabled": true,
+        "warm_structured_response": true,
+        "warm_within_host_qualification_limit": true
       },
       "claims": {
         "after_cost_uplift": false,
         "edge": false,
-        "host_runtime_qualified": false,
+        "host_runtime_qualified": true,
+        "latency_critical_probability_predictor": false,
         "live_trading_authority": false,
-        "offline_matched_ablation_eligible": false,
+        "offline_matched_ablation_eligible": true,
         "predictive_uplift": false,
         "profitability": false
       },
-      "passed": false,
-      "status": "not_installed_or_host_qualified"
+      "measurements": [
+        {
+          "load_seconds": 7.6120807,
+          "output_tokens": 17,
+          "output_tokens_per_second": 67.39105443215108,
+          "phase": "cold",
+          "prompt_tokens": 60,
+          "prompt_tokens_per_second": 906.9335066584035,
+          "response": {
+            "decision": "reject",
+            "reason_codes": [
+              "missing_liquidity"
+            ]
+          },
+          "total_seconds": 7.9345662,
+          "wall_seconds": 7.938
+        },
+        {
+          "load_seconds": 0.12248,
+          "output_tokens": 17,
+          "output_tokens_per_second": 66.45531271133767,
+          "phase": "warm",
+          "prompt_tokens": 60,
+          "prompt_tokens_per_second": 2181.500872600349,
+          "response": {
+            "decision": "reject",
+            "reason_codes": [
+              "missing_liquidity"
+            ]
+          },
+          "total_seconds": 0.4091452,
+          "wall_seconds": 0.437
+        }
+      ],
+      "passed": true,
+      "post_unload_residency": {
+        "digest": null,
+        "gpu_resident": false,
+        "loaded": false,
+        "loaded_model": null,
+        "requested_model": "hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q6_K",
+        "size_bytes": null,
+        "size_vram_bytes": null,
+        "status": "unloaded",
+        "vram_to_model_ratio": null
+      },
+      "residency": {
+        "digest": "7f310e6fa4537b88432260aab5f7be68de819df5a3c94df4ee26d41d0c593a5b",
+        "gpu_resident": true,
+        "loaded": true,
+        "loaded_model": "hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q6_K",
+        "requested_model": "hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q6_K",
+        "size_bytes": 6614197206,
+        "size_vram_bytes": 6614197206,
+        "status": "gpu_resident",
+        "vram_to_model_ratio": 1.0
+      },
+      "unload_failure": null
     }
   ],
-  "created_at": "2026-08-15T08:05:19.287928+00:00",
+  "created_at": "2026-08-15T08:16:10.430710+00:00",
   "data_authority": {
     "credentials_used": false,
     "market_data_rows": 0,
@@ -121,7 +203,7 @@
     "targets": 0,
     "trading_authority": false
   },
-  "evidence_sha256": "54a022789fdcb343ffc05dbfaf81fe17b8462c41cdc735352a27d3271e7653c9",
+  "evidence_sha256": "9fc177849bf5e62e3d3a625b26c0c84d5fa48dc14f97b6fc5a5c3b4b37ca34de",
   "host": {
     "machine": "AMD64",
     "ollama": "0.32.13",
@@ -129,6 +211,11 @@
     "release": "11",
     "system": "Windows"
   },
+  "limitations": [
+    "Host qualification measures artifact identity, structured-output conformance, latency, residency, and cleanup only; it does not measure intelligence, prediction, economic uplift, or edge.",
+    "The ODA Q6_K artifact is a third-party quantization pinned by repository revision and file SHA-256. Its conversion from the official upstream weights was not independently reproduced.",
+    "Candidates are qualified one at a time; concurrent residency and inference are outside this receipt."
+  ],
   "model_contract_ai_assist": {
     "candidate_models": [
       {
@@ -151,15 +238,16 @@
   "model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
   "qualification": {
     "ai_promoted": false,
-    "all_preregistered_candidates_host_qualified": false,
+    "all_preregistered_candidates_host_qualified": true,
     "matched_after_cost_ai_ablation_complete": false,
+    "oda_host_runtime_qualified": true,
     "qwen_host_runtime_qualified": true,
-    "reason": "Qwen is eligible only for the later target-free matched ablation. ODA is not host-qualified and no Stage 1 outcomes were accessed."
+    "reason": "Both candidates are eligible only for the later target-free matched ablation. No Stage 1 outcomes were accessed."
   },
   "schema_version": "polymarket-round27-ai-host-qualification-v1",
   "source_sha256": {
-    "src/simple_ai_trading/polymarket_round27_ai.py": "d2358aa1ef33a614133d788f568465bdbf7e5b686d6cf30864fe6f4a1d946a02",
-    "tools/probe_polymarket_round27_ai_host.py": "27b3da731d33e0002f0e914f64ae1268571c0abfa61162f6c2af8784f77e682b"
+    "src/simple_ai_trading/polymarket_round27_ai.py": "994042360048ae8b0a4542422333de8f8fe4d0251bfc3c5a4d929348ef473e9f",
+    "tools/probe_polymarket_round27_ai_host.py": "923dabc677e643e47ad8b02c4487fd8df529d0ca0927082769564bd5ab859d7c"
   },
   "sources": [
     {
@@ -179,8 +267,16 @@
       "url": "https://huggingface.co/Qwen/Qwen3.5-9B"
     },
     {
+      "title": "Qwen3.5 Ollama artifact",
+      "url": "https://ollama.com/library/qwen3.5:9b"
+    },
+    {
       "title": "ODA-Fin-SFT-8B model card",
       "url": "https://huggingface.co/OpenDataArena/ODA-Fin-SFT-8B"
+    },
+    {
+      "title": "ODA-Fin-SFT-8B GGUF quantization",
+      "url": "https://huggingface.co/mradermacher/ODA-Fin-SFT-8B-GGUF"
     }
   ]
 }

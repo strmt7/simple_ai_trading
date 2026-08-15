@@ -14,7 +14,7 @@ from urllib import request as urllib_request
 from simple_ai_trading.polymarket_round27_ai import (
     POLYMARKET_ROUND27_AI_HOST_PROBE_SCHEMA_VERSION,
     POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256,
-    POLYMARKET_ROUND27_ODA_UPSTREAM_REVISION,
+    probe_round27_oda_host,
     probe_round27_qwen_host,
 )
 
@@ -86,6 +86,8 @@ def _model_contract() -> dict[str, Any]:
 def build_report() -> dict[str, object]:
     contract = _model_contract()
     qwen = probe_round27_qwen_host()
+    oda = probe_round27_oda_host()
+    all_candidates_qualified = bool(qwen["passed"] and oda["passed"])
     report: dict[str, object] = {
         "schema_version": POLYMARKET_ROUND27_AI_HOST_PROBE_SCHEMA_VERSION,
         "created_at": datetime.now(UTC).isoformat(),
@@ -97,36 +99,18 @@ def build_report() -> dict[str, object]:
             "python": platform.python_version(),
             "ollama": _ollama_version(),
         },
-        "candidate_results": [
-            qwen,
-            {
-                "candidate": {
-                    "model_id": "OpenDataArena/ODA-Fin-SFT-8B",
-                    "upstream_revision": POLYMARKET_ROUND27_ODA_UPSTREAM_REVISION,
-                    "role": "finance_specialized_risk_review_challenger",
-                    "maximum_authority": "veto_or_reduce",
-                },
-                "status": "not_installed_or_host_qualified",
-                "passed": False,
-                "claims": {
-                    "host_runtime_qualified": False,
-                    "offline_matched_ablation_eligible": False,
-                    "predictive_uplift": False,
-                    "after_cost_uplift": False,
-                    "edge": False,
-                    "profitability": False,
-                    "live_trading_authority": False,
-                },
-            },
-        ],
+        "candidate_results": [qwen, oda],
         "qualification": {
             "qwen_host_runtime_qualified": qwen["passed"] is True,
-            "all_preregistered_candidates_host_qualified": False,
+            "oda_host_runtime_qualified": oda["passed"] is True,
+            "all_preregistered_candidates_host_qualified": (
+                all_candidates_qualified
+            ),
             "matched_after_cost_ai_ablation_complete": False,
             "ai_promoted": False,
             "reason": (
-                "Qwen is eligible only for the later target-free matched ablation. "
-                "ODA is not host-qualified and no Stage 1 outcomes were accessed."
+                "Both candidates are eligible only for the later target-free "
+                "matched ablation. No Stage 1 outcomes were accessed."
             ),
         },
         "data_authority": {
@@ -138,6 +122,22 @@ def build_report() -> dict[str, object]:
             "orders_submitted": False,
             "trading_authority": False,
         },
+        "limitations": [
+            (
+                "Host qualification measures artifact identity, structured-output "
+                "conformance, latency, residency, and cleanup only; it does not "
+                "measure intelligence, prediction, economic uplift, or edge."
+            ),
+            (
+                "The ODA Q6_K artifact is a third-party quantization pinned by "
+                "repository revision and file SHA-256. Its conversion from the "
+                "official upstream weights was not independently reproduced."
+            ),
+            (
+                "Candidates are qualified one at a time; concurrent residency "
+                "and inference are outside this receipt."
+            ),
+        ],
         "model_contract_ai_assist": contract["ai_assist"],
         "sources": [
             {
@@ -157,8 +157,16 @@ def build_report() -> dict[str, object]:
                 "url": "https://huggingface.co/Qwen/Qwen3.5-9B",
             },
             {
+                "title": "Qwen3.5 Ollama artifact",
+                "url": "https://ollama.com/library/qwen3.5:9b",
+            },
+            {
                 "title": "ODA-Fin-SFT-8B model card",
                 "url": "https://huggingface.co/OpenDataArena/ODA-Fin-SFT-8B",
+            },
+            {
+                "title": "ODA-Fin-SFT-8B GGUF quantization",
+                "url": "https://huggingface.co/mradermacher/ODA-Fin-SFT-8B-GGUF",
             },
         ],
         "source_sha256": {
@@ -195,7 +203,9 @@ def main() -> int:
         "qwen_host_runtime_qualified": report["qualification"][
             "qwen_host_runtime_qualified"
         ],
-        "all_preregistered_candidates_host_qualified": False,
+        "all_preregistered_candidates_host_qualified": report["qualification"][
+            "all_preregistered_candidates_host_qualified"
+        ],
         "ai_promoted": False,
     }))
     return 0
