@@ -64,6 +64,10 @@ revalidate. A matching model name alone is insufficient.
 
 The canonical numeric design is
 [`round-027-stage1-model-contract-v1.json`](../../round-027-stage1-model-contract-v1.json).
+The [supplemental hypothesis preregistration](../../round-027-supplemental-hypothesis-preregistration-v1.json)
+treats the supplied Reddit post only as untrusted hypothesis input. Public-book
+data cannot establish maker queue position, private fills, or rebate allocation,
+so it cannot support a maker-profitability claim.
 The prior live feature smoke accessed no outcome labels and generated no
 financial performance graph. This revision requires a new live feature smoke.
 Selection and sealed graphs will be generated only from their canonical numeric

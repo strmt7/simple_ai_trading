@@ -28,13 +28,20 @@ POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION = (
     "polymarket-round27-stage1-model-contract-v1"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256 = (
-    "30f5224f92b1cdabd71b34ead9561b6adb5696cd904810847acd0707dd743827"
+    "639543bdc3102d7090b66019434a961d19533cc1d882778013ce60aadf05208a"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
 )
 _STAGE1_CONTRACT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-stage1-campaign-contract-v1.json"
+)
+_SUPPLEMENTAL_HYPOTHESES_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/"
+    "round-027-supplemental-hypothesis-preregistration-v1.json"
+)
+_SUPPLEMENTAL_HYPOTHESES_SHA256 = (
+    "2cb8f7068fb9673c1d1c94af0a8a6d1d53a4ac382c3b5e336278a9a10543b7df"
 )
 _STAGE1_CONTRACT_SHA256 = (
     "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392"
@@ -95,6 +102,8 @@ def validate_round27_model_contract(
         or payload.get("schema_version")
         != POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION
         or payload.get("campaign_contract_sha256") != _STAGE1_CONTRACT_SHA256
+        or payload.get("supplemental_hypothesis_preregistration_sha256")
+        != _SUPPLEMENTAL_HYPOTHESES_SHA256
         or payload.get("status") != "frozen_before_stage1_capture_and_outcome_access"
         or type(payload.get("created_at_ms")) is not int
         or int(payload["created_at_ms"]) >= _FIRST_CAPTURE_START_MS
@@ -190,6 +199,35 @@ def validate_round27_model_contract(
         or not isinstance(sources, Mapping)
     ):
         raise ValueError("Round 27 model contract policy differs")
+    supplemental_path = root / _SUPPLEMENTAL_HYPOTHESES_RELATIVE_PATH
+    try:
+        supplemental = json.loads(
+            supplemental_path.read_text(encoding="ascii"),
+            object_pairs_hook=_strict_object,
+            parse_constant=_reject_nonfinite,
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
+        raise ValueError("Round 27 supplemental hypotheses are unavailable") from exc
+    if not isinstance(supplemental, dict):
+        raise ValueError("Round 27 supplemental hypotheses differ")
+    supplemental_claim = _sha256(
+        supplemental.pop("preregistration_sha256", "")
+    )
+    supplemental_authority = supplemental.get("authority")
+    supplemental_source = supplemental.get("source")
+    if (
+        supplemental_claim != _SUPPLEMENTAL_HYPOTHESES_SHA256
+        or supplemental_claim != _canonical_sha256(supplemental)
+        or supplemental.get("status")
+        != "frozen_before_stage1_market_state_access"
+        or not isinstance(supplemental_authority, Mapping)
+        or any(value is not False for value in supplemental_authority.values())
+        or not isinstance(supplemental_source, Mapping)
+        or supplemental_source.get("classification")
+        != "untrusted_reddit_food_for_thought"
+        or supplemental_source.get("performance_claims_accepted") is not False
+    ):
+        raise ValueError("Round 27 supplemental hypotheses differ")
     intervals = tuple(
         Round27RoleInterval.from_mapping(item)
         for item in partitions
