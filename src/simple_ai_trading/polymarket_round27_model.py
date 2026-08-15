@@ -573,10 +573,18 @@ def select_round27_l2_penalty(
             train = Round27Partition.from_samples(train_samples, role=partition.role)
             held = Round27Partition.from_samples(held_samples, role=partition.role)
             model = fit_round27_l2_offset(train, penalty=penalty)
+            probability = model.predict(held.features, held.offsets)
+            weight = held.weights / np.sum(held.weights)
             fold_losses.append(
-                round27_probability_metrics(
-                    held, model.predict(held.features, held.offsets)
-                ).log_loss
+                float(
+                    np.sum(
+                        weight
+                        * -(
+                            held.targets * np.log(probability)
+                            + (1.0 - held.targets) * np.log1p(-probability)
+                        )
+                    )
+                )
             )
         scores[str(penalty)] = math.fsum(fold_losses) / len(fold_losses)
     selected = min(

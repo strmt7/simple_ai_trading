@@ -25,7 +25,7 @@ flowchart LR
 | Real source-smoke TWAP60 ticks | 577 |
 | Compact trade storage | 131,175 bytes |
 | Real audited condition feature rows | 173 |
-| Focused tests | 12 passed |
+| Focused tests | 14 passed |
 
 The executable control is Polymarket's market probability. Learned models must
 beat it on condition-weighted log loss and Brier score with paired confidence
