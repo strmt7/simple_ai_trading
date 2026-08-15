@@ -150,7 +150,7 @@ def _matched_fixture(candidate=POLYMARKET_ROUND27_QWEN_HOST_CANDIDATE):
     extra_books = tuple(
         _book(market, outcome="Up", offset_ms=offset)
         for market in markets
-        for offset in (30_350, 30_600, 31_100, 32_100, 33_100)
+        for offset in (30_351, 30_601, 31_101, 32_101, 33_101, 33_102)
     )
     all_books = tuple(books) + extra_books
     config = Round27EconomicConfig(

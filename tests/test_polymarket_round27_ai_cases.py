@@ -47,7 +47,7 @@ def _rows(partition) -> tuple[Round27FeatureRow, ...]:
             decision_time_ms=sample.decision_time_ms,
             market_prior_probability=sample.market_prior_probability,
             values=sample.values,
-            maximum_receipt_wall_ms=sample.decision_time_ms,
+            maximum_receipt_wall_ms=sample.decision_time_ms - 1,
             source_chain_sha256=hashlib.sha256(
                 f"source-{sample.condition_id}".encode("ascii")
             ).hexdigest(),

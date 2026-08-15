@@ -301,7 +301,7 @@ class _BookIndex:
     ) -> PolymarketRecordedBook | None:
         values = self.books.get(token_id, ())
         times = self.times.get(token_id, ())
-        index = bisect_right(times, int(at_ms)) - 1
+        index = bisect_left(times, int(at_ms)) - 1
         while index >= 0:
             selected = values[index]
             if selected.market.condition_id == condition_id:
@@ -309,7 +309,7 @@ class _BookIndex:
             index -= 1
         return None
 
-    def first_at_or_after(
+    def first_strictly_after(
         self,
         token_id: str,
         *,
@@ -322,7 +322,7 @@ class _BookIndex:
     ) -> PolymarketRecordedBook | None:
         values = self.books.get(token_id, ())
         times = self.times.get(token_id, ())
-        index = bisect_left(times, int(target_ms))
+        index = bisect_right(times, int(target_ms))
         deadline = int(target_ms) + int(maximum_observation_delay_ms)
         while index < len(values):
             selected = values[index]
@@ -465,8 +465,8 @@ def _decision_books(
         > config.maximum_decision_book_age_ms
         or sample.decision_time_ms - down.received_wall_ms
         > config.maximum_decision_book_age_ms
-        or up.received_wall_ms > sample.decision_time_ms
-        or down.received_wall_ms > sample.decision_time_ms
+        or up.received_wall_ms >= sample.decision_time_ms
+        or down.received_wall_ms >= sample.decision_time_ms
     ):
         return None
     prior = float(_midpoint(up) / (_midpoint(up) + _midpoint(down)))
@@ -643,7 +643,7 @@ def _execute_candidate_trades(
     for candidate in candidates:
         market = market_by_condition[candidate.condition_id]
         target_ms = candidate.decision_time_ms + delay_ms
-        execution = index.first_at_or_after(
+        execution = index.first_strictly_after(
             candidate.token_id,
             condition_id=candidate.condition_id,
             target_ms=target_ms,
@@ -655,7 +655,7 @@ def _execute_candidate_trades(
             market_end_ms=candidate.market_end_ms,
         )
         state = "UNKNOWN"
-        reason = "no_gap_free_execution_book_after_delay"
+        reason = "no_gap_free_execution_book_strictly_after_delay"
         effective_latency_ms = delay_ms
         execution_event_id = ""
         filled = Decimal("0")
@@ -720,7 +720,7 @@ def _execute_candidate_trades(
                 else Decimal("0")
             )
             pnl = payout - entry_notional - fee_quote
-            markout_book = index.first_at_or_after(
+            markout_book = index.first_strictly_after(
                 candidate.token_id,
                 condition_id=candidate.condition_id,
                 target_ms=execution.received_wall_ms + config.markout_horizon_ms,

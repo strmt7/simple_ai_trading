@@ -1,0 +1,96 @@
+{
+  "amendment_sha256": "79a4282de6aaa42802dadeeee2c2405aa74f2f27974f90067e89eb722a258e83",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "profitability_claim": false
+  },
+  "base_model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+  "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+  "correction": {
+    "ai_prompts_or_candidate_families_changed": false,
+    "decision_book_receipt_cutoff": "strictly_before_decision_wall_ms",
+    "economic_execution_cutoff_became_stricter": true,
+    "economic_gate_numeric_thresholds_changed": false,
+    "execution_and_markout_receipt_cutoff": "strictly_after_target_wall_ms",
+    "feature_count_or_names_changed": false,
+    "model_payload_schema_changed": false,
+    "prediction_gate_numeric_thresholds_changed": false,
+    "same_millisecond_receipts_treated_as_ordering_ambiguous": true,
+    "trade_and_twap_receipt_cutoff": "strictly_before_decision_wall_ms",
+    "twap_source_age_measured_at_decision_wall_ms": true
+  },
+  "created_at_ms": 1786791316918,
+  "discovery_audit": {
+    "frozen_decision_features_included_same_wall_millisecond_receipts": true,
+    "frozen_execution_replay_included_same_target_millisecond_books": true,
+    "official_outcomes_accessed": false,
+    "stage1_feature_rows_accessed_or_materialized": false,
+    "synthetic_host_check_is_edge_or_profitability_evidence": false
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false,
+    "stage1_capture_started": true,
+    "stage1_feature_rows_accessed_or_materialized": false
+  },
+  "predecessor_amendment_sha256": "a2ee7a5c3f89b1bca66ca3f8dd673c760719b3f47154f678b5186ee825ae3b1e",
+  "predecessor_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_ai_cases.py": "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a",
+    "src/simple_ai_trading/polymarket_round27_ai_economics.py": "a4763089881c6475dce2ee56bb4e38ddcc4e71c89871e147d83b3eeaf0fb556b",
+    "src/simple_ai_trading/polymarket_round27_economics.py": "913fd020f65a66c69dc6e0ff36d99c3842f82d17d17e73907974cd54fbd0fbff",
+    "src/simple_ai_trading/polymarket_round27_experiment.py": "123e2f1955b612ed16e88dcfa9fa6277c06f062498bda54cfa2fcfdd658a4ba9",
+    "src/simple_ai_trading/polymarket_round27_features.py": "854fdbfe0a2ba0e8e914f3b8d6381f15222baace2b31e46c7e9cc966fc5d32f0",
+    "src/simple_ai_trading/polymarket_round27_model.py": "73de58ec5c5a1c1b79119779ff2035c7d73eabca3807aff83c07755f14123774"
+  },
+  "rationale": "The recorder preserves nanosecond monotonic receipt order, but the preregistered one-second decisions are reconstructed at exact wall-clock millisecond boundaries and have no captured decision monotonic timestamp. A receipt stamped exactly at a decision millisecond therefore has unknown ordering relative to that decision. Including it can create up to one millisecond of feature look-ahead. The same ambiguity exists for a book stamped exactly at the modeled order-arrival or markout millisecond. The correction excludes equal-wall-time receipts from features and decision books, and requires execution and markout books strictly after their modeled target. TWAP source age is still measured at the actual decision boundary. No outcome, candidate, threshold, economic sizing rule, prompt, or authority was used or relaxed.",
+  "research_basis": [
+    {
+      "purpose": "official_polymarket_market_channel_millisecond_timestamps",
+      "url": "https://docs.polymarket.com/market-data/websocket/market-channel"
+    },
+    {
+      "purpose": "official_polymarket_rtds_millisecond_timestamps",
+      "url": "https://docs.polymarket.com/market-data/websocket/rtds"
+    },
+    {
+      "purpose": "official_binance_timestamp_resolution",
+      "url": "https://developers.binance.com/en/docs/binance-spot-api-docs/web-socket-streams"
+    }
+  ],
+  "schema_version": "polymarket-round27-strict-decision-cutoff-correction-amendment-v9",
+  "status": "frozen_after_capture_start_before_stage1_feature_or_outcome_access",
+  "superseded_source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round27_ai_cases.py": {
+      "corrected": "8cc090b9d95b1493c8535b6d44ecceab81a89fa6c08ef55c3e7a3a04363f641a",
+      "frozen": "2e95562f3611842ecb801920f9cf6876eba2d11b2e0b89a76625f3a59be97bc2"
+    },
+    "src/simple_ai_trading/polymarket_round27_ai_economics.py": {
+      "corrected": "a4763089881c6475dce2ee56bb4e38ddcc4e71c89871e147d83b3eeaf0fb556b",
+      "frozen": "a222dd9c4d6246aeccf90e62ff7157697c52636aed4261c532337f5016e78fe6"
+    },
+    "src/simple_ai_trading/polymarket_round27_economics.py": {
+      "corrected": "17743f3b178d656d88dd35e4614900e0bbacfe0e4decf494bb4fbd3127bffa8a",
+      "frozen": "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54"
+    },
+    "src/simple_ai_trading/polymarket_round27_experiment.py": {
+      "corrected": "123e2f1955b612ed16e88dcfa9fa6277c06f062498bda54cfa2fcfdd658a4ba9",
+      "frozen": "9a97a253668e9ef2487c042c3574b4bea2f5cf7e6fcd5267a1f6e6fc1ed5321e"
+    },
+    "src/simple_ai_trading/polymarket_round27_features.py": {
+      "corrected": "d74d97b9bab0dba46d2b207b845da1d4b8028972bc636e0674f759cecb22f027",
+      "frozen": "032f249028418d7a479c014874a374b1dc6e68de80350b68dad83ca5aae58316"
+    },
+    "src/simple_ai_trading/polymarket_round27_model.py": {
+      "corrected": "73de58ec5c5a1c1b79119779ff2035c7d73eabca3807aff83c07755f14123774",
+      "frozen": "5eedf0a5e6f7c0317c795d99ad7425ff2e262c2d527c519d4f9d9cee7f8e8740"
+    }
+  }
+}

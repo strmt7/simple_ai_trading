@@ -116,6 +116,13 @@ own dependence horizon; the estimate is rounded up and capped at one quarter
 of the population. Fixed horizons remain, and the widest interval is retained,
 so this can only preserve or tighten promotion.
 
+The [strict decision-cutoff amendment](../../round-027-strict-decision-cutoff-correction-amendment-v9.json)
+excludes receipts stamped in the same wall-clock millisecond as a reconstructed
+decision and requires execution/markout observations strictly after their
+modeled target time. The capture has nanosecond receipt ordering, but synthetic
+decision boundaries do not; equality is therefore treated as ambiguous instead
+of granting the backtest up to one millisecond of look-ahead.
+
 The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
 binds both candidates to exact Ollama, upstream, and quantized-artifact hashes,
 and verifies strict structured output with `think=false`, one-model-at-a-time

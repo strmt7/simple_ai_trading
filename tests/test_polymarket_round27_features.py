@@ -241,7 +241,8 @@ def test_build_round27_condition_features_is_complete_and_target_blind() -> None
     assert len(row.values) == len(POLYMARKET_ROUND27_FEATURE_NAMES)
     assert row.target_accessed is False
     assert row.trading_authority is False
-    assert row.maximum_receipt_wall_ms <= row.decision_time_ms
+    assert row.maximum_receipt_wall_ms < row.decision_time_ms
+    assert row.market_prior_probability == pytest.approx(0.49)
 
 
 def test_round27_condition_features_require_complete_twenty_minute_context() -> None:
@@ -324,7 +325,27 @@ def test_book_flow_does_not_cross_connection_segments() -> None:
     assert flow.mid_log_return == 0.0
 
 
-def test_feature_row_rejects_a_future_receipt() -> None:
+def test_same_millisecond_receipts_are_excluded_from_decision_features() -> None:
+    series = Round27TradeSeries.from_points(
+        "binance_spot",
+        (
+            _trade("binance_spot", 19_000, 100.0),
+            _trade("binance_spot", 20_000, 200.0),
+        ),
+    )
+
+    metrics = _trade_metrics(
+        series,
+        decision_ms=_START_MS + 20_000,
+        window_ms=10_000,
+    )
+
+    assert metrics.count == 1
+    assert metrics.log_return == 0.0
+
+
+@pytest.mark.parametrize("receipt_offset_ms", [30_000, 30_001])
+def test_feature_row_rejects_a_noncausal_receipt(receipt_offset_ms: int) -> None:
     with pytest.raises(ValueError, match="feature row differs"):
         Round27FeatureRow.create(
             run_id="round27",
@@ -333,7 +354,7 @@ def test_feature_row_rejects_a_future_receipt() -> None:
             decision_time_ms=_START_MS + 30_000,
             market_prior_probability=0.5,
             values=(0.0,) * len(POLYMARKET_ROUND27_FEATURE_NAMES),
-            maximum_receipt_wall_ms=_START_MS + 30_001,
+            maximum_receipt_wall_ms=_START_MS + receipt_offset_ms,
             source_chain_sha256="a" * 64,
         )
 

@@ -126,13 +126,13 @@ def _population(
     books: list[PolymarketRecordedBook] = []
     samples: list[Round27ModelSample] = []
     outcomes: dict[str, int] = {}
-    execution_offsets = (30_250, 30_500, 31_000, 31_250, 31_500, 32_000, 33_000)
+    execution_offsets = (30_251, 30_501, 31_001, 31_251, 31_501, 32_001, 32_501)
     for index, market in enumerate(markets):
         decision = market.event_start_ms + 30_000
         books.extend(
             (
-                _book(market, outcome="Up", offset_ms=30_000),
-                _book(market, outcome="Down", offset_ms=30_000),
+                _book(market, outcome="Up", offset_ms=29_999),
+                _book(market, outcome="Down", offset_ms=29_999),
             )
         )
         books.extend(
@@ -250,6 +250,25 @@ def test_round27_economics_fok_refuses_insufficient_displayed_depth() -> None:
     )
 
 
+def test_round27_economics_excludes_ambiguous_same_millisecond_books() -> None:
+    markets, partition, probabilities, books, outcomes = _population(1)
+    market = markets[0]
+    ambiguous = (
+        *books,
+        _book(market, outcome="Up", offset_ms=30_000, ask=Decimal("0.80")),
+        _book(market, outcome="Down", offset_ms=30_000, ask=Decimal("0.20")),
+        _book(market, outcome="Up", offset_ms=30_500, ask=Decimal("0.80")),
+    )
+
+    report = _evaluate(markets, partition, probabilities, ambiguous, outcomes)
+    primary = next(item for item in report["scenarios"] if item["delay_ms"] == 500)
+    trade = primary["trades"][0]
+
+    assert trade["execution_state"] == "FILLED"
+    assert trade["effective_latency_ms"] == 501
+    assert trade["average_fill_price"] == "0.466"
+
+
 def test_round27_economics_bootstraps_every_evaluated_condition() -> None:
     markets, partition, probabilities, books, outcomes = _population(20)
     probabilities[10:] = np.asarray(
@@ -305,7 +324,7 @@ def test_round27_economics_fails_closed_across_connection_segment() -> None:
         book.snapshot.source_payload_sha256
         for book in books
         if book.outcome == "Up"
-        and book.received_wall_ms == target.event_start_ms + 30_000
+        and book.received_wall_ms == target.event_start_ms + 29_999
     )
 
 
@@ -355,7 +374,7 @@ def test_round27_economics_rejects_an_execution_tick_lattice_change() -> None:
     revised_books = []
     for book in books:
         offset = book.received_wall_ms - market.event_start_ms
-        if book.outcome == "Up" and offset == 30_000:
+        if book.outcome == "Up" and offset == 29_999:
             revised_books.append(
                 _book(
                     market,
@@ -365,7 +384,7 @@ def test_round27_economics_rejects_an_execution_tick_lattice_change() -> None:
                     tick_size=Decimal("0.001"),
                 )
             )
-        elif book.outcome == "Down" and offset == 30_000:
+        elif book.outcome == "Down" and offset == 29_999:
             revised_books.append(
                 _book(
                     market,
@@ -417,7 +436,7 @@ def test_round27_economics_rejects_a_book_off_its_active_tick_lattice() -> None:
             ask=Decimal("0.461") if book.outcome == "Up" else Decimal("0.539"),
             tick_size=Decimal("0.01"),
         )
-        if book.received_wall_ms == market.event_start_ms + 30_000
+        if book.received_wall_ms == market.event_start_ms + 29_999
         else book
         for book in books
     )

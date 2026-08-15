@@ -52,7 +52,7 @@ def _rows_and_outcomes(condition_count: int = 40):
                     decision_time_ms=event_start + offset,
                     market_prior_probability=0.52 if target else 0.48,
                     values=values,
-                    maximum_receipt_wall_ms=event_start + offset,
+                    maximum_receipt_wall_ms=event_start + offset - 1,
                     source_chain_sha256="a" * 64,
                 )
             )
