@@ -9,19 +9,19 @@
 </style>
 <rect width="1120" height="680" fill="#ffffff"/>
 <text x="56" y="58" class="title">Round 27 mechanics diagnostic</text>
-<text x="56" y="86" class="subtitle">11 BTC five-minute markets | 54,983 paired states | exact fees | recorded 250 ms taker delay</text>
+<text x="56" y="86" class="subtitle">53 BTC five-minute markets | 268,393 paired states | exact fees | recorded venue delay</text>
 <line x1="56" y1="112" x2="1064" y2="112" stroke="#d1d5db"/>
 <text x="70" y="158" class="heading">Candidate quote states</text>
 <text x="70" y="181" class="note">Log10 bar scale; exact state count at right</text>
-<text x="70" y="204" class="label">Extreme settlement value</text><rect x="70" y="218" width="430" height="22" rx="3" fill="#e5e7eb"/><rect x="70" y="218" width="430.00" height="22" rx="3" fill="#0f766e"/><text x="515" y="235" class="value">15,806</text><text x="70" y="286" class="label">Late strong favorite</text><rect x="70" y="300" width="430" height="22" rx="3" fill="#e5e7eb"/><rect x="70" y="300" width="308.76" height="22" rx="3" fill="#2563eb"/><text x="515" y="317" class="value">1,034</text><text x="70" y="368" class="label">Complete set after fee</text><rect x="70" y="382" width="430" height="22" rx="3" fill="#e5e7eb"/><rect x="70" y="382" width="71.58" height="22" rx="3" fill="#d97706"/><text x="515" y="399" class="value">4</text><text x="70" y="450" class="label">Split-sell after fee</text><rect x="70" y="464" width="430" height="22" rx="3" fill="#e5e7eb"/><rect x="70" y="464" width="30.83" height="22" rx="3" fill="#7c3aed"/><text x="515" y="481" class="value">1</text>
+<text x="70" y="204" class="label">Extreme settlement value</text><rect x="70" y="218" width="430" height="22" rx="3" fill="#e5e7eb"/><rect x="70" y="218" width="430.00" height="22" rx="3" fill="#0f766e"/><text x="515" y="235" class="value">60,863</text><text x="70" y="286" class="label">Late strong favorite</text><rect x="70" y="300" width="430" height="22" rx="3" fill="#e5e7eb"/><rect x="70" y="300" width="366.25" height="22" rx="3" fill="#2563eb"/><text x="515" y="317" class="value">11,884</text><text x="70" y="368" class="label">Complete set after fee</text><rect x="70" y="382" width="430" height="22" rx="3" fill="#e5e7eb"/><rect x="70" y="382" width="75.95" height="22" rx="3" fill="#d97706"/><text x="515" y="399" class="value">6</text><text x="70" y="450" class="label">Split-sell after fee</text><rect x="70" y="464" width="430" height="22" rx="3" fill="#e5e7eb"/><rect x="70" y="464" width="100.12" height="22" rx="3" fill="#7c3aed"/><text x="515" y="481" class="value">12</text>
 <line x1="660" y1="148" x2="660" y2="532" stroke="#e5e7eb"/>
 <text x="720" y="158" class="heading">Complete-set survival</text>
 <text x="720" y="181" class="note">Five-share FOK mechanics; no network latency</text>
-<text x="720" y="216" class="label">Same-state episodes</text><rect x="720" y="230" width="230" height="28" rx="3" fill="#d97706"/><text x="966" y="251" class="value">4</text><text x="720" y="306" class="label">After 250 ms delay</text><rect x="720" y="320" width="4" height="28" rx="3" fill="#dc2626"/><text x="966" y="341" class="value">0</text><text x="720" y="396" class="label">Sequential 500 ms</text><rect x="720" y="410" width="4" height="28" rx="3" fill="#991b1b"/><text x="966" y="431" class="value">0</text>
+<text x="720" y="216" class="label">Same-state episodes</text><rect x="720" y="230" width="230" height="28" rx="3" fill="#d97706"/><text x="966" y="251" class="value">6</text><text x="720" y="306" class="label">After 250 ms delay</text><rect x="720" y="320" width="4" height="28" rx="3" fill="#dc2626"/><text x="966" y="341" class="value">0</text><text x="720" y="396" class="label">Sequential 500 ms</text><rect x="720" y="410" width="4" height="28" rx="3" fill="#991b1b"/><text x="966" y="431" class="value">0</text>
 <text x="720" y="510" class="label">Best cost per complete set</text>
-<text x="720" y="540" class="note">Same state</text><text x="966" y="540" class="value">0.984630</text>
-<text x="720" y="566" class="note">After venue delay</text><text x="966" y="566" class="value">1.012066</text>
-<text x="720" y="592" class="note">Optimistic sequential</text><text x="966" y="592" class="value">1.002744</text>
+<text x="720" y="540" class="note">Same state</text><text x="966" y="540" class="value">0.992580</text>
+<text x="720" y="566" class="note">After venue delay</text><text x="966" y="566" class="value">1.014726</text>
+<text x="720" y="592" class="note">Optimistic sequential</text><text x="966" y="592" class="value">1.002034</text>
 <line x1="56" y1="620" x2="1064" y2="620" stroke="#d1d5db"/>
-<text x="56" y="649" class="note">Diagnostic cohort only. Zero opportunities survived latency; no edge, profitability, paper-trading, or live-trading claim.</text>
+<text x="56" y="649" class="note">Preregistered Stage 0 mechanics only. No edge, profitability, paper-trading, or live-trading claim.</text>
 </svg>
