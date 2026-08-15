@@ -17,6 +17,7 @@ from simple_ai_trading.polymarket_round27_ai_cases import (
 )
 from simple_ai_trading.polymarket_round27_ai_economics import (
     evaluate_round27_ai_matched_economics,
+    round27_ai_candidate_selection_from_mapping,
     select_round27_ai_candidate,
     validate_round27_ai_economic_report,
 )
@@ -230,6 +231,7 @@ def test_round27_ai_selection_uses_frozen_tie_break_and_grants_no_authority() ->
     selection = select_round27_ai_candidate((qwen, oda))
 
     assert selection.nominated_model_id == "OpenDataArena/ODA-Fin-SFT-8B"
+    assert round27_ai_candidate_selection_from_mapping(selection.asdict()) == selection
     assert selection.asdict()["sealed_partition_accessed"] is False
     assert selection.asdict()["trading_authority"] is False
 

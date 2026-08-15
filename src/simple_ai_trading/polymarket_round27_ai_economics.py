@@ -587,6 +587,10 @@ class Round27AICandidateSelection:
         }
 
     def validated(self) -> "Round27AICandidateSelection":
+        candidates = {
+            item.model_id: item for item in POLYMARKET_ROUND27_AI_HOST_CANDIDATES
+        }
+        nominated_candidate = candidates.get(self.nominated_model_id or "")
         if (
             len(self.case_panel_sha256) != 64
             or len(self.baseline_economic_report_sha256) != 64
@@ -597,6 +601,16 @@ class Round27AICandidateSelection:
             != (self.nominated_runtime_digest is None)
             or (self.nominated_model_id is None)
             != (self.nominated_report_sha256 is None)
+            or (
+                self.nominated_model_id is not None
+                and (
+                    nominated_candidate is None
+                    or self.nominated_runtime_digest
+                    != nominated_candidate.runtime_digest
+                    or self.nominated_report_sha256
+                    not in self.candidate_report_sha256
+                )
+            )
             or self.selection_sha256 != _canonical_sha256(self.identity_payload())
         ):
             raise ValueError("Round 27 AI candidate selection differs")
@@ -607,6 +621,70 @@ class Round27AICandidateSelection:
             **self.identity_payload(),
             "selection_sha256": self.selection_sha256,
         }
+
+
+def round27_ai_candidate_selection_from_mapping(
+    value: Mapping[str, object],
+) -> Round27AICandidateSelection:
+    """Reconstruct one strict persisted development nomination."""
+
+    payload = dict(value)
+    expected = {
+        "schema_version",
+        "ablation_contract_sha256",
+        "case_panel_sha256",
+        "baseline_economic_report_sha256",
+        "candidate_report_sha256",
+        "nominated_model_id",
+        "nominated_runtime_digest",
+        "nominated_report_sha256",
+        "selection_partition_only",
+        "sealed_partition_accessed",
+        "post_selection_retuning_allowed",
+        "edge_claim",
+        "profitability_claim",
+        "orders_submitted",
+        "trading_authority",
+        "selection_sha256",
+    }
+    false_fields = (
+        "sealed_partition_accessed",
+        "post_selection_retuning_allowed",
+        "edge_claim",
+        "profitability_claim",
+        "orders_submitted",
+        "trading_authority",
+    )
+    if (
+        set(payload) != expected
+        or payload.get("schema_version")
+        != POLYMARKET_ROUND27_AI_SELECTION_SCHEMA_VERSION
+        or payload.get("ablation_contract_sha256")
+        != POLYMARKET_ROUND27_AI_ABLATION_CONTRACT_SHA256
+        or payload.get("selection_partition_only") is not True
+        or any(payload.get(field) is not False for field in false_fields)
+        or not isinstance(payload.get("candidate_report_sha256"), list)
+        or any(
+            value is not None and not isinstance(value, str)
+            for value in (
+                payload.get("nominated_model_id"),
+                payload.get("nominated_runtime_digest"),
+                payload.get("nominated_report_sha256"),
+            )
+        )
+    ):
+        raise ValueError("Round 27 persisted AI candidate selection differs")
+    return Round27AICandidateSelection(
+        case_panel_sha256=str(payload["case_panel_sha256"]),
+        baseline_economic_report_sha256=str(
+            payload["baseline_economic_report_sha256"]
+        ),
+        candidate_report_sha256=tuple(payload["candidate_report_sha256"]),
+        nominated_model_id=payload["nominated_model_id"],
+        nominated_runtime_digest=payload["nominated_runtime_digest"],
+        nominated_report_sha256=payload["nominated_report_sha256"],
+        selection_sha256=str(payload["selection_sha256"]),
+    ).validated()
 
 
 def _candidate_rank(report: Mapping[str, object]) -> tuple[Decimal, Decimal, Decimal, str]:
@@ -699,6 +777,7 @@ __all__ = [
     "POLYMARKET_ROUND27_AI_SELECTION_SCHEMA_VERSION",
     "Round27AICandidateSelection",
     "evaluate_round27_ai_matched_economics",
+    "round27_ai_candidate_selection_from_mapping",
     "select_round27_ai_candidate",
     "validate_round27_ai_economic_report",
 ]
