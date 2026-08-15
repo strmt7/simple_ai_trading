@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
 import hashlib
 import json
 from typing import Callable, Mapping, Sequence
@@ -20,6 +19,7 @@ from .polymarket_round27_model import (
     paired_round27_condition_bootstrap,
     round27_model_from_payload,
     round27_probability_metrics,
+    scale_round27_probability_model,
     select_round27_correction_scale,
     select_round27_l2_penalty,
 )
@@ -59,11 +59,9 @@ def _scaled_model(
     model: Round27ProbabilityModel,
     correction_scale: float,
 ) -> Round27ProbabilityModel:
-    if isinstance(model, Round27L2OffsetModel):
-        return replace(model, correction_scale=float(correction_scale))
-    if isinstance(model, Round27LightGbmOffsetModel):
-        return replace(model, correction_scale=float(correction_scale))
-    raise TypeError("Round 27 selected model type differs")
+    if not isinstance(model, (Round27L2OffsetModel, Round27LightGbmOffsetModel)):
+        raise TypeError("Round 27 selected model type differs")
+    return scale_round27_probability_model(model, correction_scale)
 
 
 def _selected_model_identity(
@@ -83,6 +81,9 @@ def _selected_model_identity(
             None,
         )
     payload = selected_model.asdict()
+    restored = round27_model_from_payload(payload)
+    if restored.asdict() != payload:
+        raise ValueError("Round 27 selected model identity differs")
     model_sha256 = str(payload.get("model_sha256") or "")
     if len(model_sha256) != 64:
         raise ValueError("Round 27 selected model identity differs")
@@ -98,10 +99,13 @@ def _validate_selection_claim(
     claim = dict(selection_claim)
     claimed_sha256 = str(claim.pop("claim_sha256", ""))
     contract_sha256 = str(contract.get("contract_sha256") or "")
-    model_name, model_sha256, model_payload = _selected_model_identity(
-        selected_model,
-        contract_sha256=contract_sha256,
-    )
+    try:
+        model_name, model_sha256, model_payload = _selected_model_identity(
+            selected_model,
+            contract_sha256=contract_sha256,
+        )
+    except ValueError as exc:
+        raise ValueError("Round 27 sealed selection claim differs") from exc
     candidates = claim.get("candidates")
     selected_reports = (
         []

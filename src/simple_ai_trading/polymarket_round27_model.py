@@ -540,6 +540,57 @@ def fit_round27_lightgbm_offset(
     )
 
 
+def scale_round27_probability_model(
+    model: Round27L2OffsetModel | Round27LightGbmOffsetModel,
+    correction_scale: float,
+) -> Round27L2OffsetModel | Round27LightGbmOffsetModel:
+    """Return the same fitted correction with a newly bound calibration scale."""
+
+    selected_scale = float(correction_scale)
+    if selected_scale not in POLYMARKET_ROUND27_CORRECTION_SCALES:
+        raise ValueError("Round 27 correction scale differs")
+    if isinstance(model, Round27L2OffsetModel):
+        body = {
+            "schema_version": POLYMARKET_ROUND27_MODEL_SCHEMA_VERSION,
+            "model_name": model.model_name,
+            "feature_names_sha256": POLYMARKET_ROUND27_FEATURE_NAMES_SHA256,
+            "mean": list(model.mean),
+            "scale": list(model.scale),
+            "coefficients": list(model.coefficients),
+            "penalty": model.penalty,
+            "correction_scale": selected_scale,
+        }
+        return Round27L2OffsetModel(
+            mean=model.mean,
+            scale=model.scale,
+            coefficients=model.coefficients,
+            penalty=model.penalty,
+            correction_scale=selected_scale,
+            model_sha256=_canonical_sha256(body),
+        )
+    if isinstance(model, Round27LightGbmOffsetModel):
+        model_text_sha256 = hashlib.sha256(
+            model.model_text.encode("utf-8")
+        ).hexdigest()
+        body = {
+            "schema_version": POLYMARKET_ROUND27_MODEL_SCHEMA_VERSION,
+            "model_name": model.model_name,
+            "feature_names_sha256": POLYMARKET_ROUND27_FEATURE_NAMES_SHA256,
+            "correction_scale": selected_scale,
+            "backend_kind": model.backend_kind,
+            "backend_device": model.backend_device,
+            "model_text_sha256": model_text_sha256,
+        }
+        return Round27LightGbmOffsetModel(
+            model_text=model.model_text,
+            correction_scale=selected_scale,
+            backend_kind=model.backend_kind,
+            backend_device=model.backend_device,
+            model_sha256=_canonical_sha256(body),
+        )
+    raise TypeError("Round 27 probability model type differs")
+
+
 def round27_model_from_payload(
     value: Mapping[str, object],
 ) -> Round27L2OffsetModel | Round27LightGbmOffsetModel:
@@ -712,28 +763,9 @@ def select_round27_correction_scale(
     model: Round27ProbabilityModel,
     partition: Round27Partition,
 ) -> tuple[float, dict[str, float]]:
-    if isinstance(model, Round27L2OffsetModel):
-        factory = lambda scale: Round27L2OffsetModel(  # noqa: E731
-            mean=model.mean,
-            scale=model.scale,
-            coefficients=model.coefficients,
-            penalty=model.penalty,
-            correction_scale=scale,
-            model_sha256=model.model_sha256,
-        )
-    elif isinstance(model, Round27LightGbmOffsetModel):
-        factory = lambda scale: Round27LightGbmOffsetModel(  # noqa: E731
-            model_text=model.model_text,
-            correction_scale=scale,
-            backend_kind=model.backend_kind,
-            backend_device=model.backend_device,
-            model_sha256=model.model_sha256,
-        )
-    else:
-        raise TypeError("Round 27 probability model type differs")
     scores: dict[str, float] = {}
     for scale in POLYMARKET_ROUND27_CORRECTION_SCALES:
-        candidate = factory(scale)
+        candidate = scale_round27_probability_model(model, scale)
         scores[str(scale)] = round27_probability_metrics(
             partition,
             candidate.predict(partition.features, partition.offsets),
@@ -810,6 +842,7 @@ __all__ = [
     "paired_round27_condition_bootstrap",
     "round27_model_from_payload",
     "round27_probability_metrics",
+    "scale_round27_probability_model",
     "select_round27_correction_scale",
     "select_round27_l2_penalty",
 ]
