@@ -113,6 +113,7 @@ _CURRENT_RESEARCH_ARTIFACTS = (
     "round-028-economic-implementation-amendment-v1.json",
     "round-028-loaded-contract-binding-correction-v2.json",
     "round-028-operator-implementation-amendment-v1.json",
+    "round-028-sealed-evaluation-implementation-amendment-v1.json",
     "round-028-selection-implementation-amendment-v1.json",
 )
 
@@ -286,6 +287,8 @@ def build_manifest() -> dict[str, object]:
         "round28_loaded_contract_binding_corrected": True,
         "round28_loaded_contract_binding_revision": 2,
         "round28_model_result_available": False,
+        "round28_sealed_evaluation_implementation_source_bound": True,
+        "round28_sealed_result_available": False,
         "round28_ai_preregistration_frozen": True,
         "round28_ai_core_implementation_source_bound": True,
         "round28_ai_operator_implementation_source_bound": True,

@@ -1,0 +1,51 @@
+{
+  "amendment_sha256": "6d32533136e722b6fccb3cae961d6077c025b82b262c0a276d43d0bb5ec4f28b",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "base_preregistration_sha256": "8239488145f0ffe331cf9823e5517120dda0d12eb5f366cf00c5e106318d4668",
+  "created_at_ms": 1786810338335,
+  "implementation": {
+    "after_cost_evaluation": "Replay the exact persisted base and BBO-augmented models over identical sealed conditions, fee schedules, ask depth, active ticks, and fixed 250, 500, 1000, and 2000 millisecond delays.",
+    "model_policy": "Load the exact selected model pair; refitting, hyperparameter selection, calibration changes, threshold changes, and model-family substitution are forbidden.",
+    "population_policy": "Use only the terminal Stage 1-C sealed role after the campaign-wide target gate, with exact feature, overlay, target, admission, condition-population, and source hashes.",
+    "promotion_policy": "Observed BBO uplift requires both the unchanged paired probability gate and unchanged paired after-cost economic gate on sealed evidence.",
+    "restart_policy": "A valid terminal artifact is recursively checked and reused without reopening sealed outcomes or rescanning the order-book database; partial artifacts must match all current source bindings before continuation.",
+    "side_effect_policy": "The operator is read-only for prospective stores, never updates reusable historical data, and does not alter the repository-wide 2026-08-14T00:00:00Z exclusive historical cutoff."
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "round27_stage1_a_capture_running": true,
+    "round27_stage1_feature_rows_accessed_or_materialized": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false
+  },
+  "limitations": [
+    "stage1_primary_capture_slots_are_not_terminal",
+    "no_round28_selection_probability_economic_or_sealed_result_exists",
+    "no_predictive_after_cost_edge_or_profitability_claim_exists",
+    "one_use_round28_ai_sealed_confirmation_operator_remains_to_be_implemented"
+  ],
+  "parents": {
+    "loaded_contract_binding_correction_sha256": "f98b1d15c236f3cb4ad4fc7808a4dadc2b4154a50de034570ce9aa34e1909708",
+    "round28_economic_implementation_amendment_sha256": "9fc117a479f931d54e31bd2db494b039d081ded9ce6c4478d2c08c7d39d61d04",
+    "round28_operator_implementation_amendment_sha256": "0cec84ec6dd50ee8f14d6ab236e2ae886351886eccbae696a2b73d0cbcb7f826",
+    "round28_selection_implementation_amendment_sha256": "005caf15e94b5f43faaa451b9f12754b7f5c6dd88b1b09fea5a8d3182eb7e306"
+  },
+  "schema_version": "polymarket-round28-sealed-evaluation-implementation-amendment-v1",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_sealed.py": "cde9aa1ac10e37b68d80298c7994b33a936c3173406944e2d88fa1cb87bea660",
+    "tests/test_polymarket_round28_sealed.py": "be40d913aade3721f47272d026281a5ec2d6f1077a2a37b50aaad7b504c851b0",
+    "tools/run_polymarket_round28_sealed.py": "09b4dcf4751a78a00376e31f33116345ef5c7d77fc59d7c3f99bd91e6ec93321"
+  },
+  "status": "frozen_during_stage1_a_before_round28_feature_or_target_access"
+}

@@ -230,6 +230,8 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round28_loaded_contract_binding_corrected"] is True
     assert manifest["round28_loaded_contract_binding_revision"] == 2
     assert manifest["round28_model_result_available"] is False
+    assert manifest["round28_sealed_evaluation_implementation_source_bound"] is True
+    assert manifest["round28_sealed_result_available"] is False
     assert manifest["round28_ai_preregistration_frozen"] is True
     assert manifest["round28_ai_core_implementation_source_bound"] is True
     assert manifest["round28_ai_operator_implementation_source_bound"] is True
@@ -240,6 +242,10 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     artifact_paths = [entry["path"] for entry in manifest["artifacts"]]
     assert artifact_paths == sorted(set(artifact_paths))
     assert "round-023-lead-lag-results-v1.json" in artifact_paths
+    assert (
+        "round-028-sealed-evaluation-implementation-amendment-v1.json"
+        in artifact_paths
+    )
     assert "round-023-lead-lag-performance.svg" in artifact_paths
     assert "latest/public-clob-live-probe-2026-08-10.json" in artifact_paths
     assert "round-024-prospective-receipt-lead-lag-spec-v2.json" in artifact_paths

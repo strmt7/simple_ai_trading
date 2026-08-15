@@ -75,6 +75,13 @@ without another database scan; a failed probability gate stops before economic
 replay. It remains unavailable until the prospective stores are terminal and
 contains no result or trading authority.
 
+The pre-outcome [sealed evaluation amendment](../round-028-sealed-evaluation-implementation-amendment-v1.json)
+now completes the model-side confirmation path. It loads the exact selected
+pair without refitting or retuning, requires passing selection economics before
+sealed access, and compares the models on identical Stage 1-C conditions and
+after-cost scenarios. A valid terminal artifact is reused without reopening
+sealed outcomes or rescanning books. No sealed result or edge claim exists.
+
 The [Round 28 AI preregistration](../round-028-ai-risk-veto-preregistration-v1.json),
 [core implementation](../round-028-ai-risk-veto-implementation-amendment-v1.json),
 and [operator implementation](../round-028-ai-operator-implementation-amendment-v1.json)
