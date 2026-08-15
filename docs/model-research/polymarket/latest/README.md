@@ -53,6 +53,22 @@ must use identical rows, labels, weights, market-prior offsets, and execution
 scenarios. The large OpenMarket null result remains the prior; prediction
 uplift alone cannot establish after-cost edge or profitability.
 
+Round 29 is a second target-blind matched ablation over the same frozen rows,
+also not a result. The original design named a distance-to-strike/time-remaining
+interaction, while the actual 182-field corpus stores those inputs separately;
+the L2 residual therefore cannot express that relationship directly. The
+[preregistration](../round-029-settlement-state-matched-ablation-preregistration-v1.json)
+adds six deterministic fields: current TWAP side, two margin/time transforms, a
+smooth variance-standardized diagnostic, signed path efficiency, and a
+margin/elapsed-phase interaction. It can compose as 188 fields over Round 27 or
+284 fields over Round 28 without copying raw data. It explicitly forbids
+reconstructing Chainlink's unpublished TWAP calculation and leaves all frozen
+cost, delay, probability, concentration, drawdown, and one-use sealed gates
+unchanged. The overlay implementation and synthetic tamper tests pass, but the
+matched model/economic operator is not yet source-bound. No Stage 1 feature,
+outcome, metric, P&L, edge, profitability, or authority has been accessed or
+created for Round 29.
+
 The pre-target [selection implementation amendment](../round-028-selection-implementation-amendment-v1.json)
 adds chronological whole-condition folds, a 10-minute embargo, calibration-only
 scaling, paired stationary bootstrap gates, and fail-closed model persistence.
