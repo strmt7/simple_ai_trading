@@ -18,7 +18,7 @@ from .polymarket_replay import PolymarketEvidenceReplay, PolymarketRecordedBook
 from .storage import write_bytes_atomic
 
 
-ROUND27_MECHANICS_SCHEMA_VERSION = "polymarket-round27-mechanics-diagnostic-v1"
+ROUND27_MECHANICS_SCHEMA_VERSION = "polymarket-round27-mechanics-diagnostic-v2"
 ROUND27_PAIR_MAX_SKEW_MS = 250
 ROUND27_BOOK_SAMPLE_INTERVAL_MS = 50
 ROUND27_RESEARCH_QUANTITY = Decimal("5")
@@ -365,12 +365,82 @@ def _candidate_counts(quotes: Sequence[_PairedQuote]) -> dict[str, object]:
     }
 
 
+def _validate_stage0_lineage(
+    *,
+    audit: Mapping[str, object],
+    preregistration: Mapping[str, object],
+    capture_contract: Mapping[str, object],
+    capture_result: Mapping[str, object],
+) -> dict[str, object]:
+    capture_report = capture_result.get("capture_report")
+    authority = capture_result.get("authority")
+    source_quality = capture_result.get("source_quality")
+    analysis_policy = capture_contract.get("analysis_policy")
+    if (
+        audit.get("target_free") is not True
+        or audit.get("model_data_eligible") is not False
+        or preregistration.get("schema_version")
+        != "polymarket-round27-execution-hypothesis-preregistration-v3"
+        or capture_contract.get("schema_version")
+        != "polymarket-round27-stage0-mechanics-capture-contract-v1"
+        or capture_contract.get("phase") != "mechanics_stage0"
+        or capture_contract.get("hypothesis_preregistration_sha256")
+        != preregistration.get("preregistration_sha256")
+        or not isinstance(analysis_policy, Mapping)
+        or analysis_policy.get("maximum_resolved_markets") != 60
+        or analysis_policy.get("target_access_during_capture") is not False
+        or capture_result.get("schema_version")
+        != "polymarket-round27-stage0-mechanics-capture-result-v1"
+        or capture_result.get("status") != "passed"
+        or capture_result.get("failure_reasons") != []
+        or capture_result.get("contract_sha256")
+        != capture_contract.get("contract_sha256")
+        or capture_result.get("run_id") != audit.get("run_id")
+        or not isinstance(capture_report, Mapping)
+        or capture_report.get("run_id") != audit.get("run_id")
+        or capture_report.get("report_sha256") != audit.get("run_report_sha256")
+        or capture_report.get("started_at_ms") != audit.get("run_started_at_ms")
+        or capture_report.get("ended_at_ms") != audit.get("run_ended_at_ms")
+        or not isinstance(authority, Mapping)
+        or not isinstance(source_quality, Mapping)
+        or source_quality.get("passed") is not True
+        or any(
+            authority.get(key) is not False
+            for key in (
+                "credentials_used",
+                "execution_connected",
+                "orders_submitted",
+                "model_data_eligible",
+                "edge_claim",
+                "profitability_claim",
+                "paper_trading_authority",
+                "live_trading_authority",
+            )
+        )
+        or int(audit.get("run_started_at_ms", 0))
+        <= int(preregistration.get("created_at_ms", 0))
+        or int(audit.get("condition_count", 0)) > 60
+    ):
+        raise ValueError("Round 27 Stage 0 mechanics lineage differs")
+    return {
+        "condition_audit_sha256": audit["audit_sha256"],
+        "preregistration_sha256": preregistration["preregistration_sha256"],
+        "capture_contract_sha256": capture_contract["contract_sha256"],
+        "capture_result_sha256": capture_result["result_sha256"],
+        "run_id": audit["run_id"],
+        "cohort_role": "preregistered_stage0_mechanics",
+        "preregistered_stage_0": True,
+    }
+
+
 def analyze_round27_mechanics(
     repository: str | Path,
     *,
     database_path: str | Path,
     condition_audit_path: str | Path,
     preregistration_path: str | Path,
+    capture_contract_path: str | Path,
+    capture_result_path: str | Path,
     output_path: str | Path,
     progress: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> dict[str, object]:
@@ -382,20 +452,29 @@ def analyze_round27_mechanics(
     audit = _load_claim(
         Path(condition_audit_path),
         claim="audit_sha256",
-        label="Round 26 condition audit",
+        label="Round 27 Stage 0 condition audit",
     )
     preregistration = _load_claim(
         Path(preregistration_path),
         claim="preregistration_sha256",
         label="Round 27 preregistration",
     )
-    if (
-        audit.get("target_free") is not True
-        or audit.get("model_data_eligible") is not False
-        or preregistration.get("schema_version")
-        != "polymarket-round27-execution-hypothesis-preregistration-v3"
-    ):
-        raise ValueError("Round 27 mechanics lineage differs")
+    capture_contract = _load_claim(
+        Path(capture_contract_path),
+        claim="contract_sha256",
+        label="Round 27 Stage 0 capture contract",
+    )
+    capture_result = _load_claim(
+        Path(capture_result_path),
+        claim="result_sha256",
+        label="Round 27 Stage 0 capture result",
+    )
+    lineage = _validate_stage0_lineage(
+        audit=audit,
+        preregistration=preregistration,
+        capture_contract=capture_contract,
+        capture_result=capture_result,
+    )
     conditions = [
         item
         for item in audit.get("conditions", [])
@@ -418,46 +497,78 @@ def analyze_round27_mechanics(
             "replay_started",
             {"condition_count": len(condition_ids), "interval_count": len(intervals)},
         )
+    materialized_book_count = 0
+    market_count = 0
+    paired_quote_state_count = 0
+    candidate_counts = {
+        name: {"state_count": 0, "market_count": 0}
+        for name in (
+            "extreme_settlement_value",
+            "late_strong_favorite",
+            "complete_set_after_fee",
+            "split_sell_after_fee",
+        )
+    }
+    segment_benchmarks: list[dict[str, object]] = []
     with PolymarketEvidenceStore(
         database_path,
         read_only=True,
         memory_limit="1GB",
         threads=2,
     ) as store:
-        replay = PolymarketEvidenceReplay.load(
-            store,
-            run_id=str(audit["run_id"]),
-            allow_segmented_gaps=True,
-            include_resolutions=False,
-            book_sample_interval_ms=ROUND27_BOOK_SAMPLE_INTERVAL_MS,
-            condition_ids=condition_ids,
-            maximum_received_wall_ms_by_condition={
-                str(item["condition_id"]): int(item["end_ms"]) - 1
-                for item in conditions
-            },
-            materialized_minimum_depth_levels=1,
-            cap_materialized_depth_to_minimum_order_size=True,
-        )
-    if progress is not None:
-        progress(
-            "replay_complete",
-            {
-                "materialized_book_count": len(replay.books),
-                "market_count": len(replay.markets),
-            },
-        )
-    quotes = _paired_quotes(replay, intervals=intervals)
-    grouped: dict[tuple[str, str], list[_PairedQuote]] = {}
-    for quote in quotes:
-        grouped.setdefault((quote.condition_id, quote.segment_id), []).append(quote)
-    segment_benchmarks = [
-        {
-            "condition_id": condition_id,
-            "segment_id": segment_id,
-            **_latency_benchmarks(items),
-        }
-        for (condition_id, segment_id), items in sorted(grouped.items())
-    ]
+        for index, item in enumerate(conditions, start=1):
+            condition_id = str(item["condition_id"])
+            condition_intervals = {
+                key: value for key, value in intervals.items() if key[0] == condition_id
+            }
+            replay = PolymarketEvidenceReplay.load(
+                store,
+                run_id=str(audit["run_id"]),
+                allow_segmented_gaps=True,
+                include_resolutions=False,
+                book_sample_interval_ms=ROUND27_BOOK_SAMPLE_INTERVAL_MS,
+                condition_ids=(condition_id,),
+                maximum_received_wall_ms_by_condition={
+                    condition_id: int(item["end_ms"]) - 1
+                },
+                materialized_minimum_depth_levels=1,
+                cap_materialized_depth_to_minimum_order_size=True,
+            )
+            quotes = _paired_quotes(replay, intervals=condition_intervals)
+            grouped: dict[tuple[str, str], list[_PairedQuote]] = {}
+            for quote in quotes:
+                grouped.setdefault(
+                    (quote.condition_id, quote.segment_id), []
+                ).append(quote)
+            segment_benchmarks.extend(
+                {
+                    "condition_id": key[0],
+                    "segment_id": key[1],
+                    **_latency_benchmarks(grouped.get(key, ())),
+                }
+                for key in sorted(condition_intervals)
+            )
+            local_counts = _candidate_counts(quotes)
+            for name, local in local_counts.items():
+                candidate_counts[name]["state_count"] += int(local["state_count"])
+                candidate_counts[name]["market_count"] += int(local["market_count"])
+            materialized_book_count += len(replay.books)
+            market_count += len(replay.markets)
+            paired_quote_state_count += len(quotes)
+            store.recycle_analytical_connections()
+            if progress is not None:
+                progress(
+                    "condition_complete",
+                    {
+                        "completed_condition_count": index,
+                        "condition_count": len(conditions),
+                        "condition_id": condition_id,
+                        "materialized_book_count": materialized_book_count,
+                        "paired_quote_state_count": paired_quote_state_count,
+                    },
+                )
+    if market_count != len(condition_ids) or len(segment_benchmarks) != len(intervals):
+        raise ValueError("Round 27 condition-isolated replay coverage differs")
     aggregate = {
         "same_state_episode_count": sum(
             int(item["same_state_episode_count"]) for item in segment_benchmarks
@@ -472,13 +583,7 @@ def analyze_round27_mechanics(
     }
     body: dict[str, object] = {
         "schema_version": ROUND27_MECHANICS_SCHEMA_VERSION,
-        "lineage": {
-            "condition_audit_sha256": audit["audit_sha256"],
-            "preregistration_sha256": preregistration["preregistration_sha256"],
-            "run_id": audit["run_id"],
-            "cohort_role": "superseded_round26_v2_diagnostic_only",
-            "preregistered_stage_0": False,
-        },
+        "lineage": lineage,
         "method": {
             "target_free": True,
             "settlement_labels_loaded": False,
@@ -486,6 +591,7 @@ def analyze_round27_mechanics(
             "book_sample_interval_ms": ROUND27_BOOK_SAMPLE_INTERVAL_MS,
             "maximum_pair_receipt_skew_ms": ROUND27_PAIR_MAX_SKEW_MS,
             "exact_message_batches_applied_before_pair_evaluation": True,
+            "condition_isolated_bounded_replay": True,
             "fee": "recorded market fee schedule with 0.00001 pUSD ceiling",
             "venue_delay": (
                 "recorded itode flag mapped through the protocol-defined delay"
@@ -495,10 +601,10 @@ def analyze_round27_mechanics(
         "coverage": {
             "eligible_market_count": len(condition_ids),
             "eligible_segment_count": len(intervals),
-            "materialized_book_count": len(replay.books),
-            "paired_quote_state_count": len(quotes),
+            "materialized_book_count": materialized_book_count,
+            "paired_quote_state_count": paired_quote_state_count,
         },
-        "candidate_counts": _candidate_counts(quotes),
+        "candidate_counts": candidate_counts,
         "complete_set_latency": {
             **aggregate,
             "segment_benchmarks": segment_benchmarks,
@@ -512,7 +618,7 @@ def analyze_round27_mechanics(
             "profitability_claim": False,
             "promotion_eligible": False,
             "reason": (
-                "the source cohort predates the preregistration and was excluded by its data contract"
+                "Stage 0 is a target-free mechanics screen; no parameter selection or economic claim is allowed"
             ),
         },
         "authority": {

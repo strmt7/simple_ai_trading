@@ -11,6 +11,7 @@ from typing import Mapping
 from simple_ai_trading.polymarket_round27_mechanics import (
     analyze_round27_mechanics,
 )
+from simple_ai_trading.storage import write_json_atomic
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -19,7 +20,10 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--database", type=Path, required=True)
     parser.add_argument("--condition-audit", type=Path, required=True)
     parser.add_argument("--preregistration", type=Path, required=True)
+    parser.add_argument("--capture-contract", type=Path, required=True)
+    parser.add_argument("--capture-result", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--progress", type=Path)
     return parser
 
 
@@ -30,15 +34,25 @@ def _resolve(root: Path, value: Path) -> Path:
 def main() -> int:
     arguments = _parser().parse_args()
     root = arguments.repository.resolve()
+    progress_path = (
+        None
+        if arguments.progress is None
+        else _resolve(root, arguments.progress)
+    )
 
     def progress(phase: str, payload: Mapping[str, object]) -> None:
-        print(json.dumps({"phase": phase, **payload}, sort_keys=True), flush=True)
+        message = {"phase": phase, **payload}
+        if progress_path is not None:
+            write_json_atomic(progress_path, message, indent=2, sort_keys=True)
+        print(json.dumps(message, sort_keys=True), flush=True)
 
     result = analyze_round27_mechanics(
         root,
         database_path=_resolve(root, arguments.database),
         condition_audit_path=_resolve(root, arguments.condition_audit),
         preregistration_path=_resolve(root, arguments.preregistration),
+        capture_contract_path=_resolve(root, arguments.capture_contract),
+        capture_result_path=_resolve(root, arguments.capture_result),
         output_path=_resolve(root, arguments.output),
         progress=progress,
     )
