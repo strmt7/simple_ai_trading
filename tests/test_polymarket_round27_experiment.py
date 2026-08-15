@@ -12,6 +12,7 @@ from simple_ai_trading.polymarket_round27_experiment import (
     load_round27_selected_model,
     run_round27_development_selection,
     run_round27_sealed_evaluation,
+    validate_round27_sealed_access_artifacts,
 )
 from simple_ai_trading.polymarket_round27_features import (
     POLYMARKET_ROUND27_FEATURE_NAMES,
@@ -128,6 +129,14 @@ def test_selection_claim_precedes_sealed_evaluation() -> None:
     assert restored.asdict() == model.asdict()
 
     economic_claim, economic_report = _economic_claim(_contract(), claim, restored)
+    gated = validate_round27_sealed_access_artifacts(
+        contract=_contract(),
+        selection_claim=claim,
+        selection_economic_claim=economic_claim,
+        selection_economic_report=economic_report,
+    )
+    assert gated is not None
+    assert gated.asdict() == restored.asdict()
     sealed = run_round27_sealed_evaluation(
         samples=_samples(),
         contract=_contract(),

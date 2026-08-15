@@ -455,6 +455,43 @@ def _validate_selection_economic_claim(
     return {**claim, "claim_sha256": claimed}, claimed
 
 
+def validate_round27_sealed_access_artifacts(
+    *,
+    contract: Mapping[str, object],
+    selection_claim: Mapping[str, object],
+    selection_economic_claim: Mapping[str, object],
+    selection_economic_report: Mapping[str, object],
+) -> Round27ProbabilityModel | None:
+    """Validate every persisted artifact required before sealed target access."""
+
+    selected_model = load_round27_selected_model(
+        selection_claim=selection_claim,
+        contract=contract,
+    )
+    claim, selection_sha256, model_sha256 = _validate_selection_claim(
+        selection_claim,
+        contract=contract,
+        selected_model=selected_model,
+    )
+    economic_claim, _economic_claim_sha256 = _validate_selection_economic_claim(
+        selection_economic_claim,
+        contract=contract,
+        selection_claim_sha256=selection_sha256,
+        model_name=str(claim["selected_model_name"]),
+        model_sha256=model_sha256,
+    )
+    economic_report = _validate_economic_report(selection_economic_report)
+    if (
+        economic_report.get("report_sha256")
+        != economic_claim.get("economic_report_sha256")
+        or economic_report.get("model_name") != claim["selected_model_name"]
+        or economic_report.get("model_sha256") != model_sha256
+        or economic_report.get("economic_edge_gate_passed") is not True
+    ):
+        raise ValueError("Round 27 sealed access artifact binding differs")
+    return selected_model
+
+
 def run_round27_sealed_evaluation(
     *,
     samples: Sequence[Round27ModelSample],
@@ -547,4 +584,5 @@ __all__ = [
     "load_round27_selected_model",
     "run_round27_development_selection",
     "run_round27_sealed_evaluation",
+    "validate_round27_sealed_access_artifacts",
 ]

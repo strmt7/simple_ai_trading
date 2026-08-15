@@ -33,7 +33,8 @@ flowchart LR
 | Maximum entry cost | 10 USDC per condition |
 | Maximum replay batch | 32 conditions |
 | Feature store | One DuckDB, canonical zstd condition chunks |
-| Focused tests | 32 passed |
+| Target store | Separate role-gated DuckDB with dual-source receipts |
+| Focused tests | 35 passed |
 
 The executable control is Polymarket's market probability. Learned models must
 beat it on condition-weighted log loss and Brier score with paired confidence
@@ -57,6 +58,12 @@ path.
 Target-free rows persist transactionally in a single campaign database. The
 store has no outcome column, rejects diagnostic subsets and duplicate condition
 ownership, and independently replays every row and manifest on audit.
+
+Official outcomes use a different append-only database. Each chronological
+role persists its target-access claim before any outcome request and finalizes
+only when CLOB and Gamma agree for every admitted condition. The sealed role
+cannot open without the exact selected model, passing economic claim, and the
+claim-bound economic report.
 
 The sealed role stays inaccessible until the exact selected model payload, its
 source-bound economic report, and a persisted passing economic claim all
