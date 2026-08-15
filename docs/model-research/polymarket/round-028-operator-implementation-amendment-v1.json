@@ -1,0 +1,45 @@
+{
+  "amendment_sha256": "0cec84ec6dd50ee8f14d6ab236e2ae886351886eccbae696a2b73d0cbcb7f826",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "base_preregistration_sha256": "8239488145f0ffe331cf9823e5517120dda0d12eb5f366cf00c5e106318d4668",
+  "created_at_ms": 1786801356605,
+  "economic_implementation_amendment_sha256": "9fc117a479f931d54e31bd2db494b039d081ded9ce6c4478d2c08c7d39d61d04",
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "round27_stage1_feature_rows_accessed_or_materialized": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false
+  },
+  "operator_implementation": {
+    "bounded_execution_replay": "The terminal selection database is scanned through condition-sized batches twice only when no valid economic checkpoint exists.",
+    "input_lineage": "A pre-fit manifest binds every development sample identity and target population to the base feature, BBO overlay, target-store, contract, and implementation audits.",
+    "persistence": "Manifest, selection claim, and economic report are canonical, atomic, immutable restart checkpoints.",
+    "resume_validation": "A persisted economic report is reused only after recursive nested scenario, gate, model, resolution, selection, and recomputed input-manifest validation.",
+    "sealed_policy": "The operator opens only train, calibration, and selection targets and cannot grant paper or live order authority.",
+    "unavailable_or_failed_gate": "persist the rejection and do not run sealed evaluation"
+  },
+  "schema_version": "polymarket-round28-operator-implementation-amendment-v1",
+  "selection_implementation_amendment_sha256": "005caf15e94b5f43faaa451b9f12754b7f5c6dd88b1b09fea5a8d3182eb7e306",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_operator.py": "24045ce7cf206b81567dedfa36f63d835ecbfc69f3ea4eeebf33c25105c845fb",
+    "tests/test_polymarket_round28_operator.py": "d543a72afcace576e709c5c9f08bee9f20c9e81d5b79b917e913ecbfd6f4e215",
+    "tools/run_polymarket_round28_selection.py": "d429045c84f9551c98456b5c25181ebb90eb91d12489a1710d360e90136c4008"
+  },
+  "status": "frozen_before_stage1_feature_or_outcome_access",
+  "test_scope": {
+    "financial_result": false,
+    "stage1_data_used": false,
+    "synthetic_mechanics_only": true
+  }
+}

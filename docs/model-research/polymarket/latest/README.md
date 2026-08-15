@@ -64,6 +64,13 @@ a bounded batch factory rather than copied in memory or on disk. This is tested
 implementation evidence only; no Round 28 P&L, graph, edge, or profitability
 result exists yet.
 
+The source-bound [selection operator amendment](../round-028-operator-implementation-amendment-v1.json)
+adds one restart-safe command for input freezing, model selection, and matched
+economics. It recursively validates checkpoints and reuses a valid report
+without another database scan; a failed probability gate stops before economic
+replay. It remains unavailable until the prospective stores are terminal and
+contains no result or trading authority.
+
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
 Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order
