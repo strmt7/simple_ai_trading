@@ -29,8 +29,8 @@
     "profitability_claim": false
   },
   "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
-  "contract_sha256": "40f4a505aba2ec78f2425dbbdce1779f25224ac357cf9c2c014c21e31277805f",
-  "created_at_ms": 1786776213860,
+  "contract_sha256": "352fac731425ec4a41c610c6148f87e3a17cb63bfee8163c5dcce54ca9d9e256",
+  "created_at_ms": 1786776499911,
   "data_policy": {
     "assets": [
       "BTC"
@@ -94,7 +94,12 @@
     "position_sizing": "fixed_small_notional_for_model_comparison_only",
     "position_quantity": "captured_condition_minimum_order_size_shares",
     "primary_delay_ms": 500,
-    "rate_limit_or_account_authority": false
+    "rate_limit_or_account_authority": false,
+    "sealed_access_requires": [
+      "exact_persisted_selected_model_payload",
+      "source_bound_selection_economic_report",
+      "persisted_passing_selection_economic_claim"
+    ]
   },
   "knowledge_at_freeze": {
     "ai_assist_economic_metrics_computed": false,
@@ -256,7 +261,7 @@
   "source_text_sha256": {
     "src/simple_ai_trading/polymarket_condition_replay_audit.py": "efd51afecad5e4c2ca5f253f39f62b02488df5a4290055ddbe9c1319374c5a1b",
     "src/simple_ai_trading/polymarket_round27_economics.py": "f73fee80ac0efaf2db5b0bdc1c8987d7fd570364cb3fc682bc52d6ece8ee51c3",
-    "src/simple_ai_trading/polymarket_round27_experiment.py": "e2e8a651a06bd8426d9d1e772a5527d7fe0bd61a5db5b936798d6dbf45b96ef1",
+    "src/simple_ai_trading/polymarket_round27_experiment.py": "e22119f06bf156454c7cace11a8902642c243e6d13a5be4ece9f4ff048feb33a",
     "src/simple_ai_trading/polymarket_round27_features.py": "fcc316f56d57c3dfb0dac2adb5c89ede036a66b70ee4d97fb4492957d6f07203",
     "src/simple_ai_trading/polymarket_round27_model.py": "314d0724802ec3881cc1b7a4af1b0c5a24c1cb61437c18b6e8fbfd76527bb854"
   },

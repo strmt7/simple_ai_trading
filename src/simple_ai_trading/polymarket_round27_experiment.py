@@ -27,6 +27,9 @@ from .polymarket_round27_model import (
 POLYMARKET_ROUND27_SELECTION_SCHEMA_VERSION = (
     "polymarket-round27-development-selection-v1"
 )
+POLYMARKET_ROUND27_SELECTION_ECONOMIC_SCHEMA_VERSION = (
+    "polymarket-round27-selection-economic-claim-v1"
+)
 POLYMARKET_ROUND27_SEALED_SCHEMA_VERSION = "polymarket-round27-sealed-evaluation-v1"
 
 
@@ -57,6 +60,90 @@ def _scaled_model(
     if isinstance(model, Round27LightGbmOffsetModel):
         return replace(model, correction_scale=float(correction_scale))
     raise TypeError("Round 27 selected model type differs")
+
+
+def _selected_model_identity(
+    selected_model: Round27ProbabilityModel | None,
+    *,
+    contract_sha256: str,
+) -> tuple[str, str, Mapping[str, object] | None]:
+    if selected_model is None:
+        return (
+            "market_prior",
+            _canonical_sha256(
+                {
+                    "model_name": "market_prior",
+                    "contract_sha256": contract_sha256,
+                }
+            ),
+            None,
+        )
+    payload = selected_model.asdict()
+    model_sha256 = str(payload.get("model_sha256") or "")
+    if len(model_sha256) != 64:
+        raise ValueError("Round 27 selected model identity differs")
+    return selected_model.model_name, model_sha256, payload
+
+
+def _validate_selection_claim(
+    selection_claim: Mapping[str, object],
+    *,
+    contract: Mapping[str, object],
+    selected_model: Round27ProbabilityModel | None,
+) -> tuple[dict[str, object], str, str]:
+    claim = dict(selection_claim)
+    claimed_sha256 = str(claim.pop("claim_sha256", ""))
+    contract_sha256 = str(contract.get("contract_sha256") or "")
+    model_name, model_sha256, model_payload = _selected_model_identity(
+        selected_model,
+        contract_sha256=contract_sha256,
+    )
+    candidates = claim.get("candidates")
+    selected_reports = (
+        []
+        if model_payload is None or not isinstance(candidates, list)
+        else [
+            item
+            for item in candidates
+            if isinstance(item, Mapping) and item.get("model_name") == model_name
+        ]
+    )
+    claimed_model_payload = (
+        selected_reports[0].get("model") if len(selected_reports) == 1 else None
+    )
+    if (
+        claimed_sha256 != _canonical_sha256(claim)
+        or claim.get("schema_version") != POLYMARKET_ROUND27_SELECTION_SCHEMA_VERSION
+        or claim.get("contract_sha256") != contract_sha256
+        or claim.get("sealed_partition_accessed") is not False
+        or claim.get("selected_model_name") != model_name
+        or (model_payload is not None and len(selected_reports) != 1)
+        or (
+            model_payload is not None
+            and (
+                not isinstance(claimed_model_payload, Mapping)
+                or dict(claimed_model_payload) != dict(model_payload)
+            )
+        )
+    ):
+        raise ValueError("Round 27 sealed selection claim differs")
+    return {**claim, "claim_sha256": claimed_sha256}, claimed_sha256, model_sha256
+
+
+def _validate_economic_report(value: Mapping[str, object]) -> dict[str, object]:
+    report = dict(value)
+    claimed = str(report.pop("report_sha256", ""))
+    if (
+        claimed != _canonical_sha256(report)
+        or report.get("schema_version") != "polymarket-round27-economic-replay-v1"
+        or report.get("partition_role") != "selection"
+        or report.get("orders_submitted") is not False
+        or report.get("trading_authority") is not False
+        or report.get("edge_claim") is not False
+        or report.get("profitability_claim") is not False
+    ):
+        raise ValueError("Round 27 selection economic report differs")
+    return {**report, "report_sha256": claimed}
 
 
 def _minimum_conditions(
@@ -250,26 +337,113 @@ def run_round27_development_selection(
     return body, selected_model
 
 
+def build_round27_selection_economic_claim(
+    *,
+    contract: Mapping[str, object],
+    selection_claim: Mapping[str, object],
+    selected_model: Round27ProbabilityModel | None,
+    economic_report: Mapping[str, object],
+    claim_writer: Callable[[Mapping[str, object]], str],
+) -> dict[str, object]:
+    """Persist the source-bound selection economics before sealed access."""
+
+    validated_claim, selection_sha256, model_sha256 = _validate_selection_claim(
+        selection_claim,
+        contract=contract,
+        selected_model=selected_model,
+    )
+    report = _validate_economic_report(economic_report)
+    model_name = str(validated_claim["selected_model_name"])
+    if (
+        report.get("model_name") != model_name
+        or report.get("model_sha256") != model_sha256
+        or report.get("economic_edge_gate_passed") not in {True, False}
+    ):
+        raise ValueError("Round 27 selection economic model binding differs")
+    body: dict[str, object] = {
+        "schema_version": POLYMARKET_ROUND27_SELECTION_ECONOMIC_SCHEMA_VERSION,
+        "contract_sha256": contract["contract_sha256"],
+        "selection_claim_sha256": selection_sha256,
+        "selected_model_name": model_name,
+        "selected_model_sha256": model_sha256,
+        "economic_report_sha256": report["report_sha256"],
+        "selection_economic_gate_passed": bool(
+            report["economic_edge_gate_passed"]
+        ),
+        "sealed_partition_accessed": False,
+        "edge_claim": False,
+        "profitability_claim": False,
+        "trading_authority": False,
+        "orders_submitted": False,
+    }
+    body["claim_sha256"] = _canonical_sha256(body)
+    written = claim_writer(body)
+    if written != body["claim_sha256"]:
+        raise ValueError("Round 27 economic claim writer differs")
+    return body
+
+
+def _validate_selection_economic_claim(
+    value: Mapping[str, object],
+    *,
+    contract: Mapping[str, object],
+    selection_claim_sha256: str,
+    model_name: str,
+    model_sha256: str,
+) -> tuple[dict[str, object], str]:
+    claim = dict(value)
+    claimed = str(claim.pop("claim_sha256", ""))
+    if (
+        claimed != _canonical_sha256(claim)
+        or claim.get("schema_version")
+        != POLYMARKET_ROUND27_SELECTION_ECONOMIC_SCHEMA_VERSION
+        or claim.get("contract_sha256") != contract.get("contract_sha256")
+        or claim.get("selection_claim_sha256") != selection_claim_sha256
+        or claim.get("selected_model_name") != model_name
+        or claim.get("selected_model_sha256") != model_sha256
+        or claim.get("selection_economic_gate_passed") is not True
+        or claim.get("sealed_partition_accessed") is not False
+        or claim.get("edge_claim") is not False
+        or claim.get("profitability_claim") is not False
+        or claim.get("trading_authority") is not False
+        or claim.get("orders_submitted") is not False
+    ):
+        raise ValueError("Round 27 selection economic claim differs")
+    return {**claim, "claim_sha256": claimed}, claimed
+
+
 def run_round27_sealed_evaluation(
     *,
     samples: Sequence[Round27ModelSample],
     contract: Mapping[str, object],
     selection_claim: Mapping[str, object],
+    selection_economic_claim: Mapping[str, object],
+    selection_economic_report: Mapping[str, object],
     selected_model: Round27ProbabilityModel | None,
 ) -> dict[str, object]:
     """Evaluate exactly the frozen selection on the untouched sealed role."""
 
-    claim = dict(selection_claim)
-    claimed_sha256 = str(claim.pop("claim_sha256", ""))
+    claim, claimed_sha256, model_sha256 = _validate_selection_claim(
+        selection_claim,
+        contract=contract,
+        selected_model=selected_model,
+    )
+    economic_claim, economic_claim_sha256 = _validate_selection_economic_claim(
+        selection_economic_claim,
+        contract=contract,
+        selection_claim_sha256=claimed_sha256,
+        model_name=str(claim["selected_model_name"]),
+        model_sha256=model_sha256,
+    )
+    economic_report = _validate_economic_report(selection_economic_report)
     if (
-        claimed_sha256 != _canonical_sha256(claim)
-        or claim.get("schema_version") != POLYMARKET_ROUND27_SELECTION_SCHEMA_VERSION
-        or claim.get("contract_sha256") != contract.get("contract_sha256")
-        or claim.get("sealed_partition_accessed") is not False
-        or claim.get("selected_model_name")
-        != ("market_prior" if selected_model is None else selected_model.model_name)
+        economic_report.get("report_sha256")
+        != economic_claim.get("economic_report_sha256")
+        or economic_report.get("model_name") != claim["selected_model_name"]
+        or economic_report.get("model_sha256") != model_sha256
+        or economic_report.get("economic_edge_gate_passed") is not True
     ):
-        raise ValueError("Round 27 sealed selection claim differs")
+        raise ValueError("Round 27 selection economic report binding differs")
     minimum = contract.get("minimum_population")
     if not isinstance(minimum, Mapping):
         raise ValueError("Round 27 sealed contract differs")
@@ -304,6 +478,8 @@ def run_round27_sealed_evaluation(
         "schema_version": POLYMARKET_ROUND27_SEALED_SCHEMA_VERSION,
         "contract_sha256": contract["contract_sha256"],
         "selection_claim_sha256": claimed_sha256,
+        "selection_economic_claim_sha256": economic_claim_sha256,
+        "selected_model_sha256": model_sha256,
         "selected_model_name": claim["selected_model_name"],
         "market_prior_metrics": prior_metrics,
         "selected_model_metrics": selected_metrics,
@@ -322,7 +498,9 @@ def run_round27_sealed_evaluation(
 
 __all__ = [
     "POLYMARKET_ROUND27_SEALED_SCHEMA_VERSION",
+    "POLYMARKET_ROUND27_SELECTION_ECONOMIC_SCHEMA_VERSION",
     "POLYMARKET_ROUND27_SELECTION_SCHEMA_VERSION",
+    "build_round27_selection_economic_claim",
     "run_round27_development_selection",
     "run_round27_sealed_evaluation",
 ]
