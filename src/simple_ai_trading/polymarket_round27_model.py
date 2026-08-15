@@ -930,7 +930,7 @@ def round27_corrected_politis_white_block_length(
     maximum_candidate = int(
         math.ceil(min(3.0 * math.sqrt(observation_count), observation_count / 3.0))
     )
-    consecutive_lags = max(5, int(math.log10(observation_count)))
+    consecutive_lags = max(5, int(math.ceil(math.log10(observation_count))))
     maximum_lag = min(
         observation_count - 2,
         int(math.ceil(math.sqrt(observation_count))) + consecutive_lags,
@@ -939,36 +939,32 @@ def round27_corrected_politis_white_block_length(
         math.log10(observation_count) / observation_count
     )
     autocovariance = np.zeros(maximum_lag + 1, dtype=np.float64)
-    absolute_autocorrelation = np.full(
-        maximum_lag + 1,
-        np.inf,
-        dtype=np.float64,
-    )
-    first_insignificant_lag: int | None = None
+    absolute_autocorrelation = np.ones(maximum_lag + 1, dtype=np.float64)
     for lag in range(maximum_lag + 1):
         cross_product = float(centered[lag:] @ centered[: observation_count - lag])
         autocovariance[lag] = cross_product / observation_count
-        leading = centered[lag + 1 :]
-        trailing = centered[: -(lag + 1)]
-        denominator = math.sqrt(float(leading @ leading) * float(trailing @ trailing))
-        if denominator > np.finfo(np.float64).tiny:
-            absolute_autocorrelation[lag] = abs(cross_product) / denominator
-        if (
-            lag >= consecutive_lags
-            and first_insignificant_lag is None
-            and np.all(
-                absolute_autocorrelation[
-                    lag - consecutive_lags : lag
-                ]
-                < significance_band
-            )
-        ):
-            first_insignificant_lag = lag - consecutive_lags
-    truncation_lag = (
-        maximum_lag
-        if first_insignificant_lag is None
-        else min(2 * max(first_insignificant_lag, 1), maximum_lag)
+    zero_lag_autocovariance = float(autocovariance[0])
+    absolute_autocorrelation[1:] = np.abs(
+        autocovariance[1:] / zero_lag_autocovariance
     )
+    first_insignificant_lag: int | None = None
+    for first_lag in range(1, maximum_lag - consecutive_lags + 2):
+        if np.all(
+            absolute_autocorrelation[
+                first_lag : first_lag + consecutive_lags
+            ]
+            < significance_band
+        ):
+            first_insignificant_lag = first_lag
+            break
+    if first_insignificant_lag is None:
+        significant_lags = np.flatnonzero(
+            absolute_autocorrelation[1:] > significance_band
+        )
+        first_insignificant_lag = (
+            int(significant_lags[-1]) + 1 if significant_lags.size else 1
+        )
+    truncation_lag = min(2 * max(first_insignificant_lag, 1), maximum_lag)
     weighted_lag_covariance = 0.0
     long_run_covariance = float(autocovariance[0])
     for lag in range(1, truncation_lag + 1):
