@@ -9,6 +9,7 @@ import pytest
 
 from simple_ai_trading.polymarket_round27_experiment import (
     build_round27_selection_economic_claim,
+    load_round27_selected_model,
     run_round27_development_selection,
     run_round27_sealed_evaluation,
 )
@@ -119,14 +120,21 @@ def test_selection_claim_precedes_sealed_evaluation() -> None:
     assert claim["economic_metrics_computed"] is False
     assert claim["edge_claim"] is False
 
-    economic_claim, economic_report = _economic_claim(_contract(), claim, model)
+    restored = load_round27_selected_model(
+        selection_claim=persisted,
+        contract=_contract(),
+    )
+    assert restored is not None
+    assert restored.asdict() == model.asdict()
+
+    economic_claim, economic_report = _economic_claim(_contract(), claim, restored)
     sealed = run_round27_sealed_evaluation(
         samples=_samples(),
         contract=_contract(),
         selection_claim=claim,
         selection_economic_claim=economic_claim,
         selection_economic_report=economic_report,
-        selected_model=model,
+        selected_model=restored,
     )
 
     assert sealed["prediction_edge_gate_passed"] is True

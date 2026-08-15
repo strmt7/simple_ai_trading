@@ -18,6 +18,7 @@ from .polymarket_round27_model import (
     fit_round27_l2_offset,
     fit_round27_lightgbm_offset,
     paired_round27_condition_bootstrap,
+    round27_model_from_payload,
     round27_probability_metrics,
     select_round27_correction_scale,
     select_round27_l2_penalty,
@@ -128,6 +129,48 @@ def _validate_selection_claim(
     ):
         raise ValueError("Round 27 sealed selection claim differs")
     return {**claim, "claim_sha256": claimed_sha256}, claimed_sha256, model_sha256
+
+
+def load_round27_selected_model(
+    *,
+    selection_claim: Mapping[str, object],
+    contract: Mapping[str, object],
+) -> Round27ProbabilityModel | None:
+    """Restore the exact selected model from its persisted selection claim."""
+
+    claim = dict(selection_claim)
+    claimed = str(claim.pop("claim_sha256", ""))
+    selected_name = claim.get("selected_model_name")
+    candidates = claim.get("candidates")
+    if (
+        claimed != _canonical_sha256(claim)
+        or claim.get("schema_version") != POLYMARKET_ROUND27_SELECTION_SCHEMA_VERSION
+        or claim.get("contract_sha256") != contract.get("contract_sha256")
+        or claim.get("sealed_partition_accessed") is not False
+        or selected_name
+        not in {"market_prior", "l2_offset_logistic", "shallow_lightgbm_offset"}
+        or not isinstance(candidates, list)
+    ):
+        raise ValueError("Round 27 persisted selection claim differs")
+    selected_model: Round27ProbabilityModel | None = None
+    if selected_name != "market_prior":
+        matches = [
+            item
+            for item in candidates
+            if isinstance(item, Mapping) and item.get("model_name") == selected_name
+        ]
+        model_payload = matches[0].get("model") if len(matches) == 1 else None
+        if not isinstance(model_payload, Mapping):
+            raise ValueError("Round 27 persisted selected model is unavailable")
+        selected_model = round27_model_from_payload(model_payload)
+        if selected_model.model_name != selected_name:
+            raise ValueError("Round 27 persisted selected model differs")
+    _validate_selection_claim(
+        selection_claim,
+        contract=contract,
+        selected_model=selected_model,
+    )
+    return selected_model
 
 
 def _validate_economic_report(value: Mapping[str, object]) -> dict[str, object]:
@@ -501,6 +544,7 @@ __all__ = [
     "POLYMARKET_ROUND27_SELECTION_ECONOMIC_SCHEMA_VERSION",
     "POLYMARKET_ROUND27_SELECTION_SCHEMA_VERSION",
     "build_round27_selection_economic_claim",
+    "load_round27_selected_model",
     "run_round27_development_selection",
     "run_round27_sealed_evaluation",
 ]
