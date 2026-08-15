@@ -84,15 +84,19 @@ sealed outcomes or rescanning books. No sealed result or edge claim exists.
 
 The [Round 28 AI preregistration](../round-028-ai-risk-veto-preregistration-v1.json),
 [core implementation](../round-028-ai-risk-veto-implementation-amendment-v1.json),
-and [operator implementation](../round-028-ai-operator-implementation-amendment-v1.json)
+[operator implementation](../round-028-ai-operator-implementation-amendment-v1.json),
+and [sealed evaluation implementation](../round-028-ai-sealed-evaluation-implementation-amendment-v1.json)
 replace the old 182-feature prompt with the exact 278-feature augmented case.
 Qwen3.5-9B and ODA-Fin-SFT-8B remain controls; ODA-Fin-RL-8B is a pending
 challenger, not a selected model. Every model is limited to reject, reduce, or
 leave unchanged, must be fully GPU-resident under an exact digest, and is
 charged measured wall latency in the matched replay. The restart-safe operator
 accounts for all three candidates and evaluates qualified candidates in one
-bounded order-book scan. No Round 28 AI model has yet been run on Stage 1 data,
-and no AI uplift, edge, or profitability result exists.
+bounded order-book scan. The sealed path freezes target-free cases and
+inference first, opens outcomes only after an exact nomination exists, and
+reuses a valid terminal result without reopening the target store. No Round 28
+AI model has yet been run on Stage 1 data, and no AI uplift, edge, or
+profitability result exists.
 
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second

@@ -1,0 +1,60 @@
+{
+  "ai_contract_sha256": "6f0084370cd8302fe09df5f9d1caec627aaea2fe219ef435216f95a213fcf117",
+  "amendment_sha256": "925fc1274dd199648672bcab6f33013ec51a97a239cb2ccac0580dbf167a137d",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786811411424,
+  "implementation": {
+    "case_phase": "Materialize the exact sealed BBO-augmented candidate cases and run only the nominated AI digest before the process can receive any target, outcome, resolution, or PnL path.",
+    "economic_phase": "After case and inference artifacts are immutable, open the sealed target once and replay the nominated risk veto against the exact persisted Round 28 augmented baseline on identical conditions, actual fees, recorded ask depth, active ticks, and fixed 250, 500, 1000, and 2000 millisecond base delays.",
+    "latency_policy": "Add every measured per-case AI wall latency to the matching base execution delay; timeout, invalid, reduce, and reject responses remain fail-closed under the frozen AI contract.",
+    "nomination_policy": "A missing nomination writes a terminal target-free no-candidate receipt. A present nomination must match the exact selected model ID, immutable runtime digest, qualified host receipt, prompt contract, case panel, and inference report.",
+    "restart_policy": "A valid terminal AI artifact is recursively reconstructed and reused without opening the target store or rescanning outcomes or books. Partial artifacts must match every current lineage binding before continuation.",
+    "side_effect_policy": "Both operators are read-only for prospective source and target stores, never update reusable historical data, and do not alter the repository-wide 2026-08-14T00:00:00Z exclusive historical cutoff."
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "ai_candidate_nominated_from_stage1": false,
+    "official_outcomes_accessed_by_ai_operator": false,
+    "round27_stage1_a_capture_running": true,
+    "round28_ai_case_panel_materialized_from_stage1": false,
+    "round28_model_fitted_on_stage1": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false
+  },
+  "limitations": [
+    "stage1_primary_capture_slots_are_not_terminal",
+    "ODA-Fin-RL-8B_has_not_been_downloaded_or_host_qualified",
+    "no_real_round28_case_panel_inference_or_economic_report_exists",
+    "no_ai_uplift_predictive_edge_after_cost_edge_or_profitability_claim_exists",
+    "synthetic_execution_mechanics_are_not_market_performance_evidence"
+  ],
+  "parents": {
+    "round28_ai_operator_implementation_amendment_sha256": "41f92d0625ee9fb4c53a4d66c8decdb3f5c053c44ce146316778e7431ba2b04d",
+    "round28_sealed_evaluation_implementation_amendment_sha256": "6d32533136e722b6fccb3cae961d6077c025b82b262c0a276d43d0bb5ec4f28b"
+  },
+  "schema_version": "polymarket-round28-ai-sealed-evaluation-implementation-amendment-v1",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round28_ai_sealed.py": "dc3cfca3d4db326553a0495ff5087bae378b2298695fa9beea24ef096a3405a7",
+    "tests/test_polymarket_round28_ai_sealed.py": "d1a45432fc889b445d74d24a2b335806bf0e98ec1bb9cbb3724b5d409e937dcc",
+    "tests/test_polymarket_round28_ai_sealed_economics.py": "55874dd8307953842ea1cb9ff0f5e8f1841b331236147699649e1f15f215db95",
+    "tests/test_polymarket_round28_sealed_real_pair.py": "fa814d00b1dc26b17ab736cfc10366f9cf9f31e29992d055f2132e343e28f345",
+    "tools/run_polymarket_round28_ai_sealed.py": "888fce68546e1b76b0ff5f6367731dffa4037a109a94f0423910f4b7e41b964d",
+    "tools/run_polymarket_round28_ai_sealed_cases.py": "aef3765e082c2ea737ed53961c6ac5cd76804d6c2e64af560a753753a7e9955b"
+  },
+  "status": "source_bound_before_stage1_feature_or_target_access",
+  "test_scope": {
+    "financial_result": false,
+    "focused_tests_passed": 46,
+    "stage1_data_used": false,
+    "synthetic_mechanics_only": true,
+    "terminal_restart_target_store_opened": false
+  }
+}
