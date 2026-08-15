@@ -72,13 +72,17 @@ def _best_cost(segments: list[dict[str, object]], key: str) -> str | None:
 def _svg(result: dict[str, object]) -> bytes:
     candidates = result["candidate_counts"]
     complete = result["complete_set_latency"]
+    coverage = result["coverage"]
     rows = [
         ("Extreme settlement value", int(candidates["extreme_settlement_value"]["state_count"]), "#0f766e"),
         ("Late strong favorite", int(candidates["late_strong_favorite"]["state_count"]), "#2563eb"),
         ("Complete set after fee", int(candidates["complete_set_after_fee"]["state_count"]), "#d97706"),
         ("Split-sell after fee", int(candidates["split_sell_after_fee"]["state_count"]), "#7c3aed"),
     ]
-    maximum = max(math.log10(value + 1) for _label, value, _color in rows)
+    maximum = max(
+        1.0,
+        *(math.log10(value + 1) for _label, value, _color in rows),
+    )
     bars: list[str] = []
     for index, (label, value, color) in enumerate(rows):
         y = 204 + index * 82
@@ -122,7 +126,7 @@ def _svg(result: dict[str, object]) -> bytes:
 </style>
 <rect width="1120" height="680" fill="#ffffff"/>
 <text x="56" y="58" class="title">Round 27 mechanics diagnostic</text>
-<text x="56" y="86" class="subtitle">11 BTC five-minute markets | 54,983 paired states | exact fees | recorded 250 ms taker delay</text>
+<text x="56" y="86" class="subtitle">{int(coverage['eligible_market_count'])} BTC five-minute markets | {int(coverage['paired_quote_state_count']):,} paired states | exact fees | recorded venue delay</text>
 <line x1="56" y1="112" x2="1064" y2="112" stroke="#d1d5db"/>
 <text x="70" y="158" class="heading">Candidate quote states</text>
 <text x="70" y="181" class="note">Log10 bar scale; exact state count at right</text>
@@ -136,7 +140,7 @@ def _svg(result: dict[str, object]) -> bytes:
 <text x="720" y="566" class="note">After venue delay</text><text x="966" y="566" class="value">{best_delay}</text>
 <text x="720" y="592" class="note">Optimistic sequential</text><text x="966" y="592" class="value">{best_sequence}</text>
 <line x1="56" y1="620" x2="1064" y2="620" stroke="#d1d5db"/>
-<text x="56" y="649" class="note">Diagnostic cohort only. Zero opportunities survived latency; no edge, profitability, paper-trading, or live-trading claim.</text>
+<text x="56" y="649" class="note">Preregistered Stage 0 mechanics only. No edge, profitability, paper-trading, or live-trading claim.</text>
 </svg>'''
     return content.encode("ascii")
 
@@ -163,23 +167,26 @@ def publish(result_path: Path, output_directory: Path) -> dict[str, object]:
         "mechanics-diagnostic.svg": _svg(result),
     }
     complete = result["complete_set_latency"]
+    same_state = int(complete["same_state_episode_count"])
+    venue_survivors = int(complete["venue_delay_survivor_count"])
+    sequential_survivors = int(complete["minimum_sequential_survivor_count"])
     readme = f"""# Round 27 mechanics diagnostic
 
-This target-free screen used {result['coverage']['eligible_market_count']} BTC five-minute markets and {result['coverage']['paired_quote_state_count']:,} synchronized quote states from the condition-eligible portion of Round 26 v2. Exact message batches were fully applied before evaluating Up and Down together.
+This target-free screen used {result['coverage']['eligible_market_count']} BTC five-minute markets and {result['coverage']['paired_quote_state_count']:,} synchronized quote states from the preregistered Stage 0 cohort. Exact message batches were fully applied before evaluating Up and Down together, and each condition was replayed independently with bounded memory.
 
-Four after-fee complete-set episodes remained. None survived the recorded 250 ms taker delay, and none survived the optimistic 500 ms sequential two-leg floor. The best delayed cost was {_best_cost(complete['segment_benchmarks'], 'best_venue_delay_cost')} pUSD; the best sequential cost was {_best_cost(complete['segment_benchmarks'], 'best_minimum_sequential_cost')} pUSD per complete set, before network or order-response latency.
+The same-state screen found {same_state} after-fee complete-set episodes. {venue_survivors} survived the recorded venue delay and {sequential_survivors} survived the optimistic two-delay sequential floor. The best delayed cost was {_best_cost(complete['segment_benchmarks'], 'best_venue_delay_cost')} pUSD; the best sequential cost was {_best_cost(complete['segment_benchmarks'], 'best_minimum_sequential_cost')} pUSD per complete set, before network or order-response latency.
 
-Extreme-price and late-favorite states occurred often enough for prospective model-value testing. Public quotes cannot prove maker fills, queue position, or profitability.
+Extreme-price states occurred in {result['candidate_counts']['extreme_settlement_value']['market_count']} markets and late-favorite states in {result['candidate_counts']['late_strong_favorite']['market_count']} markets. These are candidate observations, not trades or an edge. Public quotes cannot prove maker fills, queue position, settlement value, or profitability.
 
 ![Round 27 mechanics diagnostic](mechanics-diagnostic.svg)
 
-The [canonical JSON](mechanics-diagnostic.json) and [latency table](complete-set-latency.csv) are hash-bound source data. This superseded cohort predates the preregistration and is not promotion eligible. No market edge or after-cost profitability is claimed.
+The [canonical JSON](mechanics-diagnostic.json) and [latency table](complete-set-latency.csv) are hash-bound source data. Stage 0 permits mechanics screening only and is not promotion eligible. No market edge or after-cost profitability is claimed.
 """
     files["README.md"] = readme.encode("ascii")
     for name, value in files.items():
         write_bytes_atomic(output_directory / name, value)
     manifest: dict[str, object] = {
-        "schema_version": "polymarket-round27-mechanics-publication-v1",
+        "schema_version": "polymarket-round27-mechanics-publication-v2",
         "mechanics_sha256": result["mechanics_sha256"],
         "diagnostic_only": True,
         "edge_claim": False,
