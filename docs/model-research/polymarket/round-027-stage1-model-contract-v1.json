@@ -29,8 +29,8 @@
     "profitability_claim": false
   },
   "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
-  "contract_sha256": "30f5224f92b1cdabd71b34ead9561b6adb5696cd904810847acd0707dd743827",
-  "created_at_ms": 1786777710134,
+  "contract_sha256": "639543bdc3102d7090b66019434a961d19533cc1d882778013ce60aadf05208a",
+  "created_at_ms": 1786777952205,
   "data_policy": {
     "assets": [
       "BTC"
@@ -280,5 +280,6 @@
     "src/simple_ai_trading/polymarket_round27_features.py": "032f249028418d7a479c014874a374b1dc6e68de80350b68dad83ca5aae58316",
     "src/simple_ai_trading/polymarket_round27_model.py": "314d0724802ec3881cc1b7a4af1b0c5a24c1cb61437c18b6e8fbfd76527bb854"
   },
-  "status": "frozen_before_stage1_capture_and_outcome_access"
+  "status": "frozen_before_stage1_capture_and_outcome_access",
+  "supplemental_hypothesis_preregistration_sha256": "2cb8f7068fb9673c1d1c94af0a8a6d1d53a4ac382c3b5e336278a9a10543b7df"
 }

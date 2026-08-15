@@ -1,0 +1,95 @@
+{
+  "authority": {
+    "edge_claim": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_ms": 1786777936180,
+  "evidence_rules": [
+    "all_entry_prices_must_come_from_captured_depth_after_the_fixed_delay",
+    "all_fees_must_come_from_captured_condition_fee_evidence",
+    "all_terminal_payouts_must_come_from_dual_source_official_resolution_evidence",
+    "missing_queue_position_or_private_fill_evidence_cannot_receive_maker_fill_credit",
+    "reddit_performance_numbers_are_not_evidence_and_must_not_enter_results",
+    "sealed_results_must_not_select_or_modify_a_threshold"
+  ],
+  "hypotheses": [
+    {
+      "analysis_role": "predeclared_feature_ablation_only",
+      "design": "compare_the_frozen_short_context_features_with_the_frozen_5_10_and_20_minute_context_features_under_identical_condition_splits",
+      "hypothesis_id": "long_context_regime_and_reversal",
+      "promotion_authority": false,
+      "required_observations": [
+        "condition_weighted_prediction_metrics",
+        "paired_condition_bootstrap",
+        "after_cost_fok_replay_at_all_fixed_delays"
+      ]
+    },
+    {
+      "analysis_role": "descriptive_subgroup_report_only",
+      "design": "report_frozen_policy_candidates_in_market_probability_strata_at_or_below_0.03_0.05_and_at_or_above_0.95_0.97_without_changing_the_policy",
+      "hypothesis_id": "extreme_probability_taker_subgroups",
+      "promotion_authority": false,
+      "required_observations": [
+        "actual_ask_depth",
+        "captured_fee_schedule",
+        "fixed_delay_fill_outcome",
+        "official_binary_payout"
+      ]
+    },
+    {
+      "analysis_role": "mechanics_diagnostic_only",
+      "design": "replay_complete_set_acquisition_sequentially_at_the_frozen_delays_and_require_both_legs_to_fill_from_actual_depth_after_fees",
+      "hypothesis_id": "complete_set_sequential_acquisition",
+      "promotion_authority": false,
+      "required_observations": [
+        "both_leg_depth_walks",
+        "sequential_leg_latency",
+        "captured_fee_schedule"
+      ]
+    },
+    {
+      "analysis_role": "frozen_model_feature_family",
+      "design": "measure_whether_causal_binance_spot_and_futures_receipts_improve_the_frozen_polymarket_market_prior_control_after_observed_delay",
+      "hypothesis_id": "cross_venue_receipt_time_information",
+      "promotion_authority": false,
+      "required_observations": [
+        "receipt_time_only_features",
+        "condition_grouped_evaluation",
+        "after_cost_fok_replay"
+      ]
+    },
+    {
+      "analysis_role": "not_identifiable_from_public_book_capture",
+      "design": "do_not_score_maker_rebate_or_split_merge_profitability_without_authenticated_private_fills_queue_position_and_reward_allocation_evidence",
+      "hypothesis_id": "maker_rebate_and_split_merge",
+      "promotion_authority": false,
+      "required_observations": [
+        "private_order_acknowledgements",
+        "private_fill_receipts",
+        "queue_position_or_conservative_queue_model",
+        "observed_reward_allocation",
+        "leg_risk"
+      ]
+    }
+  ],
+  "model_contract_sha256_before_binding": "30f5224f92b1cdabd71b34ead9561b6adb5696cd904810847acd0707dd743827",
+  "preregistration_sha256": "2cb8f7068fb9673c1d1c94af0a8a6d1d53a4ac382c3b5e336278a9a10543b7df",
+  "primary_sources": [
+    "https://docs.polymarket.com/trading/fees",
+    "https://docs.polymarket.com/market-makers/maker-rebates",
+    "https://docs.polymarket.com/market-makers/liquidity-rewards",
+    "https://docs.polymarket.com/trading/ctf/overview",
+    "https://docs.polymarket.com/trading/ctf/split"
+  ],
+  "schema_version": "polymarket-round27-supplemental-hypothesis-preregistration-v1",
+  "source": {
+    "attachment_sha256": "145e6e0876e2291fb8123b78a6c3e8057698a6950da831ad1df3b4d119f934b3",
+    "classification": "untrusted_reddit_food_for_thought",
+    "performance_claims_accepted": false,
+    "url": "https://www.reddit.com/r/PredictionsMarkets/s/JIB3xSWJuW"
+  },
+  "status": "frozen_before_stage1_market_state_access"
+}
