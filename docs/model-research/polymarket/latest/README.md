@@ -27,6 +27,15 @@ respectively, before network or order-response latency. The screen observed
 states across 44 markets. These remain prospective model-value hypotheses;
 public quotes do not prove fills, settlement value, or profitability.
 
+Stage 1 is now frozen before capture. Its three fixed 10.5-hour primary
+windows rotate across 09:00, 16:00, and 23:00 UTC starts and schedule 378 BTC
+five-minute intervals across at least three UTC dates. Each slot uses a
+separate 2.5 GiB-capped database. A fourth fixed contingency window is allowed
+only if target-free replay of all primary slots admits fewer than 300 markets.
+The [campaign contract](../round-027-stage1-campaign-contract-v1.json) forbids
+target access, fitting, adaptive replacement, and economic claims before the
+campaign gate.
+
 Round 27 uses Binance's documented USD-M `@aggTrade` market stream.
 A live 33.719-second source probe recorded 29/29 finite positive trades, while
 the new source gate independently rejects the legacy v3 feed. The subsequent
