@@ -24,7 +24,7 @@ from .polymarket_round27_model import (
 )
 
 
-POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v3"
+POLYMARKET_ROUND27_ECONOMIC_SCHEMA_VERSION = "polymarket-round27-economic-replay-v4"
 POLYMARKET_ROUND27_FIXED_DELAYS_MS = (250, 500, 1_000, 2_000)
 _SHA256_CHARACTERS = frozenset("0123456789abcdef")
 
@@ -776,10 +776,22 @@ def _scenario_report(
     trades: Sequence[Round27EconomicTrade],
     candidate_count: int,
     delay_ms: int,
-    evaluated_condition_count: int,
+    evaluated_conditions: Sequence[str],
     reasons: Mapping[str, int],
     config: Round27EconomicConfig,
 ) -> dict[str, object]:
+    ordered_conditions = tuple(str(value) for value in evaluated_conditions)
+    if not ordered_conditions or len(set(ordered_conditions)) != len(
+        ordered_conditions
+    ):
+        raise ValueError("Round 27 evaluated condition order differs")
+    trade_by_condition = {trade.condition_id: trade for trade in trades}
+    if (
+        len(trade_by_condition) != len(trades)
+        or not set(trade_by_condition) <= set(ordered_conditions)
+        or candidate_count != len(trades)
+    ):
+        raise ValueError("Round 27 scenario condition population differs")
     filled_trades = tuple(
         sorted(
             (item for item in trades if item.execution_state == "FILLED"),
@@ -807,8 +819,15 @@ def _scenario_report(
         for item in filled_trades
         if item.markout_pnl_per_contract is not None
     )
+    condition_pnl_values = tuple(
+        trade_by_condition[condition_id].net_pnl_quote
+        if condition_id in trade_by_condition
+        and trade_by_condition[condition_id].execution_state == "FILLED"
+        else Decimal("0")
+        for condition_id in ordered_conditions
+    )
     bootstrap = _condition_bootstrap(
-        pnl_values,
+        condition_pnl_values,
         draws=config.bootstrap_draws,
         seed=config.bootstrap_seed + delay_ms,
     )
@@ -831,12 +850,12 @@ def _scenario_report(
     }
     body: dict[str, object] = {
         "delay_ms": delay_ms,
-        "evaluated_condition_count": evaluated_condition_count,
+        "evaluated_condition_count": len(ordered_conditions),
         "signal_condition_count": candidate_count,
         "attempted_order_count": len(trades),
         "filled_order_count": len(filled_trades),
         "unknown_order_count": unknown_count,
-        "abstained_condition_count": evaluated_condition_count - candidate_count,
+        "abstained_condition_count": len(ordered_conditions) - candidate_count,
         "profitable_condition_count": profitable_conditions,
         "reason_counts": dict(sorted(reasons.items())),
         "gross_deployed_capital_quote": _decimal_text(deployed),
@@ -868,6 +887,9 @@ def _scenario_report(
         ),
         "markout_observation_count": len(markouts),
         "condition_bootstrap": bootstrap,
+        "condition_bootstrap_population": (
+            "all_evaluated_conditions_zero_pnl_for_no_fill"
+        ),
         "gate_checks": checks,
         "scenario_edge_gate_passed": all(checks.values()),
         "trades": [item.asdict() for item in trades],
@@ -1008,6 +1030,13 @@ def evaluate_round27_economic_scenarios(
             item.decision_time_ms,
         )
     )
+    ordered_conditions = tuple(
+        condition_id
+        for condition_id, _market in sorted(
+            market_by_condition.items(),
+            key=lambda item: (item[1].event_start_ms, item[0]),
+        )
+    )
     scenarios = []
     for delay in cfg.delays_ms:
         selected_trades = sorted(
@@ -1025,7 +1054,7 @@ def evaluate_round27_economic_scenarios(
                 trades=selected_trades,
                 candidate_count=len(candidates),
                 delay_ms=delay,
-                evaluated_condition_count=len(conditions),
+                evaluated_conditions=ordered_conditions,
                 reasons=dict(sorted(reasons.items())),
                 config=cfg,
             )

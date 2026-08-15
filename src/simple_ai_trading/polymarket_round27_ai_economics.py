@@ -279,6 +279,13 @@ def evaluate_round27_ai_matched_economics(
     ):
         raise ValueError("Round 27 AI economic condition population differs")
     market_by_condition = {market.condition_id: market for market in markets}
+    ordered_conditions = tuple(
+        condition_id
+        for condition_id, _market in sorted(
+            market_by_condition.items(),
+            key=lambda item: (item[1].event_start_ms, item[0]),
+        )
+    )
     if (books is None) == (book_batches is None):
         raise ValueError("Round 27 AI economics requires exactly one book source")
     batches: Iterable[Round27EconomicBookBatch] = (
@@ -403,7 +410,7 @@ def evaluate_round27_ai_matched_economics(
             trades=baseline_trades,
             candidate_count=len(selected_panel.cases),
             delay_ms=delay,
-            evaluated_condition_count=selected_panel.evaluated_condition_count,
+            evaluated_conditions=ordered_conditions,
             reasons=dict(sorted(baseline_reasons[delay].items())),
             config=config,
         )
@@ -413,7 +420,7 @@ def evaluate_round27_ai_matched_economics(
             trades=ai_trades,
             candidate_count=len(ai_trades),
             delay_ms=delay,
-            evaluated_condition_count=selected_panel.evaluated_condition_count,
+            evaluated_conditions=ordered_conditions,
             reasons=dict(sorted(ai_reasons[delay].items())),
             config=ai_config,
         )
