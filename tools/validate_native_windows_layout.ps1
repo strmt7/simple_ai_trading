@@ -60,6 +60,8 @@ $AiId = 114
 $ReinvestId = 115
 $ModeId = 116
 $PolymarketStopId = 117
+$PolymarketPauseId = 118
+$PolymarketStartId = 119
 
 function Assert-True([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
@@ -194,8 +196,10 @@ try {
     $windowRect = Get-Rect $window
     Assert-True ($windowRect.Width -ge $MinWidth -and $windowRect.Height -ge $MinHeight) "window is below minimum size"
     $page = Assert-Visible $window $PageListId "navigation" 180 250
-    $start = Assert-Visible $window $RunId "start" 80 36
-    $pause = Assert-Visible $window $PauseId "pause" 70 36
+    $start = Assert-Visible $window $RunId "Binance start" 110 36
+    $pause = Assert-Visible $window $PauseId "Binance pause" 110 36
+    $polymarketStart = Assert-Visible $window $PolymarketStartId "Polymarket start" 130 36
+    $polymarketPause = Assert-Visible $window $PolymarketPauseId "Polymarket pause" 130 36
     $binanceStop = Assert-Visible $window $BinanceStopId "Binance stop" 110 36
     $polymarketStop = Assert-Visible $window $PolymarketStopId "Polymarket stop" 130 36
     $mode = Assert-Visible $window $ModeId "execution mode" 90 26
@@ -209,21 +213,28 @@ try {
     Assert-Hidden $window $ArgsEditId "expert flags on overview"
     Assert-Hidden $window $OutputEditId "activity log on overview"
     foreach ($item in @(
-        @{N="navigation";R=$page}, @{N="start";R=$start}, @{N="pause";R=$pause},
+        @{N="navigation";R=$page}, @{N="Binance start";R=$start}, @{N="Binance pause";R=$pause},
+        @{N="Polymarket start";R=$polymarketStart},
+        @{N="Polymarket pause";R=$polymarketPause},
         @{N="Binance stop";R=$binanceStop}, @{N="Polymarket stop";R=$polymarketStop},
         @{N="mode";R=$mode}, @{N="profile";R=$profile}, @{N="leverage";R=$leverage}, @{N="AI";R=$ai},
         @{N="reinvest";R=$reinvest}, @{N="API budget";R=$status}
     )) { Assert-Inside $item.N $item.R $windowRect }
-    Assert-NoOverlap "start" $start "pause" $pause
-    Assert-NoOverlap "pause" $pause "Binance stop" $binanceStop
-    Assert-NoOverlap "Binance stop" $binanceStop "Polymarket stop" $polymarketStop
+    Assert-NoOverlap "Binance start" $start "Binance pause" $pause
+    Assert-NoOverlap "Binance pause" $pause "Binance stop" $binanceStop
+    Assert-NoOverlap "Binance stop" $binanceStop "Polymarket start" $polymarketStart
+    Assert-NoOverlap "Polymarket start" $polymarketStart "Polymarket pause" $polymarketPause
+    Assert-NoOverlap "Polymarket pause" $polymarketPause "Polymarket stop" $polymarketStop
     Assert-NoOverlap "mode" $mode "profile" $profile
     Assert-NoOverlap "profile" $profile "leverage" $leverage
     Assert-NoOverlap "leverage" $leverage "AI" $ai
     Assert-NoOverlap "AI" $ai "reinvest" $reinvest
     Assert-True ($page.Right -lt $mode.Left) "navigation overlaps overview controls"
     Assert-True ($mode.Bottom -lt $status.Top) "overview settings overlap telemetry footer"
-    Assert-True ((Get-ControlText (Get-Control $window $RunId "start")) -eq "Start") "overview start label is wrong"
+    Assert-True ((Get-ControlText (Get-Control $window $RunId "Binance start")) -eq "Start Binance") "overview Binance start label is wrong"
+    Assert-True ((Get-ControlText (Get-Control $window $PauseId "Binance pause")) -eq "Pause Binance") "overview Binance pause label is wrong"
+    Assert-True ((Get-ControlText (Get-Control $window $PolymarketStartId "Polymarket start")) -eq "Start Polymarket") "overview Polymarket start label is wrong"
+    Assert-True ((Get-ControlText (Get-Control $window $PolymarketPauseId "Polymarket pause")) -eq "Pause Polymarket") "overview Polymarket pause label is wrong"
     Assert-True ((Get-ControlText (Get-Control $window $BinanceStopId "Binance stop")) -eq "Stop Binance") "overview Binance stop label is wrong"
     Assert-True ((Get-ControlText (Get-Control $window $PolymarketStopId "Polymarket stop")) -eq "Stop Polymarket") "overview Polymarket stop label is wrong"
 

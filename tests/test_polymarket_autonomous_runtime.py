@@ -9,9 +9,11 @@ import json
 from pathlib import Path
 from threading import Event
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
+from polymarket_live_support import write_polymarket_live_implementation_manifest
 import simple_ai_trading.polymarket_autonomous_runtime as runtime_module
 from simple_ai_trading.polymarket import (
     PolymarketFeeSchedule,
@@ -19,24 +21,26 @@ from simple_ai_trading.polymarket import (
     PolymarketFiveMinuteMarket,
 )
 from simple_ai_trading.polymarket_autonomous import (
+    PolymarketAutonomousLockProposal,
     PolymarketAutonomousOpenProposal,
-    PolymarketAutonomousOpenResult,
+    PolymarketAutonomousReduceProposal,
 )
 from simple_ai_trading.polymarket_autonomous_runtime import (
     PolymarketAutonomousDecision,
     PolymarketAutonomousSupervisor,
 )
-from simple_ai_trading.polymarket_external_signal import (
-    PolymarketBtcReferenceFeatures,
-    PolymarketExternalSignalDecision,
-)
 from simple_ai_trading.polymarket_live import (
+    PolymarketLedgerRevision,
     PolymarketLiveBlocked,
     PolymarketLiveOrderLedger,
 )
+from simple_ai_trading.polymarket_live_risk import PolymarketLiveRiskState
 from simple_ai_trading.polymarket_live_promotion import (
     VerifiedPolymarketLivePromotion,
     load_polymarket_live_promotion,
+)
+from simple_ai_trading.polymarket_live_qualification import (
+    VerifiedPolymarketLifecycleQualification,
 )
 
 
@@ -88,10 +92,19 @@ def _promotion(
 ) -> VerifiedPolymarketLivePromotion:
     root.mkdir(parents=True, exist_ok=True)
     evidence = {}
-    for name in ("model", "evaluation", "implementation"):
+    for name in ("model", "evaluation"):
         path = root / f"{name}.json"
         path.write_text(_canonical({name: "frozen"}), encoding="ascii")
         evidence[name] = {"path": path.name, "sha256": _file_sha(path)}
+    implementation = root / "implementation.json"
+    write_polymarket_live_implementation_manifest(
+        implementation,
+        source_commit="b" * 40,
+    )
+    evidence["implementation"] = {
+        "path": implementation.name,
+        "sha256": _file_sha(implementation),
+    }
     body: dict[str, object] = {
         "schema_version": "polymarket-live-promotion-v1",
         "promotion_id": "a" * 64,
@@ -171,9 +184,7 @@ def _market(
 def _proposal(
     promotion: VerifiedPolymarketLivePromotion,
 ) -> PolymarketAutonomousOpenProposal:
-    horizon_minutes = (
-        5 if promotion.promotion.market_variant == "fiveminute" else 15
-    )
+    horizon_minutes = 5 if promotion.promotion.market_variant == "fiveminute" else 15
     return PolymarketAutonomousOpenProposal(
         proposal_id="runtime-test-proposal",
         input_sha256="5" * 64,
@@ -186,8 +197,82 @@ def _proposal(
         outcome="Up",
         selected_outcome_probability=Decimal("0.7"),
         requested_quantity=Decimal("5"),
+        risk_state_sha256=_empty_risk_state().risk_state_sha256,
+        maximum_projected_inventory_downside_quote=Decimal("10"),
         event_start_time_ms=EVENT_START_MS,
         event_end_time_ms=EVENT_START_MS + horizon_minutes * 60_000,
+        decision_time_ms=NOW_MS - 100,
+        expires_at_ms=NOW_MS + 900,
+    )
+
+
+def _empty_risk_state() -> PolymarketLiveRiskState:
+    return PolymarketLiveRiskState(
+        condition_id=MARKET_ID,
+        risk_profile="conservative",
+        risk_capital_quote=Decimal("10000"),
+        observed_at_ms=NOW_MS,
+        utc_day_index=NOW_MS // 86_400_000,
+        ledger_revision=PolymarketLedgerRevision(0, "0" * 64),
+        realized_event_count=0,
+        realized_condition_count=0,
+        daily_realized_pnl_quote=Decimal("0"),
+        lifetime_realized_pnl_quote=Decimal("0"),
+        settled_equity_quote=Decimal("10000"),
+        settled_peak_equity_quote=Decimal("10000"),
+        drawdown_capital_fraction=Decimal("0"),
+        consecutive_losing_conditions=0,
+        cooldown_until_ms=0,
+        cooldown_active=False,
+        current_condition_inventory_downside_quote=Decimal("0"),
+        other_condition_inventory_downside_quote=Decimal("0"),
+        total_inventory_downside_quote=Decimal("0"),
+        maximum_current_condition_downside_quote=Decimal("10"),
+        entry_allowed=True,
+        entry_block_reasons=(),
+    )
+
+
+def _reduction(
+    promotion: VerifiedPolymarketLivePromotion,
+) -> PolymarketAutonomousReduceProposal:
+    return PolymarketAutonomousReduceProposal(
+        proposal_id="runtime-reduction-proposal",
+        input_sha256="6" * 64,
+        model_artifact_sha256=promotion.promotion.model_artifact.sha256,
+        promotion_sha256=promotion.promotion.promotion_sha256,
+        market_id=MARKET_ID,
+        token_id=TOKEN_ID,
+        symbol="BTC",
+        market_variant=promotion.promotion.market_variant,
+        outcome="Up",
+        parent_intent_id="poly-open-parent-0001",
+        maximum_outcome_probability=Decimal("0.6"),
+        requested_quantity=Decimal("5"),
+        event_start_time_ms=EVENT_START_MS,
+        event_end_time_ms=EVENT_END_MS,
+        decision_time_ms=NOW_MS - 100,
+        expires_at_ms=NOW_MS + 900,
+    )
+
+
+def _lock(
+    promotion: VerifiedPolymarketLivePromotion,
+) -> PolymarketAutonomousLockProposal:
+    return PolymarketAutonomousLockProposal(
+        proposal_id="runtime-lock-proposal",
+        input_sha256="7" * 64,
+        model_artifact_sha256=promotion.promotion.model_artifact.sha256,
+        promotion_sha256=promotion.promotion.promotion_sha256,
+        market_id=MARKET_ID,
+        token_id=DOWN_TOKEN_ID,
+        symbol="BTC",
+        market_variant=promotion.promotion.market_variant,
+        outcome="Down",
+        owned_outcome="Up",
+        requested_quantity=Decimal("5"),
+        event_start_time_ms=EVENT_START_MS,
+        event_end_time_ms=EVENT_END_MS,
         decision_time_ms=NOW_MS - 100,
         expires_at_ms=NOW_MS + 900,
     )
@@ -220,10 +305,10 @@ def _supervisor(
     tmp_path: Path,
     *,
     provider: object,
-    external: object | None = None,
     decision_data: object | None = None,
     markets: tuple[PolymarketFiveMinuteMarket, ...] | None = None,
     market_variant: str = "fiveminute",
+    wallet_balance: Decimal = Decimal("10000"),
 ) -> PolymarketAutonomousSupervisor:
     promotion = _promotion(
         tmp_path / "promotion",
@@ -234,6 +319,7 @@ def _supervisor(
     coordinator = SimpleNamespace(
         ledger=ledger,
         runtime_authority=guard,
+        venue=SimpleNamespace(collateral_balance=lambda: wallet_balance),
         preflight=lambda: SimpleNamespace(can_close=True, errors=()),
     )
     reconciliation = SimpleNamespace(
@@ -261,9 +347,11 @@ def _supervisor(
         user_stream=stream,  # type: ignore[arg-type]
         reconciliation=reconciliation,  # type: ignore[arg-type]
         promotion=promotion,
+        lifecycle_qualification=Mock(spec=VerifiedPolymarketLifecycleQualification),
         decision_provider=provider,  # type: ignore[arg-type]
+        risk_capital_quote=Decimal("10000"),
+        risk_level="conservative",
         decision_data_service=decision_data,  # type: ignore[arg-type]
-        external_signal_provider=external,  # type: ignore[arg-type]
         decision_interval_seconds=0.25,
         decision_timeout_seconds=0.1,
         clock_ms=lambda: NOW_MS,
@@ -286,46 +374,20 @@ def test_runtime_imports_no_binance_execution_module() -> None:
     assert all("binance" not in name.lower() for name in imports)
 
 
-def test_optional_public_predictor_failure_isolated_from_polymarket_runtime(
-    tmp_path: Path,
-) -> None:
-    class ExternalSignal:
-        trading_authority = False
-        credentials_used = False
-        execution_connected = False
-
-        async def run(self, _stop: asyncio.Event) -> None:
-            raise ConnectionError("public predictor unavailable")
-
-        def evaluate(self, **_kwargs: object) -> object:
-            pytest.fail("failed optional predictor must not be queried")
-
-    supervisor = _supervisor(
-        tmp_path,
-        provider=SimpleNamespace(
-            decide=lambda **_kwargs: PolymarketAutonomousDecision()
-        ),
-        external=ExternalSignal(),
-    )
-
-    asyncio.run(supervisor.run(duration_seconds=0.05))
-
-    snapshot = supervisor.snapshot()
-    assert snapshot.stop_completed is True
-    assert snapshot.binance_execution_connected is False
-    assert snapshot.last_fault == (
-        "advisory_service_exit:external_public_signal:ConnectionError"
-    )
-
-
 def test_decision_rejects_duplicate_proposals(tmp_path: Path) -> None:
     proposal = _proposal(_promotion(tmp_path))
+    reduction = _reduction(_promotion(tmp_path / "reduce"))
     with pytest.raises(ValueError, match="duplicate"):
         PolymarketAutonomousDecision(proposals=(proposal, proposal))
     with pytest.raises(ValueError, match="open and close"):
         PolymarketAutonomousDecision(
             proposals=(proposal,),
             close_owned_exposure=True,
+        )
+    with pytest.raises(ValueError, match="mix"):
+        PolymarketAutonomousDecision(
+            proposals=(proposal,),
+            reductions=(reduction,),
         )
 
 
@@ -354,6 +416,34 @@ def test_discovery_subscribes_current_next_and_owned_market(
         assert supervisor.snapshot().binance_execution_connected is False
 
     asyncio.run(run())
+
+
+def test_discovery_reuses_current_identity_but_refreshes_at_rollover(
+    tmp_path: Path,
+) -> None:
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+    )
+    markets = (
+        _market(),
+        _market(condition_id=NEXT_MARKET_ID, start_ms=EVENT_END_MS),
+    )
+    discover = Mock(return_value=markets)
+    supervisor.public_client.discover_five_minute_markets = discover
+
+    async def run() -> None:
+        first = await supervisor._discover_and_subscribe(observed_at_ms=NOW_MS)
+        cached = await supervisor._discover_and_subscribe(observed_at_ms=NOW_MS + 1_000)
+        rolled = await supervisor._discover_and_subscribe(
+            observed_at_ms=EVENT_END_MS + 1
+        )
+
+        assert first == cached == (markets[0],)
+        assert rolled == (markets[1],)
+
+    asyncio.run(run())
+    assert discover.call_count == 2
 
 
 def test_verified_fifteen_minute_promotion_selects_only_fifteen_minute_discovery(
@@ -451,6 +541,87 @@ def test_pause_still_allows_a_model_requested_close(tmp_path: Path) -> None:
     assert closed is True
 
 
+def test_parent_bound_reduction_is_dispatched_without_close_all(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    promotion = _promotion(tmp_path / "proposal")
+    reduction = _reduction(promotion)
+    supervisor = _supervisor(
+        tmp_path / "runtime",
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+    )
+    supervisor._owned_market_ids = lambda: {MARKET_ID}  # type: ignore[method-assign]
+    submitted: list[PolymarketAutonomousReduceProposal] = []
+
+    class Result:
+        pass
+
+    def submit(
+        proposal: PolymarketAutonomousReduceProposal,
+        *_args: object,
+        **_kwargs: object,
+    ) -> Result:
+        submitted.append(proposal)
+        return Result()
+
+    monkeypatch.setattr(runtime_module, "PolymarketAutonomousReduceResult", Result)
+    monkeypatch.setattr(runtime_module, "submit_promoted_reduction", submit)
+
+    asyncio.run(
+        supervisor._apply_decision(
+            PolymarketAutonomousDecision(reductions=(reduction,)),
+            _market(),
+            observed_at_ms=NOW_MS,
+        )
+    )
+
+    assert submitted == [reduction]
+    assert supervisor.snapshot().submitted_reductions == 1
+    assert supervisor.snapshot().requested_closes == 0
+
+
+def test_risk_reducing_lock_is_dispatched_without_binance_execution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    promotion = _promotion(tmp_path / "proposal")
+    lock = _lock(promotion)
+    supervisor = _supervisor(
+        tmp_path / "runtime",
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+    )
+    supervisor._owned_market_ids = lambda: {MARKET_ID}  # type: ignore[method-assign]
+    submitted: list[PolymarketAutonomousLockProposal] = []
+
+    class Result:
+        pass
+
+    def submit(
+        proposal: PolymarketAutonomousLockProposal,
+        *_args: object,
+        **_kwargs: object,
+    ) -> Result:
+        submitted.append(proposal)
+        return Result()
+
+    monkeypatch.setattr(runtime_module, "PolymarketAutonomousLockResult", Result)
+    monkeypatch.setattr(runtime_module, "submit_promoted_lock", submit)
+
+    asyncio.run(
+        supervisor._apply_decision(
+            PolymarketAutonomousDecision(locks=(lock,)),
+            _market(),
+            observed_at_ms=NOW_MS,
+        )
+    )
+
+    snapshot = supervisor.snapshot()
+    assert submitted == [lock]
+    assert snapshot.submitted_locks == 1
+    assert snapshot.binance_execution_connected is False
+
+
 def test_timed_out_model_is_not_started_twice(tmp_path: Path) -> None:
     calls = 0
     release = Event()
@@ -475,112 +646,6 @@ def test_timed_out_model_is_not_started_twice(tmp_path: Path) -> None:
     assert first is None
     assert second is None
     assert calls == 1
-
-
-def test_external_failure_vetoes_without_calling_executor(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    promotion = _promotion(tmp_path / "proposal")
-    proposal = _proposal(promotion)
-
-    class External:
-        trading_authority = False
-        credentials_used = False
-        execution_connected = False
-
-        def evaluate(self, **_kwargs: object) -> PolymarketExternalSignalDecision:
-            raise RuntimeError("public feed unavailable")
-
-    supervisor = _supervisor(
-        tmp_path / "runtime",
-        provider=SimpleNamespace(decide=lambda **_kwargs: None),
-        external=External(),
-    )
-    submitted = False
-
-    def submit(*_args: object, **_kwargs: object) -> object:
-        nonlocal submitted
-        submitted = True
-        return object()
-
-    monkeypatch.setattr(runtime_module, "submit_promoted_open", submit)
-    asyncio.run(
-        supervisor._apply_decision(
-            PolymarketAutonomousDecision(proposals=(proposal,)),
-            _market(),
-            observed_at_ms=NOW_MS,
-        )
-    )
-
-    assert submitted is False
-    assert supervisor.snapshot().blocked_opens == 1
-    assert "unavailable" in supervisor.snapshot().last_fault
-
-
-def test_optional_external_signal_can_only_reduce_submission(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    promotion = _promotion(tmp_path / "proposal")
-    proposal = _proposal(promotion)
-    signal = PolymarketExternalSignalDecision(
-        action="reduce",
-        maximum_size_multiplier=Decimal("0.5"),
-        reasons=("wide_reference_spread",),
-        features=PolymarketBtcReferenceFeatures(
-            observed_at_ms=NOW_MS,
-            spot_mid=Decimal("100"),
-            futures_mid=Decimal("100.01"),
-            spot_spread_bps=Decimal("1"),
-            futures_spread_bps=Decimal("1"),
-            futures_basis_bps=Decimal("1"),
-            spot_log_return=0.0,
-            futures_log_return=0.0,
-            event_time_skew_ms=0,
-            receive_time_skew_ms=0,
-        ),
-    )
-    external = SimpleNamespace(
-        trading_authority=False,
-        credentials_used=False,
-        execution_connected=False,
-        evaluate=lambda **_kwargs: signal,
-    )
-    supervisor = _supervisor(
-        tmp_path / "runtime",
-        provider=SimpleNamespace(decide=lambda **_kwargs: None),
-        external=external,
-    )
-    received: list[PolymarketExternalSignalDecision | None] = []
-
-    def submit(
-        *_args: object,
-        external_signal: PolymarketExternalSignalDecision | None,
-        **_kwargs: object,
-    ) -> PolymarketAutonomousOpenResult:
-        received.append(external_signal)
-        return PolymarketAutonomousOpenResult(
-            record=SimpleNamespace(),  # type: ignore[arg-type]
-            quote=SimpleNamespace(),  # type: ignore[arg-type]
-            effective_quantity=Decimal("2.5"),
-            worst_notional_quote=Decimal("1"),
-            worst_fee_quote=Decimal("0.01"),
-            net_edge_quote_per_share=Decimal("0.1"),
-        )
-
-    monkeypatch.setattr(runtime_module, "submit_promoted_open", submit)
-    asyncio.run(
-        supervisor._apply_decision(
-            PolymarketAutonomousDecision(proposals=(proposal,)),
-            _market(),
-            observed_at_ms=NOW_MS,
-        )
-    )
-
-    assert received == [signal]
-    assert supervisor.snapshot().submitted_opens == 1
-    assert supervisor.snapshot().external_signal_enabled is True
 
 
 def test_stop_retries_until_owned_exposure_is_closed(tmp_path: Path) -> None:
@@ -668,15 +733,45 @@ def test_critical_service_failure_drains_owned_exposure_before_exit(
 
     with pytest.raises(
         RuntimeError,
-        match=(
-            "critical_service_exit:"
-            "authenticated_user_stream:ConnectionError"
-        ),
+        match=("critical_service_exit:authenticated_user_stream:ConnectionError"),
     ):
         asyncio.run(supervisor.run())
 
     assert attempts == 2
     assert supervisor.snapshot().stop_completed is True
+
+
+def test_startup_network_failure_drains_owned_exposure_before_exit(
+    tmp_path: Path,
+) -> None:
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(decide=lambda **_kwargs: None),
+    )
+    owned = {MARKET_ID}
+    attempts = 0
+    supervisor._owned_market_ids = lambda: set(owned)  # type: ignore[method-assign]
+    supervisor.coordinator.preflight = Mock(  # type: ignore[method-assign]
+        side_effect=ConnectionError("startup network unavailable")
+    )
+
+    async def close_owned() -> bool:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 2:
+            owned.clear()
+            return True
+        return False
+
+    supervisor._close_owned = close_owned  # type: ignore[method-assign]
+
+    with pytest.raises(ConnectionError, match="startup network unavailable"):
+        asyncio.run(supervisor.run())
+
+    assert attempts == 2
+    assert supervisor.snapshot().stop_completed is True
+    assert supervisor.snapshot().stop_requested is True
+    assert supervisor.snapshot().last_fault == "startup_failure:ConnectionError"
 
 
 def test_forced_exit_window_never_opens_new_exposure(tmp_path: Path) -> None:
@@ -719,51 +814,25 @@ def test_run_with_pre_requested_stop_never_invokes_model(tmp_path: Path) -> None
     assert calls == 0
     assert supervisor.snapshot().stop_completed is True
     assert supervisor.snapshot().stop_requested is True
+    assert supervisor.snapshot().wallet_capital_gate_passed is False
+    assert supervisor.snapshot().wallet_capital_support_quote == "0"
 
 
-def test_run_starts_optional_public_signal_service(tmp_path: Path) -> None:
-    started = False
-
-    class External:
-        trading_authority = False
-        credentials_used = False
-        execution_connected = False
-
-        def evaluate(self, **_kwargs: object) -> PolymarketExternalSignalDecision:
-            raise AssertionError("no proposal should be evaluated")
-
-        async def run(self, stop: asyncio.Event) -> None:
-            nonlocal started
-            started = True
-            await stop.wait()
-
+def test_wallet_capital_gate_fails_closed_without_blocking_supervision(
+    tmp_path: Path,
+) -> None:
     supervisor = _supervisor(
         tmp_path,
         provider=SimpleNamespace(decide=lambda **_kwargs: None),
-        external=External(),
+        wallet_balance=Decimal("9999.99"),
     )
-    supervisor.request_stop()
-    asyncio.run(supervisor.run())
+    asyncio.run(supervisor.run(duration_seconds=0.01))
 
-    assert started is True
-
-
-def test_runtime_rejects_external_provider_with_exchange_authority(
-    tmp_path: Path,
-) -> None:
-    external = SimpleNamespace(
-        trading_authority=True,
-        credentials_used=False,
-        execution_connected=False,
-        evaluate=lambda **_kwargs: None,
-    )
-
-    with pytest.raises(PolymarketLiveBlocked, match="public and read-only"):
-        _supervisor(
-            tmp_path,
-            provider=SimpleNamespace(decide=lambda **_kwargs: None),
-            external=external,
-        )
+    snapshot = supervisor.snapshot()
+    assert snapshot.stop_completed is True
+    assert snapshot.wallet_capital_gate_passed is False
+    assert snapshot.wallet_capital_support_quote == "9999.99"
+    assert snapshot.entry_allowed is False
 
 
 def test_run_supervises_non_authoritative_predictor_data_service(
@@ -786,8 +855,7 @@ def test_run_supervises_non_authoritative_predictor_data_service(
         provider=SimpleNamespace(decide=lambda **_kwargs: None),
         decision_data=PredictorData(),
     )
-    supervisor.request_stop()
-    asyncio.run(supervisor.run())
+    asyncio.run(supervisor.run(duration_seconds=0.01))
 
     assert started is True
     assert stopped is True
@@ -865,10 +933,7 @@ def test_unexpected_safety_service_exit_stops_before_model_decision(
 
     with pytest.raises(
         RuntimeError,
-        match=(
-            "critical_service_exit:"
-            "authenticated_user_stream:ConnectionError"
-        ),
+        match=("critical_service_exit:authenticated_user_stream:ConnectionError"),
     ):
         asyncio.run(supervisor.run())
 
@@ -876,6 +941,5 @@ def test_unexpected_safety_service_exit_stops_before_model_decision(
     assert supervisor.snapshot().stop_requested is True
     assert supervisor.snapshot().stop_completed is True
     assert supervisor.snapshot().last_fault == (
-        "critical_service_exit:"
-        "authenticated_user_stream:ConnectionError"
+        "critical_service_exit:authenticated_user_stream:ConnectionError"
     )

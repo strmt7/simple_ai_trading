@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from polymarket_live_support import write_polymarket_live_implementation_manifest
 from simple_ai_trading.polymarket_live import PolymarketLiveBlocked
 from simple_ai_trading.polymarket_live_promotion import (
     PolymarketLivePromotion,
@@ -59,10 +60,14 @@ def _payload(
     files = {
         "model.json": b'{"model":"frozen"}\n',
         "evaluation.json": b'{"evaluation":"passed"}\n',
-        "implementation.bin": b"implementation-manifest\n",
     }
     for name, content in files.items():
         root.joinpath(name).write_bytes(content)
+    manifest_path = root / "implementation.json"
+    write_polymarket_live_implementation_manifest(
+        manifest_path,
+        source_commit="b" * 40,
+    )
     body: dict[str, object] = {
         "schema_version": "polymarket-live-promotion-v1",
         "promotion_id": "a" * 64,
@@ -84,8 +89,8 @@ def _payload(
             "sha256": _file_sha(root / "evaluation.json"),
         },
         "implementation_manifest": {
-            "path": "implementation.bin",
-            "sha256": _file_sha(root / "implementation.bin"),
+            "path": manifest_path.name,
+            "sha256": _file_sha(manifest_path),
         },
         "gates": dict(GATES),
         "policy": {
@@ -144,6 +149,7 @@ def test_unverified_promotion_cannot_construct_verified_capability() -> None:
             model_artifact_path=Path("model.json"),
             evaluation_report_path=Path("model.json"),
             implementation_manifest_path=Path("model.json"),
+            implementation=object(),  # type: ignore[arg-type]
             _capability=object(),
         )
 
@@ -165,6 +171,28 @@ def test_live_promotion_rejects_payload_or_evidence_tampering(
             path,
             evidence_root=tmp_path,
             observed_at_ms=NOW_MS,
+        )
+
+
+def test_live_promotion_binds_the_exact_file_bytes(tmp_path: Path) -> None:
+    path = tmp_path / "promotion.json"
+    path.write_text(_canonical(_payload(tmp_path)), encoding="ascii")
+    expected = hashlib.sha256(path.read_bytes()).hexdigest()
+
+    verified = load_polymarket_live_promotion(
+        path,
+        evidence_root=tmp_path,
+        observed_at_ms=NOW_MS,
+        expected_file_sha256=expected,
+    )
+    assert verified.promotion.live_authority is True
+
+    with pytest.raises(ValueError, match="promotion file hash differs"):
+        load_polymarket_live_promotion(
+            path,
+            evidence_root=tmp_path,
+            observed_at_ms=NOW_MS,
+            expected_file_sha256="0" * 64,
         )
 
 

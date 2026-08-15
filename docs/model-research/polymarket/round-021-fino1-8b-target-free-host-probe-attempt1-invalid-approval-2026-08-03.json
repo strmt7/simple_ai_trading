@@ -1,0 +1,119 @@
+{
+  "artifact_sha256": "a670bc6212804c89664ad1cdbfa5f532f949209c9b4d9909af1cd6683cd63e44",
+  "candidate_selection_design_sha256": "5a5b9e38322cdb7031e3eff2d5b3b4e5d00218c20d838efcaf68fde7461ce81a",
+  "checks": {
+    "exact_model_digest_present": true,
+    "gpu_residency_passed": true,
+    "parameter_floor_passed": true,
+    "provider_failure_count_passed": true,
+    "target_free_source_preserved": true,
+    "valid_typed_response_count_passed": true
+  },
+  "created_at_utc": "2026-08-03T16:11:51.572237+00:00",
+  "model": "fino1:8b",
+  "passed": true,
+  "purpose": "provider_schema_latency_and_gpu_compatibility_only",
+  "report": {
+    "advisory_only": true,
+    "approval_count": 1,
+    "average_inference_latency_seconds": 7.8920387999969535,
+    "average_latency_seconds": 7.8920388,
+    "average_queue_delay_seconds": 0.0,
+    "case_count": 1,
+    "case_set_sha256": "be24a875dde2e45e310a494df97454653536f1b55400177791e8119d021cea2f",
+    "config": {
+      "base_url": "http://127.0.0.1:11434",
+      "maximum_advisory_latency_seconds": 30.0,
+      "minimum_approval_confidence": 0.65,
+      "model": "fino1:8b",
+      "seed": 4701,
+      "timeout_seconds": 60.0
+    },
+    "cooldown_count": 0,
+    "market_permission_sha256": "dcac9703c3016ecf2ca5344612ad25c9b5f86d3d50d4bc8db09c5cd303a5a132",
+    "market_permissions": {
+      "0x385317e8058776b4648bd5e0139acfdeeac2b1a526e5463e864513e81acdfcff": true
+    },
+    "maximum_inference_latency_seconds": 7.8920387999969535,
+    "maximum_latency_seconds": 7.8920388,
+    "maximum_output_token_count": 45,
+    "maximum_prompt_token_count": 900,
+    "maximum_queue_delay_seconds": 0.0,
+    "model_digest": "083c6422a2dd90d62ec33638ab84271edddd2cf1fa6a9841898ea18a35e27b87",
+    "model_metadata_sha256": "f170a767d32e869d3953e4dcc401f31311521ef9b3bb5b1922e6ca3848132240",
+    "model_parameters_b": 8.0,
+    "profitability_claim": false,
+    "provider_failure_count": 0,
+    "provider_telemetry_count": 1,
+    "report_sha256": "f104107670b80acf3664bf47ab8fcc489d923cb89e1b1495518d7d5124f1c779",
+    "results": [
+      {
+        "case_id": "c21900c759ba882ac373f46a30fa0c16f4e36a827ee2db95727094e2424ec6c5",
+        "condition_id": "0x385317e8058776b4648bd5e0139acfdeeac2b1a526e5463e864513e81acdfcff",
+        "decision": {
+          "action": "approve",
+          "confidence": 1.0,
+          "failure_reason": "",
+          "permits_entry": true,
+          "reason_codes": [
+            "edge_after_fees"
+          ],
+          "summary": "Approved due to sufficient edge after fees.",
+          "valid": true
+        },
+        "inference_latency_seconds": 7.8920387999969535,
+        "latency_seconds": 7.8920388,
+        "model": "fino1:8b",
+        "provider_runtime": {
+          "digest": "083c6422a2dd90d62ec33638ab84271edddd2cf1fa6a9841898ea18a35e27b87",
+          "gpu_resident": true,
+          "loaded": true,
+          "loaded_model": "fino1:8b",
+          "requested_model": "fino1:8b",
+          "size_bytes": 6811549695,
+          "size_vram_bytes": 6811549695,
+          "status": "gpu_resident",
+          "vram_to_model_ratio": 1.0
+        },
+        "queue_delay_seconds": 0.0,
+        "response_payload": {
+          "created_at": "2026-08-03T16:11:51.5254678Z",
+          "done": true,
+          "done_reason": "stop",
+          "eval_count": 45,
+          "eval_duration": 640935000,
+          "load_duration": 6842148000,
+          "message": {
+            "content": "{\n  \"action\": \"approve\",\n  \"confidence\": 1,\n  \"reason_codes\": [\"edge_after_fees\"],\n  \"summary\": \"Approved due to sufficient edge after fees.\"\n}",
+            "role": "assistant"
+          },
+          "model": "fino1:8b",
+          "prompt_eval_count": 900,
+          "prompt_eval_duration": 377175000,
+          "total_duration": 7864654200
+        },
+        "response_sha256": "498da588c96255d82d76de3b34e089ce3b97ddaec202d093c3ad9c4858474a2f"
+      }
+    ],
+    "risk_benchmark_evidence_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+    "schema_version": "polymarket-ai-veto-report-v7",
+    "selection_sha256": "5a5b9e38322cdb7031e3eff2d5b3b4e5d00218c20d838efcaf68fde7461ce81a",
+    "total_output_token_count": 45,
+    "total_prompt_token_count": 900,
+    "trading_authority": false,
+    "valid_response_count": 1,
+    "veto_count": 0
+  },
+  "schema_version": "polymarket-round21-target-free-ai-candidate-host-probe-v1",
+  "semantics": {
+    "capture_data_accessed": false,
+    "live_trading_authority": false,
+    "market_target_or_outcome_accessed": false,
+    "model_selected": false,
+    "paper_trading_authority": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false
+  },
+  "source_case_sha256": "cae4ab37ea16d74f140028305bca14a559160a6c72d8bbb31c9c6fb6b2bcd675",
+  "source_target_free_probe_sha256": "ec4a29598f2577b31c0cda057e5c39d211967a33efd1181213348efe3f1940f5"
+}

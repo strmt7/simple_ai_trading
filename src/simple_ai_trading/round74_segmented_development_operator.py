@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 import hashlib
 import json
@@ -387,12 +387,9 @@ class Round74SegmentedPreparedMatchedDevelopment:
             or self.tuning.role != "tuning"
             or training_run_ids != expected_training
             or tuning_run_ids != expected_tuning
-            or {batch.partition_sha256 for batch in batches}
-            != {self.partition_sha256}
-            or {batch.scaler_sha256 for batch in batches}
-            != {self.scaler.scaler_sha256}
-            or self.scaler.fit_source_scope
-            != "segmented_optimization_training_runs"
+            or {batch.partition_sha256 for batch in batches} != {self.partition_sha256}
+            or {batch.scaler_sha256 for batch in batches} != {self.scaler.scaler_sha256}
+            or self.scaler.fit_source_scope != "segmented_optimization_training_runs"
             or self.scaler.fit_source_run_ids
             != self.training_split.optimization_run_ids
             or self.scaler.fit_source_partition_sha256 != self.partition_sha256
@@ -657,6 +654,7 @@ def train_round74_segmented_development_policy(
     store: object,
     partition: Round74EventRunPartition,
     target_assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
+    execution_panel_builder: Callable[..., object] | None = None,
     output_directory: str | Path,
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
@@ -691,6 +689,7 @@ def train_round74_segmented_development_policy(
             run_id: assemblies[run_id]
             for run_id in preparation.tuning_subpartition.policy_selection_run_ids
         },
+        execution_panel_builder=execution_panel_builder,
         compute_backend=compute_backend,
         config=selected_config,
         inference_minibatch_rows=inference_minibatch_rows,

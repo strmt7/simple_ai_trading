@@ -46,7 +46,9 @@ _OPEN_STATES = frozenset(
     }
 )
 _TERMINAL_STATES = frozenset({"rejected", "cancelled", "expired", "failed", "filled"})
-_FILL_ACTIVE_STATUSES = frozenset({"MATCHED", "MINED", "CONFIRMED", "RETRYING"})
+_FILL_ACTIVE_STATUSES = frozenset(
+    {"MATCHED_NOT_BROADCASTED", "MATCHED", "MINED", "CONFIRMED", "RETRYING"}
+)
 _FILL_TERMINAL_STATUSES = frozenset({"CONFIRMED", "FAILED"})
 _REMOTE_ORDER_ACTIVE_STATUSES = frozenset({"LIVE"})
 _REMOTE_ORDER_TERMINAL_STATUSES = frozenset(
@@ -76,6 +78,10 @@ class PolymarketLiveUnknownState(PolymarketLiveError):
 
 class PolymarketVenueRejected(PolymarketLiveError):
     """Raised only when the venue proves that an order was rejected."""
+
+
+class PolymarketVenueTemporarilyUnavailable(PolymarketLiveBlocked):
+    """Raised when the venue proves an endpoint is temporarily unavailable."""
 
 
 class PolymarketStateConflict(PolymarketLiveBlocked):
@@ -825,6 +831,8 @@ class PolymarketLiveVenue(Protocol):
 
     def positions(self) -> tuple[PolymarketRemotePosition, ...]: ...
 
+    def collateral_balance(self) -> Decimal: ...
+
     def funding(
         self,
         intent: PolymarketLiveOrderIntent,
@@ -838,9 +846,21 @@ class PolymarketLiveVenue(Protocol):
 class PolymarketRuntimeAuthority(Protocol):
     """Runtime liveness gate implemented independently of strategy logic."""
 
-    def note_reconciliation(self, result: "PolymarketReconciliation") -> None: ...
+    def reconciliation_checkpoint(self) -> int: ...
 
-    def note_reconciliation_failure(self, failure_code: str) -> None: ...
+    def note_reconciliation(
+        self,
+        result: "PolymarketReconciliation",
+        *,
+        checkpoint: int | None = None,
+    ) -> None: ...
+
+    def note_reconciliation_failure(
+        self,
+        failure_code: str,
+        *,
+        checkpoint: int | None = None,
+    ) -> None: ...
 
     def assert_submission_allowed(self, *, closing_only: bool) -> None: ...
 
@@ -907,6 +927,155 @@ class PolymarketOwnedLot:
         if self.provisional:
             return Decimal("0")
         return self.quantity - self.reserved_close_quantity
+
+
+@dataclass(frozen=True, slots=True)
+class PolymarketConditionAccounting:
+    """Verified bot-only cash flow and inventory for one condition."""
+
+    condition_id: str
+    gross_buy_cost_quote: Decimal
+    gross_sell_proceeds_quote: Decimal
+    confirmed_redemption_payout_quote: Decimal
+    up_quantity: Decimal
+    down_quantity: Decimal
+    up_cost_basis_quote: Decimal
+    down_cost_basis_quote: Decimal
+    confirmed_fill_count: int
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "condition_id", _condition_id(self.condition_id))
+        for field_name in (
+            "gross_buy_cost_quote",
+            "gross_sell_proceeds_quote",
+            "confirmed_redemption_payout_quote",
+            "up_quantity",
+            "down_quantity",
+            "up_cost_basis_quote",
+            "down_cost_basis_quote",
+        ):
+            object.__setattr__(
+                self,
+                field_name,
+                _decimal(
+                    getattr(self, field_name),
+                    name=field_name,
+                    nonnegative=True,
+                ),
+            )
+        count = int(self.confirmed_fill_count)
+        if count < 0:
+            raise ValueError("confirmed fill count cannot be negative")
+        object.__setattr__(self, "confirmed_fill_count", count)
+
+    @property
+    def guaranteed_payout_quote(self) -> Decimal:
+        return min(self.up_quantity, self.down_quantity)
+
+    def quantity(self, outcome: str) -> Decimal:
+        if outcome == "Up":
+            return self.up_quantity
+        if outcome == "Down":
+            return self.down_quantity
+        raise ValueError("condition accounting outcome is invalid")
+
+    def cost_basis_quote(self, outcome: str) -> Decimal:
+        if outcome == "Up":
+            return self.up_cost_basis_quote
+        if outcome == "Down":
+            return self.down_cost_basis_quote
+        raise ValueError("condition accounting outcome is invalid")
+
+    @property
+    def net_cash_outflow_quote(self) -> Decimal:
+        return (
+            self.gross_buy_cost_quote
+            - self.gross_sell_proceeds_quote
+            - self.confirmed_redemption_payout_quote
+        )
+
+    @property
+    def maximum_loss_quote(self) -> Decimal:
+        return max(
+            Decimal("0"),
+            self.net_cash_outflow_quote - self.guaranteed_payout_quote,
+        )
+
+    @property
+    def inventory_downside_quote(self) -> Decimal:
+        """Return remaining cost basis not protected by paired payout."""
+
+        return max(
+            Decimal("0"),
+            self.up_cost_basis_quote
+            + self.down_cost_basis_quote
+            - self.guaranteed_payout_quote,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class PolymarketLedgerRevision:
+    """A cheap immutable tip used to reject torn multi-query snapshots."""
+
+    sequence: int
+    record_sha256: str
+
+    def __post_init__(self) -> None:
+        sequence = int(self.sequence)
+        digest = str(self.record_sha256 or "").strip().lower()
+        if (
+            sequence < 0
+            or (sequence == 0 and digest != _ZERO_SHA256)
+            or (sequence > 0 and re.fullmatch(r"[0-9a-f]{64}", digest) is None)
+        ):
+            raise ValueError("Polymarket ledger revision is invalid")
+        object.__setattr__(self, "sequence", sequence)
+        object.__setattr__(self, "record_sha256", digest)
+
+
+@dataclass(frozen=True, slots=True)
+class PolymarketRealizedPnlEvent:
+    """Exact fee-inclusive realized PnL from one owned close or redemption."""
+
+    event_id: str
+    condition_id: str
+    source: str
+    observed_at_ms: int
+    proceeds_quote: Decimal
+    consumed_cost_basis_quote: Decimal
+    pnl_quote: Decimal
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "event_id",
+            _identifier(self.event_id, name="realized event_id"),
+        )
+        object.__setattr__(self, "condition_id", _condition_id(self.condition_id))
+        source = str(self.source or "").strip().lower()
+        if source not in {"sell_fill", "redemption"}:
+            raise ValueError("Polymarket realized PnL source is invalid")
+        observed = int(self.observed_at_ms)
+        if observed <= 0:
+            raise ValueError("Polymarket realized PnL time is invalid")
+        proceeds = _decimal(
+            self.proceeds_quote,
+            name="realized proceeds",
+            nonnegative=True,
+        )
+        basis = _decimal(
+            self.consumed_cost_basis_quote,
+            name="realized cost basis",
+            nonnegative=True,
+        )
+        pnl = _decimal(self.pnl_quote, name="realized PnL")
+        if pnl != proceeds - basis:
+            raise ValueError("Polymarket realized PnL accounting differs")
+        object.__setattr__(self, "source", source)
+        object.__setattr__(self, "observed_at_ms", observed)
+        object.__setattr__(self, "proceeds_quote", proceeds)
+        object.__setattr__(self, "consumed_cost_basis_quote", basis)
+        object.__setattr__(self, "pnl_quote", pnl)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1145,7 +1314,7 @@ class PolymarketLiveOrderLedger:
             populated = any(
                 int(
                     connection.execute(
-                        f"SELECT COUNT(*) FROM {table}"  # noqa: S608 - fixed names
+                        f"SELECT COUNT(*) FROM {table}"  # nosec B608
                     ).fetchone()[0]
                 )
                 for table in (
@@ -1959,6 +2128,14 @@ class PolymarketLiveOrderLedger:
                     payload["status"] = prior_status
                 else:
                     allowed = {
+                        "MATCHED_NOT_BROADCASTED": {
+                            "MATCHED_NOT_BROADCASTED",
+                            "MATCHED",
+                            "MINED",
+                            "CONFIRMED",
+                            "RETRYING",
+                            "FAILED",
+                        },
                         "MATCHED": {
                             "MATCHED",
                             "MINED",
@@ -2140,6 +2317,27 @@ class PolymarketLiveOrderLedger:
                 "SELECT * FROM polymarket_live_orders ORDER BY created_at_ms, intent_id"
             ).fetchall()
             return tuple(self._record(row) for row in rows)
+        finally:
+            connection.close()
+
+    def revision(self) -> PolymarketLedgerRevision:
+        """Return the audit-chain tip without rescanning immutable history."""
+
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                """
+                SELECT sequence, record_sha256
+                FROM polymarket_live_audit
+                ORDER BY sequence DESC LIMIT 1
+                """
+            ).fetchone()
+            if row is None:
+                return PolymarketLedgerRevision(0, _ZERO_SHA256)
+            return PolymarketLedgerRevision(
+                sequence=int(row["sequence"]),
+                record_sha256=str(row["record_sha256"]),
+            )
         finally:
             connection.close()
 
@@ -2906,6 +3104,463 @@ class PolymarketLiveOrderLedger:
             for (market_id, token_id), quantity in sorted(quantities.items())
         )
 
+    def realized_pnl_events(self) -> tuple[PolymarketRealizedPnlEvent, ...]:
+        """Rebuild fee-inclusive realized PnL from exact owned evidence."""
+
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN")
+            order_rows = connection.execute(
+                """
+                SELECT * FROM polymarket_live_orders
+                ORDER BY created_at_ms, intent_id
+                """
+            ).fetchall()
+            orders_by_id: dict[str, sqlite3.Row] = {}
+            orders_by_intent: dict[str, sqlite3.Row] = {}
+            for row in order_rows:
+                self._verify_order_row(row)
+                if str(row["state"]) in _OPEN_STATES:
+                    raise PolymarketLiveBlocked(
+                        "realized PnL accounting has an active or unknown order"
+                    )
+                orders_by_id[str(row["expected_order_id"])] = row
+                orders_by_intent[str(row["intent_id"])] = row
+
+            fill_rows = connection.execute(
+                """
+                SELECT * FROM polymarket_live_fills
+                WHERE status != 'FAILED'
+                ORDER BY observed_at_ms, trade_id, order_id
+                """
+            ).fetchall()
+            parent_quantities: dict[str, Decimal] = {}
+            parent_costs: dict[str, Decimal] = {}
+            parent_consumed: dict[str, Decimal] = {}
+            for row in fill_rows:
+                self._verify_fill_row(row)
+                if (
+                    str(row["status"]) != "CONFIRMED"
+                    or str(row["accounting_state"]) != "VERIFIED"
+                ):
+                    raise PolymarketLiveBlocked(
+                        "realized PnL requires confirmed fee-verified fills"
+                    )
+                order = orders_by_id.get(str(row["order_id"]))
+                if order is None:
+                    raise PolymarketLiveError(
+                        "realized PnL fill lacks its bot-owned order"
+                    )
+                if (
+                    str(row["market_id"]) != str(order["market_id"])
+                    or str(row["token_id"]) != str(order["token_id"])
+                    or str(row["side"]) != str(order["side"])
+                ):
+                    raise PolymarketLiveError(
+                        "realized PnL fill identity differs from its order"
+                    )
+                if str(order["side"]) != "BUY":
+                    continue
+                quantity = _decimal(
+                    row["quantity"],
+                    name="realized buy quantity",
+                    positive=True,
+                )
+                cost = _decimal(
+                    row["price"],
+                    name="realized buy price",
+                    positive=True,
+                ) * quantity + _decimal(
+                    row["fee_quote"],
+                    name="realized buy fee",
+                    nonnegative=True,
+                )
+                parent = str(order["intent_id"])
+                parent_quantities[parent] = (
+                    parent_quantities.get(parent, Decimal("0")) + quantity
+                )
+                parent_costs[parent] = parent_costs.get(parent, Decimal("0")) + cost
+
+            events: list[PolymarketRealizedPnlEvent] = []
+            for row in fill_rows:
+                order = orders_by_id[str(row["order_id"])]
+                if str(order["side"]) != "SELL":
+                    continue
+                parent = str(order["parent_intent_id"])
+                parent_order = orders_by_intent.get(parent)
+                if (
+                    not parent
+                    or parent_order is None
+                    or str(parent_order["side"]) != "BUY"
+                    or str(parent_order["market_id"]) != str(order["market_id"])
+                    or str(parent_order["token_id"]) != str(order["token_id"])
+                ):
+                    raise PolymarketLiveError(
+                        "realized close lacks its exact bot-owned parent"
+                    )
+                quantity = _decimal(
+                    row["quantity"],
+                    name="realized sell quantity",
+                    positive=True,
+                )
+                acquired = parent_quantities.get(parent, Decimal("0"))
+                consumed = parent_consumed.get(parent, Decimal("0"))
+                if (
+                    acquired <= 0
+                    or consumed + quantity > acquired + _POSITION_TOLERANCE
+                ):
+                    raise PolymarketLiveError(
+                        "realized close exceeds its bot-owned parent quantity"
+                    )
+                basis = parent_costs[parent] * quantity / acquired
+                parent_consumed[parent] = consumed + quantity
+                gross = (
+                    _decimal(
+                        row["price"],
+                        name="realized sell price",
+                        positive=True,
+                    )
+                    * quantity
+                )
+                fee = _decimal(
+                    row["fee_quote"],
+                    name="realized sell fee",
+                    nonnegative=True,
+                )
+                if fee > gross:
+                    raise PolymarketLiveError(
+                        "realized sell fee exceeds gross proceeds"
+                    )
+                proceeds = gross - fee
+                event_identity = {
+                    "source": "sell_fill",
+                    "trade_id": str(row["trade_id"]),
+                    "order_id": str(row["order_id"]),
+                }
+                events.append(
+                    PolymarketRealizedPnlEvent(
+                        event_id=("sell:" + _canonical_sha256(event_identity)[:32]),
+                        condition_id=str(order["market_id"]),
+                        source="sell_fill",
+                        observed_at_ms=int(row["observed_at_ms"]),
+                        proceeds_quote=proceeds,
+                        consumed_cost_basis_quote=basis,
+                        pnl_quote=proceeds - basis,
+                    )
+                )
+
+            redemption_rows = connection.execute(
+                """
+                SELECT * FROM polymarket_live_redemptions
+                ORDER BY updated_at_ms, redemption_id
+                """
+            ).fetchall()
+            for row in redemption_rows:
+                redemption = self._redemption_record(row)
+                if redemption.state in {
+                    "prepared",
+                    "submitting",
+                    "submitted",
+                    "unknown",
+                }:
+                    raise PolymarketLiveBlocked(
+                        "realized PnL has an unresolved redemption"
+                    )
+                if redemption.state != "confirmed":
+                    continue
+                if redemption.payout_accounting_state != "VERIFIED":
+                    raise PolymarketLiveBlocked(
+                        "realized PnL has an unverified redemption"
+                    )
+                consumed_basis = Decimal("0")
+                for item in redemption.inventory:
+                    remaining = item.quantity
+                    for parent_order in order_rows:
+                        if (
+                            str(parent_order["side"]) != "BUY"
+                            or str(parent_order["market_id"]) != item.market_id
+                            or str(parent_order["token_id"]) != item.token_id
+                        ):
+                            continue
+                        parent = str(parent_order["intent_id"])
+                        acquired = parent_quantities.get(parent, Decimal("0"))
+                        consumed = parent_consumed.get(parent, Decimal("0"))
+                        available = max(Decimal("0"), acquired - consumed)
+                        selected = min(available, remaining)
+                        if selected:
+                            consumed_basis += parent_costs[parent] * selected / acquired
+                            parent_consumed[parent] = consumed + selected
+                            remaining -= selected
+                        if remaining <= _POSITION_TOLERANCE:
+                            remaining = Decimal("0")
+                            break
+                    if remaining:
+                        raise PolymarketLiveError(
+                            "realized redemption exceeds bot-owned cost basis"
+                        )
+                events.append(
+                    PolymarketRealizedPnlEvent(
+                        event_id=redemption.redemption_id,
+                        condition_id=redemption.condition_id,
+                        source="redemption",
+                        observed_at_ms=redemption.updated_at_ms,
+                        proceeds_quote=redemption.payout_quote,
+                        consumed_cost_basis_quote=consumed_basis,
+                        pnl_quote=redemption.payout_quote - consumed_basis,
+                    )
+                )
+            connection.execute("COMMIT")
+            return tuple(
+                sorted(
+                    events,
+                    key=lambda item: (item.observed_at_ms, item.event_id),
+                )
+            )
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def condition_accounting(
+        self,
+        condition_id: str,
+    ) -> PolymarketConditionAccounting:
+        """Rebuild exact event downside from verified bot-owned evidence."""
+
+        condition = _condition_id(condition_id)
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN")
+            order_rows = connection.execute(
+                """
+                SELECT * FROM polymarket_live_orders
+                WHERE market_id = ?
+                ORDER BY created_at_ms, intent_id
+                """,
+                [condition],
+            ).fetchall()
+            by_order_id: dict[str, sqlite3.Row] = {}
+            by_intent_id: dict[str, sqlite3.Row] = {}
+            token_outcomes: dict[str, str] = {}
+            for row in order_rows:
+                self._verify_order_row(row)
+                if str(row["state"]) in _OPEN_STATES:
+                    raise PolymarketLiveBlocked(
+                        "condition accounting has an active or unknown order"
+                    )
+                order_id = str(row["expected_order_id"])
+                by_order_id[order_id] = row
+                by_intent_id[str(row["intent_id"])] = row
+                token = str(row["token_id"])
+                outcome = str(row["outcome"])
+                prior = token_outcomes.setdefault(token, outcome)
+                if prior != outcome:
+                    raise PolymarketLiveError(
+                        "condition token maps to contradictory outcomes"
+                    )
+
+            fill_rows = connection.execute(
+                """
+                SELECT f.*
+                FROM polymarket_live_fills AS f
+                JOIN polymarket_live_orders AS o
+                  ON o.expected_order_id = f.order_id
+                WHERE o.market_id = ? AND f.status != 'FAILED'
+                ORDER BY f.observed_at_ms, f.trade_id, f.order_id
+                """,
+                [condition],
+            ).fetchall()
+            gross_buy_cost = Decimal("0")
+            gross_sell_proceeds = Decimal("0")
+            quantities = {"Up": Decimal("0"), "Down": Decimal("0")}
+            parent_buy_quantities: dict[str, Decimal] = {}
+            parent_buy_costs: dict[str, Decimal] = {}
+            parent_consumed_quantities: dict[str, Decimal] = {}
+            for row in fill_rows:
+                self._verify_fill_row(row)
+                if (
+                    str(row["status"]) != "CONFIRMED"
+                    or str(row["accounting_state"]) != "VERIFIED"
+                ):
+                    raise PolymarketLiveBlocked(
+                        "condition accounting requires confirmed fee-verified fills"
+                    )
+                order = by_order_id.get(str(row["order_id"]))
+                if order is None:
+                    raise PolymarketLiveError(
+                        "condition fill lacks its bot-owned order"
+                    )
+                quantity = _decimal(
+                    row["quantity"],
+                    name="condition fill quantity",
+                    positive=True,
+                )
+                price = _decimal(
+                    row["price"],
+                    name="condition fill price",
+                    positive=True,
+                )
+                fee = _decimal(
+                    row["fee_quote"],
+                    name="condition fill fee",
+                    nonnegative=True,
+                )
+                outcome = str(order["outcome"])
+                side = str(order["side"])
+                gross = price * quantity
+                if side == "BUY":
+                    fill_cost = gross + fee
+                    gross_buy_cost += fill_cost
+                    quantities[outcome] += quantity
+                    parent_id = str(order["intent_id"])
+                    parent_buy_quantities[parent_id] = (
+                        parent_buy_quantities.get(parent_id, Decimal("0")) + quantity
+                    )
+                    parent_buy_costs[parent_id] = (
+                        parent_buy_costs.get(parent_id, Decimal("0")) + fill_cost
+                    )
+                elif side == "SELL":
+                    if fee > gross:
+                        raise PolymarketLiveError(
+                            "condition sell fee exceeds gross proceeds"
+                        )
+                    gross_sell_proceeds += gross - fee
+                    quantities[outcome] -= quantity
+                    parent_id = str(order["parent_intent_id"])
+                    parent = by_intent_id.get(parent_id)
+                    if (
+                        not parent_id
+                        or parent is None
+                        or str(parent["side"]) != "BUY"
+                        or str(parent["outcome"]) != outcome
+                    ):
+                        raise PolymarketLiveError(
+                            "condition close lacks its bot-owned parent"
+                        )
+                    parent_consumed_quantities[parent_id] = (
+                        parent_consumed_quantities.get(
+                            parent_id,
+                            Decimal("0"),
+                        )
+                        + quantity
+                    )
+                else:
+                    raise PolymarketLiveError("condition fill side is invalid")
+
+            redemption_rows = connection.execute(
+                """
+                SELECT * FROM polymarket_live_redemptions
+                WHERE condition_id = ?
+                ORDER BY attempt
+                """,
+                [condition],
+            ).fetchall()
+            redemption_payout = Decimal("0")
+            for row in redemption_rows:
+                redemption = self._redemption_record(row)
+                if redemption.state in {
+                    "prepared",
+                    "submitting",
+                    "submitted",
+                    "unknown",
+                }:
+                    raise PolymarketLiveBlocked(
+                        "condition accounting has an unresolved redemption"
+                    )
+                if redemption.state != "confirmed":
+                    continue
+                if redemption.payout_accounting_state != "VERIFIED":
+                    raise PolymarketLiveBlocked(
+                        "condition accounting has an unverified redemption"
+                    )
+                redemption_payout += redemption.payout_quote
+                for item in redemption.inventory:
+                    outcome = token_outcomes.get(item.token_id)
+                    if outcome is None:
+                        raise PolymarketLiveError(
+                            "redeemed token lacks a bot-owned outcome"
+                        )
+                    quantities[outcome] -= item.quantity
+                    remaining = item.quantity
+                    for parent in order_rows:
+                        if (
+                            str(parent["side"]) != "BUY"
+                            or str(parent["token_id"]) != item.token_id
+                        ):
+                            continue
+                        parent_id = str(parent["intent_id"])
+                        acquired = parent_buy_quantities.get(
+                            parent_id,
+                            Decimal("0"),
+                        )
+                        consumed = parent_consumed_quantities.get(
+                            parent_id,
+                            Decimal("0"),
+                        )
+                        available = max(Decimal("0"), acquired - consumed)
+                        selected = min(available, remaining)
+                        if selected:
+                            parent_consumed_quantities[parent_id] = consumed + selected
+                            remaining -= selected
+                        if remaining <= _POSITION_TOLERANCE:
+                            remaining = Decimal("0")
+                            break
+                    if remaining:
+                        raise PolymarketLiveError(
+                            "redeemed quantity exceeds bot-owned cost basis"
+                        )
+
+            for outcome, quantity in tuple(quantities.items()):
+                if quantity < -_POSITION_TOLERANCE:
+                    raise PolymarketLiveError(
+                        "condition accounting inventory became negative"
+                    )
+                quantities[outcome] = max(Decimal("0"), quantity)
+            remaining_costs = {"Up": Decimal("0"), "Down": Decimal("0")}
+            remaining_quantities = {"Up": Decimal("0"), "Down": Decimal("0")}
+            for parent_id, acquired in parent_buy_quantities.items():
+                consumed = parent_consumed_quantities.get(parent_id, Decimal("0"))
+                if consumed > acquired + _POSITION_TOLERANCE:
+                    raise PolymarketLiveError(
+                        "condition close exceeds bot-owned cost basis"
+                    )
+                remaining = max(Decimal("0"), acquired - consumed)
+                parent = by_intent_id[parent_id]
+                outcome = str(parent["outcome"])
+                remaining_quantities[outcome] += remaining
+                remaining_costs[outcome] += (
+                    parent_buy_costs[parent_id] * remaining / acquired
+                )
+            if any(
+                abs(remaining_quantities[outcome] - quantities[outcome])
+                > _POSITION_TOLERANCE
+                for outcome in ("Up", "Down")
+            ):
+                raise PolymarketLiveError(
+                    "condition inventory and cost basis do not reconcile"
+                )
+            result = PolymarketConditionAccounting(
+                condition_id=condition,
+                gross_buy_cost_quote=gross_buy_cost,
+                gross_sell_proceeds_quote=gross_sell_proceeds,
+                confirmed_redemption_payout_quote=redemption_payout,
+                up_quantity=quantities["Up"],
+                down_quantity=quantities["Down"],
+                up_cost_basis_quote=remaining_costs["Up"],
+                down_cost_basis_quote=remaining_costs["Down"],
+                confirmed_fill_count=len(fill_rows),
+            )
+            connection.execute("COMMIT")
+            return result
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
 
 class PolymarketLiveCoordinator:
     """Coordinate live orders without touching account-wide or foreign state."""
@@ -2933,12 +3588,17 @@ class PolymarketLiveCoordinator:
             raise ValueError("live Polymarket execution requires a dedicated wallet")
 
     def preflight(self) -> PolymarketReconciliation:
+        checkpoint = (
+            None
+            if self.runtime_authority is None
+            else self.runtime_authority.reconciliation_checkpoint()
+        )
         try:
             venue = self.venue.preflight()
         except Exception as exc:
             if self.runtime_authority is not None:
                 self.runtime_authority.note_reconciliation_failure(
-                    exc.__class__.__name__
+                    exc.__class__.__name__, checkpoint=checkpoint
                 )
             raise
         errors: list[str] = []
@@ -2958,7 +3618,7 @@ class PolymarketLiveCoordinator:
             base_errors=errors,
         )
         if self.runtime_authority is not None:
-            self.runtime_authority.note_reconciliation(result)
+            self.runtime_authority.note_reconciliation(result, checkpoint=checkpoint)
         return result
 
     def _transition_reconciled(
@@ -3108,6 +3768,11 @@ class PolymarketLiveCoordinator:
         )
 
     def reconcile(self) -> PolymarketReconciliation:
+        checkpoint = (
+            None
+            if self.runtime_authority is None
+            else self.runtime_authority.reconciliation_checkpoint()
+        )
         now = int(time.time() * 1_000)
         targets = self.ledger.reconciliation_targets(observed_at_ms=now)
         owned_ids = tuple(record.expected_order_id for record in targets)
@@ -3188,7 +3853,7 @@ class PolymarketLiveCoordinator:
             base_errors=[],
         )
         if self.runtime_authority is not None:
-            self.runtime_authority.note_reconciliation(result)
+            self.runtime_authority.note_reconciliation(result, checkpoint=checkpoint)
         return result
 
     def _reconcile_snapshot(
@@ -3273,20 +3938,41 @@ class PolymarketLiveCoordinator:
         )
 
     def _owned_at_risk(self) -> tuple[Decimal, frozenset[str]]:
-        records = {record.intent.intent_id: record for record in self.ledger.records()}
-        total = Decimal("0")
-        markets: set[str] = set()
-        for lot in self.ledger.owned_lots():
-            parent = records.get(lot.parent_intent_id)
-            if parent is None or parent.intent.side != "BUY":
-                raise PolymarketLiveBlocked(
-                    "bot-owned inventory lacks its opening risk record"
-                )
-            intent = parent.intent
-            fee_reserve = intent.fee_reserve_quote * lot.quantity / intent.quantity
-            total += intent.limit_price * lot.quantity + fee_reserve
-            markets.add(lot.market_id)
+        markets = {lot.market_id for lot in self.ledger.owned_lots()}
+        total = sum(
+            (
+                self.ledger.condition_accounting(market_id).maximum_loss_quote
+                for market_id in markets
+            ),
+            start=Decimal("0"),
+        )
         return total, frozenset(markets)
+
+    def _assert_intent_current(
+        self,
+        intent: PolymarketLiveOrderIntent,
+        *,
+        observed_at_ms: int,
+    ) -> None:
+        if intent.created_at_ms - observed_at_ms > self.maximum_clock_skew_ms:
+            raise PolymarketLiveBlocked("live intent timestamp is in the future")
+        if (
+            observed_at_ms - intent.created_at_ms
+            > self.risk_limits.maximum_intent_age_ms
+        ):
+            raise PolymarketLiveBlocked("live intent exceeded its execution TTL")
+        if intent.expires_at_ms <= observed_at_ms:
+            raise PolymarketLiveBlocked("live intent has already expired")
+
+    def _assert_order_dispatch_available(self) -> None:
+        checker = getattr(self.venue, "assert_order_dispatch_available", None)
+        if checker is None:
+            return
+        if not callable(checker):
+            raise PolymarketLiveBlocked(
+                "venue order-dispatch availability gate is invalid"
+            )
+        checker()
 
     def submit(
         self,
@@ -3296,12 +3982,8 @@ class PolymarketLiveCoordinator:
         neg_risk: bool,
     ) -> PolymarketLiveOrderRecord:
         now = int(time.time() * 1_000)
-        if intent.created_at_ms - now > self.maximum_clock_skew_ms:
-            raise PolymarketLiveBlocked("live intent timestamp is in the future")
-        if now - intent.created_at_ms > self.risk_limits.maximum_intent_age_ms:
-            raise PolymarketLiveBlocked("live intent exceeded its execution TTL")
-        if intent.expires_at_ms <= now:
-            raise PolymarketLiveBlocked("live intent has already expired")
+        self._assert_intent_current(intent, observed_at_ms=now)
+        self._assert_order_dispatch_available()
         gate = self.preflight()
         if self.runtime_authority is not None:
             self.runtime_authority.assert_submission_allowed(
@@ -3352,10 +4034,30 @@ class PolymarketLiveCoordinator:
             if order_quote > self.risk_limits.maximum_order_quote:
                 raise PolymarketLiveBlocked("live order exceeds its quote ceiling")
             current_at_risk, active_markets = self._owned_at_risk()
-            if (
-                current_at_risk + order_quote
-                > self.risk_limits.maximum_total_at_risk_quote
+            if intent.market_id in active_markets or any(
+                record.intent.market_id == intent.market_id
+                for record in self.ledger.records()
             ):
+                condition = self.ledger.condition_accounting(intent.market_id)
+                up_quantity = condition.up_quantity
+                down_quantity = condition.down_quantity
+                if intent.outcome == "Up":
+                    up_quantity += intent.quantity
+                else:
+                    down_quantity += intent.quantity
+                projected_condition_loss = max(
+                    Decimal("0"),
+                    condition.net_cash_outflow_quote
+                    + order_quote
+                    - min(up_quantity, down_quantity),
+                )
+                projected_total_at_risk = current_at_risk
+                if intent.market_id in active_markets:
+                    projected_total_at_risk -= condition.maximum_loss_quote
+                projected_total_at_risk += projected_condition_loss
+            else:
+                projected_total_at_risk = current_at_risk + order_quote
+            if projected_total_at_risk > self.risk_limits.maximum_total_at_risk_quote:
                 raise PolymarketLiveBlocked(
                     "live order exceeds the aggregate capital-at-risk ceiling"
                 )
@@ -3419,7 +4121,9 @@ class PolymarketLiveCoordinator:
                     self.runtime_authority.assert_submission_allowed(
                         closing_only=intent.closing_only
                     )
+                self._assert_order_dispatch_available()
                 now = int(time.time() * 1_000)
+                self._assert_intent_current(intent, observed_at_ms=now)
                 self.ledger.reserve(prepared, observed_at_ms=now)
                 self.ledger.transition(
                     intent.intent_id,
@@ -3646,6 +4350,125 @@ class PolymarketLiveCoordinator:
             )
         return tuple(output)
 
+    def submit_owned_close_order(
+        self,
+        *,
+        parent_intent_id: str,
+        quantity: Decimal,
+        action_binding_sha256: str,
+        minimum_net_quote: Decimal = Decimal("0"),
+        maximum_book_age_ms: int = 1_500,
+    ) -> tuple[PolymarketLiveOrderRecord, PolymarketCloseQuote]:
+        """Submit one model-requested reduction of an exact bot-owned lot."""
+
+        parent_id = _identifier(parent_intent_id, name="parent_intent_id")
+        requested = _decimal(quantity, name="close quantity", positive=True)
+        minimum_net = _decimal(
+            minimum_net_quote,
+            name="minimum close net quote",
+            nonnegative=True,
+        )
+        binding = str(action_binding_sha256 or "").strip().lower()
+        if re.fullmatch(r"[0-9a-f]{64}", binding) is None or binding == _ZERO_SHA256:
+            raise ValueError("action binding must be a nonzero SHA-256 digest")
+        maximum_age = int(maximum_book_age_ms)
+        if not 100 <= maximum_age <= 5_000:
+            raise ValueError("maximum_book_age_ms must lie in [100, 5000]")
+        gate = self.reconcile()
+        if not gate.can_close:
+            raise PolymarketLiveBlocked(
+                f"targeted close blocked by reconciliation: {gate.errors}"
+            )
+        if self.ledger.open_owned_order_ids():
+            raise PolymarketLiveBlocked(
+                "targeted close requires all prior bot orders to be terminal"
+            )
+        records = self.ledger.records()
+        by_intent = {record.intent.intent_id: record for record in records}
+        parent = by_intent.get(parent_id)
+        lots = {item.parent_intent_id: item for item in self.ledger.owned_lots()}
+        lot = lots.get(parent_id)
+        if (
+            parent is None
+            or parent.intent.side != "BUY"
+            or parent.intent.closing_only
+            or parent.state not in _TERMINAL_STATES
+            or lot is None
+            or lot.provisional
+            or lot.reserved_close_quantity
+            or requested > lot.available_quantity
+        ):
+            raise PolymarketLiveBlocked(
+                "targeted close exceeds its confirmed unreserved bot-owned lot"
+            )
+        quote = self.venue.close_quote(
+            market_id=lot.market_id,
+            token_id=lot.token_id,
+            quantity=requested,
+            maximum_book_age_ms=maximum_age,
+        )
+        if (
+            quote.market_id != lot.market_id
+            or quote.token_id != lot.token_id
+            or quote.quantity != requested
+            or quote.source_age_ms < -self.maximum_clock_skew_ms
+            or quote.source_age_ms > maximum_age
+        ):
+            raise PolymarketLiveBlocked(
+                "targeted close quote identity or freshness differs"
+            )
+        if quote.net_quote < minimum_net:
+            raise PolymarketLiveBlocked(
+                "targeted close no longer meets its after-cost proceeds floor"
+            )
+        attempt = 1 + sum(
+            record.intent.closing_only and record.intent.parent_intent_id == parent_id
+            for record in records
+        )
+        now = int(time.time() * 1_000)
+        identity = _canonical_sha256(
+            {
+                "action_binding_sha256": binding,
+                "minimum_net_quote": format(minimum_net, "f"),
+                "parent_intent_id": parent_id,
+                "attempt": attempt,
+                "quantity": format(requested, "f"),
+                "limit_price": format(quote.limit_price, "f"),
+                "average_price": format(quote.average_price, "f"),
+                "fee_quote": format(quote.fee_quote, "f"),
+                "net_quote": format(quote.net_quote, "f"),
+                "fee_rate": format(quote.fee_rate, "f"),
+                "fee_exponent": quote.fee_exponent,
+                "book_payload_sha256": quote.book_payload_sha256,
+                "observed_at_ms": quote.observed_at_ms,
+            }
+        )
+        intent = PolymarketLiveOrderIntent(
+            intent_id=f"policy-close-{identity[:48]}",
+            bot_id=parent.intent.bot_id,
+            market_id=lot.market_id,
+            token_id=lot.token_id,
+            symbol="BTC",
+            outcome=parent.intent.outcome,
+            side="SELL",
+            order_type="FAK",
+            limit_price=quote.limit_price,
+            quantity=requested,
+            fee_reserve_quote=quote.fee_quote,
+            created_at_ms=now,
+            expires_at_ms=now + 10_000,
+            parent_intent_id=parent_id,
+            closing_only=True,
+        )
+        return (
+            self.submit(
+                intent,
+                tick_size=quote.tick_size,
+                neg_risk=quote.neg_risk,
+            ),
+            quote,
+        )
+
     def cancel_owned_open_orders(self) -> PolymarketCancelResult:
         records = tuple(
             record for record in self.ledger.records() if record.state in _OPEN_STATES
@@ -3738,6 +4561,28 @@ class PolymarketLiveCoordinator:
             return PolymarketCancelResult((), ())
         try:
             result = self.venue.cancel_orders(targets)
+        except PolymarketVenueTemporarilyUnavailable as exc:
+            for record in target_records:
+                current = self.ledger.record(record.intent.intent_id)
+                if current.state != "cancel_pending":
+                    continue
+                restored_state = "partial" if current.matched_quantity > 0 else "live"
+                try:
+                    self.ledger.transition(
+                        record.intent.intent_id,
+                        expected_states=("cancel_pending",),
+                        state=restored_state,
+                        observed_at_ms=int(time.time() * 1_000),
+                        remote_status=current.remote_status,
+                        matched_quantity=current.matched_quantity,
+                        failure_code="cancel_deferred_venue_unavailable",
+                    )
+                except PolymarketStateConflict:
+                    pass
+            raise PolymarketLiveBlocked(
+                "Polymarket cancellation was deferred while the venue was "
+                "temporarily unavailable"
+            ) from exc
         except Exception as exc:
             for record in target_records:
                 current = self.ledger.record(record.intent.intent_id)
@@ -3852,7 +4697,9 @@ __all__ = [
     "POLYMARKET_LIVE_ORDER_SCHEMA_VERSION",
     "PolymarketCancelResult",
     "PolymarketCloseQuote",
+    "PolymarketConditionAccounting",
     "PolymarketFundingPreflight",
+    "PolymarketLedgerRevision",
     "PolymarketLiveBlocked",
     "PolymarketLiveCoordinator",
     "PolymarketLiveError",
@@ -3868,6 +4715,7 @@ __all__ = [
     "PolymarketOwnedInventory",
     "PolymarketOwnedLot",
     "PolymarketPreparedOrder",
+    "PolymarketRealizedPnlEvent",
     "PolymarketRedemptionRecord",
     "PolymarketReconciliation",
     "PolymarketRemoteFill",
@@ -3877,5 +4725,6 @@ __all__ = [
     "PolymarketStateConflict",
     "PolymarketVenuePreflight",
     "PolymarketVenueRejected",
+    "PolymarketVenueTemporarilyUnavailable",
     "polymarket_live_metadata",
 ]

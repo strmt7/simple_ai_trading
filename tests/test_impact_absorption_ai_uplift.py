@@ -452,7 +452,7 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
     assert len(report.report_sha256) == 64
 
 
-def test_ai_pretest_qualification_binds_two_passing_development_reports(
+def test_ai_pretest_qualification_advances_two_passing_development_reports(
     tmp_path,
 ) -> None:
     reviews = tuple(
@@ -471,6 +471,10 @@ def test_ai_pretest_qualification_binds_two_passing_development_reports(
 
     assert qualification.qualification_passed
     assert qualification.model_manifest_sha256 == ("6" * 64, "7" * 64)
+    assert qualification.candidate_model_manifest_sha256 == (
+        "6" * 64,
+        "7" * 64,
+    )
     assert qualification.final_action_configuration_sha256 == (
         first.final_action_configuration_sha256
     )
@@ -539,7 +543,9 @@ def test_sparse_ai_uplift_fails_dependence_aware_confidence_gate() -> None:
     assert report.gate_reasons == ("paired_run_uplift_confidence_not_met",)
 
 
-def test_ai_pretest_qualification_rejects_a_failed_model() -> None:
+def test_ai_pretest_qualification_excludes_a_failed_model_without_blocking_pass() -> (
+    None
+):
     passing_reviews = tuple(
         _review(index, 0 if payoff < 0.0 else 10_000)
         for index, payoff in enumerate(PAYOFFS)
@@ -562,11 +568,25 @@ def test_ai_pretest_qualification_rejects_a_failed_model() -> None:
 
     qualification = build_round74_ai_pretest_qualification((passing, failed))
 
-    assert not qualification.qualification_passed
-    assert qualification.gate_reasons
-    assert all(
-        reason.startswith(f"model:{'7' * 64}:") for reason in qualification.gate_reasons
+    assert qualification.qualification_passed
+    assert qualification.model_manifest_sha256 == ("6" * 64,)
+    assert qualification.candidate_model_manifest_sha256 == (
+        "6" * 64,
+        "7" * 64,
     )
+    assert qualification.gate_reasons == ()
+
+    second_failed = replace(failed, model_manifest_sha256="8" * 64)
+    second_failed.validate()
+    blocked = build_round74_ai_pretest_qualification((failed, second_failed))
+    assert not blocked.qualification_passed
+    assert blocked.model_manifest_sha256 == ()
+    assert blocked.candidate_model_manifest_sha256 == ("7" * 64, "8" * 64)
+    assert blocked.gate_reasons
+    assert {reason.split(":", maxsplit=2)[1] for reason in blocked.gate_reasons} == {
+        "7" * 64,
+        "8" * 64,
+    }
 
 
 def test_ai_development_rejects_policy_selection_run_reuse() -> None:

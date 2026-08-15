@@ -778,6 +778,11 @@ def test_windows_workflow_taxonomy_is_complete_unique_and_model_first() -> None:
     assert set(names) == set(command_names())
     assert [item.name for item in workflow if item.group == "Polymarket models"] == [
         "polymarket-model",
+        "polymarket-round21-ablate-basis",
+        "polymarket-round21-fit-core",
+        "polymarket-round21-fit-matched",
+        "polymarket-round21-evaluate-development",
+        "polymarket-round21-ai-development",
         "polymarket-ridge",
         "polymarket-mlp",
         "polymarket-verify",
@@ -887,11 +892,11 @@ def test_generated_native_contract_matches_cli() -> None:
     assert 'ai_runtime_state == L"hybrid"' in native_source
     assert 'ai_state = ai_model_state + L" / hybrid blocked"' in native_source
     assert 'ai_state = ai_model_state + L" / GPU"' in native_source
-    assert "std::array<std::wstring, 4> states" in native_source
-    assert (
-        "environment_state, bot_state, command_contract_state, ai_state"
-        in native_source
-    )
+    assert "std::array<std::wstring, 5> states" in native_source
+    assert "environment_state," in native_source
+    assert "bot_state," in native_source
+    assert "polymarket_state," in native_source
+    assert "command_contract_state," in native_source
     confirmation = next(
         spec for spec in command_specs() if spec.name == "tape-depth-confirm"
     )
@@ -916,27 +921,52 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert 'L"Settings"' in source
     assert 'L"Stop Binance"' in source
     assert 'L"Stop Polymarket"' in source
+    assert 'L"Start Binance"' in source
+    assert 'L"Pause Binance"' in source
+    assert 'L"Start Polymarket"' in source
+    assert 'L"Pause Polymarket"' in source
+    assert 'L"Binance mode"' in source
+    assert 'L"Polymarket live pending"' in source
+    assert source.count("overview_action_layout(right)") == 1
     assert 'L"Paper"' in source
     assert 'L"Testnet live"' in source
     assert 'L"autonomous stop"' in source
     assert 'L"polymarket-live --action stop"' in source
     assert "binance_control_running_" in source
     assert "polymarket_control_running_" in source
-    assert "pause_control_running_" in source
+    assert "polymarket_start_running_" in source
+    assert "binance_pause_control_running_" in source
     binance_stop = source[
-        source.index("case kBinanceStopId:") : source.index(
-            "case kPolymarketStopId:"
-        )
+        source.index("case kBinanceStopId:") : source.index("case kPolymarketStopId:")
     ]
     polymarket_stop = source[
         source.index("case kPolymarketStopId:") : source.index(
-            "case kAiPreflightId:"
+            "case kPolymarketStartId:"
         )
+    ]
+    polymarket_start = source[
+        source.index("case kPolymarketStartId:") : source.index(
+            "case kPolymarketPauseId:"
+        )
+    ]
+    polymarket_pause = source[
+        source.index("case kPolymarketPauseId:") : source.index("case kAiPreflightId:")
+    ]
+    binance_pause = source[
+        source.index("case kAiPreflightId:") : source.index("case kRiskReportId:")
     ]
     assert 'L"autonomous stop"' in binance_stop
     assert 'L"polymarket-live --action stop"' not in binance_stop
+    assert "true," in binance_stop
     assert 'L"polymarket-live --action stop"' in polymarket_stop
     assert 'L"autonomous stop"' not in polymarket_stop
+    assert "false," in polymarket_stop
+    assert "run_polymarket_start();" in polymarket_start
+    assert 'L"polymarket-live --action pause"' in polymarket_pause
+    assert 'L"autonomous pause"' not in polymarket_pause
+    assert "false," in polymarket_pause
+    assert 'L"autonomous pause"' in binance_pause
+    assert "true," in binance_pause
     assert 'run_control_sequence({L"autonomous stop", L"close all"})' not in source
     assert "status_bar_" in source
     assert "kStatusBarId = 111" in source
@@ -951,6 +981,10 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256" in source
+    assert 'L"Workflow blocked - command contract differs"' in source
+    assert 'L"Polymarket live blocked - open Trading for details"' in source
+    assert "polymarket_state_" in source
+    assert 'L"polymarket-live --action status"' in source
     assert "struct CommandResult" in source
     assert "CREATE_NO_WINDOW" in source
     assert "STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW" in source
@@ -1020,12 +1054,16 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     assert "dry-run: simple-ai-trading polymarket-model --enable-ai" in smoke
     assert "dry-run: simple-ai-trading polymarket-model --disable-ai" in smoke
     assert "dry-run: simple-ai-trading polymarket-live" in smoke
+    assert (
+        "polymarket-live --action autonomous --activation data/polymarket/live-activation.json"
+        in smoke
+    )
     assert "Cancelled configuration was followed by autonomous start" in smoke
     assert "Stop Binance" in smoke
     assert "Stop Polymarket" in smoke
     assert "Testnet live" in smoke
     assert "operator controls reconciling to backend state" in smoke
-    assert "independent venue stop" in smoke
+    assert "independent venue starts and stops" in smoke
     assert "unsafe ledger-only close all" in smoke
     assert "graceful close abandoned an active worker" in smoke
     assert "SetProcessDPIAware" in capture

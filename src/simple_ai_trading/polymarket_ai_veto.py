@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
+from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import math
@@ -26,8 +27,8 @@ from .polymarket_model_execution import (
 POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v3"
 POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v7"
 POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v7"
-POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v2"
-POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT = "polymarket-ai-veto-ollama-response-v2"
+POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v4"
+POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT = "polymarket-ai-veto-ollama-response-v3"
 _FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v2"
 _LEGACY_FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
 _CACHED_RESPONSE_SCHEMA_VERSION = "polymarket-ai-veto-cached-response-v1"
@@ -586,9 +587,9 @@ def _request_json(
         return json.loads(response.read().decode("utf-8"))
 
 
-def _model_evidence(
+def polymarket_ai_model_evidence(
     config: PolymarketAIVetoConfig,
-    post_json: PostJson,
+    post_json: PostJson = _request_json,
 ) -> tuple[str, str]:
     tags = post_json(
         f"{config.base_url}/api/tags",
@@ -620,17 +621,45 @@ def _model_evidence(
     return digest, _canonical_sha256(show)
 
 
+def unload_polymarket_ai_model(
+    config: PolymarketAIVetoConfig,
+    *,
+    post_json: PostJson = _request_json,
+) -> None:
+    """Release one local Ollama model after a finite benchmark candidate."""
+
+    cfg = config.validated()
+    response = post_json(
+        f"{cfg.base_url}/api/generate",
+        {"model": cfg.model, "keep_alive": 0, "stream": False},
+        min(float(cfg.timeout_seconds), 10.0),
+        "POST",
+    )
+    if (
+        not isinstance(response, Mapping)
+        or response.get("model") != cfg.model
+        or response.get("done") is not True
+        or response.get("done_reason") != "unload"
+        or response.get("response") != ""
+    ):
+        raise ValueError("Polymarket AI model unload evidence is invalid")
+
+
 def _prompt(case: PolymarketAIVetoCase) -> str:
     return (
         "You are a fail-closed institutional risk reviewer for a five-minute crypto "
-        "prediction-market paper strategy. Review only the frozen proposal and causal "
+        "prediction-market strategy. Review only the frozen proposal and causal "
         "evidence. You cannot predict a different side, create a trade, increase size, "
         "raise the limit, waive fees, or assume missing evidence is favorable. Approve "
         "only if the model uplift, direct-market movement, order-book state, volatility, "
         "liquidity, latency, and validation evidence are coherent. Veto contradictions "
         "or weak after-cost margin; use cooldown for unstable regimes. An approval must "
-        "use only edge_after_fees. A veto must include an adverse reason. A cooldown must "
-        "include cooldown_required. Return JSON only.\n"
+        "use exactly the single reason edge_after_fees. If any adverse reason applies, "
+        "the action cannot be approve. A veto must include an adverse reason. A cooldown "
+        "must include cooldown_required. The code edge_after_fees means edge is proven "
+        "sufficient after costs; never use it for insufficient edge. Use "
+        "weak_probability_uplift or insufficient_evidence when edge is too small or "
+        "uncertain. Keep summary under 120 characters. Return JSON only.\n"
         f"CASE={_canonical_json(case.prompt_payload)}"
     )
 
@@ -701,6 +730,30 @@ def _parse_decision(payload: object) -> PolymarketAIVetoDecision:
         valid=True,
         failure_reason="",
     )
+
+
+def _validated_case_decision(
+    case: PolymarketAIVetoCase,
+    decision: PolymarketAIVetoDecision,
+) -> PolymarketAIVetoDecision:
+    """Reject an AI approval that contradicts a deterministic packet constraint."""
+
+    if not decision.valid or decision.action != "approve":
+        return decision
+    payload = case.prompt_payload
+    try:
+        expected_edge = Decimal(str(payload["expected_edge_per_contract_after_fee"]))
+        minimum_edge = Decimal(str(payload["minimum_required_edge_per_contract"]))
+    except (InvalidOperation, KeyError, TypeError, ValueError) as exc:
+        raise ValueError("AI approval lacks a valid frozen after-fee edge") from exc
+    if (
+        not expected_edge.is_finite()
+        or not minimum_edge.is_finite()
+        or minimum_edge < 0
+        or expected_edge < minimum_edge
+    ):
+        raise ValueError("AI approval violates the frozen after-fee edge floor")
+    return decision
 
 
 def _validated_provider_usage(
@@ -901,7 +954,7 @@ def benchmark_polymarket_ai_veto(
         for case in cases
     ):
         raise ValueError("Polymarket AI veto case identity is invalid")
-    model_digest, metadata_sha256 = _model_evidence(cfg, post_json)
+    model_digest, metadata_sha256 = polymarket_ai_model_evidence(cfg, post_json)
     expected_digest = str(expected_model_digest or "").strip().lower()
     if expected_digest:
         if (
@@ -932,8 +985,14 @@ def benchmark_polymarket_ai_veto(
                 {
                     "role": "system",
                     "content": (
-                        "Return only valid JSON matching the schema. You are veto-only "
-                        "and can never increase or create risk."
+                        "Return only valid JSON matching the schema. Action/reason "
+                        "coherence is mandatory: approve requires exactly "
+                        "[edge_after_fees]; veto requires at least one adverse reason; "
+                        "cooldown requires cooldown_required. If any adverse reason is "
+                        "present, never approve. edge_after_fees means sufficient edge, "
+                        "not an edge defect. For insufficient edge use "
+                        "weak_probability_uplift or insufficient_evidence. You are "
+                        "veto-only and can never increase or create risk."
                     ),
                 },
                 {"role": "user", "content": _prompt(case)},
@@ -989,6 +1048,15 @@ def benchmark_polymarket_ai_veto(
                 raise ValueError("Polymarket AI cache payload is invalid")
             raw, cached_runtime = _decode_cached_response_evidence(cached_evidence)
             decision = _decision_from_cached_payload(raw)
+            try:
+                decision = _validated_case_decision(case, decision)
+            except ValueError as exc:
+                raw = _failure_envelope(
+                    exc,
+                    provider_response_received=True,
+                    provider_response=raw,
+                )
+                decision = _decision_from_cached_payload(raw)
             usage = (
                 _validated_provider_usage(raw, model=cfg.model)
                 if decision.valid
@@ -1019,7 +1087,7 @@ def benchmark_polymarket_ai_veto(
                 )
                 provider_response_received = True
                 usage = _validated_provider_usage(raw, model=cfg.model)
-                decision = _parse_decision(raw)
+                decision = _validated_case_decision(case, _parse_decision(raw))
                 residency = residency_inspector(
                     cfg.base_url,
                     cfg.model,
@@ -1201,4 +1269,6 @@ __all__ = [
     "PolymarketAIVetoResult",
     "benchmark_polymarket_ai_veto",
     "build_polymarket_ai_veto_cases",
+    "polymarket_ai_model_evidence",
+    "unload_polymarket_ai_model",
 ]

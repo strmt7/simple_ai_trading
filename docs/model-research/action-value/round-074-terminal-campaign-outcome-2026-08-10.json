@@ -1,0 +1,83 @@
+{
+  "artifact_sha256": "67cba6caf728d0ae2d0271e290d1dd7fe9ab4a7fa35f861683ebf16f080a2612",
+  "decision": {
+    "model_data_eligible": false,
+    "predictive_edge_established": false,
+    "profitability_established": false,
+    "reason": "training_eligible_anchor_quota_failed",
+    "representative_training_performed": false,
+    "sealed_target_manifests_read": false,
+    "sealed_test_access_reserved_or_consumed": false,
+    "status": "campaign_cannot_qualify_model"
+  },
+  "observed_at_utc": "2026-08-10T10:12:23.675950+00:00",
+  "schema_version": "round-074-terminal-campaign-outcome-v1",
+  "scope": {
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "source_database_access": "not_opened"
+  },
+  "source_bindings": {
+    "outcome_panel_sha256": "f93c1422f85f1e485a47596edc9907b6a044f9f447a681597be2bf4f4078eda0",
+    "plan_file_sha256": "2a67f9637cb64e2a865ce94679beffa201a28095d0557a0553a59da6ce446913",
+    "plan_path": "docs/model-research/action-value/round-074-segmented-event-cohort-plan-v3.json",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "recovery_build_file_sha256": "826c9ad23c03380da79e1c8604f659c87155ec662cec0035567754b873944814",
+    "recovery_build_location": "local_data_artifact_not_committed",
+    "recovery_build_path": "round74-segmented-event-cohort-v3-recovery-build-attempt5.stdout.json",
+    "recovery_build_result_sha256": "72a1c6c6cb718553210ec795f2faf6833579f00bef04cfc1beea37f6ed603041",
+    "slot_evidence_panel_sha256": "85b3a35da2e479092ad72be13a90e0cdeab501c4c3cd2bd52d4fd43609e1b267",
+    "state_metadata_evidence": {
+      "storage-shard-schedule.json": "495b7de91a5a8b8a7161d35bcaa6a1edf769a8faa8736328dfd0b22cce25961d"
+    }
+  },
+  "terminal_coverage": {
+    "outcome_status_counts": {
+      "admitted": 459,
+      "missed": 239,
+      "transport_excluded": 22
+    },
+    "partition_entry_count": 459,
+    "partition_sha256": "cf85eb6cc9371c89d5fa04e9dc1952f0a3de7fe0e6cd60ccf6c2671529b692c7",
+    "role_quotas": {
+      "test": {
+        "admitted_count": 99,
+        "deficit_eligible_anchor_ns": 0,
+        "missed_count": 0,
+        "observed_eligible_anchor_ns": 87661953492800,
+        "planned_slot_count": 103,
+        "quota_passed": true,
+        "required_eligible_anchor_ns": 78948000000000,
+        "transport_excluded_count": 4
+      },
+      "training": {
+        "admitted_count": 266,
+        "deficit_eligible_anchor_ns": 162322767182900,
+        "missed_count": 234,
+        "observed_eligible_anchor_ns": 232417232817100,
+        "planned_slot_count": 514,
+        "quota_passed": false,
+        "required_eligible_anchor_ns": 394740000000000,
+        "transport_excluded_count": 14
+      },
+      "tuning": {
+        "admitted_count": 94,
+        "deficit_eligible_anchor_ns": 0,
+        "missed_count": 5,
+        "observed_eligible_anchor_ns": 83211472422200,
+        "planned_slot_count": 103,
+        "quota_passed": true,
+        "required_eligible_anchor_ns": 78948000000000,
+        "transport_excluded_count": 4
+      }
+    },
+    "slot_evidence_kind_counts": {
+      "late_adjudication": 7,
+      "recovery": 239,
+      "result": 474
+    },
+    "total_slots": 720
+  }
+}

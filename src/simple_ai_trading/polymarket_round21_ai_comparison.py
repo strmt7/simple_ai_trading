@@ -7,7 +7,7 @@ from decimal import Decimal
 import hashlib
 import json
 import re
-from typing import Sequence
+from collections.abc import Iterable, Sequence
 
 from .polymarket_ai_veto import PolymarketAIVetoCase, PolymarketAIVetoReport
 from .polymarket_round21_ai import (
@@ -22,8 +22,13 @@ from .polymarket_round21_comparison import (
 from .polymarket_round21_replay import (
     POLYMARKET_ROUND21_ECONOMIC_REPLAY_DESIGN_SHA256,
     Round21EconomicReplay,
+    Round21PairedEconomicMatrixAccumulator,
     Round21ReplayCondition,
-    replay_round21_full_matrix,
+    Round21DirectionalPermission,
+    round21_directional_permission_root_sha256,
+)
+from .polymarket_round21_policy import (
+    POLYMARKET_ROUND21_DETERMINISTIC_PERMISSION_SHA256,
 )
 
 
@@ -88,9 +93,7 @@ class Round21AIMatchedComparison:
             "minimum_matched_decisions": (
                 POLYMARKET_ROUND21_AI_MINIMUM_MATCHED_DECISIONS
             ),
-            "non_tied_primary_action_count": (
-                self.non_tied_primary_action_count
-            ),
+            "non_tied_primary_action_count": (self.non_tied_primary_action_count),
             "minimum_non_tied_primary_actions": (
                 POLYMARKET_ROUND21_AI_MINIMUM_NON_TIED_ACTIONS
             ),
@@ -137,16 +140,15 @@ class Round21AIMatchedComparison:
             or self.profitability_claim
             or self.paper_trading_authority
             or self.live_trading_authority
-            or self.comparison_sha256
-            != _canonical_sha256(self.identity_payload())
+            or self.comparison_sha256 != _canonical_sha256(self.identity_payload())
         ):
             raise ValueError("Round 21 AI matched comparison differs")
         return self
 
 
-def _primary_actions(
+def _primary_replay(
     matrix: Sequence[Round21EconomicReplay],
-) -> dict[tuple[str, int], str]:
+) -> Round21EconomicReplay:
     matches = tuple(
         value.validated()
         for value in matrix
@@ -154,9 +156,18 @@ def _primary_actions(
     )
     if len(matches) != 1:
         raise ValueError("Round 21 AI primary replay is unavailable")
+    return matches[0]
+
+
+def _primary_actions(
+    matrix: Sequence[Round21EconomicReplay],
+) -> dict[tuple[str, int], str]:
+    primary = _primary_replay(matrix)
     actions: dict[tuple[str, int], str] = {}
-    for condition in matches[0].conditions:
+    for condition in primary.conditions:
         for step in condition.steps:
+            if step.action == "abstain":
+                continue
             key = (condition.condition_id, step.decision_time_ms)
             if key in actions:
                 raise ValueError("Round 21 AI primary action is duplicated")
@@ -164,92 +175,92 @@ def _primary_actions(
     return actions
 
 
-def compare_round21_ai_full_matrix(
+def _compare_round21_ai_replay_matrices(
     *,
-    conditions: Sequence[Round21ReplayCondition],
+    baseline_matrix: Sequence[Round21EconomicReplay],
+    ai_matrix: Sequence[Round21EconomicReplay],
     cases: Sequence[PolymarketAIVetoCase],
     report: PolymarketAIVetoReport,
-    initial_capital_quote: Decimal = Decimal("10000"),
-    minimum_edge_per_share: Decimal = Decimal("0.02"),
-    builder_taker_fee_bps: Decimal = Decimal("0"),
+    permissions: Sequence[Round21DirectionalPermission],
+    matched_population_sha256: str,
 ) -> Round21AIMatchedComparison:
-    """Compare the deterministic policy with delayed veto-only AI permissions."""
-
-    selected_conditions = tuple(value.validated() for value in conditions)
-    if not selected_conditions:
-        raise ValueError("Round 21 AI matched population is empty")
-    condition_ids = tuple(
-        value.market.condition_id for value in selected_conditions
-    )
+    baseline = tuple(value.validated() for value in baseline_matrix)
+    ai = tuple(value.validated() for value in ai_matrix)
+    matched_sha = str(matched_population_sha256 or "").strip().lower()
     if (
-        len(set(condition_ids)) != len(condition_ids)
+        _SHA256.fullmatch(matched_sha) is None
+        or matched_sha == _EMPTY_SHA256
+        or len(baseline) != 81
+        or len(ai) != 81
+        or len({(value.profile, value.scenario) for value in baseline}) != 81
+        or len({(value.profile, value.scenario) for value in ai}) != 81
+    ):
+        raise ValueError("Round 21 AI replay matrix differs")
+    baseline_primary = _primary_replay(baseline)
+    ai_primary = _primary_replay(ai)
+    baseline_conditions = baseline_primary.conditions
+    ai_conditions = ai_primary.conditions
+    condition_ids = tuple(value.condition_id for value in baseline_conditions)
+    decision_count = sum(value.decision_count for value in baseline_conditions)
+    if (
+        not condition_ids
+        or len(set(condition_ids)) != len(condition_ids)
         or set(condition_ids) != {value.condition_id for value in cases}
+        or baseline_primary.directional_permission_root_sha256
+        != POLYMARKET_ROUND21_DETERMINISTIC_PERMISSION_SHA256
+        or {value.directional_permission_root_sha256 for value in ai}
+        != {round21_directional_permission_root_sha256(permissions)}
+        or len(ai_conditions) != len(baseline_conditions)
+        or any(
+            (
+                left.condition_id,
+                left.event_start_ms,
+                left.outcome_sha256,
+                left.source_input_sha256,
+                left.decision_count,
+            )
+            != (
+                right.condition_id,
+                right.event_start_ms,
+                right.outcome_sha256,
+                right.source_input_sha256,
+                right.decision_count,
+            )
+            for left, right in zip(
+                baseline_conditions,
+                ai_conditions,
+                strict=True,
+            )
+        )
     ):
         raise ValueError("Round 21 AI matched population differs")
-    decision_keys = tuple(
-        (condition.market.condition_id, envelope.decision_time_ms)
-        for condition in selected_conditions
-        for envelope in condition.envelopes
-    )
-    if len(set(decision_keys)) != len(decision_keys):
-        raise ValueError("Round 21 AI matched decisions are duplicated")
-    permissions = round21_permissions_from_ai_report(cases=cases, report=report)
-    baseline_matrix = replay_round21_full_matrix(
-        selected_conditions,
-        initial_capital_quote=initial_capital_quote,
-        minimum_edge_per_share=minimum_edge_per_share,
-        builder_taker_fee_bps=builder_taker_fee_bps,
-    )
-    ai_matrix = replay_round21_full_matrix(
-        selected_conditions,
-        initial_capital_quote=initial_capital_quote,
-        minimum_edge_per_share=minimum_edge_per_share,
-        builder_taker_fee_bps=builder_taker_fee_bps,
-        directional_permissions=permissions,
-    )
-    if len(baseline_matrix) != 81 or len(ai_matrix) != 81:
-        raise ValueError("Round 21 AI replay matrix differs")
-    permission_roots = {
-        value.directional_permission_root_sha256 for value in ai_matrix
-    }
-    if len(permission_roots) != 1:
-        raise ValueError("Round 21 AI permission root differs")
     deltas = tuple(
         paired_round21_replay_delta(left, right)
-        for left, right in zip(baseline_matrix, ai_matrix, strict=True)
+        for left, right in zip(baseline, ai, strict=True)
     )
-    baseline_actions = _primary_actions(baseline_matrix)
-    ai_actions = _primary_actions(ai_matrix)
-    if set(baseline_actions) != set(ai_actions):
-        raise ValueError("Round 21 AI primary action population differs")
+    baseline_actions = _primary_actions(baseline)
+    ai_actions = _primary_actions(ai)
+    action_keys = set(baseline_actions) | set(ai_actions)
     non_tied_actions = sum(
-        baseline_actions[key] != ai_actions[key] for key in baseline_actions
+        baseline_actions.get(key, "abstain") != ai_actions.get(key, "abstain")
+        for key in action_keys
     )
     all_replays_accepted = all(value.accepted for value in deltas)
     development_qualified = (
         all_replays_accepted
-        and len(decision_keys) >= POLYMARKET_ROUND21_AI_MINIMUM_MATCHED_DECISIONS
-        and non_tied_actions
-        >= POLYMARKET_ROUND21_AI_MINIMUM_NON_TIED_ACTIONS
+        and decision_count >= POLYMARKET_ROUND21_AI_MINIMUM_MATCHED_DECISIONS
+        and non_tied_actions >= POLYMARKET_ROUND21_AI_MINIMUM_NON_TIED_ACTIONS
     )
-    matched_population_sha256 = _canonical_sha256(
-        {
-            "schema_version": POLYMARKET_ROUND21_AI_COMPARISON_SCHEMA_VERSION,
-            "condition_sha256": [
-                value.matched_population_sha256()
-                for value in selected_conditions
-            ],
-        }
-    )
+    permission_root = round21_directional_permission_root_sha256(permissions)
     provisional = Round21AIMatchedComparison(
         model=report.config.model,
         model_digest=report.model_digest,
         ai_report_sha256=report.report_sha256,
-        matched_population_sha256=matched_population_sha256,
-        baseline_matrix_sha256=round21_replay_matrix_sha256(baseline_matrix),
-        ai_matrix_sha256=round21_replay_matrix_sha256(ai_matrix),
-        ai_permission_root_sha256=next(iter(permission_roots)),
-        matched_decision_count=len(decision_keys),
+        matched_population_sha256=matched_sha,
+        baseline_matrix_sha256=round21_replay_matrix_sha256(baseline),
+        ai_matrix_sha256=round21_replay_matrix_sha256(ai),
+        ai_permission_root_sha256=permission_root,
+        matched_decision_count=decision_count,
         non_tied_primary_action_count=non_tied_actions,
         deltas=deltas,
         all_replays_accepted=all_replays_accepted,
@@ -261,6 +272,66 @@ def compare_round21_ai_full_matrix(
         provisional,
         comparison_sha256=_canonical_sha256(provisional.identity_payload()),
     ).validated()
+
+
+def compare_round21_ai_replay_matrices(
+    *,
+    baseline_matrix: Sequence[Round21EconomicReplay],
+    ai_matrix: Sequence[Round21EconomicReplay],
+    cases: Sequence[PolymarketAIVetoCase],
+    report: PolymarketAIVetoReport,
+    matched_population_sha256: str,
+) -> Round21AIMatchedComparison:
+    """Compare already-streamed deterministic and AI-veto matrices."""
+
+    permissions = round21_permissions_from_ai_report(cases=cases, report=report)
+    return _compare_round21_ai_replay_matrices(
+        baseline_matrix=baseline_matrix,
+        ai_matrix=ai_matrix,
+        cases=cases,
+        report=report,
+        permissions=permissions,
+        matched_population_sha256=matched_population_sha256,
+    )
+
+
+def compare_round21_ai_full_matrix(
+    *,
+    conditions: Iterable[Round21ReplayCondition],
+    cases: Sequence[PolymarketAIVetoCase],
+    report: PolymarketAIVetoReport,
+    initial_capital_quote: Decimal = Decimal("10000"),
+    minimum_edge_per_share: Decimal = Decimal("0.02"),
+    builder_taker_fee_bps: Decimal = Decimal("0"),
+) -> Round21AIMatchedComparison:
+    """Compare the deterministic policy with delayed veto-only AI permissions."""
+
+    permissions = round21_permissions_from_ai_report(cases=cases, report=report)
+    accumulator = Round21PairedEconomicMatrixAccumulator(
+        initial_capital_quote=initial_capital_quote,
+        minimum_edge_per_share=minimum_edge_per_share,
+        builder_taker_fee_bps=builder_taker_fee_bps,
+        challenger_directional_permissions=permissions,
+    )
+    for condition in conditions:
+        accumulator.observe(condition)
+    baseline_matrix, ai_matrix = accumulator.finish()
+    if set(accumulator.condition_ids) != {value.condition_id for value in cases}:
+        raise ValueError("Round 21 AI matched population differs")
+    matched_population_sha256 = _canonical_sha256(
+        {
+            "schema_version": POLYMARKET_ROUND21_AI_COMPARISON_SCHEMA_VERSION,
+            "condition_sha256": list(accumulator.matched_condition_sha256),
+        }
+    )
+    return _compare_round21_ai_replay_matrices(
+        baseline_matrix=baseline_matrix,
+        ai_matrix=ai_matrix,
+        cases=cases,
+        report=report,
+        permissions=permissions,
+        matched_population_sha256=matched_population_sha256,
+    )
 
 
 credentials_used = False
@@ -276,4 +347,5 @@ __all__ = [
     "POLYMARKET_ROUND21_AI_MINIMUM_NON_TIED_ACTIONS",
     "Round21AIMatchedComparison",
     "compare_round21_ai_full_matrix",
+    "compare_round21_ai_replay_matrices",
 ]

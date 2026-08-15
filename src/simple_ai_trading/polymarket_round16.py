@@ -202,11 +202,20 @@ class Round16HistoricalContract:
 
 def load_round16_historical_contract(
     path: str | Path,
+    *,
+    expected_file_sha256: str | None = None,
 ) -> Round16HistoricalContract:
     selected = Path(path)
     if selected.is_symlink():
         raise ValueError("Round 16 contract cannot be a symlink")
-    raw = _decode_json(selected.read_bytes(), name="Round 16 contract")
+    encoded = selected.read_bytes()
+    if expected_file_sha256 is not None:
+        expected = str(expected_file_sha256 or "").strip().lower()
+        if _SHA256.fullmatch(expected) is None:
+            raise ValueError("expected Round 16 contract file hash is invalid")
+        if hashlib.sha256(encoded).hexdigest() != expected:
+            raise ValueError("Round 16 contract file hash differs")
+    raw = _decode_json(encoded, name="Round 16 contract")
     payload = dict(_mapping(raw, name="Round 16 contract"))
     claimed = str(payload.pop("contract_sha256", "")).strip().lower()
     if _SHA256.fullmatch(claimed) is None or _canonical_sha256(payload) != claimed:

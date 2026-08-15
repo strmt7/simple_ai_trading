@@ -21,7 +21,7 @@ from simple_ai_trading.microstructure_direction_screen import (
     utility_margin_multiplier,
 )
 from simple_ai_trading.microstructure_features import MICROSTRUCTURE_FEATURE_NAMES
-from tests.test_microstructure_outcome_lightgbm import _dataset
+from test_microstructure_outcome_lightgbm import _dataset
 
 
 def _spec() -> DirectionScreenSpec:

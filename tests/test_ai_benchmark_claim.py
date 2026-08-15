@@ -30,7 +30,7 @@ from simple_ai_trading.polymarket_recorder import POLYMARKET_STORAGE_SCHEMA_VERS
 
 ROOT = Path(__file__).resolve().parents[1]
 PREREGISTRATION = (
-    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v10-preregistration.json"
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v13-preregistration.json"
 )
 MODEL_DIGEST = "d" * 64
 MODEL_METADATA_SHA256 = "e" * 64
@@ -119,7 +119,7 @@ def _continuity_gate(monkeypatch):
     )
 
 
-def _passing_report(*, total_duration_ns: int = 2):
+def _passing_report(*, total_duration_ns: int = 2, progress=None):
     cases = default_finance_ai_test_cases()
     responses = []
     for case in cases:
@@ -160,6 +160,7 @@ def _passing_report(*, total_duration_ns: int = 2):
         timeout_seconds=60.0,
         minimum_score=0.78,
         post_json=post_json,
+        progress=progress,
     )
 
 
@@ -205,6 +206,16 @@ def _write_claimed_report(report, output: Path, claim) -> Path:
         post_model_metadata_sha256=MODEL_METADATA_SHA256,
         residency=_residency(),
     )
+
+
+def test_ai_benchmark_progress_sink_failure_cannot_abort_inference() -> None:
+    def broken_progress(_phase, _payload) -> None:
+        raise OSError(22, "detached output handle")
+
+    report = _passing_report(progress=broken_progress)
+
+    assert report.results[0].passed is True
+    assert report.results[0].valid_json_cases == len(default_finance_ai_test_cases())
 
 
 def test_preregistered_ai_benchmark_is_durable_and_exactly_once(tmp_path) -> None:
@@ -335,7 +346,7 @@ def test_preregistered_ai_benchmark_rejects_model_drift_and_cpu_execution(
 
 def test_failed_preregistered_ai_benchmark_cannot_reopen_cases(tmp_path) -> None:
     store = _ClaimStore("b" * 64)
-    output = tmp_path / "failed-qwen3-14b-v10.json"
+    output = tmp_path / "failed-qwen3-14b-v11.json"
     claim = _begin(store, output)
     failure_path = fail_preregistered_ai_benchmark_claim(  # type: ignore[arg-type]
         store,

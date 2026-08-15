@@ -1,0 +1,125 @@
+{
+  "authority": {
+    "ai_edge_claim": false,
+    "economic_backtest": false,
+    "live_trading": false,
+    "model_promotion": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "data_selection": {
+    "eligible_rows": "available_and_tabular_history_complete",
+    "feature_cadence_ms": 1000,
+    "fit_partition": "train",
+    "probability_clip": [
+      0.005,
+      0.995
+    ],
+    "residual_features": [
+      "up.spread",
+      "down.spread",
+      "up.depth_imbalance_l5",
+      "down.depth_imbalance_l5",
+      "microprice_sum_minus_one",
+      "buy_overround",
+      "sell_underround",
+      "absolute_book_age_skew_ms",
+      "elapsed_fraction",
+      "prior_logit_return_1000ms",
+      "prior_realized_logit_variation_1000ms",
+      "prior_logit_return_5000ms",
+      "prior_realized_logit_variation_5000ms",
+      "prior_logit_return_15000ms",
+      "prior_realized_logit_variation_15000ms"
+    ],
+    "sample_weighting": "equal_total_weight_per_condition",
+    "sealed_test_access": false,
+    "standardization": "train_only_condition_weighted_mean_and_standard_deviation_then_clip_to_plus_or_minus_5"
+  },
+  "evaluation": {
+    "bootstrap_draws": 100000,
+    "bootstrap_seed": 2201,
+    "cluster_unit": "polymarket_condition",
+    "diagnostic_pass": {
+      "brier_improvement_probability_minimum": 0.95,
+      "log_loss_improvement_probability_minimum": 0.95,
+      "selection_brier_better_than_executable_market_prior": true,
+      "selection_log_loss_better_than_executable_market_prior": true
+    },
+    "economic_metrics_allowed": false,
+    "horizon_buckets_elapsed_seconds": [
+      [
+        15,
+        60
+      ],
+      [
+        60,
+        120
+      ],
+      [
+        120,
+        180
+      ],
+      [
+        180,
+        240
+      ],
+      [
+        240,
+        296
+      ]
+    ],
+    "primary_metrics": [
+      "condition_equal_weight_brier_score",
+      "condition_equal_weight_log_loss"
+    ],
+    "reference_model": "executable_market_prior",
+    "selection_partition": "tune_selection_touched_once",
+    "secondary_metrics": [
+      "condition_equal_weight_threshold_accuracy",
+      "calibration_intercept",
+      "calibration_slope"
+    ]
+  },
+  "knowledge_at_freeze": {
+    "condition_level_label_linkage_inspected": false,
+    "performance_metric_computed": false,
+    "target_aggregate": {
+      "down": 14,
+      "total": 36,
+      "up": 22
+    }
+  },
+  "model": {
+    "calibration": "bounded_intercept_and_residual_shrink_fit_on_tune_calibration_only",
+    "calibration_intercept_bounds": [
+      -2.0,
+      2.0
+    ],
+    "calibration_residual_scale_bounds": [
+      0.0,
+      1.0
+    ],
+    "candidate_count": 1,
+    "form": "logit_executable_market_prior_plus_linear_l2_residual",
+    "l2_penalty_grid": [
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "penalty_selection": "train_only_leave_one_condition_out_log_loss_choose_largest_penalty_on_tie",
+    "solver": "deterministic_scipy_lbfgsb",
+    "training_seed": 2201
+  },
+  "parents": {
+    "diagnostic_preregistration_sha256": "1014fd3ca79aa043acd4a79652a9503b1713eda22e64f04ecc95f0b374dddd75",
+    "feature_names_sha256": "7a70392566e62494d4f5361500b0667dc92a4c4e80139f2033fd0a34256e9e8d",
+    "feature_policy_sha256": "9de2a470a7ef64dc802e5fc4df88b8acfd20ad929a8afb5fd2704a1b94e4725e",
+    "target_access_claim_sha256": "d9e3f0b99ab87a70761b7da8f3a3fdf46a7f504de60a8f689330b79a4d52679f",
+    "target_implementation_manifest_sha256": "53a4ba665b3524a749a2daa1f6c33ecbd1e9cff8c4a89ee9f93f6882d9e56e5f"
+  },
+  "schema_version": "polymarket-round22-diagnostic-model-spec-v1",
+  "status": "frozen_after_aggregate_target_count_before_condition_label_linkage",
+  "specification_sha256": "0d457942b0d84ecc703d882f66a1a560234f65c4a99e97a0841cd50faa152107"
+}

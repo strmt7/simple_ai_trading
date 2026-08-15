@@ -1,0 +1,37 @@
+{
+  "artifact_sha256": "38dcff6b76b16dff994390afff9d0fbfca28577f1dbd5356b06572a561ed5572",
+  "decision": "campaign_cannot_qualify_model",
+  "observed_at_utc": "2026-08-03T18:09:43.058Z",
+  "observed_wall_ms": 1785780583058,
+  "plan_path": "docs/model-research/action-value/round-074-segmented-event-cohort-plan-v3.json",
+  "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+  "schema_version": "round-074-segmented-quota-viability-audit-v1",
+  "scope": {
+    "active_database_opened": false,
+    "active_wal_opened": false,
+    "market_target_data_accessed": false,
+    "model_fit_performed": false,
+    "orders_submitted": false,
+    "profitability_or_edge_claim": false,
+    "slot_directories_and_terminal_results_read": true,
+    "trading_authority": false
+  },
+  "snapshot": {
+    "admitted_training_slot_count": 126,
+    "irrecoverably_absent_started_training_slot_count": 215,
+    "last_terminal_slot_ordinal": 369,
+    "resultless_started_training_slot_count": 22,
+    "terminal_result_count": 133,
+    "transport_excluded_training_slot_count": 7
+  },
+  "training_role": {
+    "admitted_eligible_anchor_ns": 109770675277000,
+    "deficit_to_requirement_ns": 117392324723000,
+    "future_training_slot_count": 144,
+    "generous_maximum_anchor_per_unresolved_or_future_slot_ns": 1009500000000,
+    "maximum_possible_anchor_ns": 277347675277000,
+    "maximum_possible_formula": "admitted_anchor + (resultless_started_slots + future_slots) * (capture_duration + maximum_end_overhead - maximum_target_span)",
+    "quota_mathematically_possible": false,
+    "required_eligible_anchor_ns": 394740000000000
+  }
+}

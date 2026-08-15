@@ -116,6 +116,24 @@ def test_round27_model_amendment_rejects_transitive_source_drift(
         load_round27_model_amendment(_ROOT)
 
 
+@pytest.mark.parametrize("name", [".gitattributes", "pyproject.toml", "uv.lock"])
+def test_round27_historical_provenance_does_not_freeze_runtime_metadata(
+    name: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_read_bytes = Path.read_bytes
+
+    def _updated_read_bytes(path: Path) -> bytes:
+        value = original_read_bytes(path)
+        return value + b"\n" if path.name == name else value
+
+    monkeypatch.setattr(Path, "read_bytes", _updated_read_bytes)
+
+    assert load_round27_model_amendment(_ROOT)["source_ledger"]["sha256"] == (
+        "f38396df1bb3f8dba662370401b562ab431f6514f0fad58210079e7d6a059581"
+    )
+
+
 def test_round27_effective_source_ledger_covers_static_import_closure() -> None:
     ledger = json.loads(_SOURCE_LEDGER.read_text(encoding="ascii"))
     assert ledger["scope"]["hash_normalization"] == (

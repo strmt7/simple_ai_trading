@@ -1,0 +1,207 @@
+{
+  "activation_gates": {
+    "campaign_activated": false,
+    "host_storage_and_process_preflight_passed": false,
+    "plan_uses_capture_source_commit_bound_here": true,
+    "prospective_plan_published_after_this_contract": true,
+    "scheduled_supervisor_registered_and_observed": false,
+    "start_time_frozen_before_service_start": true
+  },
+  "ai_contract": {
+    "ai_enabled_candidate_family_changed": false,
+    "ai_may_create_side_increase_risk_set_leverage_or_submit_order": false,
+    "ai_promotion_before_matched_after_cost_uplift": false,
+    "ai_role": "target_free_veto_or_reduce_only",
+    "ai_uplift_established": false,
+    "carry_forward_design_sha256": "d41aad8e7755f0f073edd3aa0267a25a290a912ce8acbde087d846405eba866f",
+    "paired_same_candidate_same_cost_same_timing_evaluation_required": true
+  },
+  "artifact_sha256": "9b43d89f65de50fe7c3c548fbf4c9c5ecd3046939f786e42ff3abc3631984b59",
+  "created_at_utc": "2026-08-10T12:07:03.056617+00:00",
+  "evidence_boundary": {
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "predictive_accuracy_established": false,
+    "profitability_established": false,
+    "representative_training_completed": false,
+    "sealed_test_accessed": false
+  },
+  "exchange_connection_contract": {
+    "connection_duration_is_below_exchange_24h_limit": true,
+    "connection_maximum_hours": 24,
+    "depth_continuity_fields": [
+      "U",
+      "u",
+      "pu"
+    ],
+    "depth_update_interval_milliseconds": 100,
+    "documentation_last_modified_utc_date": "2026-08-08",
+    "incoming_control_message_limit_per_second": 10,
+    "market_endpoint": "wss://fstream.binance.com/market",
+    "maximum_streams_per_connection": 1024,
+    "official_connect_documentation_url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/Connect",
+    "official_documentation_checked_at_utc": "2026-08-10T12:07:03.057616+00:00",
+    "official_public_stream_documentation_url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams",
+    "pong_deadline_minutes": 10,
+    "private_endpoint_used": false,
+    "public_endpoint": "wss://fstream.binance.com/public",
+    "retail_price_improvement_orders_visible_in_standard_depth": false,
+    "server_ping_interval_minutes": 3
+  },
+  "implementation": {
+    "continuous_service_file_sha256": "aa9b732d98fabfe7a418e5587ae7cd3d108531e9c0a027421dd7b0b8cc12edb8",
+    "continuous_service_path": "src/simple_ai_trading/round75_continuous_capture.py",
+    "operator_file_sha256": "81bf1f18df3423fb827a348c0f7292cc494d01f574682031f79807a6446b0412",
+    "operator_path": "tools/run_round75_continuous_capture.py",
+    "supervisor_file_sha256": "01e4131567e014a8874f74b6a84548a0012f81ded814cb65ac0aaa7ffd0add6c",
+    "supervisor_operator_file_sha256": "5c9a2d10d37f42995a027d1c00389da42d3c6c36cf7bec3e419bcfc6d74b5611",
+    "supervisor_operator_path": "tools/supervise_round75_continuous_capture.py",
+    "supervisor_path": "src/simple_ai_trading/round75_capture_supervisor.py"
+  },
+  "model_contract": {
+    "after_cost_delayed_l2_execution_gate_required": true,
+    "architecture_or_objective_changed_for_round75": false,
+    "candidate_ids_in_frozen_complexity_order": [
+      "event_pooling_linear",
+      "event_pooling_mlp",
+      "causal_event_tcn",
+      "causal_event_attention"
+    ],
+    "carry_forward_design_sha256": "8a1f22831a88de9a95634939780ba357344e1bacefe49604b0fe56e1f53f20d4",
+    "event_model_schema_version": "round-074-event-payoff-model-v13",
+    "leverage_can_create_edge": false,
+    "operational_complete_transaction_metrics_required": true,
+    "predictive_accuracy_alone_can_promote": false,
+    "reason": "Round 74 produced no eligible representative corpus, so it provided no evidence for selecting a model redesign.",
+    "sealed_one_use_test_retained": true,
+    "target_blind_causal_pretraining_retained": true,
+    "whole_epoch_chronological_roles_retained": true
+  },
+  "research_basis": [
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "High predictive metrics need not produce actionable complete transactions; retain operational economic gates."
+    },
+    {
+      "title": "LiT: limit order book transformer",
+      "url": "https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2025.1616485/full",
+      "use": "Compact causal attention remains a preregistered challenger, not a complexity-privileged default."
+    },
+    {
+      "title": "Limit Order Book Event Stream Prediction with Diffusion Model",
+      "url": "https://arxiv.org/abs/2412.09631",
+      "use": "Event-time/type generation remains research-only and is not added to the sealed financial candidate family."
+    }
+  ],
+  "resource_contract": {
+    "any_campaign_wal_blocks_next_slot": true,
+    "campaign_size_cap_bytes": 42949672960,
+    "database_opened_by_resource_preflight": false,
+    "duckdb_memory_limit": "2GB",
+    "duckdb_threads": 2,
+    "minimum_free_bytes": 107374182400,
+    "shard_size_cap_bytes": 2147483648,
+    "shard_slot_count": 24,
+    "slot_growth_cap_bytes": 536870912,
+    "training_or_backtest_during_capture": false
+  },
+  "round": 75,
+  "round74_diagnosis": {
+    "admitted_fraction_of_started_slots": 0.9108910891089109,
+    "admitted_slots": 460,
+    "campaign_continuity_failure_indicated": true,
+    "exact_host_cause_established": false,
+    "missed_slots": 238,
+    "model_architecture_failure_established": false,
+    "never_started_slots": 215,
+    "never_started_slots_in_two_major_gaps": 212,
+    "slot_directories_created": 505,
+    "total_slots": 720,
+    "training_hours_observed": 64.80744827491667,
+    "training_hours_required": 109.65,
+    "transport_excluded_slots": 22
+  },
+  "schema_version": "round-075-continuous-capture-contract-v1",
+  "scope": {
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "model_training_performed": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "source_database_access": "not_opened",
+    "target_data_accessed": false
+  },
+  "service_contract": {
+    "ambiguous_process_inventory_fails_closed": true,
+    "heartbeat_interval_seconds": 5.0,
+    "lease_is_process_lifetime_file_lock": true,
+    "missed_schema_version": "round-075-continuous-capture-missed-slot-v1",
+    "service_schema_version": "round-075-continuous-capture-service-v1",
+    "stale_after_ns": 90000000000,
+    "startup_grace_ns": 90000000000,
+    "state_schema_version": "round-075-continuous-capture-state-v1",
+    "stop_during_slot_finishes_current_public_capture": true,
+    "stop_request_starts_no_new_slot": true,
+    "supervisor_process_match_uses_exact_tool_plan_contract_and_database": true,
+    "supervisor_reinspects_before_termination": true,
+    "supervisor_schema_version": "round-075-capture-supervisor-v1",
+    "supervisor_terminates_exact_child_before_exact_parent": true
+  },
+  "source_bindings": {
+    "ai_design_file_sha256": "7f37ad620e9978f8834a5da367ab01b667cee7c916270c4f48a3c07974797133",
+    "ai_design_path": "docs/model-research/action-value/round-074-local-ai-review-design-v49.json",
+    "ai_design_sha256": "d41aad8e7755f0f073edd3aa0267a25a290a912ce8acbde087d846405eba866f",
+    "capture_implementation_git_commit": "d2ff8e75a7a00bd44394f2664eb9880f42581dfd",
+    "frozen_capture_source_file_sha256": {
+      "src/simple_ai_trading/impact_absorption_capture.py": "60bb82c400ea75efbf2d7407e02bdd17d86528519f906822f559f5f1cf08cba1",
+      "src/simple_ai_trading/impact_absorption_event_dataset.py": "ba18dd07352f42c6d4f437d3bd0b6728f2c5e624d2f0b2b33578c877dbad8be1",
+      "src/simple_ai_trading/impact_absorption_event_segmented_cohort.py": "3cdad1797cc80fff3dd4a43ec4c55faa861dcc145298c8b70d18e5e8795f314d",
+      "src/simple_ai_trading/impact_absorption_event_sequence.py": "4f5b063b1321e12d6b410f0798439ca811706c288ce63e8cc123cbf01168114f",
+      "src/simple_ai_trading/impact_absorption_store.py": "389ec4cef5bed761658ead72563d17a348767c354eda6513477e73dbac3252d5",
+      "src/simple_ai_trading/round74_segmented_campaign_runner.py": "747b6958a7631c38b2560be1d43c555294e4ca890b3658d7e2efa1d5aa6b4254",
+      "src/simple_ai_trading/round74_segmented_capture.py": "a2f099acc0834921e2cb9cfee45d49ab28a5c6c278f0c06e6128fa3e263ac8eb",
+      "src/simple_ai_trading/round74_segmented_cohort_operator.py": "270b8fd37ac74d08a5e0e2906bb656f65b5466370a8327a3b971c02380c2422c",
+      "tools/run_round74_segmented_campaign_slot.py": "303eec06cf4ded4fb5518868697f6fe99555d2403a7cf95c9cc57495f204a9ae",
+      "tools/run_round74_segmented_capture.py": "d80b1389c0581c9c7aef1197af836debff26c30641e4dc084902b4b47ada3a2f"
+    },
+    "model_design_file_sha256": "2fd1096879b5708503ac227d1154bfa0c0b174cdec04272b78eae2890c72bcd1",
+    "model_design_path": "docs/model-research/action-value/round-074-event-sequence-model-design-v135.json",
+    "model_design_sha256": "8a1f22831a88de9a95634939780ba357344e1bacefe49604b0fe56e1f53f20d4",
+    "round74_failure_analysis_artifact_sha256": "f03d8b885318c8a783b251f6f38368808480219a2fe0c96147d208f0dd671da1",
+    "round74_failure_analysis_file_sha256": "86522ac242035254e63c97820e90093a864a3c90cd0a62210ebcb2457b1b694b",
+    "round74_failure_analysis_path": "docs/model-research/action-value/round-074-terminal-failure-analysis-2026-08-10.json"
+  },
+  "status": "contract_frozen_campaign_not_activated",
+  "transport_contract": {
+    "activation_is_separate_hash_bound_step": true,
+    "automatic_retry_or_time_shift_permitted": false,
+    "capture_duration_ns": 1200000000000,
+    "cross_epoch_features_or_targets_permitted": false,
+    "every_elapsed_unreserved_slot_gets_immutable_missed_receipt": true,
+    "independent_connection_per_slot": true,
+    "independent_windows_task_per_slot": false,
+    "market_or_model_dependent_replacement_permitted": false,
+    "one_long_lived_leased_scheduler": true,
+    "plan_start_time_assigned": false,
+    "provider": "Binance USD-M public production market data",
+    "role_counts": {
+      "test": 103,
+      "training": 514,
+      "tuning": 103
+    },
+    "role_required_eligible_anchor_ns": {
+      "test": 78948000000000,
+      "training": 394740000000000,
+      "tuning": 78948000000000
+    },
+    "slot_period_ns": 1500000000000,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "target_or_activity_data_used_for_admission": false,
+    "total_predeclared_slots": 720
+  }
+}

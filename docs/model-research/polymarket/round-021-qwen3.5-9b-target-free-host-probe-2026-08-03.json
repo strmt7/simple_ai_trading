@@ -1,0 +1,199 @@
+{
+  "artifact_sha256": "ec4a29598f2577b31c0cda057e5c39d211967a33efd1181213348efe3f1940f5",
+  "case": {
+    "asset": "BTC",
+    "case_id": "c21900c759ba882ac373f46a30fa0c16f4e36a827ee2db95727094e2424ec6c5",
+    "case_sha256": "cae4ab37ea16d74f140028305bca14a559160a6c72d8bbb31c9c6fb6b2bcd675",
+    "condition_id": "0x385317e8058776b4648bd5e0139acfdeeac2b1a526e5463e864513e81acdfcff",
+    "decision_received_monotonic_ns": 120000000000,
+    "decision_received_wall_ms": 1800000120000,
+    "event_start_ms": 1800000000000,
+    "prompt_payload": {
+      "asset": "BTC",
+      "assumed_submission_latency_ms": 500,
+      "decision_best_ask": "0.52",
+      "expected_edge_per_contract_after_fee": "0.005",
+      "five_minute_market": true,
+      "hard_constraints": {
+        "cannot_create_or_reverse_trade": true,
+        "cannot_increase_size_or_limit": true,
+        "invalid_or_uncertain_response_means_veto": true
+      },
+      "liquidity_context": {
+        "market_liquidity_quote": 12000.0,
+        "market_volume_quote": 50000.0,
+        "proposed_outcome_ask_depth_3_contracts": 6.0
+      },
+      "market_implied_probability": 0.52,
+      "maximum_loss_fraction_per_market": "0.0025",
+      "maximum_loss_fraction_per_time_group": "0.005",
+      "microstructure": {
+        "chainlink_diffusion_market_logit_gap": -0.06,
+        "direct_chainlink_basis_bps": -3.0,
+        "direct_diffusion_market_logit_gap": -0.08,
+        "direct_distance_from_chainlink_open_bps": -18.0,
+        "direct_realized_volatility_1000ms_bps": 18.0,
+        "direct_realized_volatility_100ms_bps": 8.0,
+        "direct_realized_volatility_5000ms_bps": 30.0,
+        "direct_return_1000ms_bps": -8.0,
+        "direct_return_100ms_bps": -2.0,
+        "direct_return_250ms_bps": -4.0,
+        "direct_return_5000ms_bps": -15.0,
+        "direct_spread_bps": 6.0,
+        "direct_top_imbalance": -0.45,
+        "direct_trade_imbalance_1000ms": -0.3,
+        "direct_trade_imbalance_100ms": -0.4,
+        "direct_trade_imbalance_250ms": -0.35,
+        "direct_trade_imbalance_5000ms": -0.2,
+        "down_microprice_deviation_bps": 5.0,
+        "down_top_imbalance": 0.35,
+        "executable_ask_pair_premium_bps": 80.0,
+        "executable_bid_pair_discount_bps": 60.0,
+        "outcome_midpoint_sum_error_bps": 25.0,
+        "up_microprice_deviation_bps": -8.0,
+        "up_top_imbalance": -0.5
+      },
+      "minimum_required_edge_per_contract": "0.02",
+      "model_probability": 0.53,
+      "model_probability_uplift": 0.01,
+      "proposed_outcome": "Up",
+      "protective_limit_price": "0.53",
+      "remaining_seconds": 180,
+      "schema_version": "polymarket-ai-veto-case-v3",
+      "source_freshness_ms": {
+        "chainlink_anchor_gap_ms": 5.0,
+        "chainlink_arrival_age_ms": 85.0,
+        "chainlink_source_age_ms": 80.0,
+        "direct_binance_age_ms": 55.0,
+        "down_book_age_ms": 42.0,
+        "up_book_age_ms": 40.0
+      },
+      "task": "veto_only_review_of_frozen_ml_proposal",
+      "validation_only_model_evidence": {
+        "log_loss_delta": 0.001,
+        "market_baseline_log_loss": 0.693,
+        "residual_model_log_loss": 0.692,
+        "validation_market_count": 1800
+      }
+    },
+    "sample_id": "1a22abb1126265ec4c9db459694744f3eed071bcd84cec4d1dad70d6fc259e4a",
+    "schema_version": "polymarket-ai-veto-case-v3"
+  },
+  "checks": {
+    "exact_model_digest_matched": true,
+    "gpu_residency_passed": true,
+    "parameter_floor_passed": true,
+    "provider_failure_count_passed": true,
+    "target_free_payload_passed": true,
+    "valid_typed_response_count_passed": true
+  },
+  "created_at_utc": "2026-08-03T02:12:46.473615+00:00",
+  "passed": true,
+  "purpose": "provider_schema_and_gpu_compatibility_only",
+  "report": {
+    "advisory_only": true,
+    "approval_count": 0,
+    "average_inference_latency_seconds": 5.681591300002765,
+    "average_latency_seconds": 5.681591301,
+    "average_queue_delay_seconds": 0.0,
+    "case_count": 1,
+    "case_set_sha256": "0ef31e94cde54af3fb9d597895801c64a74e34f176ec184caab55504d917a73a",
+    "config": {
+      "base_url": "http://127.0.0.1:11434",
+      "maximum_advisory_latency_seconds": 30,
+      "minimum_approval_confidence": 0.65,
+      "model": "qwen3.5:9b",
+      "seed": 4701,
+      "timeout_seconds": 60
+    },
+    "cooldown_count": 0,
+    "market_permission_sha256": "936f3e54c2941d6b2980b1e814875ebbb680ba8e515165adb1f97cf5a23c4862",
+    "market_permissions": {
+      "0x385317e8058776b4648bd5e0139acfdeeac2b1a526e5463e864513e81acdfcff": false
+    },
+    "maximum_inference_latency_seconds": 5.681591300002765,
+    "maximum_latency_seconds": 5.681591301,
+    "maximum_output_token_count": 68,
+    "maximum_prompt_token_count": 974,
+    "maximum_queue_delay_seconds": 0.0,
+    "model_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+    "model_metadata_sha256": "0f4e917fffd9051ca6497ff99b9f1b9ab5221c3fff1ca192f3af6e8a393074f7",
+    "model_parameters_b": 9.0,
+    "profitability_claim": false,
+    "provider_failure_count": 0,
+    "provider_telemetry_count": 1,
+    "report_sha256": "354544b312d29723571aa62473e1e6416b528da728cb62237ca76e0e9f350e4f",
+    "results": [
+      {
+        "case_id": "c21900c759ba882ac373f46a30fa0c16f4e36a827ee2db95727094e2424ec6c5",
+        "condition_id": "0x385317e8058776b4648bd5e0139acfdeeac2b1a526e5463e864513e81acdfcff",
+        "decision": {
+          "action": "veto",
+          "confidence": 0.95,
+          "failure_reason": "",
+          "permits_entry": false,
+          "reason_codes": [
+            "insufficient_evidence"
+          ],
+          "summary": "Edge (1%) below minimum required (2%); insufficient evidence for approval.",
+          "valid": true
+        },
+        "inference_latency_seconds": 5.681591300002765,
+        "latency_seconds": 5.681591301,
+        "model": "qwen3.5:9b",
+        "provider_runtime": {
+          "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+          "gpu_resident": true,
+          "loaded": true,
+          "loaded_model": "qwen3.5:9b",
+          "requested_model": "qwen3.5:9b",
+          "size_bytes": 5641055763,
+          "size_vram_bytes": 5641055763,
+          "status": "gpu_resident",
+          "vram_to_model_ratio": 1.0
+        },
+        "queue_delay_seconds": 0.0,
+        "response_payload": {
+          "created_at": "2026-08-03T02:12:46.4158738Z",
+          "done": true,
+          "done_reason": "stop",
+          "eval_count": 68,
+          "eval_duration": 1017059000,
+          "load_duration": 4355957300,
+          "message": {
+            "content": "{\n  \"action\": \"veto\",\n  \"confidence\": 0.95,\n  \"reason_codes\": [\n    \"insufficient_evidence\"\n  ],\n  \"summary\": \"Edge (1%) below minimum required (2%); insufficient evidence for approval.\"\n}",
+            "role": "assistant"
+          },
+          "model": "qwen3.5:9b",
+          "prompt_eval_count": 974,
+          "prompt_eval_duration": 301123000,
+          "total_duration": 5679634300
+        },
+        "response_sha256": "fe6f89eb0b2eec0947e7031d3f17f196109881fcbaf6985a22c9e7f0925ca212"
+      }
+    ],
+    "risk_benchmark_evidence_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+    "schema_version": "polymarket-ai-veto-report-v7",
+    "selection_sha256": "abc56f7ffcbbf4832c9725dcb3a028201395a5a9537717c3e0e79b120a5ac4b0",
+    "total_output_token_count": 68,
+    "total_prompt_token_count": 974,
+    "trading_authority": false,
+    "valid_response_count": 1,
+    "veto_count": 1
+  },
+  "risk_benchmark_evidence": {
+    "path": "docs/ai/risk-review/latest/comparison.json",
+    "sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd"
+  },
+  "schema_version": "polymarket-round21-target-free-ai-host-probe-v1",
+  "selection_design_sha256": "abc56f7ffcbbf4832c9725dcb3a028201395a5a9537717c3e0e79b120a5ac4b0",
+  "semantics": {
+    "capture_data_accessed": false,
+    "live_trading_authority": false,
+    "market_target_or_outcome_accessed": false,
+    "model_selected": false,
+    "paper_trading_authority": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false
+  }
+}

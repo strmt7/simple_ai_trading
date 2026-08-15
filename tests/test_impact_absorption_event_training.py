@@ -65,8 +65,10 @@ from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
 from simple_ai_trading.impact_absorption_event_pretraining import (  # noqa: E402
     Round74EventPretrainingConfig,
     _Round74NextEventHead,
+    _backpropagate_pretraining_groups,
     _next_event_loss,
     _next_event_row_losses,
+    _single_visit_pretraining_schedule,
     _validate_pretraining_split,
     build_round74_event_pretraining_split,
     pretrain_round74_event_encoder,
@@ -196,6 +198,68 @@ def _config() -> Round74EventTrainingConfig:
     )
 
 
+def test_round74_training_config_binds_target_free_candidate_groups() -> None:
+    groups = tuple(
+        (candidate_id, index + 1)
+        for index, candidate_id in enumerate(ROUND74_EVENT_MODEL_CANDIDATES)
+    )
+    config = Round74EventTrainingConfig(
+        candidate_device_run_group_sizes=groups,
+        device_group_selection_mode="target_free_host_benchmark",
+        device_group_preflight_sha256="a" * 64,
+    )
+
+    config.validate()
+    assert {
+        candidate_id: config.device_run_group_size_for(candidate_id)
+        for candidate_id in config.candidate_ids
+    } == dict(groups)
+    assert config.as_dict()["candidate_device_run_group_sizes"] == dict(groups)
+    with pytest.raises(ValueError, match="configuration differs"):
+        replace(
+            config,
+            candidate_device_run_group_sizes=groups[:-1],
+        ).validate()
+
+
+def test_round74_pretest_policy_reloads_target_free_candidate_group(
+    tmp_path: Path,
+) -> None:
+    training = _batch("training", start_wall_ns=WALL_NS, identity=41)
+    tuning = _batch(
+        "tuning",
+        start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
+        identity=42,
+    )
+    config = replace(
+        _config(),
+        candidate_ids=("event_pooling_linear",),
+        architecture_selection_mode="fixed",
+        candidate_device_run_group_sizes=(("event_pooling_linear", 2),),
+        device_group_selection_mode="target_free_host_benchmark",
+        device_group_preflight_sha256="a" * 64,
+    )
+
+    artifact = train_and_seal_round74_pretest_policy(
+        [training],
+        [tuning],
+        output_directory=tmp_path,
+        compute_backend="cpu",
+        config=config,
+    )
+    _model, policy = load_round74_pretest_policy(artifact.policy_path)
+
+    assert policy["training_policy"]["candidate_device_run_group_sizes"] == {
+        "event_pooling_linear": 2,
+    }
+    assert (
+        policy["candidate_panel"]["event_pooling_linear"]["peer_reports"][0][
+            "supervised_device_run_group_size"
+        ]
+        == 2
+    )
+
+
 def _assert_gradient_health(
     optimization: dict[str, float],
     *,
@@ -318,6 +382,9 @@ def test_causal_next_event_pretraining_is_training_only_and_purged() -> None:
     assert report["calibration_data_used"] is False
     assert report["test_data_used"] is False
     assert report["initial_encoder_sha256"] != report["final_encoder_sha256"]
+    assert report["continuous_target_feature_indices"] == list(
+        range(ROUND74_EVENT_BINARY_FEATURE_COUNT, len(ROUND74_EVENT_FEATURE_NAMES))
+    )
     assert downstream_before
     assert all(
         torch.equal(model.state_dict()[name], value)
@@ -399,6 +466,105 @@ def test_causal_pretraining_device_group_preserves_equal_run_gradient() -> None:
         )
 
 
+def test_segmented_pretraining_schedule_visits_every_row_once_without_cycling() -> None:
+    first = (
+        np.asarray([0, 1], dtype=np.int64),
+        np.asarray([2], dtype=np.int64),
+    )
+    second = (np.asarray([10, 11], dtype=np.int64),)
+
+    schedule = _single_visit_pretraining_schedule((first, second))
+
+    assert [(run_index, indices.tolist()) for run_index, indices in schedule] == [
+        (0, [0, 1]),
+        (0, [2]),
+        (1, [10, 11]),
+    ]
+    assert sum(len(indices) for _run_index, indices in schedule) == 5
+
+
+def test_segmented_pretraining_gradient_is_pooled_across_unequal_runs() -> None:
+    first_batch = _batch(
+        "training",
+        start_wall_ns=WALL_NS,
+        identity=931,
+        rows=1,
+    )
+    second_batch = _batch(
+        "training",
+        start_wall_ns=WALL_NS + 1_000_000_000,
+        identity=932,
+        rows=2,
+    )
+    torch.manual_seed(7411)
+    expected_model = build_round74_event_model("causal_event_tcn")
+    expected_head = _Round74NextEventHead(64)
+    grouped_model = build_round74_event_model("causal_event_tcn")
+    grouped_head = _Round74NextEventHead(64)
+    grouped_model.load_state_dict(expected_model.state_dict(), strict=True)
+    grouped_head.load_state_dict(expected_head.state_dict(), strict=True)
+    expected_model.eval()
+    expected_head.eval()
+    grouped_model.eval()
+    grouped_head.eval()
+    concatenated = torch.from_numpy(
+        np.concatenate(
+            (first_batch.feature_values, second_batch.feature_values),
+            axis=0,
+        ).copy()
+    )
+    expected_rows, expected_event_rows, expected_continuous_rows = (
+        _next_event_row_losses(
+            expected_model,
+            expected_head,
+            concatenated,
+            masked_feature_indices=(),
+        )
+    )
+    expected_loss = expected_rows.mean()
+    expected_loss.backward()
+
+    actual_loss, actual_event, actual_continuous = _backpropagate_pretraining_groups(
+        grouped_model,
+        grouped_head,
+        (
+            (first_batch, np.asarray([0], dtype=np.int64)),
+            (second_batch, np.asarray([0, 1], dtype=np.int64)),
+        ),
+        device=torch.device("cpu"),
+        masked_feature_indices=(),
+        device_run_group_size=1,
+        equal_run_denominator=None,
+        row_denominator=3,
+    )
+
+    assert actual_loss == pytest.approx(float(expected_loss.detach()), abs=1e-7)
+    assert actual_event == pytest.approx(
+        float(expected_event_rows.mean().detach()),
+        abs=1e-7,
+    )
+    assert actual_continuous == pytest.approx(
+        float(expected_continuous_rows.mean().detach()),
+        abs=1e-7,
+    )
+    expected_parameters = (
+        *round74_event_encoder_parameters(expected_model),
+        *tuple(expected_head.parameters()),
+    )
+    grouped_parameters = (
+        *round74_event_encoder_parameters(grouped_model),
+        *tuple(grouped_head.parameters()),
+    )
+    for expected, grouped in zip(
+        expected_parameters,
+        grouped_parameters,
+        strict=True,
+    ):
+        assert expected.grad is not None
+        assert grouped.grad is not None
+        assert torch.allclose(expected.grad, grouped.grad, atol=1e-6, rtol=1e-6)
+
+
 def test_market_state_pretraining_keeps_the_unmasked_next_event_target() -> None:
     values = _batch(
         "training",
@@ -426,6 +592,110 @@ def test_market_state_pretraining_keeps_the_unmasked_next_event_target() -> None
 
     assert row_loss.shape == event_loss.shape == continuous_loss.shape == (3,)
     assert torch.isfinite(row_loss).all()
+
+
+def test_pretraining_continuous_loss_excludes_masked_zero_targets() -> None:
+    values = _batch(
+        "training",
+        start_wall_ns=WALL_NS,
+        identity=941,
+        rows=3,
+    ).feature_values
+    masked_indices = tuple(
+        sorted(
+            {
+                *ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES,
+                *ROUND74_EVENT_CLOCK_FEATURE_INDICES,
+            }
+        )
+    )
+    masked_continuous = next(
+        value for value in masked_indices if value >= ROUND74_EVENT_BINARY_FEATURE_COUNT
+    )
+    active_continuous = next(
+        value
+        for value in range(
+            ROUND74_EVENT_BINARY_FEATURE_COUNT,
+            len(ROUND74_EVENT_FEATURE_NAMES),
+        )
+        if value not in masked_indices
+    )
+
+    model = build_round74_event_model("causal_event_tcn").eval()
+    head = _Round74NextEventHead(64).eval()
+    with torch.no_grad():
+        head.continuous_delta.weight.zero_()
+        head.continuous_delta.bias.zero_()
+    tensor = torch.from_numpy(values.copy())
+    baseline = _next_event_row_losses(
+        model,
+        head,
+        tensor,
+        masked_feature_indices=masked_indices,
+    )[2]
+
+    with torch.no_grad():
+        head.continuous_delta.bias[
+            masked_continuous - ROUND74_EVENT_BINARY_FEATURE_COUNT
+        ] = 100.0
+    masked_changed = _next_event_row_losses(
+        model,
+        head,
+        tensor,
+        masked_feature_indices=masked_indices,
+    )[2]
+    assert torch.equal(masked_changed, baseline)
+
+    with torch.no_grad():
+        head.continuous_delta.bias[
+            active_continuous - ROUND74_EVENT_BINARY_FEATURE_COUNT
+        ] = 100.0
+    active_changed = _next_event_row_losses(
+        model,
+        head,
+        tensor,
+        masked_feature_indices=masked_indices,
+    )[2]
+    assert bool((active_changed > baseline).all())
+
+
+@pytest.mark.parametrize(
+    "masked_indices",
+    (
+        (True,),
+        (1.0,),
+        (-1,),
+        (len(ROUND74_EVENT_FEATURE_NAMES),),
+        (ROUND74_EVENT_BINARY_FEATURE_COUNT, ROUND74_EVENT_BINARY_FEATURE_COUNT),
+        tuple(
+            range(
+                ROUND74_EVENT_BINARY_FEATURE_COUNT,
+                len(ROUND74_EVENT_FEATURE_NAMES),
+            )
+        ),
+    ),
+)
+def test_pretraining_rejects_invalid_or_empty_continuous_feature_masks(
+    masked_indices: tuple[object, ...],
+) -> None:
+    values = _batch(
+        "training",
+        start_wall_ns=WALL_NS,
+        identity=942,
+        rows=2,
+    ).feature_values
+    model = build_round74_event_model("causal_event_tcn").eval()
+    head = _Round74NextEventHead(64).eval()
+
+    with pytest.raises(
+        ValueError, match="feature mask differs|continuous target is empty"
+    ):
+        _next_event_row_losses(
+            model,
+            head,
+            torch.from_numpy(values.copy()),
+            masked_feature_indices=masked_indices,  # type: ignore[arg-type]
+        )
 
 
 def test_segmented_pretraining_reuses_one_split_across_peers(
@@ -495,6 +765,24 @@ def test_segmented_pretraining_reuses_one_split_across_peers(
         for peer in peers
     }
     assert len(peers) == 2
+    assert all(
+        peer["causal_pretraining"]["execution_mode"] == "segmented_cohort"
+        for peer in peers
+    )
+    assert all(
+        peer["causal_pretraining"]["population_policy"]
+        == {
+            "execution_mode": "segmented_cohort",
+            "objective_weighting": "eligible_row_duration_proportional",
+            "shorter_run_policy": "single_visit_without_cycling",
+            "optimizer_step_policy": "one_accumulated_step_per_epoch",
+            "each_training_row_visited_once_per_epoch": True,
+        }
+        for peer in peers
+    )
+    assert all(
+        peer["causal_pretraining"]["optimizer_steps_per_epoch"] == 1 for peer in peers
+    )
     assert len(split_sha256) == 1
     assert len(feature_batches) == 1
     assert len(partition_rows) == 1
@@ -513,6 +801,14 @@ def test_segmented_pretraining_reuses_one_split_across_peers(
     ]["split_sha256"] = "f" * 64
     tampered_path = _write_rehashed_policy(tmp_path, tampered)
     with pytest.raises(ValueError, match="peer split differs"):
+        load_round74_pretest_policy(tampered_path)
+
+    tampered = json.loads(artifact.policy_path.read_text(encoding="ascii"))
+    tampered["initialization_panel"]["causal_next_event_pretrained"]["peer_reports"][0][
+        "causal_pretraining"
+    ]["population_policy"]["objective_weighting"] = "equal_capture_run"
+    tampered_path = _write_rehashed_policy(tmp_path, tampered)
+    with pytest.raises(ValueError, match="initialization peer differs"):
         load_round74_pretest_policy(tampered_path)
 
 

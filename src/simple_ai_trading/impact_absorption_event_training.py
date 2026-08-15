@@ -58,6 +58,7 @@ from .impact_absorption_event_pretraining import (
     ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION,
     Round74EventPretrainingConfig,
     Round74EventPretrainingSplit,
+    _pretraining_population_policy,
     build_round74_event_pretraining_split,
     pretrain_round74_event_encoder,
 )
@@ -81,8 +82,8 @@ from .round74_segmented_model_operator import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v36"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v35"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v39"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v38"
 ROUND74_EVENT_SELECTION_PROTOCOL_SCHEMA_VERSION = (
     "round-074-event-selection-protocol-v4"
 )
@@ -274,6 +275,9 @@ class Round74EventTrainingConfig:
     gradient_clip_norm: float = 1.0
     minimum_role_rows: int = 1_024
     device_run_group_size: int = 8
+    candidate_device_run_group_sizes: tuple[tuple[str, int], ...] = ()
+    device_group_selection_mode: str = "fixed_uniform"
+    device_group_preflight_sha256: str | None = None
     execution_mode: str = "cohort"
     architecture_selection_mode: str = "complexity_gate"
     pretraining: Round74EventPretrainingConfig = Round74EventPretrainingConfig()
@@ -290,8 +294,26 @@ class Round74EventTrainingConfig:
             and len(self.candidate_ids) == 1
             and self.candidate_ids[0] in ROUND74_EVENT_MODEL_CANDIDATES
         )
+        candidate_group_sizes = tuple(self.candidate_device_run_group_sizes)
+        target_free_group_selection = (
+            self.device_group_selection_mode == "target_free_host_benchmark"
+            and isinstance(self.device_group_preflight_sha256, str)
+            and _SHA256.fullmatch(self.device_group_preflight_sha256) is not None
+            and tuple(name for name, _size in candidate_group_sizes)
+            == self.candidate_ids
+            and all(
+                isinstance(size, int) and not isinstance(size, bool) and 1 <= size <= 32
+                for _name, size in candidate_group_sizes
+            )
+        )
+        fixed_group_selection = (
+            self.device_group_selection_mode == "fixed_uniform"
+            and self.device_group_preflight_sha256 is None
+            and not candidate_group_sizes
+        )
         if (
             not candidate_panel_is_valid
+            or not (target_free_group_selection or fixed_group_selection)
             or not self.seeds
             or len(self.seeds) != len(set(self.seeds))
             or any(
@@ -323,6 +345,17 @@ class Round74EventTrainingConfig:
         ):
             raise ValueError("Round 74 event training numeric policy differs")
 
+    def device_run_group_size_for(self, candidate_id: str) -> int:
+        """Return the target-free supervised group selected for one candidate."""
+
+        self.validate()
+        selected = str(candidate_id)
+        if selected not in self.candidate_ids:
+            raise ValueError("Round 74 event training candidate differs")
+        if not self.candidate_device_run_group_sizes:
+            return int(self.device_run_group_size)
+        return dict(self.candidate_device_run_group_sizes)[selected]
+
     def as_dict(self) -> dict[str, object]:
         self.validate()
         return {
@@ -337,6 +370,15 @@ class Round74EventTrainingConfig:
             "gradient_clip_norm": float(self.gradient_clip_norm),
             "minimum_role_rows": int(self.minimum_role_rows),
             "device_run_group_size": int(self.device_run_group_size),
+            "candidate_device_run_group_sizes": {
+                candidate_id: int(group_size)
+                for candidate_id, group_size in self.candidate_device_run_group_sizes
+            },
+            "device_group_selection_mode": self.device_group_selection_mode,
+            "device_group_preflight_sha256": self.device_group_preflight_sha256,
+            "causal_pretraining_device_group_policy": (
+                "independently_frozen_pretraining_config"
+            ),
             "execution_mode": self.execution_mode,
             "architecture_selection_mode": self.architecture_selection_mode,
             "feature_view_selection_mode": (
@@ -2059,6 +2101,7 @@ def _train_peer(
     pretraining_split: Round74EventPretrainingSplit | None = None,
 ) -> tuple[dict[str, torch.Tensor], dict[str, object]]:
     target_loss_scale.validate()
+    device_run_group_size = config.device_run_group_size_for(candidate_id)
     if initialization_id not in ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS:
         raise ValueError("Round 74 model initialization differs")
     if initialization_id == "random" and pretraining_split is not None:
@@ -2086,6 +2129,7 @@ def _train_peer(
             ],
             config=config.pretraining,
             split=pretraining_split,
+            execution_mode=config.execution_mode,
         )
     else:
         pretraining_report = {
@@ -2094,6 +2138,8 @@ def _train_peer(
             "applied": False,
             "reason": "paired_random_initialization_incumbent",
             "config": config.pretraining.as_dict(),
+            "execution_mode": config.execution_mode,
+            "population_policy": _pretraining_population_policy(config.execution_mode),
             "supervised_targets_used": False,
             "tuning_features_used": False,
             "tuning_targets_used": False,
@@ -2137,11 +2183,9 @@ def _train_peer(
             for start in range(
                 0,
                 len(selections),
-                config.device_run_group_size,
+                device_run_group_size,
             ):
-                selected_group = selections[
-                    start : start + config.device_run_group_size
-                ]
+                selected_group = selections[start : start + device_run_group_size]
                 grouped = _losses_for_minibatch_group(
                     model,
                     tuple(
@@ -2217,10 +2261,8 @@ def _train_peer(
                         strict=True,
                     )
                 )
-                for start in range(0, run_count, config.device_run_group_size):
-                    selected_group = selections[
-                        start : start + config.device_run_group_size
-                    ]
+                for start in range(0, run_count, device_run_group_size):
+                    selected_group = selections[start : start + device_run_group_size]
                     grouped = _losses_for_minibatch_group(
                         model,
                         tuple(
@@ -2320,7 +2362,7 @@ def _train_peer(
             model,
             early_stopping_batches,
             minibatch_rows=config.minibatch_rows,
-            device_run_group_size=config.device_run_group_size,
+            device_run_group_size=device_run_group_size,
             device=device,
             target_loss_scale=target_loss_scale,
         )
@@ -2359,7 +2401,7 @@ def _train_peer(
         model,
         early_stopping_batches,
         minibatch_rows=config.minibatch_rows,
-        device_run_group_size=config.device_run_group_size,
+        device_run_group_size=device_run_group_size,
         device=device,
         target_loss_scale=target_loss_scale,
     )
@@ -2372,6 +2414,7 @@ def _train_peer(
         raise RuntimeError("Round 74 best-state selection reload metric differs")
     return best_state, {
         "seed": seed,
+        "supervised_device_run_group_size": device_run_group_size,
         "state_conditioned_flow": state_conditioned_flow,
         "initialization_id": initialization_id,
         "causal_pretraining": pretraining_report,
@@ -2445,6 +2488,7 @@ def _fit_candidate(
     initialization_id: str = "random",
     state_conditioned_flow: bool = False,
 ) -> _CandidateFit:
+    device_run_group_size = config.device_run_group_size_for(candidate_id)
     states: list[dict[str, torch.Tensor]] = []
     reports: list[dict[str, object]] = []
     pretraining_split = (
@@ -2482,7 +2526,7 @@ def _fit_candidate(
         ensemble,
         promotion_batches,
         minibatch_rows=config.minibatch_rows,
-        device_run_group_size=config.device_run_group_size,
+        device_run_group_size=device_run_group_size,
         device=device,
         target_loss_scale=target_loss_scale,
     )
@@ -3065,6 +3109,7 @@ def _validated_candidate_fit_report(
     expected_candidate_id: str,
     expected_feature_view: str,
     expected_state_conditioned_flow: bool,
+    expected_device_run_group_size: int,
     seeds: Sequence[int],
     tuning_run_count: int,
     execution_mode: str,
@@ -3126,6 +3171,8 @@ def _validated_candidate_fit_report(
         or any(
             not isinstance(peer, Mapping)
             or peer.get("state_conditioned_flow") is not expected_state_conditioned_flow
+            or peer.get("supervised_device_run_group_size")
+            != expected_device_run_group_size
             for peer in peers
         )
         or not isinstance(metrics, Mapping)
@@ -4353,11 +4400,18 @@ def load_round74_pretest_policy(
     if dict(source_binding) != _runtime_source_binding():
         raise ValueError("Round 74 pretest policy source binding differs")
     pretraining_policy = training_policy.get("causal_pretraining")
-    if not isinstance(pretraining_policy, Mapping):
+    candidate_group_policy = training_policy.get("candidate_device_run_group_sizes")
+    if not isinstance(pretraining_policy, Mapping) or not isinstance(
+        candidate_group_policy,
+        Mapping,
+    ):
         raise ValueError("Round 74 pretest training policy differs")
     try:
+        ordered_candidate_ids = tuple(str(value) for value in candidate_ids)
+        if set(candidate_group_policy) not in (set(), set(ordered_candidate_ids)):
+            raise ValueError("Round 74 device group candidate panel differs")
         reconstructed_config = Round74EventTrainingConfig(
-            candidate_ids=tuple(str(value) for value in candidate_ids),
+            candidate_ids=ordered_candidate_ids,
             seeds=tuple(int(value) for value in seeds),
             maximum_epochs=int(training_policy["maximum_epochs"]),
             early_stopping_patience=int(training_policy["early_stopping_patience"]),
@@ -4370,6 +4424,19 @@ def load_round74_pretest_policy(
             gradient_clip_norm=float(training_policy["gradient_clip_norm"]),
             minimum_role_rows=int(training_policy["minimum_role_rows"]),
             device_run_group_size=int(training_policy["device_run_group_size"]),
+            candidate_device_run_group_sizes=tuple(
+                (candidate_id, int(candidate_group_policy[candidate_id]))
+                for candidate_id in ordered_candidate_ids
+                if candidate_id in candidate_group_policy
+            ),
+            device_group_selection_mode=str(
+                training_policy["device_group_selection_mode"]
+            ),
+            device_group_preflight_sha256=(
+                None
+                if training_policy["device_group_preflight_sha256"] is None
+                else str(training_policy["device_group_preflight_sha256"])
+            ),
             execution_mode=str(training_policy["execution_mode"]),
             architecture_selection_mode=str(
                 training_policy["architecture_selection_mode"]
@@ -4957,6 +5024,9 @@ def load_round74_pretest_policy(
                 expected_candidate_id=str(panel_candidate),
                 expected_feature_view="market_state_clock_neutral",
                 expected_state_conditioned_flow=False,
+                expected_device_run_group_size=(
+                    reconstructed_config.device_run_group_size_for(str(panel_candidate))
+                ),
                 seeds=seeds,
                 tuning_run_count=stage_tuning_run_counts["architecture"],
                 execution_mode=reconstructed_config.execution_mode,
@@ -5050,6 +5120,9 @@ def load_round74_pretest_policy(
             expected_candidate_id=expected_winner,
             expected_feature_view=incumbent_feature_view,
             expected_state_conditioned_flow=False,
+            expected_device_run_group_size=(
+                reconstructed_config.device_run_group_size_for(expected_winner)
+            ),
             seeds=seeds,
             tuning_run_count=stage_run_count,
             execution_mode=reconstructed_config.execution_mode,
@@ -5060,6 +5133,9 @@ def load_round74_pretest_policy(
             expected_candidate_id=expected_winner,
             expected_feature_view=challenger_feature_view,
             expected_state_conditioned_flow=False,
+            expected_device_run_group_size=(
+                reconstructed_config.device_run_group_size_for(expected_winner)
+            ),
             seeds=seeds,
             tuning_run_count=stage_run_count,
             execution_mode=reconstructed_config.execution_mode,
@@ -5284,6 +5360,9 @@ def load_round74_pretest_policy(
             expected_candidate_id=expected_winner,
             expected_feature_view=expected_feature_view,
             expected_state_conditioned_flow=False,
+            expected_device_run_group_size=(
+                reconstructed_config.device_run_group_size_for(expected_winner)
+            ),
             seeds=seeds,
             tuning_run_count=stage_tuning_run_counts["state_conditioned_flow"],
             execution_mode=reconstructed_config.execution_mode,
@@ -5300,6 +5379,9 @@ def load_round74_pretest_policy(
             expected_candidate_id=expected_winner,
             expected_feature_view=expected_feature_view,
             expected_state_conditioned_flow=True,
+            expected_device_run_group_size=(
+                reconstructed_config.device_run_group_size_for(expected_winner)
+            ),
             seeds=seeds,
             tuning_run_count=stage_tuning_run_counts["state_conditioned_flow"],
             execution_mode=reconstructed_config.execution_mode,
@@ -5484,6 +5566,9 @@ def load_round74_pretest_policy(
                 expected_candidate_id=expected_winner,
                 expected_feature_view=expected_feature_view,
                 expected_state_conditioned_flow=(expected_state_conditioned_flow),
+                expected_device_run_group_size=(
+                    reconstructed_config.device_run_group_size_for(expected_winner)
+                ),
                 seeds=seeds,
                 tuning_run_count=initialization_validation_run_count,
                 execution_mode=reconstructed_config.execution_mode,
@@ -5503,6 +5588,10 @@ def load_round74_pretest_policy(
                 or pretraining_report.get("initialization_id") != initialization_id
                 or pretraining_report.get("config")
                 != reconstructed_config.pretraining.as_dict()
+                or pretraining_report.get("execution_mode")
+                != reconstructed_config.execution_mode
+                or pretraining_report.get("population_policy")
+                != _pretraining_population_policy(reconstructed_config.execution_mode)
                 or pretraining_report.get("supervised_targets_used") is not False
                 or pretraining_report.get("tuning_features_used") is not False
                 or pretraining_report.get("tuning_targets_used") is not False

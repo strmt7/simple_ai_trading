@@ -1,0 +1,50 @@
+{
+  "schema_version": "finance-risk-review-infrastructure-incident-v2",
+  "recorded_at_utc": "2026-08-03T17:04:00.000Z",
+  "benchmark": {
+    "contract": "finance-risk-review-adversarial-v11",
+    "preregistration_path": "docs/ai/risk-review/qwen3-14b-v11-preregistration.json",
+    "preregistration_file_sha256": "6aced50bccf06c3f755953727b50e695691f0ee7420075361aa49a4c1b4e24d5",
+    "failure_path": "docs/ai/risk-review/qwen3-14b-v11-benchmark.failure.json",
+    "failure_file_sha256": "6471284b249a02aa15acae474a9545704e85af2bad466e75722881f7c6098c28"
+  },
+  "claim": {
+    "claim_sha256": "a464016c2a40fc69d3ce918a5711469f4862dd1f33d77cafbbbf8ec8e9e9ecc5",
+    "state": "failed",
+    "started_at_ms": 1785776503432,
+    "completed_at_ms": 1785776504395,
+    "failure_sha256": "6471284b249a02aa15acae474a9545704e85af2bad466e75722881f7c6098c28",
+    "benchmark_passed": null,
+    "report_file_sha256": null
+  },
+  "provider_evidence": {
+    "pre_inference_model_digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+    "pre_inference_model_metadata_sha256": "f1b1a3ca7afc4d2776416861de6d409d7a1a1e90417cde0dba5b21a3db233d72",
+    "post_inference_provenance_present": false,
+    "residency_evidence_present": false,
+    "partial_benchmark_report_present": false,
+    "model_loaded_after_failure": false,
+    "model_completions_evidenced": 0
+  },
+  "failure": {
+    "error_type": "OSError",
+    "error_message": "[Errno 22] Invalid argument",
+    "claim_lifetime_ms": 963,
+    "localized_boundary": "after pre-inference provenance and before the first provider request was evidenced",
+    "most_likely_root_cause": "The command wrapper timed out and detached while the integrity audit continued. The first model_started progress print then wrote to the invalid output handle. Progress callback exceptions were not isolated from benchmark execution.",
+    "root_cause_confidence": "high",
+    "provider_failure": false
+  },
+  "remediation": {
+    "progress_callbacks_are_non_authoritative": true,
+    "progress_callback_exceptions_are_contained": true,
+    "regression_test": "test_ai_benchmark_progress_sink_failure_cannot_abort_inference",
+    "v11_may_be_rerun": false
+  },
+  "interpretation": {
+    "reasoning_score_available": false,
+    "financial_edge_tested": false,
+    "ai_uplift_tested": false,
+    "trading_authority": false
+  }
+}

@@ -6,7 +6,7 @@ order, or grant paper, testnet, or live execution authority.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 import hashlib
 from importlib.metadata import PackageNotFoundError, version
@@ -21,6 +21,7 @@ from torch import nn
 from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .impact_absorption_event_action_policy import (
     ROUND74_ACTION_PROFILES,
+    Round74ActionExecutionPanel,
     Round74ActionPolicySelection,
     build_round74_action_inference_context,
     derive_round74_action_candidates,
@@ -79,12 +80,17 @@ from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 from .storage import write_bytes_atomic
 
 
-ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v6"
+ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v7"
 ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION = (
-    "round-074-development-policy-bundle-v7"
+    "round-074-development-policy-bundle-v8"
 )
 
 _SHA256 = "0123456789abcdef"
+
+Round74ExecutionPanelBuilder = Callable[
+    ...,
+    Sequence[Round74ActionExecutionPanel],
+]
 
 
 def _canonical_bytes(value: object) -> bytes:
@@ -265,6 +271,7 @@ class Round74DevelopmentPolicyBundle:
     pretest_policy_sha256: str
     pretest_model_sha256: str
     feature_scaler_sha256: str
+    training_batch_sha256: tuple[str, ...]
     tuning_subpartition_sha256: str
     model_selection_batch_sha256: tuple[str, ...]
     calibration_batch_sha256: tuple[str, ...]
@@ -298,6 +305,7 @@ class Round74DevelopmentPolicyBundle:
             self.pretest_policy_sha256,
             self.pretest_model_sha256,
             self.feature_scaler_sha256,
+            *self.training_batch_sha256,
             self.tuning_subpartition_sha256,
             *self.model_selection_batch_sha256,
             *self.calibration_batch_sha256,
@@ -315,9 +323,15 @@ class Round74DevelopmentPolicyBundle:
         if (
             self.schema_version != ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION
             or any(not _is_sha256(value) for value in digest_values)
-            or len(self.model_selection_batch_sha256) != 12
-            or len(self.calibration_batch_sha256) != 6
-            or len(self.policy_selection_batch_sha256) != 6
+            or any(
+                not values
+                for values in (
+                    self.training_batch_sha256,
+                    self.model_selection_batch_sha256,
+                    self.calibration_batch_sha256,
+                    self.policy_selection_batch_sha256,
+                )
+            )
             or len(self.execution_outcome_panel_sha256) != len(ROUND74_ACTION_PROFILES)
             or len(self.execution_outcome_panel_rows) != len(ROUND74_ACTION_PROFILES)
             or len(set(self.execution_outcome_panel_sha256))
@@ -330,13 +344,22 @@ class Round74DevelopmentPolicyBundle:
             or len(
                 set(
                     (
+                        *self.training_batch_sha256,
                         *self.model_selection_batch_sha256,
                         *self.calibration_batch_sha256,
                         *self.policy_selection_batch_sha256,
                     )
                 )
             )
-            != 24
+            != sum(
+                len(values)
+                for values in (
+                    self.training_batch_sha256,
+                    self.model_selection_batch_sha256,
+                    self.calibration_batch_sha256,
+                    self.policy_selection_batch_sha256,
+                )
+            )
             or not self.backend_kind.strip()
             or not self.backend_device.strip()
             or not self.backend_vendor.strip()
@@ -418,17 +441,14 @@ class Round74DevelopmentPolicyBundle:
                 ]
             ):
                 raise ValueError("Round 74 development action policy differs")
-        policy_by_profile = {
-            policy.profile: policy for policy in self.action_policies
-        }
+        policy_by_profile = {policy.profile: policy for policy in self.action_policies}
         for challenge in self.epistemic_action_challenges:
             challenge.validate()
             policy = policy_by_profile[challenge.profile]
             profile_index = ROUND74_ACTION_PROFILES.index(challenge.profile)
             if (
                 not policy.accepted
-                or challenge.baseline_policy_selection_sha256
-                != policy.selection_sha256
+                or challenge.baseline_policy_selection_sha256 != policy.selection_sha256
                 or challenge.execution_panel_sha256
                 != self.execution_outcome_panel_sha256[profile_index]
                 or challenge.action_filter.risk_coverage_report_sha256
@@ -446,9 +466,7 @@ class Round74DevelopmentPolicyBundle:
                 or challenge.action_filter.peer_count
                 != self.epistemic_risk_coverage.peer_count
             ):
-                raise ValueError(
-                    "Round 74 development epistemic challenge differs"
-                )
+                raise ValueError("Round 74 development epistemic challenge differs")
 
     @property
     def bundle_sha256(self) -> str:
@@ -463,6 +481,7 @@ class Round74DevelopmentPolicyBundle:
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "pretest_model_sha256": self.pretest_model_sha256,
             "feature_scaler_sha256": self.feature_scaler_sha256,
+            "training_batch_sha256": list(self.training_batch_sha256),
             "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
             "model_selection_batch_sha256": list(self.model_selection_batch_sha256),
             "calibration_batch_sha256": list(self.calibration_batch_sha256),
@@ -470,8 +489,7 @@ class Round74DevelopmentPolicyBundle:
             "probability_calibration": self.probability_calibration.as_dict(),
             "epistemic_risk_coverage": self.epistemic_risk_coverage.as_dict(),
             "epistemic_action_challenges": [
-                challenge.as_dict()
-                for challenge in self.epistemic_action_challenges
+                challenge.as_dict() for challenge in self.epistemic_action_challenges
             ],
             "online_decision_latency": self.online_decision_latency.as_dict(),
             "execution_outcome_panels": [
@@ -551,6 +569,7 @@ class Round74DevelopmentPolicyBundle:
             "pretest_policy_sha256",
             "pretest_model_sha256",
             "feature_scaler_sha256",
+            "training_batch_sha256",
             "tuning_subpartition_sha256",
             "model_selection_batch_sha256",
             "calibration_batch_sha256",
@@ -588,10 +607,7 @@ class Round74DevelopmentPolicyBundle:
             not isinstance(calibration, Mapping)
             or not isinstance(epistemic, Mapping)
             or not isinstance(epistemic_challenges, list)
-            or any(
-                not isinstance(item, Mapping)
-                for item in epistemic_challenges
-            )
+            or any(not isinstance(item, Mapping) for item in epistemic_challenges)
             or not isinstance(latency, Mapping)
             or not isinstance(execution_panels, list)
             or len(execution_panels) != len(ROUND74_ACTION_PROFILES)
@@ -646,6 +662,7 @@ class Round74DevelopmentPolicyBundle:
                 pretest_policy_sha256=str(payload["pretest_policy_sha256"]),
                 pretest_model_sha256=str(payload["pretest_model_sha256"]),
                 feature_scaler_sha256=str(payload["feature_scaler_sha256"]),
+                training_batch_sha256=strings("training_batch_sha256"),
                 tuning_subpartition_sha256=str(payload["tuning_subpartition_sha256"]),
                 model_selection_batch_sha256=strings("model_selection_batch_sha256"),
                 calibration_batch_sha256=strings("calibration_batch_sha256"),
@@ -775,12 +792,14 @@ def calibrate_and_select_round74_development_policy(
     *,
     pretest_policy_path: str | Path,
     feature_scaler: Round74EventFeatureScaler,
+    expected_training_batch_sha256: Sequence[str],
     execution_store: object,
     execution_partition: Round74EventRunPartition,
     execution_target_assembly_by_run_id: Mapping[
         str,
         Round74SourceTargetAssembly,
     ],
+    execution_panel_builder: Round74ExecutionPanelBuilder | None = None,
     compute_backend: str = "auto",
     minibatch_rows: int = 128,
     optimization_population: str = "capture_run",
@@ -789,10 +808,14 @@ def calibrate_and_select_round74_development_policy(
 
     tuning_roles.validate()
     execution_partition.validate()
+    expected_training_hashes = tuple(expected_training_batch_sha256)
     expected_execution_runs = tuning_roles.subpartition.policy_selection_run_ids
     execution_assemblies = dict(execution_target_assembly_by_run_id)
     if (
         not isinstance(feature_scaler, Round74EventFeatureScaler)
+        or not expected_training_hashes
+        or any(not _is_sha256(value) for value in expected_training_hashes)
+        or len(set(expected_training_hashes)) != len(expected_training_hashes)
         or {
             batch.scaler_sha256
             for batch in (
@@ -805,6 +828,10 @@ def calibrate_and_select_round74_development_policy(
         or execution_partition.partition_sha256
         != tuning_roles.subpartition.parent_partition_sha256
         or set(execution_assemblies) != set(expected_execution_runs)
+        or (
+            execution_panel_builder is not None
+            and not callable(execution_panel_builder)
+        )
         or any(
             not isinstance(
                 execution_assemblies[run_id],
@@ -829,7 +856,7 @@ def calibrate_and_select_round74_development_policy(
     tuning_batch_sha256 = development.get("tuning_batch_sha256")
     if (
         not isinstance(training_batch_sha256, list)
-        or len(training_batch_sha256) != 120
+        or tuple(training_batch_sha256) != expected_training_hashes
         or not isinstance(tuning_batch_sha256, list)
         or tuning_batch_sha256
         != [batch.batch_sha256 for batch in tuning_roles.model_selection_batches]
@@ -846,7 +873,7 @@ def calibrate_and_select_round74_development_policy(
         or development.get("test_batches_consumed") != 0
         or authority.get("sealed_test_evaluated") is not False
     ):
-        raise ValueError("Round 74 development tuning role binding differs")
+        raise ValueError("Round 74 development population binding differs")
     backend = require_backend(resolve_backend(compute_backend))
     device = torch_device_for_backend(backend)
     model = model.to(device)
@@ -947,13 +974,23 @@ def calibrate_and_select_round74_development_policy(
     )
     if fallback:
         raise RuntimeError(f"Round 74 development used CPU fallback: {fallback}")
-    execution_panels = build_round74_delayed_execution_panels(
-        execution_store,
-        partition=execution_partition,
-        policy_selection_batches=tuning_roles.policy_selection_batches,
-        target_assembly_by_run_id=execution_assemblies,
-        latency_evidence=decision_latency,
-    )
+    if execution_panel_builder is None:
+        execution_panels = build_round74_delayed_execution_panels(
+            execution_store,
+            partition=execution_partition,
+            policy_selection_batches=tuning_roles.policy_selection_batches,
+            target_assembly_by_run_id=execution_assemblies,
+            latency_evidence=decision_latency,
+        )
+    else:
+        execution_panels = tuple(
+            execution_panel_builder(
+                partition=execution_partition,
+                policy_selection_batches=tuning_roles.policy_selection_batches,
+                target_assembly_by_run_id=execution_assemblies,
+                latency_evidence=decision_latency,
+            )
+        )
     if tuple(panel.profile for panel in execution_panels) != ROUND74_ACTION_PROFILES:
         raise ValueError("Round 74 development execution profile panel differs")
     action_policies = tuple(
@@ -1007,6 +1044,7 @@ def calibrate_and_select_round74_development_policy(
         pretest_policy_sha256=str(policy["policy_sha256"]),
         pretest_model_sha256=str(artifact["sha256"]),
         feature_scaler_sha256=feature_scaler.scaler_sha256,
+        training_batch_sha256=expected_training_hashes,
         tuning_subpartition_sha256=tuning_roles.subpartition.subpartition_sha256,
         model_selection_batch_sha256=tuple(
             batch.batch_sha256 for batch in tuning_roles.model_selection_batches
@@ -1049,6 +1087,7 @@ def train_calibrate_and_select_round74_development_policy(
         str,
         Round74SourceTargetAssembly,
     ],
+    execution_panel_builder: Round74ExecutionPanelBuilder | None = None,
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
     inference_minibatch_rows: int = 128,
@@ -1107,9 +1146,13 @@ def train_calibrate_and_select_round74_development_policy(
         tuning_roles,
         pretest_policy_path=pretest.policy_path,
         feature_scaler=prepared.scaler,
+        expected_training_batch_sha256=tuple(
+            batch.batch_sha256 for batch in prepared.training_batches
+        ),
         execution_store=execution_store,
         execution_partition=execution_partition,
         execution_target_assembly_by_run_id=(execution_target_assembly_by_run_id),
+        execution_panel_builder=execution_panel_builder,
         compute_backend=compute_backend,
         minibatch_rows=inference_minibatch_rows,
         optimization_population=optimization_population,

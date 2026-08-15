@@ -36,7 +36,7 @@ from .statistical_resampling import moving_block_bootstrap_mean
 ROUND74_EPISTEMIC_EVALUATION_BATCH_SCHEMA_VERSION = (
     "round-074-epistemic-evaluation-batch-v1"
 )
-ROUND74_EPISTEMIC_RISK_COVERAGE_SCHEMA_VERSION = "round-074-epistemic-risk-coverage-v1"
+ROUND74_EPISTEMIC_RISK_COVERAGE_SCHEMA_VERSION = "round-074-epistemic-risk-coverage-v2"
 ROUND74_EPISTEMIC_RISK_COVERAGE_METRIC_IDS = (
     "payoff_quantile_peer_dispersion",
     "adverse_excursion_quantile_peer_dispersion",
@@ -47,7 +47,7 @@ ROUND74_EPISTEMIC_RISK_COVERAGE_METRIC_IDS = (
 ROUND74_EPISTEMIC_CURVE_TARGET_COVERAGES = tuple(index / 20.0 for index in range(1, 21))
 ROUND74_EPISTEMIC_FIXED_RISK_RATIOS = (0.50, 0.75, 0.90, 1.00)
 ROUND74_EPISTEMIC_MINIMUM_STRATUM_ROWS = 256
-ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS = 6
+ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS = 6
 ROUND74_EPISTEMIC_BOOTSTRAP_SAMPLES = 10_000
 ROUND74_EPISTEMIC_FAMILYWISE_CONFIDENCE = 0.95
 ROUND74_EPISTEMIC_PER_METRIC_CONFIDENCE = 1.0 - (
@@ -617,7 +617,7 @@ class Round74EpistemicRiskCoverageMetric:
             point.validate(self.population_rows, self.full_coverage_loss)
         expected_assessable = (
             self.population_rows >= ROUND74_EPISTEMIC_MINIMUM_STRATUM_ROWS
-            and self.capture_runs >= ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+            and self.capture_runs >= ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS
             and self.unique_uncertainty_thresholds >= 2
             and self.full_coverage_loss > _EPSILON
         )
@@ -987,7 +987,7 @@ def _evaluate_metric(
     )
     assessable = bool(
         len(loss) >= ROUND74_EPISTEMIC_MINIMUM_STRATUM_ROWS
-        and len(unique_runs) >= ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+        and len(unique_runs) >= ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS
         and len(curve.thresholds) >= 2
         and curve.full_coverage_loss > _EPSILON
     )
@@ -1208,7 +1208,7 @@ class Round74EpistemicRiskCoverageReport:
             or _SHA256.fullmatch(self.tuning_subpartition_sha256) is None
             or _SHA256.fullmatch(self.probability_calibration_sha256) is None
             or len(self.policy_selection_run_ids)
-            != ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+            < ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS
             or any(
                 _RUN_ID.fullmatch(value) is None
                 for value in self.policy_selection_run_ids
@@ -1316,8 +1316,8 @@ class Round74EpistemicRiskCoverageReport:
                 "minimum_rows_per_required_stratum": (
                     ROUND74_EPISTEMIC_MINIMUM_STRATUM_ROWS
                 ),
-                "required_capture_runs": (
-                    ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+                "minimum_required_capture_runs": (
+                    ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS
                 ),
                 "bootstrap_samples": ROUND74_EPISTEMIC_BOOTSTRAP_SAMPLES,
                 "familywise_confidence": (ROUND74_EPISTEMIC_FAMILYWISE_CONFIDENCE),
@@ -1422,7 +1422,9 @@ class Round74EpistemicRiskCoverageReport:
             "minimum_rows_per_required_stratum": (
                 ROUND74_EPISTEMIC_MINIMUM_STRATUM_ROWS
             ),
-            "required_capture_runs": (ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS),
+            "minimum_required_capture_runs": (
+                ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS
+            ),
             "bootstrap_samples": ROUND74_EPISTEMIC_BOOTSTRAP_SAMPLES,
             "familywise_confidence": ROUND74_EPISTEMIC_FAMILYWISE_CONFIDENCE,
             "per_metric_confidence": ROUND74_EPISTEMIC_PER_METRIC_CONFIDENCE,
@@ -1501,8 +1503,8 @@ def evaluate_round74_epistemic_risk_coverage(
         dict.fromkeys(run_id for batch in selected for run_id in batch.run_id)
     )
     if (
-        len(selected) != ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
-        or len(expected_runs) != ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+        len(selected) != len(expected_runs)
+        or len(expected_runs) < ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS
         or observed_runs != expected_runs
         or tuple(tuple(dict.fromkeys(batch.run_id)) for batch in selected)
         != tuple((run_id,) for run_id in expected_runs)
@@ -1633,7 +1635,7 @@ __all__ = [
     "ROUND74_EPISTEMIC_FIXED_RISK_RATIOS",
     "ROUND74_EPISTEMIC_MINIMUM_STRATUM_ROWS",
     "ROUND74_EPISTEMIC_PER_METRIC_CONFIDENCE",
-    "ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS",
+    "ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS",
     "ROUND74_EPISTEMIC_RISK_COVERAGE_METRIC_IDS",
     "ROUND74_EPISTEMIC_RISK_COVERAGE_SCHEMA_VERSION",
     "Round74EpistemicEvaluationBatch",

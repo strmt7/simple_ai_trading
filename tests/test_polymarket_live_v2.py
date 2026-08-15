@@ -14,6 +14,7 @@ from simple_ai_trading.polymarket_live import (
     PolymarketLiveOrderIntent,
     PolymarketPreparedOrder,
     PolymarketVenueRejected,
+    PolymarketVenueTemporarilyUnavailable,
 )
 from simple_ai_trading.polymarket_live_v2 import (
     OfficialPolymarketV2Venue,
@@ -35,14 +36,18 @@ def _credentials() -> PolymarketLiveCredentials:
     return PolymarketLiveCredentials(
         private_key=PRIVATE_KEY,
         api_key="offline-api-key",
-        api_secret="offline-api-secret",
+        api_secret="b2ZmbGluZS1hcGktc2VjcmV0",
         api_passphrase="offline-passphrase",
         funder_address=address,
         signature_type=0,
     )
 
 
-def _intent(*, side: str = "BUY") -> PolymarketLiveOrderIntent:
+def _intent(
+    *,
+    side: str = "BUY",
+    limit_price: Decimal = Decimal("0.50"),
+) -> PolymarketLiveOrderIntent:
     now = int(time.time() * 1_000)
     return PolymarketLiveOrderIntent(
         intent_id="official-v2-test-intent",
@@ -53,7 +58,7 @@ def _intent(*, side: str = "BUY") -> PolymarketLiveOrderIntent:
         outcome="Up",
         side=side,
         order_type="FAK",
-        limit_price=Decimal("0.50"),
+        limit_price=limit_price,
         quantity=Decimal("5"),
         fee_reserve_quote=Decimal("0.10"),
         created_at_ms=now,
@@ -97,9 +102,12 @@ class FakeClient:
         self.balance_response: object = {}
         self.trades: list[object] = []
         self.cancel_response: object = {"canceled": [], "not_canceled": {}}
+        self.cancel_error: Exception | None = None
+        self.cancel_calls = 0
         self.post_response: object = {}
         self.post_error: Exception | None = None
         self.post_calls = 0
+        self.post_arguments: list[tuple[object, str, bool]] = []
         self.orders: dict[str, object] = {}
         self.get_order_calls: list[str] = []
         self.get_order_error: Exception | None = None
@@ -146,6 +154,9 @@ class FakeClient:
 
     def cancel_orders(self, order_ids: list[str]) -> object:
         del order_ids
+        self.cancel_calls += 1
+        if self.cancel_error is not None:
+            raise self.cancel_error
         return self.cancel_response
 
     def post_order(
@@ -155,11 +166,18 @@ class FakeClient:
         order_type: str,
         defer_exec: bool,
     ) -> object:
-        del order, order_type, defer_exec
         self.post_calls += 1
+        self.post_arguments.append((order, order_type, defer_exec))
         if self.post_error is not None:
             raise self.post_error
         return self.post_response
+
+
+class FakeApiError(RuntimeError):
+    def __init__(self, status_code: int, error_msg: object) -> None:
+        super().__init__(f"HTTP {status_code}")
+        self.status_code = status_code
+        self.error_msg = error_msg
 
 
 def test_official_sdk_builds_exact_v2_hash_and_preserves_economics() -> None:
@@ -208,6 +226,52 @@ def test_official_sdk_builds_exact_v2_hash_and_preserves_economics() -> None:
     assert prepared.opaque_signed_order.maker.lower() == credentials.funder_address
     assert prepared.opaque_signed_order.signer.lower() == credentials.funder_address
     assert int(prepared.opaque_signed_order.signatureType) == 0
+
+
+@pytest.mark.parametrize(
+    ("price", "tick_size"),
+    [
+        (Decimal("0.51"), Decimal("0.01")),
+        (Decimal("0.936"), Decimal("0.001")),
+    ],
+)
+def test_official_sdk_nonbinary_prices_preserve_exact_limit_economics(
+    price: Decimal,
+    tick_size: Decimal,
+) -> None:
+    clob = pytest.importorskip("py_clob_client_v2")
+    credentials = _credentials()
+    client = clob.ClobClient(
+        host=CLOB_BASE_URL,
+        chain_id=POLYGON_CHAIN_ID,
+        key=credentials.private_key,
+        creds=clob.ApiCreds(
+            api_key=credentials.api_key,
+            api_secret=credentials.api_secret,
+            api_passphrase=credentials.api_passphrase,
+        ),
+        signature_type=credentials.signature_type,
+        funder=credentials.funder_address,
+        use_server_time=False,
+        retry_on_error=False,
+    )
+    client.get_version = lambda: 2
+    client.get_tick_size = lambda _token_id: format(tick_size, "f")
+
+    prepared = OfficialPolymarketV2Venue(
+        credentials,
+        client=client,
+    ).prepare_order(
+        _intent(limit_price=price),
+        tick_size=tick_size,
+        neg_risk=False,
+    )
+    signed = prepared.opaque_signed_order
+    maker = Decimal(str(signed.makerAmount))
+    taker = Decimal(str(signed.takerAmount))
+
+    assert maker / taker == price
+    assert taker == Decimal("5000000")
 
 
 def test_official_sdk_deposit_wallet_binds_maker_signer_and_signature_type() -> None:
@@ -289,6 +353,18 @@ def test_funding_selects_allowance_for_exact_v2_exchange(
     assert result.available_allowance == Decimal("7.654321")
 
 
+def test_collateral_balance_reads_dedicated_wallet_capital() -> None:
+    pytest.importorskip("py_clob_client_v2")
+    client = FakeClient()
+    client.balance_response = {
+        "balance": "1234567",
+        "allowances": {},
+    }
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+
+    assert venue.collateral_balance() == Decimal("1.234567")
+
+
 def test_trade_parser_binds_maker_fill_to_exact_owned_hash_and_normalizes_status() -> (
     None
 ):
@@ -330,6 +406,37 @@ def test_trade_parser_binds_maker_fill_to_exact_owned_hash_and_normalizes_status
     assert fills[0].status == "CONFIRMED"
     assert fills[0].role == "MAKER"
     assert fills[0].fee_quote == Decimal("0")
+    assert fills[0].accounting_verified is True
+
+
+def test_trade_parser_preserves_matched_not_broadcasted_as_nonterminal() -> None:
+    credentials = _credentials()
+    client = FakeClient()
+    owned = "0x" + "2" * 64
+    client.trades = [
+        {
+            "id": "trade-official-prebroadcast-0001",
+            "taker_order_id": owned,
+            "market": MARKET_ID,
+            "asset_id": TOKEN_ID,
+            "side": "BUY",
+            "size": "5",
+            "price": "0.5",
+            "status": "TRADE_STATUS_MATCHED_NOT_BROADCASTED",
+            "last_update": str(int(time.time())),
+            "fee_rate_bps": "700",
+            "transaction_hash": None,
+            "trader_side": "TAKER",
+            "maker_orders": [],
+        }
+    ]
+    venue = OfficialPolymarketV2Venue(credentials, client=client)
+
+    fills = venue.fills_for_orders((owned,), market_ids=(MARKET_ID,))
+
+    assert len(fills) == 1
+    assert fills[0].status == "MATCHED_NOT_BROADCASTED"
+    assert fills[0].transaction_hash == ""
     assert fills[0].accounting_verified is True
 
 
@@ -386,6 +493,312 @@ def test_submission_transport_error_is_propagated_after_one_attempt() -> None:
         venue.submit_order(prepared)
 
     assert client.post_calls == 1
+
+
+def test_matching_engine_restart_is_rejected_once_and_throttled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = [100.0]
+    monkeypatch.setattr(
+        "simple_ai_trading.polymarket_live_v2.time.monotonic", lambda: clock[0]
+    )
+    client = FakeClient()
+    client.post_error = FakeApiError(425, {"error": "matching engine restarting"})
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+    prepared = PolymarketPreparedOrder(
+        intent=_intent(),
+        expected_order_id="0x" + "2" * 64,
+        metadata=_intent().metadata,
+        opaque_signed_order=object(),
+    )
+
+    submitted = venue.submit_order(prepared)
+
+    assert submitted.accepted is False
+    assert submitted.rejection_code == "matching_engine_restart"
+    assert client.post_calls == 1
+    with pytest.raises(PolymarketLiveBlocked, match="matching_engine_restart"):
+        venue.submit_order(prepared)
+    assert client.post_calls == 1
+
+    clock[0] += 2.01
+    client.post_error = None
+    client.post_response = {
+        "success": True,
+        "orderID": prepared.expected_order_id,
+        "status": "live",
+    }
+    assert venue.submit_order(prepared).accepted is True
+    assert client.post_calls == 2
+
+
+def test_matching_engine_restart_defers_cancel_without_ambiguous_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = [150.0]
+    monkeypatch.setattr(
+        "simple_ai_trading.polymarket_live_v2.time.monotonic",
+        lambda: clock[0],
+    )
+    order_id = "0x" + "3" * 64
+    client = FakeClient()
+    client.cancel_error = FakeApiError(425, {"error": "matching engine restarting"})
+    client.cancel_response = {"canceled": [order_id], "not_canceled": {}}
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+
+    with pytest.raises(
+        PolymarketVenueTemporarilyUnavailable,
+        match="matching engine is restarting",
+    ):
+        venue.cancel_orders((order_id,))
+
+    assert client.cancel_calls == 1
+    with pytest.raises(PolymarketLiveBlocked, match="matching_engine_restart"):
+        venue.cancel_orders((order_id,))
+    assert client.cancel_calls == 1
+
+    clock[0] += 2.01
+    client.cancel_error = None
+    result = venue.cancel_orders((order_id,))
+    assert result.cancelled_order_ids == (order_id,)
+    assert client.cancel_calls == 2
+
+
+def test_order_rate_limit_cools_only_order_bucket(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = [175.0]
+    monkeypatch.setattr(
+        "simple_ai_trading.polymarket_live_v2.time.monotonic",
+        lambda: clock[0],
+    )
+    order_id = "0x" + "3" * 64
+    client = FakeClient()
+    client.post_error = FakeApiError(429, {"error": "rate limited"})
+    client.cancel_response = {"canceled": [order_id], "not_canceled": {}}
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+    prepared = PolymarketPreparedOrder(
+        intent=_intent(),
+        expected_order_id="0x" + "2" * 64,
+        metadata=_intent().metadata,
+        opaque_signed_order=object(),
+    )
+
+    submitted = venue.submit_order(prepared)
+
+    assert submitted.rejection_code == "order_rate_limited"
+    with pytest.raises(PolymarketLiveBlocked, match="order_rate_limited"):
+        venue.assert_order_dispatch_available()
+    assert venue.cancel_orders((order_id,)).cancelled_order_ids == (order_id,)
+
+
+def test_cancel_rate_limit_cools_only_cancel_bucket(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = [185.0]
+    monkeypatch.setattr(
+        "simple_ai_trading.polymarket_live_v2.time.monotonic",
+        lambda: clock[0],
+    )
+    order_id = "0x" + "3" * 64
+    client = FakeClient()
+    client.cancel_error = FakeApiError(429, {"error": "rate limited"})
+    client.cancel_response = {"canceled": [order_id], "not_canceled": {}}
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+
+    with pytest.raises(
+        PolymarketVenueTemporarilyUnavailable,
+        match="cancel bucket is rate limited",
+    ):
+        venue.cancel_orders((order_id,))
+
+    venue.assert_order_dispatch_available()
+    with pytest.raises(PolymarketLiveBlocked, match="cancel_rate_limited"):
+        venue.cancel_orders((order_id,))
+    assert client.cancel_calls == 1
+
+    clock[0] += 30.01
+    client.cancel_error = None
+    assert venue.cancel_orders((order_id,)).cancelled_order_ids == (order_id,)
+    assert client.cancel_calls == 2
+
+
+@pytest.mark.parametrize(
+    ("payload", "rejection_code", "retry_seconds"),
+    [
+        (
+            {
+                "error": (
+                    "Trading is currently cancel-only. New orders are not "
+                    "accepted, but cancels are allowed."
+                )
+            },
+            "cancel_only_mode",
+            30,
+        ),
+        (
+            {
+                "error": (
+                    "post-only mode: only post-only orders and cancels are allowed"
+                ),
+                "code": "post_only_mode",
+                "retry_after_seconds": 79,
+            },
+            "post_only_mode",
+            79,
+        ),
+    ],
+)
+def test_exact_restricted_mode_responses_are_rejected_without_retry(
+    monkeypatch: pytest.MonkeyPatch,
+    payload: object,
+    rejection_code: str,
+    retry_seconds: int,
+) -> None:
+    clock = [200.0]
+    monkeypatch.setattr(
+        "simple_ai_trading.polymarket_live_v2.time.monotonic", lambda: clock[0]
+    )
+    client = FakeClient()
+    client.post_error = FakeApiError(503, payload)
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+    prepared = PolymarketPreparedOrder(
+        intent=_intent(),
+        expected_order_id="0x" + "2" * 64,
+        metadata=_intent().metadata,
+        opaque_signed_order=object(),
+    )
+
+    submitted = venue.submit_order(prepared)
+
+    assert submitted.accepted is False
+    assert submitted.rejection_code == rejection_code
+    assert client.post_calls == 1
+    with pytest.raises(PolymarketLiveBlocked, match=f"retry after {retry_seconds}"):
+        venue.assert_order_dispatch_available()
+
+
+def test_cancel_only_dispatch_cooldown_does_not_block_exact_cancellation() -> None:
+    order_id = "0x" + "3" * 64
+    client = FakeClient()
+    client.post_error = FakeApiError(
+        503,
+        {
+            "error": (
+                "Trading is currently cancel-only. New orders are not accepted, "
+                "but cancels are allowed."
+            )
+        },
+    )
+    client.cancel_response = {"canceled": [order_id], "not_canceled": {}}
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+    prepared = PolymarketPreparedOrder(
+        intent=_intent(),
+        expected_order_id="0x" + "2" * 64,
+        metadata=_intent().metadata,
+        opaque_signed_order=object(),
+    )
+
+    assert venue.submit_order(prepared).rejection_code == "cancel_only_mode"
+    with pytest.raises(PolymarketLiveBlocked, match="cancel_only_mode"):
+        venue.assert_order_dispatch_available()
+
+    result = venue.cancel_orders((order_id,))
+
+    assert result.cancelled_order_ids == (order_id,)
+    assert result.failed_order_ids == ()
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"error": "service unavailable"},
+        {
+            "error": "post-only mode: only post-only orders and cancels are allowed",
+            "code": "post_only_mode",
+            "retry_after_seconds": 121,
+        },
+        {
+            "error": (
+                "Trading is currently cancel-only. New orders are not accepted, "
+                "but cancels are allowed."
+            ),
+            "unexpected": True,
+        },
+    ],
+)
+def test_unrecognized_http_503_remains_ambiguous(payload: object) -> None:
+    client = FakeClient()
+    client.post_error = FakeApiError(503, payload)
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+    prepared = PolymarketPreparedOrder(
+        intent=_intent(),
+        expected_order_id="0x" + "2" * 64,
+        metadata=_intent().metadata,
+        opaque_signed_order=object(),
+    )
+
+    with pytest.raises(FakeApiError, match="503"):
+        venue.submit_order(prepared)
+
+    assert client.post_calls == 1
+
+
+def test_submission_never_defers_execution_and_preserves_order_type() -> None:
+    client = FakeClient()
+    expected_order_id = "0x" + "2" * 64
+    signed_order = object()
+    client.post_response = {
+        "success": True,
+        "orderID": expected_order_id,
+        "status": "matched",
+        "tradeIDs": ["trade-1"],
+    }
+    venue = OfficialPolymarketV2Venue(_credentials(), client=client)
+    prepared = PolymarketPreparedOrder(
+        intent=_intent(),
+        expected_order_id=expected_order_id,
+        metadata=_intent().metadata,
+        opaque_signed_order=signed_order,
+    )
+
+    submitted = venue.submit_order(prepared)
+
+    assert submitted.accepted is True
+    assert submitted.order_id == expected_order_id
+    assert submitted.status == "matched"
+    assert client.post_arguments == [(signed_order, "FAK", False)]
+
+
+def test_audited_sdk_client_does_not_poll_settlement_after_acceptance() -> None:
+    clob = pytest.importorskip("py_clob_client_v2")
+    venue = OfficialPolymarketV2Venue(_credentials())
+    venue._client.get_version = lambda: 2
+    venue._client.get_tick_size = lambda _token_id: "0.01"
+    response = {
+        "success": True,
+        "orderID": "0x" + "2" * 64,
+        "status": "matched",
+        "tradeIDs": ["trade-1"],
+    }
+
+    assert isinstance(venue._client, clob.ClobClient)
+    venue._client._post = lambda *_args, **_kwargs: response
+    venue._client.get_trades = lambda *_args, **_kwargs: pytest.fail(
+        "settlement polling must not occupy the Polymarket action loop"
+    )
+    prepared = venue.prepare_order(
+        _intent(),
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+    )
+    response["orderID"] = prepared.expected_order_id
+
+    submitted = venue.submit_order(prepared)
+
+    assert submitted.accepted is True
+    assert submitted.order_id == prepared.expected_order_id
+    assert submitted.status == "matched"
 
 
 def test_duplicate_capable_http_400_requires_exact_hash_reconciliation() -> None:
@@ -941,4 +1354,5 @@ def test_live_adapter_has_no_account_wide_cancellation_or_heartbeat() -> None:
     assert "cancel_all(" not in source
     assert "cancel_market_orders(" not in source
     assert "heartbeat" not in source
+    assert "use_server_time=false" in source.replace(" ", "")
     assert "retry_on_error=false" in source.replace(" ", "")

@@ -13,7 +13,7 @@ import re
 import shutil
 import sys
 import tempfile
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Iterator
@@ -56,7 +56,9 @@ def _walk_values(value: object, path: str = "report") -> Iterator[tuple[str, obj
 def _assert_finite_numbers(payload: object) -> None:
     for path, value in _walk_values(payload):
         if isinstance(value, float) and not math.isfinite(value):
-            raise RuntimeError(f"foundation report contains a non-finite number at {path}")
+            raise RuntimeError(
+                f"foundation report contains a non-finite number at {path}"
+            )
 
 
 def _assert_no_host_paths(payload: object) -> None:
@@ -91,27 +93,44 @@ def _validate_observations(path: Path, payload: dict[str, object]) -> None:
         or end_exclusive_ms > FOUNDATION_SELECTION_END_EXCLUSIVE_MS
         or end_exclusive_ms <= start_ms
     ):
-        raise RuntimeError("foundation report observation window violates the sealed-period contract")
+        raise RuntimeError(
+            "foundation report observation window violates the sealed-period contract"
+        )
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         if tuple(reader.fieldnames or ()) != expected_fields:
-            raise RuntimeError("foundation observation CSV schema does not match the benchmark contract")
+            raise RuntimeError(
+                "foundation observation CSV schema does not match the benchmark contract"
+            )
         for row_number, row in enumerate(reader, start=2):
             count += 1
             symbol = str(row["symbol"])
             if symbol not in FOUNDATION_SYMBOLS:
-                raise RuntimeError(f"foundation observation row {row_number} has an invalid symbol")
+                raise RuntimeError(
+                    f"foundation observation row {row_number} has an invalid symbol"
+                )
             decision_ms = int(row["decision_ms"])
             if not start_ms <= decision_ms < end_exclusive_ms:
-                raise RuntimeError(f"foundation observation row {row_number} is outside the report window")
+                raise RuntimeError(
+                    f"foundation observation row {row_number} is outside the report window"
+                )
             key = (symbol, decision_ms)
             if key in seen:
-                raise RuntimeError(f"foundation observation row {row_number} duplicates symbol/time")
+                raise RuntimeError(
+                    f"foundation observation row {row_number} duplicates symbol/time"
+                )
             seen.add(key)
             symbols.add(symbol)
-            parsed_time = datetime.fromisoformat(row["decision_time_utc"].replace("Z", "+00:00"))
-            if parsed_time.tzinfo is None or int(parsed_time.astimezone(UTC).timestamp() * 1_000) != decision_ms:
-                raise RuntimeError(f"foundation observation row {row_number} has mismatched UTC time")
+            parsed_time = datetime.fromisoformat(
+                row["decision_time_utc"].replace("Z", "+00:00")
+            )
+            if (
+                parsed_time.tzinfo is None
+                or int(parsed_time.astimezone(UTC).timestamp() * 1_000) != decision_ms
+            ):
+                raise RuntimeError(
+                    f"foundation observation row {row_number} has mismatched UTC time"
+                )
             numeric = {
                 field: float(row[field])
                 for field in (
@@ -125,15 +144,23 @@ def _validate_observations(path: Path, payload: dict[str, object]) -> None:
                 )
             }
             if not all(math.isfinite(value) for value in numeric.values()):
-                raise RuntimeError(f"foundation observation row {row_number} contains non-finite data")
+                raise RuntimeError(
+                    f"foundation observation row {row_number} contains non-finite data"
+                )
             if numeric["last_close"] <= 0.0:
-                raise RuntimeError(f"foundation observation row {row_number} has a nonpositive close")
+                raise RuntimeError(
+                    f"foundation observation row {row_number} has a nonpositive close"
+                )
             expected_error = abs(
                 numeric["predicted_average_return"] - numeric["actual_average_return"]
             )
             expected_baseline = abs(numeric["actual_average_return"])
-            if not math.isclose(numeric["absolute_error"], expected_error, abs_tol=1e-15):
-                raise RuntimeError(f"foundation observation row {row_number} has inconsistent error")
+            if not math.isclose(
+                numeric["absolute_error"], expected_error, abs_tol=1e-15
+            ):
+                raise RuntimeError(
+                    f"foundation observation row {row_number} has inconsistent error"
+                )
             if not math.isclose(
                 numeric["random_walk_absolute_error"], expected_baseline, abs_tol=1e-15
             ):
@@ -141,7 +168,9 @@ def _validate_observations(path: Path, payload: dict[str, object]) -> None:
                     f"foundation observation row {row_number} has inconsistent baseline error"
                 )
             direction = _parse_bool(
-                row["direction_correct"], field="direction_correct", row_number=row_number
+                row["direction_correct"],
+                field="direction_correct",
+                row_number=row_number,
             )
             expected_direction = (
                 numeric["predicted_average_return"] != 0.0
@@ -150,25 +179,39 @@ def _validate_observations(path: Path, payload: dict[str, object]) -> None:
                 == math.copysign(1.0, numeric["actual_average_return"])
             )
             if direction != expected_direction:
-                raise RuntimeError(f"foundation observation row {row_number} has inconsistent direction")
+                raise RuntimeError(
+                    f"foundation observation row {row_number} has inconsistent direction"
+                )
             if int(row["inference_batch"]) < 1:
-                raise RuntimeError(f"foundation observation row {row_number} has an invalid batch")
+                raise RuntimeError(
+                    f"foundation observation row {row_number} has an invalid batch"
+                )
     if count != int(payload.get("observation_count", -1)):
-        raise RuntimeError("foundation observation CSV row count does not match the report")
+        raise RuntimeError(
+            "foundation observation CSV row count does not match the report"
+        )
     if symbols != set(FOUNDATION_SYMBOLS):
-        raise RuntimeError(f"foundation observation CSV symbol contract failed: {sorted(symbols)}")
+        raise RuntimeError(
+            f"foundation observation CSV symbol contract failed: {sorted(symbols)}"
+        )
 
 
 def _validate_chart(path: Path) -> None:
     payload = path.read_bytes()
     if not payload or len(payload) > 5 * 1024 * 1024:
-        raise RuntimeError("foundation chart is empty or exceeds the repository size gate")
+        raise RuntimeError(
+            "foundation chart is empty or exceeds the repository size gate"
+        )
     text = payload.decode("utf-8")
-    if "not P&amp;L" not in text or any(symbol not in text for symbol in FOUNDATION_SYMBOLS):
+    if "not P&amp;L" not in text or any(
+        symbol not in text for symbol in FOUNDATION_SYMBOLS
+    ):
         raise RuntimeError("foundation chart omits its non-P&L or symbol disclosure")
     lowered = text.lower()
     if "<script" in lowered or "href=" in lowered or "url(" in lowered:
-        raise RuntimeError("foundation chart contains active or externally referenced content")
+        raise RuntimeError(
+            "foundation chart contains active or externally referenced content"
+        )
     try:
         root = ET.fromstring(text)
     except ET.ParseError as exc:
@@ -177,7 +220,9 @@ def _validate_chart(path: Path) -> None:
         raise RuntimeError("foundation chart root is not SVG")
 
 
-def _validated_payload(report_path: Path, observations: Path, chart: Path) -> dict[str, object]:
+def _validated_payload(
+    report_path: Path, observations: Path, chart: Path
+) -> dict[str, object]:
     payload = json.loads(report_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise RuntimeError("foundation benchmark report is not an object")
@@ -190,7 +235,9 @@ def _validated_payload(report_path: Path, observations: Path, chart: Path) -> di
     if payload.get("predictive_candidate") is not (status == "predictive_candidate"):
         raise RuntimeError("foundation benchmark candidate status is inconsistent")
     if payload.get("trading_authority") is not False:
-        raise RuntimeError("foundation benchmark must explicitly deny trading authority")
+        raise RuntimeError(
+            "foundation benchmark must explicitly deny trading authority"
+        )
     if int(payload.get("observation_count", 0)) < 1:
         raise RuntimeError("foundation benchmark contains no observations")
     if _sha256(observations) != payload.get("observations_sha256"):
@@ -214,27 +261,42 @@ def _validated_payload(report_path: Path, observations: Path, chart: Path) -> di
             or int(item.get("maximum_open_time", -1)) + 60_000
             != int(item.get("end_exclusive_ms", -2))
         ):
-            raise RuntimeError(f"foundation source evidence failed for {item.get('symbol')}")
+            raise RuntimeError(
+                f"foundation source evidence failed for {item.get('symbol')}"
+            )
     evaluation = payload.get("evaluation")
     if not isinstance(evaluation, dict) or "not accessed" not in str(
         evaluation.get("terminal_period", "")
     ):
-        raise RuntimeError("foundation report does not preserve the sealed terminal period")
-    if evaluation.get("orders_allowed") is not False or evaluation.get("after_cost_trading_evidence") is not False:
-        raise RuntimeError("foundation report overstates forecast evidence as trading evidence")
+        raise RuntimeError(
+            "foundation report does not preserve the sealed terminal period"
+        )
+    if (
+        evaluation.get("orders_allowed") is not False
+        or evaluation.get("after_cost_trading_evidence") is not False
+    ):
+        raise RuntimeError(
+            "foundation report overstates forecast evidence as trading evidence"
+        )
     engine = payload.get("engine")
     source = engine.get("source") if isinstance(engine, dict) else None
     if not isinstance(source, dict) or source.get("verified") is not True:
-        raise RuntimeError("foundation report lacks verified executable source evidence")
+        raise RuntimeError(
+            "foundation report lacks verified executable source evidence"
+        )
     inference = payload.get("inference")
-    repeatability = inference.get("seeded_repeatability") if isinstance(inference, dict) else None
+    repeatability = (
+        inference.get("seeded_repeatability") if isinstance(inference, dict) else None
+    )
     if (
         not isinstance(repeatability, dict)
         or repeatability.get("checked") is not True
         or repeatability.get("exact") is not True
         or int(inference.get("in_process_retries", -1)) != 0
     ):
-        raise RuntimeError("foundation report lacks exact process-isolated repeatability evidence")
+        raise RuntimeError(
+            "foundation report lacks exact process-isolated repeatability evidence"
+        )
     _validate_observations(observations, payload)
     _validate_chart(chart)
     return payload
@@ -254,8 +316,8 @@ def _sanitized_payload(
     if isinstance(engine, dict):
         source = engine.get("source")
         if isinstance(source, dict):
-            source["source_root"] = (
-                "<verified-local-foundation-cache>/kronos/" + str(source.get("commit", ""))
+            source["source_root"] = "<verified-local-foundation-cache>/kronos/" + str(
+                source.get("commit", "")
             )
     promoted["observations_path"] = "observations.csv"
     promoted["chart_path"] = "benchmark.svg"
@@ -290,12 +352,15 @@ def _write_bytes_atomic(path: Path, payload: bytes) -> None:
 
 
 def _write_json_atomic(path: Path, payload: object) -> None:
-    serialized = json.dumps(
-        payload,
-        indent=2,
-        sort_keys=True,
-        allow_nan=False,
-    ).encode("utf-8") + b"\n"
+    serialized = (
+        json.dumps(
+            payload,
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("utf-8")
+        + b"\n"
+    )
     _write_bytes_atomic(path, serialized)
 
 
@@ -348,7 +413,9 @@ def verify_promoted_bundle(output: Path) -> dict[str, object]:
     if actual != _PROMOTED_FILES:
         raise RuntimeError(f"foundation promoted file set is invalid: {sorted(actual)}")
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or set(manifest.get("files", {})) != _PROMOTED_FILES - {"manifest.json"}:
+    if not isinstance(manifest, dict) or set(
+        manifest.get("files", {})
+    ) != _PROMOTED_FILES - {"manifest.json"}:
         raise RuntimeError("foundation promotion manifest schema is invalid")
     for name, expected in manifest["files"].items():
         if _sha256(output / name) != expected:
@@ -373,19 +440,19 @@ SOLUSDT. It is **not** a profitability result and grants no trading authority.
 
 | Field | Result |
 |---|---:|
-| Status | `{payload['status']}` |
-| Observations | {payload['observation_count']} |
-| Raw model MAE | {float(overall['model_mae']):.10f} |
-| Random-walk MAE | {float(overall['random_walk_mae']):.10f} |
-| Raw MAE improvement | {float(overall['mae_improvement_pct']) * 100.0:.4f}% |
-| Raw information coefficient | {float(overall['information_coefficient']):.6f} |
-| Raw direction accuracy | {float(overall['direction_accuracy']) * 100.0:.3f}% |
-| Calibrated selection MAE | {float(calibrated['model_mae']):.10f} |
-| Calibrated random-walk MAE | {float(calibrated['random_walk_mae']):.10f} |
-| Calibrated uplift probability | {float(bootstrap['positive_probability']) * 100.0:.3f}% |
-| Calibrated 95% CI | [{float(bootstrap['ci_95_low']):.10f}, {float(bootstrap['ci_95_high']):.10f}] |
-| Fault worker restarts | {int(inference['worker_restart_count'])} |
-| Planned worker rotations | {int(inference['planned_worker_rotation_count'])} |
+| Status | `{payload["status"]}` |
+| Observations | {payload["observation_count"]} |
+| Raw model MAE | {float(overall["model_mae"]):.10f} |
+| Random-walk MAE | {float(overall["random_walk_mae"]):.10f} |
+| Raw MAE improvement | {float(overall["mae_improvement_pct"]) * 100.0:.4f}% |
+| Raw information coefficient | {float(overall["information_coefficient"]):.6f} |
+| Raw direction accuracy | {float(overall["direction_accuracy"]) * 100.0:.3f}% |
+| Calibrated selection MAE | {float(calibrated["model_mae"]):.10f} |
+| Calibrated random-walk MAE | {float(calibrated["random_walk_mae"]):.10f} |
+| Calibrated uplift probability | {float(bootstrap["positive_probability"]) * 100.0:.3f}% |
+| Calibrated 95% CI | [{float(bootstrap["ci_95_low"]):.10f}, {float(bootstrap["ci_95_high"]):.10f}] |
+| Fault worker restarts | {int(inference["worker_restart_count"])} |
+| Planned worker rotations | {int(inference["planned_worker_rotation_count"])} |
 | First rejection reason | `{first_reason}` |
 
 Files:

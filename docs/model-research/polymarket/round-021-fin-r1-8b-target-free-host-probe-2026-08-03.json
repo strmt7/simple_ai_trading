@@ -1,0 +1,120 @@
+{
+  "artifact_sha256": "f8a3f62563df6b23d3d284acea5686457ee148066670eb3fdf48e80be421b15a",
+  "candidate_selection_design_sha256": "5a5b9e38322cdb7031e3eff2d5b3b4e5d00218c20d838efcaf68fde7461ce81a",
+  "checks": {
+    "case_constraint_semantics_passed": true,
+    "exact_model_digest_present": true,
+    "gpu_residency_passed": true,
+    "parameter_floor_passed": true,
+    "provider_failure_count_passed": true,
+    "target_free_source_preserved": true,
+    "valid_typed_response_count_passed": true
+  },
+  "created_at_utc": "2026-08-03T16:15:30.035296+00:00",
+  "model": "fin-r1:8b",
+  "passed": true,
+  "purpose": "provider_schema_latency_and_gpu_compatibility_only",
+  "report": {
+    "advisory_only": true,
+    "approval_count": 0,
+    "average_inference_latency_seconds": 7.940425399981905,
+    "average_latency_seconds": 7.9404254,
+    "average_queue_delay_seconds": 0.0,
+    "case_count": 1,
+    "case_set_sha256": "be24a875dde2e45e310a494df97454653536f1b55400177791e8119d021cea2f",
+    "config": {
+      "base_url": "http://127.0.0.1:11434",
+      "maximum_advisory_latency_seconds": 30.0,
+      "minimum_approval_confidence": 0.65,
+      "model": "fin-r1:8b",
+      "seed": 4701,
+      "timeout_seconds": 60.0
+    },
+    "cooldown_count": 0,
+    "market_permission_sha256": "936f3e54c2941d6b2980b1e814875ebbb680ba8e515165adb1f97cf5a23c4862",
+    "market_permissions": {
+      "0x385317e8058776b4648bd5e0139acfdeeac2b1a526e5463e864513e81acdfcff": false
+    },
+    "maximum_inference_latency_seconds": 7.940425399981905,
+    "maximum_latency_seconds": 7.9404254,
+    "maximum_output_token_count": 37,
+    "maximum_prompt_token_count": 969,
+    "maximum_queue_delay_seconds": 0.0,
+    "model_digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+    "model_metadata_sha256": "8278c751d2eca65bcb952854f6d62a947fa9235ab1b558795c7cb08b409fba09",
+    "model_parameters_b": 8.0,
+    "profitability_claim": false,
+    "provider_failure_count": 0,
+    "provider_telemetry_count": 1,
+    "report_sha256": "820fc6b25054429e0996f17fbd2a2a2783adc6de3c5f72c91a910dcea8362cdb",
+    "results": [
+      {
+        "case_id": "c21900c759ba882ac373f46a30fa0c16f4e36a827ee2db95727094e2424ec6c5",
+        "condition_id": "0x385317e8058776b4648bd5e0139acfdeeac2b1a526e5463e864513e81acdfcff",
+        "decision": {
+          "action": "veto",
+          "confidence": 0.5,
+          "failure_reason": "",
+          "permits_entry": false,
+          "reason_codes": [
+            "insufficient_evidence"
+          ],
+          "summary": "Weak model evidence and insufficient edge after fees.",
+          "valid": true
+        },
+        "inference_latency_seconds": 7.940425399981905,
+        "latency_seconds": 7.9404254,
+        "model": "fin-r1:8b",
+        "provider_runtime": {
+          "digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+          "gpu_resident": true,
+          "loaded": true,
+          "loaded_model": "fin-r1:8b",
+          "requested_model": "fin-r1:8b",
+          "size_bytes": 6178671164,
+          "size_vram_bytes": 6178671164,
+          "status": "gpu_resident",
+          "vram_to_model_ratio": 1.0
+        },
+        "queue_delay_seconds": 0.0,
+        "response_payload": {
+          "created_at": "2026-08-03T16:15:29.984069Z",
+          "done": true,
+          "done_reason": "stop",
+          "eval_count": 37,
+          "eval_duration": 506201000,
+          "load_duration": 7016125200,
+          "message": {
+            "content": "{\"action\":\"veto\",\"confidence\":0.5,\"reason_codes\":[\"insufficient_evidence\"],\"summary\":\"Weak model evidence and insufficient edge after fees.\"}",
+            "role": "assistant"
+          },
+          "model": "fin-r1:8b",
+          "prompt_eval_count": 969,
+          "prompt_eval_duration": 393478000,
+          "total_duration": 7921407000
+        },
+        "response_sha256": "b9d343a8c955c3086c55abe99bbb4a1592fc47f77b2718743636f926342b9570"
+      }
+    ],
+    "risk_benchmark_evidence_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+    "schema_version": "polymarket-ai-veto-report-v7",
+    "selection_sha256": "5a5b9e38322cdb7031e3eff2d5b3b4e5d00218c20d838efcaf68fde7461ce81a",
+    "total_output_token_count": 37,
+    "total_prompt_token_count": 969,
+    "trading_authority": false,
+    "valid_response_count": 1,
+    "veto_count": 1
+  },
+  "schema_version": "polymarket-round21-target-free-ai-candidate-host-probe-v2",
+  "semantics": {
+    "capture_data_accessed": false,
+    "live_trading_authority": false,
+    "market_target_or_outcome_accessed": false,
+    "model_selected": false,
+    "paper_trading_authority": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false
+  },
+  "source_case_sha256": "cae4ab37ea16d74f140028305bca14a559160a6c72d8bbb31c9c6fb6b2bcd675",
+  "source_target_free_probe_sha256": "ec4a29598f2577b31c0cda057e5c39d211967a33efd1181213348efe3f1940f5"
+}

@@ -13,13 +13,17 @@ from simple_ai_trading.polymarket_round21_core_features import (
     Round21CoreFeatureSnapshot,
 )
 from simple_ai_trading.polymarket_round21_corpus import (
+    POLYMARKET_ROUND21_CORE_CORPUS_DESIGN_SHA256,
     Round21CoreConditionMaterialization,
 )
 from simple_ai_trading import polymarket_round21_corpus_store as store_module
 from simple_ai_trading.polymarket_round21_corpus_store import (
     audit_round21_core_partition,
     audit_round21_sealed_core_partition,
+    load_round21_core_development_publication,
+    load_round21_core_partition_snapshots,
     load_round21_core_publication_manifest,
+    load_round21_sealed_core_partition_snapshots,
     publish_round21_core_corpus,
     validate_round21_core_publication_boundary,
 )
@@ -82,9 +86,7 @@ def _materialization(
     )
     body: dict[str, object] = {
         "schema_version": "polymarket-round21-condition-admission-v1",
-        "core_corpus_design_sha256": (
-            "a5ef5445ec0381540dd675784d711873b0d644dd0ef44462f12e71d131e133eb"
-        ),
+        "core_corpus_design_sha256": POLYMARKET_ROUND21_CORE_CORPUS_DESIGN_SHA256,
         "run_id": RUN_ID,
         "segment_index": 1,
         "snapshot_sha256": "d" * 64,
@@ -165,6 +167,13 @@ def test_partition_store_round_trips_exact_binary64_and_detects_tampering(
 
     assert audit["feature_chunk_count"] == 1
     assert audit["feature_row_count"] == 2
+    loaded = load_round21_core_partition_snapshots(path, manifest)
+    original = _materialization(
+        role="train",
+        event_start_ms=CAMPAIGN_START_MS,
+        digit="1",
+    ).available_features
+    assert loaded == original
     with duckdb.connect(str(path)) as connection:
         chunk_json, compressed_bytes = connection.execute(
             "SELECT chunk_manifest_json, compressed_payload FROM feature_chunk"
@@ -175,11 +184,6 @@ def test_partition_store_round_trips_exact_binary64_and_detects_tampering(
             bytes(compressed_bytes),
             chunk_metadata,
         )
-        original = _materialization(
-            role="train",
-            event_start_ms=CAMPAIGN_START_MS,
-            digit="1",
-        ).available_features
         assert [value.hex() for value in decoded[0].values] == [
             value.hex() for value in original[0].values
         ]
@@ -204,9 +208,7 @@ def test_sealed_partition_requires_explicit_access(tmp_path: Path) -> None:
         partition="sealed_test",
         partition_policy=_policy(),
     )
-    writer.add(
-        _materialization(role="test", event_start_ms=TEST_START_MS, digit="2")
-    )
+    writer.add(_materialization(role="test", event_start_ms=TEST_START_MS, digit="2"))
     manifest = writer.finalize(terminal_receipt_audit_sha256="f" * 64)
 
     with pytest.raises(PermissionError, match="one-use access"):
@@ -228,6 +230,20 @@ def test_sealed_partition_requires_explicit_access(tmp_path: Path) -> None:
         test_access_sha256=access,
     )
     assert audit["claim_sha256"] == claim.claim_sha256
+    assert (
+        load_round21_sealed_core_partition_snapshots(
+            path,
+            manifest,
+            one_use_store_path=ledger,
+            claim=claim,
+            test_access_sha256=access,
+        )
+        == _materialization(
+            role="test",
+            event_start_ms=TEST_START_MS,
+            digit="2",
+        ).available_features
+    )
     with pytest.raises(PermissionError, match="access is unavailable"):
         audit_round21_sealed_core_partition(
             path,
@@ -294,7 +310,9 @@ def test_atomic_publication_writes_both_partitions_or_nothing(
         }
         return {**body, "audit_sha256": _sha(body)}
 
-    monkeypatch.setattr(store_module, "load_round21_core_corpus_design", lambda _root: {})
+    monkeypatch.setattr(
+        store_module, "load_round21_core_corpus_design", lambda _root: {}
+    )
     monkeypatch.setattr(
         store_module,
         "validate_round21_terminal_transport_manifest",
@@ -327,6 +345,9 @@ def test_atomic_publication_writes_both_partitions_or_nothing(
     assert (destination / "sealed-test.duckdb").is_file()
     assert load_round21_core_publication_manifest(destination) == manifest
     assert validate_round21_core_publication_boundary(destination) == manifest
+    loaded_manifest, snapshots = load_round21_core_development_publication(destination)
+    assert loaded_manifest == manifest
+    assert snapshots == development.available_features
     assert manifest["optional_binance_consulted"] is False
 
     failed_destination = tmp_path / "failed-publication"

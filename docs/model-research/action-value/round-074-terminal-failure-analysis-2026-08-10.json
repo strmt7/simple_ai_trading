@@ -1,0 +1,111 @@
+{
+  "artifact_sha256": "f03d8b885318c8a783b251f6f38368808480219a2fe0c96147d208f0dd671da1",
+  "diagnosis": {
+    "basis": "Most never-started slots are concentrated in two long preregistered scheduling gaps; terminal evidence does not identify the exact host-level cause.",
+    "classification": "campaign_continuity_failure_indicated",
+    "exact_host_cause_established": false,
+    "market_feed_failure_established_as_primary_cause": false,
+    "model_architecture_evaluated": false,
+    "predictive_edge_evaluated": false,
+    "profitability_evaluated": false
+  },
+  "observed_at_utc": "2026-08-10T10:12:23.675950+00:00",
+  "schema_version": "round-074-terminal-failure-analysis-v1",
+  "scope": {
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "model_training_performed": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "source_database_access": "not_opened",
+    "target_data_accessed": false
+  },
+  "source_bindings": {
+    "chart_file_sha256": "fec5ee5a718dfcf001b2253574499fc9483100cd6f76d6ba7e820bfd47f7c937",
+    "chart_path": "docs/model-research/action-value/round-074-terminal-slot-coverage-2026-08-10.svg",
+    "plan_file_sha256": "2a67f9637cb64e2a865ce94679beffa201a28095d0557a0553a59da6ce446913",
+    "plan_path": "docs/model-research/action-value/round-074-segmented-event-cohort-plan-v3.json",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "recovery_build_file_sha256": "826c9ad23c03380da79e1c8604f659c87155ec662cec0035567754b873944814",
+    "recovery_build_location": "local_data_artifact_not_committed",
+    "recovery_build_result_sha256": "72a1c6c6cb718553210ec795f2faf6833579f00bef04cfc1beea37f6ed603041",
+    "slot_csv_file_sha256": "ec060e0bf787426cb5a68921a11cf42073eee2f967a676914ffc87528664b69c",
+    "slot_csv_path": "docs/model-research/action-value/round-074-terminal-slot-coverage-2026-08-10.csv",
+    "state_and_recovery_location": "local_data_artifacts_not_committed",
+    "state_metadata_evidence": {
+      "storage-shard-schedule.json": "495b7de91a5a8b8a7161d35bcaa6a1edf769a8faa8736328dfd0b22cce25961d"
+    },
+    "terminal_outcome_artifact_sha256": "22187535286009efca9c55c6281eb8f858b33c71f05bed4a517768d9f2b1cde0",
+    "terminal_outcome_file_sha256": "ab5a8d7815c8b6eab02c39043e1a4f053f9fe6630d92276297d6f6805b00d314",
+    "terminal_outcome_path": "docs/model-research/action-value/round-074-terminal-campaign-outcome-v2-2026-08-10.json"
+  },
+  "terminal_slot_analysis": {
+    "admitted_count": 460,
+    "admitted_fraction_of_started_slots": 0.9108910891089109,
+    "attempted_missed_count": 23,
+    "failure_classification_counts": {
+      "admitted": 460,
+      "captured_fresh_audit_failed": 1,
+      "captured_stored_report_missing": 8,
+      "captured_unsupported_terminal_class": 12,
+      "empty_supervisor_output": 1,
+      "never_started_no_slot_directory": 215,
+      "prior_audit_terminal_class_failed": 1,
+      "transport_excluded": 22
+    },
+    "major_gap_fraction_of_never_started_slots": 0.986046511627907,
+    "major_gap_minimum_slots": 10,
+    "major_gap_slot_count": 212,
+    "never_started_contiguous_blocks": [
+      {
+        "first_slot_ordinal": 43,
+        "last_slot_ordinal": 44,
+        "major_gap": false,
+        "role": "training",
+        "scheduled_window_end_utc": "2026-07-29T02:40:00+00:00",
+        "scheduled_window_start_utc": "2026-07-29T01:55:00+00:00",
+        "slot_count": 2
+      },
+      {
+        "first_slot_ordinal": 58,
+        "last_slot_ordinal": 82,
+        "major_gap": true,
+        "role": "training",
+        "scheduled_window_end_utc": "2026-07-29T18:30:00+00:00",
+        "scheduled_window_start_utc": "2026-07-29T08:10:00+00:00",
+        "slot_count": 25
+      },
+      {
+        "first_slot_ordinal": 151,
+        "last_slot_ordinal": 337,
+        "major_gap": true,
+        "role": "training",
+        "scheduled_window_end_utc": "2026-08-03T04:45:00+00:00",
+        "scheduled_window_start_utc": "2026-07-30T22:55:00+00:00",
+        "slot_count": 187
+      },
+      {
+        "first_slot_ordinal": 339,
+        "last_slot_ordinal": 339,
+        "major_gap": false,
+        "role": "training",
+        "scheduled_window_end_utc": "2026-08-03T05:35:00+00:00",
+        "scheduled_window_start_utc": "2026-08-03T05:15:00+00:00",
+        "slot_count": 1
+      }
+    ],
+    "never_started_slot_count": 215,
+    "slot_directory_count": 505,
+    "total_slot_count": 720,
+    "transport_excluded_count": 22
+  },
+  "training_quota": {
+    "deficit_eligible_anchor_ns": 161433186210300,
+    "deficit_hours": 44.84255172508333,
+    "observed_eligible_anchor_ns": 233306813789700,
+    "observed_hours": 64.80744827491667,
+    "quota_passed": false,
+    "required_eligible_anchor_ns": 394740000000000,
+    "required_hours": 109.65
+  }
+}

@@ -6,7 +6,7 @@ from tools.diagnose_round33_failure import (
     _binary_metrics,
     _routing_diagnostics,
 )
-from tests.test_selective_action_viability_runner import _diagnostic_bundle
+from test_selective_action_viability_runner import _diagnostic_bundle
 
 
 def test_round33_binary_diagnostic_reports_calibration_and_discrimination() -> None:

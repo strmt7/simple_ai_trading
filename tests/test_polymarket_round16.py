@@ -189,7 +189,11 @@ def _public(value: object, *, observed_at_ms: int = END_MS + 1) -> PublicPayload
 
 
 def test_round16_contract_loader_is_exact_and_has_no_authority() -> None:
-    contract = load_round16_historical_contract(CONTRACT_PATH)
+    file_sha256 = hashlib.sha256(CONTRACT_PATH.read_bytes()).hexdigest()
+    contract = load_round16_historical_contract(
+        CONTRACT_PATH,
+        expected_file_sha256=file_sha256,
+    )
 
     assert contract.contract_sha256 == (
         "6037c9ef473bcc736dbc7c3e98db76b75170e69e23de9574373bad7ae3fcdb67"
@@ -202,6 +206,12 @@ def test_round16_contract_loader_is_exact_and_has_no_authority() -> None:
         contract.historical.decision_offsets_seconds == ROUND16_DECISION_OFFSETS_SECONDS
     )
     assert contract.historical.excluded_slugs == frozenset()
+
+    with pytest.raises(ValueError, match="contract file hash differs"):
+        load_round16_historical_contract(
+            CONTRACT_PATH,
+            expected_file_sha256="0" * 64,
+        )
 
 
 def test_round16_identity_parser_never_serializes_terminal_targets() -> None:

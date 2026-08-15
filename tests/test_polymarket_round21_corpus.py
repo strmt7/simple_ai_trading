@@ -32,6 +32,9 @@ from simple_ai_trading.polymarket_round21_corpus import (
     validate_round21_condition_admission,
 )
 from simple_ai_trading.polymarket_round21_dataset import Round21PartitionPolicy
+from simple_ai_trading.polymarket_round21_core_features import (
+    build_round21_execution_books,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -180,7 +183,9 @@ def _chainlink_records(
     return tuple(records)
 
 
-def test_chainlink_controls_preserve_terminal_sequence_without_entering_features() -> None:
+def test_chainlink_controls_preserve_terminal_sequence_without_entering_features() -> (
+    None
+):
     snapshot = _canonical(
         {
             "topic": "crypto_prices",
@@ -188,9 +193,7 @@ def test_chainlink_controls_preserve_terminal_sequence_without_entering_features
             "timestamp": EVENT_START_MS,
             "payload": {
                 "symbol": "btc/usd",
-                "data": [
-                    {"timestamp": EVENT_START_MS - 1_000, "value": 60_000.0}
-                ],
+                "data": [{"timestamp": EVENT_START_MS - 1_000, "value": 60_000.0}],
             },
         }
     )
@@ -278,7 +281,9 @@ def _source(
     gaps: tuple[StreamGap, ...] = (),
     lane_pause: tuple[int, int] | None = None,
 ) -> Round21ConditionSource:
-    wall_times = tuple(EVENT_START_MS + offset + 10 for offset in range(0, 300_000, 1_000))
+    wall_times = tuple(
+        EVENT_START_MS + offset + 10 for offset in range(0, 300_000, 1_000)
+    )
     if lane_pause is not None:
         pause_start, pause_end = lane_pause
         wall_times = tuple(
@@ -314,9 +319,12 @@ def test_round21_core_corpus_design_is_hash_bound_and_target_blind() -> None:
     assert design["design_sha256"] == POLYMARKET_ROUND21_CORE_CORPUS_DESIGN_SHA256
     assert design["source_boundary"]["outcomes_consulted"] is False
     assert design["source_boundary"]["optional_binance_consulted"] is False
-    assert design["continuous_chainlink_slice"][
-        "first_observed_sequence_number_is_bound_not_renumbered"
-    ] is True
+    assert (
+        design["continuous_chainlink_slice"][
+            "first_observed_sequence_number_is_bound_not_renumbered"
+        ]
+        is True
+    )
 
 
 def test_round21_condition_materializes_full_causal_five_minute_grid() -> None:
@@ -404,9 +412,9 @@ def test_round21_joint_gap_rejects_only_affected_condition() -> None:
 
     assert result.admission["admitted"] is False
     assert result.admission["joint_unhealthy_ms"] > 2_000
-    assert "joint_clob_unhealthy_limit_exceeded" in result.admission[
-        "rejection_reasons"
-    ]
+    assert (
+        "joint_clob_unhealthy_limit_exceeded" in result.admission["rejection_reasons"]
+    )
     assert result.admission["lane_gap_counts"] == {"clob-a": 1, "clob-b": 1}
 
 
@@ -439,6 +447,40 @@ def test_round21_condition_admission_is_tamper_evident() -> None:
         validate_round21_condition_admission(_rehash(changed, "admission_sha256"))
 
 
+def test_round21_execution_books_rebuild_from_exact_admitted_union() -> None:
+    books = build_round21_execution_books(
+        condition_id=CONDITION_ID,
+        up_token_id=UP_TOKEN,
+        down_token_id=DOWN_TOKEN,
+        union_events=_source().union_events,
+        admitted_gap_free=True,
+    )
+
+    assert {book.asset_id for book in books} == {UP_TOKEN, DOWN_TOKEN}
+    assert all(book.connected and book.gap_free for book in books)
+    assert tuple(
+        (book.received_wall_ms, book.received_monotonic_ns, book.asset_id)
+        for book in books
+    ) == tuple(
+        sorted(
+            (
+                book.received_wall_ms,
+                book.received_monotonic_ns,
+                book.asset_id,
+            )
+            for book in books
+        )
+    )
+    with pytest.raises(ValueError, match="identity differs"):
+        build_round21_execution_books(
+            condition_id=CONDITION_ID,
+            up_token_id=UP_TOKEN,
+            down_token_id=DOWN_TOKEN,
+            union_events=_source().union_events,
+            admitted_gap_free=False,
+        )
+
+
 def test_round21_terminal_observer_materializes_during_one_receipt_pass() -> None:
     results = []
     observer = Round21CoreCorpusObserver(
@@ -457,6 +499,34 @@ def test_round21_terminal_observer_materializes_during_one_receipt_pass() -> Non
     assert len(results) == 1
     assert results[0].admission["admitted"] is True
     assert results[0].admission["available_feature_row_count"] > 1_000
+
+
+def test_round21_terminal_observer_can_emit_source_without_rebuilding_features(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sources = []
+    monkeypatch.setattr(
+        corpus_module,
+        "build_round21_core_condition_materialization",
+        lambda **_kwargs: pytest.fail("source-only replay rebuilt core features"),
+    )
+    observer = Round21CoreCorpusObserver(
+        conditions=(_condition(),),
+        partition_policy=_policy(),
+        sink=None,
+        source_sink=lambda condition, source: sources.append((condition, source)),
+    )
+    segment = {"run_id": RUN_ID}
+
+    observer.start_run(segment, ())
+    for message in _raw_messages():
+        observer.observe_message(segment, message)
+    observer.finish_run(segment)
+
+    assert observer.materialized_condition_count == 1
+    assert len(sources) == 1
+    assert sources[0][0].condition_id == CONDITION_ID
+    assert len(sources[0][1].union_events) == 600
 
 
 def test_round21_terminal_observer_rejects_clock_regression() -> None:
@@ -555,13 +625,9 @@ def test_round21_snapshot_loader_reconciles_actual_duckdb_payload(
                 observed_wall_ms=EVENT_START_MS - 30_000,
                 observed_monotonic_ns=(EVENT_START_MS - 30_000) * 1_000_000,
                 clob_info_json=clob_json,
-                clob_info_sha256=hashlib.sha256(
-                    clob_json.encode("ascii")
-                ).hexdigest(),
+                clob_info_sha256=hashlib.sha256(clob_json.encode("ascii")).hexdigest(),
                 up_fee_rate_json=fee_json,
-                up_fee_rate_sha256=hashlib.sha256(
-                    fee_json.encode("ascii")
-                ).hexdigest(),
+                up_fee_rate_sha256=hashlib.sha256(fee_json.encode("ascii")).hexdigest(),
                 down_fee_rate_json=fee_json,
                 down_fee_rate_sha256=hashlib.sha256(
                     fee_json.encode("ascii")

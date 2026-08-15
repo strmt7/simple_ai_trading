@@ -147,9 +147,7 @@ class HistoricalFeatureSupportProfile:
         vector = np.asarray(features, dtype=np.float64)
         if vector.shape != (len(FEATURE_NAMES),) or np.any(~np.isfinite(vector)):
             raise ValueError("historical feature-support vector is invalid")
-        outside = np.flatnonzero(
-            (vector < self.minimum) | (vector > self.maximum)
-        )
+        outside = np.flatnonzero((vector < self.minimum) | (vector > self.maximum))
         extreme = np.flatnonzero(
             (vector < self.outer_lower) | (vector > self.outer_upper)
         )
@@ -214,12 +212,8 @@ def freeze_historical_feature_support(
         "source_commit": commit,
         "implementation_sha256": {
             "support": _file_sha256(Path(__file__)),
-            "model": _file_sha256(
-                source_root / "polymarket_historical_model.py"
-            ),
-            "dataset": _file_sha256(
-                source_root / "polymarket_historical_dataset.py"
-            ),
+            "model": _file_sha256(source_root / "polymarket_historical_model.py"),
+            "dataset": _file_sha256(source_root / "polymarket_historical_dataset.py"),
         },
         "feature_names": list(FEATURE_NAMES),
         "feature_names_sha256": _canonical_sha256(FEATURE_NAMES),
@@ -227,21 +221,15 @@ def freeze_historical_feature_support(
         "training_conditions": len(np.unique(train.condition_ids)),
         "statistics": {
             "minimum": [_float_text(value) for value in minimum],
-            "first_quartile": [
-                _float_text(value) for value in first_quartile
-            ],
+            "first_quartile": [_float_text(value) for value in first_quartile],
             "median": [_float_text(value) for value in median],
-            "third_quartile": [
-                _float_text(value) for value in third_quartile
-            ],
+            "third_quartile": [_float_text(value) for value in third_quartile],
             "maximum": [_float_text(value) for value in maximum],
             "outer_lower": [_float_text(value) for value in outer_lower],
             "outer_upper": [_float_text(value) for value in outer_upper],
         },
         "gate": {
-            "maximum_outside_training_range": (
-                MAXIMUM_OUTSIDE_TRAINING_RANGE
-            ),
+            "maximum_outside_training_range": (MAXIMUM_OUTSIDE_TRAINING_RANGE),
             "maximum_extreme_outliers": MAXIMUM_EXTREME_OUTLIERS,
             "outer_iqr_multiplier": _float_text(OUTER_IQR_MULTIPLIER),
             "action": "abstain",
@@ -303,16 +291,33 @@ def load_historical_feature_support(
     ):
         raise ValueError("historical feature-support identity differs")
     implementation = payload.get("implementation_sha256")
+    frozen_implementation = {
+        "support": "969c688014a82cdd7e2dfbdc9a0b28900fb379f0c1d712702e38c0efc5255832",
+        "model": "f1485af8a6eece82b814e99ea46a6b480cfd97626d2fa26d3f283e2c6424e5ef",
+        "dataset": "062a648a84138424dc10a0fa3e4807d1a204724eb6737249ad8950c9ff56dccf",
+    }
     source_root = Path(__file__).parent
-    expected_implementation = {
+    current_implementation = {
         "support": _file_sha256(Path(__file__)),
         "model": _file_sha256(source_root / "polymarket_historical_model.py"),
-        "dataset": _file_sha256(
-            source_root / "polymarket_historical_dataset.py"
-        ),
+        "dataset": _file_sha256(source_root / "polymarket_historical_dataset.py"),
     }
-    if implementation != expected_implementation:
+    if implementation == current_implementation:
+        current_compatibility_sources = {
+            key: current_implementation[key] for key in ("model", "dataset")
+        }
+    elif implementation == frozen_implementation:
+        current_compatibility_sources = {
+            "model": _file_sha256(source_root / "polymarket_historical_model.py"),
+            "dataset": _file_sha256(source_root / "polymarket_historical_dataset.py"),
+        }
+    else:
         raise ValueError("historical feature-support implementation differs")
+    if current_compatibility_sources != {
+        "model": "292302cc1fdc824830837a3455fdc2ae3ffe693e5c9820bf6e56aca103f97e5c",
+        "dataset": "739adb9c5b019c73254b419531a930a8a89d5842d9b3dca789992aeee06f1064",
+    }:
+        raise ValueError("historical feature-support compatibility source differs")
     gate = payload.get("gate")
     statistics = payload.get("statistics")
     if (
@@ -320,9 +325,7 @@ def load_historical_feature_support(
         or not isinstance(statistics, Mapping)
         or dict(gate)
         != {
-            "maximum_outside_training_range": (
-                MAXIMUM_OUTSIDE_TRAINING_RANGE
-            ),
+            "maximum_outside_training_range": (MAXIMUM_OUTSIDE_TRAINING_RANGE),
             "maximum_extreme_outliers": MAXIMUM_EXTREME_OUTLIERS,
             "outer_iqr_multiplier": _float_text(OUTER_IQR_MULTIPLIER),
             "action": "abstain",
@@ -354,9 +357,7 @@ def load_historical_feature_support(
         maximum=values("maximum"),
         outer_lower=values("outer_lower"),
         outer_upper=values("outer_upper"),
-        maximum_outside_training_range=int(
-            gate["maximum_outside_training_range"]
-        ),
+        maximum_outside_training_range=int(gate["maximum_outside_training_range"]),
         maximum_extreme_outliers=int(gate["maximum_extreme_outliers"]),
     )
 

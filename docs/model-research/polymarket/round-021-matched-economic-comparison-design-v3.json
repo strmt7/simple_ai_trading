@@ -1,0 +1,73 @@
+{
+  "schema_version": "polymarket-round21-matched-economic-comparison-design-v3",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "supersedes": "polymarket-round21-matched-economic-comparison-design-v2",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_model_design_sha256": "3b90f4fb0940dccccd5dd673c27257882531685a2c7a1181659924cadc4ffab0",
+    "round21_economic_replay_design_sha256": "b29cb8edb600fe74c7642b071504b461e928a7f39aefab7981f0eabf80e08316"
+  },
+  "arms": {
+    "baseline": "exact_population_matched_core_probability_envelopes",
+    "challenger": "optional_binance_probability_envelopes",
+    "optional_layers": [
+      "core_spot",
+      "core_spot_usdm"
+    ],
+    "binance_execution_or_account": false,
+    "binance_missingness": "exclude_condition_from_both_arms_for_that_optional_layer",
+    "different_execution_logic": false
+  },
+  "exact_match": {
+    "condition_order": true,
+    "market_metadata": true,
+    "market_execution_evidence": true,
+    "creation_and_delayed_execution_books": true,
+    "official_outcomes": true,
+    "source_manifests": true,
+    "reconciliation_evidence": true,
+    "decision_timestamps": true,
+    "initial_capital": true,
+    "risk_profile": true,
+    "execution_scenario": true,
+    "minimum_edge": true,
+    "builder_fee": true,
+    "only_probability_evidence_may_differ": true
+  },
+  "matrix": {
+    "profiles": 3,
+    "execution_scenarios": 27,
+    "matched_replays": 81,
+    "every_profile_and_scenario_required": true
+  },
+  "paired_inference": {
+    "condition_delta": "challenger_condition_utility_minus_baseline_condition_utility",
+    "daily_delta": "sum_of_paired_condition_deltas_by_utc_day",
+    "lower_95": "deterministic_2000_sample_circular_moving_block_bootstrap_of_mean_daily_delta",
+    "drawdown": "challenger_not_above_baseline",
+    "tail_loss": "challenger_worst_five_percent_mean_not_below_baseline",
+    "action_count": "both_arms_meet_the_frozen_minimum",
+    "unknown_or_risk_violation": "reject"
+  },
+  "acceptance": {
+    "baseline_and_challenger_core_economic_gate": true,
+    "positive_net_pnl_delta": true,
+    "positive_mean_condition_utility_delta": true,
+    "positive_daily_delta_lower_95": true,
+    "no_worse_drawdown": true,
+    "no_worse_tail_loss": true,
+    "all_81_replays": true,
+    "post_test_retuning": false
+  },
+  "authority": {
+    "capture_data_accessed": false,
+    "targets_accessed": false,
+    "optional_layer_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "1f5aeb1c08b677060043248ad9e663d2eda0b1e74defd3fb741a9364272c53f6"
+}

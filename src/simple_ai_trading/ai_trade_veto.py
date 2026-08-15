@@ -20,6 +20,7 @@ from .cross_asset_cost_model import (
     TrainedCandidates,
     calibrated_predictions,
 )
+from .transport_security import validate_local_http_base_url
 
 
 AI_MODELS = ("qwen3:8b", "fino1:8b")
@@ -421,7 +422,9 @@ def _request_json(
         data = json.dumps(payload).encode("utf-8")
         headers["Content-Type"] = "application/json"
     request = Request(url, data=data, headers=headers, method=method)
-    with urlopen(request, timeout=timeout_seconds) as response:
+    with urlopen(  # nosec B310 - URL is composed from a validated loopback base.
+        request, timeout=timeout_seconds
+    ) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -431,6 +434,7 @@ def _model_metadata(
     *,
     timeout_seconds: float,
 ) -> tuple[str, str]:
+    base_url = validate_local_http_base_url(base_url, label="Ollama")
     tags = _request_json(
         f"{base_url.rstrip('/')}/api/tags",
         None,
@@ -506,7 +510,9 @@ def _decision(payload: object) -> AIVetoDecision:
     allowed = set(AI_SCHEMA["properties"]["reason_codes"]["items"]["enum"])
     if not isinstance(raw_codes, list) or not raw_codes:
         raise ValueError("AI reason_codes are missing")
-    codes = tuple(dict.fromkeys(str(value) for value in raw_codes if str(value) in allowed))
+    codes = tuple(
+        dict.fromkeys(str(value) for value in raw_codes if str(value) in allowed)
+    )
     if not codes or len(codes) > 4:
         raise ValueError("AI reason_codes are invalid")
     summary = str(parsed.get("summary") or "").strip()[:180]
@@ -602,6 +608,7 @@ def benchmark_ai_veto_model(
 
     if model not in AI_MODELS:
         raise ValueError(f"model is not frozen for this AI ablation: {model}")
+    base_url = validate_local_http_base_url(base_url, label="Ollama")
     if not cases:
         raise ValueError("AI veto benchmark requires at least one case")
     if len(cases) > MAX_CASES_PER_MODEL:
@@ -624,7 +631,9 @@ def benchmark_ai_veto_model(
                 {
                     "role": "user",
                     "content": (
-                        prompt_builder(case) if prompt_builder is not None else _prompt(case)
+                        prompt_builder(case)
+                        if prompt_builder is not None
+                        else _prompt(case)
                     ),
                 },
             ],

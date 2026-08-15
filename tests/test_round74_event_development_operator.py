@@ -123,15 +123,26 @@ class _Subpartition:
 
 
 class _Roles:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        model_selection_count: int = 12,
+        calibration_count: int = 6,
+        policy_selection_count: int = 6,
+    ) -> None:
+        calibration_start = 1 + model_selection_count
+        policy_start = calibration_start + calibration_count
+        tuning_end = policy_start + policy_selection_count
         self.model_selection_batches = tuple(
-            _Batch(_digest(index), (f"{index:032x}",)) for index in range(1, 13)
+            _Batch(_digest(index), (f"{index:032x}",))
+            for index in range(1, calibration_start)
         )
         self.calibration_batches = tuple(
-            _Batch(_digest(index), (f"{index:032x}",)) for index in range(13, 19)
+            _Batch(_digest(index), (f"{index:032x}",))
+            for index in range(calibration_start, policy_start)
         )
         self.policy_selection_batches = tuple(
-            _Batch(_digest(index), (f"{index:032x}",)) for index in range(19, 25)
+            _Batch(_digest(index), (f"{index:032x}",))
+            for index in range(policy_start, tuning_end)
         )
         self.subpartition = _Subpartition()
         self.subpartition.policy_selection_run_ids = tuple(
@@ -254,9 +265,7 @@ class _EpistemicChallenge:
     def as_dict(self) -> dict[str, object]:
         return {
             "profile": self.profile,
-            "baseline_policy_selection_sha256": (
-                self.baseline_policy_selection_sha256
-            ),
+            "baseline_policy_selection_sha256": (self.baseline_policy_selection_sha256),
             "execution_panel_sha256": self.execution_panel_sha256,
         }
 
@@ -372,11 +381,15 @@ def _mock_execution_boundary(
     return _Scaler(), partition, assemblies
 
 
+def _training_batch_sha256() -> tuple[str, ...]:
+    return tuple(_digest(index) for index in range(100, 237))
+
+
 def _policy(roles: _Roles, *, representative: bool = True) -> dict[str, object]:
     return {
         "policy_sha256": _Calibration.pretest_policy_sha256,
         "development_data": {
-            "training_batch_sha256": [_digest(index) for index in range(100, 220)],
+            "training_batch_sha256": list(_training_batch_sha256()),
             "tuning_batch_sha256": [
                 batch.batch_sha256 for batch in roles.model_selection_batches
             ],
@@ -392,7 +405,11 @@ def _policy(roles: _Roles, *, representative: bool = True) -> dict[str, object]:
 def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    roles = _Roles()
+    roles = _Roles(
+        model_selection_count=17,
+        calibration_count=8,
+        policy_selection_count=7,
+    )
     inference_calls: list[_Batch] = []
     derivations: list[tuple[object, str]] = []
     filter_calls: list[str] = []
@@ -422,7 +439,7 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         "_fit_calibration",
         lambda outputs, batches, **_kwargs: (
             _Calibration()
-            if len(outputs) == len(batches) == 6
+            if len(outputs) == len(batches) == len(roles.calibration_batches)
             else pytest.fail("calibration panel differs")
         ),
     )
@@ -446,9 +463,7 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
             _EpistemicReport(
                 tuple(batch.batch_sha256 for batch in batches),
                 policy_challenge_eligible=True,
-                policy_selection_run_ids=(
-                    roles.subpartition.policy_selection_run_ids
-                ),
+                policy_selection_run_ids=(roles.subpartition.policy_selection_run_ids),
                 model_output_sha256=tuple(
                     batch.model_output_sha256 for batch in batches
                 ),
@@ -473,9 +488,7 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
             profile=profile,
             risk_coverage_report_sha256=report.report_sha256,
             tuning_subpartition_sha256=report.tuning_subpartition_sha256,
-            probability_calibration_sha256=(
-                report.probability_calibration_sha256
-            ),
+            probability_calibration_sha256=(report.probability_calibration_sha256),
             source_run_ids=report.policy_selection_run_ids,
             source_batch_sha256=report.policy_selection_batch_sha256,
             source_model_output_sha256=report.model_output_sha256,
@@ -506,6 +519,17 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         roles,
         parent_partition_sha256=roles.subpartition.parent_partition_sha256,
     )
+    custom_builder_calls: list[dict[str, object]] = []
+    custom_panels = tuple(
+        _ExecutionPanel(profile, _digest(800 + index))
+        for index, profile in enumerate(subject.ROUND74_ACTION_PROFILES)
+    )
+
+    def custom_builder(**kwargs: object) -> tuple[_ExecutionPanel, ...]:
+        custom_builder_calls.append(kwargs)
+        return custom_panels
+
+    monkeypatch.setattr(subject, "build_round74_delayed_execution_panels", pytest.fail)
 
     def select(
         batches: tuple[_Batch, ...],
@@ -515,7 +539,7 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         execution_panel: _ExecutionPanel,
         optimization_population: str,
     ) -> _Policy:
-        assert len(batches) == len(candidates) == 6
+        assert len(batches) == len(candidates) == len(roles.policy_selection_batches)
         assert optimization_population == "capture_run"
         profile = str(candidates[0].profile)
         assert all(candidate.profile == profile for candidate in candidates)
@@ -540,7 +564,9 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         assert tuple(batch.batch_sha256 for batch in batches) == (
             risk_coverage_report.policy_selection_batch_sha256
         )
-        assert all(candidate.profile == action_filter.profile for candidate in candidates)
+        assert all(
+            candidate.profile == action_filter.profile for candidate in candidates
+        )
         assert baseline_policy.profile == action_filter.profile
         challenge_calls.append((action_filter.profile, outputs))
         return _EpistemicChallenge(
@@ -560,9 +586,11 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         roles,  # type: ignore[arg-type]
         pretest_policy_path="unused.json",
         feature_scaler=scaler,  # type: ignore[arg-type]
+        expected_training_batch_sha256=_training_batch_sha256(),
         execution_store=object(),
         execution_partition=partition,  # type: ignore[arg-type]
         execution_target_assembly_by_run_id=assemblies,  # type: ignore[arg-type]
+        execution_panel_builder=custom_builder,
         compute_backend="cpu",
     )
 
@@ -570,24 +598,39 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         *roles.calibration_batches,
         *roles.policy_selection_batches,
     ]
-    assert len(derivations) == 18
+    assert len(derivations) == len(subject.ROUND74_ACTION_PROFILES) * len(
+        roles.policy_selection_batches
+    )
+    assert len(custom_builder_calls) == 1
+    assert "partition" in custom_builder_calls[0]
+    assert "policy_selection_batches" in custom_builder_calls[0]
+    assert "target_assembly_by_run_id" in custom_builder_calls[0]
+    assert "latency_evidence" in custom_builder_calls[0]
     assert tuple(policy.profile for policy in result.action_policies) == (
         subject.ROUND74_ACTION_PROFILES
     )
     assert filter_calls == list(subject.ROUND74_ACTION_PROFILES)
-    assert tuple(
-        challenge.profile for challenge in result.epistemic_action_challenges
-    ) == subject.ROUND74_ACTION_PROFILES
+    assert (
+        tuple(challenge.profile for challenge in result.epistemic_action_challenges)
+        == subject.ROUND74_ACTION_PROFILES
+    )
     assert tuple(profile for profile, _outputs in challenge_calls) == (
         subject.ROUND74_ACTION_PROFILES
     )
     assert all(
-        outputs is challenge_calls[0][1]
-        for _profile, outputs in challenge_calls
+        outputs is challenge_calls[0][1] for _profile, outputs in challenge_calls
     )
-    for index in range(6):
-        reused = tuple(derivations[profile * 6 + index][0] for profile in range(3))
+    policy_count = len(roles.policy_selection_batches)
+    for index in range(policy_count):
+        reused = tuple(
+            derivations[profile * policy_count + index][0]
+            for profile in range(len(subject.ROUND74_ACTION_PROFILES))
+        )
         assert reused[0] is reused[1] is reused[2]
+    assert result.training_batch_sha256 == _training_batch_sha256()
+    assert len(result.model_selection_batch_sha256) == 17
+    assert len(result.calibration_batch_sha256) == 8
+    assert len(result.policy_selection_batch_sha256) == 7
     assert result.as_dict()["authority"] == {
         "representative_market_training_completed": True,
         "sealed_test_accessed": False,
@@ -615,11 +658,40 @@ def test_round74_development_coordinator_rejects_unrepresentative_policy(
         parent_partition_sha256=roles.subpartition.parent_partition_sha256,
     )
 
-    with pytest.raises(ValueError, match="tuning role binding differs"):
+    with pytest.raises(ValueError, match="population binding differs"):
         subject.calibrate_and_select_round74_development_policy(
             roles,  # type: ignore[arg-type]
             pretest_policy_path="unused.json",
             feature_scaler=scaler,  # type: ignore[arg-type]
+            expected_training_batch_sha256=_training_batch_sha256(),
+            execution_store=object(),
+            execution_partition=partition,  # type: ignore[arg-type]
+            execution_target_assembly_by_run_id=assemblies,  # type: ignore[arg-type]
+            compute_backend="cpu",
+        )
+
+
+def test_round74_development_coordinator_rejects_training_population_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    roles = _Roles()
+    monkeypatch.setattr(
+        subject,
+        "load_round74_pretest_policy",
+        lambda _path: (_Model(), _policy(roles)),
+    )
+    scaler, partition, assemblies = _mock_execution_boundary(
+        monkeypatch,
+        roles,
+        parent_partition_sha256=roles.subpartition.parent_partition_sha256,
+    )
+
+    with pytest.raises(ValueError, match="population binding differs"):
+        subject.calibrate_and_select_round74_development_policy(
+            roles,  # type: ignore[arg-type]
+            pretest_policy_path="unused.json",
+            feature_scaler=scaler,  # type: ignore[arg-type]
+            expected_training_batch_sha256=_training_batch_sha256()[:-1],
             execution_store=object(),
             execution_partition=partition,  # type: ignore[arg-type]
             execution_target_assembly_by_run_id=assemblies,  # type: ignore[arg-type]
@@ -653,7 +725,7 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
     policy = {
         "policy_sha256": _Calibration.pretest_policy_sha256,
         "development_data": {
-            "training_batch_sha256": [_digest(index) for index in range(100, 220)],
+            "training_batch_sha256": list(_training_batch_sha256()),
             "tuning_batch_sha256": [batch.batch_sha256 for batch in batches[:12]],
             "window_representation": "per_symbol",
             "representative_window_policy_applied": True,
@@ -697,6 +769,7 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
         roles,  # type: ignore[arg-type]
         pretest_policy_path="unused.json",
         feature_scaler=scaler,  # type: ignore[arg-type]
+        expected_training_batch_sha256=_training_batch_sha256(),
         execution_store=object(),
         execution_partition=partition,  # type: ignore[arg-type]
         execution_target_assembly_by_run_id=assemblies,  # type: ignore[arg-type]

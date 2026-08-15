@@ -31,6 +31,9 @@ from simple_ai_trading.paired_action_lightgbm import (  # noqa: E402
     action_conditioned_feature_names,
 )
 from simple_ai_trading.storage import write_json_atomic  # noqa: E402
+from simple_ai_trading.transport_security import (  # noqa: E402
+    validate_local_http_base_url,
+)
 
 
 ROUND = 56
@@ -138,19 +141,23 @@ def _load_feature_metadata(
     visible = tuple(name for name in paired if name != "action_sign")
     if len(paired) != 72 or len(visible) != 71:
         raise RuntimeError("Round 56 action-conditioned feature count drifted")
-    return tuple(names), visible, {
-        "path": str(metadata_path.resolve()),
-        "bytes": metadata_path.stat().st_size,
-        "file_sha256": _file_sha256(metadata_path),
-        "dataset_sha256": metadata["dataset_sha256"],
-        "source_feature_count": len(names),
-        "numerical_model_feature_count": len(paired),
-        "language_model_visible_feature_count": len(visible),
-        "language_model_visible_feature_names_sha256": _canonical_sha256(
-            list(visible)
-        ),
-        "action_sign_visible_to_language_model": False,
-    }
+    return (
+        tuple(names),
+        visible,
+        {
+            "path": str(metadata_path.resolve()),
+            "bytes": metadata_path.stat().st_size,
+            "file_sha256": _file_sha256(metadata_path),
+            "dataset_sha256": metadata["dataset_sha256"],
+            "source_feature_count": len(names),
+            "numerical_model_feature_count": len(paired),
+            "language_model_visible_feature_count": len(visible),
+            "language_model_visible_feature_names_sha256": _canonical_sha256(
+                list(visible)
+            ),
+            "action_sign_visible_to_language_model": False,
+        },
+    )
 
 
 def _post_json(
@@ -166,7 +173,9 @@ def _post_json(
         method="POST",
     )
     try:
-        with request.urlopen(message, timeout=timeout) as response:  # noqa: S310
+        with request.urlopen(  # nosec B310 - caller validates loopback base.
+            message, timeout=timeout
+        ) as response:
             result = json.loads(response.read().decode("utf-8"))
     except (OSError, error.URLError, UnicodeError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"local Ollama request failed: {url}") from exc
@@ -178,7 +187,9 @@ def _post_json(
 def _get_json(url: str, timeout: float) -> dict[str, object]:
     message = request.Request(url, headers={"Accept": "application/json"})
     try:
-        with request.urlopen(message, timeout=timeout) as response:  # noqa: S310
+        with request.urlopen(  # nosec B310 - caller validates loopback base.
+            message, timeout=timeout
+        ) as response:
             result = json.loads(response.read().decode("utf-8"))
     except (OSError, error.URLError, UnicodeError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"local Ollama request failed: {url}") from exc
@@ -285,8 +296,7 @@ def _prompt(feature_names: tuple[str, ...], factors: int) -> tuple[str, str]:
         "mechanisms involving action-aligned trend quality, order-flow confirmation, "
         "cross-asset residual behavior, volatility asymmetry, and liquidity-conditioned "
         "regimes. Avoid a naked directional prior or merely renaming one feature. "
-        "Output JSON only.\n\nAvailable features:\n- "
-        + "\n- ".join(feature_names)
+        "Output JSON only.\n\nAvailable features:\n- " + "\n- ".join(feature_names)
     )
     return system, user
 
@@ -360,7 +370,9 @@ def run(arguments: argparse.Namespace) -> int:
         or "action_sign" in feature_names
     ):
         raise RuntimeError("Round 56 excluded side identity leaked into the AI request")
-    base_url = arguments.ollama_url.rstrip("/")
+    base_url = validate_local_http_base_url(
+        arguments.ollama_url, label="Round 56 Ollama"
+    )
     tags = _get_json(f"{base_url}/api/tags", arguments.timeout)
     inventory_rows = tags.get("models")
     if not isinstance(inventory_rows, list):
@@ -438,9 +450,7 @@ def run(arguments: argparse.Namespace) -> int:
             )
         except ValueError as exc:
             programs = ()
-            program_rejections = (
-                {"index": None, "name": None, "reason": str(exc)},
-            )
+            program_rejections = ({"index": None, "name": None, "reason": str(exc)},)
         inventory_row = inventory[model]
         parameter_billions = _parameter_billions(inventory_row)
         parameter_eligible = parameter_billions >= float(
@@ -459,9 +469,7 @@ def run(arguments: argparse.Namespace) -> int:
         programs, duplicate_rejections = _deduplicate(programs, seen_expressions)
         program_rejections = tuple(program_rejections) + duplicate_rejections
         accepted.extend(programs)
-        rejected.extend(
-            {"model": model, **dict(item)} for item in program_rejections
-        )
+        rejected.extend({"model": model, **dict(item)} for item in program_rejections)
         model_evidence[model] = {
             "inventory": dict(inventory_row),
             "parameter_billions": parameter_billions,

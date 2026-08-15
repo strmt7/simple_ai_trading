@@ -2,7 +2,9 @@
 
 The application defaults to `auto`, not to an operating system or GPU vendor.
 Runtime discovery supports modern `torch.accelerator`, CUDA, ROCm, Intel XPU,
-Apple MPS, legacy DirectML, and an always-available CPU reference.
+Apple MPS, and an always-available CPU reference. The source can identify an
+existing legacy Torch-DirectML environment, but the project no longer installs
+that adapter.
 
 ## Guarantees
 
@@ -28,7 +30,7 @@ Apple MPS, legacy DirectML, and an always-available CPU reference.
 # Current PyTorch runtime for native backends
 python -m pip install -e .[gpu]
 
-# Version-pinned compatibility path for DirectML
+# Windows ONNX Runtime DirectML package for future verified inference
 python -m pip install -e .[directml]
 
 # Portable CPU reference
@@ -45,19 +47,20 @@ simple-ai-trading compute --backend auto
 simple-ai-trading ai
 ```
 
-An explicit probe such as `compute --backend directml` is saved only when the
-request is actually satisfied. CPU operation remains supported, but local AI is
-blocked because its separate model-residency and VRAM gates require measured GPU
-execution.
+An explicit training probe such as `compute --backend directml` fails closed
+unless a separately managed legacy adapter is present. Installing
+`.[directml]` alone does not claim a training backend or trading authority. CPU
+operation remains supported, but local AI is blocked because its separate
+model-residency and VRAM gates require measured GPU execution.
 
 ## DirectML Status
 
-`torch-directml` remains useful on compatible Windows and WSL AMD, Intel, and
-NVIDIA devices, but it is a version-pinned public-preview adapter. Microsoft now
-describes DirectML as sustained engineering and directs new Windows ONNX
-deployments toward Windows ML, which dynamically selects execution providers.
-No Windows ML/ONNX path is claimed until export, provider discovery, numerical
-parity, and fault-isolation tests exist in this repository.
+The project does not install `torch-directml`. Microsoft's current setup page
+limits it to an obsolete PyTorch release line, while this repository requires a
+patched current Torch line. The `directml` extra instead installs ONNX Runtime
+DirectML on Windows. No Windows ML/ONNX execution path is claimed until export,
+provider discovery, numerical parity, and fault-isolation tests exist in this
+repository.
 
 The retained Kronos benchmark used bounded DirectML worker processes because a
 device fault must not freeze the app. It demonstrated recovery on one AMD host,

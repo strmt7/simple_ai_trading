@@ -30,9 +30,15 @@ from .polymarket_round21_replay import (
 
 
 POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256 = (
-    "3b059ee9dd6d02768cff8f3a6f39ec2cc3bad3e8d6a49fd76f9abc9ec5956155"
+    "65ebb61934cac403af4369e862d851db09126efbe5d35e4b091d851ee251d7c5"
 )
-POLYMARKET_ROUND21_AI_CASE_SCHEMA_VERSION = "polymarket-round21-ai-veto-case-v1"
+POLYMARKET_ROUND21_AI_CASE_SCHEMA_VERSION = "polymarket-round21-ai-veto-case-v2"
+POLYMARKET_ROUND21_AI_HISTORICAL_CASE_SCHEMA_VERSION = (
+    "polymarket-round21-ai-veto-historical-case-v2"
+)
+POLYMARKET_ROUND21_AI_HISTORICAL_SCHEDULE_DESIGN_SHA256 = (
+    "d3edbb380f8d62fdbdd67267640b393f6940ccacf7d22456557cfe6200ca852f"
+)
 _EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _FORBIDDEN_CASE_KEYS = frozenset(
@@ -240,12 +246,125 @@ def _all_mapping_keys(value: object) -> tuple[str, ...]:
     return tuple(keys)
 
 
+@dataclass(frozen=True, slots=True)
+class Round21AIHistoricalSchedule:
+    condition_id: str
+    decision_time_ms: int
+    virtual_dispatch_wall_ms: int
+    virtual_dispatch_monotonic_ns: int
+    source_evidence_sha256: str
+    schedule_sha256: str
+
+    def identity_payload(self) -> dict[str, object]:
+        return {
+            "schema_version": (POLYMARKET_ROUND21_AI_HISTORICAL_CASE_SCHEMA_VERSION),
+            "design_sha256": (POLYMARKET_ROUND21_AI_HISTORICAL_SCHEDULE_DESIGN_SHA256),
+            "clock_mode": "virtual_event_time_zero_dispatch_delay",
+            "condition_id": self.condition_id,
+            "decision_time_ms": self.decision_time_ms,
+            "virtual_dispatch_wall_ms": self.virtual_dispatch_wall_ms,
+            "virtual_dispatch_monotonic_ns": self.virtual_dispatch_monotonic_ns,
+            "source_evidence_sha256": self.source_evidence_sha256,
+            "historical_host_receipt_observed": False,
+            "historical_provider_load_observed": False,
+            "profitability_claim": False,
+            "paper_trading_authority": False,
+            "live_trading_authority": False,
+        }
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        condition_id: str,
+        decision_time_ms: int,
+        source_evidence_sha256: str,
+    ) -> Round21AIHistoricalSchedule:
+        condition = str(condition_id or "").strip().lower()
+        decision = int(decision_time_ms)
+        source_sha = str(source_evidence_sha256 or "").strip().lower()
+        if (
+            not condition.startswith("0x")
+            or len(condition) != 66
+            or any(value not in "0123456789abcdef" for value in condition[2:])
+            or decision <= 0
+            or _SHA256.fullmatch(source_sha) is None
+            or source_sha == _EMPTY_SHA256
+        ):
+            raise ValueError("Round 21 historical AI schedule is invalid")
+        provisional = cls(
+            condition_id=condition,
+            decision_time_ms=decision,
+            virtual_dispatch_wall_ms=decision,
+            virtual_dispatch_monotonic_ns=decision * 1_000_000,
+            source_evidence_sha256=source_sha,
+            schedule_sha256=_EMPTY_SHA256,
+        )
+        return replace(
+            provisional,
+            schedule_sha256=_canonical_sha256(provisional.identity_payload()),
+        )
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, object]) -> Round21AIHistoricalSchedule:
+        expected = {
+            "schema_version",
+            "design_sha256",
+            "clock_mode",
+            "condition_id",
+            "decision_time_ms",
+            "virtual_dispatch_wall_ms",
+            "virtual_dispatch_monotonic_ns",
+            "source_evidence_sha256",
+            "historical_host_receipt_observed",
+            "historical_provider_load_observed",
+            "profitability_claim",
+            "paper_trading_authority",
+            "live_trading_authority",
+            "schedule_sha256",
+        }
+        if set(value) != expected:
+            raise ValueError("Round 21 historical AI schedule differs")
+        schedule = cls(
+            condition_id=str(value["condition_id"]),
+            decision_time_ms=int(value["decision_time_ms"]),
+            virtual_dispatch_wall_ms=int(value["virtual_dispatch_wall_ms"]),
+            virtual_dispatch_monotonic_ns=int(value["virtual_dispatch_monotonic_ns"]),
+            source_evidence_sha256=str(value["source_evidence_sha256"]),
+            schedule_sha256=str(value["schedule_sha256"]),
+        )
+        if {
+            **schedule.identity_payload(),
+            "schedule_sha256": schedule.schedule_sha256,
+        } != dict(value):
+            raise ValueError("Round 21 historical AI schedule differs")
+        return schedule.validated()
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            **self.identity_payload(),
+            "schedule_sha256": self.schedule_sha256,
+        }
+
+    def validated(self) -> Round21AIHistoricalSchedule:
+        rebuilt = self.create(
+            condition_id=self.condition_id,
+            decision_time_ms=self.decision_time_ms,
+            source_evidence_sha256=self.source_evidence_sha256,
+        )
+        if self != rebuilt:
+            raise ValueError("Round 21 historical AI schedule differs")
+        return self
+
+
 def _validated_round21_ai_case(
     case: PolymarketAIVetoCase,
 ) -> PolymarketAIVetoCase:
     payload = case.prompt_payload
     if not isinstance(payload, Mapping):
         raise ValueError("Round 21 AI veto case payload differs")
+    schema_version = payload.get("schema_version")
+    historical = schema_version == POLYMARKET_ROUND21_AI_HISTORICAL_CASE_SCHEMA_VERSION
     identity = payload.get("identity")
     hard_constraints = payload.get("hard_constraints")
     probability = payload.get("probability")
@@ -269,13 +388,27 @@ def _validated_round21_ai_case(
         "usdm",
     }
     expected_identity = {
-        "case_receipt_sha256",
         "causal_market_path_sha256",
         "feature_batch_sha256",
         "feature_row_sha256",
         "model_artifact_sha256",
         "probability_batch_sha256",
     }
+    expected_probability = {
+        "up_point",
+        "up_lower",
+        "up_upper",
+        "candidate_disagreement_width",
+        "market_prior_up",
+        "structural_up",
+        "model_layer",
+        "feature_support_eligible",
+    }
+    if historical:
+        expected_top_level.add("historical_schedule")
+        expected_identity.add("historical_schedule_sha256")
+    else:
+        expected_identity.add("case_receipt_sha256")
     expected_constraints = {
         "cannot_block_reduction_lock_stop_close_or_recovery": True,
         "cannot_create_reverse_or_increase_risk": True,
@@ -284,11 +417,41 @@ def _validated_round21_ai_case(
     }
     forbidden = _FORBIDDEN_CASE_KEYS.intersection(_all_mapping_keys(payload))
     decision_time = payload.get("decision_time_ms")
+    schedule: Round21AIHistoricalSchedule | None = None
+    if historical and isinstance(payload.get("historical_schedule"), Mapping):
+        try:
+            schedule = Round21AIHistoricalSchedule.from_mapping(
+                payload["historical_schedule"]  # type: ignore[arg-type]
+            )
+        except (KeyError, TypeError, ValueError):
+            schedule = None
+    timing_valid = (
+        (
+            schedule is not None
+            and schedule.condition_id == case.condition_id
+            and schedule.decision_time_ms == decision_time
+            and schedule.virtual_dispatch_wall_ms == case.decision_received_wall_ms
+            and schedule.virtual_dispatch_monotonic_ns
+            == case.decision_received_monotonic_ns
+            and isinstance(identity, Mapping)
+            and identity.get("historical_schedule_sha256") == schedule.schedule_sha256
+        )
+        if historical
+        else (
+            isinstance(decision_time, int)
+            and not isinstance(decision_time, bool)
+            and decision_time <= case.decision_received_wall_ms <= decision_time + 250
+            and case.decision_received_monotonic_ns > 0
+        )
+    )
     if (
         set(payload) != expected_top_level
         or forbidden
-        or payload.get("schema_version")
-        != POLYMARKET_ROUND21_AI_CASE_SCHEMA_VERSION
+        or schema_version
+        not in {
+            POLYMARKET_ROUND21_AI_CASE_SCHEMA_VERSION,
+            POLYMARKET_ROUND21_AI_HISTORICAL_CASE_SCHEMA_VERSION,
+        }
         or payload.get("ai_veto_design_sha256")
         != POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256
         or payload.get("task") != "condition_level_directional_entry_risk_veto"
@@ -299,11 +462,12 @@ def _validated_round21_ai_case(
         or payload.get("event_start_ms") != case.event_start_ms
         or isinstance(decision_time, bool)
         or not isinstance(decision_time, int)
-        or not decision_time <= case.decision_received_wall_ms <= decision_time + 250
-        or case.decision_received_monotonic_ns <= 0
+        or not timing_valid
         or not isinstance(identity, Mapping)
         or set(identity) != expected_identity
         or not isinstance(probability, Mapping)
+        or set(probability) != expected_probability
+        or type(probability.get("feature_support_eligible")) is not bool
         or hard_constraints != expected_constraints
         or payload.get("display_precision_significant_digits") != 10
         or case.case_id != _canonical_sha256(payload)
@@ -406,8 +570,7 @@ def _provider_usage(payload: object, *, model: str) -> Mapping[str, int] | None:
         "eval_duration",
     )
     if any(
-        isinstance(payload.get(name), bool)
-        or not isinstance(payload.get(name), int)
+        isinstance(payload.get(name), bool) or not isinstance(payload.get(name), int)
         for name in fields
     ):
         return None
@@ -446,13 +609,9 @@ def _valid_decision_shape(
             and decision.reason_codes == reason_codes
             and decision.summary == summary
             and not decision.failure_reason
-            and (
-                action != "approve"
-                or confidence >= minimum_approval_confidence
-            )
+            and (action != "approve" or confidence >= minimum_approval_confidence)
             and result.latency_seconds <= maximum_advisory_latency_seconds
-            and _provider_usage(result.response_payload, model=config_model)
-            is not None
+            and _provider_usage(result.response_payload, model=config_model) is not None
         )
     exact_failure = (
         decision.action == "veto"
@@ -463,12 +622,9 @@ def _valid_decision_shape(
     if not exact_failure:
         return False
     if parsed is None:
-        return (
-            isinstance(result.response_payload, Mapping)
-            and str(result.response_payload.get("schema_version") or "").startswith(
-                "polymarket-ai-veto-failure-v"
-            )
-        )
+        return isinstance(result.response_payload, Mapping) and str(
+            result.response_payload.get("schema_version") or ""
+        ).startswith("polymarket-ai-veto-failure-v")
     action, confidence, _reason_codes, _summary = parsed
     return (
         action == "approve" and confidence < minimum_approval_confidence
@@ -498,8 +654,7 @@ def _validate_round21_ai_report(
         or expected_parameters < 2.0
         or not _same_float(report.model_parameters_b, expected_parameters)
         or any(
-            _SHA256.fullmatch(str(value or "")) is None
-            or str(value) == _EMPTY_SHA256
+            _SHA256.fullmatch(str(value or "")) is None or str(value) == _EMPTY_SHA256
             for value in (
                 report.model_digest,
                 report.model_metadata_sha256,
@@ -537,8 +692,7 @@ def _validate_round21_ai_report(
                 not math.isfinite(value) or value < 0.0
                 for value in (inference, queue, latency)
             )
-            or result.response_sha256
-            != _canonical_sha256(result.response_payload)
+            or result.response_sha256 != _canonical_sha256(result.response_payload)
             or _SHA256.fullmatch(result.response_sha256) is None
             or result.response_sha256 == _EMPTY_SHA256
         ):
@@ -733,12 +887,308 @@ def _case_set_sha256(
     )
 
 
-def build_round21_ai_veto_cases(
+def _build_round21_ai_case_from_validated(
+    *,
+    condition: Round21ReplayCondition,
+    panel: Round21InferencePanel,
+    probability_batch: Round21ProbabilityBatch,
+    panel_row_index: int,
+    batch_position: int,
+    feature_row_sha256: str,
+    receipt: Round21AICaseReceipt | None,
+    historical_schedule: bool,
+) -> PolymarketAIVetoCase:
+    first_envelope = condition.envelopes[0]
+    index = int(panel_row_index)
+    row_probability = float(probability_batch.probability_up[batch_position])
+    row_lower = float(probability_batch.lower_up[batch_position])
+    row_upper = float(probability_batch.upper_up[batch_position])
+    row_support_eligible = bool(
+        probability_batch.feature_support_eligible[batch_position]
+    )
+    causal_market_path_sha256 = condition._causal_market_path_sha256_validated(  # noqa: SLF001
+        decision_time_ms=first_envelope.decision_time_ms,
+    )
+    expected_source_sha256 = round21_ai_case_source_evidence_sha256(
+        condition_id=condition.market.condition_id,
+        decision_time_ms=first_envelope.decision_time_ms,
+        feature_batch_sha256=panel.feature_batch_sha256,
+        feature_row_sha256=feature_row_sha256,
+        probability_batch_sha256=probability_batch.prediction_sha256,
+        model_artifact_sha256=probability_batch.source_model_artifact_sha256,
+        causal_market_path_sha256=causal_market_path_sha256,
+    )
+    schedule = (
+        Round21AIHistoricalSchedule.create(
+            condition_id=condition.market.condition_id,
+            decision_time_ms=first_envelope.decision_time_ms,
+            source_evidence_sha256=expected_source_sha256,
+        )
+        if historical_schedule
+        else None
+    )
+    if (
+        first_envelope.model_layer != probability_batch.population_layer
+        or first_envelope.source_model_artifact_sha256
+        != probability_batch.source_model_artifact_sha256
+        or first_envelope.source_probability_batch_sha256
+        != probability_batch.prediction_sha256
+        or first_envelope.feature_row_sha256 != feature_row_sha256
+        or Decimal(format(row_probability, ".17g")) != first_envelope.probability_up
+        or Decimal(format(row_lower, ".17g")) != first_envelope.lower_up
+        or Decimal(format(row_upper, ".17g")) != first_envelope.upper_up
+        or row_support_eligible != first_envelope.feature_support_eligible
+        or (
+            not historical_schedule
+            and (
+                receipt is None
+                or receipt.decision_time_ms != first_envelope.decision_time_ms
+                or receipt.source_evidence_sha256 != expected_source_sha256
+            )
+        )
+    ):
+        raise ValueError("Round 21 AI probability evidence differs")
+    up_book = condition.creation_book(
+        outcome="Up",
+        decision_time_ms=first_envelope.decision_time_ms,
+    )
+    down_book = condition.creation_book(
+        outcome="Down",
+        decision_time_ms=first_envelope.decision_time_ms,
+    )
+    if up_book is None or down_book is None:
+        raise ValueError("Round 21 AI causal book evidence is unavailable")
+    identity: dict[str, object] = {
+        "model_artifact_sha256": probability_batch.source_model_artifact_sha256,
+        "probability_batch_sha256": probability_batch.prediction_sha256,
+        "feature_batch_sha256": panel.feature_batch_sha256,
+        "feature_row_sha256": feature_row_sha256,
+        "causal_market_path_sha256": causal_market_path_sha256,
+    }
+    if schedule is None:
+        if receipt is None:
+            raise RuntimeError("Round 21 AI case receipt is unavailable")
+        identity["case_receipt_sha256"] = receipt.receipt_sha256
+        case_schema = POLYMARKET_ROUND21_AI_CASE_SCHEMA_VERSION
+        received_wall_ms = receipt.received_wall_ms
+        received_monotonic_ns = receipt.received_monotonic_ns
+    else:
+        identity["historical_schedule_sha256"] = schedule.schedule_sha256
+        case_schema = POLYMARKET_ROUND21_AI_HISTORICAL_CASE_SCHEMA_VERSION
+        received_wall_ms = schedule.virtual_dispatch_wall_ms
+        received_monotonic_ns = schedule.virtual_dispatch_monotonic_ns
+    schema = POLYMARKET_ROUND21_FEATURE_SCHEMA
+    payload: dict[str, object] = {
+        "schema_version": case_schema,
+        "ai_veto_design_sha256": POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256,
+        "task": "condition_level_directional_entry_risk_veto",
+        "asset": "BTC",
+        "market": "polymarket_crypto_up_down_5m",
+        "condition_id": condition.market.condition_id,
+        "event_start_ms": condition.market.event_start_ms,
+        "decision_time_ms": int(panel.decision_time_ms[index]),
+        "probability": {
+            "up_point": format(first_envelope.probability_up, "f"),
+            "up_lower": format(first_envelope.lower_up, "f"),
+            "up_upper": format(first_envelope.upper_up, "f"),
+            "candidate_disagreement_width": format(
+                first_envelope.upper_up - first_envelope.lower_up,
+                "f",
+            ),
+            "market_prior_up": format(
+                float(panel.market_prior_probability[index]),
+                ".10g",
+            ),
+            "structural_up": format(
+                float(panel.structural_probability[index]),
+                ".10g",
+            ),
+            "model_layer": first_envelope.model_layer,
+            "feature_support_eligible": (first_envelope.feature_support_eligible),
+        },
+        "core": _selected_features(
+            schema.core_names,
+            panel.core_features[index],
+            _CORE_AI_NAMES,
+        ),
+        "spot": (
+            _selected_features(
+                schema.spot_names,
+                panel.spot_features[index],
+                _SPOT_AI_NAMES,
+            )
+            if bool(panel.spot_available[index])
+            else None
+        ),
+        "usdm": (
+            _selected_features(
+                schema.usdm_names,
+                panel.usdm_features[index],
+                _USDM_AI_NAMES,
+            )
+            if bool(panel.usdm_available[index])
+            else None
+        ),
+        "missingness": {
+            "spot_available": bool(panel.spot_available[index]),
+            "usdm_available": bool(panel.usdm_available[index]),
+        },
+        "execution": {
+            "fee_rate": format(condition.market.fee_schedule.rate, "f"),
+            "fee_exponent": condition.market.fee_schedule.exponent,
+            "tick_size": format(condition.market.tick_size, "f"),
+            "minimum_order_size": format(
+                condition.market.minimum_order_size,
+                "f",
+            ),
+            "creation_book_maximum_age_ms": 500,
+            "taker_order_delay_enabled": (
+                condition.market_evidence.taker_order_delay_enabled
+            ),
+        },
+        "identity": identity,
+        "hard_constraints": {
+            "cannot_create_reverse_or_increase_risk": True,
+            "cannot_block_reduction_lock_stop_close_or_recovery": True,
+            "no_outcome_resolution_future_book_or_future_pnl": True,
+            "invalid_unavailable_or_late_preserves_deterministic_policy": True,
+        },
+        "display_precision_significant_digits": 10,
+    }
+    if schedule is not None:
+        payload["historical_schedule"] = schedule.asdict()
+    case = PolymarketAIVetoCase(
+        case_id=_canonical_sha256(payload),
+        condition_id=condition.market.condition_id,
+        sample_id=feature_row_sha256,
+        asset="BTC",
+        event_start_ms=condition.market.event_start_ms,
+        decision_received_wall_ms=received_wall_ms,
+        decision_received_monotonic_ns=received_monotonic_ns,
+        prompt_payload=payload,
+        case_sha256="",
+    )
+    return replace(
+        case,
+        case_sha256=_canonical_sha256(case.identity_payload()),
+    )
+
+
+class Round21HistoricalAICaseFactory:
+    """Compile immutable model evidence once for streamed historical cases."""
+
+    credentials_used = False
+    account_connected = False
+    binance_execution_connected = False
+    paper_trading_authority = False
+    live_trading_authority = False
+
+    def __init__(
+        self,
+        *,
+        panel: Round21InferencePanel,
+        probability_batch: Round21ProbabilityBatch,
+    ) -> None:
+        selected_panel = panel.validate()
+        selected_batch = probability_batch.validated()
+        schema = POLYMARKET_ROUND21_FEATURE_SCHEMA.validated()
+        if (
+            selected_batch.feature_batch_sha256 != selected_panel.feature_batch_sha256
+            or selected_panel.core_feature_names_sha256 != schema.core_names_sha256
+            or selected_panel.spot_feature_names_sha256 != schema.spot_names_sha256
+            or selected_panel.usdm_feature_names_sha256 != schema.usdm_names_sha256
+        ):
+            raise ValueError("Round 21 historical AI factory identity differs")
+        self.panel = selected_panel
+        self.probability_batch = selected_batch
+        self.batch_positions = {
+            int(panel_index): position
+            for position, panel_index in enumerate(selected_batch.indices.tolist())
+        }
+        self.panel_rows = {
+            (
+                str(selected_panel.condition_ids[index]),
+                int(selected_panel.decision_time_ms[index]),
+            ): index
+            for index in self.batch_positions
+        }
+        if len(self.panel_rows) != len(self.batch_positions):
+            raise ValueError("Round 21 historical AI probability rows are duplicated")
+
+    def build(self, condition: Round21ReplayCondition) -> PolymarketAIVetoCase:
+        selected = condition.validated()
+        first_envelope = selected.envelopes[0]
+        index = self.panel_rows.get(
+            (selected.market.condition_id, first_envelope.decision_time_ms)
+        )
+        if index is None:
+            raise ValueError("Round 21 historical AI case row is unavailable")
+        return _build_round21_ai_case_from_validated(
+            condition=selected,
+            panel=self.panel,
+            probability_batch=self.probability_batch,
+            panel_row_index=index,
+            batch_position=self.batch_positions[index],
+            feature_row_sha256=self.panel._row_sha256_validated(index),  # noqa: SLF001
+            receipt=None,
+            historical_schedule=True,
+        )
+
+
+class Round21HistoricalAICaseCollector:
+    """Collect one streamed historical case for every compiled condition."""
+
+    credentials_used = False
+    account_connected = False
+    binance_execution_connected = False
+    paper_trading_authority = False
+    live_trading_authority = False
+
+    def __init__(
+        self,
+        factories: Sequence[Round21HistoricalAICaseFactory],
+    ) -> None:
+        selected = tuple(factories)
+        condition_factory: dict[str, Round21HistoricalAICaseFactory] = {}
+        for factory in selected:
+            for condition_id in {value[0] for value in factory.panel_rows}:
+                if condition_id in condition_factory:
+                    raise ValueError("Round 21 historical AI factories overlap")
+                condition_factory[condition_id] = factory
+        if not condition_factory:
+            raise ValueError("Round 21 historical AI factories are empty")
+        self._condition_factory = condition_factory
+        self._cases: dict[str, PolymarketAIVetoCase] = {}
+
+    def __call__(self, condition: Round21ReplayCondition) -> None:
+        condition_id = condition.market.condition_id
+        factory = self._condition_factory.get(condition_id)
+        if factory is None or condition_id in self._cases:
+            raise ValueError("Round 21 historical AI case population differs")
+        self._cases[condition_id] = factory.build(condition)
+
+    def finish(self) -> tuple[PolymarketAIVetoCase, ...]:
+        if set(self._cases) != set(self._condition_factory):
+            raise ValueError("Round 21 historical AI case population is incomplete")
+        return tuple(
+            sorted(
+                self._cases.values(),
+                key=lambda value: (
+                    value.decision_received_monotonic_ns,
+                    value.decision_received_wall_ms,
+                    value.condition_id,
+                ),
+            )
+        )
+
+
+def _build_round21_ai_veto_cases(
     *,
     conditions: Sequence[Round21ReplayCondition],
     panel: Round21InferencePanel,
     probability_batch: Round21ProbabilityBatch,
     case_receipts: Sequence[Round21AICaseReceipt],
+    historical_schedule: bool,
 ) -> tuple[PolymarketAIVetoCase, ...]:
     """Build one target-free condition review from exact immutable model inputs."""
 
@@ -750,187 +1200,67 @@ def build_round21_ai_veto_cases(
     schema = POLYMARKET_ROUND21_FEATURE_SCHEMA.validated()
     if (
         not selected_conditions
-        or selected_batch.feature_batch_sha256
-        != selected_panel.feature_batch_sha256
+        or selected_batch.feature_batch_sha256 != selected_panel.feature_batch_sha256
         or selected_panel.core_feature_names_sha256 != schema.core_names_sha256
         or selected_panel.spot_feature_names_sha256 != schema.spot_names_sha256
         or selected_panel.usdm_feature_names_sha256 != schema.usdm_names_sha256
-        or len(receipt_map) != len(receipts)
-        or set(receipt_map)
-        != {value.market.condition_id for value in selected_conditions}
+        or (
+            not historical_schedule
+            and (
+                len(receipt_map) != len(receipts)
+                or set(receipt_map)
+                != {value.market.condition_id for value in selected_conditions}
+            )
+        )
+        or (historical_schedule and receipts)
     ):
         raise ValueError("Round 21 AI case population differs")
     batch_positions = {
         int(panel_index): position
         for position, panel_index in enumerate(selected_batch.indices.tolist())
     }
-    cases: list[PolymarketAIVetoCase] = []
+    panel_rows = {
+        (
+            str(selected_panel.condition_ids[index]),
+            int(selected_panel.decision_time_ms[index]),
+        ): index
+        for index in batch_positions
+    }
+    if len(panel_rows) != len(batch_positions):
+        raise ValueError("Round 21 AI probability rows are duplicated")
+    condition_rows: list[tuple[Round21ReplayCondition, int]] = []
     for condition in selected_conditions:
         first_envelope = condition.envelopes[0]
-        receipt = receipt_map[condition.market.condition_id]
-        matches = [
-            index
-            for index, (condition_id, decision_time) in enumerate(
-                zip(
-                    selected_panel.condition_ids,
-                    selected_panel.decision_time_ms,
-                    strict=True,
-                )
-            )
-            if str(condition_id) == condition.market.condition_id
-            and int(decision_time) == first_envelope.decision_time_ms
-            and index in batch_positions
-        ]
-        if len(matches) != 1:
+        index = panel_rows.get(
+            (condition.market.condition_id, first_envelope.decision_time_ms)
+        )
+        if index is None:
             raise ValueError("Round 21 AI case row is unavailable")
-        index = matches[0]
-        row_probability, row_lower, row_upper = selected_batch.row(index)
-        causal_market_path_sha256 = condition.causal_market_path_sha256(
-            decision_time_ms=first_envelope.decision_time_ms,
-        )
-        expected_receipt_source_sha256 = (
-            round21_ai_case_source_evidence_sha256(
-                condition_id=condition.market.condition_id,
-                decision_time_ms=first_envelope.decision_time_ms,
-                feature_batch_sha256=selected_panel.feature_batch_sha256,
-                feature_row_sha256=selected_panel.row_sha256(index),
-                probability_batch_sha256=selected_batch.prediction_sha256,
-                model_artifact_sha256=(
-                    selected_batch.source_model_artifact_sha256
-                ),
-                causal_market_path_sha256=causal_market_path_sha256,
-            )
-        )
-        if (
-            first_envelope.model_layer != selected_batch.population_layer
-            or first_envelope.source_model_artifact_sha256
-            != selected_batch.source_model_artifact_sha256
-            or first_envelope.source_probability_batch_sha256
-            != selected_batch.prediction_sha256
-            or first_envelope.feature_row_sha256
-            != selected_panel.row_sha256(index)
-            or Decimal(format(row_probability, ".17g"))
-            != first_envelope.probability_up
-            or Decimal(format(row_lower, ".17g")) != first_envelope.lower_up
-            or Decimal(format(row_upper, ".17g")) != first_envelope.upper_up
-            or receipt.decision_time_ms != first_envelope.decision_time_ms
-            or receipt.source_evidence_sha256
-            != expected_receipt_source_sha256
-        ):
-            raise ValueError("Round 21 AI probability evidence differs")
-        up_book = condition.creation_book(
-            outcome="Up",
-            decision_time_ms=first_envelope.decision_time_ms,
-        )
-        down_book = condition.creation_book(
-            outcome="Down",
-            decision_time_ms=first_envelope.decision_time_ms,
-        )
-        if up_book is None or down_book is None:
-            raise ValueError("Round 21 AI causal book evidence is unavailable")
-        payload: dict[str, object] = {
-            "schema_version": POLYMARKET_ROUND21_AI_CASE_SCHEMA_VERSION,
-            "ai_veto_design_sha256": POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256,
-            "task": "condition_level_directional_entry_risk_veto",
-            "asset": "BTC",
-            "market": "polymarket_crypto_up_down_5m",
-            "condition_id": condition.market.condition_id,
-            "event_start_ms": condition.market.event_start_ms,
-            "decision_time_ms": int(selected_panel.decision_time_ms[index]),
-            "probability": {
-                "up_point": format(first_envelope.probability_up, "f"),
-                "up_lower": format(first_envelope.lower_up, "f"),
-                "up_upper": format(first_envelope.upper_up, "f"),
-                "candidate_disagreement_width": format(
-                    first_envelope.upper_up - first_envelope.lower_up,
-                    "f",
-                ),
-                "market_prior_up": format(
-                    float(selected_panel.market_prior_probability[index]),
-                    ".10g",
-                ),
-                "structural_up": format(
-                    float(selected_panel.structural_probability[index]),
-                    ".10g",
-                ),
-                "model_layer": first_envelope.model_layer,
-            },
-            "core": _selected_features(
-                schema.core_names,
-                selected_panel.core_features[index],
-                _CORE_AI_NAMES,
+        condition_rows.append((condition, index))
+    row_sha256 = dict(
+        zip(
+            (index for _condition, index in condition_rows),
+            selected_panel.row_sha256_many(
+                tuple(index for _condition, index in condition_rows)
             ),
-            "spot": (
-                _selected_features(
-                    schema.spot_names,
-                    selected_panel.spot_features[index],
-                    _SPOT_AI_NAMES,
-                )
-                if bool(selected_panel.spot_available[index])
-                else None
-            ),
-            "usdm": (
-                _selected_features(
-                    schema.usdm_names,
-                    selected_panel.usdm_features[index],
-                    _USDM_AI_NAMES,
-                )
-                if bool(selected_panel.usdm_available[index])
-                else None
-            ),
-            "missingness": {
-                "spot_available": bool(selected_panel.spot_available[index]),
-                "usdm_available": bool(selected_panel.usdm_available[index]),
-            },
-            "execution": {
-                "fee_rate": format(condition.market.fee_schedule.rate, "f"),
-                "fee_exponent": condition.market.fee_schedule.exponent,
-                "tick_size": format(condition.market.tick_size, "f"),
-                "minimum_order_size": format(
-                    condition.market.minimum_order_size,
-                    "f",
-                ),
-                "creation_book_maximum_age_ms": 500,
-                "taker_order_delay_enabled": (
-                    condition.market_evidence.taker_order_delay_enabled
-                ),
-            },
-            "identity": {
-                "model_artifact_sha256": (
-                    selected_batch.source_model_artifact_sha256
-                ),
-                "probability_batch_sha256": selected_batch.prediction_sha256,
-                "feature_batch_sha256": selected_panel.feature_batch_sha256,
-                "feature_row_sha256": selected_panel.row_sha256(index),
-                "causal_market_path_sha256": causal_market_path_sha256,
-                "case_receipt_sha256": receipt.receipt_sha256,
-            },
-            "hard_constraints": {
-                "cannot_create_reverse_or_increase_risk": True,
-                "cannot_block_reduction_lock_stop_close_or_recovery": True,
-                "no_outcome_resolution_future_book_or_future_pnl": True,
-                "invalid_unavailable_or_late_preserves_deterministic_policy": True,
-            },
-            "display_precision_significant_digits": 10,
-        }
-        case_id = _canonical_sha256(payload)
-        case = PolymarketAIVetoCase(
-            case_id=case_id,
-            condition_id=condition.market.condition_id,
-            sample_id=selected_panel.row_sha256(index),
-            asset="BTC",
-            event_start_ms=condition.market.event_start_ms,
-            decision_received_wall_ms=receipt.received_wall_ms,
-            decision_received_monotonic_ns=receipt.received_monotonic_ns,
-            prompt_payload=payload,
-            case_sha256="",
+            strict=True,
         )
-        cases.append(
-            replace(
-                case,
-                case_sha256=_canonical_sha256(case.identity_payload()),
-            )
+    )
+    if len(row_sha256) != len(condition_rows):
+        raise ValueError("Round 21 AI case rows are duplicated")
+    cases = [
+        _build_round21_ai_case_from_validated(
+            condition=condition,
+            panel=selected_panel,
+            probability_batch=selected_batch,
+            panel_row_index=index,
+            batch_position=batch_positions[index],
+            feature_row_sha256=row_sha256[index],
+            receipt=receipt_map.get(condition.market.condition_id),
+            historical_schedule=historical_schedule,
         )
+        for condition, index in condition_rows
+    ]
     ordered = tuple(
         sorted(
             cases,
@@ -944,6 +1274,41 @@ def build_round21_ai_veto_cases(
     if len({value.condition_id for value in ordered}) != len(ordered):
         raise ValueError("Round 21 AI cases contain duplicate conditions")
     return ordered
+
+
+def build_round21_ai_veto_cases(
+    *,
+    conditions: Sequence[Round21ReplayCondition],
+    panel: Round21InferencePanel,
+    probability_batch: Round21ProbabilityBatch,
+    case_receipts: Sequence[Round21AICaseReceipt],
+) -> tuple[PolymarketAIVetoCase, ...]:
+    """Build prospective cases from exact contemporaneous host receipts."""
+
+    return _build_round21_ai_veto_cases(
+        conditions=conditions,
+        panel=panel,
+        probability_batch=probability_batch,
+        case_receipts=case_receipts,
+        historical_schedule=False,
+    )
+
+
+def build_round21_historical_ai_veto_cases(
+    *,
+    conditions: Sequence[Round21ReplayCondition],
+    panel: Round21InferencePanel,
+    probability_batch: Round21ProbabilityBatch,
+) -> tuple[PolymarketAIVetoCase, ...]:
+    """Build explicitly simulated historical AI cases without receipt claims."""
+
+    return _build_round21_ai_veto_cases(
+        conditions=conditions,
+        panel=panel,
+        probability_batch=probability_batch,
+        case_receipts=(),
+        historical_schedule=True,
+    )
 
 
 def round21_permissions_from_ai_report(
@@ -981,15 +1346,11 @@ def round21_permissions_from_ai_report(
             raise ValueError("Round 21 AI veto result differs")
         seen_conditions.add(result.condition_id)
         allowed = not decision.valid or decision.action == "approve"
-        effective_at_ms = (
-            case.decision_received_wall_ms + math.ceil(latency * 1_000.0)
-        )
+        effective_at_ms = case.decision_received_wall_ms + math.ceil(latency * 1_000.0)
         source_sha = _canonical_sha256(
             {
                 "schema_version": POLYMARKET_ROUND21_AI_CASE_SCHEMA_VERSION,
-                "ai_veto_design_sha256": (
-                    POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256
-                ),
+                "ai_veto_design_sha256": (POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256),
                 "report_sha256": claimed,
                 "case_sha256": case.case_sha256,
                 "response_sha256": result.response_sha256,
@@ -1022,9 +1383,15 @@ live_trading_authority = False
 
 __all__ = [
     "POLYMARKET_ROUND21_AI_CASE_SCHEMA_VERSION",
+    "POLYMARKET_ROUND21_AI_HISTORICAL_CASE_SCHEMA_VERSION",
+    "POLYMARKET_ROUND21_AI_HISTORICAL_SCHEDULE_DESIGN_SHA256",
     "POLYMARKET_ROUND21_AI_VETO_DESIGN_SHA256",
     "Round21AICaseReceipt",
+    "Round21AIHistoricalSchedule",
+    "Round21HistoricalAICaseCollector",
+    "Round21HistoricalAICaseFactory",
     "build_round21_ai_veto_cases",
+    "build_round21_historical_ai_veto_cases",
     "round21_ai_case_source_evidence_sha256",
     "round21_permissions_from_ai_report",
 ]

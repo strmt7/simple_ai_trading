@@ -29,5 +29,5 @@ updates:
           - numpy
           - scipy
           - torch
-          - torch-directml
+          - onnxruntime-directml
           - torchvision

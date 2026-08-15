@@ -1,0 +1,36 @@
+{
+  "admission": {
+    "benchmark_completed": false,
+    "benchmark_passed": null,
+    "financial_edge_tested": false,
+    "reasoning_score_available": false,
+    "trading_authority": false
+  },
+  "claim": {
+    "claim_sha256": "a464016c2a40fc69d3ce918a5711469f4862dd1f33d77cafbbbf8ec8e9e9ecc5",
+    "confirmation_continuity_report_sha256": "3bedeab48314d826a1dcf9dfa4f995b66eed4ac281430781074ebf3395592d72",
+    "confirmation_report_sha256": "2e7193ffd48c5008453765402cea3a6d4e5eda2f3989df19c005d9d444793b28",
+    "confirmation_run_id": "e34d349771da4c35bcc8ae436c2fe9f6",
+    "model": "qwen3:14b",
+    "output_path": "C:\\trader\\simple_ai_trading-model-dev\\docs\\ai\\risk-review\\qwen3-14b-v11-benchmark.json",
+    "preregistration_sha256": "6aced50bccf06c3f755953727b50e695691f0ee7420075361aa49a4c1b4e24d5"
+  },
+  "failure_event": {
+    "error_message": "[Errno 22] Invalid argument",
+    "error_type": "OSError"
+  },
+  "failure_event_sha256": "19b2cb72abe9fc9905c29d9683f5030eb4de9b43f8e6308785b7d866cc998231",
+  "generated_at_ms": 1785776504395,
+  "partial_benchmark_report": null,
+  "partial_benchmark_report_canonical_sha256": null,
+  "runtime_evidence": {
+    "post_inference": null,
+    "pre_inference": {
+      "model_digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+      "model_metadata_sha256": "f1b1a3ca7afc4d2776416861de6d409d7a1a1e90417cde0dba5b21a3db233d72"
+    },
+    "residency": null
+  },
+  "schema_version": "preregistered-ai-benchmark-failure-v1",
+  "success_output_exists_at_failure": false
+}

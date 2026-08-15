@@ -12,6 +12,10 @@ import time
 from typing import Mapping
 
 from .polymarket_live import PolymarketLiveBlocked
+from .polymarket_live_manifest import (
+    VerifiedPolymarketLiveImplementationManifest,
+    load_polymarket_live_implementation_manifest,
+)
 
 
 POLYMARKET_LIVE_PROMOTION_SCHEMA_VERSION = "polymarket-live-promotion-v1"
@@ -234,11 +238,17 @@ class VerifiedPolymarketLivePromotion:
     model_artifact_path: Path
     evaluation_report_path: Path
     implementation_manifest_path: Path
+    implementation: VerifiedPolymarketLiveImplementationManifest
     _capability: object
 
     def __post_init__(self) -> None:
         if self._capability is not _VERIFIED_PROMOTION_CAPABILITY:
             raise ValueError("Polymarket promotion evidence was not verified")
+        if not isinstance(
+            self.implementation,
+            VerifiedPolymarketLiveImplementationManifest,
+        ):
+            raise ValueError("Polymarket implementation evidence was not verified")
 
     def assert_live_authority(self, *, observed_at_ms: int | None = None) -> None:
         self.promotion.assert_live_authority(observed_at_ms=observed_at_ms)
@@ -357,6 +367,7 @@ def load_polymarket_live_promotion(
     evidence_root: str | Path,
     require_live_authority: bool = True,
     observed_at_ms: int | None = None,
+    expected_file_sha256: str | None = None,
 ) -> VerifiedPolymarketLivePromotion:
     promotion_path = Path(path)
     if promotion_path.is_symlink():
@@ -364,6 +375,11 @@ def load_polymarket_live_promotion(
     raw = promotion_path.read_bytes()
     if not raw or len(raw) > _MAX_PROMOTION_BYTES:
         raise ValueError("Polymarket promotion file size is invalid")
+    if expected_file_sha256 is not None and hashlib.sha256(raw).hexdigest() != _sha(
+        expected_file_sha256,
+        name="expected Polymarket promotion file hash",
+    ):
+        raise ValueError("Polymarket promotion file hash differs")
     try:
         payload = json.loads(
             raw.decode("utf-8", errors="strict"),
@@ -382,6 +398,11 @@ def load_polymarket_live_promotion(
         root,
         promotion.implementation_manifest,
     )
+    implementation = load_polymarket_live_implementation_manifest(
+        implementation_manifest_path,
+        expected_file_sha256=promotion.implementation_manifest.sha256,
+        expected_source_commit=promotion.source_commit,
+    )
     if require_live_authority:
         promotion.assert_live_authority(observed_at_ms=observed_at_ms)
     return VerifiedPolymarketLivePromotion(
@@ -389,6 +410,7 @@ def load_polymarket_live_promotion(
         model_artifact_path=model_artifact_path,
         evaluation_report_path=evaluation_report_path,
         implementation_manifest_path=implementation_manifest_path,
+        implementation=implementation,
         _capability=_VERIFIED_PROMOTION_CAPABILITY,
     )
 

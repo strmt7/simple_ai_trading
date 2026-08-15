@@ -15,9 +15,11 @@ import re
 import time
 from typing import Callable
 
-from .paper_execution import PolymarketFeeModel
 from .polymarket_external_signal import PolymarketExternalSignalDecision
+from .polymarket_fees import PolymarketFeeModel
 from .polymarket_live import (
+    PolymarketCloseQuote,
+    PolymarketConditionAccounting,
     PolymarketLiveBlocked,
     PolymarketLiveCoordinator,
     PolymarketLiveOrderIntent,
@@ -25,10 +27,17 @@ from .polymarket_live import (
     PolymarketOpenQuote,
 )
 from .polymarket_live_promotion import VerifiedPolymarketLivePromotion
+from .polymarket_live_qualification import (
+    VerifiedPolymarketLifecycleQualification,
+)
 
 
-POLYMARKET_AUTONOMOUS_PROPOSAL_SCHEMA_VERSION = (
-    "polymarket-autonomous-open-proposal-v1"
+POLYMARKET_AUTONOMOUS_PROPOSAL_SCHEMA_VERSION = "polymarket-autonomous-open-proposal-v2"
+POLYMARKET_AUTONOMOUS_REDUCE_PROPOSAL_SCHEMA_VERSION = (
+    "polymarket-autonomous-reduce-proposal-v1"
+)
+POLYMARKET_AUTONOMOUS_LOCK_PROPOSAL_SCHEMA_VERSION = (
+    "polymarket-autonomous-lock-proposal-v1"
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$")
@@ -85,6 +94,8 @@ class PolymarketAutonomousOpenProposal:
     outcome: str
     selected_outcome_probability: Decimal
     requested_quantity: Decimal
+    risk_state_sha256: str
+    maximum_projected_inventory_downside_quote: Decimal
     event_start_time_ms: int
     event_end_time_ms: int
     decision_time_ms: int
@@ -131,14 +142,30 @@ class PolymarketAutonomousOpenProposal:
             name="selected_outcome_probability",
         )
         quantity = _decimal(self.requested_quantity, name="requested_quantity")
+        risk_state_sha256 = _sha(
+            self.risk_state_sha256,
+            name="risk_state_sha256",
+        )
+        maximum_downside = _decimal(
+            self.maximum_projected_inventory_downside_quote,
+            name="maximum_projected_inventory_downside_quote",
+        )
         if probability <= 0 or probability >= 1:
             raise ValueError("selected outcome probability must lie inside (0, 1)")
         if quantity <= 0 or quantity.quantize(_QUANTITY_STEP) != quantity:
             raise ValueError(
                 "requested quantity must be positive with at most six decimals"
             )
+        if maximum_downside <= 0:
+            raise ValueError("maximum projected inventory downside must be positive")
         object.__setattr__(self, "selected_outcome_probability", probability)
         object.__setattr__(self, "requested_quantity", quantity)
+        object.__setattr__(self, "risk_state_sha256", risk_state_sha256)
+        object.__setattr__(
+            self,
+            "maximum_projected_inventory_downside_quote",
+            maximum_downside,
+        )
         start = int(self.event_start_time_ms)
         end = int(self.event_end_time_ms)
         decision = int(self.decision_time_ms)
@@ -181,6 +208,249 @@ class PolymarketAutonomousOpenProposal:
                 "f",
             ),
             "requested_quantity": format(self.requested_quantity, "f"),
+            "risk_state_sha256": self.risk_state_sha256,
+            "maximum_projected_inventory_downside_quote": format(
+                self.maximum_projected_inventory_downside_quote,
+                "f",
+            ),
+            "event_start_time_ms": self.event_start_time_ms,
+            "event_end_time_ms": self.event_end_time_ms,
+            "decision_time_ms": self.decision_time_ms,
+            "expires_at_ms": self.expires_at_ms,
+        }
+
+    def asdict(self) -> dict[str, object]:
+        return {**self.body(), "proposal_sha256": self.proposal_sha256}
+
+
+@dataclass(frozen=True, slots=True)
+class PolymarketAutonomousReduceProposal:
+    proposal_id: str
+    input_sha256: str
+    model_artifact_sha256: str
+    promotion_sha256: str
+    market_id: str
+    token_id: str
+    symbol: str
+    market_variant: str
+    outcome: str
+    parent_intent_id: str
+    maximum_outcome_probability: Decimal
+    requested_quantity: Decimal
+    event_start_time_ms: int
+    event_end_time_ms: int
+    decision_time_ms: int
+    expires_at_ms: int
+    proposal_sha256: str = ""
+
+    def __post_init__(self) -> None:
+        proposal_id = str(self.proposal_id or "").strip()
+        parent = str(self.parent_intent_id or "").strip()
+        if _IDENTIFIER.fullmatch(proposal_id) is None:
+            raise ValueError("Polymarket reduction proposal_id is invalid")
+        if _IDENTIFIER.fullmatch(parent) is None:
+            raise ValueError("Polymarket reduction parent_intent_id is invalid")
+        object.__setattr__(self, "proposal_id", proposal_id)
+        object.__setattr__(self, "parent_intent_id", parent)
+        for field_name in (
+            "input_sha256",
+            "model_artifact_sha256",
+            "promotion_sha256",
+        ):
+            object.__setattr__(
+                self,
+                field_name,
+                _sha(getattr(self, field_name), name=field_name),
+            )
+        market_id = str(self.market_id or "").strip().lower()
+        token_id = str(self.token_id or "").strip()
+        if _CONDITION_ID.fullmatch(market_id) is None:
+            raise ValueError("Polymarket reduction market_id is invalid")
+        if _TOKEN_ID.fullmatch(token_id) is None:
+            raise ValueError("Polymarket reduction token_id is invalid")
+        object.__setattr__(self, "market_id", market_id)
+        object.__setattr__(self, "token_id", token_id)
+        symbol = str(self.symbol or "").strip().upper()
+        variant = str(self.market_variant or "").strip().lower()
+        outcome = str(self.outcome or "").strip().title()
+        if symbol != "BTC" or variant not in _MARKET_VARIANT_DURATION_MS:
+            raise ValueError(
+                "autonomous live Polymarket reductions must be BTC 5m or 15m"
+            )
+        if outcome not in {"Up", "Down"}:
+            raise ValueError("Polymarket reduction outcome must be Up or Down")
+        object.__setattr__(self, "symbol", symbol)
+        object.__setattr__(self, "market_variant", variant)
+        object.__setattr__(self, "outcome", outcome)
+        probability = _decimal(
+            self.maximum_outcome_probability,
+            name="maximum_outcome_probability",
+        )
+        quantity = _decimal(self.requested_quantity, name="requested_quantity")
+        if probability <= 0 or probability >= 1:
+            raise ValueError("maximum outcome probability must lie inside (0, 1)")
+        if quantity <= 0 or quantity.quantize(_QUANTITY_STEP) != quantity:
+            raise ValueError(
+                "requested quantity must be positive with at most six decimals"
+            )
+        object.__setattr__(self, "maximum_outcome_probability", probability)
+        object.__setattr__(self, "requested_quantity", quantity)
+        start = int(self.event_start_time_ms)
+        end = int(self.event_end_time_ms)
+        decision = int(self.decision_time_ms)
+        expires = int(self.expires_at_ms)
+        duration_ms = _MARKET_VARIANT_DURATION_MS[variant]
+        if (
+            start <= 0
+            or start % duration_ms
+            or end - start != duration_ms
+            or not start <= decision < end
+            or not decision < expires <= end
+        ):
+            raise ValueError("Polymarket reduction chronology is invalid")
+        object.__setattr__(self, "event_start_time_ms", start)
+        object.__setattr__(self, "event_end_time_ms", end)
+        object.__setattr__(self, "decision_time_ms", decision)
+        object.__setattr__(self, "expires_at_ms", expires)
+        claimed = str(self.proposal_sha256 or "").strip().lower()
+        actual = _canonical_sha256(self.body())
+        if claimed and claimed != actual:
+            raise ValueError("Polymarket reduction proposal hash differs")
+        object.__setattr__(self, "proposal_sha256", actual)
+
+    def body(self) -> dict[str, object]:
+        return {
+            "schema_version": POLYMARKET_AUTONOMOUS_REDUCE_PROPOSAL_SCHEMA_VERSION,
+            "proposal_id": self.proposal_id,
+            "input_sha256": self.input_sha256,
+            "model_artifact_sha256": self.model_artifact_sha256,
+            "promotion_sha256": self.promotion_sha256,
+            "venue": "polymarket",
+            "protocol_version": 2,
+            "market_id": self.market_id,
+            "token_id": self.token_id,
+            "symbol": self.symbol,
+            "market_variant": self.market_variant,
+            "outcome": self.outcome,
+            "parent_intent_id": self.parent_intent_id,
+            "maximum_outcome_probability": format(
+                self.maximum_outcome_probability,
+                "f",
+            ),
+            "requested_quantity": format(self.requested_quantity, "f"),
+            "event_start_time_ms": self.event_start_time_ms,
+            "event_end_time_ms": self.event_end_time_ms,
+            "decision_time_ms": self.decision_time_ms,
+            "expires_at_ms": self.expires_at_ms,
+        }
+
+    def asdict(self) -> dict[str, object]:
+        return {**self.body(), "proposal_sha256": self.proposal_sha256}
+
+
+@dataclass(frozen=True, slots=True)
+class PolymarketAutonomousLockProposal:
+    proposal_id: str
+    input_sha256: str
+    model_artifact_sha256: str
+    promotion_sha256: str
+    market_id: str
+    token_id: str
+    symbol: str
+    market_variant: str
+    outcome: str
+    owned_outcome: str
+    requested_quantity: Decimal
+    event_start_time_ms: int
+    event_end_time_ms: int
+    decision_time_ms: int
+    expires_at_ms: int
+    proposal_sha256: str = ""
+
+    def __post_init__(self) -> None:
+        proposal_id = str(self.proposal_id or "").strip()
+        if _IDENTIFIER.fullmatch(proposal_id) is None:
+            raise ValueError("Polymarket lock proposal_id is invalid")
+        object.__setattr__(self, "proposal_id", proposal_id)
+        for field_name in (
+            "input_sha256",
+            "model_artifact_sha256",
+            "promotion_sha256",
+        ):
+            object.__setattr__(
+                self,
+                field_name,
+                _sha(getattr(self, field_name), name=field_name),
+            )
+        market_id = str(self.market_id or "").strip().lower()
+        token_id = str(self.token_id or "").strip()
+        if _CONDITION_ID.fullmatch(market_id) is None:
+            raise ValueError("Polymarket lock market_id is invalid")
+        if _TOKEN_ID.fullmatch(token_id) is None:
+            raise ValueError("Polymarket lock token_id is invalid")
+        object.__setattr__(self, "market_id", market_id)
+        object.__setattr__(self, "token_id", token_id)
+        symbol = str(self.symbol or "").strip().upper()
+        variant = str(self.market_variant or "").strip().lower()
+        outcome = str(self.outcome or "").strip().title()
+        owned_outcome = str(self.owned_outcome or "").strip().title()
+        if symbol != "BTC" or variant not in _MARKET_VARIANT_DURATION_MS:
+            raise ValueError("autonomous live Polymarket locks must be BTC 5m or 15m")
+        if (
+            outcome not in {"Up", "Down"}
+            or owned_outcome not in {"Up", "Down"}
+            or outcome == owned_outcome
+        ):
+            raise ValueError("Polymarket lock outcomes must be complementary")
+        object.__setattr__(self, "symbol", symbol)
+        object.__setattr__(self, "market_variant", variant)
+        object.__setattr__(self, "outcome", outcome)
+        object.__setattr__(self, "owned_outcome", owned_outcome)
+        quantity = _decimal(self.requested_quantity, name="requested_quantity")
+        if quantity <= 0 or quantity.quantize(_QUANTITY_STEP) != quantity:
+            raise ValueError(
+                "requested quantity must be positive with at most six decimals"
+            )
+        object.__setattr__(self, "requested_quantity", quantity)
+        start = int(self.event_start_time_ms)
+        end = int(self.event_end_time_ms)
+        decision = int(self.decision_time_ms)
+        expires = int(self.expires_at_ms)
+        duration_ms = _MARKET_VARIANT_DURATION_MS[variant]
+        if (
+            start <= 0
+            or start % duration_ms
+            or end - start != duration_ms
+            or not start <= decision < end
+            or not decision < expires <= end
+        ):
+            raise ValueError("Polymarket lock chronology is invalid")
+        object.__setattr__(self, "event_start_time_ms", start)
+        object.__setattr__(self, "event_end_time_ms", end)
+        object.__setattr__(self, "decision_time_ms", decision)
+        object.__setattr__(self, "expires_at_ms", expires)
+        claimed = str(self.proposal_sha256 or "").strip().lower()
+        actual = _canonical_sha256(self.body())
+        if claimed and claimed != actual:
+            raise ValueError("Polymarket lock proposal hash differs")
+        object.__setattr__(self, "proposal_sha256", actual)
+
+    def body(self) -> dict[str, object]:
+        return {
+            "schema_version": POLYMARKET_AUTONOMOUS_LOCK_PROPOSAL_SCHEMA_VERSION,
+            "proposal_id": self.proposal_id,
+            "input_sha256": self.input_sha256,
+            "model_artifact_sha256": self.model_artifact_sha256,
+            "promotion_sha256": self.promotion_sha256,
+            "venue": "polymarket",
+            "protocol_version": 2,
+            "market_id": self.market_id,
+            "token_id": self.token_id,
+            "symbol": self.symbol,
+            "market_variant": self.market_variant,
+            "outcome": self.outcome,
+            "owned_outcome": self.owned_outcome,
+            "requested_quantity": format(self.requested_quantity, "f"),
             "event_start_time_ms": self.event_start_time_ms,
             "event_end_time_ms": self.event_end_time_ms,
             "decision_time_ms": self.decision_time_ms,
@@ -198,11 +468,30 @@ class PolymarketAutonomousOpenResult:
     effective_quantity: Decimal
     worst_notional_quote: Decimal
     worst_fee_quote: Decimal
+    projected_inventory_downside_quote: Decimal
     net_edge_quote_per_share: Decimal
 
 
+@dataclass(frozen=True, slots=True)
+class PolymarketAutonomousReduceResult:
+    record: PolymarketLiveOrderRecord
+    quote: PolymarketCloseQuote
+    net_edge_quote_per_share: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class PolymarketAutonomousLockResult:
+    record: PolymarketLiveOrderRecord
+    quote: PolymarketOpenQuote
+    prior_accounting: PolymarketConditionAccounting
+    projected_maximum_loss_quote: Decimal
+    locked_edge_quote_per_share: Decimal
+
+
 def _assert_current(
-    proposal: PolymarketAutonomousOpenProposal,
+    proposal: PolymarketAutonomousOpenProposal
+    | PolymarketAutonomousReduceProposal
+    | PolymarketAutonomousLockProposal,
     promotion: VerifiedPolymarketLivePromotion,
     *,
     observed_at_ms: int,
@@ -239,7 +528,10 @@ def _effective_quantity(
     if signal.features is None:
         raise PolymarketLiveBlocked("external BTC price discovery lacks features")
     signal_time = int(signal.features.observed_at_ms)
-    if signal_time > observed_at_ms or observed_at_ms - signal_time > maximum_signal_age_ms:
+    if (
+        signal_time > observed_at_ms
+        or observed_at_ms - signal_time > maximum_signal_age_ms
+    ):
         raise PolymarketLiveBlocked("external BTC price discovery is stale")
     multiplier = signal.maximum_size_multiplier
     if signal.action == "preserve" and multiplier != 1:
@@ -251,7 +543,9 @@ def _effective_quantity(
         rounding=ROUND_DOWN,
     )
     if quantity <= 0 or quantity > proposal.requested_quantity:
-        raise PolymarketLiveBlocked("external BTC price discovery produced invalid size")
+        raise PolymarketLiveBlocked(
+            "external BTC price discovery produced invalid size"
+        )
     return quantity
 
 
@@ -260,6 +554,7 @@ def submit_promoted_open(
     promotion: VerifiedPolymarketLivePromotion,
     coordinator: PolymarketLiveCoordinator,
     *,
+    lifecycle_qualification: VerifiedPolymarketLifecycleQualification | None = None,
     external_signal: PolymarketExternalSignalDecision | None = None,
     clock_ms: Callable[[], int] | None = None,
 ) -> PolymarketAutonomousOpenResult:
@@ -271,8 +566,20 @@ def submit_promoted_open(
         raise PolymarketLiveBlocked(
             "Polymarket autonomous open requires verified promotion evidence"
         )
+    if not isinstance(
+        lifecycle_qualification,
+        VerifiedPolymarketLifecycleQualification,
+    ):
+        raise PolymarketLiveBlocked(
+            "Polymarket autonomous open requires verified authenticated "
+            "lifecycle evidence"
+        )
     now_fn = clock_ms or (lambda: int(time.time() * 1_000))
     observed_at_ms = int(now_fn())
+    lifecycle_qualification.assert_promotion_binding(
+        promotion=promotion,
+        observed_at_ms=observed_at_ms,
+    )
     policy = promotion.promotion
     _assert_current(proposal, promotion, observed_at_ms=observed_at_ms)
     if proposal.promotion_sha256 != policy.promotion_sha256:
@@ -321,15 +628,31 @@ def submit_promoted_open(
     peak_fee_price = min(quote.limit_price, _HALF)
     worst_fee = fee_model(peak_fee_price, quantity, "taker")
     worst_notional = quote.limit_price * quantity
-    net_edge = (
-        proposal.selected_outcome_probability
-        - quote.limit_price
-        - worst_fee / quantity
+    prior = coordinator.ledger.condition_accounting(proposal.market_id)
+    projected_up_quantity = prior.up_quantity
+    projected_down_quantity = prior.down_quantity
+    projected_up_cost = prior.up_cost_basis_quote
+    projected_down_cost = prior.down_cost_basis_quote
+    if proposal.outcome == "Up":
+        projected_up_quantity += quantity
+        projected_up_cost += worst_notional + worst_fee
+    else:
+        projected_down_quantity += quantity
+        projected_down_cost += worst_notional + worst_fee
+    projected_downside = max(
+        Decimal("0"),
+        projected_up_cost
+        + projected_down_cost
+        - min(projected_up_quantity, projected_down_quantity),
     )
-    if (
-        net_edge <= 0
-        or net_edge < policy.minimum_expected_edge_quote_per_share
-    ):
+    if projected_downside > (proposal.maximum_projected_inventory_downside_quote):
+        raise PolymarketLiveBlocked(
+            "Polymarket execution quote exceeds the bound live risk headroom"
+        )
+    net_edge = (
+        proposal.selected_outcome_probability - quote.limit_price - worst_fee / quantity
+    )
+    if net_edge <= 0 or net_edge < policy.minimum_expected_edge_quote_per_share:
         raise PolymarketLiveBlocked(
             "Polymarket proposal has insufficient after-cost edge"
         )
@@ -343,6 +666,15 @@ def submit_promoted_open(
         "quantity": format(quantity, "f"),
         "limit_price": format(quote.limit_price, "f"),
         "worst_fee_quote": format(worst_fee, "f"),
+        "risk_state_sha256": proposal.risk_state_sha256,
+        "maximum_projected_inventory_downside_quote": format(
+            proposal.maximum_projected_inventory_downside_quote,
+            "f",
+        ),
+        "projected_inventory_downside_quote": format(
+            projected_downside,
+            "f",
+        ),
     }
     intent_id = "poly-open-" + _canonical_sha256(intent_binding)[:32]
     expires_at_ms = min(
@@ -379,13 +711,262 @@ def submit_promoted_open(
         effective_quantity=quantity,
         worst_notional_quote=worst_notional,
         worst_fee_quote=worst_fee,
+        projected_inventory_downside_quote=projected_downside,
         net_edge_quote_per_share=net_edge,
+    )
+
+
+def submit_promoted_reduction(
+    proposal: PolymarketAutonomousReduceProposal,
+    promotion: VerifiedPolymarketLivePromotion,
+    coordinator: PolymarketLiveCoordinator,
+    *,
+    lifecycle_qualification: VerifiedPolymarketLifecycleQualification | None = None,
+    clock_ms: Callable[[], int] | None = None,
+) -> PolymarketAutonomousReduceResult:
+    """Reduce one exact bot-owned lot without weakening deterministic Stop."""
+
+    if not isinstance(proposal, PolymarketAutonomousReduceProposal):
+        raise TypeError("proposal must be PolymarketAutonomousReduceProposal")
+    if not isinstance(promotion, VerifiedPolymarketLivePromotion):
+        raise PolymarketLiveBlocked(
+            "Polymarket autonomous reduction requires verified promotion evidence"
+        )
+    if not isinstance(
+        lifecycle_qualification,
+        VerifiedPolymarketLifecycleQualification,
+    ):
+        raise PolymarketLiveBlocked(
+            "Polymarket autonomous reduction requires verified authenticated "
+            "lifecycle evidence"
+        )
+    now_fn = clock_ms or (lambda: int(time.time() * 1_000))
+    observed_at_ms = int(now_fn())
+    lifecycle_qualification.assert_promotion_binding(
+        promotion=promotion,
+        observed_at_ms=observed_at_ms,
+    )
+    policy = promotion.promotion
+    _assert_current(proposal, promotion, observed_at_ms=observed_at_ms)
+    if proposal.promotion_sha256 != policy.promotion_sha256:
+        raise PolymarketLiveBlocked("Polymarket reduction promotion hash differs")
+    if proposal.model_artifact_sha256 != policy.model_artifact.sha256:
+        raise PolymarketLiveBlocked("Polymarket reduction model hash differs")
+    if proposal.market_variant != policy.market_variant:
+        raise PolymarketLiveBlocked("Polymarket reduction market variant differs")
+    minimum_net_quote = proposal.requested_quantity * (
+        proposal.maximum_outcome_probability
+        + policy.minimum_expected_edge_quote_per_share
+    )
+    record, quote = coordinator.submit_owned_close_order(
+        parent_intent_id=proposal.parent_intent_id,
+        quantity=proposal.requested_quantity,
+        action_binding_sha256=proposal.proposal_sha256,
+        minimum_net_quote=minimum_net_quote,
+        maximum_book_age_ms=policy.maximum_prediction_age_ms,
+    )
+    if (
+        quote.market_id != proposal.market_id
+        or quote.token_id != proposal.token_id
+        or record.intent.market_id != proposal.market_id
+        or record.intent.token_id != proposal.token_id
+        or record.intent.outcome != proposal.outcome
+        or record.intent.parent_intent_id != proposal.parent_intent_id
+        or record.intent.quantity != proposal.requested_quantity
+        or not record.intent.closing_only
+    ):
+        raise PolymarketLiveBlocked(
+            "Polymarket reduction execution differs from proposal"
+        )
+    net_edge = (
+        quote.net_quote / proposal.requested_quantity
+        - proposal.maximum_outcome_probability
+    )
+    if net_edge < policy.minimum_expected_edge_quote_per_share:
+        raise PolymarketLiveBlocked(
+            "Polymarket reduction has insufficient after-cost edge"
+        )
+    return PolymarketAutonomousReduceResult(
+        record=record,
+        quote=quote,
+        net_edge_quote_per_share=net_edge,
+    )
+
+
+def submit_promoted_lock(
+    proposal: PolymarketAutonomousLockProposal,
+    promotion: VerifiedPolymarketLivePromotion,
+    coordinator: PolymarketLiveCoordinator,
+    *,
+    lifecycle_qualification: VerifiedPolymarketLifecycleQualification | None = None,
+    clock_ms: Callable[[], int] | None = None,
+) -> PolymarketAutonomousLockResult:
+    """Buy only enough complementary inventory to reduce event downside."""
+
+    if not isinstance(proposal, PolymarketAutonomousLockProposal):
+        raise TypeError("proposal must be PolymarketAutonomousLockProposal")
+    if not isinstance(promotion, VerifiedPolymarketLivePromotion):
+        raise PolymarketLiveBlocked(
+            "Polymarket autonomous lock requires verified promotion evidence"
+        )
+    if not isinstance(
+        lifecycle_qualification,
+        VerifiedPolymarketLifecycleQualification,
+    ):
+        raise PolymarketLiveBlocked(
+            "Polymarket autonomous lock requires verified authenticated "
+            "lifecycle evidence"
+        )
+    now_fn = clock_ms or (lambda: int(time.time() * 1_000))
+    observed_at_ms = int(now_fn())
+    lifecycle_qualification.assert_promotion_binding(
+        promotion=promotion,
+        observed_at_ms=observed_at_ms,
+    )
+    policy = promotion.promotion
+    _assert_current(proposal, promotion, observed_at_ms=observed_at_ms)
+    if proposal.promotion_sha256 != policy.promotion_sha256:
+        raise PolymarketLiveBlocked("Polymarket lock promotion hash differs")
+    if proposal.model_artifact_sha256 != policy.model_artifact.sha256:
+        raise PolymarketLiveBlocked("Polymarket lock model hash differs")
+    if proposal.market_variant != policy.market_variant:
+        raise PolymarketLiveBlocked("Polymarket lock market variant differs")
+    prior = coordinator.ledger.condition_accounting(proposal.market_id)
+    owned_quantity = (
+        prior.up_quantity if proposal.owned_outcome == "Up" else prior.down_quantity
+    )
+    complement_quantity = (
+        prior.up_quantity if proposal.outcome == "Up" else prior.down_quantity
+    )
+    unpaired = max(Decimal("0"), owned_quantity - complement_quantity)
+    if proposal.requested_quantity > unpaired:
+        raise PolymarketLiveBlocked(
+            "Polymarket lock exceeds confirmed unpaired bot-owned inventory"
+        )
+    quote = coordinator.venue.open_quote(
+        market_id=proposal.market_id,
+        token_id=proposal.token_id,
+        outcome=proposal.outcome,
+        quantity=proposal.requested_quantity,
+        maximum_book_age_ms=policy.maximum_prediction_age_ms,
+    )
+    submit_at_ms = int(now_fn())
+    _assert_current(proposal, promotion, observed_at_ms=submit_at_ms)
+    if (
+        quote.market_id != proposal.market_id
+        or quote.token_id != proposal.token_id
+        or quote.outcome != proposal.outcome
+        or quote.quantity != proposal.requested_quantity
+        or quote.observed_at_ms > submit_at_ms + 250
+        or submit_at_ms - quote.observed_at_ms > policy.maximum_prediction_age_ms
+    ):
+        raise PolymarketLiveBlocked(
+            "Polymarket lock quote identity or freshness differs"
+        )
+    if proposal.requested_quantity < quote.minimum_order_size:
+        raise PolymarketLiveBlocked(
+            "Polymarket lock quantity is below the venue minimum"
+        )
+    fee_model = PolymarketFeeModel(
+        enabled=quote.fee_rate > 0,
+        rate=quote.fee_rate,
+        exponent=quote.fee_exponent,
+        taker_only=True,
+    )
+    worst_fee = max(
+        quote.fee_quote,
+        fee_model(
+            min(quote.limit_price, _HALF),
+            proposal.requested_quantity,
+            "taker",
+        ),
+    )
+    worst_total = quote.limit_price * proposal.requested_quantity + worst_fee
+    owned_average_cost = prior.cost_basis_quote(proposal.owned_outcome) / owned_quantity
+    locked_edge = (
+        Decimal("1") - owned_average_cost - worst_total / proposal.requested_quantity
+    )
+    if locked_edge < policy.minimum_expected_edge_quote_per_share:
+        raise PolymarketLiveBlocked(
+            "Polymarket lock has insufficient guaranteed after-cost edge"
+        )
+    current = coordinator.ledger.condition_accounting(proposal.market_id)
+    if current != prior:
+        raise PolymarketLiveBlocked(
+            "Polymarket lock inventory changed while obtaining its quote"
+        )
+    up_quantity = prior.up_quantity
+    down_quantity = prior.down_quantity
+    if proposal.outcome == "Up":
+        up_quantity += proposal.requested_quantity
+    else:
+        down_quantity += proposal.requested_quantity
+    projected_loss = max(
+        Decimal("0"),
+        prior.net_cash_outflow_quote + worst_total - min(up_quantity, down_quantity),
+    )
+    if projected_loss > prior.maximum_loss_quote:
+        raise PolymarketLiveBlocked("Polymarket lock would increase maximum event loss")
+    identity = {
+        "schema_version": "polymarket-autonomous-lock-intent-binding-v1",
+        "proposal_sha256": proposal.proposal_sha256,
+        "promotion_sha256": policy.promotion_sha256,
+        "book_payload_sha256": quote.book_payload_sha256,
+        "prior_maximum_loss_quote": format(prior.maximum_loss_quote, "f"),
+        "projected_maximum_loss_quote": format(projected_loss, "f"),
+        "owned_average_cost_quote": format(owned_average_cost, "f"),
+        "quantity": format(proposal.requested_quantity, "f"),
+        "limit_price": format(quote.limit_price, "f"),
+        "worst_fee_quote": format(worst_fee, "f"),
+    }
+    expires_at_ms = min(
+        proposal.expires_at_ms,
+        proposal.event_end_time_ms,
+        policy.expires_at_ms,
+        submit_at_ms + policy.maximum_prediction_age_ms,
+    )
+    if expires_at_ms <= submit_at_ms:
+        raise PolymarketLiveBlocked("Polymarket lock authorization expired")
+    intent = PolymarketLiveOrderIntent(
+        intent_id="poly-lock-" + _canonical_sha256(identity)[:32],
+        bot_id=policy.bot_id,
+        market_id=proposal.market_id,
+        token_id=proposal.token_id,
+        symbol="BTC",
+        outcome=proposal.outcome,
+        side="BUY",
+        order_type="FAK",
+        limit_price=quote.limit_price,
+        quantity=proposal.requested_quantity,
+        fee_reserve_quote=worst_fee,
+        created_at_ms=submit_at_ms,
+        expires_at_ms=expires_at_ms,
+    )
+    record = coordinator.submit(
+        intent,
+        tick_size=quote.tick_size,
+        neg_risk=quote.neg_risk,
+    )
+    return PolymarketAutonomousLockResult(
+        record=record,
+        quote=quote,
+        prior_accounting=prior,
+        projected_maximum_loss_quote=projected_loss,
+        locked_edge_quote_per_share=locked_edge,
     )
 
 
 __all__ = [
     "POLYMARKET_AUTONOMOUS_PROPOSAL_SCHEMA_VERSION",
+    "POLYMARKET_AUTONOMOUS_LOCK_PROPOSAL_SCHEMA_VERSION",
+    "POLYMARKET_AUTONOMOUS_REDUCE_PROPOSAL_SCHEMA_VERSION",
+    "PolymarketAutonomousLockProposal",
+    "PolymarketAutonomousLockResult",
     "PolymarketAutonomousOpenProposal",
     "PolymarketAutonomousOpenResult",
+    "PolymarketAutonomousReduceProposal",
+    "PolymarketAutonomousReduceResult",
     "submit_promoted_open",
+    "submit_promoted_lock",
+    "submit_promoted_reduction",
 ]

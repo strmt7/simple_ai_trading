@@ -94,7 +94,7 @@ try {
         $process.Refresh()
         $process.MainWindowHandle -ne [IntPtr]::Zero
     } "native app window handle" 10000
-    Start-Sleep -Milliseconds $(if ($RealStatus.IsPresent) { 5000 } else { 600 })
+    Start-Sleep -Milliseconds $(if ($RealStatus.IsPresent) { 12000 } else { 600 })
 
     $rect = New-Object SatNativeCapture+RECT
     if (-not [SatNativeCapture]::GetWindowRect($process.MainWindowHandle, [ref]$rect)) {

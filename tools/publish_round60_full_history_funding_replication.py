@@ -573,7 +573,7 @@ Round 60 kept every Round 59 trigger, horizon, cost reference, bootstrap seed, a
 
 Exactly one of nine breadth cells passed: a causally observed settled funding rate of at least `2` bps followed by a non-overlapping seven-day window. All three symbols exceeded the precommitted 40-episode, 55% positive, positive-median, and positive lower-95%-mean gates after the 32 bps research reference.
 
-| Seven-day `>=2` bps evidence | Funding rows | P(next positive \| positive) | Episodes | Mean after 32 bps | Median after 32 bps | Positive after 32 bps | Lower 95% mean after 32 bps |
+| Seven-day `>=2` bps evidence | Funding rows | P(next positive \\| positive) | Episodes | Mean after 32 bps | Median after 32 bps | Positive after 32 bps | Lower 95% mean after 32 bps |
 |---|---:|---:|---:|---:|---:|---:|---:|
 {table}
 

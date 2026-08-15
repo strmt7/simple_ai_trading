@@ -1,0 +1,129 @@
+{
+  "schema_version": "polymarket-round21-ai-veto-design-v5",
+  "round": 21,
+  "status": "preregistered_during_capture_before_capture_target_or_model_outcome_access",
+  "parents": {
+    "round21_ai_veto_design_v4_sha256": "2ce78e959d902201a1d4e050d521f1a9ff072b0800575e95e1b92ce1f80661fc",
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_model_design_sha256": "d4066d09f420c39f149a97243745d9ac62f35b6950e141ef8654739d225087dd",
+    "round21_multi_action_policy_sha256": "eefe030e56e06854b460d8e4421aa24443ac98e15a2ae648368cf555bf39cd49",
+    "round21_economic_replay_design_sha256": "a24eea9cf6b474cb82e57cb540396447c4198b1a1b4d9d8952cc020f0f029f9c"
+  },
+  "supersession": {
+    "change": "bind_unchanged_finite_ai_program_to_round21_train_only_feature_support_evidence",
+    "candidate_count_changed": false,
+    "candidate_identities_changed": false,
+    "capture_data_used_for_change": false,
+    "targets_used_for_change": false,
+    "market_outcomes_used_for_change": false,
+    "edge_or_profitability_inferred_from_model_design_change": false,
+    "ai_reasoning_program_changed": false
+  },
+  "role": {
+    "task": "slower_cadence_epistemic_regime_and_risk_veto",
+    "per_tick_direction_or_order_generation": false,
+    "allowed_outputs": [
+      "preserve",
+      "veto",
+      "cooldown"
+    ],
+    "may_create_reverse_or_increase_risk": false,
+    "may_block_reduction_complement_lock_stop_close_or_recovery": false,
+    "invalid_unavailable_or_not_yet_effective": "preserve_deterministic_policy"
+  },
+  "cases": {
+    "one_per_condition": true,
+    "creation_time": "earliest_frozen_candidate_decision",
+    "case_receipt": "exact_source_bound_wall_and_monotonic_host_receipt_not_derived",
+    "maximum_case_assembly_lateness_ms": 250,
+    "payload": "hash_bound_causal_numeric_packet_without_targets_secrets_future_books_or_future_pnl",
+    "outcome_or_resolution": false,
+    "provider_prompt_injection_content": false,
+    "permission_effective_time": "case_receipt_plus_measured_queue_and_inference_latency",
+    "earlier_decisions": "preserve_deterministic_policy",
+    "feature_support_eligibility_hash_bound": true,
+    "feature_support_ineligible": "deterministic_policy_already_blocks_new_directional_entry"
+  },
+  "models": {
+    "candidates": [
+      "qwen3.5:9b",
+      "fin-r1:8b",
+      "fino1:8b"
+    ],
+    "minimum_parameters_b": 2,
+    "exact_immutable_weight_digest": true,
+    "strict_typed_json": true,
+    "prompt_contract": "polymarket-ai-veto-prompt-v4",
+    "positive_provider_usage": true,
+    "post_inference_gpu_residency": "required_when_ai_is_enabled",
+    "single_preloaded_worker": true,
+    "bounded_queue_latency": true,
+    "no_model_selected": true
+  },
+  "evaluation": {
+    "baseline": "same_deterministic_candidate_decisions_without_ai",
+    "matched_condition_population": true,
+    "profiles": 3,
+    "execution_scenarios": 27,
+    "minimum_matched_decisions": 300,
+    "matched_decision_count_unit": "unique_condition_id_and_decision_time_pairs_before_profile_or_scenario_expansion",
+    "minimum_non_tied_matched_actions": 30,
+    "paired_after_cost_utility_lower_95": "strictly_positive",
+    "maximum_drawdown": "not_worse",
+    "tail_loss": "not_worse",
+    "every_profile_and_execution_scenario_must_pass_independently": true,
+    "model_selection": "development_ai_qualification_only_before_one_use_sealed_test",
+    "development_qualification_selects_or_authorizes_ai": false,
+    "post_test_retuning": false
+  },
+  "independence": {
+    "execution_and_settlement_venue": "polymarket_only",
+    "binance_execution_or_account": false,
+    "optional_binance_data": "may_already_be_bound_inside_the_model_probability_packet_only",
+    "ai_provider": "local_ollama_only",
+    "credentials_in_prompt_or_artifact": false
+  },
+  "research_basis": [
+    {
+      "url": "https://huggingface.co/Qwen/Qwen3.5-9B",
+      "use": "official_apache_2_general_reasoning_control_released_after_qwen3_8b"
+    },
+    {
+      "url": "https://arxiv.org/abs/2503.16252",
+      "use": "finance_reasoning_candidate_trained_with_supervised_and_reinforcement_learning"
+    },
+    {
+      "url": "https://huggingface.co/TheFinAI/Fino1-8B",
+      "use": "finance_reasoning_transfer_candidate"
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.13770",
+      "use": "temporal_look_ahead_risk_requires_post_release_prospective_market_evaluation"
+    },
+    {
+      "url": "https://openreview.net/pdf?id=Go9otu0U90",
+      "use": "prediction_market_llm_profitability_is_difficult_and_requires_market_relative_evaluation"
+    }
+  ],
+  "target_free_host_preflight": {
+    "model": "qwen3.5:9b",
+    "minimum_parameters_b": 2,
+    "minimum_valid_typed_responses": 1,
+    "maximum_provider_failures": 0,
+    "required_runtime": "gpu_resident",
+    "minimum_vram_residency_ratio": 0.99,
+    "market_target_or_outcome_in_prompt": false,
+    "compatibility_pass_is_predictive_edge": false,
+    "compatibility_pass_is_profitability": false
+  },
+  "authority": {
+    "capture_data_accessed": false,
+    "targets_accessed": false,
+    "ai_model_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "e056abc92f9ec6a45b9ea583c8b6a22d4de7ee5f366b2129c1ca417d3e497d9d"
+}

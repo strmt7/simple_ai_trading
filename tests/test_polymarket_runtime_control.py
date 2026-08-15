@@ -11,10 +11,12 @@ from simple_ai_trading.polymarket_live import (
     PolymarketLiveError,
 )
 from simple_ai_trading.polymarket_runtime_control import (
+    POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION,
     PolymarketRuntimeControl,
     PolymarketRuntimeControlService,
     PolymarketRuntimeLeaseInterlock,
 )
+from simple_ai_trading import polymarket_runtime_control as runtime_control_module
 
 
 def test_runtime_control_enforces_one_lease_and_persistent_stop(tmp_path) -> None:
@@ -46,6 +48,45 @@ def test_runtime_control_enforces_one_lease_and_persistent_stop(tmp_path) -> Non
     assert stopped.state == "stopped"
     assert stopped.lease_id == ""
     assert stopped.stop_epoch == 1
+
+
+def test_pause_is_durable_ordered_and_keeps_the_heartbeat_alive(tmp_path) -> None:
+    control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    lease = control.acquire(owner_process_id=101)
+    entered = Event()
+    release = Event()
+    paused = Event()
+
+    def hold_submission() -> None:
+        with control.submission_guard(lease):
+            entered.set()
+            assert release.wait(timeout=5)
+
+    def request_pause() -> None:
+        control.set_paused(True, reason="operator_pause")
+        paused.set()
+
+    holder = Thread(target=hold_submission)
+    pauser = Thread(target=request_pause)
+    holder.start()
+    assert entered.wait(timeout=5)
+    pauser.start()
+    assert not paused.wait(timeout=0.1)
+    release.set()
+    holder.join(timeout=5)
+    pauser.join(timeout=5)
+
+    snapshot = control.snapshot()
+    assert snapshot.paused is True
+    assert snapshot.pause_epoch == 1
+    assert control.heartbeat(lease) is True
+    with pytest.raises(PolymarketLiveBlocked, match="does not permit"):
+        control.assert_opening_allowed(lease)
+
+    resumed = control.set_paused(False, reason="operator_resume")
+    assert resumed.paused is False
+    assert resumed.pause_epoch == 2
+    control.assert_opening_allowed(lease)
 
 
 def test_stop_is_ordered_after_an_inflight_submission_guard(tmp_path) -> None:
@@ -207,3 +248,157 @@ def test_control_service_turns_external_stop_into_shutdown(tmp_path) -> None:
         control.release(lease, reason="owned_exposure_closed")
 
     asyncio.run(scenario())
+
+
+def test_control_service_applies_external_pause_and_resume(tmp_path) -> None:
+    async def scenario() -> None:
+        control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+        lease = control.acquire(owner_process_id=101)
+        service = PolymarketRuntimeControlService(
+            control,
+            lease_id=lease,
+            heartbeat_interval_seconds=1,
+            stop_poll_interval_seconds=0.1,
+        )
+        services_stop = asyncio.Event()
+        shutdown = asyncio.Event()
+        paused = asyncio.Event()
+        resumed = asyncio.Event()
+        task = asyncio.create_task(
+            service.run(
+                services_stop,
+                request_stop=shutdown.set,
+                pause_runtime=paused.set,
+                resume_runtime=resumed.set,
+            )
+        )
+        await asyncio.sleep(0)
+        control.set_paused(True, reason="operator_pause")
+        await asyncio.wait_for(paused.wait(), timeout=2)
+        control.set_paused(False, reason="operator_resume")
+        await asyncio.wait_for(resumed.wait(), timeout=2)
+        assert shutdown.is_set() is False
+        services_stop.set()
+        await asyncio.wait_for(task, timeout=2)
+        control.release(lease, reason="test_complete")
+
+    asyncio.run(scenario())
+
+
+def _write_v1_runtime_control(path, legacy, *, record_sha256=None) -> None:
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            """
+            CREATE TABLE polymarket_runtime_control (
+                singleton INTEGER PRIMARY KEY,
+                schema_version TEXT NOT NULL,
+                state TEXT NOT NULL,
+                lease_id TEXT NOT NULL,
+                owner_process_id INTEGER NOT NULL,
+                started_at_ms INTEGER NOT NULL,
+                heartbeat_at_ms INTEGER NOT NULL,
+                stop_epoch INTEGER NOT NULL,
+                stop_requested_at_ms INTEGER NOT NULL,
+                stop_reason TEXT NOT NULL,
+                updated_at_ms INTEGER NOT NULL,
+                record_sha256 TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            "INSERT INTO polymarket_runtime_control VALUES "
+            "(1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                *legacy.values(),
+                record_sha256 or runtime_control_module._canonical_sha256(legacy),
+            ],
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def test_runtime_control_migrates_a_hash_valid_v1_record(tmp_path) -> None:
+    path = tmp_path / "ownership.sqlite3"
+    legacy = {
+        "schema_version": "polymarket-runtime-control-v1",
+        "state": "stopped",
+        "lease_id": "",
+        "owner_process_id": 0,
+        "started_at_ms": 0,
+        "heartbeat_at_ms": 0,
+        "stop_epoch": 3,
+        "stop_requested_at_ms": 123,
+        "stop_reason": "legacy_stop_complete",
+        "updated_at_ms": 456,
+    }
+    _write_v1_runtime_control(path, legacy)
+
+    snapshot = PolymarketRuntimeControl(path).snapshot()
+
+    assert snapshot.state == "stopped"
+    assert snapshot.stop_epoch == 3
+    assert snapshot.paused is False
+    assert snapshot.pause_epoch == 0
+    connection = sqlite3.connect(path)
+    try:
+        row = connection.execute(
+            "SELECT schema_version, pause_reason FROM polymarket_runtime_control"
+        ).fetchone()
+    finally:
+        connection.close()
+    assert row == (POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION, "migrated_from_v1")
+
+
+def test_runtime_control_rejects_tampered_v1_without_partial_migration(
+    tmp_path,
+) -> None:
+    path = tmp_path / "ownership.sqlite3"
+    legacy = {
+        "schema_version": "polymarket-runtime-control-v1",
+        "state": "running",
+        "lease_id": "legacy-lease",
+        "owner_process_id": 101,
+        "started_at_ms": 100,
+        "heartbeat_at_ms": 200,
+        "stop_epoch": 0,
+        "stop_requested_at_ms": 0,
+        "stop_reason": "",
+        "updated_at_ms": 200,
+    }
+    _write_v1_runtime_control(path, legacy, record_sha256="0" * 64)
+
+    with pytest.raises(PolymarketLiveError, match="v1 record differs"):
+        PolymarketRuntimeControl(path).snapshot()
+
+    connection = sqlite3.connect(path)
+    try:
+        columns = {
+            str(row[1])
+            for row in connection.execute(
+                "PRAGMA table_info(polymarket_runtime_control)"
+            ).fetchall()
+        }
+    finally:
+        connection.close()
+    assert "paused" not in columns
+
+
+def test_resume_rejects_stale_heartbeat_and_preserves_pause(tmp_path) -> None:
+    now = [100_000]
+    control = PolymarketRuntimeControl(
+        tmp_path / "ownership.sqlite3",
+        maximum_heartbeat_age_ms=5_000,
+        clock_ms=lambda: now[0],
+    )
+    control.acquire(owner_process_id=101)
+    control.set_paused(True, reason="operator_pause")
+    now[0] += 5_001
+
+    with pytest.raises(PolymarketLiveBlocked, match="heartbeat is stale"):
+        control.set_paused(False, reason="operator_resume")
+
+    snapshot = control.snapshot()
+    assert snapshot.paused is True
+    assert snapshot.pause_epoch == 1

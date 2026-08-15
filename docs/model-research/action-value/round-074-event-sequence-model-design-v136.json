@@ -1,0 +1,109 @@
+{
+  "artifact_kind": "target_free_pretraining_mask_objective_correction",
+  "authority": {
+    "live_trading": false,
+    "paper_trading": false,
+    "testnet_trading": false
+  },
+  "created_at_utc": "2026-08-10T13:25:16.193569+00:00",
+  "defect": {
+    "masked_continuous_features_were_zeroed_before_target_delta_construction": true,
+    "masked_dimensions_remained_in_continuous_loss_denominator": true,
+    "supervised_market_target_or_execution_objective_defect": false,
+    "trivial_zero_targets_diluted_admissible_feature_gradients": true
+  },
+  "design_sha256": "2016c8ff6b06ec5a007e501f42aef9c35a9a82ddbad262b3822a4a90cbaa93be",
+  "evidence_boundary": {
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "predictive_accuracy_established": false,
+    "profitability_established": false,
+    "representative_training_completed": false
+  },
+  "objective_contract": {
+    "all_continuous_features_masked_policy": "fail_closed",
+    "continuous_loss_denominator": "active_event_transition_and_unmasked_dimension_mean",
+    "continuous_loss_dimensions": "unmasked_continuous_features_only",
+    "continuous_target": "next_scaled_feature_delta",
+    "invalid_duplicate_or_out_of_range_mask_policy": "fail_closed_before_tensor_indexing",
+    "masked_continuous_target_policy": "exclude_from_loss_not_zero_impute",
+    "model_input_for_masked_feature": "zero_at_every_event",
+    "next_event_type_target": "original_observed_event_type",
+    "pretraining_uses_supervised_payoff_path_risk_or_execution_targets": false,
+    "temporary_pretraining_head_persisted": false
+  },
+  "research_basis": [
+    {
+      "title": "LOBERT: Generative AI Foundation Model for Limit Order Book Messages",
+      "url": "https://arxiv.org/abs/2511.12563",
+      "use": "Retain message-level next-event self-supervision while preserving continuous price, volume, and time representations."
+    },
+    {
+      "title": "Self-Supervised Pretext Tasks for Event Sequence Data from Detecting Misalignment",
+      "url": "https://openreview.net/forum?id=zc101QzXtw",
+      "use": "Keep event-time and event-type self-supervision target-free and separate from downstream financial outcomes."
+    },
+    {
+      "title": "TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data",
+      "url": "https://arxiv.org/abs/2502.15757",
+      "use": "Retain simple controls and after-cost complexity promotion because predictive architecture gains can deteriorate after spread costs."
+    }
+  ],
+  "round": 74,
+  "schema_contract": {
+    "causal_next_event_pretraining": "round-074-causal-next-event-pretraining-v5",
+    "event_model": "round-074-event-payoff-model-v13",
+    "event_training": "round-074-event-training-v39",
+    "pretest_policy": "round-074-event-pretest-policy-v38"
+  },
+  "schema_version": "round-074-event-sequence-model-design-v136",
+  "source_binding": {
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_pretraining.py",
+        "sha256": "ceebcde40ecdec11ac325e1074d6f277064e4c4e73ea9ffa29362d96e8ab53b9"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+        "sha256": "e8c8f97d0224599530170369b877fc53cecb078f2f13e4107b6b3b3e76a80d12"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_training.py",
+        "sha256": "ba5f396bcae9184ede3d0cd39c75920f7049a1f902510a7f5694b04cd568b789"
+      },
+      {
+        "path": "tools/publish_round74_pretraining_mask_contract.py",
+        "sha256": "1ba090aa6ed54e3ada772e1433042d1381463946abd7238d2426d333818a8f65"
+      }
+    ],
+    "predecessor_design": {
+      "design_sha256": "8a1f22831a88de9a95634939780ba357344e1bacefe49604b0fe56e1f53f20d4",
+      "file_sha256": "2fd1096879b5708503ac227d1154bfa0c0b174cdec04272b78eae2890c72bcd1",
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v135.json"
+    }
+  },
+  "source_files_are_authoritative_by_sha256": true,
+  "source_git_base_commit": "d2ff8e75a7a00bd44394f2664eb9880f42581dfd",
+  "source_git_clean_required": false,
+  "supersedes_artifact_sha256": "8a1f22831a88de9a95634939780ba357344e1bacefe49604b0fe56e1f53f20d4",
+  "unchanged_contract": {
+    "ai_role_changed": false,
+    "candidate_panel_changed": false,
+    "capture_population_or_roles_changed": false,
+    "complexity_promotion_gate_changed": false,
+    "cost_latency_funding_or_l2_execution_gate_changed": false,
+    "feature_views_changed": false,
+    "sealed_one_use_test_changed": false,
+    "supervised_distributional_loss_changed": false,
+    "trading_runtime_or_authority_changed": false,
+    "training_tuning_calibration_or_test_roles_changed": false
+  },
+  "verification": {
+    "focused_command": "python -m pytest tests/test_impact_absorption_event_training.py -k 'causal_next_event_pretraining or market_state_pretraining or pretraining_continuous_loss or pretraining_rejects_invalid' -q",
+    "focused_tests_passed": 9,
+    "representative_market_training_run": false,
+    "ruff_affected_files_passed": true,
+    "sealed_test_accessed": false
+  }
+}

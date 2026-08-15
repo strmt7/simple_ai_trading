@@ -1,0 +1,123 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v134",
+  "artifact_kind": "post_campaign_late_adjudication_integration",
+  "created_utc": "2026-08-03T14:49:50.4826012Z",
+  "supersedes_artifact_sha256": "1b1dd0d1f937a315d1688b98ab642cd6eb035f5fca703fdcdecc45ea723bac19",
+  "implementation_git_commit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "source_binding": {
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/round74_segmented_development_inputs.py",
+        "sha256": "63f99a0c57fd06829f73604cdca4f0d852250b1d097a813d55c5b99206baa49e"
+      },
+      {
+        "path": "tools/build_round74_segmented_recovery_outcomes.py",
+        "sha256": "cad8d3e24429c38fc3b27262c312152fc29bc1f2492825a01fab86d17085fa5a"
+      }
+    ],
+    "affected_tests": [
+      {
+        "path": "tests/test_round74_segmented_development_inputs.py",
+        "sha256": "50463db3aaeb733ea788cca62340504d2b3f401a9f8faf89bddb4770e03fcd74"
+      },
+      {
+        "path": "tests/test_round74_segmented_recovery_tool.py",
+        "sha256": "5e76c0573bfa22d9fa3862f5f1eac3230e7696f6a6d6735b137c2de600134b2e"
+      }
+    ],
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v133.json",
+      "sha256": "79aef6679c6cc77c89b01d77cdc379193972a404e41ec2869606cc9743755ca0"
+    }
+  },
+  "schema_contract": {
+    "late_adjudication": "round-074-segmented-late-adjudication-v1",
+    "missed_recovery": "round-074-segmented-recovery-outcome-v1",
+    "recovery_builder": "round-074-segmented-recovery-build-v2",
+    "terminal_coverage": "round-074-segmented-terminal-coverage-v2",
+    "development_inputs": "round-074-segmented-development-inputs-v2"
+  },
+  "defect": {
+    "scheduler_can_terminate_during_post_capture_audit": true,
+    "complete_supervisor_and_original_run_can_survive_without_result": true,
+    "prior_recovery_classified_every_resultless_slot_as_missed": true,
+    "admissible_original_capture_could_be_discarded": true,
+    "market_window_retry_required_for_correction": false,
+    "active_campaign_source_or_plan_changed": false
+  },
+  "declared_delta": {
+    "summary": "After the prospective schedule is terminal, fresh-audit every result-less original capture and preserve its deterministic admitted or transport-excluded outcome without retrying or rewriting the market window.",
+    "capture_protocol_changed": false,
+    "campaign_plan_changed": false,
+    "slot_schedule_changed": false,
+    "admission_gate_changed": false,
+    "transport_exclusion_gate_changed": false,
+    "target_or_model_logic_changed": false,
+    "late_evidence_type_added": true,
+    "generic_missed_recovery_retained": true,
+    "runtime_trading_path_changed": false
+  },
+  "late_adjudication_contract": {
+    "campaign_must_be_terminal": true,
+    "result_json_must_be_absent": true,
+    "complete_original_slot_file_panel_required": true,
+    "every_surviving_slot_file_hash_bound": true,
+    "reservation_identity_and_schedule_revalidated": true,
+    "original_supervisor_revalidated": true,
+    "captured_run_must_route_to_exactly_one_supplied_shard": true,
+    "database_wal_must_be_absent": true,
+    "fresh_exact_wire_and_causal_epoch_audit_required": true,
+    "same_frozen_admission_and_transport_gates_reused": true,
+    "market_window_retry_permitted": false,
+    "slot_file_rewrite_permitted": false,
+    "target_data_accessed": false,
+    "model_training_or_evaluation_performed": false,
+    "late_admitted_outcome_requires_original_capture_to_pass_all_gates": true,
+    "malformed_or_incomplete_resultless_evidence_remains_missed": true,
+    "captured_run_cannot_be_silently_downgraded_without_database_shards": true
+  },
+  "efficiency_contract": {
+    "late_audit_applies_only_to_resultless_slots": true,
+    "captured_run_routes_built_by_one_query_per_shard": true,
+    "each_late_captured_run_audited_once": true,
+    "database_shards_opened_read_only_one_at_a_time": true,
+    "additional_capture_or_market_api_usage": false,
+    "full_database_physical_hash_required": false,
+    "reason_full_database_hash_omitted": "fresh run-level cryptographic audit and later independent run replay bind the original evidence without rereading unrelated shard bytes"
+  },
+  "verification": {
+    "affected_segmented_input_runtime_tests_passed": 30,
+    "terminal_only_late_adjudication_tested": true,
+    "slot_file_tamper_rejection_tested": true,
+    "immutable_reload_tested": true,
+    "late_evidence_loader_dispatch_tested": true,
+    "captured_run_requires_database_tested": true,
+    "ruff_format_check_passed": true,
+    "ruff_check_passed": true,
+    "post_campaign_live_recovery_run": false,
+    "representative_market_training_run": false,
+    "representative_market_backtest_run": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "campaign_terminal": false,
+    "late_recovery_panel_built": false,
+    "representative_configuration_selected": false,
+    "representative_training_completed": false,
+    "representative_sealed_evaluation_completed": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "0180c8ff5f23108802417e04db5c33a9eab842de7cb663ddc3d2d021e4e58ee5"
+}

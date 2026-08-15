@@ -534,7 +534,7 @@ Round 59 tested whether causally observed positive BTCUSDT, ETHUSDT, and SOLUSDT
 
 Positive funding usually remained positive at the next settlement, but ordinary positive-funding episodes did not clear four-leg costs. The rare `>=2` bps trigger produced positive mean seven-day carry after the 32 bps stress reference, yet only 20 BTC, 20 ETH, and 25 SOL non-overlapping episodes existed versus 40 required. BTC and SOL lower 95% mean bounds remained below zero. All 27 symbol cells and all nine BTC/ETH/SOL breadth cells failed, so spot-history ingestion is not authorized.
 
-| Seven-day evidence | P(next positive \| positive) | Ordinary trigger gross mean (bps) | `>=2` bps episodes | `>=2` mean after 32 bps | Median after 32 bps | Lower 95% mean after 32 bps |
+| Seven-day evidence | P(next positive \\| positive) | Ordinary trigger gross mean (bps) | `>=2` bps episodes | `>=2` mean after 32 bps | Median after 32 bps | Lower 95% mean after 32 bps |
 |---|---:|---:|---:|---:|---:|---:|
 {table}
 

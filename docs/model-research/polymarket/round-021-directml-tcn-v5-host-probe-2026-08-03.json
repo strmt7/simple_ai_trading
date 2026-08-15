@@ -1,0 +1,55 @@
+{
+  "schema_version": "polymarket-round21-directml-tcn-v5-host-probe-v1",
+  "observed_at_ms": 1785755490812,
+  "repository_commit_oid": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "repository_worktree_clean": false,
+  "model_design_sha256": "288fba0587c060865d07275b75f29711fb368d04691bc70d4ac0fe832359d645",
+  "source_sha256": {
+    "src/simple_ai_trading/polymarket_round21_model.py": "a5a93c2bee9c45baa85126a08be1d80b011032be7b5338ba5586f06e89ea78b5",
+    "src/simple_ai_trading/polymarket_round21_tcn.py": "6d26268ee464438834a13797099fa3673b76c6b5d48c61dda76be66661bc6ec9"
+  },
+  "host": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10"
+  },
+  "packages": {
+    "numpy": "2.2.6",
+    "torch": "2.4.1",
+    "torch-directml": "0.2.5.dev240914"
+  },
+  "compute": {
+    "requested": "directml",
+    "backend_kind": "directml",
+    "backend_device": "privateuseone:0",
+    "backend_vendor": "AMD Radeon RX 9070 XT",
+    "fallback_observed": false
+  },
+  "fixture": {
+    "synthetic": true,
+    "financial_data_used": false,
+    "condition_count": 32,
+    "rows_per_condition": 1200,
+    "decision_cadence_ms": 250,
+    "feature_count": 3,
+    "maximum_epochs_overridden_for_probe": 2,
+    "training_seed": 21021
+  },
+  "result": {
+    "elapsed_seconds": "0.076867",
+    "epochs_run": 2,
+    "best_epoch": 2,
+    "payload_valid": true,
+    "state_sha256": "5a31eaa0fb204b81d13f2d2e0cf1f4ee3a7ae267acf31065522101df4032e165",
+    "training_endpoint_sampling": "eight_target_blind_seeded_rotating_stratified_rows_per_condition_per_epoch",
+    "training_endpoint_epoch_stride": "smallest_coprime_at_or_above_floor_987_over_1597_of_stratum_width",
+    "early_stopping_endpoint_sampling": "eight_fixed_midpoint_stratified_rows_per_condition"
+  },
+  "semantics": {
+    "predictive_or_economic_evidence": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false,
+    "reproducibility_proof": false
+  },
+  "artifact_sha256": "4eaced2ad2b5f185b58f6bf62ac5ab76104d8eb113e47dbd9844899b34084e0d"
+}

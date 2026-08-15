@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path, PurePosixPath
+import tomllib
 from unittest import mock
 
 from tools import vulture_check
@@ -206,12 +207,15 @@ def test_full_test_workflows_use_locked_uv_environments() -> None:
     setup_uv = "astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990"
     assert ci.count(setup_uv) == 2
     assert setup_uv in release
-    assert 'version: "0.11.29"' in ci
-    assert 'version: "0.11.29"' in release
-    assert "uv sync --locked --extra foundation-ai --extra gpu --group test" in ci
+    assert ci.count('version: "0.12.1"') == 2
+    assert 'version: "0.12.1"' in release
     assert (
-        "uv sync --locked --extra foundation-ai --extra gpu --group test "
-        "--group release" in release
+        "uv sync --locked --extra foundation-ai --extra gpu --extra polymarket-live "
+        "--extra reporting --group test" in ci
+    )
+    assert (
+        "uv sync --locked --extra foundation-ai --extra gpu --extra polymarket-live "
+        "--extra reporting --group test --group release" in release
     )
     assert "pip install" not in ci
     assert "pip install" not in release
@@ -271,3 +275,92 @@ def test_vulture_command_uses_active_interpreter_and_strict_confidence() -> None
         "100",
         "src/simple_ai_trading/risk_controls.py",
     ]
+
+
+def test_vulture_scan_falls_back_to_api_on_windows_command_length() -> None:
+    scanner = mock.Mock()
+    module = mock.Mock()
+    module.Vulture.return_value = scanner
+    scanner.get_unused_code.return_value = []
+    error = OSError("command line is too long")
+    error.winerror = 206
+
+    with (
+        mock.patch("tools.vulture_check.subprocess.run", side_effect=error),
+        mock.patch("tools.vulture_check.importlib.import_module", return_value=module),
+    ):
+        assert (
+            vulture_check.run_vulture(
+                ROOT,
+                ["src/simple_ai_trading/risk_controls.py"],
+                min_confidence=100,
+            )
+            == 0
+        )
+
+    scanner.scavenge.assert_called_once_with(["src/simple_ai_trading/risk_controls.py"])
+    scanner.get_unused_code.assert_called_once_with(min_confidence=100)
+
+
+def test_vulture_scan_ignores_only_bound_protocol_keyword_false_positive() -> None:
+    expected = {
+        (
+            "src/simple_ai_trading/polymarket_round25_resolution_store.py",
+            116,
+            "unused variable 'allow_redirects'",
+        ),
+        (
+            "src/simple_ai_trading/polymarket_historical_l2.py",
+            108,
+            "unused variable 'allow_redirects'",
+        ),
+        (
+            "src/simple_ai_trading/polymarket_round22_ingestion.py",
+            94,
+            "unused variable 'allow_redirects'",
+        ),
+        (
+            "src/simple_ai_trading/polymarket_round22_targets.py",
+            90,
+            "unused variable 'allow_redirects'",
+        ),
+        (
+            "src/simple_ai_trading/polymarket_round23_binance.py",
+            76,
+            "unused variable 'allow_redirects'",
+        ),
+    }
+    assert vulture_check.IGNORED_FINDINGS == expected
+    findings = "".join(
+        f"{path.replace('/', chr(92))}:{line}: {message} (100% confidence)\n"
+        for path, line, message in sorted(expected)
+    )
+    completed = mock.Mock(returncode=1, stdout=findings, stderr="")
+
+    with mock.patch("tools.vulture_check.subprocess.run", return_value=completed):
+        assert (
+            vulture_check.run_vulture(
+                ROOT,
+                ["src/simple_ai_trading/polymarket_round25_resolution_store.py"],
+                min_confidence=100,
+            )
+            == 0
+        )
+
+
+def test_accelerator_lock_excludes_vulnerable_legacy_directml_stack() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
+
+    assert project["tool"]["uv"]["required-version"] == ">=0.12.1,<0.13"
+    assert project["project"]["optional-dependencies"]["directml"] == [
+        "onnxruntime-directml==1.24.4; platform_system == 'Windows'"
+    ]
+
+    versions: dict[str, set[str]] = {}
+    for package in lock["package"]:
+        versions.setdefault(package["name"], set()).add(package["version"])
+    assert "torch-directml" not in versions
+    assert versions["torch"] == {"2.13.0"}
+    assert versions["h2"] == {"4.4.1"}
+    assert versions["onnxruntime-directml"] == {"1.24.4"}

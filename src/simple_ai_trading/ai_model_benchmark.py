@@ -21,7 +21,7 @@ from .ai_runtime import estimate_model_parameters_b
 from .storage import write_json_atomic
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
-AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v10"
+AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v13"
 AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT = "finance-risk-review-ollama-response-v2"
 AI_MODEL_BENCHMARK_PROVIDER_FAILURE_CONTRACT = "finance-risk-review-provider-failure-v1"
 _PROVIDER_RESPONSE_MAX_BYTES = 256 * 1024
@@ -68,6 +68,22 @@ _RESPONSE_SCHEMA = {
 _RESPONSE_KEYS = frozenset(_RESPONSE_SCHEMA["required"])
 _ACTIONS = frozenset({"approve", "veto", "cooldown", "human_review"})
 
+
+def _emit_progress(
+    progress: BenchmarkProgress | None,
+    phase: str,
+    payload: Mapping[str, object],
+) -> None:
+    """Keep observability failures outside the benchmark outcome."""
+
+    if progress is None:
+        return
+    try:
+        progress(phase, payload)
+    except Exception:
+        return
+
+
 _JSON_RESPONSE_INSTRUCTION = (
     "Return exactly one JSON object and no surrounding text. The object must contain "
     "exactly these fields: action (approve, veto, cooldown, or human_review), "
@@ -94,6 +110,7 @@ class AIProviderHTTPError(RuntimeError):
         self.captured_body = bytes(captured_body)
         self.body_truncated = bool(body_truncated)
         super().__init__(f"HTTP {self.status}: {self.reason}")
+
 
 _CONCEPT_ALIASES = {
     "reconcile": ("reconcil", "verify exchange state", "verify open orders"),
@@ -814,8 +831,7 @@ def _validated_provider_failure(value: object) -> dict[str, object] | None:
             or len(str(failure["reason"])) > 200
             or isinstance(failure.get("captured_body_bytes"), bool)
             or failure.get("captured_body_bytes") != len(body)
-            or failure.get("captured_body_sha256")
-            != hashlib.sha256(body).hexdigest()
+            or failure.get("captured_body_sha256") != hashlib.sha256(body).hexdigest()
             or body.decode("utf-8", errors="replace") != body_text
             or len(body) > _PROVIDER_ERROR_BODY_MAX_BYTES
             or not isinstance(failure.get("body_truncated"), bool)
@@ -1096,9 +1112,7 @@ def _result_from_case_results(
                 f"{item.get('name')}: provider_error={item['provider_error']}"
             )
         try:
-            provider_failure = _validated_provider_failure(
-                item.get("provider_failure")
-            )
+            provider_failure = _validated_provider_failure(item.get("provider_failure"))
             if (
                 item.get("provider_response_contract")
                 != AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT
@@ -1444,16 +1458,16 @@ def benchmark_finance_ai_models(
     tests = default_finance_ai_test_cases()
     results: list[AIModelBenchmarkResult] = []
     for model_index, model in enumerate(selected_models, start=1):
-        if progress is not None:
-            progress(
-                "model_started",
-                {
-                    "model": model,
-                    "model_index": model_index,
-                    "model_count": len(selected_models),
-                    "case_count": len(tests),
-                },
-            )
+        _emit_progress(
+            progress,
+            "model_started",
+            {
+                "model": model,
+                "model_index": model_index,
+                "model_count": len(selected_models),
+                "case_count": len(tests),
+            },
+        )
         case_results: list[dict[str, object]] = []
         for case_index, case in enumerate(tests, start=1):
             request = {
@@ -1504,37 +1518,35 @@ def benchmark_finance_ai_models(
                 provider_failure=provider_failure,
             )
             case_results.append(result)
-            if progress is not None:
-                progress(
-                    "case_complete",
-                    {
-                        "model": model,
-                        "model_index": model_index,
-                        "model_count": len(selected_models),
-                        "case": case.name,
-                        "case_index": case_index,
-                        "case_count": len(tests),
-                        "action_match": bool(result.get("action_match")),
-                        "latency_seconds": float(result.get("latency_seconds") or 0.0),
-                        "prompt_tokens": (
-                            0
-                            if provider_usage is None
-                            else provider_usage["prompt_eval_count"]
-                        ),
-                        "output_tokens": (
-                            0
-                            if provider_usage is None
-                            else provider_usage["eval_count"]
-                        ),
-                        "provider_telemetry_valid": provider_usage is not None,
-                        "provider_error": provider_error,
-                        "provider_http_status": (
-                            None
-                            if provider_failure is None
-                            else provider_failure.get("http_status")
-                        ),
-                    },
-                )
+            _emit_progress(
+                progress,
+                "case_complete",
+                {
+                    "model": model,
+                    "model_index": model_index,
+                    "model_count": len(selected_models),
+                    "case": case.name,
+                    "case_index": case_index,
+                    "case_count": len(tests),
+                    "action_match": bool(result.get("action_match")),
+                    "latency_seconds": float(result.get("latency_seconds") or 0.0),
+                    "prompt_tokens": (
+                        0
+                        if provider_usage is None
+                        else provider_usage["prompt_eval_count"]
+                    ),
+                    "output_tokens": (
+                        0 if provider_usage is None else provider_usage["eval_count"]
+                    ),
+                    "provider_telemetry_valid": provider_usage is not None,
+                    "provider_error": provider_error,
+                    "provider_http_status": (
+                        None
+                        if provider_failure is None
+                        else provider_failure.get("http_status")
+                    ),
+                },
+            )
         model_result = _result_from_case_results(
             model=model,
             installed=model.lower() in installed_set,
@@ -1542,19 +1554,19 @@ def benchmark_finance_ai_models(
             minimum_score=minimum_score,
         )
         results.append(model_result)
-        if progress is not None:
-            progress(
-                "model_complete",
-                {
-                    "model": model,
-                    "model_index": model_index,
-                    "model_count": len(selected_models),
-                    "passed": model_result.passed,
-                    "score": model_result.score,
-                    "prompt_tokens": model_result.total_prompt_token_count,
-                    "output_tokens": model_result.total_output_token_count,
-                },
-            )
+        _emit_progress(
+            progress,
+            "model_complete",
+            {
+                "model": model,
+                "model_index": model_index,
+                "model_count": len(selected_models),
+                "passed": model_result.passed,
+                "score": model_result.score,
+                "prompt_tokens": model_result.total_prompt_token_count,
+                "output_tokens": model_result.total_output_token_count,
+            },
+        )
     ranked = _rank_results(results)
     selected = next((item.model for item in ranked if item.passed), None)
     return AIModelBenchmarkReport(

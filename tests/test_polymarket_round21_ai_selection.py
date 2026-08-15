@@ -33,7 +33,7 @@ DESIGN_PATH = (
     / "docs"
     / "model-research"
     / "polymarket"
-    / "round-021-ai-candidate-selection-design-v1.json"
+    / "round-021-ai-candidate-selection-design-v7.json"
 )
 EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 
@@ -67,9 +67,7 @@ def _delta(
         profile=profile,
         scenario=scenario,
         baseline_replay_sha256=_sha(f"baseline:{profile}:{scenario}"),
-        challenger_replay_sha256=_sha(
-            f"challenger:{model}:{profile}:{scenario}"
-        ),
+        challenger_replay_sha256=_sha(f"challenger:{model}:{profile}:{scenario}"),
         matched_condition_count=400,
         net_pnl_delta_quote=Decimal("2"),
         mean_condition_utility_delta_quote=Decimal("0.01"),
@@ -133,7 +131,7 @@ def _comparison(
 
 def _comparisons() -> tuple[Round21AIMatchedComparison, ...]:
     return (
-        _comparison("qwen3:8b", lower="0.01"),
+        _comparison("qwen3.5:9b", lower="0.01"),
         _comparison("fin-r1:8b", lower="0.02"),
         _comparison("fino1:8b", lower="0.03"),
     )
@@ -144,10 +142,7 @@ def test_round21_ai_selection_design_is_canonical_and_non_authoritative() -> Non
 
     validated = validate_round21_ai_candidate_selection_design(value)
 
-    assert (
-        validated["design_sha256"]
-        == POLYMARKET_ROUND21_AI_SELECTION_DESIGN_SHA256
-    )
+    assert validated["design_sha256"] == POLYMARKET_ROUND21_AI_SELECTION_DESIGN_SHA256
     assert validated["candidate_program"]["models"] == list(
         POLYMARKET_ROUND21_AI_CANDIDATES
     )
@@ -180,7 +175,7 @@ def test_round21_ai_selection_nominates_worst_case_after_cost_winner_only() -> N
 
 def test_round21_ai_selection_uses_drawdown_only_after_primary_tie() -> None:
     comparisons = (
-        _comparison("qwen3:8b", lower="0.02", drawdown_delta="-0.002"),
+        _comparison("qwen3.5:9b", lower="0.02", drawdown_delta="-0.002"),
         _comparison("fin-r1:8b", lower="0.02", drawdown_delta="-0.004"),
         _comparison("fino1:8b", lower="0.01", drawdown_delta="-0.010"),
     )
@@ -201,8 +196,7 @@ def test_round21_ai_selection_keeps_rejections_and_nominates_none() -> None:
     assert selection.qualified_candidate_count == 0
     assert selection.nominated_model is None
     assert all(
-        score.rejection_reasons
-        == ("one_or_more_after_cost_ledgers_rejected",)
+        score.rejection_reasons == ("one_or_more_after_cost_ledgers_rejected",)
         for score in selection.scores
     )
 
@@ -258,4 +252,4 @@ def test_round21_ai_selection_rejects_nomination_tampering() -> None:
     selection = select_round21_ai_candidate(_comparisons())
 
     with pytest.raises(ValueError, match="candidate selection differs"):
-        replace(selection, nominated_model="qwen3:8b").validated()
+        replace(selection, nominated_model="qwen3.5:9b").validated()

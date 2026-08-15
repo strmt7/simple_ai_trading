@@ -1,0 +1,180 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v128",
+  "artifact_kind": "sharded_terminal_one_use_integration",
+  "created_utc": "2026-08-03T09:29:46.7005647Z",
+  "supersedes_artifact_sha256": "09ec6e519c7876025de4ea99bf6dec2037c35bbe9064097d3ac8546a523ce2c2",
+  "implementation_git_commit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "source_binding": {
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/round74_segmented_terminal_runtime.py",
+        "sha256": "ec4cd6eaac5063112cffcf6d0a40bdfe352173f3bf5de92ee9d622b1682b8b5d"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_segmented_terminal_cli.py",
+        "sha256": "4f245e943661ba91665ee1123b5325e87e3825a87af2a4dbfa5779ad4f62ee4d"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_terminal_one_use.py",
+        "sha256": "7b45528075c0296cd87d78546f6fd0c5f309644f810e1c6eecce1fbc89a5c96c"
+      },
+      {
+        "path": "src/simple_ai_trading/entrypoint.py",
+        "sha256": "153f7de934ceb3cf9e9505faab6cfbfe92346cbd7bec6532dacc07821331f3bb"
+      },
+      {
+        "path": "src/simple_ai_trading/command_contract.py",
+        "sha256": "29ff3c697bf75727c2ec7e8c9253583af703b86bab93e493af9426d34c242483"
+      },
+      {
+        "path": "native/windows/generated/command_contract.hpp",
+        "sha256": "9d7f02c4976bd24eb090fef81fd3eee04c88e276ee8c9ddd05d36714262786c9"
+      }
+    ],
+    "affected_tests": [
+      {
+        "path": "tests/test_round74_segmented_terminal_runtime.py",
+        "sha256": "09835728a28fc464c2871e3ff306fa5255e58d3f47fef8340808974b23eac008"
+      },
+      {
+        "path": "tests/test_round74_segmented_terminal_cli.py",
+        "sha256": "7ef10a67ce9473c2b8a31e5ce6528b7343491c47bcbe6b0d0883c50c3050ebc4"
+      },
+      {
+        "path": "tests/test_round74_terminal_one_use.py",
+        "sha256": "7e588548ea7d6b79b7412d8824f89b5f837efc42e45a2fa8fa7d912a9c292b01"
+      },
+      {
+        "path": "tests/test_ai_runtime_and_parity.py",
+        "sha256": "5575e6f93707378c190b8fe18d147d71d01a583c5c65cbfd09226d4d474bd5d9"
+      }
+    ],
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v127.json",
+      "sha256": "1158ffeb07e47f3e0e3147eb37eefa4cbd0994d5a3c4a64d3b485fb3fe971cfa"
+    },
+    "host_preflight": {
+      "path": "docs/model-research/action-value/round-074-terminal-host-preflight-2026-08-03.json",
+      "file_sha256": "187ae0a3c00c753f3942bc4c7eba364e544c8fb9eefbfa432627df4bcd18d79b",
+      "artifact_sha256": "ee8363becd7abf51ae6008fdf8e7481afadb7bb916ba5b60aa6872d59c04b57d"
+    }
+  },
+  "schema_contract": {
+    "terminal_preaccess": "round-074-terminal-preaccess-v2",
+    "terminal_access_claim": "round-074-terminal-access-claim-v1",
+    "terminal_result_bundle": "round-074-terminal-result-bundle-v1",
+    "terminal_database_route": "round-074-segmented-terminal-database-route-v1",
+    "terminal_run": "round-074-segmented-terminal-run-v1"
+  },
+  "declared_delta": {
+    "summary": "Replace the invalid single-store terminal assumption with a preaccess-bound federated route over the completed Round 74 capture shards.",
+    "model_architecture_changed": false,
+    "training_objective_changed": false,
+    "probability_calibration_changed": false,
+    "action_policy_changed": false,
+    "predictive_gate_changed": false,
+    "financial_gate_changed": false,
+    "ai_uplift_gate_changed": false,
+    "terminal_storage_topology_changed": true,
+    "one_use_identity_changed": true,
+    "cli_and_windows_metadata_changed": true,
+    "runtime_trading_path_changed": false
+  },
+  "database_route_contract": {
+    "operator_supplies_one_or_more_completed_databases": true,
+    "absolute_paths_enter_model_identity": false,
+    "test_run_route_discovered_without_target_artifact_access": true,
+    "every_test_run_must_exist_in_exactly_one_database": true,
+    "missing_test_run_rejected_before_reservation": true,
+    "duplicate_test_run_rejected_before_reservation": true,
+    "route_digest_bound_into_preaccess_before_target_loading": true,
+    "all_supplied_databases_idle_and_wal_free_before_reservation": true,
+    "all_supplied_databases_rechecked_before_target_replay": true,
+    "database_open_mode": "read_only_one_at_a_time",
+    "capture_database_copy_created": false,
+    "batch_order_restored_to_frozen_test_population": true,
+    "ai_execution_replay_order_restored_to_frozen_instruction_panel": true
+  },
+  "model_review": {
+    "architecture_change_justified_by_new_evidence": false,
+    "reason": "Current primary research reinforces feature quality, operational transaction validity, latency, and after-cost evaluation over unqualified depth increases; those controls already precede the one-use test and no representative development result yet justifies changing the frozen model family.",
+    "sources": [
+      {
+        "title": "Deep Limit Order Book Forecasting",
+        "url": "https://arxiv.org/abs/2403.09267",
+        "accessed_utc": "2026-08-03",
+        "used_for": "retain operational transaction and economic evaluation rather than treating forecast scores as tradability"
+      },
+      {
+        "title": "Exploring Microstructural Dynamics in Cryptocurrency Limit Order Books: Better Inputs Matter More Than Stacking Another Hidden Layer",
+        "url": "https://arxiv.org/abs/2506.05764",
+        "accessed_utc": "2026-08-03",
+        "used_for": "retain low-capacity controls and avoid adding model depth without representative evidence"
+      },
+      {
+        "title": "The Good, the Bad, and Latency: Exploratory Trading on Bybit and Binance",
+        "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4677989",
+        "accessed_utc": "2026-08-03",
+        "used_for": "retain delayed-book rewalk, adverse-selection measurement, and latency-aware execution evidence"
+      }
+    ]
+  },
+  "implementation_status": {
+    "single_database_default_removed": true,
+    "repeatable_database_cli_option_completed": true,
+    "windows_repeatable_option_metadata_generated": true,
+    "deterministic_multi_shard_route_completed": true,
+    "duplicate_and_missing_route_fail_closed": true,
+    "one_store_at_a_time_batch_assembly_completed": true,
+    "one_store_at_a_time_ai_execution_replay_completed": true,
+    "route_digest_persisted_in_one_use_preaccess": true,
+    "representative_terminal_run": false,
+    "sealed_test_accessed": false
+  },
+  "campaign_observation": {
+    "latest_completed_slot_observed": 347,
+    "slot_347_status": "admitted",
+    "slot_347_role": "training",
+    "slot_347_message_count": 703076,
+    "slot_347_frame_count": 288,
+    "slot_347_reconnect_count": 0,
+    "slot_347_exact_frame_audit_passed": true,
+    "capture_database_or_wal_opened_for_this_delta": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "verification": {
+    "focused_terminal_tests_passed": 20,
+    "multi_shard_route_tested": true,
+    "duplicate_route_rejection_tested": true,
+    "one_store_at_a_time_replay_tested": true,
+    "one_use_reserve_before_target_tested": true,
+    "terminal_failure_irreversibility_tested": true,
+    "cli_repeatable_database_parsing_tested": true,
+    "canonical_persistence_tested": true,
+    "ruff_lint_passed": true,
+    "ruff_format_passed": true,
+    "representative_market_backtest_run": false,
+    "sealed_test_accessed": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "representative_configuration_selected": false,
+    "representative_ai_qualification_completed": false,
+    "representative_sealed_evaluation_completed": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "44c901b72c21a6cfca674e1687a8ed33c74c986c6d7dd9421bbf1d214311e367"
+}

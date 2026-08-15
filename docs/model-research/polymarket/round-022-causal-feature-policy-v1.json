@@ -1,0 +1,114 @@
+{
+  "anti_leakage": {
+    "feature_availability_may_depend_on_target": false,
+    "future_book_state_allowed": false,
+    "inferred_trade_direction_allowed": false,
+    "official_resolution_allowed": false,
+    "outcome_price_or_winner_fields_allowed": false,
+    "sealed_test_role_allowed_during_development": false
+  },
+  "authority": {
+    "ai_edge_claim": false,
+    "execution_calibration": false,
+    "live_trading": false,
+    "model_data_eligible": false,
+    "paper_trading": false,
+    "profitability_claim": false,
+    "promotion": false
+  },
+  "clock_and_grid": {
+    "book_clock": "polymarket_server_timestamp_ms",
+    "earliest_sequence_eligible_offset_ms": 4000,
+    "earliest_tabular_eligible_offset_ms": 15000,
+    "feature_cadence_ms": 250,
+    "latest_model_eligible_offset_ms": 295000,
+    "maximum_book_age_ms": 1000,
+    "sequence_length": 16,
+    "source_state_rule": "latest_state_with_timestamp_strictly_before_decision",
+    "tabular_anchor_cadence_ms": 1000,
+    "transport_latency_interpretation": "unavailable_from_historical_source_and_required_from_round20_before_promotion"
+  },
+  "cross_outcome_features": {
+    "book_age": [
+      "up_age_ms",
+      "down_age_ms",
+      "absolute_age_skew_ms"
+    ],
+    "complement_consistency": [
+      "midpoint_sum_minus_one",
+      "microprice_sum_minus_one",
+      "buy_overround",
+      "sell_underround"
+    ],
+    "market_prior": "normalized_up_microprice_over_sum_of_up_and_down_microprices",
+    "prior_dynamics": {
+      "logit_return_windows_ms": [
+        1000,
+        5000,
+        15000
+      ],
+      "realized_logit_variation_windows_ms": [
+        1000,
+        5000,
+        15000
+      ],
+      "valid_grid_coverage_recorded_for_every_window": true
+    },
+    "time": [
+      "elapsed_fraction",
+      "remaining_seconds"
+    ]
+  },
+  "fixed_quote_impact": {
+    "fill_ratio_recorded_for_every_notional": true,
+    "maker_or_queue_assumption": false,
+    "notionals_usdc": [
+      5,
+      25,
+      100
+    ],
+    "unfilled_impact_value": 0.0,
+    "vwap_impact_basis": "signed_bps_from_same_side_best_quote_for_observed_partial_or_full_walk"
+  },
+  "optional_binance_predictor": {
+    "absence_blocks_core": false,
+    "account_data_allowed": false,
+    "credentials_allowed": false,
+    "execution_allowed": false,
+    "matched_ablation_required": true,
+    "public_btcusdt_spot_and_usdm_only": true,
+    "risk_or_stop_authority": false
+  },
+  "outcome_book_features": {
+    "depth_imbalance_levels": [
+      1,
+      5,
+      10,
+      20
+    ],
+    "depth_shape": "ols_coefficients_of_log1p_cumulative_shares_on_normalized_price_distance_and_squared_distance_top20",
+    "state_change": "one_second_top20_positive_and_negative_quantity_changes_by_side_normalized_by_mean_top20_depth_and_elapsed_seconds",
+    "state_change_is_trade_classification": false,
+    "static": [
+      "best_bid",
+      "best_ask",
+      "midpoint",
+      "spread",
+      "microprice",
+      "top_bid_size",
+      "top_ask_size",
+      "bid_depth_top20",
+      "ask_depth_top20",
+      "bid_level_count_top20",
+      "ask_level_count_top20"
+    ]
+  },
+  "parents": {
+    "pilot_design_sha256": "b37a9475d8b6ad0b4d2e9c53de3756baf44341f6e6d5097579052db7b99d1d2a",
+    "source_qualification_sha256": "3564d59d97899f9defae77c19655e942062342ac96f0f2365b6f9a75f5d7f050"
+  },
+  "round": 22,
+  "schema_version": "polymarket-round22-causal-feature-policy-v1",
+  "status": "frozen_before_feature_materialization_or_target_access",
+  "policy_sha256": "9de2a470a7ef64dc802e5fc4df88b8acfd20ad929a8afb5fd2704a1b94e4725e"
+}

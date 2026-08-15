@@ -32,6 +32,7 @@ from .polymarket_round16_model import (
     round16_feature_support_admission,
     round16_settlement_admission_mask,
 )
+from .polymarket_round16_targets import round16_target_implementation_manifest
 
 
 ROUND16_LIVE_LOOKBACK_SECONDS = 901
@@ -388,10 +389,14 @@ def load_verified_round16_shadow_predictor(
     evaluation_path: str | Path,
     expected_pretest_envelope_sha256: str,
     expected_evaluation_envelope_sha256: str,
+    expected_contract_file_sha256: str | None = None,
 ) -> VerifiedRound16ShadowPredictor:
     """Load only caller-pinned evidence that passed every predictive gate."""
 
-    contract = load_round16_historical_contract(contract_path)
+    contract = load_round16_historical_contract(
+        contract_path,
+        expected_file_sha256=expected_contract_file_sha256,
+    )
     pretest = _load_artifact(
         pretest_path,
         name="Round 16 pretest",
@@ -453,6 +458,9 @@ def load_verified_round16_shadow_predictor(
         ),
         "shared_model_primitives": _file_sha256(
             source_root / "polymarket_historical_model.py"
+        ),
+        "round16_target_manifest": str(
+            round16_target_implementation_manifest()["manifest_sha256"]
         ),
     }
     if pretest.get("implementation_sha256") != expected_implementation:

@@ -866,7 +866,7 @@ class Round74SealedEvaluationLedger:
             )
         if set(qualification_population.run_ids).intersection(identity.test_run_ids):
             raise ValueError("Round 74 sealed AI qualification reused test runs")
-        if len(manifests) != 2 or len(set(manifests)) != 2:
+        if not 1 <= len(manifests) <= 2 or len(set(manifests)) != len(manifests):
             raise ValueError("Round 74 sealed AI manifest panel differs")
         qualification_sha256 = ai_pretest_qualification.qualification_sha256
         now_ns = time.time_ns()

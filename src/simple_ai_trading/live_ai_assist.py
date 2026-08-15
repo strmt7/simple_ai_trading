@@ -29,6 +29,7 @@ from .meta_label import (
     META_LABEL_EVIDENCE_SCHEMA_VERSION,
     META_LABEL_MINIMUM_ACTION_SAMPLES,
 )
+from .transport_security import validate_local_http_base_url
 
 
 LIVE_AI_ENTRY_CASE_SCHEMA_VERSION = "live-ai-entry-case-v2"
@@ -848,7 +849,7 @@ class OllamaLiveAIEntryProvider:
     ) -> None:
         self.model = str(model).strip()
         self.expected_model_digest = str(expected_model_digest).strip().lower()
-        self.base_url = str(base_url).rstrip("/")
+        self.base_url = validate_local_http_base_url(base_url, label="Ollama live AI")
         self.timeout_seconds = max(0.1, float(timeout_seconds))
         self.seed = int(seed)
         if (
@@ -857,7 +858,6 @@ class OllamaLiveAIEntryProvider:
             or any(
                 value not in "0123456789abcdef" for value in self.expected_model_digest
             )
-            or not self.base_url.startswith(("http://", "https://"))
         ):
             raise ValueError("Ollama live AI provider configuration is invalid")
 
@@ -908,7 +908,9 @@ class OllamaLiveAIEntryProvider:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urlopen(request, timeout=self.timeout_seconds) as response:
+        with urlopen(  # nosec B310 - provider base is validated as loopback HTTP.
+            request, timeout=self.timeout_seconds
+        ) as response:
             raw_response = response.read(_MAX_PROVIDER_RESPONSE_BYTES + 1)
         if len(raw_response) > _MAX_PROVIDER_RESPONSE_BYTES:
             raise ValueError("Ollama response exceeds the bounded response budget")

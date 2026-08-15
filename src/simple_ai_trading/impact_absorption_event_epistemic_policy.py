@@ -33,7 +33,7 @@ from .impact_absorption_event_action_policy import (
 from .impact_absorption_event_dataset import Round74EventTrainingBatch
 from .impact_absorption_event_epistemic_evaluation import (
     ROUND74_EPISTEMIC_MINIMUM_STRATUM_ROWS,
-    ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS,
+    ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS,
     Round74EpistemicEvaluationBatch,
     Round74EpistemicRiskCoverageReport,
 )
@@ -45,12 +45,12 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EPISTEMIC_ACTION_FILTER_SCHEMA_VERSION = "round-074-epistemic-action-filter-v1"
+ROUND74_EPISTEMIC_ACTION_FILTER_SCHEMA_VERSION = "round-074-epistemic-action-filter-v2"
 ROUND74_EPISTEMIC_ACTION_FILTER_APPLICATION_SCHEMA_VERSION = (
     "round-074-epistemic-action-filter-application-v1"
 )
 ROUND74_EPISTEMIC_ACTION_REPLAY_CHALLENGE_SCHEMA_VERSION = (
-    "round-074-epistemic-action-replay-challenge-v1"
+    "round-074-epistemic-action-replay-challenge-v2"
 )
 ROUND74_EPISTEMIC_ACTION_FILTER_COMPONENTS = (
     "payoff_quantile_peer_dispersion",
@@ -162,7 +162,7 @@ class Round74EpistemicActionFilter:
             or _SHA256.fullmatch(self.tuning_subpartition_sha256) is None
             or _SHA256.fullmatch(self.probability_calibration_sha256) is None
             or len(self.source_run_ids)
-            != ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+            < ROUND74_EPISTEMIC_MINIMUM_POLICY_SELECTION_RUNS
             or len(set(self.source_run_ids)) != len(self.source_run_ids)
             or any(_RUN_ID.fullmatch(value) is None for value in self.source_run_ids)
             or len(self.source_batch_sha256) != len(self.source_run_ids)
@@ -395,7 +395,7 @@ def fit_round74_epistemic_action_filter(
     if (
         not report.policy_challenge_eligible
         or profile not in ROUND74_ACTION_PROFILES
-        or len(selected) != ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+        or len(selected) != len(expected_runs)
         or tuple(batch.batch_sha256 for batch in selected)
         != report.policy_selection_batch_sha256
         or tuple(batch.model_output_sha256 for batch in selected)
@@ -899,8 +899,7 @@ class Round74EpistemicActionReplayChallenge:
                     self.baseline_trace_sha256,
                 )
             )
-            or len(self.applications)
-            != ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+            or len(self.applications) != len(self.action_filter.source_run_ids)
             or any(
                 application.filter_sha256 != self.action_filter.filter_sha256
                 for application in self.applications
@@ -1139,7 +1138,7 @@ def _evaluate_round74_epistemic_action_replay_challenge(
         not baseline_policy.accepted
         or baseline_policy.selected_quantile is None
         or baseline_policy.selected_threshold_score is None
-        or len(selected_batches) != ROUND74_EPISTEMIC_REQUIRED_POLICY_SELECTION_RUNS
+        or len(selected_batches) != len(action_filter.source_run_ids)
         or len(selected_outputs) != len(selected_batches)
         or len(selected_candidates) != len(selected_batches)
         or tuple(batch.batch_sha256 for batch in selected_batches)

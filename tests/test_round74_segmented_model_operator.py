@@ -1031,12 +1031,17 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
         "train_calibrate_and_select_round74_development_policy",
         train,
     )
+
+    def execution_panel_builder(**_kwargs: object) -> tuple[object, ...]:
+        return ()
+
     assert (
         development_subject.train_round74_segmented_development_policy(
             result,
             store=object(),
             partition=partition,
             target_assembly_by_run_id=assemblies,
+            execution_panel_builder=execution_panel_builder,
             output_directory="unused",
             matched_preparation_sha256="d" * 64,
         )
@@ -1045,6 +1050,7 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
     assert len(training_calls) == 1
     assert training_calls[0]["config"].execution_mode == "segmented_cohort"
     assert training_calls[0]["matched_preparation_sha256"] == "d" * 64
+    assert training_calls[0]["execution_panel_builder"] is execution_panel_builder
     assert (
         tuple(training_calls[0]["execution_target_assembly_by_run_id"])
         == tuning_subpartition.policy_selection_run_ids
@@ -1145,9 +1151,7 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
                 profile=selected.profile,
                 qualification_sha256=f"{len(qualification_calls) + 30:064x}",
                 qualification_passed=True,
-                final_action_configuration_sha256=(
-                    configuration.configuration_sha256
-                ),
+                final_action_configuration_sha256=(configuration.configuration_sha256),
             ),
             validate=lambda: None,
         )

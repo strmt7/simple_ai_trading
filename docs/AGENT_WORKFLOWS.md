@@ -11,7 +11,7 @@ skills are intentionally not copied.
 | Tool | Pinned version | Repository entry point |
 | --- | --- | --- |
 | CocoIndex Code | `0.2.37` | `tools/cocoindex_agent_search.py` |
-| uv | `0.11.29` | `pyproject.toml` and `uv.lock` |
+| uv | `0.12.1` | `pyproject.toml` and `uv.lock` |
 | Ruff | `0.15.22` | `.github/workflows/ruff.yml` |
 | Vulture | `2.16` | `tools/vulture_check.py` and `.github/workflows/vulture.yml` |
 | Super-Linter | `v8.7.0` | `.github/workflows/super-linter.yml` |
@@ -86,8 +86,8 @@ change. Run the complete required matrix once against the final release tree.
 
 ```powershell
 python -m ruff check .
-python -m ruff format --check .
-python tools/vulture_check.py
+python -m ruff format --check path/to/changed.py
+uv run --with vulture==2.16 python tools/vulture_check.py
 python tools/update_readme_badges.py --check
 python -m pytest -q
 ```

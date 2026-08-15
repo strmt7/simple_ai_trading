@@ -4,18 +4,26 @@ from decimal import Decimal
 import hashlib
 import json
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
+from polymarket_live_support import write_polymarket_live_implementation_manifest
 from simple_ai_trading.polymarket_autonomous import (
+    PolymarketAutonomousLockProposal,
     PolymarketAutonomousOpenProposal,
+    PolymarketAutonomousReduceProposal,
+    submit_promoted_lock,
     submit_promoted_open,
+    submit_promoted_reduction,
 )
 from simple_ai_trading.polymarket_external_signal import (
     PolymarketBtcReferenceFeatures,
     PolymarketExternalSignalDecision,
 )
 from simple_ai_trading.polymarket_live import (
+    PolymarketCloseQuote,
+    PolymarketConditionAccounting,
     PolymarketLiveBlocked,
     PolymarketLiveOrderIntent,
     PolymarketLiveOrderRecord,
@@ -24,6 +32,9 @@ from simple_ai_trading.polymarket_live import (
 from simple_ai_trading.polymarket_live_promotion import (
     VerifiedPolymarketLivePromotion,
     load_polymarket_live_promotion,
+)
+from simple_ai_trading.polymarket_live_qualification import (
+    VerifiedPolymarketLifecycleQualification,
 )
 
 
@@ -80,7 +91,10 @@ def _verified_promotion(
     manifest_path = root / "implementation.json"
     model_path.write_bytes(b'{"model":"frozen"}\n')
     report_path.write_bytes(b'{"evaluation":"passed"}\n')
-    manifest_path.write_bytes(b'{"implementation":"frozen"}\n')
+    write_polymarket_live_implementation_manifest(
+        manifest_path,
+        source_commit="b" * 40,
+    )
     body: dict[str, object] = {
         "schema_version": "polymarket-live-promotion-v1",
         "promotion_id": "a" * 64,
@@ -124,6 +138,10 @@ def _verified_promotion(
     )
 
 
+def _qualification() -> VerifiedPolymarketLifecycleQualification:
+    return Mock(spec=VerifiedPolymarketLifecycleQualification)
+
+
 def _proposal(
     promotion: VerifiedPolymarketLivePromotion,
     *,
@@ -132,6 +150,7 @@ def _proposal(
     decision_time_ms: int = NOW_MS - 200,
     expires_at_ms: int = EVENT_END_MS,
     model_sha: str | None = None,
+    maximum_downside: str = "10",
 ) -> PolymarketAutonomousOpenProposal:
     policy = promotion.promotion
     return PolymarketAutonomousOpenProposal(
@@ -146,10 +165,63 @@ def _proposal(
         outcome="Up",
         selected_outcome_probability=Decimal(probability),
         requested_quantity=Decimal(quantity),
+        risk_state_sha256="9" * 64,
+        maximum_projected_inventory_downside_quote=Decimal(maximum_downside),
         event_start_time_ms=EVENT_START_MS,
         event_end_time_ms=EVENT_END_MS,
         decision_time_ms=decision_time_ms,
         expires_at_ms=expires_at_ms,
+    )
+
+
+def _reduction(
+    promotion: VerifiedPolymarketLivePromotion,
+    *,
+    maximum_probability: str = "0.60",
+) -> PolymarketAutonomousReduceProposal:
+    policy = promotion.promotion
+    return PolymarketAutonomousReduceProposal(
+        proposal_id="round21-btc-5m-reduction",
+        input_sha256="5" * 64,
+        model_artifact_sha256=policy.model_artifact.sha256,
+        promotion_sha256=policy.promotion_sha256,
+        market_id=MARKET_ID,
+        token_id=TOKEN_ID,
+        symbol="BTC",
+        market_variant="fiveminute",
+        outcome="Up",
+        parent_intent_id="poly-open-parent-0001",
+        maximum_outcome_probability=Decimal(maximum_probability),
+        requested_quantity=Decimal("5"),
+        event_start_time_ms=EVENT_START_MS,
+        event_end_time_ms=EVENT_END_MS,
+        decision_time_ms=NOW_MS - 200,
+        expires_at_ms=EVENT_END_MS,
+    )
+
+
+def _lock(
+    promotion: VerifiedPolymarketLivePromotion,
+    *,
+    quantity: str = "5",
+) -> PolymarketAutonomousLockProposal:
+    policy = promotion.promotion
+    return PolymarketAutonomousLockProposal(
+        proposal_id="round21-btc-5m-lock",
+        input_sha256="6" * 64,
+        model_artifact_sha256=policy.model_artifact.sha256,
+        promotion_sha256=policy.promotion_sha256,
+        market_id=MARKET_ID,
+        token_id=TOKEN_ID,
+        symbol="BTC",
+        market_variant="fiveminute",
+        outcome="Down",
+        owned_outcome="Up",
+        requested_quantity=Decimal(quantity),
+        event_start_time_ms=EVENT_START_MS,
+        event_end_time_ms=EVENT_END_MS,
+        decision_time_ms=NOW_MS - 200,
+        expires_at_ms=EVENT_END_MS,
     )
 
 
@@ -166,6 +238,8 @@ def test_fifteen_minute_proposal_has_horizon_bound_chronology() -> None:
         "outcome": "Up",
         "selected_outcome_probability": Decimal("0.60"),
         "requested_quantity": Decimal("5.000000"),
+        "risk_state_sha256": "6" * 64,
+        "maximum_projected_inventory_downside_quote": Decimal("10"),
         "event_start_time_ms": 1_800_000_000_000,
         "event_end_time_ms": 1_800_000_900_000,
         "decision_time_ms": 1_800_000_120_000,
@@ -237,9 +311,20 @@ class _Venue:
 class _Coordinator:
     def __init__(self, venue: _Venue) -> None:
         self.venue = venue
-        self.submissions: list[
-            tuple[PolymarketLiveOrderIntent, Decimal, bool]
-        ] = []
+        self.submissions: list[tuple[PolymarketLiveOrderIntent, Decimal, bool]] = []
+        self.targeted_closes: list[dict[str, object]] = []
+        self.ledger = Mock()
+        self.ledger.condition_accounting.return_value = PolymarketConditionAccounting(
+            condition_id=MARKET_ID,
+            gross_buy_cost_quote=Decimal("2.50"),
+            gross_sell_proceeds_quote=Decimal("0"),
+            confirmed_redemption_payout_quote=Decimal("0"),
+            up_quantity=Decimal("5"),
+            down_quantity=Decimal("0"),
+            up_cost_basis_quote=Decimal("2.00"),
+            down_cost_basis_quote=Decimal("0"),
+            confirmed_fill_count=1,
+        )
 
     def submit(
         self,
@@ -257,6 +342,76 @@ class _Coordinator:
             matched_quantity=intent.quantity,
             failure_code="",
             updated_at_ms=NOW_MS,
+        )
+
+    def submit_owned_close_order(
+        self,
+        *,
+        parent_intent_id: str,
+        quantity: Decimal,
+        action_binding_sha256: str,
+        minimum_net_quote: Decimal,
+        maximum_book_age_ms: int,
+    ) -> tuple[PolymarketLiveOrderRecord, PolymarketCloseQuote]:
+        self.targeted_closes.append(
+            {
+                "parent_intent_id": parent_intent_id,
+                "quantity": quantity,
+                "action_binding_sha256": action_binding_sha256,
+                "minimum_net_quote": minimum_net_quote,
+                "maximum_book_age_ms": maximum_book_age_ms,
+            }
+        )
+        net_quote = Decimal("0.70") * quantity
+        if net_quote < minimum_net_quote:
+            raise PolymarketLiveBlocked(
+                "targeted close no longer meets its after-cost proceeds floor"
+            )
+        quote = PolymarketCloseQuote(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=quantity,
+            limit_price=Decimal("0.70"),
+            average_price=Decimal("0.70"),
+            fee_quote=Decimal("0"),
+            net_quote=net_quote,
+            fee_rate=Decimal("0"),
+            fee_exponent=1,
+            tick_size=Decimal("0.01"),
+            minimum_order_size=Decimal("5"),
+            neg_risk=False,
+            source_time_ms=NOW_MS,
+            observed_at_ms=NOW_MS,
+            book_payload_sha256=BOOK_SHA,
+        )
+        intent = PolymarketLiveOrderIntent(
+            intent_id="policy-close-result-0001",
+            bot_id="simple-ai-trading-polymarket-btc",
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            symbol="BTC",
+            outcome="Up",
+            side="SELL",
+            order_type="FAK",
+            limit_price=quote.limit_price,
+            quantity=quantity,
+            fee_reserve_quote=quote.fee_quote,
+            created_at_ms=NOW_MS,
+            expires_at_ms=NOW_MS + 1_000,
+            parent_intent_id=parent_intent_id,
+            closing_only=True,
+        )
+        return (
+            PolymarketLiveOrderRecord(
+                intent=intent,
+                expected_order_id="0x" + "8" * 64,
+                state="filled",
+                remote_status="MATCHED",
+                matched_quantity=quantity,
+                failure_code="",
+                updated_at_ms=NOW_MS,
+            ),
+            quote,
         )
 
 
@@ -288,6 +443,7 @@ def test_authority_absence_or_expiry_blocks_before_quote(tmp_path: Path) -> None
             _proposal(no_live),
             no_live,
             coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
             clock_ms=lambda: NOW_MS,
         )
     expired = _verified_promotion(
@@ -300,6 +456,7 @@ def test_authority_absence_or_expiry_blocks_before_quote(tmp_path: Path) -> None
             _proposal(expired),
             expired,
             coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
             clock_ms=lambda: NOW_MS,
         )
     assert venue.calls == []
@@ -314,6 +471,7 @@ def test_stale_or_late_proposal_blocks_before_quote(tmp_path: Path) -> None:
             _proposal(promotion, decision_time_ms=NOW_MS - 1_001),
             promotion,
             coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
             clock_ms=lambda: NOW_MS,
         )
     late_now = EVENT_END_MS - 29_999
@@ -322,6 +480,7 @@ def test_stale_or_late_proposal_blocks_before_quote(tmp_path: Path) -> None:
             _proposal(promotion, decision_time_ms=late_now - 1),
             promotion,
             coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
             clock_ms=lambda: late_now,
         )
     assert venue.calls == []
@@ -342,6 +501,7 @@ def test_external_signal_can_only_veto_or_reduce(tmp_path: Path) -> None:
             _proposal(promotion),
             promotion,
             coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
             external_signal=abstain,
             clock_ms=lambda: NOW_MS,
         )
@@ -356,6 +516,7 @@ def test_external_signal_can_only_veto_or_reduce(tmp_path: Path) -> None:
             _proposal(promotion),
             promotion,
             coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
             external_signal=reduce_below_minimum,
             clock_ms=lambda: NOW_MS,
         )
@@ -373,6 +534,27 @@ def test_after_cost_edge_gate_counts_worst_fee(tmp_path: Path) -> None:
             _proposal(promotion, probability="0.51"),
             promotion,
             coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
+            clock_ms=lambda: NOW_MS,
+        )
+
+    assert len(venue.calls) == 1
+    assert coordinator.submissions == []
+
+
+def test_execution_quote_cannot_exceed_bound_live_risk_headroom(
+    tmp_path: Path,
+) -> None:
+    promotion = _verified_promotion(tmp_path)
+    venue = _Venue()
+    coordinator = _Coordinator(venue)
+
+    with pytest.raises(PolymarketLiveBlocked, match="live risk headroom"):
+        submit_promoted_open(
+            _proposal(promotion, maximum_downside="4.5"),
+            promotion,
+            coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
             clock_ms=lambda: NOW_MS,
         )
 
@@ -397,6 +579,7 @@ def test_valid_promoted_proposal_submits_exact_conservative_fok(
         _proposal(promotion, quantity="10"),
         promotion,
         coordinator,  # type: ignore[arg-type]
+        lifecycle_qualification=_qualification(),
         external_signal=reduce,
         clock_ms=lambda: NOW_MS,
     )
@@ -409,9 +592,103 @@ def test_valid_promoted_proposal_submits_exact_conservative_fok(
     assert intent.limit_price == Decimal("0.50")
     assert intent.fee_reserve_quote == Decimal("0.08750")
     assert result.worst_notional_quote == Decimal("2.50000000")
+    assert result.projected_inventory_downside_quote == Decimal("4.58750000")
     assert result.net_edge_quote_per_share == Decimal("0.0825")
     assert tick_size == Decimal("0.01")
     assert neg_risk is False
+
+
+def test_valid_promoted_reduction_submits_one_parent_bound_fak(
+    tmp_path: Path,
+) -> None:
+    promotion = _verified_promotion(tmp_path)
+    coordinator = _Coordinator(_Venue())
+    proposal = _reduction(promotion)
+
+    result = submit_promoted_reduction(
+        proposal,
+        promotion,
+        coordinator,  # type: ignore[arg-type]
+        lifecycle_qualification=_qualification(),
+        clock_ms=lambda: NOW_MS,
+    )
+
+    assert len(coordinator.targeted_closes) == 1
+    request = coordinator.targeted_closes[0]
+    assert request["parent_intent_id"] == proposal.parent_intent_id
+    assert request["quantity"] == Decimal("5")
+    assert request["action_binding_sha256"] == proposal.proposal_sha256
+    assert request["minimum_net_quote"] == Decimal("3.10")
+    assert result.record.intent.closing_only is True
+    assert result.record.intent.side == "SELL"
+    assert result.net_edge_quote_per_share == Decimal("0.10")
+
+
+def test_promoted_reduction_rechecks_after_cost_floor_before_submission(
+    tmp_path: Path,
+) -> None:
+    promotion = _verified_promotion(tmp_path)
+    coordinator = _Coordinator(_Venue())
+
+    with pytest.raises(PolymarketLiveBlocked, match="proceeds floor"):
+        submit_promoted_reduction(
+            _reduction(promotion, maximum_probability="0.69"),
+            promotion,
+            coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
+            clock_ms=lambda: NOW_MS,
+        )
+
+    assert len(coordinator.targeted_closes) == 1
+    assert coordinator.submissions == []
+
+
+def test_promoted_lock_is_fak_and_cannot_increase_event_downside(
+    tmp_path: Path,
+) -> None:
+    promotion = _verified_promotion(tmp_path)
+    coordinator = _Coordinator(_Venue())
+
+    result = submit_promoted_lock(
+        _lock(promotion),
+        promotion,
+        coordinator,  # type: ignore[arg-type]
+        lifecycle_qualification=_qualification(),
+        clock_ms=lambda: NOW_MS,
+    )
+
+    intent, tick_size, neg_risk = coordinator.submissions[0]
+    assert intent.intent_id.startswith("poly-lock-")
+    assert intent.order_type == "FAK"
+    assert intent.side == "BUY"
+    assert intent.outcome == "Down"
+    assert intent.quantity == Decimal("5")
+    assert result.projected_maximum_loss_quote <= (
+        result.prior_accounting.maximum_loss_quote
+    )
+    assert result.locked_edge_quote_per_share == Decimal("0.0825")
+    assert tick_size == Decimal("0.01")
+    assert neg_risk is False
+
+
+def test_promoted_lock_cannot_exceed_unpaired_owned_inventory(
+    tmp_path: Path,
+) -> None:
+    promotion = _verified_promotion(tmp_path)
+    venue = _Venue()
+    coordinator = _Coordinator(venue)
+
+    with pytest.raises(PolymarketLiveBlocked, match="unpaired"):
+        submit_promoted_lock(
+            _lock(promotion, quantity="5.000001"),
+            promotion,
+            coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
+            clock_ms=lambda: NOW_MS,
+        )
+
+    assert venue.calls == []
+    assert coordinator.submissions == []
 
 
 def test_model_hash_mismatch_and_unverified_object_block_before_quote(
@@ -420,11 +697,19 @@ def test_model_hash_mismatch_and_unverified_object_block_before_quote(
     promotion = _verified_promotion(tmp_path)
     venue = _Venue()
     coordinator = _Coordinator(venue)
+    with pytest.raises(PolymarketLiveBlocked, match="authenticated lifecycle"):
+        submit_promoted_open(
+            _proposal(promotion),
+            promotion,
+            coordinator,  # type: ignore[arg-type]
+            clock_ms=lambda: NOW_MS,
+        )
     with pytest.raises(PolymarketLiveBlocked, match="model hash differs"):
         submit_promoted_open(
             _proposal(promotion, model_sha="f" * 64),
             promotion,
             coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
             clock_ms=lambda: NOW_MS,
         )
     with pytest.raises(PolymarketLiveBlocked, match="verified promotion evidence"):
@@ -432,6 +717,7 @@ def test_model_hash_mismatch_and_unverified_object_block_before_quote(
             _proposal(promotion),
             promotion.promotion,  # type: ignore[arg-type]
             coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
             clock_ms=lambda: NOW_MS,
         )
     assert venue.calls == []
@@ -458,6 +744,10 @@ def test_proposal_hash_tampering_is_rejected(tmp_path: Path) -> None:
                 str(values["selected_outcome_probability"])
             ),
             requested_quantity=Decimal(str(values["requested_quantity"])),
+            risk_state_sha256=str(values["risk_state_sha256"]),
+            maximum_projected_inventory_downside_quote=Decimal(
+                str(values["maximum_projected_inventory_downside_quote"])
+            ),
             event_start_time_ms=int(values["event_start_time_ms"]),
             event_end_time_ms=int(values["event_end_time_ms"]),
             decision_time_ms=int(values["decision_time_ms"]),

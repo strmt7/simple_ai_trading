@@ -1,0 +1,111 @@
+{
+  "schema_version": "polymarket-round21-multi-action-policy-design-v6",
+  "round": 21,
+  "status": "preregistered_during_target_and_model_blind_capture",
+  "supersedes": "polymarket-round21-multi-action-policy-design-v5",
+  "parents": {
+    "round21_contract_sha256": "6aadbce31c175438c40c6a1204383d828fd78ddef93b280aa2f999f347669116",
+    "round21_execution_policy_sha256": "c49e6eef0642a68810d8aefafc6a303b2ec9c8a7bbce703b8f05167baba69bd9",
+    "round21_probability_envelope_design_sha256": "218647f01f9404984d94917962e9e81144579aafa4deae8725b625bf9be52842"
+  },
+  "decision": {
+    "cadence_ms": 250,
+    "maximum_creation_book_age_ms": 500,
+    "probability_input": "condition_decision_model_artifact_feature_row_and_probability_batch_bound_calibrated_point_lower_and_upper_up_probability",
+    "probability_range": "inclusive_zero_to_one",
+    "minimum_edge_per_share": "immutable_development_selected_parameter",
+    "creation_book_context": "exact_fresh_gap_free_up_and_down_structured_book_identities",
+    "future_books_or_outcomes": false,
+    "one_active_transition_at_a_time": true,
+    "forced_activity": false,
+    "feature_support_evidence_required": true
+  },
+  "actions": {
+    "allowed": [
+      "abstain",
+      "buy_up",
+      "buy_down",
+      "reduce_up",
+      "reduce_down",
+      "lock_up_with_down",
+      "lock_down_with_up"
+    ],
+    "priority": [
+      "positive_guaranteed_complement_lock",
+      "positive_conservative_inventory_reduction",
+      "positive_conservative_directional_entry",
+      "abstain"
+    ],
+    "directional_buy_edge": "outcome_lower_probability_minus_limit_price_minus_all_taker_fees",
+    "inventory_reduction_edge": "net_limit_proceeds_minus_outcome_upper_probability",
+    "complement_lock_edge": "one_minus_owned_average_cost_minus_complement_limit_cost_and_all_taker_fees",
+    "limit_price": "most_aggressive_tick_still_meeting_the_frozen_edge",
+    "order_type": "FAK"
+  },
+  "inventory": {
+    "source": "bot_owned_confirmed_parent_bound_lots_only",
+    "foreign_positions": "never_read_as_bot_inventory_and_never_modified",
+    "unknown_order_or_fill": "block_new_decisions",
+    "event_worst_case_loss": "total_owned_cost_basis_minus_minimum_up_down_owned_quantity_bounded_below_by_zero",
+    "sell_quantity": "bot_owned_quantity_only",
+    "complement_quantity": "unpaired_bot_owned_quantity_only",
+    "partial_fills": "persist_exact_filled_inventory_and_cancel_unfilled_remainder"
+  },
+  "risk_profiles": {
+    "conservative": {
+      "default": true,
+      "maximum_event_loss_capital_fraction": "0.001",
+      "maximum_daily_loss_capital_fraction": "0.005",
+      "maximum_drawdown_capital_fraction": "0.02",
+      "loss_cluster_cooldown_minutes": 30,
+      "maximum_displayed_depth_participation": "0.10"
+    },
+    "regular": {
+      "default": false,
+      "maximum_event_loss_capital_fraction": "0.002",
+      "maximum_daily_loss_capital_fraction": "0.01",
+      "maximum_drawdown_capital_fraction": "0.04",
+      "loss_cluster_cooldown_minutes": 15,
+      "maximum_displayed_depth_participation": "0.20"
+    },
+    "aggressive": {
+      "default": false,
+      "maximum_event_loss_capital_fraction": "0.0035",
+      "maximum_daily_loss_capital_fraction": "0.015",
+      "maximum_drawdown_capital_fraction": "0.06",
+      "loss_cluster_cooldown_minutes": 5,
+      "maximum_displayed_depth_participation": "0.30"
+    }
+  },
+  "safety": {
+    "default_profile": "conservative",
+    "daily_loss_or_drawdown_gate": "no_new_directional_entry_reductions_and_positive_locks_remain_available",
+    "cooldown_gate": "no_new_directional_entry_reductions_and_positive_locks_remain_available",
+    "feature_support_gate": "no_new_directional_entry_bot_owned_reductions_and_positive_locks_remain_available",
+    "feature_support_gate_population": "train_only_condition_equal_weighted_with_tcn_history_contamination",
+    "unsupported_rows_remain_in_proper_scoring": true,
+    "new_directional_risk_budget": "minimum_remaining_event_daily_and_drawdown_loss_headroom_after_current_event_worst_case_loss",
+    "positive_daily_pnl_increases_risk_budget": false,
+    "stale_disconnected_gapped_or_wrong_market_book": "abstain",
+    "reconciliation_failure": "abstain",
+    "cash_and_event_loss_cap": "both_must_cover_the_maximum_buy_loss_bound",
+    "maker_rebate_credit": false,
+    "leverage": false,
+    "reinvestment": false
+  },
+  "independence": {
+    "execution_venue": "polymarket_only",
+    "binance_execution": false,
+    "binance_account": false,
+    "binance_risk_or_stop_dependency": false,
+    "optional_binance_data_may_only_be_inside_the_hash_bound_probability_evidence": true
+  },
+  "authority": {
+    "model_selected": false,
+    "ai_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "eefe030e56e06854b460d8e4421aa24443ac98e15a2ae648368cf555bf39cd49"
+}

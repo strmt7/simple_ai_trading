@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import math
+import re
 import sys
 import time
 from dataclasses import asdict, dataclass
@@ -34,6 +35,25 @@ class PinnedHuggingFaceArtifact:
     weights_size: int
     weights_sha256: str
     expected_parameters: int
+
+    def __post_init__(self) -> None:
+        repository_pattern = r"[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*"
+        positive_integers = (
+            self.config_size,
+            self.weights_size,
+            self.expected_parameters,
+        )
+        if (
+            re.fullmatch(repository_pattern, self.repository) is None
+            or re.fullmatch(r"[0-9a-f]{40}", self.revision) is None
+            or re.fullmatch(r"[0-9a-f]{64}", self.config_sha256) is None
+            or re.fullmatch(r"[0-9a-f]{64}", self.weights_sha256) is None
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
+                for value in positive_integers
+            )
+        ):
+            raise ValueError("pinned Hugging Face artifact contract is invalid")
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -146,7 +166,11 @@ def _backend_payload(backend: BackendInfo) -> dict[str, object]:
 def _torch_device(backend: BackendInfo) -> Any:
     import torch
 
-    return torch_device_for_backend(backend) if backend.kind == "directml" else torch.device(backend.device)
+    return (
+        torch_device_for_backend(backend)
+        if backend.kind == "directml"
+        else torch.device(backend.device)
+    )
 
 
 def _verified_huggingface_snapshot(spec: PinnedHuggingFaceArtifact) -> Path:
@@ -158,10 +182,14 @@ def _verified_huggingface_snapshot(spec: PinnedHuggingFaceArtifact) -> Path:
         ) from exc
 
     config = Path(
-        hf_hub_download(spec.repository, "config.json", revision=spec.revision)
+        hf_hub_download(  # nosec B615 - immutable commit and local SHA-256 gate.
+            spec.repository, "config.json", revision=spec.revision
+        )
     )
     weights = Path(
-        hf_hub_download(spec.repository, "model.safetensors", revision=spec.revision)
+        hf_hub_download(  # nosec B615 - immutable commit and local SHA-256 gate.
+            spec.repository, "model.safetensors", revision=spec.revision
+        )
     )
     verify_huggingface_artifact_file(
         config,
@@ -176,7 +204,9 @@ def _verified_huggingface_snapshot(spec: PinnedHuggingFaceArtifact) -> Path:
         label=f"{spec.repository} weights",
     )
     if config.parent != weights.parent:
-        raise RuntimeError(f"{spec.repository} snapshot files resolved to different revisions")
+        raise RuntimeError(
+            f"{spec.repository} snapshot files resolved to different revisions"
+        )
     return config.parent
 
 
@@ -266,7 +296,9 @@ class KronosForecastEngine:
         )
         tokenizer = KronosTokenizer.from_pretrained(tokenizer_snapshot)
         model = Kronos.from_pretrained(model_snapshot)
-        tokenizer_parameters = sum(parameter.numel() for parameter in tokenizer.parameters())
+        tokenizer_parameters = sum(
+            parameter.numel() for parameter in tokenizer.parameters()
+        )
         model_parameters = sum(parameter.numel() for parameter in model.parameters())
         if tokenizer_parameters != KRONOS_TOKENIZER_ARTIFACT.expected_parameters:
             raise RuntimeError(
@@ -294,7 +326,9 @@ class KronosForecastEngine:
             import torch_directml
 
             device_generator = torch_directml.default_generator
-            rng_seed_control = "torch.manual_seed + torch_directml.default_generator.manual_seed"
+            rng_seed_control = (
+                "torch.manual_seed + torch_directml.default_generator.manual_seed"
+            )
         report = FoundationEngineReport(
             provider="kronos",
             model_size=size,
@@ -335,12 +369,20 @@ class KronosForecastEngine:
 
         horizon = int(prediction_length)
         samples = int(sample_count)
-        if not frames or len(frames) != len(history_timestamps) or len(frames) != len(future_timestamps):
-            raise ValueError("forecast batch inputs must be non-empty and have equal lengths")
+        if (
+            not frames
+            or len(frames) != len(history_timestamps)
+            or len(frames) != len(future_timestamps)
+        ):
+            raise ValueError(
+                "forecast batch inputs must be non-empty and have equal lengths"
+            )
         if horizon < 1 or samples < 1:
             raise ValueError("prediction_length and sample_count must be positive")
         if horizon >= KRONOS_MAX_CONTEXT:
-            raise ValueError("prediction_length exceeds the pinned Kronos context contract")
+            raise ValueError(
+                "prediction_length exceeds the pinned Kronos context contract"
+            )
         if not math.isfinite(float(temperature)) or float(temperature) <= 0.0:
             raise ValueError("temperature must be finite and positive")
         if int(top_k) < 0:
@@ -366,7 +408,9 @@ class KronosForecastEngine:
         for prediction in predictions:
             values = prediction.to_numpy(dtype="float64")
             if values.shape != (horizon, 6):
-                raise RuntimeError(f"Kronos returned invalid forecast shape {values.shape}")
+                raise RuntimeError(
+                    f"Kronos returned invalid forecast shape {values.shape}"
+                )
             if not all(math.isfinite(float(value)) for value in values.flat):
                 raise RuntimeError("Kronos returned a non-finite forecast")
             if bool((prediction["high"] < prediction["low"]).any()):

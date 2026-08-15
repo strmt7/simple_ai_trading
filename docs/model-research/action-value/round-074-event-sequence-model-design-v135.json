@@ -1,0 +1,176 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v135",
+  "artifact_kind": "target_free_candidate_specific_device_grouping",
+  "created_utc": "2026-08-03T15:34:11.7700207Z",
+  "supersedes_artifact_sha256": "0180c8ff5f23108802417e04db5c33a9eab842de7cb663ddc3d2d021e4e58ee5",
+  "implementation_git_commit": "71fdc03584d8c6e13d759e15d729a0bfcfc79ffb",
+  "source_binding": {
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "implementation_files": [
+      {
+        "path": "src/simple_ai_trading/round74_device_group_preflight.py",
+        "sha256": "341c708bad0926f393bc54d5e15893d195340f2f1f5f252091cf8104dc5e9c28"
+      },
+      {
+        "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+        "sha256": "c13b2aa52d0772384b09c12149f8370f6b36bb25a2ff80bdb553a07e146dfcb8"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_segmented_development_runtime.py",
+        "sha256": "0d5a0f44a12d105064c7d764c57c762728b99f6abf9e04cc9b4e368c28ed0ee4"
+      },
+      {
+        "path": "src/simple_ai_trading/round74_segmented_development_cli.py",
+        "sha256": "200b479c210397bf49c4622f64fa25128f5c3fde1f30a13d64eb7b5dfe44c015"
+      },
+      {
+        "path": "native/windows/generated/command_contract.hpp",
+        "sha256": "7b9f86f3d21d8ad3d0da20313656526fd19bb03ade3e482ff40c55f6ac4da27a"
+      }
+    ],
+    "affected_tests": [
+      {
+        "path": "tests/test_round74_device_group_preflight.py",
+        "sha256": "edb4012a1951f022162557ebe603f33c0eacdcb3bdbf097cc16d51d1acb8f957"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_training.py",
+        "sha256": "c8d22baee41887345a6dcf9d093a524724f7dc74497720e92cf288e25fd3eac7"
+      },
+      {
+        "path": "tests/test_round74_segmented_development_runtime.py",
+        "sha256": "bca631f89c0a0cfa2baf479ddd2718093be71fc99451cda45900b81090d68ecf"
+      },
+      {
+        "path": "tests/test_round74_segmented_development_cli.py",
+        "sha256": "b95044885c199119e6aa9483039df69eef83784fa8bc936f8c8c330528a81f7b"
+      },
+      {
+        "path": "tests/test_ai_runtime_and_parity.py",
+        "sha256": "5e87d324dec4442eede0f3667a5aeaa7969396608c9c63c8bdce2e28d7b1edbd"
+      }
+    ],
+    "host_preflight": {
+      "path": "docs/model-research/action-value/round74-device-group-preflight-ba4de96ca2f4440a3c8f869d24501d72d194e7518dd7a6daa15f05a88cc7fc31.json",
+      "file_sha256": "8bf11ea1a06d50ed16d1526be43f70974fec9c4e063e1014e63ec83c4b5f4f53",
+      "preflight_sha256": "ba4de96ca2f4440a3c8f869d24501d72d194e7518dd7a6daa15f05a88cc7fc31"
+    },
+    "predecessor_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v134.json",
+      "sha256": "8efc6d4b110211fd94369367e1842bbe8d992a141b30e7c2c851a7d0d9d7361c"
+    }
+  },
+  "schema_contract": {
+    "device_group_preflight": "round-074-device-group-preflight-v1",
+    "event_training": "round-074-event-training-v38",
+    "pretest_policy": "round-074-event-pretest-policy-v37",
+    "segmented_development_run": "round-074-segmented-development-run-v6"
+  },
+  "defect": {
+    "prior_policy_used_one_fixed_supervised_group_on_every_host_and_candidate": true,
+    "prior_default_group_size": 8,
+    "fixed_group_was_not_throughput_optimal_for_every_candidate_on_verified_host": true,
+    "attention_group_32_allocation_failure_observed_during_exploration": true,
+    "blindly_increasing_group_size_is_safe": false,
+    "financial_model_objective_defect": false
+  },
+  "declared_delta": {
+    "summary": "Select a bounded supervised device group separately for every frozen candidate in an isolated target-free host probe before target manifests are read, then bind the exact mapping and probe digest into the immutable training policy.",
+    "target_manifest_read_before_group_selection": false,
+    "market_or_target_data_used_for_group_selection": false,
+    "active_campaign_source_or_plan_changed": false,
+    "training_population_or_objective_changed": false,
+    "early_stopping_or_promotion_gate_changed": false,
+    "causal_pretraining_group_changed": false,
+    "runtime_trading_path_changed": false,
+    "shared_cli_and_native_contract_regenerated": true
+  },
+  "preflight_contract": {
+    "process_isolation": true,
+    "hard_timeout_seconds_default": 300.0,
+    "heartbeat_seconds": 10.0,
+    "stdout_and_stderr_drained_while_waiting": true,
+    "candidate_ids": [
+      "event_pooling_linear",
+      "event_pooling_mlp",
+      "causal_event_tcn",
+      "causal_event_attention"
+    ],
+    "candidate_group_sizes": [1, 2, 4, 8, 16, 32],
+    "supervised_minibatch_rows": 128,
+    "warmup_steps": 2,
+    "measurement_steps": 3,
+    "selection_rule": "smallest group within 97.5 percent of each candidate's measured best throughput",
+    "throughput_cliff_early_stop_fraction": 0.7,
+    "production_supervised_loss_and_backward_path_used": true,
+    "cpu_fallback_warning_permitted": false,
+    "allocation_failure_can_poison_parent_training_process": false,
+    "fixed_uniform_operator_override_retained": true,
+    "selected_mapping_hash_bound_into_training_policy": true
+  },
+  "verified_host_result": {
+    "backend": "directml",
+    "vendor": "AMD Radeon RX 9070 XT",
+    "torch": "2.4.1+cpu",
+    "torch_directml": "0.2.5.dev240914",
+    "elapsed_seconds": 17.4843487,
+    "measurement_count": 21,
+    "failure_count": 0,
+    "cpu_fallback_warning_count": 0,
+    "selected": {
+      "event_pooling_linear": {
+        "group_size": 32,
+        "rows_per_second": 21994.533,
+        "median_seconds": 0.186228
+      },
+      "event_pooling_mlp": {
+        "group_size": 16,
+        "rows_per_second": 22536.898,
+        "median_seconds": 0.090873
+      },
+      "causal_event_tcn": {
+        "group_size": 2,
+        "rows_per_second": 6084.966,
+        "median_seconds": 0.042071
+      },
+      "causal_event_attention": {
+        "group_size": 4,
+        "rows_per_second": 2927.97,
+        "median_seconds": 0.174865
+      }
+    },
+    "interpretation": "Host-specific throughput evidence only; it is not predictive, financial, backtest, or profitability evidence."
+  },
+  "verification": {
+    "affected_tests_passed": 60,
+    "ruff_format_check_passed": true,
+    "ruff_check_passed": true,
+    "generated_cli_native_contract_parity_passed": true,
+    "isolated_directml_parent_child_probe_passed": true,
+    "windows_pipe_backpressure_timeout_reproduced_and_fixed": true,
+    "timeout_child_termination_tested": true,
+    "preflight_timing_and_selection_tamper_rejection_tested": true,
+    "candidate_mapping_policy_reload_tested": true,
+    "representative_market_training_run": false,
+    "representative_market_backtest_run": false,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "campaign_terminal": false,
+    "representative_training_completed": false,
+    "representative_sealed_evaluation_completed": false,
+    "ai_improves_ml_established": false,
+    "predictive_accuracy_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false
+  },
+  "authority": {
+    "paper_trading": false,
+    "testnet_trading": false,
+    "mainnet_trading": false,
+    "polymarket_trading": false,
+    "order_submission": false,
+    "position_management": false
+  },
+  "design_sha256": "8a1f22831a88de9a95634939780ba357344e1bacefe49604b0fe56e1f53f20d4"
+}

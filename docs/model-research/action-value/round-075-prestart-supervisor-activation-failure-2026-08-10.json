@@ -1,0 +1,54 @@
+{
+  "artifact_sha256": "389d620107c17341375eee7a8d438fb30e7940a2f064c79f91939849a40b6b6e",
+  "containment": {
+    "campaign_database_count": 0,
+    "campaign_wal_count": 0,
+    "capture_child_process_count": 0,
+    "corrected_live_inspection_sha256": "85cdd4254b9e72622273ba2315cd8b308fbd6b1ea70d563225ce5b452988ea08",
+    "corrected_supervisor_file_sha256": "ac7b74689c9957baf162f486bdd25ab4b0134ec988598bcc277b77cbcad9b8a6",
+    "logical_service_count": 1,
+    "physical_service_process_count": 2,
+    "scheduled_task_disabled": true,
+    "service_phase": "waiting_for_campaign_start",
+    "service_state_sha256": "a5402c53f7f5fca736bfe1a98db2952d0c4452c18d9ce3f34cd0eabf0af2b0ed",
+    "task_action_sha256": "2c00ac280a2394aa38223bf8f852937462a3e42e1aceb202a3c004dcca9e1923",
+    "task_end_boundaries": [
+      "2026-08-23T14:00:00+02:00",
+      "2026-08-23T14:00:00+02:00"
+    ],
+    "task_trigger_count": 2,
+    "verified_venv_launcher_count": 1
+  },
+  "contract_v2": {
+    "artifact_sha256": "b111a4c50974c2b86dd0ddf57b1175b198ef91a9d52a5b98946eb16329944dd4",
+    "file_sha256": "566a44681ec29921fc92817e9019c4bdf5b383cbb6cd54aeafef920bc3d2c8df",
+    "path": "docs/model-research/action-value/round-075-continuous-capture-contract-v2.json"
+  },
+  "created_at_utc": "2026-08-10T12:42:24.162945+00:00",
+  "failure": {
+    "original_blocked_result_sha256": "ac72b7e8a0b17ad3dee4e8bf3906dc380ac98c17f75cac4d0577a6b087911ed5",
+    "original_start_result_sha256": "a68d3d50e9ac25077cd3ef42007afe43e3bdc1d95b8b8964c73681450a546ae9",
+    "original_supervisor_schema_version": "round-075-capture-supervisor-v1",
+    "root_cause": "windows_venv_redirect_launcher_and_base_interpreter_counted_as_two_logical_services",
+    "task_last_result": 2
+  },
+  "prospective_plan": {
+    "file_sha256": "fdfd131b7edcf66d4d523a332e50caea45d448c15bf2c21e27a72544a9d02f97",
+    "path": "docs/model-research/action-value/round-075-prospective-event-cohort-plan-v1.json",
+    "plan_sha256": "68358178d9182dbfa62ced97c274709bc156903c830d6d53a0171e028e102514",
+    "scheduled_start_wall_ns": 1786406400000000000
+  },
+  "schema_version": "round-075-prestart-supervisor-activation-failure-v1",
+  "scope": {
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "market_capture_started": false,
+    "model_training_performed": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "source_database_access": "not_opened",
+    "target_data_accessed": false
+  },
+  "status": "contained_before_campaign_start"
+}

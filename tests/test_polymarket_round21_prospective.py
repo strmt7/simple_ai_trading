@@ -16,6 +16,7 @@ from simple_ai_trading.polymarket_round21_model import Round21ProbabilityBatch
 from simple_ai_trading.polymarket_round21_prospective import (
     Round21ProspectiveScorer,
     build_round21_inference_panel,
+    validate_round21_prospective_prediction,
 )
 from simple_ai_trading.polymarket_round21_sealed import (
     Round21SealedEvaluationResult,
@@ -61,14 +62,10 @@ def _row(
         feature_schema=schema,
         core_source_chain_sha256=sha(f"core-{condition_id}-{offset_ms}"),
         spot_source_chain_sha256=(
-            sha(f"spot-{condition_id}-{offset_ms}")
-            if spot_available
-            else sha("")
+            sha(f"spot-{condition_id}-{offset_ms}") if spot_available else sha("")
         ),
         usdm_source_chain_sha256=(
-            sha(f"usdm-{condition_id}-{offset_ms}")
-            if usdm_available
-            else sha("")
+            sha(f"usdm-{condition_id}-{offset_ms}") if usdm_available else sha("")
         ),
         core_maximum_receipt_ms=decision,
         spot_maximum_receipt_ms=decision if spot_available else 0,
@@ -101,8 +98,7 @@ def _sealed(*, layer: str = "core", accepted: bool = True) -> Mock:
 def _install_boundaries(monkeypatch: pytest.MonkeyPatch) -> Mock:
     predict = Mock()
 
-    def probability_batch(artifact, *, population_layer, panel):
-        assert artifact["artifact_sha256"] == MODEL_SHA
+    def probability_batch(population_layer, panel):
         indices = np.arange(len(panel.condition_ids), dtype=np.int64)
         values = np.linspace(0.52, 0.56, len(indices), dtype=np.float64)
         return Round21ProbabilityBatch.create(
@@ -113,20 +109,38 @@ def _install_boundaries(monkeypatch: pytest.MonkeyPatch) -> Mock:
             probability_up=values,
             lower_up=values - 0.02,
             upper_up=values + 0.02,
+            feature_support_eligible=np.ones(len(indices), dtype=np.bool_),
             source_model_artifact_sha256=MODEL_SHA,
             feature_batch_sha256=panel.feature_batch_sha256,
         ).validated()
 
     predict.side_effect = probability_batch
+
+    def compile_predictor(_artifact, *, population_layer):
+        return SimpleNamespace(
+            artifact_sha256=MODEL_SHA,
+            tcn_training_backend_kind="cpu",
+            tcn_training_backend_device="cpu",
+            tcn_runtime_backend_kind="cpu",
+            tcn_runtime_backend_device="cpu",
+            tcn_backend_substituted=False,
+            tcn_accelerator_fallback=False,
+            core_feature_names_sha256=(
+                POLYMARKET_ROUND21_FEATURE_SCHEMA.core_names_sha256
+            ),
+            spot_feature_names_sha256=(
+                POLYMARKET_ROUND21_FEATURE_SCHEMA.spot_names_sha256
+            ),
+            usdm_feature_names_sha256=(
+                POLYMARKET_ROUND21_FEATURE_SCHEMA.usdm_names_sha256
+            ),
+            predict=lambda panel: predict(population_layer, panel),
+        )
+
     monkeypatch.setattr(
         prospective_module,
-        "validate_round21_development_artifact",
-        lambda artifact: dict(artifact),
-    )
-    monkeypatch.setattr(
-        prospective_module,
-        "predict_round21_probability_batch",
-        predict,
+        "compile_round21_probability_predictor",
+        compile_predictor,
     )
     return predict
 
@@ -198,6 +212,18 @@ def test_scorer_emits_idempotent_target_free_probability_evidence(
     with pytest.raises(ValueError, match="prediction differs"):
         replace(result, live_trading_authority=True).validated()
 
+    restored = validate_round21_prospective_prediction(serialized)
+    assert restored == result
+    tampered = {**serialized, "live_trading_authority": True}
+    with pytest.raises(ValueError, match="prediction differs"):
+        validate_round21_prospective_prediction(tampered)
+    tampered_evidence = dict(serialized["probability_evidence"])
+    tampered_evidence["lower_up"] = "0.51"
+    with pytest.raises(ValueError, match="probability evidence differs"):
+        validate_round21_prospective_prediction(
+            {**serialized, "probability_evidence": tampered_evidence}
+        )
+
 
 def test_scorer_resets_gaps_and_abstains_when_selected_layer_is_missing(
     monkeypatch: pytest.MonkeyPatch,
@@ -213,10 +239,13 @@ def test_scorer_resets_gaps_and_abstains_when_selected_layer_is_missing(
     second = _row(1_250, spot_available=False, usdm_available=False)
     third = _row(1_750)
 
-    assert scorer.evaluate(
-        first,
-        observed_at_ms=first.decision_time_ms,
-    ).status == "observed"
+    assert (
+        scorer.evaluate(
+            first,
+            observed_at_ms=first.decision_time_ms,
+        ).status
+        == "observed"
+    )
     abstain = scorer.evaluate(second, observed_at_ms=second.decision_time_ms)
     resumed = scorer.evaluate(third, observed_at_ms=third.decision_time_ms)
 
@@ -224,6 +253,13 @@ def test_scorer_resets_gaps_and_abstains_when_selected_layer_is_missing(
     assert abstain.reason == "selected_optional_feature_layer_unavailable"
     assert abstain.envelope is None
     assert abstain.history_row_count == 2
+    assert validate_round21_prospective_prediction(abstain.asdict()) == abstain
+    invalid_abstention = {
+        **abstain.asdict(),
+        "probability_evidence_sha256": MODEL_SHA,
+    }
+    with pytest.raises(ValueError, match="probability evidence differs"):
+        validate_round21_prospective_prediction(invalid_abstention)
     assert resumed.status == "observed"
     assert resumed.reset_reason == "cadence_gap"
     assert resumed.history_row_count == 1

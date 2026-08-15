@@ -744,6 +744,15 @@ def _segment_results(
     return tuple(results)
 
 
+def load_round21_sidecar_segment_results(
+    state_root: str | Path,
+    plan: Round21SidecarCampaignPlan,
+) -> tuple[dict[str, object], ...]:
+    """Load the complete hash-verified segment ledger without capture payloads."""
+
+    return _segment_results(Path(state_root).resolve(), plan)
+
+
 def _resource_block(config: Round21SidecarCampaignConfig) -> str | None:
     database_bytes = (
         config.database_path.stat().st_size if config.database_path.is_file() else 0
@@ -1111,6 +1120,7 @@ __all__ = [
     "build_round21_sidecar_segment_manifest",
     "create_round21_sidecar_campaign_plan",
     "inspect_round21_sidecar_campaign",
+    "load_round21_sidecar_segment_results",
     "load_round21_sidecar_campaign_plan",
     "run_round21_sidecar_campaign",
     "validate_round21_legacy_sidecar_state",
