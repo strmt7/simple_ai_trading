@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
+import pytest
 
 from simple_ai_trading.polymarket_round27_features import (
     POLYMARKET_ROUND27_FEATURE_NAMES,
@@ -15,6 +16,7 @@ from simple_ai_trading.polymarket_round27_model import (
     fit_round27_l2_offset,
     fit_round27_lightgbm_offset,
     paired_round27_condition_bootstrap,
+    round27_model_from_payload,
     round27_probability_metrics,
     select_round27_correction_scale,
     select_round27_l2_penalty,
@@ -101,6 +103,12 @@ def test_l2_offset_model_improves_a_causal_synthetic_signal() -> None:
     assert model_metrics.balanced_accuracy == 1.0
     assert np.all((prediction > 0.0) & (prediction < 1.0))
 
+    restored = round27_model_from_payload(model.asdict())
+    assert np.array_equal(
+        restored.predict(partition.features, partition.offsets),
+        prediction,
+    )
+
 
 def test_correction_scale_can_fail_closed_to_the_market_prior() -> None:
     partition = Round27Partition.from_samples(_samples(), role="train")
@@ -152,3 +160,16 @@ def test_shallow_lightgbm_is_bounded_and_cpu_portable() -> None:
     assert len(model.model_sha256) == 64
     assert np.all(np.isfinite(prediction))
     assert np.all((prediction > 0.0) & (prediction < 1.0))
+
+    payload = model.asdict()
+    assert payload["model_text"] == model.model_text
+    restored = round27_model_from_payload(payload)
+    assert np.array_equal(
+        restored.predict(partition.features, partition.offsets),
+        prediction,
+    )
+
+    tampered = dict(payload)
+    tampered["model_text"] = f"{payload['model_text']}#"
+    with pytest.raises(ValueError, match="persisted LightGBM model differs"):
+        round27_model_from_payload(tampered)
