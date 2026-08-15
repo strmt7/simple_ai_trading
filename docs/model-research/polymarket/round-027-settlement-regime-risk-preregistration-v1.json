@@ -1,0 +1,57 @@
+{
+  "authority": {
+    "edge_claim": false,
+    "live_trading_authority": false,
+    "model_promotion_authority": false,
+    "orders_submitted": false,
+    "profitability_claim": false
+  },
+  "campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+  "created_at_ms": 1786786052076,
+  "diagnostic": {
+    "analysis_role": "descriptive_regime_risk_diagnostic_only",
+    "bin_width_seconds": 10,
+    "condition_weighting": "one_equal_weight_per_eligible_condition",
+    "entry_or_policy_selection_allowed": false,
+    "final_window_seconds": [
+      60,
+      30,
+      10
+    ],
+    "minimum_interpretable_conditions": 60,
+    "near_the_money_definition": {
+      "decision_receipt_time_seconds_before_close": 10,
+      "maximum_up_mid": 0.6,
+      "minimum_up_mid": 0.4,
+      "missing_or_stale_mid_policy": "unclassified"
+    },
+    "post_close_reversal_seconds": [
+      10,
+      20,
+      30
+    ],
+    "required_outputs": [
+      "condition_level_canonical_table",
+      "utc_date_and_hour_coverage",
+      "signed_and_absolute_spot_flow_by_window",
+      "spot_return_and_realized_variation_by_window",
+      "polymarket_spread_and_depth_by_probability_stratum",
+      "post_close_reversal_slopes_with_date_clustered_uncertainty",
+      "near_the_money_versus_far_from_the_money_comparison"
+    ]
+  },
+  "evidence_rules": [
+    "use_only_local_receipt_time_and_captured_public_payloads",
+    "never_use_post_close_data_in_a_prediction_or_entry_payload",
+    "do_not_infer_trade_direction_from_public_polymarket_book_messages",
+    "do_not_label_a_cycle_manipulated_from_flow_alone",
+    "do_not_transfer_historical_single_print_performance_to_the_60_second_twap_regime",
+    "missing_coverage_produces_exclusion_not_imputation",
+    "this_diagnostic_cannot_change_the_frozen_model_or_economic_policy"
+  ],
+  "live_product_regime_audit_sha256": "b5a38ce4c562762f056c435a527f882b003e5659330f3ce0a1d313b5697167a0",
+  "model_contract_sha256": "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439",
+  "preregistration_sha256": "ef395435896aec6ff5987f13df989b32d49bd58ed0a715796906dafdf9dd8208",
+  "schema_version": "polymarket-round27-settlement-regime-risk-preregistration-v1",
+  "status": "frozen_after_stage1_capture_start_before_stage1_feature_or_outcome_access"
+}
