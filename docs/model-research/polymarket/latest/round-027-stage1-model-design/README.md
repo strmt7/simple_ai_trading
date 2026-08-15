@@ -101,6 +101,14 @@ Abstentions and orders without a fill contribute zero P&L instead of
 disappearing; minimum fills, profitable conditions, fill rate, unknown-state,
 and capital controls remain independent gates.
 
+The [boundary-return and Brier-confidence amendment](../../round-027-boundary-return-and-brier-confidence-correction-amendment-v7.json)
+anchors each fixed-window Binance return to the last causally received price
+before the window while keeping trade flow strictly in-window. This restores
+the boundary-to-first-trade move that the frozen feature calculation omitted.
+It also requires dependence-aware Brier-score improvement in addition to the
+existing log-loss confidence gate. No candidate, numeric threshold, economic
+rule, prompt, or authority was relaxed.
+
 The [AI host receipt](../../round-027-ai-host-qualification-v1-2026-08-15.json)
 binds both candidates to exact Ollama, upstream, and quantized-artifact hashes,
 and verifies strict structured output with `think=false`, one-model-at-a-time

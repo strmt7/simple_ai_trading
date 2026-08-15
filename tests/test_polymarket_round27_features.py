@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 import hashlib
 import json
+import math
 from types import SimpleNamespace
 
 import pytest
@@ -18,6 +19,7 @@ from simple_ai_trading.polymarket_round27_features import (
     Round27TradePoint,
     Round27TradeSeries,
     _book_flow,
+    _trade_metrics,
     build_round27_condition_features,
     load_round27_public_source_series,
 )
@@ -164,6 +166,50 @@ def _source() -> Round27PublicSourceSeries:
         twap=twap,
         source_chain_sha256="a" * 64,
     ).validated()
+
+
+def test_trade_return_uses_last_observation_at_window_boundary() -> None:
+    series = Round27TradeSeries.from_points(
+        "binance_spot",
+        (
+            _trade("binance_spot", 9_000, 100.0),
+            _trade("binance_spot", 10_500, 110.0),
+            _trade("binance_spot", 19_000, 121.0),
+        ),
+    )
+
+    metrics = _trade_metrics(
+        series,
+        decision_ms=_START_MS + 20_000,
+        window_ms=10_000,
+    )
+
+    assert metrics.count == 2
+    assert metrics.log_return == pytest.approx(math.log(121.0 / 100.0))
+    assert metrics.realized_variance == pytest.approx(
+        math.log(110.0 / 100.0) ** 2 + math.log(121.0 / 110.0) ** 2
+    )
+
+
+def test_trade_return_prefers_an_exact_window_boundary_observation() -> None:
+    series = Round27TradeSeries.from_points(
+        "binance_spot",
+        (
+            _trade("binance_spot", 9_000, 80.0),
+            _trade("binance_spot", 10_000, 100.0),
+            _trade("binance_spot", 19_000, 110.0),
+        ),
+    )
+
+    metrics = _trade_metrics(
+        series,
+        decision_ms=_START_MS + 20_000,
+        window_ms=10_000,
+    )
+
+    assert metrics.count == 2
+    assert metrics.log_return == pytest.approx(math.log(110.0 / 100.0))
+    assert metrics.realized_variance == pytest.approx(math.log(110.0 / 100.0) ** 2)
 
 
 def test_build_round27_condition_features_is_complete_and_target_blind() -> None:

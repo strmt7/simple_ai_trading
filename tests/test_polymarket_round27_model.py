@@ -178,7 +178,10 @@ def test_condition_bootstrap_reports_paired_log_loss_delta() -> None:
 
     assert result["condition_count"] == 40
     assert result["mean_candidate_minus_prior_log_loss"] < 0.0
+    assert result["mean_candidate_minus_prior_brier_score"] < 0.0
     assert result["ci95_upper"] < 0.0
+    assert result["brier_score"]["ci95_upper"] < 0.0
+    assert result["log_loss"]["ci95_upper"] == result["ci95_upper"]
     assert result["method"] == (
         "stationary_bootstrap_block_length_sensitivity_envelope"
     )

@@ -866,7 +866,8 @@ def paired_round27_condition_bootstrap(
             key=lambda item: (item[1], item[0]),
         )
     )
-    condition_values: list[float] = []
+    condition_log_loss_values: list[float] = []
+    condition_brier_values: list[float] = []
     for condition in ordered_conditions:
         selected = partition.conditions == condition
         target = partition.targets[selected]
@@ -878,18 +879,35 @@ def paired_round27_condition_bootstrap(
             target * np.log(candidate_probability[selected])
             + (1.0 - target) * np.log1p(-candidate_probability[selected])
         )
-        condition_values.append(float(np.mean(candidate_loss - baseline_loss)))
-    values = np.asarray(condition_values, dtype=np.float64)
-    if values.size < 20 or draws < 1_000:
+        condition_log_loss_values.append(
+            float(np.mean(candidate_loss - baseline_loss))
+        )
+        baseline_brier = (baseline_probability[selected] - target) ** 2
+        candidate_brier = (candidate_probability[selected] - target) ** 2
+        condition_brier_values.append(
+            float(np.mean(candidate_brier - baseline_brier))
+        )
+    log_loss_values = np.asarray(condition_log_loss_values, dtype=np.float64)
+    brier_values = np.asarray(condition_brier_values, dtype=np.float64)
+    if log_loss_values.size < 20 or draws < 1_000:
         raise ValueError("Round 27 bootstrap population is insufficient")
+    log_loss_interval = round27_stationary_bootstrap_mean_interval(
+        log_loss_values,
+        draws=draws,
+        seed=seed,
+    )
+    brier_interval = round27_stationary_bootstrap_mean_interval(
+        brier_values,
+        draws=draws,
+        seed=seed + 97_409,
+    )
     return {
-        "mean_candidate_minus_prior_log_loss": float(np.mean(values)),
-        "condition_count": int(values.size),
-        **round27_stationary_bootstrap_mean_interval(
-            values,
-            draws=draws,
-            seed=seed,
-        ),
+        "mean_candidate_minus_prior_log_loss": float(np.mean(log_loss_values)),
+        "mean_candidate_minus_prior_brier_score": float(np.mean(brier_values)),
+        "condition_count": int(log_loss_values.size),
+        "log_loss": log_loss_interval,
+        "brier_score": brier_interval,
+        **log_loss_interval,
     }
 
 
