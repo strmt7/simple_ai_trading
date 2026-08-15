@@ -28,7 +28,7 @@ POLYMARKET_ROUND27_MODEL_CONTRACT_SCHEMA_VERSION = (
     "polymarket-round27-stage1-model-contract-v1"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_SHA256 = (
-    "cb314e958b1b2e693780ab3ed699ed126acfc7279a1ec84e6dec17bc79b3fac6"
+    "3e18856b1f526655a514fd524378a92a878c6ec0a1857772d503b9bd7e77d439"
 )
 POLYMARKET_ROUND27_MODEL_CONTRACT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
