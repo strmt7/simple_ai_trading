@@ -64,8 +64,7 @@ def test_entrypoint_registers_independent_polymarket_live_command() -> None:
     assert args.activation is None
     assert args.ledger == live_cli.DEFAULT_POLYMARKET_LIVE_LEDGER.as_posix()
     assert (
-        args.activation_output
-        == live_cli.DEFAULT_POLYMARKET_LIVE_ACTIVATION.as_posix()
+        args.activation_output == live_cli.DEFAULT_POLYMARKET_LIVE_ACTIVATION.as_posix()
     )
     assert args.replace_activation is False
     assert args.promotion is None
