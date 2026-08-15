@@ -342,7 +342,8 @@ def test_cancel_owned_cancels_exact_owned_orders_despite_foreign_state(
             self.args = _args
             self.kwargs = _kwargs
 
-        def cancel_owned_open_orders(self):
+        @staticmethod
+        def cancel_owned_open_orders():
             calls.append("cancel")
             return PolymarketCancelResult((), ())
 
@@ -440,7 +441,8 @@ def test_stop_owned_exposure_closes_only_local_inventory() -> None:
         def owned_inventory():
             return tuple(inventory)
 
-        def open_owned_order_ids(self):
+        @staticmethod
+        def open_owned_order_ids():
             return ()
 
     class Coordinator:
@@ -498,7 +500,8 @@ def test_stop_owned_exposure_reports_blocked_inventory_without_claiming_close() 
         def owned_inventory():
             return inventory
 
-        def open_owned_order_ids(self):
+        @staticmethod
+        def open_owned_order_ids():
             return ()
 
     class Coordinator:
@@ -1069,7 +1072,8 @@ def test_supervision_runs_independent_services_and_stops_cleanly(
         def __init__(self, _venue, _ledger, **kwargs):
             assert isinstance(kwargs["runtime_authority"], Guard)
 
-        def preflight(self):
+        @staticmethod
+        def preflight():
             events.append("preflight")
             return clean
 
@@ -1455,7 +1459,8 @@ def test_autonomous_assembles_independent_promoted_runtime(
         def __init__(self, **kwargs: object) -> None:
             captured.update(kwargs)
 
-        async def run(self, *, duration_seconds: float) -> None:
+        @staticmethod
+        async def run(*, duration_seconds: float) -> None:
             assert duration_seconds == 3
             events.append("run")
 
@@ -1608,7 +1613,8 @@ def test_autonomous_cleanup_surfaces_failed_stop_latch_after_closing_resources()
     events: list[str] = []
 
     class Control:
-        def request_stop(self, *, reason: str) -> None:
+        @staticmethod
+        def request_stop(*, reason: str) -> None:
             events.append(f"stop:{reason}")
             raise RuntimeError("durable stop latch failed")
 
