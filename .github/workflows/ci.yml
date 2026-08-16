@@ -23,9 +23,6 @@ jobs:
   test-with-coverage:
     name: Python tests and coverage
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      id-token: write # Codecov OIDC upload; no long-lived repository secret.
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -83,17 +80,6 @@ jobs:
           path: |
             htmlcov
             coverage.xml
-
-      - name: Upload coverage report to Codecov
-        if: >-
-          always() &&
-          github.event_name == 'push' &&
-          github.ref_name == github.event.repository.default_branch
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: true
-          use_oidc: true
 
   windows-python311-smoke:
     name: Windows Python 3.11 and native UI smoke
