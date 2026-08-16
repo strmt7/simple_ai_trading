@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 from decimal import Decimal, ROUND_CEILING, localcontext
 import hashlib
 import json
@@ -216,6 +216,24 @@ def _dataset(
         provisional,
         dataset_sha256=_sha(provisional.identity_payload()),
     )
+
+
+def test_round13_strict_payload_parsers_round_trip_current_evidence() -> None:
+    observation = _observation()
+    observation_payload = {
+        "schema_version": "polymarket-round13-entry-observation-v1",
+        **asdict(observation),
+    }
+    assert round13_module._observation_from_payload(observation_payload) == observation
+
+    attempt = _attempt(observation=observation)
+    attempt_payload = {
+        "schema_version": "polymarket-round13-attempt-v1",
+        **asdict(attempt),
+        "observation": observation_payload,
+    }
+    assert round13_module._attempt_from_payload(attempt_payload) == attempt
+    assert round13_module._boolean(True, name="value") is True
 
 
 def test_round13_program_is_host_neutral_and_exact() -> None:

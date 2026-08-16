@@ -99,7 +99,7 @@ def _finite_float(value: object, *, name: str) -> float:
     if isinstance(value, bool):
         raise ValueError(f"{name} must be a finite number")
     try:
-        parsed = float(value)
+        parsed = float(str(value))
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be a finite number") from exc
     if not math.isfinite(parsed):

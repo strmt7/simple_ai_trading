@@ -29,6 +29,16 @@ CONTRACT_BINDING_CORRECTION = (
     ROOT / "docs/model-research/polymarket/"
     "round-028-loaded-contract-binding-correction-v1.json"
 )
+SUCCESSOR_CONTRACT_BINDING_CORRECTIONS = (
+    ROOT / "docs/model-research/polymarket/"
+    "round-028-loaded-contract-binding-correction-v2.json",
+    ROOT / "docs/model-research/polymarket/"
+    "round-028-loaded-contract-binding-correction-v3.json",
+)
+STATIC_ANALYSIS_REMEDIATION = (
+    ROOT / "docs/model-research/polymarket/"
+    "round-028-static-analysis-remediation-amendment-v2.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -52,7 +62,9 @@ def _text_sha256(path: Path) -> str:
 def test_round28_preregistration_is_hash_and_source_bound_before_targets() -> None:
     value = json.loads(PREREGISTRATION.read_text(encoding="ascii"))
     amendment = json.loads(IMPLEMENTATION_AMENDMENT.read_text(encoding="ascii"))
+    remediation = json.loads(STATIC_ANALYSIS_REMEDIATION.read_text(encoding="ascii"))
     claimed = value.pop("preregistration_sha256")
+    remediation_claimed = remediation.pop("amendment_sha256")
 
     assert claimed == _canonical_sha256(value)
     assert value["status"] == (
@@ -75,16 +87,25 @@ def test_round28_preregistration_is_hash_and_source_bound_before_targets() -> No
         "profitability_claim": False,
     }
     superseded = amendment["superseded_source_text_sha256"]
+    remediated = remediation["source_text_sha256"]
+    assert remediation_claimed == _canonical_sha256(remediation)
+    assert remediation["base_preregistration_sha256"] == claimed
+    assert not set(superseded) & set(remediated)
     assert set(superseded) <= set(value["source_text_sha256"])
     assert all(
         value["source_text_sha256"][relative] == expected
         for relative, expected in superseded.items()
     )
-    assert all(
-        expected == _text_sha256(ROOT / relative)
-        for relative, expected in value["source_text_sha256"].items()
-        if relative not in superseded
-    )
+    for relative, expected in value["source_text_sha256"].items():
+        if relative in superseded:
+            continue
+        if relative in remediated:
+            assert remediated[relative] == {
+                "corrected": _text_sha256(ROOT / relative),
+                "frozen": expected,
+            }
+        else:
+            assert expected == _text_sha256(ROOT / relative)
 
 
 def test_round28_preregistration_binds_exact_incremental_feature_contract() -> None:
@@ -117,6 +138,10 @@ def test_round28_preregistration_binds_exact_incremental_feature_contract() -> N
 def test_round28_selection_amendment_is_hash_and_superseded_source_bound() -> None:
     value = json.loads(IMPLEMENTATION_AMENDMENT.read_text(encoding="ascii"))
     correction = json.loads(CONTRACT_BINDING_CORRECTION.read_text(encoding="ascii"))
+    successor_replacements = [
+        json.loads(path.read_text(encoding="ascii"))["superseded_source_text_sha256"]
+        for path in SUCCESSOR_CONTRACT_BINDING_CORRECTIONS
+    ]
     claimed = value.pop("amendment_sha256")
 
     assert claimed == _canonical_sha256(value)
@@ -148,9 +173,11 @@ def test_round28_selection_amendment_is_hash_and_superseded_source_bound() -> No
     replacements = correction["superseded_source_text_sha256"]
     for relative, expected in value["source_text_sha256"].items():
         if relative in replacements:
-            assert replacements[relative] == {
-                "frozen": expected,
-                "corrected": _text_sha256(ROOT / relative),
-            }
-        else:
-            assert expected == _text_sha256(ROOT / relative)
+            assert replacements[relative]["frozen"] == expected
+            expected = replacements[relative]["corrected"]
+        for successor in successor_replacements:
+            if relative not in successor:
+                continue
+            assert successor[relative]["frozen"] == expected
+            expected = successor[relative]["corrected"]
+        assert expected == _text_sha256(ROOT / relative)

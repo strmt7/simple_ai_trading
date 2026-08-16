@@ -794,13 +794,16 @@ def _validate_execution_economics(
     if execution.exit_filled:
         if entry is None or exit_result is None:
             raise ValueError("Polymarket action execution exit result is missing")
+        entry_cost_quote = execution.entry_cost_quote
+        if entry_cost_quote is None:
+            raise ValueError("Polymarket action execution entry cost is missing")
         expected_proceeds = (
             exit_result.average_fill_price * exit_result.filled_quantity
             - exit_result.fee_quote
         )
         if (
             execution.exit_proceeds_quote != expected_proceeds
-            or execution.net_quote != expected_proceeds - execution.entry_cost_quote
+            or execution.net_quote != expected_proceeds - entry_cost_quote
         ):
             raise ValueError("Polymarket action execution exit value is inconsistent")
     elif execution.exit_proceeds_quote is not None or execution.net_quote is not None:

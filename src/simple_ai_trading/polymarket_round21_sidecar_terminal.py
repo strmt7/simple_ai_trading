@@ -257,21 +257,29 @@ def validate_round21_sidecar_terminal_manifest(
         for segment in segments
         if not segment["eligible_for_optional_feature_replay"]
     ]
+    created_at_ms = _integer(
+        payload.get("created_at_ms"), label="creation time", minimum=1
+    )
+    campaign_end_ms = _integer(
+        payload.get("campaign_end_ms"), label="campaign end", minimum=1
+    )
+    campaign_start_ms = _integer(
+        payload.get("campaign_start_ms"), label="campaign start", minimum=1
+    )
     if (
         set(payload) != expected_keys
         or claimed != _canonical_sha256(payload)
         or _SHA256.fullmatch(claimed) is None
         or payload.get("schema_version")
         != POLYMARKET_ROUND21_SIDECAR_TERMINAL_SCHEMA_VERSION
-        or _integer(payload.get("created_at_ms"), label="creation time", minimum=1)
-        < _integer(payload.get("campaign_end_ms"), label="campaign end", minimum=1)
-        or _integer(payload.get("campaign_start_ms"), label="campaign start", minimum=1)
-        >= payload["campaign_end_ms"]
+        or created_at_ms < campaign_end_ms
+        or campaign_start_ms >= campaign_end_ms
         or _SHA256.fullmatch(str(payload.get("source_plan_sha256") or "")) is None
         or not eligible
         or len(run_ids) != len(set(run_ids))
         or any(
-            int(current["started_at_ms"]) < int(previous["ended_at_ms"])
+            _integer(current.get("started_at_ms"), label="segment start", minimum=1)
+            < _integer(previous.get("ended_at_ms"), label="segment end", minimum=1)
             for previous, current in zip(eligible, eligible[1:], strict=False)
         )
         or payload.get("eligible_run_ids") != run_ids

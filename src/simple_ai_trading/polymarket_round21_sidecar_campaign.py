@@ -7,6 +7,7 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass
 import hashlib
 import hmac
+import importlib
 import json
 import math
 import os
@@ -55,13 +56,11 @@ POLYMARKET_ROUND21_SIDECAR_CAMPAIGN_STATE_SCHEMA_VERSION = (
 POLYMARKET_ROUND21_SIDECAR_MAXIMUM_CONSECUTIVE_FAILURES = 3
 POLYMARKET_ROUND21_SIDECAR_FAILURE_BACKOFF_SECONDS = 30
 _DESIGN_RELATIVE = (
-    "docs/model-research/polymarket/"
-    "round-021-binance-sidecar-campaign-design-v2.json"
+    "docs/model-research/polymarket/round-021-binance-sidecar-campaign-design-v2.json"
 )
 _REQUIRED_FILES = (
     _DESIGN_RELATIVE,
-    "docs/model-research/polymarket/"
-    "round-021-binance-sidecar-capture-design-v1.json",
+    "docs/model-research/polymarket/round-021-binance-sidecar-capture-design-v1.json",
     "docs/model-research/polymarket/"
     "round-021-independent-matched-edge-contract-v1.json",
     "src/simple_ai_trading/polymarket_recorder.py",
@@ -102,6 +101,29 @@ def _canonical_json(value: object) -> str:
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _integer(value: object, *, label: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"Round 21 sidecar campaign {label} is invalid")
+    return value
+
+
+def _posix_file_lock(file_descriptor: int, *, unlock: bool) -> None:
+    module = importlib.import_module("fcntl")
+    flock = getattr(module, "flock", None)
+    lock_un = getattr(module, "LOCK_UN", None)
+    lock_ex = getattr(module, "LOCK_EX", None)
+    lock_nb = getattr(module, "LOCK_NB", None)
+    if (
+        not callable(flock)
+        or not isinstance(lock_un, int)
+        or not isinstance(lock_ex, int)
+        or not isinstance(lock_nb, int)
+    ):
+        raise RuntimeError("POSIX file locking is unavailable")
+    operation = lock_un if unlock else lock_ex | lock_nb
+    flock(file_descriptor, operation)
 
 
 def _file_sha256(path: Path) -> str:
@@ -214,17 +236,15 @@ def validate_round21_legacy_sidecar_state(
         set(state) != expected_keys
         or claimed != _canonical_sha256(state)
         or _SHA256.fullmatch(claimed) is None
-        or state.get("schema_version")
-        != "polymarket-round21-binance-sidecar-state-v1"
+        or state.get("schema_version") != "polymarket-round21-binance-sidecar-state-v1"
         or state.get("phase") not in {"capture-started", "capturing"}
-        or state.get("round21_contract_sha256")
-        != POLYMARKET_ROUND21_CONTRACT_SHA256
+        or state.get("round21_contract_sha256") != POLYMARKET_ROUND21_CONTRACT_SHA256
         or state.get("sidecar_design_sha256")
         != POLYMARKET_ROUND21_SIDECAR_DESIGN_SHA256
         or type(state.get("observed_at_ms")) is not int
-        or int(state["observed_at_ms"]) <= 0
+        or _integer(state["observed_at_ms"], label="observation time") <= 0
         or any(
-            type(state.get(name)) is not int or int(state[name]) < 0
+            type(state.get(name)) is not int or _integer(state[name], label=name) < 0
             for name in ("database_bytes", "wal_bytes", "free_bytes")
         )
         or not isinstance(details, Mapping)
@@ -276,22 +296,20 @@ def create_round21_sidecar_campaign_plan(
     if not isinstance(details, Mapping):
         raise AssertionError("validated legacy sidecar details are unavailable")
     payload: dict[str, object] = {
-        "schema_version": (
-            POLYMARKET_ROUND21_SIDECAR_CAMPAIGN_PLAN_SCHEMA_VERSION
-        ),
+        "schema_version": (POLYMARKET_ROUND21_SIDECAR_CAMPAIGN_PLAN_SCHEMA_VERSION),
         "created_at_ms": int(created_at_ms),
         "scheduled_start_ms": int(scheduled_start_ms),
         "scheduled_end_ms": POLYMARKET_ROUND21_SIDECAR_SCHEDULED_END_MS,
         "round21_contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
-        "round20_campaign_plan_sha256": (
-            POLYMARKET_ROUND21_CAMPAIGN_PLAN_SHA256
-        ),
+        "round20_campaign_plan_sha256": (POLYMARKET_ROUND21_CAMPAIGN_PLAN_SHA256),
         "sidecar_v1_design_sha256": POLYMARKET_ROUND21_SIDECAR_DESIGN_SHA256,
         "sidecar_campaign_design_sha256": (
             POLYMARKET_ROUND21_SIDECAR_CAMPAIGN_DESIGN_SHA256
         ),
         "legacy_run_id": str(details["run_id"]),
-        "legacy_state_observed_at_ms": int(legacy["observed_at_ms"]),
+        "legacy_state_observed_at_ms": _integer(
+            legacy["observed_at_ms"], label="legacy observation time"
+        ),
         "legacy_state_artifact_sha256": legacy["artifact_sha256"],
         "legacy_interruption": "host_reboot",
         "repository_commit_oid": str(repository_commit_oid).strip().lower(),
@@ -365,8 +383,7 @@ def validate_round21_sidecar_campaign_plan(
         or type(observed) is not int
         or not 0 < start <= observed < created < end
         or end != POLYMARKET_ROUND21_SIDECAR_SCHEDULED_END_MS
-        or payload.get("round21_contract_sha256")
-        != POLYMARKET_ROUND21_CONTRACT_SHA256
+        or payload.get("round21_contract_sha256") != POLYMARKET_ROUND21_CONTRACT_SHA256
         or payload.get("round20_campaign_plan_sha256")
         != POLYMARKET_ROUND21_CAMPAIGN_PLAN_SHA256
         or payload.get("sidecar_v1_design_sha256")
@@ -374,20 +391,15 @@ def validate_round21_sidecar_campaign_plan(
         or payload.get("sidecar_campaign_design_sha256")
         != POLYMARKET_ROUND21_SIDECAR_CAMPAIGN_DESIGN_SHA256
         or _RUN_ID.fullmatch(str(payload.get("legacy_run_id") or "")) is None
-        or _SHA256.fullmatch(
-            str(payload.get("legacy_state_artifact_sha256") or "")
-        )
+        or _SHA256.fullmatch(str(payload.get("legacy_state_artifact_sha256") or ""))
         is None
         or payload.get("legacy_interruption") != "host_reboot"
-        or _GIT_OID.fullmatch(str(payload.get("repository_commit_oid") or ""))
-        is None
-        or _GIT_OID.fullmatch(str(payload.get("repository_tree_oid") or ""))
-        is None
+        or _GIT_OID.fullmatch(str(payload.get("repository_commit_oid") or "")) is None
+        or _GIT_OID.fullmatch(str(payload.get("repository_tree_oid") or "")) is None
         or not isinstance(files, Mapping)
         or set(files) != set(_REQUIRED_FILES)
         or any(_SHA256.fullmatch(str(item)) is None for item in files.values())
-        or payload.get("required_streams")
-        != ["binance_futures", "binance_spot"]
+        or payload.get("required_streams") != ["binance_futures", "binance_spot"]
         or any(payload.get(name) is not False for name in false_fields)
     ):
         raise ValueError("Round 21 sidecar campaign plan differs")
@@ -397,9 +409,7 @@ def validate_round21_sidecar_campaign_plan(
         scheduled_end_ms=end,
         legacy_run_id=str(payload["legacy_run_id"]),
         legacy_state_observed_at_ms=observed,
-        legacy_state_artifact_sha256=str(
-            payload["legacy_state_artifact_sha256"]
-        ),
+        legacy_state_artifact_sha256=str(payload["legacy_state_artifact_sha256"]),
         repository_commit_oid=str(payload["repository_commit_oid"]),
         repository_tree_oid=str(payload["repository_tree_oid"]),
         repository_file_sha256=dict(files),
@@ -456,9 +466,7 @@ def build_round21_sidecar_segment_manifest(
     segment_index: int,
 ) -> dict[str, object]:
     payload: dict[str, object] = {
-        "schema_version": (
-            POLYMARKET_ROUND21_SIDECAR_SEGMENT_MANIFEST_SCHEMA_VERSION
-        ),
+        "schema_version": (POLYMARKET_ROUND21_SIDECAR_SEGMENT_MANIFEST_SCHEMA_VERSION),
         "plan_sha256": plan.plan_sha256,
         "round21_contract_sha256": POLYMARKET_ROUND21_CONTRACT_SHA256,
         "sidecar_campaign_design_sha256": (
@@ -539,8 +547,7 @@ def validate_round21_sidecar_segment_manifest(
         or payload.get("schema_version")
         != POLYMARKET_ROUND21_SIDECAR_SEGMENT_MANIFEST_SCHEMA_VERSION
         or payload.get("plan_sha256") != plan.plan_sha256
-        or payload.get("round21_contract_sha256")
-        != POLYMARKET_ROUND21_CONTRACT_SHA256
+        or payload.get("round21_contract_sha256") != POLYMARKET_ROUND21_CONTRACT_SHA256
         or payload.get("sidecar_campaign_design_sha256")
         != POLYMARKET_ROUND21_SIDECAR_CAMPAIGN_DESIGN_SHA256
         or _RUN_ID.fullmatch(str(payload.get("run_id") or "")) is None
@@ -553,15 +560,11 @@ def validate_round21_sidecar_segment_manifest(
         or segment < 1
         or payload.get("scheduled_campaign_start_ms") != plan.scheduled_start_ms
         or payload.get("scheduled_campaign_end_ms") != plan.scheduled_end_ms
-        or payload.get("purpose")
-        != "round21_optional_predictor_sidecar_segment"
+        or payload.get("purpose") != "round21_optional_predictor_sidecar_segment"
         or payload.get("required_assets") != []
-        or payload.get("required_streams")
-        != ["binance_futures", "binance_spot"]
-        or payload.get("spot_streams")
-        != ["btcusdt@bookTicker", "btcusdt@trade"]
-        or payload.get("usdm_streams")
-        != ["btcusdt@bookTicker", "btcusdt@trade"]
+        or payload.get("required_streams") != ["binance_futures", "binance_spot"]
+        or payload.get("spot_streams") != ["btcusdt@bookTicker", "btcusdt@trade"]
+        or payload.get("usdm_streams") != ["btcusdt@bookTicker", "btcusdt@trade"]
         or payload.get("repository_commit_oid") != plan.repository_commit_oid
         or payload.get("repository_tree_oid") != plan.repository_tree_oid
         or any(payload.get(name) is not False for name in false_fields)
@@ -613,14 +616,10 @@ class _CampaignFileLock(AbstractContextManager["_CampaignFileLock"]):
 
                 msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
             else:
-                import fcntl
-
-                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                _posix_file_lock(handle.fileno(), unlock=False)
         except OSError as exc:
             handle.close()
-            raise RuntimeError(
-                "Round 21 sidecar campaign is already running"
-            ) from exc
+            raise RuntimeError("Round 21 sidecar campaign is already running") from exc
         self.handle = handle
         return self
 
@@ -635,9 +634,7 @@ class _CampaignFileLock(AbstractContextManager["_CampaignFileLock"]):
 
                 msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
             else:
-                import fcntl
-
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                _posix_file_lock(handle.fileno(), unlock=True)
         finally:
             handle.close()
             self.handle = None
@@ -666,9 +663,7 @@ def _write_segment_result(
     if status not in {"complete", "degraded", "failed", "interrupted"}:
         raise ValueError("Round 21 sidecar segment status differs")
     payload: dict[str, object] = {
-        "schema_version": (
-            POLYMARKET_ROUND21_SIDECAR_SEGMENT_RESULT_SCHEMA_VERSION
-        ),
+        "schema_version": (POLYMARKET_ROUND21_SIDECAR_SEGMENT_RESULT_SCHEMA_VERSION),
         "plan_sha256": plan.plan_sha256,
         "segment_index": int(segment_index),
         "status": status,
@@ -682,9 +677,7 @@ def _write_segment_result(
     }
     path = _segment_result_path(state_root, segment_index)
     if path.exists():
-        raise FileExistsError(
-            f"Round 21 sidecar segment result already exists: {path}"
-        )
+        raise FileExistsError(f"Round 21 sidecar segment result already exists: {path}")
     return _write_hashed_json(path, payload)
 
 
@@ -725,7 +718,7 @@ def _segment_results(
             or value.get("segment_index") != expected_index
             or status not in {"complete", "degraded", "failed", "interrupted"}
             or type(value.get("observed_at_ms")) is not int
-            or int(value["observed_at_ms"]) <= 0
+            or _integer(value["observed_at_ms"], label="result observation time") <= 0
             or not isinstance(value.get("details"), Mapping)
             or value.get("optional_feature_admission_pending")
             is not (status in {"complete", "degraded"})
@@ -921,9 +914,7 @@ def inspect_round21_sidecar_campaign(
     observed = time.time_ns() // 1_000_000 if now_ms is None else int(now_ms)
     results = _segment_results(config.state_root, plan)
     return {
-        "schema_version": (
-            POLYMARKET_ROUND21_SIDECAR_CAMPAIGN_STATE_SCHEMA_VERSION
-        ),
+        "schema_version": (POLYMARKET_ROUND21_SIDECAR_CAMPAIGN_STATE_SCHEMA_VERSION),
         "plan_sha256": plan.plan_sha256,
         "observed_at_ms": observed,
         "relation": "after_campaign" if observed >= plan.scheduled_end_ms else "open",
@@ -1073,14 +1064,12 @@ async def run_round21_sidecar_campaign(
                     POLYMARKET_ROUND21_SIDECAR_MAXIMUM_CONSECUTIVE_FAILURES
                 ):
                     break
-                await asyncio.sleep(
-                    POLYMARKET_ROUND21_SIDECAR_FAILURE_BACKOFF_SECONDS
-                )
+                await asyncio.sleep(POLYMARKET_ROUND21_SIDECAR_FAILURE_BACKOFF_SECONDS)
         status_counts: dict[str, int] = {}
         for result in results:
             status = str(result["status"])
             status_counts[status] = status_counts.get(status, 0) + 1
-        terminal = {
+        terminal: dict[str, object] = {
             "schema_version": (
                 POLYMARKET_ROUND21_SIDECAR_CAMPAIGN_STATE_SCHEMA_VERSION
             ),

@@ -105,14 +105,22 @@ def _decimal(
     return parsed
 
 
-def _timestamp(value: object, *, name: str) -> int:
+def _integer(value: object, *, name: str, minimum: int | None = None) -> int:
+    if isinstance(value, bool) or not isinstance(
+        value, (str, bytes, bytearray, int, float)
+    ):
+        raise ValueError(f"{name} must be an integer")
     try:
         parsed = int(value)
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(f"{name} must be an integer timestamp") from exc
-    if parsed < 0:
-        raise ValueError(f"{name} must be non-negative")
+        raise ValueError(f"{name} must be an integer") from exc
+    if minimum is not None and parsed < minimum:
+        raise ValueError(f"{name} is below its minimum")
     return parsed
+
+
+def _timestamp(value: object, *, name: str) -> int:
+    return _integer(value, name=name, minimum=0)
 
 
 @dataclass(frozen=True)
@@ -527,11 +535,16 @@ class PolymarketEvidenceReplay:
                 selected_conditions
             ).issubset(continuity.eligible_condition_ids):
                 raise ValueError("Polymarket replay continuity proof differs")
-            gap_count = int(
-                connection.execute(
-                    "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
-                    [selected],
-                ).fetchone()[0]
+            gap_count_row = connection.execute(
+                "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
+                [selected],
+            ).fetchone()
+            if gap_count_row is None:
+                raise RuntimeError("Polymarket stream-gap count query returned no row")
+            gap_count = _integer(
+                gap_count_row[0],
+                name="Polymarket stream-gap count",
+                minimum=0,
             )
         else:
             gap_count = cls.validate_stream_gaps(
@@ -805,22 +818,22 @@ class PolymarketEvidenceReplay:
                     continue
             recorded_by_condition[item.condition_id] = item
         official_by_condition: dict[str, PolymarketResolutionEvidence] = {}
-        for item in load_official_resolutions(store, run_id=run_id):
-            if allowed is not None and item.condition_id not in allowed:
+        for official in load_official_resolutions(store, run_id=run_id):
+            if allowed is not None and official.condition_id not in allowed:
                 continue
             external = PolymarketResolutionEvidence(
-                run_id=item.run_id,
-                event_id=item.resolution_id,
-                condition_id=item.condition_id,
-                winning_asset_id=item.winning_asset_id,
-                winning_outcome=item.winning_outcome,
-                resolved_at_ms=item.observed_wall_ms,
-                received_wall_ms=item.observed_wall_ms,
+                run_id=official.run_id,
+                event_id=official.resolution_id,
+                condition_id=official.condition_id,
+                winning_asset_id=official.winning_asset_id,
+                winning_outcome=official.winning_outcome,
+                resolved_at_ms=official.observed_wall_ms,
+                received_wall_ms=official.observed_wall_ms,
                 received_monotonic_ns=0,
-                event_sha256=item.evidence_sha256,
+                event_sha256=official.evidence_sha256,
                 source="clob_gamma_crosscheck",
             )
-            observed = recorded_by_condition.get(item.condition_id)
+            observed = recorded_by_condition.get(official.condition_id)
             if observed is not None:
                 if (
                     observed.winning_asset_id != external.winning_asset_id
@@ -829,9 +842,9 @@ class PolymarketEvidenceReplay:
                     raise ValueError(
                         "recorded and finalized Polymarket resolutions disagree"
                     )
-            if item.condition_id in official_by_condition:
+            if official.condition_id in official_by_condition:
                 raise ValueError("Polymarket replay has duplicate official resolutions")
-            official_by_condition[item.condition_id] = external
+            official_by_condition[official.condition_id] = external
         return tuple(
             sorted(
                 official_by_condition.values(),
@@ -1011,12 +1024,22 @@ class PolymarketEvidenceReplay:
                     event=dict(payload),
                     event_sha256=str(raw_row[5]),
                     connection_id=str(raw_row[6]),
-                    sequence_number=int(raw_row[7]),
-                    received_wall_ms=int(raw_row[8]),
-                    received_monotonic_ns=int(raw_row[9]),
-                    available_wall_ms=int(raw_row[8]),
-                    available_monotonic_ns=int(raw_row[9]),
-                    sub_index=int(raw_row[10]),
+                    sequence_number=_integer(
+                        raw_row[7], name="CLOB sequence number", minimum=0
+                    ),
+                    received_wall_ms=_timestamp(
+                        raw_row[8], name="CLOB received wall timestamp"
+                    ),
+                    received_monotonic_ns=_timestamp(
+                        raw_row[9], name="CLOB received monotonic timestamp"
+                    ),
+                    available_wall_ms=_timestamp(
+                        raw_row[8], name="CLOB available wall timestamp"
+                    ),
+                    available_monotonic_ns=_timestamp(
+                        raw_row[9], name="CLOB available monotonic timestamp"
+                    ),
+                    sub_index=_integer(raw_row[10], name="CLOB sub-index", minimum=0),
                 )
                 metrics.total_event_count += 1
                 condition = str(row.event.get("market") or row.condition_id).lower()
@@ -1063,14 +1086,9 @@ class PolymarketEvidenceReplay:
                         metrics.maximum_late_arrival_delay_ns,
                         arrival_delay,
                     )
-                    if (
-                        arrival_delay != 0
-                        and (
-                            source_skew > _CAUSAL_REORDER_MAX_SOURCE_SKEW_MS
-                            or not 0
-                            <= arrival_delay
-                            <= _CAUSAL_REORDER_MAX_ARRIVAL_NS
-                        )
+                    if arrival_delay != 0 and (
+                        source_skew > _CAUSAL_REORDER_MAX_SOURCE_SKEW_MS
+                        or not 0 <= arrival_delay <= _CAUSAL_REORDER_MAX_ARRIVAL_NS
                     ):
                         raise ValueError(
                             "CLOB event exceeded the bounded causal reorder window: "
@@ -1123,8 +1141,8 @@ class PolymarketEvidenceReplay:
                     prepared[index] = item
 
             output: list[_EventRow] = []
-            for row, condition, source_time in prepared:
-                if source_time is None:
+            for row, condition, release_source_time in prepared:
+                if release_source_time is None:
                     output.append(row)
                     continue
                 release_wall_ms = release_wall_by_condition[condition]
@@ -2852,6 +2870,8 @@ class PolymarketEvidenceReplay:
                     max(current.bids, default=Decimal("0")),
                     min(current.asks, default=Decimal("1")),
                 )
+                if reported_checksum is None:
+                    raise ValueError("price_change batch did not report a checksum")
                 if reported_checksum != expected:
                     correction_evidence = cls._next_group_full_book_crossing_evidence(
                         token,
@@ -2986,7 +3006,7 @@ class PolymarketEvidenceReplay:
                         and pending_hash == book_hash
                         and pending_checksum == change_checksum
                     )
-                    correction_evidence: tuple[_EventRow, _EventRow] | tuple[()] = ()
+                    correction_evidence: tuple[_EventRow, ...] = ()
                     if (
                         len(pending_changes) == 1
                         and not same_message
@@ -3065,11 +3085,15 @@ class PolymarketEvidenceReplay:
                         name="corroborated price_change size",
                         minimum=Decimal("0"),
                     )
-                    levels = payload.bids if side == "BUY" else payload.asks
+                    snapshot_levels = payload.bids if side == "BUY" else payload.asks
                     if side not in {"BUY", "SELL"}:
                         raise ValueError("price_change side must be BUY or SELL")
                     level_size = next(
-                        (level.quantity for level in levels if level.price == price),
+                        (
+                            level.quantity
+                            for level in snapshot_levels
+                            if level.price == price
+                        ),
                         Decimal("0"),
                     )
                     expected_best = (
@@ -3224,11 +3248,13 @@ class PolymarketEvidenceReplay:
                                 raise ValueError(
                                     "retained price_change is off the active tick"
                                 )
-                            levels = rebased.bids if side == "BUY" else rebased.asks
+                            active_levels = (
+                                rebased.bids if side == "BUY" else rebased.asks
+                            )
                             if size == 0:
-                                levels.pop(price, None)
+                                active_levels.pop(price, None)
                             else:
-                                levels[price] = size
+                                active_levels[price] = size
                             replay_rows.append(change_row)
                         expected = (
                             max(rebased.bids, default=Decimal("0")),

@@ -10,7 +10,7 @@ import hashlib
 import json
 import math
 import time
-from typing import Callable, Mapping, Sequence, TypeVar
+from typing import Callable, Mapping, overload, Sequence, TypeVar
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .duckdb_batch import insert_rows_columnar
@@ -211,7 +211,9 @@ def _finite_float(value: object, *, name: str, positive: bool = False) -> float:
 
 
 def _timestamp(value: object, *, name: str) -> int:
-    if isinstance(value, bool):
+    if isinstance(value, bool) or not isinstance(
+        value, (str, bytes, bytearray, int, float)
+    ):
         raise ValueError(f"{name} must be a non-negative integer")
     try:
         parsed = int(value)
@@ -443,6 +445,12 @@ class _CompactBookTimeView(Sequence[int]):
     def __len__(self) -> int:
         return len(self._books)
 
+    @overload
+    def __getitem__(self, index: int) -> int: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> tuple[int, ...]: ...
+
     def __getitem__(self, index: int | slice) -> int | tuple[int, ...]:
         if isinstance(index, slice):
             return tuple(
@@ -494,6 +502,12 @@ class _CompactBinanceBookView(Sequence[_BinanceBookPoint]):
             if self._indices is not None
             else self._start + normalized
         )
+
+    @overload
+    def __getitem__(self, index: int) -> _BinanceBookPoint: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> tuple[_BinanceBookPoint, ...]: ...
 
     def __getitem__(
         self, index: int | slice
@@ -643,6 +657,12 @@ class _CompactBinanceBooks(Sequence[_BinanceBookPoint]):
         offset = index * 32
         return values[offset : offset + 32].hex()
 
+    @overload
+    def __getitem__(self, index: int) -> _BinanceBookPoint: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> tuple[_BinanceBookPoint, ...]: ...
+
     def __getitem__(
         self, index: int | slice
     ) -> _BinanceBookPoint | tuple[_BinanceBookPoint, ...]:
@@ -742,6 +762,12 @@ class _CompactTradeTimeView(Sequence[int]):
     def __len__(self) -> int:
         return len(self._trades)
 
+    @overload
+    def __getitem__(self, index: int) -> int: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> tuple[int, ...]: ...
+
     def __getitem__(self, index: int | slice) -> int | tuple[int, ...]:
         if isinstance(index, slice):
             return tuple(
@@ -793,6 +819,12 @@ class _CompactBinanceTradeView(Sequence[_BinanceTradePoint]):
             if self._indices is not None
             else self._start + normalized
         )
+
+    @overload
+    def __getitem__(self, index: int) -> _BinanceTradePoint: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> tuple[_BinanceTradePoint, ...]: ...
 
     def __getitem__(
         self, index: int | slice
@@ -940,6 +972,12 @@ class _CompactBinanceTrades(Sequence[_BinanceTradePoint]):
     def _hex_at(values: bytearray, index: int) -> str:
         offset = index * 32
         return values[offset : offset + 32].hex()
+
+    @overload
+    def __getitem__(self, index: int) -> _BinanceTradePoint: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> tuple[_BinanceTradePoint, ...]: ...
 
     def __getitem__(
         self, index: int | slice
@@ -1163,6 +1201,12 @@ class _FixedDigestSequence(Sequence[bytes]):
     def __len__(self) -> int:
         return len(self._values) // 32
 
+    @overload
+    def __getitem__(self, index: int) -> bytes: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> tuple[bytes, ...]: ...
+
     def __getitem__(self, index: int | slice) -> bytes | tuple[bytes, ...]:
         if isinstance(index, slice):
             return tuple(
@@ -1353,6 +1397,7 @@ class _BookSeries:
         source_scope_sha256: str,
     ) -> None:
         self.points = _stable_received_order(points)
+        self.times: Sequence[int]
         if isinstance(self.points, _CompactBinanceBookView):
             self.connection_id = self.points.connection_id
             self.times = self.points.times()
@@ -1449,6 +1494,7 @@ class _TradeSeries:
         source_scope_sha256: str,
     ) -> None:
         self.points = _stable_received_order(points)
+        self.times: Sequence[int]
         if isinstance(self.points, _CompactBinanceTradeView):
             self.connection_id = self.points.connection_id
             self.times = self.points.times()
@@ -1520,8 +1566,8 @@ def _parse_feed_points(
     maximum_received_wall_ms: int | None = None,
 ) -> tuple[
     dict[str, tuple[_PricePoint, ...]],
-    dict[str, Sequence[_BinanceBookPoint]],
-    dict[str, Sequence[_BinanceTradePoint]],
+    dict[str, _CompactBinanceBooks],
+    dict[str, _CompactBinanceTrades],
     dict[str, dict[str, int]],
 ]:
     chainlink: dict[str, list[_PricePoint]] = {key: [] for key in _ASSETS}
@@ -1887,26 +1933,26 @@ def load_polymarket_feature_source_context(
         )
     book_series: dict[str, dict[str, _BookSeries]] = {}
     trade_series: dict[str, dict[str, _TradeSeries]] = {}
-    for asset, points in direct_books.items():
+    for asset, book_points in direct_books.items():
         if progress is not None:
             progress(
                 "feature-source-series",
                 {
                     "asset": asset,
                     "kind": "book",
-                    "point_count": len(points),
+                    "point_count": len(book_points),
                     "status": "started",
                 },
             )
-        if isinstance(points, _CompactBinanceBooks):
+        if isinstance(book_points, _CompactBinanceBooks):
             grouped_books: Mapping[str, Sequence[_BinanceBookPoint]] = (
-                points.connection_views()
+                book_points.connection_views()
             )
         else:
-            mutable_groups: dict[str, list[_BinanceBookPoint]] = {}
-            for point in points:
-                mutable_groups.setdefault(point.connection_id, []).append(point)
-            grouped_books = mutable_groups
+            mutable_book_groups: dict[str, list[_BinanceBookPoint]] = {}
+            for point in book_points:
+                mutable_book_groups.setdefault(point.connection_id, []).append(point)
+            grouped_books = mutable_book_groups
         book_series[asset] = {
             connection_id: _BookSeries(
                 segment,
@@ -1920,31 +1966,31 @@ def load_polymarket_feature_source_context(
                 {
                     "asset": asset,
                     "kind": "book",
-                    "point_count": len(points),
+                    "point_count": len(book_points),
                     "segment_count": len(grouped_books),
                     "status": "complete",
                 },
             )
-    for asset, points in direct_trades.items():
+    for asset, trade_points in direct_trades.items():
         if progress is not None:
             progress(
                 "feature-source-series",
                 {
                     "asset": asset,
                     "kind": "trade",
-                    "point_count": len(points),
+                    "point_count": len(trade_points),
                     "status": "started",
                 },
             )
-        if isinstance(points, _CompactBinanceTrades):
+        if isinstance(trade_points, _CompactBinanceTrades):
             grouped_trades: Mapping[str, Sequence[_BinanceTradePoint]] = (
-                points.connection_views()
+                trade_points.connection_views()
             )
         else:
-            mutable_groups: dict[str, list[_BinanceTradePoint]] = {}
-            for point in points:
-                mutable_groups.setdefault(point.connection_id, []).append(point)
-            grouped_trades = mutable_groups
+            mutable_trade_groups: dict[str, list[_BinanceTradePoint]] = {}
+            for point in trade_points:
+                mutable_trade_groups.setdefault(point.connection_id, []).append(point)
+            grouped_trades = mutable_trade_groups
         trade_series[asset] = {
             connection_id: _TradeSeries(
                 segment,
@@ -1958,7 +2004,7 @@ def load_polymarket_feature_source_context(
                 {
                     "asset": asset,
                     "kind": "trade",
-                    "point_count": len(points),
+                    "point_count": len(trade_points),
                     "segment_count": len(grouped_trades),
                     "status": "complete",
                 },
@@ -2374,7 +2420,7 @@ def build_polymarket_feature_dataset(
         )
         last_emitted_ns[condition] = decision_ns
 
-    labeled_conditions = {asset: set() for asset in _ASSETS}
+    labeled_conditions: dict[str, set[str]] = {asset: set() for asset in _ASSETS}
     row_assets = {asset: 0 for asset in labeled_conditions}
     for row in rows:
         row_assets[row.asset] += 1
@@ -2449,7 +2495,12 @@ def materialize_polymarket_feature_dataset(
         dataset.source_scope,
         run_id=dataset.run_id,
     )
-    scoped_conditions = set(source_scope["condition_ids"])
+    scoped_condition_values = source_scope.get("condition_ids")
+    if not isinstance(scoped_condition_values, list) or not all(
+        isinstance(value, str) for value in scoped_condition_values
+    ):
+        raise ValueError("Polymarket feature source scope conditions are invalid")
+    scoped_conditions = set(scoped_condition_values)
     if scoped_conditions and any(
         row.condition_id not in scoped_conditions for row in dataset.rows
     ):

@@ -18,6 +18,7 @@ from typing import Callable, Mapping, Sequence
 import numpy as np
 from numpy.typing import NDArray
 
+from .paper_execution import BookLevel
 from .polymarket import PolymarketFiveMinuteMarket
 from .polymarket_recorder import DecodedPublicEvent, PolymarketEvidenceStore
 from .polymarket_replay import PolymarketEvidenceReplay, PolymarketRecordedBook
@@ -140,6 +141,10 @@ def _canonical_sha256(value: object) -> str:
 
 
 def _finite_positive(value: object, *, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(
+        value, (str, bytes, bytearray, int, float)
+    ):
+        raise ValueError(f"{name} is not numeric")
     try:
         selected = float(value)
     except (TypeError, ValueError, OverflowError) as exc:
@@ -147,6 +152,17 @@ def _finite_positive(value: object, *, name: str) -> float:
     if not math.isfinite(selected) or selected <= 0.0:
         raise ValueError(f"{name} must be finite and positive")
     return selected
+
+
+def _integer(value: object, *, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(
+        value, (str, bytes, bytearray, int, float)
+    ):
+        raise ValueError(f"{name} is not an integer")
+    try:
+        return int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} is not an integer") from exc
 
 
 def _logit(probability: float) -> float:
@@ -431,13 +447,16 @@ def _trade_metrics(
     gross = float(np.sum(quote, dtype=np.float64))
     signs = np.where(selected.buyer_is_maker[start:end], -1.0, 1.0)
     signed = float(np.sum(quote * signs, dtype=np.float64))
-    anchor_index = int(
-        np.searchsorted(
-            selected.received_wall_ms[:end],
-            window_start_ms,
-            side="right",
+    anchor_index = (
+        int(
+            np.searchsorted(
+                selected.received_wall_ms[:end],
+                window_start_ms,
+                side="right",
+            )
         )
-    ) - 1
+        - 1
+    )
     path_prices = (
         np.concatenate(
             (
@@ -459,9 +478,7 @@ def _trade_metrics(
     )
     return _TradeMetrics(
         log_return=(
-            0.0
-            if path_prices.size < 2
-            else math.log(path_prices[-1] / path_prices[0])
+            0.0 if path_prices.size < 2 else math.log(path_prices[-1] / path_prices[0])
         ),
         realized_variance=float(np.sum(returns * returns, dtype=np.float64)),
         signed_quote_imbalance=0.0 if gross <= 0.0 else signed / gross,
@@ -492,7 +509,7 @@ class _BookMetrics:
     depth5_imbalance: float
 
 
-def _depth(levels: Sequence[object], count: int) -> float:
+def _depth(levels: Sequence[BookLevel], count: int) -> float:
     return math.fsum(float(level.quantity) for level in levels[:count])
 
 
@@ -642,7 +659,21 @@ class Round27FeatureRow:
             "target_accessed": False,
             "trading_authority": False,
         }
-        row = cls(**payload, row_sha256=_canonical_sha256(payload))
+        row = cls(
+            schema_version=POLYMARKET_ROUND27_FEATURE_SCHEMA_VERSION,
+            run_id=str(run_id),
+            condition_id=str(condition_id).lower(),
+            event_start_ms=int(event_start_ms),
+            decision_time_ms=int(decision_time_ms),
+            market_prior_probability=float(market_prior_probability),
+            values=selected_values,
+            feature_names_sha256=POLYMARKET_ROUND27_FEATURE_NAMES_SHA256,
+            maximum_receipt_wall_ms=int(maximum_receipt_wall_ms),
+            source_chain_sha256=str(source_chain_sha256).lower(),
+            row_sha256=_canonical_sha256(payload),
+            target_accessed=False,
+            trading_authority=False,
+        )
         return row.validated()
 
     def validated(self) -> "Round27FeatureRow":
@@ -698,11 +729,11 @@ def _eligible_decision_times(
             continue
         start = max(
             market.event_start_ms + POLYMARKET_ROUND27_FIRST_DECISION_OFFSET_MS,
-            int(interval["interval_start_ms"]),
+            _integer(interval["interval_start_ms"], name="interval start"),
         )
         end = min(
             market.end_ms - POLYMARKET_ROUND27_LAST_DECISION_OFFSET_MS,
-            int(interval["interval_end_ms"]),
+            _integer(interval["interval_end_ms"], name="interval end"),
         )
         aligned = (
             (start + POLYMARKET_ROUND27_DECISION_STEP_MS - 1)
@@ -799,6 +830,9 @@ def build_round27_condition_features(
         )
         if not twap.available:
             continue
+        assert twap.log_distance_from_open is not None
+        assert twap.realized_variance_rate_per_second is not None
+        assert twap.path_efficiency is not None
         assert twap.current_source_age_ms is not None
         values: list[float] = [
             (decision - market.event_start_ms) / 300_000.0,

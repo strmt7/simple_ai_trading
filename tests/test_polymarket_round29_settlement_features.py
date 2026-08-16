@@ -140,3 +140,7 @@ def test_round29_rejects_source_field_and_provenance_tampering() -> None:
     valid = Round29FeatureRow.from_round27(base, overlay)
     with pytest.raises(ValueError, match="feature view differs"):
         replace(valid, feature_view="unknown").validated()  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="feature row differs"):
+        replace(valid, schema_version="unknown").validated()
+    with pytest.raises(ValueError, match="feature row differs"):
+        replace(valid, bbo_row_sha256="f" * 64).validated()

@@ -15,9 +15,7 @@ POLYMARKET_ROUND27_MODEL_AMENDMENT_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
     "round-027-campaign-admission-gate-correction-amendment-v16.json"
 )
-POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD = (
-    "model_implementation_amendment_sha256"
-)
+POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD = "model_implementation_amendment_sha256"
 _PREDECESSOR_AMENDMENT_SHA256 = (
     "4efe95538114bfd814a25867b8a933b2c19b01433b953a3ee7cd57ac019c8a81"
 )
@@ -124,6 +122,13 @@ _EFFECTIVE_SOURCE_LEDGER_SHA256 = (
 )
 _EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v7.json"
+)
+_STATIC_ANALYSIS_REMEDIATION_SHA256 = (
+    "cd505ac97623af8e52c255a6b3bf09c1f8cc8be5129498f1522721c5919a6c66"
+)
+_STATIC_ANALYSIS_REMEDIATION_RELATIVE_PATH = Path(
+    "docs/model-research/polymarket/"
+    "round-027-static-analysis-remediation-amendment-v17.json"
 )
 _HISTORICAL_PROVENANCE_FILES = frozenset(
     {".gitattributes", "pyproject.toml", "uv.lock"}
@@ -436,8 +441,7 @@ def _validate_original_predecessor(value: Mapping[str, object]) -> None:
         or claimed != _canonical_sha256(payload)
         or payload.get("schema_version")
         != "polymarket-round27-lightgbm-offset-correction-amendment-v1"
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
@@ -447,8 +451,7 @@ def _validate_original_predecessor(value: Mapping[str, object]) -> None:
         or correction.get("lightgbm_init_score") != "market_prior_logit"
         or correction.get("selection_and_economic_gates_changed") is not False
         or not isinstance(discovery, Mapping)
-        or discovery.get("old_tree_prediction_was_a_market_prior_residual")
-        is not False
+        or discovery.get("old_tree_prediction_was_a_market_prior_residual") is not False
     ):
         raise ValueError("Round 27 predecessor model amendment differs")
 
@@ -465,8 +468,7 @@ def _validate_calibration_predecessor(value: Mapping[str, object]) -> None:
         != "polymarket-round27-calibration-identity-correction-amendment-v2"
         or payload.get("status")
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _ORIGINAL_PREDECESSOR_AMENDMENT_SHA256
@@ -486,11 +488,8 @@ def _validate_calibration_predecessor(value: Mapping[str, object]) -> None:
         or correction.get("selection_and_economic_gates_changed") is not False
         or not isinstance(discovery, Mapping)
         or discovery.get("old_scale_change_recomputed_model_sha256") is not False
-        or discovery.get("old_selection_identity_bound_scaled_predictions")
-        is not False
-        or discovery.get(
-            "corrected_non_unit_prediction_is_byte_identical_after_reload"
-        )
+        or discovery.get("old_selection_identity_bound_scaled_predictions") is not False
+        or discovery.get("corrected_non_unit_prediction_is_byte_identical_after_reload")
         is not True
     ):
         raise ValueError("Round 27 predecessor model amendment differs")
@@ -531,8 +530,7 @@ def _validate_active_tick_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _CALIBRATION_PREDECESSOR_AMENDMENT_SHA256
@@ -542,8 +540,7 @@ def _validate_active_tick_predecessor(
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("superseded_source_text_sha256") != _EXPECTED_REPLACEMENTS
         or not isinstance(correction, Mapping)
-        or correction.get("ai_case_schema_version")
-        != "polymarket-round27-ai-case-v2"
+        or correction.get("ai_case_schema_version") != "polymarket-round27-ai-case-v2"
         or correction.get("ai_prompt_fields_changed") is not False
         or correction.get("candidate_limit_uses_decision_book_active_tick_size")
         is not True
@@ -560,12 +557,9 @@ def _validate_active_tick_predecessor(
         or not isinstance(discovery, Mapping)
         or discovery.get("frozen_candidate_limit_used_static_market_tick_size")
         is not True
-        or discovery.get(
-            "frozen_execution_revalidated_limit_against_active_tick_size"
-        )
+        or discovery.get("frozen_execution_revalidated_limit_against_active_tick_size")
         is not False
-        or discovery.get("official_market_channel_emits_tick_size_change")
-        is not True
+        or discovery.get("official_market_channel_emits_tick_size_change") is not True
         or discovery.get("official_order_price_requires_active_tick_alignment")
         is not True
         or discovery.get("synthetic_host_check_is_edge_or_profitability_evidence")
@@ -625,8 +619,7 @@ def _validate_walk_forward_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _ACTIVE_TICK_PREDECESSOR_AMENDMENT_SHA256
@@ -638,8 +631,7 @@ def _validate_walk_forward_predecessor(
         != _EXPECTED_CURRENT_REPLACEMENTS
         or not isinstance(correction, Mapping)
         or correction.get("candidate_families_changed") is not False
-        or correction.get("economic_or_prediction_gate_thresholds_changed")
-        is not False
+        or correction.get("economic_or_prediction_gate_thresholds_changed") is not False
         or correction.get("future_conditions_may_train_a_past_validation_fold")
         is not False
         or correction.get("l2_penalty_selection")
@@ -648,15 +640,15 @@ def _validate_walk_forward_predecessor(
         or correction.get("pre_validation_embargo_ms") != 600_000
         or correction.get("validation_block_count") != 5
         or correction.get("validation_loss_weighting")
-        != (
-            "equal_weight_per_condition_across_all_walk_forward_validation_blocks"
-        )
+        != ("equal_weight_per_condition_across_all_walk_forward_validation_blocks")
         or not isinstance(discovery, Mapping)
         or discovery.get("frozen_condition_hash_folds_grouped_rows_by_condition")
         is not True
         or discovery.get("frozen_condition_hash_folds_preserved_temporal_direction")
         is not False
-        or discovery.get("frozen_condition_hash_folds_permitted_future_training_conditions")
+        or discovery.get(
+            "frozen_condition_hash_folds_permitted_future_training_conditions"
+        )
         is not True
         or discovery.get("synthetic_host_check_is_edge_or_profitability_evidence")
         is not False
@@ -714,8 +706,7 @@ def _validate_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _WALK_FORWARD_PREDECESSOR_AMENDMENT_SHA256
@@ -723,36 +714,26 @@ def _validate_predecessor(
         != _EXPECTED_LATEST_PREDECESSOR_SOURCES
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
-        or payload.get("superseded_source_text_sha256")
-        != _EXPECTED_LATEST_REPLACEMENTS
+        or payload.get("superseded_source_text_sha256") != _EXPECTED_LATEST_REPLACEMENTS
         or not isinstance(correction, Mapping)
-        or correction.get("ai_matched_uplift_uses_same_corrected_bootstrap")
-        is not True
+        or correction.get("ai_matched_uplift_uses_same_corrected_bootstrap") is not True
         or correction.get("candidate_families_or_ai_prompts_changed") is not False
-        or correction.get("condition_order")
-        != "event_start_ms_then_condition_id"
+        or correction.get("condition_order") != "event_start_ms_then_condition_id"
         or correction.get("confidence_interval_method")
         != "stationary_bootstrap_block_length_sensitivity_envelope"
-        or correction.get("economic_or_prediction_gate_thresholds_changed")
-        is not False
+        or correction.get("economic_or_prediction_gate_thresholds_changed") is not False
         or correction.get("economic_report_schema_version")
         != "polymarket-round27-economic-replay-v3"
         or correction.get("expected_block_durations_ms")
         != [300_000, 1_200_000, 3_600_000]
         or correction.get("expected_block_lengths_conditions") != [1, 4, 12]
-        or correction.get("lower_bound_aggregation")
-        != "minimum_across_block_lengths"
+        or correction.get("lower_bound_aggregation") != "minimum_across_block_lengths"
         or correction.get("minimum_bootstrap_conditions") != 20
-        or correction.get("upper_bound_aggregation")
-        != "maximum_across_block_lengths"
+        or correction.get("upper_bound_aggregation") != "maximum_across_block_lengths"
         or not isinstance(discovery, Mapping)
-        or discovery.get(
-            "frozen_economic_bootstrap_resampled_conditions_independently"
-        )
+        or discovery.get("frozen_economic_bootstrap_resampled_conditions_independently")
         is not True
-        or discovery.get(
-            "frozen_prediction_bootstrap_ordered_conditions_by_opaque_id"
-        )
+        or discovery.get("frozen_prediction_bootstrap_ordered_conditions_by_opaque_id")
         is not True
         or discovery.get(
             "frozen_prediction_bootstrap_resampled_conditions_independently"
@@ -817,28 +798,22 @@ def _validate_v6_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
-        or payload.get("predecessor_amendment_sha256")
-        != _PREDECESSOR_AMENDMENT_SHA256
+        or payload.get("predecessor_amendment_sha256") != _PREDECESSOR_AMENDMENT_SHA256
         or payload.get("predecessor_source_text_sha256")
         != _EXPECTED_FINAL_PREDECESSOR_SOURCES
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
-        or payload.get("superseded_source_text_sha256")
-        != _EXPECTED_FINAL_REPLACEMENTS
+        or payload.get("superseded_source_text_sha256") != _EXPECTED_FINAL_REPLACEMENTS
         or not isinstance(correction, Mapping)
-        or correction.get("ai_replay_uses_same_all_condition_population")
-        is not True
+        or correction.get("ai_replay_uses_same_all_condition_population") is not True
         or correction.get("block_length_unit")
         != "chronologically_ordered_observed_conditions"
         or correction.get("candidate_families_or_ai_prompts_changed") is not False
         or correction.get("economic_bootstrap_no_fill_value_quote") != "0"
-        or correction.get("economic_bootstrap_population")
-        != "all_evaluated_conditions"
-        or correction.get("economic_or_prediction_gate_thresholds_changed")
-        is not False
+        or correction.get("economic_bootstrap_population") != "all_evaluated_conditions"
+        or correction.get("economic_or_prediction_gate_thresholds_changed") is not False
         or correction.get("economic_report_schema_version")
         != "polymarket-round27-economic-replay-v4"
         or correction.get(
@@ -856,9 +831,7 @@ def _validate_v6_predecessor(
             "frozen_economic_bootstrap_dropped_abstained_and_unfilled_conditions"
         )
         is not True
-        or discovery.get(
-            "frozen_expected_block_duration_assumed_no_missing_conditions"
-        )
+        or discovery.get("frozen_expected_block_duration_assumed_no_missing_conditions")
         is not True
         or discovery.get("frozen_fill_rate_gate_prevented_low_activity_from_passing")
         is not True
@@ -990,13 +963,11 @@ def _validate_v7_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V6_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("superseded_source_text_sha256") != expected_replacements
@@ -1013,14 +984,20 @@ def _validate_v7_predecessor(
         or correction.get("model_payload_schema_changed") is not False
         or correction.get("prediction_gate_became_stricter") is not True
         or correction.get("prediction_gate_numeric_thresholds_changed") is not False
-        or correction.get("realized_variance_includes_boundary_to_first_in_window_return")
+        or correction.get(
+            "realized_variance_includes_boundary_to_first_in_window_return"
+        )
         is not True
         or correction.get("trade_count_notional_and_imbalance_exclude_boundary_anchor")
         is not True
         or not isinstance(discovery, Mapping)
-        or discovery.get("frozen_brier_improvement_had_dependence_aware_confidence_bound")
+        or discovery.get(
+            "frozen_brier_improvement_had_dependence_aware_confidence_bound"
+        )
         is not False
-        or discovery.get("frozen_fixed_window_return_included_boundary_to_first_trade_move")
+        or discovery.get(
+            "frozen_fixed_window_return_included_boundary_to_first_trade_move"
+        )
         is not False
         or discovery.get("frozen_trade_count_or_notional_included_pre_window_receipts")
         is not False
@@ -1188,13 +1165,11 @@ def _validate_v8_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V7_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("correction") != expected_correction
@@ -1345,13 +1320,11 @@ def _validate_v9_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V8_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("correction") != expected_correction
@@ -1372,6 +1345,7 @@ def _validate_source_ledger(
     expected_schema_version: str,
     predecessor_sha256: str | None,
     verify_current_files: bool,
+    current_source_replacements: Mapping[str, tuple[str, str]] | None = None,
 ) -> dict[str, object]:
     operator_ledger = expected_schema_version in {
         "polymarket-round27-effective-source-ledger-v4",
@@ -1412,16 +1386,17 @@ def _validate_source_ledger(
     files = payload.get("files_sha256")
     scope = payload.get("scope")
     exclusions = payload.get("excluded_files")
+    created_at_ms = payload.get("created_at_ms")
     expected_fields = {
-            "authority",
-            "base_model_contract_sha256",
-            "campaign_contract_sha256",
-            "created_at_ms",
-            "excluded_files",
-            "files_sha256",
-            "schema_version",
-            "scope",
-            "status",
+        "authority",
+        "base_model_contract_sha256",
+        "campaign_contract_sha256",
+        "created_at_ms",
+        "excluded_files",
+        "files_sha256",
+        "schema_version",
+        "scope",
+        "status",
     }
     if predecessor_sha256 is not None:
         expected_fields.add("predecessor_source_ledger_sha256")
@@ -1439,13 +1414,11 @@ def _validate_source_ledger(
         or payload.get("status")
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or payload.get("authority") != _EXPECTED_AUTHORITY
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
-        or type(payload.get("created_at_ms")) is not int
-        or not _FIRST_CAPTURE_START_MS
-        < int(payload["created_at_ms"])
-        < _FIRST_CAPTURE_END_MS
+        or isinstance(created_at_ms, bool)
+        or not isinstance(created_at_ms, int)
+        or not _FIRST_CAPTURE_START_MS < created_at_ms < _FIRST_CAPTURE_END_MS
         or exclusions
         != {
             "src/simple_ai_trading/polymarket_round27_model_amendment.py": (
@@ -1456,25 +1429,21 @@ def _validate_source_ledger(
         or not isinstance(files, Mapping)
         or len(files) != expected_file_count
         or not isinstance(scope, Mapping)
-        or scope.get("dependency_resolution")
-        != expected_dependency_resolution
-        or scope.get("entrypoint_selection")
-        != expected_entrypoint_selection
-        or scope.get("hash_normalization")
-        != "replace_crlf_with_lf_before_sha256"
-        or scope.get("included_dependency_lockfiles")
-        != ["pyproject.toml", "uv.lock"]
+        or scope.get("dependency_resolution") != expected_dependency_resolution
+        or scope.get("entrypoint_selection") != expected_entrypoint_selection
+        or scope.get("hash_normalization") != "replace_crlf_with_lf_before_sha256"
+        or scope.get("included_dependency_lockfiles") != ["pyproject.toml", "uv.lock"]
         or scope.get("locked_file_count") != expected_file_count
         or ("operator_entrypoints_included" in scope) is not operator_ledger
-        or (
-            operator_ledger
-            and scope.get("operator_entrypoints_included") is not True
-        )
+        or (operator_ledger and scope.get("operator_entrypoints_included") is not True)
         or scope.get("stage1_capture_code_included_through_model_contract") is not True
         or scope.get("unlocked_local_dependencies_per_static_import_audit") != []
     ):
         raise ValueError("Round 27 effective source ledger differs")
     if verify_current_files:
+        replacements = dict(current_source_replacements or {})
+        if set(replacements) - {str(relative) for relative in files}:
+            raise ValueError("Round 27 source remediation scope differs")
         for relative, expected in files.items():
             relative_path = Path(str(relative))
             source = (repository / relative_path).resolve()
@@ -1486,11 +1455,94 @@ def _validate_source_ledger(
                 raise ValueError("Round 27 effective source ledger file differs")
             if relative_path.as_posix() in _HISTORICAL_PROVENANCE_FILES:
                 continue
-            if hashlib.sha256(
-                source.read_bytes().replace(b"\r\n", b"\n")
-            ).hexdigest() != _sha256(expected):
+            expected_current = _sha256(expected)
+            replacement = replacements.get(relative_path.as_posix())
+            if replacement is not None:
+                frozen, expected_current = replacement
+                if frozen != _sha256(expected):
+                    raise ValueError("Round 27 source remediation predecessor differs")
+            if (
+                hashlib.sha256(source.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+                != expected_current
+            ):
                 raise ValueError("Round 27 effective source ledger file differs")
     return {**payload, "source_ledger_sha256": claimed}
+
+
+def _load_static_analysis_source_replacements(
+    repository: Path,
+) -> dict[str, tuple[str, str]]:
+    selected = (repository / _STATIC_ANALYSIS_REMEDIATION_RELATIVE_PATH).resolve()
+    if repository not in selected.parents or not selected.is_file():
+        raise ValueError("Round 27 source remediation is unavailable")
+    payload = _load_strict(selected)
+    claimed = _sha256(payload.pop("amendment_sha256", ""))
+    sources = payload.get("source_text_sha256")
+    created_at_ms = payload.get("created_at_ms")
+    knowledge = {
+        "model_fitted_on_stage1": False,
+        "official_outcomes_accessed": False,
+        "performance_metrics_computed": False,
+        "stage1_feature_rows_accessed_or_materialized": False,
+    }
+    if (
+        set(payload)
+        != {
+            "authority",
+            "created_at_ms",
+            "knowledge_at_amendment",
+            "predecessor_model_amendment_sha256",
+            "predecessor_source_ledger_sha256",
+            "rationale",
+            "schema_version",
+            "source_text_sha256",
+            "status",
+        }
+        or claimed != _STATIC_ANALYSIS_REMEDIATION_SHA256
+        or claimed != _canonical_sha256(payload)
+        or payload.get("schema_version")
+        != "polymarket-round27-static-analysis-remediation-amendment-v17"
+        or payload.get("status") != "frozen_before_stage1_feature_or_outcome_access"
+        or payload.get("authority") != _EXPECTED_AUTHORITY
+        or payload.get("knowledge_at_amendment") != knowledge
+        or payload.get("predecessor_model_amendment_sha256")
+        != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
+        or payload.get("predecessor_source_ledger_sha256")
+        != _EFFECTIVE_SOURCE_LEDGER_SHA256
+        or isinstance(created_at_ms, bool)
+        or not isinstance(created_at_ms, int)
+        or created_at_ms <= _FIRST_CAPTURE_START_MS
+        or not isinstance(payload.get("rationale"), str)
+        or not str(payload["rationale"]).strip()
+        or not isinstance(sources, Mapping)
+        or len(sources) != 22
+    ):
+        raise ValueError("Round 27 source remediation differs")
+    replacements: dict[str, tuple[str, str]] = {}
+    for relative, raw_replacement in sources.items():
+        if not isinstance(raw_replacement, Mapping) or set(raw_replacement) != {
+            "corrected",
+            "frozen",
+        }:
+            raise ValueError("Round 27 source remediation differs")
+        normalized = Path(str(relative)).as_posix()
+        replacements[normalized] = (
+            _sha256(raw_replacement.get("frozen")),
+            _sha256(raw_replacement.get("corrected")),
+        )
+    if len(replacements) != len(sources):
+        raise ValueError("Round 27 source remediation differs")
+    return replacements
+
+
+def load_round27_static_analysis_source_replacements(
+    repository: str | Path,
+) -> dict[str, tuple[str, str]]:
+    """Load the validated analyzer-only source replacement layer."""
+
+    return _load_static_analysis_source_replacements(
+        Path(repository).resolve(strict=True)
+    )
 
 
 def _validate_v10_predecessor(
@@ -1605,13 +1657,11 @@ def _validate_v10_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V9_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("correction") != expected_correction
@@ -1751,13 +1801,11 @@ def _validate_v11_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V10_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("correction") != expected_correction
@@ -1929,13 +1977,11 @@ def _validate_v12_predecessor(
         != "frozen_after_capture_start_before_stage1_feature_or_outcome_access"
         or type(created_at_ms) is not int
         or not _FIRST_CAPTURE_START_MS < int(created_at_ms) < _FIRST_CAPTURE_END_MS
-        or payload.get("base_model_contract_sha256")
-        != _BASE_MODEL_CONTRACT_SHA256
+        or payload.get("base_model_contract_sha256") != _BASE_MODEL_CONTRACT_SHA256
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V11_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("correction") != expected_correction
@@ -2133,8 +2179,7 @@ def _validate_v13_predecessor(
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V12_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("correction") != expected_correction
@@ -2174,9 +2219,7 @@ def _validate_v14_predecessor(
         "economic_report_schema_version_from": (
             "polymarket-round27-economic-replay-v4"
         ),
-        "economic_report_schema_version_to": (
-            "polymarket-round27-economic-replay-v5"
-        ),
+        "economic_report_schema_version_to": ("polymarket-round27-economic-replay-v5"),
         "feature_model_ai_candidates_changed": False,
         "minimum_new_entry_time_to_settlement_ms": 60_000,
         "settlement_hazard_gate_may_be_overridden": False,
@@ -2312,8 +2355,7 @@ def _validate_v14_predecessor(
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V13_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("correction") != expected_correction
@@ -2363,9 +2405,7 @@ def _validate_v15_predecessor(
         "corrected": (
             "fd34be8bb07bf16a528d1daae67a46dedc62e98c8fc865a6c240471a3234ec24"
         ),
-        "frozen": (
-            "539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54"
-        ),
+        "frozen": ("539daa52e4d5bd1f4a03b15cb81951c587aa668ec6d91cb18a2a09209e8f7f54"),
     }
     payload = dict(value)
     claimed = _sha256(payload.pop("amendment_sha256", ""))
@@ -2375,9 +2415,7 @@ def _validate_v15_predecessor(
         "economic_report_schema_version_from": (
             "polymarket-round27-economic-replay-v5"
         ),
-        "economic_report_schema_version_to": (
-            "polymarket-round27-economic-replay-v6"
-        ),
+        "economic_report_schema_version_to": ("polymarket-round27-economic-replay-v6"),
         "execution_receipt_settlement_hazard_gate_added": True,
         "feature_model_ai_candidates_changed": False,
         "minimum_new_entry_time_to_settlement_ms": 60_000,
@@ -2440,8 +2478,7 @@ def _validate_v15_predecessor(
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V14_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("correction") != expected_correction
@@ -2514,9 +2551,7 @@ def validate_round27_model_amendment(
         "target_access_schema_version_from": (
             "polymarket-round27-role-target-access-v1"
         ),
-        "target_access_schema_version_to": (
-            "polymarket-round27-role-target-access-v2"
-        ),
+        "target_access_schema_version_to": ("polymarket-round27-role-target-access-v2"),
         "target_store_schema_version_from": (
             "polymarket-round27-role-gated-target-store-v1"
         ),
@@ -2551,8 +2586,7 @@ def validate_round27_model_amendment(
         {
             "purpose": "frozen_model_population_gate",
             "relative_path": (
-                "docs/model-research/polymarket/"
-                "round-027-stage1-model-contract-v1.json"
+                "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
             ),
         },
     ]
@@ -2590,8 +2624,7 @@ def validate_round27_model_amendment(
         or payload.get("campaign_contract_sha256") != _CAMPAIGN_CONTRACT_SHA256
         or payload.get("predecessor_amendment_sha256")
         != _V15_PREDECESSOR_AMENDMENT_SHA256
-        or payload.get("predecessor_source_text_sha256")
-        != expected_predecessor_sources
+        or payload.get("predecessor_source_text_sha256") != expected_predecessor_sources
         or payload.get("authority") != _EXPECTED_AUTHORITY
         or payload.get("knowledge_at_freeze") != _EXPECTED_KNOWLEDGE
         or payload.get("correction") != expected_correction
@@ -2608,6 +2641,7 @@ def validate_round27_model_amendment(
         expected_schema_version="polymarket-round27-effective-source-ledger-v7",
         predecessor_sha256=_V6_SOURCE_LEDGER_SHA256,
         verify_current_files=True,
+        current_source_replacements=_load_static_analysis_source_replacements(root),
     )
     return {**payload, "amendment_sha256": claimed}
 
@@ -2674,5 +2708,6 @@ __all__ = [
     "POLYMARKET_ROUND27_MODEL_AMENDMENT_RELATIVE_PATH",
     "POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256",
     "load_round27_model_amendment",
+    "load_round27_static_analysis_source_replacements",
     "validate_round27_model_amendment",
 ]

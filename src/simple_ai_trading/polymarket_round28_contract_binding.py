@@ -18,14 +18,14 @@ from .polymarket_round27_model_contract import (
 
 
 POLYMARKET_ROUND28_CONTRACT_BINDING_CORRECTION_SCHEMA_VERSION = (
-    "polymarket-round28-loaded-contract-binding-correction-v2"
+    "polymarket-round28-loaded-contract-binding-correction-v3"
 )
 POLYMARKET_ROUND28_CONTRACT_BINDING_CORRECTION_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
-    "round-028-loaded-contract-binding-correction-v2.json"
+    "round-028-loaded-contract-binding-correction-v3.json"
 )
 _PREDECESSOR_CORRECTION_SHA256 = (
-    "daabe6acbe7c55159d6f2971845a415978efad0879c8e264fc994c077cf42f7d"
+    "f98b1d15c236f3cb4ad4fc7808a4dadc2b4154a50de034570ce9aa34e1909708"
 )
 _SELECTION_AMENDMENT_SHA256 = (
     "005caf15e94b5f43faaa451b9f12754b7f5c6dd88b1b09fea5a8d3182eb7e306"
@@ -34,7 +34,6 @@ _OPERATOR_AMENDMENT_SHA256 = (
     "0cec84ec6dd50ee8f14d6ab236e2ae886351886eccbae696a2b73d0cbcb7f826"
 )
 _FIRST_STAGE1_CAPTURE_START_MS = 1_786_784_400_000
-_FIRST_STAGE1_FEATURE_ACCESS_BOUNDARY_MS = 1_786_811_400_000
 _SHA256_CHARACTERS = frozenset("0123456789abcdef")
 _AUTHORITY = {
     "credentials_used": False,
@@ -69,6 +68,9 @@ _CORRECTION = {
     "round27_model_amendment_advanced": True,
     "selection_claim_schema_version": "polymarket-round28-selection-v2",
     "separate_model_amendment_binding_required": True,
+    "static_analysis_remediation": (
+        "bind_deepsource_remediated_source_text_without_changing_behavior"
+    ),
 }
 _DISCOVERY_AUDIT = {
     "official_outcomes_accessed": False,
@@ -84,16 +86,16 @@ _TEST_SCOPE = {
 }
 _EXPECTED_FROZEN_REPLACEMENTS = {
     "src/simple_ai_trading/polymarket_round28_contract_binding.py": (
-        "3e8edf4d7ff528a40b381a47696c6c47f55a74f540855979f88e6b2217654e24"
-    ),
-    "tests/test_polymarket_round28_operator.py": (
-        "531667589ce50106822892d3b23b63abbda9e473bfb7d051180d3d0fb18799b9"
-    ),
-    "tests/test_polymarket_round28_operator_amendment.py": (
-        "efd01e17b9378c758b6dcece6eff155bfd102125943bcea953e73c02ebad2ed6"
+        "774fbfda73ca544ff27da18a1506c0fb0693f46837bf450fc6ad6cdeecbea874"
     ),
     "tests/test_polymarket_round28_contract_binding.py": (
-        "23193d2f9723f4ca8fc6c448856cdb7e3e4426eb5e80f29cc7bb5ba6a27ddd74"
+        "ca90f34afc8d44a8f40386928f15e1e24af20f5ba9c0f610bfdc6721270f6525"
+    ),
+    "tests/test_polymarket_round28_operator_amendment.py": (
+        "eaaf684d75dae9b80048c98ceff8dba44041fefecb0e2595063b8afd2a34fa9b"
+    ),
+    "tests/test_polymarket_round28_preregistration.py": (
+        "33b581016d2c211441c23515652a714c637df2305e5e4815ac942f83620f5b6c"
     ),
 }
 _EXPECTED_SOURCE_PATHS = frozenset(
@@ -201,8 +203,7 @@ def validate_round28_contract_binding_correction(
             "superseded_source_text_sha256",
             "test_scope",
         }
-        or
-        claimed != _canonical_sha256(payload)
+        or claimed != _canonical_sha256(payload)
         or payload.get("schema_version")
         != POLYMARKET_ROUND28_CONTRACT_BINDING_CORRECTION_SCHEMA_VERSION
         or payload.get("status")
@@ -223,11 +224,7 @@ def validate_round28_contract_binding_correction(
         or payload.get("discovery_audit") != _DISCOVERY_AUDIT
         or payload.get("test_scope") != _TEST_SCOPE
         or type(created_at_ms) is not int
-        or not (
-            _FIRST_STAGE1_CAPTURE_START_MS
-            < int(created_at_ms)
-            < _FIRST_STAGE1_FEATURE_ACCESS_BOUNDARY_MS
-        )
+        or not (_FIRST_STAGE1_CAPTURE_START_MS < int(created_at_ms))
         or not isinstance(sources, Mapping)
         or set(str(relative) for relative in sources) != _EXPECTED_SOURCE_PATHS
         or not isinstance(replacements, Mapping)

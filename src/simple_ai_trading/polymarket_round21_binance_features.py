@@ -131,7 +131,9 @@ def _positive_decimal(value: object, *, name: str) -> float:
 
 
 def _positive_integer(value: object, *, name: str) -> int:
-    if isinstance(value, bool):
+    if isinstance(value, bool) or not isinstance(
+        value, (str, bytes, bytearray, int, float)
+    ):
         raise ValueError(f"Round 21 Binance {name} is invalid")
     try:
         parsed = int(value)
@@ -365,10 +367,10 @@ def parse_round21_binance_record(
             ask_quantity=_positive_decimal(body["A"], name="best ask quantity"),
             source_payload_sha256=raw_sha,
         )
-    keys = frozenset(body)
+    trade_keys = frozenset(body)
     if (
-        not _TRADE_REQUIRED_KEYS.issubset(keys)
-        or keys - _TRADE_REQUIRED_KEYS - _TRADE_OPTIONAL_KEYS
+        not _TRADE_REQUIRED_KEYS.issubset(trade_keys)
+        or trade_keys - _TRADE_REQUIRED_KEYS - _TRADE_OPTIONAL_KEYS
         or body["e"] != "trade"
         or str(body["s"] or "").upper() != "BTCUSDT"
     ):
@@ -741,29 +743,31 @@ class _MarketAccumulator:
         values: list[float] = []
         mid_returns: list[float] = []
         for window_ms in POLYMARKET_ROUND21_BINANCE_WINDOWS_MS:
-            item = self.trades.window(decision, window_ms)
+            trade_window = self.trades.window(decision, window_ms)
             values.extend(
                 (
-                    item.log_return,
-                    item.realized_variance,
-                    item.signed_quote_imbalance,
-                    math.log1p(item.quote_notional),
-                    float(item.count),
+                    trade_window.log_return,
+                    trade_window.realized_variance,
+                    trade_window.signed_quote_imbalance,
+                    math.log1p(trade_window.quote_notional),
+                    float(trade_window.count),
                 )
             )
         for window_ms in POLYMARKET_ROUND21_BINANCE_WINDOWS_MS:
-            item = self.books.window(decision, window_ms)
-            mid_returns.append(item.mid_log_return)
+            book_window = self.books.window(decision, window_ms)
+            mid_returns.append(book_window.mid_log_return)
             values.extend(
                 (
-                    item.mid_log_return,
-                    item.microprice_log_return,
-                    item.mean_relative_spread,
-                    item.mean_quantity_imbalance,
-                    item.mean_log_depth,
-                    float(item.count),
+                    book_window.mid_log_return,
+                    book_window.microprice_log_return,
+                    book_window.mean_relative_spread,
+                    book_window.mean_quantity_imbalance,
+                    book_window.mean_log_depth,
+                    float(book_window.count),
                 )
             )
+        if latest_book is None:
+            raise RuntimeError("Round 21 available Binance book receipt is missing")
         current = self.books.current(decision)
         if current is None:
             raise RuntimeError("Round 21 available Binance book has no current state")

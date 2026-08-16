@@ -106,6 +106,18 @@ def _reject_nonfinite(value: str) -> object:
     raise ValueError(f"Round 21 model artifact contains {value}")
 
 
+def _finite_float(value: object, *, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(
+        value,
+        (int, float, np.integer, np.floating),
+    ):
+        raise ValueError(f"Round 21 {name} is invalid")
+    selected = float(value)
+    if not math.isfinite(selected):
+        raise ValueError(f"Round 21 {name} is invalid")
+    return selected
+
+
 def _array_sha256(value: np.ndarray, *, dtype: str) -> str:
     selected = np.asarray(value, dtype=dtype, order="C")
     return hashlib.sha256(selected.tobytes(order="C")).hexdigest()
@@ -671,7 +683,7 @@ def _condition_count(condition_ids: np.ndarray) -> int:
 
 def _condition_weights(condition_ids: np.ndarray) -> np.ndarray:
     groups = _condition_groups(np.asarray(condition_ids, dtype=object))
-    weights = np.empty(len(condition_ids), dtype=np.float64)
+    weights: np.ndarray = np.empty(len(condition_ids), dtype=np.float64)
     for _condition, start, end in groups:
         weights[start:end] = 1.0 / len(groups) / (end - start)
     return weights
@@ -844,14 +856,14 @@ def _feature_support_row_metrics(
         or scale.shape != lower.shape
     ):
         raise ValueError("Round 21 feature support is invalid")
-    clipped_fraction = np.empty(len(values), dtype=np.float64)
-    maximum_excess = np.empty(len(values), dtype=np.float32)
+    clipped_fraction: np.ndarray = np.empty(len(values), dtype=np.float64)
+    maximum_excess: np.ndarray = np.empty(len(values), dtype=np.float32)
     feature_count = values.shape[1]
     for start in range(0, len(values), _FEATURE_SUPPORT_CHUNK_ROWS):
         end = min(len(values), start + _FEATURE_SUPPORT_CHUNK_ROWS)
         chunk = values[start:end]
-        outside_count = np.zeros(end - start, dtype=np.int32)
-        chunk_maximum_excess = np.zeros(end - start, dtype=np.float32)
+        outside_count: np.ndarray = np.zeros(end - start, dtype=np.int32)
+        chunk_maximum_excess: np.ndarray = np.zeros(end - start, dtype=np.float32)
         for feature_index in range(feature_count):
             column = chunk[:, feature_index]
             outside_count += (column < lower[feature_index]) | (
@@ -1169,7 +1181,7 @@ def _raw_prediction(
             raise ValueError("Round 21 logistic coefficient shape differs")
         linear = (
             offset
-            + float(model["intercept"])
+            + _finite_float(model["intercept"], name="model intercept")
             + np.asarray(values @ coefficient, dtype=np.float64)
         )
     elif family == "lightgbm_residual":
@@ -1234,9 +1246,9 @@ def _apply_platt(
     predictions: np.ndarray,
     calibration: Mapping[str, object],
 ) -> np.ndarray:
-    intercept = float(calibration["intercept"])
-    slope = float(calibration["slope"])
-    if not math.isfinite(intercept) or not math.isfinite(slope) or slope < 0.0:
+    intercept = _finite_float(calibration["intercept"], name="calibration intercept")
+    slope = _finite_float(calibration["slope"], name="calibration slope")
+    if slope < 0.0:
         raise ValueError("Round 21 calibration is invalid")
     return _probability(expit(intercept + slope * logit(_probability(predictions))))
 
@@ -1560,9 +1572,12 @@ def _circular_block_bootstrap_means(
         raise ValueError("Round 21 bootstrap population is invalid")
     block_length = _dependence_block_length(len(selected))
     block_count = math.ceil(len(selected) / block_length)
-    offsets = np.arange(block_length, dtype=np.int64)
+    offsets: np.ndarray = np.arange(block_length, dtype=np.int64)
     generator = np.random.default_rng(POLYMARKET_ROUND21_MODEL_SEED + int(seed_offset))
-    samples = np.empty(POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES, dtype=np.float64)
+    samples: np.ndarray = np.empty(
+        POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES,
+        dtype=np.float64,
+    )
     for index in range(POLYMARKET_ROUND21_BOOTSTRAP_SAMPLES):
         starts = generator.integers(0, len(selected), size=block_count)
         indices = np.add.outer(starts, offsets).reshape(-1)[: len(selected)]
@@ -1899,7 +1914,7 @@ def _control_predictions(
             )
         )
     prevalence = float(np.sum(_condition_weights(train.condition_ids) * train.labels))
-    prevalence_prediction = np.full(
+    prevalence_prediction: np.ndarray = np.full(
         len(selection.labels),
         prevalence,
         dtype=np.float64,
@@ -2037,6 +2052,8 @@ def _validated_probability_basis_gate(
     if result["basis_accepted"] is not True:
         raise ValueError("Round 21 probability-basis gate is not accepted")
     datasets = result["dataset_and_partition"]
+    if not isinstance(datasets, Mapping):
+        raise ValueError("Round 21 probability-basis dataset identity differs")
     shared_identity_keys = {
         "role",
         "row_count",
@@ -2052,7 +2069,9 @@ def _validated_probability_basis_gate(
         ("tune_selection", tune_selection),
     ):
         expected = _dataset_identity(panel)
-        observed = datasets[role]
+        observed = datasets.get(role)
+        if not isinstance(observed, Mapping):
+            raise ValueError("Round 21 probability-basis dataset identity differs")
         matches = (
             observed == expected
             if require_exact_dataset_identity
@@ -2152,7 +2171,7 @@ def fit_round21_development(
             ).hexdigest(),
         }
         if layer == "core":
-            improvements = {
+            control_improvements = {
                 str(control["control_id"]): {
                     metric: _paired_improvement(
                         tune_selection.condition_ids,
@@ -2170,11 +2189,11 @@ def fit_round21_development(
             }
             accepted = all(
                 result[metric]["lower_95"] > 0.0
-                for result in improvements.values()
+                for result in control_improvements.values()
                 for metric in ("log_loss", "brier")
             )
             comparison = {
-                "against_every_control": improvements,
+                "against_every_control": control_improvements,
                 "predictive_development_accepted": accepted,
             }
         else:
@@ -2206,7 +2225,7 @@ def fit_round21_development(
                 selection_indices,
             ):
                 raise RuntimeError("Round 21 matched core population differs")
-            improvements = {
+            incremental_improvements = {
                 metric: _paired_improvement(
                     tune_selection.condition_ids[selection_indices],
                     tune_selection.labels[selection_indices],
@@ -2218,7 +2237,7 @@ def fit_round21_development(
                 for metric_index, metric in enumerate(("log_loss", "brier"))
             }
             accepted = all(
-                improvements[metric]["lower_95"] > 0.0
+                incremental_improvements[metric]["lower_95"] > 0.0
                 for metric in ("log_loss", "brier")
             )
             comparison = {
@@ -2227,7 +2246,7 @@ def fit_round21_development(
                 "matched_condition_count": _condition_count(
                     tune_selection.condition_ids[selection_indices]
                 ),
-                "incremental_improvement": improvements,
+                "incremental_improvement": incremental_improvements,
                 "predictive_development_accepted": accepted,
             }
             layer_payload["matched_core_candidate_ledger"] = matched_records
@@ -3029,7 +3048,7 @@ class _CompiledRound21Candidate:
             if coefficient.shape != lower.shape or not np.all(np.isfinite(coefficient)):
                 raise ValueError("Round 21 compiled coefficient differs")
             coefficient.setflags(write=False)
-            intercept = float(model.get("intercept"))
+            intercept = _finite_float(model.get("intercept"), name="model intercept")
         elif family == "lightgbm_residual":
             booster = lgb.Booster(model_str=str(model.get("model_string") or ""))
         elif family == "causal_tcn_residual":
@@ -3039,8 +3058,14 @@ class _CompiledRound21Candidate:
             )
         else:
             raise ValueError("Round 21 compiled model family differs")
-        calibration_intercept = float(calibration.get("intercept"))
-        calibration_slope = float(calibration.get("slope"))
+        calibration_intercept = _finite_float(
+            calibration.get("intercept"),
+            name="calibration intercept",
+        )
+        calibration_slope = _finite_float(
+            calibration.get("slope"),
+            name="calibration slope",
+        )
         if (
             not math.isfinite(intercept)
             or not math.isfinite(calibration_intercept)
@@ -3403,6 +3428,7 @@ def predict_round21_controls(
         control_id = str(control.get("control_id") or "")
         if control_id in output or control_id not in expected:
             raise ValueError("Round 21 probability control differs")
+        prediction: np.ndarray
         if control_id == "training_prevalence":
             try:
                 probability = float(control["probability_up"])

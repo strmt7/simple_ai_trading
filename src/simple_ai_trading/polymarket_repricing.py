@@ -120,8 +120,7 @@ class PolymarketRepricingConfig:
             or int(self.primary_per_leg_submission_latency_ms) != 500
             or int(self.minimum_complete_markets_per_asset) != 30
             or int(self.minimum_positive_markets_per_asset) != 10
-            or self.minimum_positive_market_fraction_per_asset
-            != Decimal("0.1")
+            or self.minimum_positive_market_fraction_per_asset != Decimal("0.1")
             or int(self.minimum_positive_markets_per_outcome_asset) != 5
         ):
             raise ValueError(
@@ -155,9 +154,7 @@ class PolymarketRepricingDecision:
     creation_book: PolymarketRecordedBook
 
     @classmethod
-    def from_book(
-        cls, book: PolymarketRecordedBook
-    ) -> "PolymarketRepricingDecision":
+    def from_book(cls, book: PolymarketRecordedBook) -> "PolymarketRepricingDecision":
         return cls(
             event_id=book.event_id,
             condition_id=book.market.condition_id,
@@ -169,7 +166,9 @@ class PolymarketRepricingDecision:
             creation_book=book,
         )
 
-    def validated(self, *, maximum_creation_book_age_ms: int) -> "PolymarketRepricingDecision":
+    def validated(
+        self, *, maximum_creation_book_age_ms: int
+    ) -> "PolymarketRepricingDecision":
         book = self.creation_book
         age_ns = self.received_monotonic_ns - book.received_monotonic_ns
         if (
@@ -226,8 +225,7 @@ class PolymarketRepricingDecisionExecution:
             self.entry_result is not None
             and self.exit_result is not None
             and self.exit_result.state == "FILLED"
-            and self.exit_result.filled_quantity
-            == self.entry_result.filled_quantity
+            and self.exit_result.filled_quantity == self.entry_result.filled_quantity
         )
 
 
@@ -290,9 +288,7 @@ class PolymarketRepricingOpportunity:
             "best_entry_event_id": self.best_entry_event_id,
             "best_exit_event_id": self.best_exit_event_id,
             "best_exit_decision_event_id": self.best_exit_decision_event_id,
-            "best_decision_received_wall_ms": (
-                self.best_decision_received_wall_ms
-            ),
+            "best_decision_received_wall_ms": (self.best_decision_received_wall_ms),
             "best_entry_received_wall_ms": self.best_entry_received_wall_ms,
             "best_exit_received_wall_ms": self.best_exit_received_wall_ms,
             "best_exit_decision_received_wall_ms": (
@@ -301,12 +297,8 @@ class PolymarketRepricingOpportunity:
             "best_decision_received_monotonic_ns": (
                 self.best_decision_received_monotonic_ns
             ),
-            "best_entry_received_monotonic_ns": (
-                self.best_entry_received_monotonic_ns
-            ),
-            "best_exit_received_monotonic_ns": (
-                self.best_exit_received_monotonic_ns
-            ),
+            "best_entry_received_monotonic_ns": (self.best_entry_received_monotonic_ns),
+            "best_exit_received_monotonic_ns": (self.best_exit_received_monotonic_ns),
             "best_exit_decision_received_monotonic_ns": (
                 self.best_exit_decision_received_monotonic_ns
             ),
@@ -328,15 +320,11 @@ class PolymarketRepricingOpportunity:
             "best_exit_execution_target_monotonic_ns": (
                 self.best_exit_execution_target_monotonic_ns
             ),
-            "best_entry_venue_taker_delay_ms": (
-                self.best_entry_venue_taker_delay_ms
-            ),
+            "best_entry_venue_taker_delay_ms": (self.best_entry_venue_taker_delay_ms),
             "best_exit_venue_taker_delay_ms": self.best_exit_venue_taker_delay_ms,
             "quantity": _decimal_text(self.quantity),
             "best_entry_cost_quote": _decimal_text(self.best_entry_cost_quote),
-            "best_exit_proceeds_quote": _decimal_text(
-                self.best_exit_proceeds_quote
-            ),
+            "best_exit_proceeds_quote": _decimal_text(self.best_exit_proceeds_quote),
             "best_net_quote": _decimal_text(self.best_net_quote),
             "best_net_bps_on_entry_cost": _decimal_text(
                 self.best_net_bps_on_entry_cost
@@ -349,6 +337,90 @@ class PolymarketRepricingOpportunity:
             "positive": self.positive,
             "opportunity_sha256": self.opportunity_sha256,
         }
+
+    def _complete_value_state_valid(self) -> bool:
+        entry_cost = self.best_entry_cost_quote
+        exit_proceeds = self.best_exit_proceeds_quote
+        net_quote = self.best_net_quote
+        net_bps = self.best_net_bps_on_entry_cost
+        if (
+            entry_cost is None
+            or exit_proceeds is None
+            or net_quote is None
+            or net_bps is None
+        ):
+            return False
+        return (
+            entry_cost > 0
+            and exit_proceeds >= 0
+            and net_quote == exit_proceeds - entry_cost
+            and net_bps == net_quote / entry_cost * Decimal("10000")
+        )
+
+    def _complete_clock_state_valid(self) -> bool:
+        decision_wall = self.best_decision_received_wall_ms
+        entry_wall = self.best_entry_received_wall_ms
+        exit_decision_wall = self.best_exit_decision_received_wall_ms
+        exit_wall = self.best_exit_received_wall_ms
+        entry_target_wall = self.best_entry_execution_target_wall_ms
+        exit_decision_target_wall = self.best_exit_decision_target_wall_ms
+        exit_target_wall = self.best_exit_execution_target_wall_ms
+        decision_ns = self.best_decision_received_monotonic_ns
+        entry_ns = self.best_entry_received_monotonic_ns
+        exit_decision_ns = self.best_exit_decision_received_monotonic_ns
+        exit_ns = self.best_exit_received_monotonic_ns
+        entry_target_ns = self.best_entry_execution_target_monotonic_ns
+        exit_decision_target_ns = self.best_exit_decision_target_monotonic_ns
+        exit_target_ns = self.best_exit_execution_target_monotonic_ns
+        entry_delay = self.best_entry_venue_taker_delay_ms
+        exit_delay = self.best_exit_venue_taker_delay_ms
+        if (
+            decision_wall is None
+            or entry_wall is None
+            or exit_decision_wall is None
+            or exit_wall is None
+            or entry_target_wall is None
+            or exit_decision_target_wall is None
+            or exit_target_wall is None
+            or decision_ns is None
+            or entry_ns is None
+            or exit_decision_ns is None
+            or exit_ns is None
+            or entry_target_ns is None
+            or exit_decision_target_ns is None
+            or exit_target_ns is None
+            or entry_delay is None
+            or exit_delay is None
+        ):
+            return False
+        return (
+            entry_target_wall
+            == decision_wall + self.per_leg_submission_latency_ms + entry_delay
+            and exit_decision_target_wall == entry_wall + self.holding_period_ms
+            and exit_target_wall
+            == exit_decision_target_wall
+            + self.per_leg_submission_latency_ms
+            + exit_delay
+            and entry_target_ns
+            == decision_ns
+            + (self.per_leg_submission_latency_ms + entry_delay) * 1_000_000
+            and exit_decision_target_ns == entry_ns + self.holding_period_ms * 1_000_000
+            and exit_target_ns
+            == exit_decision_target_ns
+            + (self.per_leg_submission_latency_ms + exit_delay) * 1_000_000
+            and decision_ns <= entry_ns <= exit_decision_ns <= exit_ns
+            and entry_ns >= entry_target_ns
+            and entry_ns - entry_target_ns
+            <= _MAX_POST_TARGET_EXECUTION_OBSERVATION_DELAY_MS * 1_000_000
+            and exit_decision_ns <= exit_decision_target_ns
+            and exit_decision_target_ns - exit_decision_ns
+            <= _MAX_ORDER_CREATION_BOOK_AGE_MS * 1_000_000
+            and exit_ns >= exit_target_ns
+            and exit_ns - exit_target_ns
+            <= _MAX_POST_TARGET_EXECUTION_OBSERVATION_DELAY_MS * 1_000_000
+            and entry_delay in {0, POLYMARKET_TAKER_ORDER_DELAY_MS}
+            and exit_delay in {0, POLYMARKET_TAKER_ORDER_DELAY_MS}
+        )
 
     def validated(self) -> "PolymarketRepricingOpportunity":
         empty = self.complete_round_trip_count == 0
@@ -412,78 +484,17 @@ class PolymarketRepricingOpportunity:
                 for value in reason_counts.values()
             )
             or sum(reason_counts.values()) != self.decision_count
-            or reason_counts["complete_round_trip"]
-            != self.complete_round_trip_count
+            or reason_counts["complete_round_trip"] != self.complete_round_trip_count
             or self.quantity <= 0
             or not optional_state_valid
-            or not empty
-            and (
-                self.best_entry_cost_quote is None
-                or self.best_entry_cost_quote <= 0
-                or self.best_exit_proceeds_quote is None
-                or self.best_exit_proceeds_quote < 0
-                or self.best_net_quote
-                != self.best_exit_proceeds_quote - self.best_entry_cost_quote
-                or self.best_net_bps_on_entry_cost
-                != self.best_net_quote
-                / self.best_entry_cost_quote
-                * Decimal("10000")
-                or self.best_entry_execution_target_wall_ms
-                != self.best_decision_received_wall_ms
-                + self.per_leg_submission_latency_ms
-                + self.best_entry_venue_taker_delay_ms
-                or self.best_exit_decision_target_wall_ms
-                != self.best_entry_received_wall_ms
-                + self.holding_period_ms
-                or self.best_exit_execution_target_wall_ms
-                != self.best_exit_decision_target_wall_ms
-                + self.per_leg_submission_latency_ms
-                + self.best_exit_venue_taker_delay_ms
-                or self.best_entry_execution_target_monotonic_ns
-                != self.best_decision_received_monotonic_ns
-                + (
-                    self.per_leg_submission_latency_ms
-                    + self.best_entry_venue_taker_delay_ms
+            or (
+                not empty
+                and (
+                    not self._complete_value_state_valid()
+                    or not self._complete_clock_state_valid()
                 )
-                * 1_000_000
-                or self.best_exit_decision_target_monotonic_ns
-                != self.best_entry_received_monotonic_ns
-                + self.holding_period_ms * 1_000_000
-                or self.best_exit_execution_target_monotonic_ns
-                != self.best_exit_decision_target_monotonic_ns
-                + (
-                    self.per_leg_submission_latency_ms
-                    + self.best_exit_venue_taker_delay_ms
-                )
-                * 1_000_000
-                or self.best_decision_received_monotonic_ns
-                > self.best_entry_received_monotonic_ns
-                or self.best_entry_received_monotonic_ns
-                > self.best_exit_decision_received_monotonic_ns
-                or self.best_exit_decision_received_monotonic_ns
-                > self.best_exit_received_monotonic_ns
-                or self.best_entry_received_monotonic_ns
-                < self.best_entry_execution_target_monotonic_ns
-                or self.best_entry_received_monotonic_ns
-                - self.best_entry_execution_target_monotonic_ns
-                > _MAX_POST_TARGET_EXECUTION_OBSERVATION_DELAY_MS * 1_000_000
-                or self.best_exit_decision_received_monotonic_ns
-                > self.best_exit_decision_target_monotonic_ns
-                or self.best_exit_decision_target_monotonic_ns
-                - self.best_exit_decision_received_monotonic_ns
-                > _MAX_ORDER_CREATION_BOOK_AGE_MS * 1_000_000
-                or self.best_exit_received_monotonic_ns
-                < self.best_exit_execution_target_monotonic_ns
-                or self.best_exit_received_monotonic_ns
-                - self.best_exit_execution_target_monotonic_ns
-                > _MAX_POST_TARGET_EXECUTION_OBSERVATION_DELAY_MS * 1_000_000
-                or self.best_entry_venue_taker_delay_ms
-                not in {0, POLYMARKET_TAKER_ORDER_DELAY_MS}
-                or self.best_exit_venue_taker_delay_ms
-                not in {0, POLYMARKET_TAKER_ORDER_DELAY_MS}
             )
-            or self.opportunity_sha256
-            != _canonical_sha256(self.identity_payload())
+            or self.opportunity_sha256 != _canonical_sha256(self.identity_payload())
         ):
             raise ValueError("Polymarket repricing opportunity is invalid")
         return self
@@ -564,7 +575,9 @@ class PolymarketRepricingReport:
                 ),
             )
         )
-        expected_opportunity_order = tuple(sorted(opportunities, key=_opportunity_sort_key))
+        expected_opportunity_order = tuple(
+            sorted(opportunities, key=_opportunity_sort_key)
+        )
         opportunity_keys = {
             (
                 item.condition_id,
@@ -865,10 +878,7 @@ class _ExecutionParameterIndex:
 def _valid_limit_for_tick(price: Decimal, tick_size: Decimal) -> bool:
     if tick_size <= 0 or tick_size > Decimal("0.1"):
         return False
-    return (
-        tick_size <= price <= Decimal("1") - tick_size
-        and price % tick_size == 0
-    )
+    return tick_size <= price <= Decimal("1") - tick_size and price % tick_size == 0
 
 
 class PolymarketRepricingExecutionContext:
@@ -888,9 +898,7 @@ class PolymarketRepricingExecutionContext:
         self.market_by_condition = {
             market.condition_id: market for market in replay.markets
         }
-        decision_events: dict[
-            tuple[str, str], list[PolymarketRecordedBook]
-        ] = {}
+        decision_events: dict[tuple[str, str], list[PolymarketRecordedBook]] = {}
         for book in replay.books:
             decision_events.setdefault(
                 (book.market.condition_id, book.event_id), []
@@ -924,9 +932,7 @@ class PolymarketRepricingExecutionContext:
             raise ValueError("Polymarket repricing decision clock is invalid")
         anchors = tuple(
             book
-            for book in self.decision_events.get(
-                (market.condition_id, event_id), ()
-            )
+            for book in self.decision_events.get((market.condition_id, event_id), ())
             if book.received_wall_ms == received_wall_ms
             and book.received_monotonic_ns == received_monotonic_ns
         )
@@ -983,17 +989,15 @@ class PolymarketRepricingExecutionContext:
         ):
             raise ValueError("Polymarket repricing execution request is invalid")
 
-        def terminal(
-            reason: str,
-            **values: object,
-        ) -> PolymarketRepricingDecisionExecution:
+        state = PolymarketRepricingDecisionExecution(
+            terminal_reason="",
+            decision=selected,
+        )
+
+        def terminal(reason: str) -> PolymarketRepricingDecisionExecution:
             if reason not in _TERMINAL_REASONS:
                 raise ValueError("Polymarket repricing terminal reason is invalid")
-            return PolymarketRepricingDecisionExecution(
-                terminal_reason=reason,
-                decision=selected,
-                **values,
-            )
+            return replace(state, terminal_reason=reason)
 
         quantity = market.minimum_order_size
         fee = market.fee_schedule.fee_model()
@@ -1003,28 +1007,23 @@ class PolymarketRepricingExecutionContext:
         )
         if entry_parameter is None:
             return terminal("missing_entry_execution_parameters")
+        state = replace(state, entry_parameter=entry_parameter)
         if entry_parameter.minimum_order_age_seconds != 0:
-            return terminal(
-                "unsupported_entry_minimum_order_age",
-                entry_parameter=entry_parameter,
-            )
+            return terminal("unsupported_entry_minimum_order_age")
         entry_venue_delay_ms = entry_parameter.taker_order_delay_ms
         entry_total_latency_ms = latency_ms + entry_venue_delay_ms
         entry_target_wall_ms = selected.received_wall_ms + entry_total_latency_ms
         entry_target_monotonic_ns = (
             selected.received_monotonic_ns + entry_total_latency_ms * 1_000_000
         )
-        entry_values = {
-            "entry_parameter": entry_parameter,
-            "entry_venue_taker_delay_ms": entry_venue_delay_ms,
-            "entry_execution_target_wall_ms": entry_target_wall_ms,
-            "entry_execution_target_monotonic_ns": entry_target_monotonic_ns,
-        }
-        if (
-            market.end_ms - entry_target_wall_ms
-            < minimum_remaining_market_time_ms
-        ):
-            return terminal("entry_enters_excluded_close_window", **entry_values)
+        state = replace(
+            state,
+            entry_venue_taker_delay_ms=entry_venue_delay_ms,
+            entry_execution_target_wall_ms=entry_target_wall_ms,
+            entry_execution_target_monotonic_ns=entry_target_monotonic_ns,
+        )
+        if market.end_ms - entry_target_wall_ms < minimum_remaining_market_time_ms:
+            return terminal("entry_enters_excluded_close_window")
         entry = self.book_index.first_at_or_after(
             token_id=selected.token_id,
             segment_id=selected.segment_id,
@@ -1035,21 +1034,15 @@ class PolymarketRepricingExecutionContext:
             ),
         )
         if entry is None:
-            return terminal("missing_entry_execution_book", **entry_values)
-        entry_values["entry_book"] = entry
-        if (
-            market.end_ms - entry.received_wall_ms
-            < minimum_remaining_market_time_ms
-        ):
-            return terminal(
-                "entry_confirmation_enters_excluded_close_window",
-                **entry_values,
-            )
+            return terminal("missing_entry_execution_book")
+        state = replace(state, entry_book=entry)
+        if market.end_ms - entry.received_wall_ms < minimum_remaining_market_time_ms:
+            return terminal("entry_confirmation_enters_excluded_close_window")
         entry_limit = Decimal("1") - selected.creation_book.tick_size
         if not _valid_limit_for_tick(
             entry_limit, selected.creation_book.tick_size
         ) or not _valid_limit_for_tick(entry_limit, entry.tick_size):
-            return terminal("entry_tick_drift", **entry_values)
+            return terminal("entry_tick_drift")
 
         entry_seed = _canonical_sha256(
             {
@@ -1059,9 +1052,7 @@ class PolymarketRepricingExecutionContext:
                 "decision_event_id": selected.event_id,
                 "per_leg_submission_latency_ms": latency_ms,
                 "holding_period_ms": holding_period_ms,
-                "entry_execution_parameter_sha256": (
-                    entry_parameter.snapshot_sha256
-                ),
+                "entry_execution_parameter_sha256": (entry_parameter.snapshot_sha256),
             }
         )
         entry_intent = PaperOrderIntent(
@@ -1083,19 +1074,17 @@ class PolymarketRepricingExecutionContext:
             entry.snapshot,
             execution_time_ms=entry.received_wall_ms,
             submission_latency_ms=entry_total_latency_ms,
-            maximum_book_age_ms=(
-                maximum_post_target_execution_observation_delay_ms
-            ),
+            maximum_book_age_ms=(maximum_post_target_execution_observation_delay_ms),
             fee=fee,
         )
-        entry_values["entry_result"] = entry_result
+        state = replace(state, entry_result=entry_result)
         if entry_result.state != "FILLED":
-            return terminal("entry_not_filled", **entry_values)
+            return terminal("entry_not_filled")
         entry_cost = (
             entry_result.average_fill_price * entry_result.filled_quantity
             + entry_result.fee_quote
         )
-        entry_values["entry_cost_quote"] = entry_cost
+        state = replace(state, entry_cost_quote=entry_cost)
 
         exit_target_monotonic_ns = (
             entry.received_monotonic_ns + holding_period_ms * 1_000_000
@@ -1108,45 +1097,40 @@ class PolymarketRepricingExecutionContext:
             maximum_age_ms=maximum_order_creation_book_age_ms,
         )
         if exit_decision is None:
-            return terminal("missing_exit_decision_book", **entry_values)
+            return terminal("missing_exit_decision_book")
         exit_parameter = self.parameter_index.latest_at_or_before(
             market.condition_id,
             exit_target_monotonic_ns + latency_ms * 1_000_000,
         )
         exit_created_at_ms = entry.received_wall_ms + holding_period_ms
-        exit_values = {
-            **entry_values,
-            "exit_decision_book": exit_decision,
-            "exit_decision_target_wall_ms": exit_created_at_ms,
-            "exit_decision_target_monotonic_ns": exit_target_monotonic_ns,
-        }
+        state = replace(
+            state,
+            exit_decision_book=exit_decision,
+            exit_decision_target_wall_ms=exit_created_at_ms,
+            exit_decision_target_monotonic_ns=exit_target_monotonic_ns,
+        )
         if exit_parameter is None:
-            return terminal("missing_exit_execution_parameters", **exit_values)
-        exit_values["exit_parameter"] = exit_parameter
+            return terminal("missing_exit_execution_parameters")
+        state = replace(state, exit_parameter=exit_parameter)
         if exit_parameter.minimum_order_age_seconds != 0:
-            return terminal("unsupported_exit_minimum_order_age", **exit_values)
+            return terminal("unsupported_exit_minimum_order_age")
         exit_venue_delay_ms = exit_parameter.taker_order_delay_ms
         exit_total_latency_ms = latency_ms + exit_venue_delay_ms
-        exit_execution_target_wall_ms = (
-            exit_created_at_ms + exit_total_latency_ms
-        )
+        exit_execution_target_wall_ms = exit_created_at_ms + exit_total_latency_ms
         exit_execution_target_monotonic_ns = (
             exit_target_monotonic_ns + exit_total_latency_ms * 1_000_000
         )
-        exit_values.update(
-            {
-                "exit_venue_taker_delay_ms": exit_venue_delay_ms,
-                "exit_execution_target_wall_ms": exit_execution_target_wall_ms,
-                "exit_execution_target_monotonic_ns": (
-                    exit_execution_target_monotonic_ns
-                ),
-            }
+        state = replace(
+            state,
+            exit_venue_taker_delay_ms=exit_venue_delay_ms,
+            exit_execution_target_wall_ms=exit_execution_target_wall_ms,
+            exit_execution_target_monotonic_ns=exit_execution_target_monotonic_ns,
         )
         if (
             market.end_ms - exit_execution_target_wall_ms
             < minimum_remaining_market_time_ms
         ):
-            return terminal("exit_enters_excluded_close_window", **exit_values)
+            return terminal("exit_enters_excluded_close_window")
         exit_book = self.book_index.first_at_or_after(
             token_id=selected.token_id,
             segment_id=selected.segment_id,
@@ -1157,18 +1141,18 @@ class PolymarketRepricingExecutionContext:
             ),
         )
         if exit_book is None:
-            return terminal("missing_exit_execution_book", **exit_values)
-        exit_values["exit_book"] = exit_book
+            return terminal("missing_exit_execution_book")
+        state = replace(state, exit_book=exit_book)
         if (
             market.end_ms - exit_book.received_wall_ms
             < minimum_remaining_market_time_ms
         ):
-            return terminal("exit_enters_excluded_close_window", **exit_values)
+            return terminal("exit_enters_excluded_close_window")
         exit_limit = exit_decision.tick_size
         if not _valid_limit_for_tick(
             exit_limit, exit_decision.tick_size
         ) or not _valid_limit_for_tick(exit_limit, exit_book.tick_size):
-            return terminal("exit_tick_drift", **exit_values)
+            return terminal("exit_tick_drift")
 
         exit_seed = _canonical_sha256(
             {
@@ -1180,9 +1164,7 @@ class PolymarketRepricingExecutionContext:
                 "exit_creation_book_event_id": exit_decision.event_id,
                 "per_leg_submission_latency_ms": latency_ms,
                 "holding_period_ms": holding_period_ms,
-                "exit_execution_parameter_sha256": (
-                    exit_parameter.snapshot_sha256
-                ),
+                "exit_execution_parameter_sha256": (exit_parameter.snapshot_sha256),
             }
         )
         exit_intent = PaperOrderIntent(
@@ -1204,29 +1186,27 @@ class PolymarketRepricingExecutionContext:
             exit_book.snapshot,
             execution_time_ms=exit_book.received_wall_ms,
             submission_latency_ms=exit_total_latency_ms,
-            maximum_book_age_ms=(
-                maximum_post_target_execution_observation_delay_ms
-            ),
+            maximum_book_age_ms=(maximum_post_target_execution_observation_delay_ms),
             fee=fee,
             owned_quantity=entry_result.filled_quantity,
             closing_position=True,
         )
-        exit_values["exit_result"] = exit_result
+        state = replace(state, exit_result=exit_result)
         if (
             exit_result.state != "FILLED"
             or exit_result.filled_quantity != entry_result.filled_quantity
         ):
-            return terminal("exit_not_filled", **exit_values)
+            return terminal("exit_not_filled")
         exit_proceeds = (
             exit_result.average_fill_price * exit_result.filled_quantity
             - exit_result.fee_quote
         )
-        return terminal(
-            "complete_round_trip",
-            **exit_values,
+        state = replace(
+            state,
             exit_proceeds_quote=exit_proceeds,
             net_quote=exit_proceeds - entry_cost,
         )
+        return terminal("complete_round_trip")
 
 
 def _source_replay_evidence_sha256(replay: PolymarketEvidenceReplay) -> str:
@@ -1313,20 +1293,23 @@ def _scenario_opportunity(
 ) -> PolymarketRepricingOpportunity:
     quantity = market.minimum_order_size
     terminal_reason_counts = {reason: 0 for reason in _TERMINAL_REASONS}
-    best: tuple[
-        Decimal,
-        PolymarketRecordedBook,
-        PolymarketRecordedBook,
-        PolymarketRecordedBook,
-        PolymarketRecordedBook,
-        Decimal,
-        Decimal,
-        int,
-        int,
-        int,
-        int,
-        int,
-    ] | None = None
+    best: (
+        tuple[
+            Decimal,
+            PolymarketRecordedBook,
+            PolymarketRecordedBook,
+            PolymarketRecordedBook,
+            PolymarketRecordedBook,
+            Decimal,
+            Decimal,
+            int,
+            int,
+            int,
+            int,
+            int,
+        ]
+        | None
+    ) = None
 
     for decision in decisions:
         execution = execution_context.execute(
@@ -1334,9 +1317,7 @@ def _scenario_opportunity(
             PolymarketRepricingDecision.from_book(decision),
             latency_ms=latency_ms,
             holding_period_ms=holding_period_ms,
-            minimum_remaining_market_time_ms=(
-                config.minimum_remaining_market_time_ms
-            ),
+            minimum_remaining_market_time_ms=(config.minimum_remaining_market_time_ms),
             maximum_order_creation_book_age_ms=(
                 config.maximum_order_creation_book_age_ms
             ),
@@ -1402,9 +1383,7 @@ def _scenario_opportunity(
         best_exit_decision_received_wall_ms=(
             None if best is None else best[3].received_wall_ms
         ),
-        best_exit_received_wall_ms=(
-            None if best is None else best[4].received_wall_ms
-        ),
+        best_exit_received_wall_ms=(None if best is None else best[4].received_wall_ms),
         best_decision_received_monotonic_ns=(
             None if best is None else best[1].received_monotonic_ns
         ),
@@ -1425,14 +1404,12 @@ def _scenario_opportunity(
         best_entry_execution_target_monotonic_ns=(
             None
             if best is None
-            else best[1].received_monotonic_ns
-            + (latency_ms + best[7]) * 1_000_000
+            else best[1].received_monotonic_ns + (latency_ms + best[7]) * 1_000_000
         ),
         best_exit_decision_target_monotonic_ns=(
             None
             if best is None
-            else best[2].received_monotonic_ns
-            + holding_period_ms * 1_000_000
+            else best[2].received_monotonic_ns + holding_period_ms * 1_000_000
         ),
         best_exit_execution_target_monotonic_ns=(
             None
@@ -1571,15 +1548,15 @@ def _primary_gate(
             and item.holding_period_ms == config.primary_holding_period_ms
         )
         complete_conditions = {
-            item.condition_id
-            for item in selected
-            if item.best_net_quote is not None
+            item.condition_id for item in selected if item.best_net_quote is not None
         }
-        positive_conditions = {
-            item.condition_id for item in selected if item.positive
-        }
+        positive_conditions = {item.condition_id for item in selected if item.positive}
         positive_up = len(
-            {item.condition_id for item in selected if item.outcome == "Up" and item.positive}
+            {
+                item.condition_id
+                for item in selected
+                if item.outcome == "Up" and item.positive
+            }
         )
         positive_down = len(
             {
@@ -1594,10 +1571,8 @@ def _primary_gate(
             else Decimal(len(positive_conditions)) / Decimal(len(complete_conditions))
         )
         passed = (
-            len(complete_conditions)
-            >= config.minimum_complete_markets_per_asset
-            and len(positive_conditions)
-            >= config.minimum_positive_markets_per_asset
+            len(complete_conditions) >= config.minimum_complete_markets_per_asset
+            and len(positive_conditions) >= config.minimum_positive_markets_per_asset
             and fraction >= config.minimum_positive_market_fraction_per_asset
             and positive_up >= config.minimum_positive_markets_per_outcome_asset
             and positive_down >= config.minimum_positive_markets_per_outcome_asset
@@ -1667,7 +1642,9 @@ def evaluate_polymarket_repricing_ceiling(
     cfg = (config or PolymarketRepricingConfig()).validated()
     markets = tuple(replay.markets)
     if not markets or not replay.books:
-        raise ValueError("Polymarket repricing screen requires replay books and markets")
+        raise ValueError(
+            "Polymarket repricing screen requires replay books and markets"
+        )
     market_by_condition = {market.condition_id: market for market in markets}
     if len(market_by_condition) != len(markets):
         raise ValueError("Polymarket repricing markets are duplicated")
@@ -1762,9 +1739,7 @@ def evaluate_polymarket_repricing_ceiling(
         market_execution_evidence=execution_evidence,
         replay_continuity_mode=replay.diagnostics.continuity_mode,
         replay_stream_gap_count=replay.diagnostics.stream_gap_count,
-        replay_book_sample_interval_ms=(
-            replay.diagnostics.book_sample_interval_ms
-        ),
+        replay_book_sample_interval_ms=(replay.diagnostics.book_sample_interval_ms),
         config=cfg,
         market_counts=market_counts,
         opportunities=tuple(opportunities),

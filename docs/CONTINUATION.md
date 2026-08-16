@@ -44,14 +44,36 @@ the repository and on GitHub before changing code.
   outcome, model metric, P&L, or authority was produced.
 - Dependencies, imported agent workflows, release automation, and concise
   operator documentation are integrated into the main-line closeout gate.
+- The 2026-08-16 DeepSource remediation addresses the complete 219-finding
+  inventory across 25 Python modules without analyzer suppressions. Ruff,
+  format, Vulture, terminology, provenance, badge, and manifest checks pass
+  locally. The final full pytest run passed at 100%; source branch coverage is
+  76.42%, and changed-line coverage is 95% (765 executable lines, 38 missing).
+  Native Windows build, CLI parity, smoke, launcher, and layout checks also
+  pass; the audited 2250x1470 render has no clipping or overlap.
+- A complete Codex Security diff review found no reportable findings across all
+  30 changed product-source files. Dependency audits of both supported GPU
+  stacks found no known vulnerabilities. Zizmor auditor and pedantic scans pass
+  after replacing the Codecov token path with GitHub OIDC. Before this commit,
+  live GitHub showed zero open Dependabot alerts, zero open secret-scanning
+  alerts, and only `main`; code scanning was unavailable and remains unverified.
+  Hosted CI, Ruff, Vulture, Super-Linter, and DeepSource are never inferred from
+  local runs; this checkpoint is valid only if they pass on its pushed commit.
+- Immutable Round 27 source-ledger and Round 28/29 preregistration hashes remain
+  preserved. Canonical source-only remediation amendments bind every
+  semantics-preserving analyzer refactor before any Stage 1 feature or outcome
+  access. Round 28 correction v3 supersedes v2 only for those source bindings;
+  it creates no data, model result, P&L, or authority. The generated publication
+  manifest now lists Round 29 as the latest research round without claiming a
+  result or authority.
 
 ## Next Work
 
-1. Verify clean `main`, current capture liveness/state, and live GitHub checks,
-   alerts, and branch inventory. The last full local/hosted closeout passed at
-   `59f873436ef7014951a7c29b1d0e797c212726be`; do not repeat the full suite
-   before a material checkpoint, and do not claim zero vulnerabilities when a
-   scanner is unavailable.
+1. Before resuming model work, verify clean current `main`, capture liveness,
+   current-main CI, Ruff, Vulture, Super-Linter, DeepSource, secret scanning,
+   Dependabot, code scanning, and branch inventory live. Do not claim zero
+   vulnerabilities when a scanner is unavailable, and do not repeat the full
+   suite unless a subsequent source change invalidates its passing evidence.
 2. Preserve every active real-data capture. Never stop, mutate, relabel, pool, or
    open outcomes from a preregistered capture without explicit operator
    approval and its contract-defined terminal step.

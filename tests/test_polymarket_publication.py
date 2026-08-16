@@ -95,9 +95,18 @@ def test_latest_publication_distinguishes_round25_capture_from_results() -> None
     assert "structural probability" in normalized_readme
     assert "settlement hypothesis" in normalized_readme
     assert "minimum condition counts of `2000/400/400`" in normalized_readme
-    assert "control fitter is implemented but no control model has been fitted" in normalized_readme
-    assert "lightgbm operator is implemented but no round 25 tree has been fitted" in normalized_readme
-    assert "sequence materializer is implemented but no sequence corpus has been materialized" in normalized_readme
+    assert (
+        "control fitter is implemented but no control model has been fitted"
+        in normalized_readme
+    )
+    assert (
+        "lightgbm operator is implemented but no round 25 tree has been fitted"
+        in normalized_readme
+    )
+    assert (
+        "sequence materializer is implemented but no sequence corpus has been materialized"
+        in normalized_readme
+    )
     assert "no seed model or ensemble has been fitted" in normalized_readme
     assert "the v2 plan has no test role" in normalized_readme
     assert "ai cannot create or enlarge a trade" in normalized_readme
@@ -133,11 +142,11 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
 
     assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
     assert manifest["schema_version"] == "polymarket-current-status-publication-v1"
-    assert manifest["latest_research_round"] == 28
+    assert manifest["latest_research_round"] == 29
     assert manifest["latest_evaluated_round"] == 23
     assert manifest["latest_graph_round"] == 23
     assert (
-        manifest["status"] == "round28_stage1_capture_running_no_result"
+        manifest["status"] == "round29_preregistered_stage1_capture_running_no_result"
     )
     assert manifest["round21_result_available"] is False
     assert manifest["round23_result_available"] is True
@@ -198,7 +207,10 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round25_fin_r1_supervisor_called_by_execution"] is False
     assert manifest["round25_qwen3_8b_supervisor_candidate_rejected"] is True
     assert manifest["round25_slow_llm_supervisor_mechanism_rejected"] is True
-    assert manifest["round25_slow_llm_supervisor_additional_model_cycling_allowed"] is False
+    assert (
+        manifest["round25_slow_llm_supervisor_additional_model_cycling_allowed"]
+        is False
+    )
     assert manifest["round25_sealed_test_campaign_planned"] is False
     assert manifest["round25_settlement_rule_verified"] is False
     assert manifest["round25_terminal_design_frozen"] is True
@@ -235,10 +247,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["round28_ai_preregistration_frozen"] is True
     assert manifest["round28_ai_core_implementation_source_bound"] is True
     assert manifest["round28_ai_operator_implementation_source_bound"] is True
-    assert (
-        manifest["round28_ai_sealed_evaluation_implementation_source_bound"]
-        is True
-    )
+    assert manifest["round28_ai_sealed_evaluation_implementation_source_bound"] is True
     assert manifest["round28_ai_sealed_result_available"] is False
     assert manifest["round28_ai_result_available"] is False
     assert manifest["profitability_claim"] is False
@@ -248,8 +257,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert artifact_paths == sorted(set(artifact_paths))
     assert "round-023-lead-lag-results-v1.json" in artifact_paths
     assert (
-        "round-028-sealed-evaluation-implementation-amendment-v1.json"
-        in artifact_paths
+        "round-028-sealed-evaluation-implementation-amendment-v1.json" in artifact_paths
     )
     assert (
         "round-028-ai-sealed-evaluation-implementation-amendment-v1.json"
@@ -288,8 +296,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert "round-025-tcn-directml-host-probe-2026-08-10.json" in artifact_paths
     assert "round-025-tcn-fit-contract-v1.json" in artifact_paths
     assert (
-        "round-025-twap-native-candidate-selection-amendment-v2.json"
-        in artifact_paths
+        "round-025-twap-native-candidate-selection-amendment-v2.json" in artifact_paths
     )
     assert "round-025-twap-native-candidate-selection-design-v1.json" in artifact_paths
     assert "round-025-twap-native-model-design-v1.json" in artifact_paths
@@ -306,8 +313,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
         in artifact_paths
     )
     assert (
-        "round-025-fin-r1-regime-supervisor-uplift-contract-v1.json"
-        in artifact_paths
+        "round-025-fin-r1-regime-supervisor-uplift-contract-v1.json" in artifact_paths
     )
     assert (
         "round-025-qwen3-8b-regime-supervisor-host-probe-v1-2026-08-10.json"
@@ -326,15 +332,18 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
         in artifact_paths
     )
     assert (
-        "round-025-twap-wire-source-qualification-v2-2026-08-10.json"
-        in artifact_paths
+        "round-025-twap-wire-source-qualification-v2-2026-08-10.json" in artifact_paths
     )
     assert (
         "round-027-campaign-admission-gate-correction-amendment-v16.json"
         in artifact_paths
     )
     assert "round-027-effective-source-ledger-v7.json" in artifact_paths
+    assert "round-027-static-analysis-remediation-amendment-v17.json" in artifact_paths
     assert "round-028-loaded-contract-binding-correction-v2.json" in artifact_paths
+    assert "round-028-loaded-contract-binding-correction-v3.json" in artifact_paths
+    assert "round-028-static-analysis-remediation-amendment-v2.json" in artifact_paths
+    assert "round-029-static-analysis-remediation-amendment-v1.json" in artifact_paths
     root = RESEARCH.resolve()
     for entry in manifest["artifacts"]:
         path = (RESEARCH / entry["path"]).resolve()
@@ -373,7 +382,9 @@ def test_latest_public_clob_probe_is_truthfully_scoped() -> None:
     assert probe["validation"]["live_readiness_proved"] is False
 
 
-def test_round25_resolution_transport_probe_is_self_hashed_and_non_authoritative() -> None:
+def test_round25_resolution_transport_probe_is_self_hashed_and_non_authoritative() -> (
+    None
+):
     probe = json.loads(
         (
             RESEARCH

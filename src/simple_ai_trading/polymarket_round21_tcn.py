@@ -64,6 +64,24 @@ def _torch() -> Any:
     return torch
 
 
+def _integer(value: object, *, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+        raise ValueError(f"Round 21 TCN {name} is invalid")
+    return int(value)
+
+
+def _finite_float(value: object, *, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(
+        value,
+        (int, float, np.integer, np.floating),
+    ):
+        raise ValueError(f"Round 21 TCN {name} is invalid")
+    selected = float(value)
+    if not math.isfinite(selected):
+        raise ValueError(f"Round 21 TCN {name} is invalid")
+    return selected
+
+
 def _groups(condition_ids: np.ndarray) -> tuple[tuple[int, int], ...]:
     selected = np.asarray(condition_ids, dtype=object)
     if selected.ndim != 1 or len(selected) < 1:
@@ -126,11 +144,11 @@ def _history_starts(
         or not len(conditions)
     ):
         raise ValueError("Round 21 TCN history arrays are invalid")
-    reset = np.empty(len(conditions), dtype=np.bool_)
+    reset: np.ndarray = np.empty(len(conditions), dtype=np.bool_)
     reset[0] = True
     reset[1:] = conditions[1:] != conditions[:-1]
     reset[1:] |= decisions[1:] - decisions[:-1] != 250
-    starts = np.arange(len(conditions), dtype=np.int64)
+    starts: np.ndarray = np.arange(len(conditions), dtype=np.int64)
     starts[~reset] = 0
     np.maximum.accumulate(starts, out=starts)
     return starts
@@ -155,7 +173,7 @@ def _build_sequences_from_history_starts(
         (len(selected), ROUND21_TCN_SEQUENCE_LENGTH, values.shape[1] + 1),
         dtype=np.float32,
     )
-    lags = np.arange(
+    lags: np.ndarray = np.arange(
         ROUND21_TCN_SEQUENCE_LENGTH - 1,
         -1,
         -1,
@@ -348,12 +366,21 @@ def validate_round21_tcn_payload(
         encoded = str(payload["state_base64"])
         state = base64.b64decode(encoded, validate=True)
         state_sha = str(payload["state_sha256"])
-        parameter_count = int(payload["parameter_count"])
-        best_epoch = int(payload["best_epoch"])
-        epochs_run = int(payload["epochs_run"])
-        stop_log_loss = float(payload["best_stop_condition_equal_log_loss"])
-        train_conditions = int(payload["training_condition_count"])
-        stop_conditions = int(payload["stop_condition_count"])
+        parameter_count = _integer(payload["parameter_count"], name="parameter count")
+        best_epoch = _integer(payload["best_epoch"], name="best epoch")
+        epochs_run = _integer(payload["epochs_run"], name="epochs run")
+        stop_log_loss = _finite_float(
+            payload["best_stop_condition_equal_log_loss"],
+            name="stop log loss",
+        )
+        train_conditions = _integer(
+            payload["training_condition_count"],
+            name="training condition count",
+        )
+        stop_conditions = _integer(
+            payload["stop_condition_count"],
+            name="stop condition count",
+        )
         training_seed = _validated_training_seed(payload["training_seed"])
     except (KeyError, TypeError, ValueError, OverflowError):
         return False
@@ -379,8 +406,8 @@ def validate_round21_tcn_payload(
 
 
 def _model(feature_width: int) -> Any:
-    torch = _torch()
-    nn = torch.nn
+    _torch()
+    from torch import nn
 
     class CausalBlock(nn.Module):
         def __init__(self, dilation: int) -> None:
@@ -501,7 +528,7 @@ def _predict(
     endpoints: np.ndarray,
 ) -> np.ndarray:
     torch = _torch()
-    output = np.empty(len(endpoints), dtype=np.float64)
+    output: np.ndarray = np.empty(len(endpoints), dtype=np.float64)
     history_starts = _history_starts(condition_ids, decision_time_ms)
     model.eval()
     with torch.no_grad():
@@ -853,7 +880,7 @@ class Round21CompiledTCNPredictor:
         decision_time_ms: np.ndarray,
     ) -> np.ndarray:
         values = np.asarray(matrix, dtype=np.float32, order="C")
-        labels = np.zeros(len(values), dtype=np.float32)
+        labels: np.ndarray = np.zeros(len(values), dtype=np.float32)
         validated = _validate_arrays(
             values,
             labels,
@@ -863,7 +890,7 @@ class Round21CompiledTCNPredictor:
         )
         if values.shape[1] != self.feature_width:
             raise ValueError("Round 21 TCN feature width differs")
-        endpoints = np.arange(len(values), dtype=np.int64)
+        endpoints: np.ndarray = np.arange(len(values), dtype=np.int64)
         with self._lock:
             return _predict(
                 self._model,

@@ -1,0 +1,41 @@
+{
+  "amendment_sha256": "42d82f30c0f9a51bf6e8cc428f4c704ac13f04cdb87fb6231b6301d2c274b8cd",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "base_preregistration_sha256": "8239488145f0ffe331cf9823e5517120dda0d12eb5f366cf00c5e106318d4668",
+  "created_at_ms": 1786838331807,
+  "knowledge_at_amendment": {
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "round27_stage1_feature_rows_accessed_or_materialized": false
+  },
+  "rationale": "DeepSource remediation changed type validation and local variable structure only. This amendment preserves the frozen Round 28 preregistration and binds its four affected implementation sources to their exact remediated text before any Stage 1 feature or outcome access.",
+  "schema_version": "polymarket-round28-static-analysis-remediation-amendment-v2",
+  "source_text_sha256": {
+    "src/simple_ai_trading/polymarket_round21_binance_features.py": {
+      "corrected": "165f7cfcfc549791dcfd9e01c282853f564f02f9bbe5c1fd447283fa9bcf89e1",
+      "frozen": "4ecefd09ab294bfd6929f777c55af36e3bd36cba032351e567f4b1c0d7e1c906"
+    },
+    "src/simple_ai_trading/polymarket_round21_sidecar_terminal.py": {
+      "corrected": "16ebf2791ccf2bf19c05f9e01ebaabf6d0a36f433a6bada3d74c9060609f79b6",
+      "frozen": "d97ad1d35a638b37c041ff2d31cce3ffd24aec5d4d81e6de32d00758f4b96453"
+    },
+    "src/simple_ai_trading/polymarket_round27_features.py": {
+      "corrected": "0c2078b229b00a4f24382bc7cae106e4c2807bac411d07ccf6e74df6ee2a671e",
+      "frozen": "d74d97b9bab0dba46d2b207b845da1d4b8028972bc636e0674f759cecb22f027"
+    },
+    "src/simple_ai_trading/polymarket_round28_book_ticker.py": {
+      "corrected": "18c2e2099f756b213526fcc5201a7c06dc9ea62dac9890725a38da68365ed11d",
+      "frozen": "f8081a46cb661654fcbcea3b900ca07db7986c8ff68fda1864a05af1008969a4"
+    }
+  },
+  "status": "frozen_before_stage1_feature_or_outcome_access"
+}
