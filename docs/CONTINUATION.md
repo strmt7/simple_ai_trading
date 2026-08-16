@@ -54,11 +54,13 @@ the repository and on GitHub before changing code.
 - A complete Codex Security diff review found no reportable findings across all
   30 changed product-source files. Dependency audits of both supported GPU
   stacks found no known vulnerabilities. Zizmor auditor and pedantic scans pass
-  after replacing the Codecov token path with GitHub OIDC. Before this commit,
-  live GitHub showed zero open Dependabot alerts, zero open secret-scanning
-  alerts, and only `main`; code scanning was unavailable and remains unverified.
-  Hosted CI, Ruff, Vulture, Super-Linter, and DeepSource are never inferred from
-  local runs; this checkpoint is valid only if they pass on its pushed commit.
+  without a long-lived coverage-service token. Coverage remains enforced in CI
+  and published as a GitHub artifact; the unavailable, unprovisioned Codecov
+  upload is not treated as a repository quality gate. Before this commit, live
+  GitHub showed zero open Dependabot alerts, zero open secret-scanning alerts,
+  and only `main`; code scanning was unavailable and remains unverified. Hosted
+  CI, Ruff, Vulture, Super-Linter, and DeepSource are never inferred from local
+  runs; this checkpoint is valid only if they pass on its pushed commit.
 - Immutable Round 27 source-ledger and Round 28/29 preregistration hashes remain
   preserved. Canonical source-only remediation amendments bind every
   semantics-preserving analyzer refactor before any Stage 1 feature or outcome

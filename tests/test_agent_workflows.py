@@ -111,8 +111,10 @@ def test_ci_enforces_financial_terminology_audit() -> None:
 
     assert "uv run --locked python tools/audit_financial_terminology.py" in workflow
     assert "tools/audit_financial_terminology.py" in documentation
-    assert "id-token: write" in workflow
-    assert "use_oidc: true" in workflow
+    assert "diff-cover coverage.xml" in workflow
+    assert "--fail-under=95" in workflow
+    assert "name: coverage-html" in workflow
+    assert "codecov/codecov-action" not in workflow
     assert "CODECOV_TOKEN" not in workflow
 
 
