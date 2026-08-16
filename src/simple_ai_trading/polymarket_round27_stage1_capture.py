@@ -26,6 +26,9 @@ from .polymarket_round27_capture import (
     _create_recorder,
     _database_footprint_bytes,
 )
+from .polymarket_round27_model_amendment import (
+    load_round27_static_analysis_source_replacements,
+)
 from .storage import write_bytes_atomic, write_json_atomic
 
 
@@ -368,12 +371,21 @@ def validate_round27_stage1_contract(
         raise ValueError("Round 27 Stage 1 slots differ") from exc
     if len(slots) != len(raw_slots):
         raise ValueError("Round 27 Stage 1 slots differ")
+    static_replacements = load_round27_static_analysis_source_replacements(root)
     normalized_sources: dict[str, str] = {}
     for relative, expected_value in source_hashes.items():
         expected = str(expected_value).lower()
-        if _SHA256.fullmatch(expected) is None or expected != _text_sha256(
-            root / str(relative)
-        ):
+        if _SHA256.fullmatch(expected) is None:
+            raise ValueError(f"Round 27 Stage 1 source differs: {relative}")
+        effective_expected = expected
+        replacement = static_replacements.get(str(relative))
+        if replacement is not None:
+            frozen, corrected = replacement
+            if expected == frozen:
+                effective_expected = corrected
+            elif expected != corrected:
+                raise ValueError(f"Round 27 Stage 1 source differs: {relative}")
+        if effective_expected != _text_sha256(root / str(relative)):
             raise ValueError(f"Round 27 Stage 1 source differs: {relative}")
         normalized_sources[str(relative)] = expected
     normalized_lineage: dict[str, str] = {}

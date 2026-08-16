@@ -56,6 +56,17 @@ adds deterministic interactions among already observed exact TWAP margin,
 remaining time, variance, and path state. It currently has no result, edge,
 profitability claim, or trading authority.
 
+## Repository Quality Gate
+
+Model work is not complete while repository analyzers or dependency checks are
+red. Fix findings at their type, schema, or ownership boundary; do not hide
+them with broad ignores. Run focused tests while editing, then run the full
+local matrix once at the final checkpoint. Push only after that matrix passes,
+and close the checkpoint only after current-main CI, Ruff, Vulture,
+Super-Linter, DeepSource, secret scanning, and available GitHub dependency and
+code-scanning checks have been verified. An unavailable scanner is reported as
+unverified, never as zero vulnerabilities.
+
 ## Resume Here
 
 A new development session must start with

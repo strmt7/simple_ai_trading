@@ -25,6 +25,10 @@ PREREGISTRATION = (
     ROOT / "docs/model-research/polymarket/"
     "round-029-settlement-state-matched-ablation-preregistration-v1.json"
 )
+STATIC_ANALYSIS_REMEDIATION = (
+    ROOT / "docs/model-research/polymarket/"
+    "round-029-static-analysis-remediation-amendment-v1.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -47,7 +51,9 @@ def _text_sha256(path: Path) -> str:
 
 def test_round29_preregistration_is_hash_and_source_bound_before_targets() -> None:
     value = json.loads(PREREGISTRATION.read_text(encoding="ascii"))
+    remediation = json.loads(STATIC_ANALYSIS_REMEDIATION.read_text(encoding="ascii"))
     claimed = value.pop("preregistration_sha256")
+    remediation_claimed = remediation.pop("amendment_sha256")
 
     assert claimed == _canonical_sha256(value)
     assert value["status"] == (
@@ -70,10 +76,14 @@ def test_round29_preregistration_is_hash_and_source_bound_before_targets() -> No
         "paper_trading_authority": False,
         "profitability_claim": False,
     }
-    assert all(
-        expected == _text_sha256(ROOT / relative)
-        for relative, expected in value["source_text_sha256"].items()
-    )
+    assert remediation_claimed == _canonical_sha256(remediation)
+    assert remediation["base_preregistration_sha256"] == claimed
+    assert set(remediation["source_text_sha256"]) == set(value["source_text_sha256"])
+    for relative, expected in value["source_text_sha256"].items():
+        assert remediation["source_text_sha256"][relative] == {
+            "corrected": _text_sha256(ROOT / relative),
+            "frozen": expected,
+        }
 
 
 def test_round29_preregistration_binds_exact_feature_and_comparison_contracts() -> None:

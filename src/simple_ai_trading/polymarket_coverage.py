@@ -70,7 +70,9 @@ def _positive_decimal(value: object, *, name: str) -> Decimal:
 
 
 def _timestamp(value: object, *, name: str) -> int:
-    if isinstance(value, bool):
+    if isinstance(value, bool) or not isinstance(
+        value, (str, bytes, bytearray, int, float)
+    ):
         raise ValueError(f"{name} must be a non-negative integer")
     try:
         parsed = int(value)
@@ -221,12 +223,13 @@ def inspect_polymarket_feed_coverage(
         )
         gap_validation_error = ""
     except ValueError as exc:
-        stream_gap_count = int(
-            connection.execute(
-                "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
-                [selected],
-            ).fetchone()[0]
-        )
+        gap_row = connection.execute(
+            "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
+            [selected],
+        ).fetchone()
+        if gap_row is None:
+            raise ValueError("Polymarket stream-gap count is unavailable") from exc
+        stream_gap_count = int(gap_row[0])
         gap_validation_error = str(exc)
     counts = {asset: {key: 0 for key in _COUNT_KEYS} for asset in _ASSETS}
 
@@ -395,12 +398,13 @@ def inspect_polymarket_verified_source_coverage(
         raise ValueError(f"unknown Polymarket recorder run: {selected}")
     run_status = str(run[0])
     integrity_errors = store.resume_integrity_errors(selected)
-    stream_gap_count = int(
-        connection.execute(
-            "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
-            [selected],
-        ).fetchone()[0]
-    )
+    gap_row = connection.execute(
+        "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
+        [selected],
+    ).fetchone()
+    if gap_row is None:
+        raise ValueError("Polymarket stream-gap count is unavailable")
+    stream_gap_count = int(gap_row[0])
     data_errors: list[str] = []
     if stream_gap_count and not allow_segmented_gaps:
         data_errors.append("stream_gap_invalid:segmented continuity is disabled")
@@ -454,9 +458,9 @@ def inspect_polymarket_verified_source_coverage(
     resolved_conditions: dict[str, set[str]] = {asset: set() for asset in _ASSETS}
     try:
         for resolution in load_official_resolutions(store, run_id=selected):
-            asset = condition_asset.get(resolution.condition_id)
-            if asset:
-                resolved_conditions[asset].add(resolution.condition_id)
+            resolution_asset = condition_asset.get(resolution.condition_id)
+            if resolution_asset:
+                resolved_conditions[resolution_asset].add(resolution.condition_id)
     except ValueError as exc:
         data_errors.append(
             f"official_resolution_invalid:{exc.__class__.__name__}:{exc}"

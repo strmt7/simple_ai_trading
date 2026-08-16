@@ -114,6 +114,18 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
 
 
+def _finite_float(value: object, *, label: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"Round 21 {label} is invalid")
+    try:
+        parsed = float(str(value))
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"Round 21 {label} is invalid") from exc
+    if not math.isfinite(parsed):
+        raise ValueError(f"Round 21 {label} is invalid")
+    return parsed
+
+
 def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     output: dict[str, object] = {}
     for key, value in pairs:
@@ -309,8 +321,10 @@ def _fit_arm(
     selected_model, _selected_stop_metrics = min(
         candidates,
         key=lambda value: (
-            float(value[1]["condition_equal_log_loss"]),
-            -float(value[0]["l2"]),
+            _finite_float(
+                value[1]["condition_equal_log_loss"], label="condition log loss"
+            ),
+            -_finite_float(value[0]["l2"], label="regularization"),
             str(value[0]["candidate_id"]),
         ),
     )
@@ -345,12 +359,16 @@ def _fit_arm(
             "regularization_candidates": [
                 {
                     "candidate_id": model["candidate_id"],
-                    "l2": format(float(model["l2"]), "g"),
+                    "l2": format(
+                        _finite_float(model["l2"], label="regularization"), "g"
+                    ),
                     "metrics": metrics,
                 }
                 for model, metrics in candidates
             ],
-            "selected_l2": format(float(selected_model["l2"]), "g"),
+            "selected_l2": format(
+                _finite_float(selected_model["l2"], label="regularization"), "g"
+            ),
             "selected_model": deepcopy(selected_model),
             "paired_evaluation_metrics": _model._metrics(
                 selection.condition_ids[selection_indices],
@@ -486,6 +504,25 @@ def _valid_paired(value: object, *, condition_count: int) -> bool:
         and all(math.isfinite(item) for item in (mean, lower, upper))
         and lower <= mean <= upper
     )
+
+
+def _positive_paired_lower_bounds(value: object) -> bool:
+    if not isinstance(value, Mapping):
+        return False
+    try:
+        for metric in ("log_loss", "brier"):
+            metric_value = value.get(metric)
+            if (
+                not isinstance(metric_value, Mapping)
+                or _finite_float(
+                    metric_value.get("lower_95"), label=f"{metric} lower bound"
+                )
+                <= 0.0
+            ):
+                return False
+    except ValueError:
+        return False
+    return True
 
 
 def _valid_dataset_identity(value: object, *, role: str) -> bool:
@@ -634,10 +671,7 @@ def validate_round21_probability_basis_ablation_result(
             for metric in ("log_loss", "brier")
         )
     )
-    expected_accepted = bool(
-        valid_paired
-        and all(float(paired[metric]["lower_95"]) > 0.0 for metric in paired)
-    )
+    expected_accepted = bool(valid_paired and _positive_paired_lower_bounds(paired))
     valid_arms = set(arms) == set(_ARMS)
     arm_feature_counts: dict[str, int] = {}
     if valid_arms:

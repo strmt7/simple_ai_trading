@@ -106,6 +106,7 @@ _CURRENT_RESEARCH_ARTIFACTS = (
     "round-027-effective-source-ledger-v7.json",
     "round-027-settlement-regime-risk-preregistration-v1.json",
     "round-027-stage1-campaign-contract-v1.json",
+    "round-027-static-analysis-remediation-amendment-v17.json",
     "round-028-community-hypothesis-review-v1.json",
     "round-028-ai-operator-implementation-amendment-v1.json",
     "round-028-ai-risk-veto-implementation-amendment-v1.json",
@@ -115,9 +116,13 @@ _CURRENT_RESEARCH_ARTIFACTS = (
     "round-028-binance-bbo-matched-ablation-preregistration-v1.json",
     "round-028-economic-implementation-amendment-v1.json",
     "round-028-loaded-contract-binding-correction-v2.json",
+    "round-028-loaded-contract-binding-correction-v3.json",
     "round-028-operator-implementation-amendment-v1.json",
     "round-028-sealed-evaluation-implementation-amendment-v1.json",
     "round-028-selection-implementation-amendment-v1.json",
+    "round-028-static-analysis-remediation-amendment-v2.json",
+    "round-029-settlement-state-matched-ablation-preregistration-v1.json",
+    "round-029-static-analysis-remediation-amendment-v1.json",
 )
 
 
@@ -190,10 +195,10 @@ def _artifact(path: Path) -> dict[str, object]:
 def build_manifest() -> dict[str, object]:
     body: dict[str, object] = {
         "schema_version": "polymarket-current-status-publication-v1",
-        "status": "round28_stage1_capture_running_no_result",
+        "status": "round29_preregistered_stage1_capture_running_no_result",
         "asset": "BTC",
         "market_variant": "fiveminute",
-        "latest_research_round": 28,
+        "latest_research_round": 29,
         "latest_evaluated_round": 23,
         "latest_graph_round": 23,
         "accepted_historical_predictive_edge": False,
@@ -303,6 +308,9 @@ def build_manifest() -> dict[str, object]:
         "round28_ai_direct_v1_case_operator_superseded": True,
         "round28_ai_sealed_result_available": False,
         "round28_ai_result_available": False,
+        "round29_preregistration_frozen": True,
+        "round29_model_result_available": False,
+        "round29_sealed_result_available": False,
         "profitability_claim": False,
         "paper_authority": False,
         "live_trading_authority": False,

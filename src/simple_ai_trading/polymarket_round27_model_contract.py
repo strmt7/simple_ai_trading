@@ -24,6 +24,7 @@ from .polymarket_round27_model import (
 from .polymarket_round27_model_amendment import (
     POLYMARKET_ROUND27_MODEL_AMENDMENT_FIELD,
     load_round27_model_amendment,
+    load_round27_static_analysis_source_replacements,
 )
 from .polymarket_round27_stage1_capture import load_round27_stage1_contract
 
@@ -163,8 +164,7 @@ def validate_round27_model_contract(
         != "first_target_blind_positive_after_cost_candidate_per_condition"
         or economics.get("entry_price")
         != "fok_walk_of_actual_polymarket_clob_ask_depth_after_observed_delay"
-        or economics.get("exit_value")
-        != "official_binary_condition_resolution_payout"
+        or economics.get("exit_value") != "official_binary_condition_resolution_payout"
         or economics.get("fixed_delay_scenarios_ms") != [250, 500, 1000, 2000]
         or economics.get("primary_delay_ms") != 500
         or economics.get("maximum_execution_observation_delay_ms") != 500
@@ -199,8 +199,7 @@ def validate_round27_model_contract(
         or models[1].get("l2_penalties") != list(POLYMARKET_ROUND27_L2_PENALTIES)
         or models[1].get("correction_scales")
         != list(POLYMARKET_ROUND27_CORRECTION_SCALES)
-        or models[2].get("selection_claim_payload")
-        != "full_model_text_and_sha256"
+        or models[2].get("selection_claim_payload") != "full_model_text_and_sha256"
         or not isinstance(partitions, list)
         or not isinstance(sources, Mapping)
     ):
@@ -216,16 +215,13 @@ def validate_round27_model_contract(
         raise ValueError("Round 27 supplemental hypotheses are unavailable") from exc
     if not isinstance(supplemental, dict):
         raise ValueError("Round 27 supplemental hypotheses differ")
-    supplemental_claim = _sha256(
-        supplemental.pop("preregistration_sha256", "")
-    )
+    supplemental_claim = _sha256(supplemental.pop("preregistration_sha256", ""))
     supplemental_authority = supplemental.get("authority")
     supplemental_source = supplemental.get("source")
     if (
         supplemental_claim != _SUPPLEMENTAL_HYPOTHESES_SHA256
         or supplemental_claim != _canonical_sha256(supplemental)
-        or supplemental.get("status")
-        != "frozen_before_stage1_market_state_access"
+        or supplemental.get("status") != "frozen_before_stage1_market_state_access"
         or not isinstance(supplemental_authority, Mapping)
         or any(value is not False for value in supplemental_authority.values())
         or not isinstance(supplemental_source, Mapping)
@@ -259,6 +255,7 @@ def validate_round27_model_contract(
     replacement_sources = amendment.get("superseded_source_text_sha256")
     if not isinstance(replacement_sources, Mapping):
         raise ValueError("Round 27 model amendment source binding differs")
+    static_replacement_sources = load_round27_static_analysis_source_replacements(root)
     for relative, expected in sources.items():
         relative_path = Path(str(relative))
         path = (root / relative_path).resolve()
@@ -271,6 +268,12 @@ def validate_round27_model_contract(
             ):
                 raise ValueError("Round 27 model amendment source binding differs")
             effective_expected = replacement.get("corrected")
+        static_replacement = static_replacement_sources.get(str(relative))
+        if static_replacement is not None:
+            frozen, corrected = static_replacement
+            if frozen != _sha256(effective_expected):
+                raise ValueError("Round 27 source remediation binding differs")
+            effective_expected = corrected
         if (
             relative_path.is_absolute()
             or root not in path.parents
@@ -281,12 +284,21 @@ def validate_round27_model_contract(
     for relative, replacement in replacement_sources.items():
         relative_path = Path(str(relative))
         path = (root / relative_path).resolve()
+        corrected = (
+            replacement.get("corrected") if isinstance(replacement, Mapping) else None
+        )
+        static_replacement = static_replacement_sources.get(str(relative))
+        if static_replacement is not None:
+            frozen, static_corrected = static_replacement
+            if frozen != _sha256(corrected):
+                raise ValueError("Round 27 source remediation binding differs")
+            corrected = static_corrected
         if (
             not isinstance(replacement, Mapping)
             or relative_path.is_absolute()
             or root not in path.parents
             or not path.is_file()
-            or _file_sha256(path) != _sha256(replacement.get("corrected"))
+            or _file_sha256(path) != _sha256(corrected)
         ):
             raise ValueError("Round 27 model amendment source binding differs")
     stage1 = load_round27_stage1_contract(

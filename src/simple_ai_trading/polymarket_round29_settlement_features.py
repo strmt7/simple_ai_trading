@@ -160,7 +160,17 @@ class Round29SettlementOverlayRow:
             "target_accessed": False,
             "trading_authority": False,
         }
-        return cls(**payload, row_sha256=_canonical_sha256(payload)).validated()
+        return cls(
+            schema_version=POLYMARKET_ROUND29_SETTLEMENT_OVERLAY_SCHEMA_VERSION,
+            decision_time_ms=selected.decision_time_ms,
+            base_row_sha256=selected.row_sha256,
+            values=_settlement_values(selected),
+            feature_names_sha256=(POLYMARKET_ROUND29_SETTLEMENT_FEATURE_NAMES_SHA256),
+            source_chain_sha256=_canonical_sha256(source_identity),
+            row_sha256=_canonical_sha256(payload),
+            target_accessed=False,
+            trading_authority=False,
+        ).validated()
 
     def validated(self) -> "Round29SettlementOverlayRow":
         payload = {
@@ -306,7 +316,25 @@ class Round29FeatureRow:
             "target_accessed": False,
             "trading_authority": False,
         }
-        return cls(**payload, row_sha256=_canonical_sha256(payload)).validated()
+        return cls(
+            schema_version=POLYMARKET_ROUND29_FEATURE_SCHEMA_VERSION,
+            feature_view=feature_view,
+            run_id=run_id,
+            condition_id=condition_id,
+            event_start_ms=event_start_ms,
+            decision_time_ms=decision_time_ms,
+            market_prior_probability=market_prior_probability,
+            values=values,
+            feature_names_sha256=feature_hash,
+            maximum_receipt_wall_ms=maximum_receipt_wall_ms,
+            base_row_sha256=base_row_sha256,
+            settlement_overlay_row_sha256=selected_overlay.row_sha256,
+            bbo_row_sha256=bbo_row_sha256,
+            source_chain_sha256=_canonical_sha256(source_identity),
+            row_sha256=_canonical_sha256(payload),
+            target_accessed=False,
+            trading_authority=False,
+        ).validated()
 
     def validated(self) -> "Round29FeatureRow":
         try:
@@ -336,39 +364,45 @@ class Round29FeatureRow:
             "target_accessed": self.target_accessed,
             "trading_authority": self.trading_authority,
         }
+        if _round29_core_fields_differ(self, feature_names, feature_hash):
+            raise ValueError("Round 29 feature row differs")
+        if _round29_view_binding_differs(self):
+            raise ValueError("Round 29 feature row differs")
         if (
-            self.schema_version != POLYMARKET_ROUND29_FEATURE_SCHEMA_VERSION
-            or not self.run_id
-            or _CONDITION_ID.fullmatch(self.condition_id) is None
-            or not self.event_start_ms
-            <= self.decision_time_ms
-            < self.event_start_ms + 300_000
-            or self.decision_time_ms % 1_000
-            or not 0.0 < self.market_prior_probability < 1.0
-            or len(self.values) != len(feature_names)
-            or any(not math.isfinite(value) for value in self.values)
-            or self.feature_names_sha256 != feature_hash
-            or not 0 < self.maximum_receipt_wall_ms < self.decision_time_ms
-            or _SHA256.fullmatch(self.base_row_sha256) is None
-            or _SHA256.fullmatch(self.settlement_overlay_row_sha256) is None
-            or (
-                self.feature_view == "round29_settlement_augmented"
-                and self.bbo_row_sha256 is not None
-            )
-            or (
-                self.feature_view == "round29_bbo_settlement_augmented"
-                and (
-                    self.bbo_row_sha256 is None
-                    or _SHA256.fullmatch(self.bbo_row_sha256) is None
-                )
-            )
-            or self.source_chain_sha256 != _canonical_sha256(source_identity)
+            self.source_chain_sha256 != _canonical_sha256(source_identity)
             or self.row_sha256 != _canonical_sha256(payload)
             or self.target_accessed
             or self.trading_authority
         ):
             raise ValueError("Round 29 feature row differs")
         return self
+
+
+def _round29_core_fields_differ(
+    row: Round29FeatureRow,
+    feature_names: tuple[str, ...],
+    feature_hash: str,
+) -> bool:
+    return (
+        row.schema_version != POLYMARKET_ROUND29_FEATURE_SCHEMA_VERSION
+        or not row.run_id
+        or _CONDITION_ID.fullmatch(row.condition_id) is None
+        or not row.event_start_ms <= row.decision_time_ms < row.event_start_ms + 300_000
+        or bool(row.decision_time_ms % 1_000)
+        or not 0.0 < row.market_prior_probability < 1.0
+        or len(row.values) != len(feature_names)
+        or any(not math.isfinite(value) for value in row.values)
+        or row.feature_names_sha256 != feature_hash
+        or not 0 < row.maximum_receipt_wall_ms < row.decision_time_ms
+        or _SHA256.fullmatch(row.base_row_sha256) is None
+        or _SHA256.fullmatch(row.settlement_overlay_row_sha256) is None
+    )
+
+
+def _round29_view_binding_differs(row: Round29FeatureRow) -> bool:
+    if row.feature_view == "round29_settlement_augmented":
+        return row.bbo_row_sha256 is not None
+    return row.bbo_row_sha256 is None or _SHA256.fullmatch(row.bbo_row_sha256) is None
 
 
 __all__ = [

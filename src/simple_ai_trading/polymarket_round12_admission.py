@@ -8,8 +8,16 @@ import json
 from typing import TYPE_CHECKING, Mapping
 
 if TYPE_CHECKING:
-    from .polymarket_action_value import PolymarketActionFeature
-    from .polymarket_repricing import PolymarketRepricingDecisionExecution
+    from .polymarket_action_value import (
+        PolymarketActionFeature,
+        PolymarketActionValueConfig,
+        PolymarketActionValueDataset,
+    )
+    from .polymarket_features import PolymarketFeatureDataset
+    from .polymarket_repricing import (
+        PolymarketRepricingDecisionExecution,
+        PolymarketRepricingExecutionContext,
+    )
 
 
 POLYMARKET_ROUND12_ADMISSION_SCHEMA_VERSION = (
@@ -176,9 +184,7 @@ class PolymarketRound12ActionLocalAdmission:
                 <= self.decision_monotonic_ns - self.creation_book_monotonic_ns
                 <= POLYMARKET_ROUND12_CREATION_BOOK_MAXIMUM_AGE_MS * 1_000_000
             ):
-                raise ValueError(
-                    "Polymarket Round 12 decision continuity is invalid"
-                )
+                raise ValueError("Polymarket Round 12 decision continuity is invalid")
         elif (
             self.submission_attempted
             or self.observation_state != "not_submitted"
@@ -210,12 +216,13 @@ class PolymarketRound12ActionLocalAdmission:
                 or not 0
                 <= self.entry_book_monotonic_ns
                 - self.entry_execution_target_monotonic_ns
-                <= POLYMARKET_ROUND12_EXECUTION_OBSERVATION_MAXIMUM_DELAY_MS
-                * 1_000_000
+                <= POLYMARKET_ROUND12_EXECUTION_OBSERVATION_MAXIMUM_DELAY_MS * 1_000_000
             ):
                 raise ValueError("Round 12 observed entry continuity is invalid")
-        elif self.entry_book_event_id or self.entry_book_segment_id or (
-            self.entry_book_monotonic_ns is not None
+        elif (
+            self.entry_book_event_id
+            or self.entry_book_segment_id
+            or (self.entry_book_monotonic_ns is not None)
         ):
             raise ValueError("Round 12 unobserved entry contains book evidence")
 
@@ -279,9 +286,7 @@ def build_round12_action_local_admission(
         )
 
     decision = execution.decision.validated(
-        maximum_creation_book_age_ms=(
-            POLYMARKET_ROUND12_CREATION_BOOK_MAXIMUM_AGE_MS
-        )
+        maximum_creation_book_age_ms=(POLYMARKET_ROUND12_CREATION_BOOK_MAXIMUM_AGE_MS)
     )
     if (
         decision.condition_id != feature.condition_id
@@ -289,8 +294,7 @@ def build_round12_action_local_admission(
         or decision.outcome != feature.outcome
         or decision.event_id != feature.decision_event_id
         or decision.received_wall_ms != feature.decision_received_wall_ms
-        or decision.received_monotonic_ns
-        != feature.decision_received_monotonic_ns
+        or decision.received_monotonic_ns != feature.decision_received_monotonic_ns
     ):
         raise ValueError("Round 12 action execution and feature are misaligned")
     creation = decision.creation_book
@@ -370,9 +374,7 @@ class PolymarketRound12AdmissionDataset:
             "schema_version": "polymarket-round12-action-local-dataset-v1",
             "source_action_dataset_sha256": self.source_action_dataset_sha256,
             "source_run_id": self.source_run_id,
-            "admission_sha256": [
-                item.admission_sha256 for item in self.admissions
-            ],
+            "admission_sha256": [item.admission_sha256 for item in self.admissions],
             "observation_state_counts": dict(
                 sorted(self.observation_state_counts.items())
             ),
@@ -409,27 +411,28 @@ class PolymarketRound12AdmissionDataset:
 
 
 def build_round12_action_evidence_datasets(
-    source: object,
-    execution_context: object,
+    source: PolymarketFeatureDataset,
+    execution_context: PolymarketRepricingExecutionContext,
     *,
-    config: object | None = None,
-) -> tuple[object, PolymarketRound12AdmissionDataset]:
+    config: PolymarketActionValueConfig | None = None,
+) -> tuple[PolymarketActionValueDataset, PolymarketRound12AdmissionDataset]:
     """Build legacy action labels and compact Round 12 admission rows in one replay."""
 
     from .polymarket_action_value import build_polymarket_action_value_dataset
 
     admissions: list[PolymarketRound12ActionLocalAdmission] = []
 
-    def observe(feature: object, execution: object | None) -> None:
-        admissions.append(  # type: ignore[arg-type]
-            build_round12_action_local_admission(feature, execution)
-        )
+    def observe(
+        feature: PolymarketActionFeature,
+        execution: PolymarketRepricingDecisionExecution | None,
+    ) -> None:
+        admissions.append(build_round12_action_local_admission(feature, execution))
 
     action_dataset = build_polymarket_action_value_dataset(
-        source,  # type: ignore[arg-type]
-        execution_context,  # type: ignore[arg-type]
-        config=config,  # type: ignore[arg-type]
-        execution_observer=observe,  # type: ignore[arg-type]
+        source,
+        execution_context,
+        config=config,
+        execution_observer=observe,
     )
     if tuple(item.action_feature_sha256 for item in admissions) != tuple(
         item.action_feature_sha256 for item in action_dataset.features
@@ -445,7 +448,9 @@ def build_round12_action_evidence_datasets(
         admissions=tuple(admissions),
         observation_state_counts=counts,
         decision_admissible_count=sum(item.decision_admissible for item in admissions),
-        submission_attempted_count=sum(item.submission_attempted for item in admissions),
+        submission_attempted_count=sum(
+            item.submission_attempted for item in admissions
+        ),
         condition_blocked_count=sum(item.condition_blocked for item in admissions),
         dataset_sha256="",
     )
@@ -699,17 +704,13 @@ def load_round12_admission_dataset(
                 decision_monotonic_ns=(None if row[7] is None else int(row[7])),
                 creation_book_event_id=str(row[8]),
                 creation_book_segment_id=str(row[9]),
-                creation_book_monotonic_ns=(
-                    None if row[10] is None else int(row[10])
-                ),
+                creation_book_monotonic_ns=(None if row[10] is None else int(row[10])),
                 entry_execution_target_monotonic_ns=(
                     None if row[11] is None else int(row[11])
                 ),
                 entry_book_event_id=str(row[12]),
                 entry_book_segment_id=str(row[13]),
-                entry_book_monotonic_ns=(
-                    None if row[14] is None else int(row[14])
-                ),
+                entry_book_monotonic_ns=(None if row[14] is None else int(row[14])),
                 decision_admissible=bool(row[15]),
                 submission_attempted=bool(row[16]),
                 observation_state=str(row[17]),

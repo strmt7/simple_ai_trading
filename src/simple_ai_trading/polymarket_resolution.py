@@ -25,13 +25,26 @@ _ROUND13_CLAIM_SCHEMA_VERSION = "polymarket-round13-one-use-claim-v1"
 class PolymarketResolutionMarket(Protocol):
     """Minimal recorded identity required for official resolution validation."""
 
-    market_id: str
-    condition_id: str
-    slug: str
-    up_token_id: str
-    down_token_id: str
-    resolution_source: str
-    end_ms: int
+    @property
+    def market_id(self) -> str: ...
+
+    @property
+    def condition_id(self) -> str: ...
+
+    @property
+    def slug(self) -> str: ...
+
+    @property
+    def up_token_id(self) -> str: ...
+
+    @property
+    def down_token_id(self) -> str: ...
+
+    @property
+    def resolution_source(self) -> str: ...
+
+    @property
+    def end_ms(self) -> int: ...
 
     @property
     def token_ids(self) -> tuple[str, str]: ...
@@ -142,7 +155,7 @@ def _require_round13_resolution_authority(
         raise ValueError(
             "Round 13 resolution requires its committed one-use evaluation claim"
         )
-    table_exists = bool(
+    table_row = (
         store.connect()
         .execute(
             """
@@ -150,8 +163,11 @@ def _require_round13_resolution_authority(
             WHERE table_name = 'polymarket_round13_evaluation_claim'
             """
         )
-        .fetchone()[0]
+        .fetchone()
     )
+    if table_row is None:
+        raise ValueError("Round 13 resolution authority table check is unavailable")
+    table_exists = bool(table_row[0])
     if not table_exists:
         raise ValueError(
             "Round 13 resolution requires its committed one-use evaluation claim"
@@ -185,14 +201,17 @@ def _require_round13_resolution_authority(
         "state": "opened_before_resolution_query",
         "preexisting_resolution_count": 0,
     }
-    maximum_end_ms = int(
+    maximum_end_row = (
         store.connect()
         .execute(
             "SELECT max(end_ms) FROM polymarket_market_snapshot WHERE run_id = ?",
             [run_id],
         )
-        .fetchone()[0]
+        .fetchone()
     )
+    if maximum_end_row is None or maximum_end_row[0] is None:
+        raise ValueError("Round 13 resolution market horizon is unavailable")
+    maximum_end_ms = int(maximum_end_row[0])
     if (
         str(row[0]) != _ROUND13_CLAIM_SCHEMA_VERSION
         or not _is_sha256(row[1])
@@ -236,6 +255,17 @@ def _decimal(value: object, *, name: str) -> Decimal:
     if not parsed.is_finite():
         raise ValueError(f"{name} must be a finite decimal")
     return parsed
+
+
+def _integer(value: object, *, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(
+        value, (str, bytes, bytearray, int, float)
+    ):
+        raise ValueError(f"{name} must be an integer")
+    try:
+        return int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be an integer") from exc
 
 
 @dataclass(frozen=True)
@@ -472,9 +502,10 @@ def _resolution_from_row(
     clob_payload = _strict_json(clob_json, name="stored CLOB resolution")
     gamma_payload = _strict_json(gamma_json, name="stored Gamma resolution")
     stored_payload = _strict_json(payload_json, name="stored resolution evidence")
-    if not all(
-        isinstance(item, Mapping)
-        for item in (clob_payload, gamma_payload, stored_payload)
+    if (
+        not isinstance(clob_payload, Mapping)
+        or not isinstance(gamma_payload, Mapping)
+        or not isinstance(stored_payload, Mapping)
     ):
         raise ValueError("stored official resolution JSON must contain objects")
     canonical_clob, actual_clob_sha = _canonical_mapping(
@@ -493,11 +524,15 @@ def _resolution_from_row(
         raise ValueError("stored official resolution schema is unsupported")
     if str(condition_id) != market.condition_id or str(market_id) != market.market_id:
         raise ValueError("stored official resolution market identity drifted")
+    observed_wall = _integer(observed_wall_ms, name="stored observed wall time")
+    observed_monotonic = _integer(
+        observed_monotonic_ns, name="stored observed monotonic time"
+    )
     winner = validate_official_resolution(
         market,
         clob_payload,
         gamma_payload,
-        observed_wall_ms=int(observed_wall_ms),
+        observed_wall_ms=observed_wall,
     )
     if winner != (str(winning_asset_id), str(winning_outcome)):
         raise ValueError("stored official resolution winner drifted")
@@ -505,8 +540,8 @@ def _resolution_from_row(
         "schema_version": POLYMARKET_RESOLUTION_SCHEMA_VERSION,
         "run_id": str(run_id),
         "condition_id": market.condition_id,
-        "observed_wall_ms": int(observed_wall_ms),
-        "observed_monotonic_ns": int(observed_monotonic_ns),
+        "observed_wall_ms": observed_wall,
+        "observed_monotonic_ns": observed_monotonic,
         "clob_payload_sha256": str(clob_sha),
         "gamma_payload_sha256": str(gamma_sha),
     }
@@ -516,8 +551,8 @@ def _resolution_from_row(
         resolution_id=str(resolution_id),
         run_id=str(run_id),
         market=market,
-        observed_wall_ms=int(observed_wall_ms),
-        observed_monotonic_ns=int(observed_monotonic_ns),
+        observed_wall_ms=observed_wall,
+        observed_monotonic_ns=observed_monotonic,
         winning_asset_id=str(winning_asset_id),
         winning_outcome=str(winning_outcome),
         clob_payload_sha256=str(clob_sha),
@@ -539,8 +574,8 @@ def _resolution_from_row(
         condition_id=market.condition_id,
         market_id=market.market_id,
         asset=market.asset,
-        observed_wall_ms=int(observed_wall_ms),
-        observed_monotonic_ns=int(observed_monotonic_ns),
+        observed_wall_ms=observed_wall,
+        observed_monotonic_ns=observed_monotonic,
         winning_asset_id=str(winning_asset_id),
         winning_outcome=str(winning_outcome),
         clob_payload_sha256=str(clob_sha),

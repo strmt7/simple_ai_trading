@@ -278,14 +278,15 @@ def inspect_ollama_model_residency(
         raise ValueError("Ollama runtime inventory contains ambiguous model entries")
     raw = matches[0]
     loaded_model = raw.get("model") or raw.get("name")
-    digest = raw.get("digest")
+    digest_value = raw.get("digest")
     size = raw.get("size")
     size_vram = raw.get("size_vram")
     if (
         not isinstance(loaded_model, str)
         or not loaded_model
-        or not _is_sha256(digest)
-        or (expected_digest is not None and digest != expected_digest)
+        or not isinstance(digest_value, str)
+        or not _is_sha256(digest_value)
+        or (expected_digest is not None and digest_value != expected_digest)
         or isinstance(size, bool)
         or not isinstance(size, int)
         or size <= 0
@@ -298,7 +299,7 @@ def inspect_ollama_model_residency(
         requested_model=requested_model,
         status="gpu_resident" if size_vram > 0 else "cpu_only",
         loaded_model=loaded_model,
-        digest=digest,
+        digest=digest_value,
         size_bytes=size,
         size_vram_bytes=size_vram,
         vram_to_model_ratio=size_vram / size,
@@ -306,6 +307,10 @@ def inspect_ollama_model_residency(
 
 
 def _safe_float(value: object) -> float | None:
+    if isinstance(value, bool) or not isinstance(
+        value, (str, bytes, bytearray, int, float)
+    ):
+        return None
     try:
         parsed = float(value)
     except (TypeError, ValueError, OverflowError):
@@ -415,10 +420,10 @@ def _nvidia_free_vram_gb() -> float | None:
         [exe, "--query-gpu=memory.free", "--format=csv,noheader,nounits"]
     )
     values = [_safe_float(line.strip()) for line in output.splitlines() if line.strip()]
-    values = [value for value in values if value is not None]
-    if not values:
+    valid_values = [value for value in values if value is not None]
+    if not valid_values:
         return None
-    return max(values) / 1024.0
+    return max(valid_values) / 1024.0
 
 
 def _torch_backend_free_vram_gb(backend: BackendInfo) -> float | None:

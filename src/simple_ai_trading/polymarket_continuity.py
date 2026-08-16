@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from bisect import bisect_right
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 import hashlib
 import json
 from typing import Mapping
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
+from .polymarket import PolymarketFiveMinuteMarket
 from .polymarket_action_value import POLYMARKET_ACTION_VALUE_CONTRACT_SHA256
 from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_replay import PolymarketEvidenceReplay
@@ -20,6 +21,30 @@ POLYMARKET_CONTINUITY_ELIGIBILITY_SCHEMA_VERSION = (
 POLYMARKET_ACTION_CONTRACT_COMMIT = "3dee7424ebb8740767f05c3ea9e64b10d1c59851"
 POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS = 1_784_143_695_000
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
+
+_ClobEvidence = tuple[int, int, str | None, str | None, int | None]
+_BinanceEvidence = tuple[int, int, int, str | None]
+_RtdsEvidence = tuple[int, int, str | None]
+
+
+@dataclass(slots=True)
+class _ClobAccumulator:
+    window_events: int = 0
+    window_connections: set[str] = field(default_factory=set)
+    baseline: tuple[int, int, str, str] | None = None
+
+
+@dataclass(slots=True)
+class _BinanceAccumulator:
+    bookticker: int = 0
+    trade: int = 0
+    connections: set[str] = field(default_factory=set)
+
+
+@dataclass(slots=True)
+class _RtdsAccumulator:
+    events: int = 0
+    connections: set[str] = field(default_factory=set)
 
 
 def _canonical_json(value: object) -> str:
@@ -207,7 +232,7 @@ class PolymarketContinuityReport:
 
 def _create_window_tables(
     store: PolymarketEvidenceStore,
-    groups: Mapping[int, tuple[object, ...]],
+    groups: Mapping[int, tuple[PolymarketFiveMinuteMarket, ...]],
     config: PolymarketContinuityConfig,
 ) -> tuple[dict[str, int], list[tuple[object, ...]], list[tuple[object, ...]]]:
     connection = store.connect()
@@ -287,9 +312,9 @@ def _continuity_evidence(
     store: PolymarketEvidenceStore,
     run_id: str,
 ) -> tuple[
-    dict[tuple[int, str, str], tuple[object, ...]],
-    dict[tuple[int, str], tuple[object, ...]],
-    dict[tuple[int, str], tuple[object, ...]],
+    dict[tuple[int, str, str], _ClobEvidence],
+    dict[tuple[int, str], _BinanceEvidence],
+    dict[tuple[int, str], _RtdsEvidence],
     dict[int, tuple[str, ...]],
     dict[str, int],
     dict[tuple[str, str], int],
@@ -365,9 +390,9 @@ def _continuity_evidence(
             baseline_deadline_ms,
         ) in token_windows
     }
-    clob_accumulators: dict[tuple[int, str, str], dict[str, object]] = {}
-    binance_accumulators: dict[tuple[int, str], dict[str, object]] = {}
-    rtds_accumulators: dict[tuple[int, str], dict[str, object]] = {}
+    clob_accumulators: dict[tuple[int, str, str], _ClobAccumulator] = {}
+    binance_accumulators: dict[tuple[int, str], _BinanceAccumulator] = {}
+    rtds_accumulators: dict[tuple[int, str], _RtdsAccumulator] = {}
     for decoded in store.iter_public_events(
         run_id,
         streams=("binance_spot", "clob_market", "polymarket_rtds"),
@@ -381,20 +406,14 @@ def _continuity_evidence(
             )
             if window is None or received_wall_ms > window[3]:
                 continue
-            key = (window[0], window[1], decoded.asset_id)
-            accumulator = clob_accumulators.setdefault(
-                key,
-                {
-                    "window_events": 0,
-                    "window_connections": set(),
-                    "baseline": None,
-                },
+            clob_key = (window[0], window[1], decoded.asset_id)
+            clob_accumulator = clob_accumulators.setdefault(
+                clob_key,
+                _ClobAccumulator(),
             )
             if window[2] <= received_wall_ms <= window[3]:
-                accumulator["window_events"] = int(accumulator["window_events"]) + 1
-                connections = accumulator["window_connections"]
-                assert isinstance(connections, set)
-                connections.add(decoded.connection_id)
+                clob_accumulator.window_events += 1
+                clob_accumulator.window_connections.add(decoded.connection_id)
             if event_type == "book" and received_wall_ms <= window[4]:
                 candidate = (
                     received_wall_ms,
@@ -402,78 +421,77 @@ def _continuity_evidence(
                     decoded.event_id,
                     decoded.connection_id,
                 )
-                baseline = accumulator["baseline"]
+                baseline = clob_accumulator.baseline
                 if baseline is None or candidate > baseline:
-                    accumulator["baseline"] = candidate
+                    clob_accumulator.baseline = candidate
             continue
         asset = decoded.symbol.upper()
         event_start = event_window(asset, received_wall_ms)
         if event_start is None:
             continue
-        key = (event_start, asset)
+        asset_key = (event_start, asset)
         if decoded.stream == "binance_spot":
-            accumulator = binance_accumulators.setdefault(
-                key,
-                {"bookticker": 0, "trade": 0, "connections": set()},
+            binance_accumulator = binance_accumulators.setdefault(
+                asset_key,
+                _BinanceAccumulator(),
             )
             if event_type in {"bookticker", "trade"}:
-                accumulator[event_type] = int(accumulator[event_type]) + 1
-            connections = accumulator["connections"]
-            assert isinstance(connections, set)
-            connections.add(decoded.connection_id)
+                if event_type == "bookticker":
+                    binance_accumulator.bookticker += 1
+                else:
+                    binance_accumulator.trade += 1
+            binance_accumulator.connections.add(decoded.connection_id)
         elif event_type.startswith("crypto_prices_chainlink:"):
-            accumulator = rtds_accumulators.setdefault(
-                key,
-                {"events": 0, "connections": set()},
+            rtds_accumulator = rtds_accumulators.setdefault(
+                asset_key,
+                _RtdsAccumulator(),
             )
-            accumulator["events"] = int(accumulator["events"]) + 1
-            connections = accumulator["connections"]
-            assert isinstance(connections, set)
-            connections.add(decoded.connection_id)
+            rtds_accumulator.events += 1
+            rtds_accumulator.connections.add(decoded.connection_id)
 
-    clob: dict[tuple[int, str, str], tuple[object, ...]] = {}
+    clob: dict[tuple[int, str, str], _ClobEvidence] = {}
     for event_start_ms, asset, _condition_id, token_id, *_bounds in token_windows:
-        key = (int(event_start_ms), str(asset), str(token_id))
-        accumulator = clob_accumulators.get(key)
-        if accumulator is None:
-            clob[key] = (0, 0, None, None, None)
+        clob_key = (int(event_start_ms), str(asset), str(token_id))
+        stored_clob_accumulator = clob_accumulators.get(clob_key)
+        if stored_clob_accumulator is None:
+            clob[clob_key] = (0, 0, None, None, None)
             continue
-        connections = accumulator["window_connections"]
-        baseline = accumulator["baseline"]
-        assert isinstance(connections, set)
-        clob[key] = (
-            int(accumulator["window_events"]),
-            len(connections),
-            min(connections) if connections else None,
+        baseline = stored_clob_accumulator.baseline
+        clob[clob_key] = (
+            stored_clob_accumulator.window_events,
+            len(stored_clob_accumulator.window_connections),
+            min(stored_clob_accumulator.window_connections)
+            if stored_clob_accumulator.window_connections
+            else None,
             None if baseline is None else baseline[3],
             None if baseline is None else baseline[0],
         )
-    binance: dict[tuple[int, str], tuple[object, ...]] = {}
-    rtds: dict[tuple[int, str], tuple[object, ...]] = {}
+    binance: dict[tuple[int, str], _BinanceEvidence] = {}
+    rtds: dict[tuple[int, str], _RtdsEvidence] = {}
     for event_start_ms, asset, _window_start, _window_end in asset_windows:
-        key = (int(event_start_ms), str(asset))
-        binance_accumulator = binance_accumulators.get(key)
-        if binance_accumulator is None:
-            binance[key] = (0, 0, 0, None)
+        asset_key = (int(event_start_ms), str(asset))
+        stored_binance_accumulator = binance_accumulators.get(asset_key)
+        if stored_binance_accumulator is None:
+            binance[asset_key] = (0, 0, 0, None)
         else:
-            connections = binance_accumulator["connections"]
-            assert isinstance(connections, set)
-            binance[key] = (
-                int(binance_accumulator["bookticker"]),
-                int(binance_accumulator["trade"]),
-                len(connections),
-                min(connections) if connections else None,
+            binance[asset_key] = (
+                stored_binance_accumulator.bookticker,
+                stored_binance_accumulator.trade,
+                len(stored_binance_accumulator.connections),
+                min(stored_binance_accumulator.connections)
+                if stored_binance_accumulator.connections
+                else None,
             )
-        rtds_accumulator = rtds_accumulators.get(key)
-        if rtds_accumulator is None:
-            rtds[key] = (0, 0, None)
+        stored_rtds_accumulator = rtds_accumulators.get(asset_key)
+        if stored_rtds_accumulator is None:
+            rtds[asset_key] = (0, 0, None)
         else:
-            connections = rtds_accumulator["connections"]
-            assert isinstance(connections, set)
-            rtds[key] = (
-                int(rtds_accumulator["events"]),
-                len(connections),
-                min(connections) if connections else None,
+            rtds[asset_key] = (
+                stored_rtds_accumulator.events,
+                len(stored_rtds_accumulator.connections),
+                min(stored_rtds_accumulator.connections)
+                if stored_rtds_accumulator.connections
+                else None,
             )
 
     raw_gaps = connection.execute(
@@ -876,10 +894,10 @@ def evaluate_polymarket_continuity_eligibility(
     if persisted is not None:
         return persisted
     markets = PolymarketEvidenceReplay.load_markets(store, run_id=selected)
-    groups: dict[int, list[object]] = {}
+    groups: dict[int, list[PolymarketFiveMinuteMarket]] = {}
     for market in markets:
         groups.setdefault(int(market.event_start_ms), []).append(market)
-    synchronized: dict[int, tuple[object, ...]] = {}
+    synchronized: dict[int, tuple[PolymarketFiveMinuteMarket, ...]] = {}
     for event_start_ms, values in sorted(groups.items()):
         ordered = tuple(sorted(values, key=lambda item: _ASSETS.index(item.asset)))
         if tuple(item.asset for item in ordered) != _ASSETS:
@@ -899,12 +917,13 @@ def evaluate_polymarket_continuity_eligibility(
             end_ms=market_group[0].end_ms,
             config=cfg,
         )
+        assets_evidence: dict[str, object] = {}
         evidence: dict[str, object] = {
             "run_bounds": {
                 "started_at_ms": started_at_ms,
                 "ended_at_ms": ended_at_ms,
             },
-            "assets": {},
+            "assets": assets_evidence,
         }
         if started_at_ms > window_start:
             reasons.append("run_started_after_window_start")
@@ -920,14 +939,16 @@ def evaluate_polymarket_continuity_eligibility(
                 reasons.append(f"late_or_missing_market_snapshot:{market.asset}")
             token_evidence: dict[str, object] = {}
             for outcome, token_id in zip(("Up", "Down"), market.token_ids, strict=True):
-                values = clob.get((event_start_ms, market.asset, token_id))
-                if values is None:
-                    values = (0, 0, None, None, None)
-                window_events = int(values[0] or 0)
-                window_connections = int(values[1] or 0)
-                window_connection = str(values[2] or "")
-                baseline_connection = str(values[3] or "")
-                baseline_wall_ms = None if values[4] is None else int(values[4])
+                clob_values = clob.get((event_start_ms, market.asset, token_id))
+                if clob_values is None:
+                    clob_values = (0, 0, None, None, None)
+                window_events = int(clob_values[0] or 0)
+                window_connections = int(clob_values[1] or 0)
+                window_connection = str(clob_values[2] or "")
+                baseline_connection = str(clob_values[3] or "")
+                baseline_wall_ms = (
+                    None if clob_values[4] is None else int(clob_values[4])
+                )
                 token_evidence[outcome] = {
                     "window_event_count": window_events,
                     "window_connection_count": window_connections,
@@ -1006,7 +1027,7 @@ def evaluate_polymarket_continuity_eligibility(
             )
             if rtds_connection_start is None or rtds_connection_start > window_start:
                 reasons.append(f"rtds_segment_started_after_window:{market.asset}")
-            evidence["assets"][market.asset] = asset_evidence
+            assets_evidence[market.asset] = asset_evidence
         frozen_reasons = tuple(sorted(set(reasons)))
         provisional_group = PolymarketContinuityGroup(
             event_start_ms=event_start_ms,

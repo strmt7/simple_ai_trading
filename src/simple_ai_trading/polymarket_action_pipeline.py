@@ -13,6 +13,7 @@ from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket import PolymarketFiveMinuteMarket
 from .polymarket_action_value import (
     POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
+    PolymarketActionValueDataset,
     PolymarketActionValueConfig,
     build_polymarket_action_value_dataset,
     materialize_polymarket_action_value_dataset,
@@ -116,6 +117,21 @@ def _strict_json(raw: object, *, name: str) -> object:
         )
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
         raise ValueError(f"{name} is invalid JSON") from exc
+
+
+def _string_tuple(value: object, *, name: str) -> tuple[str, ...]:
+    if isinstance(value, (str, bytes, bytearray)) or not isinstance(value, Sequence):
+        raise ValueError(f"{name} is not an array")
+    return tuple(str(item) for item in value)
+
+
+def _integer_tuple(value: object, *, name: str) -> tuple[int, ...]:
+    if isinstance(value, (str, bytes, bytearray)) or not isinstance(value, Sequence):
+        raise ValueError(f"{name} is not an array")
+    try:
+        return tuple(int(item) for item in value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} contains a non-integer") from exc
 
 
 def _nonnegative_count_mapping(raw: object, *, name: str) -> dict[str, int]:
@@ -404,7 +420,7 @@ def _batch_identity(
     group_starts_ms: Sequence[int],
     condition_ids: Sequence[str],
 ) -> dict[str, object]:
-    identity = {
+    identity: dict[str, object] = {
         "schema_version": POLYMARKET_ACTION_BATCH_SCHEMA_VERSION,
         "contract_sha256": POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
         "run_id": run_id,
@@ -508,11 +524,22 @@ def _load_existing_batch(
         )
         if not isinstance(replay_diagnostics, Mapping):
             raise ValueError("stored replay diagnostics is not an object")
+        source_scope_payload = _strict_json(
+            feature_manifest[5], name="stored feature source scope"
+        )
+        if not isinstance(source_scope_payload, Mapping):
+            raise ValueError("stored feature source scope is not an object")
+        identity_condition_ids = _string_tuple(
+            identity["condition_ids"], name="batch condition IDs"
+        )
         source_scope = validate_polymarket_feature_source_scope(
-            _strict_json(feature_manifest[5], name="stored feature source scope"),
+            source_scope_payload,
             run_id=str(identity["run_id"]),
-            condition_ids=tuple(str(value) for value in identity["condition_ids"]),
+            condition_ids=identity_condition_ids,
             require_bounded=True,
+        )
+        source_condition_ids = _string_tuple(
+            source_scope["condition_ids"], name="stored source-scope condition IDs"
         )
         excluded_after_scope = int(
             replay_diagnostics["excluded_after_event_scope_count"]
@@ -525,8 +552,7 @@ def _load_existing_batch(
         tuple(feature_manifest[:2]) != (row[11], row[11])
         or str(feature_manifest[3]) != POLYMARKET_DATASET_SCHEMA_VERSION
         or str(feature_manifest[4]) != POLYMARKET_FEATURE_SCHEMA_VERSION
-        or tuple(source_scope["condition_ids"])
-        != tuple(sorted(str(value) for value in identity["condition_ids"]))
+        or source_condition_ids != tuple(sorted(identity_condition_ids))
         or action_manifest is None
         or tuple(action_manifest[:3]) != tuple(row[12:15])
         or tuple(action_manifest[5:]) != tuple(row[12:15])
@@ -577,22 +603,18 @@ def _load_existing_batch(
     return PolymarketActionBatchResult(
         batch_id=batch_id,
         status="existing",
-        group_starts_ms=tuple(int(value) for value in identity["group_starts_ms"]),
-        condition_ids=tuple(str(value) for value in identity["condition_ids"]),
+        group_starts_ms=_integer_tuple(
+            identity["group_starts_ms"], name="batch group starts"
+        ),
+        condition_ids=identity_condition_ids,
         feature_dataset_sha256=str(row[9]),
         action_dataset_sha256=str(row[10]),
         feature_row_count=int(row[11]),
         action_count=int(row[12]),
         classifier_eligible_count=int(row[13]),
         positive_complete_count=int(row[14]),
-        category_counts={
-            str(key): int(value)
-            for key, value in batch_payload["category_counts"].items()
-        },
-        terminal_reason_counts={
-            str(key): int(value)
-            for key, value in batch_payload["terminal_reason_counts"].items()
-        },
+        category_counts=dict(category_counts),
+        terminal_reason_counts=dict(terminal_reason_counts),
         excluded_after_event_scope_count=excluded_after_scope,
         round13_scenario_dataset_sha256=round13_dataset_sha256,
         batch_sha256=str(row[17]),
@@ -676,8 +698,12 @@ def _persist_batch(
     return PolymarketActionBatchResult(
         batch_id=batch_id,
         status="created",
-        group_starts_ms=tuple(int(value) for value in identity["group_starts_ms"]),
-        condition_ids=tuple(str(value) for value in identity["condition_ids"]),
+        group_starts_ms=_integer_tuple(
+            identity["group_starts_ms"], name="batch group starts"
+        ),
+        condition_ids=_string_tuple(
+            identity["condition_ids"], name="batch condition IDs"
+        ),
         feature_dataset_sha256=feature_dataset_sha256,
         action_dataset_sha256=action_dataset_sha256,
         feature_row_count=int(feature_row_count),
@@ -701,14 +727,17 @@ def _require_no_round13_resolution_evidence(
     store: PolymarketEvidenceStore,
     run_id: str,
 ) -> None:
-    count = int(
+    row = (
         store.connect()
         .execute(
             "SELECT count(*) FROM polymarket_resolution_evidence WHERE run_id = ?",
             [run_id],
         )
-        .fetchone()[0]
+        .fetchone()
     )
+    if row is None:
+        raise ValueError("Round 13 resolution evidence count is unavailable")
+    count = int(row[0])
     if count:
         raise ValueError(
             "Round 13 label-free materialization requires no official resolution "
@@ -892,7 +921,9 @@ def materialize_polymarket_action_value_batches(
         if frozen_round13 is not None:
             _require_no_round13_resolution_evidence(store, selected)
         identity, _batch_id = batch_specs[index]
-        conditions = tuple(str(value) for value in identity["condition_ids"])
+        conditions = _string_tuple(
+            identity["condition_ids"], name="batch condition IDs"
+        )
         if progress is not None:
             progress(
                 "batch-started",
@@ -946,6 +977,7 @@ def materialize_polymarket_action_value_batches(
         )
         materialize_polymarket_feature_dataset(store, features)
         execution_context = PolymarketRepricingExecutionContext(replay)
+        actions: PolymarketActionValueDataset
         admissions = None
         if admission_mode == "action_local":
             actions, admissions = build_round12_action_evidence_datasets(

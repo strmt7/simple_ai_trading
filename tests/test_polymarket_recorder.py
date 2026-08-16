@@ -635,6 +635,38 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
     assert hot_path_unique_constraints == []
 
 
+def test_evidence_store_compacts_to_multiple_chunks_at_a_tight_byte_cap(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(recorder_module, "_MAX_RAW_CHUNK_BYTES", 64)
+    messages = [
+        _message(
+            "polymarket_rtds",
+            {"payload": "x" * 32},
+            sequence=sequence,
+        )
+        for sequence in range(1, 4)
+    ]
+    with PolymarketEvidenceStore(tmp_path / "tight-chunks.duckdb") as store:
+        store.start_run("tight-chunks", EPOCH * 1_000)
+        store.connect().execute(
+            "UPDATE polymarket_recorder_run "
+            "SET storage_schema_version = 'polymarket-evidence-storage-v3' "
+            "WHERE run_id = 'tight-chunks'"
+        )
+        store._storage_schema_version_by_run.pop("tight-chunks", None)
+        store.append_messages("tight-chunks", messages)
+        chunks = (
+            store.connect()
+            .execute("SELECT count(*) FROM polymarket_raw_chunk")
+            .fetchone()
+        )
+
+    assert chunks is not None
+    assert chunks[0] > 1
+
+
 def test_storage_v4_audit_pages_payloads_by_primary_key(
     tmp_path,
     monkeypatch,
@@ -1471,6 +1503,14 @@ def test_market_registry_can_drop_expired_tokens_without_post_market_grace() -> 
     assert registry.changed.is_set()
 
 
+def test_recorder_rejects_out_of_range_market_subscription_grace(tmp_path) -> None:
+    with pytest.raises(ValueError, match="must lie in"):
+        PolymarketPublicRecorder(
+            tmp_path / "invalid-grace.duckdb",
+            market_subscription_grace_seconds=901,
+        )
+
+
 def test_recorder_retries_transient_initial_discovery_and_records_gap(
     tmp_path, monkeypatch
 ) -> None:
@@ -1493,9 +1533,9 @@ def test_recorder_retries_transient_initial_discovery_and_records_gap(
     monkeypatch.setattr(recorder_module, "_bounded_backoff", no_wait)
 
     async def exercise() -> StreamGap:
-        output: asyncio.Queue[
-            RawStreamMessage | StreamGap | MarketEvidence | None
-        ] = asyncio.Queue()
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None] = (
+            asyncio.Queue()
+        )
         await recorder._initial_discover(
             "run",
             output,
@@ -1530,9 +1570,9 @@ def test_recorder_does_not_retry_a_discovery_contract_failure(
     monkeypatch.setattr(recorder, "_discover", discover)
 
     async def exercise() -> None:
-        output: asyncio.Queue[
-            RawStreamMessage | StreamGap | MarketEvidence | None
-        ] = asyncio.Queue()
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None] = (
+            asyncio.Queue()
+        )
         with pytest.raises(ValueError, match="resolution source differs"):
             await recorder._initial_discover(
                 "run",
@@ -1593,7 +1633,9 @@ def test_rtds_twap_mode_uses_exact_topic_and_validator(tmp_path, monkeypatch) ->
     )
 
 
-def test_rtds_twap_60_mode_uses_exact_topic_and_validator(tmp_path, monkeypatch) -> None:
+def test_rtds_twap_60_mode_uses_exact_topic_and_validator(
+    tmp_path, monkeypatch
+) -> None:
     recorder = PolymarketPublicRecorder(
         tmp_path / "twap-60-subscription.duckdb",
         assets=("BTC",),
@@ -1667,9 +1709,7 @@ def test_twap_validator_rejects_nonconforming_updates(mutator) -> None:
     mutator(event)
 
     with pytest.raises(ValueError, match="Chainlink TWAP"):
-        _validate_chainlink_twap_30_frame(
-            _canonical(event), expected_symbol="btc/usd"
-        )
+        _validate_chainlink_twap_30_frame(_canonical(event), expected_symbol="btc/usd")
 
 
 def test_twap_validator_rejects_duplicate_keys_and_invalid_mode(tmp_path) -> None:
@@ -2317,6 +2357,17 @@ def test_storage_v4_recovers_only_an_exact_terminal_audit_oom(
             reopened, "_iter_capture_messages", unexpected_decompression
         )
         assert reopened.resume_integrity_errors(run_id) == ()
+        paper_journal = object.__new__(recorder_module.PaperOrderJournal)
+        monkeypatch.setattr(
+            paper_journal,
+            "integrity_errors",
+            lambda: ("paper_journal:integrity_error",),
+        )
+        reopened.paper_journal = paper_journal
+        assert reopened.resume_integrity_errors(run_id) == (
+            "paper_journal:integrity_error",
+        )
+        reopened.paper_journal = None
         assert reopened.integrity_errors(run_id) == ()
 
 
@@ -2600,6 +2651,98 @@ def test_invalid_stream_payload_fails_run_and_gap_validation_is_fail_closed(
     assert any(
         error.startswith("invalid_stream_message:") for error in report.integrity_errors
     )
+
+
+def test_compact_v3_integrity_rejects_missing_chunk_and_invalid_metadata(
+    tmp_path,
+) -> None:
+    database = tmp_path / "compact-v3-metadata.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("compact-v3-metadata", EPOCH * 1_000)
+        store.connect().execute(
+            "UPDATE polymarket_recorder_run "
+            "SET storage_schema_version = 'polymarket-evidence-storage-v3' "
+            "WHERE run_id = 'compact-v3-metadata'"
+        )
+        store._storage_schema_version_by_run.pop("compact-v3-metadata", None)
+        store.append_messages(
+            "compact-v3-metadata",
+            [_message("polymarket_rtds", "PING", sequence=1)],
+        )
+        connection = store.connect()
+        original_chunk_id = connection.execute(
+            "SELECT storage_chunk_id FROM polymarket_raw_message"
+        ).fetchone()[0]
+        connection.execute(
+            "UPDATE polymarket_raw_message SET storage_chunk_id = 'missing'"
+        )
+        missing_chunk_errors = store.integrity_errors("compact-v3-metadata")
+        connection.execute(
+            "UPDATE polymarket_raw_message SET storage_chunk_id = ?, "
+            "chunk_message_index = 2048",
+            [original_chunk_id],
+        )
+        invalid_metadata_errors = store.integrity_errors("compact-v3-metadata")
+
+    assert any(
+        error.startswith("raw_message_missing_chunk:") for error in missing_chunk_errors
+    )
+    assert any(
+        error.startswith("raw_message_metadata_invalid:")
+        for error in invalid_metadata_errors
+    )
+
+
+def test_compact_v3_integrity_recomputes_parse_state(tmp_path) -> None:
+    database = tmp_path / "compact-v3-parse.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("compact-v3-parse", EPOCH * 1_000)
+        store.connect().execute(
+            "UPDATE polymarket_recorder_run "
+            "SET storage_schema_version = 'polymarket-evidence-storage-v3' "
+            "WHERE run_id = 'compact-v3-parse'"
+        )
+        store._storage_schema_version_by_run.pop("compact-v3-parse", None)
+        store.append_messages(
+            "compact-v3-parse",
+            [
+                _message("polymarket_rtds", "PING", sequence=1),
+                _message("clob_market", "{not-json", sequence=1),
+            ],
+        )
+        store.connect().execute(
+            "UPDATE polymarket_raw_message SET parse_status = 'ok' "
+            "WHERE stream = 'polymarket_rtds'"
+        )
+        errors = store.integrity_errors("compact-v3-parse")
+
+    assert any(error.startswith("raw_message_parse_mismatch:") for error in errors)
+    assert any(error.startswith("invalid_stream_message:") for error in errors)
+
+
+def test_legacy_v1_integrity_recomputes_raw_hash_and_message_id(tmp_path) -> None:
+    database = tmp_path / "legacy-v1-integrity.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("legacy-v1-integrity", EPOCH * 1_000)
+        store.connect().execute(
+            "UPDATE polymarket_recorder_run "
+            "SET storage_schema_version = 'polymarket-public-evidence-v1' "
+            "WHERE run_id = 'legacy-v1-integrity'"
+        )
+        store._storage_schema_version_by_run.pop("legacy-v1-integrity", None)
+        store.append_messages(
+            "legacy-v1-integrity",
+            [_message("polymarket_rtds", "PING", sequence=1)],
+        )
+        store.connect().execute(
+            "UPDATE polymarket_raw_message SET raw_text = raw_text || ' ', "
+            "message_id = ?",
+            ["f" * 64],
+        )
+        errors = store.integrity_errors("legacy-v1-integrity")
+
+    assert any(error.startswith("raw_message_hash_mismatch:") for error in errors)
+    assert any(error.startswith("raw_message_id_mismatch:") for error in errors)
 
 
 def test_evidence_hash_mismatch_is_rejected_before_persistence(tmp_path) -> None:

@@ -25,7 +25,11 @@ from .polymarket_action_value import (
     PolymarketActionFeature,
     PolymarketActionValueDataset,
 )
-from .polymarket_features import POLYMARKET_FEATURE_NAMES, PolymarketFeatureDataset
+from .polymarket_features import (
+    POLYMARKET_FEATURE_NAMES,
+    PolymarketFeatureDataset,
+    PolymarketFeatureRow,
+)
 from .polymarket_repricing import (
     PolymarketRecordedBook,
     PolymarketRepricingDecision,
@@ -226,6 +230,41 @@ def _reject_nonfinite_json(value: str) -> object:
 def _mapping(value: object, *, name: str) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise ValueError(f"{name} is not an object")
+    return value
+
+
+def _string(value: object, *, name: str) -> str:
+    if not isinstance(value, str):
+        raise ValueError(f"{name} is not a string")
+    return value
+
+
+def _optional_string(value: object, *, name: str) -> str | None:
+    return None if value is None else _string(value, name=name)
+
+
+def _integer(value: object, *, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{name} is not an integer")
+    return value
+
+
+def _optional_integer(value: object, *, name: str) -> int | None:
+    return None if value is None else _integer(value, name=name)
+
+
+def _finite_float(value: object, *, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{name} is not finite")
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ValueError(f"{name} is not finite")
+    return parsed
+
+
+def _boolean(value: object, *, name: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"{name} is not a boolean")
     return value
 
 
@@ -923,10 +962,10 @@ class PolymarketRound13LabelFreeDataset:
         }
 
     def validated(self) -> PolymarketRound13LabelFreeDataset:
-        for item in self.calibration_snapshots:
-            item.validated()
-        for item in self.attempts:
-            item.validated()
+        for snapshot in self.calibration_snapshots:
+            snapshot.validated()
+        for attempt in self.attempts:
+            attempt.validated()
         snapshot_by_condition = {
             item.condition_id: item for item in self.calibration_snapshots
         }
@@ -1343,51 +1382,43 @@ def _entry_observation(
                 state = "simulated_fill"
                 reason = "stressed_displayed_depth_walk_complete"
                 cost, filled_quantity, fee_quote, fills = walked
-    payload = {
-        "scenario": scenario.name,
-        "action_feature_sha256": feature.action_feature_sha256,
-        "condition_id": feature.condition_id,
-        "outcome": feature.outcome,
-        "decision_event_id": decision.event_id,
-        "decision_segment_id": decision.segment_id,
-        "decision_monotonic_ns": decision.received_monotonic_ns,
-        "creation_book_event_id": decision.creation_book.event_id,
-        "fok_tick_size": format(decision.creation_book.tick_size, "f"),
-        "fok_limit_price": format(fok_limit_price, "f"),
-        "order_amount_quote": format(order_amount_quote, "f"),
-        "execution_parameter_sha256": parameter_sha,
-        "execution_target_monotonic_ns": target_ns,
-        "entry_book_event_id": "" if entry is None else entry.event_id,
-        "entry_book_segment_id": "" if entry is None else entry.segment_id,
-        "entry_book_monotonic_ns": (
+    source_evidence = {
+        "creation_source_sha256": decision.creation_book.snapshot.source_payload_sha256,
+        "entry_source_sha256": (
+            "" if entry is None else entry.snapshot.source_payload_sha256
+        ),
+        "transformed_fills": [list(item) for item in fills],
+    }
+    provisional = PolymarketRound13EntryObservation(
+        scenario=scenario.name,
+        action_feature_sha256=feature.action_feature_sha256,
+        condition_id=feature.condition_id,
+        outcome=feature.outcome,
+        decision_event_id=decision.event_id,
+        decision_segment_id=decision.segment_id,
+        decision_monotonic_ns=decision.received_monotonic_ns,
+        creation_book_event_id=decision.creation_book.event_id,
+        fok_tick_size=format(decision.creation_book.tick_size, "f"),
+        fok_limit_price=format(fok_limit_price, "f"),
+        order_amount_quote=format(order_amount_quote, "f"),
+        execution_parameter_sha256=parameter_sha,
+        execution_target_monotonic_ns=target_ns,
+        entry_book_event_id="" if entry is None else entry.event_id,
+        entry_book_segment_id="" if entry is None else entry.segment_id,
+        entry_book_monotonic_ns=(
             None if entry is None else entry.received_monotonic_ns
         ),
-        "entry_book_tick_size": (
-            None if entry is None else format(entry.tick_size, "f")
-        ),
-        "submission_attempted": state != "not_submitted",
-        "observation_state": state,
-        "entry_modeled_quantity": (
+        entry_book_tick_size=(None if entry is None else format(entry.tick_size, "f")),
+        submission_attempted=state != "not_submitted",
+        observation_state=state,
+        entry_modeled_quantity=(
             None if filled_quantity is None else format(filled_quantity, "f")
         ),
-        "entry_fee_quote": None if fee_quote is None else format(fee_quote, "f"),
-        "entry_cost_quote": None if cost is None else format(cost, "f"),
-        "maximum_entry_loss_quote": format(maximum_entry_loss_quote, "f"),
-        "reason": reason,
-        "source_evidence": {
-            "creation_source_sha256": decision.creation_book.snapshot.source_payload_sha256,
-            "entry_source_sha256": (
-                "" if entry is None else entry.snapshot.source_payload_sha256
-            ),
-            "transformed_fills": [list(item) for item in fills],
-        },
-    }
-    identity = {
-        key: value for key, value in payload.items() if key != "source_evidence"
-    }
-    identity["source_evidence_sha256"] = _sha256(payload["source_evidence"])
-    provisional = PolymarketRound13EntryObservation(
-        **identity,
+        entry_fee_quote=None if fee_quote is None else format(fee_quote, "f"),
+        entry_cost_quote=None if cost is None else format(cost, "f"),
+        maximum_entry_loss_quote=format(maximum_entry_loss_quote, "f"),
+        reason=reason,
+        source_evidence_sha256=_sha256(source_evidence),
         evidence_sha256="",
     )
     return replace(
@@ -1487,15 +1518,15 @@ def _select_fok_candidate(
         )
     if not candidates:
         return None, "insufficient_creation_depth_within_fok_limit"
-    outcome, _probability, edge, reason = _select_outcome(
+    selected_outcome, _selected_probability, selected_edge, reason = _select_outcome(
         probability_up,
         executions,
         policy,
     )
-    if outcome is None or edge is None:
+    if selected_outcome is None or selected_edge is None:
         return None, reason
-    selected = candidates[outcome]
-    if selected.expected_edge_quote != edge:
+    selected = candidates[selected_outcome]
+    if selected.expected_edge_quote != selected_edge:
         raise RuntimeError("Round 13 candidate selection edge is inconsistent")
     return selected, "eligible_primary_candidate"
 
@@ -1574,7 +1605,7 @@ def build_round13_label_free_dataset(
         (item.source_feature_id, item.outcome): item for item in action_source.features
     }
     market_by_condition = context.market_by_condition
-    rows_by_condition: dict[str, list[object]] = {}
+    rows_by_condition: dict[str, list[PolymarketFeatureRow]] = {}
     for row in source.rows:
         rows_by_condition.setdefault(row.condition_id, []).append(row)
     if len(rows_by_condition) != 3:
@@ -1820,31 +1851,178 @@ def _snapshot_from_payload(value: object) -> PolymarketRound13CalibrationSnapsho
     payload = dict(_mapping(value, name="Round 13 calibration snapshot"))
     if payload.pop("schema_version", None) != (
         "polymarket-round13-calibration-snapshot-v1"
-    ):
+    ) or set(payload) != set(PolymarketRound13CalibrationSnapshot.__dataclass_fields__):
         raise ValueError("Round 13 calibration snapshot schema differs")
     try:
-        return PolymarketRound13CalibrationSnapshot(**payload).validated()
+        return PolymarketRound13CalibrationSnapshot(
+            condition_id=_string(payload.get("condition_id"), name="condition ID"),
+            asset=_string(payload.get("asset"), name="asset"),
+            event_start_ms=_integer(payload.get("event_start_ms"), name="event start"),
+            action_feature_up_sha256=_string(
+                payload.get("action_feature_up_sha256"), name="up action feature hash"
+            ),
+            action_feature_down_sha256=_string(
+                payload.get("action_feature_down_sha256"),
+                name="down action feature hash",
+            ),
+            decision_event_id=_string(
+                payload.get("decision_event_id"), name="decision event ID"
+            ),
+            decision_monotonic_ns=_integer(
+                payload.get("decision_monotonic_ns"), name="decision clock"
+            ),
+            remaining_seconds=_finite_float(
+                payload.get("remaining_seconds"), name="remaining seconds"
+            ),
+            market_prior_up=_finite_float(
+                payload.get("market_prior_up"), name="market prior"
+            ),
+            calibrated_probability_up=_finite_float(
+                payload.get("calibrated_probability_up"),
+                name="calibrated probability",
+            ),
+            snapshot_sha256=_string(
+                payload.get("snapshot_sha256"), name="snapshot hash"
+            ),
+        ).validated()
     except (TypeError, ValueError) as exc:
         raise ValueError("Round 13 calibration snapshot payload is invalid") from exc
 
 
 def _observation_from_payload(value: object) -> PolymarketRound13EntryObservation:
     payload = dict(_mapping(value, name="Round 13 entry observation"))
-    if payload.pop("schema_version", None) != "polymarket-round13-entry-observation-v1":
+    if payload.pop(
+        "schema_version", None
+    ) != "polymarket-round13-entry-observation-v1" or set(payload) != set(
+        PolymarketRound13EntryObservation.__dataclass_fields__
+    ):
         raise ValueError("Round 13 entry observation schema differs")
     try:
-        return PolymarketRound13EntryObservation(**payload).validated()
+        return PolymarketRound13EntryObservation(
+            scenario=_string(payload.get("scenario"), name="scenario"),
+            action_feature_sha256=_string(
+                payload.get("action_feature_sha256"), name="action feature hash"
+            ),
+            condition_id=_string(payload.get("condition_id"), name="condition ID"),
+            outcome=_string(payload.get("outcome"), name="outcome"),
+            decision_event_id=_string(
+                payload.get("decision_event_id"), name="decision event ID"
+            ),
+            decision_segment_id=_string(
+                payload.get("decision_segment_id"), name="decision segment ID"
+            ),
+            decision_monotonic_ns=_integer(
+                payload.get("decision_monotonic_ns"), name="decision clock"
+            ),
+            creation_book_event_id=_string(
+                payload.get("creation_book_event_id"), name="creation book event ID"
+            ),
+            fok_tick_size=_string(payload.get("fok_tick_size"), name="FOK tick size"),
+            fok_limit_price=_string(
+                payload.get("fok_limit_price"), name="FOK limit price"
+            ),
+            order_amount_quote=_string(
+                payload.get("order_amount_quote"), name="order amount"
+            ),
+            execution_parameter_sha256=_string(
+                payload.get("execution_parameter_sha256"),
+                name="execution parameter hash",
+            ),
+            execution_target_monotonic_ns=_optional_integer(
+                payload.get("execution_target_monotonic_ns"),
+                name="execution target clock",
+            ),
+            entry_book_event_id=_string(
+                payload.get("entry_book_event_id"), name="entry book event ID"
+            ),
+            entry_book_segment_id=_string(
+                payload.get("entry_book_segment_id"), name="entry book segment ID"
+            ),
+            entry_book_monotonic_ns=_optional_integer(
+                payload.get("entry_book_monotonic_ns"), name="entry book clock"
+            ),
+            entry_book_tick_size=_optional_string(
+                payload.get("entry_book_tick_size"), name="entry book tick size"
+            ),
+            submission_attempted=_boolean(
+                payload.get("submission_attempted"), name="submission flag"
+            ),
+            observation_state=_string(
+                payload.get("observation_state"), name="observation state"
+            ),
+            entry_modeled_quantity=_optional_string(
+                payload.get("entry_modeled_quantity"), name="entry quantity"
+            ),
+            entry_fee_quote=_optional_string(
+                payload.get("entry_fee_quote"), name="entry fee"
+            ),
+            entry_cost_quote=_optional_string(
+                payload.get("entry_cost_quote"), name="entry cost"
+            ),
+            maximum_entry_loss_quote=_string(
+                payload.get("maximum_entry_loss_quote"), name="maximum entry loss"
+            ),
+            reason=_string(payload.get("reason"), name="observation reason"),
+            source_evidence_sha256=_string(
+                payload.get("source_evidence_sha256"), name="source evidence hash"
+            ),
+            evidence_sha256=_string(
+                payload.get("evidence_sha256"), name="evidence hash"
+            ),
+        ).validated()
     except (TypeError, ValueError) as exc:
         raise ValueError("Round 13 entry observation payload is invalid") from exc
 
 
 def _attempt_from_payload(value: object) -> PolymarketRound13Attempt:
     payload = dict(_mapping(value, name="Round 13 attempt"))
-    if payload.pop("schema_version", None) != "polymarket-round13-attempt-v1":
+    if payload.pop("schema_version", None) != "polymarket-round13-attempt-v1" or set(
+        payload
+    ) != set(PolymarketRound13Attempt.__dataclass_fields__):
         raise ValueError("Round 13 attempt schema differs")
-    payload["observation"] = _observation_from_payload(payload.get("observation"))
     try:
-        return PolymarketRound13Attempt(**payload).validated()
+        return PolymarketRound13Attempt(
+            scenario=_string(payload.get("scenario"), name="scenario"),
+            policy=_string(payload.get("policy"), name="policy"),
+            condition_id=_string(payload.get("condition_id"), name="condition ID"),
+            asset=_string(payload.get("asset"), name="asset"),
+            event_start_ms=_integer(payload.get("event_start_ms"), name="event start"),
+            attempt_index=_integer(payload.get("attempt_index"), name="attempt index"),
+            action_feature_sha256=_string(
+                payload.get("action_feature_sha256"), name="action feature hash"
+            ),
+            decision_event_id=_string(
+                payload.get("decision_event_id"), name="decision event ID"
+            ),
+            decision_monotonic_ns=_integer(
+                payload.get("decision_monotonic_ns"), name="decision clock"
+            ),
+            remaining_seconds=_finite_float(
+                payload.get("remaining_seconds"), name="remaining seconds"
+            ),
+            outcome=_string(payload.get("outcome"), name="outcome"),
+            probability=_finite_float(payload.get("probability"), name="probability"),
+            expected_edge_quote=_string(
+                payload.get("expected_edge_quote"), name="expected edge"
+            ),
+            order_amount_quote=_string(
+                payload.get("order_amount_quote"), name="order amount"
+            ),
+            minimum_signed_quantity=_string(
+                payload.get("minimum_signed_quantity"), name="minimum quantity"
+            ),
+            creation_modeled_quantity=_string(
+                payload.get("creation_modeled_quantity"), name="creation quantity"
+            ),
+            creation_fee_quote=_string(
+                payload.get("creation_fee_quote"), name="creation fee"
+            ),
+            conservative_entry_cost_quote=_string(
+                payload.get("conservative_entry_cost_quote"), name="entry cost"
+            ),
+            observation=_observation_from_payload(payload.get("observation")),
+            attempt_sha256=_string(payload.get("attempt_sha256"), name="attempt hash"),
+        ).validated()
     except (TypeError, ValueError) as exc:
         raise ValueError("Round 13 attempt payload is invalid") from exc
 

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from simple_ai_trading import polymarket_round12_admission as admission_module
 from simple_ai_trading.polymarket_round12_admission import (
     PolymarketRound12ActionLocalAdmission,
     build_round12_action_local_admission,
@@ -183,9 +184,7 @@ def test_action_local_admission_rejects_entry_outside_observation_horizon() -> N
     with pytest.raises(ValueError, match="observed entry continuity"):
         build_round12_action_local_admission(
             _Feature(),
-            _execution(
-                entry_book=_Book("entry", SEGMENT_A, TARGET_NS + 500_000_001)
-            ),
+            _execution(entry_book=_Book("entry", SEGMENT_A, TARGET_NS + 500_000_001)),
         )
 
 
@@ -198,3 +197,21 @@ def test_action_local_admission_hash_detects_mutation() -> None:
 
     with pytest.raises(ValueError, match="admission is invalid"):
         tampered.validated()
+
+
+def test_action_local_admission_rejects_invalid_decision_continuity() -> None:
+    admission = build_round12_action_local_admission(_Feature(), _execution())
+    provisional = replace(
+        admission,
+        creation_book_event_id="",
+        admission_sha256="",
+    )
+    malformed = replace(
+        provisional,
+        admission_sha256=admission_module._canonical_sha256(
+            provisional.identity_payload()
+        ),
+    )
+
+    with pytest.raises(ValueError, match="decision continuity is invalid"):
+        malformed.validated()

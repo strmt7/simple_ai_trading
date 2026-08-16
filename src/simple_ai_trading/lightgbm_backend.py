@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import ctypes.util
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from functools import lru_cache
 import os
@@ -74,7 +75,7 @@ def _opencl_library() -> ctypes.CDLL:
 
 
 def _opencl_text(
-    function: object,
+    function: Callable[..., int],
     handle: ctypes.c_void_p,
     parameter: int,
 ) -> str:
@@ -90,7 +91,7 @@ def _opencl_text(
 
 
 def _opencl_number(
-    function: object,
+    function: Callable[..., int],
     handle: ctypes.c_void_p,
     parameter: int,
     number_type: type[ctypes._SimpleCData],
@@ -105,11 +106,14 @@ def _opencl_number(
     )
     if status != 0:
         raise RuntimeError(f"OpenCL numeric query failed with status {status}")
-    return int(value.value)
+    raw_value = value.value
+    if not isinstance(raw_value, int):
+        raise RuntimeError("OpenCL numeric query returned a non-integer value")
+    return raw_value
 
 
 def _opencl_optional_text(
-    function: object,
+    function: Callable[..., int],
     handle: ctypes.c_void_p,
     parameter: int,
 ) -> str:
@@ -317,7 +321,7 @@ def _probe_lightgbm_target(
         return False, f"LightGBM probe imports failed ({exc.__class__.__name__})"
 
     features = np.arange(512 * 8, dtype=np.float32).reshape(512, 8) % np.float32(97.0)
-    labels = (np.arange(512, dtype=np.int32) % 2).astype(np.float32)
+    labels: object = (np.arange(512, dtype=np.int32) % 2).astype(np.float32)
     parameters: dict[str, object] = {
         "objective": "binary",
         "device_type": target,
@@ -406,9 +410,13 @@ def lightgbm_backend_parameters(
                     platform_id = selected.platform_id
                     device_id = selected.device_id
                 else:
+                    if device_id is None:
+                        raise RuntimeError(
+                            "OpenCL device ID is required when a platform ID is configured"
+                        )
                     selected = selected_opencl_gpu_device(
                         platform_id,
-                        int(device_id),
+                        device_id,
                     )
             except RuntimeError as exc:
                 failures.append(f"gpu identity: {exc}")

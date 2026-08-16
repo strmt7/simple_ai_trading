@@ -18,13 +18,11 @@ from simple_ai_trading.polymarket_round28_contract_binding import (
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_CONTRACT = (
-    ROOT
-    / "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
+    ROOT / "docs/model-research/polymarket/round-027-stage1-model-contract-v1.json"
 )
 PREDECESSOR_CORRECTION = (
-    ROOT
-    / "docs/model-research/polymarket/"
-    "round-028-loaded-contract-binding-correction-v1.json"
+    ROOT / "docs/model-research/polymarket/"
+    "round-028-loaded-contract-binding-correction-v2.json"
 )
 
 

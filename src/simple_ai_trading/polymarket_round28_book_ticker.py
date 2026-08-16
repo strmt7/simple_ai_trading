@@ -79,6 +79,15 @@ def _sha256(value: object, *, name: str) -> str:
     return selected
 
 
+def _integer(value: object, *, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        raise ValueError(f"Round 28 {name} is not an integer")
+    try:
+        return int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"Round 28 {name} is not an integer") from exc
+
+
 def _is_source_bbo_feature(name: str) -> bool:
     return (
         ".book_" in name
@@ -211,7 +220,18 @@ class Round28BookTickerOverlayRow:
             "target_accessed": False,
             "trading_authority": False,
         }
-        return cls(**payload, row_sha256=_canonical_sha256(payload)).validated()
+        return cls(
+            decision_time_ms=int(features.decision_time_ms),
+            values=_selected_bbo_values(features),
+            feature_names_sha256=(POLYMARKET_ROUND28_BOOK_TICKER_FEATURE_NAMES_SHA256),
+            spot_source_chain_sha256=features.spot_source_chain_sha256,
+            usdm_source_chain_sha256=features.usdm_source_chain_sha256,
+            maximum_receipt_wall_ms=maximum_receipt,
+            source_chain_sha256=_canonical_sha256(source_identity),
+            row_sha256=_canonical_sha256(payload),
+            target_accessed=False,
+            trading_authority=False,
+        ).validated()
 
     def validated(self) -> "Round28BookTickerOverlayRow":
         payload = {
@@ -304,7 +324,26 @@ class Round28FeatureRow:
             "target_accessed": False,
             "trading_authority": False,
         }
-        return cls(**payload, row_sha256=_canonical_sha256(payload)).validated()
+        return cls(
+            schema_version=POLYMARKET_ROUND28_FEATURE_SCHEMA_VERSION,
+            run_id=selected_base.run_id,
+            condition_id=selected_base.condition_id,
+            event_start_ms=selected_base.event_start_ms,
+            decision_time_ms=selected_base.decision_time_ms,
+            market_prior_probability=selected_base.market_prior_probability,
+            values=(*selected_base.values, *selected_overlay.values),
+            feature_names_sha256=POLYMARKET_ROUND28_FEATURE_NAMES_SHA256,
+            maximum_receipt_wall_ms=max(
+                selected_base.maximum_receipt_wall_ms,
+                selected_overlay.maximum_receipt_wall_ms,
+            ),
+            base_row_sha256=selected_base.row_sha256,
+            overlay_row_sha256=selected_overlay.row_sha256,
+            source_chain_sha256=_canonical_sha256(source_identity),
+            row_sha256=_canonical_sha256(payload),
+            target_accessed=False,
+            trading_authority=False,
+        ).validated()
 
     def validated(self) -> "Round28FeatureRow":
         payload = {
@@ -484,12 +523,25 @@ def validate_round28_book_ticker_report(
     counts = payload.get("sidecar_stream_counts")
     rejected = payload.get("rejection_counts")
     try:
-        base_count = int(payload["base_decision_count"])
-        accepted_count = int(payload["accepted_decision_count"])
-        rejected_count = int(payload["rejected_decision_count"])
-        accepted_fraction = float(payload["accepted_fraction"])
-        raw_message_count = int(payload["sidecar_raw_message_count"])
-        gap_count = int(payload["sidecar_stream_gap_count"])
+        base_count = _integer(payload["base_decision_count"], name="base count")
+        accepted_count = _integer(
+            payload["accepted_decision_count"], name="accepted count"
+        )
+        rejected_count = _integer(
+            payload["rejected_decision_count"], name="rejected count"
+        )
+        accepted_fraction_value = payload["accepted_fraction"]
+        if isinstance(accepted_fraction_value, bool) or not isinstance(
+            accepted_fraction_value, (str, int, float)
+        ):
+            raise TypeError("accepted fraction is not numeric")
+        accepted_fraction = float(accepted_fraction_value)
+        raw_message_count = _integer(
+            payload["sidecar_raw_message_count"], name="raw message count"
+        )
+        gap_count = _integer(
+            payload["sidecar_stream_gap_count"], name="stream gap count"
+        )
     except (KeyError, TypeError, ValueError, OverflowError) as exc:
         raise ValueError("Round 28 BBO report counts differ") from exc
     if (

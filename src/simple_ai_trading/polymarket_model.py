@@ -25,12 +25,8 @@ POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v4"
 POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v4"
 POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION = "polymarket-purged-time-split-v1"
 POLYMARKET_MODEL_REPORT_SCHEMA_VERSION = "polymarket-probability-report-v2"
-POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION = (
-    "polymarket-market-anchored-profile-logit-v1"
-)
-POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION = (
-    "polymarket-profile-challenger-report-v1"
-)
+POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-profile-logit-v1"
+POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION = "polymarket-profile-challenger-report-v1"
 POLYMARKET_PROFILE_CHALLENGER_SCHEMA_VERSION = (
     "polymarket-profile-challenger-assessment-v1"
 )
@@ -169,7 +165,7 @@ def _finite(value: object, *, name: str) -> float:
     if isinstance(value, bool):
         raise ValueError(f"{name} must be finite")
     try:
-        parsed = float(value)
+        parsed = float(str(value))
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be finite") from exc
     if not math.isfinite(parsed):
@@ -217,7 +213,10 @@ class PolymarketModelConfig:
             or not 50 <= int(self.maximum_horizon_error_ms) <= 10_000
             or not 3 <= int(self.minimum_markets_per_asset) <= 100_000
             or not 10 <= int(self.minimum_time_groups) <= 100_000
-            or any(not math.isfinite(value) or not 0.05 <= value <= 0.35 for value in fractions)
+            or any(
+                not math.isfinite(value) or not 0.05 <= value <= 0.35
+                for value in fractions
+            )
             or sum(fractions) > 0.60
             or not 1 <= int(self.purge_time_groups) <= 100
             or not 5 <= int(self.minimum_train_time_groups) <= 100_000
@@ -283,7 +282,9 @@ class PolymarketModelSample:
     sample_sha256: str
 
     def feature_map(self) -> dict[str, float]:
-        return dict(zip(POLYMARKET_MODEL_FEATURE_NAMES, self.feature_values, strict=True))
+        return dict(
+            zip(POLYMARKET_MODEL_FEATURE_NAMES, self.feature_values, strict=True)
+        )
 
     def risk_context_map(self) -> dict[str, float]:
         return dict(
@@ -306,8 +307,7 @@ class PolymarketModelSample:
     def validated(self) -> "PolymarketModelSample":
         if (
             len(self.feature_values) != len(POLYMARKET_MODEL_FEATURE_NAMES)
-            or len(self.risk_context_values)
-            != len(POLYMARKET_MODEL_RISK_CONTEXT_NAMES)
+            or len(self.risk_context_values) != len(POLYMARKET_MODEL_RISK_CONTEXT_NAMES)
             or not all(math.isfinite(value) for value in self.feature_values)
             or not all(
                 math.isfinite(value) and value >= 0.0
@@ -351,7 +351,9 @@ class PolymarketInferenceInput:
     input_sha256: str
 
     def feature_map(self) -> dict[str, float]:
-        return dict(zip(POLYMARKET_MODEL_FEATURE_NAMES, self.feature_values, strict=True))
+        return dict(
+            zip(POLYMARKET_MODEL_FEATURE_NAMES, self.feature_values, strict=True)
+        )
 
     def risk_context_map(self) -> dict[str, float]:
         return dict(
@@ -378,14 +380,9 @@ class PolymarketInferenceInput:
             or len(self.input_provenance_sha256) != 64
             or self.asset not in _ASSETS
             or self.end_ms <= self.event_start_ms
-            or not (
-                self.event_start_ms
-                <= self.decision_received_wall_ms
-                < self.end_ms
-            )
+            or not (self.event_start_ms <= self.decision_received_wall_ms < self.end_ms)
             or len(self.feature_values) != len(POLYMARKET_MODEL_FEATURE_NAMES)
-            or len(self.risk_context_values)
-            != len(POLYMARKET_MODEL_RISK_CONTEXT_NAMES)
+            or len(self.risk_context_values) != len(POLYMARKET_MODEL_RISK_CONTEXT_NAMES)
             or not all(math.isfinite(value) for value in self.feature_values)
             or not all(
                 math.isfinite(value) and value >= 0.0
@@ -477,18 +474,11 @@ class PolymarketModelSplit:
                 for role in ("train", "validation", "test")
             },
             "market_counts": {
-                role: len(
-                    {
-                        item.condition_id
-                        for item in self.samples_for(role)
-                    }
-                )
+                role: len({item.condition_id for item in self.samples_for(role)})
                 for role in ("train", "validation", "test")
             },
             "train_group_starts_ms": list(self.train_group_starts_ms),
-            "validation_group_starts_ms": list(
-                self.validation_group_starts_ms
-            ),
+            "validation_group_starts_ms": list(self.validation_group_starts_ms),
             "test_group_starts_ms": list(self.test_group_starts_ms),
             "purged_group_starts_ms": list(self.purged_group_starts_ms),
             "split_sha256": self.split_sha256,
@@ -692,7 +682,9 @@ class PolymarketProfileModelReport:
 def _row_map(row: PolymarketFeatureRow) -> dict[str, float]:
     if len(row.feature_values) != len(POLYMARKET_FEATURE_NAMES):
         raise ValueError("Polymarket feature row width is invalid")
-    values = tuple(_finite(value, name="Polymarket feature") for value in row.feature_values)
+    values = tuple(
+        _finite(value, name="Polymarket feature") for value in row.feature_values
+    )
     return dict(zip(POLYMARKET_FEATURE_NAMES, values, strict=True))
 
 
@@ -775,12 +767,8 @@ def build_polymarket_model_features(
         values["binance_trade_imbalance_5000ms"],
         values["binance_top_imbalance"],
         values["binance_spread_bps"],
-        _relative_bps(
-            values["up_microprice"], up_midpoint, name="Up microprice"
-        ),
-        _relative_bps(
-            values["down_microprice"], down_midpoint, name="Down microprice"
-        ),
+        _relative_bps(values["up_microprice"], up_midpoint, name="Up microprice"),
+        _relative_bps(values["down_microprice"], down_midpoint, name="Down microprice"),
         values["up_top_imbalance"],
         values["down_top_imbalance"],
         10_000.0 * (up_midpoint + down_midpoint - 1.0),
@@ -861,18 +849,14 @@ def _inference_input_payload(
         "source_feature_id": model_input.source_feature_id,
         "source_row_sha256": model_input.source_row_sha256,
         "model_config_sha256": model_input.model_config_sha256,
-        "live_inference_contract_sha256": (
-            model_input.live_inference_contract_sha256
-        ),
+        "live_inference_contract_sha256": (model_input.live_inference_contract_sha256),
         "condition_id": model_input.condition_id,
         "market_id": model_input.market_id,
         "asset": model_input.asset,
         "event_start_ms": model_input.event_start_ms,
         "end_ms": model_input.end_ms,
         "decision_received_wall_ms": model_input.decision_received_wall_ms,
-        "decision_received_monotonic_ns": (
-            model_input.decision_received_monotonic_ns
-        ),
+        "decision_received_monotonic_ns": (model_input.decision_received_monotonic_ns),
         "decision_event_id": model_input.decision_event_id,
         "horizon_seconds": model_input.horizon_seconds,
         "feature_names": list(POLYMARKET_MODEL_FEATURE_NAMES),
@@ -910,11 +894,7 @@ def build_polymarket_inference_input(
         or market.asset != row.asset
     ):
         raise ValueError("Polymarket inference feature and market metadata disagree")
-    if not (
-        market.event_start_ms
-        <= row.decision_received_wall_ms
-        < market.end_ms
-    ):
+    if not (market.event_start_ms <= row.decision_received_wall_ms < market.end_ms):
         raise ValueError("Polymarket inference row lies outside its market window")
     values = row.feature_map()
     remaining_ms = market.end_ms - row.decision_received_wall_ms
@@ -962,9 +942,7 @@ def build_polymarket_inference_input(
         source_feature_id=row.feature_id,
         source_row_sha256=row.row_sha256,
         model_config_sha256=model_config_sha256,
-        live_inference_contract_sha256=(
-            POLYMARKET_LIVE_INFERENCE_CONTRACT_SHA256
-        ),
+        live_inference_contract_sha256=(POLYMARKET_LIVE_INFERENCE_CONTRACT_SHA256),
         condition_id=condition,
         market_id=market.market_id,
         asset=market.asset,
@@ -1010,11 +988,11 @@ def build_polymarket_model_dataset(
     if source.dataset_id != source.dataset_sha256 or len(source.dataset_sha256) != 64:
         raise ValueError("source Polymarket feature dataset identity is invalid")
     market_by_condition: dict[str, PolymarketFiveMinuteMarket] = {}
-    for market in markets:
-        condition = market.condition_id.lower()
+    for candidate_market in markets:
+        condition = candidate_market.condition_id.lower()
         if condition in market_by_condition:
             raise ValueError("Polymarket model market metadata is duplicated")
-        market_by_condition[condition] = market
+        market_by_condition[condition] = candidate_market
 
     rows_by_condition: dict[str, list[PolymarketFeatureRow]] = {}
     for row in source.rows:
@@ -1027,12 +1005,16 @@ def build_polymarket_model_dataset(
     samples: list[PolymarketModelSample] = []
     skipped: dict[str, int] = {}
     for condition in sorted(rows_by_condition):
-        market = market_by_condition.get(condition)
-        if market is None:
+        selected_market = market_by_condition.get(condition)
+        if selected_market is None:
             _increment(skipped, "missing_market_metadata")
             continue
         rows = rows_by_condition[condition]
-        if any(row.asset != market.asset or row.market_id != market.market_id for row in rows):
+        if any(
+            row.asset != selected_market.asset
+            or row.market_id != selected_market.market_id
+            for row in rows
+        ):
             raise ValueError("Polymarket feature and market metadata disagree")
         outcomes = {bool(row.official_up) for row in rows}
         resolutions = {row.resolution_event_id for row in rows}
@@ -1043,12 +1025,12 @@ def build_polymarket_model_dataset(
         for row in rows:
             values = _row_map(row)
             if not (
-                market.event_start_ms
+                selected_market.event_start_ms
                 <= row.decision_received_wall_ms
-                < market.end_ms
+                < selected_market.end_ms
             ):
                 raise ValueError("Polymarket model row lies outside its market window")
-            remaining_ms = market.end_ms - row.decision_received_wall_ms
+            remaining_ms = selected_market.end_ms - row.decision_received_wall_ms
             if abs(values["remaining_seconds"] * 1_000.0 - remaining_ms) > 2.0:
                 raise ValueError("Polymarket model row has inconsistent remaining time")
             candidates.append((remaining_ms, row, values))
@@ -1092,7 +1074,9 @@ def build_polymarket_model_dataset(
                 or not 0.0 < values["up_best_bid"] < values["up_best_ask"] < 1.0
                 or not 0.0 < values["down_best_bid"] < values["down_best_ask"] < 1.0
             ):
-                raise ValueError("Polymarket model row has non-executable outcome quotes")
+                raise ValueError(
+                    "Polymarket model row has non-executable outcome quotes"
+                )
             baseline = values["up_midpoint"] / midpoint_total
             if not 0.0 < baseline < 1.0:
                 raise ValueError("Polymarket normalized market probability is invalid")
@@ -1109,17 +1093,17 @@ def build_polymarket_model_dataset(
                 source_run_id=source.run_id,
                 source_feature_id=row.feature_id,
                 condition_id=condition,
-                market_id=market.market_id,
-                asset=market.asset,
-                event_start_ms=market.event_start_ms,
-                end_ms=market.end_ms,
+                market_id=selected_market.market_id,
+                asset=selected_market.asset,
+                event_start_ms=selected_market.event_start_ms,
+                end_ms=selected_market.end_ms,
                 decision_received_wall_ms=row.decision_received_wall_ms,
                 decision_received_monotonic_ns=row.decision_received_monotonic_ns,
                 decision_event_id=row.decision_event_id,
                 horizon_seconds=horizon,
                 feature_values=build_polymarket_model_features(
                     values,
-                    market.asset,
+                    selected_market.asset,
                     baseline_up_probability=baseline,
                 ),
                 risk_context_values=build_polymarket_risk_context(values),
@@ -1135,7 +1119,9 @@ def build_polymarket_model_dataset(
                 sample_sha256="",
             )
             samples.append(
-                replace(sample, sample_sha256=_canonical_sha256(_sample_payload(sample)))
+                replace(
+                    sample, sample_sha256=_canonical_sha256(_sample_payload(sample))
+                )
             )
 
     samples.sort(
@@ -1165,7 +1151,9 @@ def build_polymarket_model_dataset(
             f"{time_group_count}/{cfg.minimum_time_groups}"
         )
     for condition in {item.condition_id for item in samples}:
-        weight = sum(item.market_weight for item in samples if item.condition_id == condition)
+        weight = sum(
+            item.market_weight for item in samples if item.condition_id == condition
+        )
         if not math.isclose(weight, 1.0, rel_tol=0.0, abs_tol=1e-12):
             raise ValueError("Polymarket model market weights are not equalized")
 
@@ -1252,7 +1240,9 @@ def _market_outcome_counts(
     samples: Sequence[PolymarketModelSample],
 ) -> dict[bool, int]:
     outcomes = {
-        condition: bool(next(item.official_up for item in samples if item.condition_id == condition))
+        condition: bool(
+            next(item.official_up for item in samples if item.condition_id == condition)
+        )
         for condition in {item.condition_id for item in samples}
     }
     return {
@@ -1265,7 +1255,9 @@ def _asset_market_outcome_counts(
     samples: Sequence[PolymarketModelSample],
     asset: str,
 ) -> dict[bool, int]:
-    return _market_outcome_counts(tuple(item for item in samples if item.asset == asset))
+    return _market_outcome_counts(
+        tuple(item for item in samples if item.asset == asset)
+    )
 
 
 def split_polymarket_model_dataset(
@@ -1289,35 +1281,36 @@ def split_polymarket_model_dataset(
         int(round(len(groups) * cfg.test_fraction)),
     )
     train_count = (
-        len(groups)
-        - validation_count
-        - test_count
-        - 2 * cfg.purge_time_groups
+        len(groups) - validation_count - test_count - 2 * cfg.purge_time_groups
     )
     if train_count < cfg.minimum_train_time_groups:
         raise ValueError("insufficient time groups for the purged chronological split")
     train_groups = groups[:train_count]
-    first_purge = groups[
-        train_count : train_count + cfg.purge_time_groups
-    ]
+    first_purge = groups[train_count : train_count + cfg.purge_time_groups]
     validation_start = train_count + cfg.purge_time_groups
-    validation_groups = groups[
-        validation_start : validation_start + validation_count
-    ]
+    validation_groups = groups[validation_start : validation_start + validation_count]
     second_purge = groups[
-        validation_start
-        + validation_count : validation_start
+        validation_start + validation_count : validation_start
         + validation_count
         + cfg.purge_time_groups
     ]
     test_groups = groups[-test_count:]
     purged_groups = (*first_purge, *second_purge)
     role_groups = (set(train_groups), set(validation_groups), set(test_groups))
-    if any(left & right for index, left in enumerate(role_groups) for right in role_groups[index + 1 :]):
+    if any(
+        left & right
+        for index, left in enumerate(role_groups)
+        for right in role_groups[index + 1 :]
+    ):
         raise ValueError("Polymarket chronological split groups overlap")
     if set(purged_groups) & set().union(*role_groups):
         raise ValueError("Polymarket purged groups leaked into a split role")
-    if not max(train_groups) < min(validation_groups) < max(validation_groups) < min(test_groups):
+    if (
+        not max(train_groups)
+        < min(validation_groups)
+        < max(validation_groups)
+        < min(test_groups)
+    ):
         raise ValueError("Polymarket chronological split order is invalid")
 
     def select(group_values: Sequence[int]) -> tuple[PolymarketModelSample, ...]:
@@ -1366,9 +1359,10 @@ def _raw_matrix(samples: Sequence[PolymarketPredictable]) -> np.ndarray:
     for sample in samples:
         sample.validated()
     matrix = np.asarray([item.feature_values for item in samples], dtype=np.float64)
-    if matrix.shape != (len(samples), len(POLYMARKET_MODEL_FEATURE_NAMES)) or not np.all(
-        np.isfinite(matrix)
-    ):
+    if matrix.shape != (
+        len(samples),
+        len(POLYMARKET_MODEL_FEATURE_NAMES),
+    ) or not np.all(np.isfinite(matrix)):
         raise ValueError("Polymarket model design matrix is invalid")
     return matrix
 
@@ -1464,9 +1458,9 @@ def _fit_offset_coefficients(
 
     def objective(candidate: np.ndarray) -> float:
         linear = offsets + augmented @ candidate
-        likelihood = np.sum(
-            weights * (np.logaddexp(0.0, linear) - labels * linear)
-        ) / weight_sum
+        likelihood = (
+            np.sum(weights * (np.logaddexp(0.0, linear) - labels * linear)) / weight_sum
+        )
         return float(likelihood + 0.5 * np.sum(regularization * candidate**2))
 
     for _ in range(maximum_iterations):
@@ -1479,9 +1473,8 @@ def _fit_offset_coefficients(
             + regularization * coefficients
         )
         hessian = (
-            (augmented.T * (weights * variance)) @ augmented / weight_sum
-            + np.diag(regularization)
-        )
+            augmented.T * (weights * variance)
+        ) @ augmented / weight_sum + np.diag(regularization)
         try:
             step = np.linalg.solve(hessian, gradient)
         except np.linalg.LinAlgError:
@@ -1556,7 +1549,10 @@ def predict_polymarket_probabilities(
         model.robust_center,
         model.robust_scale,
     )
-    if any(len(value) != width for value in arrays) or len(model.coefficients) != width + 1:
+    if (
+        any(len(value) != width for value in arrays)
+        or len(model.coefficients) != width + 1
+    ):
         raise ValueError("Polymarket offset model parameter width is invalid")
     _validate_inference_config(samples, model.config)
     return _predict_arrays(
@@ -1659,9 +1655,7 @@ def evaluate_polymarket_probabilities(
         raise ValueError("Polymarket probability predictions must lie inside (0, 1)")
     weight_sum = float(np.sum(weights))
     brier = float(np.sum(weights * (predicted - labels) ** 2) / weight_sum)
-    accuracy = float(
-        np.sum(weights * ((predicted >= 0.5) == labels)) / weight_sum
-    )
+    accuracy = float(np.sum(weights * ((predicted >= 0.5) == labels)) / weight_sum)
     sharpness = float(np.sum(weights * np.abs(predicted - 0.5)) / weight_sum)
     calibration_error = 0.0
     bin_indexes = np.minimum((predicted * 10).astype(np.int64), 9)
@@ -1804,7 +1798,9 @@ def _expand_profile_coefficients(
 ) -> np.ndarray:
     if active_coefficients.shape != (len(feature_indexes) + 1,):
         raise ValueError("Polymarket profile coefficient width is invalid")
-    expanded = np.zeros(len(POLYMARKET_MODEL_FEATURE_NAMES) + 1, dtype=np.float64)
+    expanded: np.ndarray = np.zeros(
+        len(POLYMARKET_MODEL_FEATURE_NAMES) + 1, dtype=np.float64
+    )
     expanded[0] = active_coefficients[0]
     expanded[1 + np.asarray(feature_indexes, dtype=np.int64)] = active_coefficients[1:]
     return expanded
@@ -1914,13 +1910,10 @@ def fit_polymarket_offset_model(
                 coefficients=coefficients,
                 maximum_absolute_correction=cfg.maximum_absolute_logit_correction,
             )
-            candidate_inner_sums[float(l2)] += (
-                fold_weight
-                * _weighted_log_loss_arrays(
-                    fold_labels,
-                    predictions,
-                    fold_weights,
-                )
+            candidate_inner_sums[float(l2)] += fold_weight * _weighted_log_loss_arrays(
+                fold_labels,
+                predictions,
+                fold_weights,
             )
     if inner_weight <= 0.0:
         raise ValueError("inner rolling model selection has no effective weight")
@@ -1956,7 +1949,9 @@ def fit_polymarket_offset_model(
         maximum_iterations=cfg.maximum_iterations,
         tolerance=cfg.convergence_tolerance,
     )
-    validation_labels, validation_weights, _ = _targets_weights_offsets(split.validation)
+    validation_labels, validation_weights, _ = _targets_weights_offsets(
+        split.validation
+    )
     baseline_validation = _baseline_probabilities(split.validation)
     baseline_validation_loss = _weighted_log_loss_arrays(
         validation_labels,
@@ -2040,6 +2035,18 @@ def fit_polymarket_offset_model(
             samples,
             predict_polymarket_probabilities(model, samples),
         )
+    validation_log_loss_delta = (
+        model_metrics["validation"].weighted_log_loss
+        - baseline_metrics["validation"].weighted_log_loss
+    )
+    test_log_loss_delta = (
+        model_metrics["test"].weighted_log_loss
+        - baseline_metrics["test"].weighted_log_loss
+    )
+    test_brier_delta = (
+        model_metrics["test"].weighted_brier_score
+        - baseline_metrics["test"].weighted_brier_score
+    )
     report_payload = {
         "schema_version": POLYMARKET_MODEL_REPORT_SCHEMA_VERSION,
         "source_dataset_sha256": dataset.dataset_sha256,
@@ -2049,21 +2056,10 @@ def fit_polymarket_offset_model(
         "baseline_metrics": {
             key: value.asdict() for key, value in baseline_metrics.items()
         },
-        "model_metrics": {
-            key: value.asdict() for key, value in model_metrics.items()
-        },
-        "validation_log_loss_delta": (
-            model_metrics["validation"].weighted_log_loss
-            - baseline_metrics["validation"].weighted_log_loss
-        ),
-        "test_log_loss_delta": (
-            model_metrics["test"].weighted_log_loss
-            - baseline_metrics["test"].weighted_log_loss
-        ),
-        "test_brier_delta": (
-            model_metrics["test"].weighted_brier_score
-            - baseline_metrics["test"].weighted_brier_score
-        ),
+        "model_metrics": {key: value.asdict() for key, value in model_metrics.items()},
+        "validation_log_loss_delta": validation_log_loss_delta,
+        "test_log_loss_delta": test_log_loss_delta,
+        "test_brier_delta": test_brier_delta,
         "trading_authority": False,
         "execution_claim": False,
         "profitability_claim": False,
@@ -2078,9 +2074,9 @@ def fit_polymarket_offset_model(
         selected_candidate=selected_name,
         baseline_metrics=baseline_metrics,
         model_metrics=model_metrics,
-        validation_log_loss_delta=float(report_payload["validation_log_loss_delta"]),
-        test_log_loss_delta=float(report_payload["test_log_loss_delta"]),
-        test_brier_delta=float(report_payload["test_brier_delta"]),
+        validation_log_loss_delta=validation_log_loss_delta,
+        test_log_loss_delta=test_log_loss_delta,
+        test_brier_delta=test_brier_delta,
         report_sha256=_canonical_sha256(report_payload),
     )
     return model, report
@@ -2170,9 +2166,7 @@ def fit_polymarket_profile_challenger(
                     center=center,
                     scale=scale,
                     coefficients=coefficients,
-                    maximum_absolute_correction=(
-                        cfg.maximum_absolute_logit_correction
-                    ),
+                    maximum_absolute_correction=(cfg.maximum_absolute_logit_correction),
                 )
                 candidate_sums[name] += fold_weight * _weighted_log_loss_arrays(
                     fold_labels,
@@ -2187,8 +2181,7 @@ def fit_polymarket_profile_challenger(
         *[
             (
                 _profile_candidate_name(profile, l2),
-                candidate_sums[_profile_candidate_name(profile, l2)]
-                / inner_weight,
+                candidate_sums[_profile_candidate_name(profile, l2)] / inner_weight,
             )
             for profile, _feature_names in POLYMARKET_PROFILE_FEATURES
             for l2 in POLYMARKET_PROFILE_L2_CANDIDATES
@@ -2254,8 +2247,7 @@ def fit_polymarket_profile_challenger(
     )
     if (
         candidate_validation_loss
-        <= baseline_validation_loss
-        - cfg.minimum_validation_log_loss_improvement
+        <= baseline_validation_loss - cfg.minimum_validation_log_loss_improvement
     ):
         selected_name = inner_name
         selected_profile: str | None = inner_profile

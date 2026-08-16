@@ -291,6 +291,19 @@ def _source_fixture(
     return source, tuple(markets)
 
 
+def test_model_dataset_rejects_crossed_or_non_executable_quotes() -> None:
+    source, markets = _source_fixture(groups=3)
+    row = source.rows[0]
+    values = list(row.feature_values)
+    values[POLYMARKET_FEATURE_NAMES.index("up_best_bid")] = 0.51
+    values[POLYMARKET_FEATURE_NAMES.index("up_best_ask")] = 0.50
+    malformed = replace(row, feature_values=tuple(values))
+    changed_source = replace(source, rows=(malformed, *source.rows[1:]))
+
+    with pytest.raises(ValueError, match="non-executable outcome quotes"):
+        build_polymarket_model_dataset(changed_source, markets)
+
+
 def _replay_fixture(
     samples: tuple,
     markets: tuple[PolymarketFiveMinuteMarket, ...],
@@ -2049,10 +2062,13 @@ def test_ai_veto_requires_exact_completed_provider_usage() -> None:
         "eval_count": 24,
         "eval_duration": 1,
     }
-    assert ai_veto_module._validated_provider_usage(
-        response,
-        model="qwen3.5:9b",
-    ) == expected
+    assert (
+        ai_veto_module._validated_provider_usage(
+            response,
+            model="qwen3.5:9b",
+        )
+        == expected
+    )
     assert _parsed_ai_provider_usage(response, model="qwen3.5:9b") == expected
 
     for field, value in (
@@ -2443,9 +2459,10 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
     assert third.model_digest == "e" * 64
     assert impossible_duration.provider_failure_count == 1
     assert not any(impossible_duration.market_permissions.values())
-    assert impossible_duration.results[0].response_payload[
-        "provider_response_received"
-    ] is True
+    assert (
+        impossible_duration.results[0].response_payload["provider_response_received"]
+        is True
+    )
     assert chat_calls == 3
     assert [row["cache_hit"] for row in progress_rows] == [
         False,
@@ -2490,9 +2507,7 @@ def test_ai_veto_charges_single_gpu_worker_queue_delay(
         queued_cases.append(
             replace(
                 queued,
-                case_sha256=ai_veto_module._canonical_sha256(
-                    queued.identity_payload()
-                ),
+                case_sha256=ai_veto_module._canonical_sha256(queued.identity_payload()),
             )
         )
     queued_cases.sort(
@@ -2833,7 +2848,9 @@ def test_ai_skip_reason_prevents_unusable_provider_calls(
     )
 
 
-def test_ai_latency_stress_gate_requires_non_degrading_economics_at_every_latency() -> None:
+def test_ai_latency_stress_gate_requires_non_degrading_economics_at_every_latency() -> (
+    None
+):
     def report(
         *,
         net: str,

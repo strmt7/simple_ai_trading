@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import copy
+import hashlib
 import json
 from pathlib import Path
 
@@ -16,9 +17,28 @@ from simple_ai_trading.polymarket_round27_model_amendment import (
 
 _ROOT = Path(__file__).resolve().parents[1]
 _SOURCE_LEDGER = (
-    _ROOT
-    / "docs/model-research/polymarket/round-027-effective-source-ledger-v7.json"
+    _ROOT / "docs/model-research/polymarket/round-027-effective-source-ledger-v7.json"
 )
+_STATIC_ANALYSIS_REMEDIATION = (
+    _ROOT / "docs/model-research/polymarket/"
+    "round-027-static-analysis-remediation-amendment-v17.json"
+)
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+    ).hexdigest()
+
+
+def _text_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def test_round27_model_amendment_is_exact_and_pre_target() -> None:
@@ -47,9 +67,7 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
         "target_access_schema_version_from": (
             "polymarket-round27-role-target-access-v1"
         ),
-        "target_access_schema_version_to": (
-            "polymarket-round27-role-target-access-v2"
-        ),
+        "target_access_schema_version_to": ("polymarket-round27-role-target-access-v2"),
         "target_store_schema_version_from": (
             "polymarket-round27-role-gated-target-store-v1"
         ),
@@ -62,12 +80,9 @@ def test_round27_model_amendment_is_exact_and_pre_target() -> None:
     )
     assert amendment["source_ledger"] == {
         "relative_path": (
-            "docs/model-research/polymarket/"
-            "round-027-effective-source-ledger-v7.json"
+            "docs/model-research/polymarket/round-027-effective-source-ledger-v7.json"
         ),
-        "sha256": (
-            "f38396df1bb3f8dba662370401b562ab431f6514f0fad58210079e7d6a059581"
-        ),
+        "sha256": ("f38396df1bb3f8dba662370401b562ab431f6514f0fad58210079e7d6a059581"),
     }
     assert set(amendment["superseded_source_text_sha256"]) == {
         "src/simple_ai_trading/polymarket_round27_ai_cases.py",
@@ -114,6 +129,27 @@ def test_round27_model_amendment_rejects_transitive_source_drift(
 
     with pytest.raises(ValueError, match="source ledger file differs"):
         load_round27_model_amendment(_ROOT)
+
+
+def test_round27_static_analysis_remediation_is_canonical_and_exact() -> None:
+    amendment = json.loads(_STATIC_ANALYSIS_REMEDIATION.read_text(encoding="ascii"))
+    claimed = amendment.pop("amendment_sha256")
+    ledger = json.loads(_SOURCE_LEDGER.read_text(encoding="ascii"))
+
+    assert claimed == "cd505ac97623af8e52c255a6b3bf09c1f8cc8be5129498f1522721c5919a6c66"
+    assert claimed == _canonical_sha256(amendment)
+    assert (
+        amendment["predecessor_source_ledger_sha256"] == ledger["source_ledger_sha256"]
+    )
+    assert amendment["knowledge_at_amendment"] == {
+        "model_fitted_on_stage1": False,
+        "official_outcomes_accessed": False,
+        "performance_metrics_computed": False,
+        "stage1_feature_rows_accessed_or_materialized": False,
+    }
+    for relative, replacement in amendment["source_text_sha256"].items():
+        assert replacement["frozen"] == ledger["files_sha256"][relative]
+        assert replacement["corrected"] == _text_sha256(_ROOT / relative)
 
 
 @pytest.mark.parametrize("name", [".gitattributes", "pyproject.toml", "uv.lock"])
