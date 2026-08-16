@@ -277,33 +277,33 @@ def test_sidecar_file_lock_and_immutable_segment_result(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     operations: list[bool] = []
-    monkeypatch.setattr(polymarket_round21_sidecar_campaign.os, "name", "posix")
-    monkeypatch.setattr(
-        polymarket_round21_sidecar_campaign,
-        "_posix_file_lock",
-        lambda _descriptor, *, unlock: operations.append(unlock),
-    )
-    with polymarket_round21_sidecar_campaign._CampaignFileLock(
-        tmp_path / "campaign.lock"
-    ):
-        pass
-    assert operations == [False, True]
+    with monkeypatch.context() as lock_patch:
+        lock_patch.setattr(polymarket_round21_sidecar_campaign.os, "name", "posix")
+        lock_patch.setattr(
+            polymarket_round21_sidecar_campaign,
+            "_posix_file_lock",
+            lambda _descriptor, *, unlock: operations.append(unlock),
+        )
+        with polymarket_round21_sidecar_campaign._CampaignFileLock(
+            tmp_path / "campaign.lock"
+        ):
+            pass
+        assert operations == [False, True]
 
-    def lock_failure(_descriptor: int, *, unlock: bool) -> None:
-        del unlock
-        raise OSError("locked")
+        def lock_failure(_descriptor: int, *, unlock: bool) -> None:
+            del unlock
+            raise OSError("locked")
 
-    monkeypatch.setattr(
-        polymarket_round21_sidecar_campaign,
-        "_posix_file_lock",
-        lock_failure,
-    )
-    with pytest.raises(RuntimeError, match="already running"):
-        polymarket_round21_sidecar_campaign._CampaignFileLock(
-            tmp_path / "campaign-failure.lock"
-        ).__enter__()
+        lock_patch.setattr(
+            polymarket_round21_sidecar_campaign,
+            "_posix_file_lock",
+            lock_failure,
+        )
+        with pytest.raises(RuntimeError, match="already running"):
+            polymarket_round21_sidecar_campaign._CampaignFileLock(
+                tmp_path / "campaign-failure.lock"
+            ).__enter__()
 
-    monkeypatch.setattr(polymarket_round21_sidecar_campaign.os, "name", "nt")
     state = tmp_path / "state"
     plan = SimpleNamespace(plan_sha256="a" * 64)
     polymarket_round21_sidecar_campaign._write_segment_result(
@@ -599,7 +599,7 @@ def test_round27_static_remediation_parser_rejects_malformed_artifacts(
     first_source = next(iter(sources))
     second_source = next(iter(key for key in sources if key != first_source))
     replacement = sources.pop(second_source)
-    sources[first_source.replace("/", "\\")] = replacement
+    sources[f"./{first_source}"] = replacement
     install(colliding)
     with pytest.raises(ValueError, match="source remediation differs"):
         module._load_static_analysis_source_replacements(ROOT)

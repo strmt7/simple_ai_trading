@@ -111,8 +111,9 @@ def test_ci_enforces_financial_terminology_audit() -> None:
 
     assert "uv run --locked python tools/audit_financial_terminology.py" in workflow
     assert "tools/audit_financial_terminology.py" in documentation
-    assert "env.CODECOV_TOKEN != ''" in workflow
-    assert "token: ${{ env.CODECOV_TOKEN }}" in workflow
+    assert "id-token: write" in workflow
+    assert "use_oidc: true" in workflow
+    assert "CODECOV_TOKEN" not in workflow
 
 
 def test_posix_launchers_start_with_bom_free_shebangs() -> None:
