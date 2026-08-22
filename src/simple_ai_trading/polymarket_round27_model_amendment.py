@@ -124,11 +124,14 @@ _EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v7.json"
 )
 _STATIC_ANALYSIS_REMEDIATION_SHA256 = (
-    "cd505ac97623af8e52c255a6b3bf09c1f8cc8be5129498f1522721c5919a6c66"
+    "6e328f16ea50941d637fbbee2f4506cc269fc775815e1caaca64fbb246707bba"
 )
 _STATIC_ANALYSIS_REMEDIATION_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
-    "round-027-static-analysis-remediation-amendment-v17.json"
+    "round-027-static-analysis-remediation-amendment-v18.json"
+)
+_PREDECESSOR_STATIC_ANALYSIS_REMEDIATION_SHA256 = (
+    "cd505ac97623af8e52c255a6b3bf09c1f8cc8be5129498f1522721c5919a6c66"
 )
 _HISTORICAL_PROVENANCE_FILES = frozenset(
     {".gitattributes", "pyproject.toml", "uv.lock"}
@@ -1479,48 +1482,54 @@ def _load_static_analysis_source_replacements(
     claimed = _sha256(payload.pop("amendment_sha256", ""))
     sources = payload.get("source_text_sha256")
     created_at_ms = payload.get("created_at_ms")
+    rationale = payload.get("rationale")
     knowledge = {
         "model_fitted_on_stage1": False,
         "official_outcomes_accessed": False,
         "performance_metrics_computed": False,
         "stage1_feature_rows_accessed_or_materialized": False,
     }
-    if (
-        set(payload)
-        != {
-            "authority",
-            "created_at_ms",
-            "knowledge_at_amendment",
-            "predecessor_model_amendment_sha256",
-            "predecessor_source_ledger_sha256",
-            "rationale",
-            "schema_version",
-            "source_text_sha256",
-            "status",
-        }
-        or claimed != _STATIC_ANALYSIS_REMEDIATION_SHA256
-        or claimed != _canonical_sha256(payload)
-        or payload.get("schema_version")
-        != "polymarket-round27-static-analysis-remediation-amendment-v17"
-        or payload.get("status") != "frozen_before_stage1_feature_or_outcome_access"
-        or payload.get("authority") != _EXPECTED_AUTHORITY
-        or payload.get("knowledge_at_amendment") != knowledge
-        or payload.get("predecessor_model_amendment_sha256")
-        != POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256
-        or payload.get("predecessor_source_ledger_sha256")
-        != _EFFECTIVE_SOURCE_LEDGER_SHA256
-        or isinstance(created_at_ms, bool)
-        or not isinstance(created_at_ms, int)
-        or created_at_ms <= _FIRST_CAPTURE_START_MS
-        or not isinstance(payload.get("rationale"), str)
-        or not str(payload["rationale"]).strip()
-        or not isinstance(sources, Mapping)
-        or len(sources) != 22
-    ):
+    if type(created_at_ms) is not int or created_at_ms <= _FIRST_CAPTURE_START_MS:
+        raise ValueError("Round 27 source remediation differs")
+    if not isinstance(rationale, str) or not rationale.strip():
+        raise ValueError("Round 27 source remediation differs")
+    if not isinstance(sources, Mapping) or len(sources) != 23:
+        raise ValueError("Round 27 source remediation differs")
+    expected_fields = {
+        "authority",
+        "created_at_ms",
+        "knowledge_at_amendment",
+        "predecessor_model_amendment_sha256",
+        "predecessor_source_ledger_sha256",
+        "predecessor_static_analysis_remediation_sha256",
+        "rationale",
+        "schema_version",
+        "source_text_sha256",
+        "status",
+    }
+    metadata_matches = (
+        set(payload) == expected_fields,
+        claimed == _STATIC_ANALYSIS_REMEDIATION_SHA256,
+        claimed == _canonical_sha256(payload),
+        payload.get("schema_version")
+        == "polymarket-round27-static-analysis-remediation-amendment-v18",
+        payload.get("status") == "frozen_before_stage1_feature_or_outcome_access",
+        payload.get("authority") == _EXPECTED_AUTHORITY,
+        payload.get("knowledge_at_amendment") == knowledge,
+        payload.get("predecessor_model_amendment_sha256")
+        == POLYMARKET_ROUND27_MODEL_AMENDMENT_SHA256,
+        payload.get("predecessor_source_ledger_sha256")
+        == _EFFECTIVE_SOURCE_LEDGER_SHA256,
+        payload.get("predecessor_static_analysis_remediation_sha256")
+        == _PREDECESSOR_STATIC_ANALYSIS_REMEDIATION_SHA256,
+    )
+    if not all(metadata_matches):
         raise ValueError("Round 27 source remediation differs")
     replacements: dict[str, tuple[str, str]] = {}
     for relative, raw_replacement in sources.items():
-        if not isinstance(raw_replacement, Mapping) or set(raw_replacement) != {
+        if not isinstance(raw_replacement, Mapping):
+            raise ValueError("Round 27 source remediation differs")
+        if set(raw_replacement) != {
             "corrected",
             "frozen",
         }:

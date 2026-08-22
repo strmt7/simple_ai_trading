@@ -159,6 +159,17 @@ blind overwrite. All new development after integration belongs on `main`.
   scope: four in `ai_uplift.py` and five in `financial_sanity.py`. These are
   maintainability findings, not reported security vulnerabilities; preserve
   behavior and reason ordering if addressing them in a later bounded refactor.
+- Full Linux CI on documentation closeout revision `68c1a422` exposed 29
+  cascading Round 27/28 failures. The immutable v7 source ledger and cumulative
+  v17 replacement layer no longer recognized the later `b5144c98`
+  exception-path changes in `compute.py` and `polymarket_recorder.py`. The
+  cumulative v18 maintenance amendment preserves both predecessors and binds
+  the original ledger hashes to the current implementations. It changes no
+  model mathematics, feature, target, cost, threshold, risk gate, authority, or
+  result. The exact previously failing cluster now passes 70 tests locally with
+  100% changed-line coverage, plus Mypy, Ruff/format, Pylint errors-only,
+  targeted Bandit, lock, manifest, and diff checks. This remains local evidence
+  until every hosted check passes on the final pushed SHA.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -198,9 +209,11 @@ Code revision `5c220bcfa34028640fb3ac00d8953314c291d7fd` and closeout revision
 AI-uplift v5 contract described above. At the snapshot, GitHub showed only
 `main`, no open pull requests, zero open Dependabot alerts, and zero open
 secret-scanning alerts. GitHub code scanning returned `404: no analysis found`
-and remained unavailable. Hosted Ruff, Vulture, Super-Linter, and the Windows
-job passed; full Linux CI remained in progress, and DeepSource remained red for
-the nine displayed complexity findings described above.
+and remained unavailable. Hosted Ruff, Vulture, Super-Linter, DeepSource, and
+the Windows job passed on documentation closeout `68c1a422`; full Linux CI
+failed only the 29 source-provenance tests described above. The cumulative v18
+repair must be verified on its own final pushed SHA. The nine complexity
+findings on the earlier changed Python scope remain deferred as described above.
 No model score, label, fill, cost, threshold, model outcome, trading authority,
 or profitability claim changed. Verify every available hosted check on the
 final pushed SHA; pending and unavailable checks are not passes.

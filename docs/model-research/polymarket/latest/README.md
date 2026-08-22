@@ -41,6 +41,12 @@ The [v16 admission correction](../round-027-campaign-admission-gate-correction-a
 enforces that gate at the target-store API: one persisted receipt must bind all
 primary audits, the total and role-specific population floors, and each role's
 exact target-free feature population before any outcome request can begin.
+The cumulative
+[v18 source-maintenance amendment](../round-027-static-analysis-remediation-amendment-v18.json)
+preserves the immutable v7 ledger and v17 amendment while binding later
+exception-path observability changes in compute discovery and recorder
+rollback. It changes no model, feature, target, cost, risk gate, result, or
+authority.
 
 Round 28 is a preregistered, target-blind BBO ablation over that same campaign,
 not a new result. The independent Round 21 sidecar already overlaps the Stage 1

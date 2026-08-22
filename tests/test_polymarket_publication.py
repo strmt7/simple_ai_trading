@@ -340,6 +340,7 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     )
     assert "round-027-effective-source-ledger-v7.json" in artifact_paths
     assert "round-027-static-analysis-remediation-amendment-v17.json" in artifact_paths
+    assert "round-027-static-analysis-remediation-amendment-v18.json" in artifact_paths
     assert "round-028-loaded-contract-binding-correction-v2.json" in artifact_paths
     assert "round-028-loaded-contract-binding-correction-v3.json" in artifact_paths
     assert "round-028-static-analysis-remediation-amendment-v2.json" in artifact_paths

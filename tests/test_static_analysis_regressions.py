@@ -572,7 +572,7 @@ def test_round27_static_remediation_parser_rejects_malformed_artifacts(
     module = polymarket_round27_model_amendment
     artifact_path = (
         ROOT / "docs/model-research/polymarket/"
-        "round-027-static-analysis-remediation-amendment-v17.json"
+        "round-027-static-analysis-remediation-amendment-v18.json"
     )
     original = json.loads(artifact_path.read_text(encoding="ascii"))
     original_path = module._STATIC_ANALYSIS_REMEDIATION_RELATIVE_PATH
@@ -610,6 +610,26 @@ def test_round27_static_remediation_parser_rejects_malformed_artifacts(
     first_source = next(iter(malformed["source_text_sha256"]))
     malformed["source_text_sha256"][first_source] = []
     install(malformed)
+    with pytest.raises(ValueError, match="source remediation differs"):
+        module._load_static_analysis_source_replacements(ROOT)
+
+    invalid_created_at = deepcopy(original)
+    invalid_created_at["created_at_ms"] = True
+    install(invalid_created_at)
+    with pytest.raises(ValueError, match="source remediation differs"):
+        module._load_static_analysis_source_replacements(ROOT)
+
+    blank_rationale = deepcopy(original)
+    blank_rationale["rationale"] = " "
+    install(blank_rationale)
+    with pytest.raises(ValueError, match="source remediation differs"):
+        module._load_static_analysis_source_replacements(ROOT)
+
+    missing_source = deepcopy(original)
+    missing_source["source_text_sha256"].pop(
+        next(iter(missing_source["source_text_sha256"]))
+    )
+    install(missing_source)
     with pytest.raises(ValueError, match="source remediation differs"):
         module._load_static_analysis_source_replacements(ROOT)
 

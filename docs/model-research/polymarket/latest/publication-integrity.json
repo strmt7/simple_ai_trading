@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 62447,
+      "bytes": 62788,
       "path": "latest/README.md",
-      "sha256": "10ac584befca53fb31eb74eefb384348d3ee8e275a4e5662f6b85f242ae6a6b2"
+      "sha256": "ec7dbcb6d946efe857575db50bf9934e8fa9904946da958c387da4edd731d7d2"
     },
     {
       "bytes": 77606,
@@ -527,6 +527,11 @@
       "sha256": "f4bb9b2f4747320ae789170b890f9f7f966bc5d110071a2003a43ab9f2a87e14"
     },
     {
+      "bytes": 6965,
+      "path": "round-027-static-analysis-remediation-amendment-v18.json",
+      "sha256": "1142aba5a98c5f842a228d710b1033d68da274f7e421ac6931962dc67f72ebda"
+    },
+    {
       "bytes": 3882,
       "path": "round-028-ai-operator-implementation-amendment-v1.json",
       "sha256": "a339e19ba05abc638ccc558297e45c4d8ebf5b01406066fab588e26bc2e91f9f"
@@ -614,7 +619,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 29,
   "live_trading_authority": false,
-  "manifest_sha256": "5284eaea22e90463053dd061d9a9cb9b504e28184596d8df0c7ee232ae949258",
+  "manifest_sha256": "2db4e08939d6bb53c5e406a78206af88afe932aefbe14ae207d7a5a0c627b11b",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
