@@ -315,6 +315,24 @@ def _required_query_value(
     return row[0]
 
 
+def _condition_cache_aggregate_counts(
+    row: Sequence[object] | None,
+) -> tuple[int, int]:
+    if row is None or len(row) != 2:
+        raise ValueError("Polymarket condition cache aggregate row is invalid")
+    frame_count, message_count = row
+    if (
+        isinstance(frame_count, bool)
+        or not isinstance(frame_count, int)
+        or frame_count < 0
+        or isinstance(message_count, bool)
+        or not isinstance(message_count, int)
+        or message_count < 0
+    ):
+        raise ValueError("Polymarket condition cache aggregate row is invalid")
+    return frame_count, message_count
+
+
 def _compact_message_manifest_hash(row: Sequence[object]) -> str:
     if len(row) != 17:
         raise ValueError("compact raw-message manifest row has an invalid width")
@@ -3682,8 +3700,12 @@ class PolymarketEvidenceStore:
             """,
             [run_id],
         ).fetchone()
-        if manifest_frame_count != int(aggregate[0]) or manifest_message_count != int(
-            aggregate[1]
+        aggregate_frame_count, aggregate_message_count = (
+            _condition_cache_aggregate_counts(aggregate)
+        )
+        if (
+            manifest_frame_count != aggregate_frame_count
+            or manifest_message_count != aggregate_message_count
         ):
             raise ValueError("Polymarket condition cache frame totals differ")
         expected = {
@@ -3691,15 +3713,15 @@ class PolymarketEvidenceStore:
             "run_id": run_id,
             "source_run_report_sha256": source_run_report_sha256,
             "condition_count": len(manifests),
-            "frame_count": int(aggregate[0]),
-            "message_count": int(aggregate[1]),
+            "frame_count": aggregate_frame_count,
+            "message_count": aggregate_message_count,
             "manifests": manifests,
         }
         if (
             expected != dict(report)
             or int(build[3]) != len(manifests)
-            or int(build[4]) != int(aggregate[0])
-            or int(build[5]) != int(aggregate[1])
+            or int(build[4]) != aggregate_frame_count
+            or int(build[5]) != aggregate_message_count
         ):
             raise ValueError("Polymarket condition cache summary differs")
         self._validated_condition_cache_runs[run_id] = str(build[7])

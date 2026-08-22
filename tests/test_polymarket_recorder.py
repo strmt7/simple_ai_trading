@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import threading
+from typing import Sequence
 
 import duckdb
 import pytest
@@ -59,6 +60,21 @@ def test_terminal_recovery_rollback_failure_is_attached_to_primary_error() -> No
         "Polymarket terminal-audit recovery rollback failed (RuntimeError); "
         "transaction state must be treated as unknown"
     ]
+
+
+def test_condition_cache_aggregate_counts_are_strict() -> None:
+    assert recorder_module._condition_cache_aggregate_counts((3, 7)) == (3, 7)
+
+
+@pytest.mark.parametrize(
+    "row",
+    [None, (), (1,), (1, 2, 3), (True, 1), (-1, 1), (1, object())],
+)
+def test_condition_cache_aggregate_counts_fail_closed(
+    row: Sequence[object] | None,
+) -> None:
+    with pytest.raises(ValueError, match="aggregate row is invalid"):
+        recorder_module._condition_cache_aggregate_counts(row)
 
 
 def _market_payload(asset: str) -> dict[str, object]:

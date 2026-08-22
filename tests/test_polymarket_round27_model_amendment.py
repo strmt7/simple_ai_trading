@@ -21,11 +21,11 @@ _SOURCE_LEDGER = (
 )
 _STATIC_ANALYSIS_REMEDIATION = (
     _ROOT / "docs/model-research/polymarket/"
-    "round-027-static-analysis-remediation-amendment-v18.json"
+    "round-027-static-analysis-remediation-amendment-v19.json"
 )
 _PREDECESSOR_STATIC_ANALYSIS_REMEDIATION = (
     _ROOT / "docs/model-research/polymarket/"
-    "round-027-static-analysis-remediation-amendment-v17.json"
+    "round-027-static-analysis-remediation-amendment-v18.json"
 )
 
 
@@ -144,10 +144,10 @@ def test_round27_static_analysis_remediation_is_canonical_and_exact() -> None:
     )
     predecessor_claimed = predecessor.pop("amendment_sha256")
 
-    assert claimed == "6e328f16ea50941d637fbbee2f4506cc269fc775815e1caaca64fbb246707bba"
+    assert claimed == "ea8f716fa75e8342982a678fe9b085c37ce68984f85edbd2fde686a0b69f4ff5"
     assert claimed == _canonical_sha256(amendment)
     assert predecessor_claimed == (
-        "cd505ac97623af8e52c255a6b3bf09c1f8cc8be5129498f1522721c5919a6c66"
+        "6e328f16ea50941d637fbbee2f4506cc269fc775815e1caaca64fbb246707bba"
     )
     assert predecessor_claimed == _canonical_sha256(predecessor)
     assert (
@@ -163,8 +163,8 @@ def test_round27_static_analysis_remediation_is_canonical_and_exact() -> None:
         "performance_metrics_computed": False,
         "stage1_feature_rows_accessed_or_materialized": False,
     }
-    assert set(amendment["source_text_sha256"]) == (
-        set(predecessor["source_text_sha256"]) | {"src/simple_ai_trading/compute.py"}
+    assert set(amendment["source_text_sha256"]) == set(
+        predecessor["source_text_sha256"]
     )
     for relative, replacement in amendment["source_text_sha256"].items():
         assert replacement["frozen"] == ledger["files_sha256"][relative]

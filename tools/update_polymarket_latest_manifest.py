@@ -108,6 +108,7 @@ _CURRENT_RESEARCH_ARTIFACTS = (
     "round-027-stage1-campaign-contract-v1.json",
     "round-027-static-analysis-remediation-amendment-v17.json",
     "round-027-static-analysis-remediation-amendment-v18.json",
+    "round-027-static-analysis-remediation-amendment-v19.json",
     "round-028-community-hypothesis-review-v1.json",
     "round-028-ai-operator-implementation-amendment-v1.json",
     "round-028-ai-risk-veto-implementation-amendment-v1.json",

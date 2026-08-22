@@ -155,13 +155,25 @@ blind overwrite. All new development after integration belongs on `main`.
   current Pylint `no-self-use` extension. Six are `TYP-062` on the same optional
   aggregate row in `polymarket_recorder.py` at lines `3685`, `3686`, `3694`,
   `3695`, `3701`, and `3702`. That recorder is bound by the immutable Round 27
-  source ledger. A future fix must reject an absent or malformed aggregate row
-  before indexing and advance the cumulative ledger amendment with provenance
-  tests in the same reviewed change; do not add a type assertion, ignore, or
-  unbound edit merely to silence DeepSource. Exact follow-up revision
-  `502568f7` passed DeepSource with zero issues in three minutes 22 seconds;
-  hosted Ruff, Vulture, Super-Linter, and Windows Python/native-UI also passed.
-  The Linux test-and-coverage job remained in progress at the bounded refresh.
+  source ledger. Exact follow-up revision `502568f7` passed DeepSource with zero
+  issues in three minutes 22 seconds; hosted Ruff, Vulture, Super-Linter, and
+  Windows Python/native-UI also passed. The Linux test-and-coverage job remained
+  in progress at the bounded refresh.
+- The subsequent provenance-safe recorder correction closes those six findings.
+  `_condition_cache_aggregate_counts` requires one exact two-field row of
+  nonnegative integer frame and message counts before indexing. Missing,
+  wrong-width, boolean, non-integer, and negative evidence fails closed. Valid
+  DuckDB counts preserve the prior report and comparison values. New cumulative
+  amendment `round-027-static-analysis-remediation-amendment-v19.json` preserves
+  v7/v17/v18, chains to v18 SHA-256
+  `6e328f16ea50941d637fbbee2f4506cc269fc775815e1caaca64fbb246707bba`,
+  retains every original frozen source hash, and binds recorder SHA-256
+  `fd9c3d307f820cfcb854e05b6630a6fbc2df19b7a8c5108636cec3f5cab5d740`.
+  The 39-test affected matrix passes with `9/9` changed executable lines covered;
+  scoped Mypy with runtime dependencies, Ruff, formatting, the generated
+  publication manifest, terminology, and markdown checks pass. No model,
+  feature, target, result, cost, risk, authority, edge, or profitability claim
+  changes.
 - A Windows child-process reproducer proved that a fake `git.exe` in the
   process current directory could satisfy an unqualified `git` invocation.
   Package bootstrap now removes empty, relative, duplicate, and

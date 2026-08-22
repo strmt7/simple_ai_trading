@@ -124,14 +124,14 @@ _EFFECTIVE_SOURCE_LEDGER_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/round-027-effective-source-ledger-v7.json"
 )
 _STATIC_ANALYSIS_REMEDIATION_SHA256 = (
-    "6e328f16ea50941d637fbbee2f4506cc269fc775815e1caaca64fbb246707bba"
+    "ea8f716fa75e8342982a678fe9b085c37ce68984f85edbd2fde686a0b69f4ff5"
 )
 _STATIC_ANALYSIS_REMEDIATION_RELATIVE_PATH = Path(
     "docs/model-research/polymarket/"
-    "round-027-static-analysis-remediation-amendment-v18.json"
+    "round-027-static-analysis-remediation-amendment-v19.json"
 )
 _PREDECESSOR_STATIC_ANALYSIS_REMEDIATION_SHA256 = (
-    "cd505ac97623af8e52c255a6b3bf09c1f8cc8be5129498f1522721c5919a6c66"
+    "6e328f16ea50941d637fbbee2f4506cc269fc775815e1caaca64fbb246707bba"
 )
 _HISTORICAL_PROVENANCE_FILES = frozenset(
     {".gitattributes", "pyproject.toml", "uv.lock"}
@@ -1512,7 +1512,7 @@ def _load_static_analysis_source_replacements(
         claimed == _STATIC_ANALYSIS_REMEDIATION_SHA256,
         claimed == _canonical_sha256(payload),
         payload.get("schema_version")
-        == "polymarket-round27-static-analysis-remediation-amendment-v18",
+        == "polymarket-round27-static-analysis-remediation-amendment-v19",
         payload.get("status") == "frozen_before_stage1_feature_or_outcome_access",
         payload.get("authority") == _EXPECTED_AUTHORITY,
         payload.get("knowledge_at_amendment") == knowledge,
