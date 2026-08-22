@@ -98,12 +98,15 @@ helper findings are recorded exactly in `docs/CONTINUATION.md`; they remain a
 bounded maintainability queue and must not be presented as vulnerabilities or
 silenced with broad analyzer exclusions.
 
-The next bounded model-evidence batch decomposes four members of that queue:
-AI-uplift period validation, block-bootstrap validation, probability-calibration
-deterioration, and the model-report coordinator. Complete accepted/rejected
-model-report fingerprints and 100% changed-line coverage protect the refactor.
-Reduce the recorded residual count only after DeepSource analyzes the exact
-pushed checkpoint.
+Exact revision `67dab5d8` passed every GitHub Actions workflow. DeepSource
+confirmed that the four targeted model-evidence findings were gone and reported
+the expected nine residual changed-scope complexity findings. The next bounded
+batch now decomposes those nine paths without changing calculations, thresholds,
+diagnostics, or serialized report order. Locally, all target scores are `14` or
+lower, no replacement helper exceeds `14`, 51 focused and 235 affected tests
+pass, and all 133 changed executable lines have coverage. This is maintainability
+evidence only. Reduce the recorded residual count only after DeepSource analyzes
+the exact pushed checkpoint; do not treat it as a project-wide security result.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating

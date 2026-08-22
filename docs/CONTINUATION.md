@@ -235,6 +235,18 @@ blind overwrite. All new development after integration belongs on `main`.
   Ruff/format, Pylint errors-only, targeted Bandit, strict simplification checks,
   and Radon pass. This is maintainability evidence only; hosted DeepSource must
   confirm the residual inventory on the exact pushed SHA.
+- Exact revision `67dab5d8d4acbb12d71077a2fa30cd62ac5f03f3` subsequently
+  passed CI, Ruff, Vulture, Super-Linter, and Windows native-UI smoke.
+  DeepSource confirmed that the four targeted findings were gone and reported
+  exactly the expected nine residual changed-scope complexity findings.
+- The current local batch decomposes all nine residual paths. Their Radon scores
+  are now `5/3/6/14/14/12/14/1/1` in the documented DeepSource order, and no
+  replacement helper exceeds `14`. The six complete accepted/rejected report
+  fingerprints remain unchanged. Locally, 51 focused tests and the 235-test
+  affected matrix pass, all 133 changed executable lines have coverage, and
+  scoped Mypy, Ruff/format, Pylint errors-only, targeted Bandit, strict
+  simplification checks, and Radon pass. Hosted DeepSource must analyze the exact
+  pushed checkpoint before this changed-scope queue is called closed.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -398,11 +410,11 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    follow-up reduced it to 51. The nine changed-scope AI-uplift and
    financial-sanity complexity findings were later closed in two bounded,
    behavior-preserving batches. DeepSource then exposed the 13 smaller helper
-   findings listed above under its stricter threshold. The subsequent local
-   model-evidence batch addresses four; continue from the exact final-SHA
-   DeepSource inventory rather than assuming the expected nine remain. Address
-   each remaining contract family separately, and do not treat the original
-   closure as a project-wide backlog result.
+   findings listed above under its stricter threshold. Exact revision `67dab5d8`
+   closed four and confirmed the remaining nine. The subsequent local batch
+   addresses all nine; continue from the exact final-SHA DeepSource inventory
+   rather than assuming they are closed. Do not treat this changed-scope closure
+   as a project-wide backlog or security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.

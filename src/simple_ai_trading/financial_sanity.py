@@ -1004,13 +1004,118 @@ def _walk_forward_report_for_objective(
     return None
 
 
+def _positive_integer(value: float | None) -> bool:
+    return value is not None and value > 0.0 and float(value).is_integer()
+
+
+def _accepted_fold_count_valid(
+    accepted_folds: float | None,
+    fold_count: float | None,
+) -> bool:
+    return bool(
+        accepted_folds is not None
+        and accepted_folds >= 0.0
+        and float(accepted_folds).is_integer()
+        and fold_count is not None
+        and accepted_folds == fold_count
+    )
+
+
+def _walk_forward_objective_checks(
+    report: Mapping[str, Any],
+    *,
+    report_path: str,
+) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
+    if report.get("passed") is not True:
+        checks.append(
+            _check(
+                "block",
+                "purged walk-forward",
+                "accepted objective failed purged walk-forward evidence",
+                path=f"{report_path}.passed",
+                metric=report.get("passed"),
+                limit=True,
+            )
+        )
+    reason = report.get("reason")
+    if reason not in (None, ""):
+        checks.append(
+            _check(
+                "block",
+                "purged walk-forward",
+                "accepted purged walk-forward report contains rejection reason",
+                path=f"{report_path}.reason",
+                metric=str(reason),
+                limit="empty",
+            )
+        )
+    fold_count = _finite(report.get("fold_count"))
+    accepted_folds = _finite(report.get("accepted_folds"))
+    if not _positive_integer(fold_count):
+        checks.append(
+            _check(
+                "block",
+                "purged walk-forward",
+                "accepted purged walk-forward report has no real folds",
+                path=f"{report_path}.fold_count",
+                metric=fold_count if fold_count is not None else "missing",
+                limit="positive integer",
+            )
+        )
+    if not _accepted_fold_count_valid(accepted_folds, fold_count):
+        checks.append(
+            _check(
+                "block",
+                "purged walk-forward",
+                "accepted purged walk-forward fold count is inconsistent",
+                path=f"{report_path}.accepted_folds",
+                metric=accepted_folds if accepted_folds is not None else "missing",
+                limit="accepted_folds==fold_count",
+            )
+        )
+    worst_score = _finite(report.get("worst_score"))
+    checks.append(
+        _check(
+            "ok" if worst_score is not None and worst_score > 0.0 else "block",
+            "purged walk-forward",
+            "accepted purged walk-forward worst score",
+            path=f"{report_path}.worst_score",
+            metric=worst_score if worst_score is not None else "missing",
+            limit=">0",
+        )
+    )
+    worst_pnl = _finite(report.get("worst_realized_pnl"))
+    checks.append(
+        _check(
+            "ok" if worst_pnl is not None and worst_pnl > 0.0 else "block",
+            "purged walk-forward",
+            "accepted purged walk-forward worst realized P&L",
+            path=f"{report_path}.worst_realized_pnl",
+            metric=worst_pnl if worst_pnl is not None else "missing",
+            limit=">0",
+        )
+    )
+    checks.append(
+        _range_check(
+            report.get("worst_max_drawdown"),
+            path=f"{report_path}.worst_max_drawdown",
+            label="purged walk-forward",
+            low=0.0,
+            high=1.0,
+            hard_low=0.0,
+            hard_high=1.0,
+        )
+    )
+    return checks
+
+
 def _walk_forward_gate_checks(
     outcome: Mapping[str, Any],
     *,
     objectives: Sequence[str],
     prefix: str,
 ) -> list[FinancialSanityCheck]:
-    checks: list[FinancialSanityCheck] = []
     raw = outcome.get("walk_forward_gate")
     if not isinstance(raw, Mapping) or not raw:
         return [
@@ -1023,6 +1128,7 @@ def _walk_forward_gate_checks(
                 limit="passed purged folds",
             )
         ]
+    checks: list[FinancialSanityCheck] = []
     for objective in objectives:
         report = _walk_forward_report_for_objective(raw, str(objective))
         report_path = f"{prefix}.walk_forward_gate.{objective}"
@@ -1038,95 +1144,7 @@ def _walk_forward_gate_checks(
                 )
             )
             continue
-        if report.get("passed") is not True:
-            checks.append(
-                _check(
-                    "block",
-                    "purged walk-forward",
-                    "accepted objective failed purged walk-forward evidence",
-                    path=f"{report_path}.passed",
-                    metric=report.get("passed"),
-                    limit=True,
-                )
-            )
-        reason = report.get("reason")
-        if reason not in (None, ""):
-            checks.append(
-                _check(
-                    "block",
-                    "purged walk-forward",
-                    "accepted purged walk-forward report contains rejection reason",
-                    path=f"{report_path}.reason",
-                    metric=str(reason),
-                    limit="empty",
-                )
-            )
-        fold_count = _finite(report.get("fold_count"))
-        accepted_folds = _finite(report.get("accepted_folds"))
-        if (
-            fold_count is None
-            or fold_count <= 0.0
-            or not float(fold_count).is_integer()
-        ):
-            checks.append(
-                _check(
-                    "block",
-                    "purged walk-forward",
-                    "accepted purged walk-forward report has no real folds",
-                    path=f"{report_path}.fold_count",
-                    metric=fold_count if fold_count is not None else "missing",
-                    limit="positive integer",
-                )
-            )
-        if (
-            accepted_folds is None
-            or accepted_folds < 0.0
-            or not float(accepted_folds).is_integer()
-            or (fold_count is not None and accepted_folds != fold_count)
-        ):
-            checks.append(
-                _check(
-                    "block",
-                    "purged walk-forward",
-                    "accepted purged walk-forward fold count is inconsistent",
-                    path=f"{report_path}.accepted_folds",
-                    metric=accepted_folds if accepted_folds is not None else "missing",
-                    limit="accepted_folds==fold_count",
-                )
-            )
-        worst_score = _finite(report.get("worst_score"))
-        checks.append(
-            _check(
-                "ok" if worst_score is not None and worst_score > 0.0 else "block",
-                "purged walk-forward",
-                "accepted purged walk-forward worst score",
-                path=f"{report_path}.worst_score",
-                metric=worst_score if worst_score is not None else "missing",
-                limit=">0",
-            )
-        )
-        worst_pnl = _finite(report.get("worst_realized_pnl"))
-        checks.append(
-            _check(
-                "ok" if worst_pnl is not None and worst_pnl > 0.0 else "block",
-                "purged walk-forward",
-                "accepted purged walk-forward worst realized P&L",
-                path=f"{report_path}.worst_realized_pnl",
-                metric=worst_pnl if worst_pnl is not None else "missing",
-                limit=">0",
-            )
-        )
-        checks.append(
-            _range_check(
-                report.get("worst_max_drawdown"),
-                path=f"{report_path}.worst_max_drawdown",
-                label="purged walk-forward",
-                low=0.0,
-                high=1.0,
-                hard_low=0.0,
-                hard_high=1.0,
-            )
-        )
+        checks.extend(_walk_forward_objective_checks(report, report_path=report_path))
     return checks
 
 
@@ -1202,90 +1220,117 @@ def _selection_risk_header_checks(
     return checks
 
 
+@dataclass(frozen=True)
+class _TerminalHoldoutEvidence:
+    payload: Mapping[str, Any] | None
+    result: Mapping[str, Any] | None
+    score: float | None
+    rows: float | None
+    first_timestamp: float | None
+    last_timestamp: float | None
+    realized_pnl: float | None
+    dataset_fingerprint: str
+    result_fingerprint: str
+
+    @classmethod
+    def from_report(cls, report: Mapping[str, Any]) -> _TerminalHoldoutEvidence:
+        terminal = report.get("terminal_holdout")
+        payload = terminal if isinstance(terminal, Mapping) else None
+        raw_result = payload.get("result") if payload is not None else None
+        result = raw_result if isinstance(raw_result, Mapping) else None
+        try:
+            result_fingerprint = terminal_result_fingerprint(terminal)
+        except (TypeError, ValueError, OverflowError):
+            result_fingerprint = ""
+        return cls(
+            payload=payload,
+            result=result,
+            score=_finite(payload.get("score")) if payload is not None else None,
+            rows=_finite(payload.get("rows")) if payload is not None else None,
+            first_timestamp=(
+                _finite(payload.get("start_timestamp")) if payload is not None else None
+            ),
+            last_timestamp=(
+                _finite(payload.get("end_timestamp")) if payload is not None else None
+            ),
+            realized_pnl=(
+                _finite(result.get("realized_pnl")) if result is not None else None
+            ),
+            dataset_fingerprint=(
+                str(payload.get("dataset_fingerprint") or "").lower()
+                if payload is not None
+                else ""
+            ),
+            result_fingerprint=result_fingerprint,
+        )
+
+    def contract_valid(self) -> bool:
+        return bool(
+            self.payload is not None
+            and self.payload.get("schema_version") == "terminal-holdout-v1"
+            and self.payload.get("passed") is True
+            and self.payload.get("reason") in (None, "")
+            and _finite(self.payload.get("evaluation_count")) == 1.0
+        )
+
+    def interval_valid(self) -> bool:
+        return bool(
+            self.rows is not None
+            and self.rows > 0.0
+            and self.first_timestamp is not None
+            and self.first_timestamp >= 0.0
+            and self.last_timestamp is not None
+            and self.last_timestamp >= self.first_timestamp
+        )
+
+    def result_valid(self) -> bool:
+        return bool(
+            self.score is not None
+            and self.score > 0.0
+            and _is_sha256(self.dataset_fingerprint)
+            and self.result is not None
+            and self.result.get("accepted") is True
+            and self.realized_pnl is not None
+            and self.realized_pnl > 0.0
+            and self.result.get("stopped_by_liquidation") is False
+            and _finite(self.result.get("liquidation_events")) == 0.0
+        )
+
+    def reservation_valid(self, *, objective: str) -> bool:
+        return _terminal_reservation_passed(
+            self.payload,
+            dataset_fingerprint=self.dataset_fingerprint,
+            result_fingerprint=self.result_fingerprint,
+            rows=self.rows,
+            first_timestamp=self.first_timestamp,
+            last_timestamp=self.last_timestamp,
+            objective=objective,
+        )
+
+    def valid(self, *, objective: str) -> bool:
+        return all(
+            (
+                self.contract_valid(),
+                self.interval_valid(),
+                self.result_valid(),
+                self.reservation_valid(objective=objective),
+            )
+        )
+
+
 def _terminal_holdout_check(
     report: Mapping[str, Any],
     *,
     objective: str,
     report_path: str,
 ) -> FinancialSanityCheck:
-    terminal = report.get("terminal_holdout")
-    terminal_path = f"{report_path}.terminal_holdout"
-    terminal_mapping = terminal if isinstance(terminal, Mapping) else None
-    terminal_result = (
-        terminal_mapping.get("result") if terminal_mapping is not None else None
-    )
-    terminal_score = (
-        _finite(terminal_mapping.get("score")) if terminal_mapping is not None else None
-    )
-    terminal_rows = (
-        _finite(terminal_mapping.get("rows")) if terminal_mapping is not None else None
-    )
-    terminal_first = (
-        _finite(terminal_mapping.get("start_timestamp"))
-        if terminal_mapping is not None
-        else None
-    )
-    terminal_last = (
-        _finite(terminal_mapping.get("end_timestamp"))
-        if terminal_mapping is not None
-        else None
-    )
-    terminal_pnl = (
-        _finite(terminal_result.get("realized_pnl"))
-        if isinstance(terminal_result, Mapping)
-        else None
-    )
-    terminal_fingerprint = (
-        str(terminal_mapping.get("dataset_fingerprint") or "").lower()
-        if terminal_mapping is not None
-        else ""
-    )
-    try:
-        result_fingerprint = terminal_result_fingerprint(terminal)
-    except (TypeError, ValueError, OverflowError):
-        result_fingerprint = ""
-    terminal_reservation_passed = _terminal_reservation_passed(
-        terminal_mapping,
-        dataset_fingerprint=terminal_fingerprint,
-        result_fingerprint=result_fingerprint,
-        rows=terminal_rows,
-        first_timestamp=terminal_first,
-        last_timestamp=terminal_last,
-        objective=objective,
-    )
-    terminal_passed = bool(
-        terminal_mapping is not None
-        and all(
-            (
-                terminal_mapping.get("schema_version") == "terminal-holdout-v1",
-                terminal_mapping.get("passed") is True,
-                terminal_mapping.get("reason") in (None, ""),
-                _finite(terminal_mapping.get("evaluation_count")) == 1.0,
-                terminal_rows is not None and terminal_rows > 0.0,
-                terminal_first is not None and terminal_first >= 0.0,
-                terminal_last is not None
-                and terminal_first is not None
-                and terminal_last >= terminal_first,
-                terminal_score is not None and terminal_score > 0.0,
-                _is_sha256(terminal_fingerprint),
-                isinstance(terminal_result, Mapping),
-                isinstance(terminal_result, Mapping)
-                and terminal_result.get("accepted") is True,
-                terminal_pnl is not None and terminal_pnl > 0.0,
-                isinstance(terminal_result, Mapping)
-                and terminal_result.get("stopped_by_liquidation") is False,
-                isinstance(terminal_result, Mapping)
-                and _finite(terminal_result.get("liquidation_events")) == 0.0,
-                terminal_reservation_passed,
-            )
-        )
-    )
+    evidence = _TerminalHoldoutEvidence.from_report(report)
     return _check(
-        "ok" if terminal_passed else "block",
+        "ok" if evidence.valid(objective=objective) else "block",
         "sealed terminal holdout",
         "accepted selection-risk terminal evidence",
-        path=terminal_path,
-        metric=terminal_score if terminal_score is not None else "missing",
+        path=f"{report_path}.terminal_holdout",
+        metric=evidence.score if evidence.score is not None else "missing",
         limit="single accepted positive fingerprinted ledger-reserved evaluation",
     )
 
@@ -1649,13 +1694,77 @@ def _iter_market_edge_reports(
     return reports
 
 
+def _market_edge_report_checks(
+    report: Mapping[str, Any],
+    *,
+    full_path: str,
+) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
+    accepted = report.get("accepted")
+    net_edge_pct = _finite(report.get("net_edge_pct"))
+    min_edge_pct = _finite(report.get("min_net_edge_pct"))
+    reason = str(report.get("reason") or "accepted")[:240]
+    checks.append(
+        _check(
+            "ok" if accepted is True else "block",
+            "market edge",
+            reason,
+            path=full_path,
+            metric=net_edge_pct if net_edge_pct is not None else "missing",
+            limit=(
+                f">={min_edge_pct:g}"
+                if min_edge_pct is not None
+                else "positive audited edge"
+            ),
+        )
+    )
+    if net_edge_pct is None:
+        checks.append(
+            _check(
+                "block",
+                "market edge pct",
+                "missing or non-finite net edge",
+                path=f"{full_path}.net_edge_pct",
+            )
+        )
+    liquidation_events = _finite(report.get("liquidation_events"))
+    if accepted is True and liquidation_events is not None and liquidation_events > 0:
+        checks.append(
+            _check(
+                "block",
+                "liquidation evidence",
+                "accepted market-edge report contains liquidation events",
+                path=f"{full_path}.liquidation_events",
+                metric=liquidation_events,
+                limit=0,
+            )
+        )
+    min_downside_ratio = _finite(report.get("min_downside_return_risk_ratio"))
+    downside_ratio = _finite(report.get("downside_return_risk_ratio"))
+    if (
+        accepted is True
+        and min_downside_ratio is not None
+        and (downside_ratio is None or downside_ratio < min_downside_ratio)
+    ):
+        checks.append(
+            _check(
+                "block",
+                "market edge downside risk",
+                "accepted market-edge report fails downside return/risk evidence",
+                path=f"{full_path}.downside_return_risk_ratio",
+                metric=downside_ratio if downside_ratio is not None else "missing",
+                limit=f">={min_downside_ratio:g}",
+            )
+        )
+    return checks
+
+
 def _market_edge_checks(
     payload: Mapping[str, Any], *, path: str
 ) -> list[FinancialSanityCheck]:
     checks: list[FinancialSanityCheck] = []
     reports = _iter_market_edge_reports(payload)
-    summary_accepted = payload.get("market_edge_accepted")
-    if summary_accepted is False:
+    if payload.get("market_edge_accepted") is False:
         checks.append(
             _check(
                 "block",
@@ -1678,65 +1787,12 @@ def _market_edge_checks(
             )
         )
     for relative_path, report in reports:
-        accepted = report.get("accepted")
-        net_edge_pct = _finite(report.get("net_edge_pct"))
-        min_edge_pct = _finite(report.get("min_net_edge_pct"))
-        reason = str(report.get("reason") or "accepted")[:240]
-        full_path = f"{path}.{relative_path}"
-        checks.append(
-            _check(
-                "ok" if accepted is True else "block",
-                "market edge",
-                reason,
-                path=full_path,
-                metric=net_edge_pct if net_edge_pct is not None else "missing",
-                limit=f">={min_edge_pct:g}"
-                if min_edge_pct is not None
-                else "positive audited edge",
+        checks.extend(
+            _market_edge_report_checks(
+                report,
+                full_path=f"{path}.{relative_path}",
             )
         )
-        if net_edge_pct is None:
-            checks.append(
-                _check(
-                    "block",
-                    "market edge pct",
-                    "missing or non-finite net edge",
-                    path=f"{full_path}.net_edge_pct",
-                )
-            )
-        liquidation_events = _finite(report.get("liquidation_events"))
-        if (
-            accepted is True
-            and liquidation_events is not None
-            and liquidation_events > 0
-        ):
-            checks.append(
-                _check(
-                    "block",
-                    "liquidation evidence",
-                    "accepted market-edge report contains liquidation events",
-                    path=f"{full_path}.liquidation_events",
-                    metric=liquidation_events,
-                    limit=0,
-                )
-            )
-        min_downside_ratio = _finite(report.get("min_downside_return_risk_ratio"))
-        downside_ratio = _finite(report.get("downside_return_risk_ratio"))
-        if (
-            accepted is True
-            and min_downside_ratio is not None
-            and (downside_ratio is None or downside_ratio < min_downside_ratio)
-        ):
-            checks.append(
-                _check(
-                    "block",
-                    "market edge downside risk",
-                    "accepted market-edge report fails downside return/risk evidence",
-                    path=f"{full_path}.downside_return_risk_ratio",
-                    metric=downside_ratio if downside_ratio is not None else "missing",
-                    limit=f">={min_downside_ratio:g}",
-                )
-            )
     return checks
 
 
@@ -1764,6 +1820,14 @@ def _positive_count_check(
         path=path,
         metric=metric,
         limit=">0",
+    )
+
+
+def _real_binance_source_scope(source_scope: str) -> bool:
+    source_scope_lc = source_scope.lower()
+    return bool(
+        "binance" in source_scope_lc
+        and not any(token in source_scope_lc for token in _BLOCKED_DATA_SOURCE_TOKENS)
     )
 
 
@@ -1808,7 +1872,6 @@ def _data_coverage_checks(coverage: object, *, path: str) -> list[FinancialSanit
         )
 
     source_scope = str(coverage.get("source_scope") or "").strip()
-    source_scope_lc = source_scope.lower()
     if not source_scope:
         checks.append(
             _check(
@@ -1820,10 +1883,7 @@ def _data_coverage_checks(coverage: object, *, path: str) -> list[FinancialSanit
                 limit="Binance market-data source scope",
             )
         )
-    elif (
-        any(token in source_scope_lc for token in _BLOCKED_DATA_SOURCE_TOKENS)
-        or "binance" not in source_scope_lc
-    ):
+    elif not _real_binance_source_scope(source_scope):
         checks.append(
             _check(
                 "block",
@@ -1970,6 +2030,10 @@ def _top_level_symbol_checks(
     return checks
 
 
+def _symbol_sets_mismatch(actual: Sequence[str], expected: Sequence[str]) -> bool:
+    return bool(actual and expected and set(actual) != set(expected))
+
+
 def _accepted_portfolio_symbol_checks(
     portfolio: Mapping[str, Any],
     accepted_outcomes: Sequence[Mapping[str, Any]],
@@ -2065,7 +2129,7 @@ def _accepted_portfolio_symbol_checks(
         ),
     )
     for actual, expected, label, detail, path in symbol_sets:
-        if actual and expected and set(actual) != set(expected):
+        if _symbol_sets_mismatch(actual, expected):
             checks.append(
                 _check(
                     "block",
@@ -2562,6 +2626,59 @@ class _PairedOutcomeCounts:
             )
         )
 
+    def effective_invalid(self, minimum: int) -> bool:
+        return bool(
+            self.effective is None
+            or self.effective < minimum
+            or not self.effective_is_integer
+            or (
+                self.sample is not None
+                and self.effective is not None
+                and self.effective > self.sample
+            )
+        )
+
+    def positive_invalid(self) -> bool:
+        return bool(
+            self.positive is None
+            or self.positive < 0.0
+            or (
+                self.effective is not None
+                and self.positive is not None
+                and self.positive > self.effective
+            )
+            or not self.positive_is_integer
+        )
+
+    def rate_inputs_valid(self, positive_rate: float | None) -> bool:
+        return all(
+            (
+                self.effective is not None,
+                self.effective is not None and self.effective > 0.0,
+                self.positive is not None,
+                self.effective_is_integer,
+                self.positive_is_integer,
+                self.positive is not None
+                and self.effective is not None
+                and self.positive <= self.effective,
+                positive_rate is not None,
+            )
+        )
+
+    def sign_inputs_valid(self, sign_p: float | None) -> bool:
+        return all(
+            (
+                self.effective is not None,
+                self.positive is not None,
+                self.effective_is_integer,
+                self.positive_is_integer,
+                self.positive is not None
+                and self.effective is not None
+                and self.positive <= self.effective,
+                sign_p is not None,
+            )
+        )
+
 
 def _ai_uplift_statistical_header_checks(
     statistical: Mapping[str, object],
@@ -2647,16 +2764,7 @@ def _ai_uplift_count_checks(
                 limit="nonnegative integer",
             )
         )
-    if (
-        counts.effective is None
-        or counts.effective < min_paired_samples
-        or not counts.effective_is_integer
-        or (
-            counts.sample is not None
-            and counts.effective is not None
-            and counts.effective > counts.sample
-        )
-    ):
+    if counts.effective_invalid(min_paired_samples):
         checks.append(
             _check(
                 "block",
@@ -2669,16 +2777,7 @@ def _ai_uplift_count_checks(
                 limit=f"integer in [{min_paired_samples},sample_count]",
             )
         )
-    if (
-        counts.positive is None
-        or counts.positive < 0.0
-        or (
-            counts.effective is not None
-            and counts.positive is not None
-            and counts.positive > counts.effective
-        )
-        or not counts.positive_is_integer
-    ):
+    if counts.positive_invalid():
         checks.append(
             _check(
                 "block",
@@ -2726,20 +2825,7 @@ def _ai_uplift_rate_checks(
                 limit=f">={thresholds.min_positive_delta_rate:g}",
             )
         )
-    rate_inputs_valid = all(
-        (
-            counts.effective is not None,
-            counts.effective is not None and counts.effective > 0.0,
-            counts.positive is not None,
-            counts.effective_is_integer,
-            counts.positive_is_integer,
-            counts.positive is not None
-            and counts.effective is not None
-            and counts.positive <= counts.effective,
-            positive_rate is not None,
-        )
-    )
-    if rate_inputs_valid:
+    if counts.rate_inputs_valid(positive_rate):
         positive_count = cast(float, counts.positive)
         effective_count = cast(float, counts.effective)
         checked_positive_rate = cast(float, positive_rate)
@@ -2767,19 +2853,7 @@ def _ai_uplift_rate_checks(
                 limit=f"<={thresholds.max_sign_test_p:g}",
             )
         )
-    sign_inputs_valid = all(
-        (
-            counts.effective is not None,
-            counts.positive is not None,
-            counts.effective_is_integer,
-            counts.positive_is_integer,
-            counts.positive is not None
-            and counts.effective is not None
-            and counts.positive <= counts.effective,
-            sign_p is not None,
-        )
-    )
-    if sign_inputs_valid:
+    if counts.sign_inputs_valid(sign_p):
         effective_count = cast(float, counts.effective)
         positive_count = cast(float, counts.positive)
         checked_sign_p = cast(float, sign_p)
@@ -3596,28 +3670,13 @@ class _BacktestSequenceState:
     trade_log: Sequence[object]
 
 
-def _backtest_sequence_checks(
+def _backtest_count_identity_checks(
     evidence: _BacktestEvidence,
-) -> tuple[list[FinancialSanityCheck], _BacktestSequenceState]:
+    *,
+    closed_count: int | None,
+    trade_count: int | None,
+) -> list[FinancialSanityCheck]:
     checks: list[FinancialSanityCheck] = []
-    closed_count = _integer_count_check(
-        checks,
-        evidence.closed_trades,
-        path="closed_trades",
-        label="closed trade count",
-    )
-    trade_count = _integer_count_check(
-        checks,
-        evidence.trades,
-        path="trades",
-        label="trade count",
-    )
-    loss_streak_count = _integer_count_check(
-        checks,
-        evidence.max_consecutive_losses,
-        path="max_consecutive_losses",
-        label="loss streak count",
-    )
     if closed_count is not None and trade_count is not None:
         checks.append(
             _check(
@@ -3652,6 +3711,15 @@ def _backtest_sequence_checks(
                 limit=evidence.max_exposure,
             )
         )
+    return checks
+
+
+def _backtest_trade_sequence_checks(
+    evidence: _BacktestEvidence,
+    *,
+    closed_count: int | None,
+) -> tuple[list[FinancialSanityCheck], Sequence[object]]:
+    checks: list[FinancialSanityCheck] = []
     if isinstance(evidence.trade_log, (tuple, list)):
         trade_log: Sequence[object] = evidence.trade_log
         if closed_count is not None:
@@ -3701,26 +3769,70 @@ def _backtest_sequence_checks(
             )
         elif not isinstance(raw, (tuple, list)):
             checks.append(_check("block", label, "not a sequence", path=label))
-    if evidence.trade_pnls is not None and evidence.realized_pnl is not None:
-        pnl_sum = sum(evidence.trade_pnls)
-        checks.append(
-            _check(
-                (
-                    "ok"
-                    if _approx_equal(
-                        pnl_sum,
-                        evidence.realized_pnl,
-                        scale=evidence.cash_scale,
-                    )
-                    else "block"
-                ),
-                "trade PnL identity",
-                "sum(trade_pnls) equals realized_pnl",
-                path="trade_pnls",
-                metric=pnl_sum,
-                limit=evidence.realized_pnl,
-            )
+    return checks, trade_log
+
+
+def _backtest_trade_pnl_sum_checks(
+    evidence: _BacktestEvidence,
+) -> list[FinancialSanityCheck]:
+    if evidence.trade_pnls is None or evidence.realized_pnl is None:
+        return []
+    pnl_sum = sum(evidence.trade_pnls)
+    return [
+        _check(
+            (
+                "ok"
+                if _approx_equal(
+                    pnl_sum,
+                    evidence.realized_pnl,
+                    scale=evidence.cash_scale,
+                )
+                else "block"
+            ),
+            "trade PnL identity",
+            "sum(trade_pnls) equals realized_pnl",
+            path="trade_pnls",
+            metric=pnl_sum,
+            limit=evidence.realized_pnl,
         )
+    ]
+
+
+def _backtest_sequence_checks(
+    evidence: _BacktestEvidence,
+) -> tuple[list[FinancialSanityCheck], _BacktestSequenceState]:
+    checks: list[FinancialSanityCheck] = []
+    closed_count = _integer_count_check(
+        checks,
+        evidence.closed_trades,
+        path="closed_trades",
+        label="closed trade count",
+    )
+    trade_count = _integer_count_check(
+        checks,
+        evidence.trades,
+        path="trades",
+        label="trade count",
+    )
+    loss_streak_count = _integer_count_check(
+        checks,
+        evidence.max_consecutive_losses,
+        path="max_consecutive_losses",
+        label="loss streak count",
+    )
+    checks.extend(
+        _backtest_count_identity_checks(
+            evidence,
+            closed_count=closed_count,
+            trade_count=trade_count,
+        )
+    )
+    sequence_checks, trade_log = _backtest_trade_sequence_checks(
+        evidence,
+        closed_count=closed_count,
+    )
+    checks.extend(sequence_checks)
+    checks.extend(_backtest_trade_pnl_sum_checks(evidence))
     return checks, _BacktestSequenceState(
         closed_count=closed_count,
         trade_count=trade_count,
@@ -3992,95 +4104,124 @@ def _backtest_trade_log_checks(
     )
 
 
+def _trade_pnl_log_identity_checks(
+    evidence: _BacktestEvidence,
+    summary: _TradeLogSummary,
+) -> list[FinancialSanityCheck]:
+    if evidence.trade_pnls is None or len(summary.net_values) != len(
+        evidence.trade_pnls
+    ):
+        return []
+    return [
+        _check(
+            "ok" if _approx_equal(pnl, net, scale=evidence.cash_scale) else "block",
+            "trade PnL log identity",
+            "trade_pnls entry equals trade_log net_pnl",
+            path=f"trade_pnls[{index}]",
+            metric=pnl,
+            limit=net,
+        )
+        for index, (pnl, net) in enumerate(
+            zip(evidence.trade_pnls, summary.net_values, strict=True)
+        )
+    ]
+
+
+def _trade_return_log_identity_checks(
+    evidence: _BacktestEvidence,
+    summary: _TradeLogSummary,
+) -> list[FinancialSanityCheck]:
+    if evidence.trade_returns is None or len(summary.return_values) != len(
+        evidence.trade_returns
+    ):
+        return []
+    return [
+        _check(
+            "ok" if _approx_equal(stored, logged, scale=1.0) else "block",
+            "trade return log identity",
+            "trade_returns entry equals trade_log return_pct",
+            path=f"trade_returns[{index}]",
+            metric=stored,
+            limit=logged,
+        )
+        for index, (stored, logged) in enumerate(
+            zip(evidence.trade_returns, summary.return_values, strict=True)
+        )
+    ]
+
+
+def _backtest_fee_identity_checks(
+    evidence: _BacktestEvidence,
+    summary: _TradeLogSummary,
+) -> list[FinancialSanityCheck]:
+    if evidence.total_fees is None:
+        return []
+    return [
+        _check(
+            (
+                "ok"
+                if _approx_equal(
+                    summary.fee_sum,
+                    evidence.total_fees,
+                    scale=evidence.cash_scale,
+                )
+                else "block"
+            ),
+            "fee identity",
+            "sum(entry_fee + exit_fee) equals total_fees",
+            path="total_fees",
+            metric=summary.fee_sum,
+            limit=evidence.total_fees,
+        )
+    ]
+
+
+def _backtest_win_rate_identity_checks(
+    evidence: _BacktestEvidence,
+    state: _BacktestSequenceState,
+    summary: _TradeLogSummary,
+) -> list[FinancialSanityCheck]:
+    if (
+        state.closed_count is None
+        or state.closed_count <= 0
+        or evidence.win_rate is None
+        or len(summary.net_values) != state.closed_count
+    ):
+        return []
+    expected_win_rate = (
+        sum(1 for value in summary.net_values if value > 0.0) / state.closed_count
+    )
+    return [
+        _check(
+            (
+                "ok"
+                if _approx_equal(
+                    evidence.win_rate,
+                    expected_win_rate,
+                    scale=1.0,
+                )
+                else "block"
+            ),
+            "win rate identity",
+            "win_rate equals positive net-PnL trades divided by closed_trades",
+            path="win_rate",
+            metric=evidence.win_rate,
+            limit=expected_win_rate,
+        )
+    ]
+
+
 def _backtest_log_identity_checks(
     evidence: _BacktestEvidence,
     state: _BacktestSequenceState,
     summary: _TradeLogSummary,
 ) -> list[FinancialSanityCheck]:
-    checks: list[FinancialSanityCheck] = []
-    if evidence.trade_pnls is not None and len(summary.net_values) == len(
-        evidence.trade_pnls
-    ):
-        for index, (pnl, net) in enumerate(
-            zip(evidence.trade_pnls, summary.net_values, strict=True)
-        ):
-            checks.append(
-                _check(
-                    (
-                        "ok"
-                        if _approx_equal(pnl, net, scale=evidence.cash_scale)
-                        else "block"
-                    ),
-                    "trade PnL log identity",
-                    "trade_pnls entry equals trade_log net_pnl",
-                    path=f"trade_pnls[{index}]",
-                    metric=pnl,
-                    limit=net,
-                )
-            )
-    if evidence.trade_returns is not None and len(summary.return_values) == len(
-        evidence.trade_returns
-    ):
-        for index, (stored, logged) in enumerate(
-            zip(evidence.trade_returns, summary.return_values, strict=True)
-        ):
-            checks.append(
-                _check(
-                    ("ok" if _approx_equal(stored, logged, scale=1.0) else "block"),
-                    "trade return log identity",
-                    "trade_returns entry equals trade_log return_pct",
-                    path=f"trade_returns[{index}]",
-                    metric=stored,
-                    limit=logged,
-                )
-            )
-    if evidence.total_fees is not None:
-        checks.append(
-            _check(
-                (
-                    "ok"
-                    if _approx_equal(
-                        summary.fee_sum,
-                        evidence.total_fees,
-                        scale=evidence.cash_scale,
-                    )
-                    else "block"
-                ),
-                "fee identity",
-                "sum(entry_fee + exit_fee) equals total_fees",
-                path="total_fees",
-                metric=summary.fee_sum,
-                limit=evidence.total_fees,
-            )
-        )
-    if (
-        state.closed_count is not None
-        and state.closed_count > 0
-        and evidence.win_rate is not None
-        and len(summary.net_values) == state.closed_count
-    ):
-        expected_win_rate = (
-            sum(1 for value in summary.net_values if value > 0.0) / state.closed_count
-        )
-        checks.append(
-            _check(
-                (
-                    "ok"
-                    if _approx_equal(
-                        evidence.win_rate,
-                        expected_win_rate,
-                        scale=1.0,
-                    )
-                    else "block"
-                ),
-                "win rate identity",
-                "win_rate equals positive net-PnL trades divided by closed_trades",
-                path="win_rate",
-                metric=evidence.win_rate,
-                limit=expected_win_rate,
-            )
-        )
-    return checks
+    return [
+        *_trade_pnl_log_identity_checks(evidence, summary),
+        *_trade_return_log_identity_checks(evidence, summary),
+        *_backtest_fee_identity_checks(evidence, summary),
+        *_backtest_win_rate_identity_checks(evidence, state, summary),
+    ]
 
 
 def _backtest_pnl_path_checks(
