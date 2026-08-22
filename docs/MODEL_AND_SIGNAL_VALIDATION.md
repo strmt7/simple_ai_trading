@@ -98,7 +98,10 @@ The gate enforces:
   paired evidence blocks the artifact even when aggregate AI P&L is higher.
   Aggregate realized P&L, ROI, and expectancy must each improve strictly while
   maximum drawdown cannot worsen. Counts, rates, and sign-test p-values must be
-  internally consistent,
+  internally consistent. The ordered rejection trace is part of the evidence
+  contract: refactors may decompose policy, period, statistical, and risk
+  checks, but cannot reorder, omit, or relabel a reason without an explicit
+  schema decision,
 - bounded drawdown, CVaR, deployed weight, plain effective symbol count,
   correlation-adjusted effective symbol count, correlation, and cluster
   exposure metrics.

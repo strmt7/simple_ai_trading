@@ -81,9 +81,11 @@ still reported 522 source audit items and the last verified DeepSource project
 backlog was about 28000 issues. These are bounded triage queues, not permission
 for broad suppressions or risky mass rewrites. See `docs/CONTINUATION.md` for
 the exact inventory and integration hazard. Closeout revision `f50c3a83`
-removed the current AI-uplift type-contract blockers; DeepSource still displayed
-nine changed-scope complexity findings. Treat those as maintainability debt,
-not confirmed vulnerabilities, and refactor them only in behavior-preserving,
+removed the current AI-uplift type-contract blockers; DeepSource then displayed
+nine changed-scope complexity findings. The four `ai_uplift.py` paths have now
+been decomposed under exact output and reason-order tests; five
+`financial_sanity.py` paths remain. Treat them as maintainability debt, not
+confirmed vulnerabilities, and refactor them only in behavior-preserving,
 reviewable batches.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a

@@ -6,6 +6,8 @@ from simple_ai_trading import statistical_resampling
 from simple_ai_trading.ai_uplift import (
     AIUpliftPolicy,
     _binomial_upper_tail,
+    _matched_period_deltas,
+    _model_parameters_b,
     _moving_block_bootstrap,
     assess_ai_uplift,
     normalize_uplift_metrics,
@@ -174,6 +176,58 @@ def test_ai_uplift_rejects_small_or_non_improving_models() -> None:
     assert "ai_drawdown_worse_than_baseline" in report.reasons
     assert "ai_closed_trades<5" in report.reasons
     assert "ai_uplift_non_tied_pairs<30" in report.reasons
+
+
+def test_ai_uplift_rejection_reason_order_is_stable() -> None:
+    report = assess_ai_uplift(
+        {
+            "realized_pnl": 12.0,
+            "max_drawdown": 0.04,
+            "expectancy": 0.9,
+            "closed_trades": 10,
+        },
+        {
+            "realized_pnl": 11.0,
+            "max_drawdown": 0.05,
+            "expectancy": 0.8,
+            "closed_trades": 3,
+        },
+        model_name="tiny-560m",
+    )
+
+    assert report.reasons == (
+        "ai_uplift_baseline_roi_pct_missing",
+        "ai_uplift_baseline_profit_factor_missing",
+        "ai_uplift_baseline_win_rate_missing",
+        "ai_uplift_baseline_liquidation_events_missing",
+        "ai_uplift_baseline_max_consecutive_losses_missing",
+        "ai_uplift_baseline_downside_return_risk_ratio_missing",
+        "ai_uplift_ai_roi_pct_missing",
+        "ai_uplift_ai_profit_factor_missing",
+        "ai_uplift_ai_win_rate_missing",
+        "ai_uplift_ai_liquidation_events_missing",
+        "ai_uplift_ai_max_consecutive_losses_missing",
+        "ai_uplift_ai_downside_return_risk_ratio_missing",
+        "model_parameters<2.00B",
+        "ai_closed_trades<5",
+        "ai_uplift_matched_periods_missing",
+        "ai_uplift_evaluation_span_days<90",
+        "ai_uplift_non_tied_pairs<30",
+        "ai_uplift_positive_delta_rate<0.55",
+        "ai_uplift_sign_test_p_value>0.0500",
+        "ai_uplift_mean_sample_delta<=0",
+        "ai_uplift_block_bootstrap_lower_mean_delta<=0",
+        "ai_uplift_baseline_dataset_fingerprint_invalid",
+        "ai_uplift_ai_dataset_fingerprint_invalid",
+        "ai_uplift_baseline_evidence_sha256_invalid",
+        "ai_uplift_ai_evidence_sha256_invalid",
+        "ai_uplift_model_artifact_sha256_invalid",
+        "ai_uplift_paired_samples_sha256_invalid",
+        "ai_pnl_not_above_baseline",
+        "ai_roi_not_above_baseline",
+        "ai_expectancy_not_above_baseline",
+        "ai_drawdown_worse_than_baseline",
+    )
 
 
 def test_ai_uplift_rejects_statistically_weak_paired_samples() -> None:
@@ -420,6 +474,43 @@ def test_ai_uplift_rejects_noninteger_matched_period_timestamp() -> None:
     assert "ai_uplift_period_rows_invalid" in report.reasons
 
 
+def test_ai_uplift_rejects_malformed_matched_period_rows() -> None:
+    rows: list[object] = [
+        object(),
+        {
+            "scope": "",
+            "period_start_ms": 0,
+            "period_end_ms": _PERIOD_MS,
+            "baseline_return": 0.0,
+            "ai_return": 0.002,
+        },
+    ]
+
+    deltas, binding, reasons = _matched_period_deltas(rows)  # type: ignore[arg-type]
+
+    assert deltas == ()
+    assert binding["sample_count"] == 0
+    assert reasons == (
+        "ai_uplift_period_0_not_mapping",
+        "ai_uplift_period_1_invalid",
+        "ai_uplift_period_rows_invalid",
+        "ai_uplift_matched_periods_missing",
+    )
+
+
+def test_ai_uplift_rejects_period_scope_and_duration_mismatch() -> None:
+    periods = _matched_periods((0.002, 0.002))
+    periods[1]["scope"] = "ETHUSDT"
+    periods[1]["period_end_ms"] = int(periods[1]["period_end_ms"]) + 1
+
+    _deltas, _binding, reasons = _matched_period_deltas(periods)
+
+    assert reasons == (
+        "ai_uplift_period_scope_mismatch",
+        "ai_uplift_period_duration_mismatch",
+    )
+
+
 def test_ai_uplift_rejects_invalid_metric_types_counts_and_ranges() -> None:
     baseline = _complete(
         {
@@ -564,6 +655,11 @@ def test_ai_uplift_rejects_index_paired_trade_sequences() -> None:
         {"block_bootstrap_confidence": 0.949},
         {"min_evaluation_span_days": 89},
         {"require_evidence_binding": False},
+        {"min_positive_delta_rate": 0.54},
+        {"min_bootstrap_mean_delta_lower": -0.01},
+        {"min_pnl_delta": -0.01},
+        {"max_drawdown_delta": 0.01},
+        {"min_downside_return_risk_delta": -0.01},
     ],
 )
 def test_ai_uplift_policy_cannot_weaken_mandatory_floors(
@@ -571,6 +667,16 @@ def test_ai_uplift_policy_cannot_weaken_mandatory_floors(
 ) -> None:
     with pytest.raises(ValueError, match="cannot|mandatory"):
         AIUpliftPolicy(**override)
+
+
+def test_ai_uplift_policy_rejects_nonfinite_values() -> None:
+    with pytest.raises(ValueError, match="finite"):
+        AIUpliftPolicy(min_pnl_delta=float("nan"))
+
+
+def test_ai_uplift_rejects_invalid_supplied_parameter_counts() -> None:
+    assert _model_parameters_b("", float("nan")) is None
+    assert _model_parameters_b("", object()) is None  # type: ignore[arg-type]
 
 
 def test_ai_uplift_rejects_missing_source_metrics_even_with_positive_periods() -> None:
