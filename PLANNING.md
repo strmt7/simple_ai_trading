@@ -242,6 +242,20 @@ fit, weight, prediction, threshold, result, P&L, risk, authority, or
 profitability claim changes. The report validator, fit-member routine, top-level
 fit orchestration, and materializer remain separate bounded complexity tasks.
 
+The report-validation follow-up decomposes `PolymarketMLPReport.validated` from
+Radon `61` to `7`; its largest helper scores `12`. It preserves exact canonical
+SHA-256 identities for both valid states: validation rejection with untouched
+test evidence sealed, and validation admission with complete test evidence.
+Eleven malformed contracts cover identity, threshold-grid, admission,
+validation-statistic, sealed-test, evaluated-test, canonical-reason, and report
+hash failures. The 59-test affected matrix passes at `81.54%` module coverage,
+and changed executable-line coverage is `57/57`. Ruff and formatting pass;
+scoped Bandit retains only the documented deterministic-bootstrap `B311` and
+reports no high- or medium-severity finding. No split, feature, label, fit,
+weight, prediction, threshold, partition access, result, P&L, risk, authority,
+or profitability claim changes. `_fit_member`, top-level fit orchestration, and
+materialization remain three separate bounded tasks.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance
