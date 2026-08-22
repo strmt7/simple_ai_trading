@@ -26,23 +26,22 @@ the repository and on GitHub before changing code.
 
 ## Live Host Handoff: 2026-08-22
 
-The following state was reverified at approximately `2026-08-22T13:09Z`. It is
+The following state was reverified at approximately `2026-08-22T14:23Z`. It is
 host state, not model evidence, and must be rechecked before any action.
 
-- The bounded audit began from clean, synchronized parent
-  `a9eb70a13ffefcd56055a628054c1c177fdb55dc`; local handoff changes were in
-  progress at this host snapshot. GitHub and local remote-tracking inventory
-  contained only `main` after pruning. Do not copy a commit identifier from
-  this mutable handoff; verify `git rev-parse HEAD` and
-  `git rev-parse origin/main` directly.
+- Main was synchronized at
+  `486f0506d60857e291941c7f17580c172b8ea5ca` before the AI-uplift v5 work.
+  Code checkpoint `5c220bcfa34028640fb3ac00d8953314c291d7fd`
+  was then pushed to `main`; this documentation closeout remained local at the
+  snapshot. GitHub and local remote-tracking branch inventory contained only
+  `main`. Always verify `git rev-parse HEAD` and `git rev-parse origin/main`
+  directly before resuming.
 - Round 75 prospective Binance capture is active from the detached worktree
-  `C:\trader\simple_ai_trading-model-dev`. Canonical state named parent PID
-  `37976` and physical child PID `2928`, reported
-  `waiting_for_next_fixed_slot`, slot ordinal `665`, no credentials, no orders,
-  and no trading authority. The frozen campaign ends at
-  `2026-08-23T12:00:00Z`. Scheduled task
-  `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1` was ready; its
-  `2026-08-22T13:07:15Z` invocation succeeded.
+  `C:\trader\simple_ai_trading-model-dev`. The latest supervisor record was
+  `service_healthy`, with no credentials, orders, or trading authority.
+  Scheduled task `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1`
+  was ready and its `2026-08-22T14:21:15Z` invocation returned `0`. The frozen
+  campaign ends at `2026-08-23T12:00:00Z`.
 - The independent Round 21 Binance spot/futures sidecar is active from clean,
   detached commit `4a5912574a9157d79fecc53bf68ed6f01bb8dac8` in
   `C:\trader\simple_ai_trading-round21-sidecar-v2`. Wrapper PID `35008` and
@@ -127,6 +126,35 @@ blind overwrite. All new development after integration belongs on `main`.
   closure, reports every failure, and does not mask an active primary error.
   Focused tests, mypy, Ruff, and the full `B110`/`B112` scan pass. These changes
   do not alter model outputs, evidence, risk limits, or trading authority.
+- AI uplift schema `ai-uplift-v5` now fails closed when aggregate ROI does not
+  strictly improve over the machine-learning baseline. It records the exact
+  metric alias used by each treatment, rejects baseline/AI alias mismatches,
+  normalizes explicit drawdown and win-rate percentage aliases, validates
+  count/range inputs, and requires strict aggregate P&L, ROI, and expectancy
+  improvement without worse maximum drawdown. The independent financial-sanity
+  reader validates v5 provenance, recomputes every reported delta, and applies
+  the same directional gates so a hand-edited `accepted` flag cannot bypass the
+  production assessor. This is evidence-contract hardening, not AI uplift,
+  market-edge, or profitability evidence.
+- Code checkpoint `5c220bcfa34028640fb3ac00d8953314c291d7fd`
+  passed 189 focused AI/uplift/review/financial-sanity/Polymarket tests, local
+  Ruff check, Pylint errors-only, targeted Bandit, terminology, lock, and diff
+  checks. Hosted Vulture and Super-Linter passed. Hosted Ruff failed because a
+  newly added long expression did not satisfy its changed-range format gate;
+  the closeout formats only the new ranges and locally reproduces zero overlap.
+  DeepSource failed with 32 displayed issues, 34 resolved, and 13 classified as
+  introduced. The blocking items were strict object-to-number type errors in
+  the newly reclassified `ai_uplift.py`; the remainder shown were legacy
+  complexity findings. The closeout adds typed period/bootstrap contracts and
+  guarded finite/integer/reason parsing. Current mypy then reports zero issues
+  in both changed source modules, compared with 18 on exact parent `486f0506`.
+  The local closeout passes 191 affected tests and 96% changed-line coverage,
+  plus Ruff check, Pylint errors-only, targeted Bandit, markdownlint,
+  terminology, lock, and diff checks. Hosted reanalysis of the closeout must
+  still be verified.
+- Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
+  passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
+  was still in progress at the snapshot.
 - The last full DeepSource backlog verification on `2026-08-16` found about
   28000 active findings, including 118 security findings. DeepSource passed
   revision `053e71ec9959c7b51c73d6983fb574e03f4173ea` with no blocking issues or
@@ -158,21 +186,21 @@ blind overwrite. All new development after integration belongs on `main`.
 
 ### Round Closeout Checkpoint
 
-Revision `2457d9d59f2c680998d2e296a0d4ce5639c5f049` was pushed to `main` and its
-hosted Ruff and Vulture checks passed. Its longer Python, Windows-native UI, and
-Super-Linter jobs were still running at this handoff. DeepSource failed with
-the reduced exact inventory described above. GitHub showed only `main`, no open
-pull requests, zero open Dependabot alerts, and zero open secret-scanning
-alerts; code scanning remained unavailable. The bounded follow-up changes no
-model scores, labels, fills, costs, thresholds, model evidence, trading
-authority, or profitability claim. Verify every available hosted check on the
-final pushed SHA; a pending or unavailable check is not a pass.
+Code revision `5c220bcfa34028640fb3ac00d8953314c291d7fd` was pushed
+to `main` with the AI-uplift v5 contract described above. The subsequent
+documentation closeout must be verified by its own final SHA. At the snapshot,
+GitHub showed only `main`; previously verified alert APIs reported zero open
+Dependabot and secret-scanning alerts, while code scanning remained unavailable.
+No model score, label, fill, cost, threshold, model outcome, trading authority,
+or profitability claim changed. Verify every available hosted check on the
+final pushed SHA; pending and unavailable checks are not passes.
 
 This is an interruption-safe checkpoint, not product completion. Round 75 and
-Round 21 remain active under their frozen contracts. The detached Round 75
-worktree still reports 97 modified paths, 2 deleted paths, and 218 untracked
-paths; the content review boundary remains 71 differing plus 26 locally-only
-paths. Do not reconcile any of them before Round 75 terminalization.
+Round 21 remain active under their frozen contracts. The 97 modified, 2 deleted,
+218 untracked, and 71 differing plus 26 locally-only path counts above are a
+historical preservation snapshot against an older `main`; they must be
+recomputed after terminalization because `main` has advanced. Do not reconcile
+any path before Round 75 terminalization.
 
 ## Completed Foundation
 

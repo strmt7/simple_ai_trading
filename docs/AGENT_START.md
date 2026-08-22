@@ -18,9 +18,12 @@ agents to canonical evidence without replacing that evidence.
 - Polymarket terminal state requires authenticated exact-ID order evidence or
   exact fill evidence. Stop cancels only owned hashes and closes only
   parent-bound, confirmed, unreserved lots from fresh Polymarket books.
-- AI uplift v3 requires at least 30 non-tied matched outcomes. Exact ties are
+- AI uplift v5 requires at least 30 non-tied matched outcomes. Exact ties are
   excluded from the paired sign test but retained in the moving-block bootstrap
-  and the contiguous 90-day coverage evidence.
+  and contiguous 90-day coverage evidence. AI must also strictly improve
+  aggregate realized P&L, ROI, and expectancy without worsening maximum
+  drawdown. Baseline and AI metrics must use identical, recorded source keys so
+  percentage and fractional units cannot be mixed.
 - Profit factor is gross profit divided by gross loss and is capped at `999.0`
   in finite JSON evidence; positive P&L with zero gross loss uses that cap.
 - Return-to-drawdown evidence is bounded to `[-999.0, 999.0]`; positive return

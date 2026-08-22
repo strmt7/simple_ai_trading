@@ -35,7 +35,11 @@ _AI_UPLIFT_SOURCE_KEYS = {
     "closed_trades": ("closed_trades", "trade_count", "trades"),
     "win_rate": ("win_rate", "win_rate_pct"),
     "liquidation_events": ("liquidation_events", "liquidations"),
-    "max_consecutive_losses": ("max_consecutive_losses", "loss_streak", "consecutive_losses"),
+    "max_consecutive_losses": (
+        "max_consecutive_losses",
+        "loss_streak",
+        "consecutive_losses",
+    ),
     "downside_return_risk_ratio": (
         "downside_return_risk_ratio",
         "return_risk_ratio",
@@ -1709,7 +1713,10 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                         min_parameters_b = max(min_parameters_b, parsed_min)
                     parsed_closed_trades = _finite(policy.get("min_ai_closed_trades"))
                     if parsed_closed_trades is not None:
-                        min_ai_closed_trades = max(min_ai_closed_trades, int(parsed_closed_trades))
+                        min_ai_closed_trades = max(
+                            min_ai_closed_trades,
+                            int(parsed_closed_trades),
+                        )
                     parsed_samples = _finite(policy.get("min_paired_samples"))
                     if parsed_samples is not None:
                         min_paired_samples = max(min_paired_samples, int(parsed_samples))
@@ -1725,12 +1732,20 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     parsed_roi_delta = _finite(policy.get("min_roi_delta"))
                     if parsed_roi_delta is not None:
                         min_roi_delta = max(min_roi_delta, parsed_roi_delta)
-                    parsed_expectancy_delta = _finite(policy.get("min_expectancy_delta"))
+                    parsed_expectancy_delta = _finite(
+                        policy.get("min_expectancy_delta")
+                    )
                     if parsed_expectancy_delta is not None:
-                        min_expectancy_delta = max(min_expectancy_delta, parsed_expectancy_delta)
+                        min_expectancy_delta = max(
+                            min_expectancy_delta,
+                            parsed_expectancy_delta,
+                        )
                     parsed_drawdown_delta = _finite(policy.get("max_drawdown_delta"))
                     if parsed_drawdown_delta is not None:
-                        max_drawdown_delta = min(max_drawdown_delta, parsed_drawdown_delta)
+                        max_drawdown_delta = min(
+                            max_drawdown_delta,
+                            parsed_drawdown_delta,
+                        )
                     parsed_mean_delta = _finite(policy.get("min_mean_sample_delta"))
                     if parsed_mean_delta is not None:
                         min_mean_sample_delta = max(min_mean_sample_delta, parsed_mean_delta)
@@ -1811,7 +1826,10 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                                 )
                             )
                     metric_sources: dict[str, Mapping[str, object]] = {}
-                    for source_group in ("baseline_metric_sources", "ai_metric_sources"):
+                    for source_group in (
+                        "baseline_metric_sources",
+                        "ai_metric_sources",
+                    ):
                         source_payload = evidence_binding.get(source_group)
                         if not isinstance(source_payload, Mapping):
                             checks.append(
@@ -1819,14 +1837,20 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                                     "block",
                                     "AI uplift evidence binding",
                                     "accepted AI uplift is missing metric-unit provenance",
-                                    path=f"{prefix}.ai_uplift.evidence_binding.{source_group}",
+                                    path=(
+                                        f"{prefix}.ai_uplift.evidence_binding."
+                                        f"{source_group}"
+                                    ),
                                     metric="missing",
                                     limit="supported source key for every metric",
                                 )
                             )
                             continue
                         metric_sources[source_group] = source_payload
-                        for metric_name, allowed_sources in _AI_UPLIFT_SOURCE_KEYS.items():
+                        for (
+                            metric_name,
+                            allowed_sources,
+                        ) in _AI_UPLIFT_SOURCE_KEYS.items():
                             source_name = source_payload.get(metric_name)
                             if source_name not in allowed_sources:
                                 checks.append(
@@ -1834,7 +1858,10 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                                         "block",
                                         "AI uplift evidence binding",
                                         "accepted AI uplift has invalid metric-unit provenance",
-                                        path=f"{prefix}.ai_uplift.evidence_binding.{source_group}.{metric_name}",
+                                        path=(
+                                            f"{prefix}.ai_uplift.evidence_binding."
+                                            f"{source_group}.{metric_name}"
+                                        ),
                                         metric=_primitive_metric(source_name),
                                         limit=" or ".join(allowed_sources),
                                     )
@@ -1843,15 +1870,24 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     ai_sources = metric_sources.get("ai_metric_sources")
                     if baseline_sources is not None and ai_sources is not None:
                         for metric_name in _AI_UPLIFT_REQUIRED_METRICS:
-                            if baseline_sources.get(metric_name) != ai_sources.get(metric_name):
+                            if baseline_sources.get(metric_name) != ai_sources.get(
+                                metric_name
+                            ):
                                 checks.append(
                                     _check(
                                         "block",
                                         "AI uplift evidence binding",
                                         "baseline and AI metrics use different units",
-                                        path=f"{prefix}.ai_uplift.evidence_binding.ai_metric_sources.{metric_name}",
-                                        metric=_primitive_metric(ai_sources.get(metric_name)),
-                                        limit=_primitive_metric(baseline_sources.get(metric_name)),
+                                        path=(
+                                            f"{prefix}.ai_uplift.evidence_binding."
+                                            f"ai_metric_sources.{metric_name}"
+                                        ),
+                                        metric=_primitive_metric(
+                                            ai_sources.get(metric_name)
+                                        ),
+                                        limit=_primitive_metric(
+                                            baseline_sources.get(metric_name)
+                                        ),
                                     )
                                 )
                 for group_name in ("baseline", "ai", "deltas"):
@@ -2106,7 +2142,10 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                 if ai_uplift_accepted:
                     baseline_metrics = ai_uplift.get("baseline")
                     ai_metrics = ai_uplift.get("ai")
-                    if isinstance(baseline_metrics, Mapping) and isinstance(ai_metrics, Mapping):
+                    if isinstance(baseline_metrics, Mapping) and isinstance(
+                        ai_metrics,
+                        Mapping,
+                    ):
                         for key in _AI_UPLIFT_REQUIRED_METRICS:
                             baseline_value = _finite(baseline_metrics.get(key))
                             ai_value = _finite(ai_metrics.get(key))
@@ -2145,7 +2184,10 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                                 )
                             )
                         ai_closed_trades = _finite(ai_metrics.get("closed_trades"))
-                        if ai_closed_trades is not None and ai_closed_trades < min_ai_closed_trades:
+                        if (
+                            ai_closed_trades is not None
+                            and ai_closed_trades < min_ai_closed_trades
+                        ):
                             checks.append(
                                 _check(
                                     "block",
@@ -2174,7 +2216,10 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                                 )
                             )
                     drawdown_delta = _finite(deltas.get("max_drawdown"))
-                    if drawdown_delta is not None and drawdown_delta > max_drawdown_delta:
+                    if (
+                        drawdown_delta is not None
+                        and drawdown_delta > max_drawdown_delta
+                    ):
                         checks.append(
                             _check(
                                 "block",

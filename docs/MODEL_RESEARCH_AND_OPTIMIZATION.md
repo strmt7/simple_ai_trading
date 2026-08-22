@@ -1452,7 +1452,9 @@ analytically incoherent artifacts before they reach an operator:
 - accepted AI uplift evidence must include complete finite baseline, AI, and
   delta metrics, model-size evidence, hash-bound contiguous fixed-period
   samples, and paired sign-test plus block-bootstrap evidence; missing, weak,
-  index-paired, or policy-weakened fields block the model-lab artifact,
+  index-paired, unit-inconsistent, delta-inconsistent, or policy-weakened fields
+  block the model-lab artifact. The v5 contract requires strict aggregate P&L,
+  ROI, and expectancy improvement with non-worsening maximum drawdown,
 - accepted stress, temporal robustness, and portfolio metrics must remain in
   financial ranges such as drawdown/CVaR/deployed-weight between 0 and 1.
 
