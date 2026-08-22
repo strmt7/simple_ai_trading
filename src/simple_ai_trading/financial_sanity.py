@@ -26,10 +26,32 @@ _AI_UPLIFT_REQUIRED_METRICS = (
     "max_consecutive_losses",
     "downside_return_risk_ratio",
 )
+_AI_UPLIFT_SOURCE_KEYS = {
+    "realized_pnl": ("realized_pnl", "net_pnl", "pnl"),
+    "roi_pct": ("roi_pct", "roi", "return_pct", "net_return_pct"),
+    "max_drawdown": ("max_drawdown", "max_drawdown_pct", "drawdown"),
+    "expectancy": ("expectancy", "edge", "mean_trade_pnl"),
+    "profit_factor": ("profit_factor",),
+    "closed_trades": ("closed_trades", "trade_count", "trades"),
+    "win_rate": ("win_rate", "win_rate_pct"),
+    "liquidation_events": ("liquidation_events", "liquidations"),
+    "max_consecutive_losses": ("max_consecutive_losses", "loss_streak", "consecutive_losses"),
+    "downside_return_risk_ratio": (
+        "downside_return_risk_ratio",
+        "return_risk_ratio",
+        "profit_drawdown_ratio",
+        "calmar_ratio",
+    ),
+}
 _AI_UPLIFT_DEFAULT_MIN_MODEL_PARAMETERS_B = 2.0
+_AI_UPLIFT_DEFAULT_MIN_AI_CLOSED_TRADES = 5
 _AI_UPLIFT_DEFAULT_MIN_PAIRED_SAMPLES = 30
 _AI_UPLIFT_DEFAULT_MAX_SIGN_TEST_P = 0.05
 _AI_UPLIFT_DEFAULT_MIN_POSITIVE_DELTA_RATE = 0.55
+_AI_UPLIFT_DEFAULT_MIN_PNL_DELTA = 0.0
+_AI_UPLIFT_DEFAULT_MIN_ROI_DELTA = 0.0
+_AI_UPLIFT_DEFAULT_MIN_EXPECTANCY_DELTA = 0.0
+_AI_UPLIFT_DEFAULT_MAX_DRAWDOWN_DELTA = 0.0
 _AI_UPLIFT_DEFAULT_MIN_MEAN_SAMPLE_DELTA = 0.0
 _AI_UPLIFT_DEFAULT_BOOTSTRAP_SAMPLES = 2_000
 _AI_UPLIFT_DEFAULT_BOOTSTRAP_CONFIDENCE = 0.95
@@ -1652,7 +1674,7 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                 )
             if ai_uplift_accepted:
                 if (
-                    ai_uplift.get("schema_version") != "ai-uplift-v4"
+                    ai_uplift.get("schema_version") != "ai-uplift-v5"
                     or ai_uplift.get("trading_authority") is not False
                     or ai_uplift.get("profitability_claim") is not False
                 ):
@@ -1663,14 +1685,19 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                             "accepted AI uplift has an unsafe or unsupported authority contract",
                             path=f"{prefix}.ai_uplift.schema_version",
                             metric=ai_uplift.get("schema_version", "missing"),
-                            limit="ai-uplift-v4 with no authority or profitability claim",
+                            limit="ai-uplift-v5 with no authority or profitability claim",
                         )
                     )
                 policy = ai_uplift.get("policy")
                 min_parameters_b = _AI_UPLIFT_DEFAULT_MIN_MODEL_PARAMETERS_B
+                min_ai_closed_trades = _AI_UPLIFT_DEFAULT_MIN_AI_CLOSED_TRADES
                 min_paired_samples = _AI_UPLIFT_DEFAULT_MIN_PAIRED_SAMPLES
                 max_sign_test_p = _AI_UPLIFT_DEFAULT_MAX_SIGN_TEST_P
                 min_positive_delta_rate = _AI_UPLIFT_DEFAULT_MIN_POSITIVE_DELTA_RATE
+                min_pnl_delta = _AI_UPLIFT_DEFAULT_MIN_PNL_DELTA
+                min_roi_delta = _AI_UPLIFT_DEFAULT_MIN_ROI_DELTA
+                min_expectancy_delta = _AI_UPLIFT_DEFAULT_MIN_EXPECTANCY_DELTA
+                max_drawdown_delta = _AI_UPLIFT_DEFAULT_MAX_DRAWDOWN_DELTA
                 min_mean_sample_delta = _AI_UPLIFT_DEFAULT_MIN_MEAN_SAMPLE_DELTA
                 min_bootstrap_samples = _AI_UPLIFT_DEFAULT_BOOTSTRAP_SAMPLES
                 min_bootstrap_confidence = _AI_UPLIFT_DEFAULT_BOOTSTRAP_CONFIDENCE
@@ -1680,6 +1707,9 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     parsed_min = _finite(policy.get("min_model_parameters_b"))
                     if parsed_min is not None:
                         min_parameters_b = max(min_parameters_b, parsed_min)
+                    parsed_closed_trades = _finite(policy.get("min_ai_closed_trades"))
+                    if parsed_closed_trades is not None:
+                        min_ai_closed_trades = max(min_ai_closed_trades, int(parsed_closed_trades))
                     parsed_samples = _finite(policy.get("min_paired_samples"))
                     if parsed_samples is not None:
                         min_paired_samples = max(min_paired_samples, int(parsed_samples))
@@ -1689,6 +1719,18 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     parsed_rate = _finite(policy.get("min_positive_delta_rate"))
                     if parsed_rate is not None:
                         min_positive_delta_rate = max(min_positive_delta_rate, max(0.0, min(1.0, parsed_rate)))
+                    parsed_pnl_delta = _finite(policy.get("min_pnl_delta"))
+                    if parsed_pnl_delta is not None:
+                        min_pnl_delta = max(min_pnl_delta, parsed_pnl_delta)
+                    parsed_roi_delta = _finite(policy.get("min_roi_delta"))
+                    if parsed_roi_delta is not None:
+                        min_roi_delta = max(min_roi_delta, parsed_roi_delta)
+                    parsed_expectancy_delta = _finite(policy.get("min_expectancy_delta"))
+                    if parsed_expectancy_delta is not None:
+                        min_expectancy_delta = max(min_expectancy_delta, parsed_expectancy_delta)
+                    parsed_drawdown_delta = _finite(policy.get("max_drawdown_delta"))
+                    if parsed_drawdown_delta is not None:
+                        max_drawdown_delta = min(max_drawdown_delta, parsed_drawdown_delta)
                     parsed_mean_delta = _finite(policy.get("min_mean_sample_delta"))
                     if parsed_mean_delta is not None:
                         min_mean_sample_delta = max(min_mean_sample_delta, parsed_mean_delta)
@@ -1768,6 +1810,50 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                                     limit="64 lowercase hex characters",
                                 )
                             )
+                    metric_sources: dict[str, Mapping[str, object]] = {}
+                    for source_group in ("baseline_metric_sources", "ai_metric_sources"):
+                        source_payload = evidence_binding.get(source_group)
+                        if not isinstance(source_payload, Mapping):
+                            checks.append(
+                                _check(
+                                    "block",
+                                    "AI uplift evidence binding",
+                                    "accepted AI uplift is missing metric-unit provenance",
+                                    path=f"{prefix}.ai_uplift.evidence_binding.{source_group}",
+                                    metric="missing",
+                                    limit="supported source key for every metric",
+                                )
+                            )
+                            continue
+                        metric_sources[source_group] = source_payload
+                        for metric_name, allowed_sources in _AI_UPLIFT_SOURCE_KEYS.items():
+                            source_name = source_payload.get(metric_name)
+                            if source_name not in allowed_sources:
+                                checks.append(
+                                    _check(
+                                        "block",
+                                        "AI uplift evidence binding",
+                                        "accepted AI uplift has invalid metric-unit provenance",
+                                        path=f"{prefix}.ai_uplift.evidence_binding.{source_group}.{metric_name}",
+                                        metric=_primitive_metric(source_name),
+                                        limit=" or ".join(allowed_sources),
+                                    )
+                                )
+                    baseline_sources = metric_sources.get("baseline_metric_sources")
+                    ai_sources = metric_sources.get("ai_metric_sources")
+                    if baseline_sources is not None and ai_sources is not None:
+                        for metric_name in _AI_UPLIFT_REQUIRED_METRICS:
+                            if baseline_sources.get(metric_name) != ai_sources.get(metric_name):
+                                checks.append(
+                                    _check(
+                                        "block",
+                                        "AI uplift evidence binding",
+                                        "baseline and AI metrics use different units",
+                                        path=f"{prefix}.ai_uplift.evidence_binding.ai_metric_sources.{metric_name}",
+                                        metric=_primitive_metric(ai_sources.get(metric_name)),
+                                        limit=_primitive_metric(baseline_sources.get(metric_name)),
+                                    )
+                                )
                 for group_name in ("baseline", "ai", "deltas"):
                     checks.extend(
                         _required_metric_checks(
@@ -2018,6 +2104,87 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     if parsed is None:
                         checks.append(_check("block", "AI uplift delta", "non-finite delta", path=f"{prefix}.ai_uplift.deltas.{key}"))
                 if ai_uplift_accepted:
+                    baseline_metrics = ai_uplift.get("baseline")
+                    ai_metrics = ai_uplift.get("ai")
+                    if isinstance(baseline_metrics, Mapping) and isinstance(ai_metrics, Mapping):
+                        for key in _AI_UPLIFT_REQUIRED_METRICS:
+                            baseline_value = _finite(baseline_metrics.get(key))
+                            ai_value = _finite(ai_metrics.get(key))
+                            reported_delta = _finite(deltas.get(key))
+                            if (
+                                baseline_value is not None
+                                and ai_value is not None
+                                and reported_delta is not None
+                                and not math.isclose(
+                                    reported_delta,
+                                    ai_value - baseline_value,
+                                    rel_tol=1e-9,
+                                    abs_tol=1e-9,
+                                )
+                            ):
+                                checks.append(
+                                    _check(
+                                        "block",
+                                        "AI uplift delta",
+                                        "reported delta does not match AI minus baseline",
+                                        path=f"{prefix}.ai_uplift.deltas.{key}",
+                                        metric=reported_delta,
+                                        limit=ai_value - baseline_value,
+                                    )
+                                )
+                        ai_pnl = _finite(ai_metrics.get("realized_pnl"))
+                        if ai_pnl is not None and ai_pnl <= 0.0:
+                            checks.append(
+                                _check(
+                                    "block",
+                                    "AI uplift evidence",
+                                    "accepted AI uplift has nonpositive realized PnL",
+                                    path=f"{prefix}.ai_uplift.ai.realized_pnl",
+                                    metric=ai_pnl,
+                                    limit=">0",
+                                )
+                            )
+                        ai_closed_trades = _finite(ai_metrics.get("closed_trades"))
+                        if ai_closed_trades is not None and ai_closed_trades < min_ai_closed_trades:
+                            checks.append(
+                                _check(
+                                    "block",
+                                    "AI uplift evidence",
+                                    "accepted AI uplift has too few closed trades",
+                                    path=f"{prefix}.ai_uplift.ai.closed_trades",
+                                    metric=ai_closed_trades,
+                                    limit=f">={min_ai_closed_trades}",
+                                )
+                            )
+                    for key, threshold in (
+                        ("realized_pnl", min_pnl_delta),
+                        ("roi_pct", min_roi_delta),
+                        ("expectancy", min_expectancy_delta),
+                    ):
+                        parsed = _finite(deltas.get(key))
+                        if parsed is not None and parsed <= threshold:
+                            checks.append(
+                                _check(
+                                    "block",
+                                    "AI uplift delta",
+                                    "accepted AI uplift does not strictly improve the metric",
+                                    path=f"{prefix}.ai_uplift.deltas.{key}",
+                                    metric=parsed,
+                                    limit=f">{threshold:g}",
+                                )
+                            )
+                    drawdown_delta = _finite(deltas.get("max_drawdown"))
+                    if drawdown_delta is not None and drawdown_delta > max_drawdown_delta:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift tail risk",
+                                "accepted AI uplift worsens maximum drawdown",
+                                path=f"{prefix}.ai_uplift.deltas.max_drawdown",
+                                metric=drawdown_delta,
+                                limit=f"<={max_drawdown_delta:g}",
+                            )
+                        )
                     for key in ("max_consecutive_losses",):
                         parsed = _finite(deltas.get(key))
                         if parsed is not None and parsed > 0.0:

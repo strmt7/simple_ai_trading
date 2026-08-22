@@ -101,7 +101,7 @@ def _write_report(
     ai_uplift = None
     if include_ai_uplift:
         ai_uplift = {
-            "schema_version": "ai-uplift-v4",
+            "schema_version": "ai-uplift-v5",
             "accepted": not failed_ai_uplift,
             "advisory_only": failed_ai_uplift,
             "trading_authority": False,
@@ -116,6 +116,30 @@ def _write_report(
                 "ai_evidence_sha256": "a" * 64,
                 "model_artifact_sha256": "c" * 64,
                 "paired_samples_sha256": "e" * 64,
+                "baseline_metric_sources": {
+                    "realized_pnl": "realized_pnl",
+                    "roi_pct": "roi_pct",
+                    "max_drawdown": "max_drawdown",
+                    "expectancy": "expectancy",
+                    "profit_factor": "profit_factor",
+                    "closed_trades": "closed_trades",
+                    "win_rate": "win_rate",
+                    "liquidation_events": "liquidation_events",
+                    "max_consecutive_losses": "max_consecutive_losses",
+                    "downside_return_risk_ratio": "downside_return_risk_ratio",
+                },
+                "ai_metric_sources": {
+                    "realized_pnl": "realized_pnl",
+                    "roi_pct": "roi_pct",
+                    "max_drawdown": "max_drawdown",
+                    "expectancy": "expectancy",
+                    "profit_factor": "profit_factor",
+                    "closed_trades": "closed_trades",
+                    "win_rate": "win_rate",
+                    "liquidation_events": "liquidation_events",
+                    "max_consecutive_losses": "max_consecutive_losses",
+                    "downside_return_risk_ratio": "downside_return_risk_ratio",
+                },
             },
             "baseline": {
                 "realized_pnl": 6.0,

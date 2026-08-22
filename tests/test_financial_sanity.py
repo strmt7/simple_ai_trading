@@ -529,11 +529,12 @@ def _accepted_ai_uplift() -> dict[str, object]:
         "downside_return_risk_ratio": 1.45,
     }
     deltas = {key: float(ai[key]) - float(baseline[key]) for key in baseline}
+    metric_sources = {key: key for key in baseline}
     paired_samples_sha256 = "e" * 64
     first_period_ms = 1_700_000_000_000
     period_duration_ms = 3 * 86_400_000
     return {
-        "schema_version": "ai-uplift-v4",
+        "schema_version": "ai-uplift-v5",
         "accepted": True,
         "advisory_only": False,
         "trading_authority": False,
@@ -548,6 +549,8 @@ def _accepted_ai_uplift() -> dict[str, object]:
             "ai_evidence_sha256": "a" * 64,
             "model_artifact_sha256": "c" * 64,
             "paired_samples_sha256": paired_samples_sha256,
+            "baseline_metric_sources": metric_sources,
+            "ai_metric_sources": metric_sources.copy(),
         },
         "baseline": baseline,
         "ai": ai,
@@ -588,9 +591,14 @@ def _accepted_ai_uplift() -> dict[str, object]:
         "reasons": [],
         "policy": {
             "min_model_parameters_b": 2.0,
+            "min_ai_closed_trades": 5,
             "min_paired_samples": 30,
             "min_positive_delta_rate": 0.55,
             "max_sign_test_p_value": 0.05,
+            "min_pnl_delta": 0.0,
+            "min_roi_delta": 0.0,
+            "min_expectancy_delta": 0.0,
+            "max_drawdown_delta": 0.0,
             "min_mean_sample_delta": 0.0,
             "block_bootstrap_samples": 2_000,
             "block_bootstrap_confidence": 0.95,
@@ -937,6 +945,60 @@ def test_model_lab_financial_sanity_accepts_complete_ai_uplift_contract() -> Non
 
     assert report.allowed is True
     assert not any(check.label == "AI uplift evidence" and check.status == "block" for check in report.checks)
+
+
+def test_model_lab_financial_sanity_recomputes_ai_uplift_roi_delta() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    uplift["deltas"]["roi_pct"] = 0.5  # type: ignore[index]
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "AI uplift delta"
+        and check.path.endswith(".deltas.roi_pct")
+        and "does not match" in check.detail
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_requires_strict_roi_uplift() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    uplift["ai"]["roi_pct"] = uplift["baseline"]["roi_pct"]  # type: ignore[index]
+    uplift["deltas"]["roi_pct"] = 0.0  # type: ignore[index]
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "AI uplift delta"
+        and check.path.endswith(".deltas.roi_pct")
+        and "strictly improve" in check.detail
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_rejects_metric_unit_mismatch() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    uplift["evidence_binding"]["ai_metric_sources"][  # type: ignore[index]
+        "max_drawdown"
+    ] = "max_drawdown_pct"
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "AI uplift evidence binding"
+        and check.path.endswith(".ai_metric_sources.max_drawdown")
+        and "different units" in check.detail
+        for check in report.checks
+    )
 
 
 def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_missing_contract_metrics() -> None:

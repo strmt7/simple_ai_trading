@@ -59,6 +59,7 @@ class AIUpliftPolicy:
     min_positive_delta_rate: float = 0.55
     max_sign_test_p_value: float = 0.05
     min_pnl_delta: float = 0.0
+    min_roi_delta: float = 0.0
     min_expectancy_delta: float = 0.0
     min_mean_sample_delta: float = 0.0
     max_drawdown_delta: float = 0.0
@@ -80,6 +81,7 @@ class AIUpliftPolicy:
             self.min_positive_delta_rate,
             self.max_sign_test_p_value,
             self.min_pnl_delta,
+            self.min_roi_delta,
             self.min_expectancy_delta,
             self.min_mean_sample_delta,
             self.max_drawdown_delta,
@@ -115,6 +117,7 @@ class AIUpliftPolicy:
             )
         if (
             self.min_pnl_delta < 0.0
+            or self.min_roi_delta < 0.0
             or self.min_expectancy_delta < 0.0
             or self.min_mean_sample_delta < 0.0
             or self.max_ai_liquidation_events > 0
@@ -153,7 +156,7 @@ class AIUpliftReport:
     evidence_binding: dict[str, object]
     reasons: tuple[str, ...] = field(default_factory=tuple)
     policy: dict[str, object] = field(default_factory=dict)
-    schema_version: str = "ai-uplift-v4"
+    schema_version: str = "ai-uplift-v5"
     trading_authority: bool = False
     profitability_claim: bool = False
 
@@ -174,6 +177,26 @@ def _first_metric(metrics: Mapping[str, object], keys: tuple[str, ...]) -> float
         if key in metrics:
             return _finite(metrics[key])
     return 0.0
+
+
+def _metric_source_keys(metrics: Mapping[str, object]) -> dict[str, str]:
+    """Record the exact source key used for every normalized financial metric."""
+
+    return {
+        name: next((key for key in keys if key in metrics), "")
+        for name, keys in (
+            ("realized_pnl", _PNL_KEYS),
+            ("roi_pct", _ROI_KEYS),
+            ("max_drawdown", _DRAWDOWN_KEYS),
+            ("expectancy", _EXPECTANCY_KEYS),
+            ("profit_factor", _PROFIT_FACTOR_KEYS),
+            ("closed_trades", _TRADES_KEYS),
+            ("win_rate", _WIN_RATE_KEYS),
+            ("liquidation_events", _LIQUIDATION_KEYS),
+            ("max_consecutive_losses", _LOSS_STREAK_KEYS),
+            ("downside_return_risk_ratio", _DOWNSIDE_RETURN_RISK_KEYS),
+        )
+    }
 
 
 def _required_source_metric_reasons(
@@ -200,12 +223,22 @@ def _required_source_metric_reasons(
         if isinstance(metrics[key], bool):
             reasons.append(f"ai_uplift_{prefix}_{name}_nonfinite")
             continue
-        try:
-            parsed = float(metrics[key])
-        except (TypeError, ValueError, OverflowError):
-            parsed = float("nan")
+        parsed = _finite(metrics[key], default=float("nan"))
         if not math.isfinite(parsed):
             reasons.append(f"ai_uplift_{prefix}_{name}_nonfinite")
+            continue
+        if name in {
+            "closed_trades",
+            "liquidation_events",
+            "max_consecutive_losses",
+        } and (parsed < 0.0 or not parsed.is_integer()):
+            reasons.append(f"ai_uplift_{prefix}_{name}_invalid_count")
+        elif name in {"max_drawdown", "profit_factor"} and parsed < 0.0:
+            reasons.append(f"ai_uplift_{prefix}_{name}_invalid_range")
+        elif name == "win_rate":
+            upper = 100.0 if key == "win_rate_pct" else 1.0
+            if not 0.0 <= parsed <= upper:
+                reasons.append(f"ai_uplift_{prefix}_{name}_invalid_range")
     return tuple(reasons)
 
 
@@ -491,6 +524,8 @@ def _uplift_evidence_binding(
     ai_artifact = str(ai_metrics.get("evidence_sha256") or "").lower()
     model_artifact = str(model_artifact_sha256 or "").lower()
     paired_artifact = str(paired_samples_sha256 or "").lower()
+    baseline_sources = _metric_source_keys(baseline_metrics)
+    ai_sources = _metric_source_keys(ai_metrics)
     reasons: list[str] = []
     for label, value in (
         ("baseline_dataset_fingerprint", baseline_dataset),
@@ -504,6 +539,13 @@ def _uplift_evidence_binding(
             reasons.append(f"ai_uplift_{label}_invalid")
     if baseline_dataset != ai_dataset:
         reasons.append("ai_uplift_dataset_fingerprint_mismatch")
+    for name in baseline_sources:
+        if (
+            baseline_sources[name]
+            and ai_sources[name]
+            and baseline_sources[name] != ai_sources[name]
+        ):
+            reasons.append(f"ai_uplift_{name}_source_key_mismatch")
     return {
         "accepted": not reasons,
         "reasons": list(dict.fromkeys(reasons)),
@@ -514,20 +556,33 @@ def _uplift_evidence_binding(
         "ai_evidence_sha256": ai_artifact,
         "model_artifact_sha256": model_artifact,
         "paired_samples_sha256": paired_artifact,
+        "baseline_metric_sources": baseline_sources,
+        "ai_metric_sources": ai_sources,
     }
 
 
 def normalize_uplift_metrics(metrics: Mapping[str, object]) -> dict[str, float]:
     """Normalize common backtest metric names into the AI uplift contract."""
 
+    drawdown_source = next(
+        (key for key in _DRAWDOWN_KEYS if key in metrics),
+        "",
+    )
+    normalized_drawdown = abs(_first_metric(metrics, _DRAWDOWN_KEYS))
+    if drawdown_source == "max_drawdown_pct":
+        normalized_drawdown /= 100.0
+    win_rate_source = next((key for key in _WIN_RATE_KEYS if key in metrics), "")
+    normalized_win_rate = _first_metric(metrics, _WIN_RATE_KEYS)
+    if win_rate_source == "win_rate_pct":
+        normalized_win_rate /= 100.0
     return {
         "realized_pnl": _first_metric(metrics, _PNL_KEYS),
         "roi_pct": _first_metric(metrics, _ROI_KEYS),
-        "max_drawdown": abs(_first_metric(metrics, _DRAWDOWN_KEYS)),
+        "max_drawdown": normalized_drawdown,
         "expectancy": _first_metric(metrics, _EXPECTANCY_KEYS),
         "profit_factor": _first_metric(metrics, _PROFIT_FACTOR_KEYS),
         "closed_trades": max(0.0, _first_metric(metrics, _TRADES_KEYS)),
-        "win_rate": _first_metric(metrics, _WIN_RATE_KEYS),
+        "win_rate": normalized_win_rate,
         "liquidation_events": max(0.0, _first_metric(metrics, _LIQUIDATION_KEYS)),
         "max_consecutive_losses": max(0.0, _first_metric(metrics, _LOSS_STREAK_KEYS)),
         "downside_return_risk_ratio": _first_metric(
@@ -609,6 +664,8 @@ def assess_ai_uplift(
         )
     if deltas["realized_pnl"] <= float(cfg.min_pnl_delta):
         reasons.append("ai_pnl_not_above_baseline")
+    if deltas["roi_pct"] <= float(cfg.min_roi_delta):
+        reasons.append("ai_roi_not_above_baseline")
     if deltas["expectancy"] <= float(cfg.min_expectancy_delta):
         reasons.append("ai_expectancy_not_above_baseline")
     if deltas["max_drawdown"] > float(cfg.max_drawdown_delta):
