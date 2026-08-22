@@ -151,6 +151,83 @@ def _passing_selection_risk_stub(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(training_suite, "_terminal_holdout_gate", _passing_terminal_gate)
 
 
+def _configure_terminal_audit_failure_path(monkeypatch: pytest.MonkeyPatch) -> ObjectiveSpec:
+    objective = get_objective("default")
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=7,
+    )
+    rows = _rows(100)
+    feature_cfg = default_config_for("conservative", ())
+    monkeypatch.setattr(training_suite, "make_advanced_rows", lambda *_a, **_k: list(rows))
+    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
+    monkeypatch.setattr(training_suite, "_local_refinement_candidates", lambda _candidate: [])
+    monkeypatch.setattr(
+        training_suite,
+        "_rows_for_candidate",
+        lambda *_a, **_k: (list(rows), feature_cfg),
+    )
+    monkeypatch.setattr(
+        training_suite,
+        "_evaluate_candidate",
+        lambda payload: {
+            "score": 2.0,
+            "candidate": payload["candidate"],
+            "strategy": StrategyConfig(),
+            "model": _fake_trained_model(2),
+            "feature_cfg": feature_cfg,
+            "feature_dim": 2,
+            "feature_signature": "terminal-audit-failure-test",
+            "row_count": 60,
+            "positive_rate": 0.5,
+            "threshold": 0.55,
+            "threshold_source": "strategy",
+            "threshold_score": None,
+            "calibration_rows": 10,
+            "validation_rows": 10,
+            "selection_score": 2.0,
+            "validation_score": 2.0,
+            "full_sample_score": 2.0,
+            "selection_result": {"accepted": True, "realized_pnl": 20.0},
+            "validation_result": {"accepted": True, "realized_pnl": 20.0},
+            "full_sample_result": {"accepted": True, "realized_pnl": 20.0},
+            "ensemble_refined": bool(payload.get("ensemble_seeds")),
+        },
+    )
+    monkeypatch.setattr(
+        training_suite,
+        "_purged_walk_forward_gate",
+        lambda *_a, **_k: {
+            "passed": True,
+            "reason": None,
+            "fold_count": 2,
+            "accepted_folds": 2,
+            "worst_score": 1.5,
+            "worst_realized_pnl": 10.0,
+            "worst_max_drawdown": 0.02,
+            "folds": [],
+        },
+    )
+    monkeypatch.setattr(training_suite, "optimize_hybrid_model_zoo", lambda *_a, **_k: None)
+    monkeypatch.setattr(training_suite, "run_backtest", lambda *_a, **_k: _make_result())
+    monkeypatch.setattr(
+        training_suite,
+        "build_meta_label_report",
+        lambda *_a, **_k: SimpleNamespace(
+            policy={"enabled": False},
+            asdict=lambda: {"status": "not_trained", "policy": {"enabled": False}},
+        ),
+    )
+    monkeypatch.setattr(training_suite, "_feature_ablation_report", lambda *_a, **_k: [])
+    return objective
+
+
 # ----- CandidateParams ------------------------------------------------------
 
 
@@ -2099,6 +2176,119 @@ def test_train_for_objective_keeps_terminal_rows_sealed_until_final_model(
         )
     assert backtest_windows.count((80, 99)) == 1
     assert not (reuse_dir / "model_conservative.json").exists()
+
+
+def test_terminal_evaluation_failure_is_finalized_without_masking_primary_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
+) -> None:
+    objective = _configure_terminal_audit_failure_path(monkeypatch)
+    ledger = TerminalHoldoutLedger(tmp_path / "terminal-evaluation-error.sqlite3")
+    reserved: dict[str, object] = {}
+    reserve = ledger.reserve
+
+    def tracked_reserve(**kwargs):
+        result = reserve(**kwargs)
+        reserved.update(result)
+        return result
+
+    monkeypatch.setattr(ledger, "reserve", tracked_reserve)
+
+    def fail_terminal_gate(*_args, **_kwargs):
+        raise RuntimeError("terminal scorer unavailable")
+
+    monkeypatch.setattr(training_suite, "_terminal_holdout_gate", fail_terminal_gate)
+
+    with pytest.raises(TrainingSuiteRejected, match="failed sealed terminal holdout") as exc:
+        train_for_objective(
+            _synthetic_candles(n=10),
+            StrategyConfig(),
+            objective,
+            output_dir=tmp_path,
+            market_type="spot",
+            starting_cash=1000.0,
+            max_workers=1,
+            terminal_ledger=ledger,
+            terminal_symbol="BTCUSDT",
+        )
+
+    assert exc.value.diagnostics["reason"].startswith("terminal_holdout_unhandled_error: RuntimeError")
+    assert "terminal_audit_error" not in exc.value.diagnostics
+    assert isinstance(exc.value.__cause__, RuntimeError)
+    stored = ledger.reservation(str(reserved["reservation_id"]))
+    assert stored is not None
+    assert stored["status"] == "failed"
+    assert stored["result_status"] == "evaluation_error"
+    assert not (tmp_path / "model_conservative.json").exists()
+
+
+@pytest.mark.parametrize("failure_mode", ["terminal_gate", "result_fingerprint"])
+def test_terminal_audit_failure_is_reported_and_reservation_remains_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
+    failure_mode: str,
+) -> None:
+    objective = _configure_terminal_audit_failure_path(monkeypatch)
+    ledger = TerminalHoldoutLedger(tmp_path / f"terminal-audit-{failure_mode}.sqlite3")
+    reserved: dict[str, object] = {}
+    reserve = ledger.reserve
+
+    def tracked_reserve(**kwargs):
+        result = reserve(**kwargs)
+        reserved.update(result)
+        return result
+
+    monkeypatch.setattr(ledger, "reserve", tracked_reserve)
+    if failure_mode == "terminal_gate":
+        def fail_terminal_gate(*_args, **_kwargs):
+            raise RuntimeError("terminal scorer unavailable")
+
+        monkeypatch.setattr(training_suite, "_terminal_holdout_gate", fail_terminal_gate)
+        expected_primary = "terminal_holdout_unhandled_error: RuntimeError"
+        expected_message = "failed sealed terminal holdout"
+    else:
+        fingerprint = training_suite.terminal_result_fingerprint
+        calls = 0
+
+        def fail_first_fingerprint(report):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise ValueError("terminal report is not canonical")
+            return fingerprint(report)
+
+        monkeypatch.setattr(training_suite, "terminal_result_fingerprint", fail_first_fingerprint)
+        expected_primary = "terminal_result_fingerprint_error: terminal report is not canonical"
+        expected_message = "terminal result could not be fingerprinted"
+
+    def fail_finalize(*_args, **_kwargs):
+        raise RuntimeError("terminal ledger unavailable")
+
+    monkeypatch.setattr(ledger, "finalize", fail_finalize)
+
+    with pytest.raises(TrainingSuiteRejected, match=expected_message) as exc:
+        train_for_objective(
+            _synthetic_candles(n=10),
+            StrategyConfig(),
+            objective,
+            output_dir=tmp_path,
+            market_type="spot",
+            starting_cash=1000.0,
+            max_workers=1,
+            terminal_ledger=ledger,
+            terminal_symbol="BTCUSDT",
+        )
+
+    assert exc.value.diagnostics["reason"].startswith(expected_primary)
+    assert exc.value.diagnostics["terminal_audit_error"] == (
+        "terminal_reservation_finalize_failed: RuntimeError: terminal ledger unavailable"
+    )
+    stored = ledger.reservation(str(reserved["reservation_id"]))
+    assert stored is not None
+    assert stored["status"] == "reserved"
+    assert not (tmp_path / "model_conservative.json").exists()
 
 
 def test_train_for_objective_persists_walk_forward_gate(

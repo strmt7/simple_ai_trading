@@ -31,7 +31,7 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, field, replace
 from itertools import product
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from .advanced_model import (
     AdvancedFeatureConfig,
@@ -761,6 +761,27 @@ def _model_rows_fingerprint(rows: Sequence[ModelRow]) -> str:
         if features:
             digest.update(struct.pack(feature_format, *features))
     return digest.hexdigest()
+
+
+def _finalize_terminal_failure_audit(
+    terminal_ledger: TerminalHoldoutLedger,
+    terminal_reservation: Mapping[str, object],
+    *,
+    report: Mapping[str, object],
+    error: str,
+) -> str | None:
+    """Persist terminal failure evidence without masking the primary failure."""
+
+    try:
+        terminal_ledger.finalize(
+            str(terminal_reservation["reservation_id"]),
+            result_status="evaluation_error",
+            result_fingerprint=terminal_result_fingerprint(report),
+            error=error,
+        )
+    except Exception as exc:
+        return f"terminal_reservation_finalize_failed: {exc.__class__.__name__}: {exc}"
+    return None
 
 
 def _terminal_holdout_gate(
@@ -2456,31 +2477,32 @@ def train_for_objective(
                 score_batch_size=effective_score_batch_size,
             )
         except Exception as exc:
+            terminal_audit_error: str | None = None
             if terminal_reservation is not None and terminal_ledger is not None:
-                try:
-                    error_report = {
-                        "schema_version": _TERMINAL_HOLDOUT_SCHEMA,
-                        "passed": False,
-                        "reason": "terminal_holdout_unhandled_error",
-                        "error": f"{exc.__class__.__name__}: {exc}",
-                    }
-                    terminal_ledger.finalize(
-                        str(terminal_reservation["reservation_id"]),
-                        result_status="evaluation_error",
-                        result_fingerprint=terminal_result_fingerprint(error_report),
-                        error=f"{exc.__class__.__name__}: {exc}",
-                    )
-                except Exception:
-                    pass
+                error_report = {
+                    "schema_version": _TERMINAL_HOLDOUT_SCHEMA,
+                    "passed": False,
+                    "reason": "terminal_holdout_unhandled_error",
+                    "error": f"{exc.__class__.__name__}: {exc}",
+                }
+                terminal_audit_error = _finalize_terminal_failure_audit(
+                    terminal_ledger,
+                    terminal_reservation,
+                    report=error_report,
+                    error=f"{exc.__class__.__name__}: {exc}",
+                )
             terminal_reason = f"terminal_holdout_unhandled_error: {exc.__class__.__name__}: {exc}"
             selection_risk["passed"] = False
             selection_risk["reason"] = terminal_reason
             best["selection_risk"] = selection_risk
             best["score"] = float("-inf")
+            diagnostics = {"objective": objective.name, "reason": terminal_reason}
+            if terminal_audit_error is not None:
+                diagnostics["terminal_audit_error"] = terminal_audit_error
             raise TrainingSuiteRejected(
                 f"Selected {objective.name} model failed sealed terminal holdout",
                 row_count=len(rows),
-                diagnostics={"objective": objective.name, "reason": terminal_reason},
+                diagnostics=diagnostics,
             ) from exc
         if terminal_holdout.get("dataset_fingerprint") != terminal_dataset_fingerprint:
             terminal_holdout["passed"] = False
@@ -2490,29 +2512,30 @@ def train_for_objective(
             terminal_result_sha256 = terminal_result_fingerprint(terminal_holdout)
         except (TypeError, ValueError, OverflowError) as exc:
             terminal_reason = f"terminal_result_fingerprint_error: {exc}"
+            terminal_audit_error = None
             if terminal_reservation is not None and terminal_ledger is not None:
                 fallback_report = {
                     "schema_version": _TERMINAL_HOLDOUT_SCHEMA,
                     "passed": False,
                     "reason": terminal_reason,
                 }
-                try:
-                    terminal_ledger.finalize(
-                        str(terminal_reservation["reservation_id"]),
-                        result_status="evaluation_error",
-                        result_fingerprint=terminal_result_fingerprint(fallback_report),
-                        error=terminal_reason,
-                    )
-                except Exception:
-                    pass
+                terminal_audit_error = _finalize_terminal_failure_audit(
+                    terminal_ledger,
+                    terminal_reservation,
+                    report=fallback_report,
+                    error=terminal_reason,
+                )
             selection_risk["passed"] = False
             selection_risk["reason"] = terminal_reason
             best["selection_risk"] = selection_risk
             best["score"] = float("-inf")
+            diagnostics = {"objective": objective.name, "reason": terminal_reason}
+            if terminal_audit_error is not None:
+                diagnostics["terminal_audit_error"] = terminal_audit_error
             raise TrainingSuiteRejected(
                 f"Selected {objective.name} model terminal result could not be fingerprinted",
                 row_count=len(rows),
-                diagnostics={"objective": objective.name, "reason": terminal_reason},
+                diagnostics=diagnostics,
             ) from exc
         if terminal_reservation is not None and terminal_ledger is not None:
             terminal_result_status = (
