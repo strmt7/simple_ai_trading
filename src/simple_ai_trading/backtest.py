@@ -333,10 +333,11 @@ def threshold_backtest_selection_score(
     if required >= 3 and closed == 1:
         score -= cash * 0.035
     realized = _finite_float(getattr(result, "realized_pnl", 0.0), 0.0)
-    if closed > 0 and realized <= 0.0:
+    has_closed_trades = closed > 0
+    if has_closed_trades and realized <= 0.0:
         score -= cash * 0.015
     profit_factor = _finite_float(getattr(result, "profit_factor", 0.0), 0.0)
-    if closed > 0 and 0.0 < profit_factor < 1.0:
+    if has_closed_trades and 0.0 < profit_factor < 1.0:
         score -= cash * 0.015
     return float(score)
 
@@ -845,9 +846,7 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                 values = torch.sigmoid(values)
             elif activation == "tanh":
                 values = torch.tanh(values)
-            elif activation == "linear":
-                values = values
-            else:
+            elif activation != "linear":
                 values = torch.relu(values)
         return values[:, 0]
 
@@ -1347,29 +1346,29 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                         long_margin = lightgbm_output(expert_features, proto_features["long"])
                         short_margin = lightgbm_output(expert_features, proto_features["short"])
 
-                        def hurdle_action_value(side, margin):
-                            if not bool(params.get(f"{side}_enabled", False)):
+                        def hurdle_action_value(side, margin, hurdle_params):
+                            if not bool(hurdle_params.get(f"{side}_enabled", False)):
                                 return torch.full_like(margin, -1.0)
                             slope = _clamp_float(
-                                params.get(f"{side}_calibration_slope", 0.0),
+                                hurdle_params.get(f"{side}_calibration_slope", 0.0),
                                 0.0,
                                 100.0,
                                 0.0,
                             )
                             intercept = _clamp_float(
-                                params.get(f"{side}_calibration_intercept", 0.0),
+                                hurdle_params.get(f"{side}_calibration_intercept", 0.0),
                                 -100.0,
                                 100.0,
                                 0.0,
                             )
                             positive_mean = _clamp_float(
-                                params.get(f"{side}_positive_mean", 0.0),
+                                hurdle_params.get(f"{side}_positive_mean", 0.0),
                                 0.0,
                                 1.0,
                                 0.0,
                             )
                             nonpositive_mean = _clamp_float(
-                                params.get(f"{side}_nonpositive_mean", -1.0),
+                                hurdle_params.get(f"{side}_nonpositive_mean", -1.0),
                                 -1.0,
                                 0.0,
                                 -1.0,
@@ -1384,8 +1383,8 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                                 max=1.0,
                             )
 
-                        long_score = hurdle_action_value("long", long_margin)
-                        short_score = hurdle_action_value("short", short_margin)
+                        long_score = hurdle_action_value("long", long_margin, params)
+                        short_score = hurdle_action_value("short", short_margin, params)
                         best_score = torch.maximum(long_score, short_score)
                         actionable = (best_score > float(deadband)) & (torch.abs(long_score - short_score) > 1e-12)
                         adjusted = (best_score - float(deadband)) / max(1e-9, 1.0 - float(deadband))
@@ -1630,26 +1629,80 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                         tape_quality = 1.0 - tape_no_tape
                         tape_weight = torch.clamp(0.35 + 0.45 * tape_quality, min=0.0, max=0.80)
 
-                        def blend(left, right):
-                            return left * (1.0 - tape_weight) + right * tape_weight
+                        def blend(left, right, weight):
+                            return left * (1.0 - weight) + right * weight
 
-                        taker_buy_ratio = torch.clamp(blend(taker_buy_ratio, tape_buy_notional_ratio), min=0.0, max=1.0)
-                        signed_base = torch.clamp(blend(signed_base, tape_signed_notional), min=-1.0, max=1.0)
-                        signed_quote = torch.clamp(blend(signed_quote, tape_signed_notional), min=-1.0, max=1.0)
-                        trade_impulse = torch.clamp(blend(trade_impulse, tape_count_impulse), min=-1.0, max=1.0)
-                        quote_impulse = torch.clamp(blend(quote_impulse, tape_notional_impulse), min=-1.0, max=1.0)
-                        quote_per_trade_impulse = torch.clamp(blend(quote_per_trade_impulse, tape_large_share), min=-1.0, max=1.0)
+                        taker_buy_ratio = torch.clamp(
+                            blend(
+                                taker_buy_ratio, tape_buy_notional_ratio, tape_weight
+                            ),
+                            min=0.0,
+                            max=1.0,
+                        )
+                        signed_base = torch.clamp(
+                            blend(signed_base, tape_signed_notional, tape_weight),
+                            min=-1.0,
+                            max=1.0,
+                        )
+                        signed_quote = torch.clamp(
+                            blend(signed_quote, tape_signed_notional, tape_weight),
+                            min=-1.0,
+                            max=1.0,
+                        )
+                        trade_impulse = torch.clamp(
+                            blend(trade_impulse, tape_count_impulse, tape_weight),
+                            min=-1.0,
+                            max=1.0,
+                        )
+                        quote_impulse = torch.clamp(
+                            blend(quote_impulse, tape_notional_impulse, tape_weight),
+                            min=-1.0,
+                            max=1.0,
+                        )
+                        quote_per_trade_impulse = torch.clamp(
+                            blend(
+                                quote_per_trade_impulse, tape_large_share, tape_weight
+                            ),
+                            min=-1.0,
+                            max=1.0,
+                        )
                         no_trade_ratio = torch.minimum(no_trade_ratio, tape_no_tape)
-                        flow_return_alignment = torch.clamp(blend(flow_return_alignment, tape_flow_return_alignment), min=-1.0, max=1.0)
-                        signed_ratio_delta = torch.clamp(blend(signed_ratio_delta, tape_signed_acceleration), min=-1.0, max=1.0)
+                        flow_return_alignment = torch.clamp(
+                            blend(
+                                flow_return_alignment,
+                                tape_flow_return_alignment,
+                                tape_weight,
+                            ),
+                            min=-1.0,
+                            max=1.0,
+                        )
+                        signed_ratio_delta = torch.clamp(
+                            blend(
+                                signed_ratio_delta,
+                                tape_signed_acceleration,
+                                tape_weight,
+                            ),
+                            min=-1.0,
+                            max=1.0,
+                        )
                         mean_abs_signed_ratio = torch.clamp(torch.maximum(mean_abs_signed_ratio, torch.abs(tape_signed_notional)), min=0.0, max=1.0)
-                        flow_acceleration = torch.clamp(blend(flow_acceleration, tape_signed_acceleration), min=-1.0, max=1.0)
+                        flow_acceleration = torch.clamp(
+                            blend(
+                                flow_acceleration, tape_signed_acceleration, tape_weight
+                            ),
+                            min=-1.0,
+                            max=1.0,
+                        )
                         tape_divergence = torch.tanh(
                             (tape_signed_notional * 2.0)
                             - (tape_micro_drift * 1.4)
                             - (tape_vwap_gap * 0.8)
                         )
-                        price_flow_divergence = torch.clamp(blend(price_flow_divergence, tape_divergence), min=-1.0, max=1.0)
+                        price_flow_divergence = torch.clamp(
+                            blend(price_flow_divergence, tape_divergence, tape_weight),
+                            min=-1.0,
+                            max=1.0,
+                        )
                     if family == "mean_reversion_vwap":
                         score = (
                             0.36 * torch.tanh((0.42 - rsi) * 5.4)
@@ -2008,7 +2061,7 @@ def _threshold_grid(start: float, end: float, steps: int, baseline: float) -> li
         end = min(1.0, start + 0.01)
     values = [start + (end - start) * i / (steps - 1) for i in range(steps)]
     values.append(_clamp_threshold(baseline))
-    return sorted(set(round(_clamp_threshold(value), 12) for value in values))
+    return sorted({round(_clamp_threshold(value), 12) for value in values})
 
 
 def _probability_adaptive_threshold_grid(
