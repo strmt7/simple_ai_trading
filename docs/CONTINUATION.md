@@ -26,29 +26,31 @@ the repository and on GitHub before changing code.
 
 ## Live Host Handoff: 2026-08-22
 
-The following state was verified at approximately `2026-08-22T10:31Z`. It is
+The following state was verified at approximately `2026-08-22T12:15Z`. It is
 host state, not model evidence, and must be rechecked before any action.
 
-- Pushed `main` was clean and synchronized with `origin/main` when this
-  snapshot was taken. GitHub and local remote-tracking inventory contain only
-  `main` after pruning. Do not copy a commit identifier from this mutable
-  handoff; verify `git rev-parse HEAD` and `git rev-parse origin/main` directly.
+- The bounded audit began from clean, synchronized parent
+  `a9eb70a13ffefcd56055a628054c1c177fdb55dc`; local handoff changes were in
+  progress at this host snapshot. GitHub and local remote-tracking inventory
+  contained only `main` after pruning. Do not copy a commit identifier from
+  this mutable handoff; verify `git rev-parse HEAD` and
+  `git rev-parse origin/main` directly.
 - Round 75 prospective Binance capture is active from the detached worktree
-  `C:\trader\simple_ai_trading-model-dev`. Snapshot parent PID `21980` and
-  physical child PID `31648` were alive. Canonical service state reported
-  `waiting_for_next_fixed_slot`, slot ordinal `658`, no credentials, no orders,
+  `C:\trader\simple_ai_trading-model-dev`. Canonical state named parent PID
+  `67356` and physical child PID `66676`, reported
+  `waiting_for_next_fixed_slot`, slot ordinal `662`, no credentials, no orders,
   and no trading authority. The frozen campaign ends at
   `2026-08-23T12:00:00Z`. Scheduled task
-  `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1` was ready and its
-  most recent invocation succeeded.
+  `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1` was ready; its
+  `2026-08-22T12:13:15Z` invocation succeeded.
 - The independent Round 21 Binance spot/futures sidecar is active from clean,
   detached commit `4a5912574a9157d79fecc53bf68ed6f01bb8dac8` in
   `C:\trader\simple_ai_trading-round21-sidecar-v2`. Wrapper PID `35008` and
   physical child PID `35264` were alive. Its state reported segment `12`,
-  phase `capturing`, `110471327` written public messages, ten recorded stream
-  gaps, no credentials, no execution connection, no model-data eligibility,
-  and no paper or live authority. Its frozen scheduled end is
-  `2026-08-29T23:40:00Z`.
+  phase `capturing`, `114424257` written public messages, twelve recorded
+  stream gaps, zero recorder errors, no credentials, no execution connection,
+  no model-data eligibility, and no paper or live authority. Its frozen
+  scheduled end is `2026-08-29T23:40:00Z`.
 - All process IDs above are ephemeral snapshots. Process rotation is expected;
   never infer failure, completion, or permission to restart from PID drift.
 - Never stop, restart, stage, clean, reset, switch, merge, or modify either
@@ -86,13 +88,13 @@ blind overwrite. All new development after integration belongs on `main`.
 - GitHub reported zero open Dependabot alerts, zero open secret-scanning
   alerts, no open pull requests, and only `main`. GitHub code scanning returned
   `404: no analysis found`; it is unavailable, not zero.
-- `uv lock --check` passed. The dependency lock and product source have not
-  changed since pip-audit found no known vulnerabilities in the complete
-  exported GPU and DirectML dependency stacks. The exact pushed revision
+- `uv lock --check` passed. Dependency manifests and the lock have not changed
+  since pip-audit found no known vulnerabilities in the complete exported GPU
+  and DirectML dependency stacks. The exact pushed revision
   `053e71ec9959c7b51c73d6983fb574e03f4173ea` passed hosted actionlint and
   Zizmor `1.25.2` through Super-Linter.
-- A fresh Bandit audit of `src/simple_ai_trading` scanned 436629 lines and
-  reported 527 audit findings: zero high severity, 251 medium, and 276 low.
+- A fresh Bandit audit of `src/simple_ai_trading` reported 525 audit findings:
+  zero high severity, 251 medium, and 274 low.
   The medium set is dominated by 248 dynamic-SQL (`B608`) review items. Its
   three `B113` request findings are false positives because each displayed call
   supplies an explicit bounded timeout. The remaining findings still require
@@ -110,6 +112,16 @@ blind overwrite. All new development after integration belongs on `main`.
   model package bootstrap; they are not suppressed. Explicit absolute PATH
   directories remain a host trust boundary and still require controlled
   installation and permissions.
+- Two silent terminal-holdout audit exceptions were removed. If terminal
+  evaluation or result fingerprinting fails, the model remains rejected; a
+  successful ledger update records `evaluation_error`, while a failed update
+  leaves the durable reservation in fail-closed `reserved` state and now adds
+  `terminal_audit_error` to rejection diagnostics without replacing the
+  primary failure. The affected 96 training-suite and terminal-ledger tests,
+  Ruff, and a focused Bandit scan pass. The full Bandit inventory now contains
+  two `B110` and one `B112` findings: rollback/transport cleanup and an optional
+  GPU-memory probe. They need bounded source-level review, not blanket
+  suppression.
 - The last full DeepSource backlog verification on `2026-08-16` found about
   28000 active findings, including 118 security findings. DeepSource passed
   revision `053e71ec9959c7b51c73d6983fb574e03f4173ea` with no blocking issues or
@@ -118,13 +130,15 @@ blind overwrite. All new development after integration belongs on `main`.
 
 ### Round Closeout Checkpoint
 
-Revision `053e71ec9959c7b51c73d6983fb574e03f4173ea` was clean and synchronized
-with `origin/main` at `2026-08-22T10:31Z`. CI, Ruff, Vulture, Super-Linter, and
-DeepSource passed on that exact revision. Dependabot and secret scanning had no
-open alerts; code scanning was unavailable. The latest changes add a direct
-masked-pretraining target-integrity regression and cancel superseded same-ref
-quality workflows. They do not create model evidence, trading authority, or a
-profitability claim.
+At the start of the latest bounded audit, revision
+`a9eb70a13ffefcd56055a628054c1c177fdb55dc` was clean and synchronized with
+`origin/main`; its CI, Ruff, Vulture, Super-Linter, and DeepSource checks passed.
+The current handoff adds only terminal-audit failure observability and focused
+regressions. Resolve and verify the new exact pushed SHA rather than treating
+this historical parent as current. GitHub showed only `main`, no open pull
+requests, zero open Dependabot alerts, and zero open secret-scanning alerts;
+code scanning remained unavailable. No model evidence, trading authority, or
+profitability claim was created.
 
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The detached Round 75
@@ -193,6 +207,17 @@ training or profitability claim was made, and no source or capture worktree was
 changed. Re-run the focused tests only after the capture is terminalized and
 the differing files are safely reconciled onto `main`.
 
+The same audit identified a post-capture, preregistration-only challenger: keep
+v5 unchanged and compare a separate next-mark plus conditional-duration-density
+objective on identical encoders, splits, seeds, populations, supervised
+training, and after-cost evaluation. The duration target must come from the
+untouched next event even when timing input is masked. Call it a conditional
+marked-duration density, not a complete point-process likelihood, unless the
+dataset exposes observation-end censoring and terminal survival. Promotion
+requires paired proper-loss improvement without run/symbol/task subgroup
+degradation and then downstream after-cost improvement. Do not implement or
+evaluate it before Round 75 terminalization; it has no present edge claim.
+
 ## Next Work
 
 1. Reverify both live captures and their canonical state files. Let Round 75
@@ -213,11 +238,12 @@ the differing files are safely reconciled onto `main`.
    unverified until focused domain tests, contract hashes, generated CLI/native
    parity, and the affected analyzer gates pass on the integrated tree. Do not
    publish or infer their model claims from local file presence.
-5. Triage real security risk in bounded batches, beginning with Bandit/DeepSource
-   dynamic SQL and executable-installation provenance. Distinguish parameterized
-   identifier whitelisting, explicit trusted PATH entries, and fixed executable
-   contracts from actual injection or path-hijack exposure. Add direct
-   regressions for every behavior change; do not suppress the backlog broadly.
+5. Continue security triage in bounded batches. Review the remaining two
+   `B110` cleanup paths and one `B112` optional hardware probe, then trace
+   Bandit/DeepSource dynamic SQL source-to-sink paths. Distinguish fixed or
+   validated identifiers and trusted executable contracts from actual
+   injection or path-hijack exposure. Add direct regressions for every behavior
+   change; do not suppress the backlog broadly.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.
