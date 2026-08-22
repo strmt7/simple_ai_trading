@@ -168,8 +168,18 @@ blind overwrite. All new development after integration belongs on `main`.
   model mathematics, feature, target, cost, threshold, risk gate, authority, or
   result. The exact previously failing cluster now passes 70 tests locally with
   100% changed-line coverage, plus Mypy, Ruff/format, Pylint errors-only,
-  targeted Bandit, lock, manifest, and diff checks. This remains local evidence
-  until every hosted check passes on the final pushed SHA.
+  targeted Bandit, lock, manifest, and diff checks. Repair revision `580e4a0e`
+  subsequently passed full hosted CI, Ruff, Vulture, Super-Linter, DeepSource,
+  and the Windows Python/native-UI smoke job.
+- The four `ai_uplift.py` complexity findings from `f50c3a83` are decomposed
+  locally without changing output construction or rejection order:
+  `AIUpliftPolicy.__post_init__` fell from 24 to 1, `_matched_period_deltas`
+  from 22 to 9, `_statistical_evidence` from 20 to 2, and `assess_ai_uplift`
+  from 33 to 3. The affected matrix passes 217 tests and the 156 changed
+  executable lines have 100% coverage. Mypy, Ruff/format, Pylint errors-only,
+  targeted Bandit, and Radon also pass locally. Hosted checks must still be
+  verified on this refactor's final pushed SHA; the five deferred
+  `financial_sanity.py` complexity findings are unchanged.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -211,9 +221,10 @@ AI-uplift v5 contract described above. At the snapshot, GitHub showed only
 secret-scanning alerts. GitHub code scanning returned `404: no analysis found`
 and remained unavailable. Hosted Ruff, Vulture, Super-Linter, DeepSource, and
 the Windows job passed on documentation closeout `68c1a422`; full Linux CI
-failed only the 29 source-provenance tests described above. The cumulative v18
-repair must be verified on its own final pushed SHA. The nine complexity
-findings on the earlier changed Python scope remain deferred as described above.
+failed only the 29 source-provenance tests described above. Cumulative v18
+repair `580e4a0e` then passed every hosted workflow and DeepSource. The five
+`financial_sanity.py` complexity findings remain deferred, and the four
+`ai_uplift.py` findings have the local closeout evidence described above.
 No model score, label, fill, cost, threshold, model outcome, trading authority,
 or profitability claim changed. Verify every available hosted check on the
 final pushed SHA; pending and unavailable checks are not passes.
