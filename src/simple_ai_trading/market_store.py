@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Mapping, Sequence, cast
+from typing import Any, Iterable, Mapping, Sequence, cast
 
 from .api import Candle
 
@@ -36,6 +37,52 @@ class CandleCoverageQuality:
         payload = asdict(self)
         payload["coverage"] = self.coverage.asdict()
         return payload
+
+
+def _empty_coverage_quality(
+    coverage: CandleCoverage,
+    interval_ms: int,
+    start_ms: int | None,
+    end_ms: int | None,
+) -> CandleCoverageQuality:
+    if interval_ms <= 0 or start_ms is None or end_ms is None:
+        expected_count = 0
+    else:
+        bounded_start = int(start_ms)
+        bounded_end = int(end_ms)
+        expected_count = (
+            ((bounded_end - bounded_start) // interval_ms) + 1
+            if bounded_end >= bounded_start
+            else 0
+        )
+    return CandleCoverageQuality(
+        coverage,
+        expected_count=expected_count,
+        gap_count=expected_count,
+        coverage_ratio=0.0,
+    )
+
+
+def _missing_candle_count(
+    rows: Iterable[Mapping[str, object]],
+    *,
+    interval_ms: int,
+    span_start: int,
+    span_end: int,
+    first_open_time: int,
+    last_open_time: int,
+) -> int:
+    missing = max(0, (first_open_time - span_start) // interval_ms)
+    previous: int | None = None
+    for row in rows:
+        if row["open_time"] is None:
+            continue
+        current = int(cast(Any, row["open_time"]))
+        if previous is not None:
+            missing += max(0, ((current - previous) // interval_ms) - 1)
+        previous = current
+    missing += max(0, (span_end - last_open_time) // interval_ms)
+    return missing
 
 
 @dataclass(frozen=True)
@@ -771,15 +818,7 @@ class MarketDataStore:
     ) -> CandleCoverageQuality:
         coverage = self.coverage(symbol, market_type, interval, start_ms=start_ms, end_ms=end_ms)
         if coverage.count == 0:
-            if interval_ms > 0 and start_ms is not None and end_ms is not None and int(end_ms) >= int(start_ms):
-                expected_count = ((int(end_ms) - int(start_ms)) // interval_ms) + 1
-                return CandleCoverageQuality(
-                    coverage,
-                    expected_count=expected_count,
-                    gap_count=expected_count,
-                    coverage_ratio=0.0,
-                )
-            return CandleCoverageQuality(coverage, expected_count=0, gap_count=0, coverage_ratio=0.0)
+            return _empty_coverage_quality(coverage, interval_ms, start_ms, end_ms)
         if interval_ms <= 0:
             return CandleCoverageQuality(
                 coverage,
@@ -809,30 +848,22 @@ class MarketDataStore:
         last_open_time = cast(int, coverage.last_open_time)
         span_start = int(start_ms) if start_ms is not None else first_open_time
         span_end = int(end_ms) if end_ms is not None else last_open_time
-        missing = 0
-        if first_open_time > span_start:
-            missing += max(0, (first_open_time - span_start) // interval_ms)
-        previous: int | None = None
-        for row in rows:
-            if row["open_time"] is None:
-                continue
-            current = int(row["open_time"])
-            if previous is not None:
-                delta = current - previous
-                if delta > interval_ms:
-                    missing += max(0, (delta // interval_ms) - 1)
-            previous = current
-        if last_open_time < span_end:
-            missing += max(0, (span_end - last_open_time) // interval_ms)
+        missing = _missing_candle_count(
+            rows,
+            interval_ms=interval_ms,
+            span_start=span_start,
+            span_end=span_end,
+            first_open_time=first_open_time,
+            last_open_time=last_open_time,
+        )
 
         span = max(0, span_end - span_start)
         expected_count = max(coverage.count, (span // interval_ms) + 1)
-        ratio = coverage.count / expected_count if expected_count else 0.0
         return CandleCoverageQuality(
             coverage,
             expected_count=expected_count,
             gap_count=missing,
-            coverage_ratio=ratio,
+            coverage_ratio=coverage.count / expected_count,
         )
 
     def latest_open_time(self, symbol: str, market_type: str, interval: str) -> int | None:
@@ -1101,8 +1132,8 @@ class MarketDataStore:
             value = float(cast(Any, payload[key]))
         except (KeyError, TypeError, ValueError, OverflowError) as exc:
             raise ValueError(f"top-of-book missing numeric {key}") from exc
-        if not value > 0.0:
-            raise ValueError(f"top-of-book {key} must be positive")
+        if not math.isfinite(value) or value <= 0.0:
+            raise ValueError(f"top-of-book {key} must be finite and positive")
         return value
 
     def insert_top_of_book_snapshot(
@@ -1123,10 +1154,12 @@ class MarketDataStore:
         ask_qty = self._finite_positive(payload, "askQty")
         if ask_price < bid_price:
             raise ValueError("top-of-book askPrice is below bidPrice")
-        mid_price = (bid_price + ask_price) / 2.0
         spread = ask_price - bid_price
-        spread_bps = (spread / mid_price) * 10_000.0 if mid_price > 0.0 else 0.0
+        mid_price = bid_price + (spread / 2.0)
+        spread_bps = (spread / mid_price) * 10_000.0
         depth_notional = bid_price * bid_qty + ask_price * ask_qty
+        if not math.isfinite(depth_notional):
+            raise ValueError("top-of-book depth notional must be finite")
         before_changes = self.connect().total_changes
         self.connect().execute(
             """

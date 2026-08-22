@@ -274,6 +274,21 @@ blind overwrite. All new development after integration belongs on `main`.
   before changing another coherent family. Formatting correction `5f6e790c`
   passed DeepSource, Ruff, and Vulture; that one-line-delta result does not
   erase the parent run's 27-item inventory.
+- The next bounded market-data batch safely implements two items from that
+  inventory. `MarketDataStore.coverage_quality` drops from Radon `18` to `7`;
+  its extracted empty-window and streamed-gap helpers score `5` and `4`.
+  Top-of-book ingestion explicitly rejects non-finite and non-positive prices
+  or quantities, calculates the midpoint as `bid + spread / 2` to avoid finite
+  input overflow, and rejects non-finite derived depth notional before opening
+  a transaction. Direct regressions cover NaN, positive and negative infinity,
+  zero, negative quantity, bounded empty windows, null defensive rows, finite
+  extreme inputs, overflow rejection, and absence of partial writes. The
+  322-test affected matrix passes and changed-line coverage is `29/29`.
+  Scoped Mypy, Ruff, Pylint errors-only, strict simplification checks, and
+  Markdown lint pass locally. Bandit still reports ten pre-existing `B608`
+  dynamic-SQL heuristics outside changed lines and no high-severity issue.
+  Verify the exact pushed DeepSource inventory before selecting another family;
+  do not infer that the parent 27-item queue is otherwise closed.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -441,9 +456,11 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    closed four and confirmed the remaining nine. The subsequent local batch
    addresses all nine, and exact revision `bb6abac7` confirmed their closure.
    The seven-item type/test follow-up is closed at `13f33f8a`; continue from its
-   exact 27-item DeepSource inventory recorded above. Do not treat the narrow
-   `5f6e790c` pass as closure of that broader backlog or as a project-wide
-   security result.
+   exact 27-item DeepSource inventory recorded above. The current market-data
+   batch handles the coverage-complexity and unsafe-comparison family; continue
+   from its exact hosted result, not from an assumed residual count. Do not
+   treat the narrow `5f6e790c` pass as closure of that broader backlog or as a
+   project-wide security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.

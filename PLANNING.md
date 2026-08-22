@@ -118,6 +118,18 @@ run before another bounded batch starts. Formatting correction `5f6e790c`
 passed DeepSource, Ruff, and Vulture. That narrow pass does not erase the
 `13f33f8a` inventory or constitute a project-wide security result.
 
+The next bounded market-data integrity batch addresses two findings from that
+inventory without broad formatter churn. `MarketDataStore.coverage_quality`
+falls from Radon `18` to `7`, with pure helpers scoring `5` and `4`. Top-of-book
+ingestion now rejects NaN and infinite prices or quantities, uses an
+overflow-safe midpoint, and rejects non-finite derived depth notional before
+any write. The 322-test affected matrix passes and all 29 changed executable
+lines have coverage. Ruff, scoped Mypy, Pylint errors-only, and strict
+simplification checks pass. Bandit still reports the ten documented dynamic-SQL
+heuristics outside changed lines; hosted analysis is required before updating
+the remaining queue. This is data-integrity and maintainability evidence, not
+model-edge or profitability evidence.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance
