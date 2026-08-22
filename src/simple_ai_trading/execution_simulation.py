@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import asdict, dataclass
+from typing import SupportsFloat, SupportsIndex
 
 from .types import StrategyConfig
 
@@ -131,6 +132,8 @@ def _safe_positive(value: float, default: float = 0.0) -> float:
 
 
 def _safe_finite(value: object, default: float = 0.0) -> float:
+    if not isinstance(value, (str, bytes, bytearray, SupportsFloat, SupportsIndex)):
+        return float(default)
     try:
         parsed = float(value)
     except (TypeError, ValueError, OverflowError):
