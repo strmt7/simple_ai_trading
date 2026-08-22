@@ -17,8 +17,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import importlib
+import logging
 import os
 from typing import Any, Literal
+
+
+_LOGGER = logging.getLogger(__name__)
 
 BackendKind = Literal["cpu", "cuda", "rocm", "xpu", "directml", "mps"]
 
@@ -140,10 +144,15 @@ def _cuda_free_memory(torch: Any, count: int) -> dict[int, int]:
             free, total = getter(index)
             free_value = int(free)
             total_value = int(total)
-        except Exception:
-            continue
-        if free_value >= 0 and total_value > 0 and free_value <= total_value:
-            memory[index] = free_value
+        except Exception as exc:
+            _LOGGER.debug(
+                "CUDA memory probe failed for device %d (%s)",
+                index,
+                exc.__class__.__name__,
+            )
+        else:
+            if free_value >= 0 and total_value > 0 and free_value <= total_value:
+                memory[index] = free_value
     return memory
 
 

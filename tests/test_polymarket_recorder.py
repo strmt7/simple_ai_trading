@@ -41,6 +41,26 @@ def _sha(value: str) -> str:
     return hashlib.sha256(value.encode("ascii")).hexdigest()
 
 
+def test_terminal_recovery_rollback_failure_is_attached_to_primary_error() -> None:
+    class _RollbackFailure:
+        @staticmethod
+        def execute(statement: str) -> None:
+            assert statement == "ROLLBACK"
+            raise RuntimeError("rollback unavailable")
+
+    primary_error = ValueError("primary failure")
+
+    recorder_module._rollback_preserving_primary_error(  # noqa: SLF001
+        _RollbackFailure(),  # type: ignore[arg-type]
+        primary_error,
+    )
+
+    assert primary_error.__notes__ == [
+        "Polymarket terminal-audit recovery rollback failed (RuntimeError); "
+        "transaction state must be treated as unknown"
+    ]
+
+
 def _market_payload(asset: str) -> dict[str, object]:
     token_base = {"BTC": "7", "ETH": "8", "SOL": "9"}[asset]
     return {
