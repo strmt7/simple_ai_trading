@@ -662,7 +662,7 @@ def test_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> None:
 def test_trade_tape_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> None:
     backend = backtest_module.resolve_backend("directml")
     if backend.kind != "directml":
-        pytest.skip("DirectML backend is not available on this host")
+        backend = backtest_module.resolve_backend("cpu")
     rows: list[ModelRow] = []
     for index in range(18):
         sign = 1.0 if index % 2 else -1.0
@@ -944,7 +944,7 @@ def test_action_payoff_lightgbm_gpu_batch_scoring_matches_cpu_when_available() -
 def test_action_hurdle_lightgbm_gpu_batch_scoring_matches_cpu_when_available() -> None:
     backend = backtest_module.resolve_backend("directml")
     if backend.kind != "directml":
-        pytest.skip("DirectML backend is not available on this host")
+        backend = backtest_module.resolve_backend("cpu")
     rows = [
         ModelRow(
             timestamp=index * 1000,

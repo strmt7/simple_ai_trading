@@ -132,23 +132,32 @@ blind overwrite. All new development after integration belongs on `main`.
   classified as introduced. Its first rendered page contained fifteen major
   type-contract findings in `backtest.py`, `execution_simulation.py`, and
   `financial_sanity.py`; it did not identify those findings as security
-  vulnerabilities. The current bounded remediation adds explicit
+  vulnerabilities. Revision
+  `16c40e26d278caf5eba166609fb70716325adaf1` added explicit
   numeric-conversion guards, a typed scoring-backend payload, unambiguous
   optional trade-limit and threshold-variant types, and primitive-only sanity
-  diagnostics. Focused mypy, Ruff, Bandit, Pylint, and affected behavioral
-  suites pass locally. The next pushed SHA must confirm the hosted reduction;
-  do not infer that the remaining DeepSource backlog is fixed.
+  diagnostics. Its hosted DeepSource run reduced the exact inventory to 86
+  findings, reported 536 resolved findings, and classified 75 remaining
+  findings as introduced. The follow-up closeout revision removes the next
+  page's loop-variable closure captures, one no-op assignment, one unnecessary
+  generator, and a simple comparison warning. It also makes two accelerated
+  scorer parity tests execute through Torch on CPU when DirectML is absent.
+  Focused behavioral tests, mypy, Ruff, Bandit, and Pylint pass locally. Large
+  function-complexity findings and the rest of the DeepSource backlog remain;
+  verify the exact hosted result before updating this inventory.
 
 ### Round Closeout Checkpoint
 
-Revision `c6ff3ac286eca7d58938ff9eded3c461f9ad60ea` was clean and synchronized with
-`origin/main`; its CI, Ruff, Vulture, Super-Linter, coverage, Windows-native UI,
-and launcher checks passed. DeepSource alone failed with the exact inventory
-described above. GitHub showed only `main`, no open pull requests, zero open
-Dependabot alerts, and zero open secret-scanning alerts; code scanning remained
-unavailable. The current bounded type-contract remediation changes no model
-scores, labels, fills, costs, thresholds, model evidence, trading authority, or
-profitability claim. Resolve and verify its new exact pushed SHA.
+Revision `16c40e26d278caf5eba166609fb70716325adaf1` was pushed to `main`; Ruff,
+Vulture, and the Windows-native UI smoke passed before this follow-up closeout
+began, while its longer CI and Super-Linter jobs had not reached a terminal
+state. DeepSource failed with the reduced exact inventory described above.
+GitHub showed only `main`, no open pull requests, zero open Dependabot alerts,
+and zero open secret-scanning alerts; code scanning remained unavailable. The
+current bounded follow-up changes no model scores, labels, fills, costs,
+thresholds, model evidence, trading authority, or profitability claim. Verify
+every available hosted check on the final pushed SHA; a pending or unavailable
+check is not a pass.
 
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The detached Round 75
@@ -253,9 +262,10 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    Bandit/DeepSource dynamic SQL source-to-sink paths. Distinguish fixed or
    validated identifiers and trusted executable contracts from actual
    injection or path-hijack exposure. Add direct regressions for every behavior
-   change; do not suppress the backlog broadly. Continue the exact DeepSource
-   run inventory after confirming the first fifteen type-contract findings were
-   removed on the pushed checkpoint.
+   change; do not suppress the backlog broadly. Continue from the exact
+   DeepSource inventory on the final closeout SHA. The first type-contract
+   batch reduced 107 findings to 86; the remaining complexity findings were
+   intentionally recorded rather than rushed into this closeout.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.
