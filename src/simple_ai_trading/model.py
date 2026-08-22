@@ -226,168 +226,372 @@ def _blend(left: float, right: float, weight: float) -> float:
     return value if math.isfinite(value) else 0.0
 
 
-def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any] | None) -> float:
-    """Return an interpretable long/short alpha score from raw base features.
+@dataclass(frozen=True)
+class _RuleAlphaState:
+    momentum_1: float
+    momentum_3: float
+    momentum_10: float
+    momentum_20: float
+    ema_spread: float
+    rsi: float
+    ema_gap: float
+    relative_atr: float
+    volatility_20: float
+    volume_ratio: float
+    trend_acceleration: float
+    gap_to_vwap: float
+    volume_trend: float
+    order_flow: dict[str, float]
+    higher_timeframe: dict[str, float]
 
-    Positive scores express long pressure, negative scores express short
-    pressure.  The function uses only same-row/past-derived feature values, so
-    it can be used identically in live trading and backtests.
-    """
 
-    family = str((params or {}).get("family", "momentum_breakout")).strip().lower()
-    if family == "empirical_feature_edge":
-        feature_index = _param_int(params, "feature_index", 0, low=0, high=max(0, len(values) - 1))
-        threshold = _param_float(params, "feature_threshold", 0.0, low=-1e12, high=1e12)
-        scale = max(1e-9, abs(_param_float(params, "feature_scale", 1.0, low=1e-12, high=1e12)))
-        tail_direction = 1.0 if _param_float(params, "tail_direction", 1.0, low=-1.0, high=1.0) >= 0.0 else -1.0
-        trade_side = 1.0 if _param_float(params, "trade_side", 1.0, low=-1.0, high=1.0) >= 0.0 else -1.0
-        confidence = _param_float(params, "edge_confidence", 1.0, low=0.0, high=1.0)
-        slope = _param_float(params, "edge_slope", 1.0, low=0.1, high=20.0)
-        value = float(values[feature_index]) if feature_index < len(values) else 0.0
-        if not math.isfinite(value):
-            value = threshold
-        delta = tail_direction * (value - threshold) / scale
-        if "second_feature_index" in (params or {}):
-            second_index = _param_int(params, "second_feature_index", 0, low=0, high=max(0, len(values) - 1))
-            second_threshold = _param_float(params, "second_feature_threshold", 0.0, low=-1e12, high=1e12)
-            second_scale = max(1e-9, abs(_param_float(params, "second_feature_scale", 1.0, low=1e-12, high=1e12)))
-            second_tail = 1.0 if _param_float(params, "second_tail_direction", 1.0, low=-1.0, high=1.0) >= 0.0 else -1.0
-            second_value = float(values[second_index]) if second_index < len(values) else second_threshold
-            if not math.isfinite(second_value):
-                second_value = second_threshold
-            second_delta = second_tail * (second_value - second_threshold) / second_scale
-            delta = min(delta, second_delta)
-        strength = math.tanh(max(0.0, delta) * slope)
-        score = trade_side * max(0.0, strength) * confidence
-        deadband = _param_float(params, "deadband", 0.04, low=0.0, high=0.95)
-        magnitude = abs(score)
-        if magnitude <= deadband:
-            return 0.0
-        adjusted = (magnitude - deadband) / max(1e-9, 1.0 - deadband)
-        return _clamp(math.copysign(adjusted, score), -1.0, 1.0)
+def _apply_rule_alpha_deadband(
+    score: float,
+    params: dict[str, Any] | None,
+) -> float:
+    deadband = _param_float(params, "deadband", 0.04, low=0.0, high=0.95)
+    magnitude = abs(score)
+    if magnitude <= deadband:
+        return 0.0
+    adjusted = (magnitude - deadband) / max(1e-9, 1.0 - deadband)
+    return _clamp(math.copysign(adjusted, score), -1.0, 1.0)
+
+
+def _empirical_feature_edge_score(
+    values: Sequence[float],
+    params: dict[str, Any] | None,
+) -> float:
+    feature_index = _param_int(
+        params,
+        "feature_index",
+        0,
+        low=0,
+        high=max(0, len(values) - 1),
+    )
+    threshold = _param_float(
+        params,
+        "feature_threshold",
+        0.0,
+        low=-1e12,
+        high=1e12,
+    )
+    scale = max(
+        1e-9,
+        abs(
+            _param_float(
+                params,
+                "feature_scale",
+                1.0,
+                low=1e-12,
+                high=1e12,
+            )
+        ),
+    )
+    tail_direction = (
+        1.0
+        if _param_float(
+            params,
+            "tail_direction",
+            1.0,
+            low=-1.0,
+            high=1.0,
+        )
+        >= 0.0
+        else -1.0
+    )
+    trade_side = (
+        1.0
+        if _param_float(
+            params,
+            "trade_side",
+            1.0,
+            low=-1.0,
+            high=1.0,
+        )
+        >= 0.0
+        else -1.0
+    )
+    confidence = _param_float(
+        params,
+        "edge_confidence",
+        1.0,
+        low=0.0,
+        high=1.0,
+    )
+    slope = _param_float(
+        params,
+        "edge_slope",
+        1.0,
+        low=0.1,
+        high=20.0,
+    )
+    value = float(values[feature_index]) if feature_index < len(values) else 0.0
+    if not math.isfinite(value):
+        value = threshold
+    delta = tail_direction * (value - threshold) / scale
+
+    if "second_feature_index" in (params or {}):
+        second_index = _param_int(
+            params,
+            "second_feature_index",
+            0,
+            low=0,
+            high=max(0, len(values) - 1),
+        )
+        second_threshold = _param_float(
+            params,
+            "second_feature_threshold",
+            0.0,
+            low=-1e12,
+            high=1e12,
+        )
+        second_scale = max(
+            1e-9,
+            abs(
+                _param_float(
+                    params,
+                    "second_feature_scale",
+                    1.0,
+                    low=1e-12,
+                    high=1e12,
+                )
+            ),
+        )
+        second_tail = (
+            1.0
+            if _param_float(
+                params,
+                "second_tail_direction",
+                1.0,
+                low=-1.0,
+                high=1.0,
+            )
+            >= 0.0
+            else -1.0
+        )
+        second_value = (
+            float(values[second_index])
+            if second_index < len(values)
+            else second_threshold
+        )
+        if not math.isfinite(second_value):
+            second_value = second_threshold
+        second_delta = second_tail * (second_value - second_threshold) / second_scale
+        delta = min(delta, second_delta)
+
+    strength = math.tanh(max(0.0, delta) * slope)
+    score = trade_side * max(0.0, strength) * confidence
+    return _apply_rule_alpha_deadband(score, params)
+
+
+def _blend_rule_alpha_trade_tape(
+    order_flow: dict[str, float],
+    trade_tape: dict[str, float],
+) -> dict[str, float]:
+    if trade_tape["available"] <= 0.0:
+        return order_flow
+
+    tape_weight = _clamp(
+        0.35 + 0.45 * trade_tape["quality"],
+        0.0,
+        0.80,
+    )
+    blended = dict(order_flow)
+    blended["taker_buy_ratio"] = _clamp(
+        _blend(
+            order_flow["taker_buy_ratio"],
+            trade_tape["buy_notional_ratio"],
+            tape_weight,
+        ),
+        0.0,
+        1.0,
+    )
+    blended["signed_base"] = _clamp(
+        _blend(
+            order_flow["signed_base"],
+            trade_tape["signed_notional"],
+            tape_weight,
+        ),
+        -1.0,
+        1.0,
+    )
+    blended["signed_quote"] = _clamp(
+        _blend(
+            order_flow["signed_quote"],
+            trade_tape["signed_notional"],
+            tape_weight,
+        ),
+        -1.0,
+        1.0,
+    )
+    blended["trade_impulse"] = _clamp(
+        _blend(
+            order_flow["trade_impulse"],
+            trade_tape["count_impulse"],
+            tape_weight,
+        ),
+        -1.0,
+        1.0,
+    )
+    blended["quote_impulse"] = _clamp(
+        _blend(
+            order_flow["quote_impulse"],
+            trade_tape["notional_impulse"],
+            tape_weight,
+        ),
+        -1.0,
+        1.0,
+    )
+    blended["quote_per_trade_impulse"] = _clamp(
+        _blend(
+            order_flow["quote_per_trade_impulse"],
+            trade_tape["large_trade_share"],
+            tape_weight,
+        ),
+        -1.0,
+        1.0,
+    )
+    blended["no_trade_ratio"] = min(
+        order_flow["no_trade_ratio"],
+        trade_tape["no_tape_ratio"],
+    )
+    blended["flow_return_alignment"] = _clamp(
+        _blend(
+            order_flow["flow_return_alignment"],
+            trade_tape["flow_return_alignment"],
+            tape_weight,
+        ),
+        -1.0,
+        1.0,
+    )
+    blended["signed_ratio_delta"] = _clamp(
+        _blend(
+            order_flow["signed_ratio_delta"],
+            trade_tape["signed_acceleration"],
+            tape_weight,
+        ),
+        -1.0,
+        1.0,
+    )
+    blended["mean_abs_signed_ratio"] = _clamp(
+        max(
+            order_flow["mean_abs_signed_ratio"],
+            abs(trade_tape["signed_notional"]),
+        ),
+        0.0,
+        1.0,
+    )
+    blended["flow_acceleration"] = _clamp(
+        _blend(
+            order_flow["flow_acceleration"],
+            trade_tape["signed_acceleration"],
+            tape_weight,
+        ),
+        -1.0,
+        1.0,
+    )
+    tape_divergence = math.tanh(
+        (trade_tape["signed_notional"] * 2.0)
+        - (trade_tape["micro_drift"] * 1.4)
+        - (trade_tape["vwap_gap"] * 0.8)
+    )
+    blended["price_flow_divergence"] = _clamp(
+        _blend(
+            order_flow["price_flow_divergence"],
+            tape_divergence,
+            tape_weight,
+        ),
+        -1.0,
+        1.0,
+    )
+    return blended
+
+
+def _rule_alpha_state(
+    values: Sequence[float],
+    params: dict[str, Any] | None,
+) -> _RuleAlphaState:
     padded = list(values[:13])
     while len(padded) < 13:
         padded.append(0.0)
-    momentum_1, momentum_3, momentum_10, momentum_20 = padded[0], padded[1], padded[2], padded[3]
-    ema_spread = padded[4]
-    rsi = _clamp(padded[5], 0.0, 1.0)
-    ema_gap = padded[6]
-    relative_atr = abs(padded[7])
-    volatility_20 = abs(padded[8])
-    volume_ratio = padded[9]
-    trend_acceleration = padded[10]
-    gap_to_vwap = padded[11]
-    volume_trend = padded[12]
     order_flow = _order_flow_summary(values, params)
     higher_timeframe = _higher_timeframe_summary(values, params)
     trade_tape = _trade_tape_summary(values, params)
-    if trade_tape["available"] > 0.0:
-        tape_weight = _clamp(0.35 + 0.45 * trade_tape["quality"], 0.0, 0.80)
-        order_flow = dict(order_flow)
-        order_flow["taker_buy_ratio"] = _clamp(
-            _blend(order_flow["taker_buy_ratio"], trade_tape["buy_notional_ratio"], tape_weight),
-            0.0,
-            1.0,
-        )
-        order_flow["signed_base"] = _clamp(
-            _blend(order_flow["signed_base"], trade_tape["signed_notional"], tape_weight),
-            -1.0,
-            1.0,
-        )
-        order_flow["signed_quote"] = _clamp(
-            _blend(order_flow["signed_quote"], trade_tape["signed_notional"], tape_weight),
-            -1.0,
-            1.0,
-        )
-        order_flow["trade_impulse"] = _clamp(
-            _blend(order_flow["trade_impulse"], trade_tape["count_impulse"], tape_weight),
-            -1.0,
-            1.0,
-        )
-        order_flow["quote_impulse"] = _clamp(
-            _blend(order_flow["quote_impulse"], trade_tape["notional_impulse"], tape_weight),
-            -1.0,
-            1.0,
-        )
-        order_flow["quote_per_trade_impulse"] = _clamp(
-            _blend(order_flow["quote_per_trade_impulse"], trade_tape["large_trade_share"], tape_weight),
-            -1.0,
-            1.0,
-        )
-        order_flow["no_trade_ratio"] = min(order_flow["no_trade_ratio"], trade_tape["no_tape_ratio"])
-        order_flow["flow_return_alignment"] = _clamp(
-            _blend(order_flow["flow_return_alignment"], trade_tape["flow_return_alignment"], tape_weight),
-            -1.0,
-            1.0,
-        )
-        order_flow["signed_ratio_delta"] = _clamp(
-            _blend(order_flow["signed_ratio_delta"], trade_tape["signed_acceleration"], tape_weight),
-            -1.0,
-            1.0,
-        )
-        order_flow["mean_abs_signed_ratio"] = _clamp(
-            max(order_flow["mean_abs_signed_ratio"], abs(trade_tape["signed_notional"])),
-            0.0,
-            1.0,
-        )
-        order_flow["flow_acceleration"] = _clamp(
-            _blend(order_flow["flow_acceleration"], trade_tape["signed_acceleration"], tape_weight),
-            -1.0,
-            1.0,
-        )
-        tape_divergence = math.tanh(
-            (trade_tape["signed_notional"] * 2.0)
-            - (trade_tape["micro_drift"] * 1.4)
-            - (trade_tape["vwap_gap"] * 0.8)
-        )
-        order_flow["price_flow_divergence"] = _clamp(
-            _blend(order_flow["price_flow_divergence"], tape_divergence, tape_weight),
-            -1.0,
-            1.0,
-        )
+    order_flow = _blend_rule_alpha_trade_tape(order_flow, trade_tape)
+    return _RuleAlphaState(
+        momentum_1=padded[0],
+        momentum_3=padded[1],
+        momentum_10=padded[2],
+        momentum_20=padded[3],
+        ema_spread=padded[4],
+        rsi=_clamp(padded[5], 0.0, 1.0),
+        ema_gap=padded[6],
+        relative_atr=abs(padded[7]),
+        volatility_20=abs(padded[8]),
+        volume_ratio=padded[9],
+        trend_acceleration=padded[10],
+        gap_to_vwap=padded[11],
+        volume_trend=padded[12],
+        order_flow=order_flow,
+        higher_timeframe=higher_timeframe,
+    )
 
+
+def _classic_rule_alpha_score(
+    family: str,
+    state: _RuleAlphaState,
+) -> float | None:
     if family == "mean_reversion_vwap":
-        score = (
-            0.36 * math.tanh((0.42 - rsi) * 5.4)
-            - 0.30 * math.tanh(gap_to_vwap * 135.0)
-            - 0.16 * math.tanh(momentum_3 * 185.0)
-            + 0.10 * math.tanh(volume_ratio * 1.7)
-            - 0.08 * math.tanh(ema_gap * 110.0)
+        return (
+            0.36 * math.tanh((0.42 - state.rsi) * 5.4)
+            - 0.30 * math.tanh(state.gap_to_vwap * 135.0)
+            - 0.16 * math.tanh(state.momentum_3 * 185.0)
+            + 0.10 * math.tanh(state.volume_ratio * 1.7)
+            - 0.08 * math.tanh(state.ema_gap * 110.0)
         )
-    elif family == "trend_pullback":
+    if family == "trend_pullback":
         trend = (
-            0.46 * math.tanh(momentum_20 * 95.0)
-            + 0.26 * math.tanh(momentum_10 * 115.0)
-            + 0.16 * math.tanh(ema_gap * 125.0)
-            + 0.12 * math.tanh(volume_trend * 4.0)
+            0.46 * math.tanh(state.momentum_20 * 95.0)
+            + 0.26 * math.tanh(state.momentum_10 * 115.0)
+            + 0.16 * math.tanh(state.ema_gap * 125.0)
+            + 0.12 * math.tanh(state.volume_trend * 4.0)
         )
-        pullback = (
-            -0.34 * math.tanh(momentum_3 * 180.0)
-            -0.18 * math.tanh(momentum_1 * 240.0)
+        pullback = -0.34 * math.tanh(state.momentum_3 * 180.0) - 0.18 * math.tanh(
+            state.momentum_1 * 240.0
         )
-        score = trend + pullback + 0.10 * math.tanh(trend_acceleration * 260.0)
-    elif family == "volatility_breakout":
+        return trend + pullback + 0.10 * math.tanh(state.trend_acceleration * 260.0)
+    if family == "volatility_breakout":
         direction = (
-            0.44 * math.tanh(momentum_1 * 320.0)
-            + 0.34 * math.tanh(momentum_3 * 190.0)
-            + 0.14 * math.tanh(momentum_10 * 120.0)
-            + 0.08 * math.tanh(trend_acceleration * 260.0)
+            0.44 * math.tanh(state.momentum_1 * 320.0)
+            + 0.34 * math.tanh(state.momentum_3 * 190.0)
+            + 0.14 * math.tanh(state.momentum_10 * 120.0)
+            + 0.08 * math.tanh(state.trend_acceleration * 260.0)
         )
-        expansion = 0.55 + 0.45 * math.tanh((relative_atr + volatility_20) * 95.0 + volume_ratio * 1.1)
-        score = direction * expansion
-    elif family == "volume_flow_proxy":
+        expansion = 0.55 + 0.45 * math.tanh(
+            (state.relative_atr + state.volatility_20) * 95.0 + state.volume_ratio * 1.1
+        )
+        return direction * expansion
+    if family == "volume_flow_proxy":
         flow = (
-            0.34 * math.tanh(volume_ratio * 2.3)
-            + 0.28 * math.tanh(volume_trend * 4.5)
-            + 0.22 * math.tanh(trend_acceleration * 260.0)
+            0.34 * math.tanh(state.volume_ratio * 2.3)
+            + 0.28 * math.tanh(state.volume_trend * 4.5)
+            + 0.22 * math.tanh(state.trend_acceleration * 260.0)
         )
         direction = (
-            0.42 * math.tanh(momentum_1 * 300.0)
-            + 0.34 * math.tanh(momentum_3 * 180.0)
-            + 0.24 * math.tanh(momentum_10 * 120.0)
+            0.42 * math.tanh(state.momentum_1 * 300.0)
+            + 0.34 * math.tanh(state.momentum_3 * 180.0)
+            + 0.24 * math.tanh(state.momentum_10 * 120.0)
         )
-        score = direction * (0.55 + 0.45 * math.tanh(flow))
-    elif family == "order_flow_momentum":
+        return direction * (0.55 + 0.45 * math.tanh(flow))
+    return None
+
+
+def _flow_rule_alpha_score(
+    family: str,
+    state: _RuleAlphaState,
+) -> float | None:
+    order_flow = state.order_flow
+    if family == "order_flow_momentum":
         flow_pressure = (
             0.34 * math.tanh(order_flow["signed_base"] * 2.6)
             + 0.30 * math.tanh(order_flow["signed_quote"] * 2.6)
@@ -397,26 +601,26 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             + 0.04 * math.tanh(order_flow["quote_impulse"] * 1.6)
         )
         price_confirmation = (
-            0.36 * math.tanh(momentum_1 * 260.0)
-            + 0.30 * math.tanh(momentum_3 * 170.0)
-            + 0.18 * math.tanh(momentum_10 * 105.0)
-            + 0.16 * math.tanh(ema_gap * 105.0)
+            0.36 * math.tanh(state.momentum_1 * 260.0)
+            + 0.30 * math.tanh(state.momentum_3 * 170.0)
+            + 0.18 * math.tanh(state.momentum_10 * 105.0)
+            + 0.16 * math.tanh(state.ema_gap * 105.0)
         )
         liquidity_penalty = 0.18 * math.tanh(order_flow["no_trade_ratio"] * 4.0)
-        score = 0.62 * flow_pressure + 0.38 * price_confirmation - liquidity_penalty
-    elif family == "flow_reversion":
+        return 0.62 * flow_pressure + 0.38 * price_confirmation - liquidity_penalty
+    if family == "flow_reversion":
         exhaustion = (
             0.36 * math.tanh(order_flow["signed_base"] * 2.4)
             + 0.30 * math.tanh(order_flow["signed_quote"] * 2.4)
             + 0.16 * math.tanh(order_flow["quote_per_trade_impulse"] * 1.8)
         )
         stretched_price = (
-            0.32 * math.tanh(gap_to_vwap * 145.0)
-            + 0.24 * math.tanh(momentum_3 * 170.0)
-            + 0.18 * math.tanh((rsi - 0.50) * 4.6)
+            0.32 * math.tanh(state.gap_to_vwap * 145.0)
+            + 0.24 * math.tanh(state.momentum_3 * 170.0)
+            + 0.18 * math.tanh((state.rsi - 0.50) * 4.6)
         )
-        score = -0.58 * exhaustion * abs(stretched_price) - 0.42 * stretched_price
-    elif family == "flow_consensus_breakout":
+        return -0.58 * exhaustion * abs(stretched_price) - 0.42 * stretched_price
+    if family == "flow_consensus_breakout":
         consensus = (
             0.22 * math.tanh(order_flow["signed_base"] * 2.8)
             + 0.20 * math.tanh(order_flow["signed_quote"] * 2.8)
@@ -427,15 +631,25 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             + 0.08 * math.tanh((order_flow["taker_buy_ratio"] - 0.5) * 5.0)
         )
         price_confirmation = (
-            0.38 * math.tanh(momentum_1 * 280.0)
-            + 0.30 * math.tanh(momentum_3 * 190.0)
-            + 0.18 * math.tanh(momentum_10 * 120.0)
-            + 0.14 * math.tanh(trend_acceleration * 250.0)
+            0.38 * math.tanh(state.momentum_1 * 280.0)
+            + 0.30 * math.tanh(state.momentum_3 * 190.0)
+            + 0.18 * math.tanh(state.momentum_10 * 120.0)
+            + 0.14 * math.tanh(state.trend_acceleration * 250.0)
         )
-        flow_quality = 1.0 - _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
-        flow_strength = 0.55 + 0.45 * math.tanh(order_flow["mean_abs_signed_ratio"] * 4.0)
-        score = flow_quality * flow_strength * (0.68 * consensus + 0.32 * price_confirmation)
-    elif family == "liquidity_absorption_reversal":
+        flow_quality = 1.0 - _clamp(
+            order_flow["no_trade_ratio"],
+            0.0,
+            1.0,
+        )
+        flow_strength = 0.55 + 0.45 * math.tanh(
+            order_flow["mean_abs_signed_ratio"] * 4.0
+        )
+        return (
+            flow_quality
+            * flow_strength
+            * (0.68 * consensus + 0.32 * price_confirmation)
+        )
+    if family == "liquidity_absorption_reversal":
         absorption = (
             0.34 * math.tanh(order_flow["price_flow_divergence"] * 2.6)
             + 0.24 * math.tanh(order_flow["signed_base"] * 2.0)
@@ -444,13 +658,13 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             + 0.10 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.0)
         )
         stretch = (
-            0.34 * math.tanh(gap_to_vwap * 150.0)
-            + 0.24 * math.tanh(momentum_3 * 180.0)
-            + 0.18 * math.tanh(momentum_10 * 120.0)
-            + 0.14 * math.tanh((rsi - 0.50) * 4.8)
+            0.34 * math.tanh(state.gap_to_vwap * 150.0)
+            + 0.24 * math.tanh(state.momentum_3 * 180.0)
+            + 0.18 * math.tanh(state.momentum_10 * 120.0)
+            + 0.14 * math.tanh((state.rsi - 0.50) * 4.8)
         )
-        score = -0.58 * absorption - 0.42 * stretch
-    elif family == "micro_flow_scalp":
+        return -0.58 * absorption - 0.42 * stretch
+    if family == "micro_flow_scalp":
         flow_pressure = (
             0.24 * math.tanh(order_flow["signed_base"] * 3.2)
             + 0.22 * math.tanh(order_flow["signed_quote"] * 3.0)
@@ -461,19 +675,23 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             + 0.04 * math.tanh(order_flow["quote_impulse"] * 2.0)
         )
         price_tape = (
-            0.40 * math.tanh(momentum_1 * 360.0)
-            + 0.30 * math.tanh(momentum_3 * 220.0)
-            + 0.18 * math.tanh(trend_acceleration * 300.0)
-            + 0.12 * math.tanh(ema_gap * 120.0)
+            0.40 * math.tanh(state.momentum_1 * 360.0)
+            + 0.30 * math.tanh(state.momentum_3 * 220.0)
+            + 0.18 * math.tanh(state.trend_acceleration * 300.0)
+            + 0.12 * math.tanh(state.ema_gap * 120.0)
         )
-        liquidity_quality = 1.0 - _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
-        score = liquidity_quality * (0.68 * flow_pressure + 0.32 * price_tape)
-    elif family == "vwap_snapback_scalp":
+        liquidity_quality = 1.0 - _clamp(
+            order_flow["no_trade_ratio"],
+            0.0,
+            1.0,
+        )
+        return liquidity_quality * (0.68 * flow_pressure + 0.32 * price_tape)
+    if family == "vwap_snapback_scalp":
         stretch = (
-            0.42 * math.tanh(gap_to_vwap * 180.0)
-            + 0.24 * math.tanh(momentum_3 * 210.0)
-            + 0.18 * math.tanh((rsi - 0.50) * 5.2)
-            + 0.16 * math.tanh(ema_gap * 130.0)
+            0.42 * math.tanh(state.gap_to_vwap * 180.0)
+            + 0.24 * math.tanh(state.momentum_3 * 210.0)
+            + 0.18 * math.tanh((state.rsi - 0.50) * 5.2)
+            + 0.16 * math.tanh(state.ema_gap * 130.0)
         )
         exhaustion = (
             0.30 * math.tanh(order_flow["price_flow_divergence"] * 2.8)
@@ -481,9 +699,11 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             - 0.18 * math.tanh(order_flow["flow_return_alignment"] * 2.4)
             + 0.16 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.2)
         )
-        participation = 0.72 + 0.28 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.0)
-        score = -participation * (0.64 * stretch + 0.36 * exhaustion)
-    elif family == "liquidity_sweep_reversal":
+        participation = 0.72 + 0.28 * math.tanh(
+            order_flow["mean_abs_signed_ratio"] * 3.0
+        )
+        return -participation * (0.64 * stretch + 0.36 * exhaustion)
+    if family == "liquidity_sweep_reversal":
         sweep = (
             0.28 * math.tanh(order_flow["signed_base"] * 3.2)
             + 0.24 * math.tanh(order_flow["signed_quote"] * 3.0)
@@ -492,30 +712,40 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             + 0.14 * math.tanh(order_flow["flow_acceleration"] * 2.8)
         )
         price_stretch = (
-            0.34 * math.tanh(gap_to_vwap * 165.0)
-            + 0.26 * math.tanh(momentum_3 * 190.0)
-            + 0.20 * math.tanh(momentum_10 * 130.0)
-            + 0.20 * math.tanh((rsi - 0.50) * 4.8)
+            0.34 * math.tanh(state.gap_to_vwap * 165.0)
+            + 0.26 * math.tanh(state.momentum_3 * 190.0)
+            + 0.20 * math.tanh(state.momentum_10 * 130.0)
+            + 0.20 * math.tanh((state.rsi - 0.50) * 4.8)
         )
         divergence = math.tanh(order_flow["price_flow_divergence"] * 3.0)
-        score = -0.52 * sweep * abs(price_stretch) - 0.30 * price_stretch - 0.18 * divergence
-    elif family == "compression_breakout_scalp":
+        return (
+            -0.52 * sweep * abs(price_stretch)
+            - 0.30 * price_stretch
+            - 0.18 * divergence
+        )
+    if family == "compression_breakout_scalp":
         direction = (
-            0.42 * math.tanh(momentum_1 * 360.0)
-            + 0.28 * math.tanh(momentum_3 * 230.0)
+            0.42 * math.tanh(state.momentum_1 * 360.0)
+            + 0.28 * math.tanh(state.momentum_3 * 230.0)
             + 0.18 * math.tanh(order_flow["signed_base"] * 2.6)
             + 0.12 * math.tanh(order_flow["flow_acceleration"] * 2.8)
         )
-        compression = 1.0 - math.tanh((relative_atr + volatility_20) * 75.0)
+        compression = 1.0 - math.tanh((state.relative_atr + state.volatility_20) * 75.0)
         participation = (
             0.46
-            + 0.24 * math.tanh(volume_ratio * 1.8)
+            + 0.24 * math.tanh(state.volume_ratio * 1.8)
             + 0.18 * math.tanh(abs(order_flow["signed_base"]) * 2.4)
             + 0.12 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.0)
         )
-        liquidity_quality = 1.0 - 0.5 * _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
-        score = direction * (0.55 + 0.45 * compression) * participation * liquidity_quality
-    elif family == "volume_synchronized_flow":
+        liquidity_quality = 1.0 - 0.5 * _clamp(
+            order_flow["no_trade_ratio"],
+            0.0,
+            1.0,
+        )
+        return (
+            direction * (0.55 + 0.45 * compression) * participation * liquidity_quality
+        )
+    if family == "volume_synchronized_flow":
         flow_direction = (
             0.24 * math.tanh(order_flow["signed_base"] * 2.7)
             + 0.22 * math.tanh(order_flow["signed_quote"] * 2.7)
@@ -526,85 +756,117 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             + 0.06 * math.tanh(order_flow["quote_per_trade_impulse"] * 1.8)
         )
         price_direction = (
-            0.30 * math.tanh(momentum_1 * 280.0)
-            + 0.24 * math.tanh(momentum_3 * 190.0)
-            + 0.18 * math.tanh(momentum_10 * 115.0)
-            + 0.14 * math.tanh(trend_acceleration * 240.0)
-            + 0.08 * math.tanh(ema_gap * 105.0)
-            - 0.06 * math.tanh(gap_to_vwap * 125.0)
+            0.30 * math.tanh(state.momentum_1 * 280.0)
+            + 0.24 * math.tanh(state.momentum_3 * 190.0)
+            + 0.18 * math.tanh(state.momentum_10 * 115.0)
+            + 0.14 * math.tanh(state.trend_acceleration * 240.0)
+            + 0.08 * math.tanh(state.ema_gap * 105.0)
+            - 0.06 * math.tanh(state.gap_to_vwap * 125.0)
         )
         participation = (
             0.42
-            + 0.22 * math.tanh(volume_ratio * 1.6)
+            + 0.22 * math.tanh(state.volume_ratio * 1.6)
             + 0.18 * math.tanh(order_flow["trade_impulse"] * 1.8)
             + 0.18 * math.tanh(order_flow["quote_impulse"] * 1.8)
         )
-        synchronization = 0.50 + 0.50 * math.tanh(order_flow["flow_return_alignment"] * 2.4)
-        flow_strength = 0.58 + 0.42 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.4)
-        liquidity_quality = 1.0 - _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
-        divergence_penalty = 0.18 * math.tanh(abs(order_flow["price_flow_divergence"]) * 2.8)
-        score = (
+        synchronization = 0.50 + 0.50 * math.tanh(
+            order_flow["flow_return_alignment"] * 2.4
+        )
+        flow_strength = 0.58 + 0.42 * math.tanh(
+            order_flow["mean_abs_signed_ratio"] * 3.4
+        )
+        liquidity_quality = 1.0 - _clamp(
+            order_flow["no_trade_ratio"],
+            0.0,
+            1.0,
+        )
+        divergence_penalty = 0.18 * math.tanh(
+            abs(order_flow["price_flow_divergence"]) * 2.8
+        )
+        direction_sign = flow_direction if flow_direction != 0.0 else price_direction
+        return (
             liquidity_quality
             * flow_strength
             * (0.62 * synchronization * flow_direction + 0.38 * price_direction)
             * (0.72 + 0.28 * participation)
-        ) - divergence_penalty * math.copysign(1.0, flow_direction if flow_direction != 0.0 else price_direction)
-    elif family == "adaptive_tape_regime":
+        ) - divergence_penalty * math.copysign(1.0, direction_sign)
+    if family == "adaptive_tape_regime":
         trend = (
-            0.30 * math.tanh(momentum_1 * 310.0)
-            + 0.24 * math.tanh(momentum_3 * 210.0)
-            + 0.18 * math.tanh(momentum_10 * 130.0)
+            0.30 * math.tanh(state.momentum_1 * 310.0)
+            + 0.24 * math.tanh(state.momentum_3 * 210.0)
+            + 0.18 * math.tanh(state.momentum_10 * 130.0)
             + 0.18 * math.tanh(order_flow["signed_base"] * 2.8)
             + 0.10 * math.tanh(order_flow["flow_acceleration"] * 2.8)
         )
         reversion = -(
-            0.36 * math.tanh(gap_to_vwap * 155.0)
-            + 0.24 * math.tanh(momentum_3 * 175.0)
-            + 0.20 * math.tanh((rsi - 0.50) * 4.6)
+            0.36 * math.tanh(state.gap_to_vwap * 155.0)
+            + 0.24 * math.tanh(state.momentum_3 * 175.0)
+            + 0.20 * math.tanh((state.rsi - 0.50) * 4.6)
             + 0.20 * math.tanh(order_flow["price_flow_divergence"] * 2.4)
         )
-        persistence = math.tanh(order_flow["flow_persistence"] * 2.4 + order_flow["flow_return_alignment"] * 1.8)
+        persistence = math.tanh(
+            order_flow["flow_persistence"] * 2.4
+            + order_flow["flow_return_alignment"] * 1.8
+        )
         trend_weight = 0.5 + 0.5 * persistence
-        score = trend_weight * trend + (1.0 - trend_weight) * reversion
-    elif family == "higher_timeframe_alignment":
+        return trend_weight * trend + (1.0 - trend_weight) * reversion
+    return None
+
+
+def _regime_rule_alpha_score(
+    family: str,
+    state: _RuleAlphaState,
+) -> float:
+    order_flow = state.order_flow
+    higher_timeframe = state.higher_timeframe
+    if family == "higher_timeframe_alignment":
         if higher_timeframe["available"] <= 0.0:
-            score = 0.0
-        else:
-            broad_direction = (
-                0.30 * math.tanh(higher_timeframe["return"] * 105.0)
-                + 0.22 * math.tanh(higher_timeframe["mean_gap"] * 125.0)
-                + 0.14 * math.tanh(higher_timeframe["bounce"] * 32.0)
-                + 0.14 * math.tanh(higher_timeframe["drawdown"] * 32.0)
-                + 0.10 * math.tanh(higher_timeframe["volume_impulse"] * 1.5)
-                + 0.10 * math.tanh(higher_timeframe["trade_impulse"] * 1.5)
-            )
-            local_direction = (
-                0.24 * math.tanh(momentum_1 * 300.0)
-                + 0.22 * math.tanh(momentum_3 * 210.0)
-                + 0.18 * math.tanh(momentum_10 * 130.0)
-                + 0.14 * math.tanh(ema_gap * 115.0)
-                + 0.12 * math.tanh(order_flow["signed_base"] * 2.4)
-                + 0.10 * math.tanh(order_flow["flow_acceleration"] * 2.4)
-            )
-            same_direction = broad_direction * local_direction
-            alignment = 0.42 + 0.58 * (0.5 + 0.5 * math.tanh(same_direction * 5.0))
-            volatility_penalty = 0.35 * math.tanh(
-                higher_timeframe["realized_volatility"] * 130.0 + higher_timeframe["range"] * 32.0
-            )
-            participation = 0.64 + 0.18 * math.tanh(higher_timeframe["volume_impulse"] * 1.4) + 0.18 * math.tanh(volume_ratio * 1.8)
-            flow_quality = 1.0 - 0.5 * _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
-            score = (
-                alignment
-                * max(0.20, 1.0 - volatility_penalty)
-                * participation
-                * flow_quality
-                * (0.54 * local_direction + 0.46 * broad_direction)
-            )
-    elif family == "directional_regime_rider":
+            return 0.0
         broad_direction = (
-            0.28 * math.tanh(momentum_20 * 115.0)
-            + 0.20 * math.tanh(momentum_10 * 135.0)
-            + 0.16 * math.tanh(ema_gap * 125.0)
+            0.30 * math.tanh(higher_timeframe["return"] * 105.0)
+            + 0.22 * math.tanh(higher_timeframe["mean_gap"] * 125.0)
+            + 0.14 * math.tanh(higher_timeframe["bounce"] * 32.0)
+            + 0.14 * math.tanh(higher_timeframe["drawdown"] * 32.0)
+            + 0.10 * math.tanh(higher_timeframe["volume_impulse"] * 1.5)
+            + 0.10 * math.tanh(higher_timeframe["trade_impulse"] * 1.5)
+        )
+        local_direction = (
+            0.24 * math.tanh(state.momentum_1 * 300.0)
+            + 0.22 * math.tanh(state.momentum_3 * 210.0)
+            + 0.18 * math.tanh(state.momentum_10 * 130.0)
+            + 0.14 * math.tanh(state.ema_gap * 115.0)
+            + 0.12 * math.tanh(order_flow["signed_base"] * 2.4)
+            + 0.10 * math.tanh(order_flow["flow_acceleration"] * 2.4)
+        )
+        same_direction = broad_direction * local_direction
+        alignment = 0.42 + 0.58 * (0.5 + 0.5 * math.tanh(same_direction * 5.0))
+        volatility_penalty = 0.35 * math.tanh(
+            higher_timeframe["realized_volatility"] * 130.0
+            + higher_timeframe["range"] * 32.0
+        )
+        participation = (
+            0.64
+            + 0.18 * math.tanh(higher_timeframe["volume_impulse"] * 1.4)
+            + 0.18 * math.tanh(state.volume_ratio * 1.8)
+        )
+        flow_quality = 1.0 - 0.5 * _clamp(
+            order_flow["no_trade_ratio"],
+            0.0,
+            1.0,
+        )
+        return (
+            alignment
+            * max(0.20, 1.0 - volatility_penalty)
+            * participation
+            * flow_quality
+            * (0.54 * local_direction + 0.46 * broad_direction)
+        )
+
+    if family == "directional_regime_rider":
+        broad_direction = (
+            0.28 * math.tanh(state.momentum_20 * 115.0)
+            + 0.20 * math.tanh(state.momentum_10 * 135.0)
+            + 0.16 * math.tanh(state.ema_gap * 125.0)
         )
         if higher_timeframe["available"] > 0.0:
             broad_direction = (
@@ -615,38 +877,73 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
                 + 0.16 * broad_direction
             )
         local_confirmation = (
-            0.30 * math.tanh(momentum_3 * 220.0)
-            + 0.20 * math.tanh(momentum_1 * 320.0)
+            0.30 * math.tanh(state.momentum_3 * 220.0)
+            + 0.20 * math.tanh(state.momentum_1 * 320.0)
             + 0.18 * math.tanh(order_flow["signed_base"] * 2.6)
             + 0.14 * math.tanh(order_flow["flow_acceleration"] * 2.8)
             + 0.10 * math.tanh(order_flow["flow_persistence"] * 2.0)
             + 0.08 * math.tanh((order_flow["taker_buy_ratio"] - 0.5) * 5.0)
         )
-        agreement = 0.55 + 0.45 * math.tanh((broad_direction * local_confirmation) * 5.0)
-        liquidity_quality = 1.0 - _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
-        volatility_drag = 0.30 * math.tanh((relative_atr + volatility_20 + higher_timeframe["realized_volatility"]) * 90.0)
-        score = (
+        agreement = 0.55 + 0.45 * math.tanh(
+            (broad_direction * local_confirmation) * 5.0
+        )
+        liquidity_quality = 1.0 - _clamp(
+            order_flow["no_trade_ratio"],
+            0.0,
+            1.0,
+        )
+        volatility_drag = 0.30 * math.tanh(
+            (
+                state.relative_atr
+                + state.volatility_20
+                + higher_timeframe["realized_volatility"]
+            )
+            * 90.0
+        )
+        return (
             max(0.25, 1.0 - volatility_drag)
             * (0.70 * broad_direction + 0.30 * local_confirmation)
             * (0.70 + 0.30 * agreement)
             * (0.55 + 0.45 * liquidity_quality)
         )
-    else:
-        score = (
-            0.32 * math.tanh(momentum_20 * 90.0)
-            + 0.27 * math.tanh(momentum_10 * 115.0)
-            + 0.18 * math.tanh(momentum_3 * 165.0)
-            - 0.11 * math.tanh(ema_spread * 95.0)
-            + 0.08 * math.tanh(volume_ratio * 2.0)
-            + 0.04 * math.tanh((relative_atr + volatility_20) * 85.0)
-        )
 
-    deadband = _param_float(params, "deadband", 0.04, low=0.0, high=0.95)
-    magnitude = abs(score)
-    if magnitude <= deadband:
-        return 0.0
-    adjusted = (magnitude - deadband) / max(1e-9, 1.0 - deadband)
-    return _clamp(math.copysign(adjusted, score), -1.0, 1.0)
+    return (
+        0.32 * math.tanh(state.momentum_20 * 90.0)
+        + 0.27 * math.tanh(state.momentum_10 * 115.0)
+        + 0.18 * math.tanh(state.momentum_3 * 165.0)
+        - 0.11 * math.tanh(state.ema_spread * 95.0)
+        + 0.08 * math.tanh(state.volume_ratio * 2.0)
+        + 0.04 * math.tanh((state.relative_atr + state.volatility_20) * 85.0)
+    )
+
+
+def _rule_alpha_family_score(
+    family: str,
+    state: _RuleAlphaState,
+) -> float:
+    score = _classic_rule_alpha_score(family, state)
+    if score is not None:
+        return score
+    score = _flow_rule_alpha_score(family, state)
+    if score is not None:
+        return score
+    return _regime_rule_alpha_score(family, state)
+
+
+def _rule_alpha_score_from_values(
+    values: Sequence[float],
+    params: dict[str, Any] | None,
+) -> float:
+    """Return a causal, interpretable long/short alpha score."""
+
+    family = str((params or {}).get("family", "momentum_breakout")).strip().lower()
+    if family == "empirical_feature_edge":
+        return _empirical_feature_edge_score(values, params)
+    score = _rule_alpha_family_score(
+        family,
+        _rule_alpha_state(values, params),
+    )
+    return _apply_rule_alpha_deadband(score, params)
 
 
 class ModelLoadError(ValueError):
@@ -880,7 +1177,8 @@ class TrainedModel:
             total += weight
         return _clamp(weighted_positive / total if total else 0.5, 0.0, 1.0)
 
-    def _technical_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+    @staticmethod
+    def _technical_probability(expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
         if not features:
             return None
         values = list(features[: max(1, min(int(expert.feature_count), len(features)))])
@@ -919,7 +1217,8 @@ class TrainedModel:
         score = trend + mean_reversion + breakout
         return _clamp(_sigmoid(score * 2.2), 0.0, 1.0)
 
-    def _rule_alpha_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+    @staticmethod
+    def _rule_alpha_probability(expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
         if not features:
             return None
         values = list(features[: max(1, min(int(expert.feature_count), len(features)))])

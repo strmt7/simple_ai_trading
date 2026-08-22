@@ -291,9 +291,27 @@ blind overwrite. All new development after integration belongs on `main`.
   coverage-complexity and unsafe-comparison findings, and introduced only
   `PY-W0072` and `PTC-W0062` in the new test. The follow-up constructs the
   parameterized payload in one expression and uses one compound context manager;
-  its focused eight-test file, Mypy, Ruff, and formatter checks pass. Verify the
-  final follow-up SHA before selecting another family; do not infer that the
-  parent 27-item queue is otherwise closed.
+  its focused eight-test file, Mypy, Ruff, and formatter checks pass. Exact
+  follow-up revision `8d5ecc1e7c0807892055643d4bd92cbeea70f7ac` passed hosted
+  DeepSource, Ruff, Vulture, and Super-Linter. Its longer CI run remained in
+  progress at the final refresh. Do not infer that the parent 27-item queue is
+  otherwise closed.
+- The current bounded rule-alpha batch decomposes
+  `_rule_alpha_score_from_values` from Radon `35` to `3`; its extracted helpers
+  score at most `12`. It also makes `_technical_probability` and
+  `_rule_alpha_probability` static without changing their call contract. A
+  frozen numeric regression covers every named rule-alpha family, the default
+  family, empirical two-feature behavior, absent higher-timeframe context,
+  non-finite values, an empty feature vector, and negative trade direction.
+  The 213-test affected matrix passes. After the mechanical formatting pass,
+  the 20-test exact-score contract passes; a deterministic in-memory harness
+  comparing the parent and current implementations produced 2416 exact
+  float-hex matches; and changed-line coverage is `160/160`. Scoped Mypy, Ruff,
+  Pylint errors-only, Bandit, and strict simplification checks pass locally. No
+  score, coefficient, calibration, serialization, model outcome, P&L, risk
+  threshold, or trading authority changes. Commit this batch on `main`, push
+  it, and verify the exact hosted result before selecting another item from the
+  parent inventory.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -461,11 +479,13 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    closed four and confirmed the remaining nine. The subsequent local batch
    addresses all nine, and exact revision `bb6abac7` confirmed their closure.
    The seven-item type/test follow-up is closed at `13f33f8a`; continue from its
-   exact 27-item DeepSource inventory recorded above. The current market-data
-   batch handles the coverage-complexity and unsafe-comparison family; continue
-   from its exact hosted result, not from an assumed residual count. Do not
-   treat the narrow `5f6e790c` pass as closure of that broader backlog or as a
-   project-wide security result.
+   exact 27-item DeepSource inventory recorded above. The market-data batch
+   closed the coverage-complexity and unsafe-comparison family at exact
+   follow-up revision `8d5ecc1e`. The current rule-alpha batch addresses the
+   monolithic scorer and its two static-method findings; continue from its exact
+   hosted result, not from an assumed residual count. Do not treat the narrow
+   `5f6e790c` pass or either bounded follow-up as closure of that broader backlog
+   or as a project-wide security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.
