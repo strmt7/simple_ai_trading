@@ -158,7 +158,10 @@ blind overwrite. All new development after integration belongs on `main`.
   source ledger. A future fix must reject an absent or malformed aggregate row
   before indexing and advance the cumulative ledger amendment with provenance
   tests in the same reviewed change; do not add a type assertion, ignore, or
-  unbound edit merely to silence DeepSource.
+  unbound edit merely to silence DeepSource. Exact follow-up revision
+  `502568f7` passed DeepSource with zero issues in three minutes 22 seconds;
+  hosted Ruff, Vulture, Super-Linter, and Windows Python/native-UI also passed.
+  The Linux test-and-coverage job remained in progress at the bounded refresh.
 - A Windows child-process reproducer proved that a fake `git.exe` in the
   process current directory could satisfy an unqualified `git` invocation.
   Package bootstrap now removes empty, relative, duplicate, and
