@@ -288,6 +288,20 @@ fit, prediction, threshold, partition policy, evidence identity, P&L, risk,
 authority, or profitability claim changes. Materialization is the sole
 remaining MLP complexity task in this queue.
 
+The materialization closeout decomposes `materialize_polymarket_mlp_report`
+from Radon `23` to `2`; its largest persistence helper scores `8`. Identity
+validation, validation/test replay, canonical row construction, schema setup,
+existing-evidence verification, and transactional insertion are now explicit
+private phases. Static allowlisted SQL, row and sort order, canonical JSON/hash
+inputs, idempotence, runtime-evidence repair, tamper rejection, and rollback
+semantics are preserved. The 59-test focused matrix passes, including the real
+DuckDB create/existing/tamper path, and changed executable-line coverage is
+`84/84`. Ruff and formatting pass; scoped Bandit reports no high- or
+medium-severity finding. The three scoped Mypy diagnostics are unchanged lines
+outside this batch. This closes the documented MLP complexity queue only; it
+does not establish model edge, profitability, production authority, or
+project-wide analyzer closure.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance

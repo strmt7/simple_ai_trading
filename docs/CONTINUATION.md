@@ -31,9 +31,10 @@ The following state was reverified through approximately
 rechecked before any action.
 
 The `2026-08-23` closeout refresh found `main` synchronized with `origin/main`
-at parent `75160c3d4c2f88011026448b6153dc91dbcd83de` before the final bounded
-edit. Round 21 wrapper PID `35008` and child PID `35264` were responsive. The
-Round 75 scheduled supervisor was `Ready` and its last result was `0`. Neither
+at parent `1ea2387cc905f1d9a4a7fab73061f842091e1c42` before the final bounded
+materializer edit. Round 21 wrapper PID `35008` and child PID `35264` were
+responsive. The Round 75 scheduled supervisor was `Ready` and its last result
+was `0`. Neither
 capture worktree, process, state file, database, or schedule was changed. These
 are ephemeral observations and must be reverified after resumption. GitHub
 exposed only `main`, no open pull request, zero open Dependabot alerts, and zero
@@ -132,6 +133,21 @@ blind overwrite. All new development after integration belongs on `main`.
   placeholder strings. Bandit reports zero `B608` findings in both files. The
   remaining `B311` item is SHA-seeded pseudo-random model initialization used
   for deterministic reproducibility, not a secret or security decision.
+- The final MLP materializer closeout separates identity checks, causal replay,
+  canonical row construction, schema creation, existing-evidence verification,
+  and transactional insertion. `materialize_polymarket_mlp_report` falls from
+  Radon `23` to `2`; the largest extracted helper is `8`. The 59-test focused
+  matrix passes, including real DuckDB create/existing/prediction-tamper behavior
+  and direct runtime-tamper, missing-runtime repair, replay-drift, and rollback
+  checks. Changed executable-line coverage is `84/84`; Ruff and formatting pass.
+  Scoped Bandit reports no high- or medium-severity finding. Scoped Mypy reports
+  only three annotations on unchanged lines `841`, `1374`, and `1401`; this batch
+  adds no diagnostic. The locked environment resolves, the installed Python
+  environment audit reports no known third-party vulnerability, and GitHub
+  reports zero open Dependabot and secret-scanning alerts. GitHub code scanning
+  still returns `404: no analysis found`, and DeepSource remained red at the
+  pre-closeout parent. Therefore project-wide vulnerability and analyzer closure
+  remain unproven.
 - A Windows child-process reproducer proved that a fake `git.exe` in the
   process current directory could satisfy an unqualified `git` invocation.
   Package bootstrap now removes empty, relative, duplicate, and
@@ -724,10 +740,10 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    rejection tests. Fit-member training-loop complexity is closed under exact
    numeric and progress fingerprints. Top-level orchestration is also closed
    under exact full-report and callback fingerprints plus admission-gated test
-   mechanics. Decompose the sole remaining MLP finding,
-   `materialize_polymarket_mlp_report`, under idempotence, transaction, runtime
-   evidence, and tamper tests. Continue source-to-sink triage in other modules
-   from exact hosted results, not assumed residual counts. Replace runtime
+   mechanics. The materializer is now closed under real DuckDB idempotence,
+   transaction rollback, runtime-evidence repair, replay-drift, and tamper tests.
+   Continue source-to-sink triage in other modules from exact hosted results,
+   not assumed residual counts. Replace runtime
    assertions only when an explicit fail-closed error and cleanup contract
    exists; do not mechanically rewrite typing assertions.
    Do not treat the narrow `5f6e790c` pass or any bounded follow-up as closure
