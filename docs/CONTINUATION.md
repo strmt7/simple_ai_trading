@@ -287,8 +287,13 @@ blind overwrite. All new development after integration belongs on `main`.
   Scoped Mypy, Ruff, Pylint errors-only, strict simplification checks, and
   Markdown lint pass locally. Bandit still reports ten pre-existing `B608`
   dynamic-SQL heuristics outside changed lines and no high-severity issue.
-  Verify the exact pushed DeepSource inventory before selecting another family;
-  do not infer that the parent 27-item queue is otherwise closed.
+  DeepSource analyzed exact revision `6370235f`, resolved the targeted
+  coverage-complexity and unsafe-comparison findings, and introduced only
+  `PY-W0072` and `PTC-W0062` in the new test. The follow-up constructs the
+  parameterized payload in one expression and uses one compound context manager;
+  its focused eight-test file, Mypy, Ruff, and formatter checks pass. Verify the
+  final follow-up SHA before selecting another family; do not infer that the
+  parent 27-item queue is otherwise closed.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.

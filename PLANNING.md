@@ -126,9 +126,11 @@ overflow-safe midpoint, and rejects non-finite derived depth notional before
 any write. The 322-test affected matrix passes and all 29 changed executable
 lines have coverage. Ruff, scoped Mypy, Pylint errors-only, and strict
 simplification checks pass. Bandit still reports the ten documented dynamic-SQL
-heuristics outside changed lines; hosted analysis is required before updating
-the remaining queue. This is data-integrity and maintainability evidence, not
-model-edge or profitability evidence.
+heuristics outside changed lines. DeepSource analyzed exact code revision
+`6370235f`, resolved the targeted coverage-complexity and unsafe-comparison
+findings, and introduced only two style findings in the new regression test;
+the follow-up removes both. This is data-integrity and maintainability evidence,
+not model-edge or profitability evidence.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
