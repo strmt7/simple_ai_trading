@@ -385,6 +385,79 @@ def test_ai_uplift_rejects_noncontiguous_matched_periods() -> None:
     assert "ai_uplift_periods_not_contiguous" in report.reasons
 
 
+def test_ai_uplift_rejects_noninteger_matched_period_timestamp() -> None:
+    periods = _matched_periods((0.002,) * 30)
+    periods[0]["period_start_ms"] = 1.5
+
+    report = assess_ai_uplift(
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "roi_pct": 1.2,
+                "max_drawdown": 0.04,
+                "expectancy": 0.9,
+                "closed_trades": 10,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 14.0,
+                "roi_pct": 1.4,
+                "max_drawdown": 0.035,
+                "expectancy": 1.1,
+                "closed_trades": 10,
+            },
+            _AI_SHA256,
+        ),
+        model_name="qwen2.5:7b",
+        model_artifact_sha256=_MODEL_SHA256,
+        matched_periods=periods,
+    )
+
+    assert report.accepted is False
+    assert "ai_uplift_period_0_invalid" in report.reasons
+    assert "ai_uplift_period_rows_invalid" in report.reasons
+
+
+def test_ai_uplift_rejects_invalid_metric_types_counts_and_ranges() -> None:
+    baseline = _complete(
+        {
+            "realized_pnl": 12.0,
+            "roi_pct": 1.2,
+            "max_drawdown": 0.04,
+            "expectancy": 0.9,
+            "closed_trades": 10,
+        },
+        _BASELINE_SHA256,
+    )
+    ai = _complete(
+        {
+            "realized_pnl": True,
+            "roi_pct": 1.4,
+            "max_drawdown": -0.035,
+            "expectancy": 1.1,
+            "closed_trades": 10.5,
+            "win_rate": 1.1,
+        },
+        _AI_SHA256,
+    )
+
+    report = assess_ai_uplift(
+        baseline,
+        ai,
+        model_name="qwen2.5:7b",
+        model_artifact_sha256=_MODEL_SHA256,
+        matched_periods=_matched_periods((0.002,) * 30),
+    )
+
+    assert report.accepted is False
+    assert "ai_uplift_ai_realized_pnl_nonfinite" in report.reasons
+    assert "ai_uplift_ai_closed_trades_invalid_count" in report.reasons
+    assert "ai_uplift_ai_max_drawdown_invalid_range" in report.reasons
+    assert "ai_uplift_ai_win_rate_invalid_range" in report.reasons
+
+
 def test_ai_uplift_rejects_tail_risk_deterioration() -> None:
     report = assess_ai_uplift(
         _bound(

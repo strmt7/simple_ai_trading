@@ -6,7 +6,7 @@ import hashlib
 import json
 import math
 from dataclasses import asdict, dataclass, field
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, SupportsFloat, SupportsIndex, TypedDict
 
 from .ai_runtime import estimate_model_parameters_b
 from .statistical_resampling import moving_block_bootstrap_mean
@@ -47,6 +47,33 @@ _MIN_BLOCK_BOOTSTRAP_SAMPLES = 2_000
 _MIN_BLOCK_BOOTSTRAP_CONFIDENCE = 0.95
 _MIN_EVALUATION_SPAN_DAYS = 90
 _DAY_MS = 86_400_000
+
+
+class _MatchedPeriodRow(TypedDict):
+    scope: str
+    period_start_ms: int
+    period_end_ms: int
+    baseline_return: float
+    ai_return: float
+
+
+class _PeriodBinding(TypedDict):
+    evidence_unit: str
+    scope: str
+    sample_count: int
+    period_duration_ms: int
+    first_period_start_ms: int | None
+    last_period_end_ms: int | None
+    paired_samples_sha256: str
+
+
+class _BootstrapEvidence(TypedDict):
+    samples: int
+    confidence: float
+    block_length: int
+    mean_delta_ci_lower: float
+    mean_delta_ci_upper: float
+    positive_mean_probability: float
 
 
 @dataclass(frozen=True)
@@ -165,11 +192,32 @@ class AIUpliftReport:
 
 
 def _finite(value: object, default: float = 0.0) -> float:
+    if isinstance(value, bool) or not isinstance(
+        value,
+        (str, bytes, bytearray, SupportsFloat, SupportsIndex),
+    ):
+        return default
     try:
         parsed = float(value)
     except (TypeError, ValueError, OverflowError):
         return default
     return parsed if math.isfinite(parsed) else default
+
+
+def _integer(value: object) -> int | None:
+    parsed = _finite(value, default=float("nan"))
+    if not math.isfinite(parsed) or not parsed.is_integer():
+        return None
+    return int(parsed)
+
+
+def _reason_strings(value: object) -> tuple[str, ...]:
+    if not isinstance(value, Sequence) or isinstance(
+        value,
+        (str, bytes, bytearray),
+    ):
+        return ()
+    return tuple(str(reason) for reason in value if str(reason))
 
 
 def _first_metric(metrics: Mapping[str, object], keys: tuple[str, ...]) -> float:
@@ -251,10 +299,10 @@ def _is_sha256(value: object) -> bool:
 
 def _matched_period_deltas(
     periods: Sequence[Mapping[str, object]] | None,
-) -> tuple[tuple[float, ...], dict[str, object], tuple[str, ...]]:
+) -> tuple[tuple[float, ...], _PeriodBinding, tuple[str, ...]]:
     rows = tuple(periods or ())
     reasons: list[str] = []
-    canonical: list[dict[str, object]] = []
+    canonical: list[_MatchedPeriodRow] = []
     expected_scope = ""
     expected_duration = 0
     previous_end = -1
@@ -263,12 +311,11 @@ def _matched_period_deltas(
             reasons.append(f"ai_uplift_period_{index}_not_mapping")
             continue
         scope = str(raw.get("scope") or "").strip()
-        try:
-            start_ms = int(raw.get("period_start_ms"))
-            end_ms = int(raw.get("period_end_ms"))
-            baseline_return = float(raw.get("baseline_return"))
-            ai_return = float(raw.get("ai_return"))
-        except (TypeError, ValueError, OverflowError):
+        start_ms = _integer(raw.get("period_start_ms"))
+        end_ms = _integer(raw.get("period_end_ms"))
+        baseline_return = _finite(raw.get("baseline_return"), default=float("nan"))
+        ai_return = _finite(raw.get("ai_return"), default=float("nan"))
+        if start_ms is None or end_ms is None:
             reasons.append(f"ai_uplift_period_{index}_invalid")
             continue
         if (
@@ -314,20 +361,14 @@ def _matched_period_deltas(
             allow_nan=False,
         ).encode("ascii")
         fingerprint = hashlib.sha256(encoded).hexdigest()
-    deltas = tuple(
-        float(row["ai_return"]) - float(row["baseline_return"]) for row in canonical
-    )
-    binding = {
+    deltas = tuple(row["ai_return"] - row["baseline_return"] for row in canonical)
+    binding: _PeriodBinding = {
         "evidence_unit": "matched_fixed_period_return_delta",
         "scope": expected_scope,
         "sample_count": len(canonical),
         "period_duration_ms": expected_duration,
-        "first_period_start_ms": int(canonical[0]["period_start_ms"])
-        if canonical
-        else None,
-        "last_period_end_ms": int(canonical[-1]["period_end_ms"])
-        if canonical
-        else None,
+        "first_period_start_ms": canonical[0]["period_start_ms"] if canonical else None,
+        "last_period_end_ms": canonical[-1]["period_end_ms"] if canonical else None,
         "paired_samples_sha256": fingerprint,
     }
     return deltas, binding, tuple(dict.fromkeys(reasons))
@@ -399,20 +440,37 @@ def _moving_block_bootstrap(
     samples: int,
     confidence: float,
     seed_material: str,
-) -> dict[str, object]:
+) -> _BootstrapEvidence:
     evidence = moving_block_bootstrap_mean(
         deltas,
         samples=samples,
         confidence=confidence,
         seed_material=seed_material,
     )
+    parsed_samples = _integer(evidence.get("samples"))
+    parsed_block_length = _integer(evidence.get("block_length"))
+    parsed_values = {
+        key: _finite(evidence.get(key), default=float("nan"))
+        for key in (
+            "confidence",
+            "mean_ci_lower",
+            "mean_ci_upper",
+            "positive_mean_probability",
+        )
+    }
+    if (
+        parsed_samples is None
+        or parsed_block_length is None
+        or any(not math.isfinite(value) for value in parsed_values.values())
+    ):
+        raise ValueError("moving-block bootstrap returned invalid evidence")
     return {
-        "samples": evidence["samples"],
-        "confidence": evidence["confidence"],
-        "block_length": evidence["block_length"],
-        "mean_delta_ci_lower": evidence["mean_ci_lower"],
-        "mean_delta_ci_upper": evidence["mean_ci_upper"],
-        "positive_mean_probability": evidence["positive_mean_probability"],
+        "samples": parsed_samples,
+        "confidence": parsed_values["confidence"],
+        "block_length": parsed_block_length,
+        "mean_delta_ci_lower": parsed_values["mean_ci_lower"],
+        "mean_delta_ci_upper": parsed_values["mean_ci_upper"],
+        "positive_mean_probability": parsed_values["positive_mean_probability"],
     }
 
 
@@ -440,10 +498,10 @@ def _statistical_evidence(
         seed_material=str(period_binding["paired_samples_sha256"] or "missing"),
     )
     reasons = list(period_reasons)
-    first_period_ms = period_binding.get("first_period_start_ms")
-    last_period_ms = period_binding.get("last_period_end_ms")
+    first_period_ms = period_binding["first_period_start_ms"]
+    last_period_ms = period_binding["last_period_end_ms"]
     evaluation_span_ms = (
-        int(last_period_ms) - int(first_period_ms)
+        last_period_ms - first_period_ms
         if first_period_ms is not None and last_period_ms is not None
         else 0
     )
@@ -471,7 +529,7 @@ def _statistical_evidence(
         reasons.append(
             f"ai_uplift_mean_sample_delta<={float(policy.min_mean_sample_delta):g}"
         )
-    bootstrap_lower = float(bootstrap["mean_delta_ci_lower"])
+    bootstrap_lower = bootstrap["mean_delta_ci_lower"]
     if bootstrap_lower <= float(policy.min_bootstrap_mean_delta_lower):
         reasons.append(
             "ai_uplift_block_bootstrap_lower_mean_delta<="
@@ -499,12 +557,12 @@ def _statistical_evidence(
         "mean_delta": mean_delta,
         "median_delta": _median(deltas),
         "min_mean_sample_delta": float(policy.min_mean_sample_delta),
-        "block_bootstrap_samples": int(bootstrap["samples"]),
-        "block_bootstrap_confidence": float(bootstrap["confidence"]),
-        "block_length": int(bootstrap["block_length"]),
+        "block_bootstrap_samples": bootstrap["samples"],
+        "block_bootstrap_confidence": bootstrap["confidence"],
+        "block_length": bootstrap["block_length"],
         "mean_delta_ci_lower": bootstrap_lower,
-        "mean_delta_ci_upper": float(bootstrap["mean_delta_ci_upper"]),
-        "positive_mean_probability": float(bootstrap["positive_mean_probability"]),
+        "mean_delta_ci_upper": bootstrap["mean_delta_ci_upper"],
+        "positive_mean_probability": bootstrap["positive_mean_probability"],
         "min_bootstrap_mean_delta_lower": float(policy.min_bootstrap_mean_delta_lower),
         "evaluation_span_ms": evaluation_span_ms,
         "min_evaluation_span_ms": minimum_span_ms,
@@ -655,13 +713,9 @@ def assess_ai_uplift(
     if ai["closed_trades"] < max(0, int(cfg.min_ai_closed_trades)):
         reasons.append(f"ai_closed_trades<{int(cfg.min_ai_closed_trades)}")
     if not bool(statistical.get("accepted")):
-        reasons.extend(
-            str(reason) for reason in statistical.get("reasons", ()) if str(reason)
-        )
+        reasons.extend(_reason_strings(statistical.get("reasons")))
     if cfg.require_evidence_binding and not bool(evidence_binding.get("accepted")):
-        reasons.extend(
-            str(reason) for reason in evidence_binding.get("reasons", ()) if str(reason)
-        )
+        reasons.extend(_reason_strings(evidence_binding.get("reasons")))
     if deltas["realized_pnl"] <= float(cfg.min_pnl_delta):
         reasons.append("ai_pnl_not_above_baseline")
     if deltas["roi_pct"] <= float(cfg.min_roi_delta):

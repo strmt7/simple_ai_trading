@@ -30,8 +30,10 @@ profit promise or a shortcut to mainnet.
 A model advances only with reproducible source provenance, causal splits,
 explicit spread/fee/latency/liquidity costs, adequate trade activity, positive
 after-cost evidence, bounded drawdown, and untouched holdout results. AI must
-also show matched uplift over the frozen machine-learning decision; otherwise
-it remains a veto-only research component.
+also show matched uplift over the frozen machine-learning decision. The v5 gate
+requires identical metric-unit provenance, recomputed AI-minus-baseline deltas,
+strict aggregate P&L/ROI/expectancy improvement, and non-worsening maximum
+drawdown; otherwise AI remains a veto-only research component.
 
 The current state and next admissible experiment are recorded in the
 [Binance](docs/model-research/action-value/latest/README.md) and

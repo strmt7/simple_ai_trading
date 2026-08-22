@@ -88,12 +88,17 @@ The gate enforces:
 - accepted AI uplift evidence must include finite baseline, AI, and delta
   metrics for realized P&L, ROI, drawdown, expectancy, profit factor, trade
   count, win rate, liquidation count, loss streak, and downside return/risk,
-  plus model-size evidence that satisfies the uplift policy,
+  plus model-size evidence that satisfies the uplift policy. The v5 contract
+  records the exact source alias for each metric, requires matching aliases
+  between treatments, normalizes explicit percentage aliases, and independently
+  recomputes every serialized delta as AI minus baseline,
 - accepted AI uplift evidence must also include paired holdout statistical
   evidence: sample count, positive paired-delta count/rate, one-sided sign-test
   p-value, and positive mean paired delta. Missing, weak, or nonpositive
   paired evidence blocks the artifact even when aggregate AI P&L is higher.
-  Counts, rates, and sign-test p-values must be internally consistent,
+  Aggregate realized P&L, ROI, and expectancy must each improve strictly while
+  maximum drawdown cannot worsen. Counts, rates, and sign-test p-values must be
+  internally consistent,
 - bounded drawdown, CVaR, deployed weight, plain effective symbol count,
   correlation-adjusted effective symbol count, correlation, and cluster
   exposure metrics.
@@ -142,6 +147,12 @@ References:
   <https://airc.nist.gov/airmf-resources/playbook/measure/>
   and
   <https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.800-4.pdf>
+- NIST metrics guidance and the CFA Institute GIPS overview, which support
+  explicit, consistent measurement methods and comparable after-cost
+  performance evidence:
+  <https://www.nist.gov/itl/ai/ai-standards-and-guidelines-group/metrics-and-measures>
+  and
+  <https://www.cfainstitute.org/insights/professional-learning/refresher-readings/2026/overview-of-the-global-investment-performance-standards>
 
 ## Market Edge Requirement
 
