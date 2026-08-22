@@ -7,7 +7,7 @@ import math
 import random
 from dataclasses import asdict, dataclass, field
 from statistics import mean, pstdev
-from typing import Any, Iterable, List, Sequence, Tuple
+from typing import Any, Iterable, List, Sequence, Tuple, cast
 
 from .compute import (
     BackendInfo,
@@ -1207,16 +1207,16 @@ class TrainedModel:
             )
 
         if payoff_tree_schema == "action_value_v1":
-            long_score = ensemble_value("long_tree_info", "long_average_output")
-            short_score = ensemble_value("short_tree_info", "short_average_output")
-            if long_score is None or short_score is None:
+            tree_long_score = ensemble_value("long_tree_info", "long_average_output")
+            tree_short_score = ensemble_value("short_tree_info", "short_average_output")
+            if tree_long_score is None or tree_short_score is None:
                 return None
             return _PayoffExpertPrediction(
                 schema=payoff_tree_schema,
                 clip_bps=clip_bps,
                 deadband_bps=deadband_bps,
-                long_score=long_score,
-                short_score=short_score,
+                long_score=tree_long_score,
+                short_score=tree_short_score,
                 long_enabled=True,
                 short_enabled=True,
             )
@@ -1485,7 +1485,7 @@ class TrainedModel:
             float(item["validation_actionable_mean_edge_bps"])
             for item in validated_supporting
         ]
-        validation_rows = [
+        validation_row_counts = [
             int(item["validation_actionable_rows"])
             for item in validated_supporting
         ]
@@ -1506,7 +1506,7 @@ class TrainedModel:
             ),
             "validated_support_count": len(validated_supporting),
             "minimum_supporting_validation_rows": (
-                min(validation_rows) if validation_rows else 0
+                min(validation_row_counts) if validation_row_counts else 0
             ),
             "minimum_supporting_validation_after_cost_edge_bps": (
                 min(validation_edges) if validation_edges else None
@@ -2565,7 +2565,7 @@ def _optional_decision_threshold(value: object, *, low: float, high: float) -> f
     if value is None:
         return None
     try:
-        parsed = float(value)
+        parsed = float(cast(Any, value))
     except (TypeError, ValueError, OverflowError):
         return None
     if not math.isfinite(parsed):

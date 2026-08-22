@@ -247,6 +247,19 @@ blind overwrite. All new development after integration belongs on `main`.
   scoped Mypy, Ruff/format, Pylint errors-only, targeted Bandit, strict
   simplification checks, and Radon pass. Hosted DeepSource must analyze the exact
   pushed checkpoint before this changed-scope queue is called closed.
+- DeepSource analyzed exact revision
+  `bb6abac7b33cd3ffe089c05872283beef3bc13f0`, resolved all nine targeted
+  findings, and introduced no replacement-helper finding. The run remained red
+  for six adjacent type-contract diagnostics in `market_store.py`, `model.py`,
+  and `terminal_holdout_ledger.py`, plus one complexity diagnostic in
+  `test_financial_sanity.py`. The current follow-up fixes those seven exact items
+  and five adjacent local Mypy findings. All 11 changed executable source lines
+  have coverage; the focused five-file runtime matrix, direct legacy action-value
+  tree test, scoped Mypy, Ruff, strict simplification checks, and Pylint
+  errors-only pass. Pylint's only unfiltered errors are the unavailable optional
+  `torch` imports. The file-wide Bandit scan still reports the documented dynamic
+  SQL and assertion triage queue, but no finding is on a changed line. Hosted
+  DeepSource must verify the follow-up SHA before the seven-item queue is closed.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.

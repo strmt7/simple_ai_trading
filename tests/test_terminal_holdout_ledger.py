@@ -81,6 +81,8 @@ def test_terminal_model_fingerprint_excludes_later_governance_stamps() -> None:
     assert terminal_model_fingerprint(model) != initial
     with pytest.raises(TypeError, match="dataclass"):
         terminal_model_fingerprint(object())
+    with pytest.raises(TypeError, match="dataclass"):
+        terminal_model_fingerprint(TrainedModel)
 
 
 def test_terminal_result_fingerprint_binds_result_but_excludes_reservation() -> None:

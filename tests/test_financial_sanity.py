@@ -76,6 +76,17 @@ def _backtest_result(**overrides) -> BacktestResult:
     return BacktestResult(**payload)
 
 
+def _report_has_check(
+    report: FinancialSanityReport,
+    *,
+    path: str,
+    status: str,
+) -> bool:
+    return any(
+        check.path == path and check.status == status for check in report.checks
+    )
+
+
 def test_backtest_financial_sanity_accepts_consistent_accounting() -> None:
     report = build_backtest_financial_sanity_report(_backtest_result())
 
@@ -429,31 +440,37 @@ def test_model_financial_sanity_gates_promoted_probability_calibration() -> None
     )
 
     assert good_report.allowed is True
-    assert any(
-        check.path == "probability_brier_after" and check.status == "ok"
-        for check in good_report.checks
+    assert _report_has_check(
+        good_report,
+        path="probability_brier_after",
+        status="ok",
     )
     assert missing_report.allowed is False
-    assert any(
-        check.path == "probability_brier_after" and check.status == "block"
-        for check in missing_report.checks
+    assert _report_has_check(
+        missing_report,
+        path="probability_brier_after",
+        status="block",
     )
-    assert any(
-        check.path == "probability_ece_after" and check.status == "block"
-        for check in missing_report.checks
+    assert _report_has_check(
+        missing_report,
+        path="probability_ece_after",
+        status="block",
     )
     assert bad_report.allowed is False
-    assert any(
-        check.path == "probability_brier_after" and check.status == "block"
-        for check in bad_report.checks
+    assert _report_has_check(
+        bad_report,
+        path="probability_brier_after",
+        status="block",
     )
-    assert any(
-        check.path == "probability_ece_after" and check.status == "block"
-        for check in bad_report.checks
+    assert _report_has_check(
+        bad_report,
+        path="probability_ece_after",
+        status="block",
     )
-    assert any(
-        check.path == "probability_log_loss_after" and check.status == "block"
-        for check in bad_report.checks
+    assert _report_has_check(
+        bad_report,
+        path="probability_log_loss_after",
+        status="block",
     )
     assert worse_ece_report.allowed is False
     assert any(
@@ -461,9 +478,10 @@ def test_model_financial_sanity_gates_promoted_probability_calibration() -> None
         for check in worse_ece_report.checks
     )
     assert failed_coverage_report.allowed is False
-    assert any(
-        check.path == "execution_validation.data_coverage" and check.status == "block"
-        for check in failed_coverage_report.checks
+    assert _report_has_check(
+        failed_coverage_report,
+        path="execution_validation.data_coverage",
+        status="block",
     )
 
 
@@ -992,7 +1010,9 @@ def test_model_lab_financial_sanity_blocks_inconsistent_temporal_window_counts()
 
 def test_model_lab_financial_sanity_blocks_missing_portfolio_symbol_evidence() -> None:
     payload = _model_lab_payload_with_symbols()
-    del payload["portfolio_risk"]["accepted_symbols"]  # type: ignore[index]
+    portfolio = payload["portfolio_risk"]
+    assert isinstance(portfolio, dict)
+    del portfolio["accepted_symbols"]
 
     report = build_model_lab_financial_sanity_report(payload)
 
@@ -1176,8 +1196,12 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_missing_contract_m
 ):
     payload = _model_lab_payload_with_symbols(["BTCUSDT"])
     uplift = _accepted_ai_uplift()
-    del uplift["baseline"]["profit_factor"]  # type: ignore[index]
-    del uplift["deltas"]["downside_return_risk_ratio"]  # type: ignore[index]
+    baseline = uplift["baseline"]
+    deltas = uplift["deltas"]
+    assert isinstance(baseline, dict)
+    assert isinstance(deltas, dict)
+    del baseline["profit_factor"]
+    del deltas["downside_return_risk_ratio"]
     payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
 
     report = build_model_lab_financial_sanity_report(payload)

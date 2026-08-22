@@ -105,8 +105,13 @@ batch now decomposes those nine paths without changing calculations, thresholds,
 diagnostics, or serialized report order. Locally, all target scores are `14` or
 lower, no replacement helper exceeds `14`, 51 focused and 235 affected tests
 pass, and all 133 changed executable lines have coverage. This is maintainability
-evidence only. Reduce the recorded residual count only after DeepSource analyzes
-the exact pushed checkpoint; do not treat it as a project-wide security result.
+evidence only. DeepSource analyzed exact revision `bb6abac7`, resolved all nine
+targeted findings, and introduced no replacement-helper finding. That wider run
+then exposed six type-contract diagnostics in adjacent modules and one test
+complexity diagnostic. The follow-up fixes those exact seven items plus five
+adjacent local Mypy findings, with all 11 changed executable source lines covered.
+Hosted reanalysis is still required; do not treat this bounded closure as a
+project-wide security result.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
