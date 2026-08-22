@@ -3,7 +3,12 @@ from __future__ import annotations
 import io
 import subprocess
 
-from simple_ai_trading.foundation_worker_client import FoundationWorkerSupervisor
+import pytest
+
+from simple_ai_trading.foundation_worker_client import (
+    FoundationWorkerError,
+    FoundationWorkerSupervisor,
+)
 
 
 class _HungLauncher:
@@ -32,6 +37,32 @@ class _HungLauncher:
 
     def kill(self) -> None:
         self.killed = True
+
+
+def test_start_reaps_launcher_when_required_process_pipe_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    supervisor = FoundationWorkerSupervisor(
+        model_size="small",
+        backend="cpu",
+        source_cache_root=None,
+        require_accelerator=False,
+    )
+    process = _HungLauncher()
+    monkeypatch.setattr(subprocess, "Popen", lambda *_args, **_kwargs: process)
+
+    with pytest.raises(
+        FoundationWorkerError, match="process pipes are unavailable"
+    ) as error:
+        supervisor.start()
+
+    assert error.value.restartable is False
+    assert process.stdin.closed is True
+    assert process.wait_calls == 2
+    assert process.terminated is True
+    assert process.killed is False
+    assert supervisor.process is None
+    assert supervisor.pid is None
 
 
 def test_stop_terminates_distinct_runtime_when_windows_launcher_hangs(
