@@ -45,6 +45,31 @@ def _rows(count: int = 80) -> list[ModelRow]:
     return rows
 
 
+def test_action_value_tree_prediction_returns_finite_side_scores() -> None:
+    tree = {"tree_structure": {"leaf_value": 0.25}}
+    expert = HybridExpert(
+        name="action-value-tree",
+        kind="signed_payoff_lightgbm_ranker",
+        weight=1.0,
+        feature_count=2,
+        params={
+            "input_dim": 2,
+            "payoff_tree_schema": "action_value_v1",
+            "long_tree_info": [tree],
+            "short_tree_info": [tree],
+        },
+    )
+
+    prediction = _model()._signed_payoff_lightgbm_ranker_prediction(  # noqa: SLF001
+        expert,
+        (0.1, -0.1),
+    )
+
+    assert prediction is not None
+    assert prediction.long_score == pytest.approx(0.25)
+    assert prediction.short_score == pytest.approx(0.25)
+
+
 def test_payoff_internal_validation_split_purges_overlapping_labels() -> None:
     rows = _rows(1_000)
     examples = hybrid_models._PayoffTrainingExamples(

@@ -9,7 +9,7 @@ import sqlite3
 import time
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
-from typing import Mapping
+from typing import Any, Mapping, cast
 
 from .assets import is_supported_major_symbol, normalize_symbol
 from .types import config_paths
@@ -52,9 +52,9 @@ def _strict_int(value: object, *, label: str) -> int:
 def terminal_model_fingerprint(model: object) -> str:
     """Bind the evaluated model while excluding later governance stamps."""
 
-    if not is_dataclass(model):
+    if not is_dataclass(model) or isinstance(model, type):
         raise TypeError("terminal model fingerprint requires a dataclass model")
-    payload = asdict(model)
+    payload = asdict(cast(Any, model))
     if not isinstance(payload, dict):  # pragma: no cover - dataclasses always return mappings
         raise TypeError("terminal model fingerprint payload is invalid")
     payload.pop("selection_risk", None)

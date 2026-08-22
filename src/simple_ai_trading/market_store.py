@@ -7,7 +7,7 @@ import sqlite3
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Mapping, Sequence, cast
+from typing import Any, Mapping, Sequence, cast
 
 from .api import Candle
 
@@ -475,8 +475,8 @@ class MarketDataStore:
                     str(payload.get("market_type", "")),
                     str(payload.get("schema_version", "")),
                     str(payload.get("status", "")),
-                    int(payload.get("started_at_ms", 0)),
-                    int(payload.get("completed_at_ms", 0)),
+                    int(cast(Any, payload.get("started_at_ms", 0))),
+                    int(cast(Any, payload.get("completed_at_ms", 0))),
                     str(payload.get("output_dir", "")),
                     str(payload.get("manifest_path", "")),
                     encoded,
@@ -1098,7 +1098,7 @@ class MarketDataStore:
     @staticmethod
     def _finite_positive(payload: Mapping[str, object], key: str) -> float:
         try:
-            value = float(payload[key])
+            value = float(cast(Any, payload[key]))
         except (KeyError, TypeError, ValueError, OverflowError) as exc:
             raise ValueError(f"top-of-book missing numeric {key}") from exc
         if not value > 0.0:
