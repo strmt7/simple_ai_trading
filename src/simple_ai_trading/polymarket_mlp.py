@@ -1461,15 +1461,47 @@ def _group_utility_uplift(
     return tuple(values)
 
 
-def fit_and_evaluate_polymarket_mlp(
+@dataclass(frozen=True)
+class _PolymarketMLPPreparedData:
+    split: PolymarketRidgeSplit
+    validation_indices: np.ndarray
+    training_x: np.ndarray
+    training_y: np.ndarray
+    validation_x: np.ndarray
+    validation_y: np.ndarray
+    mean: np.ndarray
+    scale: np.ndarray
+    standardized_training: np.ndarray
+    standardized_validation: np.ndarray
+    weights: np.ndarray
+
+
+@dataclass(frozen=True)
+class _PolymarketMLPValidationResult:
+    validation_loss: float
+    ridge_validation_loss: float
+    validation_uplift: PolymarketMLPBootstrap
+    evaluations: tuple[PolymarketPolicyEvaluation, ...]
+    selected: PolymarketPolicyEvaluation | None
+    utility_uplift: float | None
+    admission_reasons: tuple[str, ...]
+    admitted: bool
+
+
+@dataclass(frozen=True)
+class _PolymarketMLPTestResult:
+    selected_policy: str
+    selected_threshold: float | None
+    test_loss: float | None
+    test_metrics: PolymarketPolicyMetrics | None
+    test_uplift: PolymarketMLPBootstrap | None
+    test_reasons: tuple[str, ...]
+
+
+def _prepare_mlp_fit_data(
     dataset: PolymarketRidgeDataset,
     parent: PolymarketRidgeReport,
-    *,
-    compute_backend: str = "auto",
-    progress: ProgressCallback | None = None,
-) -> PolymarketMLPReport:
-    """Fit the preregistered nonlinear challenger and open test only if admitted."""
-
+) -> _PolymarketMLPPreparedData:
     dataset.validated()
     parent.validated()
     expected_split = split_polymarket_ridge_dataset(dataset)
@@ -1492,76 +1524,167 @@ def fit_and_evaluate_polymarket_mlp(
     )
     training_x, training_y = _matrix(dataset, train_indices)
     validation_x, validation_y = _matrix(dataset, validation_indices)
-    mean = np.mean(training_x, axis=0, dtype=np.float64)
-    scale = np.std(training_x, axis=0, dtype=np.float64)
+    mean = np.asarray(np.mean(training_x, axis=0, dtype=np.float64), dtype=np.float64)
+    scale = np.asarray(
+        np.std(training_x, axis=0, dtype=np.float64),
+        dtype=np.float64,
+    )
     scale = np.where(np.isfinite(scale) & (scale > 1e-12), scale, 1.0)
     standardized_training = (training_x - mean) / scale
     standardized_validation = (validation_x - mean) / scale
     weights = _condition_weights(dataset, train_indices)
+    return _PolymarketMLPPreparedData(
+        split=expected_split,
+        validation_indices=validation_indices,
+        training_x=training_x,
+        training_y=training_y,
+        validation_x=validation_x,
+        validation_y=validation_y,
+        mean=mean,
+        scale=scale,
+        standardized_training=standardized_training,
+        standardized_validation=standardized_validation,
+        weights=weights,
+    )
+
+
+def _emit_mlp_preflight_progress(
+    progress: ProgressCallback | None,
+    evidence: PolymarketMLPBackendEvidence,
+    prepared: _PolymarketMLPPreparedData,
+) -> None:
+    if progress is None:
+        return
+    progress(
+        "polymarket_mlp_preflight",
+        {
+            "backend": evidence.kind,
+            "device": evidence.device,
+            "fallback_reason": evidence.fallback_reason,
+            "training_rows": int(prepared.training_x.shape[0]),
+            "validation_rows": int(prepared.validation_x.shape[0]),
+        },
+    )
+
+
+def _fit_mlp_seed_members(
+    torch: Any,
+    device: object,
+    prepared: _PolymarketMLPPreparedData,
+    progress: ProgressCallback | None,
+) -> tuple[tuple[PolymarketMLPMember, ...], list[float]]:
+    fitted_members: list[PolymarketMLPMember] = []
+    canonical_replay_drifts: list[float] = []
+    for seed in POLYMARKET_MLP_SEEDS:
+        if progress is not None:
+            progress("polymarket_mlp_seed", {"seed": seed, "status": "started"})
+        member, canonical_replay_drift = _fit_member(
+            torch,
+            device,
+            seed=seed,
+            training_features=prepared.standardized_training,
+            training_labels=prepared.training_y,
+            training_weights=prepared.weights,
+            validation_features=prepared.standardized_validation,
+            validation_labels=prepared.validation_y,
+            progress=progress,
+        )
+        fitted_members.append(member)
+        canonical_replay_drifts.append(canonical_replay_drift)
+        if progress is not None:
+            progress(
+                "polymarket_mlp_seed",
+                {
+                    "seed": seed,
+                    "status": "complete",
+                    "best_epoch": member.best_epoch,
+                    "epochs_ran": member.epochs_ran,
+                    "canonical_replay_max_probability_drift": (canonical_replay_drift),
+                },
+            )
+    return tuple(fitted_members), canonical_replay_drifts
+
+
+def _fit_mlp_reproducibility_member(
+    torch: Any,
+    device: object,
+    prepared: _PolymarketMLPPreparedData,
+    progress: ProgressCallback | None,
+) -> tuple[PolymarketMLPMember, float]:
+    if progress is not None:
+        progress(
+            "polymarket_mlp_reproducibility",
+            {"seed": POLYMARKET_MLP_SEEDS[0], "status": "started"},
+        )
+    return _fit_member(
+        torch,
+        device,
+        seed=POLYMARKET_MLP_SEEDS[0],
+        training_features=prepared.standardized_training,
+        training_labels=prepared.training_y,
+        training_weights=prepared.weights,
+        validation_features=prepared.standardized_validation,
+        validation_labels=prepared.validation_y,
+        progress=progress,
+        run_kind="reproducibility",
+    )
+
+
+def _reproducibility_drift(
+    members: Sequence[PolymarketMLPMember],
+    repeated: PolymarketMLPMember,
+    validation_features: np.ndarray,
+) -> float:
+    first_probability = members[0].predict_standardized(validation_features)
+    repeated_probability = repeated.predict_standardized(validation_features)
+    drift = float(np.max(np.abs(first_probability - repeated_probability)))
+    if drift > POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE:
+        raise ValueError(
+            f"Polymarket MLP same-seed probability drift exceeds tolerance:{drift:.9g}"
+        )
+    return drift
+
+
+def _emit_mlp_reproducibility_progress(
+    progress: ProgressCallback | None,
+    drift: float,
+) -> None:
+    if progress is None:
+        return
+    progress(
+        "polymarket_mlp_reproducibility",
+        {
+            "seed": POLYMARKET_MLP_SEEDS[0],
+            "status": "complete",
+            "maximum_probability_drift": drift,
+        },
+    )
+
+
+def _fit_mlp_ensemble(
+    dataset: PolymarketRidgeDataset,
+    prepared: _PolymarketMLPPreparedData,
+    *,
+    compute_backend: str,
+    progress: ProgressCallback | None,
+) -> PolymarketMLPEnsemble:
     torch, device, backend = _torch_runtime(compute_backend)
     training_started = time.perf_counter()
     backend_evidence = _preflight(torch, device, backend)
-    if progress is not None:
-        progress(
-            "polymarket_mlp_preflight",
-            {
-                "backend": backend_evidence.kind,
-                "device": backend_evidence.device,
-                "fallback_reason": backend_evidence.fallback_reason,
-                "training_rows": int(training_x.shape[0]),
-                "validation_rows": int(validation_x.shape[0]),
-            },
-        )
+    _emit_mlp_preflight_progress(progress, backend_evidence, prepared)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        fitted_members: list[PolymarketMLPMember] = []
-        canonical_replay_drifts: list[float] = []
-        for seed in POLYMARKET_MLP_SEEDS:
-            if progress is not None:
-                progress("polymarket_mlp_seed", {"seed": seed, "status": "started"})
-            member, canonical_replay_drift = _fit_member(
-                torch,
-                device,
-                seed=seed,
-                training_features=standardized_training,
-                training_labels=training_y,
-                training_weights=weights,
-                validation_features=standardized_validation,
-                validation_labels=validation_y,
-                progress=progress,
-            )
-            fitted_members.append(member)
-            canonical_replay_drifts.append(canonical_replay_drift)
-            if progress is not None:
-                progress(
-                    "polymarket_mlp_seed",
-                    {
-                        "seed": seed,
-                        "status": "complete",
-                        "best_epoch": member.best_epoch,
-                        "epochs_ran": member.epochs_ran,
-                        "canonical_replay_max_probability_drift": (
-                            canonical_replay_drift
-                        ),
-                    },
-                )
-        members = tuple(fitted_members)
-        if progress is not None:
-            progress(
-                "polymarket_mlp_reproducibility",
-                {"seed": POLYMARKET_MLP_SEEDS[0], "status": "started"},
-            )
-        repeated, repeated_replay_drift = _fit_member(
+        members, canonical_replay_drifts = _fit_mlp_seed_members(
             torch,
             device,
-            seed=POLYMARKET_MLP_SEEDS[0],
-            training_features=standardized_training,
-            training_labels=training_y,
-            training_weights=weights,
-            validation_features=standardized_validation,
-            validation_labels=validation_y,
-            progress=progress,
-            run_kind="reproducibility",
+            prepared,
+            progress,
+        )
+        repeated, repeated_replay_drift = _fit_mlp_reproducibility_member(
+            torch,
+            device,
+            prepared,
+            progress,
         )
         canonical_replay_drifts.append(repeated_replay_drift)
     fallback = _fallback_messages([str(item.message) for item in caught])
@@ -1572,87 +1695,36 @@ def fit_and_evaluate_polymarket_mlp(
         training_seconds=time.perf_counter() - training_started,
         canonical_replay_max_probability_drift=max(canonical_replay_drifts),
     )
-    first_probability = members[0].predict_standardized(standardized_validation)
-    repeated_probability = repeated.predict_standardized(standardized_validation)
-    reproducibility_drift = float(
-        np.max(np.abs(first_probability - repeated_probability))
+    reproducibility_drift = _reproducibility_drift(
+        members,
+        repeated,
+        prepared.standardized_validation,
     )
-    if reproducibility_drift > POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE:
-        raise ValueError(
-            "Polymarket MLP same-seed probability drift exceeds tolerance:"
-            f"{reproducibility_drift:.9g}"
-        )
-    if progress is not None:
-        progress(
-            "polymarket_mlp_reproducibility",
-            {
-                "seed": POLYMARKET_MLP_SEEDS[0],
-                "status": "complete",
-                "maximum_probability_drift": reproducibility_drift,
-            },
-        )
+    _emit_mlp_reproducibility_progress(progress, reproducibility_drift)
     provisional_ensemble = PolymarketMLPEnsemble(
         dataset_sha256=dataset.dataset_sha256,
-        feature_mean=tuple(float(value) for value in mean),
-        feature_scale=tuple(float(value) for value in scale),
+        feature_mean=tuple(float(value) for value in prepared.mean),
+        feature_scale=tuple(float(value) for value in prepared.scale),
         members=members,
         backend=backend_evidence,
         reproducibility_max_probability_drift=reproducibility_drift,
         ensemble_sha256="",
     )
-    ensemble = replace(
+    return replace(
         provisional_ensemble,
         ensemble_sha256=_sha256(provisional_ensemble.identity_payload()),
     ).validated()
-    validation_probability = ensemble.predict(validation_x)
-    validation_loss = _binary_log_loss(validation_probability, validation_y)
-    ridge_validation_probability = parent.selected_model.predict(validation_x)
-    ridge_validation_loss = _binary_log_loss(
-        ridge_validation_probability,
-        validation_y,
-    )
-    if not math.isclose(
-        ridge_validation_loss,
-        parent.selected_validation_log_loss,
-        rel_tol=1e-12,
-        abs_tol=1e-12,
-    ):
-        raise ValueError("Polymarket MLP parent validation replay differs")
-    validation_uplift = _bootstrap(
-        _group_log_loss_uplift(
-            dataset,
-            validation_indices,
-            ridge_validation_probability,
-            validation_probability,
-            expected_split.validation_groups,
-        ),
-        seed_material=dataset.dataset_sha256 + "validation-log-loss",
-    )
-    validation_evaluations = tuple(
-        evaluate_polymarket_policy(
-            dataset,
-            validation_indices,
-            validation_probability,
-            threshold,
-            require_asset_profit=False,
-        )
-        for threshold in POLYMARKET_RIDGE_THRESHOLD_GRID
-    )
-    passed = [item for item in validation_evaluations if item.metrics.gate_passed]
-    selected_validation = (
-        max(
-            passed,
-            key=lambda item: (
-                item.metrics.wilson_lower_bound_95,
-                float(item.metrics.threshold or 0.0),
-            ),
-        )
-        if passed
-        else None
-    )
+
+
+def _require_parent_validation_replay(
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    prepared: _PolymarketMLPPreparedData,
+    ridge_validation_probability: np.ndarray,
+) -> PolymarketPolicyEvaluation:
     ridge_validation_evaluation = evaluate_polymarket_policy(
         dataset,
-        validation_indices,
+        prepared.validation_indices,
         ridge_validation_probability,
         parent.selected_threshold,
         require_asset_profit=False,
@@ -1671,6 +1743,111 @@ def fit_and_evaluate_polymarket_mlp(
         != expected_ridge_validation.asdict()
     ):
         raise ValueError("Polymarket MLP parent-policy validation simulation differs")
+    return ridge_validation_evaluation
+
+
+def _select_mlp_validation(
+    evaluations: Sequence[PolymarketPolicyEvaluation],
+) -> PolymarketPolicyEvaluation | None:
+    passed = [item for item in evaluations if item.metrics.gate_passed]
+    if not passed:
+        return None
+    return max(
+        passed,
+        key=lambda item: (
+            item.metrics.wilson_lower_bound_95,
+            float(item.metrics.threshold or 0.0),
+        ),
+    )
+
+
+def _mlp_admission_reasons(
+    selected: PolymarketPolicyEvaluation | None,
+    validation_uplift: PolymarketMLPBootstrap,
+    utility_uplift: float | None,
+) -> tuple[str, ...]:
+    admission_reasons: list[str] = []
+    if selected is None:
+        admission_reasons.append("no_validation_threshold_passed")
+    if validation_uplift.lower_95 <= 0.0:
+        admission_reasons.append("validation_log_loss_uplift_lower_not_positive")
+    if utility_uplift is None or utility_uplift <= 0.0:
+        admission_reasons.append("validation_stress_utility_not_above_ridge")
+    return tuple(sorted(set(admission_reasons)))
+
+
+def _emit_mlp_validation_progress(
+    progress: ProgressCallback | None,
+    result: _PolymarketMLPValidationResult,
+    split: PolymarketRidgeSplit,
+) -> None:
+    if progress is None:
+        return
+    progress(
+        "polymarket_mlp_validation",
+        {
+            "admitted_to_test": result.admitted,
+            "admission_reasons": list(result.admission_reasons),
+            "validation_log_loss": result.validation_loss,
+            "ridge_validation_log_loss": result.ridge_validation_loss,
+            "log_loss_uplift_lower_95": result.validation_uplift.lower_95,
+            "stress_utility_uplift_quote": result.utility_uplift,
+            "untouched_test_group_count": len(split.test_groups),
+        },
+    )
+
+
+def _evaluate_mlp_validation(
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    prepared: _PolymarketMLPPreparedData,
+    ensemble: PolymarketMLPEnsemble,
+    progress: ProgressCallback | None,
+) -> _PolymarketMLPValidationResult:
+    validation_probability = ensemble.predict(prepared.validation_x)
+    validation_loss = _binary_log_loss(
+        validation_probability,
+        prepared.validation_y,
+    )
+    ridge_validation_probability = parent.selected_model.predict(prepared.validation_x)
+    ridge_validation_loss = _binary_log_loss(
+        ridge_validation_probability,
+        prepared.validation_y,
+    )
+    if not math.isclose(
+        ridge_validation_loss,
+        parent.selected_validation_log_loss,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    ):
+        raise ValueError("Polymarket MLP parent validation replay differs")
+    validation_uplift = _bootstrap(
+        _group_log_loss_uplift(
+            dataset,
+            prepared.validation_indices,
+            ridge_validation_probability,
+            validation_probability,
+            prepared.split.validation_groups,
+        ),
+        seed_material=dataset.dataset_sha256 + "validation-log-loss",
+    )
+    validation_evaluations = tuple(
+        evaluate_polymarket_policy(
+            dataset,
+            prepared.validation_indices,
+            validation_probability,
+            threshold,
+            require_asset_profit=False,
+        )
+        for threshold in POLYMARKET_RIDGE_THRESHOLD_GRID
+    )
+    selected_validation = _select_mlp_validation(validation_evaluations)
+    ridge_validation_evaluation = _require_parent_validation_replay(
+        dataset,
+        parent,
+        prepared,
+        ridge_validation_probability,
+    )
     validation_utility_uplift = (
         None
         if selected_validation is None
@@ -1679,148 +1856,259 @@ def fit_and_evaluate_polymarket_mlp(
             - ridge_validation_evaluation.metrics.aggregate_stress_utility_quote
         )
     )
-    admission_reasons: list[str] = []
-    if selected_validation is None:
-        admission_reasons.append("no_validation_threshold_passed")
-    if validation_uplift.lower_95 <= 0.0:
-        admission_reasons.append("validation_log_loss_uplift_lower_not_positive")
-    if validation_utility_uplift is None or validation_utility_uplift <= 0.0:
-        admission_reasons.append("validation_stress_utility_not_above_ridge")
-    frozen_admission_reasons = tuple(sorted(set(admission_reasons)))
-    admitted = not frozen_admission_reasons
-    if progress is not None:
-        progress(
-            "polymarket_mlp_validation",
-            {
-                "admitted_to_test": admitted,
-                "admission_reasons": list(frozen_admission_reasons),
-                "validation_log_loss": validation_loss,
-                "ridge_validation_log_loss": ridge_validation_loss,
-                "log_loss_uplift_lower_95": validation_uplift.lower_95,
-                "stress_utility_uplift_quote": validation_utility_uplift,
-                "untouched_test_group_count": len(expected_split.test_groups),
-            },
-        )
-    if admitted:
-        if progress is not None:
-            progress("polymarket_mlp_test", {"status": "started"})
-        if selected_validation is None:
-            raise RuntimeError("Polymarket MLP admission state is inconsistent")
-        selected_policy = "causal_mlp"
-        selected_threshold = selected_validation.metrics.threshold
-    else:
-        selected_policy = "no_trade"
-        selected_threshold = None
-    test_loss: float | None = None
-    test_metrics: PolymarketPolicyMetrics | None = None
-    test_uplift: PolymarketMLPBootstrap | None = None
+    frozen_admission_reasons = _mlp_admission_reasons(
+        selected_validation,
+        validation_uplift,
+        validation_utility_uplift,
+    )
+    result = _PolymarketMLPValidationResult(
+        validation_loss=validation_loss,
+        ridge_validation_loss=ridge_validation_loss,
+        validation_uplift=validation_uplift,
+        evaluations=validation_evaluations,
+        selected=selected_validation,
+        utility_uplift=validation_utility_uplift,
+        admission_reasons=frozen_admission_reasons,
+        admitted=not frozen_admission_reasons,
+    )
+    _emit_mlp_validation_progress(progress, result, prepared.split)
+    return result
+
+
+def _mlp_test_reasons(
+    parent: PolymarketRidgeReport,
+    test_loss: float,
+    test_metrics: PolymarketPolicyMetrics,
+    test_uplift: PolymarketMLPBootstrap,
+) -> tuple[str, ...]:
     test_reasons: list[str] = []
-    if admitted:
-        _validate_partition_label_breadth(
+    if not test_metrics.gate_passed:
+        test_reasons.extend(test_metrics.gate_reasons)
+    if test_loss >= parent.test_log_loss:
+        test_reasons.append("test_log_loss_not_below_ridge")
+    if (
+        test_metrics.aggregate_stress_utility_quote
+        <= parent.test_metrics.aggregate_stress_utility_quote
+    ):
+        test_reasons.append("test_stress_utility_not_above_ridge")
+    if (
+        test_metrics.maximum_realized_drawdown_quote
+        > parent.test_metrics.maximum_realized_drawdown_quote
+    ):
+        test_reasons.append("test_realized_drawdown_above_ridge")
+    for asset in sorted(parent.test_metrics.pnl_by_asset):
+        if test_metrics.pnl_by_asset[asset] < parent.test_metrics.pnl_by_asset[asset]:
+            test_reasons.append(f"test_asset_utility_below_ridge:{asset}")
+    if test_uplift.lower_95 <= 0.0:
+        test_reasons.append("test_utility_bootstrap_lower_not_positive")
+    return tuple(test_reasons)
+
+
+def _emit_mlp_test_progress(
+    progress: ProgressCallback | None,
+    *,
+    status: str,
+    test_loss: float | None = None,
+    test_metrics: PolymarketPolicyMetrics | None = None,
+    reason_count: int = 0,
+) -> None:
+    if progress is None:
+        return
+    payload: dict[str, object] = {"status": status}
+    if status == "complete" and test_metrics is not None:
+        payload.update(
+            {
+                "test_log_loss": test_loss,
+                "test_stress_utility_quote": (
+                    test_metrics.aggregate_stress_utility_quote
+                ),
+                "gate_reason_count": reason_count,
+            }
+        )
+    progress("polymarket_mlp_test", payload)
+
+
+def _evaluate_admitted_mlp_test(
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    prepared: _PolymarketMLPPreparedData,
+    ensemble: PolymarketMLPEnsemble,
+    selected_threshold: float | None,
+    progress: ProgressCallback | None,
+) -> _PolymarketMLPTestResult:
+    _validate_partition_label_breadth(
+        dataset,
+        name="test",
+        groups=prepared.split.test_groups,
+    )
+    test_indices = _partition_indices(dataset, prepared.split.test_groups)
+    test_x, test_y = _matrix(dataset, test_indices)
+    test_probability = ensemble.predict(test_x)
+    test_loss = _binary_log_loss(test_probability, test_y)
+    test_evaluation = evaluate_polymarket_policy(
+        dataset,
+        test_indices,
+        test_probability,
+        selected_threshold,
+        require_asset_profit=True,
+    )
+    ridge_test_probability = parent.selected_model.predict(test_x)
+    ridge_test_evaluation = evaluate_polymarket_policy(
+        dataset,
+        test_indices,
+        ridge_test_probability,
+        parent.selected_threshold,
+        require_asset_profit=True,
+    )
+    if ridge_test_evaluation.metrics.asdict() != parent.test_metrics.asdict():
+        raise ValueError("Polymarket MLP parent test replay differs")
+    baseline_utility = _condition_utility(
+        dataset,
+        ridge_test_evaluation,
+        prepared.split.test_groups,
+    )
+    challenger_utility = _condition_utility(
+        dataset,
+        test_evaluation,
+        prepared.split.test_groups,
+    )
+    test_uplift = _bootstrap(
+        _group_utility_uplift(
             dataset,
-            name="test",
-            groups=expected_split.test_groups,
+            prepared.split.test_groups,
+            baseline_utility,
+            challenger_utility,
+        ),
+        seed_material=dataset.dataset_sha256 + "test-utility",
+    )
+    test_metrics = test_evaluation.metrics
+    test_reasons = _mlp_test_reasons(
+        parent,
+        test_loss,
+        test_metrics,
+        test_uplift,
+    )
+    _emit_mlp_test_progress(
+        progress,
+        status="complete",
+        test_loss=test_loss,
+        test_metrics=test_metrics,
+        reason_count=len(test_reasons),
+    )
+    return _PolymarketMLPTestResult(
+        selected_policy="causal_mlp",
+        selected_threshold=selected_threshold,
+        test_loss=test_loss,
+        test_metrics=test_metrics,
+        test_uplift=test_uplift,
+        test_reasons=test_reasons,
+    )
+
+
+def _evaluate_mlp_test_if_admitted(
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    prepared: _PolymarketMLPPreparedData,
+    ensemble: PolymarketMLPEnsemble,
+    validation: _PolymarketMLPValidationResult,
+    progress: ProgressCallback | None,
+) -> _PolymarketMLPTestResult:
+    if not validation.admitted:
+        return _PolymarketMLPTestResult(
+            selected_policy="no_trade",
+            selected_threshold=None,
+            test_loss=None,
+            test_metrics=None,
+            test_uplift=None,
+            test_reasons=(),
         )
-        test_indices = _partition_indices(dataset, expected_split.test_groups)
-        test_x, test_y = _matrix(dataset, test_indices)
-        test_probability = ensemble.predict(test_x)
-        test_loss = _binary_log_loss(test_probability, test_y)
-        test_evaluation = evaluate_polymarket_policy(
-            dataset,
-            test_indices,
-            test_probability,
-            selected_threshold,
-            require_asset_profit=True,
-        )
-        ridge_test_probability = parent.selected_model.predict(test_x)
-        ridge_test_evaluation = evaluate_polymarket_policy(
-            dataset,
-            test_indices,
-            ridge_test_probability,
-            parent.selected_threshold,
-            require_asset_profit=True,
-        )
-        if ridge_test_evaluation.metrics.asdict() != parent.test_metrics.asdict():
-            raise ValueError("Polymarket MLP parent test replay differs")
-        baseline_utility = _condition_utility(
-            dataset,
-            ridge_test_evaluation,
-            expected_split.test_groups,
-        )
-        challenger_utility = _condition_utility(
-            dataset,
-            test_evaluation,
-            expected_split.test_groups,
-        )
-        test_uplift = _bootstrap(
-            _group_utility_uplift(
-                dataset,
-                expected_split.test_groups,
-                baseline_utility,
-                challenger_utility,
-            ),
-            seed_material=dataset.dataset_sha256 + "test-utility",
-        )
-        test_metrics = test_evaluation.metrics
-        if not test_metrics.gate_passed:
-            test_reasons.extend(test_metrics.gate_reasons)
-        if test_loss >= parent.test_log_loss:
-            test_reasons.append("test_log_loss_not_below_ridge")
-        if (
-            test_metrics.aggregate_stress_utility_quote
-            <= parent.test_metrics.aggregate_stress_utility_quote
-        ):
-            test_reasons.append("test_stress_utility_not_above_ridge")
-        if (
-            test_metrics.maximum_realized_drawdown_quote
-            > parent.test_metrics.maximum_realized_drawdown_quote
-        ):
-            test_reasons.append("test_realized_drawdown_above_ridge")
-        for asset in sorted(parent.test_metrics.pnl_by_asset):
-            if (
-                test_metrics.pnl_by_asset[asset]
-                < parent.test_metrics.pnl_by_asset[asset]
-            ):
-                test_reasons.append(f"test_asset_utility_below_ridge:{asset}")
-        if test_uplift.lower_95 <= 0.0:
-            test_reasons.append("test_utility_bootstrap_lower_not_positive")
-        if progress is not None:
-            progress(
-                "polymarket_mlp_test",
-                {
-                    "status": "complete",
-                    "test_log_loss": test_loss,
-                    "test_stress_utility_quote": (
-                        test_metrics.aggregate_stress_utility_quote
-                    ),
-                    "gate_reason_count": len(test_reasons),
-                },
-            )
+    _emit_mlp_test_progress(progress, status="started")
+    if validation.selected is None:
+        raise RuntimeError("Polymarket MLP admission state is inconsistent")
+    return _evaluate_admitted_mlp_test(
+        dataset,
+        parent,
+        prepared,
+        ensemble,
+        validation.selected.metrics.threshold,
+        progress,
+    )
+
+
+def _build_mlp_report(
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    prepared: _PolymarketMLPPreparedData,
+    ensemble: PolymarketMLPEnsemble,
+    validation: _PolymarketMLPValidationResult,
+    test: _PolymarketMLPTestResult,
+) -> PolymarketMLPReport:
     provisional = PolymarketMLPReport(
         dataset_sha256=dataset.dataset_sha256,
         parent_ridge_report_sha256=parent.report_sha256,
-        split=expected_split,
+        split=prepared.split,
         ensemble=ensemble,
-        validation_log_loss=validation_loss,
-        ridge_validation_log_loss=ridge_validation_loss,
-        validation_log_loss_uplift=validation_uplift,
-        validation_trials=tuple(item.metrics for item in validation_evaluations),
-        validation_stress_utility_uplift_quote=validation_utility_uplift,
-        validation_admission_reasons=frozen_admission_reasons,
-        selected_policy=selected_policy,
-        selected_threshold=selected_threshold,
-        test_evaluated=admitted,
-        test_log_loss=test_loss,
-        test_metrics=test_metrics,
-        test_utility_uplift=test_uplift,
-        test_gate_reasons=tuple(sorted(set(test_reasons))),
-        development_passed=admitted and not test_reasons,
+        validation_log_loss=validation.validation_loss,
+        ridge_validation_log_loss=validation.ridge_validation_loss,
+        validation_log_loss_uplift=validation.validation_uplift,
+        validation_trials=tuple(item.metrics for item in validation.evaluations),
+        validation_stress_utility_uplift_quote=validation.utility_uplift,
+        validation_admission_reasons=validation.admission_reasons,
+        selected_policy=test.selected_policy,
+        selected_threshold=test.selected_threshold,
+        test_evaluated=validation.admitted,
+        test_log_loss=test.test_loss,
+        test_metrics=test.test_metrics,
+        test_utility_uplift=test.test_uplift,
+        test_gate_reasons=tuple(sorted(set(test.test_reasons))),
+        development_passed=validation.admitted and not test.test_reasons,
         report_sha256="",
     )
     return replace(
         provisional,
         report_sha256=_sha256(provisional.identity_payload()),
     ).validated()
+
+
+def fit_and_evaluate_polymarket_mlp(
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    *,
+    compute_backend: str = "auto",
+    progress: ProgressCallback | None = None,
+) -> PolymarketMLPReport:
+    """Fit the preregistered nonlinear challenger and open test only if admitted."""
+
+    prepared = _prepare_mlp_fit_data(dataset, parent)
+    ensemble = _fit_mlp_ensemble(
+        dataset,
+        prepared,
+        compute_backend=compute_backend,
+        progress=progress,
+    )
+    validation = _evaluate_mlp_validation(
+        dataset,
+        parent,
+        prepared,
+        ensemble,
+        progress,
+    )
+    test = _evaluate_mlp_test_if_admitted(
+        dataset,
+        parent,
+        prepared,
+        ensemble,
+        validation,
+        progress,
+    )
+    return _build_mlp_report(
+        dataset,
+        parent,
+        prepared,
+        ensemble,
+        validation,
+        test,
+    )
 
 
 def _prediction_rows(

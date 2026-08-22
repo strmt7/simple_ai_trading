@@ -505,6 +505,40 @@ blind overwrite. All new development after integration belongs on `main`.
   early stopping, checkpoint, parameter, prediction, threshold, partition
   access, P&L, risk, authority, or profitability claim changes. Hosted checks
   on the pushed revision remain required.
+- Exact fit-member checkpoint
+  `442dc3d59a7d208f7c9dccdf7472b487abf1a876` passed hosted Windows smoke,
+  Ruff, Vulture, and Super-Linter. Its Linux coverage job remained in progress
+  at the refresh. DeepSource failed with blocking issues under exact run ID
+  `d07c554b-884a-4135-8ecf-17982d6a7461`; do not infer its issue inventory from
+  the aggregate state.
+- The top-level orchestration follow-up decomposes
+  `fit_and_evaluate_polymarket_mlp` from Radon `47` to `1`; its largest phase
+  helper scores `8`. Parent authority, causal data preparation, device fitting,
+  reproducibility, validation admission, admission-gated test evaluation, and
+  immutable report construction are now explicit. The 150-group replay remains
+  byte-identical at dataset SHA-256
+  `1dbe87ac256d2f6851235d2cb38eafa982e62e1be7e5e84c14f095eaeadacf29`,
+  parent SHA-256
+  `a9adaf23a8fd1851636cadfebb04f5f4a65d4ce63f9b028f33dcf119ec3cf21d`,
+  ensemble SHA-256
+  `e05f81ca3391f7bb802e5183cddb4a3a8b563807d74bacf6deac50f693215e7d`,
+  report SHA-256
+  `c2d130107c162845fbd44b65c13f44131978538d5f60f8716cb2fd6d7b7f1af9`,
+  and non-batch callback SHA-256
+  `20bb664a7c2317719f3e6764e7516f6b21403da9a831726b62e1e0ec616d8a12`.
+  Member, split, bootstrap, and validation-trial hashes also match the recorded
+  parent values. The rejected branch returns before untouched-test rows, labels,
+  predictions, or metrics are accessed. Nine controlled mechanics tests cover
+  admitted execution, replay mismatches, all reason families, optional progress,
+  and reproducibility failure without creating model or financial evidence.
+  All 71 affected tests pass at `90.68%` module coverage; changed executable-line
+  coverage is `162/162`. Ruff and format pass. Mypy with ephemeral SciPy stubs
+  reports zero issues; the locked environment without that optional stub package
+  reports only the known SciPy import diagnostic. Scoped Bandit reports no high-
+  or medium-severity finding and only the existing deterministic-bootstrap
+  `B311`. No model input, target, tensor, fit, prediction, threshold, partition
+  policy, evidence identity, P&L, risk, authority, or profitability claim
+  changes. Hosted checks on the pushed revision remain required.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -688,15 +722,14 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    bounded closeout under canonical identity fingerprints and fail-closed tests.
    Report validation is also closed under exact admitted/no-trade identities and
    rejection tests. Fit-member training-loop complexity is closed under exact
-   numeric and progress fingerprints. Continue the remaining two MLP findings
-   in this order: separate `fit_and_evaluate_polymarket_mlp` orchestration
-   without changing test-access gates; then decompose
-   `materialize_polymarket_mlp_report` under idempotence, transaction, and tamper
-   tests. Do not combine those families in one broad rewrite. Continue
-   source-to-sink triage in other modules from exact hosted results, not assumed
-   residual counts. Replace runtime assertions only when an explicit
-   fail-closed error and cleanup contract exists; do not mechanically rewrite
-   typing assertions.
+   numeric and progress fingerprints. Top-level orchestration is also closed
+   under exact full-report and callback fingerprints plus admission-gated test
+   mechanics. Decompose the sole remaining MLP finding,
+   `materialize_polymarket_mlp_report`, under idempotence, transaction, runtime
+   evidence, and tamper tests. Continue source-to-sink triage in other modules
+   from exact hosted results, not assumed residual counts. Replace runtime
+   assertions only when an explicit fail-closed error and cleanup contract
+   exists; do not mechanically rewrite typing assertions.
    Do not treat the narrow `5f6e790c` pass or any bounded follow-up as closure
    of the broader backlog or as a project-wide security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
