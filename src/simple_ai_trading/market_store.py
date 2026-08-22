@@ -583,29 +583,28 @@ class MarketDataStore:
     ) -> dict[str, object] | None:
         """Return the newest catalogued capture containing one symbol."""
 
-        conditions = ["s.symbol = ?"]
-        parameters: list[object] = [str(symbol).upper()]
-        if require_passed:
-            conditions.extend(
-                (
-                    "c.status = 'pass'",
-                    "s.replay_smoke_passed = 1",
-                    "s.sequence_gap_count = 0",
-                    "s.crossed_book_count = 0",
-                    "s.invalid_event_count = 0",
-                    "s.error = ''",
-                )
-            )
-        row = self.connect().execute(
-            f"""
+        conn = self.connect()
+        row = conn.execute(
+            """
             SELECT c.payload_json
             FROM microstructure_captures c
             JOIN microstructure_capture_symbols s ON s.capture_id = c.capture_id
-            WHERE {' AND '.join(conditions)}
+            WHERE s.symbol = ?
+              AND (
+                  ? = 0
+                  OR (
+                      c.status = 'pass'
+                      AND s.replay_smoke_passed = 1
+                      AND s.sequence_gap_count = 0
+                      AND s.crossed_book_count = 0
+                      AND s.invalid_event_count = 0
+                      AND s.error = ''
+                  )
+              )
             ORDER BY c.completed_at_ms DESC
             LIMIT 1
             """,
-            parameters,
+            (str(symbol).upper(), 1 if require_passed else 0),
         ).fetchone()
         if row is None:
             return None

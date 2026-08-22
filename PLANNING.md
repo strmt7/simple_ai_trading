@@ -134,7 +134,7 @@ DeepSource, Ruff, Vulture, and Super-Linter; its longer CI run remained in
 progress at the final refresh. This is data-integrity and maintainability
 evidence, not model-edge or profitability evidence.
 
-The current bounded model-maintainability batch decomposes
+The bounded model-maintainability batch decomposes
 `_rule_alpha_score_from_values` from Radon `35` to `3`; no extracted helper
 exceeds `12`. It also marks the technical and rule-alpha probability helpers as
 static. A frozen numeric contract covers every rule-alpha family, the default
@@ -147,9 +147,21 @@ errors-only, Bandit, and strict simplification checks pass locally. No score,
 coefficient, calibration, serialization, model result, P&L, risk setting, or
 trading authority changes. Exact code revision `31c1e02e` was pushed; its
 hosted Ruff range gate found only the two newly decorated signatures needed
-formatting. Narrow follow-up `c349aca6` fixes those signatures. Hosted Ruff and
-Vulture pass on that follow-up; Super-Linter, CI, and DeepSource remained in
-progress at the final refresh and are not recorded as passes.
+formatting. Narrow follow-up `c349aca6` fixes those signatures. Hosted
+DeepSource, Ruff, and Vulture pass on that follow-up. Documentation checkpoint
+`291c758a` also passed DeepSource, Ruff, Vulture, and Super-Linter; its CI run
+remained in progress at the final refresh.
+
+The current bounded SQL-safety batch replaces the optional dynamic predicate
+in `latest_microstructure_capture` with one static, parameter-bound query. Its
+regression proves passed-only selection, unrestricted selection, and rejection
+of an injection-shaped symbol. The full 20-test market-data matrix passes and
+both changed executable lines have coverage. Scoped Mypy, Ruff, Pylint
+errors-only, and formatter checks pass. Bandit `B608` findings in
+`market_store.py` fall from ten to nine without suppression. The remaining nine
+queries construct predicates only from internal fixed literals and bind every
+external value; they remain a documented review queue, not nine proven
+vulnerabilities or permission for a risky mass rewrite.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
