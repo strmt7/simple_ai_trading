@@ -44,7 +44,9 @@ The current state and next admissible experiment are recorded in the
 1. Preserve the active Round 75 Binance capture through its fixed
    `2026-08-23T12:00:00Z` boundary and the independent Round 21 Binance sidecar
    through its fixed `2026-08-29T23:40:00Z` boundary. Do not read targets or
-   outcomes early.
+   outcomes early. Round 75 currently has 639 fail-closed missed-slot receipts
+   and repeated storage-resource-gate failures; do not salvage, retry, or alter
+   its frozen process before the contract-defined terminal audit.
 2. Run each contract's target-blind terminal, continuity, source, gap, role,
    population, lease, database/WAL, and resource audits. Failed capture gates
    close the affected lineage without salvage or adaptive thresholds.

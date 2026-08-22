@@ -27,25 +27,34 @@ the repository and on GitHub before changing code.
 ## Live Host Handoff: 2026-08-22
 
 The following state was reverified through approximately
-`2026-08-22T14:51Z`. It is host state, not model evidence, and must be
+`2026-08-22T17:14Z`. It is host state, not model evidence, and must be
 rechecked before any action.
 
-- Main and `origin/main` were synchronized at closeout revision
-  `f50c3a8302090b15bce8075f425716dcf2afc659`. GitHub's remote branch inventory
-  contained only `main`, with no open pull requests. Always verify
+- Main and `origin/main` were synchronized at model-evidence refactor revision
+  `9f5efe1573281306a1dde413afe353fcc309bee3` before this documentation
+  closeout. GitHub's remote branch inventory contained only `main`, with no
+  open pull requests. Always verify
   `git rev-parse HEAD`, `git rev-parse origin/main`, and the remote branch
   inventory directly before resuming.
 - Round 75 prospective Binance capture is active from the detached worktree
   `C:\trader\simple_ai_trading-model-dev`. The latest supervisor record was
   `service_healthy`, with no credentials, orders, or trading authority.
   Scheduled task `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1`
-  was ready and its `2026-08-22T14:47:15Z` invocation returned `0`. The frozen
-  campaign ends at `2026-08-23T12:00:00Z`.
+  was ready and its `2026-08-22T17:13:15Z` invocation returned `0`. The service
+  state was fail-closed at slot `674`, phase `waiting_for_next_fixed_slot`.
+  The state tree contained 36 completed slot directories and 639 immutable
+  missed-slot receipts, all classified as
+  `service_observed_start_window_elapsed_without_reservation`, with exact host
+  cause not established and automatic retry forbidden. The service stderr log
+  also contained repeated `Round 75 storage resource gate failed` records.
+  Do not infer causality between those facts, salvage missed slots, or modify
+  the frozen process; perform the contract-defined terminal resource and
+  continuity audit after the campaign ends at `2026-08-23T12:00:00Z`.
 - The independent Round 21 Binance spot/futures sidecar is active from clean,
   detached commit `4a5912574a9157d79fecc53bf68ed6f01bb8dac8` in
   `C:\trader\simple_ai_trading-round21-sidecar-v2`. Wrapper PID `35008` and
   physical child PID `35264` were alive. Its state reported segment `12`,
-  phase `capturing`, `118914188` written public messages, twelve recorded
+  phase `capturing`, `123162645` written public messages, twelve recorded
   stream gaps, zero recorder errors, no credentials, no execution connection,
   no model-data eligibility, and no paper or live authority. Its frozen
   scheduled end is `2026-08-29T23:40:00Z`.
@@ -171,15 +180,17 @@ blind overwrite. All new development after integration belongs on `main`.
   targeted Bandit, lock, manifest, and diff checks. Repair revision `580e4a0e`
   subsequently passed full hosted CI, Ruff, Vulture, Super-Linter, DeepSource,
   and the Windows Python/native-UI smoke job.
-- The four `ai_uplift.py` complexity findings from `f50c3a83` are decomposed
-  locally without changing output construction or rejection order:
+- The four `ai_uplift.py` complexity findings from `f50c3a83` were decomposed
+  in revision `9f5efe15` without changing output construction or rejection
+  order:
   `AIUpliftPolicy.__post_init__` fell from 24 to 1, `_matched_period_deltas`
   from 22 to 9, `_statistical_evidence` from 20 to 2, and `assess_ai_uplift`
   from 33 to 3. The affected matrix passes 217 tests and the 156 changed
   executable lines have 100% coverage. Mypy, Ruff/format, Pylint errors-only,
-  targeted Bandit, and Radon also pass locally. Hosted checks must still be
-  verified on this refactor's final pushed SHA; the five deferred
-  `financial_sanity.py` complexity findings are unchanged.
+  targeted Bandit, and Radon passed locally. Exact-SHA hosted CI, Ruff,
+  Vulture, Super-Linter, DeepSource, and the Windows Python/native-UI smoke job
+  also passed. The five deferred `financial_sanity.py` complexity findings are
+  unchanged.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -224,7 +235,10 @@ the Windows job passed on documentation closeout `68c1a422`; full Linux CI
 failed only the 29 source-provenance tests described above. Cumulative v18
 repair `580e4a0e` then passed every hosted workflow and DeepSource. The five
 `financial_sanity.py` complexity findings remain deferred, and the four
-`ai_uplift.py` findings have the local closeout evidence described above.
+`ai_uplift.py` findings were closed by `9f5efe15`, which passed every available
+hosted workflow and DeepSource. GitHub still reported zero open Dependabot and
+secret-scanning alerts; code scanning remained unavailable with
+`404: no analysis found` and is not a zero-alert result.
 No model score, label, fill, cost, threshold, model outcome, trading authority,
 or profitability claim changed. Verify every available hosted check on the
 final pushed SHA; pending and unavailable checks are not passes.
