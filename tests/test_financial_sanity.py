@@ -82,9 +82,7 @@ def _report_has_check(
     path: str,
     status: str,
 ) -> bool:
-    return any(
-        check.path == path and check.status == status for check in report.checks
-    )
+    return any(check.path == path and check.status == status for check in report.checks)
 
 
 def test_backtest_financial_sanity_accepts_consistent_accounting() -> None:
