@@ -86,6 +86,12 @@ nine changed-scope complexity findings. Treat those as maintainability debt,
 not confirmed vulnerabilities, and refactor them only in behavior-preserving,
 reviewable batches.
 
+Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
+bound dependency requires a cumulative, predecessor-bound amendment; updating
+code without advancing that replacement layer is a CI-blocking provenance
+failure. Round 27's cumulative v18 amendment records the current `compute.py`
+and `polymarket_recorder.py` exception-path changes without rewriting v7 or v17.
+
 ## Resume Here
 
 A new development session must start with
