@@ -13,6 +13,24 @@ from typing import Any, Iterable, Mapping, Sequence, cast
 from .api import Candle
 
 
+_SQLITE_INTEGER_MIN = -(1 << 63)
+_SQLITE_INTEGER_MAX = (1 << 63) - 1
+
+
+def _sqlite_time_window(
+    start_ms: int | None,
+    end_ms: int | None,
+) -> tuple[int, int]:
+    return (
+        _SQLITE_INTEGER_MIN if start_ms is None else int(start_ms),
+        _SQLITE_INTEGER_MAX if end_ms is None else int(end_ms),
+    )
+
+
+def _sqlite_limit(limit: int | None) -> int:
+    return -1 if limit is None else max(0, int(limit))
+
+
 @dataclass(frozen=True)
 class CandleCoverage:
     symbol: str
@@ -700,25 +718,30 @@ class MarketDataStore:
         end_ms: int | None = None,
         limit: int | None = None,
     ) -> list[Candle]:
-        params: list[object] = [symbol.upper(), market_type, interval]
-        where = ["symbol = ?", "market_type = ?", "interval = ?"]
-        if start_ms is not None:
-            where.append("open_time >= ?")
-            params.append(int(start_ms))
-        if end_ms is not None:
-            where.append("open_time <= ?")
-            params.append(int(end_ms))
-        query = """
+        window_start, window_end = _sqlite_time_window(start_ms, end_ms)
+        conn = self.connect()
+        rows = conn.execute(
+            """
             SELECT open_time, open, high, low, close, volume, close_time,
                    quote_volume, trade_count, taker_buy_base_volume, taker_buy_quote_volume
             FROM candles
-            WHERE """ + " AND ".join(where) + """
+            WHERE symbol = ?
+              AND market_type = ?
+              AND interval = ?
+              AND open_time >= ?
+              AND open_time <= ?
             ORDER BY open_time DESC
-            """
-        if limit is not None:
-            query += " LIMIT ?"
-            params.append(max(0, int(limit)))
-        rows = self.connect().execute(query, params).fetchall()
+            LIMIT ?
+            """,
+            (
+                symbol.upper(),
+                market_type,
+                interval,
+                window_start,
+                window_end,
+                _sqlite_limit(limit),
+            ),
+        ).fetchall()
         return [
             Candle(
                 open_time=int(row["open_time"]),
@@ -745,21 +768,19 @@ class MarketDataStore:
         start_ms: int | None = None,
         end_ms: int | None = None,
     ) -> CandleCoverage:
-        params: list[object] = [symbol.upper(), market_type, interval]
-        where = ["symbol = ?", "market_type = ?", "interval = ?"]
-        if start_ms is not None:
-            where.append("open_time >= ?")
-            params.append(int(start_ms))
-        if end_ms is not None:
-            where.append("open_time <= ?")
-            params.append(int(end_ms))
-        row = self.connect().execute(
-            f"""
+        window_start, window_end = _sqlite_time_window(start_ms, end_ms)
+        conn = self.connect()
+        row = conn.execute(
+            """
             SELECT COUNT(*) AS count, MIN(open_time) AS first_open_time, MAX(open_time) AS last_open_time
             FROM candles
-            WHERE {' AND '.join(where)}
+            WHERE symbol = ?
+              AND market_type = ?
+              AND interval = ?
+              AND open_time >= ?
+              AND open_time <= ?
             """,
-            params,
+            (symbol.upper(), market_type, interval, window_start, window_end),
         ).fetchone()
         return CandleCoverage(
             symbol=symbol.upper(),
@@ -826,22 +847,19 @@ class MarketDataStore:
                 coverage_ratio=1.0,
             )
 
-        params: list[object] = [symbol.upper(), market_type, interval]
-        where = ["symbol = ?", "market_type = ?", "interval = ?"]
-        if start_ms is not None:
-            where.append("open_time >= ?")
-            params.append(int(start_ms))
-        if end_ms is not None:
-            where.append("open_time <= ?")
-            params.append(int(end_ms))
+        window_start, window_end = _sqlite_time_window(start_ms, end_ms)
         rows = self.connect().execute(
-            f"""
+            """
             SELECT open_time
             FROM candles
-            WHERE {' AND '.join(where)}
+            WHERE symbol = ?
+              AND market_type = ?
+              AND interval = ?
+              AND open_time >= ?
+              AND open_time <= ?
             ORDER BY open_time ASC
             """,
-            params,
+            (symbol.upper(), market_type, interval, window_start, window_end),
         )
         first_open_time = cast(int, coverage.first_open_time)
         last_open_time = cast(int, coverage.last_open_time)
@@ -966,25 +984,28 @@ class MarketDataStore:
         end_ms: int | None = None,
         limit: int | None = None,
     ) -> list[AggTrade]:
-        params: list[object] = [symbol.upper(), market_type]
-        where = ["symbol = ?", "market_type = ?"]
-        if start_ms is not None:
-            where.append("trade_time_ms >= ?")
-            params.append(int(start_ms))
-        if end_ms is not None:
-            where.append("trade_time_ms <= ?")
-            params.append(int(end_ms))
-        query = f"""
+        window_start, window_end = _sqlite_time_window(start_ms, end_ms)
+        conn = self.connect()
+        rows = conn.execute(
+            """
             SELECT symbol, market_type, agg_trade_id, price, quantity, first_trade_id, last_trade_id,
                    trade_time_ms, is_buyer_maker, best_match
             FROM agg_trades
-            WHERE {' AND '.join(where)}
+            WHERE symbol = ?
+              AND market_type = ?
+              AND trade_time_ms >= ?
+              AND trade_time_ms <= ?
             ORDER BY trade_time_ms DESC, agg_trade_id DESC
-            """
-        if limit is not None:
-            query += " LIMIT ?"
-            params.append(max(0, int(limit)))
-        rows = self.connect().execute(query, params).fetchall()
+            LIMIT ?
+            """,
+            (
+                symbol.upper(),
+                market_type,
+                window_start,
+                window_end,
+                _sqlite_limit(limit),
+            ),
+        ).fetchall()
         return [self._agg_trade_from_row(row) for row in reversed(rows)]
 
     def agg_trade_coverage(
@@ -995,25 +1016,22 @@ class MarketDataStore:
         start_ms: int | None = None,
         end_ms: int | None = None,
     ) -> AggTradeCoverage:
-        params: list[object] = [symbol.upper(), market_type]
-        where = ["symbol = ?", "market_type = ?"]
-        if start_ms is not None:
-            where.append("trade_time_ms >= ?")
-            params.append(int(start_ms))
-        if end_ms is not None:
-            where.append("trade_time_ms <= ?")
-            params.append(int(end_ms))
-        row = self.connect().execute(
-            f"""
+        window_start, window_end = _sqlite_time_window(start_ms, end_ms)
+        conn = self.connect()
+        row = conn.execute(
+            """
             SELECT COUNT(*) AS count,
                    MIN(trade_time_ms) AS first_trade_time_ms,
                    MAX(trade_time_ms) AS last_trade_time_ms,
                    MIN(agg_trade_id) AS first_agg_trade_id,
                    MAX(agg_trade_id) AS last_agg_trade_id
             FROM agg_trades
-            WHERE {' AND '.join(where)}
+            WHERE symbol = ?
+              AND market_type = ?
+              AND trade_time_ms >= ?
+              AND trade_time_ms <= ?
             """,
-            params,
+            (symbol.upper(), market_type, window_start, window_end),
         ).fetchone()
         return AggTradeCoverage(
             symbol=symbol.upper(),
@@ -1036,15 +1054,10 @@ class MarketDataStore:
         limit: int | None = None,
     ) -> list[AggTradeBucket]:
         width = max(1, int(bucket_ms))
-        params: list[object] = [width, width, symbol.upper(), market_type]
-        where = ["symbol = ?", "market_type = ?"]
-        if start_ms is not None:
-            where.append("trade_time_ms >= ?")
-            params.append(int(start_ms))
-        if end_ms is not None:
-            where.append("trade_time_ms <= ?")
-            params.append(int(end_ms))
-        query = f"""
+        window_start, window_end = _sqlite_time_window(start_ms, end_ms)
+        conn = self.connect()
+        rows = conn.execute(
+            """
             WITH normalized AS (
                 SELECT
                     ((trade_time_ms / ?) * ?) AS bucket_open_time,
@@ -1057,7 +1070,10 @@ class MarketDataStore:
                     trade_time_ms,
                     is_buyer_maker
                 FROM agg_trades
-                WHERE {' AND '.join(where)}
+                WHERE symbol = ?
+                  AND market_type = ?
+                  AND trade_time_ms >= ?
+                  AND trade_time_ms <= ?
             ),
             ranked AS (
                 SELECT
@@ -1095,11 +1111,18 @@ class MarketDataStore:
             FROM ranked
             GROUP BY bucket_open_time
             ORDER BY bucket_open_time DESC
-            """
-        if limit is not None:
-            query += " LIMIT ?"
-            params.append(max(0, int(limit)))
-        rows = self.connect().execute(query, params).fetchall()
+            LIMIT ?
+            """,
+            (
+                width,
+                width,
+                symbol.upper(),
+                market_type,
+                window_start,
+                window_end,
+                _sqlite_limit(limit),
+            ),
+        ).fetchall()
         return [
             AggTradeBucket(
                 symbol=str(row["symbol"]),
@@ -1232,25 +1255,28 @@ class MarketDataStore:
         end_ms: int | None = None,
         limit: int | None = None,
     ) -> list[TopOfBookSnapshot]:
-        params: list[object] = [symbol.upper(), market_type]
-        where = ["symbol = ?", "market_type = ?"]
-        if start_ms is not None:
-            where.append("ts_ms >= ?")
-            params.append(int(start_ms))
-        if end_ms is not None:
-            where.append("ts_ms <= ?")
-            params.append(int(end_ms))
-        query = f"""
+        window_start, window_end = _sqlite_time_window(start_ms, end_ms)
+        conn = self.connect()
+        rows = conn.execute(
+            """
             SELECT provider, symbol, market_type, ts_ms, bid_price, bid_qty, ask_price, ask_qty,
                    mid_price, spread, spread_bps, depth_notional, ingested_at_ms
             FROM top_of_book_snapshots
-            WHERE {' AND '.join(where)}
+            WHERE symbol = ?
+              AND market_type = ?
+              AND ts_ms >= ?
+              AND ts_ms <= ?
             ORDER BY ts_ms DESC
-            """
-        if limit is not None:
-            query += " LIMIT ?"
-            params.append(max(0, int(limit)))
-        rows = self.connect().execute(query, params).fetchall()
+            LIMIT ?
+            """,
+            (
+                symbol.upper(),
+                market_type,
+                window_start,
+                window_end,
+                _sqlite_limit(limit),
+            ),
+        ).fetchall()
         return [self._top_of_book_from_row(row) for row in reversed(rows)]
 
     def latest_top_of_book(self, symbol: str, market_type: str) -> TopOfBookSnapshot | None:
@@ -1591,28 +1617,29 @@ class MarketDataStore:
         start_ms: int | None = None,
         end_ms: int | None = None,
     ) -> list[FuturesReferenceBar]:
-        where = [
-            "symbol = ?",
-            "market_type = ?",
-            "kind = ?",
-            "interval = ?",
-        ]
-        params: list[object] = [symbol.upper(), market_type, kind, interval]
-        if start_ms is not None:
-            where.append("open_time >= ?")
-            params.append(int(start_ms))
-        if end_ms is not None:
-            where.append("open_time <= ?")
-            params.append(int(end_ms))
-        rows = self.connect().execute(
-            f"""
+        window_start, window_end = _sqlite_time_window(start_ms, end_ms)
+        conn = self.connect()
+        rows = conn.execute(
+            """
             SELECT symbol, market_type, kind, interval, open_time, open, high,
                    low, close, close_time
             FROM futures_reference_bars
-            WHERE {" AND ".join(where)}
+            WHERE symbol = ?
+              AND market_type = ?
+              AND kind = ?
+              AND interval = ?
+              AND open_time >= ?
+              AND open_time <= ?
             ORDER BY open_time
             """,
-            params,
+            (
+                symbol.upper(),
+                market_type,
+                kind,
+                interval,
+                window_start,
+                window_end,
+            ),
         ).fetchall()
         return [
             FuturesReferenceBar(
@@ -1638,23 +1665,20 @@ class MarketDataStore:
         start_ms: int | None = None,
         end_ms: int | None = None,
     ) -> list[FundingRateRecord]:
-        where = ["symbol = ?", "market_type = ?"]
-        params: list[object] = [symbol.upper(), market_type]
-        if start_ms is not None:
-            where.append("calc_time >= ?")
-            params.append(int(start_ms))
-        if end_ms is not None:
-            where.append("calc_time <= ?")
-            params.append(int(end_ms))
-        rows = self.connect().execute(
-            f"""
+        window_start, window_end = _sqlite_time_window(start_ms, end_ms)
+        conn = self.connect()
+        rows = conn.execute(
+            """
             SELECT symbol, market_type, calc_time, funding_interval_hours,
                    funding_rate
             FROM funding_rates
-            WHERE {" AND ".join(where)}
+            WHERE symbol = ?
+              AND market_type = ?
+              AND calc_time >= ?
+              AND calc_time <= ?
             ORDER BY calc_time
             """,
-            params,
+            (symbol.upper(), market_type, window_start, window_end),
         ).fetchall()
         return [
             FundingRateRecord(

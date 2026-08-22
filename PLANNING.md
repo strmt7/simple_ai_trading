@@ -152,16 +152,26 @@ DeepSource, Ruff, and Vulture pass on that follow-up. Documentation checkpoint
 `291c758a` also passed DeepSource, Ruff, Vulture, and Super-Linter; its CI run
 remained in progress at the final refresh.
 
-The current bounded SQL-safety batch replaces the optional dynamic predicate
+The first bounded SQL-safety checkpoint replaces the optional dynamic predicate
 in `latest_microstructure_capture` with one static, parameter-bound query. Its
 regression proves passed-only selection, unrestricted selection, and rejection
 of an injection-shaped symbol. The full 20-test market-data matrix passes and
 both changed executable lines have coverage. Scoped Mypy, Ruff, Pylint
 errors-only, and formatter checks pass. Bandit `B608` findings in
-`market_store.py` fall from ten to nine without suppression. The remaining nine
-queries construct predicates only from internal fixed literals and bind every
-external value; they remain a documented review queue, not nine proven
-vulnerabilities or permission for a risky mass rewrite.
+`market_store.py` fall from ten to nine without suppression. Exact revision
+`63ecb4f2` passed hosted DeepSource, Ruff, Vulture, and Super-Linter; its CI run
+remained in progress at the final refresh.
+
+The current follow-up removes the remaining nine dynamic predicate joins. Every
+time window and limit is now bound in static SQL; omitted windows use SQLite's
+full signed-integer range and an omitted limit binds SQLite's unlimited `-1`.
+All timestamp columns are `INTEGER NOT NULL`, and `EXPLAIN QUERY PLAN` confirms
+covering-index searches for candles, aggregate trades, top-of-book snapshots,
+futures reference bars, and funding rates. The 47-test affected matrix passes,
+all 31 changed executable lines have coverage, and scoped Mypy, Ruff, Pylint
+errors-only, Bandit, and changed-range formatting checks pass. Bandit now
+reports zero findings in `market_store.py`; this does not close dynamic-SQL or
+security findings in other modules.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
