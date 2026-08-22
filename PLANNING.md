@@ -91,6 +91,13 @@ fingerprints and rejection-order tests protecting the evidence contract. This
 closes that bounded maintainability batch; it is not a vulnerability, model-edge,
 or profitability claim.
 
+DeepSource's first analysis of the decomposed module applied a stricter helper
+threshold and reported 13 residual complexity findings plus two simplification
+findings. The simplifications are fixed in the follow-up checkpoint. The 13
+helper findings are recorded exactly in `docs/CONTINUATION.md`; they remain a
+bounded maintainability queue and must not be presented as vulnerabilities or
+silenced with broad analyzer exclusions.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance
