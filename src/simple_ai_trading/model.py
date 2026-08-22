@@ -1178,7 +1178,10 @@ class TrainedModel:
         return _clamp(weighted_positive / total if total else 0.5, 0.0, 1.0)
 
     @staticmethod
-    def _technical_probability(expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+    def _technical_probability(
+        expert: HybridExpert,
+        features: Tuple[float, ...],
+    ) -> float | None:
         if not features:
             return None
         values = list(features[: max(1, min(int(expert.feature_count), len(features)))])
@@ -1218,7 +1221,10 @@ class TrainedModel:
         return _clamp(_sigmoid(score * 2.2), 0.0, 1.0)
 
     @staticmethod
-    def _rule_alpha_probability(expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+    def _rule_alpha_probability(
+        expert: HybridExpert,
+        features: Tuple[float, ...],
+    ) -> float | None:
         if not features:
             return None
         values = list(features[: max(1, min(int(expert.feature_count), len(features)))])
