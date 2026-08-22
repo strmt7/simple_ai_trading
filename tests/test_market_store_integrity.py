@@ -63,12 +63,19 @@ def test_market_data_store_rejects_non_finite_or_non_positive_top_of_book_values
     key: str,
     value: float,
 ) -> None:
-    payload = {"bidPrice": 99.0, "bidQty": 2.0, "askPrice": 101.0, "askQty": 3.0}
-    payload[key] = value
+    payload = {
+        "bidPrice": 99.0,
+        "bidQty": 2.0,
+        "askPrice": 101.0,
+        "askQty": 3.0,
+        key: value,
+    }
 
-    with MarketDataStore(tmp_path / f"invalid-{key}-{value!s}.sqlite") as store:
-        with pytest.raises(ValueError, match=rf"{key} must be finite and positive"):
-            store.insert_top_of_book_snapshot("binance", "BTCUSDT", "spot", payload)
+    with (
+        MarketDataStore(tmp_path / f"invalid-{key}-{value!s}.sqlite") as store,
+        pytest.raises(ValueError, match=rf"{key} must be finite and positive"),
+    ):
+        store.insert_top_of_book_snapshot("binance", "BTCUSDT", "spot", payload)
 
 
 def test_market_data_store_keeps_extreme_top_of_book_metrics_finite(
