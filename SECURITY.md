@@ -1,42 +1,50 @@
-﻿# Security
+# Security
 
-This project is **test-phase software** that trades on Binance **testnet** by
-default.  Real-money execution is intentionally blocked in the current phase.
-Any change that widens that scope must be accompanied by explicit operator
-opt-in, tests that prove redaction still holds, and an update to this file.
+Simple AI Trading is beta research software. Binance execution is restricted to
+paper or testnet/Demo environments. The independent Polymarket live-capable
+boundary is disabled by default and has no capital authority. No model is
+approved for real-money trading.
 
-## Threat model in scope
+## Security boundaries
 
-- Accidental credential disclosure via logs, artifacts, stdout/stderr, or git
-  history.
-- Accidental live-mode execution from a misconfigured strategy.
-- Supply-chain drift from unexpected dependencies (runtime deps are intentionally
-  small and listed in `pyproject.toml`; anything else needs review).
-- Exchange API rate-limit abuse or order replay from loose loops.
+- Credentials must never enter prompts, logs, artifacts, tests, documentation,
+  or Git history.
+- A configuration error must not widen execution authority. Any future
+  real-money boundary requires explicit operator opt-in and direct regression
+  tests.
+- Only provably bot-owned orders and positions may be changed. Unknown state
+  blocks new exposure and forces reconciliation before recovery.
+- Risk, ownership, reconciliation, Pause, Stop, and close controls remain
+  deterministic. AI cannot override them or block a close.
+- Dependencies and GitHub Actions are treated as supply-chain boundaries and
+  require pinned, reviewed updates.
+- Exchange requests must use bounded timeouts, backoff, idempotency, and
+  rate-limit controls.
 
-## Out of scope
+## Credential handling
 
-- Cryptographic attacks against Binance's HMAC implementation.
-- Attacks that require root on the host â€” the app inherits whatever trust the
-  host already has.
-- Losses caused by genuinely adverse markets on testnet â€” testnet funds are not
-  real money.
+Runtime secrets are stored outside the repository in
+`~/.config/simple_ai_trading/runtime.json` and loaded only when needed.
+`RuntimeConfig.public_dict()` is the only supported source for persisted
+runtime snapshots. Logging and request errors must pass through the repository's
+redaction layer before they are displayed or written.
 
-## Credential hygiene
+If a credential has appeared in a prompt, log, artifact, or commit, treat it as
+compromised and rotate it immediately. Redaction after disclosure is not a
+substitute for rotation.
 
-- API keys + secrets live in `~/.config/simple_ai_trading/runtime.json`
-  with mode `0600`, created by `configure`.  They are read lazily; nothing
-  imports the secret at module load time.
-- Every outbound URL routed through `_redact_request_url` before any log, error
-  message, or persisted artifact writes it.
-- All `logging_ext` handlers apply a redaction filter that scrubs `ghp_*` /
-  `github_pat_*` / `sk-*` tokens, signed query fields (`signature`,
-  `timestamp`, `recvWindow`), and `X-MBX-APIKEY` headers.
-- `RuntimeConfig.public_dict()` is the only acceptable source for runtime
-  snapshots embedded in JSON artifacts.
+## Scanner results
+
+A clear scanner is evidence about that scanner and revision, not proof that no
+vulnerability exists. Unsupported or unavailable scanners are reported as
+unverified. Static-analysis findings are reviewed at their source and trust
+boundary; they are not hidden through broad suppressions.
+
+The current verified inventory and remaining review queues are recorded in
+`docs/CONTINUATION.md`.
 
 ## Reporting
 
-For non-public issues, contact the repository owner privately with a clear
-reproduction.  Do not file public issues that include a valid API key or PAT;
-rotate the credential first.
+Report non-public issues privately to the repository owner with a minimal
+reproduction and affected revision. Never file a public issue containing a
+valid credential, signed request, wallet secret, or unredacted account data.

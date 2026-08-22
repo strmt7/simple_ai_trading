@@ -26,7 +26,7 @@ the repository and on GitHub before changing code.
 
 ## Live Host Handoff: 2026-08-22
 
-The following state was verified at approximately `2026-08-22T09:23Z`. It is
+The following state was verified at approximately `2026-08-22T10:31Z`. It is
 host state, not model evidence, and must be rechecked before any action.
 
 - Pushed `main` was clean and synchronized with `origin/main` when this
@@ -34,9 +34,9 @@ host state, not model evidence, and must be rechecked before any action.
   `main` after pruning. Do not copy a commit identifier from this mutable
   handoff; verify `git rev-parse HEAD` and `git rev-parse origin/main` directly.
 - Round 75 prospective Binance capture is active from the detached worktree
-  `C:\trader\simple_ai_trading-model-dev`. Snapshot parent PID `3636` and
-  physical child PID `64444` were alive. Canonical service state reported
-  `waiting_for_next_fixed_slot`, slot ordinal `656`, no credentials, no orders,
+  `C:\trader\simple_ai_trading-model-dev`. Snapshot parent PID `21980` and
+  physical child PID `31648` were alive. Canonical service state reported
+  `waiting_for_next_fixed_slot`, slot ordinal `658`, no credentials, no orders,
   and no trading authority. The frozen campaign ends at
   `2026-08-23T12:00:00Z`. Scheduled task
   `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1` was ready and its
@@ -45,7 +45,7 @@ host state, not model evidence, and must be rechecked before any action.
   detached commit `4a5912574a9157d79fecc53bf68ed6f01bb8dac8` in
   `C:\trader\simple_ai_trading-round21-sidecar-v2`. Wrapper PID `35008` and
   physical child PID `35264` were alive. Its state reported segment `12`,
-  phase `capturing`, `106562414` written public messages, ten recorded stream
+  phase `capturing`, `110471327` written public messages, ten recorded stream
   gaps, no credentials, no execution connection, no model-data eligibility,
   and no paper or live authority. Its frozen scheduled end is
   `2026-08-29T23:40:00Z`.
@@ -86,19 +86,43 @@ blind overwrite. All new development after integration belongs on `main`.
 - GitHub reported zero open Dependabot alerts, zero open secret-scanning
   alerts, no open pull requests, and only `main`. GitHub code scanning returned
   `404: no analysis found`; it is unavailable, not zero.
-- `uv lock --check` passed. Pip-audit found no known vulnerabilities in the
-  complete exported GPU and DirectML dependency stacks. Zizmor pedantic found
-  no workflow findings.
+- `uv lock --check` passed. The dependency lock and product source have not
+  changed since pip-audit found no known vulnerabilities in the complete
+  exported GPU and DirectML dependency stacks. The exact pushed revision
+  `053e71ec9959c7b51c73d6983fb574e03f4173ea` passed hosted actionlint and
+  Zizmor `1.25.2` through Super-Linter.
 - A fresh Bandit audit of `src/simple_ai_trading` scanned 436585 lines and
   reported 527 audit findings: zero high severity, 251 medium, and 276 low.
   The medium set is dominated by 248 dynamic-SQL (`B608`) review items. Its
   three `B113` request findings are false positives because each displayed call
   supplies an explicit bounded timeout. The remaining findings still require
   source-by-source triage; this audit does not prove vulnerability or safety.
-- The last live DeepSource verification on `2026-08-16` passed the final commit
-  delta with zero introduced issues, while its project backlog remained about
-  28000 active findings, including 118 security findings. Recheck DeepSource
-  before changing that claim.
+- `market_store._table_columns` was source-traced: its only caller supplies the
+  fixed internal literal `archive_files`, so that `B608` item has no
+  attacker-controlled source-to-sink path and needs no speculative patch.
+  Executable-resolution findings remain a shared-boundary review; do not claim
+  closure from changing isolated call sites.
+- The last full DeepSource backlog verification on `2026-08-16` found about
+  28000 active findings, including 118 security findings. DeepSource passed
+  revision `053e71ec9959c7b51c73d6983fb574e03f4173ea` with no blocking issues or
+  failing metrics; the historical project-backlog count was not refreshed and
+  must not be represented as current.
+
+### Round Closeout Checkpoint
+
+Revision `053e71ec9959c7b51c73d6983fb574e03f4173ea` was clean and synchronized
+with `origin/main` at `2026-08-22T10:31Z`. CI, Ruff, Vulture, Super-Linter, and
+DeepSource passed on that exact revision. Dependabot and secret scanning had no
+open alerts; code scanning was unavailable. The latest changes add a direct
+masked-pretraining target-integrity regression and cancel superseded same-ref
+quality workflows. They do not create model evidence, trading authority, or a
+profitability claim.
+
+This is an interruption-safe checkpoint, not product completion. Round 75 and
+Round 21 remain active under their frozen contracts. The detached Round 75
+worktree still reports 97 modified paths, 2 deleted paths, and 218 untracked
+paths; the content review boundary remains 71 differing plus 26 locally-only
+paths. Do not reconcile any of them before Round 75 terminalization.
 
 ## Completed Foundation
 
