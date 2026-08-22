@@ -2066,6 +2066,40 @@ def polymarket_selected_policy_tables(
     return evaluation, selected_rows, equity_rows, market_rows
 
 
+_RIDGE_MATERIALIZATION_SQL: Mapping[str, tuple[str, str]] = {
+    "polymarket_ridge_candidate": (
+        "SELECT * FROM polymarket_ridge_candidate WHERE report_sha256 = ? ORDER BY l2",
+        "INSERT INTO polymarket_ridge_candidate VALUES (?, ?, ?, ?, ?, ?)",
+    ),
+    "polymarket_ridge_threshold_trial": (
+        "SELECT * FROM polymarket_ridge_threshold_trial "
+        "WHERE report_sha256 = ? ORDER BY partition, trial_key",
+        "INSERT INTO polymarket_ridge_threshold_trial VALUES (?, ?, ?, ?, ?)",
+    ),
+    "polymarket_ridge_split_group": (
+        "SELECT * FROM polymarket_ridge_split_group "
+        "WHERE report_sha256 = ? ORDER BY partition, ordinal",
+        "INSERT INTO polymarket_ridge_split_group VALUES (?, ?, ?, ?)",
+    ),
+    "polymarket_ridge_selected_action": (
+        "SELECT * FROM polymarket_ridge_selected_action "
+        "WHERE report_sha256 = ? ORDER BY partition, sequence",
+        "INSERT INTO polymarket_ridge_selected_action "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    ),
+    "polymarket_ridge_equity": (
+        "SELECT * FROM polymarket_ridge_equity "
+        "WHERE report_sha256 = ? ORDER BY partition, sequence",
+        "INSERT INTO polymarket_ridge_equity VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    ),
+    "polymarket_ridge_market_pnl": (
+        "SELECT * FROM polymarket_ridge_market_pnl "
+        "WHERE report_sha256 = ? ORDER BY partition, condition_id",
+        "INSERT INTO polymarket_ridge_market_pnl VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ),
+}
+
+
 def materialize_polymarket_ridge_report(
     store: PolymarketEvidenceStore,
     dataset: PolymarketRidgeDataset,
@@ -2247,19 +2281,20 @@ def materialize_polymarket_ridge_report(
         [report.report_sha256],
     ).fetchone()
     tables = (
-        ("polymarket_ridge_candidate", candidate_rows, "l2"),
-        ("polymarket_ridge_threshold_trial", threshold_rows, "partition, trial_key"),
-        ("polymarket_ridge_split_group", split_rows, "partition, ordinal"),
-        ("polymarket_ridge_selected_action", selected_rows, "partition, sequence"),
-        ("polymarket_ridge_equity", equity_rows, "partition, sequence"),
-        ("polymarket_ridge_market_pnl", market_rows, "partition, condition_id"),
+        ("polymarket_ridge_candidate", candidate_rows),
+        ("polymarket_ridge_threshold_trial", threshold_rows),
+        ("polymarket_ridge_split_group", split_rows),
+        ("polymarket_ridge_selected_action", selected_rows),
+        ("polymarket_ridge_equity", equity_rows),
+        ("polymarket_ridge_market_pnl", market_rows),
     )
     if existing is not None:
         if tuple(existing) != report_row:
             raise ValueError("stored Polymarket ridge report is inconsistent")
-        for table, expected, ordering in tables:
+        for table, expected in tables:
+            select_sql, _insert_sql = _RIDGE_MATERIALIZATION_SQL[table]
             rows = connection.execute(
-                f"SELECT * FROM {table} WHERE report_sha256 = ? ORDER BY {ordering}",
+                select_sql,
                 [report.report_sha256],
             ).fetchall()
             if [tuple(row) for row in rows] != sorted(
@@ -2277,11 +2312,11 @@ def materialize_polymarket_ridge_report(
                 "INSERT INTO polymarket_ridge_report VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 report_row,
             )
-            for table, rows, _ordering in tables:
+            for table, rows in tables:
                 if rows:
-                    placeholders = ", ".join("?" for _ in rows[0])
+                    _select_sql, insert_sql = _RIDGE_MATERIALIZATION_SQL[table]
                     connection.executemany(
-                        f"INSERT INTO {table} VALUES ({placeholders})",
+                        insert_sql,
                         rows,
                     )
             connection.execute("COMMIT")

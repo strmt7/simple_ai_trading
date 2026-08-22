@@ -117,6 +117,11 @@ blind overwrite. All new development after integration belongs on `main`.
   static SQL with bound full-range windows and limits. Bandit now reports zero
   findings in `market_store.py`. This is module-level closure only; do not infer
   project-wide dynamic-SQL or vulnerability closure.
+- The Polymarket Ridge and MLP report materializers now use complete allowlisted
+  select and insert statements instead of interpolated table, ordering, and
+  placeholder strings. Bandit reports zero `B608` findings in both files. The
+  remaining `B311` item is SHA-seeded pseudo-random model initialization used
+  for deterministic reproducibility, not a secret or security decision.
 - A Windows child-process reproducer proved that a fake `git.exe` in the
   process current directory could satisfy an unqualified `git` invocation.
   Package bootstrap now removes empty, relative, duplicate, and
@@ -348,9 +353,20 @@ blind overwrite. All new development after integration belongs on `main`.
   top-of-book snapshots, futures reference bars, and funding rates. The 47-test
   affected matrix passes, changed-line coverage is `31/31`, and scoped Mypy,
   Ruff, Pylint errors-only, Bandit, and changed-range formatting checks pass.
-  Bandit reports zero findings in `market_store.py`. Hosted analysis of the exact
-  pushed follow-up remains required; other modules retain their own SQL review
-  queues.
+  Bandit reports zero findings in `market_store.py`. Exact revision
+  `646bbdbe5d3a45637462fca83755cfcc47645b6c` passed hosted DeepSource, Ruff,
+  and Vulture. Its Super-Linter and CI runs remained in progress at the final
+  refresh. Other modules retain their own SQL review queues.
+- The current model-evidence SQL batch replaces the Ridge and MLP materializer's
+  runtime table, ordering, and placeholder interpolation with complete
+  allowlisted SQL statements. The full 19-test combined module passes, including
+  fit-claim reservation, deterministic fitting, idempotence, transaction,
+  runtime-evidence, CLI parity, and tamper-detection paths. Changed-line coverage
+  is `10/10`; Ruff, Pylint errors-only, Bandit, and changed-range formatting
+  checks pass; and both files now report zero `B608` findings. Scoped Mypy still
+  reports 22 pre-existing diagnostics outside changed lines and is not a pass.
+  No dataset, fit, model score, policy, P&L, or authority changes. Hosted analysis
+  of the exact pushed checkpoint remains required.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -523,11 +539,13 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    follow-up revision `8d5ecc1e`. The rule-alpha scorer and two static-method
    findings are closed at follow-up `c349aca6`. The first SQL-safety checkpoint
    removed one of ten `market_store.py` dynamic-query heuristics at `63ecb4f2`;
-   the current follow-up removes the other nine without suppression or index
-   loss. Continue source-to-sink triage in other modules from exact hosted
-   results, not assumed residual counts. Do not treat the narrow `5f6e790c` pass
-   or any bounded follow-up as closure of the broader backlog or as a
-   project-wide security result.
+   follow-up `646bbdbe` removes the other nine without suppression or index loss.
+   The current Ridge/MLP materializer batch removes four more internal-identifier
+   construction sites through explicit statement allowlists. Continue
+   source-to-sink triage in other modules from exact hosted results, not assumed
+   residual counts. Do not treat the narrow `5f6e790c` pass or any bounded
+   follow-up as closure of the broader backlog or as a project-wide security
+   result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.

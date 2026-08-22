@@ -1587,6 +1587,41 @@ def _prediction_rows(
     ]
 
 
+_MLP_MATERIALIZATION_SQL: Mapping[str, tuple[str, str]] = {
+    "polymarket_mlp_member": (
+        "SELECT * FROM polymarket_mlp_member WHERE report_sha256 = ? ORDER BY seed",
+        "INSERT INTO polymarket_mlp_member VALUES (?, ?, ?, ?, ?, ?)",
+    ),
+    "polymarket_mlp_epoch": (
+        "SELECT * FROM polymarket_mlp_epoch "
+        "WHERE report_sha256 = ? ORDER BY seed, epoch",
+        "INSERT INTO polymarket_mlp_epoch VALUES (?, ?, ?, ?, ?)",
+    ),
+    "polymarket_mlp_prediction": (
+        "SELECT * FROM polymarket_mlp_prediction "
+        "WHERE report_sha256 = ? ORDER BY partition, sequence",
+        "INSERT INTO polymarket_mlp_prediction "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    ),
+    "polymarket_mlp_selected_action": (
+        "SELECT * FROM polymarket_mlp_selected_action "
+        "WHERE report_sha256 = ? ORDER BY partition, sequence",
+        "INSERT INTO polymarket_mlp_selected_action "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    ),
+    "polymarket_mlp_equity": (
+        "SELECT * FROM polymarket_mlp_equity "
+        "WHERE report_sha256 = ? ORDER BY partition, sequence",
+        "INSERT INTO polymarket_mlp_equity VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    ),
+    "polymarket_mlp_market_pnl": (
+        "SELECT * FROM polymarket_mlp_market_pnl "
+        "WHERE report_sha256 = ? ORDER BY partition, condition_id",
+        "INSERT INTO polymarket_mlp_market_pnl VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ),
+}
+
+
 def materialize_polymarket_mlp_report(
     store: PolymarketEvidenceStore,
     dataset: PolymarketRidgeDataset,
@@ -1806,35 +1841,30 @@ def materialize_polymarket_mlp_report(
         """
     )
     tables = (
-        ("polymarket_mlp_member", member_rows, "seed", lambda row: row[1]),
+        ("polymarket_mlp_member", member_rows, lambda row: row[1]),
         (
             "polymarket_mlp_epoch",
             trace_rows,
-            "seed, epoch",
             lambda row: (row[1], row[2]),
         ),
         (
             "polymarket_mlp_prediction",
             prediction_rows,
-            "partition, sequence",
             lambda row: (row[1], row[2]),
         ),
         (
             "polymarket_mlp_selected_action",
             selected_rows,
-            "partition, sequence",
             lambda row: (row[1], row[2]),
         ),
         (
             "polymarket_mlp_equity",
             equity_rows,
-            "partition, sequence",
             lambda row: (row[1], row[2]),
         ),
         (
             "polymarket_mlp_market_pnl",
             market_rows,
-            "partition, condition_id",
             lambda row: (row[1], row[2]),
         ),
     )
@@ -1845,9 +1875,10 @@ def materialize_polymarket_mlp_report(
     if existing is not None:
         if tuple(existing) != report_row:
             raise ValueError("stored Polymarket MLP report is inconsistent")
-        for table, expected, ordering, sort_key in tables:
+        for table, expected, sort_key in tables:
+            select_sql, _insert_sql = _MLP_MATERIALIZATION_SQL[table]
             rows = connection.execute(
-                f"SELECT * FROM {table} WHERE report_sha256 = ? ORDER BY {ordering}",
+                select_sql,
                 [report.report_sha256],
             ).fetchall()
             if [tuple(row) for row in rows] != sorted(expected, key=sort_key):
@@ -1878,11 +1909,11 @@ def materialize_polymarket_mlp_report(
                 "INSERT INTO polymarket_mlp_runtime_evidence VALUES (?, ?, ?)",
                 runtime_row,
             )
-            for table, rows, _ordering, _sort_key in tables:
+            for table, rows, _sort_key in tables:
                 if rows:
-                    placeholders = ", ".join("?" for _ in rows[0])
+                    _select_sql, insert_sql = _MLP_MATERIALIZATION_SQL[table]
                     connection.executemany(
-                        f"INSERT INTO {table} VALUES ({placeholders})",
+                        insert_sql,
                         rows,
                     )
             connection.execute("COMMIT")
