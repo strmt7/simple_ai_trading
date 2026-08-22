@@ -171,7 +171,21 @@ futures reference bars, and funding rates. The 47-test affected matrix passes,
 all 31 changed executable lines have coverage, and scoped Mypy, Ruff, Pylint
 errors-only, Bandit, and changed-range formatting checks pass. Bandit now
 reports zero findings in `market_store.py`; this does not close dynamic-SQL or
-security findings in other modules.
+security findings in other modules. Exact revision `646bbdbe` passed hosted
+DeepSource, Ruff, and Vulture; its Super-Linter and CI runs remained in progress
+at the final refresh.
+
+The current model-evidence SQL batch replaces runtime table, ordering, and
+placeholder interpolation in the Polymarket Ridge and MLP materializers with
+complete allowlisted select and insert statements. Idempotence, transaction,
+runtime-evidence, and tamper-detection behavior remains unchanged. All 19 tests
+in the combined Ridge/MLP module pass and all ten changed executable lines have
+coverage. Ruff, Pylint errors-only, Bandit, and changed-range formatting checks
+pass; both files now report zero `B608` findings. Their one remaining Bandit
+`B311` item is SHA-seeded pseudo-random model initialization required for
+reproducibility, not a cryptographic or security decision. Scoped Mypy remains
+red with 22 pre-existing diagnostics outside changed lines and is not recorded
+as a pass. No dataset, fit, model score, policy, P&L, or authority changes.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
