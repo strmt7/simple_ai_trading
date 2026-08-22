@@ -453,6 +453,14 @@ class PolymarketMLPBootstrap:
 
 
 @dataclass(frozen=True)
+class _PolymarketMLPReportExpectation:
+    selected_validation: PolymarketPolicyMetrics | None
+    admission_reasons: tuple[str, ...]
+    selected_policy: str
+    selected_threshold: float | None
+
+
+@dataclass(frozen=True)
 class PolymarketMLPReport:
     dataset_sha256: str
     parent_ridge_report_sha256: str
@@ -515,120 +523,161 @@ class PolymarketMLPReport:
         return {**self.identity_payload(), "report_sha256": self.report_sha256}
 
     def validated(self) -> PolymarketMLPReport:
-        self.split.validated()
-        self.ensemble.validated()
-        self.validation_log_loss_uplift.validated()
-        for metrics in self.validation_trials:
-            metrics.validated(require_asset_profit=False)
-        if self.test_metrics is not None:
-            self.test_metrics.validated(require_asset_profit=True)
-        if self.test_utility_uplift is not None:
-            self.test_utility_uplift.validated()
-        passing_trials = [item for item in self.validation_trials if item.gate_passed]
-        selected_validation = (
-            max(
-                passing_trials,
-                key=lambda item: (
-                    item.wilson_lower_bound_95,
-                    float(item.threshold or 0.0),
-                ),
-            )
-            if passing_trials
-            else None
-        )
-        expected_admission_reasons: list[str] = []
-        if selected_validation is None:
-            expected_admission_reasons.append("no_validation_threshold_passed")
-        if self.validation_log_loss_uplift.lower_95 <= 0.0:
-            expected_admission_reasons.append(
-                "validation_log_loss_uplift_lower_not_positive"
-            )
+        _validate_mlp_report_children(self)
+        expectation = _mlp_report_expectation(self)
+        test_reasons_are_canonical = _canonical_report_reasons(self.test_gate_reasons)
         if (
-            self.validation_stress_utility_uplift_quote is None
-            or self.validation_stress_utility_uplift_quote <= 0.0
-        ):
-            expected_admission_reasons.append(
-                "validation_stress_utility_not_above_ridge"
-            )
-        frozen_admission_reasons = tuple(sorted(set(expected_admission_reasons)))
-        admitted = not frozen_admission_reasons
-        expected_policy = "causal_mlp" if admitted else "no_trade"
-        expected_threshold = (
-            selected_validation.threshold
-            if admitted and selected_validation is not None
-            else None
-        )
-        test_reasons_are_canonical = tuple(
-            sorted(set(self.test_gate_reasons))
-        ) == self.test_gate_reasons and all(
-            isinstance(value, str) and value for value in self.test_gate_reasons
-        )
-        if (
-            not _is_sha256(self.dataset_sha256)
-            or self.dataset_sha256 != self.ensemble.dataset_sha256
-            or not _is_sha256(self.parent_ridge_report_sha256)
-            or tuple(item.threshold for item in self.validation_trials)
-            != POLYMARKET_RIDGE_THRESHOLD_GRID
-            or self.selected_policy not in {"causal_mlp", "no_trade"}
-            or (self.selected_policy == "no_trade") != (self.selected_threshold is None)
-            or self.validation_admission_reasons != frozen_admission_reasons
-            or self.selected_policy != expected_policy
-            or self.selected_threshold != expected_threshold
-            or self.test_evaluated != (not self.validation_admission_reasons)
-            or self.test_evaluated != (self.selected_policy == "causal_mlp")
-            or self.test_evaluated
-            != (
-                self.test_log_loss is not None
-                and self.test_metrics is not None
-                and self.test_utility_uplift is not None
-            )
-            or self.development_passed
-            != (self.test_evaluated and not self.test_gate_reasons)
-            or not math.isfinite(self.validation_log_loss)
-            or self.validation_log_loss < 0.0
-            or not math.isfinite(self.ridge_validation_log_loss)
-            or self.ridge_validation_log_loss < 0.0
-            or self.validation_log_loss_uplift.sample_count
-            != len(self.split.validation_groups)
-            or (
-                self.validation_stress_utility_uplift_quote is not None
-                and not math.isfinite(self.validation_stress_utility_uplift_quote)
-            )
-            or (selected_validation is None)
-            != (self.validation_stress_utility_uplift_quote is None)
-            or tuple(sorted(set(self.validation_admission_reasons)))
-            != self.validation_admission_reasons
+            not _mlp_report_identity_is_valid(self)
+            or not _mlp_report_selection_is_valid(self, expectation)
+            or not _mlp_report_validation_evidence_is_valid(self, expectation)
             or not test_reasons_are_canonical
-            or (
-                not self.test_evaluated
-                and (
-                    self.test_log_loss is not None
-                    or self.test_metrics is not None
-                    or self.test_utility_uplift is not None
-                    or self.test_gate_reasons
-                )
-            )
-            or (
-                self.test_evaluated
-                and (
-                    self.test_log_loss is None
-                    or not math.isfinite(self.test_log_loss)
-                    or self.test_log_loss < 0.0
-                    or self.test_metrics is None
-                    or self.test_metrics.threshold != self.selected_threshold
-                    or self.test_utility_uplift is None
-                    or self.test_utility_uplift.sample_count
-                    != len(self.split.test_groups)
-                    or not set(self.test_metrics.gate_reasons).issubset(
-                        self.test_gate_reasons
-                    )
-                )
-            )
-            or not _is_sha256(self.report_sha256)
-            or self.report_sha256 != _sha256(self.identity_payload())
+            or not _mlp_report_test_evidence_is_valid(self)
+            or not _mlp_report_hash_is_valid(self)
         ):
             raise ValueError("Polymarket MLP report is invalid")
         return self
+
+
+def _validate_mlp_report_children(report: PolymarketMLPReport) -> None:
+    report.split.validated()
+    report.ensemble.validated()
+    report.validation_log_loss_uplift.validated()
+    for metrics in report.validation_trials:
+        metrics.validated(require_asset_profit=False)
+    if report.test_metrics is not None:
+        report.test_metrics.validated(require_asset_profit=True)
+    if report.test_utility_uplift is not None:
+        report.test_utility_uplift.validated()
+
+
+def _best_passing_validation_trial(
+    trials: Sequence[PolymarketPolicyMetrics],
+) -> PolymarketPolicyMetrics | None:
+    passing_trials = [item for item in trials if item.gate_passed]
+    if not passing_trials:
+        return None
+    return max(
+        passing_trials,
+        key=lambda item: (
+            item.wilson_lower_bound_95,
+            float(item.threshold or 0.0),
+        ),
+    )
+
+
+def _mlp_report_expectation(
+    report: PolymarketMLPReport,
+) -> _PolymarketMLPReportExpectation:
+    selected_validation = _best_passing_validation_trial(report.validation_trials)
+    admission_reasons: list[str] = []
+    if selected_validation is None:
+        admission_reasons.append("no_validation_threshold_passed")
+    if report.validation_log_loss_uplift.lower_95 <= 0.0:
+        admission_reasons.append("validation_log_loss_uplift_lower_not_positive")
+    if (
+        report.validation_stress_utility_uplift_quote is None
+        or report.validation_stress_utility_uplift_quote <= 0.0
+    ):
+        admission_reasons.append("validation_stress_utility_not_above_ridge")
+    frozen_reasons = tuple(sorted(set(admission_reasons)))
+    admitted = not frozen_reasons
+    return _PolymarketMLPReportExpectation(
+        selected_validation=selected_validation,
+        admission_reasons=frozen_reasons,
+        selected_policy="causal_mlp" if admitted else "no_trade",
+        selected_threshold=(
+            selected_validation.threshold
+            if admitted and selected_validation is not None
+            else None
+        ),
+    )
+
+
+def _canonical_report_reasons(reasons: tuple[str, ...]) -> bool:
+    return tuple(sorted(set(reasons))) == reasons and all(
+        isinstance(value, str) and value for value in reasons
+    )
+
+
+def _mlp_report_identity_is_valid(report: PolymarketMLPReport) -> bool:
+    return (
+        _is_sha256(report.dataset_sha256)
+        and report.dataset_sha256 == report.ensemble.dataset_sha256
+        and _is_sha256(report.parent_ridge_report_sha256)
+        and tuple(item.threshold for item in report.validation_trials)
+        == POLYMARKET_RIDGE_THRESHOLD_GRID
+    )
+
+
+def _mlp_report_selection_is_valid(
+    report: PolymarketMLPReport,
+    expectation: _PolymarketMLPReportExpectation,
+) -> bool:
+    test_payload_is_complete = (
+        report.test_log_loss is not None
+        and report.test_metrics is not None
+        and report.test_utility_uplift is not None
+    )
+    return (
+        report.selected_policy in {"causal_mlp", "no_trade"}
+        and (report.selected_policy == "no_trade")
+        == (report.selected_threshold is None)
+        and report.validation_admission_reasons == expectation.admission_reasons
+        and report.selected_policy == expectation.selected_policy
+        and report.selected_threshold == expectation.selected_threshold
+        and report.test_evaluated == (not report.validation_admission_reasons)
+        and report.test_evaluated == (report.selected_policy == "causal_mlp")
+        and report.test_evaluated == test_payload_is_complete
+        and report.development_passed
+        == (report.test_evaluated and not report.test_gate_reasons)
+    )
+
+
+def _mlp_report_validation_evidence_is_valid(
+    report: PolymarketMLPReport,
+    expectation: _PolymarketMLPReportExpectation,
+) -> bool:
+    stress_uplift = report.validation_stress_utility_uplift_quote
+    return (
+        math.isfinite(report.validation_log_loss)
+        and report.validation_log_loss >= 0.0
+        and math.isfinite(report.ridge_validation_log_loss)
+        and report.ridge_validation_log_loss >= 0.0
+        and report.validation_log_loss_uplift.sample_count
+        == len(report.split.validation_groups)
+        and (stress_uplift is None or math.isfinite(stress_uplift))
+        and (expectation.selected_validation is None) == (stress_uplift is None)
+        and _canonical_report_reasons(report.validation_admission_reasons)
+    )
+
+
+def _mlp_report_test_evidence_is_valid(report: PolymarketMLPReport) -> bool:
+    if not report.test_evaluated:
+        return (
+            report.test_log_loss is None
+            and report.test_metrics is None
+            and report.test_utility_uplift is None
+            and not report.test_gate_reasons
+        )
+    test_log_loss = report.test_log_loss
+    test_metrics = report.test_metrics
+    test_utility_uplift = report.test_utility_uplift
+    return (
+        test_log_loss is not None
+        and math.isfinite(test_log_loss)
+        and test_log_loss >= 0.0
+        and test_metrics is not None
+        and test_metrics.threshold == report.selected_threshold
+        and test_utility_uplift is not None
+        and test_utility_uplift.sample_count == len(report.split.test_groups)
+        and set(test_metrics.gate_reasons).issubset(report.test_gate_reasons)
+    )
+
+
+def _mlp_report_hash_is_valid(report: PolymarketMLPReport) -> bool:
+    return _is_sha256(report.report_sha256) and report.report_sha256 == _sha256(
+        report.identity_payload()
+    )
 
 
 @dataclass(frozen=True)

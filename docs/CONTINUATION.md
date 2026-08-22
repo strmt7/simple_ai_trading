@@ -455,6 +455,29 @@ blind overwrite. All new development after integration belongs on `main`.
   validation paths. No feature, target, split, fit, weight, prediction,
   threshold, evidence identity, result, P&L, risk, authority, or profitability
   claim changes. Hosted checks on the final pushed SHA must be read directly.
+- Exact validation checkpoint
+  `3fda7ff7b9caa5b97dbc0378c819fcd459814a1b` passed hosted Windows smoke,
+  Ruff, Vulture, and Super-Linter. Its Linux coverage job remained in progress
+  at the refresh. DeepSource failed with blocking issues under exact run ID
+  `22ab322b-8b09-4dfd-bab8-4f0d6d38ec2a`; do not infer the residual issue
+  inventory from its aggregate failure state.
+- The report-validation follow-up decomposes
+  `PolymarketMLPReport.validated` from Radon `61` to `7`; its largest helper
+  scores `12`. Parent behavior is frozen with canonical no-trade report SHA-256
+  `f24c8a92186309073c4d07be3c1ce2fbc3012af5a59eda3e77e8b38b35a90f9c`
+  and admitted report SHA-256
+  `9c471198599a852778f6e0500245095a201effda708e969eea1aff82540da05b`.
+  Eleven malformed reports cover identity, threshold-grid, admission,
+  validation-statistic, sealed-test, evaluated-test, canonical-reason, and hash
+  failures. The 59-test affected matrix passes at `81.54%` module coverage;
+  changed executable-line coverage is `57/57`. Ruff and format pass. Scoped
+  Bandit reports no high- or medium-severity finding and retains only the
+  existing deterministic-bootstrap `B311`. Bare Mypy retains the same two
+  diagnostics at unchanged SciPy/training lines and reports none in the changed
+  report-validation paths. No split, feature, target, fit, weight, prediction,
+  threshold, partition access, evidence identity, result, P&L, risk, authority,
+  or profitability claim changes. Hosted checks on the pushed revision remain
+  required.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -636,16 +659,16 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    recorder finding until a cumulative source-ledger amendment can be reviewed.
    Backend, member, and ensemble validation complexity is closed in the final
    bounded closeout under canonical identity fingerprints and fail-closed tests.
-   Continue the remaining four MLP findings in this order: decompose
-   `PolymarketMLPReport.validated` under complete report identity and rejection
-   tests; freeze fit-state and numeric parity before changing `_fit_member`;
-   separate `fit_and_evaluate_polymarket_mlp` orchestration without changing
-   test-access gates; then decompose `materialize_polymarket_mlp_report` under
-   idempotence, transaction, and tamper tests. Do not combine those families in
-   one broad rewrite. Continue source-to-sink triage in other modules from exact
-   hosted results, not assumed residual counts. Replace runtime assertions only
-   when an explicit fail-closed error and cleanup contract exists; do not
-   mechanically rewrite typing assertions.
+   Report validation is also closed under exact admitted/no-trade identities and
+   rejection tests. Continue the remaining three MLP findings in this order:
+   freeze fit-state and numeric parity before changing `_fit_member`; separate
+   `fit_and_evaluate_polymarket_mlp` orchestration without changing test-access
+   gates; then decompose `materialize_polymarket_mlp_report` under idempotence,
+   transaction, and tamper tests. Do not combine those families in one broad
+   rewrite. Continue source-to-sink triage in other modules from exact hosted
+   results, not assumed residual counts. Replace runtime assertions only when an
+   explicit fail-closed error and cleanup contract exists; do not mechanically
+   rewrite typing assertions.
    Do not treat the narrow `5f6e790c` pass or any bounded follow-up as closure
    of the broader backlog or as a project-wide security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
