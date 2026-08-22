@@ -332,6 +332,15 @@ def test_backtest_financial_sanity_blocks_malformed_optional_evidence() -> None:
     )
 
 
+def test_backtest_financial_sanity_skips_fee_identity_without_total_fee_evidence() -> (
+    None
+):
+    report = build_backtest_financial_sanity_report(_backtest_result(total_fees=None))
+
+    assert report.allowed is False
+    assert not any(check.label == "fee identity" for check in report.checks)
+
+
 def test_model_financial_sanity_blocks_malformed_parameters() -> None:
     model = TrainedModel(
         weights=[0.0, float("inf")],
@@ -1409,6 +1418,32 @@ def test_model_lab_financial_sanity_blocks_failed_market_edge_evidence() -> None
         check.label == "market edge" and check.status == "block"
         for check in report.checks
     )
+
+
+def test_model_lab_financial_sanity_blocks_incomplete_liquidated_market_edge() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    stress = payload["outcomes"][0]["stress_validation"]  # type: ignore[index]
+    assert isinstance(stress, dict)
+    stress["market_edge"] = {
+        "accepted": True,
+        "reason": None,
+        "min_net_edge_pct": 0.002,
+        "liquidation_events": 1,
+    }
+
+    report = build_model_lab_financial_sanity_report(payload)
+    blocked = {
+        (check.label, check.path) for check in report.checks if check.status == "block"
+    }
+
+    assert (
+        "market edge pct",
+        "outcomes[0].stress_validation.market_edge.net_edge_pct",
+    ) in blocked
+    assert (
+        "liquidation evidence",
+        "outcomes[0].stress_validation.market_edge.liquidation_events",
+    ) in blocked
 
 
 def test_model_lab_financial_sanity_blocks_accepted_market_edge_with_bad_downside_risk() -> (
