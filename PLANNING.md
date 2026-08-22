@@ -270,6 +270,24 @@ gradient clipping, early stopping, checkpoint, model parameter, prediction,
 threshold, partition access, P&L, risk, authority, or profitability claim
 changes. Top-level fit orchestration and materialization remain separate tasks.
 
+The top-level follow-up decomposes `fit_and_evaluate_polymarket_mlp` from Radon
+`47` to `1`; its largest phase helper scores `8`. Parent authority, causal data
+preparation, device fitting, same-seed replay, validation admission, test access,
+test evaluation, and report construction are explicit contracts. The existing
+150-group parent replay produces byte-identical dataset, Ridge parent, split,
+ensemble, member, bootstrap, validation-trial, report, and callback hashes. The
+validation-rejected branch returns before any untouched-test row, label,
+prediction, or metric access. Controlled mechanics tests cover the admitted
+path, parent replay mismatches, all admission and test reason families, optional
+progress callbacks, and reproducibility failure without producing financial
+evidence. All 71 affected tests pass at `90.68%` module coverage; changed
+executable-line coverage is `162/162`. Ruff, formatting, and Mypy with SciPy
+stubs pass. Scoped Bandit reports no high- or medium-severity finding and only
+the existing deterministic-bootstrap `B311`. No model input, target, tensor,
+fit, prediction, threshold, partition policy, evidence identity, P&L, risk,
+authority, or profitability claim changes. Materialization is the sole
+remaining MLP complexity task in this queue.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance
