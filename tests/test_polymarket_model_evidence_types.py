@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from types import SimpleNamespace
+from typing import cast
 
 import numpy as np
 import pytest
 
-from simple_ai_trading import polymarket_mlp, polymarket_ridge
+from simple_ai_trading import polymarket_fit_claim, polymarket_mlp, polymarket_ridge
+from simple_ai_trading.polymarket_mlp import PolymarketMLPReport
+from simple_ai_trading.polymarket_ridge import PolymarketPolicyMetrics
 
 
 def test_stored_evidence_type_guards_accept_canonical_values() -> None:
@@ -54,3 +58,53 @@ def test_mlp_bootstrap_rejects_invalid_quantiles(
 
     with pytest.raises(RuntimeError, match="bootstrap quantiles are invalid"):
         polymarket_mlp._bootstrap([1.0], seed_material="test")
+
+
+def test_mlp_selected_validation_metrics_require_exactly_one_match() -> None:
+    trial = cast(PolymarketPolicyMetrics, SimpleNamespace(threshold=0.6))
+    selected = cast(
+        PolymarketMLPReport,
+        SimpleNamespace(selected_threshold=0.6, validation_trials=(trial,)),
+    )
+    no_trade = cast(
+        PolymarketMLPReport,
+        SimpleNamespace(selected_threshold=None, validation_trials=()),
+    )
+
+    assert polymarket_mlp._selected_validation_metrics(selected) is trial
+    assert polymarket_mlp._selected_validation_metrics(no_trade) is None
+    for trials in ((), (trial, trial)):
+        malformed = cast(
+            PolymarketMLPReport,
+            SimpleNamespace(selected_threshold=0.6, validation_trials=trials),
+        )
+        with pytest.raises(ValueError, match="threshold is missing or duplicated"):
+            polymarket_mlp._selected_validation_metrics(malformed)
+
+
+@pytest.mark.parametrize(
+    "row",
+    [None, (), (True,), (-1,), (2,), ("1",), (0, 1)],
+)
+def test_fit_claim_table_count_requires_one_binary_integer(
+    row: tuple[object, ...] | None,
+) -> None:
+    with pytest.raises(ValueError, match="report-table count"):
+        polymarket_fit_claim._required_table_count(row)
+
+
+def test_fit_claim_table_count_accepts_absent_and_present_states() -> None:
+    assert polymarket_fit_claim._required_table_count((0,)) == 0
+    assert polymarket_fit_claim._required_table_count((1,)) == 1
+
+
+def test_fit_claim_identity_rejects_unregistered_report_queries() -> None:
+    with pytest.raises(ValueError, match="fit-claim identity is invalid"):
+        polymarket_fit_claim._validated_identity(
+            experiment="round9_ridge",
+            parent_sha256="a" * 64,
+            contract_sha256="b" * 64,
+            dataset_sha256="c" * 64,
+            report_table="unregistered_report",
+            report_parent_column="parent_sha256",
+        )

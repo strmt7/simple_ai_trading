@@ -21,6 +21,34 @@ _RESERVATIONS: weakref.WeakKeyDictionary[
     PolymarketEvidenceStore,
     dict[tuple[str, str, str, str, str, str], PolymarketFitClaim],
 ] = weakref.WeakKeyDictionary()
+_REPORT_SQL: dict[tuple[str, str], tuple[str, str]] = {
+    (
+        "polymarket_ridge_report",
+        "pipeline_report_sha256",
+    ): (
+        """
+        SELECT report_sha256, contract_sha256, dataset_sha256
+        FROM polymarket_ridge_report WHERE pipeline_report_sha256 = ?
+        """,
+        """
+        SELECT pipeline_report_sha256, contract_sha256, dataset_sha256
+        FROM polymarket_ridge_report WHERE report_sha256 = ?
+        """,
+    ),
+    (
+        "polymarket_mlp_report",
+        "parent_ridge_report_sha256",
+    ): (
+        """
+        SELECT report_sha256, contract_sha256, dataset_sha256
+        FROM polymarket_mlp_report WHERE parent_ridge_report_sha256 = ?
+        """,
+        """
+        SELECT parent_ridge_report_sha256, contract_sha256, dataset_sha256
+        FROM polymarket_mlp_report WHERE report_sha256 = ?
+        """,
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -67,6 +95,7 @@ def _validated_identity(
         not _IDENTIFIER.fullmatch(values[0])
         or not all(_SHA256.fullmatch(value) for value in values[1:4])
         or not all(_IDENTIFIER.fullmatch(value) for value in values[4:])
+        or (values[4], values[5]) not in _REPORT_SQL
     ):
         raise ValueError("Polymarket fit-claim identity is invalid")
     return values
@@ -90,6 +119,15 @@ def _ensure_table(store: PolymarketEvidenceStore) -> None:
         )
         """
     )
+
+
+def _required_table_count(row: tuple[object, ...] | None) -> int:
+    if row is None or len(row) != 1:
+        raise ValueError("Polymarket report-table count row is invalid")
+    value = row[0]
+    if isinstance(value, bool) or not isinstance(value, int) or value not in (0, 1):
+        raise ValueError("Polymarket report-table count is invalid")
+    return value
 
 
 def begin_polymarket_fit_claim(
@@ -133,22 +171,23 @@ def begin_polymarket_fit_claim(
             """,
             [experiment, parent_sha256],
         ).fetchone()
-        report_table_exists = bool(
+        report_table_count = _required_table_count(
             connection.execute(
                 """
                 SELECT count(*) FROM information_schema.tables
                 WHERE table_schema = current_schema() AND table_name = ?
                 """,
                 [report_table],
-            ).fetchone()[0]
+            ).fetchone()
         )
+        report_table_exists = bool(report_table_count)
         persisted = []
         if report_table_exists:
+            parent_query, _report_query = _REPORT_SQL[
+                (report_table, report_parent_column)
+            ]
             persisted = connection.execute(
-                f"""
-                SELECT report_sha256, contract_sha256, dataset_sha256
-                FROM {report_table} WHERE {report_parent_column} = ?
-                """,
+                parent_query,
                 [parent_sha256],
             ).fetchall()
         if len(persisted) > 1:
@@ -374,11 +413,9 @@ def complete_polymarket_fit_claim(
     if not _SHA256.fullmatch(str(report_sha256)):
         raise ValueError("Polymarket fit completion report digest is invalid")
     connection = store.connect()
+    _parent_query, report_query = _REPORT_SQL[(report_table, report_parent_column)]
     persisted = connection.execute(
-        f"""
-        SELECT {report_parent_column}, contract_sha256, dataset_sha256
-        FROM {report_table} WHERE report_sha256 = ?
-        """,
+        report_query,
         [report_sha256],
     ).fetchone()
     claim = connection.execute(
