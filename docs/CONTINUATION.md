@@ -56,10 +56,16 @@ host state, not model evidence, and must be rechecked before any action.
 
 ### Unintegrated Worktree
 
-The Round 75 worktree contains substantial work that is not on GitHub. It is
-detached at `c42219d47dc781a46411a4ec96838f8a26c3924c`, which is an ancestor of
-current `main`, with 99 tracked changes and 218 untracked files. At the live
-snapshot its tracked binary diff hashed to Git object
+The Round 75 worktree is detached at
+`c42219d47dc781a46411a4ec96838f8a26c3924c`, which is an ancestor of current
+`main`. Relative to that old base, Git reports 99 tracked changes and 218
+untracked paths. That status is not an unpublished-work count: comparison with
+published `main` at `49195b214cdbfd8a188bafa71426e4e7889478c2` found 218
+byte-identical files, two local deletions already absent from `main`, 71 files
+with different content, and 26 local files absent from `main`. Therefore 97
+local content paths require post-capture review; the other 220 must not be
+needlessly copied or recommitted. At the live snapshot its tracked binary diff
+hashed to Git object
 `bf7f896c3fa2b17a7a7a34887b2d3fe04cb4be54`; the sorted untracked
 path/content manifest had SHA-256
 `f622661d58b6cf044d9e0946c7115ceffa379de553f2eaecaee5b999b02be13b`.
@@ -148,10 +154,12 @@ is published, tested on current `main`, or safe to discard.
    audits before deciding whether any row is admissible. A failed gate closes
    that lineage; it does not permit salvage or threshold changes.
 3. After Round 75 terminalization, preserve and re-hash the entire detached
-   worktree before integration. Reconcile its 99 tracked and 218 untracked
-   files onto current `main` without losing the analyzer fixes already on
-   `main`. Inspect every conflict; do not bulk-copy over newer files. Commit and
-   develop only on `main` after that point.
+   worktree before integration. Recompute its content comparison against the
+   then-current `main`; the 2026-08-22 snapshot had 71 differing and 26
+   locally-only files, while 220 status paths were already equivalent. Inspect
+   every differing path and preserve the analyzer fixes already on `main`; do
+   not bulk-copy or stage all dirty-status paths. Commit and develop only on
+   `main` after that point.
 4. Treat the unintegrated Round 74/75 documents and implementation as
    unverified until focused domain tests, contract hashes, generated CLI/native
    parity, and the affected analyzer gates pass on the integrated tree. Do not

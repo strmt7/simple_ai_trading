@@ -48,8 +48,9 @@ The current state and next admissible experiment are recorded in the
    close the affected lineage without salvage or adaptive thresholds.
 3. After Round 75 terminalization, preserve and reconcile the detached
    `simple_ai_trading-model-dev` worktree onto `main`. It currently contains
-   substantial unintegrated Round 74/75 and Polymarket work based on an older
-   ancestor of `main`; never clean it or overwrite the newer analyzer fixes.
+   97 content paths that differ from or are absent on published `main`, plus
+   220 dirty-status paths already equivalent to `main`, all based on an older
+   ancestor. Never clean it, bulk-stage it, or overwrite newer analyzer fixes.
 4. Revalidate every integrated contract hash, focused domain test, and
    generated CLI/native parity surface before treating local files as
    implemented evidence.
