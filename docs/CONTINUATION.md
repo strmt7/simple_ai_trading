@@ -204,8 +204,24 @@ blind overwrite. All new development after integration belongs on `main`.
   lines, `32` missing), clearing the `95%` gate. Ruff/format, Pylint
   errors-only, targeted Bandit, and Radon pass. Mypy reports no error in the
   changed module but still follows imports into three unchanged modules with
-  nine recorded type errors. Hosted results remain unverified until this
-  checkpoint is pushed and its exact-SHA jobs reach terminal status.
+  nine recorded type errors. At that local checkpoint, hosted results were
+  unverified; the next bullet records the first exact-SHA analyzer result.
+- DeepSource failed revision `eaff89305fca00073e8d701bd8a85ad0acc0d920`
+  with 15 changed-scope maintainability findings and no displayed security
+  finding: 13 helper functions exceeded its strict complexity threshold, one
+  nested conditional was collapsible, and one comparison could be chained.
+  The two simplification findings are fixed in the immediate follow-up. The
+  residual complexity queue is `_walk_forward_gate_checks` (`23`),
+  `_terminal_holdout_check` (`23`), `_ai_uplift_count_checks` (`22`),
+  `_ai_uplift_period_contract_checks` (`19`), `_market_edge_checks` (`19`),
+  `_ai_uplift_rate_checks` (`19`), `_ai_uplift_bootstrap_checks` (`18`),
+  `_backtest_sequence_checks` (`18`), `_backtest_log_identity_checks` (`18`),
+  `_probability_deterioration_checks` (`17`),
+  `build_model_financial_sanity_report` (`17`), `_data_coverage_checks` (`16`),
+  and `_accepted_portfolio_symbol_checks` (`16`). Do not broaden this batch or
+  suppress the rule during closeout. A later agent should decompose one coherent
+  contract family at a time under the fixed full-report fingerprints and then
+  verify the exact new DeepSource inventory.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -368,8 +384,10 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    type-contract batch reduced the headline Python count from 107 to 86 and the
    follow-up reduced it to 51. The nine changed-scope AI-uplift and
    financial-sanity complexity findings were later closed in two bounded,
-   behavior-preserving batches. Continue from the exact DeepSource inventory on
-   the final checkpoint rather than treating that closure as a project-wide
+   behavior-preserving batches. DeepSource then exposed the 13 smaller helper
+   findings listed above under its stricter threshold; address them one contract
+   family at a time. Continue from the exact DeepSource inventory on the final
+   checkpoint rather than treating the original closure as a project-wide
    backlog result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize

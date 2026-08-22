@@ -1659,20 +1659,21 @@ def _market_edge_checks(
             )
         min_downside_ratio = _finite(report.get("min_downside_return_risk_ratio"))
         downside_ratio = _finite(report.get("downside_return_risk_ratio"))
-        if accepted is True and min_downside_ratio is not None:
-            if downside_ratio is None or downside_ratio < min_downside_ratio:
-                checks.append(
-                    _check(
-                        "block",
-                        "market edge downside risk",
-                        "accepted market-edge report fails downside return/risk evidence",
-                        path=f"{full_path}.downside_return_risk_ratio",
-                        metric=downside_ratio
-                        if downside_ratio is not None
-                        else "missing",
-                        limit=f">={min_downside_ratio:g}",
-                    )
+        if (
+            accepted is True
+            and min_downside_ratio is not None
+            and (downside_ratio is None or downside_ratio < min_downside_ratio)
+        ):
+            checks.append(
+                _check(
+                    "block",
+                    "market edge downside risk",
+                    "accepted market-edge report fails downside return/risk evidence",
+                    path=f"{full_path}.downside_return_risk_ratio",
+                    metric=downside_ratio if downside_ratio is not None else "missing",
+                    limit=f">={min_downside_ratio:g}",
                 )
+            )
     return checks
 
 
@@ -4223,7 +4224,7 @@ def _equity_point_checks(
     )
     expected_drawdown = (
         1.0
-        if checked_equity <= 0.0 and next_peak > 0.0
+        if checked_equity <= 0.0 < next_peak
         else ((next_peak - checked_equity) / next_peak if next_peak else 0.0)
     )
     checks.append(
