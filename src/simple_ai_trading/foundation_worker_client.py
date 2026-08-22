@@ -123,17 +123,25 @@ class FoundationWorkerSupervisor:
             bufsize=1,
             creationflags=creation_flags,
         )
-        assert self.process.stdout is not None
-        assert self.process.stderr is not None
+        process = self.process
+        stdin = process.stdin
+        stdout = process.stdout
+        stderr = process.stderr
+        if stdin is None or stdout is None or stderr is None:
+            self.stop()
+            raise FoundationWorkerError(
+                "foundation worker process pipes are unavailable",
+                restartable=False,
+            )
         threading.Thread(
             target=self._pump_stdout,
-            args=(self.process.stdout, self._stdout),
+            args=(stdout, self._stdout),
             daemon=True,
             name="foundation-worker-stdout",
         ).start()
         threading.Thread(
             target=self._pump_stderr,
-            args=(self.process.stderr, self._stderr),
+            args=(stderr, self._stderr),
             daemon=True,
             name="foundation-worker-stderr",
         ).start()

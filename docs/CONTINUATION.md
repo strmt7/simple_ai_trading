@@ -377,6 +377,30 @@ blind overwrite. All new development after integration belongs on `main`.
   No dataset, feature, target, fit, bootstrap sample, coefficient, model score,
   policy, P&L, risk setting, authority, or profitability claim changes. Hosted
   analysis of the exact pushed checkpoint remains required.
+- DeepSource analyzed exact checkpoint
+  `eef018010903fc851783ceab9314f03f88892ebf` and failed with 29 displayed
+  issues, 9 resolved, and 8 classified as introduced. Its first rendered page
+  contained seven MLP complexity findings in
+  `PolymarketMLPBackendEvidence.validated`, `PolymarketMLPMember.validated`,
+  `PolymarketMLPEnsemble.validated`, `PolymarketMLPReport.validated`,
+  `_fit_member`, `fit_and_evaluate_polymarket_mlp`, and
+  `materialize_polymarket_mlp_report`; one comparison simplification in backend
+  validation; one critical unguarded `next()` in MLP materialization; and
+  optional-row type findings in `polymarket_fit_claim.py` and
+  `polymarket_recorder.py`. The public page did not identify introduced status
+  per card, so do not map those eleven rendered items onto the eight-item
+  introduced count. Ruff, Vulture, Windows smoke, and Super-Linter passed on
+  that exact revision; Linux coverage remained in progress at the last refresh.
+- A fresh in-memory Bandit scan of exact `eef01801` reported 508 findings: zero
+  high severity, 237 medium, and 271 low. The inventory was 234 `B608`, 183
+  `B101`, and 91 other items. The immediate AI-worker lifecycle batch replaces
+  the two assertions in `foundation_worker_client.py` with an explicit
+  three-pipe gate. A hanging malformed launcher is closed, terminated, reaped,
+  and removed from supervisor state before startup fails. Its two focused tests
+  pass, changed executable-line coverage is `7/7`, and focused Mypy, Ruff,
+  Pylint errors-only, and Bandit pass. The file now has zero `B101` findings
+  without suppression. No model, prediction, inference payload, timeout,
+  backend, P&L, risk, authority, or profitability claim changes.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -553,10 +577,14 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    The current Ridge/MLP materializer batch removes four more internal-identifier
    construction sites through explicit statement allowlists, and its bounded
    type follow-up closes the two modules' 22 scoped Mypy diagnostics. Continue
-   source-to-sink triage in other modules from exact hosted results, not assumed
-   residual counts. Do not treat the narrow `5f6e790c` pass or any bounded
-   follow-up as closure of the broader backlog or as a project-wide security
-   result.
+   from the exact `eef01801` DeepSource inventory above. Address the critical
+   unguarded MLP lookup and optional-row type boundaries before decomposing
+   complexity in behavior-preserving contract families. Continue source-to-sink
+   triage in other modules from exact hosted results, not assumed residual
+   counts. Replace runtime assertions only when an explicit fail-closed error
+   and cleanup contract exists; do not mechanically rewrite typing assertions.
+   Do not treat the narrow `5f6e790c` pass or any bounded follow-up as closure
+   of the broader backlog or as a project-wide security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.

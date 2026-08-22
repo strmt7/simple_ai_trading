@@ -195,6 +195,24 @@ only the documented non-security `B311` item in these files and no `B608`.
 No dataset, feature, target, fit, bootstrap sample, coefficient, model score,
 policy, P&L, risk setting, trading authority, or profitability claim changes.
 
+DeepSource analyzed exact type checkpoint `eef01801` and failed with 29
+displayed issues, 9 resolved issues, and 8 classified as introduced. Its first
+rendered page showed seven MLP complexity findings, one comparison
+simplification, one critical unguarded `next()` finding, and optional-row type
+findings in `polymarket_fit_claim.py` and `polymarket_recorder.py`. The page did
+not expose per-card introduced status, so those categories must not be equated
+with the eight-item introduced count. The exact inventory and next order are in
+`docs/CONTINUATION.md`.
+
+The next bounded AI-runtime safety batch replaces two optimization-removable
+worker-pipe assertions with explicit stdin/stdout/stderr validation. A malformed
+foundation-model launcher is now stopped, reaped, and removed from supervisor
+state before a non-restartable startup error is returned. The focused two-test
+matrix passes, all seven changed executable lines have coverage, and the file's
+Bandit `B101` count falls from two to zero without suppression. This changes no
+model, prediction, inference payload, timeout, backend choice, risk setting,
+P&L, authority, or profitability claim.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance
