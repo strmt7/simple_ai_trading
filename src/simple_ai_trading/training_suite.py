@@ -2491,7 +2491,9 @@ def train_for_objective(
                     report=error_report,
                     error=f"{exc.__class__.__name__}: {exc}",
                 )
-            terminal_reason = f"terminal_holdout_unhandled_error: {exc.__class__.__name__}: {exc}"
+            terminal_reason = (
+                f"terminal_holdout_unhandled_error: {exc.__class__.__name__}: {exc}"
+            )
             selection_risk["passed"] = False
             selection_risk["reason"] = terminal_reason
             best["selection_risk"] = selection_risk

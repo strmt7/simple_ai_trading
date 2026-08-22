@@ -148,10 +148,14 @@ def _passing_selection_risk_stub(monkeypatch: pytest.MonkeyPatch) -> None:
         }
 
     monkeypatch.setattr(training_suite, "_selection_risk_report", report)
-    monkeypatch.setattr(training_suite, "_terminal_holdout_gate", _passing_terminal_gate)
+    monkeypatch.setattr(
+        training_suite, "_terminal_holdout_gate", _passing_terminal_gate
+    )
 
 
-def _configure_terminal_audit_failure_path(monkeypatch: pytest.MonkeyPatch) -> ObjectiveSpec:
+def _configure_terminal_audit_failure_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> ObjectiveSpec:
     objective = get_objective("default")
     candidate = CandidateParams(
         epochs=2,
@@ -165,9 +169,15 @@ def _configure_terminal_audit_failure_path(monkeypatch: pytest.MonkeyPatch) -> O
     )
     rows = _rows(100)
     feature_cfg = default_config_for("conservative", ())
-    monkeypatch.setattr(training_suite, "make_advanced_rows", lambda *_a, **_k: list(rows))
-    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
-    monkeypatch.setattr(training_suite, "_local_refinement_candidates", lambda _candidate: [])
+    monkeypatch.setattr(
+        training_suite, "make_advanced_rows", lambda *_a, **_k: list(rows)
+    )
+    monkeypatch.setattr(
+        training_suite, "_candidate_grid", lambda _training: [candidate]
+    )
+    monkeypatch.setattr(
+        training_suite, "_local_refinement_candidates", lambda _candidate: []
+    )
     monkeypatch.setattr(
         training_suite,
         "_rows_for_candidate",
@@ -214,8 +224,12 @@ def _configure_terminal_audit_failure_path(monkeypatch: pytest.MonkeyPatch) -> O
             "folds": [],
         },
     )
-    monkeypatch.setattr(training_suite, "optimize_hybrid_model_zoo", lambda *_a, **_k: None)
-    monkeypatch.setattr(training_suite, "run_backtest", lambda *_a, **_k: _make_result())
+    monkeypatch.setattr(
+        training_suite, "optimize_hybrid_model_zoo", lambda *_a, **_k: None
+    )
+    monkeypatch.setattr(
+        training_suite, "run_backtest", lambda *_a, **_k: _make_result()
+    )
     monkeypatch.setattr(
         training_suite,
         "build_meta_label_report",
@@ -224,7 +238,9 @@ def _configure_terminal_audit_failure_path(monkeypatch: pytest.MonkeyPatch) -> O
             asdict=lambda: {"status": "not_trained", "policy": {"enabled": False}},
         ),
     )
-    monkeypatch.setattr(training_suite, "_feature_ablation_report", lambda *_a, **_k: [])
+    monkeypatch.setattr(
+        training_suite, "_feature_ablation_report", lambda *_a, **_k: []
+    )
     return objective
 
 
@@ -2200,7 +2216,9 @@ def test_terminal_evaluation_failure_is_finalized_without_masking_primary_error(
 
     monkeypatch.setattr(training_suite, "_terminal_holdout_gate", fail_terminal_gate)
 
-    with pytest.raises(TrainingSuiteRejected, match="failed sealed terminal holdout") as exc:
+    with pytest.raises(
+        TrainingSuiteRejected, match="failed sealed terminal holdout"
+    ) as exc:
         train_for_objective(
             _synthetic_candles(n=10),
             StrategyConfig(),
@@ -2213,7 +2231,9 @@ def test_terminal_evaluation_failure_is_finalized_without_masking_primary_error(
             terminal_symbol="BTCUSDT",
         )
 
-    assert exc.value.diagnostics["reason"].startswith("terminal_holdout_unhandled_error: RuntimeError")
+    assert exc.value.diagnostics["reason"].startswith(
+        "terminal_holdout_unhandled_error: RuntimeError"
+    )
     assert "terminal_audit_error" not in exc.value.diagnostics
     assert isinstance(exc.value.__cause__, RuntimeError)
     stored = ledger.reservation(str(reserved["reservation_id"]))
@@ -2245,7 +2265,9 @@ def test_terminal_audit_failure_is_reported_and_reservation_remains_fail_closed(
         def fail_terminal_gate(*_args, **_kwargs):
             raise RuntimeError("terminal scorer unavailable")
 
-        monkeypatch.setattr(training_suite, "_terminal_holdout_gate", fail_terminal_gate)
+        monkeypatch.setattr(
+            training_suite, "_terminal_holdout_gate", fail_terminal_gate
+        )
         expected_primary = "terminal_holdout_unhandled_error: RuntimeError"
         expected_message = "failed sealed terminal holdout"
     else:
@@ -2260,7 +2282,9 @@ def test_terminal_audit_failure_is_reported_and_reservation_remains_fail_closed(
             return fingerprint(report)
 
         monkeypatch.setattr(training_suite, "terminal_result_fingerprint", fail_first_fingerprint)
-        expected_primary = "terminal_result_fingerprint_error: terminal report is not canonical"
+        expected_primary = (
+            "terminal_result_fingerprint_error: terminal report is not canonical"
+        )
         expected_message = "terminal result could not be fingerprinted"
 
     def fail_finalize(*_args, **_kwargs):
