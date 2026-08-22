@@ -2196,14 +2196,114 @@ def _selected_validation_metrics(
     return matches[0]
 
 
-def materialize_polymarket_mlp_report(
-    store: PolymarketEvidenceStore,
+_MLP_MATERIALIZATION_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS polymarket_mlp_report (
+    report_sha256 VARCHAR PRIMARY KEY,
+    schema_version VARCHAR NOT NULL,
+    contract_sha256 VARCHAR NOT NULL,
+    dataset_sha256 VARCHAR NOT NULL,
+    parent_ridge_report_sha256 VARCHAR NOT NULL,
+    ensemble_sha256 VARCHAR NOT NULL,
+    selected_policy VARCHAR NOT NULL,
+    selected_threshold DOUBLE,
+    test_evaluated BOOLEAN NOT NULL,
+    development_passed BOOLEAN NOT NULL,
+    report_json VARCHAR NOT NULL,
+    ensemble_json VARCHAR NOT NULL
+);
+CREATE TABLE IF NOT EXISTS polymarket_mlp_member (
+    report_sha256 VARCHAR NOT NULL,
+    seed INTEGER NOT NULL,
+    member_sha256 VARCHAR NOT NULL,
+    best_epoch INTEGER NOT NULL,
+    epochs_ran INTEGER NOT NULL,
+    model_json VARCHAR NOT NULL,
+    PRIMARY KEY(report_sha256, seed)
+);
+CREATE TABLE IF NOT EXISTS polymarket_mlp_runtime_evidence (
+    report_sha256 VARCHAR NOT NULL,
+    runtime_sha256 VARCHAR NOT NULL,
+    backend_json VARCHAR NOT NULL,
+    PRIMARY KEY(report_sha256, runtime_sha256)
+);
+CREATE TABLE IF NOT EXISTS polymarket_mlp_epoch (
+    report_sha256 VARCHAR NOT NULL,
+    seed INTEGER NOT NULL,
+    epoch INTEGER NOT NULL,
+    training_loss DOUBLE NOT NULL,
+    validation_log_loss DOUBLE NOT NULL,
+    PRIMARY KEY(report_sha256, seed, epoch)
+);
+CREATE TABLE IF NOT EXISTS polymarket_mlp_prediction (
+    report_sha256 VARCHAR NOT NULL,
+    partition VARCHAR NOT NULL,
+    sequence UBIGINT NOT NULL,
+    dataset_observation_index UBIGINT NOT NULL,
+    action_feature_sha256 VARCHAR NOT NULL,
+    condition_id VARCHAR NOT NULL,
+    event_start_ms BIGINT NOT NULL,
+    decision_received_monotonic_ns UBIGINT NOT NULL,
+    probability DOUBLE NOT NULL,
+    positive_complete BOOLEAN NOT NULL,
+    category VARCHAR NOT NULL,
+    stress_utility_quote VARCHAR NOT NULL,
+    PRIMARY KEY(report_sha256, partition, sequence)
+);
+CREATE TABLE IF NOT EXISTS polymarket_mlp_selected_action (
+    report_sha256 VARCHAR NOT NULL, partition VARCHAR NOT NULL,
+    sequence UBIGINT NOT NULL, action_feature_sha256 VARCHAR NOT NULL,
+    action_label_sha256 VARCHAR NOT NULL, condition_id VARCHAR NOT NULL,
+    asset VARCHAR NOT NULL, outcome VARCHAR NOT NULL,
+    event_start_ms BIGINT NOT NULL,
+    decision_received_monotonic_ns UBIGINT NOT NULL,
+    release_monotonic_ns UBIGINT NOT NULL, probability DOUBLE NOT NULL,
+    category VARCHAR NOT NULL, positive_complete BOOLEAN NOT NULL,
+    condition_blocked BOOLEAN NOT NULL,
+    stress_utility_quote VARCHAR NOT NULL,
+    PRIMARY KEY(report_sha256, partition, sequence)
+);
+CREATE TABLE IF NOT EXISTS polymarket_mlp_equity (
+    report_sha256 VARCHAR NOT NULL, partition VARCHAR NOT NULL,
+    sequence UBIGINT NOT NULL, release_monotonic_ns UBIGINT NOT NULL,
+    action_feature_sha256 VARCHAR NOT NULL, pnl_quote VARCHAR NOT NULL,
+    equity_quote VARCHAR NOT NULL, drawdown_quote VARCHAR NOT NULL,
+    PRIMARY KEY(report_sha256, partition, sequence)
+);
+CREATE TABLE IF NOT EXISTS polymarket_mlp_market_pnl (
+    report_sha256 VARCHAR NOT NULL, partition VARCHAR NOT NULL,
+    condition_id VARCHAR NOT NULL, asset VARCHAR NOT NULL,
+    attempt_count UBIGINT NOT NULL, completed_trade_count UBIGINT NOT NULL,
+    pnl_quote VARCHAR NOT NULL,
+    PRIMARY KEY(report_sha256, partition, condition_id)
+);
+"""
+
+_MLPRow = tuple[object, ...]
+_MLPSortKey = Callable[[_MLPRow], Any]
+_MLPTableRows = tuple[str, list[_MLPRow], _MLPSortKey]
+
+
+@dataclass(frozen=True)
+class _MLPPartitionRows:
+    predictions: list[_MLPRow]
+    actions: list[_MLPRow]
+    equity: list[_MLPRow]
+    markets: list[_MLPRow]
+
+
+@dataclass(frozen=True)
+class _MLPPersistenceRows:
+    report: _MLPRow
+    runtime: _MLPRow
+    runtime_json: str
+    tables: tuple[_MLPTableRows, ...]
+
+
+def _validated_mlp_materialization_identity(
     dataset: PolymarketRidgeDataset,
     parent: PolymarketRidgeReport,
     report: PolymarketMLPReport,
-) -> PolymarketMLPMaterialization:
-    """Persist the nonlinear model and every reconstructable result atomically."""
-
+) -> None:
     dataset.validated()
     parent.validated()
     report.validated()
@@ -2214,63 +2314,82 @@ def materialize_polymarket_mlp_report(
         or report.split != parent.split
     ):
         raise ValueError("Polymarket MLP materialization identity differs")
-    validation_indices = _partition_indices(dataset, report.split.validation_groups)
-    validation_x, _validation_y = _matrix(dataset, validation_indices)
-    validation_probability = report.ensemble.predict(validation_x)
-    validation_evaluation, validation_actions, validation_equity, validation_markets = (
-        polymarket_selected_policy_tables(
-            dataset,
-            report_sha256=report.report_sha256,
-            partition="validation",
-            indices=validation_indices,
-            probabilities=validation_probability,
-            threshold=report.selected_threshold,
-            require_asset_profit=False,
-        )
-    )
-    expected_validation = _selected_validation_metrics(report)
-    if expected_validation is not None:
-        if validation_evaluation.metrics.asdict() != expected_validation.asdict():
-            raise ValueError("Polymarket MLP validation replay differs from report")
-    validation_predictions = _prediction_rows(
+
+
+def _replay_mlp_partition(
+    dataset: PolymarketRidgeDataset,
+    report: PolymarketMLPReport,
+    *,
+    partition: str,
+    groups: Sequence[int],
+    require_asset_profit: bool,
+) -> tuple[PolymarketPolicyEvaluation, _MLPPartitionRows]:
+    indices = _partition_indices(dataset, groups)
+    features, _labels = _matrix(dataset, indices)
+    probabilities = report.ensemble.predict(features)
+    evaluation, actions, equity, markets = polymarket_selected_policy_tables(
         dataset,
         report_sha256=report.report_sha256,
-        partition="validation",
-        indices=validation_indices,
-        probabilities=validation_probability,
+        partition=partition,
+        indices=indices,
+        probabilities=probabilities,
+        threshold=report.selected_threshold,
+        require_asset_profit=require_asset_profit,
     )
-    test_predictions: list[tuple[object, ...]] = []
-    test_actions: list[tuple[object, ...]] = []
-    test_equity: list[tuple[object, ...]] = []
-    test_markets: list[tuple[object, ...]] = []
-    if report.test_evaluated:
-        test_indices = _partition_indices(dataset, report.split.test_groups)
-        test_x, _test_y = _matrix(dataset, test_indices)
-        test_probability = report.ensemble.predict(test_x)
-        test_evaluation, test_actions, test_equity, test_markets = (
-            polymarket_selected_policy_tables(
-                dataset,
-                report_sha256=report.report_sha256,
-                partition="test",
-                indices=test_indices,
-                probabilities=test_probability,
-                threshold=report.selected_threshold,
-                require_asset_profit=True,
-            )
-        )
-        if (
-            report.test_metrics is None
-            or test_evaluation.metrics.asdict() != report.test_metrics.asdict()
-        ):
-            raise ValueError("Polymarket MLP test replay differs from report")
-        test_predictions = _prediction_rows(
+    return evaluation, _MLPPartitionRows(
+        predictions=_prediction_rows(
             dataset,
             report_sha256=report.report_sha256,
-            partition="test",
-            indices=test_indices,
-            probabilities=test_probability,
-        )
-    member_rows = [
+            partition=partition,
+            indices=indices,
+            probabilities=probabilities,
+        ),
+        actions=actions,
+        equity=equity,
+        markets=markets,
+    )
+
+
+def _replay_mlp_validation(
+    dataset: PolymarketRidgeDataset,
+    report: PolymarketMLPReport,
+) -> _MLPPartitionRows:
+    evaluation, rows = _replay_mlp_partition(
+        dataset,
+        report,
+        partition="validation",
+        groups=report.split.validation_groups,
+        require_asset_profit=False,
+    )
+    expected = _selected_validation_metrics(report)
+    if expected is not None and evaluation.metrics.asdict() != expected.asdict():
+        raise ValueError("Polymarket MLP validation replay differs from report")
+    return rows
+
+
+def _replay_mlp_test(
+    dataset: PolymarketRidgeDataset,
+    report: PolymarketMLPReport,
+) -> _MLPPartitionRows:
+    if not report.test_evaluated:
+        return _MLPPartitionRows([], [], [], [])
+    evaluation, rows = _replay_mlp_partition(
+        dataset,
+        report,
+        partition="test",
+        groups=report.split.test_groups,
+        require_asset_profit=True,
+    )
+    if (
+        report.test_metrics is None
+        or evaluation.metrics.asdict() != report.test_metrics.asdict()
+    ):
+        raise ValueError("Polymarket MLP test replay differs from report")
+    return rows
+
+
+def _mlp_member_rows(report: PolymarketMLPReport) -> list[_MLPRow]:
+    return [
         (
             report.report_sha256,
             member.seed,
@@ -2286,7 +2405,10 @@ def materialize_polymarket_mlp_report(
         )
         for member in report.ensemble.members
     ]
-    trace_rows = [
+
+
+def _mlp_trace_rows(report: PolymarketMLPReport) -> list[_MLPRow]:
+    return [
         (
             report.report_sha256,
             item.seed,
@@ -2297,11 +2419,14 @@ def materialize_polymarket_mlp_report(
         for member in report.ensemble.members
         for item in member.trace
     ]
-    prediction_rows = validation_predictions + test_predictions
-    selected_rows = validation_actions + test_actions
-    equity_rows = validation_equity + test_equity
-    market_rows = validation_markets + test_markets
-    report_row = (
+
+
+def _mlp_report_row(
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    report: PolymarketMLPReport,
+) -> _MLPRow:
+    return (
         report.report_sha256,
         POLYMARKET_MLP_REPORT_SCHEMA_VERSION,
         POLYMARKET_MLP_CONTRACT_SHA256,
@@ -2320,184 +2445,146 @@ def materialize_polymarket_mlp_report(
             }
         ),
     )
+
+
+def _mlp_persistence_rows(
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    report: PolymarketMLPReport,
+    validation: _MLPPartitionRows,
+    test: _MLPPartitionRows,
+) -> _MLPPersistenceRows:
     runtime_json = _canonical_json(report.ensemble.backend.asdict())
     runtime_row = (
         report.report_sha256,
         _sha256(report.ensemble.backend.asdict()),
         runtime_json,
     )
-    connection = store.connect()
-    connection.execute(
-        """
-        CREATE TABLE IF NOT EXISTS polymarket_mlp_report (
-            report_sha256 VARCHAR PRIMARY KEY,
-            schema_version VARCHAR NOT NULL,
-            contract_sha256 VARCHAR NOT NULL,
-            dataset_sha256 VARCHAR NOT NULL,
-            parent_ridge_report_sha256 VARCHAR NOT NULL,
-            ensemble_sha256 VARCHAR NOT NULL,
-            selected_policy VARCHAR NOT NULL,
-            selected_threshold DOUBLE,
-            test_evaluated BOOLEAN NOT NULL,
-            development_passed BOOLEAN NOT NULL,
-            report_json VARCHAR NOT NULL,
-            ensemble_json VARCHAR NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS polymarket_mlp_member (
-            report_sha256 VARCHAR NOT NULL,
-            seed INTEGER NOT NULL,
-            member_sha256 VARCHAR NOT NULL,
-            best_epoch INTEGER NOT NULL,
-            epochs_ran INTEGER NOT NULL,
-            model_json VARCHAR NOT NULL,
-            PRIMARY KEY(report_sha256, seed)
-        );
-        CREATE TABLE IF NOT EXISTS polymarket_mlp_runtime_evidence (
-            report_sha256 VARCHAR NOT NULL,
-            runtime_sha256 VARCHAR NOT NULL,
-            backend_json VARCHAR NOT NULL,
-            PRIMARY KEY(report_sha256, runtime_sha256)
-        );
-        CREATE TABLE IF NOT EXISTS polymarket_mlp_epoch (
-            report_sha256 VARCHAR NOT NULL,
-            seed INTEGER NOT NULL,
-            epoch INTEGER NOT NULL,
-            training_loss DOUBLE NOT NULL,
-            validation_log_loss DOUBLE NOT NULL,
-            PRIMARY KEY(report_sha256, seed, epoch)
-        );
-        CREATE TABLE IF NOT EXISTS polymarket_mlp_prediction (
-            report_sha256 VARCHAR NOT NULL,
-            partition VARCHAR NOT NULL,
-            sequence UBIGINT NOT NULL,
-            dataset_observation_index UBIGINT NOT NULL,
-            action_feature_sha256 VARCHAR NOT NULL,
-            condition_id VARCHAR NOT NULL,
-            event_start_ms BIGINT NOT NULL,
-            decision_received_monotonic_ns UBIGINT NOT NULL,
-            probability DOUBLE NOT NULL,
-            positive_complete BOOLEAN NOT NULL,
-            category VARCHAR NOT NULL,
-            stress_utility_quote VARCHAR NOT NULL,
-            PRIMARY KEY(report_sha256, partition, sequence)
-        );
-        CREATE TABLE IF NOT EXISTS polymarket_mlp_selected_action (
-            report_sha256 VARCHAR NOT NULL, partition VARCHAR NOT NULL,
-            sequence UBIGINT NOT NULL, action_feature_sha256 VARCHAR NOT NULL,
-            action_label_sha256 VARCHAR NOT NULL, condition_id VARCHAR NOT NULL,
-            asset VARCHAR NOT NULL, outcome VARCHAR NOT NULL,
-            event_start_ms BIGINT NOT NULL,
-            decision_received_monotonic_ns UBIGINT NOT NULL,
-            release_monotonic_ns UBIGINT NOT NULL, probability DOUBLE NOT NULL,
-            category VARCHAR NOT NULL, positive_complete BOOLEAN NOT NULL,
-            condition_blocked BOOLEAN NOT NULL,
-            stress_utility_quote VARCHAR NOT NULL,
-            PRIMARY KEY(report_sha256, partition, sequence)
-        );
-        CREATE TABLE IF NOT EXISTS polymarket_mlp_equity (
-            report_sha256 VARCHAR NOT NULL, partition VARCHAR NOT NULL,
-            sequence UBIGINT NOT NULL, release_monotonic_ns UBIGINT NOT NULL,
-            action_feature_sha256 VARCHAR NOT NULL, pnl_quote VARCHAR NOT NULL,
-            equity_quote VARCHAR NOT NULL, drawdown_quote VARCHAR NOT NULL,
-            PRIMARY KEY(report_sha256, partition, sequence)
-        );
-        CREATE TABLE IF NOT EXISTS polymarket_mlp_market_pnl (
-            report_sha256 VARCHAR NOT NULL, partition VARCHAR NOT NULL,
-            condition_id VARCHAR NOT NULL, asset VARCHAR NOT NULL,
-            attempt_count UBIGINT NOT NULL, completed_trade_count UBIGINT NOT NULL,
-            pnl_quote VARCHAR NOT NULL,
-            PRIMARY KEY(report_sha256, partition, condition_id)
-        );
-        """
-    )
-    tables = (
-        ("polymarket_mlp_member", member_rows, lambda row: row[1]),
-        (
-            "polymarket_mlp_epoch",
-            trace_rows,
-            lambda row: (row[1], row[2]),
-        ),
-        (
-            "polymarket_mlp_prediction",
-            prediction_rows,
-            lambda row: (row[1], row[2]),
-        ),
-        (
-            "polymarket_mlp_selected_action",
-            selected_rows,
-            lambda row: (row[1], row[2]),
-        ),
-        (
-            "polymarket_mlp_equity",
-            equity_rows,
-            lambda row: (row[1], row[2]),
-        ),
-        (
-            "polymarket_mlp_market_pnl",
-            market_rows,
-            lambda row: (row[1], row[2]),
+    return _MLPPersistenceRows(
+        report=_mlp_report_row(dataset, parent, report),
+        runtime=runtime_row,
+        runtime_json=runtime_json,
+        tables=(
+            ("polymarket_mlp_member", _mlp_member_rows(report), lambda row: row[1]),
+            (
+                "polymarket_mlp_epoch",
+                _mlp_trace_rows(report),
+                lambda row: (row[1], row[2]),
+            ),
+            (
+                "polymarket_mlp_prediction",
+                validation.predictions + test.predictions,
+                lambda row: (row[1], row[2]),
+            ),
+            (
+                "polymarket_mlp_selected_action",
+                validation.actions + test.actions,
+                lambda row: (row[1], row[2]),
+            ),
+            (
+                "polymarket_mlp_equity",
+                validation.equity + test.equity,
+                lambda row: (row[1], row[2]),
+            ),
+            (
+                "polymarket_mlp_market_pnl",
+                validation.markets + test.markets,
+                lambda row: (row[1], row[2]),
+            ),
         ),
     )
+
+
+def _ensure_mlp_materialization_schema(connection: Any) -> None:
+    connection.execute(_MLP_MATERIALIZATION_SCHEMA_SQL)
+
+
+def _validate_existing_mlp_materialization(
+    connection: Any,
+    report_sha256: str,
+    rows: _MLPPersistenceRows,
+) -> bool:
     existing = connection.execute(
         "SELECT * FROM polymarket_mlp_report WHERE report_sha256 = ?",
-        [report.report_sha256],
+        [report_sha256],
     ).fetchone()
-    if existing is not None:
-        if tuple(existing) != report_row:
-            raise ValueError("stored Polymarket MLP report is inconsistent")
-        for table, expected, sort_key in tables:
-            select_sql, _insert_sql = _MLP_MATERIALIZATION_SQL[table]
-            rows = connection.execute(
-                select_sql,
-                [report.report_sha256],
-            ).fetchall()
-            if [tuple(row) for row in rows] != sorted(expected, key=sort_key):
-                raise ValueError(f"stored {table} rows are inconsistent")
-        stored_runtime = connection.execute(
-            """
-            SELECT backend_json FROM polymarket_mlp_runtime_evidence
-            WHERE report_sha256 = ? AND runtime_sha256 = ?
-            """,
-            runtime_row[:2],
-        ).fetchone()
-        if stored_runtime is None:
-            connection.execute(
-                "INSERT INTO polymarket_mlp_runtime_evidence VALUES (?, ?, ?)",
-                runtime_row,
-            )
-        elif str(stored_runtime[0]) != runtime_json:
-            raise ValueError("stored Polymarket MLP runtime evidence is inconsistent")
+    if existing is None:
+        return False
+    if tuple(existing) != rows.report:
+        raise ValueError("stored Polymarket MLP report is inconsistent")
+    for table, expected, sort_key in rows.tables:
+        select_sql, _insert_sql = _MLP_MATERIALIZATION_SQL[table]
+        stored = connection.execute(select_sql, [report_sha256]).fetchall()
+        if [tuple(row) for row in stored] != sorted(expected, key=sort_key):
+            raise ValueError(f"stored {table} rows are inconsistent")
+    stored_runtime = connection.execute(
+        """
+        SELECT backend_json FROM polymarket_mlp_runtime_evidence
+        WHERE report_sha256 = ? AND runtime_sha256 = ?
+        """,
+        rows.runtime[:2],
+    ).fetchone()
+    if stored_runtime is None:
+        connection.execute(
+            "INSERT INTO polymarket_mlp_runtime_evidence VALUES (?, ?, ?)",
+            rows.runtime,
+        )
+    elif str(stored_runtime[0]) != rows.runtime_json:
+        raise ValueError("stored Polymarket MLP runtime evidence is inconsistent")
+    return True
+
+
+def _insert_mlp_materialization(connection: Any, rows: _MLPPersistenceRows) -> None:
+    connection.execute("BEGIN TRANSACTION")
+    try:
+        connection.execute(
+            "INSERT INTO polymarket_mlp_report VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            rows.report,
+        )
+        connection.execute(
+            "INSERT INTO polymarket_mlp_runtime_evidence VALUES (?, ?, ?)",
+            rows.runtime,
+        )
+        for table, table_rows, _sort_key in rows.tables:
+            if table_rows:
+                _select_sql, insert_sql = _MLP_MATERIALIZATION_SQL[table]
+                connection.executemany(insert_sql, table_rows)
+        connection.execute("COMMIT")
+    except Exception:
+        connection.execute("ROLLBACK")
+        raise
+
+
+def materialize_polymarket_mlp_report(
+    store: PolymarketEvidenceStore,
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    report: PolymarketMLPReport,
+) -> PolymarketMLPMaterialization:
+    """Persist the nonlinear model and every reconstructable result atomically."""
+
+    _validated_mlp_materialization_identity(dataset, parent, report)
+    validation = _replay_mlp_validation(dataset, report)
+    test = _replay_mlp_test(dataset, report)
+    rows = _mlp_persistence_rows(dataset, parent, report, validation, test)
+    connection = store.connect()
+    _ensure_mlp_materialization_schema(connection)
+    if _validate_existing_mlp_materialization(
+        connection,
+        report.report_sha256,
+        rows,
+    ):
         status = "existing"
     else:
-        connection.execute("BEGIN TRANSACTION")
-        try:
-            connection.execute(
-                "INSERT INTO polymarket_mlp_report VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                report_row,
-            )
-            connection.execute(
-                "INSERT INTO polymarket_mlp_runtime_evidence VALUES (?, ?, ?)",
-                runtime_row,
-            )
-            for table, rows, _sort_key in tables:
-                if rows:
-                    _select_sql, insert_sql = _MLP_MATERIALIZATION_SQL[table]
-                    connection.executemany(
-                        insert_sql,
-                        rows,
-                    )
-            connection.execute("COMMIT")
-        except Exception:
-            connection.execute("ROLLBACK")
-            raise
+        _insert_mlp_materialization(connection, rows)
         status = "created"
     return PolymarketMLPMaterialization(
         report_sha256=report.report_sha256,
         status=status,
-        validation_prediction_count=len(validation_predictions),
-        test_prediction_count=len(test_predictions),
-        selected_validation_action_count=len(validation_actions),
-        selected_test_action_count=len(test_actions),
+        validation_prediction_count=len(validation.predictions),
+        test_prediction_count=len(test.predictions),
+        selected_validation_action_count=len(validation.actions),
+        selected_test_action_count=len(test.actions),
     )
 
 
