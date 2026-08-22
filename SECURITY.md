@@ -18,6 +18,10 @@ approved for real-money trading.
   deterministic. AI cannot override them or block a close.
 - Dependencies and GitHub Actions are treated as supply-chain boundaries and
   require pinned, reviewed updates.
+- Package startup removes empty, relative, and current-directory entries from
+  child-process `PATH`. Windows startup also disables implicit current-directory
+  executable lookup. External tools must therefore resolve through explicit
+  absolute PATH directories rather than files beside the launched project.
 - Exchange requests must use bounded timeouts, backoff, idempotency, and
   rate-limit controls.
 

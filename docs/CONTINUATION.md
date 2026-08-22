@@ -91,7 +91,7 @@ blind overwrite. All new development after integration belongs on `main`.
   exported GPU and DirectML dependency stacks. The exact pushed revision
   `053e71ec9959c7b51c73d6983fb574e03f4173ea` passed hosted actionlint and
   Zizmor `1.25.2` through Super-Linter.
-- A fresh Bandit audit of `src/simple_ai_trading` scanned 436585 lines and
+- A fresh Bandit audit of `src/simple_ai_trading` scanned 436629 lines and
   reported 527 audit findings: zero high severity, 251 medium, and 276 low.
   The medium set is dominated by 248 dynamic-SQL (`B608`) review items. Its
   three `B113` request findings are false positives because each displayed call
@@ -100,8 +100,16 @@ blind overwrite. All new development after integration belongs on `main`.
 - `market_store._table_columns` was source-traced: its only caller supplies the
   fixed internal literal `archive_files`, so that `B608` item has no
   attacker-controlled source-to-sink path and needs no speculative patch.
-  Executable-resolution findings remain a shared-boundary review; do not claim
-  closure from changing isolated call sites.
+- A Windows child-process reproducer proved that a fake `git.exe` in the
+  process current directory could satisfy an unqualified `git` invocation.
+  Package bootstrap now removes empty, relative, duplicate, and
+  current-directory PATH entries before any operational module runs and sets
+  `NoDefaultCurrentDirectoryInExePath=1` on Windows. The paired exploit test
+  proves the unguarded child executes the fake binary while the guarded child
+  does not. The 22 `B607` calls remain scanner-visible because Bandit cannot
+  model package bootstrap; they are not suppressed. Explicit absolute PATH
+  directories remain a host trust boundary and still require controlled
+  installation and permissions.
 - The last full DeepSource backlog verification on `2026-08-16` found about
   28000 active findings, including 118 security findings. DeepSource passed
   revision `053e71ec9959c7b51c73d6983fb574e03f4173ea` with no blocking issues or
@@ -206,10 +214,10 @@ the differing files are safely reconciled onto `main`.
    parity, and the affected analyzer gates pass on the integrated tree. Do not
    publish or infer their model claims from local file presence.
 5. Triage real security risk in bounded batches, beginning with Bandit/DeepSource
-   dynamic SQL and executable-resolution findings. Distinguish parameterized
-   identifier whitelisting and fixed executable contracts from actual injection
-   or path-hijack exposure. Add direct regressions for every behavior change;
-   do not suppress the backlog broadly.
+   dynamic SQL and executable-installation provenance. Distinguish parameterized
+   identifier whitelisting, explicit trusted PATH entries, and fixed executable
+   contracts from actual injection or path-hijack exposure. Add direct
+   regressions for every behavior change; do not suppress the backlog broadly.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.
