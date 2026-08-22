@@ -363,10 +363,20 @@ blind overwrite. All new development after integration belongs on `main`.
   fit-claim reservation, deterministic fitting, idempotence, transaction,
   runtime-evidence, CLI parity, and tamper-detection paths. Changed-line coverage
   is `10/10`; Ruff, Pylint errors-only, Bandit, and changed-range formatting
-  checks pass; and both files now report zero `B608` findings. Scoped Mypy still
-  reports 22 pre-existing diagnostics outside changed lines and is not a pass.
-  No dataset, fit, model score, policy, P&L, or authority changes. Hosted analysis
-  of the exact pushed checkpoint remains required.
+  checks pass; and both files now report zero `B608` findings.
+- The bounded Ridge/MLP type follow-up closes all 22 scoped Mypy diagnostics.
+  Explicit stored-object, stored-array, strict-integer, and finite-number guards
+  now protect pipeline batches, action metadata, split groups, candidate rows,
+  selected-policy evidence, and report reconstruction. The MLP bootstrap also
+  requires exactly two finite quantiles before constructing evidence. The full
+  19-test module and seven focused malformed-evidence contracts pass together;
+  changed-line coverage clears the 95% gate, and Ruff/format and scoped Mypy
+  pass. Bandit reports no `B608` in either file and retains one low-severity
+  `B311` at the SHA-seeded deterministic bootstrap RNG. That RNG is required for
+  reproducible statistical evidence and is not used for secrets or security.
+  No dataset, feature, target, fit, bootstrap sample, coefficient, model score,
+  policy, P&L, risk setting, authority, or profitability claim changes. Hosted
+  analysis of the exact pushed checkpoint remains required.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -541,7 +551,8 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    removed one of ten `market_store.py` dynamic-query heuristics at `63ecb4f2`;
    follow-up `646bbdbe` removes the other nine without suppression or index loss.
    The current Ridge/MLP materializer batch removes four more internal-identifier
-   construction sites through explicit statement allowlists. Continue
+   construction sites through explicit statement allowlists, and its bounded
+   type follow-up closes the two modules' 22 scoped Mypy diagnostics. Continue
    source-to-sink triage in other modules from exact hosted results, not assumed
    residual counts. Do not treat the narrow `5f6e790c` pass or any bounded
    follow-up as closure of the broader backlog or as a project-wide security

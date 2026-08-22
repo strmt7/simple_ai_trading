@@ -1106,14 +1106,19 @@ def _bootstrap(
             start = rng.randint(0, maximum_start) if maximum_start else 0
             sample.extend(observations[start : start + block])
         means.append(math.fsum(sample[:count]) / count)
-    lower, upper = np.quantile(np.asarray(means), [0.025, 0.975])
+    quantiles = np.asarray(
+        np.quantile(np.asarray(means), [0.025, 0.975]),
+        dtype=np.float64,
+    ).reshape(-1)
+    if quantiles.size != 2 or not np.all(np.isfinite(quantiles)):
+        raise RuntimeError("Polymarket MLP bootstrap quantiles are invalid")
     return PolymarketMLPBootstrap(
         sample_count=count,
         block_length=block,
         resamples=POLYMARKET_MLP_BOOTSTRAP_SAMPLES,
         mean_delta=math.fsum(observations) / count,
-        lower_95=float(lower),
-        upper_95=float(upper),
+        lower_95=float(quantiles[0]),
+        upper_95=float(quantiles[1]),
         positive_mean_probability=sum(value > 0.0 for value in means) / len(means),
         values_sha256=_sha256(_float_text(observations)),
     )

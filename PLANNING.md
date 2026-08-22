@@ -183,9 +183,17 @@ in the combined Ridge/MLP module pass and all ten changed executable lines have
 coverage. Ruff, Pylint errors-only, Bandit, and changed-range formatting checks
 pass; both files now report zero `B608` findings. Their one remaining Bandit
 `B311` item is SHA-seeded pseudo-random model initialization required for
-reproducibility, not a cryptographic or security decision. Scoped Mypy remains
-red with 22 pre-existing diagnostics outside changed lines and is not recorded
-as a pass. No dataset, fit, model score, policy, P&L, or authority changes.
+reproducibility, not a cryptographic or security decision.
+
+The bounded type follow-up closes all 22 scoped Mypy diagnostics in those two
+modules. Stored report objects, arrays, integers, and finite numeric values now
+have explicit runtime boundaries; Ridge split and candidate reconstruction no
+longer relies on unchecked object coercion; and MLP bootstrap quantiles must be
+exactly two finite values. The combined 26-test matrix passes and changed-line
+coverage clears the 95% gate. Ruff and scoped Mypy pass. Bandit still reports
+only the documented non-security `B311` item in these files and no `B608`.
+No dataset, feature, target, fit, bootstrap sample, coefficient, model score,
+policy, P&L, risk setting, trading authority, or profitability claim changes.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
