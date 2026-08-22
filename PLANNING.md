@@ -310,7 +310,10 @@ static and passes the current Pylint `no-self-use` extension. The six recorder
 locations remain a ledger-bound type-integrity task: fail closed if the
 aggregate query does not return the required row before indexing it, and advance
 the cumulative Round 27 source-ledger amendment in the same reviewed change.
-Do not bypass that provenance requirement with an assertion or ignore.
+Do not bypass that provenance requirement with an assertion or ignore. Exact
+follow-up revision `502568f7` passed DeepSource with zero issues; hosted Ruff,
+Vulture, Super-Linter, and the Windows Python/native-UI job also passed. Its
+long Linux test-and-coverage job was still running at the bounded refresh.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
