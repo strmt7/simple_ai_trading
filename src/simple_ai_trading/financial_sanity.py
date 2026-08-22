@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
-from typing import Any
+from typing import Any, SupportsFloat, SupportsIndex
 
 from .model import TrainedModel
 from .terminal_holdout_ledger import reservation_evidence_passed, terminal_result_fingerprint
@@ -95,11 +95,25 @@ def _check(
 
 
 def _finite(value: object) -> float | None:
+    if not isinstance(value, (str, bytes, bytearray, SupportsFloat, SupportsIndex)):
+        return None
     try:
         parsed = float(value)
     except (TypeError, ValueError, OverflowError):
         return None
     return parsed if math.isfinite(parsed) else None
+
+
+def _primitive_metric(
+    value: object,
+    *,
+    default: str = "missing",
+) -> float | int | str | None:
+    if value is None:
+        return default
+    if isinstance(value, (float, int, str)):
+        return value
+    return f"unsupported:{type(value).__name__}"
 
 
 def _is_sha256(value: object) -> bool:
@@ -138,7 +152,7 @@ def _ai_uplift_period_evidence_checks(
                 "AI uplift statistical evidence",
                 "accepted AI uplift does not use fixed-period matched returns",
                 path=f"{base_path}.evidence_unit",
-                metric=statistical.get("evidence_unit", "missing"),
+                metric=_primitive_metric(statistical.get("evidence_unit")),
                 limit="matched_fixed_period_return_delta",
             )
         )
@@ -150,7 +164,7 @@ def _ai_uplift_period_evidence_checks(
                 "AI uplift statistical evidence",
                 "accepted AI uplift has no paired-period table fingerprint",
                 path=f"{base_path}.paired_samples_sha256",
-                metric=paired_sha256 or "missing",
+                metric=_primitive_metric(paired_sha256),
                 limit="64 lowercase hex characters",
             )
         )
@@ -161,8 +175,8 @@ def _ai_uplift_period_evidence_checks(
                 "AI uplift statistical evidence",
                 "paired-period table hash disagrees with evidence binding",
                 path=f"{base_path}.paired_samples_sha256",
-                metric=paired_sha256 or "missing",
-                limit=evidence_binding.get("paired_samples_sha256", "missing"),
+                metric=_primitive_metric(paired_sha256),
+                limit=_primitive_metric(evidence_binding.get("paired_samples_sha256")),
             )
         )
     sample_count = _finite(statistical.get("sample_count"))
@@ -1387,28 +1401,29 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
     portfolio = payload.get("portfolio_risk")
     accepted_outcomes = _accepted_outcomes(payload)
     top_level_symbols = _symbol_sequence(payload.get("accepted_symbols"))
-    if accepted_outcomes and not isinstance(portfolio, Mapping):
-        checks.append(
-            _check(
-                "block",
-                "portfolio risk",
-                "accepted outcomes require a portfolio-risk report",
-                path="portfolio_risk",
-                metric="missing",
-                limit="accepted portfolio-risk report",
+    if accepted_outcomes:
+        if not isinstance(portfolio, Mapping):
+            checks.append(
+                _check(
+                    "block",
+                    "portfolio risk",
+                    "accepted outcomes require a portfolio-risk report",
+                    path="portfolio_risk",
+                    metric="missing",
+                    limit="accepted portfolio-risk report",
+                )
             )
-        )
-    elif accepted_outcomes and portfolio.get("accepted") is not True:
-        checks.append(
-            _check(
-                "block",
-                "portfolio risk",
-                "accepted outcomes require accepted portfolio-risk evidence",
-                path="portfolio_risk.accepted",
-                metric=portfolio.get("accepted"),
-                limit=True,
+        elif portfolio.get("accepted") is not True:
+            checks.append(
+                _check(
+                    "block",
+                    "portfolio risk",
+                    "accepted outcomes require accepted portfolio-risk evidence",
+                    path="portfolio_risk.accepted",
+                    metric=_primitive_metric(portfolio.get("accepted")),
+                    limit=True,
+                )
             )
-        )
     if top_level_symbols:
         duplicates = _duplicate_symbols(top_level_symbols)
         if duplicates:

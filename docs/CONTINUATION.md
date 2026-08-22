@@ -26,7 +26,7 @@ the repository and on GitHub before changing code.
 
 ## Live Host Handoff: 2026-08-22
 
-The following state was verified at approximately `2026-08-22T12:15Z`. It is
+The following state was reverified at approximately `2026-08-22T13:09Z`. It is
 host state, not model evidence, and must be rechecked before any action.
 
 - The bounded audit began from clean, synchronized parent
@@ -37,17 +37,17 @@ host state, not model evidence, and must be rechecked before any action.
   `git rev-parse origin/main` directly.
 - Round 75 prospective Binance capture is active from the detached worktree
   `C:\trader\simple_ai_trading-model-dev`. Canonical state named parent PID
-  `67356` and physical child PID `66676`, reported
-  `waiting_for_next_fixed_slot`, slot ordinal `662`, no credentials, no orders,
+  `37976` and physical child PID `2928`, reported
+  `waiting_for_next_fixed_slot`, slot ordinal `665`, no credentials, no orders,
   and no trading authority. The frozen campaign ends at
   `2026-08-23T12:00:00Z`. Scheduled task
   `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1` was ready; its
-  `2026-08-22T12:13:15Z` invocation succeeded.
+  `2026-08-22T13:07:15Z` invocation succeeded.
 - The independent Round 21 Binance spot/futures sidecar is active from clean,
   detached commit `4a5912574a9157d79fecc53bf68ed6f01bb8dac8` in
   `C:\trader\simple_ai_trading-round21-sidecar-v2`. Wrapper PID `35008` and
   physical child PID `35264` were alive. Its state reported segment `12`,
-  phase `capturing`, `114424257` written public messages, twelve recorded
+  phase `capturing`, `115951163` written public messages, twelve recorded
   stream gaps, zero recorder errors, no credentials, no execution connection,
   no model-data eligibility, and no paper or live authority. Its frozen
   scheduled end is `2026-08-29T23:40:00Z`.
@@ -127,18 +127,28 @@ blind overwrite. All new development after integration belongs on `main`.
   revision `053e71ec9959c7b51c73d6983fb574e03f4173ea` with no blocking issues or
   failing metrics; the historical project-backlog count was not refreshed and
   must not be represented as current.
+- DeepSource failed exact revision
+  `c6ff3ac286eca7d58938ff9eded3c461f9ad60ea` with 107 Python findings, 88
+  classified as introduced. Its first rendered page contained fifteen major
+  type-contract findings in `backtest.py`, `execution_simulation.py`, and
+  `financial_sanity.py`; it did not identify those findings as security
+  vulnerabilities. The current bounded remediation adds explicit
+  numeric-conversion guards, a typed scoring-backend payload, unambiguous
+  optional trade-limit and threshold-variant types, and primitive-only sanity
+  diagnostics. Focused mypy, Ruff, Bandit, Pylint, and affected behavioral
+  suites pass locally. The next pushed SHA must confirm the hosted reduction;
+  do not infer that the remaining DeepSource backlog is fixed.
 
 ### Round Closeout Checkpoint
 
-At the start of the latest bounded audit, revision
-`a9eb70a13ffefcd56055a628054c1c177fdb55dc` was clean and synchronized with
-`origin/main`; its CI, Ruff, Vulture, Super-Linter, and DeepSource checks passed.
-The current handoff adds only terminal-audit failure observability and focused
-regressions. Resolve and verify the new exact pushed SHA rather than treating
-this historical parent as current. GitHub showed only `main`, no open pull
-requests, zero open Dependabot alerts, and zero open secret-scanning alerts;
-code scanning remained unavailable. No model evidence, trading authority, or
-profitability claim was created.
+Revision `c6ff3ac286eca7d58938ff9eded3c461f9ad60ea` was clean and synchronized with
+`origin/main`; its CI, Ruff, Vulture, Super-Linter, coverage, Windows-native UI,
+and launcher checks passed. DeepSource alone failed with the exact inventory
+described above. GitHub showed only `main`, no open pull requests, zero open
+Dependabot alerts, and zero open secret-scanning alerts; code scanning remained
+unavailable. The current bounded type-contract remediation changes no model
+scores, labels, fills, costs, thresholds, model evidence, trading authority, or
+profitability claim. Resolve and verify its new exact pushed SHA.
 
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The detached Round 75
@@ -243,7 +253,9 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    Bandit/DeepSource dynamic SQL source-to-sink paths. Distinguish fixed or
    validated identifiers and trusted executable contracts from actual
    injection or path-hijack exposure. Add direct regressions for every behavior
-   change; do not suppress the backlog broadly.
+   change; do not suppress the backlog broadly. Continue the exact DeepSource
+   run inventory after confirming the first fifteen type-contract findings were
+   removed on the pushed checkpoint.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.

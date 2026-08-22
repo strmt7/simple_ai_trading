@@ -3,7 +3,17 @@
 from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass, replace
-from typing import Callable, Dict, List, Mapping, Sequence
+from typing import (
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Sequence,
+    SupportsFloat,
+    SupportsIndex,
+    SupportsInt,
+    TypedDict,
+)
 
 from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .compute import (
@@ -137,14 +147,28 @@ class ThresholdBacktestCalibration:
         return asdict(self)
 
 
-def _finite_float(value: object, default: float = 0.0) -> float:
-    if not isinstance(value, (int, float, str)):
-        return default
+def _parse_finite_float(value: object) -> float | None:
+    if not isinstance(value, (str, bytes, bytearray, SupportsFloat, SupportsIndex)):
+        return None
     try:
         parsed = float(value)
     except (TypeError, ValueError, OverflowError):
-        return default
-    return parsed if math.isfinite(parsed) else default
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def _finite_float(value: object, default: float = 0.0) -> float:
+    parsed = _parse_finite_float(value)
+    return default if parsed is None else parsed
+
+
+def _parse_int(value: object) -> int | None:
+    if not isinstance(value, (str, bytes, bytearray, SupportsInt, SupportsIndex)):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
 
 
 def _clamp_float(value: object, low: float, high: float, default: float) -> float:
@@ -702,7 +726,14 @@ def _adjusted_side_thresholds(
     return adjusted_long, adjusted_short
 
 
-def _score_backend_payload(backend: BackendInfo) -> dict[str, str]:
+class _ScoreBackendPayload(TypedDict):
+    scoring_backend_requested: str
+    scoring_backend_kind: str
+    scoring_backend_device: str
+    scoring_backend_reason: str
+
+
+def _score_backend_payload(backend: BackendInfo) -> _ScoreBackendPayload:
     return {
         "scoring_backend_requested": backend.requested,
         "scoring_backend_kind": backend.kind,
@@ -834,16 +865,12 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
             or len(tree_info) > MAX_SERIALIZED_LIGHTGBM_TREES
         ):
             return None
-        try:
-            input_dim = max(
-                1,
-                min(
-                    int(params.get("input_dim", input_dim_default) or input_dim_default),
-                    int(model.feature_dim),
-                ),
-            )
-        except (TypeError, ValueError, OverflowError):
+        parsed_input_dim = _parse_int(
+            params.get("input_dim", input_dim_default) or input_dim_default
+        )
+        if parsed_input_dim is None:
             return None
+        input_dim = max(1, min(parsed_input_dim, int(model.feature_dim)))
 
         serialized_trees: list[list[tuple[int, float, int, int, bool, bool, float]]] = []
         max_nodes = 0
@@ -863,18 +890,14 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     return None
                 max_depth = max(max_depth, depth)
                 if "leaf_value" in node:
-                    try:
-                        leaf_value = float(node["leaf_value"])
-                    except (TypeError, ValueError, OverflowError):
-                        return None
-                    if not math.isfinite(leaf_value):
+                    leaf_value = _parse_finite_float(node["leaf_value"])
+                    if leaf_value is None:
                         return None
                     nodes.append((0, 0.0, len(nodes), len(nodes), True, True, leaf_value))
                     continue
-                try:
-                    split_feature = int(node["split_feature"])
-                    threshold = float(node["threshold"])
-                except (KeyError, TypeError, ValueError, OverflowError):
+                split_feature = _parse_int(node.get("split_feature"))
+                threshold = _parse_finite_float(node.get("threshold"))
+                if split_feature is None or threshold is None:
                     return None
                 if (
                     split_feature < 0
@@ -1080,11 +1103,25 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
             ))
         elif expert.kind == "signed_payoff_ranker":
             params = dict(getattr(expert, "params", {}) or {})
-            weights = params.get("weights")
-            if not isinstance(weights, list) or not weights:
+            raw_payoff_weights = params.get("weights")
+            if not isinstance(raw_payoff_weights, list) or not raw_payoff_weights:
                 raise ValueError(f"Accelerated scorer cannot load payoff expert {expert.name}")
-            input_dim = max(1, min(int(params.get("input_dim", len(weights)) or len(weights)), model.feature_dim, len(weights)))
-            payoff_weights = torch.tensor([float(value) for value in weights[:input_dim]], dtype=torch.float32, device=device)
+            input_dim = max(
+                1,
+                min(
+                    int(
+                        params.get("input_dim", len(raw_payoff_weights))
+                        or len(raw_payoff_weights)
+                    ),
+                    model.feature_dim,
+                    len(raw_payoff_weights),
+                ),
+            )
+            payoff_weights = torch.tensor(
+                [float(value) for value in raw_payoff_weights[:input_dim]],
+                dtype=torch.float32,
+                device=device,
+            )
             hybrid_specs.append((
                 expert.kind,
                 expert_weight,
@@ -2069,9 +2106,8 @@ def _approximate_threshold_signal_count(
 
     count = 0
     futures = str(market_type).lower() == "futures"
-    max_daily: int | None = int(cfg.max_trades_per_day)
-    if max_daily <= 0:
-        max_daily = None
+    configured_max_daily = int(cfg.max_trades_per_day)
+    max_daily: int | None = configured_max_daily if configured_max_daily > 0 else None
     daily_counts: dict[int, int] = {}
     cooldown_ms = max(0, int(cfg.cooldown_minutes)) * 60 * 1000
     last_entry_timestamp: int | None = None
@@ -2469,6 +2505,7 @@ def calibrate_threshold_for_backtest(
             },
         )
     for threshold in thresholds:
+        variants: tuple[tuple[float | None, float | None], ...]
         if market_type == "futures":
             threshold = max(0.5, float(threshold))
             side_mode = str(allowed_sides or "both").strip().lower()
@@ -2741,9 +2778,8 @@ def run_backtest(
     )
 
     daily_trade_count: Dict[int, int] = {}
-    max_daily: int | None = int(cfg.max_trades_per_day)
-    if max_daily <= 0:
-        max_daily = None
+    configured_max_daily = int(cfg.max_trades_per_day)
+    max_daily: int | None = configured_max_daily if configured_max_daily > 0 else None
 
     max_open_positions = int(cfg.max_open_positions)
     regime_gate_min_rows = max(8, min(len(rows), int(cfg.liquidity_lookback_bars)))

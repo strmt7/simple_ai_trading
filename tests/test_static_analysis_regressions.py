@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from decimal import Decimal
 import json
 from pathlib import Path
 import sys
@@ -10,6 +11,9 @@ import pytest
 
 from simple_ai_trading import ai_runtime
 from simple_ai_trading import api
+from simple_ai_trading import backtest
+from simple_ai_trading import execution_simulation
+from simple_ai_trading import financial_sanity
 from simple_ai_trading import lightgbm_backend
 from simple_ai_trading import polymarket_action_pipeline
 from simple_ai_trading import polymarket_action_value
@@ -34,6 +38,21 @@ from simple_ai_trading.compute import BackendInfo
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_model_evaluation_numeric_guards_are_typed_and_fail_closed() -> None:
+    assert backtest._parse_finite_float(Decimal("1.25")) == 1.25
+    assert backtest._parse_finite_float(object()) is None
+    assert backtest._parse_finite_float(float("inf")) is None
+    assert backtest._parse_int("3") == 3
+    assert backtest._parse_int(object()) is None
+
+    assert execution_simulation._safe_finite(Decimal("2.5"), -1.0) == 2.5
+    assert execution_simulation._safe_finite(object(), -1.0) == -1.0
+    assert financial_sanity._finite(Decimal("3.75")) == 3.75
+    assert financial_sanity._finite(object()) is None
+    assert financial_sanity._primitive_metric(None) == "missing"
+    assert financial_sanity._primitive_metric(object()) == "unsupported:object"
 
 
 def test_numeric_and_sequence_guards_fail_closed() -> None:
