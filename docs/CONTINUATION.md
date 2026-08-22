@@ -26,27 +26,26 @@ the repository and on GitHub before changing code.
 
 ## Live Host Handoff: 2026-08-22
 
-The following state was reverified at approximately `2026-08-22T14:23Z`. It is
-host state, not model evidence, and must be rechecked before any action.
+The following state was reverified through approximately
+`2026-08-22T14:51Z`. It is host state, not model evidence, and must be
+rechecked before any action.
 
-- Main was synchronized at
-  `486f0506d60857e291941c7f17580c172b8ea5ca` before the AI-uplift v5 work.
-  Code checkpoint `5c220bcfa34028640fb3ac00d8953314c291d7fd`
-  was then pushed to `main`; this documentation closeout remained local at the
-  snapshot. GitHub and local remote-tracking branch inventory contained only
-  `main`. Always verify `git rev-parse HEAD` and `git rev-parse origin/main`
-  directly before resuming.
+- Main and `origin/main` were synchronized at closeout revision
+  `f50c3a8302090b15bce8075f425716dcf2afc659`. GitHub's remote branch inventory
+  contained only `main`, with no open pull requests. Always verify
+  `git rev-parse HEAD`, `git rev-parse origin/main`, and the remote branch
+  inventory directly before resuming.
 - Round 75 prospective Binance capture is active from the detached worktree
   `C:\trader\simple_ai_trading-model-dev`. The latest supervisor record was
   `service_healthy`, with no credentials, orders, or trading authority.
   Scheduled task `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1`
-  was ready and its `2026-08-22T14:21:15Z` invocation returned `0`. The frozen
+  was ready and its `2026-08-22T14:47:15Z` invocation returned `0`. The frozen
   campaign ends at `2026-08-23T12:00:00Z`.
 - The independent Round 21 Binance spot/futures sidecar is active from clean,
   detached commit `4a5912574a9157d79fecc53bf68ed6f01bb8dac8` in
   `C:\trader\simple_ai_trading-round21-sidecar-v2`. Wrapper PID `35008` and
   physical child PID `35264` were alive. Its state reported segment `12`,
-  phase `capturing`, `115951163` written public messages, twelve recorded
+  phase `capturing`, `118914188` written public messages, twelve recorded
   stream gaps, zero recorder errors, no credentials, no execution connection,
   no model-data eligibility, and no paper or live authority. Its frozen
   scheduled end is `2026-08-29T23:40:00Z`.
@@ -150,8 +149,16 @@ blind overwrite. All new development after integration belongs on `main`.
   in both changed source modules, compared with 18 on exact parent `486f0506`.
   The local closeout passes 191 affected tests and 96% changed-line coverage,
   plus Ruff check, Pylint errors-only, targeted Bandit, markdownlint,
-  terminology, lock, and diff checks. Hosted reanalysis of the closeout must
-  still be verified.
+  terminology, lock, and diff checks. Hosted Ruff, Vulture, Super-Linter, and
+  the Windows Python/native-UI job then passed on closeout revision
+  `f50c3a8302090b15bce8075f425716dcf2afc659`. Its full Linux
+  test-and-coverage job was still running at the handoff and is not a pass
+  until GitHub reports a successful terminal result. DeepSource reanalysis
+  resolved the displayed type-contract findings. It still failed with only
+  `PY-R1000` cyclomatic-complexity findings visible in the changed Python
+  scope: four in `ai_uplift.py` and five in `financial_sanity.py`. These are
+  maintainability findings, not reported security vulnerabilities; preserve
+  behavior and reason ordering if addressing them in a later bounded refactor.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -186,11 +193,14 @@ blind overwrite. All new development after integration belongs on `main`.
 
 ### Round Closeout Checkpoint
 
-Code revision `5c220bcfa34028640fb3ac00d8953314c291d7fd` was pushed
-to `main` with the AI-uplift v5 contract described above. The subsequent
-documentation closeout must be verified by its own final SHA. At the snapshot,
-GitHub showed only `main`; previously verified alert APIs reported zero open
-Dependabot and secret-scanning alerts, while code scanning remained unavailable.
+Code revision `5c220bcfa34028640fb3ac00d8953314c291d7fd` and closeout revision
+`f50c3a8302090b15bce8075f425716dcf2afc659` were pushed to `main` with the
+AI-uplift v5 contract described above. At the snapshot, GitHub showed only
+`main`, no open pull requests, zero open Dependabot alerts, and zero open
+secret-scanning alerts. GitHub code scanning returned `404: no analysis found`
+and remained unavailable. Hosted Ruff, Vulture, Super-Linter, and the Windows
+job passed; full Linux CI remained in progress, and DeepSource remained red for
+the nine displayed complexity findings described above.
 No model score, label, fill, cost, threshold, model outcome, trading authority,
 or profitability claim changed. Verify every available hosted check on the
 final pushed SHA; pending and unavailable checks are not passes.
