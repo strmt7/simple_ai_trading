@@ -63,7 +63,7 @@ class BackendInfo:
 
     @property
     def request_satisfied(self) -> bool:
-        return self.requested == "auto" or self.requested == self.kind
+        return self.requested in {"auto", self.kind}
 
     @property
     def fell_back(self) -> bool:
@@ -151,7 +151,7 @@ def _cuda_free_memory(torch: Any, count: int) -> dict[int, int]:
                 exc.__class__.__name__,
             )
         else:
-            if free_value >= 0 and total_value > 0 and free_value <= total_value:
+            if 0 <= free_value <= total_value and total_value > 0:
                 memory[index] = free_value
     return memory
 
@@ -237,8 +237,11 @@ def _try_xpu() -> BackendInfo | None:
             count,
             current=_runtime_current_index(runtime),
         )
-        name_getter = getattr(runtime, "get_device_name", None)
-        name = name_getter(index) if callable(name_getter) else "Intel XPU"
+        name_getter: Any = getattr(runtime, "get_device_name", None)
+        if callable(name_getter):
+            name = runtime.get_device_name(index)
+        else:
+            name = "Intel XPU"
     except Exception:  # pragma: no cover - driver/configuration boundary
         return None
     return BackendInfo(
