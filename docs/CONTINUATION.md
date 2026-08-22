@@ -109,6 +109,14 @@ blind overwrite. All new development after integration belongs on `main`.
 - `market_store._table_columns` was source-traced: its only caller supplies the
   fixed internal literal `archive_files`, so that `B608` item has no
   attacker-controlled source-to-sink path and needs no speculative patch.
+- `MarketDataStore.latest_microstructure_capture` now uses one static query for
+  both passed-only and unrestricted selection, with the symbol and mode bound as
+  parameters. A direct regression includes an injection-shaped symbol. The
+  module's `B608` count falls from ten to nine without suppression. The remaining
+  nine query builders were source-traced: their predicate lists contain only
+  internal fixed literals, while symbols, market types, intervals, timestamps,
+  bucket widths, and limits are bound values. Preserve that classification, but
+  do not call the heuristics vulnerabilities or globally suppress them.
 - A Windows child-process reproducer proved that a fake `git.exe` in the
   process current directory could satisfy an unqualified `git` invocation.
   Package bootstrap now removes empty, relative, duplicate, and
@@ -296,7 +304,7 @@ blind overwrite. All new development after integration belongs on `main`.
   DeepSource, Ruff, Vulture, and Super-Linter. Its longer CI run remained in
   progress at the final refresh. Do not infer that the parent 27-item queue is
   otherwise closed.
-- The current bounded rule-alpha batch decomposes
+- The bounded rule-alpha batch decomposes
   `_rule_alpha_score_from_values` from Radon `35` to `3`; its extracted helpers
   score at most `12`. It also makes `_technical_probability` and
   `_rule_alpha_probability` static without changing their call contract. A
@@ -315,10 +323,21 @@ blind overwrite. All new development after integration belongs on `main`.
   formatting. Narrow follow-up
   `c349aca6337bc5940d471a60c325f05d5a6d4f3b` fixes those signatures; its
   20-test exact-score contract and local changed-range reproduction pass.
-  Hosted Ruff and Vulture pass on that follow-up. Super-Linter, CI, and
-  DeepSource remained in progress at the final refresh and must not be recorded
-  as passes until their exact terminal results are read. Continue from that
-  exact hosted result before selecting another item from the parent inventory.
+  Hosted DeepSource, Ruff, and Vulture pass on that follow-up. Documentation
+  checkpoint `291c758ab559932c24d6dd6d530315b625f13e9a` also passed DeepSource,
+  Ruff, Vulture, and Super-Linter. Its CI run remained in progress at the final
+  refresh and must not be recorded as a pass until its exact terminal result is
+  read.
+- The current bounded SQL-safety batch removes the dynamic predicate assembly
+  from `latest_microstructure_capture` without changing its public contract. A
+  new isolated regression covers passed-only selection, unrestricted selection,
+  case normalization, and an injection-shaped symbol. The complete 20-test
+  market-data matrix passes; changed-line coverage is `2/2`; and scoped Mypy,
+  Ruff, Pylint errors-only, and formatter checks pass. Bandit reports nine
+  remaining `B608` heuristics in `market_store.py`, down from ten, with no
+  suppression. Those nine use internal fixed predicate fragments and bound
+  external values. Hosted analysis of the exact pushed checkpoint remains
+  required; this is one bounded hardening step, not project-wide security proof.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -488,11 +507,13 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    The seven-item type/test follow-up is closed at `13f33f8a`; continue from its
    exact 27-item DeepSource inventory recorded above. The market-data batch
    closed the coverage-complexity and unsafe-comparison family at exact
-   follow-up revision `8d5ecc1e`. The current rule-alpha batch addresses the
-   monolithic scorer and its two static-method findings; continue from its exact
-   hosted result, not from an assumed residual count. Do not treat the narrow
-   `5f6e790c` pass or either bounded follow-up as closure of that broader backlog
-   or as a project-wide security result.
+   follow-up revision `8d5ecc1e`. The rule-alpha scorer and two static-method
+   findings are closed at follow-up `c349aca6`. The current SQL-safety batch
+   removes one of the ten `market_store.py` dynamic-query heuristics; retain the
+   source-to-sink classification above for the remaining nine. Continue from
+   exact hosted results, not assumed residual counts. Do not treat the narrow
+   `5f6e790c` pass or any bounded follow-up as closure of the broader backlog or
+   as a project-wide security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.
