@@ -309,9 +309,16 @@ blind overwrite. All new development after integration belongs on `main`.
   float-hex matches; and changed-line coverage is `160/160`. Scoped Mypy, Ruff,
   Pylint errors-only, Bandit, and strict simplification checks pass locally. No
   score, coefficient, calibration, serialization, model outcome, P&L, risk
-  threshold, or trading authority changes. Commit this batch on `main`, push
-  it, and verify the exact hosted result before selecting another item from the
-  parent inventory.
+  threshold, or trading authority changes. Exact code revision
+  `31c1e02e64b8c8056a437f2fefa20d283dac2601` was pushed to `main`. Its hosted
+  Ruff range gate found only the two newly decorated signatures needed
+  formatting. Narrow follow-up
+  `c349aca6337bc5940d471a60c325f05d5a6d4f3b` fixes those signatures; its
+  20-test exact-score contract and local changed-range reproduction pass.
+  Hosted Ruff and Vulture pass on that follow-up. Super-Linter, CI, and
+  DeepSource remained in progress at the final refresh and must not be recorded
+  as passes until their exact terminal results are read. Continue from that
+  exact hosted result before selecting another item from the parent inventory.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.

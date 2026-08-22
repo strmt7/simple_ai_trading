@@ -145,8 +145,11 @@ parent-versus-current harness produced 2416 exact float-hex matches; and all
 160 changed executable lines have coverage. Scoped Mypy, Ruff, Pylint
 errors-only, Bandit, and strict simplification checks pass locally. No score,
 coefficient, calibration, serialization, model result, P&L, risk setting, or
-trading authority changes. Hosted analysis of the exact pushed revision
-remains a required closeout gate.
+trading authority changes. Exact code revision `31c1e02e` was pushed; its
+hosted Ruff range gate found only the two newly decorated signatures needed
+formatting. Narrow follow-up `c349aca6` fixes those signatures. Hosted Ruff and
+Vulture pass on that follow-up; Super-Linter, CI, and DeepSource remained in
+progress at the final refresh and are not recorded as passes.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
