@@ -131,7 +131,7 @@ class PolymarketMLPBackendEvidence:
         if (
             self.requested not in {"auto", *allowed}
             or self.kind not in allowed
-            or (self.requested != "auto" and self.requested != self.kind)
+            or self.requested not in ("auto", self.kind)
             or not self.device
             or not self.vendor
             or not self.torch_version
@@ -1627,6 +1627,22 @@ _MLP_MATERIALIZATION_SQL: Mapping[str, tuple[str, str]] = {
 }
 
 
+def _selected_validation_metrics(
+    report: PolymarketMLPReport,
+) -> PolymarketPolicyMetrics | None:
+    threshold = report.selected_threshold
+    if threshold is None:
+        return None
+    matches = tuple(
+        item for item in report.validation_trials if item.threshold == threshold
+    )
+    if len(matches) != 1:
+        raise ValueError(
+            "Polymarket MLP selected validation threshold is missing or duplicated"
+        )
+    return matches[0]
+
+
 def materialize_polymarket_mlp_report(
     store: PolymarketEvidenceStore,
     dataset: PolymarketRidgeDataset,
@@ -1659,12 +1675,8 @@ def materialize_polymarket_mlp_report(
             require_asset_profit=False,
         )
     )
-    if report.selected_threshold is not None:
-        expected_validation = next(
-            item
-            for item in report.validation_trials
-            if item.threshold == report.selected_threshold
-        )
+    expected_validation = _selected_validation_metrics(report)
+    if expected_validation is not None:
         if validation_evaluation.metrics.asdict() != expected_validation.asdict():
             raise ValueError("Polymarket MLP validation replay differs from report")
     validation_predictions = _prediction_rows(

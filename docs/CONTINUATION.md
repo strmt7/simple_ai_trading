@@ -401,6 +401,29 @@ blind overwrite. All new development after integration belongs on `main`.
   Pylint errors-only, and Bandit pass. The file now has zero `B101` findings
   without suppression. No model, prediction, inference payload, timeout,
   backend, P&L, risk, authority, or profitability claim changes.
+- Exact worker checkpoint `1ad4b84a03ba0778e4a89074354f39eb984632d0`
+  passed hosted DeepSource, Ruff, Vulture, Windows smoke, and Super-Linter. Its
+  Linux coverage job remained in progress at the last refresh.
+- The immediate model-evidence contract follow-up replaces the unguarded MLP
+  `next()` with a helper that requires exactly one validation trial for the
+  selected threshold. Missing and duplicate matches now fail with an explicit
+  evidence-contract error. The fit-claim information-schema probe now requires
+  one row containing exactly `0` or `1` before indexing. Both fit-claim dynamic
+  identifier queries are replaced by complete static Ridge and MLP statements;
+  any unregistered report table/parent-column pair now fails identity
+  validation. During post-capture Round 75 integration, inventory every new
+  fit-claim caller and add its complete static statements before enabling that
+  model family; never reopen arbitrary identifier construction. DeepSource's
+  exact backend comparison simplification is also applied. The full 19-test
+  Ridge/MLP module and 17 focused malformed-evidence
+  contracts pass together; changed executable-line coverage is `22/22`, scoped
+  Mypy, Ruff, and Pylint errors-only pass, and Bandit reports zero `B608` in
+  `polymarket_fit_claim.py`. The adjacent `polymarket_recorder.py` optional-row
+  finding is intentionally deferred because the file is bound by Round 27's
+  immutable source ledger; changing it requires a reviewed cumulative successor
+  to v18 and must not occur casually during the active capture. No model fit,
+  prediction, score, policy, P&L, risk, authority, or profitability claim
+  changes. Hosted analysis of the final pushed checkpoint remains required.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -577,12 +600,15 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    The current Ridge/MLP materializer batch removes four more internal-identifier
    construction sites through explicit statement allowlists, and its bounded
    type follow-up closes the two modules' 22 scoped Mypy diagnostics. Continue
-   from the exact `eef01801` DeepSource inventory above. Address the critical
-   unguarded MLP lookup and optional-row type boundaries before decomposing
-   complexity in behavior-preserving contract families. Continue source-to-sink
-   triage in other modules from exact hosted results, not assumed residual
-   counts. Replace runtime assertions only when an explicit fail-closed error
-   and cleanup contract exists; do not mechanically rewrite typing assertions.
+   from the exact `eef01801` DeepSource inventory above. The critical MLP lookup
+   and unbound fit-claim row boundary are closed locally in the immediate
+   follow-up. Preserve the recorder finding until a cumulative source-ledger
+   amendment can be reviewed. Decompose the seven MLP complexity findings in
+   behavior-preserving contract families under complete identity-payload and
+   result tests. Continue source-to-sink triage in other modules from exact
+   hosted results, not assumed residual counts. Replace runtime assertions only
+   when an explicit fail-closed error and cleanup contract exists; do not
+   mechanically rewrite typing assertions.
    Do not treat the narrow `5f6e790c` pass or any bounded follow-up as closure
    of the broader backlog or as a project-wide security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,

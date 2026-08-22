@@ -213,6 +213,20 @@ Bandit `B101` count falls from two to zero without suppression. This changes no
 model, prediction, inference payload, timeout, backend choice, risk setting,
 P&L, authority, or profitability claim.
 
+The immediate model-evidence contract follow-up removes the unguarded MLP
+validation-trial lookup, requires exactly one trial for a selected threshold,
+and validates the fit-claim schema probe as one binary integer row before it is
+indexed. The two fit-claim dynamic-identifier queries are now complete static
+statements selected by an explicit Ridge/MLP identity allowlist; unregistered
+table/column pairs fail closed. It also applies DeepSource's exact backend
+comparison simplification. The combined 36-test evidence matrix passes, all 22
+changed executable lines have coverage, and scoped Mypy, Ruff, and Pylint pass.
+Bandit reports zero `B608` in `polymarket_fit_claim.py`. The adjacent recorder
+optional-row finding is deliberately not changed: that file is bound by the
+immutable Round 27 ledger and requires a reviewed cumulative successor to v18.
+No training, prediction, model selection, score, P&L, risk, authority, or
+profitability claim changes.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance
