@@ -578,8 +578,8 @@ def test_market_state_pretraining_keeps_the_unmasked_next_event_target() -> None
         identity=94,
         rows=3,
     ).feature_values
-    model = build_round74_event_model("causal_event_tcn")
-    head = _Round74NextEventHead(64)
+    model = build_round74_event_model("causal_event_tcn").eval()
+    head = _Round74NextEventHead(64).eval()
     masked_indices = tuple(
         sorted(
             {
@@ -588,6 +588,12 @@ def test_market_state_pretraining_keeps_the_unmasked_next_event_target() -> None
             }
         )
     )
+    assert set(range(5)).issubset(masked_indices)
+    with torch.no_grad():
+        head.event_type.weight.zero_()
+        head.event_type.bias.copy_(
+            torch.arange(5, dtype=head.event_type.bias.dtype)
+        )
 
     row_loss, event_loss, continuous_loss = _next_event_row_losses(
         model,
@@ -598,6 +604,20 @@ def test_market_state_pretraining_keeps_the_unmasked_next_event_target() -> None
 
     assert row_loss.shape == event_loss.shape == continuous_loss.shape == (3,)
     assert torch.isfinite(row_loss).all()
+
+    changed_values = values.copy()
+    changed_values[0, 1:, :5] = 0.0
+    changed_values[0, 1:, 4] = 1.0
+    _changed_row, changed_event, changed_continuous = _next_event_row_losses(
+        model,
+        head,
+        torch.from_numpy(changed_values),
+        masked_feature_indices=masked_indices,
+    )
+
+    assert not torch.equal(changed_event[0], event_loss[0])
+    assert torch.equal(changed_event[1:], event_loss[1:])
+    assert torch.equal(changed_continuous, continuous_loss)
 
 
 def test_pretraining_continuous_loss_excludes_masked_zero_targets() -> None:
