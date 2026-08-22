@@ -23,7 +23,7 @@ profit promise or a shortcut to mainnet.
 | Futures leverage | `5x` conservative, `10x` regular, `15x` aggressive |
 | Maximum futures leverage | `20x` application ceiling |
 | Binance execution | Paper or testnet/Demo only |
-| Polymarket execution | Disabled; BTC-only live-capable boundary has no authority |
+| Polymarket execution | Disabled; BTC live boundary has no authority |
 
 ## Promotion Standard
 
@@ -226,6 +226,21 @@ optional-row finding is deliberately not changed: that file is bound by the
 immutable Round 27 ledger and requires a reviewed cumulative successor to v18.
 No training, prediction, model selection, score, P&L, risk, authority, or
 profitability claim changes.
+
+The bounded MLP validation closeout then decomposes backend, member, and
+ensemble evidence validation. Their Radon scores fall from `17/25/16` to
+`4/5/6`; every extracted helper scores `10` or lower. Pre-edit canonical
+fingerprints freeze the backend identity, all three member identities, and the
+ensemble identity. Ten focused tests cover valid evidence plus every extracted
+fail-closed branch; the 40-test affected matrix passes and changed executable
+line coverage is `58/58`. Ruff and formatting pass. A scoped Bandit run reports
+no high- or medium-severity finding and retains only the documented source
+`B311` deterministic-bootstrap warning. Bare Mypy retains two diagnostics in
+unchanged SciPy/training lines and reports none in this validation change.
+This is maintainability and evidence-integrity work only: no feature, target,
+fit, weight, prediction, threshold, result, P&L, risk, authority, or
+profitability claim changes. The report validator, fit-member routine, top-level
+fit orchestration, and materializer remain separate bounded complexity tasks.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
