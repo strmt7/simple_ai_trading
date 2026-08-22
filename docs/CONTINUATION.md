@@ -222,6 +222,19 @@ blind overwrite. All new development after integration belongs on `main`.
   suppress the rule during closeout. A later agent should decompose one coherent
   contract family at a time under the fixed full-report fingerprints and then
   verify the exact new DeepSource inventory.
+- The next local model-evidence batch reduces four functions from that exact
+  queue without changing calculations or diagnostics:
+  `_ai_uplift_period_contract_checks` falls from `19` to `8`,
+  `_ai_uplift_bootstrap_checks` from `18` to `9`,
+  `_probability_deterioration_checks` from `17` to `8`, and
+  `build_model_financial_sanity_report` from `17` to `1`. The largest extracted
+  predicate scores `12`, below DeepSource's observed threshold. Accepted and
+  rejected model reports add two fixed SHA-256 fingerprints to the four existing
+  complete report contracts. Locally, 49 focused tests and the 233-test affected
+  matrix pass, and all `62` changed executable lines have coverage. Scoped Mypy,
+  Ruff/format, Pylint errors-only, targeted Bandit, strict simplification checks,
+  and Radon pass. This is maintainability evidence only; hosted DeepSource must
+  confirm the residual inventory on the exact pushed SHA.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -385,10 +398,11 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    follow-up reduced it to 51. The nine changed-scope AI-uplift and
    financial-sanity complexity findings were later closed in two bounded,
    behavior-preserving batches. DeepSource then exposed the 13 smaller helper
-   findings listed above under its stricter threshold; address them one contract
-   family at a time. Continue from the exact DeepSource inventory on the final
-   checkpoint rather than treating the original closure as a project-wide
-   backlog result.
+   findings listed above under its stricter threshold. The subsequent local
+   model-evidence batch addresses four; continue from the exact final-SHA
+   DeepSource inventory rather than assuming the expected nine remain. Address
+   each remaining contract family separately, and do not treat the original
+   closure as a project-wide backlog result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.

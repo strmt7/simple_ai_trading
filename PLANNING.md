@@ -98,6 +98,13 @@ helper findings are recorded exactly in `docs/CONTINUATION.md`; they remain a
 bounded maintainability queue and must not be presented as vulnerabilities or
 silenced with broad analyzer exclusions.
 
+The next bounded model-evidence batch decomposes four members of that queue:
+AI-uplift period validation, block-bootstrap validation, probability-calibration
+deterioration, and the model-report coordinator. Complete accepted/rejected
+model-report fingerprints and 100% changed-line coverage protect the refactor.
+Reduce the recorded residual count only after DeepSource analyzes the exact
+pushed checkpoint.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance

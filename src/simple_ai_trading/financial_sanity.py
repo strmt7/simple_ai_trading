@@ -206,6 +206,31 @@ def _ai_uplift_period_evidence_checks(
     return checks
 
 
+def _fixed_period_contract_valid(
+    *,
+    scope: str,
+    sample_count: float | None,
+    duration_ms: float | None,
+    first_ms: float | None,
+    last_ms: float | None,
+    min_evaluation_span_ms: int,
+) -> bool:
+    return (
+        bool(scope)
+        and sample_count is not None
+        and sample_count > 0.0
+        and float(sample_count).is_integer()
+        and duration_ms is not None
+        and duration_ms > 0.0
+        and float(duration_ms).is_integer()
+        and first_ms is not None
+        and last_ms is not None
+        and last_ms > first_ms
+        and abs((last_ms - first_ms) - sample_count * duration_ms) <= 0.5
+        and last_ms - first_ms >= min_evaluation_span_ms
+    )
+
+
 def _ai_uplift_period_contract_checks(
     statistical: Mapping[str, object],
     evidence_binding: object,
@@ -256,19 +281,13 @@ def _ai_uplift_period_contract_checks(
     first_ms = _finite(statistical.get("first_period_start_ms"))
     last_ms = _finite(statistical.get("last_period_end_ms"))
     scope = str(statistical.get("scope") or "")
-    period_contract_valid = (
-        bool(scope)
-        and sample_count is not None
-        and sample_count > 0.0
-        and float(sample_count).is_integer()
-        and duration_ms is not None
-        and duration_ms > 0.0
-        and float(duration_ms).is_integer()
-        and first_ms is not None
-        and last_ms is not None
-        and last_ms > first_ms
-        and abs((last_ms - first_ms) - sample_count * duration_ms) <= 0.5
-        and last_ms - first_ms >= min_evaluation_span_ms
+    period_contract_valid = _fixed_period_contract_valid(
+        scope=scope,
+        sample_count=sample_count,
+        duration_ms=duration_ms,
+        first_ms=first_ms,
+        last_ms=last_ms,
+        min_evaluation_span_ms=min_evaluation_span_ms,
     )
     if not period_contract_valid:
         checks.append(
@@ -284,6 +303,54 @@ def _ai_uplift_period_contract_checks(
     return checks
 
 
+@dataclass(frozen=True)
+class _BootstrapEvidence:
+    samples: float | None
+    confidence: float | None
+    lower: float | None
+    upper: float | None
+    positive_probability: float | None
+
+    @classmethod
+    def from_statistical(cls, statistical: Mapping[str, object]) -> _BootstrapEvidence:
+        return cls(
+            samples=_finite(statistical.get("block_bootstrap_samples")),
+            confidence=_finite(statistical.get("block_bootstrap_confidence")),
+            lower=_finite(statistical.get("mean_delta_ci_lower")),
+            upper=_finite(statistical.get("mean_delta_ci_upper")),
+            positive_probability=_finite(statistical.get("positive_mean_probability")),
+        )
+
+    def samples_invalid(self, minimum: int) -> bool:
+        return (
+            self.samples is None
+            or not float(self.samples).is_integer()
+            or self.samples < minimum
+        )
+
+    def confidence_invalid(self, minimum: float) -> bool:
+        return (
+            self.confidence is None
+            or self.confidence < minimum
+            or self.confidence >= 1.0
+        )
+
+    def interval_invalid(self, minimum_lower: float) -> bool:
+        return (
+            self.lower is None
+            or self.lower <= minimum_lower
+            or self.upper is None
+            or self.upper < self.lower
+        )
+
+    def positive_probability_invalid(self, minimum: float) -> bool:
+        return (
+            self.positive_probability is None
+            or self.positive_probability < minimum
+            or self.positive_probability > 1.0
+        )
+
+
 def _ai_uplift_bootstrap_checks(
     statistical: Mapping[str, object],
     *,
@@ -294,75 +361,56 @@ def _ai_uplift_bootstrap_checks(
 ) -> list[FinancialSanityCheck]:
     checks: list[FinancialSanityCheck] = []
     base_path = f"{prefix}.ai_uplift.statistical_evidence"
-    bootstrap_samples = _finite(statistical.get("block_bootstrap_samples"))
-    bootstrap_confidence = _finite(statistical.get("block_bootstrap_confidence"))
-    bootstrap_lower = _finite(statistical.get("mean_delta_ci_lower"))
-    bootstrap_upper = _finite(statistical.get("mean_delta_ci_upper"))
-    bootstrap_positive = _finite(statistical.get("positive_mean_probability"))
-    if (
-        bootstrap_samples is None
-        or not float(bootstrap_samples).is_integer()
-        or bootstrap_samples < min_bootstrap_samples
-    ):
+    evidence = _BootstrapEvidence.from_statistical(statistical)
+    if evidence.samples_invalid(min_bootstrap_samples):
         checks.append(
             _check(
                 "block",
                 "AI uplift block bootstrap",
                 "accepted AI uplift has too few block-bootstrap resamples",
                 path=f"{base_path}.block_bootstrap_samples",
-                metric=bootstrap_samples
-                if bootstrap_samples is not None
-                else "missing",
+                metric=evidence.samples if evidence.samples is not None else "missing",
                 limit=f">={min_bootstrap_samples}",
             )
         )
-    if (
-        bootstrap_confidence is None
-        or bootstrap_confidence < min_bootstrap_confidence
-        or bootstrap_confidence >= 1.0
-    ):
+    if evidence.confidence_invalid(min_bootstrap_confidence):
         checks.append(
             _check(
                 "block",
                 "AI uplift block bootstrap",
                 "accepted AI uplift confidence level is too weak",
                 path=f"{base_path}.block_bootstrap_confidence",
-                metric=bootstrap_confidence
-                if bootstrap_confidence is not None
-                else "missing",
+                metric=(
+                    evidence.confidence
+                    if evidence.confidence is not None
+                    else "missing"
+                ),
                 limit=f"[{min_bootstrap_confidence:g},1)",
             )
         )
-    if (
-        bootstrap_lower is None
-        or bootstrap_lower <= min_bootstrap_lower
-        or bootstrap_upper is None
-        or bootstrap_upper < bootstrap_lower
-    ):
+    if evidence.interval_invalid(min_bootstrap_lower):
         checks.append(
             _check(
                 "block",
                 "AI uplift block bootstrap",
                 "accepted AI uplift confidence interval does not prove positive mean uplift",
                 path=f"{base_path}.mean_delta_ci_lower",
-                metric=bootstrap_lower if bootstrap_lower is not None else "missing",
+                metric=evidence.lower if evidence.lower is not None else "missing",
                 limit=f">{min_bootstrap_lower:g}",
             )
         )
-    if (
-        bootstrap_positive is None
-        or bootstrap_positive < min_bootstrap_confidence
-        or bootstrap_positive > 1.0
-    ):
+    if evidence.positive_probability_invalid(min_bootstrap_confidence):
         checks.append(
             _check(
                 "block",
                 "AI uplift block bootstrap",
                 "accepted AI uplift has weak positive-mean probability",
                 path=f"{base_path}.positive_mean_probability",
-                metric=bootstrap_positive
-                if bootstrap_positive is not None
-                else "missing",
+                metric=(
+                    evidence.positive_probability
+                    if evidence.positive_probability is not None
+                    else "missing"
+                ),
                 limit=f">={min_bootstrap_confidence:g}",
             )
         )
@@ -597,17 +645,33 @@ def _probability_range_checks(
     return checks
 
 
+def _calibration_metric_worsened(
+    before: float | None,
+    after: float | None,
+) -> bool:
+    return before is not None and after is not None and after > before + 1e-9
+
+
+def _has_partial_unpromoted_calibration(
+    evidence: _ProbabilityCalibrationEvidence,
+    *,
+    promoted: bool,
+) -> bool:
+    return (
+        evidence.any_metric
+        and not promoted
+        and evidence.brier_after is None
+        and evidence.ece_after is None
+    )
+
+
 def _probability_deterioration_checks(
     evidence: _ProbabilityCalibrationEvidence,
     *,
     promoted: bool,
 ) -> list[FinancialSanityCheck]:
     checks: list[FinancialSanityCheck] = []
-    if (
-        evidence.brier_before is not None
-        and evidence.brier_after is not None
-        and evidence.brier_after > evidence.brier_before + 1e-9
-    ):
+    if _calibration_metric_worsened(evidence.brier_before, evidence.brier_after):
         checks.append(
             _check(
                 "block" if promoted else "warn",
@@ -618,10 +682,9 @@ def _probability_deterioration_checks(
                 limit=f"<={evidence.brier_before:g}",
             )
         )
-    if (
-        evidence.log_loss_before is not None
-        and evidence.log_loss_after is not None
-        and evidence.log_loss_after > evidence.log_loss_before + 1e-9
+    if _calibration_metric_worsened(
+        evidence.log_loss_before,
+        evidence.log_loss_after,
     ):
         checks.append(
             _check(
@@ -633,12 +696,7 @@ def _probability_deterioration_checks(
                 limit=f"<={evidence.log_loss_before:g}",
             )
         )
-    if (
-        evidence.any_metric
-        and not promoted
-        and evidence.brier_after is None
-        and evidence.ece_after is None
-    ):
+    if _has_partial_unpromoted_calibration(evidence, promoted=promoted):
         checks.append(
             _check(
                 "warn",
@@ -647,11 +705,7 @@ def _probability_deterioration_checks(
                 path="probability_brier_after",
             )
         )
-    if (
-        evidence.ece_before is not None
-        and evidence.ece_after is not None
-        and evidence.ece_after > evidence.ece_before + 1e-9
-    ):
+    if _calibration_metric_worsened(evidence.ece_before, evidence.ece_after):
         checks.append(
             _check(
                 "block" if promoted else "warn",
@@ -674,9 +728,7 @@ def _probability_calibration_checks(model: TrainedModel) -> list[FinancialSanity
     return checks
 
 
-def build_model_financial_sanity_report(
-    model: TrainedModel, *, source: str = "model"
-) -> FinancialSanityReport:
+def _model_shape_checks(model: TrainedModel) -> list[FinancialSanityCheck]:
     checks: list[FinancialSanityCheck] = []
     feature_dim = int(getattr(model, "feature_dim", 0) or 0)
     checks.append(
@@ -705,7 +757,13 @@ def build_model_financial_sanity_report(
     checks.extend(
         _finite_sequence([getattr(model, "bias", None)], path="bias", label="bias")
     )
-    checks.append(
+    return checks
+
+
+def _model_training_parameter_checks(
+    model: TrainedModel,
+) -> list[FinancialSanityCheck]:
+    return [
         _range_check(
             getattr(model, "learning_rate", None),
             path="learning_rate",
@@ -714,9 +772,7 @@ def build_model_financial_sanity_report(
             high=0.5,
             hard_low=1e-9,
             hard_high=1.0,
-        )
-    )
-    checks.append(
+        ),
         _range_check(
             getattr(model, "l2_penalty", None),
             path="l2_penalty",
@@ -725,9 +781,7 @@ def build_model_financial_sanity_report(
             high=1.0,
             hard_low=0.0,
             hard_high=10.0,
-        )
-    )
-    checks.append(
+        ),
         _range_check(
             getattr(model, "probability_temperature", None),
             path="probability_temperature",
@@ -736,48 +790,38 @@ def build_model_financial_sanity_report(
             high=4.0,
             hard_low=1e-6,
             hard_high=10.0,
-        )
-    )
-    checks.extend(_probability_calibration_checks(model))
-    threshold = getattr(model, "decision_threshold", None)
-    if threshold is not None:
+        ),
+    ]
+
+
+def _model_threshold_checks(model: TrainedModel) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
+    for attr, label, low, high in (
+        ("decision_threshold", "decision threshold", 0.50, 0.99),
+        ("long_decision_threshold", "long decision threshold", 0.50, 0.99),
+        ("short_decision_threshold", "short decision threshold", 0.01, 0.50),
+    ):
+        threshold = getattr(model, attr, None)
+        if threshold is None:
+            continue
         checks.append(
             _range_check(
                 threshold,
-                path="decision_threshold",
-                label="decision threshold",
-                low=0.50,
-                high=0.99,
+                path=attr,
+                label=label,
+                low=low,
+                high=high,
                 hard_low=0.01,
                 hard_high=0.99,
             )
         )
-    long_threshold = getattr(model, "long_decision_threshold", None)
-    if long_threshold is not None:
-        checks.append(
-            _range_check(
-                long_threshold,
-                path="long_decision_threshold",
-                label="long decision threshold",
-                low=0.50,
-                high=0.99,
-                hard_low=0.01,
-                hard_high=0.99,
-            )
-        )
-    short_threshold = getattr(model, "short_decision_threshold", None)
-    if short_threshold is not None:
-        checks.append(
-            _range_check(
-                short_threshold,
-                path="short_decision_threshold",
-                label="short decision threshold",
-                low=0.01,
-                high=0.50,
-                hard_low=0.01,
-                hard_high=0.99,
-            )
-        )
+    return checks
+
+
+def _model_class_and_hybrid_checks(
+    model: TrainedModel,
+) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
     for attr in ("class_weight_pos", "class_weight_neg"):
         checks.append(
             _range_check(
@@ -824,18 +868,37 @@ def build_model_financial_sanity_report(
                 hard_high=5001.0,
             )
         )
+    return checks
+
+
+def _model_execution_coverage_checks(
+    model: TrainedModel,
+) -> list[FinancialSanityCheck]:
     execution = getattr(model, "execution_validation", None)
-    if isinstance(execution, Mapping) and execution:
-        coverage = execution.get("data_coverage")
-        if isinstance(coverage, Mapping) and coverage.get("integrity_status") == "fail":
-            checks.append(
-                _check(
-                    "block",
-                    "data coverage",
-                    "execution validation contains failed coverage",
-                    path="execution_validation.data_coverage",
-                )
-            )
+    if not isinstance(execution, Mapping) or not execution:
+        return []
+    coverage = execution.get("data_coverage")
+    if not isinstance(coverage, Mapping) or coverage.get("integrity_status") != "fail":
+        return []
+    return [
+        _check(
+            "block",
+            "data coverage",
+            "execution validation contains failed coverage",
+            path="execution_validation.data_coverage",
+        )
+    ]
+
+
+def build_model_financial_sanity_report(
+    model: TrainedModel, *, source: str = "model"
+) -> FinancialSanityReport:
+    checks = _model_shape_checks(model)
+    checks.extend(_model_training_parameter_checks(model))
+    checks.extend(_probability_calibration_checks(model))
+    checks.extend(_model_threshold_checks(model))
+    checks.extend(_model_class_and_hybrid_checks(model))
+    checks.extend(_model_execution_coverage_checks(model))
     return FinancialSanityReport(tuple(checks), source=source)
 
 

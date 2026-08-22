@@ -409,6 +409,15 @@ def test_model_financial_sanity_gates_promoted_probability_calibration() -> None
     worse_ece_report = build_model_financial_sanity_report(
         replace(good, probability_ece_before=0.08, probability_ece_after=0.12)
     )
+    failed_coverage_report = build_model_financial_sanity_report(
+        replace(
+            good,
+            execution_validation={
+                "passed": True,
+                "data_coverage": {"integrity_status": "fail"},
+            },
+        )
+    )
 
     assert good_report.allowed is True
     assert any(
@@ -441,6 +450,11 @@ def test_model_financial_sanity_gates_promoted_probability_calibration() -> None
     assert any(
         check.detail == "calibration increased expected calibration error"
         for check in worse_ece_report.checks
+    )
+    assert failed_coverage_report.allowed is False
+    assert any(
+        check.path == "execution_validation.data_coverage" and check.status == "block"
+        for check in failed_coverage_report.checks
     )
 
 
@@ -1533,6 +1547,37 @@ def _report_fingerprint(report: FinancialSanityReport) -> str:
 
 
 def test_financial_sanity_full_report_contracts_are_stable() -> None:
+    good_model = build_model_financial_sanity_report(
+        TrainedModel(
+            weights=[0.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+            selection_risk={"passed": True},
+            execution_validation={"passed": True},
+            probability_calibration_size=128,
+            probability_log_loss_before=0.62,
+            probability_log_loss_after=0.58,
+            probability_brier_before=0.24,
+            probability_brier_after=0.22,
+            probability_ece_before=0.10,
+            probability_ece_after=0.08,
+        )
+    )
+    bad_model = build_model_financial_sanity_report(
+        TrainedModel(
+            weights=[0.0, float("inf")],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+            learning_rate=2.0,
+            probability_temperature=0.0,
+        )
+    )
     good_backtest = build_backtest_financial_sanity_report(_backtest_result())
     bad_backtest = build_backtest_financial_sanity_report(
         _backtest_result(
@@ -1563,6 +1608,12 @@ def test_financial_sanity_full_report_contracts_are_stable() -> None:
     bad_lab_payload["outcomes"][0]["ai_uplift"] = bad_ai_uplift  # type: ignore[index]
     bad_lab = build_model_lab_financial_sanity_report(bad_lab_payload)
 
+    assert _report_fingerprint(good_model) == (
+        "77a505b3904724da4df72a9ddf340db05f32216bc9be0c64e49370cebf1e883c"
+    )
+    assert _report_fingerprint(bad_model) == (
+        "4b3c1cab8619fd5a9d65f20338b26ab3d263fd1484dff6017f0256ef3abed96c"
+    )
     assert _report_fingerprint(good_backtest) == (
         "4cf4e751e6c377b1e0982669e9b229ecdde30f69df4686fce65371dd3bd393cb"
     )
