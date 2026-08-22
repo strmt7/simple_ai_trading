@@ -129,8 +129,24 @@ simplification checks pass. Bandit still reports the ten documented dynamic-SQL
 heuristics outside changed lines. DeepSource analyzed exact code revision
 `6370235f`, resolved the targeted coverage-complexity and unsafe-comparison
 findings, and introduced only two style findings in the new regression test;
-the follow-up removes both. This is data-integrity and maintainability evidence,
-not model-edge or profitability evidence.
+the follow-up removes both. Exact follow-up revision `8d5ecc1e` passed hosted
+DeepSource, Ruff, Vulture, and Super-Linter; its longer CI run remained in
+progress at the final refresh. This is data-integrity and maintainability
+evidence, not model-edge or profitability evidence.
+
+The current bounded model-maintainability batch decomposes
+`_rule_alpha_score_from_values` from Radon `35` to `3`; no extracted helper
+exceeds `12`. It also marks the technical and rule-alpha probability helpers as
+static. A frozen numeric contract covers every rule-alpha family, the default
+family, empirical two-feature behavior, missing context, non-finite values,
+short vectors, and negative trade direction. The 213-test affected matrix
+passes; the post-format 20-test numeric contract passes; a deterministic
+parent-versus-current harness produced 2416 exact float-hex matches; and all
+160 changed executable lines have coverage. Scoped Mypy, Ruff, Pylint
+errors-only, Bandit, and strict simplification checks pass locally. No score,
+coefficient, calibration, serialization, model result, P&L, risk setting, or
+trading authority changes. Hosted analysis of the exact pushed revision
+remains a required closeout gate.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
