@@ -306,20 +306,30 @@ DeepSource's first exact analysis of this closeout (`d52f623b`) reported 11
 introduced findings: five `PYL-R0201` findings in the new in-memory test fakes
 and six `TYP-062` findings on one optional aggregate row in
 `polymarket_recorder.py`. The narrow follow-up marks the five fake methods
-static and passes the current Pylint `no-self-use` extension. The six recorder
-locations remain a ledger-bound type-integrity task: fail closed if the
-aggregate query does not return the required row before indexing it, and advance
-the cumulative Round 27 source-ledger amendment in the same reviewed change.
-Do not bypass that provenance requirement with an assertion or ignore. Exact
-follow-up revision `502568f7` passed DeepSource with zero issues; hosted Ruff,
-Vulture, Super-Linter, and the Windows Python/native-UI job also passed. Its
-long Linux test-and-coverage job was still running at the bounded refresh.
+static and passes the current Pylint `no-self-use` extension. Exact follow-up
+revision `502568f7` passed DeepSource with zero issues; hosted Ruff, Vulture,
+Super-Linter, and the Windows Python/native-UI job also passed. Its long Linux
+test-and-coverage job was still running at the bounded refresh.
+
+The ledger-bound follow-up then closes the six recorder findings without an
+assertion or analyzer ignore. A dedicated validator requires one exact
+two-field row containing nonnegative integer frame and message counts before
+any indexing, comparison, or report serialization. Missing, wrong-width,
+boolean, non-integer, and negative evidence fails closed. The cumulative Round
+27 v19 amendment preserves v7/v17/v18 and binds the new recorder hash to every
+original frozen hash. The 39-test affected contract matrix passes, including
+real DuckDB cache creation/replay, downstream model/stage-capture source
+bindings, and publication reconstruction; all 9 changed executable lines have
+coverage. Scoped Mypy with runtime dependencies, Ruff, formatting, manifest,
+terminology, and markdown checks pass. No model, feature, target, result, cost,
+risk limit, authority, edge, or profitability claim changes.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance
-failure. Round 27's cumulative v18 amendment records the current `compute.py`
-and `polymarket_recorder.py` exception-path changes without rewriting v7 or v17.
+failure. Round 27's cumulative v19 amendment records the current `compute.py`
+and `polymarket_recorder.py` evidence-integrity changes without rewriting v7,
+v17, or v18.
 
 ## Resume Here
 

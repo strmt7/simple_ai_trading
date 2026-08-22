@@ -572,7 +572,7 @@ def test_round27_static_remediation_parser_rejects_malformed_artifacts(
     module = polymarket_round27_model_amendment
     artifact_path = (
         ROOT / "docs/model-research/polymarket/"
-        "round-027-static-analysis-remediation-amendment-v18.json"
+        "round-027-static-analysis-remediation-amendment-v19.json"
     )
     original = json.loads(artifact_path.read_text(encoding="ascii"))
     original_path = module._STATIC_ANALYSIS_REMEDIATION_RELATIVE_PATH
