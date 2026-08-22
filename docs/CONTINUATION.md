@@ -112,11 +112,11 @@ blind overwrite. All new development after integration belongs on `main`.
 - `MarketDataStore.latest_microstructure_capture` now uses one static query for
   both passed-only and unrestricted selection, with the symbol and mode bound as
   parameters. A direct regression includes an injection-shaped symbol. The
-  module's `B608` count falls from ten to nine without suppression. The remaining
-  nine query builders were source-traced: their predicate lists contain only
-  internal fixed literals, while symbols, market types, intervals, timestamps,
-  bucket widths, and limits are bound values. Preserve that classification, but
-  do not call the heuristics vulnerabilities or globally suppress them.
+  first checkpoint reduced the module's `B608` count from ten to nine without
+  suppression. The follow-up converts the remaining nine query builders to
+  static SQL with bound full-range windows and limits. Bandit now reports zero
+  findings in `market_store.py`. This is module-level closure only; do not infer
+  project-wide dynamic-SQL or vulnerability closure.
 - A Windows child-process reproducer proved that a fake `git.exe` in the
   process current directory could satisfy an unqualified `git` invocation.
   Package bootstrap now removes empty, relative, duplicate, and
@@ -328,7 +328,7 @@ blind overwrite. All new development after integration belongs on `main`.
   Ruff, Vulture, and Super-Linter. Its CI run remained in progress at the final
   refresh and must not be recorded as a pass until its exact terminal result is
   read.
-- The current bounded SQL-safety batch removes the dynamic predicate assembly
+- The first bounded SQL-safety checkpoint removes dynamic predicate assembly
   from `latest_microstructure_capture` without changing its public contract. A
   new isolated regression covers passed-only selection, unrestricted selection,
   case normalization, and an injection-shaped symbol. The complete 20-test
@@ -336,8 +336,21 @@ blind overwrite. All new development after integration belongs on `main`.
   Ruff, Pylint errors-only, and formatter checks pass. Bandit reports nine
   remaining `B608` heuristics in `market_store.py`, down from ten, with no
   suppression. Those nine use internal fixed predicate fragments and bound
-  external values. Hosted analysis of the exact pushed checkpoint remains
-  required; this is one bounded hardening step, not project-wide security proof.
+  external values. Exact revision
+  `63ecb4f2af0f4bb62566105084f873ce25dd9ad9` passed hosted DeepSource, Ruff,
+  Vulture, and Super-Linter. Its CI run remained in progress at the final
+  refresh.
+- The current follow-up replaces those remaining nine predicate joins with
+  static, parameter-bound SQL. Omitted windows bind SQLite's full signed-integer
+  range, and an omitted result limit binds SQLite's unlimited `-1`; the filtered
+  schema columns are all `INTEGER NOT NULL`. Representative `EXPLAIN QUERY PLAN`
+  checks retain covering-index searches for candles, aggregate trades,
+  top-of-book snapshots, futures reference bars, and funding rates. The 47-test
+  affected matrix passes, changed-line coverage is `31/31`, and scoped Mypy,
+  Ruff, Pylint errors-only, Bandit, and changed-range formatting checks pass.
+  Bandit reports zero findings in `market_store.py`. Hosted analysis of the exact
+  pushed follow-up remains required; other modules retain their own SQL review
+  queues.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -508,12 +521,13 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    exact 27-item DeepSource inventory recorded above. The market-data batch
    closed the coverage-complexity and unsafe-comparison family at exact
    follow-up revision `8d5ecc1e`. The rule-alpha scorer and two static-method
-   findings are closed at follow-up `c349aca6`. The current SQL-safety batch
-   removes one of the ten `market_store.py` dynamic-query heuristics; retain the
-   source-to-sink classification above for the remaining nine. Continue from
-   exact hosted results, not assumed residual counts. Do not treat the narrow
-   `5f6e790c` pass or any bounded follow-up as closure of the broader backlog or
-   as a project-wide security result.
+   findings are closed at follow-up `c349aca6`. The first SQL-safety checkpoint
+   removed one of ten `market_store.py` dynamic-query heuristics at `63ecb4f2`;
+   the current follow-up removes the other nine without suppression or index
+   loss. Continue source-to-sink triage in other modules from exact hosted
+   results, not assumed residual counts. Do not treat the narrow `5f6e790c` pass
+   or any bounded follow-up as closure of the broader backlog or as a
+   project-wide security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.
