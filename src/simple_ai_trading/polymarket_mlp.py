@@ -121,32 +121,49 @@ class PolymarketMLPBackendEvidence:
         return payload
 
     def validated(self) -> PolymarketMLPBackendEvidence:
-        values = (
-            self.preflight_objective,
-            self.preflight_parameter_delta,
-            self.preflight_seconds,
-            self.training_seconds,
-        )
-        allowed = {"cpu", "cuda", "rocm", "xpu", "directml", "mps"}
-        if (
-            self.requested not in {"auto", *allowed}
-            or self.kind not in allowed
-            or self.requested not in ("auto", self.kind)
-            or not self.device
-            or not self.vendor
-            or not self.torch_version
-            or (self.kind == "directml" and not self.torch_directml_version)
-            or not all(math.isfinite(value) and value >= 0.0 for value in values)
-            or self.preflight_parameter_delta <= 0.0
-            or self.training_seconds <= 0.0
-            or self.canonical_replay_max_probability_drift is None
-            or not math.isfinite(self.canonical_replay_max_probability_drift)
-            or not 0.0
-            <= self.canonical_replay_max_probability_drift
-            <= POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
-        ):
+        if not _backend_selection_is_valid(self):
+            raise ValueError("Polymarket MLP backend evidence is invalid")
+        if not _backend_identity_is_valid(self):
+            raise ValueError("Polymarket MLP backend evidence is invalid")
+        if not _backend_runtime_is_valid(self):
             raise ValueError("Polymarket MLP backend evidence is invalid")
         return self
+
+
+def _backend_selection_is_valid(evidence: PolymarketMLPBackendEvidence) -> bool:
+    allowed = {"cpu", "cuda", "rocm", "xpu", "directml", "mps"}
+    return (
+        evidence.requested in {"auto", *allowed}
+        and evidence.kind in allowed
+        and evidence.requested in ("auto", evidence.kind)
+    )
+
+
+def _backend_identity_is_valid(evidence: PolymarketMLPBackendEvidence) -> bool:
+    return bool(
+        evidence.device
+        and evidence.vendor
+        and evidence.torch_version
+        and (evidence.kind != "directml" or evidence.torch_directml_version)
+    )
+
+
+def _backend_runtime_is_valid(evidence: PolymarketMLPBackendEvidence) -> bool:
+    values = (
+        evidence.preflight_objective,
+        evidence.preflight_parameter_delta,
+        evidence.preflight_seconds,
+        evidence.training_seconds,
+    )
+    replay_drift = evidence.canonical_replay_max_probability_drift
+    return (
+        all(math.isfinite(value) and value >= 0.0 for value in values)
+        and evidence.preflight_parameter_delta > 0.0
+        and evidence.training_seconds > 0.0
+        and replay_drift is not None
+        and math.isfinite(replay_drift)
+        and 0.0 <= replay_drift <= POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
+    )
 
 
 @dataclass(frozen=True)
@@ -193,45 +210,15 @@ class PolymarketMLPMember:
         }
 
     def validated(self) -> PolymarketMLPMember:
-        values = (
-            *self.hidden1_weight,
-            *self.hidden1_bias,
-            *self.hidden2_weight,
-            *self.hidden2_bias,
-            *self.output_weight,
-            self.output_bias,
-        )
-        best_loss = math.inf
-        expected_best_epoch = 0
-        for item in self.trace:
-            if item.validation_log_loss < best_loss - POLYMARKET_MLP_MIN_DELTA:
-                best_loss = item.validation_log_loss
-                expected_best_epoch = item.epoch
-        if (
-            self.seed not in POLYMARKET_MLP_SEEDS
-            or not 1 <= self.best_epoch <= self.epochs_ran <= POLYMARKET_MLP_MAX_EPOCHS
-            or len(self.hidden1_weight) != 64 * _FEATURE_COUNT
-            or len(self.hidden1_bias) != 64
-            or len(self.hidden2_weight) != 32 * 64
-            or len(self.hidden2_bias) != 32
-            or len(self.output_weight) != 32
-            or len(values) != _MEMBER_PARAMETER_COUNT
-            or not all(math.isfinite(value) for value in values)
-            or len(self.trace) != self.epochs_ran
-            or tuple(item.epoch for item in self.trace)
-            != tuple(range(1, self.epochs_ran + 1))
-            or any(
-                item.seed != self.seed
-                or not math.isfinite(item.training_loss)
-                or not math.isfinite(item.validation_log_loss)
-                or item.training_loss < 0.0
-                or item.validation_log_loss < 0.0
-                for item in self.trace
-            )
-            or self.best_epoch != expected_best_epoch
-            or not _is_sha256(self.member_sha256)
-            or self.member_sha256 != _sha256(self.identity_payload())
-        ):
+        values = _member_parameter_values(self)
+        expected_best_epoch = _member_expected_best_epoch(self.trace)
+        if not _member_header_is_valid(self):
+            raise ValueError("Polymarket MLP member is invalid")
+        if not _member_parameters_are_valid(self, values):
+            raise ValueError("Polymarket MLP member is invalid")
+        if not _member_trace_is_valid(self, expected_best_epoch):
+            raise ValueError("Polymarket MLP member is invalid")
+        if not _member_hash_is_valid(self):
             raise ValueError("Polymarket MLP member is invalid")
         return self
 
@@ -257,6 +244,75 @@ class PolymarketMLPMember:
         if not np.all(np.isfinite(probability)):
             raise ValueError("Polymarket MLP probabilities are non-finite")
         return np.asarray(probability, dtype=np.float64)
+
+
+def _member_parameter_values(member: PolymarketMLPMember) -> tuple[float, ...]:
+    return (
+        *member.hidden1_weight,
+        *member.hidden1_bias,
+        *member.hidden2_weight,
+        *member.hidden2_bias,
+        *member.output_weight,
+        member.output_bias,
+    )
+
+
+def _member_expected_best_epoch(trace: Sequence[PolymarketMLPEpoch]) -> int:
+    best_loss = math.inf
+    expected_best_epoch = 0
+    for item in trace:
+        if item.validation_log_loss < best_loss - POLYMARKET_MLP_MIN_DELTA:
+            best_loss = item.validation_log_loss
+            expected_best_epoch = item.epoch
+    return expected_best_epoch
+
+
+def _member_header_is_valid(member: PolymarketMLPMember) -> bool:
+    return (
+        member.seed in POLYMARKET_MLP_SEEDS
+        and 1 <= member.best_epoch <= member.epochs_ran <= POLYMARKET_MLP_MAX_EPOCHS
+    )
+
+
+def _member_parameters_are_valid(
+    member: PolymarketMLPMember,
+    values: Sequence[float],
+) -> bool:
+    return (
+        len(member.hidden1_weight) == 64 * _FEATURE_COUNT
+        and len(member.hidden1_bias) == 64
+        and len(member.hidden2_weight) == 32 * 64
+        and len(member.hidden2_bias) == 32
+        and len(member.output_weight) == 32
+        and len(values) == _MEMBER_PARAMETER_COUNT
+        and all(math.isfinite(value) for value in values)
+    )
+
+
+def _member_trace_is_valid(
+    member: PolymarketMLPMember,
+    expected_best_epoch: int,
+) -> bool:
+    expected_epochs = tuple(range(1, member.epochs_ran + 1))
+    return (
+        len(member.trace) == member.epochs_ran
+        and tuple(item.epoch for item in member.trace) == expected_epochs
+        and all(
+            item.seed == member.seed
+            and math.isfinite(item.training_loss)
+            and math.isfinite(item.validation_log_loss)
+            and item.training_loss >= 0.0
+            and item.validation_log_loss >= 0.0
+            for item in member.trace
+        )
+        and member.best_epoch == expected_best_epoch
+    )
+
+
+def _member_hash_is_valid(member: PolymarketMLPMember) -> bool:
+    return _is_sha256(member.member_sha256) and member.member_sha256 == _sha256(
+        member.identity_payload()
+    )
 
 
 @dataclass(frozen=True)
@@ -289,22 +345,13 @@ class PolymarketMLPEnsemble:
         for member in self.members:
             member.validated()
         self.backend.validated()
-        if (
-            not _is_sha256(self.dataset_sha256)
-            or len(self.feature_mean) != _FEATURE_COUNT
-            or len(self.feature_scale) != _FEATURE_COUNT
-            or not all(math.isfinite(value) for value in self.feature_mean)
-            or not all(
-                math.isfinite(value) and value > 0.0 for value in self.feature_scale
-            )
-            or tuple(item.seed for item in self.members) != POLYMARKET_MLP_SEEDS
-            or not math.isfinite(self.reproducibility_max_probability_drift)
-            or not 0.0
-            <= self.reproducibility_max_probability_drift
-            <= POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
-            or not _is_sha256(self.ensemble_sha256)
-            or self.ensemble_sha256 != _sha256(self.identity_payload())
-        ):
+        if not _ensemble_features_are_valid(self):
+            raise ValueError("Polymarket MLP ensemble is invalid")
+        if not _ensemble_members_are_valid(self):
+            raise ValueError("Polymarket MLP ensemble is invalid")
+        if not _ensemble_reproducibility_is_valid(self):
+            raise ValueError("Polymarket MLP ensemble is invalid")
+        if not _ensemble_hash_is_valid(self):
             raise ValueError("Polymarket MLP ensemble is invalid")
         return self
 
@@ -325,6 +372,36 @@ class PolymarketMLPEnsemble:
         if not np.all(np.isfinite(probability)):
             raise ValueError("Polymarket MLP ensemble probabilities are non-finite")
         return np.asarray(probability, dtype=np.float64)
+
+
+def _ensemble_features_are_valid(ensemble: PolymarketMLPEnsemble) -> bool:
+    return (
+        _is_sha256(ensemble.dataset_sha256)
+        and len(ensemble.feature_mean) == _FEATURE_COUNT
+        and len(ensemble.feature_scale) == _FEATURE_COUNT
+        and all(math.isfinite(value) for value in ensemble.feature_mean)
+        and all(
+            math.isfinite(value) and value > 0.0 for value in ensemble.feature_scale
+        )
+    )
+
+
+def _ensemble_members_are_valid(ensemble: PolymarketMLPEnsemble) -> bool:
+    return tuple(item.seed for item in ensemble.members) == POLYMARKET_MLP_SEEDS
+
+
+def _ensemble_reproducibility_is_valid(ensemble: PolymarketMLPEnsemble) -> bool:
+    drift = ensemble.reproducibility_max_probability_drift
+    return (
+        math.isfinite(drift)
+        and 0.0 <= drift <= POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
+    )
+
+
+def _ensemble_hash_is_valid(ensemble: PolymarketMLPEnsemble) -> bool:
+    return _is_sha256(ensemble.ensemble_sha256) and ensemble.ensemble_sha256 == _sha256(
+        ensemble.identity_payload()
+    )
 
 
 @dataclass(frozen=True)

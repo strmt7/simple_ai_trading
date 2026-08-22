@@ -30,6 +30,16 @@ The following state was reverified through approximately
 `2026-08-22T17:14Z`. It is host state, not model evidence, and must be
 rechecked before any action.
 
+The `2026-08-23` closeout refresh found `main` synchronized with `origin/main`
+at parent `75160c3d4c2f88011026448b6153dc91dbcd83de` before the final bounded
+edit. Round 21 wrapper PID `35008` and child PID `35264` were responsive. The
+Round 75 scheduled supervisor was `Ready` and its last result was `0`. Neither
+capture worktree, process, state file, database, or schedule was changed. These
+are ephemeral observations and must be reverified after resumption. GitHub
+exposed only `main`, no open pull request, zero open Dependabot alerts, and zero
+open secret-scanning alerts. Code scanning returned `404: no analysis found`;
+it remains unavailable and must not be represented as zero vulnerabilities.
+
 - Main and `origin/main` were synchronized at model-evidence refactor revision
   `9f5efe1573281306a1dde413afe353fcc309bee3` before this documentation
   closeout. GitHub's remote branch inventory contained only `main`, with no
@@ -424,6 +434,27 @@ blind overwrite. All new development after integration belongs on `main`.
   to v18 and must not occur casually during the active capture. No model fit,
   prediction, score, policy, P&L, risk, authority, or profitability claim
   changes. Hosted analysis of the final pushed checkpoint remains required.
+- Exact parent `75160c3d4c2f88011026448b6153dc91dbcd83de` passed hosted Ruff,
+  Vulture, Windows smoke, and Super-Linter at the closeout refresh. Its Linux
+  coverage job was still running. DeepSource failed that exact parent because
+  blocking complexity findings remained; the exact run ID is
+  `f4b06373-b6fd-4781-aa6d-2999dbdc696b`. Pending is not pass, and this result
+  is not a project-wide vulnerability count.
+- The final bounded MLP validation batch decomposes only
+  `PolymarketMLPBackendEvidence.validated`,
+  `PolymarketMLPMember.validated`, and
+  `PolymarketMLPEnsemble.validated`. Their Radon scores fall from `17/25/16` to
+  `4/5/6`; every new helper scores `10` or lower. Pre-edit SHA-256 fingerprints
+  freeze the backend identity, each seeded member identity, and the ensemble
+  identity. Ten focused tests cover canonical evidence and every extracted
+  fail-closed branch. The 40-test affected matrix passes at `78.42%` module
+  coverage and changed executable-line coverage is `58/58`. Ruff and format
+  pass. Scoped Bandit reports no high- or medium-severity finding and only the
+  existing source `B311` deterministic-bootstrap item. Bare Mypy retains two
+  diagnostics at unchanged SciPy/training lines and reports none in the changed
+  validation paths. No feature, target, split, fit, weight, prediction,
+  threshold, evidence identity, result, P&L, risk, authority, or profitability
+  claim changes. Hosted checks on the final pushed SHA must be read directly.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -601,11 +632,17 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    construction sites through explicit statement allowlists, and its bounded
    type follow-up closes the two modules' 22 scoped Mypy diagnostics. Continue
    from the exact `eef01801` DeepSource inventory above. The critical MLP lookup
-   and unbound fit-claim row boundary are closed locally in the immediate
-   follow-up. Preserve the recorder finding until a cumulative source-ledger
-   amendment can be reviewed. Decompose the seven MLP complexity findings in
-   behavior-preserving contract families under complete identity-payload and
-   result tests. Continue source-to-sink triage in other modules from exact
+   and unbound fit-claim row boundary are closed in `75160c3d`. Preserve the
+   recorder finding until a cumulative source-ledger amendment can be reviewed.
+   Backend, member, and ensemble validation complexity is closed in the final
+   bounded closeout under canonical identity fingerprints and fail-closed tests.
+   Continue the remaining four MLP findings in this order: decompose
+   `PolymarketMLPReport.validated` under complete report identity and rejection
+   tests; freeze fit-state and numeric parity before changing `_fit_member`;
+   separate `fit_and_evaluate_polymarket_mlp` orchestration without changing
+   test-access gates; then decompose `materialize_polymarket_mlp_report` under
+   idempotence, transaction, and tamper tests. Do not combine those families in
+   one broad rewrite. Continue source-to-sink triage in other modules from exact
    hosted results, not assumed residual counts. Replace runtime assertions only
    when an explicit fail-closed error and cleanup contract exists; do not
    mechanically rewrite typing assertions.
