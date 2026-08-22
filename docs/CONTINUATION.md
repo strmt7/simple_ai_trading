@@ -26,17 +26,17 @@ the repository and on GitHub before changing code.
 
 ## Live Host Handoff: 2026-08-22
 
-The following state was verified at approximately `2026-08-22T07:54Z`. It is
+The following state was verified at approximately `2026-08-22T09:23Z`. It is
 host state, not model evidence, and must be rechecked before any action.
 
-- Pushed `main` is clean at
-  `9bd824a71bfa08f8e1d6e066f79867174d778d00`, synchronized with
-  `origin/main`. GitHub and local remote-tracking inventory contain only
-  `main` after pruning.
+- Pushed `main` was clean and synchronized with `origin/main` when this
+  snapshot was taken. GitHub and local remote-tracking inventory contain only
+  `main` after pruning. Do not copy a commit identifier from this mutable
+  handoff; verify `git rev-parse HEAD` and `git rev-parse origin/main` directly.
 - Round 75 prospective Binance capture is active from the detached worktree
-  `C:\trader\simple_ai_trading-model-dev`. Parent PID `33332` and physical
-  child PID `29136` were alive. Canonical service state reported
-  `waiting_for_next_fixed_slot`, slot ordinal `652`, no credentials, no orders,
+  `C:\trader\simple_ai_trading-model-dev`. Snapshot parent PID `3636` and
+  physical child PID `64444` were alive. Canonical service state reported
+  `waiting_for_next_fixed_slot`, slot ordinal `656`, no credentials, no orders,
   and no trading authority. The frozen campaign ends at
   `2026-08-23T12:00:00Z`. Scheduled task
   `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1` was ready and its
@@ -45,10 +45,12 @@ host state, not model evidence, and must be rechecked before any action.
   detached commit `4a5912574a9157d79fecc53bf68ed6f01bb8dac8` in
   `C:\trader\simple_ai_trading-round21-sidecar-v2`. Wrapper PID `35008` and
   physical child PID `35264` were alive. Its state reported segment `12`,
-  phase `capturing`, `102506595` written public messages, ten recorded stream
+  phase `capturing`, `106562414` written public messages, ten recorded stream
   gaps, no credentials, no execution connection, no model-data eligibility,
   and no paper or live authority. Its frozen scheduled end is
   `2026-08-29T23:40:00Z`.
+- All process IDs above are ephemeral snapshots. Process rotation is expected;
+  never infer failure, completion, or permission to restart from PID drift.
 - Never stop, restart, stage, clean, reset, switch, merge, or modify either
   active capture worktree from this handoff. PID death alone is not a terminal
   verdict; use the contract-defined state, lease, process ancestry, scheduled
@@ -143,6 +145,21 @@ is published, tested on current `main`, or safe to discard.
   it creates no data, model result, P&L, or authority. The generated publication
   manifest now lists Round 29 as the latest research round without claiming a
   result or authority.
+
+### Latest Model Audit
+
+A read-only audit on `2026-08-22` traced the unintegrated Round 74 v136
+target-free pretraining objective through feature-view masking, target
+construction, loss normalization, causal encoders, chronological purged
+splits, segmented population weighting, paired random-state restoration, and
+the focused failure-mode tests. The implementation matched its frozen
+mask-aware contract: event targets come from untouched observations, masked
+continuous dimensions are excluded from both target scoring and the loss
+denominator, segmented rows are visited once without cycling, and validation
+uses the same eligible-row weighting. No evidence-backed defect was found, no
+training or profitability claim was made, and no source or capture worktree was
+changed. Re-run the focused tests only after the capture is terminalized and
+the differing files are safely reconciled onto `main`.
 
 ## Next Work
 
