@@ -143,21 +143,25 @@ blind overwrite. All new development after integration belongs on `main`.
   generator, and a simple comparison warning. It also makes two accelerated
   scorer parity tests execute through Torch on CPU when DirectML is absent.
   Focused behavioral tests, mypy, Ruff, Bandit, and Pylint pass locally. Large
-  function-complexity findings and the rest of the DeepSource backlog remain;
-  verify the exact hosted result before updating this inventory.
+  function-complexity findings and the rest of the DeepSource backlog remain.
+  DeepSource failed follow-up revision
+  `2457d9d59f2c680998d2e296a0d4ce5639c5f049`: its headline Python count fell
+  to 51, while the change summary reported 61 issues, 10 resolved and 51
+  introduced. Its first rendered item was the intentionally deferred
+  cyclomatic-complexity finding for `_batch_probabilities_torch`; do not infer
+  that the remaining backlog is fixed or that every finding is a vulnerability.
 
 ### Round Closeout Checkpoint
 
-Revision `16c40e26d278caf5eba166609fb70716325adaf1` was pushed to `main`; Ruff,
-Vulture, and the Windows-native UI smoke passed before this follow-up closeout
-began, while its longer CI and Super-Linter jobs had not reached a terminal
-state. DeepSource failed with the reduced exact inventory described above.
-GitHub showed only `main`, no open pull requests, zero open Dependabot alerts,
-and zero open secret-scanning alerts; code scanning remained unavailable. The
-current bounded follow-up changes no model scores, labels, fills, costs,
-thresholds, model evidence, trading authority, or profitability claim. Verify
-every available hosted check on the final pushed SHA; a pending or unavailable
-check is not a pass.
+Revision `2457d9d59f2c680998d2e296a0d4ce5639c5f049` was pushed to `main` and its
+hosted Ruff and Vulture checks passed. Its longer Python, Windows-native UI, and
+Super-Linter jobs were still running at this handoff. DeepSource failed with
+the reduced exact inventory described above. GitHub showed only `main`, no open
+pull requests, zero open Dependabot alerts, and zero open secret-scanning
+alerts; code scanning remained unavailable. The bounded follow-up changes no
+model scores, labels, fills, costs, thresholds, model evidence, trading
+authority, or profitability claim. Verify every available hosted check on the
+final pushed SHA; a pending or unavailable check is not a pass.
 
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The detached Round 75
@@ -264,8 +268,9 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    injection or path-hijack exposure. Add direct regressions for every behavior
    change; do not suppress the backlog broadly. Continue from the exact
    DeepSource inventory on the final closeout SHA. The first type-contract
-   batch reduced 107 findings to 86; the remaining complexity findings were
-   intentionally recorded rather than rushed into this closeout.
+   batch reduced the headline Python count from 107 to 86 and the follow-up
+   reduced it to 51; the remaining complexity findings were intentionally
+   recorded rather than rushed into this closeout.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.
