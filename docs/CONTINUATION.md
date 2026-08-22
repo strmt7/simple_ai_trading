@@ -148,6 +148,17 @@ blind overwrite. All new development after integration belongs on `main`.
   still returns `404: no analysis found`, and DeepSource remained red at the
   pre-closeout parent. Therefore project-wide vulnerability and analyzer closure
   remain unproven.
+- Exact DeepSource run `62f6f94a-e0e5-4e1b-a0fe-7ccd6f093ebd` on revision
+  `d52f623b` resolved two findings and reported 11 introduced findings. Five are
+  `PYL-R0201` on the new test fakes at original lines `36`, `46`, `61`, `141`,
+  and `157`; the immediate follow-up marks those methods static and passes the
+  current Pylint `no-self-use` extension. Six are `TYP-062` on the same optional
+  aggregate row in `polymarket_recorder.py` at lines `3685`, `3686`, `3694`,
+  `3695`, `3701`, and `3702`. That recorder is bound by the immutable Round 27
+  source ledger. A future fix must reject an absent or malformed aggregate row
+  before indexing and advance the cumulative ledger amendment with provenance
+  tests in the same reviewed change; do not add a type assertion, ignore, or
+  unbound edit merely to silence DeepSource.
 - A Windows child-process reproducer proved that a fake `git.exe` in the
   process current directory could satisfy an unqualified `git` invocation.
   Package bootstrap now removes empty, relative, duplicate, and

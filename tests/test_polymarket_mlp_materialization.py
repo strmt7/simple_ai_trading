@@ -33,8 +33,8 @@ def test_mlp_materialization_rolls_back_failed_insert() -> None:
     statements: list[str] = []
 
     class Connection:
+        @staticmethod
         def execute(
-            self,
             statement: str,
             _parameters: Any = None,
         ) -> _Result:
@@ -43,7 +43,8 @@ def test_mlp_materialization_rolls_back_failed_insert() -> None:
                 raise RuntimeError("injected failure")
             return _Result()
 
-        def executemany(self, _statement: str, _parameters: Any) -> None:
+        @staticmethod
+        def executemany(_statement: str, _parameters: Any) -> None:
             raise AssertionError("no table rows should be inserted")
 
     with pytest.raises(RuntimeError, match="injected failure"):
@@ -58,8 +59,8 @@ def test_mlp_materialization_rejects_tampered_runtime_evidence() -> None:
     rows = _persistence_rows()
 
     class Connection:
+        @staticmethod
         def execute(
-            self,
             statement: str,
             _parameters: Any = None,
         ) -> _Result:
@@ -138,8 +139,8 @@ def test_mlp_materialization_rejects_tampered_report() -> None:
     rows = _persistence_rows()
 
     class Connection:
+        @staticmethod
         def execute(
-            self,
             _statement: str,
             _parameters: Any = None,
         ) -> _Result:
@@ -154,8 +155,8 @@ def test_mlp_materialization_repairs_missing_runtime_evidence() -> None:
     inserted: list[tuple[object, ...]] = []
 
     class Connection:
+        @staticmethod
         def execute(
-            self,
             statement: str,
             parameters: Any = None,
         ) -> _Result:

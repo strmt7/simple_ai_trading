@@ -302,6 +302,16 @@ outside this batch. This closes the documented MLP complexity queue only; it
 does not establish model edge, profitability, production authority, or
 project-wide analyzer closure.
 
+DeepSource's first exact analysis of this closeout (`d52f623b`) reported 11
+introduced findings: five `PYL-R0201` findings in the new in-memory test fakes
+and six `TYP-062` findings on one optional aggregate row in
+`polymarket_recorder.py`. The narrow follow-up marks the five fake methods
+static and passes the current Pylint `no-self-use` extension. The six recorder
+locations remain a ledger-bound type-integrity task: fail closed if the
+aggregate query does not return the required row before indexing it, and advance
+the cumulative Round 27 source-ledger amendment in the same reviewed change.
+Do not bypass that provenance requirement with an assertion or ignore.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance
