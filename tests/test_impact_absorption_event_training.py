@@ -591,9 +591,7 @@ def test_market_state_pretraining_keeps_the_unmasked_next_event_target() -> None
     assert set(range(5)).issubset(masked_indices)
     with torch.no_grad():
         head.event_type.weight.zero_()
-        head.event_type.bias.copy_(
-            torch.arange(5, dtype=head.event_type.bias.dtype)
-        )
+        head.event_type.bias.copy_(torch.arange(5, dtype=head.event_type.bias.dtype))
 
     row_loss, event_loss, continuous_loss = _next_event_row_losses(
         model,
