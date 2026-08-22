@@ -189,8 +189,23 @@ blind overwrite. All new development after integration belongs on `main`.
   executable lines have 100% coverage. Mypy, Ruff/format, Pylint errors-only,
   targeted Bandit, and Radon passed locally. Exact-SHA hosted CI, Ruff,
   Vulture, Super-Linter, DeepSource, and the Windows Python/native-UI smoke job
-  also passed. The five deferred `financial_sanity.py` complexity findings are
-  unchanged.
+  also passed.
+- The five deferred `financial_sanity.py` paths were subsequently decomposed
+  without changing calculations, check order, labels, paths, metrics, limits, or
+  report serialization. Radon scores fell from `188` to `2` for
+  `build_model_lab_financial_sanity_report`, `125` to `2` for
+  `build_backtest_financial_sanity_report`, `64` to `5` for
+  `_selection_risk_checks`, `36` to `1` for
+  `_ai_uplift_period_evidence_checks`, and `30` to `1` for
+  `_probability_calibration_checks`. The module's highest remaining score is
+  `23`. Four fixed SHA-256 fingerprints cover complete good/bad backtest and
+  model-lab reports. Locally, 49 focused financial-sanity tests and the 233-test
+  affected matrix pass; changed executable-line coverage is `95.7%` (`741`
+  lines, `32` missing), clearing the `95%` gate. Ruff/format, Pylint
+  errors-only, targeted Bandit, and Radon pass. Mypy reports no error in the
+  changed module but still follows imports into three unchanged modules with
+  nine recorded type errors. Hosted results remain unverified until this
+  checkpoint is pushed and its exact-SHA jobs reach terminal status.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -233,10 +248,12 @@ secret-scanning alerts. GitHub code scanning returned `404: no analysis found`
 and remained unavailable. Hosted Ruff, Vulture, Super-Linter, DeepSource, and
 the Windows job passed on documentation closeout `68c1a422`; full Linux CI
 failed only the 29 source-provenance tests described above. Cumulative v18
-repair `580e4a0e` then passed every hosted workflow and DeepSource. The five
-`financial_sanity.py` complexity findings remain deferred, and the four
+repair `580e4a0e` then passed every hosted workflow and DeepSource. The four
 `ai_uplift.py` findings were closed by `9f5efe15`, which passed every available
-hosted workflow and DeepSource. GitHub still reported zero open Dependabot and
+hosted workflow and DeepSource. The five `financial_sanity.py` findings were
+then closed locally under full-report fingerprint tests as described above;
+their hosted status must be read from the exact final checkpoint. GitHub still
+reported zero open Dependabot and
 secret-scanning alerts; code scanning remained unavailable with
 `404: no analysis found` and is not a zero-alert result.
 No model score, label, fill, cost, threshold, model outcome, trading authority,
@@ -349,8 +366,11 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    every behavior change; do not suppress the backlog broadly. Continue from
    the exact DeepSource inventory on the final closeout SHA. The first
    type-contract batch reduced the headline Python count from 107 to 86 and the
-   follow-up reduced it to 51; the remaining complexity findings were
-   intentionally recorded rather than rushed into this closeout.
+   follow-up reduced it to 51. The nine changed-scope AI-uplift and
+   financial-sanity complexity findings were later closed in two bounded,
+   behavior-preserving batches. Continue from the exact DeepSource inventory on
+   the final checkpoint rather than treating that closure as a project-wide
+   backlog result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import hashlib
+import json
 import math
 
 from simple_ai_trading.financial_sanity import (
+    FinancialSanityReport,
     build_backtest_financial_sanity_report,
     build_model_financial_sanity_report,
     build_model_lab_financial_sanity_report,
@@ -78,8 +81,14 @@ def test_backtest_financial_sanity_accepts_consistent_accounting() -> None:
 
     assert report.allowed is True
     assert report.block_count == 0
-    assert any(check.label == "backtest cash identity" and check.status == "ok" for check in report.checks)
-    assert any(check.label == "win rate identity" and check.status == "ok" for check in report.checks)
+    assert any(
+        check.label == "backtest cash identity" and check.status == "ok"
+        for check in report.checks
+    )
+    assert any(
+        check.label == "win rate identity" and check.status == "ok"
+        for check in report.checks
+    )
 
 
 def test_backtest_financial_sanity_blocks_inconsistent_accounting() -> None:
@@ -149,32 +158,55 @@ def test_backtest_financial_sanity_blocks_liquidation_evidence() -> None:
                 "exit_fee": 0.5,
                 "exit_reason": "liquidation",
             },
-        )
+        ),
     )
     report = build_backtest_financial_sanity_report(result)
 
     assert report.allowed is False
-    blocked = {(check.label, check.path) for check in report.checks if check.status == "block"}
+    blocked = {
+        (check.label, check.path) for check in report.checks if check.status == "block"
+    }
     assert ("liquidation evidence", "stopped_by_liquidation") in blocked
     assert ("liquidation evidence", "liquidation_events") in blocked
     assert ("liquidation evidence", "liquidation_loss") in blocked
     assert ("liquidation evidence", "trade_log[0].exit_reason") in blocked
-    assert not any(check.label == "backtest cash identity" and check.status == "block" for check in report.checks)
-    assert not any(check.label == "trade PnL identity" and check.status == "block" for check in report.checks)
+    assert not any(
+        check.label == "backtest cash identity" and check.status == "block"
+        for check in report.checks
+    )
+    assert not any(
+        check.label == "trade PnL identity" and check.status == "block"
+        for check in report.checks
+    )
 
-    accounting_only = build_backtest_financial_sanity_report(result, reject_liquidation=False)
+    accounting_only = build_backtest_financial_sanity_report(
+        result, reject_liquidation=False
+    )
     assert accounting_only.allowed is True
-    assert any(check.label == "liquidation evidence" and check.status == "warn" for check in accounting_only.checks)
+    assert any(
+        check.label == "liquidation evidence" and check.status == "warn"
+        for check in accounting_only.checks
+    )
 
 
 def test_backtest_financial_sanity_blocks_inconsistent_liquidation_counters() -> None:
-    bad_events = build_backtest_financial_sanity_report(_backtest_result(liquidation_events=-1))
-    bad_loss = build_backtest_financial_sanity_report(_backtest_result(liquidation_loss=-1.0))
+    bad_events = build_backtest_financial_sanity_report(
+        _backtest_result(liquidation_events=-1)
+    )
+    bad_loss = build_backtest_financial_sanity_report(
+        _backtest_result(liquidation_loss=-1.0)
+    )
 
     assert bad_events.allowed is False
-    assert any(check.label == "liquidation events" and check.status == "block" for check in bad_events.checks)
+    assert any(
+        check.label == "liquidation events" and check.status == "block"
+        for check in bad_events.checks
+    )
     assert bad_loss.allowed is False
-    assert any(check.label == "liquidation loss" and check.status == "block" for check in bad_loss.checks)
+    assert any(
+        check.label == "liquidation loss" and check.status == "block"
+        for check in bad_loss.checks
+    )
 
 
 def test_backtest_financial_sanity_blocks_path_metric_drift() -> None:
@@ -205,9 +237,24 @@ def test_backtest_financial_sanity_blocks_equity_curve_drift() -> None:
         _backtest_result(
             max_drawdown=0.02,
             equity_curve=(
-                {"timestamp": 1000, "equity": 1000.0, "drawdown": 0.0, "position_side": 0},
-                {"timestamp": 2000, "equity": 1010.0, "drawdown": 0.0, "position_side": 0},
-                {"timestamp": 3000, "equity": 1005.0, "drawdown": 0.01, "position_side": 0},
+                {
+                    "timestamp": 1000,
+                    "equity": 1000.0,
+                    "drawdown": 0.0,
+                    "position_side": 0,
+                },
+                {
+                    "timestamp": 2000,
+                    "equity": 1010.0,
+                    "drawdown": 0.0,
+                    "position_side": 0,
+                },
+                {
+                    "timestamp": 3000,
+                    "equity": 1005.0,
+                    "drawdown": 0.01,
+                    "position_side": 0,
+                },
             ),
         )
     )
@@ -246,6 +293,45 @@ def test_backtest_financial_sanity_blocks_trade_level_math_omissions() -> None:
     assert "trade return" in labels
 
 
+def test_backtest_financial_sanity_blocks_malformed_optional_evidence() -> None:
+    malformed_entries = build_backtest_financial_sanity_report(
+        _backtest_result(
+            liquidation_events=None,
+            liquidation_loss=None,
+            trade_pnls=None,
+            trade_returns=None,
+            trade_log=("not-a-trade",),
+            equity_curve=(
+                "not-an-equity-point",
+                {
+                    "timestamp": None,
+                    "equity": 1000.0,
+                    "drawdown": 0.0,
+                    "position_side": 0,
+                },
+            ),
+        )
+    )
+    malformed_curve = build_backtest_financial_sanity_report(
+        _backtest_result(equity_curve="not-an-equity-curve")
+    )
+
+    blocked_paths = {
+        check.path for check in malformed_entries.checks if check.status == "block"
+    }
+    assert malformed_entries.allowed is False
+    assert "liquidation_events" in blocked_paths
+    assert "liquidation_loss" in blocked_paths
+    assert "trade_log[0]" in blocked_paths
+    assert "equity_curve[0]" in blocked_paths
+    assert "equity_curve[1]" in blocked_paths
+    assert malformed_curve.allowed is False
+    assert any(
+        check.path == "equity_curve" and check.status == "block"
+        for check in malformed_curve.checks
+    )
+
+
 def test_model_financial_sanity_blocks_malformed_parameters() -> None:
     model = TrainedModel(
         weights=[0.0, float("inf")],
@@ -262,8 +348,13 @@ def test_model_financial_sanity_blocks_malformed_parameters() -> None:
 
     assert report.allowed is False
     assert report.block_count >= 3
-    assert any(check.path == "weights" and check.status == "block" for check in report.checks)
-    assert any(check.path == "learning_rate" and check.status == "block" for check in report.checks)
+    assert any(
+        check.path == "weights" and check.status == "block" for check in report.checks
+    )
+    assert any(
+        check.path == "learning_rate" and check.status == "block"
+        for check in report.checks
+    )
 
 
 def test_model_financial_sanity_gates_promoted_probability_calibration() -> None:
@@ -320,19 +411,42 @@ def test_model_financial_sanity_gates_promoted_probability_calibration() -> None
     )
 
     assert good_report.allowed is True
-    assert any(check.path == "probability_brier_after" and check.status == "ok" for check in good_report.checks)
+    assert any(
+        check.path == "probability_brier_after" and check.status == "ok"
+        for check in good_report.checks
+    )
     assert missing_report.allowed is False
-    assert any(check.path == "probability_brier_after" and check.status == "block" for check in missing_report.checks)
-    assert any(check.path == "probability_ece_after" and check.status == "block" for check in missing_report.checks)
+    assert any(
+        check.path == "probability_brier_after" and check.status == "block"
+        for check in missing_report.checks
+    )
+    assert any(
+        check.path == "probability_ece_after" and check.status == "block"
+        for check in missing_report.checks
+    )
     assert bad_report.allowed is False
-    assert any(check.path == "probability_brier_after" and check.status == "block" for check in bad_report.checks)
-    assert any(check.path == "probability_ece_after" and check.status == "block" for check in bad_report.checks)
-    assert any(check.path == "probability_log_loss_after" and check.status == "block" for check in bad_report.checks)
+    assert any(
+        check.path == "probability_brier_after" and check.status == "block"
+        for check in bad_report.checks
+    )
+    assert any(
+        check.path == "probability_ece_after" and check.status == "block"
+        for check in bad_report.checks
+    )
+    assert any(
+        check.path == "probability_log_loss_after" and check.status == "block"
+        for check in bad_report.checks
+    )
     assert worse_ece_report.allowed is False
-    assert any(check.detail == "calibration increased expected calibration error" for check in worse_ece_report.checks)
+    assert any(
+        check.detail == "calibration increased expected calibration error"
+        for check in worse_ece_report.checks
+    )
 
 
-def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[str, object]:
+def _model_lab_payload_with_symbols(
+    symbols: list[str] | None = None,
+) -> dict[str, object]:
     accepted_symbols = list(symbols or ["AAAUSDC", "BBBUSDC"])
     outcomes = [
         {
@@ -354,7 +468,9 @@ def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[st
             "accepted": True,
             "accepted_symbols": accepted_symbols,
             "effective_symbol_count": float(len(accepted_symbols)),
-            "correlation_adjusted_effective_symbol_count": max(1.0, float(len(accepted_symbols)) - 0.25),
+            "correlation_adjusted_effective_symbol_count": max(
+                1.0, float(len(accepted_symbols)) - 0.25
+            ),
             "portfolio_cvar_95": 0.01,
             "portfolio_max_drawdown": 0.02,
             "deployed_weight": min(1.0, 0.20 * len(accepted_symbols)),
@@ -608,7 +724,9 @@ def _accepted_ai_uplift() -> dict[str, object]:
     }
 
 
-def test_model_lab_financial_sanity_accepts_consistent_portfolio_symbol_evidence() -> None:
+def test_model_lab_financial_sanity_accepts_consistent_portfolio_symbol_evidence() -> (
+    None
+):
     report = build_model_lab_financial_sanity_report(_model_lab_payload_with_symbols())
 
     assert report.allowed is True
@@ -697,7 +815,8 @@ def test_model_lab_financial_sanity_blocks_missing_walk_forward_evidence() -> No
 
     assert report.allowed is False
     assert any(
-        check.label == "purged walk-forward" and check.path.endswith(".walk_forward_gate")
+        check.label == "purged walk-forward"
+        and check.path.endswith(".walk_forward_gate")
         for check in report.checks
     )
 
@@ -812,7 +931,9 @@ def test_model_lab_financial_sanity_blocks_accepted_stress_without_scenarios() -
     )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_temporal_without_statistical_edge() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_temporal_without_statistical_edge() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols(["BTCUSDT"])
     robustness = _accepted_robustness_validation()
     del robustness["statistical_edge_accepted"]
@@ -822,12 +943,15 @@ def test_model_lab_financial_sanity_blocks_accepted_temporal_without_statistical
 
     assert report.allowed is False
     assert any(
-        check.label == "temporal robustness" and check.path.endswith(".statistical_edge_accepted")
+        check.label == "temporal robustness"
+        and check.path.endswith(".statistical_edge_accepted")
         for check in report.checks
     )
 
 
-def test_model_lab_financial_sanity_blocks_inconsistent_temporal_window_counts() -> None:
+def test_model_lab_financial_sanity_blocks_inconsistent_temporal_window_counts() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols(["BTCUSDT"])
     robustness = _accepted_robustness_validation()
     robustness["accepted_windows"] = 6
@@ -856,7 +980,9 @@ def test_model_lab_financial_sanity_blocks_missing_portfolio_symbol_evidence() -
     )
 
 
-def test_model_lab_financial_sanity_blocks_mismatched_accepted_symbol_evidence() -> None:
+def test_model_lab_financial_sanity_blocks_mismatched_accepted_symbol_evidence() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols()
     payload["portfolio_risk"]["accepted_symbols"] = ["AAAUSDC", "CCCUSDC"]  # type: ignore[index]
 
@@ -864,7 +990,9 @@ def test_model_lab_financial_sanity_blocks_mismatched_accepted_symbol_evidence()
 
     assert report.allowed is False
     assert any(
-        check.label == "portfolio symbols" and "differ" in check.detail and check.status == "block"
+        check.label == "portfolio symbols"
+        and "differ" in check.detail
+        and check.status == "block"
         for check in report.checks
     )
 
@@ -878,12 +1006,16 @@ def test_model_lab_financial_sanity_blocks_duplicate_portfolio_symbols() -> None
 
     assert report.allowed is False
     assert any(
-        check.label == "portfolio symbols" and "duplicate" in check.detail and check.status == "block"
+        check.label == "portfolio symbols"
+        and "duplicate" in check.detail
+        and check.status == "block"
         for check in report.checks
     )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_portfolio_without_accepted_outcomes() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_portfolio_without_accepted_outcomes() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols()
     payload["outcomes"] = []
 
@@ -896,7 +1028,9 @@ def test_model_lab_financial_sanity_blocks_accepted_portfolio_without_accepted_o
     )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_outcome_without_portfolio_risk() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_outcome_without_portfolio_risk() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols()
     del payload["portfolio_risk"]
 
@@ -904,12 +1038,16 @@ def test_model_lab_financial_sanity_blocks_accepted_outcome_without_portfolio_ri
 
     assert report.allowed is False
     assert any(
-        check.label == "portfolio risk" and check.path == "portfolio_risk" and check.status == "block"
+        check.label == "portfolio risk"
+        and check.path == "portfolio_risk"
+        and check.status == "block"
         for check in report.checks
     )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_outcome_with_failed_portfolio_risk() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_outcome_with_failed_portfolio_risk() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols()
     payload["portfolio_risk"]["accepted"] = False  # type: ignore[index]
     payload["portfolio_risk"]["reason"] = "cvar95>0.0100"  # type: ignore[index]
@@ -918,12 +1056,16 @@ def test_model_lab_financial_sanity_blocks_accepted_outcome_with_failed_portfoli
 
     assert report.allowed is False
     assert any(
-        check.label == "portfolio risk" and check.path == "portfolio_risk.accepted" and check.status == "block"
+        check.label == "portfolio risk"
+        and check.path == "portfolio_risk.accepted"
+        and check.status == "block"
         for check in report.checks
     )
 
 
-def test_model_lab_financial_sanity_blocks_top_level_symbols_without_accepted_outcomes() -> None:
+def test_model_lab_financial_sanity_blocks_top_level_symbols_without_accepted_outcomes() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols()
     payload["portfolio_risk"]["accepted"] = False  # type: ignore[index]
     payload["outcomes"] = []
@@ -932,7 +1074,9 @@ def test_model_lab_financial_sanity_blocks_top_level_symbols_without_accepted_ou
 
     assert report.allowed is False
     assert any(
-        check.label == "accepted symbols" and "no accepted outcome" in check.detail and check.status == "block"
+        check.label == "accepted symbols"
+        and "no accepted outcome" in check.detail
+        and check.status == "block"
         for check in report.checks
     )
 
@@ -944,7 +1088,10 @@ def test_model_lab_financial_sanity_accepts_complete_ai_uplift_contract() -> Non
     report = build_model_lab_financial_sanity_report(payload)
 
     assert report.allowed is True
-    assert not any(check.label == "AI uplift evidence" and check.status == "block" for check in report.checks)
+    assert not any(
+        check.label == "AI uplift evidence" and check.status == "block"
+        for check in report.checks
+    )
 
 
 def test_model_lab_financial_sanity_recomputes_ai_uplift_roi_delta() -> None:
@@ -1001,7 +1148,9 @@ def test_model_lab_financial_sanity_rejects_metric_unit_mismatch() -> None:
     )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_missing_contract_metrics() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_missing_contract_metrics() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols(["BTCUSDT"])
     uplift = _accepted_ai_uplift()
     del uplift["baseline"]["profit_factor"]  # type: ignore[index]
@@ -1012,16 +1161,20 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_missing_contract_m
 
     assert report.allowed is False
     assert any(
-        check.label == "AI uplift evidence" and check.path.endswith(".baseline.profit_factor")
+        check.label == "AI uplift evidence"
+        and check.path.endswith(".baseline.profit_factor")
         for check in report.checks
     )
     assert any(
-        check.label == "AI uplift evidence" and check.path.endswith(".deltas.downside_return_risk_ratio")
+        check.label == "AI uplift evidence"
+        and check.path.endswith(".deltas.downside_return_risk_ratio")
         for check in report.checks
     )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_model_size_evidence() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_model_size_evidence() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols(["BTCUSDT"])
     uplift = _accepted_ai_uplift()
     uplift["model_parameters_b"] = 1.0
@@ -1031,7 +1184,8 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_model_size
 
     assert report.allowed is False
     assert any(
-        check.label == "AI uplift evidence" and check.path.endswith(".model_parameters_b")
+        check.label == "AI uplift evidence"
+        and check.path.endswith(".model_parameters_b")
         for check in report.checks
     )
 
@@ -1052,7 +1206,9 @@ def test_model_lab_financial_sanity_blocks_ai_uplift_without_hash_binding() -> N
     )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_statistical_evidence() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_statistical_evidence() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols(["BTCUSDT"])
     uplift = _accepted_ai_uplift()
     del uplift["statistical_evidence"]
@@ -1068,7 +1224,9 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_statistica
     )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_weak_sign_test() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_weak_sign_test() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols(["BTCUSDT"])
     uplift = _accepted_ai_uplift()
     uplift["statistical_evidence"]["positive_delta_rate"] = 0.50  # type: ignore[index]
@@ -1079,8 +1237,13 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_weak_sign_tes
 
     assert report.allowed is False
     blocked_paths = {check.path for check in report.checks if check.status == "block"}
-    assert "outcomes[0].ai_uplift.statistical_evidence.positive_delta_rate" in blocked_paths
-    assert "outcomes[0].ai_uplift.statistical_evidence.sign_test_p_value" in blocked_paths
+    assert (
+        "outcomes[0].ai_uplift.statistical_evidence.positive_delta_rate"
+        in blocked_paths
+    )
+    assert (
+        "outcomes[0].ai_uplift.statistical_evidence.sign_test_p_value" in blocked_paths
+    )
 
 
 def test_model_lab_financial_sanity_blocks_weak_ai_uplift_bootstrap() -> None:
@@ -1094,11 +1257,19 @@ def test_model_lab_financial_sanity_blocks_weak_ai_uplift_bootstrap() -> None:
 
     assert report.allowed is False
     blocked_paths = {check.path for check in report.checks if check.status == "block"}
-    assert "outcomes[0].ai_uplift.statistical_evidence.mean_delta_ci_lower" in blocked_paths
-    assert "outcomes[0].ai_uplift.statistical_evidence.positive_mean_probability" in blocked_paths
+    assert (
+        "outcomes[0].ai_uplift.statistical_evidence.mean_delta_ci_lower"
+        in blocked_paths
+    )
+    assert (
+        "outcomes[0].ai_uplift.statistical_evidence.positive_mean_probability"
+        in blocked_paths
+    )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_inconsistent_statistics() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_inconsistent_statistics() -> (
+    None
+):
     payload = _model_lab_payload_with_symbols(["BTCUSDT"])
     uplift = _accepted_ai_uplift()
     statistical = uplift["statistical_evidence"]  # type: ignore[index]
@@ -1114,7 +1285,9 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_inconsistent_
         "outcomes[0].ai_uplift.statistical_evidence.paired_sample_length_mismatch"
         in blocked_paths
     )
-    assert "outcomes[0].ai_uplift.statistical_evidence.sign_test_p_value" in blocked_paths
+    assert (
+        "outcomes[0].ai_uplift.statistical_evidence.sign_test_p_value" in blocked_paths
+    )
 
 
 def test_model_lab_financial_sanity_blocks_forged_ai_uplift_tie_counts() -> None:
@@ -1164,7 +1337,9 @@ def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:
     report = build_model_lab_financial_sanity_report(payload)
 
     assert report.allowed is False
-    assert any("rows=0" in check.detail for check in report.checks if check.status == "block")
+    assert any(
+        "rows=0" in check.detail for check in report.checks if check.status == "block"
+    )
 
 
 def test_model_lab_financial_sanity_blocks_failed_market_edge_evidence() -> None:
@@ -1216,10 +1391,15 @@ def test_model_lab_financial_sanity_blocks_failed_market_edge_evidence() -> None
     report = build_model_lab_financial_sanity_report(payload)
 
     assert report.allowed is False
-    assert any(check.label == "market edge" and check.status == "block" for check in report.checks)
+    assert any(
+        check.label == "market edge" and check.status == "block"
+        for check in report.checks
+    )
 
 
-def test_model_lab_financial_sanity_blocks_accepted_market_edge_with_bad_downside_risk() -> None:
+def test_model_lab_financial_sanity_blocks_accepted_market_edge_with_bad_downside_risk() -> (
+    None
+):
     payload = {
         "accepted_symbols": ["BTCUSDT"],
         "portfolio_risk": {
@@ -1339,3 +1519,59 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_tail_risk() -> Non
     assert "AI uplift" in labels
     assert "AI uplift tail risk" in labels
     assert "AI uplift liquidation risk" in labels
+
+
+def _report_fingerprint(report: FinancialSanityReport) -> str:
+    encoded = json.dumps(
+        report.asdict(),
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def test_financial_sanity_full_report_contracts_are_stable() -> None:
+    good_backtest = build_backtest_financial_sanity_report(_backtest_result())
+    bad_backtest = build_backtest_financial_sanity_report(
+        _backtest_result(
+            ending_cash=1007.0,
+            win_rate=1.0,
+            total_fees=0.0,
+            trade_pnls=(10.0,),
+            trade_returns=(0.01,),
+            trade_log=(
+                {
+                    "realized_pnl": 12.0,
+                    "net_pnl": 9.0,
+                    "entry_fee": 1.0,
+                    "exit_fee": 1.0,
+                    "exit_reason": "",
+                },
+            ),
+        )
+    )
+    good_lab = build_model_lab_financial_sanity_report(
+        _model_lab_payload_with_symbols(["BTCUSDT"])
+    )
+    bad_lab_payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    bad_ai_uplift = _accepted_ai_uplift()
+    statistical = bad_ai_uplift["statistical_evidence"]
+    assert isinstance(statistical, dict)
+    statistical["tie_count"] = 1
+    bad_lab_payload["outcomes"][0]["ai_uplift"] = bad_ai_uplift  # type: ignore[index]
+    bad_lab = build_model_lab_financial_sanity_report(bad_lab_payload)
+
+    assert _report_fingerprint(good_backtest) == (
+        "4cf4e751e6c377b1e0982669e9b229ecdde30f69df4686fce65371dd3bd393cb"
+    )
+    assert _report_fingerprint(bad_backtest) == (
+        "6e297ee0d0e7a375a581fba7a585c8a5954545dc9b1e7732be53de55b56bc490"
+    )
+    assert _report_fingerprint(good_lab) == (
+        "a79b58c1abead462e1409de313673d856922251f303a597e550ca49184bb14f4"
+    )
+    assert _report_fingerprint(bad_lab) == (
+        "ef21c86b4204e5d331fafe59fb51b7fa262cf9df7110ed2766fdc286515871e6"
+    )
