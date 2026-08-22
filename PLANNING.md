@@ -84,11 +84,12 @@ backlog was about 28000 issues. These are bounded triage queues, not permission
 for broad suppressions or risky mass rewrites. See `docs/CONTINUATION.md` for
 the exact inventory and integration hazard. Closeout revision `f50c3a83`
 removed the current AI-uplift type-contract blockers; DeepSource then displayed
-nine changed-scope complexity findings. The four `ai_uplift.py` paths have now
-been decomposed under exact output and reason-order tests; five
-`financial_sanity.py` paths remain. Treat them as maintainability debt, not
-confirmed vulnerabilities, and refactor them only in behavior-preserving,
-reviewable batches.
+nine changed-scope complexity findings. All nine paths have now been decomposed
+in behavior-preserving batches. The five `financial_sanity.py` entry points fell
+from Radon scores `188/125/64/36/30` to `2/2/5/1/1`, with exact serialized-report
+fingerprints and rejection-order tests protecting the evidence contract. This
+closes that bounded maintainability batch; it is not a vulnerability, model-edge,
+or profitability claim.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating

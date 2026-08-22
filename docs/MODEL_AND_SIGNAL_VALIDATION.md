@@ -106,6 +106,13 @@ The gate enforces:
   correlation-adjusted effective symbol count, correlation, and cluster
   exposure metrics.
 
+The complete serialized financial-sanity report is an evidence contract, not
+just its final `allowed` flag. Check order, status, label, detail, path, metric,
+and limit are fingerprinted for representative accepted and rejected backtest
+and model-lab reports. A refactor may decompose implementation paths, but it may
+not reorder or relabel those diagnostics without an explicit schema decision
+and corresponding consumer migration.
+
 Live/readiness feature-drift evidence is also part of this standard. It compares
 current rows with the model's fitted feature means and standard deviations, then
 tracks maximum absolute z-score, mean absolute z-score, and the fraction of
