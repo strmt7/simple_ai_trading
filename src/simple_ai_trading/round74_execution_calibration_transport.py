@@ -76,7 +76,9 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
 
 
-def _positive_timeout(value: object) -> float:
+def _positive_timeout(value: float) -> float:
+    if isinstance(value, bool):
+        raise ValueError("Round 74 execution transport timeout differs")
     selected = float(value)
     if (
         not math.isfinite(selected)
@@ -155,10 +157,15 @@ class Round74BinanceTestnetExecutionTransport:
     def __exit__(
         self,
         _exc_type: object,
-        _exc: object,
+        _exc: BaseException | None,
         _traceback: object,
     ) -> None:
-        self.close()
+        try:
+            self.close()
+        except RuntimeError as cleanup_error:
+            if _exc is None:
+                raise
+            _exc.add_note(str(cleanup_error))
 
     @staticmethod
     def _headers(*, api_key: str = "") -> dict[str, str]:
@@ -321,28 +328,38 @@ class Round74BinanceTestnetExecutionTransport:
                 max_queue=64,
                 user_agent_header=_USER_AGENT,
             )
-        except Exception:
+        except Exception as connection_error:
+            cleanup_failure = ""
             try:
                 self._request(
                     "DELETE",
                     "/fapi/v1/listenKey",
                     api_key_only=True,
                 )
-            except RuntimeError:
-                pass
-            self._listen_key = ""
-            raise RuntimeError(
+            except RuntimeError as cleanup_error:
+                cleanup_failure = (
+                    "Round 74 execution listen-key cleanup failed "
+                    f"({cleanup_error.__class__.__name__}); remote stream state "
+                    "must be treated as unknown"
+                )
+            finally:
+                self._listen_key = ""
+            reported_error = RuntimeError(
                 "Round 74 execution user stream connection failed"
-            ) from None
+            )
+            if cleanup_failure:
+                reported_error.add_note(cleanup_failure)
+            raise reported_error from connection_error
 
     def close(self) -> None:
+        cleanup_failures: list[str] = []
         websocket = self._websocket
         self._websocket = None
         if websocket is not None:
             try:
                 websocket.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                cleanup_failures.append(f"websocket_close:{exc.__class__.__name__}")
         if self._listen_key:
             try:
                 self._request(
@@ -350,10 +367,19 @@ class Round74BinanceTestnetExecutionTransport:
                     "/fapi/v1/listenKey",
                     api_key_only=True,
                 )
-            except RuntimeError:
-                pass
-            self._listen_key = ""
-        self._session.close()
+            except RuntimeError as exc:
+                cleanup_failures.append(f"listen_key_delete:{exc.__class__.__name__}")
+            finally:
+                self._listen_key = ""
+        try:
+            self._session.close()
+        except Exception as exc:
+            cleanup_failures.append(f"session_close:{exc.__class__.__name__}")
+        if cleanup_failures:
+            raise RuntimeError(
+                "Round 74 execution transport cleanup failed: "
+                + ",".join(cleanup_failures)
+            )
 
     def position(self, symbol: str) -> Mapping[str, object]:
         selected_symbol = _symbol(symbol)

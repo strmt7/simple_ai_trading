@@ -75,7 +75,7 @@ unverified, never as zero vulnerabilities.
 
 At the 2026-08-22 handoff, dependency audits and Zizmor passed and available
 GitHub alert APIs were clear, but GitHub code scanning was unavailable. Bandit
-still reported 527 source audit items and the last verified DeepSource project
+still reported 522 source audit items and the last verified DeepSource project
 backlog was about 28000 issues. These are bounded triage queues, not permission
 for broad suppressions or risky mass rewrites. See `docs/CONTINUATION.md` for
 the exact inventory and integration hazard.

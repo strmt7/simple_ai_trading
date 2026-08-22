@@ -172,6 +172,22 @@ _CONDITION_MANIFEST_INSERT_SQL = (
 )
 
 
+def _rollback_preserving_primary_error(
+    connection: duckdb.DuckDBPyConnection,
+    primary_error: BaseException,
+) -> None:
+    """Rollback while retaining both the primary and cleanup failure states."""
+
+    try:
+        connection.execute("ROLLBACK")
+    except Exception as rollback_error:
+        primary_error.add_note(
+            "Polymarket terminal-audit recovery rollback failed "
+            f"({rollback_error.__class__.__name__}); transaction state "
+            "must be treated as unknown"
+        )
+
+
 def _round14_binance_spot_websocket(assets: Sequence[str]) -> str:
     streams = [
         stream
@@ -5618,11 +5634,8 @@ class PolymarketEvidenceStore:
             if chain_errors:
                 raise ValueError("; ".join(chain_errors))
             connection.execute("COMMIT")
-        except Exception:
-            try:
-                connection.execute("ROLLBACK")
-            except Exception:
-                pass
+        except Exception as primary_error:
+            _rollback_preserving_primary_error(connection, primary_error)
             raise
         terminal_fingerprint = self._terminal_evidence_fingerprint(run_id)
         self._terminal_evidence_integrity_cache[run_id] = (

@@ -594,6 +594,39 @@ def test_cuda_selects_device_with_most_reported_free_memory(monkeypatch) -> None
     assert info.selection == "maximum_reported_free_memory:3000"
 
 
+def test_cuda_memory_probe_failure_is_observable_and_does_not_hide_other_devices(
+    monkeypatch,
+    caplog,
+) -> None:
+    class _PartiallyReadableMemoryCuda(_FakeCuda):
+        def __init__(self) -> None:
+            super().__init__(count=2)
+
+        @staticmethod
+        def current_device() -> int:
+            return 0
+
+        @staticmethod
+        def mem_get_info(index: int) -> tuple[int, int]:
+            if index == 0:
+                raise RuntimeError("device telemetry unavailable")
+            return 3_000, 4_000
+
+        @staticmethod
+        def get_device_name(index: int) -> str:
+            return f"NVIDIA Test {index}"
+
+    fake = _make_fake_torch(cuda=_PartiallyReadableMemoryCuda())
+    monkeypatch.setattr("simple_ai_trading.compute._probe_torch", lambda: (fake, ""))
+
+    with caplog.at_level("DEBUG", logger="simple_ai_trading.compute"):
+        info = resolve_backend("cuda")
+
+    assert info.device == "cuda:1"
+    assert info.selection == "maximum_reported_free_memory:3000"
+    assert "memory probe failed for device 0 (RuntimeError)" in caplog.text
+
+
 def test_operator_device_index_override_is_validated(monkeypatch) -> None:
     fake = _make_fake_torch(cuda=_FakeCuda(count=2, name="NVIDIA Test"))
     monkeypatch.setattr("simple_ai_trading.compute._probe_torch", lambda: (fake, ""))

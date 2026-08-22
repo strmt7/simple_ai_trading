@@ -93,8 +93,8 @@ blind overwrite. All new development after integration belongs on `main`.
   and DirectML dependency stacks. The exact pushed revision
   `053e71ec9959c7b51c73d6983fb574e03f4173ea` passed hosted actionlint and
   Zizmor `1.25.2` through Super-Linter.
-- A fresh Bandit audit of `src/simple_ai_trading` reported 525 audit findings:
-  zero high severity, 251 medium, and 274 low.
+- A fresh Bandit audit of `src/simple_ai_trading` reported 522 audit findings:
+  zero high severity, 251 medium, and 271 low.
   The medium set is dominated by 248 dynamic-SQL (`B608`) review items. Its
   three `B113` request findings are false positives because each displayed call
   supplies an explicit bounded timeout. The remaining findings still require
@@ -118,10 +118,15 @@ blind overwrite. All new development after integration belongs on `main`.
   leaves the durable reservation in fail-closed `reserved` state and now adds
   `terminal_audit_error` to rejection diagnostics without replacing the
   primary failure. The affected 96 training-suite and terminal-ledger tests,
-  Ruff, and a focused Bandit scan pass. The full Bandit inventory now contains
-  two `B110` and one `B112` findings: rollback/transport cleanup and an optional
-  GPU-memory probe. They need bounded source-level review, not blanket
-  suppression.
+  Ruff, and a focused Bandit scan pass.
+- The remaining two `B110` and one `B112` findings were then removed without
+  suppressions. Per-device CUDA memory-probe failures are debug-observable and
+  do not hide usable peer devices. A failed Polymarket recovery rollback is
+  attached to the primary exception with unknown transaction state. Round 74
+  testnet transport cleanup attempts WebSocket, listen-key, and HTTP-session
+  closure, reports every failure, and does not mask an active primary error.
+  Focused tests, mypy, Ruff, and the full `B110`/`B112` scan pass. These changes
+  do not alter model outputs, evidence, risk limits, or trading authority.
 - The last full DeepSource backlog verification on `2026-08-16` found about
   28000 active findings, including 118 security findings. DeepSource passed
   revision `053e71ec9959c7b51c73d6983fb574e03f4173ea` with no blocking issues or
@@ -261,16 +266,15 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    unverified until focused domain tests, contract hashes, generated CLI/native
    parity, and the affected analyzer gates pass on the integrated tree. Do not
    publish or infer their model claims from local file presence.
-5. Continue security triage in bounded batches. Review the remaining two
-   `B110` cleanup paths and one `B112` optional hardware probe, then trace
-   Bandit/DeepSource dynamic SQL source-to-sink paths. Distinguish fixed or
-   validated identifiers and trusted executable contracts from actual
-   injection or path-hijack exposure. Add direct regressions for every behavior
-   change; do not suppress the backlog broadly. Continue from the exact
-   DeepSource inventory on the final closeout SHA. The first type-contract
-   batch reduced the headline Python count from 107 to 86 and the follow-up
-   reduced it to 51; the remaining complexity findings were intentionally
-   recorded rather than rushed into this closeout.
+5. Continue security triage in bounded batches. The `B110` and `B112` queue is
+   now zero. Trace remaining Bandit/DeepSource dynamic SQL source-to-sink paths.
+   Distinguish fixed or validated identifiers and trusted executable contracts
+   from actual injection or path-hijack exposure. Add direct regressions for
+   every behavior change; do not suppress the backlog broadly. Continue from
+   the exact DeepSource inventory on the final closeout SHA. The first
+   type-contract batch reduced the headline Python count from 107 to 86 and the
+   follow-up reduced it to 51; the remaining complexity findings were
+   intentionally recorded rather than rushed into this closeout.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.

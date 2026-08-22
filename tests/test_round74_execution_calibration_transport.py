@@ -228,6 +228,17 @@ def _terminal(client_order_id: str) -> dict[str, object]:
     }
 
 
+def test_transport_rejects_boolean_timeout() -> None:
+    with pytest.raises(ValueError, match="transport timeout differs"):
+        Round74BinanceTestnetExecutionTransport(
+            api_key="key",
+            api_secret="secret",
+            timeout_seconds=True,  # type: ignore[arg-type]
+            session_factory=_Session,
+            websocket_factory=lambda _url, **_kwargs: _WebSocket([]),
+        )
+
+
 def test_transport_uses_only_official_testnet_surfaces_and_signed_calls() -> None:
     session = _Session()
     websocket = _WebSocket([{"e": "ACCOUNT_UPDATE"}, _terminal("sat-r74-cal-test-i")])
@@ -430,3 +441,103 @@ def test_transport_closes_listen_key_when_websocket_open_fails() -> None:
     ]
     assert listen_methods == ["POST", "DELETE"]
     transport.close()
+
+
+def test_transport_open_reports_failed_listen_key_cleanup() -> None:
+    class _DeleteFailureSession(_Session):
+        def request(
+            self,
+            method: str,
+            url: str,
+            **kwargs: object,
+        ) -> _Response:
+            if method == "DELETE" and urlsplit(url).path == "/fapi/v1/listenKey":
+                self.calls.append({"method": method, "url": url, **kwargs})
+                raise requests.Timeout("listen-key cleanup failed")
+            return super().request(method, url, **kwargs)
+
+    session = _DeleteFailureSession()
+
+    def fail_connect(_url: str, **_kwargs: object) -> _WebSocket:
+        raise OSError("connection failed")
+
+    transport = Round74BinanceTestnetExecutionTransport(
+        api_key="key",
+        api_secret="secret",
+        session_factory=lambda: session,
+        websocket_factory=fail_connect,
+    )
+
+    with pytest.raises(RuntimeError, match="user stream connection failed") as captured:
+        transport.open()
+
+    assert captured.value.__notes__ == [
+        "Round 74 execution listen-key cleanup failed (RuntimeError); remote "
+        "stream state must be treated as unknown"
+    ]
+    transport.close()
+
+
+def test_transport_close_attempts_every_resource_and_reports_failures() -> None:
+    class _FailingSession(_Session):
+        def close(self) -> None:
+            self.closed = True
+            raise OSError("session close failed")
+
+    class _FailingWebSocket(_WebSocket):
+        def close(self, code: int = 1000, reason: str = "") -> None:
+            del code, reason
+            self.closed = True
+            raise OSError("websocket close failed")
+
+    session = _FailingSession()
+    websocket = _FailingWebSocket([])
+    transport = Round74BinanceTestnetExecutionTransport(
+        api_key="key",
+        api_secret="secret",
+        session_factory=lambda: session,
+        websocket_factory=lambda _url, **_kwargs: websocket,
+    )
+    transport.open()
+
+    with pytest.raises(
+        RuntimeError, match="websocket_close:OSError,session_close:OSError"
+    ):
+        transport.close()
+
+    assert websocket.closed is True
+    assert session.closed is True
+    assert any(
+        call["method"] == "DELETE"
+        and urlsplit(str(call["url"])).path == "/fapi/v1/listenKey"
+        for call in session.calls
+    )
+
+
+def test_transport_context_preserves_primary_error_and_attaches_cleanup_failure() -> (
+    None
+):
+    class _FailingWebSocket(_WebSocket):
+        def close(self, code: int = 1000, reason: str = "") -> None:
+            del code, reason
+            self.closed = True
+            raise OSError("websocket close failed")
+
+    session = _Session()
+    websocket = _FailingWebSocket([])
+    transport = Round74BinanceTestnetExecutionTransport(
+        api_key="key",
+        api_secret="secret",
+        session_factory=lambda: session,
+        websocket_factory=lambda _url, **_kwargs: websocket,
+    )
+
+    with pytest.raises(ValueError, match="primary operation failed") as captured:
+        with transport:
+            raise ValueError("primary operation failed")
+
+    assert captured.value.__notes__ == [
+        "Round 74 execution transport cleanup failed: websocket_close:OSError"
+    ]
+    assert websocket.closed is True
+    assert session.closed is True
