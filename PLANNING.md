@@ -39,22 +39,27 @@ The current state and next admissible experiment are recorded in the
 
 ## Active Experiment Order
 
-1. Let the fixed Round 27 Stage 1 capture and independent Binance BBO sidecar
-   finish without reading feature rows or outcomes early.
-2. Run the target-blind campaign, condition, source, and population gates.
-3. Materialize the frozen 182-field base, 96-field BBO overlay, and six-field
-   Round 29 settlement-state overlay without duplicating raw data.
-4. Before target access, finish and hash-bind the Round 29 matched model and
-   economic operator. Compare 188 versus 182 fields diagnostically and 284
-   versus 278 fields for the primary test.
-5. Open outcomes only through the existing one-use gate. Reject any candidate
-   that fails matched probability, after-cost, delay, concentration, drawdown,
-   or untouched sealed checks.
+1. Preserve the active Round 75 Binance capture through its fixed
+   `2026-08-23T12:00:00Z` boundary and the independent Round 21 Binance sidecar
+   through its fixed `2026-08-29T23:40:00Z` boundary. Do not read targets or
+   outcomes early.
+2. Run each contract's target-blind terminal, continuity, source, gap, role,
+   population, lease, database/WAL, and resource audits. Failed capture gates
+   close the affected lineage without salvage or adaptive thresholds.
+3. After Round 75 terminalization, preserve and reconcile the detached
+   `simple_ai_trading-model-dev` worktree onto `main`. It currently contains
+   substantial unintegrated Round 74/75 and Polymarket work based on an older
+   ancestor of `main`; never clean it or overwrite the newer analyzer fixes.
+4. Revalidate every integrated contract hash, focused domain test, and
+   generated CLI/native parity surface before treating local files as
+   implemented evidence.
+5. Only then proceed through the frozen source, causal split, execution-cost,
+   delay, access-ledger, sample, model, and one-use evaluation gates. AI remains
+   veto/downsize-only until a matched causal uplift test passes.
 
-Round 29 does not reconstruct Chainlink's private TWAP calculation. It only
-adds deterministic interactions among already observed exact TWAP margin,
-remaining time, variance, and path state. It currently has no result, edge,
-profitability claim, or trading authority.
+The currently pushed checkpoint has no reproducible after-cost edge,
+profitability claim, or trading authority. Local unintegrated files do not
+change that fact.
 
 ## Repository Quality Gate
 
@@ -66,6 +71,13 @@ and close the checkpoint only after current-main CI, Ruff, Vulture,
 Super-Linter, DeepSource, secret scanning, and available GitHub dependency and
 code-scanning checks have been verified. An unavailable scanner is reported as
 unverified, never as zero vulnerabilities.
+
+At the 2026-08-22 handoff, dependency audits and Zizmor passed and available
+GitHub alert APIs were clear, but GitHub code scanning was unavailable. Bandit
+still reported 527 source audit items and the last verified DeepSource project
+backlog was about 28000 issues. These are bounded triage queues, not permission
+for broad suppressions or risky mass rewrites. See `docs/CONTINUATION.md` for
+the exact inventory and integration hazard.
 
 ## Resume Here
 
