@@ -118,6 +118,22 @@ def test_ci_enforces_financial_terminology_audit() -> None:
     assert "CODECOV_TOKEN" not in workflow
 
 
+def test_push_workflows_cancel_superseded_runs_on_the_same_ref() -> None:
+    for relative in (
+        ".github/workflows/ci.yml",
+        ".github/workflows/ruff.yml",
+        ".github/workflows/super-linter.yml",
+        ".github/workflows/vulture.yml",
+    ):
+        workflow = _read(relative)
+        assert "group: ${{ github.workflow }}-${{ github.ref }}" in workflow
+        assert (
+            "group: ${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}"
+            not in workflow
+        )
+        assert "cancel-in-progress: true" in workflow
+
+
 def test_posix_launchers_start_with_bom_free_shebangs() -> None:
     for relative in ("run-shell.sh", "run-gui.sh"):
         payload = (ROOT / relative).read_bytes()
