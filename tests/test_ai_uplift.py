@@ -8,6 +8,7 @@ from simple_ai_trading.ai_uplift import (
     _binomial_upper_tail,
     _moving_block_bootstrap,
     assess_ai_uplift,
+    normalize_uplift_metrics,
 )
 from simple_ai_trading.ai_runtime import estimate_model_parameters_b
 
@@ -144,7 +145,7 @@ def test_ai_uplift_accepts_multibillion_holdout_improvement() -> None:
     assert report.statistical_evidence["tie_count"] == 0
     assert report.statistical_evidence["mean_delta_ci_lower"] > 0.0
     assert report.evidence_binding["accepted"] is True
-    assert report.schema_version == "ai-uplift-v4"
+    assert report.schema_version == "ai-uplift-v5"
     assert report.trading_authority is False
     assert report.profitability_claim is False
 
@@ -216,6 +217,7 @@ def test_ai_uplift_sign_test_excludes_unchanged_periods() -> None:
         _complete(
             {
                 "realized_pnl": 12.0,
+                "roi_pct": 1.2,
                 "max_drawdown": 0.04,
                 "expectancy": 0.9,
                 "closed_trades": 10,
@@ -225,6 +227,7 @@ def test_ai_uplift_sign_test_excludes_unchanged_periods() -> None:
         _complete(
             {
                 "realized_pnl": 18.0,
+                "roi_pct": 1.8,
                 "max_drawdown": 0.035,
                 "expectancy": 1.2,
                 "closed_trades": 12,
@@ -242,6 +245,78 @@ def test_ai_uplift_sign_test_excludes_unchanged_periods() -> None:
     assert report.statistical_evidence["tie_count"] == 60
     assert report.statistical_evidence["positive_delta_rate"] == 1.0
     assert report.statistical_evidence["sign_test_p_value"] == 2**-30
+
+
+def test_ai_uplift_rejects_aggregate_roi_degradation() -> None:
+    report = assess_ai_uplift(
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "roi_pct": 2.0,
+                "max_drawdown": 0.04,
+                "expectancy": 0.9,
+                "closed_trades": 10,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 18.0,
+                "roi_pct": 1.8,
+                "max_drawdown": 0.035,
+                "expectancy": 1.2,
+                "closed_trades": 12,
+            },
+            _AI_SHA256,
+        ),
+        model_name="qwen2.5:7b",
+        model_artifact_sha256=_MODEL_SHA256,
+        matched_periods=_matched_periods((0.002,) * 30),
+    )
+
+    assert report.accepted is False
+    assert "ai_roi_not_above_baseline" in report.reasons
+
+
+def test_ai_uplift_rejects_mismatched_metric_units_and_normalizes_percentages() -> None:
+    baseline = _complete(
+        {
+            "realized_pnl": 12.0,
+            "roi_pct": 1.2,
+            "max_drawdown": 0.04,
+            "expectancy": 0.9,
+            "closed_trades": 10,
+            "win_rate": 0.60,
+        },
+        _BASELINE_SHA256,
+    )
+    ai = _complete(
+        {
+            "realized_pnl": 18.0,
+            "roi_pct": 1.8,
+            "max_drawdown_pct": 3.5,
+            "expectancy": 1.2,
+            "closed_trades": 12,
+            "win_rate_pct": 65.0,
+        },
+        _AI_SHA256,
+    )
+    ai.pop("win_rate")
+
+    report = assess_ai_uplift(
+        baseline,
+        ai,
+        model_name="qwen2.5:7b",
+        model_artifact_sha256=_MODEL_SHA256,
+        matched_periods=_matched_periods((0.002,) * 30),
+    )
+
+    normalized = normalize_uplift_metrics(ai)
+    assert normalized["max_drawdown"] == pytest.approx(0.035)
+    assert normalized["win_rate"] == pytest.approx(0.65)
+    assert report.accepted is False
+    assert "ai_uplift_max_drawdown_source_key_mismatch" in report.reasons
+    assert "ai_uplift_win_rate_source_key_mismatch" in report.reasons
 
 
 def test_ai_uplift_requires_thirty_non_tied_periods() -> None:
