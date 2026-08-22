@@ -1072,6 +1072,235 @@ def _extract_member(
     ).validated()
 
 
+@dataclass(frozen=True)
+class _PolymarketMLPFitContext:
+    torch: Any
+    device: object
+    model: Any
+    optimizer: _ExplicitAdamW
+    seed: int
+    training_features: np.ndarray
+    training_labels: np.ndarray
+    training_weights: np.ndarray
+    validation_features: np.ndarray
+    validation_labels: np.ndarray
+    progress: ProgressCallback | None
+    run_kind: str
+
+
+@dataclass
+class _PolymarketMLPFitState:
+    best_loss: float
+    best_epoch: int
+    best_state: dict[str, Any] | None
+    stale_epochs: int
+    trace: list[PolymarketMLPEpoch]
+    last_batch_heartbeat: float
+
+
+def _train_member_batch(
+    context: _PolymarketMLPFitContext,
+    selected: np.ndarray,
+) -> float:
+    torch = context.torch
+    features = torch.from_numpy(
+        np.ascontiguousarray(context.training_features[selected], dtype=np.float32)
+    ).to(context.device)
+    labels = torch.from_numpy(
+        np.ascontiguousarray(context.training_labels[selected], dtype=np.float32)
+    ).to(context.device)
+    weights = torch.from_numpy(
+        np.ascontiguousarray(context.training_weights[selected], dtype=np.float32)
+    ).to(context.device)
+    context.optimizer.zero_grad(set_to_none=True)
+    logits = context.model(features)
+    losses = _binary_logit_losses(torch, logits, labels)
+    loss = torch.mean(losses * weights)
+    if not bool(torch.isfinite(loss).detach().cpu().item()):
+        raise RuntimeError("Polymarket MLP training loss is non-finite")
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(
+        context.model.parameters(),
+        1.0,
+        foreach=False,
+    )
+    context.optimizer.step()
+    return float(loss.detach().cpu())
+
+
+def _emit_member_batch_heartbeat(
+    context: _PolymarketMLPFitContext,
+    state: _PolymarketMLPFitState,
+    *,
+    epoch: int,
+    offset: int,
+    rows: int,
+    order_size: int,
+    heartbeat: float,
+) -> None:
+    if context.progress is None or heartbeat - state.last_batch_heartbeat < 30.0:
+        return
+    context.progress(
+        "polymarket_mlp_batch",
+        {
+            "run_kind": context.run_kind,
+            "seed": context.seed,
+            "epoch": epoch,
+            "rows_complete": min(offset + rows, order_size),
+            "rows_total": order_size,
+        },
+    )
+    state.last_batch_heartbeat = heartbeat
+
+
+def _train_member_epoch(
+    context: _PolymarketMLPFitContext,
+    state: _PolymarketMLPFitState,
+    *,
+    epoch: int,
+) -> float:
+    context.model.train()
+    order = np.random.default_rng(context.seed + epoch).permutation(
+        context.training_features.shape[0]
+    )
+    total_loss = 0.0
+    total_rows = 0
+    for offset in range(0, order.size, POLYMARKET_MLP_BATCH_SIZE):
+        selected = order[offset : offset + POLYMARKET_MLP_BATCH_SIZE]
+        loss = _train_member_batch(context, selected)
+        rows = int(selected.size)
+        total_loss += loss * rows
+        total_rows += rows
+        _emit_member_batch_heartbeat(
+            context,
+            state,
+            epoch=epoch,
+            offset=offset,
+            rows=rows,
+            order_size=int(order.size),
+            heartbeat=time.perf_counter(),
+        )
+    return total_loss / total_rows
+
+
+def _update_member_checkpoint(
+    context: _PolymarketMLPFitContext,
+    state: _PolymarketMLPFitState,
+    *,
+    epoch: int,
+    validation_loss: float,
+) -> None:
+    if validation_loss < state.best_loss - POLYMARKET_MLP_MIN_DELTA:
+        state.best_loss = validation_loss
+        state.best_epoch = epoch
+        state.best_state = {
+            name: value.detach().cpu().clone()
+            for name, value in context.model.state_dict().items()
+        }
+        state.stale_epochs = 0
+    else:
+        state.stale_epochs += 1
+
+
+def _emit_member_epoch_progress(
+    context: _PolymarketMLPFitContext,
+    state: _PolymarketMLPFitState,
+    *,
+    epoch: int,
+    validation_loss: float,
+) -> None:
+    if context.progress is None or not (
+        epoch == 1 or epoch % 5 == 0 or state.stale_epochs >= POLYMARKET_MLP_PATIENCE
+    ):
+        return
+    context.progress(
+        "polymarket_mlp_epoch",
+        {
+            "run_kind": context.run_kind,
+            "seed": context.seed,
+            "epoch": epoch,
+            "training_loss": state.trace[-1].training_loss,
+            "validation_log_loss": validation_loss,
+            "best_validation_log_loss": state.best_loss,
+            "stale_epochs": state.stale_epochs,
+        },
+    )
+
+
+def _evaluate_member_epoch(
+    context: _PolymarketMLPFitContext,
+    state: _PolymarketMLPFitState,
+    *,
+    epoch: int,
+    training_loss: float,
+) -> bool:
+    validation_probability = _predict_torch(
+        context.torch,
+        context.model,
+        context.device,
+        context.validation_features,
+    )
+    validation_loss = _binary_log_loss(
+        validation_probability,
+        context.validation_labels,
+    )
+    state.trace.append(
+        PolymarketMLPEpoch(
+            seed=context.seed,
+            epoch=epoch,
+            training_loss=training_loss,
+            validation_log_loss=validation_loss,
+        )
+    )
+    _update_member_checkpoint(
+        context,
+        state,
+        epoch=epoch,
+        validation_loss=validation_loss,
+    )
+    _emit_member_epoch_progress(
+        context,
+        state,
+        epoch=epoch,
+        validation_loss=validation_loss,
+    )
+    return state.stale_epochs >= POLYMARKET_MLP_PATIENCE
+
+
+def _finalize_member_fit(
+    context: _PolymarketMLPFitContext,
+    state: _PolymarketMLPFitState,
+) -> tuple[PolymarketMLPMember, float]:
+    if state.best_state is None or state.best_epoch <= 0:
+        raise RuntimeError("Polymarket MLP produced no finite validation checkpoint")
+    context.model.load_state_dict(state.best_state)
+    torch_probability = _predict_torch(
+        context.torch,
+        context.model,
+        context.device,
+        context.validation_features,
+    )
+    member = _extract_member(
+        context.model,
+        seed=context.seed,
+        best_epoch=state.best_epoch,
+        trace=state.trace,
+    )
+    canonical_probability = member.predict_standardized(context.validation_features)
+    canonical_replay_drift = float(
+        np.max(np.abs(torch_probability - canonical_probability))
+    )
+    if (
+        not math.isfinite(canonical_replay_drift)
+        or canonical_replay_drift > POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
+    ):
+        raise RuntimeError(
+            "Polymarket MLP canonical replay drift exceeds tolerance:"
+            f"{canonical_replay_drift:.9g}"
+        )
+    return member, canonical_replay_drift
+
+
 def _fit_member(
     torch: Any,
     device: object,
@@ -1088,128 +1317,38 @@ def _fit_member(
     torch.manual_seed(seed)
     model = _new_torch_model(torch).to(device)
     optimizer = _ExplicitAdamW(torch, tuple(model.parameters()))
-    best_loss = math.inf
-    best_epoch = 0
-    best_state: dict[str, Any] | None = None
-    stale_epochs = 0
-    trace: list[PolymarketMLPEpoch] = []
-    last_batch_heartbeat = time.perf_counter()
-    for epoch in range(1, POLYMARKET_MLP_MAX_EPOCHS + 1):
-        model.train()
-        order = np.random.default_rng(seed + epoch).permutation(
-            training_features.shape[0]
-        )
-        total_loss = 0.0
-        total_rows = 0
-        for offset in range(0, order.size, POLYMARKET_MLP_BATCH_SIZE):
-            selected = order[offset : offset + POLYMARKET_MLP_BATCH_SIZE]
-            features = torch.from_numpy(
-                np.ascontiguousarray(training_features[selected], dtype=np.float32)
-            ).to(device)
-            labels = torch.from_numpy(
-                np.ascontiguousarray(training_labels[selected], dtype=np.float32)
-            ).to(device)
-            weights = torch.from_numpy(
-                np.ascontiguousarray(training_weights[selected], dtype=np.float32)
-            ).to(device)
-            optimizer.zero_grad(set_to_none=True)
-            logits = model(features)
-            losses = _binary_logit_losses(torch, logits, labels)
-            loss = torch.mean(losses * weights)
-            if not bool(torch.isfinite(loss).detach().cpu().item()):
-                raise RuntimeError("Polymarket MLP training loss is non-finite")
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0, foreach=False)
-            optimizer.step()
-            rows = int(selected.size)
-            total_loss += float(loss.detach().cpu()) * rows
-            total_rows += rows
-            heartbeat = time.perf_counter()
-            if progress is not None and heartbeat - last_batch_heartbeat >= 30.0:
-                progress(
-                    "polymarket_mlp_batch",
-                    {
-                        "run_kind": run_kind,
-                        "seed": seed,
-                        "epoch": epoch,
-                        "rows_complete": min(offset + rows, order.size),
-                        "rows_total": int(order.size),
-                    },
-                )
-                last_batch_heartbeat = heartbeat
-        validation_probability = _predict_torch(
-            torch,
-            model,
-            device,
-            validation_features,
-        )
-        validation_loss = _binary_log_loss(
-            validation_probability,
-            validation_labels,
-        )
-        trace.append(
-            PolymarketMLPEpoch(
-                seed=seed,
-                epoch=epoch,
-                training_loss=total_loss / total_rows,
-                validation_log_loss=validation_loss,
-            )
-        )
-        if validation_loss < best_loss - POLYMARKET_MLP_MIN_DELTA:
-            best_loss = validation_loss
-            best_epoch = epoch
-            best_state = {
-                name: value.detach().cpu().clone()
-                for name, value in model.state_dict().items()
-            }
-            stale_epochs = 0
-        else:
-            stale_epochs += 1
-        if progress is not None and (
-            epoch == 1 or epoch % 5 == 0 or stale_epochs >= POLYMARKET_MLP_PATIENCE
-        ):
-            progress(
-                "polymarket_mlp_epoch",
-                {
-                    "run_kind": run_kind,
-                    "seed": seed,
-                    "epoch": epoch,
-                    "training_loss": trace[-1].training_loss,
-                    "validation_log_loss": validation_loss,
-                    "best_validation_log_loss": best_loss,
-                    "stale_epochs": stale_epochs,
-                },
-            )
-        if stale_epochs >= POLYMARKET_MLP_PATIENCE:
-            break
-    if best_state is None or best_epoch <= 0:
-        raise RuntimeError("Polymarket MLP produced no finite validation checkpoint")
-    model.load_state_dict(best_state)
-    torch_probability = _predict_torch(
-        torch,
-        model,
-        device,
-        validation_features,
-    )
-    member = _extract_member(
-        model,
+    context = _PolymarketMLPFitContext(
+        torch=torch,
+        device=device,
+        model=model,
+        optimizer=optimizer,
         seed=seed,
-        best_epoch=best_epoch,
-        trace=trace,
+        training_features=training_features,
+        training_labels=training_labels,
+        training_weights=training_weights,
+        validation_features=validation_features,
+        validation_labels=validation_labels,
+        progress=progress,
+        run_kind=run_kind,
     )
-    canonical_probability = member.predict_standardized(validation_features)
-    canonical_replay_drift = float(
-        np.max(np.abs(torch_probability - canonical_probability))
+    state = _PolymarketMLPFitState(
+        best_loss=math.inf,
+        best_epoch=0,
+        best_state=None,
+        stale_epochs=0,
+        trace=[],
+        last_batch_heartbeat=time.perf_counter(),
     )
-    if (
-        not math.isfinite(canonical_replay_drift)
-        or canonical_replay_drift > POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
-    ):
-        raise RuntimeError(
-            "Polymarket MLP canonical replay drift exceeds tolerance:"
-            f"{canonical_replay_drift:.9g}"
-        )
-    return member, canonical_replay_drift
+    for epoch in range(1, POLYMARKET_MLP_MAX_EPOCHS + 1):
+        training_loss = _train_member_epoch(context, state, epoch=epoch)
+        if _evaluate_member_epoch(
+            context,
+            state,
+            epoch=epoch,
+            training_loss=training_loss,
+        ):
+            break
+    return _finalize_member_fit(context, state)
 
 
 def _bootstrap(

@@ -256,6 +256,20 @@ weight, prediction, threshold, partition access, result, P&L, risk, authority,
 or profitability claim changes. `_fit_member`, top-level fit orchestration, and
 materialization remain three separate bounded tasks.
 
+The fit-member follow-up decomposes `_fit_member` from Radon `17` to `3`; every
+training helper scores `5` or lower. A deterministic CPU contract freezes the
+input SHA-256, all member parameters, the complete 40-epoch trace, best epoch,
+six prediction float-hex values, canonical replay drift, and epoch-progress
+payloads. The member and trace SHA-256 values remain exact after extraction.
+Direct safety tests cover non-finite weighted loss rejection and rate-limited
+batch heartbeats. All 62 affected tests pass and changed executable-line
+coverage is `88/88`. Ruff and formatting pass; scoped Bandit reports no high-
+or medium-severity finding and only the existing deterministic-bootstrap
+`B311`. No tensor dtype, RNG, batch ordering, optimizer operation, loss,
+gradient clipping, early stopping, checkpoint, model parameter, prediction,
+threshold, partition access, P&L, risk, authority, or profitability claim
+changes. Top-level fit orchestration and materialization remain separate tasks.
+
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating
 code without advancing that replacement layer is a CI-blocking provenance

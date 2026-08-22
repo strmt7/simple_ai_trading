@@ -478,6 +478,33 @@ blind overwrite. All new development after integration belongs on `main`.
   threshold, partition access, evidence identity, result, P&L, risk, authority,
   or profitability claim changes. Hosted checks on the pushed revision remain
   required.
+- Exact report-validation checkpoint
+  `ab1cab7bc6a0f5f49a4900b285710b2acf751db7` passed hosted Windows smoke,
+  Ruff, Vulture, and Super-Linter. Its Linux coverage job remained in progress
+  at the refresh. DeepSource failed with blocking issues under exact run ID
+  `b0c9481e-2a8b-404f-a68e-7fbfe6e2bc21`; do not infer its issue inventory from
+  the aggregate state.
+- The fit-member follow-up decomposes `_fit_member` from Radon `17` to `3`; all
+  extracted helpers score `5` or lower. A deterministic CPU contract freezes
+  input SHA-256
+  `a88b58b8e0bfc9165f87c3b8977028d0366c1e0ae13392136d4def96f34920f3`,
+  member SHA-256
+  `f9da99f54c0c3a57deb3aec51b4d7c63c7a41dec053e8a20e1702a2cf927ae14`,
+  trace SHA-256
+  `7052e95e3fad0a990df1646e73c1117804b97f741836c2c9cfff33ea5ba08b89`,
+  best epoch `20`, epoch count `40`, all six prediction float-hex values,
+  replay drift, and epoch-progress SHA-256
+  `2574cb15bcc3fa2b6fca5c985253dc1d33a402ee6f89a82ab58358b9e3c13a07`.
+  Direct tests also cover non-finite weighted loss rejection and rate-limited
+  batch heartbeats. All 62 affected tests pass; changed executable-line
+  coverage is `88/88`. Ruff and format pass. Scoped Bandit reports no high- or
+  medium-severity finding and only the existing deterministic-bootstrap
+  `B311`. Bare Mypy retains the same two diagnostics at unchanged
+  SciPy/training-orchestration lines and reports none in the fit-member change.
+  No tensor dtype, RNG, permutation, optimizer operation, loss, gradient clip,
+  early stopping, checkpoint, parameter, prediction, threshold, partition
+  access, P&L, risk, authority, or profitability claim changes. Hosted checks
+  on the pushed revision remain required.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -660,15 +687,16 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    Backend, member, and ensemble validation complexity is closed in the final
    bounded closeout under canonical identity fingerprints and fail-closed tests.
    Report validation is also closed under exact admitted/no-trade identities and
-   rejection tests. Continue the remaining three MLP findings in this order:
-   freeze fit-state and numeric parity before changing `_fit_member`; separate
-   `fit_and_evaluate_polymarket_mlp` orchestration without changing test-access
-   gates; then decompose `materialize_polymarket_mlp_report` under idempotence,
-   transaction, and tamper tests. Do not combine those families in one broad
-   rewrite. Continue source-to-sink triage in other modules from exact hosted
-   results, not assumed residual counts. Replace runtime assertions only when an
-   explicit fail-closed error and cleanup contract exists; do not mechanically
-   rewrite typing assertions.
+   rejection tests. Fit-member training-loop complexity is closed under exact
+   numeric and progress fingerprints. Continue the remaining two MLP findings
+   in this order: separate `fit_and_evaluate_polymarket_mlp` orchestration
+   without changing test-access gates; then decompose
+   `materialize_polymarket_mlp_report` under idempotence, transaction, and tamper
+   tests. Do not combine those families in one broad rewrite. Continue
+   source-to-sink triage in other modules from exact hosted results, not assumed
+   residual counts. Replace runtime assertions only when an explicit
+   fail-closed error and cleanup contract exists; do not mechanically rewrite
+   typing assertions.
    Do not treat the narrow `5f6e790c` pass or any bounded follow-up as closure
    of the broader backlog or as a project-wide security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
