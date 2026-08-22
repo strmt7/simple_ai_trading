@@ -110,8 +110,13 @@ targeted findings, and introduced no replacement-helper finding. That wider run
 then exposed six type-contract diagnostics in adjacent modules and one test
 complexity diagnostic. The follow-up fixes those exact seven items plus five
 adjacent local Mypy findings, with all 11 changed executable source lines covered.
-Hosted reanalysis is still required; do not treat this bounded closure as a
-project-wide security result.
+Exact code revision `13f33f8a` removed those seven target diagnostics, but its
+touched-file DeepSource analysis resolved 208 findings and exposed 27 broader
+legacy maintainability findings. The first rendered page is inventoried in
+`docs/CONTINUATION.md`; the remaining findings must be exported from that exact
+run before another bounded batch starts. Formatting correction `5f6e790c`
+passed DeepSource, Ruff, and Vulture. That narrow pass does not erase the
+`13f33f8a` inventory or constitute a project-wide security result.
 
 Frozen source ledgers are immutable. Later analyzer or safety maintenance in a
 bound dependency requires a cumulative, predecessor-bound amendment; updating

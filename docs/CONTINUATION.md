@@ -258,8 +258,22 @@ blind overwrite. All new development after integration belongs on `main`.
   tree test, scoped Mypy, Ruff, strict simplification checks, and Pylint
   errors-only pass. Pylint's only unfiltered errors are the unavailable optional
   `torch` imports. The file-wide Bandit scan still reports the documented dynamic
-  SQL and assertion triage queue, but no finding is on a changed line. Hosted
-  DeepSource must verify the follow-up SHA before the seven-item queue is closed.
+  SQL and assertion triage queue, but no finding is on a changed line.
+- Exact code revision `13f33f8a2b78e826579d65611763f40fef60e9cc`
+  removed the seven targeted DeepSource diagnostics. Its broader touched-file
+  analysis resolved 208 findings and introduced 27 legacy maintainability
+  findings. The first rendered page included complexity in
+  `MarketDataStore.coverage_quality`, `_rule_alpha_score_from_values`,
+  `_serialized_mlp_output`, `_signed_payoff_lightgbm_ranker_prediction`,
+  `predict_payoff_evidence`, `_temperature_scan_torch`, and
+  `calibrate_probability_temperature`; two instance-independent methods; one
+  protected-member access; and a suggested rewrite of `not value > 0.0`.
+  Do not apply that comparison rewrite directly because it would accept NaN.
+  Export and classify all 27 findings from the
+  [exact DeepSource run](https://app.deepsource.com/gh/strmt7/simple_ai_trading/run/baab8e6e-dbe8-4653-8d1c-e884778ea8df/python/)
+  before changing another coherent family. Formatting correction `5f6e790c`
+  passed DeepSource, Ruff, and Vulture; that one-line-delta result does not
+  erase the parent run's 27-item inventory.
 - Exact parent `486f0506d60857e291941c7f17580c172b8ea5ca`
   passed hosted Ruff, Vulture, Super-Linter, and DeepSource. Its longer CI run
   was still in progress at the snapshot.
@@ -425,9 +439,11 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    behavior-preserving batches. DeepSource then exposed the 13 smaller helper
    findings listed above under its stricter threshold. Exact revision `67dab5d8`
    closed four and confirmed the remaining nine. The subsequent local batch
-   addresses all nine; continue from the exact final-SHA DeepSource inventory
-   rather than assuming they are closed. Do not treat this changed-scope closure
-   as a project-wide backlog or security result.
+   addresses all nine, and exact revision `bb6abac7` confirmed their closure.
+   The seven-item type/test follow-up is closed at `13f33f8a`; continue from its
+   exact 27-item DeepSource inventory recorded above. Do not treat the narrow
+   `5f6e790c` pass as closure of that broader backlog or as a project-wide
+   security result.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.
