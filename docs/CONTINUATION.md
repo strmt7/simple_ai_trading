@@ -21,13 +21,82 @@ the repository and on GitHub before changing code.
 - Prospective captures after the cutoff are isolated, append-only experiments.
   They must never be merged into the frozen historical snapshot or used after
   their preregistered access boundary is violated.
-- At this handoff, the Round 21 Binance BBO sidecar (`33804`, `34228`) and the
-  Round 27 Stage 1 supervisor (`65092`, `36844`) were alive. The supervisor was
-  waiting for fixed slot `stage1-b`; it had no credentials, orders, or trading
-  authority. Reverify the processes and canonical state files before acting,
-  and never stop or mutate either capture merely because a PID later changes.
+- The old Round 21/27 PIDs (`33804`, `34228`, `65092`, `36844`) are no longer
+  alive. Do not restart them from this historical note.
+
+## Live Host Handoff: 2026-08-22
+
+The following state was verified at approximately `2026-08-22T07:54Z`. It is
+host state, not model evidence, and must be rechecked before any action.
+
+- Pushed `main` is clean at
+  `9bd824a71bfa08f8e1d6e066f79867174d778d00`, synchronized with
+  `origin/main`. GitHub and local remote-tracking inventory contain only
+  `main` after pruning.
+- Round 75 prospective Binance capture is active from the detached worktree
+  `C:\trader\simple_ai_trading-model-dev`. Parent PID `33332` and physical
+  child PID `29136` were alive. Canonical service state reported
+  `waiting_for_next_fixed_slot`, slot ordinal `652`, no credentials, no orders,
+  and no trading authority. The frozen campaign ends at
+  `2026-08-23T12:00:00Z`. Scheduled task
+  `SimpleAITrading-Round75-Continuous-Capture-Supervisor-v1` was ready and its
+  most recent invocation succeeded.
+- The independent Round 21 Binance spot/futures sidecar is active from clean,
+  detached commit `4a5912574a9157d79fecc53bf68ed6f01bb8dac8` in
+  `C:\trader\simple_ai_trading-round21-sidecar-v2`. Wrapper PID `35008` and
+  physical child PID `35264` were alive. Its state reported segment `12`,
+  phase `capturing`, `102506595` written public messages, ten recorded stream
+  gaps, no credentials, no execution connection, no model-data eligibility,
+  and no paper or live authority. Its frozen scheduled end is
+  `2026-08-29T23:40:00Z`.
+- Never stop, restart, stage, clean, reset, switch, merge, or modify either
+  active capture worktree from this handoff. PID death alone is not a terminal
+  verdict; use the contract-defined state, lease, process ancestry, scheduled
+  task, database/WAL, and independent terminal audit together.
+
+### Unintegrated Worktree
+
+The Round 75 worktree contains substantial work that is not on GitHub. It is
+detached at `c42219d47dc781a46411a4ec96838f8a26c3924c`, which is an ancestor of
+current `main`, with 99 tracked changes and 218 untracked files. At the live
+snapshot its tracked binary diff hashed to Git object
+`bf7f896c3fa2b17a7a7a34887b2d3fe04cb4be54`; the sorted untracked
+path/content manifest had SHA-256
+`f622661d58b6cf044d9e0946c7115ceffa379de553f2eaecaee5b999b02be13b`.
+The newest untracked-file write was `2026-08-10T21:43:27Z`.
+
+These hashes are preservation aids, not validation or approval. Do not commit
+or change HEAD in that worktree while Round 75 is live: the capture is bound to
+its frozen implementation and a repository identity change could invalidate
+it. After contract-defined terminalization, snapshot the state again, preserve
+the complete diff and untracked manifest, and reconcile it onto `main` with a
+reviewed three-way integration. Never use `git clean`, destructive reset, or a
+blind overwrite. All new development after integration belongs on `main`.
+
+### Security Snapshot
+
+- GitHub reported zero open Dependabot alerts, zero open secret-scanning
+  alerts, no open pull requests, and only `main`. GitHub code scanning returned
+  `404: no analysis found`; it is unavailable, not zero.
+- `uv lock --check` passed. Pip-audit found no known vulnerabilities in the
+  complete exported GPU and DirectML dependency stacks. Zizmor pedantic found
+  no workflow findings.
+- A fresh Bandit audit of `src/simple_ai_trading` scanned 436585 lines and
+  reported 527 audit findings: zero high severity, 251 medium, and 276 low.
+  The medium set is dominated by 248 dynamic-SQL (`B608`) review items. Its
+  three `B113` request findings are false positives because each displayed call
+  supplies an explicit bounded timeout. The remaining findings still require
+  source-by-source triage; this audit does not prove vulnerability or safety.
+- The last live DeepSource verification on `2026-08-16` passed the final commit
+  delta with zero introduced issues, while its project backlog remained about
+  28000 active findings, including 118 security findings. Recheck DeepSource
+  before changing that claim.
 
 ## Completed Foundation
+
+This section describes pushed `main` only. It predates the unintegrated
+Round 74/75 worktree above and must not be used to infer that newer local work
+is published, tested on current `main`, or safe to discard.
 
 - CLI and native Windows commands share one parser-derived contract.
 - Deterministic ownership, reconciliation, Pause, Stop, loss, liquidity,
@@ -71,29 +140,36 @@ the repository and on GitHub before changing code.
 
 ## Next Work
 
-1. Before resuming model work, verify clean current `main`, capture liveness,
-   current-main CI, Ruff, Vulture, Super-Linter, DeepSource, secret scanning,
-   Dependabot, code scanning, and branch inventory live. Do not claim zero
-   vulnerabilities when a scanner is unavailable, and do not repeat the full
-   suite unless a subsequent source change invalidates its passing evidence.
-2. Preserve every active real-data capture. Never stop, mutate, relabel, pool, or
-   open outcomes from a preregistered capture without explicit operator
-   approval and its contract-defined terminal step.
-3. When the Stage 1 campaign closes, run only target-blind source, condition,
-   role, and population audits. Materialize Round 27, Round 28 BBO, and Round 29
-   settlement overlays only after those gates pass.
-4. Before any target access, implement and source-bind the Round 29 matched L2
-   selection and economic operator specified by
-   `round-029-settlement-state-matched-ablation-preregistration-v1.json`.
-   Preserve all inherited penalties, scales, costs, delays, and one-use gates.
-5. Evaluate only after source, causal split, costs, access ledger, minimum
-   sample, and implementation bindings are complete. Failed gates close the
-   hypothesis; they never justify weaker costs, adaptive thresholds, or a
-   reused holdout.
-6. AI stays veto/downsize-only until it demonstrates statistically defensible,
-   latency-charged causal uplift over the frozen non-AI decision.
-7. After model evidence is credible, finish native Windows usability and
-   parser-parity browser/visual QA, then build the manual beta release.
+1. Reverify both live captures and their canonical state files. Let Round 75
+   reach its fixed terminal boundary and let the Round 21 sidecar reach its
+   separately frozen boundary. Do not inspect targets or outcomes early.
+2. Terminalize each capture only through its frozen contract. Run target-blind
+   source, continuity, gap, role, population, lease, database/WAL, and resource
+   audits before deciding whether any row is admissible. A failed gate closes
+   that lineage; it does not permit salvage or threshold changes.
+3. After Round 75 terminalization, preserve and re-hash the entire detached
+   worktree before integration. Reconcile its 99 tracked and 218 untracked
+   files onto current `main` without losing the analyzer fixes already on
+   `main`. Inspect every conflict; do not bulk-copy over newer files. Commit and
+   develop only on `main` after that point.
+4. Treat the unintegrated Round 74/75 documents and implementation as
+   unverified until focused domain tests, contract hashes, generated CLI/native
+   parity, and the affected analyzer gates pass on the integrated tree. Do not
+   publish or infer their model claims from local file presence.
+5. Triage real security risk in bounded batches, beginning with Bandit/DeepSource
+   dynamic SQL and executable-resolution findings. Distinguish parameterized
+   identifier whitelisting and fixed executable contracts from actual injection
+   or path-hijack exposure. Add direct regressions for every behavior change;
+   do not suppress the backlog broadly.
+6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
+   sample, and implementation bindings are complete. AI remains veto/downsize
+   only until matched, latency-charged causal uplift is demonstrated.
+7. Run focused checks while integrating, then the full local matrix once at the
+   final checkpoint. On this Windows host invoke pytest through
+   `uv run --locked python -m pytest`; the direct `uv run pytest` console entry
+   does not place the repository's `tools` package on `sys.path`. Push `main`,
+   verify all hosted workflows and available scanners on that exact SHA, and
+   keep the GitHub branch inventory to `main`.
 
 ## Safety Invariants
 
@@ -118,6 +194,8 @@ the repository and on GitHub before changing code.
 - Data cutoff: `docs/model-research/research-data-snapshot-contract-v1.json`
 - Agent and CI workflow: `docs/AGENT_WORKFLOWS.md`
 - Product direction: `PLANNING.md`
+- Live local capture and integration boundary: this document's
+  `Live Host Handoff: 2026-08-22` section
 
 Suggested continuation request:
 

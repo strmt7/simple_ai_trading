@@ -64,6 +64,13 @@ extends the established parser with independently registered commands.
 - The compact cross-round ledger is
   `docs/model-research/action-value/latest/progress.csv`. Read its header and
   only the last few rows unless a task names an older mechanism.
+- **Local 2026-08-22 integration boundary:** pushed `main` does not contain the
+  active Round 75 implementation. That capture is running from a detached,
+  materially dirty local worktree whose HEAD must not change before frozen
+  terminalization. The independent Round 21 Binance sidecar is also active.
+  Read `docs/CONTINUATION.md` for exact processes, state hashes, scheduled end
+  times, security coverage, and the post-capture integration sequence. Never
+  clean, reset, stage, commit, switch, or merge either live capture worktree.
 - **Current capture boundary:** Round 73 v9 is invalidated before target or
   model access. Eighteen indexed hours passed the old gate, but two later
   reconnect-free, exact-audit-passing hours were rejected solely because the
