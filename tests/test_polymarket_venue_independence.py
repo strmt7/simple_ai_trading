@@ -23,7 +23,12 @@ LIVE_BOUNDARY_IMPORTS = {
         {"polymarket_live", "polymarket_live_v2"}
     ),
     "polymarket_live_promotion.py": frozenset(
-        {"polymarket_live", "polymarket_live_manifest"}
+        {
+            "polymarket_cross_regime_evaluation",
+            "polymarket_live",
+            "polymarket_live_manifest",
+            "polymarket_live_risk",
+        }
     ),
     "polymarket_live_risk.py": frozenset({"polymarket_live"}),
     "polymarket_live_qualification.py": frozenset(
