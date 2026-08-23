@@ -514,7 +514,10 @@ def test_news_feed_helpers_and_ollama_validation(tmp_path, monkeypatch) -> None:
     assert signals._provider_name_for_url(signals.BITSTAMP_BTCUSD_TICKER_URL) == "bitstamp_btcusd_momentum"
     assert signals._provider_name_for_url(f"{signals.BINANCE_SPOT_BASE_URL}/api/v3/ticker/24hr?symbol=BTCUSDC") == "binance_spot_momentum"
     assert signals._provider_name_for_url(signals.MEMPOOL_FEES_URL) == "mempool_fee_pressure"
-    assert signals._provider_name_for_url("https://evil.test/api.kraken.com") == "evil_test"
+    assert (
+        signals._provider_name_for_url("https://evil.test/api.kraken.com")
+        == "evil_test"
+    )
     assert (
         signals._provider_name_for_url(
             "https://api.kraken.com.evil.test/?next=https://api.exchange.coinbase.com"
