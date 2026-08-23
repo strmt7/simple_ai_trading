@@ -381,17 +381,51 @@ APIs reported zero open code-scanning, Dependabot, and secret-scanning alerts,
 with only `main` and no open pull request. This is bounded scanner evidence, not
 a claim that no undiscovered vulnerability exists.
 
-Current-main DeepSource run
+Historical DeepSource run
 `3a5e59a3-09f7-40a8-b078-92af00bab296` on `71a22f38` renders 15 findings in
 the three recently changed AI evidence modules: seven major type or overlapping-
 exception diagnostics and eight complexity-only findings. The bounded type
 follow-up removes all seven, rejects boolean or unsupported numeric assertions,
 validates recursive JSON before provider transport, and closes four adjacent
 Mypy object-conversion errors. The 74 focused tests, scoped Mypy, Ruff, and
-Bandit pass locally. The eight complexity findings remain an explicit later
-maintainability queue; hosted analysis of the exact pushed revision is still
-required. This changes no model, score, decision threshold, risk authority,
-P&L, or profitability evidence.
+Bandit pass locally. Exact boundary-regression checkpoint `55dac7b9` then
+passed every hosted workflow and DeepSource. The eight complexity findings
+became the bounded queue closed or narrowed by the section below. These changes
+do not alter a model, score, decision threshold, risk authority, P&L, or
+profitability evidence.
+
+### AI Review Complexity Closeout: 2026-08-23
+
+Exact source checkpoint `4ef963f602d3e56479262741c793e6a1ab2f8822`
+closes all seven documented `PY-R1000` findings in `ai_review.py`. Radon scores
+fall from `22/74/21/23/19/24/35` to `7/2/1/4/8/10/9` for decision validation,
+report validation, Ollama identity resolution, compact model-lab evidence,
+market-edge collection, selection-risk warnings, and review orchestration.
+Every extracted helper scores `14` or lower, matching DeepSource's observed
+threshold.
+
+Behavior was frozen before refactoring. Parent/current checks made 90 report-
+validation comparisons, 96 compact-evidence and selection-risk comparisons,
+and 20 orchestration/result-artifact comparisons across ten success and fail-
+closed scenarios, with zero mismatches. The focused matrix passes 72 tests;
+the complete affected AI matrix passes 193 tests; changed executable-line
+coverage is `230/230`. Ruff, formatting, scoped Mypy, Bandit, Vulture,
+compilation, dependency-lock validation, terminology, badge, and whitespace
+checks pass locally.
+
+The exact source SHA passed Linux full-suite and changed-line coverage,
+Windows Python/native UI smoke, Ruff, Vulture, Super-Linter, Python and native
+C++ CodeQL, and DeepSource run
+`e89a24fa-6434-46ec-b6d3-93bf15ec8f1a`. The available GitHub APIs reported
+zero open Dependabot, code-scanning, and secret-scanning alerts, with only
+`main` and no open pull request. This is bounded analyzer evidence, not proof
+that no undiscovered vulnerability exists.
+
+The only remaining finding from that eight-item AI complexity inventory is
+`ai_start_gate.evaluate_ai_start_gate` (Radon `24`). Keep it as a separate,
+behavior-frozen task with exact startup-status, provider-call-order, and
+persisted-evidence parity. No model input, prediction, score, threshold, risk
+authority, P&L, order path, or profitability behavior changed in this closeout.
 
 ## Resume Here
 
