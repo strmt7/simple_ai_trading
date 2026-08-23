@@ -276,10 +276,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     if len(selection_run_ids) != 1:
         raise ValueError("Round 29 selection source run differs")
     selection_run_id = next(iter(selection_run_ids))
+    raw_role_audits = target_audit.get("roles")
+    if not isinstance(raw_role_audits, list):
+        raise ValueError("Round 29 target role audits differ")
     role_audits = {
         item["role"]: item
-        for item in target_audit["roles"]
-        if isinstance(item, Mapping)
+        for item in raw_role_audits
+        if isinstance(item, Mapping) and isinstance(item.get("role"), str)
     }
     selection_target_audit = role_audits.get("selection")
     if (

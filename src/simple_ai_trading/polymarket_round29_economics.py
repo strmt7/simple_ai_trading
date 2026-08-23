@@ -17,7 +17,11 @@ from .polymarket_round27_economics import (
 )
 from .polymarket_round27_model import Round27ModelSample, Round27Partition
 from .polymarket_round28_economics import paired_round28_economic_scenario
-from .polymarket_round29_model import Round29ModelSample, Round29Partition
+from .polymarket_round29_model import (
+    Round29ModelSample,
+    Round29Partition,
+    Round29ProbabilityModel,
+)
 from .polymarket_round29_selection import load_round29_selected_pair
 
 
@@ -198,25 +202,35 @@ def evaluate_round29_matched_economics(
     cfg = (config or Round27EconomicConfig()).validated()
 
     def evaluate(
-        model: object,
+        model: Round29ProbabilityModel,
         probability: np.ndarray,
     ) -> dict[str, object]:
-        kwargs: dict[str, object] = (
-            {"books": books}
-            if books is not None
-            else {"book_batches": book_batch_factory()}
-        )
+        if books is not None:
+            return evaluate_round27_economic_scenarios(
+                partition=projected,
+                predictions=probability,
+                markets=markets,
+                books=books,
+                outcomes_up=outcomes_up,
+                model_name=f"{model.model_name}:{model.feature_view}",
+                model_sha256=model.model_sha256,
+                source_audit_sha256=source_audit_sha256,
+                resolution_evidence_sha256=resolution_evidence_sha256,
+                config=cfg,
+            )
+        if book_batch_factory is None:
+            raise RuntimeError("Round 29 economic book source narrowed incorrectly")
         return evaluate_round27_economic_scenarios(
             partition=projected,
             predictions=probability,
             markets=markets,
             outcomes_up=outcomes_up,
-            model_name=f"{model.model_name}:{model.feature_view}",  # type: ignore[attr-defined]
-            model_sha256=model.model_sha256,  # type: ignore[attr-defined]
+            model_name=f"{model.model_name}:{model.feature_view}",
+            model_sha256=model.model_sha256,
             source_audit_sha256=source_audit_sha256,
             resolution_evidence_sha256=resolution_evidence_sha256,
             config=cfg,
-            **kwargs,
+            book_batches=book_batch_factory(),
         )
 
     base_report = evaluate(pair.base_model, base_probability)

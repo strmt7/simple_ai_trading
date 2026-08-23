@@ -103,6 +103,33 @@ def _sha256(value: object, *, label: str) -> str:
     return selected
 
 
+def _finite_float_field(
+    value: Mapping[str, object],
+    field: str,
+    *,
+    label: str,
+) -> float:
+    raw = value.get(field)
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        raise ValueError(f"Round 29 {label} differs")
+    selected = float(raw)
+    if not math.isfinite(selected):
+        raise ValueError(f"Round 29 {label} differs")
+    return selected
+
+
+def _mapping_field(
+    value: Mapping[str, object],
+    field: str,
+    *,
+    label: str,
+) -> Mapping[str, object]:
+    selected = value.get(field)
+    if not isinstance(selected, Mapping):
+        raise ValueError(f"Round 29 {label} differs")
+    return selected
+
+
 def _prior_probability(partition: Round29Partition) -> NDArray[np.float64]:
     offsets = np.asarray(partition.offsets, dtype=np.float64)
     output = np.empty_like(offsets)
@@ -433,46 +460,93 @@ def round29_pair_selection_report(
         draws=draws,
         seed=2_999 if pair_name == "diagnostic" else 2_989,
     )
-    try:
-        checks = {
-            "augmented_log_loss_better_than_base": float(augmented_metrics["log_loss"])
-            < float(base_metrics["log_loss"]),
-            "augmented_brier_better_than_base": float(augmented_metrics["brier_score"])
-            < float(base_metrics["brier_score"]),
-            "paired_log_loss_uplift_confidence_gate_met": float(
-                uplift["log_loss"]["ci95_upper"]  # type: ignore[index]
-            )
-            < 0.0,
-            "paired_brier_uplift_confidence_gate_met": float(
-                uplift["brier_score"]["ci95_upper"]  # type: ignore[index]
-            )
-            < 0.0,
-            "augmented_log_loss_better_than_market_prior": float(
-                augmented_metrics["log_loss"]
-            )
-            < float(prior_metrics["log_loss"]),
-            "augmented_brier_better_than_market_prior": float(
-                augmented_metrics["brier_score"]
-            )
-            < float(prior_metrics["brier_score"]),
-            "augmented_prior_log_loss_confidence_gate_met": float(
-                versus_prior["log_loss"]["ci95_upper"]  # type: ignore[index]
-            )
-            < 0.0,
-            "augmented_prior_brier_confidence_gate_met": float(
-                versus_prior["brier_score"]["ci95_upper"]  # type: ignore[index]
-            )
-            < 0.0,
-            "balanced_accuracy_floor_met": float(augmented_metrics["balanced_accuracy"])
-            >= float(prediction_evaluation["balanced_accuracy_floor"]),
-            "calibration_not_materially_worse_than_prior": float(
-                augmented_metrics["expected_calibration_error"]
-            )
-            <= float(prior_metrics["expected_calibration_error"])
-            + float(prediction_evaluation["calibration_ece_maximum_degradation"]),
-        }
-    except (KeyError, TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("Round 29 prediction evaluation contract differs") from exc
+    uplift_log_loss = _mapping_field(uplift, "log_loss", label="log-loss uplift")
+    uplift_brier = _mapping_field(uplift, "brier_score", label="Brier uplift")
+    prior_log_loss = _mapping_field(
+        versus_prior,
+        "log_loss",
+        label="prior log-loss uplift",
+    )
+    prior_brier = _mapping_field(
+        versus_prior,
+        "brier_score",
+        label="prior Brier uplift",
+    )
+    checks = {
+        "augmented_log_loss_better_than_base": _finite_float_field(
+            augmented_metrics,
+            "log_loss",
+            label="augmented log loss",
+        )
+        < _finite_float_field(base_metrics, "log_loss", label="base log loss"),
+        "augmented_brier_better_than_base": _finite_float_field(
+            augmented_metrics,
+            "brier_score",
+            label="augmented Brier score",
+        )
+        < _finite_float_field(base_metrics, "brier_score", label="base Brier score"),
+        "paired_log_loss_uplift_confidence_gate_met": _finite_float_field(
+            uplift_log_loss,
+            "ci95_upper",
+            label="log-loss uplift confidence bound",
+        )
+        < 0.0,
+        "paired_brier_uplift_confidence_gate_met": _finite_float_field(
+            uplift_brier,
+            "ci95_upper",
+            label="Brier uplift confidence bound",
+        )
+        < 0.0,
+        "augmented_log_loss_better_than_market_prior": _finite_float_field(
+            augmented_metrics,
+            "log_loss",
+            label="augmented log loss",
+        )
+        < _finite_float_field(prior_metrics, "log_loss", label="prior log loss"),
+        "augmented_brier_better_than_market_prior": _finite_float_field(
+            augmented_metrics,
+            "brier_score",
+            label="augmented Brier score",
+        )
+        < _finite_float_field(prior_metrics, "brier_score", label="prior Brier score"),
+        "augmented_prior_log_loss_confidence_gate_met": _finite_float_field(
+            prior_log_loss,
+            "ci95_upper",
+            label="prior log-loss confidence bound",
+        )
+        < 0.0,
+        "augmented_prior_brier_confidence_gate_met": _finite_float_field(
+            prior_brier,
+            "ci95_upper",
+            label="prior Brier confidence bound",
+        )
+        < 0.0,
+        "balanced_accuracy_floor_met": _finite_float_field(
+            augmented_metrics,
+            "balanced_accuracy",
+            label="balanced accuracy",
+        )
+        >= _finite_float_field(
+            prediction_evaluation,
+            "balanced_accuracy_floor",
+            label="balanced accuracy floor",
+        ),
+        "calibration_not_materially_worse_than_prior": _finite_float_field(
+            augmented_metrics,
+            "expected_calibration_error",
+            label="augmented calibration error",
+        )
+        <= _finite_float_field(
+            prior_metrics,
+            "expected_calibration_error",
+            label="prior calibration error",
+        )
+        + _finite_float_field(
+            prediction_evaluation,
+            "calibration_ece_maximum_degradation",
+            label="calibration degradation ceiling",
+        ),
+    }
     body: dict[str, object] = {
         "schema_version": POLYMARKET_ROUND29_PAIR_SELECTION_SCHEMA_VERSION,
         "pair_name": pair_name,

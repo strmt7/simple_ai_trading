@@ -1,5 +1,5 @@
 {
-  "amendment_sha256": "81a612504232ede903c0346601d69fdf4e4ab957bbed36048a3c16ec5856d5b0",
+  "amendment_sha256": "2eddb9cbe180f495b39a07c93d95b171790b865e08f7e478f329d541c3590032",
   "authority": {
     "credentials_used": false,
     "edge_claim": false,
@@ -44,11 +44,11 @@
   "schema_version": "polymarket-round29-model-economic-operator-implementation-amendment-v1",
   "source_text_sha256": {
     "docs/model-research/cross-regime-edge-acceptance-contract-v1.json": "64b5df61d25223df43b75005d2cd24685404150fd7b03970b2d1813e27cbc364",
-    "src/simple_ai_trading/polymarket_round29_economics.py": "01b6c1d96b6e1a7abc5e3f29477e95a81d38c7a4c774ad7a1053acc3686e5c38",
-    "src/simple_ai_trading/polymarket_round29_model.py": "504c6de40626f0a2fe808cfc70d2100deec9802b9ca598e66404997ca291edc3",
-    "src/simple_ai_trading/polymarket_round29_operator.py": "0d4de57fecedf841de327c00490572e368691b29a4c7ff0c9ac58b58da4af8e8",
-    "src/simple_ai_trading/polymarket_round29_selection.py": "1f3c56daa7092460c50fef743d172ce29ecfd0ed4ee5f37c0f5ba75b4a59fecd",
-    "src/simple_ai_trading/polymarket_round29_source.py": "096b845992b1b3ba3f7915cb70424d6a1ceb0f9f4e4647b29ffac33a031f6092",
+    "src/simple_ai_trading/polymarket_round29_economics.py": "ec99548831ea39f147dd996b9529b4f30f59f37356962bd035befbc2321ee350",
+    "src/simple_ai_trading/polymarket_round29_model.py": "cf8bc2ffff0392051e3c325b09c83890b0a7b49e2ea16acf72503b0865281545",
+    "src/simple_ai_trading/polymarket_round29_operator.py": "cfc9f6f7a567fe55eecdca42ace8e6cbe6c183211ee824ede8b96210a36c79db",
+    "src/simple_ai_trading/polymarket_round29_selection.py": "a8c92e7d26fb4c54db951ee1ac637a56a20341189dd48fb0cec5856363d6f578",
+    "src/simple_ai_trading/polymarket_round29_source.py": "f2668e0d2426658385adcc4d69050d21b8b45052437132bd1d853190f940fd02",
     "tests/test_polymarket_round29_economics.py": "6a8d4eb83281bb0f66e7e1489dbfb40a942f20441ec6298b71db96daccae3fa6",
     "tests/test_polymarket_round29_model.py": "0117cbef75f950c7fb944c54abe0d596d4c27240a11bf5272b6f72ceacf0a8e3",
     "tests/test_polymarket_round29_operator.py": "283d0a7c0a4421b3fdf1fad652bdb197d86434775ca849b12af2f694f0d86eb3",
@@ -56,7 +56,7 @@
     "tests/test_polymarket_round29_source.py": "b7048d0cfdaf7afcea8b565d4b59fe15c6176fc47e572e04ab7dbd6a245c8269",
     "tests/test_cross_regime_edge_acceptance_contract.py": "10ddef19381148e4005f36911a302563052a95bdd264cbcfe46e237035ad5ab0",
     "tests/test_run_polymarket_round29_selection.py": "26e8f4c796edc15b94cf7dec50e3b9ef380b2a6d810243e2d0077af6234ffdca",
-    "tools/run_polymarket_round29_selection.py": "ca4749d6f3736fbc326d6610a6e359bcef720efb3e970723ad3c22b98bd62e82"
+    "tools/run_polymarket_round29_selection.py": "4ee6f82b59ee3175f2a4a11cc35f9141ed99c36fdafebc120c56e3578404d496"
   },
   "status": "frozen_before_stage1_feature_or_outcome_access"
 }
