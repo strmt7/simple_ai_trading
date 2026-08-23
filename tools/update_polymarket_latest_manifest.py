@@ -124,6 +124,7 @@ _CURRENT_RESEARCH_ARTIFACTS = (
     "round-028-selection-implementation-amendment-v1.json",
     "round-028-static-analysis-remediation-amendment-v2.json",
     "round-029-settlement-state-matched-ablation-preregistration-v1.json",
+    "round-029-model-economic-operator-implementation-amendment-v1.json",
     "round-029-static-analysis-remediation-amendment-v1.json",
 )
 
@@ -197,7 +198,7 @@ def _artifact(path: Path) -> dict[str, object]:
 def build_manifest() -> dict[str, object]:
     body: dict[str, object] = {
         "schema_version": "polymarket-current-status-publication-v1",
-        "status": "round29_preregistered_stage1_capture_running_no_result",
+        "status": "round29_operator_source_bound_stage1_capture_running_no_result",
         "asset": "BTC",
         "market_variant": "fiveminute",
         "latest_research_round": 29,
@@ -311,6 +312,8 @@ def build_manifest() -> dict[str, object]:
         "round28_ai_sealed_result_available": False,
         "round28_ai_result_available": False,
         "round29_preregistration_frozen": True,
+        "round29_model_economic_operator_source_bound": True,
+        "round29_cross_regime_claim_boundary_source_bound": True,
         "round29_model_result_available": False,
         "round29_sealed_result_available": False,
         "profitability_claim": False,

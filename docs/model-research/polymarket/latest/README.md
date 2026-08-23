@@ -70,9 +70,18 @@ margin/elapsed-phase interaction. It can compose as 188 fields over Round 27 or
 reconstructing Chainlink's unpublished TWAP calculation and leaves all frozen
 cost, delay, probability, concentration, drawdown, and one-use sealed gates
 unchanged. The overlay implementation and synthetic tamper tests pass, but the
-matched model/economic operator is not yet source-bound. No Stage 1 feature,
-outcome, metric, P&L, edge, profitability, or authority has been accessed or
-created for Round 29.
+matched model/economic path is now source-bound by the
+[implementation amendment](../round-029-model-economic-operator-implementation-amendment-v1.json).
+It fits the diagnostic and promotion-controlling pairs on identical rows,
+binds the persisted selection to the exact input manifest, replays both primary
+arms over the same observed books and fixed delays, and rejects source, model,
+nested-report, path-alias, or hard-link drift. The bounded runner stops before
+economics when probability gates fail. The amendment also binds the
+[cross-regime acceptance contract](../../cross-regime-edge-acceptance-contract-v1.json):
+aggregate passage cannot establish a bull/bear/sideways/choppy or stressed
+liquidity/latency edge, and unsupported states require rejection or abstention.
+No Stage 1 feature, outcome, metric, P&L, edge, profitability, or authority has
+been accessed or created for Round 29.
 
 The pre-target [selection implementation amendment](../round-028-selection-implementation-amendment-v1.json)
 adds chronological whole-condition folds, a 10-minute embargo, calibration-only

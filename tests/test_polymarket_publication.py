@@ -146,8 +146,14 @@ def test_current_status_manifest_reconstructs_every_artifact() -> None:
     assert manifest["latest_evaluated_round"] == 23
     assert manifest["latest_graph_round"] == 23
     assert (
-        manifest["status"] == "round29_preregistered_stage1_capture_running_no_result"
+        manifest["status"]
+        == "round29_operator_source_bound_stage1_capture_running_no_result"
     )
+    assert manifest["round29_preregistration_frozen"] is True
+    assert manifest["round29_model_economic_operator_source_bound"] is True
+    assert manifest["round29_cross_regime_claim_boundary_source_bound"] is True
+    assert manifest["round29_model_result_available"] is False
+    assert manifest["round29_sealed_result_available"] is False
     assert manifest["round21_result_available"] is False
     assert manifest["round23_result_available"] is True
     assert manifest["round24_result_available"] is False

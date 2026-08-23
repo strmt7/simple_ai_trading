@@ -35,6 +35,13 @@ requires identical metric-unit provenance, recomputed AI-minus-baseline deltas,
 strict aggregate P&L/ROI/expectancy improvement, and non-worsening maximum
 drawdown; otherwise AI remains a veto-only research component.
 
+Aggregate results cannot establish an all-regime edge. The
+[cross-regime acceptance contract](docs/model-research/cross-regime-edge-acceptance-contract-v1.json)
+requires causal bullish, bearish, sideways, choppy, volatility, liquidity, and
+latency slices. Missing or inadequate evidence means rejection or no new
+exposure in that state; deterministic portfolio controls remain authoritative
+even when a model is wrong.
+
 The current state and next admissible experiment are recorded in the
 [Binance](docs/model-research/action-value/latest/README.md) and
 [Polymarket](docs/model-research/polymarket/latest/README.md) status pages.
@@ -75,12 +82,13 @@ an operator assertion still cannot create size evidence.
 5. Only then proceed through the frozen source, causal split, execution-cost,
    delay, access-ledger, sample, model, and one-use evaluation gates. AI remains
    veto/downsize-only until a matched causal uplift test passes.
-6. Independently complete the target-blind Round 29 Polymarket model/economic
-   operator. The settlement feature overlay is implemented, but the matched
-   diagnostic and BBO promotion pairs are not yet source-bound. Preserve the
-   frozen preregistration, bind final implementation hashes through a cumulative
-   pre-outcome amendment, and keep Stage 1 outcomes closed until manifest,
-   causal-access, matched-row, economic, tamper, and parity checks pass.
+6. Preserve the completed target-blind Round 29 Polymarket model/economic
+   operator and its cumulative pre-outcome amendment. The exact model,
+   selection, source-composition, economics, operator, runner, tests, and
+   cross-regime claim boundary are source-bound. Keep Stage 1 outcomes closed
+   until the campaign stores are terminal and the operator rederives the exact
+   input manifest; aggregate passage alone cannot authorize an all-regime,
+   sealed, profitability, paper, or live claim.
 
 The currently pushed checkpoint has no reproducible after-cost edge,
 profitability claim, or trading authority. Local unintegrated files do not

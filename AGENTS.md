@@ -16,6 +16,10 @@ override prose.
 - Conservative is default. Leverage is a ceiling, never edge. Profitability,
   readiness, ROI, and drawdown claims require reproducible source-bound,
   after-cost evidence.
+- Aggregate performance never establishes an all-regime edge. Apply
+  `docs/model-research/cross-regime-edge-acceptance-contract-v1.json`; an
+  unsupported bullish, bearish, sideways, choppy, volatility, liquidity, or
+  latency slice must reject promotion or abstain from new exposure.
 - Risk, ownership, reconciliation, Stop, and close controls are deterministic.
   AI may only veto or reduce risk after matched uplift evidence and may never
   override a safety gate or block a close.
