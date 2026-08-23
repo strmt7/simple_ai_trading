@@ -1,0 +1,70 @@
+{
+  "admissibility": {
+    "complete_capture_reports_added_by_wal": 0,
+    "incomplete_run_id": "76bbc3cd9ddd42028ecdebf1555117db",
+    "incomplete_slot_ordinal": 67,
+    "original_evidence_modified": false,
+    "wal_payload_admitted": false
+  },
+  "artifact_sha256": "18fa37db65aa19fed16128d4aaf0af10cb0606c95192b46dfca0b0a28e932751",
+  "copy_recovery": {
+    "database_bytes": 112734208,
+    "database_sha256": "b541e7745c873dfbd7c76cdf90eb2898a6ce23549dd8367d55924d875d95e770",
+    "nonzero_row_counts": {
+      "main.impact_capture_frame_v10": 623,
+      "main.impact_capture_lane_state": 9,
+      "main.impact_capture_report": 2,
+      "main.impact_capture_run": 3,
+      "main.impact_capture_segment": 9,
+      "main.impact_rest_event_v10": 194
+    },
+    "schema_sha256": "1aac30882ff8a722a48bb7ba9dd7fca782fd15e1a3e89edccace01884a5d7b37",
+    "table_count": 41,
+    "wal_exists_after_recovery": false
+  },
+  "copy_without_wal": {
+    "database_bytes": 73674752,
+    "database_sha256": "e17516c86309cbde1aa5b70d3e57828901ef21d3fbf6cff781a52b488aa89697",
+    "nonzero_row_counts": {
+      "main.impact_capture_frame_v10": 427,
+      "main.impact_capture_lane_state": 6,
+      "main.impact_capture_report": 2,
+      "main.impact_capture_run": 3,
+      "main.impact_capture_segment": 9,
+      "main.impact_rest_event_v10": 132
+    },
+    "schema_sha256": "1aac30882ff8a722a48bb7ba9dd7fca782fd15e1a3e89edccace01884a5d7b37",
+    "table_count": 41
+  },
+  "duckdb_version": "1.5.4",
+  "method": {
+    "copy_hashes_matched_sources_before_open": true,
+    "copied_database_opened_read_only_before_recovery": true,
+    "copied_database_opened_read_write_for_wal_recovery": true,
+    "financial_outcomes_accessed": false,
+    "original_database_opened": false,
+    "original_wal_replayed": false,
+    "target_data_accessed": false
+  },
+  "official_basis": [
+    "https://duckdb.org/docs/current/guides/troubleshooting/crashes",
+    "https://duckdb.org/docs/lts/operations_manual/footprint_of_duckdb/files_created_by_duckdb",
+    "https://duckdb.org/docs/lts/sql/statements/checkpoint"
+  ],
+  "observed_at_utc": "2026-08-23T12:20:00Z",
+  "row_count_delta_after_wal_recovery": {
+    "main.impact_capture_frame_v10": 196,
+    "main.impact_capture_lane_state": 3,
+    "main.impact_capture_report": 0,
+    "main.impact_capture_run": 0,
+    "main.impact_capture_segment": 0,
+    "main.impact_rest_event_v10": 62
+  },
+  "schema_version": "round-075-wal-copy-recovery-v1",
+  "source": {
+    "database_bytes": 73674752,
+    "database_sha256": "e17516c86309cbde1aa5b70d3e57828901ef21d3fbf6cff781a52b488aa89697",
+    "wal_bytes": 9431058,
+    "wal_sha256": "6faf25f095c92233d2fa28d57c76068e2c14093b8cb9070ce8e32d81d8eaf032"
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "artifact_sha256": "94a556887adf33996168de260a8a172952bc64040273a7ff2dfb373f2c2f50d6",
+  "coverage": {
+    "all_slots_have_terminal_dispositions": false,
+    "incomplete_slot_ordinals": [
+      67
+    ],
+    "incomplete_slot_records": [
+      {
+        "logs": {
+          "capture.stderr.log": {
+            "bytes": 3612,
+            "sha256": "64e1acfa360f3e872a7c461c81fba5819986f1ced54c1200a90283280f8c2b35"
+          },
+          "capture.stdout.json": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "monitor_sample_count": 28,
+        "reservation_sha256": "79d77b92b4379de9af1dcb450bb8318052d1c9692556bb1ddc81ce2a1730bd93",
+        "role": "training",
+        "slot_ordinal": 67,
+        "state_file_sha256": "777d9c0c57922acb88ce6ee009ad6757a6b9bef7f748d39e710f7b9ae1a9ed50",
+        "state_phase": "running"
+      }
+    ],
+    "missed_manifest_sha256": "767e0c48808b6a7f05df4294c3ec98656ace79c246b94c77b3acaf1aada8d424",
+    "missed_receipt_count": 684,
+    "result_manifest_sha256": "358f1b790d5c4127df03a817df518bba707b3e47c9e970770501f71361e1dda0",
+    "result_reason_counts": {
+      "admitted": 33,
+      "in_run_transport": 2
+    },
+    "result_status_counts": {
+      "admitted": 33,
+      "transport_excluded": 2
+    },
+    "role_counts": {
+      "test": {
+        "admitted": 0,
+        "eligible_anchor_quota_passed": false,
+        "missed": 103,
+        "observed_raw_eligible_anchor_ns": 0,
+        "required_eligible_anchor_ns": 78948000000000,
+        "result": 0
+      },
+      "training": {
+        "admitted": 33,
+        "eligible_anchor_quota_passed": false,
+        "missed": 478,
+        "observed_raw_eligible_anchor_ns": 28903469878300,
+        "required_eligible_anchor_ns": 394740000000000,
+        "result": 35
+      },
+      "tuning": {
+        "admitted": 0,
+        "eligible_anchor_quota_passed": false,
+        "missed": 103,
+        "observed_raw_eligible_anchor_ns": 0,
+        "required_eligible_anchor_ns": 78948000000000,
+        "result": 0
+      }
+    },
+    "terminal_result_count": 35,
+    "total_predeclared_slots": 720,
+    "uncovered_slot_ordinals": []
+  },
+  "gates": {
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "model_data_access_permitted": false,
+    "profitability_established": false,
+    "representative_training_completed": false,
+    "role_eligible_anchor_quotas_passed": false,
+    "sealed_test_access_permitted": false,
+    "source_continuity_passed": false,
+    "trading_authority": false,
+    "training_permitted": false,
+    "tuning_permitted": false
+  },
+  "observed_at_utc": "2026-08-23T12:35:47.7918594Z",
+  "schema_version": "round-075-terminal-audit-v1",
+  "scope": {
+    "credentials_used": false,
+    "financial_outcomes_accessed": false,
+    "model_training_performed": false,
+    "orders_submitted": false,
+    "source_databases_opened": false,
+    "source_wals_replayed": false,
+    "target_data_accessed": false
+  },
+  "service": {
+    "campaign_boundary_wall_ns": 1787486400000000000,
+    "campaign_terminal_state_passed": true,
+    "heartbeat_wall_ns": 1787486404458226100,
+    "lease_exclusively_available": true,
+    "phase": "campaign_terminal",
+    "state_sha256": "1e3313c8c5f3ee20c36de20fa0b5cab837098e6390ce23de657e6323cd6da0a6"
+  },
+  "sources": {
+    "activation_artifact_sha256": "d7befbb64f209d65fa4b278df8025f51cb75903734c6cfde1c23f674fc1fd309",
+    "activation_file_sha256": "85e5f280b281437fac20343a9aaadd2dc431f340fb0451b6d8d67955a86cb103",
+    "contract_artifact_sha256": "eca592acb4c3f37c6d043d37664614d35994d6e9b3ebea2e801351c287a49bbf",
+    "contract_file_sha256": "7f740984395490113af53c304b3d7c649e4f6e593543a6ebdcf02a1a14becefe",
+    "frozen_implementation_file_sha256": {
+      "src/simple_ai_trading/round75_capture_supervisor.py": "ac7b74689c9957baf162f486bdd25ab4b0134ec988598bcc277b77cbcad9b8a6",
+      "src/simple_ai_trading/round75_continuous_capture.py": "090704bd5bacfe6104efd9245d1fb17792594f8eba4bd8e7359208a24ab7c5dd",
+      "tools/run_round75_continuous_capture.py": "17d0e3d8de3d13997037e567d2f19f3c5524223df0be7a4a9b5eee3d90e90822",
+      "tools/supervise_round75_continuous_capture.py": "44e194589f886695de7ecda9aa0d8edbab0a6f7b73e57752d8c041a25ea3eb2b"
+    },
+    "plan_file_sha256": "fdfd131b7edcf66d4d523a332e50caea45d448c15bf2c21e27a72544a9d02f97",
+    "plan_sha256": "68358178d9182dbfa62ced97c274709bc156903c830d6d53a0171e028e102514"
+  },
+  "status": "rejected_incomplete_campaign",
+  "storage": {
+    "all_campaign_wals_absent": false,
+    "database_bytes": 1526501376,
+    "database_file_count": 3,
+    "database_files": [
+      {
+        "bytes": 290205696,
+        "filesystem_ctime_utc": "2026-08-11T06:15:10.482433+00:00",
+        "last_write_at_utc": "2026-08-11T09:55:26.566615+00:00",
+        "name": "round75-prospective-event-cohort-shard-000.duckdb",
+        "sha256": "d831fa4eed51528d5fd818038c7c0f19925485524fd9863e25ab23fdd4a5d537"
+      },
+      {
+        "bytes": 1162620928,
+        "filesystem_ctime_utc": "2026-08-11T10:00:14.525772+00:00",
+        "last_write_at_utc": "2026-08-11T19:55:36.674502+00:00",
+        "name": "round75-prospective-event-cohort-shard-001.duckdb",
+        "sha256": "eaebb04f4b2eedfb5aa5c18300e537917d94d6030868f3810b84a99e2d17bad9"
+      },
+      {
+        "bytes": 73674752,
+        "filesystem_ctime_utc": "2026-08-11T20:00:09.692175+00:00",
+        "last_write_at_utc": "2026-08-12T03:55:12.722424+00:00",
+        "name": "round75-prospective-event-cohort-shard-002.duckdb",
+        "sha256": "e17516c86309cbde1aa5b70d3e57828901ef21d3fbf6cff781a52b488aa89697"
+      }
+    ],
+    "source_databases_opened": false,
+    "wal_bytes": 9431058,
+    "wal_file_count": 1,
+    "wal_files": [
+      {
+        "bytes": 9431058,
+        "filesystem_ctime_utc": "2026-08-12T03:55:12.646842+00:00",
+        "last_write_at_utc": "2026-08-12T04:08:45.109714+00:00",
+        "name": "round75-prospective-event-cohort-shard-002.duckdb.wal",
+        "sha256": "6faf25f095c92233d2fa28d57c76068e2c14093b8cb9070ce8e32d81d8eaf032"
+      }
+    ]
+  },
+  "supervisor": {
+    "automatic_start_permitted": false,
+    "classification": "campaign_terminal",
+    "inspection_passed": true,
+    "inspection_sha256": "ad80d4bb0ee12bfa5952c6ce94f2ccdfa319e0f883c42a21de25b0d7dd09a298",
+    "no_owned_processes_observed": true
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "active_implementation": {
+    "src/simple_ai_trading/round75_capture_supervisor.py": "e713eaa83440abff57bbd9773088f8b14791293aee0a5e21bec105a4660dc6ba",
+    "src/simple_ai_trading/round75_continuous_capture.py": "090704bd5bacfe6104efd9245d1fb17792594f8eba4bd8e7359208a24ab7c5dd",
+    "src/simple_ai_trading/round75_terminal_audit.py": "dec6ac5a8ce96810426f5a28dc18a12a6a6beadd2447ca874f33b6724906779e",
+    "tools/audit_round75_terminal_capture.py": "f4a0bd82cb61f182115cae6b3e832fc6b0e92056cab61a0a4b8a4bb1e78c5558",
+    "tools/run_round75_continuous_capture.py": "17d0e3d8de3d13997037e567d2f19f3c5524223df0be7a4a9b5eee3d90e90822",
+    "tools/supervise_round75_continuous_capture.py": "67349cf56e6ff8db1ae3d410ace7629a75d5d339de8af1dadc5266345e5399b9"
+  },
+  "artifact_sha256": "5800f6a865bf9d4a763c85c57988a5f2c7a9ab4ac5e441e74360a6c44561c240",
+  "created_at_utc": "2026-08-23T12:30:00Z",
+  "frozen_v4_source_mirror": {
+    "src/simple_ai_trading/round75_capture_supervisor.py": {
+      "mirror_path": "docs/model-research/action-value/round-075-frozen-v4-source/src/simple_ai_trading/round75_capture_supervisor.py.txt",
+      "sha256": "ac7b74689c9957baf162f486bdd25ab4b0134ec988598bcc277b77cbcad9b8a6"
+    },
+    "src/simple_ai_trading/round75_continuous_capture.py": {
+      "mirror_path": "docs/model-research/action-value/round-075-frozen-v4-source/src/simple_ai_trading/round75_continuous_capture.py.txt",
+      "sha256": "090704bd5bacfe6104efd9245d1fb17792594f8eba4bd8e7359208a24ab7c5dd"
+    },
+    "tools/run_round75_continuous_capture.py": {
+      "mirror_path": "docs/model-research/action-value/round-075-frozen-v4-source/tools/run_round75_continuous_capture.py.txt",
+      "sha256": "17d0e3d8de3d13997037e567d2f19f3c5524223df0be7a4a9b5eee3d90e90822"
+    },
+    "tools/supervise_round75_continuous_capture.py": {
+      "mirror_path": "docs/model-research/action-value/round-075-frozen-v4-source/tools/supervise_round75_continuous_capture.py.txt",
+      "sha256": "44e194589f886695de7ecda9aa0d8edbab0a6f7b73e57752d8c041a25ea3eb2b"
+    }
+  },
+  "post_campaign_changes": {
+    "campaign_terminal_is_a_non_restartable_supervisor_state": true,
+    "campaign_terminal_process_presence_fails_closed_without_automatic_termination": true,
+    "expired_campaign_missing_service_is_not_restarted": true,
+    "original_database_or_wal_modification_permitted": false,
+    "supervisor_schema_version": "round-075-capture-supervisor-v3",
+    "terminal_audit_opens_source_databases": false
+  },
+  "preserved_contract": {
+    "artifact_sha256": "eca592acb4c3f37c6d043d37664614d35994d6e9b3ebea2e801351c287a49bbf",
+    "file_sha256": "7f740984395490113af53c304b3d7c649e4f6e593543a6ebdcf02a1a14becefe",
+    "path": "docs/model-research/action-value/round-075-continuous-capture-contract-v4.json"
+  },
+  "scope": {
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "model_training_performed": false,
+    "orders_submitted": false,
+    "profitability_established": false,
+    "target_data_accessed": false,
+    "trading_authority": false
+  },
+  "schema_version": "round-075-post-campaign-amendment-v1",
+  "terminal_evidence": {
+    "audit_artifact_sha256": "94a556887adf33996168de260a8a172952bc64040273a7ff2dfb373f2c2f50d6",
+    "audit_file_sha256": "1e1ab831e2f45dc832e493ed807a1b9c0998f0e81733bc44d6c3b2b6b4c86ade",
+    "audit_path": "docs/model-research/action-value/round-075-terminal-campaign-audit-2026-08-23.json",
+    "recovery_artifact_sha256": "18fa37db65aa19fed16128d4aaf0af10cb0606c95192b46dfca0b0a28e932751",
+    "recovery_file_sha256": "d030d0657104a8d8cbc1e0a22c40734681c5912c5f086570d89aed5a303aa194",
+    "recovery_path": "docs/model-research/action-value/round-075-wal-copy-recovery-2026-08-23.json",
+    "status": "rejected_incomplete_campaign"
+  }
+}
