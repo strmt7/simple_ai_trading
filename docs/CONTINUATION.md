@@ -673,7 +673,12 @@ DPI, which can differ on a hosted Windows Server session and force the app below
 its scaled minimum. The follow-up uses `GetDpiForWindow` on the launched app and
 includes both control and window coordinates in any containment failure. The
 native application itself passed the same audit locally at 150% DPI and
-`2250x1470`; hosted replacement evidence is still required.
+`2250x1470`. The resulting hosted coordinates then proved a real minimum-size
+defect: at `1280x860`, the reinvestment toggle ended six pixels beyond the outer
+frame. The overview settings row now uses compact, non-overlapping AI and
+reinvestment bounds that end at the padded client edge, and the validator can
+explicitly exercise `1280x860` in device-independent pixels. Hosted replacement
+evidence is still required.
 
 The first successful Python and native CodeQL uploads made the alert API
 available and returned five findings on `0d886254`: two incomplete URL-host

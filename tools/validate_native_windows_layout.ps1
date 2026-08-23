@@ -2,7 +2,9 @@ param(
     [string]$Exe = "",
     [string]$Out = "",
     [int]$MinWidth = 1200,
-    [int]$MinHeight = 720
+    [int]$MinHeight = 720,
+    [int]$TargetWidthDips = 1500,
+    [int]$TargetHeightDips = 980
 )
 
 $ErrorActionPreference = "Stop"
@@ -189,8 +191,8 @@ try {
     $window = $process.MainWindowHandle
     $dpi = [double][SatNativeLayoutAudit]::GetDpiForWindow($window)
     Assert-True ($dpi -gt 0) "GetDpiForWindow returned an invalid DPI"
-    $targetWidth = [Math]::Max($MinWidth, [int][Math]::Ceiling(1500 * $dpi / 96))
-    $targetHeight = [Math]::Max($MinHeight, [int][Math]::Ceiling(980 * $dpi / 96))
+    $targetWidth = [Math]::Max($MinWidth, [int][Math]::Ceiling($TargetWidthDips * $dpi / 96))
+    $targetHeight = [Math]::Max($MinHeight, [int][Math]::Ceiling($TargetHeightDips * $dpi / 96))
     [void][SatNativeLayoutAudit]::MoveWindow($window, 60, 60, $targetWidth, $targetHeight, $true)
     [void][SatNativeLayoutAudit]::SetForegroundWindow($window)
     Start-Sleep -Milliseconds 700

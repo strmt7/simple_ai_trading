@@ -1074,6 +1074,8 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     assert "$ModeId = 116" in layout
     assert "GetDpiForWindow($window)" in layout
     assert "GetDpiForSystem" not in layout
+    assert "$TargetWidthDips * $dpi / 96" in layout
+    assert "$TargetHeightDips * $dpi / 96" in layout
     assert "overview settings overlap telemetry footer" in layout
     assert "Assert-PixelHealth" in layout
     assert "API budget value" in layout
