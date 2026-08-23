@@ -66,6 +66,12 @@ The currently pushed checkpoint has no reproducible after-cost edge,
 profitability claim, or trading authority. Local unintegrated files do not
 change that fact.
 
+The next target-blind model experiment is frozen in the
+[Round 76 preregistration](docs/model-research/action-value/round-076-mark-conditioned-duration-preregistration-v1.json).
+It permits one mark-conditioned, censor-aware interarrival-density challenger
+against unchanged v5 controls. Implementation and evaluation remain blocked
+until Round 75 terminal adjudication and source reconciliation complete.
+
 ## Repository Quality Gate
 
 Model work is not complete while repository analyzers or dependency checks are
