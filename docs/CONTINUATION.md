@@ -6,7 +6,7 @@ Development belongs only on `main`; do not create another development branch.
 ## Closeout State
 
 - The last fully hosted-verified baseline before this model-gate publication is
-  `806389ee6bf4b867ce2684b9147102eba2efabb9`. CI, Ruff, Vulture,
+  `3c3d499a41836940924d5940533cc09512871c7f`. CI, Ruff, Vulture,
   Super-Linter, CodeQL, and DeepSource passed that exact revision. GitHub exposed
   only `main`, and the available APIs reported zero open Dependabot,
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
@@ -63,6 +63,11 @@ Round 75.
   and at least 300 audited eligible markets. Replaying slot B cannot create the
   missing third date. Canonical adjudication:
   `round-029-stage1-readiness-adjudication-2026-08-23.json`.
+- Polymarket live-promotion schema v2 now requires strict semantic cross-regime
+  evidence bound to the exact model, commit, market variant, risk profile, and
+  frozen evidence roles. Hash-valid placeholder reports and caller-asserted
+  gates no longer suffice. This control grants no edge, profitability, paper,
+  or live claim; no real promotion artifact currently exists.
 - The current reproducible action-value status, CSV, and graph are in
   `docs/model-research/action-value/latest-status/`. Round 72 remains the latest
   completed model evaluation and was rejected. Rounds 73-76 contain no invented
@@ -128,9 +133,10 @@ lease, state, database, and WAL agree.
 
 ## Verification Scope
 
-The focused Round 75 closeout currently passes 20 tests plus Ruff and formatting.
-Run the smallest affected checks during development, then full CI once before
-publication. Do not repeat unchanged expensive suites between adjacent edits.
+The focused Round 75 closeout passes 20 tests. The cross-regime promotion change
+passes 61 affected tests before final publication checks. Run the smallest
+affected checks during development, then full CI once before publication. Do
+not repeat unchanged expensive suites between adjacent edits.
 
 The previous verbose handoff and chronology are preserved byte-for-byte in:
 

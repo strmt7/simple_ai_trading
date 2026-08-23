@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from decimal import Decimal
-import hashlib
 import json
 from pathlib import Path
 
 import pytest
 
-from polymarket_live_support import write_polymarket_live_implementation_manifest
+from polymarket_live_support import build_polymarket_live_promotion_fixture
 from simple_ai_trading.polymarket import (
     PolymarketFeeSchedule,
     PolymarketFifteenMinuteMarket,
@@ -40,19 +39,6 @@ NOW_MS = EVENT_START_MS + 120_000
 MARKET_ID = "0x" + "1" * 64
 UP_TOKEN = "1" * 40
 DOWN_TOKEN = "2" * 40
-GATES = {
-    "prospective_untouched_test": True,
-    "source_integrity": True,
-    "causal_feature_replay": True,
-    "proper_scoring_uplift": True,
-    "after_cost_edge": True,
-    "uncertainty_lower_bound": True,
-    "drawdown_limit": True,
-    "latency_stress": True,
-    "displayed_depth_stress": True,
-    "authenticated_order_lifecycle": True,
-    "settlement_and_redemption": True,
-}
 
 
 def _canonical(value: object) -> str:
@@ -65,57 +51,15 @@ def _canonical(value: object) -> str:
     )
 
 
-def _sha(value: object) -> str:
-    return hashlib.sha256(_canonical(value).encode("ascii")).hexdigest()
-
-
-def _file_sha(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def _promotion(root: Path) -> VerifiedPolymarketLivePromotion:
-    root.mkdir(parents=True, exist_ok=True)
-    paths: dict[str, Path] = {}
-    evidence: dict[str, dict[str, str]] = {}
-    for name in ("model", "evaluation"):
-        path = root / f"{name}.json"
-        path.write_text(_canonical({name: "frozen"}), encoding="ascii")
-        paths[name] = path
-        evidence[name] = {"path": path.name, "sha256": _file_sha(path)}
-    implementation = root / "implementation.json"
-    write_polymarket_live_implementation_manifest(
-        implementation,
-        source_commit="b" * 40,
+    payload = build_polymarket_live_promotion_fixture(
+        root,
+        now_ms=NOW_MS,
+        market_variant="fifteenminute",
+        bot_id="round16-decision-test",
+        created_at_ms=NOW_MS - 60_000,
+        expires_at_ms=NOW_MS + 60_000,
     )
-    paths["implementation"] = implementation
-    evidence["implementation"] = {
-        "path": implementation.name,
-        "sha256": _file_sha(implementation),
-    }
-    body: dict[str, object] = {
-        "schema_version": "polymarket-live-promotion-v1",
-        "promotion_id": "a" * 64,
-        "created_at_ms": NOW_MS - 60_000,
-        "expires_at_ms": NOW_MS + 60_000,
-        "source_commit": "b" * 40,
-        "venue": "polymarket",
-        "protocol_version": 2,
-        "asset": "BTC",
-        "market_variant": "fifteenminute",
-        "environment": "live",
-        "bot_id": "round16-decision-test",
-        "model_artifact": evidence["model"],
-        "evaluation_report": evidence["evaluation"],
-        "implementation_manifest": evidence["implementation"],
-        "gates": GATES,
-        "policy": {
-            "minimum_expected_edge_quote_per_share": "0.02",
-            "maximum_prediction_age_ms": 1_000,
-            "minimum_remaining_seconds": 30,
-        },
-        "authority": {"paper": True, "live": True},
-    }
-    payload = {**body, "promotion_sha256": _sha(body)}
     path = root / "promotion.json"
     path.write_text(_canonical(payload), encoding="ascii")
     return load_polymarket_live_promotion(

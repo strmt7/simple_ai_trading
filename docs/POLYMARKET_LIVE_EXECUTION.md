@@ -58,6 +58,14 @@ flowchart LR
   modified, symlinked, noncanonical, version-drifted, or commit-mismatched
   runtime evidence before account or order construction. An opaque file hash is
   not accepted as implementation evidence.
+- Promotion schema v2 also parses the evaluation report rather than trusting an
+  opaque report hash or caller-supplied gate. It binds the exact model, source
+  commit, market variant, risk profile, frozen data/cost/regime/selection
+  digests, isolated train/tune/test roles, and every required direction, path,
+  volatility, liquidity, and execution-stress slice. Missing evidence, unknown
+  execution, untracked inventory, or a failed slice blocks authority. Stale or
+  missing books and unknown execution must demonstrate abstention. The report
+  cannot grant paper or live authority by itself.
 - Current wallet types `0` (EOA), `1` (Polymarket proxy), `2` (Gnosis Safe),
   and `3` (POLY_1271 deposit wallet) are accepted. Every prepared order must
   preserve the configured signature type and funder. Types `0`-`2` must use
