@@ -12,6 +12,7 @@ from typing import Callable, Mapping
 
 import requests
 
+from .ai_model_identity import OllamaModelIdentity, canonical_ollama_model_name
 from .ai_runtime import (
     AICapabilityReport,
     OllamaResidencyReport,
@@ -443,55 +444,6 @@ def _get_json(url: str, timeout: float) -> object:
     )
     response.raise_for_status()
     return response.json()
-
-
-def canonical_ollama_model_name(model: str) -> str:
-    """Return one explicit local Ollama model identity, including its tag."""
-
-    if not isinstance(model, str):
-        raise ValueError("Ollama model name is invalid")
-    name = model.strip()
-    if (
-        not name
-        or len(name) > 240
-        or name.count(":") > 1
-        or name[0] in "./:-"
-        or name[-1] in "/:"
-        or any(
-            not character.isascii() or not (character.isalnum() or character in "._/-:")
-            for character in name
-        )
-    ):
-        raise ValueError("Ollama model name is invalid")
-    return name if ":" in name else f"{name}:latest"
-
-
-@dataclass(frozen=True)
-class OllamaModelIdentity:
-    canonical_model: str
-    digest: str
-    metadata_sha256: str
-    parameter_count: int
-    parameter_size: str
-
-    @property
-    def parameters_b(self) -> float:
-        return self.parameter_count / 1_000_000_000.0
-
-    def validated(self) -> OllamaModelIdentity:
-        if (
-            canonical_ollama_model_name(self.canonical_model) != self.canonical_model
-            or not _is_sha256(self.digest)
-            or not _is_sha256(self.metadata_sha256)
-            or isinstance(self.parameter_count, bool)
-            or not isinstance(self.parameter_count, int)
-            or self.parameter_count <= 0
-            or not isinstance(self.parameter_size, str)
-            or not self.parameter_size
-            or len(self.parameter_size) > 64
-        ):
-            raise ValueError("Ollama model identity is invalid")
-        return self
 
 
 def resolve_ollama_model_identity(

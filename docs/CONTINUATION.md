@@ -845,13 +845,28 @@ is bounded scanner evidence, not proof that no undiscovered vulnerability
 exists. The unresolved DeepSource inventory below remains open and must not be
 described as remediated by this change.
 
-One known false-negative remains: the generic uplift assessor may reject a
-custom or `:latest` model name whose size cannot be inferred from its tag even
-though the live v3 evidence contains a provenance-bound exact count. Address it
-only through a separate typed, provenance-attested API; never weaken the size
-floor or accept a free-form operator assertion. No capture process, worktree,
-database, schedule, target, or outcome was inspected or modified in this
-closeout.
+The follow-up closes the documented custom/`:latest` false-negative without
+weakening the gate. `OllamaModelIdentity` now lives in the lower-level
+`ai_model_identity` contract shared by review, startup, live audit, and uplift.
+The generic assessor accepts its exact count only when the attested canonical
+name and digest match the evaluated model name and artifact hash. Structural,
+name, or digest mismatch rejects; an optional operator count remains only a
+consistency assertion against the attested exact integer. Calls without an
+attestation preserve the previous name-inference behavior and therefore cannot
+turn a custom name plus a supplied number into evidence.
+
+The live v3 materializer reconstructs that identity only from one unique,
+semantically validated audit cohort. A `private-finance:latest` regression now
+clears the same complete after-cost uplift fixture as `qwen3:14b`, while
+misbound names, digests, malformed identities, assertion mismatches, legacy v2
+records, and unverified custom-name assertions remain rejected. The serialized
+`ai-uplift-v5` and outer `live-ai-shadow-uplift-v3` schemas are unchanged.
+Across the affected AI, live-audit, financial-sanity, runtime-parity, and
+Polymarket publication surfaces, 215 tests pass locally, together with Ruff and
+whitespace checks. This is evidence-integrity and compatibility evidence, not
+proof of AI uplift, market edge, profitability, or trading authority. No
+capture process, worktree, database, schedule, target, or outcome was inspected
+or modified.
 
 Immediately before this closeout commit, parent revision
 `1806156125f411baff0a57253464ca033750c769` was clean and synchronized. GitHub's
@@ -930,10 +945,9 @@ reverted to reduce analyzer scope.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated. Preserve
-   the v3 live-review identity binding and v2 read-only compatibility. Resolve
-   the documented custom/`:latest` false-negative only with typed,
-   provenance-attested exact-count evidence; never infer authority from a
-   free-form command argument or rewrite historical hash-chained records.
+   the v3 live-review identity binding, typed exact-count attestation, and v2
+   read-only compatibility; never infer authority from a free-form command
+   argument or rewrite historical hash-chained records.
 7. Run focused checks while integrating, then the full local matrix once at the
    final checkpoint. On this Windows host invoke pytest through
    `uv run --locked python -m pytest`; the direct `uv run pytest` console entry

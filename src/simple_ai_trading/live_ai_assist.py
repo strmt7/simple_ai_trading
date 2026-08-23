@@ -21,7 +21,7 @@ from typing import Callable, Mapping, Protocol, Sequence
 from urllib.request import Request, urlopen
 
 from .advanced_model import advanced_config_from_signature
-from .ai_review import canonical_ollama_model_name
+from .ai_model_identity import OllamaModelIdentity
 from .ai_runtime import inspect_ollama_model_residency
 from .execution_simulation import configured_round_trip_cost_floor_bps
 from .meta_label import (
@@ -624,15 +624,17 @@ class LiveAIEntryCase:
         if not 0.0 <= float(self.maximum_risk_multiplier) <= 1.0:
             raise ValueError("AI entry review risk bound is invalid")
         if self.schema_version == LIVE_AI_ENTRY_CASE_SCHEMA_VERSION:
-            if (
-                canonical_ollama_model_name(self.model_name) != self.model_name
-                or isinstance(self.model_parameter_count, bool)
-                or not isinstance(self.model_parameter_count, int)
-                or self.model_parameter_count < 2_000_000_000
-                or not isinstance(self.model_parameter_size, str)
-                or not self.model_parameter_size
-                or len(self.model_parameter_size) > 64
-            ):
+            try:
+                identity = OllamaModelIdentity(
+                    canonical_model=self.model_name,
+                    digest=self.model_digest,
+                    metadata_sha256=self.model_metadata_sha256,
+                    parameter_count=self.model_parameter_count,
+                    parameter_size=self.model_parameter_size,
+                ).validated()
+            except ValueError as exc:
+                raise ValueError("AI entry review model identity is invalid") from exc
+            if identity.parameter_count < 2_000_000_000:
                 raise ValueError("AI entry review model identity is invalid")
         elif self.schema_version == LEGACY_LIVE_AI_ENTRY_CASE_SCHEMA_VERSION:
             if any(
@@ -657,15 +659,6 @@ class LiveAIEntryCase:
                 or any(character not in "0123456789abcdef" for character in value)
             ):
                 raise ValueError(f"AI entry review {name} is invalid")
-        if self.schema_version == LIVE_AI_ENTRY_CASE_SCHEMA_VERSION and (
-            not isinstance(self.model_metadata_sha256, str)
-            or len(self.model_metadata_sha256) != 64
-            or any(
-                character not in "0123456789abcdef"
-                for character in self.model_metadata_sha256
-            )
-        ):
-            raise ValueError("AI entry review model metadata digest is invalid")
         normalized = _bounded_json_value(self.evidence)
         if not isinstance(normalized, Mapping):
             raise ValueError("AI entry review evidence is invalid")
@@ -1411,20 +1404,19 @@ class AIAssistedDecisionFunction:
         )
         if not 1_000 <= self._maximum_review_age_ms <= 300_000:
             raise ValueError("live AI maximum review age is invalid")
-        if canonical_ollama_model_name(self._model_name) != self._model_name:
-            raise ValueError("live AI model name is invalid")
-        if (
-            isinstance(self._model_parameter_count, bool)
-            or not isinstance(self._model_parameter_count, int)
-            or self._model_parameter_count < 2_000_000_000
-            or not isinstance(self._model_parameter_size, str)
-            or not self._model_parameter_size
-            or len(self._model_parameter_size) > 64
-        ):
+        try:
+            identity = OllamaModelIdentity(
+                canonical_model=self._model_name,
+                digest=self._model_digest,
+                metadata_sha256=self._model_metadata_sha256,
+                parameter_count=self._model_parameter_count,
+                parameter_size=self._model_parameter_size,
+            ).validated()
+        except ValueError as exc:
+            raise ValueError("live AI model parameter identity is invalid") from exc
+        if identity.parameter_count < 2_000_000_000:
             raise ValueError("live AI model parameter identity is invalid")
         for name, value in {
-            "model_digest": self._model_digest,
-            "model_metadata_sha256": self._model_metadata_sha256,
             "terminal_model_fingerprint": self._terminal_model_fingerprint,
         }.items():
             if (

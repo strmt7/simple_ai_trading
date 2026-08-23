@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 from typing import Callable, Mapping
 
+from .ai_model_identity import OllamaModelIdentity
 from .ai_review import (
     AIReviewReport,
-    OllamaModelIdentity,
     load_ai_review_report,
     resolve_ollama_model_identity,
 )
