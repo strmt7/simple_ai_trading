@@ -1114,6 +1114,34 @@ def test_ai_review_blocks_before_chat_when_model_provenance_fails(
     assert "AI model provenance failed" in str(review.error)
 
 
+def test_ai_review_rejects_invalid_model_provenance_digests(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
+    called = False
+
+    def fake_post(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("chat must not run with invalid model provenance")
+
+    with pytest.raises(ValueError, match="AI review report is invalid"):
+        run_model_lab_ai_review(
+            report_path,
+            RuntimeConfig(compute_backend="directml"),
+            post_json=fake_post,
+            model_provenance=lambda *_args: ("invalid", "e" * 64),
+        )
+
+    assert called is False
+
+
 def test_ai_start_gate_binds_review_market_and_terminal_model(
     tmp_path: Path,
     monkeypatch,
