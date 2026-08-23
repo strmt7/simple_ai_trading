@@ -766,10 +766,7 @@ def normalize_uplift_metrics(metrics: Mapping[str, object]) -> dict[str, float]:
 
 
 def _finite_model_parameters_b(value: object) -> float | None:
-    try:
-        parsed = float(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
+    parsed = _finite(value, default=float("nan"))
     if not math.isfinite(parsed) or parsed <= 0.0:
         return None
     return parsed
@@ -782,6 +779,7 @@ def _model_parameter_evidence(
     attested_model_identity: OllamaModelIdentity | None = None,
     model_artifact_sha256: str = "",
 ) -> tuple[float | None, tuple[str, ...]]:
+    inferred: float | None
     if attested_model_identity is not None:
         try:
             identity = attested_model_identity.validated()

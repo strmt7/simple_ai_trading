@@ -914,6 +914,42 @@ amendments where required, and re-run the exact affected tests plus hosted
 DeepSource after each batch. The model-size integrity correction must not be
 reverted to reduce analyzer scope.
 
+### Current AI Type-Boundary Batch: 2026-08-23
+
+Exact DeepSource run
+[`3a5e59a3-09f7-40a8-b078-92af00bab296`](https://app.deepsource.com/gh/strmt7/simple_ai_trading/run/3a5e59a3-09f7-40a8-b078-92af00bab296/python/)
+on `71a22f3809f6b3506a32cb002e8b743cbcd46d64` renders 15 issue cards. Seven
+are major boundary diagnostics: four `TYP-050` numeric/JSON conversions in
+`ai_review.py` and `ai_uplift.py`, plus three `PYL-W0714` overlapping exception
+entries in `ai_review.py` and `ai_start_gate.py`. The other eight are
+`PY-R1000` complexity findings in AI decision/report validation, model identity
+resolution, compact evidence construction, precheck warnings, review execution,
+and the start gate. This exact current inventory supersedes the historical
+1,268-item run as the next changed-scope queue; it does not prove that every
+historical or undiscovered repository issue is absent.
+
+The bounded follow-up gives provider requests a recursively typed JSON adapter
+after the existing JSON round-trip validation, narrows numeric coercion to
+supported scalar protocols, rejects booleans as parameter or financial metric
+values, and catches each JSON/read failure through its non-overlapping ancestor.
+One required-field tuple and the existing bounded string-list validator also
+close four adjacent object-conversion errors surfaced by a real Mypy run. The
+public report schema and canonical required-field order are unchanged; valid
+bounded string lists and supported finite numeric values retain their prior
+request representation. Malformed JSON, invalid UTF-8, unsupported objects,
+booleans, nested request payloads, and the normal numeric path have direct
+regressions.
+
+At the local checkpoint, 74 tests in `test_ai_review.py` and
+`test_ai_uplift.py` pass. The three changed source modules pass Mypy with an
+ephemeral `types-requests` overlay; Ruff and formatting pass; scoped Bandit
+reports no finding. Current Pylint no longer exposes DeepSource's `W0714`
+message code, so hosted DeepSource on the exact pushed revision remains the
+authority for those three closures. The eight complexity findings are
+deliberately deferred as maintainability work. No model input, prediction,
+uplift result, threshold, order path, risk limit, P&L, trading authority, or
+profitability claim changes.
+
 ## Next Work
 
 1. Reverify both live captures and their canonical state files. Let Round 75

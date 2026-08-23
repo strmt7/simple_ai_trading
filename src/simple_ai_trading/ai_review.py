@@ -8,7 +8,7 @@ import math
 import time
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
-from typing import Callable, Mapping
+from typing import Callable, Mapping, SupportsFloat, SupportsIndex, TypeAlias, cast
 
 import requests
 
@@ -40,6 +40,18 @@ _MAX_PROMPT_CHARS = 12_000
 _MAX_ABLATION_ITEMS = 6
 _MAX_AI_UPLIFT_WARNINGS = 8
 _POSITIVE_ABLATION_DELTA_EPS = 1e-9
+_AI_REVIEW_REQUIRED_FIELDS = (
+    "action",
+    "confidence",
+    "risk_score",
+    "rationale",
+    "concerns",
+    "required_actions",
+)
+
+_JsonValue: TypeAlias = (
+    None | bool | int | float | str | list["_JsonValue"] | dict[str, "_JsonValue"]
+)
 
 PostJson = Callable[[str, Mapping[str, object], float], object]
 GetJson = Callable[[str, float], object]
@@ -64,14 +76,7 @@ _AI_REVIEW_SCHEMA: dict[str, object] = {
             "maxItems": _MAX_ACTIONS,
         },
     },
-    "required": [
-        "action",
-        "confidence",
-        "risk_score",
-        "rationale",
-        "concerns",
-        "required_actions",
-    ],
+    "required": list(_AI_REVIEW_REQUIRED_FIELDS),
     "additionalProperties": False,
 }
 
@@ -290,6 +295,10 @@ def _json_mapping(value: Mapping[str, object]) -> dict[str, object]:
     return payload
 
 
+def _request_json_mapping(value: Mapping[str, object]) -> dict[str, _JsonValue]:
+    return cast(dict[str, _JsonValue], _json_mapping(value))
+
+
 def _is_sha256(value: object) -> bool:
     return (
         isinstance(value, str)
@@ -340,7 +349,7 @@ def load_ai_review_report(
             Path(path).read_text(encoding="utf-8"),
             label="AI review artifact",
         )
-    except (OSError, UnicodeDecodeError, ValueError) as exc:
+    except (OSError, ValueError) as exc:
         raise ValueError("AI review artifact is unreadable") from exc
     expected_fields = {
         "schema_version",
@@ -428,7 +437,7 @@ def load_ai_review_report(
 def _post_json(url: str, payload: Mapping[str, object], timeout: float) -> object:
     response = requests.post(  # nosec B113
         url,
-        json=dict(payload),
+        json=_request_json_mapping(payload),
         timeout=max(0.1, float(timeout)),
         headers={"User-Agent": "simple-ai-trading-ai-review/0.1"},
     )
@@ -528,6 +537,11 @@ def resolve_ollama_model_provenance(
 
 
 def _finite(value: object, default: float = 0.0) -> float:
+    if isinstance(value, bool) or not isinstance(
+        value,
+        (str, bytes, bytearray, SupportsFloat, SupportsIndex),
+    ):
+        return default
     try:
         parsed = float(value)
     except (TypeError, ValueError, OverflowError):
@@ -536,6 +550,11 @@ def _finite(value: object, default: float = 0.0) -> float:
 
 
 def _optional_finite(value: object) -> float | None:
+    if isinstance(value, bool) or not isinstance(
+        value,
+        (str, bytes, bytearray, SupportsFloat, SupportsIndex),
+    ):
+        return None
     try:
         parsed = float(value)
     except (TypeError, ValueError, OverflowError):
@@ -575,7 +594,7 @@ def _ollama_response_text(payload: Mapping[str, object]) -> str:
 
 
 def _decision_from_mapping(payload: Mapping[str, object]) -> AIReviewDecision:
-    expected_fields = set(_AI_REVIEW_SCHEMA["required"])
+    expected_fields = set(_AI_REVIEW_REQUIRED_FIELDS)
     if set(payload) != expected_fields:
         raise ValueError("AI review response fields are missing or unexpected")
     action_raw = payload["action"]
@@ -823,17 +842,24 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
             "portfolio_cvar_95": _finite(portfolio.get("portfolio_cvar_95")),
             "portfolio_max_drawdown": _finite(portfolio.get("portfolio_max_drawdown")),
             "deployed_weight": _finite(portfolio.get("deployed_weight")),
-            "accepted_symbols": list(portfolio.get("accepted_symbols") or [])[
-                :_MAX_OUTCOMES
-            ],
+            "accepted_symbols": _bounded_list(
+                portfolio.get("accepted_symbols"),
+                limit=_MAX_OUTCOMES,
+            ),
         }
     learning_feedback = _compact_learning_feedback(report.get("learning_feedback"))
     return {
         "quote_asset": str(report.get("quote_asset") or ""),
         "interval": str(report.get("interval") or ""),
         "market_type": str(report.get("market_type") or ""),
-        "requested_objectives": list(report.get("requested_objectives") or []),
-        "accepted_symbols": list(report.get("accepted_symbols") or []),
+        "requested_objectives": _bounded_list(
+            report.get("requested_objectives"),
+            limit=_MAX_OUTCOMES,
+        ),
+        "accepted_symbols": _bounded_list(
+            report.get("accepted_symbols"),
+            limit=_MAX_OUTCOMES,
+        ),
         "portfolio_risk": portfolio_summary,
         "learning_feedback": learning_feedback,
         "outcomes": compact_outcomes,
@@ -1347,7 +1373,10 @@ def _deterministic_precheck(
     require_ai_uplift: bool = False,
     financial_report: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
-    accepted_symbols = list(compact.get("accepted_symbols") or [])
+    accepted_symbols = _bounded_list(
+        compact.get("accepted_symbols"),
+        limit=_MAX_OUTCOMES,
+    )
     portfolio = compact.get("portfolio_risk")
     portfolio_ok = (
         bool(portfolio.get("accepted")) if isinstance(portfolio, Mapping) else False

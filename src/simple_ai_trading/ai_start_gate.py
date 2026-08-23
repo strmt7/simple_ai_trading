@@ -63,7 +63,7 @@ def _strict_json_mapping(path: Path) -> Mapping[str, object]:
                 ValueError(f"non-finite constant: {value}")
             ),
         )
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+    except (OSError, ValueError) as exc:
         raise ValueError("AI review source model-lab report is unreadable") from exc
     if not isinstance(payload, Mapping):
         raise ValueError("AI review source model-lab report is not an object")
