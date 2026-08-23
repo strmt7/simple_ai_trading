@@ -265,6 +265,8 @@ def test_full_test_workflows_use_locked_uv_environments() -> None:
     )
     assert "pip install" not in ci
     assert "pip install" not in release
+    assert '$ErrorActionPreference = "Stop"' in ci
+    assert "$PSNativeCommandUseErrorActionPreference = $true" in ci
 
 
 def test_vulture_scope_keeps_only_production_python() -> None:

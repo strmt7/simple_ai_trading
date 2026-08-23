@@ -7,12 +7,33 @@ import json
 from pathlib import Path
 import sys
 import time
+from typing import Any
 
 from .compute import SUPPORTED_COMPUTE_BACKENDS
-from .round74_segmented_terminal_runtime import (
-    recover_round74_segmented_terminal_result,
-    run_round74_segmented_terminal_evaluation,
-)
+
+
+def run_round74_segmented_terminal_evaluation(
+    **kwargs: Any,
+) -> dict[str, object]:
+    """Load the optional Torch runtime only for terminal model evaluation."""
+
+    from .round74_segmented_terminal_runtime import (  # noqa: PLC0415
+        run_round74_segmented_terminal_evaluation as run,
+    )
+
+    return run(**kwargs)
+
+
+def recover_round74_segmented_terminal_result(
+    **kwargs: Any,
+) -> dict[str, object]:
+    """Load terminal recovery code only when recovery is requested."""
+
+    from .round74_segmented_terminal_runtime import (  # noqa: PLC0415
+        recover_round74_segmented_terminal_result as recover,
+    )
+
+    return recover(**kwargs)
 
 
 def _emit(payload: dict[str, object]) -> None:
