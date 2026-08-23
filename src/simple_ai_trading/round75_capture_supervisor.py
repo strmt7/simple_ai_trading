@@ -689,6 +689,75 @@ def terminate_round75_owned_process(process_id: int) -> None:
     os.kill(process_id, signal.SIGTERM)
 
 
+def _validated_repair_process_ids(inspection: Mapping[str, object]) -> tuple[int, ...]:
+    repairable = inspection.get("repairable_process_ids_in_child_first_order")
+    if not isinstance(repairable, list):
+        raise RuntimeError("Round 75 repair process inventory differs")
+    expected: list[int] = []
+    for value in repairable:
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise RuntimeError("Round 75 repair process identity differs")
+        expected.append(value)
+    return tuple(expected)
+
+
+def _terminate_repairable_process(
+    config: Round75CaptureSupervisorConfig,
+    process_id: int,
+    *,
+    refresh_inventory: Callable[[], Sequence[Round75ProcessRecord]],
+    terminate: Callable[[int], None],
+    sleep: Callable[[float], None],
+) -> bool:
+    current = next(
+        (row for row in refresh_inventory() if row.process_id == process_id),
+        None,
+    )
+    if current is None:
+        return False
+    if not (
+        _service_process_matches(config, current)
+        or _capture_child_matches(config, current)
+    ):
+        raise RuntimeError("Round 75 process identity changed before repair")
+    terminate(process_id)
+    deadline = time.monotonic() + 15.0
+    while any(row.process_id == process_id for row in refresh_inventory()):
+        if time.monotonic() >= deadline:
+            raise RuntimeError("Round 75 owned process did not terminate before deadline")
+        sleep(0.1)
+    return True
+
+
+def _repair_stale_owned_processes(
+    config: Round75CaptureSupervisorConfig,
+    inspection: Mapping[str, object],
+    *,
+    refresh_inventory: Callable[[], Sequence[Round75ProcessRecord]],
+    terminate: Callable[[int], None],
+    sleep: Callable[[float], None],
+) -> list[int]:
+    terminated = [
+        process_id
+        for process_id in _validated_repair_process_ids(inspection)
+        if _terminate_repairable_process(
+            config,
+            process_id,
+            refresh_inventory=refresh_inventory,
+            terminate=terminate,
+            sleep=sleep,
+        )
+    ]
+    remaining = tuple(refresh_inventory())
+    if any(
+        _service_process_matches(config, process)
+        or _capture_child_matches(config, process)
+        for process in remaining
+    ):
+        raise RuntimeError("Round 75 owned process remained after repair")
+    return terminated
+
+
 def supervise_round75_capture(
     config: Round75CaptureSupervisorConfig,
     *,
@@ -752,43 +821,13 @@ def supervise_round75_capture(
             }
             cancelled_result["result_sha256"] = _canonical_sha256(cancelled_result)
             return cancelled_result
-        repairable = reinspection["repairable_process_ids_in_child_first_order"]
-        if not isinstance(repairable, list):
-            raise RuntimeError("Round 75 repair process inventory differs")
-        expected: list[int] = []
-        for value in repairable:
-            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-                raise RuntimeError("Round 75 repair process identity differs")
-            expected.append(value)
-        for process_id in expected:
-            refreshed = tuple(refresh_inventory())
-            current = next(
-                (row for row in refreshed if row.process_id == process_id),
-                None,
-            )
-            if current is None:
-                continue
-            if not (
-                _service_process_matches(config, current)
-                or _capture_child_matches(config, current)
-            ):
-                raise RuntimeError("Round 75 process identity changed before repair")
-            terminate(process_id)
-            terminated.append(process_id)
-            deadline = time.monotonic() + 15.0
-            while any(row.process_id == process_id for row in refresh_inventory()):
-                if time.monotonic() >= deadline:
-                    raise RuntimeError(
-                        "Round 75 owned process did not terminate before deadline"
-                    )
-                sleep(0.1)
-        remaining = tuple(refresh_inventory())
-        if any(
-            _service_process_matches(config, process)
-            or _capture_child_matches(config, process)
-            for process in remaining
-        ):
-            raise RuntimeError("Round 75 owned process remained after repair")
+        terminated = _repair_stale_owned_processes(
+            config,
+            reinspection,
+            refresh_inventory=refresh_inventory,
+            terminate=terminate,
+            sleep=sleep,
+        )
         started_process_id = start_service(config)
         action = "stale_owned_repaired_and_service_started"
     result: dict[str, object] = {
