@@ -1,0 +1,220 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "baseline_contract": {
+    "identifier": "round74_v136_causal_next_event_pretraining_v5",
+    "model_design_file_sha256": "511897f9c6f7357934a2ee5bda385389404213e1155589a3f90435164d378681",
+    "model_design_path": "docs/model-research/action-value/round-074-event-sequence-model-design-v136.json",
+    "model_design_sha256": "2016c8ff6b06ec5a007e501f42aef9c35a9a82ddbad262b3822a4a90cbaa93be",
+    "objective": "normalized next-mark categorical log loss plus dimension-mean Huber next-scaled-feature-delta loss",
+    "temporary_head_persisted": false,
+    "unchanged_for_comparison": true
+  },
+  "candidate_contract": {
+    "candidate_count": 1,
+    "duration_head": {
+      "conditioning": "encoded_history_and_original_observed_next_mark",
+      "distribution": "censored_gaussian_mixture_on_training_scaled_log1p_interarrival_us",
+      "mixture_components": 8,
+      "mixture_weights": "softmax",
+      "numerical_evaluation": "logsumexp_with_log_cdf_and_log_survival_at_censoring_boundaries",
+      "standard_deviation_parameterization": "0.05_plus_softplus_raw_standard_deviation",
+      "target_mark_is_not_an_input_to_encoder_or_next_mark_head": true
+    },
+    "encoder_architecture": "exactly_the_same_candidate_encoder_as_the_paired_v5_baseline",
+    "identifier": "round76_mark_conditioned_censored_duration_pretraining_v1",
+    "next_mark_head": "categorical_logits_from_encoded_history_only",
+    "supervised_candidate_family_changed": false,
+    "temporary_heads_discarded_before_supervised_fit": true
+  },
+  "comparison_contract": {
+    "candidate_multiplicity": "one_candidate_no_architecture_or_hyperparameter_sweep",
+    "duration_control": "history_neutral_symbol_and_mark_conditioned_eight_component_censored_gaussian_mixture_fit_on_the_same_training_rows",
+    "identical_fields": [
+      "capture_runs",
+      "row_populations",
+      "feature_views",
+      "encoder_architecture",
+      "initial_encoder_state",
+      "random_seeds",
+      "chronological_splits",
+      "purges",
+      "batch_order",
+      "maximum_epochs",
+      "early_stopping_policy",
+      "optimizer",
+      "learning_rate",
+      "weight_decay",
+      "gradient_clipping",
+      "training_backend",
+      "supervised_fit",
+      "execution_replay",
+      "cost_and_latency_scenarios"
+    ],
+    "mark_control": "paired_round74_v136_v5_next_mark_log_loss",
+    "paired_seed_policy": "restore_the_same_initial_encoder_and_rng_state_before_each_arm",
+    "selection_data_reuse_for_terminal_claim": false
+  },
+  "created_at_utc": "2026-08-23T02:59:28Z",
+  "data_contract": {
+    "capture_clock": "local_monotonic_receipt_time",
+    "censoring_boundaries": "derive_from_the_exact_hash_bound_training_scaler_lower_clip_upper_clip_median_scale_and_standardized_clip",
+    "constant_or_degenerate_target_policy": "reject_candidate_before_fit",
+    "feature_names_sha256": "1487503fff95883204aa0a34a8141a126d72300f85cc0d72d005144a5f2d225e",
+    "feature_view_input": "apply_the_frozen_feature_mask_to_model_input_only",
+    "forbidden_target_clocks": [
+      "exchange_event_time_ms",
+      "received_wall_ns",
+      "decision_wall_ns"
+    ],
+    "gap_reset_policy": "inherit_round74_v136_and_score_only_valid_within_sequence_transitions",
+    "masked_timing_view_policy": "zero_timing_input_but_retain_the_untouched_next_event_duration_target",
+    "scaler_policy": "training_only_hash_bound_round74_event_feature_scaler_v6",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "target_feature_name": "log1p_interarrival_us",
+    "target_source": "unmasked_original_feature_values[:,1:,target_feature_index]",
+    "winsorization_policy": "boundary_values_are_scored_as_left_or_right_censored_probability_mass_not_as_ordinary_density"
+  },
+  "evidence_boundary": {
+    "ai_uplift_established": false,
+    "candidate_implemented": false,
+    "candidate_trained": false,
+    "financial_edge_established": false,
+    "predictive_accuracy_established": false,
+    "profitability_established": false,
+    "representative_training_completed": false,
+    "round75_outcomes_accessed": false,
+    "sealed_test_accessed": false
+  },
+  "forbidden_actions": [
+    "access_round75_targets_or_outcomes_before_terminal_adjudication",
+    "modify_restart_or_salvage_the_active_round75_capture",
+    "implement_or_train_the_candidate_before_capture_source_reconciliation",
+    "change_candidate_count_mixture_count_loss_or_thresholds_after_target_access",
+    "refetch_or_move_the_repository_historical_data_cutoff",
+    "reuse_selection_rows_for_a_terminal_claim",
+    "promote_from_accuracy_or_pretraining_loss_without_after_cost_evidence",
+    "call_this_a_complete_point_process_likelihood_without_terminal_survival_and_censoring_evidence",
+    "grant_ai_order_submission_risk_increase_leverage_or_safety_override_authority"
+  ],
+  "implementation_gate": {
+    "capture_source_compatibility_proven": false,
+    "implementation_permitted_now": false,
+    "required_before_implementation": [
+      "round75_contract_defined_terminal_adjudication_completed",
+      "round75_source_continuity_gap_role_population_lease_database_wal_and_resource_gates_passed",
+      "detached_worktree_preserved_rehashed_and_reviewed_path_by_path",
+      "frozen_capture_feature_semantics_reconciled_with_current_main",
+      "exact_scaler_artifact_available_and_hash_matches_every_training_batch",
+      "focused_contract_and_target_construction_tests_pass_on_integrated_main"
+    ],
+    "round75_terminal_adjudication_completed": false,
+    "source_hash_difference_is_permission_to_bulk_copy": false
+  },
+  "knowledge_at_freeze": {
+    "candidate_model_fitted": false,
+    "duration_or_mark_metrics_computed": false,
+    "financial_metrics_computed": false,
+    "round75_feature_rows_materialized_for_candidate": false,
+    "round75_outcomes_accessed": false,
+    "round75_terminal_adjudication_completed": false,
+    "sealed_partition_accessed": false
+  },
+  "loss_contract": {
+    "duration_interior": "negative_log_mixture_density_at_the_scaled_log1p_interarrival_target",
+    "duration_left_boundary": "negative_log_mixture_cdf_at_the_scaler_derived_lower_boundary",
+    "duration_right_boundary": "negative_log_mixture_survival_probability_at_the_scaler_derived_upper_boundary",
+    "joint_row_loss": "negative_log_p_next_mark_given_history_plus_negative_log_p_duration_given_history_and_original_next_mark",
+    "loss_weight_tuning": false,
+    "mark_loss": "unnormalized_categorical_negative_log_likelihood_for_a_joint_proper_score",
+    "missing_or_nonfinite_policy": "fail_closed_before_optimizer_step",
+    "optimizer_selection_metric": "mean_joint_row_negative_log_likelihood_on_the_frozen_purged_training_tail",
+    "probability_floor_or_posthoc_clipping": false,
+    "supervised_financial_targets_used": false,
+    "terminal_survival_term_included": false
+  },
+  "preregistration_sha256": "023480cd2b478e64de6c69340c4fdeab9c80567e57a36b802bcb81ed8af47120",
+  "promotion_gates": {
+    "after_cost": "after_proper_score_promotion_only_the_paired_candidate_must_improve_net_pnl_roi_and_expectancy_after_source_specific_fees_spread_impact_latency_and_adverse_selection",
+    "economic_risk": "maximum_drawdown_tail_loss_liquidation_exposure_turnover_concentration_and_complete_transaction_gates_must_be_nonworse",
+    "mark_probability": "candidate_next_mark_log_loss_must_be_noninferior_to_v5_with_secondary_accuracy_balanced_accuracy_brier_and_calibration_reported_but_never_promoting_alone",
+    "minimum_population": "all_existing_round75_run_symbol_role_transition_and_economic_minimums_remain_unchanged_and_a_missing_subgroup_rejects",
+    "proper_duration_score": "candidate_duration_nll_must_improve_over_the_history_neutral_symbol_and_mark_conditioned_control",
+    "sealed": "sealed_test_remains_one_use_and_inaccessible_until_every_selection_and_economic_gate_passes",
+    "simultaneous_inference": "paired_capture_run_block_bootstrap_familywise_95_percent_bounds_across_aggregate_symbol_next_mark_feature_view_architecture_and_capture_run_groups",
+    "subgroup_non_degradation": "no_required_symbol_mark_feature_view_architecture_or_capture_run_group_may_have_a_positive_simultaneous_candidate_minus_control_upper_bound",
+    "trading_authority": "no_pretraining_or_predictive_result_grants_paper_testnet_or_live_authority"
+  },
+  "research_basis": [
+    {
+      "finding": "Direct conditional density estimation of inter-event times supports tractable mixture models without numerical intensity integration.",
+      "title": "Intensity-Free Learning of Temporal Point Processes",
+      "url": "https://openreview.net/pdf?id=HygOjhEYDH"
+    },
+    {
+      "finding": "A mark model plus log-normal-mixture inter-event model can retain transformer history encoding while avoiding thinning-based inference.",
+      "title": "Decomposable Transformer Point Processes",
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2024/hash/a1f0d96171c8e79019ae35ee439c2938-Abstract-Conference.html"
+    },
+    {
+      "finding": "Conditioning event time on the next mark can capture mark-time dependence lost by conditionally independent factorizations.",
+      "title": "Modeling Inter-Dependence Between Time and Mark in Multivariate Temporal Point Processes",
+      "url": "https://arxiv.org/abs/2210.15294"
+    },
+    {
+      "finding": "Joint time and mark training can produce conflicting gradients, so component losses and gradient conflict diagnostics must be reported separately.",
+      "title": "Preventing Conflicting Gradients in Neural Marked Temporal Point Processes",
+      "url": "https://openreview.net/forum?id=INijCSPtbQ"
+    },
+    {
+      "finding": "Aggregate next-event metrics can hide weak rare-mark behavior, requiring explicit per-mark evaluation.",
+      "title": "Addressing Mark Imbalance in Integration-free Marked Temporal Point Processes",
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2025/hash/590c043fab86acdb65fb4ffc3490c074-Abstract-Conference.html"
+    }
+  ],
+  "resource_contract": {
+    "additional_candidate_count": 1,
+    "automatic_hyperparameter_sweep": false,
+    "capture_period_training_or_backtest": false,
+    "epoch_progress_and_bounded_heartbeat_required": true,
+    "gpu_backend": "same_verified_backend_as_paired_v5_or_fail_closed_to_explicit_cpu_mode",
+    "memory_budget": "inherit_the_verified_v5_batch_and_device_group_limits",
+    "model_checkpoint_writes": "best_candidate_only_with_atomic_replace_and_hash",
+    "training_data_duplication": false
+  },
+  "round": 76,
+  "schema_version": "round-076-mark-conditioned-duration-pretraining-preregistration-v1",
+  "source_binding": {
+    "current_main_canonical_lf_sha256": {
+      "src/simple_ai_trading/impact_absorption_event_dataset.py": "e4789e19f30a3a95781104db7de3901a57c46e5b1e21a3f05523a39a408f41de",
+      "src/simple_ai_trading/impact_absorption_event_pretraining.py": "ceebcde40ecdec11ac325e1074d6f277064e4c4e73ea9ffa29362d96e8ab53b9",
+      "src/simple_ai_trading/impact_absorption_event_scaling.py": "8832c3723430359afd9df272f0c2c3c3be847937b134cdd2a1f36ffa207815f7",
+      "src/simple_ai_trading/impact_absorption_event_sequence.py": "6cd99986bfff5487d3f3cbd6fad5464be6ab1a2f0bb8a18a4f0e6b53953717b8",
+      "src/simple_ai_trading/impact_absorption_event_training.py": "e8c8f97d0224599530170369b877fc53cecb078f2f13e4107b6b3b3e76a80d12"
+    },
+    "file_sha256_normalization": "canonical_lf_bytes",
+    "round75_capture_contract": {
+      "artifact_sha256": "eca592acb4c3f37c6d043d37664614d35994d6e9b3ebea2e801351c287a49bbf",
+      "capture_source_git_base_commit": "d2ff8e75a7a00bd44394f2664eb9880f42581dfd",
+      "file_sha256": "7f740984395490113af53c304b3d7c649e4f6e593543a6ebdcf02a1a14becefe",
+      "frozen_event_sequence_file_sha256": "4f5b063b1321e12d6b410f0798439ca811706c288ce63e8cc123cbf01168114f",
+      "path": "docs/model-research/action-value/round-075-continuous-capture-contract-v4.json"
+    },
+    "round75_frozen_and_current_event_sequence_hashes_differ": true,
+    "semantic_fact_verified_in_both_sources": "log1p_interarrival_us_is_derived_from_nonnegative_local_monotonic_receipt_delta_divided_by_1000",
+    "v136_design_file_sha256": "511897f9c6f7357934a2ee5bda385389404213e1155589a3f90435164d378681",
+    "v136_design_sha256": "2016c8ff6b06ec5a007e501f42aef9c35a9a82ddbad262b3822a4a90cbaa93be"
+  },
+  "status": "frozen_target_blind_before_round75_terminal_adjudication"
+}

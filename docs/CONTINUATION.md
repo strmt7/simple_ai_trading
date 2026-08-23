@@ -771,16 +771,16 @@ training or profitability claim was made, and no source or capture worktree was
 changed. Re-run the focused tests only after the capture is terminalized and
 the differing files are safely reconciled onto `main`.
 
-The same audit identified a post-capture, preregistration-only challenger: keep
-v5 unchanged and compare a separate next-mark plus conditional-duration-density
-objective on identical encoders, splits, seeds, populations, supervised
-training, and after-cost evaluation. The duration target must come from the
-untouched next event even when timing input is masked. Call it a conditional
-marked-duration density, not a complete point-process likelihood, unless the
-dataset exposes observation-end censoring and terminal survival. Promotion
-requires paired proper-loss improvement without run/symbol/task subgroup
-degradation and then downstream after-cost improvement. Do not implement or
-evaluate it before Round 75 terminalization; it has no present edge claim.
+That target-blind challenger is now frozen in the hash-bound
+`round-076-mark-conditioned-duration-preregistration-v1.json`. It keeps v5
+unchanged and permits one mark-conditioned, censor-aware duration candidate on
+identical encoders, splits, seeds, populations, supervised training, and
+after-cost evaluation. The target comes from the untouched next event even when
+timing input is masked; scaler boundaries use CDF/survival mass rather than an
+ordinary density. It is not a complete point-process likelihood because no
+terminal survival term is available. Do not implement, train, or evaluate it
+before Round 75 terminal adjudication and source reconciliation. It has no
+current predictive, economic, or trading-authority claim.
 
 ## Next Work
 
@@ -839,6 +839,8 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
 - Polymarket status: `docs/model-research/polymarket/latest/README.md`
 - Round 29 preregistration:
   `docs/model-research/polymarket/round-029-settlement-state-matched-ablation-preregistration-v1.json`
+- Round 76 target-blind duration challenger:
+  `docs/model-research/action-value/round-076-mark-conditioned-duration-preregistration-v1.json`
 - Model rules: `docs/MODEL_AND_SIGNAL_VALIDATION.md`
 - Data cutoff: `docs/model-research/research-data-snapshot-contract-v1.json`
 - Agent and CI workflow: `docs/AGENT_WORKFLOWS.md`
