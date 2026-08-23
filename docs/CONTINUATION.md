@@ -997,12 +997,28 @@ reported zero open Dependabot, code-scanning, and secret-scanning alerts, only
 `main`, and no open pull request. This snapshot does not prove the absence of
 undiscovered vulnerabilities.
 
-One item from the original eight-finding complexity queue remains:
-`ai_start_gate.evaluate_ai_start_gate` at Radon `24`. Address it separately
-with frozen startup status, provider-call order, persisted evidence, and
-parent/current parity. Do not combine it with model or trading changes. This
-closeout changes no model input, prediction, score, threshold, risk authority,
-P&L, order path, or profitability evidence.
+### AI Start-Gate Complexity Closeout: 2026-08-23
+
+The follow-up to source checkpoint `4ef963f6` closes the final item in the
+original eight-finding AI complexity queue. `evaluate_ai_start_gate` now scores
+Radon `7` instead of `24`; its largest helpers are the unchanged accepted-
+outcome validator at `13` and terminal-fingerprint validator at `12`.
+
+The refactor preserves disabled handling, review loading, capability probing,
+model identity and parameter checks, source-market/objective validation,
+terminal reservation binding, runtime model fingerprinting, fallback status,
+messages, and short-circuit order. Parent/current comparison passes 17 startup
+scenarios with 34 exact result and call-trace comparisons. Local verification
+passes 80 focused gate tests and 201 affected AI tests; changed executable-line
+coverage is `39/39`. Scoped Mypy, Bandit, Ruff, formatting, Vulture,
+compilation, lock validation, financial terminology, and whitespace checks
+pass. The exact pushed revision's hosted workflows and DeepSource remain the
+final publication authority.
+
+This closes a maintainability queue, not a trading milestone. No model input,
+prediction, score, threshold, risk authority, P&L, order path, or profitability
+evidence changes. The Round 75 and Round 21 protected captures were not read,
+modified, stopped, restarted, staged, or terminalized during this work.
 
 ## Next Work
 

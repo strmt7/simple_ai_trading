@@ -155,6 +155,118 @@ def _expected_terminal_fingerprint(
     return fingerprint
 
 
+def _disabled_start_gate(path: Path) -> AIStartGateReport:
+    return AIStartGateReport(
+        status="disabled",
+        allowed=True,
+        active=False,
+        reason="AI features are disabled",
+        review_path=str(path),
+    )
+
+
+def _validated_runtime_model_identity(
+    review: AIReviewReport,
+    capability: AICapabilityReport,
+    runtime: RuntimeConfig,
+    *,
+    base_url: str,
+    timeout_seconds: float,
+    model_identity_resolver: ModelIdentityResolver,
+) -> OllamaModelIdentity:
+    if review.status != "ok" or not review.approved:
+        raise ValueError("AI review is not approved")
+    if review.model != capability.model:
+        raise ValueError("AI review model differs from the current runtime model")
+    model_identity = model_identity_resolver(
+        base_url,
+        review.model,
+        timeout_seconds,
+    ).validated()
+    if (
+        model_identity.digest != review.model_digest
+        or model_identity.metadata_sha256 != review.model_metadata_sha256
+    ):
+        raise ValueError("installed AI model provenance differs from the review")
+    minimum_parameters_b = max(2.0, float(runtime.ai_min_model_parameters_b))
+    if model_identity.parameters_b < minimum_parameters_b:
+        raise ValueError(
+            "installed AI model parameter count is below the runtime minimum"
+        )
+    return model_identity
+
+
+def _reviewed_runtime_outcome(
+    review: AIReviewReport,
+    runtime: RuntimeConfig,
+    *,
+    objective: str,
+) -> Mapping[str, object]:
+    source_path = Path(review.source_report)
+    source = _strict_json_mapping(source_path)
+    expected_quote = str(source.get("quote_asset") or "")
+    if (
+        source.get("interval") != runtime.interval
+        or source.get("market_type") != runtime.market_type
+        or not expected_quote
+        or not runtime.symbol.endswith(expected_quote)
+    ):
+        raise ValueError("AI review market contract differs from runtime")
+    requested = source.get("requested_objectives")
+    if (
+        not isinstance(requested, list)
+        or any(not isinstance(item, str) for item in requested)
+        or objective not in requested
+    ):
+        raise ValueError("AI review objective differs from runtime")
+    return _accepted_outcome(
+        source,
+        symbol=runtime.symbol,
+        objective=objective,
+    )
+
+
+def _matching_terminal_model_fingerprint(
+    outcome: Mapping[str, object],
+    *,
+    objective: str,
+    model_artifact: object | None,
+) -> str:
+    expected_fingerprint = _expected_terminal_fingerprint(
+        outcome,
+        objective=objective,
+    )
+    if model_artifact is None:
+        raise ValueError("runtime model artifact is unavailable for AI binding")
+    actual_fingerprint = terminal_model_fingerprint(model_artifact)
+    if actual_fingerprint != expected_fingerprint:
+        raise ValueError("runtime model fingerprint differs from the AI review")
+    return actual_fingerprint
+
+
+def _active_start_gate(
+    path: Path,
+    review: AIReviewReport,
+    model_identity: OllamaModelIdentity,
+    terminal_fingerprint: str,
+) -> AIStartGateReport:
+    return AIStartGateReport(
+        status="active",
+        allowed=True,
+        active=True,
+        reason="AI review and runtime model provenance are exact matches",
+        review_path=str(path),
+        review_sha256=review.report_sha256,
+        source_report_sha256=review.source_report_sha256,
+        model=model_identity.canonical_model,
+        model_digest=model_identity.digest,
+        model_metadata_sha256=model_identity.metadata_sha256,
+        model_parameter_count=model_identity.parameter_count,
+        model_parameter_size=model_identity.parameter_size,
+        terminal_model_fingerprint=terminal_fingerprint,
+    )
+
+
 def evaluate_ai_start_gate(
     runtime: RuntimeConfig,
     *,
@@ -171,13 +283,7 @@ def evaluate_ai_start_gate(
 
     path = Path(review_path)
     if not runtime.ai_enabled:
-        return AIStartGateReport(
-            status="disabled",
-            allowed=True,
-            active=False,
-            reason="AI features are disabled",
-            review_path=str(path),
-        )
+        return _disabled_start_gate(path)
     try:
         review = load_ai_review_report(path)
     except (OSError, ValueError) as exc:
@@ -207,56 +313,24 @@ def evaluate_ai_start_gate(
             review=review,
         )
     try:
-        if review.status != "ok" or not review.approved:
-            raise ValueError("AI review is not approved")
-        if review.model != capability.model:
-            raise ValueError("AI review model differs from the current runtime model")
-        model_identity = model_identity_resolver(
-            base_url,
-            review.model,
-            timeout_seconds,
-        ).validated()
-        if (
-            model_identity.digest != review.model_digest
-            or model_identity.metadata_sha256 != review.model_metadata_sha256
-        ):
-            raise ValueError("installed AI model provenance differs from the review")
-        minimum_parameters_b = max(2.0, float(runtime.ai_min_model_parameters_b))
-        if model_identity.parameters_b < minimum_parameters_b:
-            raise ValueError(
-                "installed AI model parameter count is below the runtime minimum"
-            )
-        source_path = Path(review.source_report)
-        source = _strict_json_mapping(source_path)
-        expected_quote = str(source.get("quote_asset") or "")
-        if (
-            source.get("interval") != runtime.interval
-            or source.get("market_type") != runtime.market_type
-            or not expected_quote
-            or not runtime.symbol.endswith(expected_quote)
-        ):
-            raise ValueError("AI review market contract differs from runtime")
-        requested = source.get("requested_objectives")
-        if (
-            not isinstance(requested, list)
-            or any(not isinstance(item, str) for item in requested)
-            or objective not in requested
-        ):
-            raise ValueError("AI review objective differs from runtime")
-        outcome = _accepted_outcome(
-            source,
-            symbol=runtime.symbol,
+        model_identity = _validated_runtime_model_identity(
+            review,
+            capability,
+            runtime,
+            base_url=base_url,
+            timeout_seconds=timeout_seconds,
+            model_identity_resolver=model_identity_resolver,
+        )
+        outcome = _reviewed_runtime_outcome(
+            review,
+            runtime,
             objective=objective,
         )
-        expected_fingerprint = _expected_terminal_fingerprint(
+        actual_fingerprint = _matching_terminal_model_fingerprint(
             outcome,
             objective=objective,
+            model_artifact=model_artifact,
         )
-        if model_artifact is None:
-            raise ValueError("runtime model artifact is unavailable for AI binding")
-        actual_fingerprint = terminal_model_fingerprint(model_artifact)
-        if actual_fingerprint != expected_fingerprint:
-            raise ValueError("runtime model fingerprint differs from the AI review")
     except (OSError, TypeError, ValueError, OverflowError) as exc:
         return _fallback_or_block(
             runtime=runtime,
@@ -265,21 +339,7 @@ def evaluate_ai_start_gate(
             reason=str(exc),
             review=review,
         )
-    return AIStartGateReport(
-        status="active",
-        allowed=True,
-        active=True,
-        reason="AI review and runtime model provenance are exact matches",
-        review_path=str(path),
-        review_sha256=review.report_sha256,
-        source_report_sha256=review.source_report_sha256,
-        model=model_identity.canonical_model,
-        model_digest=model_identity.digest,
-        model_metadata_sha256=model_identity.metadata_sha256,
-        model_parameter_count=model_identity.parameter_count,
-        model_parameter_size=model_identity.parameter_size,
-        terminal_model_fingerprint=actual_fingerprint,
-    )
+    return _active_start_gate(path, review, model_identity, actual_fingerprint)
 
 
 __all__ = [
