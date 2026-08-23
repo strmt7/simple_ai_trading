@@ -756,12 +756,16 @@ is published, tested on current `main`, or safe to discard.
   are separate.
 - Current model and AI research records preserve rejected, blocked, and
   non-authoritative outcomes instead of relabeling them as success.
-- Round 29 now has a hash-bound, target-blind six-field settlement interaction
-  overlay and preregistration. It repairs a design/implementation gap for the
-  linear residual candidate without changing frozen Round 27/28 rows or
-  pretending to reproduce Chainlink's unpublished TWAP method. Synthetic
-  transform, zero-variance, composition, and tamper tests pass; no Stage 1 row,
-  outcome, model metric, P&L, or authority was produced.
+- Round 29 now has a hash-bound, target-blind six-field settlement interaction,
+  matched L2 selection, paired after-cost economics, deterministic source
+  composition, recursive restart validation, and one bounded operator command.
+  The persisted selection claim is bound to the exact feature/target manifest;
+  source, nested report, model, path-alias, and hard-link drift fail closed. Its
+  pre-outcome amendment also binds the cross-regime acceptance contract, which
+  requires rejection or abstention rather than extrapolation from aggregate
+  performance. Twenty-two focused Round 29 tests plus the contract test pass;
+  no Stage 1 row, outcome, metric, P&L, edge, profitability, or authority was
+  accessed or produced.
 - Dependencies, imported agent workflows, release automation, and concise
   operator documentation are integrated into the main-line closeout gate.
 - The 2026-08-16 DeepSource remediation addresses the complete 219-finding

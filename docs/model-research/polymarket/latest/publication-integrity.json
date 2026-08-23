@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 62775,
+      "bytes": 63496,
       "path": "latest/README.md",
-      "sha256": "ddcb5c63c3e3c948b8cb5eff53fa79d88d2212bb36f66cb03f7672efde6a36f8"
+      "sha256": "f686a34123647894e413fb3ad9aab220d6e684814794a65beb8cd7d6c2b9c37e"
     },
     {
       "bytes": 77606,
@@ -607,6 +607,11 @@
       "sha256": "8bdf56b65e011cb094934ce50185b05a3170de1a8dbe97541208fa0824abc446"
     },
     {
+      "bytes": 3695,
+      "path": "round-029-model-economic-operator-implementation-amendment-v1.json",
+      "sha256": "1d33f840dc5210404ebe9e4d00be83225593141fd71c1f81c1f9620efacd52df"
+    },
+    {
       "bytes": 8267,
       "path": "round-029-settlement-state-matched-ablation-preregistration-v1.json",
       "sha256": "0c3a1b0a30abefae0189d9a3f4e0e05bb685d0abfc58c62ee724032fe116e343"
@@ -624,7 +629,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 29,
   "live_trading_authority": false,
-  "manifest_sha256": "9fffbbae96cf4673047006bff05719614eee1b61297e76b2a0b1e88114eb5c95",
+  "manifest_sha256": "4311c5660c98ebcf44a855be000c725b4f784bfe2ec7d1ce053dbb212942f105",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,
@@ -735,6 +740,8 @@
   "round28_model_result_available": false,
   "round28_sealed_evaluation_implementation_source_bound": true,
   "round28_sealed_result_available": false,
+  "round29_cross_regime_claim_boundary_source_bound": true,
+  "round29_model_economic_operator_source_bound": true,
   "round29_model_result_available": false,
   "round29_preregistration_frozen": true,
   "round29_sealed_result_available": false,
@@ -743,5 +750,5 @@
   "source_dataset_sha256": "a6fd7f55ec7705d391a035b923c4440c3f92ddfb5b1b169ee6b7df3d67aa7665",
   "source_evaluation_artifact_sha256": "c3385d4894ca430a91442d1023bf01f61c650f6d208a4d0f89d11007ee5a11c0",
   "source_pretest_artifact_sha256": "03e4fae64f34f835cac338dee111701c73419929e97a22939e12037eba8dfec9",
-  "status": "round29_preregistered_stage1_capture_running_no_result"
+  "status": "round29_operator_source_bound_stage1_capture_running_no_result"
 }

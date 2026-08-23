@@ -1,0 +1,62 @@
+{
+  "amendment_sha256": "81a612504232ede903c0346601d69fdf4e4ab957bbed36048a3c16ec5856d5b0",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "base_preregistration_sha256": "bff028ff0d6d665d44ae8e476723ba26607a61d03e5a874b284379ff048f5b5c",
+  "cross_regime_edge_acceptance_contract_sha256": "06068c3e5e8003dce4d3e5b47391a64c987941e6aa25b841f9e1079dcb6ecf23",
+  "implementation_boundary": {
+    "diagnostic_pair_can_promote": false,
+    "final_walk_forward_confirmation_performed": false,
+    "implementation_adds_model_selection_and_matched_economic_replay_only": true,
+    "sealed_partition_accessed": false
+  },
+  "knowledge_at_freeze": {
+    "ai_assist_economic_metrics_computed": false,
+    "model_fitted_on_stage1": false,
+    "official_outcomes_accessed": false,
+    "performance_metrics_computed": false,
+    "round27_stage1_feature_rows_accessed_or_materialized": false,
+    "sealed_partition_accessed": false,
+    "selection_partition_accessed": false
+  },
+  "regime_claim_boundary": {
+    "aggregate_result_can_establish_all_regime_robustness": false,
+    "failed_or_unsupported_regime_requires": "reject_or_abstain_from_new_exposure",
+    "minimum_required_future_slices": [
+      "bullish",
+      "bearish",
+      "sideways",
+      "choppy",
+      "high_volatility",
+      "stressed_liquidity",
+      "stressed_latency"
+    ],
+    "portfolio_survival_must_be_independent_of_model_output": true,
+    "required_before_any_all_regime_claim": "separately_preregistered_causal_regime_definitions_adequate_population_after_cost_noninferiority_and_absolute_risk_gates"
+  },
+  "schema_version": "polymarket-round29-model-economic-operator-implementation-amendment-v1",
+  "source_text_sha256": {
+    "docs/model-research/cross-regime-edge-acceptance-contract-v1.json": "64b5df61d25223df43b75005d2cd24685404150fd7b03970b2d1813e27cbc364",
+    "src/simple_ai_trading/polymarket_round29_economics.py": "01b6c1d96b6e1a7abc5e3f29477e95a81d38c7a4c774ad7a1053acc3686e5c38",
+    "src/simple_ai_trading/polymarket_round29_model.py": "504c6de40626f0a2fe808cfc70d2100deec9802b9ca598e66404997ca291edc3",
+    "src/simple_ai_trading/polymarket_round29_operator.py": "0d4de57fecedf841de327c00490572e368691b29a4c7ff0c9ac58b58da4af8e8",
+    "src/simple_ai_trading/polymarket_round29_selection.py": "1f3c56daa7092460c50fef743d172ce29ecfd0ed4ee5f37c0f5ba75b4a59fecd",
+    "src/simple_ai_trading/polymarket_round29_source.py": "096b845992b1b3ba3f7915cb70424d6a1ceb0f9f4e4647b29ffac33a031f6092",
+    "tests/test_polymarket_round29_economics.py": "6a8d4eb83281bb0f66e7e1489dbfb40a942f20441ec6298b71db96daccae3fa6",
+    "tests/test_polymarket_round29_model.py": "0117cbef75f950c7fb944c54abe0d596d4c27240a11bf5272b6f72ceacf0a8e3",
+    "tests/test_polymarket_round29_operator.py": "283d0a7c0a4421b3fdf1fad652bdb197d86434775ca849b12af2f694f0d86eb3",
+    "tests/test_polymarket_round29_selection.py": "058adf59e66ef99620b32f511d9d4096a7f94f867bc25932586e824b6935b5cb",
+    "tests/test_polymarket_round29_source.py": "b7048d0cfdaf7afcea8b565d4b59fe15c6176fc47e572e04ab7dbd6a245c8269",
+    "tests/test_cross_regime_edge_acceptance_contract.py": "10ddef19381148e4005f36911a302563052a95bdd264cbcfe46e237035ad5ab0",
+    "tests/test_run_polymarket_round29_selection.py": "26e8f4c796edc15b94cf7dec50e3b9ef380b2a6d810243e2d0077af6234ffdca",
+    "tools/run_polymarket_round29_selection.py": "ca4749d6f3736fbc326d6610a6e359bcef720efb3e970723ad3c22b98bd62e82"
+  },
+  "status": "frozen_before_stage1_feature_or_outcome_access"
+}

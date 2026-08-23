@@ -12,6 +12,10 @@ agents to canonical evidence without replacing that evidence.
 - Conservative is the default profile. Leverage is a risk ceiling, never a
   source of edge. Profitability, ROI, and drawdown claims require reproducible
   source-bound after-cost evidence.
+- Aggregate performance is not an all-regime edge. The hash-bound
+  `docs/model-research/cross-regime-edge-acceptance-contract-v1.json` requires
+  causal bull, bear, sideways, choppy, volatility, liquidity, and latency
+  slices; unsupported states must reject promotion or abstain from new risk.
 - Risk, reconciliation, Stop, and ownership checks are deterministic. AI may
   veto or downsize only after matched uplift evidence and may never block a
   close or override a safety gate.

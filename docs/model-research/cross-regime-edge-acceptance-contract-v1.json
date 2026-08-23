@@ -1,0 +1,139 @@
+{
+  "authority": {
+    "edge_claim": false,
+    "live_trading_authority": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "claim_boundary": {
+    "cannot_lose_claim_permitted": false,
+    "every_regime_must_generate_trades": false,
+    "missing_or_inadequate_slice_may_be_extrapolated": false,
+    "portfolio_survival_is_independent_of_model_output": true,
+    "profitable_in_every_future_market_is_guaranteed": false,
+    "unsupported_regime_action": "abstain_from_new_exposure"
+  },
+  "contract_sha256": "06068c3e5e8003dce4d3e5b47391a64c987941e6aa25b841f9e1079dcb6ecf23",
+  "evidence_sequence": [
+    "freeze_causal_features_costs_regime_definitions_threshold_fit_roles_and_rejection_gates",
+    "screen_mechanism_on_bounded_development_data",
+    "evaluate_untouched_selection_data_after_all_observed_costs",
+    "evaluate_each_required_regime_and_stress_slice",
+    "reject_or_add_a_target_blind_abstention_policy_for_unsupported_slices",
+    "repeat_matched_evaluation_of_the_complete_policy_without_weakening_any_gate",
+    "optionally_run_final_walk_forward_confirmation_only_after_all_prior_gates_pass"
+  ],
+  "model_acceptance": {
+    "aggregate": [
+      "positive_after_cost_net_pnl",
+      "positive_condition_or_event_block_bootstrap_lower_bound",
+      "probability_improvement_when_a_probability_model_is_used",
+      "no_material_drawdown_degradation_against_the_frozen_baseline",
+      "risk_profile_absolute_drawdown_limit_respected",
+      "no_profit_concentration_below_the_frozen_minimum_population",
+      "all_fixed_latency_and_execution_stress_scenarios_pass"
+    ],
+    "per_required_slice": [
+      "population_meets_a_preregistered_power_or_minimum-sample_requirement",
+      "after_cost_net_pnl_is_not_negative",
+      "paired_noninferiority_to_the_frozen_baseline_is_not_rejected",
+      "absolute_drawdown_and_expected_shortfall_limits_pass",
+      "no_unknown_execution_or_untracked_inventory_state",
+      "otherwise_the_complete_policy_abstains_from_new_exposure_in_that_slice"
+    ],
+    "search_bias": [
+      "record_every_tried_family_and_parameter_grid",
+      "retain_rejections",
+      "apply_a_preregistered_multiple-testing_or_backtest-overfitting_control_when_more_than_one_candidate_is_compared",
+      "never_choose_regime_boundaries_from_selection_or_sealed_pnl"
+    ]
+  },
+  "regime_definition": {
+    "classification_is_target_blind": true,
+    "classification_time": "at_or_before_each_decision_receipt_time",
+    "direction_axis": [
+      "bullish",
+      "bearish",
+      "sideways"
+    ],
+    "execution_axis": [
+      "nominal_latency",
+      "elevated_latency",
+      "severe_latency",
+      "no_fill_or_unknown_state"
+    ],
+    "liquidity_axis": [
+      "normal_liquidity",
+      "stressed_spread",
+      "stressed_depth",
+      "stale_or_missing_book"
+    ],
+    "path_axis": [
+      "directional",
+      "choppy"
+    ],
+    "threshold_policy": "fit_only_on_the_training_role_from_lagged_returns_realized_variation_path_efficiency_spread_depth_and_source_age_then_hash_before_any_selection_or_sealed_access",
+    "volatility_axis": [
+      "low_or_normal_volatility",
+      "high_volatility",
+      "stress_volatility"
+    ]
+  },
+  "risk_independence": {
+    "ai_or_ml_may_override_a_safety_gate": false,
+    "close_or_reduce_only_action_may_be_blocked_by_model": false,
+    "leverage_can_create_edge": false,
+    "required_controls": [
+      "fresh_source_and_market_state_gate",
+      "bot_owned_inventory_reconciliation",
+      "unknown_order_state_blocks_new_exposure",
+      "isolated_position_and_portfolio_notional_limits",
+      "risk_profile_drawdown_and_daily_loss_circuit_breakers",
+      "liquidation_distance_and_margin_reserve_gate_before_leverage",
+      "exchange_side_protection_when_supported_plus_reconciliation_after_reconnect",
+      "rate_limit_reserve_for_cancel_close_and_reconciliation",
+      "independent_watchdog_timeouts_and_stop_path",
+      "no_automatic_reinvestment_by_default"
+    ],
+    "tail_disclosure": "Gaps_exchange_failure_zero_liquidity_and_unreachable_venues_can_exceed_planned_losses;_no_software_can_guarantee_a_fixed_maximum_loss_in_every_future_state"
+  },
+  "research_basis": [
+    {
+      "finding": "Regime-switching evidence shows that return means, volatility, autocorrelation, and dependence can differ materially and change abruptly.",
+      "source": "NBER Working Paper 17182",
+      "url": "https://www.nber.org/papers/w17182"
+    },
+    {
+      "finding": "Basel market-risk standards use daily 97.5 percent one-tailed expected shortfall, liquidity horizons, stress calibration, ongoing backtesting, and independent validation; this contract adopts those principles without claiming bank regulatory compliance.",
+      "source": "Basel Framework MAR30 and MAR33",
+      "url": "https://www.bis.org/baselframework/BaselFramework.pdf"
+    },
+    {
+      "finding": "MiFID II Article 17 requires resilient systems, thresholds and limits, business continuity, testing, monitoring, and time-sequenced records for algorithmic trading.",
+      "source": "ESMA MiFID II Article 17",
+      "url": "https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-17-algorithmic-trading"
+    },
+    {
+      "finding": "Backtest selection itself can overfit; ordinary holdout testing can be unreliable after repeated strategy selection.",
+      "source": "Bailey et al., The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253"
+    }
+  ],
+  "schema_version": "cross-regime-edge-acceptance-contract-v1",
+  "scope": {
+    "binance_assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "binance_execution": "testnet_demo_or_paper_only",
+    "polymarket_independent_live_capable_asset": "BTC",
+    "polymarket_live_enabled_by_default": false,
+    "polymarket_research_assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ]
+  },
+  "status": "frozen_before_new_regime_conditioned_model_outcome_access"
+}
