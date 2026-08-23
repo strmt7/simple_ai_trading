@@ -1,13 +1,13 @@
 {
   "active_implementation": {
-    "src/simple_ai_trading/round75_capture_supervisor.py": "5e6d495f9eacce914e951008c7c1dd729bed01fc65d05d44c602ac81ec58af34",
+    "src/simple_ai_trading/round75_capture_supervisor.py": "293f00c967b79eb600b1998c89dcc86a7a65cfd70b51ed241fda5bed2ff54926",
     "src/simple_ai_trading/round75_continuous_capture.py": "090704bd5bacfe6104efd9245d1fb17792594f8eba4bd8e7359208a24ab7c5dd",
     "src/simple_ai_trading/round75_terminal_audit.py": "dec6ac5a8ce96810426f5a28dc18a12a6a6beadd2447ca874f33b6724906779e",
     "tools/audit_round75_terminal_capture.py": "f4a0bd82cb61f182115cae6b3e832fc6b0e92056cab61a0a4b8a4bb1e78c5558",
     "tools/run_round75_continuous_capture.py": "17d0e3d8de3d13997037e567d2f19f3c5524223df0be7a4a9b5eee3d90e90822",
     "tools/supervise_round75_continuous_capture.py": "67349cf56e6ff8db1ae3d410ace7629a75d5d339de8af1dadc5266345e5399b9"
   },
-  "artifact_sha256": "f1a1bc536cf37e7ec867f4d8ddf450537cfa83ae7ed17dd061421db5fa7c0db3",
+  "artifact_sha256": "377962b57b12101cabc2bd86d7a56c6941c28c80ffa660bc8a16a96f7a290ac8",
   "created_at_utc": "2026-08-23T12:30:00Z",
   "frozen_v4_source_mirror": {
     "src/simple_ai_trading/round75_capture_supervisor.py": {

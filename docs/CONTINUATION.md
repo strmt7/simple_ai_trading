@@ -35,7 +35,7 @@ Canonical evidence:
   `18fa37db65aa19fed16128d4aaf0af10cb0606c95192b46dfca0b0a28e932751`.
 - `round-075-post-campaign-amendment-v1.json`: frozen-source preservation and
   non-restartable supervisor v3; artifact SHA-256
-  `f1a1bc536cf37e7ec867f4d8ddf450537cfa83ae7ed17dd061421db5fa7c0db3`.
+  `377962b57b12101cabc2bd86d7a56c6941c28c80ffa660bc8a16a96f7a290ac8`.
 
 Facts: 720 slots were preregistered; 35 produced results, 33 were admitted, 684
 were missed, and slot 67 remained incomplete. All admitted epochs are training
