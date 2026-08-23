@@ -36,6 +36,10 @@ from simple_ai_trading.objective import get_objective
 
 
 _DIGEST = "a" * 64
+_MODEL_NAME = "qwen3:8b"
+_METADATA_DIGEST = "c" * 64
+_PARAMETER_COUNT = 8_200_000_000
+_PARAMETER_SIZE = "8.2B"
 _FINGERPRINT = "b" * 64
 _FEATURE_SIGNATURE = advanced_feature_signature(
     replace(
@@ -44,6 +48,15 @@ _FEATURE_SIGNATURE = advanced_feature_signature(
         label_stop_threshold=0.0015,
     )
 )
+
+
+def _model_identity_kwargs() -> dict[str, object]:
+    return {
+        "model_name": _MODEL_NAME,
+        "model_metadata_sha256": _METADATA_DIGEST,
+        "model_parameter_count": _PARAMETER_COUNT,
+        "model_parameter_size": _PARAMETER_SIZE,
+    }
 
 
 def test_exact_case_window_accounts_for_submission_and_revisit_polls() -> None:
@@ -220,6 +233,7 @@ def _case(*, observed_at_ms: int = 1_000, model_digest: str = _DIGEST):
         proposed_side="LONG",
         ml_confidence=0.72,
         maximum_risk_multiplier=0.4,
+        **_model_identity_kwargs(),
         model_digest=model_digest,
         terminal_model_fingerprint=_FINGERPRINT,
         evidence=_approval_evidence(),
@@ -265,6 +279,13 @@ def test_case_identity_is_deterministic_and_tamper_evident() -> None:
     object.__setattr__(tampered, "ml_confidence", 0.99)
     with pytest.raises(ValueError, match="identity mismatch"):
         tampered.validated()
+
+    metadata_tampered = replace(first, model_metadata_sha256="d" * 64)
+    with pytest.raises(ValueError, match="identity mismatch"):
+        metadata_tampered.validated()
+
+    with pytest.raises(ValueError, match="model identity"):
+        replace(first, model_parameter_count=8_200_000_000.5).validated()
 
 
 def test_provider_parser_is_exact_and_semantically_fail_closed() -> None:
@@ -315,6 +336,7 @@ def test_approval_requires_bound_after_cost_model_evidence() -> None:
         proposed_side="LONG",
         ml_confidence=0.72,
         maximum_risk_multiplier=0.4,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
         evidence={"cost_model": {}},
@@ -336,6 +358,7 @@ def test_approval_requires_current_validated_after_cost_edge() -> None:
         proposed_side="LONG",
         ml_confidence=0.72,
         maximum_risk_multiplier=0.4,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
         evidence=evidence,
@@ -371,6 +394,7 @@ def test_approval_accepts_current_meta_bucket_with_positive_block_bound() -> Non
         proposed_side="LONG",
         ml_confidence=0.72,
         maximum_risk_multiplier=0.4,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
         evidence=evidence,
@@ -414,6 +438,7 @@ def test_ineligible_model_evidence_never_consumes_provider_tokens(
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
     )
@@ -477,6 +502,7 @@ def test_invalid_meta_label_bucket_never_consumes_provider_tokens(
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
     )
@@ -523,6 +549,7 @@ def test_nonpositive_current_payoff_never_consumes_provider_tokens(
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
     )
@@ -564,6 +591,7 @@ def test_supplied_payoff_evidence_must_match_promoted_model(
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
     )
@@ -601,6 +629,7 @@ def test_zero_sized_model_proposal_never_consumes_provider_tokens(
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
     )
@@ -638,6 +667,7 @@ def test_coordinator_can_suspend_entry_review_without_affecting_ml_side(
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
     )
@@ -737,6 +767,7 @@ def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
         proposed_side="LONG",
         ml_confidence=0.72,
         maximum_risk_multiplier=0.4,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
         evidence=oversized_evidence,
@@ -814,6 +845,7 @@ def test_shadow_reviewer_defers_only_entry_then_preserves_ml_side_and_size(
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
     )
@@ -908,6 +940,7 @@ def test_completed_review_cannot_be_replayed_after_freshness_window(
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
         clock=lambda: 400.0,
@@ -951,6 +984,7 @@ def test_shadow_contract_failure_blocks_only_entry_not_the_ml_decision(
     assisted = AIAssistedDecisionFunction(
         malformed_decision,
         reviewer,
+        **_model_identity_kwargs(),
         model_digest=_DIGEST,
         terminal_model_fingerprint=_FINGERPRINT,
     )

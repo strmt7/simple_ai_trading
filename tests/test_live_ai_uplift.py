@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
@@ -10,6 +11,8 @@ import pytest
 
 from simple_ai_trading import cli
 from simple_ai_trading.live_ai_assist import (
+    LEGACY_LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION,
+    LEGACY_LIVE_AI_ENTRY_CASE_SCHEMA_VERSION,
     LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION,
     LIVE_AI_ENTRY_CASE_SCHEMA_VERSION,
     LiveAIEntryDecision,
@@ -24,6 +27,10 @@ from simple_ai_trading.positions import ClosedTrade
 
 
 _MODEL_DIGEST = "a" * 64
+_MODEL_NAME = "qwen3:14b"
+_MODEL_METADATA_DIGEST = "c" * 64
+_MODEL_PARAMETER_COUNT = 14_000_000_000
+_MODEL_PARAMETER_SIZE = "14.0B"
 _TERMINAL_FINGERPRINT = "b" * 64
 _DAY_MS = 86_400_000
 
@@ -107,7 +114,11 @@ def _case(observed_at_ms: int):
         proposed_side="LONG",
         ml_confidence=0.7,
         maximum_risk_multiplier=0.4,
+        model_name=_MODEL_NAME,
         model_digest=_MODEL_DIGEST,
+        model_metadata_sha256=_MODEL_METADATA_DIGEST,
+        model_parameter_count=_MODEL_PARAMETER_COUNT,
+        model_parameter_size=_MODEL_PARAMETER_SIZE,
         terminal_model_fingerprint=_TERMINAL_FINGERPRINT,
         evidence=_approval_evidence(),
     )
@@ -130,7 +141,9 @@ def _decision(action: str) -> LiveAIEntryDecision:
     )
 
 
-def _record(case, decision, *, completed_at_ms: int, previous: str) -> dict[str, object]:
+def _record(
+    case, decision, *, completed_at_ms: int, previous: str
+) -> dict[str, object]:
     unsigned = {
         "schema_version": LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION,
         "previous_record_sha256": previous,
@@ -144,7 +157,38 @@ def _record(case, decision, *, completed_at_ms: int, previous: str) -> dict[str,
     return unsigned | {"record_sha256": _canonical_sha256(unsigned)}
 
 
-def _trade(case, *, opened_at_ms: int, pnl: float, action: str, index: int) -> ClosedTrade:
+def _legacy_record(
+    case,
+    decision,
+    *,
+    completed_at_ms: int,
+) -> tuple[dict[str, object], str]:
+    legacy_case = case.identity_payload()
+    legacy_case["schema_version"] = LEGACY_LIVE_AI_ENTRY_CASE_SCHEMA_VERSION
+    for field in (
+        "model_name",
+        "model_metadata_sha256",
+        "model_parameter_count",
+        "model_parameter_size",
+    ):
+        legacy_case.pop(field)
+    legacy_case_id = _canonical_sha256(legacy_case)
+    unsigned = {
+        "schema_version": LEGACY_LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION,
+        "previous_record_sha256": "0" * 64,
+        "completed_at_ms": completed_at_ms,
+        "latency_seconds": 0.5,
+        "case": legacy_case | {"case_id": legacy_case_id},
+        "decision": decision.asdict(),
+        "mode": "shadow_only",
+        "trading_authority": False,
+    }
+    return unsigned | {"record_sha256": _canonical_sha256(unsigned)}, legacy_case_id
+
+
+def _trade(
+    case, *, opened_at_ms: int, pnl: float, action: str, index: int
+) -> ClosedTrade:
     return ClosedTrade(
         id=f"trade-{index:03d}",
         symbol="BTCUSDT",
@@ -190,7 +234,9 @@ def test_semantic_audit_loader_rejects_rehashed_risk_cap_violation(
     tmp_path: Path,
 ) -> None:
     case = _case(1_000)
-    record = _record(case, _decision("approve"), completed_at_ms=2_000, previous="0" * 64)
+    record = _record(
+        case, _decision("approve"), completed_at_ms=2_000, previous="0" * 64
+    )
     record["decision"]["risk_multiplier"] = 0.5
     unsigned = dict(record)
     unsigned.pop("record_sha256")
@@ -206,7 +252,9 @@ def test_semantic_audit_loader_rejects_rehashed_empty_provider_telemetry(
     tmp_path: Path,
 ) -> None:
     case = _case(1_000)
-    record = _record(case, _decision("approve"), completed_at_ms=2_000, previous="0" * 64)
+    record = _record(
+        case, _decision("approve"), completed_at_ms=2_000, previous="0" * 64
+    )
     record["decision"]["prompt_tokens"] = 0
     unsigned = dict(record)
     unsigned.pop("record_sha256")
@@ -237,9 +285,36 @@ def test_materializer_rejects_review_completed_after_entry() -> None:
     assert report["profitability_claim"] is False
 
 
+def test_legacy_audit_remains_readable_but_cannot_authorize_uplift() -> None:
+    case = _case(1_000)
+    record, legacy_case_id = _legacy_record(
+        case,
+        _decision("approve"),
+        completed_at_ms=2_000,
+    )
+    trade = replace(
+        _trade(case, opened_at_ms=3_000, pnl=1.0, action="approve", index=1),
+        ai_review_case_id=legacy_case_id,
+    )
+
+    report = assess_live_ai_shadow_uplift(
+        [trade],
+        [record],
+        initial_capital=1_000.0,
+        model_name=_MODEL_NAME,
+        model_parameters_b=14.0,
+    )
+
+    assert report["causally_eligible_trades"] == 0
+    assert report["rejection_counts"] == {"legacy_model_identity_unbound": 1}
+    assert report["accepted"] is False
+
+
 def test_materializer_rejects_realized_only_drawdown_evidence() -> None:
     case = _case(1_000)
-    record = _record(case, _decision("approve"), completed_at_ms=2_000, previous="0" * 64)
+    record = _record(
+        case, _decision("approve"), completed_at_ms=2_000, previous="0" * 64
+    )
     trade = _trade(case, opened_at_ms=3_000, pnl=1.0, action="approve", index=1)
     report = assess_live_ai_shadow_uplift(
         [trade],
@@ -293,10 +368,7 @@ def test_materializer_builds_bound_daily_pairs_and_can_clear_existing_gate(
         encoding="utf-8",
     )
     verified_records = load_live_ai_entry_audit(path)
-    intratrade_paths = {
-        trade.id: _one_second_path(trade)
-        for trade in trades
-    }
+    intratrade_paths = {trade.id: _one_second_path(trade) for trade in trades}
     report = assess_live_ai_shadow_uplift(
         trades,
         verified_records,

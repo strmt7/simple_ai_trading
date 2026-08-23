@@ -10,15 +10,17 @@ from pathlib import Path
 import sqlite3
 from typing import Mapping, Sequence
 
+from .ai_review import canonical_ollama_model_name
 from .ai_uplift import AIUpliftPolicy, assess_ai_uplift
 from .live_ai_assist import (
+    LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION,
     load_live_ai_entry_audit,
     validate_live_ai_entry_audit_records,
 )
 from .positions import BOT_OWNER, ClosedTrade, PositionsStore
 
 
-LIVE_AI_UPLIFT_SCHEMA_VERSION = "live-ai-shadow-uplift-v2"
+LIVE_AI_UPLIFT_SCHEMA_VERSION = "live-ai-shadow-uplift-v3"
 _DAY_MS = 86_400_000
 _ACTION_STATUS = {
     "approve": "shadow_approve",
@@ -234,7 +236,9 @@ def _intratrade_path_risk(
         sources.update(path_sources)
         complete_trade_count += 1
     unique_reasons = tuple(dict.fromkeys(reasons))
-    verified = bool(eligible) and complete_trade_count == len(eligible) and not unique_reasons
+    verified = (
+        bool(eligible) and complete_trade_count == len(eligible) and not unique_reasons
+    )
     evidence = {
         "verified": verified,
         "interval": "1s",
@@ -298,7 +302,10 @@ def _trade_metrics(
         else 0.0
     )
     downside_ratio = (
-        math.fsum(daily_returns) / len(daily_returns) / downside_deviation * math.sqrt(365.0)
+        math.fsum(daily_returns)
+        / len(daily_returns)
+        / downside_deviation
+        * math.sqrt(365.0)
         if downside_deviation > 0.0
         else 0.0
     )
@@ -358,6 +365,11 @@ def assess_live_ai_shadow_uplift(
     """Build same-trade daily returns using only pre-entry AI decisions."""
 
     capital = _finite(initial_capital, label="initial_capital")
+    try:
+        requested_model_name = canonical_ollama_model_name(model_name)
+    except ValueError as exc:
+        raise ValueError("live AI uplift model identity is invalid") from exc
+    cfg = policy or AIUpliftPolicy()
     coverage_floor = _finite(
         minimum_causal_coverage,
         label="minimum_causal_coverage",
@@ -367,7 +379,6 @@ def assess_live_ai_shadow_uplift(
         capital <= 0.0
         or not 0.90 <= coverage_floor <= 1.0
         or not 1_000 <= maximum_age_ms <= 300_000
-        or not str(model_name).strip()
     ):
         raise ValueError("live AI uplift policy is invalid")
     verified_records = validate_live_ai_entry_audit_records(audit_records)
@@ -385,10 +396,11 @@ def assess_live_ai_shadow_uplift(
         for trade in trades
         if trade.owner == BOT_OWNER and trade.ai_review_mode == "shadow_only"
     ]
-    candidates.sort(key=lambda trade: (trade.opened_at_ms, trade.closed_at_ms, trade.id))
+    candidates.sort(
+        key=lambda trade: (trade.opened_at_ms, trade.closed_at_ms, trade.id)
+    )
     candidate_case_ids = {
-        str(trade.ai_review_case_id or "").lower()
-        for trade in candidates
+        str(trade.ai_review_case_id or "").lower() for trade in candidates
     }
     audited_case_ids = set(records_by_case)
     matched_proposal_case_ids = audited_case_ids.intersection(candidate_case_ids)
@@ -401,7 +413,11 @@ def assess_live_ai_shadow_uplift(
     rejection_counts: Counter[str] = Counter()
     used_case_ids: set[str] = set()
     eligible: list[dict[str, object]] = []
+    model_names: set[str] = set()
     model_digests: set[str] = set()
+    model_metadata_digests: set[str] = set()
+    model_parameter_counts: set[int] = set()
+    model_parameter_sizes: set[str] = set()
     terminal_fingerprints: set[str] = set()
     for trade in candidates:
         case_id = str(trade.ai_review_case_id or "").lower()
@@ -416,6 +432,9 @@ def assess_live_ai_shadow_uplift(
         raw_decision = record.get("decision")
         if not isinstance(raw_case, Mapping) or not isinstance(raw_decision, Mapping):
             rejection_counts["audit_evidence_missing"] += 1
+            continue
+        if record.get("schema_version") != LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION:
+            rejection_counts["legacy_model_identity_unbound"] += 1
             continue
         try:
             completed_at_ms = int(record["completed_at_ms"])
@@ -449,12 +468,30 @@ def assess_live_ai_shadow_uplift(
         ):
             rejection_counts["decision_contract_mismatch"] += 1
             continue
+        raw_model_name = raw_case.get("model_name")
+        raw_parameter_count = raw_case.get("model_parameter_count")
+        raw_parameter_size = raw_case.get("model_parameter_size")
+        if (
+            not isinstance(raw_model_name, str)
+            or raw_model_name != requested_model_name
+            or isinstance(raw_parameter_count, bool)
+            or not isinstance(raw_parameter_count, int)
+            or raw_parameter_count / 1_000_000_000.0 < float(cfg.min_model_parameters_b)
+            or not isinstance(raw_parameter_size, str)
+            or not raw_parameter_size
+        ):
+            rejection_counts["model_identity_mismatch"] += 1
+            continue
         model_digest = str(raw_case.get("model_digest") or "").lower()
         observed_model_digest = str(
             raw_decision.get("observed_model_digest") or ""
         ).lower()
         try:
             model_digest = _sha256(model_digest, label="AI model digest")
+            model_metadata_digest = _sha256(
+                raw_case.get("model_metadata_sha256"),
+                label="AI model metadata digest",
+            )
             terminal_fingerprint = _sha256(
                 raw_case.get("terminal_model_fingerprint"),
                 label="terminal model fingerprint",
@@ -489,25 +526,44 @@ def assess_live_ai_shadow_uplift(
             }
         )
         used_case_ids.add(case_id)
+        model_names.add(raw_model_name)
         model_digests.add(model_digest)
+        model_metadata_digests.add(model_metadata_digest)
+        model_parameter_counts.add(raw_parameter_count)
+        model_parameter_sizes.add(raw_parameter_size)
         terminal_fingerprints.add(terminal_fingerprint)
     causal_coverage = len(eligible) / len(candidates) if candidates else 0.0
     materialization_reasons: list[str] = []
     if not candidates:
         materialization_reasons.append("ai_shadow_trades_missing")
     if causal_coverage < coverage_floor:
-        materialization_reasons.append(
-            f"causal_ai_trade_coverage<{coverage_floor:.2f}"
-        )
+        materialization_reasons.append(f"causal_ai_trade_coverage<{coverage_floor:.2f}")
     if unmatched_proposal_case_ids:
         rejection_counts["counterfactual_outcome_missing"] = len(
             unmatched_proposal_case_ids
         )
-        materialization_reasons.append(
-            "ai_shadow_proposal_outcomes_incomplete"
-        )
+        materialization_reasons.append("ai_shadow_proposal_outcomes_incomplete")
     if len(model_digests) != 1:
         materialization_reasons.append("ai_model_digest_not_unique")
+    if len(model_names) != 1:
+        materialization_reasons.append("ai_model_name_not_unique")
+    if len(model_metadata_digests) != 1:
+        materialization_reasons.append("ai_model_metadata_digest_not_unique")
+    if len(model_parameter_counts) != 1 or len(model_parameter_sizes) != 1:
+        materialization_reasons.append("ai_model_parameter_identity_not_unique")
+    if model_parameters_b is not None and len(model_parameter_counts) == 1:
+        asserted_parameters_b = _finite(
+            model_parameters_b,
+            label="model_parameters_b",
+        )
+        audited_parameters_b = next(iter(model_parameter_counts)) / 1_000_000_000.0
+        if not math.isclose(
+            asserted_parameters_b,
+            audited_parameters_b,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ):
+            materialization_reasons.append("model_parameter_count_assertion_mismatch")
     if len(terminal_fingerprints) != 1:
         materialization_reasons.append("terminal_model_fingerprint_not_unique")
     dataset_rows = [
@@ -603,29 +659,41 @@ def assess_live_ai_shadow_uplift(
         path_evidence_sha256=path_evidence_sha256,
     )
     model_digest = next(iter(model_digests)) if len(model_digests) == 1 else ""
+    audited_model_name = (
+        next(iter(model_names)) if len(model_names) == 1 else requested_model_name
+    )
     uplift = assess_ai_uplift(
         baseline_metrics,
         ai_metrics,
-        model_name=str(model_name),
-        model_parameters_b=model_parameters_b,
+        model_name=audited_model_name,
+        model_parameters_b=None,
         model_artifact_sha256=model_digest,
         matched_periods=matched_periods,
-        policy=policy,
+        policy=cfg,
     )
-    combined_reasons = tuple(
-        dict.fromkeys([*materialization_reasons, *uplift.reasons])
-    )
+    combined_reasons = tuple(dict.fromkeys([*materialization_reasons, *uplift.reasons]))
     accepted = uplift.accepted and not materialization_reasons
     report = {
         "schema_version": LIVE_AI_UPLIFT_SCHEMA_VERSION,
         "accepted": accepted,
         "advisory_only": not accepted,
-        "model_name": str(model_name),
+        "model_name": audited_model_name,
         "model_digest": model_digest,
-        "terminal_model_fingerprint": (
-            next(iter(terminal_fingerprints))
-            if len(terminal_fingerprints) == 1
+        "model_metadata_sha256": (
+            next(iter(model_metadata_digests))
+            if len(model_metadata_digests) == 1
             else ""
+        ),
+        "model_parameter_count": (
+            next(iter(model_parameter_counts))
+            if len(model_parameter_counts) == 1
+            else None
+        ),
+        "model_parameter_size": (
+            next(iter(model_parameter_sizes)) if len(model_parameter_sizes) == 1 else ""
+        ),
+        "terminal_model_fingerprint": (
+            next(iter(terminal_fingerprints)) if len(terminal_fingerprints) == 1 else ""
         ),
         "candidate_trades": len(candidates),
         "causally_eligible_trades": len(eligible),

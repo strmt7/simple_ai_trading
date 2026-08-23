@@ -800,10 +800,58 @@ command parity. At this checkpoint, 85 focused tests pass. The signed live AI
 entry audit already binds exact model digests and post-inference GPU residency,
 but its current case schema does not include the model name or verified
 parameter metadata. Do not claim a cryptographic name-to-digest binding from
-the command argument. The next bounded migration must version the audit schema,
-bind canonical model identity and parameter metadata to the digest at review
-time, preserve read-only validation of historical hash chains, and reject mixed
-or legacy evidence for any future authoritative uplift decision.
+the command argument. The bounded v3 migration described below closes that gap;
+do not revert it or rewrite historical hash-chained records.
+
+### AI Live-Audit Identity Binding: 2026-08-23
+
+The live AI start gate now resolves one canonical Ollama name and binds the
+installed digest, full `/api/show` metadata hash, exact
+`model_info.general.parameter_count`, and `details.parameter_size`. The exact
+integer count, rather than the approximate display label, enforces the runtime
+minimum. Missing, ambiguous, malformed, changed, or undersized metadata blocks
+AI before the per-entry reviewer starts.
+
+`live-ai-entry-case-v3`, `live-ai-entry-audit-v3`, and
+`live-ai-shadow-uplift-v3` carry that identity through the case hash, append-only
+audit chain, CLI startup wiring, and causal uplift materializer. A model-name,
+metadata-hash, parameter-count, display-label, digest, or terminal-fingerprint
+mismatch fails closed. Historical v2 chains remain read-only verifiable so old
+evidence is not destroyed, but the uplift materializer rejects every v2 record
+as `legacy_model_identity_unbound`; mixed identity cohorts cannot authorize
+promotion.
+
+The primary metadata contract was checked against Ollama's current official
+[API documentation](https://github.com/ollama/ollama/blob/main/docs/api.md) and
+[OpenAPI schema](https://github.com/ollama/ollama/blob/main/docs/openapi.yaml).
+`/api/show` exposes the exact integer count under
+`model_info.general.parameter_count`; `details.parameter_size` is an approximate
+label. This migration adds no extra provider request because the existing
+provenance path already reads `/api/tags` and `/api/show`.
+
+Local focused verification passes 63 AI review, start-gate, live-assist, and
+live-uplift tests, including canonical `:latest` resolution, malformed exact
+counts, metadata tampering, legacy read compatibility, and legacy promotion
+rejection. The related CLI suites completed with one expected fixture-migration
+failure; after adding the new identity fields to that mock, the exact failed
+test passes. Ruff passes on every changed file. Scoped Mypy and local pip-audit
+are unavailable in the locked environment and must not be reported as passes.
+
+At the pre-commit snapshot `2026-08-23T04:41:21Z`, `main` and `origin/main`
+were synchronized at `c39dd1c1e8f0bd733be37d54461ad9f44cff1c89`, GitHub
+listed only `main` and no open pull request, and the available GitHub APIs
+returned zero open code-scanning, Dependabot, and secret-scanning alerts. This
+is bounded scanner evidence, not proof that no undiscovered vulnerability
+exists. The unresolved DeepSource inventory below remains open and must not be
+described as remediated by this change.
+
+One known false-negative remains: the generic uplift assessor may reject a
+custom or `:latest` model name whose size cannot be inferred from its tag even
+though the live v3 evidence contains a provenance-bound exact count. Address it
+only through a separate typed, provenance-attested API; never weaken the size
+floor or accept a free-form operator assertion. No capture process, worktree,
+database, schedule, target, or outcome was inspected or modified in this
+closeout.
 
 Immediately before this closeout commit, parent revision
 `1806156125f411baff0a57253464ca033750c769` was clean and synchronized. GitHub's
@@ -881,11 +929,11 @@ reverted to reduce analyzer scope.
    absence of undiscovered vulnerabilities.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
-   only until matched, latency-charged causal uplift is demonstrated. Migrate
-   the live AI review schema through a versioned compatibility path that binds
-   model name and verified parameter metadata to the observed digest; never
-   infer that binding from a free-form command argument or rewrite historical
-   hash-chained records.
+   only until matched, latency-charged causal uplift is demonstrated. Preserve
+   the v3 live-review identity binding and v2 read-only compatibility. Resolve
+   the documented custom/`:latest` false-negative only with typed,
+   provenance-attested exact-count evidence; never infer authority from a
+   free-form command argument or rewrite historical hash-chained records.
 7. Run focused checks while integrating, then the full local matrix once at the
    final checkpoint. On this Windows host invoke pytest through
    `uv run --locked python -m pytest`; the direct `uv run pytest` console entry

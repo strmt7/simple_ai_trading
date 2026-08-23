@@ -8,7 +8,10 @@ from pathlib import Path
 import pytest
 
 from simple_ai_trading.ai_review import (
+    OllamaModelIdentity,
+    canonical_ollama_model_name,
     load_ai_review_report,
+    resolve_ollama_model_identity,
     resolve_ollama_model_provenance,
     run_model_lab_ai_review,
 )
@@ -40,6 +43,16 @@ def _capability(ok: bool = True) -> AICapabilityReport:
         model_available=ok,
         model_local=ok,
     )
+
+
+def _model_identity() -> OllamaModelIdentity:
+    return OllamaModelIdentity(
+        canonical_model="qwen3:8b",
+        digest="d" * 64,
+        metadata_sha256="e" * 64,
+        parameter_count=8_200_000_000,
+        parameter_size="8.2B",
+    ).validated()
 
 
 @pytest.fixture(autouse=True)
@@ -1011,6 +1024,46 @@ def test_ollama_model_provenance_binds_inventory_digest_and_show_metadata() -> N
     )
 
 
+def test_ollama_model_identity_requires_canonical_exact_parameter_metadata() -> None:
+    digest = "a" * 64
+    metadata = {
+        "details": {"parameter_size": "8.2B"},
+        "model_info": {"general.parameter_count": 8_200_000_000},
+    }
+    identity = resolve_ollama_model_identity(
+        "http://127.0.0.1:11434",
+        "qwen3",
+        7.0,
+        get_json=lambda *_args: {
+            "models": [{"name": "qwen3:latest", "digest": digest}]
+        },
+        post_json=lambda *_args: metadata,
+    )
+
+    assert canonical_ollama_model_name("qwen3") == "qwen3:latest"
+    assert identity.canonical_model == "qwen3:latest"
+    assert identity.parameter_count == 8_200_000_000
+    assert identity.parameters_b == pytest.approx(8.2)
+
+    for invalid_metadata in (
+        {"details": {"parameter_size": "8.2B"}, "model_info": {}},
+        {
+            "details": {"parameter_size": "8.2B"},
+            "model_info": {"general.parameter_count": "8200000000"},
+        },
+    ):
+        with pytest.raises(ValueError, match="parameter metadata"):
+            resolve_ollama_model_identity(
+                "http://127.0.0.1:11434",
+                "qwen3",
+                7.0,
+                get_json=lambda *_args: {
+                    "models": [{"name": "qwen3:latest", "digest": digest}]
+                },
+                post_json=lambda *_args, payload=invalid_metadata: payload,
+            )
+
+
 def test_ai_review_blocks_before_chat_when_model_provenance_fails(
     tmp_path: Path,
     monkeypatch,
@@ -1090,12 +1143,16 @@ def test_ai_start_gate_binds_review_market_and_terminal_model(
         paper_mode=False,
         review_path=review_path,
         capability_detector=lambda _cfg: _capability(True),
-        model_provenance=lambda *_args: ("d" * 64, "e" * 64),
+        model_identity_resolver=lambda *_args: _model_identity(),
     )
 
     assert gate.status == "active"
     assert gate.allowed is True
     assert gate.active is True
+    assert gate.model == "qwen3:8b"
+    assert gate.model_metadata_sha256 == "e" * 64
+    assert gate.model_parameter_count == 8_200_000_000
+    assert gate.model_parameter_size == "8.2B"
     assert gate.terminal_model_fingerprint == terminal_model_fingerprint(model)
 
     blocked = evaluate_ai_start_gate(
@@ -1105,7 +1162,7 @@ def test_ai_start_gate_binds_review_market_and_terminal_model(
         paper_mode=False,
         review_path=review_path,
         capability_detector=lambda _cfg: _capability(True),
-        model_provenance=lambda *_args: ("d" * 64, "e" * 64),
+        model_identity_resolver=lambda *_args: _model_identity(),
     )
     assert blocked.status == "blocked"
     assert blocked.allowed is False
@@ -1118,7 +1175,7 @@ def test_ai_start_gate_binds_review_market_and_terminal_model(
         paper_mode=True,
         review_path=review_path,
         capability_detector=lambda _cfg: _capability(True),
-        model_provenance=lambda *_args: ("d" * 64, "e" * 64),
+        model_identity_resolver=lambda *_args: _model_identity(),
     )
     assert fallback.status == "paper_fallback"
     assert fallback.allowed is True

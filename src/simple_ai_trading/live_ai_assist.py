@@ -21,6 +21,7 @@ from typing import Callable, Mapping, Protocol, Sequence
 from urllib.request import Request, urlopen
 
 from .advanced_model import advanced_config_from_signature
+from .ai_review import canonical_ollama_model_name
 from .ai_runtime import inspect_ollama_model_residency
 from .execution_simulation import configured_round_trip_cost_floor_bps
 from .meta_label import (
@@ -32,8 +33,10 @@ from .meta_label import (
 from .transport_security import validate_local_http_base_url
 
 
-LIVE_AI_ENTRY_CASE_SCHEMA_VERSION = "live-ai-entry-case-v2"
-LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION = "live-ai-entry-audit-v2"
+LIVE_AI_ENTRY_CASE_SCHEMA_VERSION = "live-ai-entry-case-v3"
+LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION = "live-ai-entry-audit-v3"
+LEGACY_LIVE_AI_ENTRY_CASE_SCHEMA_VERSION = "live-ai-entry-case-v2"
+LEGACY_LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION = "live-ai-entry-audit-v2"
 LIVE_AI_ENTRY_PROMPT_CONTRACT = "live-ai-entry-risk-review-v2"
 _ZERO_SHA256 = "0" * 64
 _MAX_COMPLETED_REVIEWS = 8
@@ -563,6 +566,7 @@ class LiveAIEntryCase:
     """One immutable ML proposal for the LLM risk-assessment overlay."""
 
     case_id: str
+    schema_version: str
     symbol: str
     market_type: str
     interval: str
@@ -570,13 +574,17 @@ class LiveAIEntryCase:
     proposed_side: str
     ml_confidence: float
     maximum_risk_multiplier: float
+    model_name: str
     model_digest: str
+    model_metadata_sha256: str
+    model_parameter_count: int
+    model_parameter_size: str
     terminal_model_fingerprint: str
     evidence: Mapping[str, object]
 
     def identity_payload(self) -> dict[str, object]:
-        return {
-            "schema_version": LIVE_AI_ENTRY_CASE_SCHEMA_VERSION,
+        payload = {
+            "schema_version": self.schema_version,
             "prompt_contract": LIVE_AI_ENTRY_PROMPT_CONTRACT,
             "symbol": self.symbol,
             "market_type": self.market_type,
@@ -589,6 +597,16 @@ class LiveAIEntryCase:
             "terminal_model_fingerprint": self.terminal_model_fingerprint,
             "evidence": dict(self.evidence),
         }
+        if self.schema_version == LIVE_AI_ENTRY_CASE_SCHEMA_VERSION:
+            payload.update(
+                {
+                    "model_name": self.model_name,
+                    "model_metadata_sha256": self.model_metadata_sha256,
+                    "model_parameter_count": self.model_parameter_count,
+                    "model_parameter_size": self.model_parameter_size,
+                }
+            )
+        return payload
 
     def validated(self) -> LiveAIEntryCase:
         if self.proposed_side not in {"LONG", "SHORT"}:
@@ -605,15 +623,49 @@ class LiveAIEntryCase:
             raise ValueError("AI entry review ML confidence is invalid")
         if not 0.0 <= float(self.maximum_risk_multiplier) <= 1.0:
             raise ValueError("AI entry review risk bound is invalid")
+        if self.schema_version == LIVE_AI_ENTRY_CASE_SCHEMA_VERSION:
+            if (
+                canonical_ollama_model_name(self.model_name) != self.model_name
+                or isinstance(self.model_parameter_count, bool)
+                or not isinstance(self.model_parameter_count, int)
+                or self.model_parameter_count < 2_000_000_000
+                or not isinstance(self.model_parameter_size, str)
+                or not self.model_parameter_size
+                or len(self.model_parameter_size) > 64
+            ):
+                raise ValueError("AI entry review model identity is invalid")
+        elif self.schema_version == LEGACY_LIVE_AI_ENTRY_CASE_SCHEMA_VERSION:
+            if any(
+                (
+                    self.model_name,
+                    self.model_metadata_sha256,
+                    self.model_parameter_count,
+                    self.model_parameter_size,
+                )
+            ):
+                raise ValueError("legacy AI entry review model identity is invalid")
+        else:
+            raise ValueError("AI entry review case schema is invalid")
         for name, value in {
             "model_digest": self.model_digest,
             "terminal_model_fingerprint": self.terminal_model_fingerprint,
             "case_id": self.case_id,
         }.items():
-            if len(value) != 64 or any(
-                character not in "0123456789abcdef" for character in value
+            if (
+                not isinstance(value, str)
+                or len(value) != 64
+                or any(character not in "0123456789abcdef" for character in value)
             ):
                 raise ValueError(f"AI entry review {name} is invalid")
+        if self.schema_version == LIVE_AI_ENTRY_CASE_SCHEMA_VERSION and (
+            not isinstance(self.model_metadata_sha256, str)
+            or len(self.model_metadata_sha256) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.model_metadata_sha256
+            )
+        ):
+            raise ValueError("AI entry review model metadata digest is invalid")
         normalized = _bounded_json_value(self.evidence)
         if not isinstance(normalized, Mapping):
             raise ValueError("AI entry review evidence is invalid")
@@ -633,7 +685,11 @@ def build_live_ai_entry_case(
     proposed_side: str,
     ml_confidence: float,
     maximum_risk_multiplier: float,
+    model_name: str,
     model_digest: str,
+    model_metadata_sha256: str,
+    model_parameter_count: int,
+    model_parameter_size: str,
     terminal_model_fingerprint: str,
     evidence: Mapping[str, object],
 ) -> LiveAIEntryCase:
@@ -652,13 +708,17 @@ def build_live_ai_entry_case(
         "proposed_side": str(proposed_side),
         "ml_confidence": float(ml_confidence),
         "maximum_risk_multiplier": float(maximum_risk_multiplier),
+        "model_name": model_name,
         "model_digest": str(model_digest),
+        "model_metadata_sha256": model_metadata_sha256,
+        "model_parameter_count": model_parameter_count,
+        "model_parameter_size": model_parameter_size,
         "terminal_model_fingerprint": str(terminal_model_fingerprint),
         "evidence": dict(normalized),
     }
-    # ``schema_version`` is hash material, not a dataclass field.
     case = LiveAIEntryCase(
         case_id=_canonical_sha256(identity),
+        schema_version=LIVE_AI_ENTRY_CASE_SCHEMA_VERSION,
         symbol=str(symbol),
         market_type=str(market_type),
         interval=str(interval),
@@ -666,7 +726,11 @@ def build_live_ai_entry_case(
         proposed_side=str(proposed_side),
         ml_confidence=float(ml_confidence),
         maximum_risk_multiplier=float(maximum_risk_multiplier),
+        model_name=model_name,
         model_digest=str(model_digest),
+        model_metadata_sha256=model_metadata_sha256,
+        model_parameter_count=model_parameter_count,
+        model_parameter_size=model_parameter_size,
         terminal_model_fingerprint=str(terminal_model_fingerprint),
         evidence=dict(normalized),
     )
@@ -969,8 +1033,13 @@ def _audit_case_and_decision(
     *,
     line_number: int,
 ) -> tuple[LiveAIEntryCase, LiveAIEntryDecision]:
+    audit_schema_version = record.get("schema_version")
     if (
-        record.get("schema_version") != LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION
+        audit_schema_version
+        not in {
+            LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION,
+            LEGACY_LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION,
+        }
         or record.get("mode") != "shadow_only"
         or record.get("trading_authority") is not False
     ):
@@ -979,14 +1048,21 @@ def _audit_case_and_decision(
     raw_decision = record.get("decision")
     if not isinstance(raw_case, Mapping) or not isinstance(raw_decision, Mapping):
         raise ValueError(f"AI entry audit evidence is missing at line {line_number}")
-    if (
-        raw_case.get("schema_version") != LIVE_AI_ENTRY_CASE_SCHEMA_VERSION
-        or raw_case.get("prompt_contract") != LIVE_AI_ENTRY_PROMPT_CONTRACT
+    case_schema_version = raw_case.get("schema_version")
+    expected_case_schema = (
+        LIVE_AI_ENTRY_CASE_SCHEMA_VERSION
+        if audit_schema_version == LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION
+        else LEGACY_LIVE_AI_ENTRY_CASE_SCHEMA_VERSION
+    )
+    if case_schema_version != expected_case_schema or (
+        raw_case.get("prompt_contract") != LIVE_AI_ENTRY_PROMPT_CONTRACT
     ):
         raise ValueError(f"AI entry audit case schema is invalid at line {line_number}")
     try:
+        current_identity = case_schema_version == LIVE_AI_ENTRY_CASE_SCHEMA_VERSION
         case = LiveAIEntryCase(
             case_id=str(raw_case["case_id"]),
+            schema_version=str(case_schema_version),
             symbol=str(raw_case["symbol"]),
             market_type=str(raw_case["market_type"]),
             interval=str(raw_case["interval"]),
@@ -994,7 +1070,17 @@ def _audit_case_and_decision(
             proposed_side=str(raw_case["proposed_side"]),
             ml_confidence=float(raw_case["ml_confidence"]),
             maximum_risk_multiplier=float(raw_case["maximum_risk_multiplier"]),
+            model_name=str(raw_case["model_name"]) if current_identity else "",
             model_digest=str(raw_case["model_digest"]),
+            model_metadata_sha256=(
+                str(raw_case["model_metadata_sha256"]) if current_identity else ""
+            ),
+            model_parameter_count=(
+                int(raw_case["model_parameter_count"]) if current_identity else 0
+            ),
+            model_parameter_size=(
+                str(raw_case["model_parameter_size"]) if current_identity else ""
+            ),
             terminal_model_fingerprint=str(raw_case["terminal_model_fingerprint"]),
             evidence=dict(raw_case["evidence"]),
         ).validated()
@@ -1299,14 +1385,22 @@ class AIAssistedDecisionFunction:
         base_decision_fn: Callable[..., object],
         reviewer: AsyncLiveAIEntryReviewer,
         *,
+        model_name: str,
         model_digest: str,
+        model_metadata_sha256: str,
+        model_parameter_count: int,
+        model_parameter_size: str,
         terminal_model_fingerprint: str,
         maximum_review_age_seconds: int = 300,
         clock: Callable[[], float] = time.time,
     ) -> None:
         self._base_decision_fn = base_decision_fn
         self._reviewer = reviewer
+        self._model_name = model_name
         self._model_digest = model_digest
+        self._model_metadata_sha256 = model_metadata_sha256
+        self._model_parameter_count = model_parameter_count
+        self._model_parameter_size = model_parameter_size
         self._terminal_model_fingerprint = terminal_model_fingerprint
         self._maximum_review_age_ms = int(maximum_review_age_seconds) * 1_000
         self._clock = clock
@@ -1317,12 +1411,26 @@ class AIAssistedDecisionFunction:
         )
         if not 1_000 <= self._maximum_review_age_ms <= 300_000:
             raise ValueError("live AI maximum review age is invalid")
+        if canonical_ollama_model_name(self._model_name) != self._model_name:
+            raise ValueError("live AI model name is invalid")
+        if (
+            isinstance(self._model_parameter_count, bool)
+            or not isinstance(self._model_parameter_count, int)
+            or self._model_parameter_count < 2_000_000_000
+            or not isinstance(self._model_parameter_size, str)
+            or not self._model_parameter_size
+            or len(self._model_parameter_size) > 64
+        ):
+            raise ValueError("live AI model parameter identity is invalid")
         for name, value in {
             "model_digest": self._model_digest,
+            "model_metadata_sha256": self._model_metadata_sha256,
             "terminal_model_fingerprint": self._terminal_model_fingerprint,
         }.items():
-            if len(value) != 64 or any(
-                character not in "0123456789abcdef" for character in value
+            if (
+                not isinstance(value, str)
+                or len(value) != 64
+                or any(character not in "0123456789abcdef" for character in value)
             ):
                 raise ValueError(f"live AI {name} is invalid")
         for attribute in ("_effective_strategy", "_model_artifact"):
@@ -1566,7 +1674,11 @@ class AIAssistedDecisionFunction:
                     1.0,
                     max(0.0, proposed_size_multiplier),
                 ),
+                model_name=self._model_name,
                 model_digest=self._model_digest,
+                model_metadata_sha256=self._model_metadata_sha256,
+                model_parameter_count=self._model_parameter_count,
+                model_parameter_size=self._model_parameter_size,
                 terminal_model_fingerprint=self._terminal_model_fingerprint,
                 evidence=evidence,
             )

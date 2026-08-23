@@ -41,9 +41,17 @@ The current state and next admissible experiment are recorded in the
 
 AI model-size gates infer parameter count from the model identity. An optional
 operator value is only a consistency assertion: it cannot supply or override
-the inferred count, and any mismatch rejects the uplift report. Before AI
-uplift can become authoritative, the signed live-review audit must also bind
-the model name and parameter metadata to the already recorded model digest.
+the inferred count, and any mismatch rejects the uplift report. Live-review v3
+also binds the canonical Ollama name, exact metadata parameter count, display
+size, metadata hash, model digest, and terminal-model fingerprint into each
+hash-chained case. Historical v2 records remain readable but can never satisfy
+the authoritative uplift gate.
+
+The remaining AI identity limitation is fail-closed: a custom or `:latest`
+model name whose size cannot be inferred by the generic uplift assessor may be
+rejected even when the live v3 record contains an exact count. Resolve this in
+a later bounded API change using provenance-attested parameter evidence; do not
+weaken the current gate or turn an operator assertion into evidence.
 
 ## Active Experiment Order
 
