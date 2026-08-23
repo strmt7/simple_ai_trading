@@ -5,12 +5,12 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Closeout State
 
-- The last fully hosted-verified baseline before this Round 75 closeout is
-  `fc416b7112ae05d668871bd0ebeca19501f594b6`. CI, Ruff, Vulture,
+- The last fully hosted-verified baseline before this model-gate publication is
+  `806389ee6bf4b867ce2684b9147102eba2efabb9`. CI, Ruff, Vulture,
   Super-Linter, CodeQL, and DeepSource passed that exact revision. GitHub exposed
   only `main`, and the available APIs reported zero open Dependabot,
-  code-scanning, and secret-scanning alerts. Reverify these claims for the new
-  closeout commit; zero alerts never proves zero undisclosed vulnerabilities.
+  code-scanning, and secret-scanning alerts. Reverify the publication commit;
+  zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
   demonstrated long-lived after-cost edge. Binance remains paper/testnet/Demo;
   Polymarket remains independent, disabled by default, and unpromoted.
@@ -50,6 +50,24 @@ WAL, use slot 67, materialize targets, train, tune, inspect sealed tests, or mak
 accuracy, AI-uplift, edge, profitability, ROI, or trading-authority claims from
 Round 75.
 
+## Current Model-Gate Verdicts
+
+- Binance Round 76 is blocked before implementation. Its preregistration required
+  a passing Round 75 terminal population; Round 75 failed source continuity,
+  role quotas, and train/tune/test coverage. The candidate was not implemented,
+  trained, or rejected by a model result. Canonical adjudication:
+  `round-076-round75-source-gate-adjudication-v1.json`.
+- Polymarket Round 29 is blocked before feature, target, or model access. Stage 1
+  produced one terminal primary slot, one incomplete slot with a 3,483,426-byte
+  WAL, and no third primary slot. The frozen requirement is three primary dates
+  and at least 300 audited eligible markets. Replaying slot B cannot create the
+  missing third date. Canonical adjudication:
+  `round-029-stage1-readiness-adjudication-2026-08-23.json`.
+- The current reproducible action-value status, CSV, and graph are in
+  `docs/model-research/action-value/latest-status/`. Round 72 remains the latest
+  completed model evaluation and was rejected. Rounds 73-76 contain no invented
+  model, trade, ROI, or profitability metrics.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -69,6 +87,14 @@ remaining content paths against current `main` with a three-way comparison and
 integrate only work that is both unpublished and still valid. The exact Round
 75 v4 implementation has already been preserved in `main`; do not duplicate it.
 
+The 2026-08-23 three-way audit is recorded in
+`docs/model-research/model-dev-three-way-audit-2026-08-23.json`. Current `main`
+descends from the frozen commit; 214 working files match `main` exactly and 15
+additional frozen blobs occurred earlier in `main` history. An AST comparison
+found no frozen-only top-level source symbol. One still-valid AI edge-floor
+regression test was integrated manually; the stale activation-era publication
+and all bulk-copy paths remain rejected. Keep the worktree frozen.
+
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
 `2026-08-29T23:40:00Z`. Its process IDs are ephemeral. Do not touch it until a
@@ -79,10 +105,12 @@ lease, state, database, and WAL agree.
 
 1. Reverify `main`, GitHub branches, alerts, and exact-SHA hosted workflows for
    this closeout.
-2. Preserve and three-way review the remaining model-dev changes. Integrate on
-   `main` only, in coherent batches with source-specific tests.
-3. Run Polymarket Round 29 only after every source-bound input passes. Keep Stage
-   1 outcomes and economics sealed until the probability gate permits access.
+2. Keep the completed model-dev three-way audit frozen. Do not bulk-integrate
+   stale or divergent files; reevaluate a specific path only when a current task
+   requires it.
+3. Do not run Polymarket Round 29 from the incomplete Stage 1 campaign. If this
+   hypothesis resumes, freeze a new target-blind prospective capture contract;
+   keep outcomes and economics sealed until every source gate passes.
 4. Reject any candidate that fails bull, bear, sideways, choppy, high-volatility,
    liquidity-stress, or latency-stress after-cost slices. Abstention is required
    where evidence is unsupported; no strategy can guarantee profit or prevent

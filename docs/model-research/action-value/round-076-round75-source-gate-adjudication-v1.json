@@ -1,0 +1,64 @@
+{
+  "artifact_sha256": "eea5d71fe093b05083dfd7287f1cfff4613b5a9135a7f3460e8073f4dbcc2ff1",
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "cross_regime_boundary": {
+    "contract_file_sha256": "64b5df61d25223df43b75005d2cd24685404150fd7b03970b2d1813e27cbc364",
+    "contract_sha256": "06068c3e5e8003dce4d3e5b47391a64c987941e6aa25b841f9e1079dcb6ecf23",
+    "unsupported_regime_action": "abstain_from_new_exposure"
+  },
+  "decision": {
+    "candidate_hypothesis_rejected_by_results": false,
+    "candidate_implementation_permitted": false,
+    "candidate_training_permitted": false,
+    "round75_data_permitted_for_round76": false,
+    "status": "blocked_before_implementation_by_round75_source_gate"
+  },
+  "evidence_boundary": {
+    "ai_uplift_established": false,
+    "candidate_implemented": false,
+    "candidate_trained": false,
+    "financial_edge_established": false,
+    "model_or_target_data_accessed": false,
+    "predictive_accuracy_established": false,
+    "profitability_established": false,
+    "sealed_test_accessed": false
+  },
+  "lineage": {
+    "cross_regime_contract_sha256": "06068c3e5e8003dce4d3e5b47391a64c987941e6aa25b841f9e1079dcb6ecf23",
+    "round75_terminal_audit_artifact_sha256": "94a556887adf33996168de260a8a172952bc64040273a7ff2dfb373f2c2f50d6",
+    "round75_terminal_audit_file_sha256": "1e1ab831e2f45dc832e493ed807a1b9c0998f0e81733bc44d6c3b2b6b4c86ade",
+    "round76_preregistration_file_sha256": "84667fc25499e9f52d3feca0f8323d837d00c5172090198e20336a1739548f26",
+    "round76_preregistration_sha256": "023480cd2b478e64de6c69340c4fdeab9c80567e57a36b802bcb81ed8af47120"
+  },
+  "next_action": {
+    "bulk_copy_from_frozen_worktree_permitted": false,
+    "implement_round76_against_round75": false,
+    "required_if_hypothesis_is_retried": "new_preregistered_representative_train_tune_test_source_campaign_with_passing_continuity_and_terminal_gates",
+    "reuse_round75_incomplete_source": false
+  },
+  "observed_at_utc": "2026-08-23T15:21:31.9614357Z",
+  "round75_terminal_facts": {
+    "all_roles_eligible_anchor_quota_passed": false,
+    "campaign_status": "rejected_incomplete_campaign",
+    "incomplete_slot_ordinals": [
+      67
+    ],
+    "model_data_access_permitted": false,
+    "source_continuity_passed": false,
+    "test_admitted_epochs": 0,
+    "training_admitted_epochs": 33,
+    "training_observed_raw_eligible_anchor_ns": 28903469878300,
+    "training_required_eligible_anchor_ns": 394740000000000,
+    "tuning_admitted_epochs": 0,
+    "wal_bytes": 9431058
+  },
+  "schema_version": "round-076-round75-source-gate-adjudication-v1"
+}

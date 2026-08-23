@@ -1,0 +1,55 @@
+{
+  "artifact_sha256": "95b05552b0f561bdb9514767bf6005f58935e4b6622439868f852f4a13cb8cc9",
+  "authority": {
+    "edge_claim": false,
+    "model_training_performed": false,
+    "profitability_claim": false,
+    "target_data_accessed": false,
+    "trading_authority": false
+  },
+  "baseline": {
+    "frozen_detached_commit": "c42219d47dc781a46411a4ec96838f8a26c3924c",
+    "main_commit_at_audit": "806389ee6bf4b867ce2684b9147102eba2efabb9",
+    "main_descends_from_frozen_commit": true
+  },
+  "content_review": {
+    "frozen_only_top_level_source_symbols": 0,
+    "frozen_only_top_level_test_symbols": [
+      "test_ai_veto_rejects_typed_approval_below_frozen_edge_floor",
+      "test_round74_terminal_host_preflight_is_bound_and_non_authoritative"
+    ],
+    "selected_for_manual_integration": [
+      "test_ai_veto_rejects_typed_approval_below_frozen_edge_floor"
+    ],
+    "stale_publication_context": "The frozen latest-status publication stopped while Round 75 was waiting to start and is superseded by the terminal Round 75 audit.",
+    "source_review_method": "Python AST comparison of every differing Python source path after exact three-way blob classification"
+  },
+  "decision": {
+    "bulk_integration_permitted": false,
+    "frozen_worktree_modification_permitted": false,
+    "result": "preserve_frozen_worktree_integrate_only_selected_currently_valid_test",
+    "stale_latest_publication_integration_permitted": false
+  },
+  "observed_at_utc": "2026-08-23T15:21:31.9614357Z",
+  "scope": {
+    "data_directories_excluded": true,
+    "original_worktree_modified": false,
+    "paths_reviewed": 315,
+    "status_entries_total_including_deletions": 317
+  },
+  "three_way_counts": {
+    "already_integrated_exact": 214,
+    "deletion_integrated": 2,
+    "diverged_three_way": 25,
+    "unpublished_tracked_only": 9,
+    "unpublished_unique": 20,
+    "untracked_collision": 47
+  },
+  "whole_main_history_blob_counts": {
+    "current_exact": 214,
+    "present_in_main_history_but_superseded": 15,
+    "working_files_checked": 315,
+    "working_blob_not_exactly_in_main_history": 86
+  },
+  "schema_version": "model-dev-three-way-audit-v1"
+}

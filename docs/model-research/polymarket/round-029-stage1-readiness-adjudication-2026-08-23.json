@@ -1,0 +1,112 @@
+{
+  "artifact_sha256": "9fe96dfe1ad71abf13941a436485ba378477dcbb595099ba621263904ece33af",
+  "audit_method": {
+    "database_files_opened": false,
+    "directory_metadata_read": true,
+    "financial_outcomes_accessed": false,
+    "small_target_free_json_read": true,
+    "source_wal_replayed": false,
+    "target_store_opened": false
+  },
+  "authority": {
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "cross_regime_boundary": {
+    "contract_file_sha256": "64b5df61d25223df43b75005d2cd24685404150fd7b03970b2d1813e27cbc364",
+    "contract_sha256": "06068c3e5e8003dce4d3e5b47391a64c987941e6aa25b841f9e1079dcb6ecf23",
+    "missing_or_failed_slice_action": "reject_or_abstain_from_new_exposure",
+    "profit_in_every_future_regime_guaranteed": false,
+    "required_slices": [
+      "bullish",
+      "bearish",
+      "sideways",
+      "choppy",
+      "high_volatility",
+      "stressed_liquidity",
+      "stressed_latency"
+    ]
+  },
+  "decision": {
+    "new_exposure_authority": false,
+    "recovery_of_slot_b_wal_can_repair_campaign": false,
+    "round29_selection_permitted": false,
+    "status": "blocked_incomplete_stage1_campaign",
+    "target_or_model_access_permitted": false
+  },
+  "gates": {
+    "all_primary_slots_have_terminal_results": false,
+    "all_primary_slots_pass_target_free_condition_audit": false,
+    "feature_store_present": false,
+    "minimum_300_eligible_markets_established": false,
+    "minimum_three_distinct_utc_dates_established": false,
+    "no_source_wal_present": false,
+    "round28_overlay_store_present": false,
+    "selection_source_database_ready": false,
+    "target_store_present": false
+  },
+  "lineage": {
+    "cross_regime_contract_sha256": "06068c3e5e8003dce4d3e5b47391a64c987941e6aa25b841f9e1079dcb6ecf23",
+    "round27_campaign_contract_file_sha256": "75b99c2c7b65e5ed412c55259d1cd6b1bf33aaa99f43259490200e13ad311caa",
+    "round27_campaign_contract_sha256": "3f484154d69baed632e617f2de41b149385299a97b47e5e9184c694c43c89392",
+    "round29_implementation_amendment_file_sha256": "5601c2cb0d3af8508e3ff9d496ffcd92947616494435d622ef8deb095c14e2c0",
+    "round29_implementation_amendment_sha256": "2eddb9cbe180f495b39a07c93d95b171790b865e08f7e478f329d541c3590032",
+    "round29_preregistration_file_sha256": "0c3a1b0a30abefae0189d9a3f4e0e05bb685d0abfc58c62ee724032fe116e343",
+    "round29_preregistration_sha256": "bff028ff0d6d665d44ae8e476723ba26607a61d03e5a874b284379ff048f5b5c"
+  },
+  "next_action": {
+    "open_or_replay_original_slot_b_database_or_wal": false,
+    "reason": "Slot B recovery cannot create the absent third primary date or establish the frozen population gate.",
+    "required_if_research_resumes": "freeze_a_new_target_blind_prospective_capture_contract_with_complete_terminal_supervision",
+    "run_round29_now": false
+  },
+  "observed_at_utc": "2026-08-23T15:21:31.9614357Z",
+  "observed_primary_slots": {
+    "stage1-a": {
+      "condition_count": 127,
+      "database_bytes": 2021666816,
+      "model_data_eligible": false,
+      "result_present": true,
+      "result_status": "passed",
+      "stream_gap_count": 16,
+      "target_accessed": false,
+      "terminal_result_present": true,
+      "wal_present": false
+    },
+    "stage1-b": {
+      "database_bytes": 1852321792,
+      "last_progress_phase": "capturing",
+      "result_present": false,
+      "state_phase": "slot_capture_running",
+      "terminal_result_present": false,
+      "written_gap_count": 23,
+      "written_message_count": 12255777,
+      "wal_bytes": 3483426,
+      "wal_present": true
+    },
+    "stage1-c": {
+      "database_present": false,
+      "result_present": false,
+      "terminal_result_present": false,
+      "wal_present": false
+    }
+  },
+  "protected_source": {
+    "detached_commit": "c42219d47dc781a46411a4ec96838f8a26c3924c",
+    "original_files_modified": false,
+    "source_role": "frozen_read_only_model_development_worktree"
+  },
+  "reasons": [
+    "Only one of three required primary slots has a terminal result.",
+    "Slot B stopped in capture with no terminal result and retains a DuckDB WAL.",
+    "Slot C and its third UTC capture date are absent.",
+    "No eligible-market audit, feature store, target store, Round 28 overlay store, or selection source is present.",
+    "The Round 29 probability and economic operators therefore have no admissible input population."
+  ],
+  "schema_version": "polymarket-round29-stage1-readiness-adjudication-v1"
+}
