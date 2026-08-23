@@ -89,6 +89,13 @@ Super-Linter, DeepSource, secret scanning, and available GitHub dependency and
 code-scanning checks have been verified. An unavailable scanner is reported as
 unverified, never as zero vulnerabilities.
 
+Latest source revision `beffdb2e` passes every GitHub Actions workflow but fails
+DeepSource run `168f4123-432e-4b4f-9d4c-a48395b2724f`, which re-raised a
+repository-wide 1,268-issue Python inventory. Treat that as an unresolved
+bounded analyzer program, not 1,268 confirmed vulnerabilities and not a reason
+to revert the AI model-size integrity correction. The exact counts, first page,
+and resumption order are in `docs/CONTINUATION.md`.
+
 At the `2026-08-23T02:26Z` closeout, exact revision `42a3721f` passed CI, Ruff,
 Vulture, Super-Linter, Python and native C++ CodeQL, and DeepSource. GitHub's
 available APIs reported zero open code-scanning, Dependabot, and secret-scanning

@@ -814,6 +814,43 @@ not runnable because the locked environment has no `mypy` executable; do not
 record it as passed. Verify every hosted analyzer on the exact pushed closeout
 revision before treating the checkpoint as green.
 
+The source checkpoint's GitHub Actions all passed: Linux tests and coverage,
+changed-line coverage, POSIX smoke, Windows Python/native UI smoke, Ruff,
+Vulture, Super-Linter, and Python plus native C++ CodeQL. DeepSource did not
+pass. Exact run
+[`168f4123-432e-4b4f-9d4c-a48395b2724f`](https://app.deepsource.com/gh/strmt7/simple_ai_trading/run/168f4123-432e-4b4f-9d4c-a48395b2724f/python/)
+on `beffdb2e32b6f6f21d354668fa0f8c7cd891e7ed` reported 1,171 raised, 285
+resolved, zero suppressed, and 1,268 total Python issues. Its immediately
+preceding run `e11c6f71-c6ae-4844-9d98-7d01c12450c6` passed on parent
+`1806156125f411baff0a57253464ca033750c769`. Do not infer that the source
+checkpoint is fully green or that all 1,268 findings were introduced by the
+seven-file patch. The run grades were security A, complexity A, reliability D,
+hygiene D, and aggregate D; DeepSource SCA had no check and its secrets analyzer
+was disabled.
+
+The complete rule-count inventory rendered by that run is:
+`PYL-E1123=1`, `PYL-W0706=1`, `PYL-R0201=1`, `PYL-R1716=2`, `PYL-W0621=9`,
+`TYP-052=74`, `TYP-012=2`, `TYP-050=854`, `TYP-062=139`, `TYP-060=94`,
+`TYP-057=13`, `TYP-068=9`, `TYP-005=11`, `TYP-054=2`, `PTC-W0034=21`,
+`PYL-W0714=2`, `PTC-W0051=2`, `PTC-W0063=5`, `PYL-C0209=1`, and
+`PY-R1000=25`. Those counts sum to 1,268. The first rendered page contained 15
+major type findings: `ai_benchmark_claim.py:428-429` (`TYP-050`),
+`ai_model_benchmark.py:1023-1024,1151,1154,1260,1317,1321,1532`
+(`TYP-050` and `TYP-060`), and `ai_review.py:430,485,490,498` (`TYP-050`,
+`TYP-005`). This is only page one; export every page from the exact run before
+claiming a complete location inventory.
+
+Resume DeepSource work as a separate bounded program. First reproduce and
+explain the scope delta between the passing parent run and the failed source
+run; do not disable Mypy, weaken metrics, add broad exclusions, or treat a
+documentation-only green run as source remediation. Export all 1,268 findings,
+deduplicate by rule/path/location, and validate bug-risk or security-relevant
+items before style or complexity work. Fix small source-compatible batches with
+direct regressions, preserve research source bindings through canonical
+amendments where required, and re-run the exact affected tests plus hosted
+DeepSource after each batch. The model-size integrity correction must not be
+reverted to reduce analyzer scope.
+
 ## Next Work
 
 1. Reverify both live captures and their canonical state files. Let Round 75
