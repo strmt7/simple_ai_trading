@@ -178,6 +178,56 @@ def test_ai_uplift_rejects_small_or_non_improving_models() -> None:
     assert "ai_uplift_non_tied_pairs<30" in report.reasons
 
 
+@pytest.mark.parametrize(
+    ("model_name", "asserted_parameters_b", "expected_parameters_b", "reason"),
+    [
+        ("tiny-560m", 14.0, 0.56, "model_parameter_count_mismatch"),
+        (
+            "operator-selected-local-llm",
+            14.0,
+            None,
+            "model_parameter_count_not_inferred_from_model_identity",
+        ),
+    ],
+)
+def test_ai_uplift_rejects_unverified_parameter_size_assertions(
+    model_name: str,
+    asserted_parameters_b: float,
+    expected_parameters_b: float | None,
+    reason: str,
+) -> None:
+    report = assess_ai_uplift(
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "roi_pct": 1.2,
+                "max_drawdown": 0.04,
+                "expectancy": 0.9,
+                "closed_trades": 30,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 18.0,
+                "roi_pct": 1.8,
+                "max_drawdown": 0.035,
+                "expectancy": 1.2,
+                "closed_trades": 30,
+            },
+            _AI_SHA256,
+        ),
+        model_name=model_name,
+        model_parameters_b=asserted_parameters_b,
+        model_artifact_sha256=_MODEL_SHA256,
+        matched_periods=_matched_periods((0.002,) * 30),
+    )
+
+    assert report.accepted is False
+    assert report.model_parameters_b == expected_parameters_b
+    assert reason in report.reasons
+
+
 def test_ai_uplift_rejection_reason_order_is_stable() -> None:
     report = assess_ai_uplift(
         {

@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"aaba170fa07b6351e0363e4cfc764f6bc57b779c4ab32ca849607fb0de4b3f40";
+inline constexpr const wchar_t* kCommandContractSha256 = L"a0577accaccb1dd2603b24a8ac082ea1d4fc88f8666760a10fdc1a39c8d21615";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -103,7 +103,7 @@ inline constexpr CommandOptionSpec kOptions_ai_uplift[] = {
     {L"--market-db", L"market_db", L"", L"", L"read-only market database with contiguous one-second trade paths", L"1", true, true, false},
     {L"--starting-capital", L"starting_capital", L"", L"", L"capital denominator used for matched daily returns", L"1", true, true, false},
     {L"--model", L"model", L"", L"qwen3:14b", L"", L"1", false, true, false},
-    {L"--model-parameters-b", L"model_parameters_b", L"", L"14.0", L"", L"1", false, true, false},
+    {L"--model-parameters-b", L"model_parameters_b", L"", L"", L"optional consistency assertion; model identity determines size", L"1", false, true, false},
     {L"--output", L"output", L"", L"data/autonomous/ai-uplift-report.json", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };

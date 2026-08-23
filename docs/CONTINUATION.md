@@ -782,6 +782,38 @@ terminal survival term is available. Do not implement, train, or evaluate it
 before Round 75 terminal adjudication and source reconciliation. It has no
 current predictive, economic, or trading-authority claim.
 
+### AI Model-Size Integrity Closeout: 2026-08-23
+
+The `ai-uplift` command previously defaulted a separate
+`--model-parameters-b=14.0` value and treated any supplied value as the model's
+size. A caller could therefore name a sub-2B model while asserting 14B and pass
+the size floor if all unrelated evidence gates passed. The uplift verifier now
+derives size from the model identity. `--model-parameters-b` defaults to absent
+and is only a consistency assertion; an invalid assertion, a mismatch, or an
+identity from which size cannot be inferred rejects the report. The serialized
+`ai-uplift-v5` shape is unchanged. This is an evidence-integrity correction,
+not model-edge, profitability, or trading-authority evidence.
+
+Focused tests cover the 560M-as-14B mismatch, an unparseable identity asserted
+as 14B, parser default behavior, live uplift construction, and generated native
+command parity. At this checkpoint, 85 focused tests pass. The signed live AI
+entry audit already binds exact model digests and post-inference GPU residency,
+but its current case schema does not include the model name or verified
+parameter metadata. Do not claim a cryptographic name-to-digest binding from
+the command argument. The next bounded migration must version the audit schema,
+bind canonical model identity and parameter metadata to the digest at review
+time, preserve read-only validation of historical hash chains, and reject mixed
+or legacy evidence for any future authoritative uplift decision.
+
+Immediately before this closeout commit, parent revision
+`1806156125f411baff0a57253464ca033750c769` was clean and synchronized. GitHub's
+available APIs returned zero open code-scanning, Dependabot, and secret-scanning
+alerts, with only `main`. This bounded snapshot is not proof that no undiscovered
+vulnerability exists. Ruff and whitespace checks pass locally. Scoped Mypy was
+not runnable because the locked environment has no `mypy` executable; do not
+record it as passed. Verify every hosted analyzer on the exact pushed closeout
+revision before treating the checkpoint as green.
+
 ## Next Work
 
 1. Reverify both live captures and their canonical state files. Let Round 75
@@ -812,7 +844,11 @@ current predictive, economic, or trading-authority claim.
    absence of undiscovered vulnerabilities.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
-   only until matched, latency-charged causal uplift is demonstrated.
+   only until matched, latency-charged causal uplift is demonstrated. Migrate
+   the live AI review schema through a versioned compatibility path that binds
+   model name and verified parameter metadata to the observed digest; never
+   infer that binding from a free-form command argument or rewrite historical
+   hash-chained records.
 7. Run focused checks while integrating, then the full local matrix once at the
    final checkpoint. On this Windows host invoke pytest through
    `uv run --locked python -m pytest`; the direct `uv run pytest` console entry

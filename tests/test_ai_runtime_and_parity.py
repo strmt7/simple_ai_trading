@@ -799,6 +799,21 @@ def test_windows_workflow_taxonomy_is_complete_unique_and_model_first() -> None:
     ]
 
 
+def test_ai_uplift_parameter_count_is_not_operator_supplied_by_default() -> None:
+    args = cli._build_parser().parse_args(
+        [
+            "ai-uplift",
+            "--market-db",
+            "market.db",
+            "--starting-capital",
+            "10000",
+        ]
+    )
+
+    assert args.model == "qwen3:14b"
+    assert args.model_parameters_b is None
+
+
 def test_windows_launcher_reports_missing_native_executable(
     monkeypatch, capsys
 ) -> None:

@@ -39,6 +39,12 @@ The current state and next admissible experiment are recorded in the
 [Binance](docs/model-research/action-value/latest/README.md) and
 [Polymarket](docs/model-research/polymarket/latest/README.md) status pages.
 
+AI model-size gates infer parameter count from the model identity. An optional
+operator value is only a consistency assertion: it cannot supply or override
+the inferred count, and any mismatch rejects the uplift report. Before AI
+uplift can become authoritative, the signed live-review audit must also bind
+the model name and parameter metadata to the already recorded model digest.
+
 ## Active Experiment Order
 
 1. Preserve the active Round 75 Binance capture through its fixed
