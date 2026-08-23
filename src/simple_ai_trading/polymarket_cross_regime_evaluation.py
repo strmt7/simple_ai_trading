@@ -330,33 +330,39 @@ def _validate_slice(
         name=f"{slice_id} abstention replay",
     )
     declared_passed = _boolean(raw["passed"], name=f"{slice_id} passed")
-    common_passed = (
-        decisions == classifications
-        and unknown == 0
-        and untracked == 0
-        and Decimal("0") <= drawdown <= maximum_drawdown
-        and Decimal("0") <= expected_shortfall <= maximum_expected_shortfall
+    common_passed = all(
+        (
+            decisions == classifications,
+            unknown == 0,
+            untracked == 0,
+            Decimal("0") <= drawdown <= maximum_drawdown,
+            Decimal("0") <= expected_shortfall <= maximum_expected_shortfall,
+        )
     )
     if action == "trade":
-        semantic_passed = (
-            common_passed
-            and slice_id not in _MANDATORY_ABSTENTION_SLICES
-            and openings == trades
-            and trades >= minimum_trades
-            and pnl >= Decimal("0")
-            and lower_bound >= Decimal("0")
-            and abstention_passed is False
+        semantic_passed = all(
+            (
+                common_passed,
+                slice_id not in _MANDATORY_ABSTENTION_SLICES,
+                openings == trades,
+                trades >= minimum_trades,
+                pnl >= Decimal("0"),
+                lower_bound >= Decimal("0"),
+                abstention_passed is False,
+            )
         )
     elif action == "abstain":
-        semantic_passed = (
-            common_passed
-            and openings == 0
-            and trades == 0
-            and pnl == Decimal("0")
-            and lower_bound == Decimal("0")
-            and drawdown == Decimal("0")
-            and expected_shortfall == Decimal("0")
-            and abstention_passed is True
+        semantic_passed = all(
+            (
+                common_passed,
+                openings == 0,
+                trades == 0,
+                pnl == Decimal("0"),
+                lower_bound == Decimal("0"),
+                drawdown == Decimal("0"),
+                expected_shortfall == Decimal("0"),
+                abstention_passed is True,
+            )
         )
     else:
         raise ValueError("cross-regime policy action is invalid")
@@ -454,21 +460,23 @@ def _validate_aggregate(
         if positive_pnls
         else Decimal("1")
     )
-    semantic_passed = (
-        classifications == sum(item.classification_count for item in slices)
-        and decisions == sum(item.decision_count for item in slices)
-        and openings == sum(item.opened_position_count for item in slices)
-        and trades == sum(item.closed_trade_count for item in slices)
-        and pnl == computed_pnl
-        and pnl > Decimal("0")
-        and lower_bound > Decimal("0")
-        and Decimal("0") <= drawdown <= maximum_drawdown
-        and Decimal("0") <= expected_shortfall <= maximum_expected_shortfall
-        and concentration == computed_concentration
-        and concentration <= maximum_concentration
-        and unknown == 0
-        and untracked == 0
-        and all(item.passed for item in slices)
+    semantic_passed = all(
+        (
+            classifications == sum(item.classification_count for item in slices),
+            decisions == sum(item.decision_count for item in slices),
+            openings == sum(item.opened_position_count for item in slices),
+            trades == sum(item.closed_trade_count for item in slices),
+            pnl == computed_pnl,
+            pnl > Decimal("0"),
+            lower_bound > Decimal("0"),
+            Decimal("0") <= drawdown <= maximum_drawdown,
+            Decimal("0") <= expected_shortfall <= maximum_expected_shortfall,
+            concentration == computed_concentration,
+            concentration <= maximum_concentration,
+            unknown == 0,
+            untracked == 0,
+            all(item.passed for item in slices),
+        )
     )
     if declared_passed is not semantic_passed or not semantic_passed:
         raise ValueError("cross-regime aggregate failed")
@@ -525,16 +533,20 @@ def validate_polymarket_cross_regime_evaluation(
     market_variant = str(payload["market_variant"] or "").strip().lower()
     risk_profile = str(payload["risk_profile"] or "").strip().lower()
     source_commit = str(payload["source_commit"] or "").strip().lower()
-    if (
-        payload["schema_version"] != POLYMARKET_CROSS_REGIME_EVALUATION_SCHEMA_VERSION
-        or payload["venue"] != "polymarket"
-        or payload["asset"] != "BTC"
-        or market_variant not in _MARKET_VARIANTS
-        or market_variant != str(expected_market_variant).strip().lower()
-        or source_commit != str(expected_source_commit).strip().lower()
-        or _GIT_COMMIT.fullmatch(source_commit) is None
-        or risk_profile != str(expected_risk_profile).strip().lower()
-    ):
+    scope_matches = all(
+        (
+            payload["schema_version"]
+            == POLYMARKET_CROSS_REGIME_EVALUATION_SCHEMA_VERSION,
+            payload["venue"] == "polymarket",
+            payload["asset"] == "BTC",
+            market_variant in _MARKET_VARIANTS,
+            market_variant == str(expected_market_variant).strip().lower(),
+            source_commit == str(expected_source_commit).strip().lower(),
+            _GIT_COMMIT.fullmatch(source_commit) is not None,
+            risk_profile == str(expected_risk_profile).strip().lower(),
+        )
+    )
+    if not scope_matches:
         raise ValueError("cross-regime evaluation scope differs")
     profile = polymarket_live_risk_profile(risk_profile)
     model_sha = _sha(payload["model_artifact_sha256"], name="evaluated model")
