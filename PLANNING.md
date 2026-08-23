@@ -75,6 +75,12 @@ an operator assertion still cannot create size evidence.
 5. Only then proceed through the frozen source, causal split, execution-cost,
    delay, access-ledger, sample, model, and one-use evaluation gates. AI remains
    veto/downsize-only until a matched causal uplift test passes.
+6. Independently complete the target-blind Round 29 Polymarket model/economic
+   operator. The settlement feature overlay is implemented, but the matched
+   diagnostic and BBO promotion pairs are not yet source-bound. Preserve the
+   frozen preregistration, bind final implementation hashes through a cumulative
+   pre-outcome amendment, and keep Stage 1 outcomes closed until manifest,
+   causal-access, matched-row, economic, tamper, and parity checks pass.
 
 The currently pushed checkpoint has no reproducible after-cost edge,
 profitability claim, or trading authority. Local unintegrated files do not
@@ -96,6 +102,22 @@ and close the checkpoint only after current-main CI, Ruff, Vulture,
 Super-Linter, DeepSource, secret scanning, and available GitHub dependency and
 code-scanning checks have been verified. An unavailable scanner is reported as
 unverified, never as zero vulnerabilities.
+
+The current bounded authority is code revision `0c96dfb0`: every hosted
+workflow and DeepSource run `bea75b29-e9f6-448c-a6e3-4fe2689bc398` passed;
+GitHub reported zero open Dependabot, code-scanning, and secret-scanning alerts,
+only `main`, and no open pull request. A fresh local audit found zero known
+vulnerabilities in each complete 113-package GPU and DirectML lock export and
+zero high-severity Bandit result. Bandit still reports 235 medium and 269 low
+review candidates, dominated by 232 `B608` dynamic-SQL heuristics. Those counts
+are not confirmed vulnerability counts. Non-provider secret patterns and
+secret validity checks remain disabled after a repository-level enable attempt,
+so they must not be claimed as active protection. The audit scope and next
+source-trace order are in `docs/CONTINUATION.md`.
+
+The remainder of this section is a chronological analyzer ledger. Older red
+snapshots explain completed work; they do not override the current authority
+above or create a current vulnerability count.
 
 Latest source revision `beffdb2e` passes every GitHub Actions workflow but fails
 DeepSource run `168f4123-432e-4b4f-9d4c-a48395b2724f`, which re-raised a
