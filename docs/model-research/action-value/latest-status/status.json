@@ -1,0 +1,62 @@
+{
+  "claims": {
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_established": false,
+    "trading_authority": false
+  },
+  "cross_regime_policy": {
+    "future_profit_or_no_loss_guaranteed": false,
+    "unsupported_slice_action": "abstain_from_new_exposure"
+  },
+  "current_round": 76,
+  "later_round_status": {
+    "73": "invalidated_before_model",
+    "74": "terminal_campaign_quota_failed_no_model",
+    "75": "rejected_incomplete_campaign",
+    "76": "blocked_by_round75_source_gate"
+  },
+  "latest_completed_model_evaluation": {
+    "accepted_market_edge": false,
+    "round": 72,
+    "status": "rejected"
+  },
+  "publisher": {
+    "file_sha256": "7119a0c798f5ed885c5e3841c5d1677efb4667b92cd89d7f8b8274fb81f2dccf",
+    "path": "tools/publish_action_value_latest_status.py"
+  },
+  "schema_version": "action-value-latest-status-v1",
+  "sources": {
+    "cross_regime": {
+      "contract_sha256": "06068c3e5e8003dce4d3e5b47391a64c987941e6aa25b841f9e1079dcb6ecf23",
+      "file_sha256": "64b5df61d25223df43b75005d2cd24685404150fd7b03970b2d1813e27cbc364",
+      "path": "docs/model-research/cross-regime-edge-acceptance-contract-v1.json"
+    },
+    "round73": {
+      "artifact_sha256": "c6bf1061fc1e3e43293eaf385f3156ec41d14b377f4a966bc28ab941be06ff91",
+      "file_sha256": "64a096f9ea6da448439f7a7ded209a94138d5c3075bbaa8b557b051d3ce9dd24",
+      "path": "docs/model-research/action-value/round-073-v9-corpus-invalidation-2026-07-25.json"
+    },
+    "round74": {
+      "artifact_sha256": "22187535286009efca9c55c6281eb8f858b33c71f05bed4a517768d9f2b1cde0",
+      "file_sha256": "ab5a8d7815c8b6eab02c39043e1a4f053f9fe6630d92276297d6f6805b00d314",
+      "path": "docs/model-research/action-value/round-074-terminal-campaign-outcome-v2-2026-08-10.json"
+    },
+    "round75": {
+      "artifact_sha256": "94a556887adf33996168de260a8a172952bc64040273a7ff2dfb373f2c2f50d6",
+      "file_sha256": "1e1ab831e2f45dc832e493ed807a1b9c0998f0e81733bc44d6c3b2b6b4c86ade",
+      "path": "docs/model-research/action-value/round-075-terminal-campaign-audit-2026-08-23.json"
+    },
+    "round76_adjudication": {
+      "artifact_sha256": "eea5d71fe093b05083dfd7287f1cfff4613b5a9135a7f3460e8073f4dbcc2ff1",
+      "file_sha256": "38e594d09a42ff9f6c6fb3598982f6559b2acbcacecffab0953e0bee6519288e",
+      "path": "docs/model-research/action-value/round-076-round75-source-gate-adjudication-v1.json"
+    },
+    "round76_preregistration": {
+      "file_sha256": "84667fc25499e9f52d3feca0f8323d837d00c5172090198e20336a1739548f26",
+      "path": "docs/model-research/action-value/round-076-mark-conditioned-duration-preregistration-v1.json",
+      "preregistration_sha256": "023480cd2b478e64de6c69340c4fdeab9c80567e57a36b802bcb81ed8af47120"
+    }
+  },
+  "status_sha256": "ddaf78bd49b26c15f860806ef62962b9555fa291a92d6726d21b26727c222f8c"
+}

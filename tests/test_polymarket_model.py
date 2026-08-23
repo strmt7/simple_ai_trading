@@ -38,6 +38,7 @@ from simple_ai_trading.polymarket import (
     PolymarketFiveMinuteMarket,
 )
 from simple_ai_trading.polymarket_ai_veto import (
+    PolymarketAIVetoCase,
     PolymarketAIVetoConfig,
     benchmark_polymarket_ai_veto,
     build_polymarket_ai_veto_cases,
@@ -1969,6 +1970,71 @@ def test_ai_veto_parser_rejects_type_coercion_and_duplicate_json_keys() -> None:
         with pytest.raises(ValueError, match="AI response"):
             ai_veto_module._parse_decision({"message": {"content": content}})
         assert _parsed_valid_ai_response({"message": {"content": content}}) is None
+
+
+def test_ai_veto_rejects_typed_approval_below_frozen_edge_floor() -> None:
+    provisional = PolymarketAIVetoCase(
+        case_id="1" * 64,
+        condition_id="0x" + "2" * 64,
+        sample_id="3" * 64,
+        asset="BTC",
+        event_start_ms=1_800_000_000_000,
+        decision_received_wall_ms=1_800_000_120_000,
+        decision_received_monotonic_ns=120_000_000_000,
+        prompt_payload={
+            "expected_edge_per_contract_after_fee": "0.005",
+            "minimum_required_edge_per_contract": "0.02",
+        },
+        case_sha256="",
+    )
+    case = replace(
+        provisional,
+        case_sha256=ai_veto_module._canonical_sha256(  # noqa: SLF001
+            provisional.identity_payload()
+        ),
+    )
+
+    def approve(
+        url: str,
+        _payload: dict[str, object],
+        _timeout: float,
+        _method: str,
+    ) -> object:
+        if url.endswith("/api/tags"):
+            return {"models": [{"name": "qwen3.5:9b", "digest": "f" * 64}]}
+        if url.endswith("/api/show"):
+            return {"model": "qwen3.5:9b", "parameters": "9B"}
+        return _ollama_chat_response(
+            json.dumps(
+                {
+                    "action": "approve",
+                    "confidence": 0.95,
+                    "reason_codes": ["edge_after_fees"],
+                    "summary": "Edge is sufficient.",
+                }
+            )
+        )
+
+    report = benchmark_polymarket_ai_veto(
+        (case,),
+        all_condition_ids=(case.condition_id,),
+        selection_sha256="a" * 64,
+        risk_benchmark_evidence_sha256="b" * 64,
+        config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+        post_json=approve,  # type: ignore[arg-type]
+        expected_model_digest="f" * 64,
+        residency_inspector=_gpu_residency,
+    )
+
+    assert report.provider_failure_count == 1
+    assert report.valid_response_count == 0
+    assert report.veto_count == 1
+    assert report.market_permissions == {case.condition_id: False}
+    result = report.results[0]
+    assert result.decision.valid is False
+    assert result.decision.action == "veto"
+    assert result.response_payload["error_type"] == "ValueError"  # type: ignore[index]
+    assert result.response_payload["provider_response_received"] is True  # type: ignore[index]
 
 
 def test_ai_veto_supports_preregistered_qwen3_14b_candidate() -> None:

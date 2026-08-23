@@ -160,15 +160,17 @@ Full contracts: [live simulation](docs/LIVE_MARKET_SIMULATION.md),
 
 The latest charts are generated from canonical CSV/JSON, not edited by hand:
 
-- [Binance model status and charts](docs/model-research/action-value/latest/README.md)
+- [Current Binance model status and progress](docs/model-research/action-value/latest-status/README.md)
+- [Latest completed Binance model metrics](docs/model-research/action-value/latest/README.md)
 - [Polymarket model status and charts](docs/model-research/polymarket/latest/README.md)
 - [Local AI comparison evidence](docs/ai/risk-review/latest/comparison.json)
 - [Model validation rules](docs/MODEL_AND_SIGNAL_VALIDATION.md)
 
 The current exact-BBO research path uses Feature contract `l1-tape-causal-v8`
-with a fixed 107-feature order. No v16 artifact is accepted
-or claimed profitable. Round 74 and current Polymarket research likewise grant
-no paper, testnet, or live trading authority.
+with a fixed 107-feature order. No v16 artifact is accepted or claimed
+profitable. Round 72 was rejected; Rounds 73-76 produced no model or P&L result.
+Current Polymarket research likewise grants no paper, testnet, or live trading
+authority.
 
 ## Documentation
 
