@@ -2645,13 +2645,13 @@ class MainWindow {
     }
 
     void write_smoke_log() {
-        std::wstring path = env_string(L"SIMPLE_AI_TRADING_GUI_SMOKE_LOG");
-        if (path.empty()) {
-            std::array<wchar_t, MAX_PATH> temp{};
-            DWORD len = GetTempPathW(static_cast<DWORD>(temp.size()), temp.data());
-            path = (len > 0 && len < temp.size()) ? std::wstring(temp.data(), len) : L".\\";
-            path += L"SimpleAITradingGuiSmoke.log";
-        }
+        std::array<wchar_t, MAX_PATH> temp{};
+        DWORD len = GetTempPathW(static_cast<DWORD>(temp.size()), temp.data());
+        std::filesystem::path path =
+            (len > 0 && len < temp.size())
+                ? std::filesystem::path(std::wstring(temp.data(), len))
+                : module_dir();
+        path /= L"SimpleAITradingGuiSmoke.log";
         std::wstring snapshot;
         {
             std::lock_guard lock(output_mutex_);

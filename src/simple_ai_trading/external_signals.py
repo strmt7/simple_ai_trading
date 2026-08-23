@@ -841,36 +841,32 @@ def _structured_news_texts_from_payload(provider: str, payload: object, *, limit
 
 
 def _provider_name_for_url(url: str) -> str:
-    lower = url.lower()
-    if "alternative.me" in lower:
-        return "alternative_fear_greed"
-    if "coingecko" in lower:
-        return "coingecko_bitcoin"
-    if "coinpaprika" in lower:
-        return "coinpaprika_bitcoin"
-    if "coinlore" in lower:
-        return "coinlore_bitcoin"
-    if "blockchain.info/stats" in lower:
-        return "blockchain_network_stats"
-    if "kraken.com" in lower:
-        return "kraken_btcusd_momentum"
-    if "exchange.coinbase.com" in lower:
-        return "coinbase_btcusd_momentum"
-    if "bitstamp" in lower:
-        return "bitstamp_btcusd_momentum"
-    if "api.binance.com/api/v3/ticker/24hr" in lower:
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower().rstrip(".")
+    path = parsed.path.lower()
+    providers = {
+        "api.alternative.me": "alternative_fear_greed",
+        "api.coingecko.com": "coingecko_bitcoin",
+        "api.coinpaprika.com": "coinpaprika_bitcoin",
+        "api.coinlore.net": "coinlore_bitcoin",
+        "api.blockchain.info": "blockchain_network_stats",
+        "api.kraken.com": "kraken_btcusd_momentum",
+        "api.exchange.coinbase.com": "coinbase_btcusd_momentum",
+        "www.bitstamp.net": "bitstamp_btcusd_momentum",
+        "mempool.space": "mempool_fee_pressure",
+        "min-api.cryptocompare.com": "cryptocompare_btc_news",
+        "api.gdeltproject.org": "gdelt_bitcoin_news",
+        "hn.algolia.com": "hackernews_bitcoin_attention",
+    }
+    if host in providers:
+        return providers[host]
+    if host == "api.binance.com" and path == "/api/v3/ticker/24hr":
         return "binance_spot_momentum"
-    if "premiumindex" in lower or "openinterest" in lower:
+    if host == "fapi.binance.com" and (
+        "premiumindex" in path or "openinterest" in path
+    ):
         return "binance_futures_positioning"
-    if "mempool.space/api" in lower:
-        return "mempool_fee_pressure"
-    if "cryptocompare" in lower:
-        return "cryptocompare_btc_news"
-    if "gdeltproject" in lower:
-        return "gdelt_bitcoin_news"
-    if "hn.algolia" in lower:
-        return "hackernews_bitcoin_attention"
-    return lower.split("//", 1)[-1].split("/", 1)[0].replace(".", "_")
+    return host.replace(".", "_")
 
 
 def _http_retry_delay_seconds(response: object, attempt: int) -> float:

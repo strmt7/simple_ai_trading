@@ -116,14 +116,12 @@ $oldDelayCommand = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND
 $oldFailCommand = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND
 $oldContractSha = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256
 $oldSmoke = $env:SIMPLE_AI_TRADING_GUI_SMOKE
-$oldSmokeLog = $env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG
 $process = $null
 try {
     $env:SIMPLE_AI_TRADING_REPO_ROOT = $Repo
     $env:SIMPLE_AI_TRADING_GUI_DRY_RUN = "1"
     $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS = "2500"
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE -ErrorAction SilentlyContinue
-    Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG -ErrorAction SilentlyContinue
 
     $process = Start-Process -FilePath $Exe -PassThru -WindowStyle Normal
     Wait-Until { $process.Refresh(); $process.MainWindowHandle -ne [IntPtr]::Zero } "native app window handle" 10000
@@ -352,10 +350,9 @@ try {
         Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue
         Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS -ErrorAction SilentlyContinue
         Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND -ErrorAction SilentlyContinue
-        $log = Join-Path $env:TEMP "SimpleAITradingNativeRealComputeSmoke.log"
+        $log = Join-Path $env:TEMP "SimpleAITradingGuiSmoke.log"
         Remove-Item -LiteralPath $log -ErrorAction SilentlyContinue
         $env:SIMPLE_AI_TRADING_GUI_SMOKE = "1"
-        $env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG = $log
         $process = Start-Process -FilePath $Exe -PassThru -WindowStyle Normal
         Wait-Until { Test-Path -LiteralPath $log } "real compute smoke log" 30000
         $content = Get-Content -Path $log -Raw
@@ -388,5 +385,4 @@ try {
     if ($null -eq $oldFailCommand) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND = $oldFailCommand }
     if ($null -eq $oldContractSha) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256 -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256 = $oldContractSha }
     if ($null -eq $oldSmoke) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_SMOKE = $oldSmoke }
-    if ($null -eq $oldSmokeLog) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG = $oldSmokeLog }
 }
