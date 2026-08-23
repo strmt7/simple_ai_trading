@@ -439,6 +439,8 @@ class PolymarketRemoteFill:
         if any(accounting_values) and not all(accounting_values):
             raise ValueError("fill fee accounting evidence is incomplete")
         if all(accounting_values):
+            if self.fee_exponent is None:
+                raise ValueError("fill fee accounting evidence is incomplete")
             fee_rate = _decimal(
                 self.fee_rate,
                 name="fill fee rate",
@@ -1557,7 +1559,10 @@ class PolymarketLiveOrderLedger:
         }
 
     @classmethod
-    def _verify_order_row(cls, row: Mapping[str, object]) -> None:
+    def _verify_order_row(
+        cls,
+        row: Mapping[str, object] | sqlite3.Row,
+    ) -> None:
         if str(row["record_sha256"]) != _canonical_sha256(cls._order_row_payload(row)):
             raise PolymarketLiveError("live order snapshot hash differs")
 
@@ -1693,7 +1698,10 @@ class PolymarketLiveOrderLedger:
         }
 
     @classmethod
-    def _verify_redemption_row(cls, row: Mapping[str, object]) -> None:
+    def _verify_redemption_row(
+        cls,
+        row: Mapping[str, object] | sqlite3.Row,
+    ) -> None:
         if str(row["record_sha256"]) != _canonical_sha256(
             cls._redemption_row_payload(row)
         ):
@@ -3477,12 +3485,12 @@ class PolymarketLiveOrderLedger:
                     )
                 redemption_payout += redemption.payout_quote
                 for item in redemption.inventory:
-                    outcome = token_outcomes.get(item.token_id)
-                    if outcome is None:
+                    redeemed_outcome = token_outcomes.get(item.token_id)
+                    if redeemed_outcome is None:
                         raise PolymarketLiveError(
                             "redeemed token lacks a bot-owned outcome"
                         )
-                    quantities[outcome] -= item.quantity
+                    quantities[redeemed_outcome] -= item.quantity
                     remaining = item.quantity
                     for parent in order_rows:
                         if (
