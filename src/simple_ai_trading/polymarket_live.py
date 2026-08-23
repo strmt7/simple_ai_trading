@@ -131,6 +131,12 @@ def _decimal(
     return parsed
 
 
+def _required_integer(value: int | None, *, name: str) -> int:
+    if value is None:
+        raise ValueError(f"{name} is required")
+    return int(value)
+
+
 def _identifier(value: object, *, name: str) -> str:
     normalized = str(value or "").strip()
     if _IDENTIFIER.fullmatch(normalized) is None:
@@ -439,14 +445,15 @@ class PolymarketRemoteFill:
         if any(accounting_values) and not all(accounting_values):
             raise ValueError("fill fee accounting evidence is incomplete")
         if all(accounting_values):
-            if self.fee_exponent is None:
-                raise ValueError("fill fee accounting evidence is incomplete")
             fee_rate = _decimal(
                 self.fee_rate,
                 name="fill fee rate",
                 nonnegative=True,
             )
-            fee_exponent = int(self.fee_exponent)
+            fee_exponent = _required_integer(
+                self.fee_exponent,
+                name="fill fee exponent",
+            )
             fee_quote = _decimal(
                 self.fee_quote,
                 name="fill fee quote",
@@ -1531,7 +1538,9 @@ class PolymarketLiveOrderLedger:
             raise
 
     @staticmethod
-    def _order_row_payload(row: Mapping[str, object]) -> dict[str, object]:
+    def _order_row_payload(
+        row: Mapping[str, object] | sqlite3.Row,
+    ) -> dict[str, object]:
         return {
             "intent_id": str(row["intent_id"]),
             "bot_id": str(row["bot_id"]),
@@ -1679,7 +1688,9 @@ class PolymarketLiveOrderLedger:
             ) from exc
 
     @staticmethod
-    def _redemption_row_payload(row: Mapping[str, object]) -> dict[str, object]:
+    def _redemption_row_payload(
+        row: Mapping[str, object] | sqlite3.Row,
+    ) -> dict[str, object]:
         return {
             "redemption_id": str(row["redemption_id"]),
             "condition_id": str(row["condition_id"]),
