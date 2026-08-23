@@ -350,7 +350,11 @@ optional runtime and makes native PowerShell failures terminal; replacement
 hosted results remain mandatory evidence. The first fail-closed rerun also
 found that the layout auditor could size the per-monitor-aware app using a
 different process DPI. The follow-up audits at the launched window's actual DPI
-and reports exact containment coordinates.
+and reports exact containment coordinates. The first completed scan then found
+three actionable input-boundary defects: two URL substring checks and one
+environment-controlled native smoke-log path. Exact host parsing and a fixed
+OS-temporary smoke path address them; two credential-fingerprint alerts were
+source-traced and dismissed individually as non-password false positives.
 
 ## Resume Here
 

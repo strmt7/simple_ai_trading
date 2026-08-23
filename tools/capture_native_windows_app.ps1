@@ -75,7 +75,6 @@ function Test-PixelHealth([Drawing.Bitmap]$Image) {
 $oldRepoRoot = $env:SIMPLE_AI_TRADING_REPO_ROOT
 $oldDryRun = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN
 $oldSmoke = $env:SIMPLE_AI_TRADING_GUI_SMOKE
-$oldSmokeLog = $env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG
 $process = $null
 $bitmap = $null
 $graphics = $null
@@ -87,7 +86,6 @@ try {
         $env:SIMPLE_AI_TRADING_GUI_DRY_RUN = "1"
     }
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE -ErrorAction SilentlyContinue
-    Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG -ErrorAction SilentlyContinue
 
     $process = Start-Process -FilePath $Exe -PassThru -WindowStyle Normal
     Wait-Until {
@@ -146,5 +144,4 @@ try {
     if ($null -eq $oldRepoRoot) { Remove-Item Env:SIMPLE_AI_TRADING_REPO_ROOT -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_REPO_ROOT = $oldRepoRoot }
     if ($null -eq $oldDryRun) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN = $oldDryRun }
     if ($null -eq $oldSmoke) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_SMOKE = $oldSmoke }
-    if ($null -eq $oldSmokeLog) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG = $oldSmokeLog }
 }

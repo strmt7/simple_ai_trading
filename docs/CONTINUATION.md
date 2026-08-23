@@ -675,6 +675,21 @@ includes both control and window coordinates in any containment failure. The
 native application itself passed the same audit locally at 150% DPI and
 `2250x1470`; hosted replacement evidence is still required.
 
+The first successful Python and native CodeQL uploads made the alert API
+available and returned five findings on `0d886254`: two incomplete URL-host
+checks, two weak-sensitive-hash findings, and one native path-injection finding.
+The URL findings were confirmed as substring-classification defects; provider
+identity now comes from `urlparse(...).hostname` and exact host/path rules, with
+host-confusion regressions. The native finding was also confirmed: a smoke-only
+environment variable unnecessarily controlled the output file. The app and its
+tools now use one process-independent filename under the OS temporary directory,
+and both dry-run and real-compute native smoke checks pass locally. The two hash
+findings were dismissed individually as false positives with evidence comments:
+the Binance digest is transient in-memory change detection, while the Polymarket
+binding includes a validated 256-bit private key; neither path stores, accepts,
+or verifies a password. Do not call the three code fixes closed until a fresh
+CodeQL analysis marks those alerts fixed and the open-alert API is rechecked.
+
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The 97 modified, 2 deleted,
 218 untracked, and 71 differing plus 26 locally-only path counts above are a

@@ -1019,6 +1019,7 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "runtime_summary()" in source
     assert "repo_root()" in source
     assert "SIMPLE_AI_TRADING_GUI_SMOKE" in source
+    assert "SIMPLE_AI_TRADING_GUI_SMOKE_LOG" not in source
     assert 'preview += L" (repeatable)";' in source
 
 
