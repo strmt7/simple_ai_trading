@@ -339,24 +339,18 @@ reconciliation, and the production `1e-5` replay tolerance; model fitting and
 all financial behavior are unchanged. Exact replacement `d93de892` passed all
 five GitHub workflows and DeepSource with zero changed-scope Python issues.
 
-The next security checkpoint enables pinned CodeQL `v4.37.8` with
-`security-extended` queries for Python and a manual native Win32 C++ build.
-The workflow has no model or trading authority. A green workflow proves scan
-completion only; the GitHub code-scanning alert API remains the finding
-authority and must be read after the first terminal run. Its first native job
-also exposed an eagerly loaded optional Torch runtime and a Windows smoke step
-that could mask failed native commands. The corrective checkpoint defers the
-optional runtime and makes native PowerShell failures terminal; replacement
-hosted results remain mandatory evidence. The first fail-closed rerun also
-found that the layout auditor could size the per-monitor-aware app using a
-different process DPI. The follow-up audits at the launched window's actual DPI
-and reports exact containment coordinates. Those coordinates exposed a six-pixel
-overflow at the supported `1280x860` minimum; compact settings geometry and an
-explicit minimum-size audit now cover that boundary. The first completed scan
-then found three actionable input-boundary defects: two URL substring checks and
-one environment-controlled native smoke-log path. Exact host parsing and a
-fixed OS-temporary smoke path address them; two credential-fingerprint alerts
-were source-traced and dismissed individually as non-password false positives.
+Pinned CodeQL `v4.37.8` now scans Python and the native Win32 C++ target with
+`security-extended` queries. Its first runs exposed an eagerly loaded optional
+Torch runtime, masked Windows smoke failures, a DPI-audit mismatch, a six-pixel
+minimum-layout overflow, two URL host-confusion defects, and one
+environment-controlled smoke-log path. Those defects are fixed with focused
+regressions. The two credential-fingerprint findings were source-traced and
+dismissed individually as non-password false positives. Exact closeout revision
+`6ba7e3261947a2f7f8067900b43c404540665677` passed CI, Ruff, Vulture,
+Super-Linter, Python and native C++ CodeQL, and DeepSource. GitHub's available
+APIs reported zero open code-scanning, Dependabot, and secret-scanning alerts,
+with only `main` and no open pull request. This is bounded scanner evidence, not
+a claim that no undiscovered vulnerability exists.
 
 ## Resume Here
 
