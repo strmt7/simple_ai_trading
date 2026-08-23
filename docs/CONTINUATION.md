@@ -24,6 +24,40 @@ the repository and on GitHub before changing code.
 - The old Round 21/27 PIDs (`33804`, `34228`, `65092`, `36844`) are no longer
   alive. Do not restart them from this historical note.
 
+## Closeout Snapshot: 2026-08-23T09:10Z
+
+This is the current bounded closeout. Later sections preserve chronology and
+design rationale; do not treat their older red analyzer snapshots as current.
+
+- The verified code baseline is
+  `0c96dfb0fd95c75f32f60749cc1c136f1228f86a`. `main` and `origin/main` were
+  clean and synchronized, GitHub exposed only `main` and no open pull request,
+  and CI, Ruff, Vulture, Super-Linter, Python/C++ CodeQL, and DeepSource run
+  `bea75b29-e9f6-448c-a6e3-4fe2689bc398` passed on that exact revision.
+- GitHub's APIs returned zero open Dependabot, code-scanning, and
+  secret-scanning alerts. Provider secret scanning and push protection are
+  enabled. Repository-level attempts to enable non-provider pattern scanning
+  and validity checks returned successfully but left both settings disabled;
+  treat those two capabilities as unavailable or account-policy controlled,
+  not as enabled protection.
+- `uv lock --check` passed. `pip-audit 2.10.1` found no known vulnerability in
+  either complete 113-package locked stack: one with the GPU extra and one
+  with the DirectML extra. Both exports also included terminal testing,
+  microstructure, reporting, Polymarket, foundation-AI, test, and release
+  dependencies. This is advisory-database evidence at this timestamp, not a
+  guarantee about undisclosed defects.
+- A fresh full Bandit inventory reported 504 candidates: zero high severity,
+  235 medium, and 269 low. Of the medium candidates, 232 are `B608` dynamic-SQL
+  heuristics and three are `B113`; the low-severity inventory is led by
+  `B101` (181), `B603` (23), `B607` (22), `B404` (18), `B105` (17), `B311`
+  (7), and `B106` (1). These are review candidates, not 504 confirmed
+  vulnerabilities. Future batches must source-trace one trust boundary at a
+  time and add a direct regression before changing code.
+- No source defect was established by this bounded pass, so no trading,
+  model, execution, or risk code was changed. The Round 75 and Round 21
+  protected worktrees, processes, state, databases, and outcomes were not
+  inspected or modified.
+
 ## Live Host Handoff: 2026-08-23
 
 The closeout state below was reverified at approximately `2026-08-23T02:26Z`.
@@ -1044,17 +1078,37 @@ modified, stopped, restarted, staged, or terminalized during this work.
    refreshing current alerts and analyzer output on the then-current `main`;
    do not resurrect historical counts as current findings. Trace each candidate
    from source to sink, fix validated defects with direct regressions, and avoid
-   broad suppressions or mechanical rewrites. The closeout authority is exact
-   revision `42a3721f`: all hosted workflows and DeepSource passed, and the
-   available GitHub APIs reported zero open alerts. That snapshot does not prove
-   absence of undiscovered vulnerabilities.
-6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
+   broad suppressions or mechanical rewrites. Begin with the three `B113`
+   candidates, then review `B608` by reachable caller and identifier
+   allowlisting; do not interpolate untrusted identifiers or rewrite queries
+   merely to reduce a scanner count. The current bounded inventory and exact
+   code authority are in `Closeout Snapshot: 2026-08-23T09:10Z` above.
+6. Complete the target-blind Round 29 Polymarket implementation before any
+   Stage 1 outcome access. The six-field settlement feature overlay exists,
+   but its matched model/economic operator is not source-bound. Use the frozen
+   Round 29 preregistration without editing it; add a cumulative pre-outcome
+   implementation amendment that binds the final source hashes. Implement a
+   dedicated L2 offset-logistic path for the diagnostic 182-vs-188 feature pair
+   and the promotion-controlling 278-vs-284 BBO pair, preserving identical
+   rows, labels, weights, offsets, penalty/correction grids, execution
+   scenarios, confidence gates, and fail-closed authority. Reuse Round 28's
+   validated mechanics by explicit shared code or exact-parity tests; do not
+   modify frozen Round 28 behavior or add LightGBM to this deliberately bounded
+   residual experiment.
+7. The Round 29 operator must persist and validate a source manifest before it
+   can open target-bearing inputs, remain restart-safe and read-only against
+   source stores, and expose no sealed-test, AI, or trading authority. Add
+   model, economics, operator, tamper, causal-access, and CLI/native parity tests
+   if a command is registered. Promotion remains impossible unless the primary
+   pair passes both paired probability gates and all inherited after-cost
+   economic, delay, concentration, drawdown, and confidence gates.
+8. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated. Preserve
    the v3 live-review identity binding, typed exact-count attestation, and v2
    read-only compatibility; never infer authority from a free-form command
    argument or rewrite historical hash-chained records.
-7. Run focused checks while integrating, then the full local matrix once at the
+9. Run focused checks while integrating, then the full local matrix once at the
    final checkpoint. On this Windows host invoke pytest through
    `uv run --locked python -m pytest`; the direct `uv run pytest` console entry
    does not place the repository's `tools` package on `sys.path`. Push `main`,
