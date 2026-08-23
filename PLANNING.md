@@ -381,6 +381,18 @@ APIs reported zero open code-scanning, Dependabot, and secret-scanning alerts,
 with only `main` and no open pull request. This is bounded scanner evidence, not
 a claim that no undiscovered vulnerability exists.
 
+Current-main DeepSource run
+`3a5e59a3-09f7-40a8-b078-92af00bab296` on `71a22f38` renders 15 findings in
+the three recently changed AI evidence modules: seven major type or overlapping-
+exception diagnostics and eight complexity-only findings. The bounded type
+follow-up removes all seven, rejects boolean or unsupported numeric assertions,
+validates recursive JSON before provider transport, and closes four adjacent
+Mypy object-conversion errors. The 74 focused tests, scoped Mypy, Ruff, and
+Bandit pass locally. The eight complexity findings remain an explicit later
+maintainability queue; hosted analysis of the exact pushed revision is still
+required. This changes no model, score, decision threshold, risk authority,
+P&L, or profitability evidence.
+
 ## Resume Here
 
 A new development session must start with

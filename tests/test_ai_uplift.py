@@ -858,6 +858,7 @@ def test_ai_uplift_policy_rejects_nonfinite_values() -> None:
 
 def test_ai_uplift_rejects_invalid_supplied_parameter_counts() -> None:
     assert _model_parameters_b("", float("nan")) is None
+    assert _model_parameters_b("", True) is None  # type: ignore[arg-type]
     assert _model_parameters_b("", object()) is None  # type: ignore[arg-type]
 
 
