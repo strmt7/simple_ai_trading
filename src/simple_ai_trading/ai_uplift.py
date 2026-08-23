@@ -764,17 +764,37 @@ def normalize_uplift_metrics(metrics: Mapping[str, object]) -> dict[str, float]:
     }
 
 
-def _model_parameters_b(model_name: str, supplied: float | None) -> float | None:
-    candidate = supplied
-    if candidate is None:
-        candidate = estimate_model_parameters_b(model_name)
+def _finite_model_parameters_b(value: object) -> float | None:
     try:
-        parsed = float(candidate) if candidate is not None else None
+        parsed = float(value)
     except (TypeError, ValueError, OverflowError):
         return None
-    if parsed is None or not math.isfinite(parsed):
+    if not math.isfinite(parsed) or parsed <= 0.0:
         return None
     return parsed
+
+
+def _model_parameter_evidence(
+    model_name: str,
+    supplied: float | None,
+) -> tuple[float | None, tuple[str, ...]]:
+    inferred = _finite_model_parameters_b(estimate_model_parameters_b(model_name))
+    reasons: list[str] = []
+    if supplied is not None:
+        asserted = _finite_model_parameters_b(supplied)
+        if asserted is None:
+            reasons.append("model_parameter_count_assertion_invalid")
+        elif inferred is None:
+            reasons.append("model_parameter_count_not_inferred_from_model_identity")
+        elif not math.isclose(asserted, inferred, rel_tol=0.0, abs_tol=1e-12):
+            reasons.append("model_parameter_count_mismatch")
+    elif inferred is None:
+        reasons.append("model_parameter_count_not_inferred_from_model_identity")
+    return inferred, tuple(reasons)
+
+
+def _model_parameters_b(model_name: str, supplied: float | None) -> float | None:
+    return _model_parameter_evidence(model_name, supplied)[0]
 
 
 def _uplift_deltas(
@@ -803,14 +823,19 @@ def _model_and_evidence_reasons(
     ai: Mapping[str, float],
     policy: AIUpliftPolicy,
     parameters_b: float | None,
+    parameter_evidence_reasons: Sequence[str],
     statistical: Mapping[str, object],
     evidence_binding: Mapping[str, object],
 ) -> tuple[str, ...]:
     reasons = list(_required_source_metric_reasons(baseline_metrics, "baseline"))
     reasons.extend(_required_source_metric_reasons(ai_metrics, "ai"))
-    if parameters_b is None:
+    reasons.extend(parameter_evidence_reasons)
+    if parameters_b is None and not parameter_evidence_reasons:
         reasons.append("model_parameter_count_unknown")
-    elif parameters_b < max(0.0, float(policy.min_model_parameters_b)):
+    elif parameters_b is not None and parameters_b < max(
+        0.0,
+        float(policy.min_model_parameters_b),
+    ):
         reasons.append(f"model_parameters<{float(policy.min_model_parameters_b):.2f}B")
     if policy.require_positive_ai_pnl and ai["realized_pnl"] <= 0.0:
         reasons.append("ai_realized_pnl<=0")
@@ -894,7 +919,10 @@ def assess_ai_uplift(
     cfg = policy or AIUpliftPolicy()
     baseline = normalize_uplift_metrics(baseline_metrics)
     ai = normalize_uplift_metrics(ai_metrics)
-    parameters_b = _model_parameters_b(model_name, model_parameters_b)
+    parameters_b, parameter_evidence_reasons = _model_parameter_evidence(
+        model_name,
+        model_parameters_b,
+    )
     deltas = _uplift_deltas(baseline, ai)
     statistical = _statistical_evidence(
         baseline_metrics,
@@ -915,6 +943,7 @@ def assess_ai_uplift(
             ai,
             cfg,
             parameters_b,
+            parameter_evidence_reasons,
             statistical,
             evidence_binding,
         )

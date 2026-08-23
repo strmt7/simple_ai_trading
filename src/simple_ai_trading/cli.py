@@ -3046,7 +3046,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="capital denominator used for matched daily returns",
     )
     parser_ai_uplift.add_argument("--model", default="qwen3:14b")
-    parser_ai_uplift.add_argument("--model-parameters-b", type=float, default=14.0)
+    parser_ai_uplift.add_argument(
+        "--model-parameters-b",
+        type=float,
+        default=None,
+        help="optional consistency assertion; model identity determines size",
+    )
     parser_ai_uplift.add_argument(
         "--output",
         default="data/autonomous/ai-uplift-report.json",
@@ -8321,6 +8326,7 @@ def command_ai_uplift(args: argparse.Namespace) -> int:
     from .live_ai_uplift import assess_live_ai_shadow_uplift_paths
 
     output = Path(args.output)
+    raw_model_parameters_b = getattr(args, "model_parameters_b", None)
     try:
         report = assess_live_ai_shadow_uplift_paths(
             positions_root=Path(args.positions_root),
@@ -8328,7 +8334,11 @@ def command_ai_uplift(args: argparse.Namespace) -> int:
             market_db=Path(args.market_db),
             initial_capital=float(args.starting_capital),
             model_name=str(args.model),
-            model_parameters_b=float(args.model_parameters_b),
+            model_parameters_b=(
+                None
+                if raw_model_parameters_b is None
+                else float(raw_model_parameters_b)
+            ),
         )
         write_json_atomic(output, report, indent=2, sort_keys=True)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
