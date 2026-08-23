@@ -421,8 +421,14 @@ def test_capture_supervisor_fails_if_owned_process_does_not_terminate(
         process_id=4150,
         heartbeat_wall_ns=now - ROUND75_SERVICE_STALE_AFTER_NS - 1,
     )
-    clock = iter((100.0, 116.0))
-    monkeypatch.setattr(supervisor_module.time, "monotonic", lambda: next(clock))
+    monotonic_calls = 0
+
+    def monotonic() -> float:
+        nonlocal monotonic_calls
+        monotonic_calls += 1
+        return 100.0 if monotonic_calls == 1 else 116.0
+
+    monkeypatch.setattr(supervisor_module.time, "monotonic", monotonic)
 
     with pytest.raises(RuntimeError, match="did not terminate before deadline"):
         supervise_round75_capture(
@@ -435,6 +441,7 @@ def test_capture_supervisor_fails_if_owned_process_does_not_terminate(
             refresh_inventory=lambda: (service,),
             sleep=lambda _seconds: None,
         )
+    assert monotonic_calls == 2
 
 
 def test_capture_supervisor_does_not_repair_stale_family_without_flag(
