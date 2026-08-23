@@ -958,7 +958,51 @@ touched two large legacy fixture modules. The narrow follow-up restores
 `test_ai_review.py` and `test_ai_uplift.py` byte-for-byte to their `71a22f38`
 versions and moves every new assertion into the small dedicated
 `test_ai_type_boundaries.py` module. This avoids an unrelated fixture refactor;
-hosted analysis of the exact follow-up remains required.
+exact follow-up `55dac7b9c68bee01113fe8321c47bb777351ddd0` passed every
+hosted workflow and DeepSource. The complexity queue is superseded by the
+closeout below.
+
+### AI Review Complexity Closeout: 2026-08-23
+
+Source checkpoint `4ef963f602d3e56479262741c793e6a1ab2f8822` is the
+current verified AI-review authority. It decomposes the seven outstanding
+`ai_review.py` complexity findings without changing provider behavior, evidence
+ordering, exception scope, call order, hashes, persisted artifacts, or fail-
+closed reasons. Before/after Radon scores are:
+
+| Surface | Before | After |
+| --- | ---: | ---: |
+| `AIReviewDecision.validated` | 22 | 7 |
+| `AIReviewReport.validated` | 74 | 2 |
+| `resolve_ollama_model_identity` | 21 | 1 |
+| `_compact_model_lab_report` | 23 | 4 |
+| `_compact_market_edge_validation` | 19 | 8 |
+| `_selection_risk_precheck_warnings` | 24 | 10 |
+| `run_model_lab_ai_review` | 35 | 9 |
+
+Parent/current parity completed with zero mismatches: 90 report-validation
+cases, 96 compact-evidence/selection-risk comparisons, and 20 result plus
+persisted-artifact comparisons across ten orchestration scenarios. Local
+verification passes 72 focused tests and 193 affected AI tests; changed-line
+coverage is `230/230`. Ruff, formatting, scoped Mypy, Bandit, Vulture,
+compilation, lock validation, financial terminology, badge generation, and
+whitespace checks pass.
+
+The exact source SHA passed every hosted workflow: Linux full-suite and
+changed-line coverage, Windows Python/native UI smoke, Ruff, Vulture,
+Super-Linter, and Python plus native C++ CodeQL. DeepSource run
+[`e89a24fa-6434-46ec-b6d3-93bf15ec8f1a`](https://app.deepsource.com/gh/strmt7/simple_ai_trading/run/e89a24fa-6434-46ec-b6d3-93bf15ec8f1a/python/)
+passed with no blocking issue or failing metric. The available GitHub APIs
+reported zero open Dependabot, code-scanning, and secret-scanning alerts, only
+`main`, and no open pull request. This snapshot does not prove the absence of
+undiscovered vulnerabilities.
+
+One item from the original eight-finding complexity queue remains:
+`ai_start_gate.evaluate_ai_start_gate` at Radon `24`. Address it separately
+with frozen startup status, provider-call order, persisted evidence, and
+parent/current parity. Do not combine it with model or trading changes. This
+closeout changes no model input, prediction, score, threshold, risk authority,
+P&L, order path, or profitability evidence.
 
 ## Next Work
 
