@@ -667,6 +667,14 @@ step. Treat the correction as unverified until the replacement Windows and both
 CodeQL language jobs finish successfully; then query the alert API rather than
 inferring a zero-alert result from green workflow status.
 
+The first fail-closed Windows rerun then exposed a separate DPI-audit defect:
+the validator sized a per-monitor-aware app from the auditor process's system
+DPI, which can differ on a hosted Windows Server session and force the app below
+its scaled minimum. The follow-up uses `GetDpiForWindow` on the launched app and
+includes both control and window coordinates in any containment failure. The
+native application itself passed the same audit locally at 150% DPI and
+`2250x1470`; hosted replacement evidence is still required.
+
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The 97 modified, 2 deleted,
 218 untracked, and 71 differing plus 26 locally-only path counts above are a

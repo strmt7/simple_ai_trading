@@ -347,7 +347,10 @@ authority and must be read after the first terminal run. Its first native job
 also exposed an eagerly loaded optional Torch runtime and a Windows smoke step
 that could mask failed native commands. The corrective checkpoint defers the
 optional runtime and makes native PowerShell failures terminal; replacement
-hosted results remain mandatory evidence.
+hosted results remain mandatory evidence. The first fail-closed rerun also
+found that the layout auditor could size the per-monitor-aware app using a
+different process DPI. The follow-up audits at the launched window's actual DPI
+and reports exact containment coordinates.
 
 ## Resume Here
 

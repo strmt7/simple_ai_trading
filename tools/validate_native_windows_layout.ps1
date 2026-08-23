@@ -28,7 +28,7 @@ public static class SatNativeLayoutAudit {
     [DllImport("user32.dll")] public static extern bool RedrawWindow(IntPtr hWnd, IntPtr updateRect, IntPtr updateRegion, uint flags);
     [DllImport("user32.dll")] public static extern bool UpdateWindow(IntPtr hWnd);
     [DllImport("dwmapi.dll")] public static extern int DwmFlush();
-    [DllImport("user32.dll")] public static extern uint GetDpiForSystem();
+    [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr hWnd);
     [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, StringBuilder lParam);
 }
@@ -122,8 +122,9 @@ function Assert-NoOverlap([string]$AName, $A, [string]$BName, $B) {
 }
 
 function Assert-Inside([string]$Name, $Rect, $Window) {
-    Assert-True ($Rect.Left -ge $Window.Left -and $Rect.Top -ge $Window.Top) "$Name starts outside the window"
-    Assert-True ($Rect.Right -le $Window.Right -and $Rect.Bottom -le $Window.Bottom) "$Name extends outside the window"
+    $detail = "$Name=[$($Rect.Left),$($Rect.Top),$($Rect.Right),$($Rect.Bottom)] window=[$($Window.Left),$($Window.Top),$($Window.Right),$($Window.Bottom)]"
+    Assert-True ($Rect.Left -ge $Window.Left -and $Rect.Top -ge $Window.Top) "$detail starts outside"
+    Assert-True ($Rect.Right -le $Window.Right -and $Rect.Bottom -le $Window.Bottom) "$detail extends outside"
 }
 
 function Select-Page([IntPtr]$Window, [IntPtr]$List, [int]$Index) {
@@ -186,7 +187,8 @@ try {
     $process = Start-Process -FilePath $Exe -PassThru -WindowStyle Normal
     Wait-Until { $process.Refresh(); $process.MainWindowHandle -ne [IntPtr]::Zero } "native app window handle" 10000
     $window = $process.MainWindowHandle
-    $dpi = [double][SatNativeLayoutAudit]::GetDpiForSystem()
+    $dpi = [double][SatNativeLayoutAudit]::GetDpiForWindow($window)
+    Assert-True ($dpi -gt 0) "GetDpiForWindow returned an invalid DPI"
     $targetWidth = [Math]::Max($MinWidth, [int][Math]::Ceiling(1500 * $dpi / 96))
     $targetHeight = [Math]::Max($MinHeight, [int][Math]::Ceiling(980 * $dpi / 96))
     [void][SatNativeLayoutAudit]::MoveWindow($window, 60, 60, $targetWidth, $targetHeight, $true)
