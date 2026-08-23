@@ -726,8 +726,8 @@ class MainWindow {
         MoveWindow(mode_combo_, main_left + scale(84), control_top, scale(120), scale(220), TRUE);
         MoveWindow(profile_combo_, main_left + scale(270), control_top, scale(160), scale(220), TRUE);
         MoveWindow(leverage_combo_, main_left + scale(514), control_top, scale(120), scale(220), TRUE);
-        MoveWindow(ai_toggle_, main_left + scale(670), control_top, scale(150), scale(40), TRUE);
-        MoveWindow(reinvest_toggle_, main_left + scale(850), control_top, scale(180), scale(40), TRUE);
+        MoveWindow(ai_toggle_, main_left + scale(650), control_top, scale(140), scale(40), TRUE);
+        MoveWindow(reinvest_toggle_, main_left + scale(810), control_top, scale(186), scale(40), TRUE);
 
         for (HWND control : {subtitle_, safety_, page_title_, page_summary_, command_label_, command_combo_,
                              args_label_, args_edit_, help_label_, quick_label_, tools_label_, output_label_,
