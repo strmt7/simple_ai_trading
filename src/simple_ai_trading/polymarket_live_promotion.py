@@ -88,6 +88,25 @@ def _mapping(value: object, *, name: str) -> Mapping[str, object]:
     return value
 
 
+def _boolean(value: object, *, name: str) -> bool:
+    if type(value) is not bool:
+        raise ValueError(f"{name} must be a boolean")
+    return value
+
+
+def _validate_authority(
+    paper_authority: object,
+    live_authority: object,
+    gates: Mapping[str, bool],
+) -> None:
+    if not all(type(value) is bool for value in (paper_authority, live_authority)):
+        raise ValueError("Polymarket promotion authority flags are invalid")
+    if live_authority and not paper_authority:
+        raise ValueError("live authority requires paper authority")
+    if (paper_authority or live_authority) and not all(gates.values()):
+        raise ValueError("trading authority requires every promotion gate")
+
+
 def _sha(value: object, *, name: str) -> str:
     normalized = str(value or "").strip().lower()
     if _SHA256.fullmatch(normalized) is None:
@@ -172,7 +191,13 @@ class PolymarketLivePromotion:
         )
         created = int(self.created_at_ms)
         expires = int(self.expires_at_ms)
-        if created <= 0 or expires <= created or expires - created > 31_536_000_000:
+        if not all(
+            (
+                created > 0,
+                expires > created,
+                expires - created <= 31_536_000_000,
+            )
+        ):
             raise ValueError("Polymarket promotion validity interval is invalid")
         object.__setattr__(self, "created_at_ms", created)
         object.__setattr__(self, "expires_at_ms", expires)
@@ -181,7 +206,12 @@ class PolymarketLivePromotion:
             raise ValueError("Polymarket promotion source commit is invalid")
         object.__setattr__(self, "source_commit", commit)
         bot_id = str(self.bot_id or "").strip()
-        if not 8 <= len(bot_id) <= 128 or not re.fullmatch(r"[A-Za-z0-9._:-]+", bot_id):
+        if not all(
+            (
+                8 <= len(bot_id) <= 128,
+                re.fullmatch(r"[A-Za-z0-9._:-]+", bot_id) is not None,
+            )
+        ):
             raise ValueError("Polymarket promotion bot_id is invalid")
         object.__setattr__(self, "bot_id", bot_id)
         market_variant = str(self.market_variant or "").strip().lower()
@@ -194,8 +224,11 @@ class PolymarketLivePromotion:
             polymarket_live_risk_profile(self.risk_profile).name,
         )
         gates = dict(self.gates)
-        if set(gates) != _REQUIRED_GATES or any(
-            type(value) is not bool for value in gates.values()
+        if not all(
+            (
+                set(gates) == _REQUIRED_GATES,
+                all(type(value) is bool for value in gates.values()),
+            )
         ):
             raise ValueError("Polymarket promotion gate set is invalid")
         object.__setattr__(self, "gates", dict(sorted(gates.items())))
@@ -218,15 +251,7 @@ class PolymarketLivePromotion:
             raise ValueError("Polymarket promotion remaining-time gate is invalid")
         object.__setattr__(self, "maximum_prediction_age_ms", prediction_age)
         object.__setattr__(self, "minimum_remaining_seconds", remaining)
-        if (
-            type(self.paper_authority) is not bool
-            or type(self.live_authority) is not bool
-        ):
-            raise ValueError("Polymarket promotion authority flags are invalid")
-        if self.live_authority and not self.paper_authority:
-            raise ValueError("live authority requires paper authority")
-        if (self.paper_authority or self.live_authority) and not all(gates.values()):
-            raise ValueError("trading authority requires every promotion gate")
+        _validate_authority(self.paper_authority, self.live_authority, gates)
 
     def assert_live_authority(self, *, observed_at_ms: int | None = None) -> None:
         now = (
@@ -363,15 +388,18 @@ def validate_polymarket_live_promotion(
             payload["implementation_manifest"],
             name="implementation manifest",
         ),
-        gates={str(key): value for key, value in gates.items()},
+        gates={
+            str(key): _boolean(value, name=f"promotion gate {key}")
+            for key, value in gates.items()
+        },
         minimum_expected_edge_quote_per_share=_decimal(
             policy["minimum_expected_edge_quote_per_share"],
             name="minimum expected edge",
         ),
         maximum_prediction_age_ms=int(policy["maximum_prediction_age_ms"]),
         minimum_remaining_seconds=int(policy["minimum_remaining_seconds"]),
-        paper_authority=authority["paper"],
-        live_authority=authority["live"],
+        paper_authority=_boolean(authority["paper"], name="paper authority"),
+        live_authority=_boolean(authority["live"], name="live authority"),
     )
 
 

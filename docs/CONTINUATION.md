@@ -134,7 +134,7 @@ lease, state, database, and WAL agree.
 ## Verification Scope
 
 The focused Round 75 closeout passes 20 tests. The cross-regime promotion change
-passes 61 affected tests before final publication checks. Run the smallest
+passes 62 affected tests before final publication checks. Run the smallest
 affected checks during development, then full CI once before publication. Do
 not repeat unchanged expensive suites between adjacent edits.
 
