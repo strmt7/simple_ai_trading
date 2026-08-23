@@ -157,6 +157,8 @@ def validate_round29_source_report(
     source_count = report.get("source_base_row_count")
     matched_count = report.get("matched_row_count")
     excluded_count = report.get("excluded_without_bbo_count")
+    first_decision_time_ms = report.get("first_decision_time_ms")
+    last_decision_time_ms = report.get("last_decision_time_ms")
     if (
         report.get("schema_version") != POLYMARKET_ROUND29_SOURCE_REPORT_SCHEMA_VERSION
         or type(source_count) is not int
@@ -170,9 +172,9 @@ def validate_round29_source_report(
             _sha256(report.get(field), name=field) != report.get(field)
             for field in hash_fields
         )
-        or type(report.get("first_decision_time_ms")) is not int
-        or type(report.get("last_decision_time_ms")) is not int
-        or int(report["first_decision_time_ms"]) > int(report["last_decision_time_ms"])
+        or type(first_decision_time_ms) is not int
+        or type(last_decision_time_ms) is not int
+        or int(first_decision_time_ms) > int(last_decision_time_ms)
         or report.get("diagnostic_and_primary_rows_matched") is not True
         or any(
             report.get(field) is not False

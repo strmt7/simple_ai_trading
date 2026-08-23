@@ -609,7 +609,7 @@
     {
       "bytes": 3695,
       "path": "round-029-model-economic-operator-implementation-amendment-v1.json",
-      "sha256": "1d33f840dc5210404ebe9e4d00be83225593141fd71c1f81c1f9620efacd52df"
+      "sha256": "5601c2cb0d3af8508e3ff9d496ffcd92947616494435d622ef8deb095c14e2c0"
     },
     {
       "bytes": 8267,
@@ -629,7 +629,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 29,
   "live_trading_authority": false,
-  "manifest_sha256": "4311c5660c98ebcf44a855be000c725b4f784bfe2ec7d1ce053dbb212942f105",
+  "manifest_sha256": "69bdc5b016986c16a6a26b5fd50270aaf8e3984a0bd65b7b46aedfd0daaadac2",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,

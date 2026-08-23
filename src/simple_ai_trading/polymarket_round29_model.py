@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
-from typing import Literal, Protocol
+from typing import Literal, Protocol, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -93,6 +93,27 @@ def _canonical_json(value: object) -> str:
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _persisted_float(value: object, *, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"Round 29 persisted {name} differs")
+    selected = float(value)
+    if not math.isfinite(selected):
+        raise ValueError(f"Round 29 persisted {name} differs")
+    return selected
+
+
+def _persisted_float_tuple(value: object, *, name: str) -> tuple[float, ...]:
+    if not isinstance(value, list):
+        raise ValueError(f"Round 29 persisted {name} differs")
+    return tuple(_persisted_float(item, name=name) for item in value)
+
+
+def _persisted_feature_view(value: object) -> Round29FeatureView:
+    if not isinstance(value, str) or value not in _FEATURE_VIEWS:
+        raise ValueError("Round 29 persisted feature view differs")
+    return cast(Round29FeatureView, value)
 
 
 def _feature_contract(
@@ -561,9 +582,14 @@ def round29_probability_metrics(
 
 
 class Round29ProbabilityModel(Protocol):
-    model_name: str
-    feature_view: Round29FeatureView
-    model_sha256: str
+    @property
+    def model_name(self) -> str: ...
+
+    @property
+    def feature_view(self) -> Round29FeatureView: ...
+
+    @property
+    def model_sha256(self) -> str: ...
 
     def predict(
         self,
@@ -740,16 +766,19 @@ def round29_model_from_payload(
     }
     try:
         model = Round29L2OffsetModel(
-            feature_view=str(value["feature_view"]),  # type: ignore[arg-type]
+            feature_view=_persisted_feature_view(value["feature_view"]),
             feature_names_sha256=str(value["feature_names_sha256"]),
-            mean=tuple(float(item) for item in value["mean"]),  # type: ignore[arg-type]
-            scale=tuple(float(item) for item in value["scale"]),  # type: ignore[arg-type]
-            coefficients=tuple(
-                float(item)
-                for item in value["coefficients"]  # type: ignore[arg-type]
+            mean=_persisted_float_tuple(value["mean"], name="mean"),
+            scale=_persisted_float_tuple(value["scale"], name="scale"),
+            coefficients=_persisted_float_tuple(
+                value["coefficients"],
+                name="coefficients",
             ),
-            penalty=float(value["penalty"]),
-            correction_scale=float(value["correction_scale"]),
+            penalty=_persisted_float(value["penalty"], name="penalty"),
+            correction_scale=_persisted_float(
+                value["correction_scale"],
+                name="correction scale",
+            ),
             model_sha256=str(value["model_sha256"]),
             model_name=str(value["model_name"]),
         )

@@ -105,6 +105,34 @@ def _validated_claim(
     return {**body, hash_field: claimed}
 
 
+def _required_int(
+    value: Mapping[str, object],
+    field: str,
+    *,
+    name: str,
+) -> int:
+    selected = value.get(field)
+    if type(selected) is not int:
+        raise ValueError(f"Round 29 {name} differs")
+    return selected
+
+
+def _boolean_checks(
+    value: Mapping[str, object],
+    *,
+    name: str,
+) -> dict[str, bool]:
+    raw_checks = value.get("gate_checks")
+    if not isinstance(raw_checks, Mapping) or not raw_checks:
+        raise ValueError(f"Round 29 {name} gate checks differ")
+    checks: dict[str, bool] = {}
+    for raw_name, raw_check in raw_checks.items():
+        if not isinstance(raw_name, str) or type(raw_check) is not bool:
+            raise ValueError(f"Round 29 {name} gate checks differ")
+        checks[raw_name] = raw_check
+    return checks
+
+
 def validate_round29_implementation_amendment(
     value: Mapping[str, object],
 ) -> dict[str, object]:
@@ -444,26 +472,64 @@ def validate_round29_economic_report(
     )
     if not isinstance(raw_paired, list):
         raise ValueError("Round 29 paired economic scenarios differ")
-    paired = tuple(
-        _validated_claim(
-            item,
-            hash_field="paired_scenario_sha256",
-            name="paired economic scenario",
+    paired_list: list[dict[str, object]] = []
+    for item in raw_paired:
+        if not isinstance(item, Mapping):
+            raise ValueError("Round 29 paired economic scenario differs")
+        paired_list.append(
+            _validated_claim(
+                item,
+                hash_field="paired_scenario_sha256",
+                name="paired economic scenario",
+            )
         )
-        for item in raw_paired
-        if isinstance(item, Mapping)
-    )
-    inherited = tuple(
-        _validated_claim(
-            item["inherited_round28_matched_scenario"],
-            hash_field="paired_scenario_sha256",
-            name="inherited paired economic scenario",
+    paired = tuple(paired_list)
+    inherited_list: list[dict[str, object]] = []
+    for item in paired:
+        raw_inherited = item.get("inherited_round28_matched_scenario")
+        if not isinstance(raw_inherited, Mapping):
+            raise ValueError("Round 29 inherited paired economic scenario differs")
+        inherited_list.append(
+            _validated_claim(
+                raw_inherited,
+                hash_field="paired_scenario_sha256",
+                name="inherited paired economic scenario",
+            )
         )
-        for item in paired
-        if isinstance(item.get("inherited_round28_matched_scenario"), Mapping)
-    )
+    inherited = tuple(inherited_list)
     base_scenarios = _scenario_by_delay(base)
     augmented_scenarios = _scenario_by_delay(augmented)
+    paired_delays: list[int] = []
+    for item, inherited_item in zip(paired, inherited, strict=True):
+        delay = _required_int(item, "delay_ms", name="paired economic delay")
+        inherited_delay = _required_int(
+            inherited_item,
+            "delay_ms",
+            name="inherited paired economic delay",
+        )
+        checks = _boolean_checks(
+            inherited_item,
+            name="inherited paired economic scenario",
+        )
+        if delay not in base_scenarios or delay not in augmented_scenarios:
+            raise ValueError("Round 29 paired economic delay population differs")
+        if (
+            item.get("schema_version")
+            != POLYMARKET_ROUND29_PAIRED_SCENARIO_SCHEMA_VERSION
+            or delay != inherited_delay
+            or item.get("scenario_uplift_gate_passed")
+            is not inherited_item.get("scenario_uplift_gate_passed")
+            or inherited_item.get("schema_version")
+            != POLYMARKET_ROUND28_PAIRED_SCENARIO_SCHEMA_VERSION
+            or inherited_item.get("base_scenario_sha256")
+            != base_scenarios[delay]["scenario_sha256"]
+            or inherited_item.get("augmented_scenario_sha256")
+            != augmented_scenarios[delay]["scenario_sha256"]
+            or inherited_item.get("scenario_uplift_gate_passed")
+            is not all(checks.values())
+        ):
+            raise ValueError("Round 29 matched economic report differs")
+        paired_delays.append(delay)
     if (
         report.get("schema_version") != POLYMARKET_ROUND29_ECONOMIC_SCHEMA_VERSION
         or report.get("partition_role") != "selection"
@@ -482,30 +548,7 @@ def validate_round29_economic_report(
         or report.get("resolution_evidence_sha256") != resolution_sha256
         or len(paired) != len(POLYMARKET_ROUND27_FIXED_DELAYS_MS)
         or len(inherited) != len(paired)
-        or [item.get("delay_ms") for item in paired]
-        != list(POLYMARKET_ROUND27_FIXED_DELAYS_MS)
-        or any(
-            item.get("schema_version")
-            != POLYMARKET_ROUND29_PAIRED_SCENARIO_SCHEMA_VERSION
-            or item.get("delay_ms") != inherited_item.get("delay_ms")
-            or item.get("scenario_uplift_gate_passed")
-            is not inherited_item.get("scenario_uplift_gate_passed")
-            or inherited_item.get("schema_version")
-            != POLYMARKET_ROUND28_PAIRED_SCENARIO_SCHEMA_VERSION
-            or inherited_item.get("base_scenario_sha256")
-            != base_scenarios[int(item["delay_ms"])]["scenario_sha256"]
-            or inherited_item.get("augmented_scenario_sha256")
-            != augmented_scenarios[int(item["delay_ms"])]["scenario_sha256"]
-            or not isinstance(inherited_item.get("gate_checks"), Mapping)
-            or not inherited_item["gate_checks"]
-            or any(
-                type(check) is not bool
-                for check in inherited_item["gate_checks"].values()
-            )
-            or inherited_item.get("scenario_uplift_gate_passed")
-            is not all(inherited_item["gate_checks"].values())
-            for item, inherited_item in zip(paired, inherited, strict=True)
-        )
+        or paired_delays != list(POLYMARKET_ROUND27_FIXED_DELAYS_MS)
         or report.get("economic_uplift_gate_passed")
         is not (
             augmented.get("economic_edge_gate_passed") is True
