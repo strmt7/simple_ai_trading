@@ -644,8 +644,16 @@ test keeps the exact input hash, member and trace self-hash checks, fixed epoch
 and progress structure, progress-to-trace reconciliation, finite-loss checks,
 and reference predictions within the model's unchanged `1e-5` production
 replay tolerance. No source, model, threshold, result, or authority changed.
-The focused three-test file and Ruff/format checks pass locally; the exact
-replacement revision still needs a terminal hosted Linux result.
+Exact replacement `d93de89239f5296e073ec12a2f85b7a42b31083f` passed all
+five GitHub workflows and DeepSource with zero changed-scope Python issues.
+
+The next bounded security checkpoint adds pinned CodeQL `v4.37.8` with
+`security-extended` queries for Python and a manually built native Win32 C++
+target. It runs on pushes, pull requests, manual dispatch, and weekly schedule
+with read-only repository permissions plus SARIF upload authority. A passing
+workflow does not mean zero vulnerabilities: refresh the GitHub code-scanning
+alert API after its first terminal run. Dependency and secret scanning remain
+separate authorities; DeepSource SCA is inactive.
 
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The 97 modified, 2 deleted,

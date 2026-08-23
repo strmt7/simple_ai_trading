@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_BADGES = (
     "License",
     "CI",
+    "CodeQL",
     "super-linter",
     "Ruff",
     "Vulture",
@@ -35,6 +36,7 @@ def test_readme_exposes_imported_tooling_badges_in_canonical_order() -> None:
     positions = [readme.index(f"[![{badge}](") for badge in EXPECTED_BADGES]
     assert positions == sorted(positions)
     assert "actions/workflows/super-linter.yml" in readme
+    assert "actions/workflows/codeql.yml" in readme
     assert "actions/workflows/ruff.yml" in readme
     assert "actions/workflows/vulture.yml" in readme
     assert "https://github.com/cocoindex-io/cocoindex-code" in readme

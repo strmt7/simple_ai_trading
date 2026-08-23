@@ -16,6 +16,11 @@
       "target": "https://github.com/{repo_path}/actions/workflows/ci.yml"
     },
     {
+      "alt": "CodeQL",
+      "image": "https://img.shields.io/github/actions/workflow/status/{repo_path}/codeql.yml?branch={branch}&logo=github&label=CodeQL",
+      "target": "https://github.com/{repo_path}/actions/workflows/codeql.yml"
+    },
+    {
       "alt": "super-linter",
       "image": "https://img.shields.io/github/actions/workflow/status/{repo_path}/super-linter.yml?branch={branch}&label=super-linter",
       "target": "https://github.com/{repo_path}/actions/workflows/super-linter.yml"

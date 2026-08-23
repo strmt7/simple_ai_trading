@@ -11,6 +11,7 @@ skills are intentionally not copied.
 | Tool | Pinned version | Repository entry point |
 | --- | --- | --- |
 | CocoIndex Code | `0.2.37` | `tools/cocoindex_agent_search.py` |
+| CodeQL | `v4.37.8` | `.github/workflows/codeql.yml` |
 | uv | `0.12.1` | `pyproject.toml` and `uv.lock` |
 | Ruff | `0.15.22` | `.github/workflows/ruff.yml` |
 | Vulture | `2.16` | `tools/vulture_check.py` and `.github/workflows/vulture.yml` |
@@ -23,6 +24,7 @@ A fresh 2026-07-18 upstream check found CocoIndex Code `0.2.37`, Vulture
 still its upstream `HEAD`; OMERO advanced to the exact commit above and its
 applicable ECC `2.0.0` skill changes were reviewed and adapted. Ruff and uv were
 updated only after reviewing their release notes and pinned action commits.
+CodeQL `v4.37.8` is bound to its official `2026-08-21` tag commit.
 
 CI and release jobs use `uv sync --locked`; `uv.lock` is the cross-platform,
 hash-bound dependency record. Dependabot may propose monthly `uv` and GitHub
@@ -33,6 +35,10 @@ The main CI workflow also runs `tools/audit_financial_terminology.py`. It reject
 superseded labels in authored documentation, Windows UI text, publication
 generators, and tracked evidence filenames while preserving immutable raw model
 responses and backward-compatible serialized identifiers.
+
+CodeQL runs `security-extended` queries against Python and a real manual build
+of the native Win32 C++ app. It uploads SARIF on pushes, pull requests, manual
+runs, and a weekly schedule; it does not replace dependency or secret scanning.
 
 The imported repo-local skills are `cocoindex-code-search`, `search-first`,
 `source-audit`, `ai-regression-testing`, `docs-knowledge-maintainer`, and

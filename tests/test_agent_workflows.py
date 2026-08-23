@@ -68,6 +68,7 @@ def test_agent_workflow_doc_records_exact_tool_versions() -> None:
         KARPATHY_COMMIT,
         "`2.0.0`",
         "`0.2.37`",
+        "`v4.37.8`",
         "`0.15.22`",
         "`2.16`",
         "`v8.7.0`",
@@ -121,6 +122,7 @@ def test_ci_enforces_financial_terminology_audit() -> None:
 def test_push_workflows_cancel_superseded_runs_on_the_same_ref() -> None:
     for relative in (
         ".github/workflows/ci.yml",
+        ".github/workflows/codeql.yml",
         ".github/workflows/ruff.yml",
         ".github/workflows/super-linter.yml",
         ".github/workflows/vulture.yml",
@@ -193,6 +195,31 @@ def test_super_linter_workflow_is_digest_pinned_and_scoped() -> None:
     ):
         assert gate in text
     assert "third_party" not in text
+
+
+def test_codeql_scans_python_and_native_windows_with_least_privilege() -> None:
+    text = _read(".github/workflows/codeql.yml")
+    action = "github/codeql-action/{}@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28"
+
+    assert "schedule:" in text
+    assert "workflow_dispatch:" in text
+    assert "security-events: write" in text
+    assert "contents: write" not in text
+    assert "pull-requests: write" not in text
+    assert "- language: python\n            build-mode: none" in text
+    assert "- language: c-cpp\n            build-mode: manual" in text
+    assert "os: ubuntu-24.04" in text
+    assert "os: windows-2025" in text
+    assert "fail-fast: false" in text
+    assert "queries: security-extended" in text
+    assert action.format("init") in text
+    assert action.format("analyze") in text
+    assert "astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990" in text
+    assert "version: '0.12.1'" in text
+    assert "uv sync --locked --group test" in text
+    assert "pip install" not in text
+    assert "tools\\build_native_windows.ps1" in text
+    assert "persist-credentials: false" in text
 
 
 def test_all_remote_github_actions_are_commit_pinned() -> None:
