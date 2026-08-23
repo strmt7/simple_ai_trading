@@ -150,6 +150,8 @@ Key invariants:
 - API usage at or above 80% of a known limit blocks a new automatic session.
 - Backtests include source-specific spread, liquidity, latency, fees, impact,
   and adverse execution assumptions; missing evidence lowers authority.
+- Polymarket promotion requires model-bound after-cost evidence across bullish,
+  bearish, sideways, choppy, volatility, liquidity, and execution-stress slices.
 - No future label, book, fill, resolution, or PnL may enter live inference.
 
 Full contracts: [live simulation](docs/LIVE_MARKET_SIMULATION.md),

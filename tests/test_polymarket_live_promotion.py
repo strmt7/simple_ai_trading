@@ -6,7 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from polymarket_live_support import write_polymarket_live_implementation_manifest
+from polymarket_live_support import (
+    POLYMARKET_LIVE_PROMOTION_GATES,
+    build_polymarket_live_promotion_fixture,
+)
 from simple_ai_trading.polymarket_live import PolymarketLiveBlocked
 from simple_ai_trading.polymarket_live_promotion import (
     PolymarketLivePromotion,
@@ -18,19 +21,6 @@ from simple_ai_trading.polymarket_live_promotion import (
 
 
 NOW_MS = 1_800_000_000_000
-GATES = {
-    "prospective_untouched_test": True,
-    "source_integrity": True,
-    "causal_feature_replay": True,
-    "proper_scoring_uplift": True,
-    "after_cost_edge": True,
-    "uncertainty_lower_bound": True,
-    "drawdown_limit": True,
-    "latency_stress": True,
-    "displayed_depth_stress": True,
-    "authenticated_order_lifecycle": True,
-    "settlement_and_redemption": True,
-}
 
 
 def _canonical(value: object) -> str:
@@ -57,50 +47,12 @@ def _payload(
     live: bool = True,
     market_variant: str = "fiveminute",
 ) -> dict[str, object]:
-    files = {
-        "model.json": b'{"model":"frozen"}\n',
-        "evaluation.json": b'{"evaluation":"passed"}\n',
-    }
-    for name, content in files.items():
-        root.joinpath(name).write_bytes(content)
-    manifest_path = root / "implementation.json"
-    write_polymarket_live_implementation_manifest(
-        manifest_path,
-        source_commit="b" * 40,
+    return build_polymarket_live_promotion_fixture(
+        root,
+        now_ms=NOW_MS,
+        live=live,
+        market_variant=market_variant,
     )
-    body: dict[str, object] = {
-        "schema_version": "polymarket-live-promotion-v1",
-        "promotion_id": "a" * 64,
-        "created_at_ms": NOW_MS - 1_000,
-        "expires_at_ms": NOW_MS + 86_400_000,
-        "source_commit": "b" * 40,
-        "venue": "polymarket",
-        "protocol_version": 2,
-        "asset": "BTC",
-        "market_variant": market_variant,
-        "environment": "live",
-        "bot_id": "simple-ai-trading-polymarket-btc",
-        "model_artifact": {
-            "path": "model.json",
-            "sha256": _file_sha(root / "model.json"),
-        },
-        "evaluation_report": {
-            "path": "evaluation.json",
-            "sha256": _file_sha(root / "evaluation.json"),
-        },
-        "implementation_manifest": {
-            "path": manifest_path.name,
-            "sha256": _file_sha(manifest_path),
-        },
-        "gates": dict(GATES),
-        "policy": {
-            "minimum_expected_edge_quote_per_share": "0.02",
-            "maximum_prediction_age_ms": 1_000,
-            "minimum_remaining_seconds": 30,
-        },
-        "authority": {"paper": True, "live": live},
-    }
-    return {**body, "promotion_sha256": _sha(body)}
 
 
 def test_live_promotion_is_hash_and_evidence_bound(tmp_path: Path) -> None:
@@ -120,6 +72,8 @@ def test_live_promotion_is_hash_and_evidence_bound(tmp_path: Path) -> None:
     assert promotion.model_artifact.sha256 == _file_sha(tmp_path / "model.json")
     assert all(promotion.gates.values())
     assert verified.model_artifact_path == (tmp_path / "model.json").resolve()
+    assert verified.cross_regime_evaluation.aggregate.passed is True
+    assert verified.cross_regime_evaluation.risk_profile == "conservative"
 
 
 def test_unverified_promotion_cannot_construct_verified_capability() -> None:
@@ -132,10 +86,11 @@ def test_unverified_promotion_cannot_construct_verified_capability() -> None:
         source_commit="b" * 40,
         bot_id="simple-ai-trading-polymarket-btc",
         market_variant="fiveminute",
+        risk_profile="conservative",
         model_artifact=evidence,
         evaluation_report=evidence,
         implementation_manifest=evidence,
-        gates=GATES,
+        gates=POLYMARKET_LIVE_PROMOTION_GATES,
         minimum_expected_edge_quote_per_share="0.02",
         maximum_prediction_age_ms=1_000,
         minimum_remaining_seconds=30,
@@ -150,6 +105,7 @@ def test_unverified_promotion_cannot_construct_verified_capability() -> None:
             evaluation_report_path=Path("model.json"),
             implementation_manifest_path=Path("model.json"),
             implementation=object(),  # type: ignore[arg-type]
+            cross_regime_evaluation=object(),  # type: ignore[arg-type]
             _capability=object(),
         )
 
@@ -250,6 +206,28 @@ def test_live_promotion_rejects_duplicate_json_keys(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="duplicate keys"):
         load_polymarket_live_promotion(path, evidence_root=tmp_path)
+
+
+def test_live_promotion_rejects_hash_valid_dummy_evaluation(tmp_path: Path) -> None:
+    payload = _payload(tmp_path)
+    evaluation_path = tmp_path / "evaluation.json"
+    evaluation_path.write_text('{"evaluation":"passed"}', encoding="ascii")
+    payload["evaluation_report"] = {
+        "path": evaluation_path.name,
+        "sha256": _file_sha(evaluation_path),
+    }
+    body = dict(payload)
+    body.pop("promotion_sha256")
+    body["promotion_sha256"] = _sha(body)
+    promotion_path = tmp_path / "promotion.json"
+    promotion_path.write_text(_canonical(body), encoding="ascii")
+
+    with pytest.raises(ValueError, match="evaluation schema is invalid"):
+        load_polymarket_live_promotion(
+            promotion_path,
+            evidence_root=tmp_path,
+            observed_at_ms=NOW_MS,
+        )
 
 
 def test_live_promotion_accepts_only_five_or_fifteen_minute_scope(

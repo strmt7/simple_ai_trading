@@ -4,6 +4,10 @@ import hashlib
 import json
 from pathlib import Path
 
+from simple_ai_trading.polymarket_cross_regime_evaluation import (
+    CROSS_REGIME_EDGE_ACCEPTANCE_CONTRACT_SHA256,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "docs/model-research/cross-regime-edge-acceptance-contract-v1.json"
@@ -26,6 +30,7 @@ def test_cross_regime_edge_contract_fails_closed_without_promising_no_loss() -> 
     claimed = contract.pop("contract_sha256")
 
     assert claimed == _canonical_sha256(contract)
+    assert claimed == CROSS_REGIME_EDGE_ACCEPTANCE_CONTRACT_SHA256
     assert contract["schema_version"] == "cross-regime-edge-acceptance-contract-v1"
     assert contract["claim_boundary"] == {
         "cannot_lose_claim_permitted": False,

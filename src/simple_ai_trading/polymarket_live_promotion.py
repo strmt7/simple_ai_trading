@@ -11,17 +11,20 @@ import re
 import time
 from typing import Mapping
 
+from .polymarket_cross_regime_evaluation import (
+    PolymarketCrossRegimeEvaluation,
+    load_polymarket_cross_regime_evaluation,
+)
 from .polymarket_live import PolymarketLiveBlocked
 from .polymarket_live_manifest import (
     VerifiedPolymarketLiveImplementationManifest,
     load_polymarket_live_implementation_manifest,
 )
+from .polymarket_live_risk import polymarket_live_risk_profile
 
 
-POLYMARKET_LIVE_PROMOTION_SCHEMA_VERSION = "polymarket-live-promotion-v1"
-POLYMARKET_LIVE_MARKET_VARIANTS = frozenset(
-    {"fiveminute", "fifteenminute"}
-)
+POLYMARKET_LIVE_PROMOTION_SCHEMA_VERSION = "polymarket-live-promotion-v2"
+POLYMARKET_LIVE_MARKET_VARIANTS = frozenset({"fiveminute", "fifteenminute"})
 _MAX_PROMOTION_BYTES = 128 * 1024
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _GIT_COMMIT = re.compile(r"^[0-9a-f]{40}$")
@@ -39,6 +42,7 @@ _REQUIRED_GATES = frozenset(
         "displayed_depth_stress",
         "authenticated_order_lifecycle",
         "settlement_and_redemption",
+        "cross_regime_after_cost",
     }
 )
 
@@ -144,6 +148,7 @@ class PolymarketLivePromotion:
     source_commit: str
     bot_id: str
     market_variant: str
+    risk_profile: str
     model_artifact: PolymarketPromotionEvidence
     evaluation_report: PolymarketPromotionEvidence
     implementation_manifest: PolymarketPromotionEvidence
@@ -183,6 +188,11 @@ class PolymarketLivePromotion:
         if market_variant not in POLYMARKET_LIVE_MARKET_VARIANTS:
             raise ValueError("Polymarket promotion market variant is invalid")
         object.__setattr__(self, "market_variant", market_variant)
+        object.__setattr__(
+            self,
+            "risk_profile",
+            polymarket_live_risk_profile(self.risk_profile).name,
+        )
         gates = dict(self.gates)
         if set(gates) != _REQUIRED_GATES or any(
             type(value) is not bool for value in gates.values()
@@ -208,15 +218,20 @@ class PolymarketLivePromotion:
             raise ValueError("Polymarket promotion remaining-time gate is invalid")
         object.__setattr__(self, "maximum_prediction_age_ms", prediction_age)
         object.__setattr__(self, "minimum_remaining_seconds", remaining)
-        if type(self.paper_authority) is not bool or type(self.live_authority) is not bool:
+        if (
+            type(self.paper_authority) is not bool
+            or type(self.live_authority) is not bool
+        ):
             raise ValueError("Polymarket promotion authority flags are invalid")
         if self.live_authority and not self.paper_authority:
             raise ValueError("live authority requires paper authority")
-        if self.live_authority and not all(gates.values()):
-            raise ValueError("live authority requires every promotion gate")
+        if (self.paper_authority or self.live_authority) and not all(gates.values()):
+            raise ValueError("trading authority requires every promotion gate")
 
     def assert_live_authority(self, *, observed_at_ms: int | None = None) -> None:
-        now = int(time.time() * 1_000) if observed_at_ms is None else int(observed_at_ms)
+        now = (
+            int(time.time() * 1_000) if observed_at_ms is None else int(observed_at_ms)
+        )
         if now < self.created_at_ms:
             raise PolymarketLiveBlocked("Polymarket promotion is not yet valid")
         if now >= self.expires_at_ms:
@@ -225,9 +240,7 @@ class PolymarketLivePromotion:
             raise PolymarketLiveBlocked("Polymarket promotion has no live authority")
         failed = tuple(name for name, passed in self.gates.items() if not passed)
         if failed:
-            raise PolymarketLiveBlocked(
-                f"Polymarket promotion gates failed: {failed}"
-            )
+            raise PolymarketLiveBlocked(f"Polymarket promotion gates failed: {failed}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,6 +252,7 @@ class VerifiedPolymarketLivePromotion:
     evaluation_report_path: Path
     implementation_manifest_path: Path
     implementation: VerifiedPolymarketLiveImplementationManifest
+    cross_regime_evaluation: PolymarketCrossRegimeEvaluation
     _capability: object
 
     def __post_init__(self) -> None:
@@ -249,6 +263,21 @@ class VerifiedPolymarketLivePromotion:
             VerifiedPolymarketLiveImplementationManifest,
         ):
             raise ValueError("Polymarket implementation evidence was not verified")
+        if not isinstance(
+            self.cross_regime_evaluation,
+            PolymarketCrossRegimeEvaluation,
+        ):
+            raise ValueError("Polymarket cross-regime evidence was not verified")
+        if (
+            self.cross_regime_evaluation.model_artifact_sha256
+            != self.promotion.model_artifact.sha256
+            or self.cross_regime_evaluation.source_commit
+            != self.promotion.source_commit
+            or self.cross_regime_evaluation.market_variant
+            != self.promotion.market_variant
+            or self.cross_regime_evaluation.risk_profile != self.promotion.risk_profile
+        ):
+            raise ValueError("Polymarket cross-regime evidence binding differs")
 
     def assert_live_authority(self, *, observed_at_ms: int | None = None) -> None:
         self.promotion.assert_live_authority(observed_at_ms=observed_at_ms)
@@ -279,6 +308,7 @@ def validate_polymarket_live_promotion(
         "protocol_version",
         "asset",
         "market_variant",
+        "risk_profile",
         "environment",
         "bot_id",
         "model_artifact",
@@ -323,6 +353,7 @@ def validate_polymarket_live_promotion(
         source_commit=str(payload["source_commit"]),
         bot_id=str(payload["bot_id"]),
         market_variant=str(payload["market_variant"]),
+        risk_profile=str(payload["risk_profile"]),
         model_artifact=_evidence(payload["model_artifact"], name="model artifact"),
         evaluation_report=_evidence(
             payload["evaluation_report"],
@@ -355,9 +386,7 @@ def _resolve_evidence(root: Path, evidence: PolymarketPromotionEvidence) -> Path
     if not resolved.is_file():
         raise ValueError("Polymarket promotion evidence is not a file")
     if _sha256_file(resolved) != evidence.sha256:
-        raise ValueError(
-            f"Polymarket promotion evidence hash differs: {evidence.path}"
-        )
+        raise ValueError(f"Polymarket promotion evidence hash differs: {evidence.path}")
     return resolved
 
 
@@ -403,6 +432,16 @@ def load_polymarket_live_promotion(
         expected_file_sha256=promotion.implementation_manifest.sha256,
         expected_source_commit=promotion.source_commit,
     )
+    cross_regime_evaluation = load_polymarket_cross_regime_evaluation(
+        evaluation_report_path,
+        expected_file_sha256=promotion.evaluation_report.sha256,
+        expected_model_artifact_sha256=promotion.model_artifact.sha256,
+        expected_source_commit=promotion.source_commit,
+        expected_market_variant=promotion.market_variant,
+        expected_risk_profile=promotion.risk_profile,
+    )
+    if cross_regime_evaluation.created_at_ms > promotion.created_at_ms:
+        raise ValueError("Polymarket evaluation was created after its promotion")
     if require_live_authority:
         promotion.assert_live_authority(observed_at_ms=observed_at_ms)
     return VerifiedPolymarketLivePromotion(
@@ -411,6 +450,7 @@ def load_polymarket_live_promotion(
         evaluation_report_path=evaluation_report_path,
         implementation_manifest_path=implementation_manifest_path,
         implementation=implementation,
+        cross_regime_evaluation=cross_regime_evaluation,
         _capability=_VERIFIED_PROMOTION_CAPABILITY,
     )
 
