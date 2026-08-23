@@ -1,5 +1,5 @@
 {
-  "amendment_sha256": "2eddb9cbe180f495b39a07c93d95b171790b865e08f7e478f329d541c3590032",
+  "amendment_sha256": "fdc82836575a28f84b07973cd7d7817387310b4759562dd0aac89630c78c909b",
   "authority": {
     "credentials_used": false,
     "edge_claim": false,
@@ -54,7 +54,7 @@
     "tests/test_polymarket_round29_operator.py": "283d0a7c0a4421b3fdf1fad652bdb197d86434775ca849b12af2f694f0d86eb3",
     "tests/test_polymarket_round29_selection.py": "058adf59e66ef99620b32f511d9d4096a7f94f867bc25932586e824b6935b5cb",
     "tests/test_polymarket_round29_source.py": "b7048d0cfdaf7afcea8b565d4b59fe15c6176fc47e572e04ab7dbd6a245c8269",
-    "tests/test_cross_regime_edge_acceptance_contract.py": "10ddef19381148e4005f36911a302563052a95bdd264cbcfe46e237035ad5ab0",
+    "tests/test_cross_regime_edge_acceptance_contract.py": "7264b2f75b70394b39b5f74659bcb5a4140ce320639fb98e68768f3444a664a0",
     "tests/test_run_polymarket_round29_selection.py": "26e8f4c796edc15b94cf7dec50e3b9ef380b2a6d810243e2d0077af6234ffdca",
     "tools/run_polymarket_round29_selection.py": "4ee6f82b59ee3175f2a4a11cc35f9141ed99c36fdafebc120c56e3578404d496"
   },
