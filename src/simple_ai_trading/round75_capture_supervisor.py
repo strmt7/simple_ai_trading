@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 from dataclasses import dataclass
+from importlib import import_module
 import json
 import os
 from pathlib import Path
@@ -13,18 +14,81 @@ import signal
 # Fixed argv is used after package startup removes unsafe executable search entries.
 import subprocess  # nosec B404
 import time
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Mapping, Protocol, Sequence, cast
 
-from .impact_absorption_event_segmented_cohort import (
-    ROUND74_SEGMENTED_COHORT_SLOT_PERIOD_NS,
-    load_round74_segmented_cohort_plan,
+
+class _Round74SegmentedCohortPlan(Protocol):
+    scheduled_start_wall_ns: int
+    total_slots: int
+    plan_sha256: str
+
+
+class _Round75ContinuousCaptureConfig(Protocol):
+    repository: Path
+    contract_path: Path
+    plan_path: Path
+    prerequisite_path: Path
+    data_root: Path
+    state_root: Path
+    service_state_path: Path
+    lease_path: Path
+    stop_request_path: Path
+
+    def validate(self) -> None: ...
+
+
+def _runtime_symbol(module_name: str, symbol_name: str) -> object:
+    module = import_module(module_name, package=__package__)
+    try:
+        return getattr(module, symbol_name)
+    except AttributeError as exc:
+        raise ImportError(f"{module_name} does not provide {symbol_name}") from exc
+
+
+def _runtime_int(module_name: str, symbol_name: str) -> int:
+    value = _runtime_symbol(module_name, symbol_name)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ImportError(f"{module_name}.{symbol_name} is not an integer")
+    return value
+
+
+def _runtime_str(module_name: str, symbol_name: str) -> str:
+    value = _runtime_symbol(module_name, symbol_name)
+    if not isinstance(value, str) or not value:
+        raise ImportError(f"{module_name}.{symbol_name} is not a non-empty string")
+    return value
+
+
+# Keep this terminal supervisor's type surface independent from the frozen
+# campaign implementation while validating every runtime symbol it consumes.
+_SEGMENTED_COHORT_MODULE = ".impact_absorption_event_segmented_cohort"
+_CONTINUOUS_CAPTURE_MODULE = ".round75_continuous_capture"
+ROUND74_SEGMENTED_COHORT_SLOT_PERIOD_NS = _runtime_int(
+    _SEGMENTED_COHORT_MODULE,
+    "ROUND74_SEGMENTED_COHORT_SLOT_PERIOD_NS",
 )
-from .round75_continuous_capture import (
-    ROUND75_CONTINUOUS_CAPTURE_STATE_SCHEMA_VERSION,
-    ROUND75_SHARD_PREFIX,
-    Round75ContinuousCaptureConfig,
-    _canonical_sha256,
-    load_round75_continuous_capture_contract,
+ROUND75_CONTINUOUS_CAPTURE_STATE_SCHEMA_VERSION = _runtime_str(
+    _CONTINUOUS_CAPTURE_MODULE,
+    "ROUND75_CONTINUOUS_CAPTURE_STATE_SCHEMA_VERSION",
+)
+ROUND75_SHARD_PREFIX = _runtime_str(
+    _CONTINUOUS_CAPTURE_MODULE,
+    "ROUND75_SHARD_PREFIX",
+)
+load_round74_segmented_cohort_plan = cast(
+    Callable[[str], _Round74SegmentedCohortPlan],
+    _runtime_symbol(_SEGMENTED_COHORT_MODULE, "load_round74_segmented_cohort_plan"),
+)
+load_round75_continuous_capture_contract = cast(
+    Callable[[Path], tuple[dict[str, object], str]],
+    _runtime_symbol(
+        _CONTINUOUS_CAPTURE_MODULE,
+        "load_round75_continuous_capture_contract",
+    ),
+)
+_canonical_sha256 = cast(
+    Callable[[object], str],
+    _runtime_symbol(_CONTINUOUS_CAPTURE_MODULE, "_canonical_sha256"),
 )
 
 
@@ -66,7 +130,7 @@ class Round75ProcessRecord:
 
 @dataclass(frozen=True)
 class Round75CaptureSupervisorConfig:
-    capture: Round75ContinuousCaptureConfig
+    capture: _Round75ContinuousCaptureConfig
     python_executable: Path
     service_tool_path: Path
     capture_tool_path: Path
@@ -673,7 +737,7 @@ def supervise_round75_capture(
             "stale_owned_service",
         }:
             action = "repair_cancelled_state_changed"
-            result = {
+            cancelled_result = {
                 "schema_version": ROUND75_CAPTURE_SUPERVISOR_SCHEMA_VERSION,
                 "inspection_sha256": inspection["inspection_sha256"],
                 "reinspection_sha256": reinspection["inspection_sha256"],
@@ -686,12 +750,16 @@ def supervise_round75_capture(
                 "orders_submitted": False,
                 "trading_authority": False,
             }
-            result["result_sha256"] = _canonical_sha256(result)
-            return result
-        expected = [
-            int(value)
-            for value in reinspection["repairable_process_ids_in_child_first_order"]
-        ]
+            cancelled_result["result_sha256"] = _canonical_sha256(cancelled_result)
+            return cancelled_result
+        repairable = reinspection["repairable_process_ids_in_child_first_order"]
+        if not isinstance(repairable, list):
+            raise RuntimeError("Round 75 repair process inventory differs")
+        expected: list[int] = []
+        for value in repairable:
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise RuntimeError("Round 75 repair process identity differs")
+            expected.append(value)
         for process_id in expected:
             refreshed = tuple(refresh_inventory())
             current = next(
