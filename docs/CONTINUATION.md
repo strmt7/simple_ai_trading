@@ -635,6 +635,18 @@ No model score, label, fill, cost, threshold, model outcome, trading authority,
 or profitability claim changed. Verify every available hosted check on the
 final pushed SHA; pending and unavailable checks are not passes.
 
+Exact checkpoint `ec04b2f6a110c07212f4a709a5c10f61c7c4a84b` passed
+DeepSource, Ruff, Vulture, Super-Linter, and the Windows job. Its Linux suite
+finished with one failure: `test_fit_member_preserves_exact_training_contract`
+required the Windows floating-point training SHA-256 on Linux. PyTorch does not
+promise bit-identical floating-point results across platforms. The replacement
+test keeps the exact input hash, member and trace self-hash checks, fixed epoch
+and progress structure, progress-to-trace reconciliation, finite-loss checks,
+and reference predictions within the model's unchanged `1e-5` production
+replay tolerance. No source, model, threshold, result, or authority changed.
+The focused three-test file and Ruff/format checks pass locally; the exact
+replacement revision still needs a terminal hosted Linux result.
+
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The 97 modified, 2 deleted,
 218 untracked, and 71 differing plus 26 locally-only path counts above are a

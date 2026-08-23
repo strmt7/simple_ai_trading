@@ -331,6 +331,14 @@ failure. Round 27's cumulative v19 amendment records the current `compute.py`
 and `polymarket_recorder.py` evidence-integrity changes without rewriting v7,
 v17, or v18.
 
+Exact recorder checkpoint `ec04b2f6` passed DeepSource, Ruff, Vulture,
+Super-Linter, and the Windows job. Linux completed the full suite but failed
+one test that required a Windows MLP training SHA-256 on Linux. The bounded
+replacement keeps exact input and evidence self-hashes, epoch/progress-to-trace
+reconciliation, and the production `1e-5` replay tolerance; model fitting and
+all financial behavior are unchanged. The replacement SHA still requires an
+exact hosted Linux result.
+
 ## Resume Here
 
 A new development session must start with
