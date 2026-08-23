@@ -16,7 +16,7 @@ from pathlib import Path
 import re
 import sqlite3
 import time
-from typing import ContextManager, Mapping, Protocol, Sequence
+from typing import ContextManager, Mapping, Protocol, Sequence, cast
 
 
 POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION = "polymarket-live-ledger-v3"
@@ -174,6 +174,53 @@ def polymarket_live_metadata(bot_id: str, intent_id: str) -> str:
         "intent_id": _identifier(intent_id, name="intent_id"),
     }
     return "0x" + _canonical_sha256(payload)
+
+
+def _validated_fill_fee_accounting(
+    *,
+    fee_rate: Decimal | None,
+    fee_exponent: int | None,
+    fee_quote: Decimal | None,
+    fee_schedule_sha256: str,
+    quantity: Decimal,
+    role: str,
+) -> tuple[Decimal | None, int | None, Decimal | None, str]:
+    provided = (
+        fee_rate is not None,
+        fee_exponent is not None,
+        fee_quote is not None,
+        bool(fee_schedule_sha256),
+    )
+    if any(provided) and not all(provided):
+        raise ValueError("fill fee accounting evidence is incomplete")
+    if not all(provided):
+        return None, None, None, ""
+    parsed_rate = _decimal(fee_rate, name="fill fee rate", nonnegative=True)
+    parsed_exponent = _required_integer(fee_exponent, name="fill fee exponent")
+    parsed_quote = _decimal(fee_quote, name="fill fee quote", nonnegative=True)
+    if not all(
+        (
+            parsed_rate <= 1,
+            parsed_exponent > 0,
+            parsed_quote <= quantity,
+            re.fullmatch(r"[0-9a-f]{64}", fee_schedule_sha256) is not None,
+        )
+    ):
+        raise ValueError("fill fee accounting evidence is invalid")
+    if role == "MAKER" and parsed_quote:
+        raise ValueError("maker fills cannot carry a Polymarket fee")
+    if parsed_rate == 0 and parsed_quote:
+        raise ValueError("zero-rate fill cannot carry a Polymarket fee")
+    return parsed_rate, parsed_exponent, parsed_quote, fee_schedule_sha256
+
+
+def _validated_fill_transaction_hash(value: object, *, status: str) -> str:
+    transaction_hash = str(value or "").strip().lower()
+    if transaction_hash and _BYTES32.fullmatch(transaction_hash) is None:
+        raise ValueError("fill transaction hash is invalid")
+    if status in {"MINED", "CONFIRMED"} and not transaction_hash:
+        raise ValueError("mined or confirmed fill requires a transaction hash")
+    return transaction_hash
 
 
 @dataclass(frozen=True, slots=True)
@@ -436,58 +483,24 @@ class PolymarketRemoteFill:
             reported_fee_rate_bps,
         )
         fee_schedule_sha256 = str(self.fee_schedule_sha256 or "").strip().lower()
-        accounting_values = (
-            self.fee_rate is not None,
-            self.fee_exponent is not None,
-            self.fee_quote is not None,
-            bool(fee_schedule_sha256),
+        fee_rate, fee_exponent, fee_quote, fee_schedule_sha256 = (
+            _validated_fill_fee_accounting(
+                fee_rate=self.fee_rate,
+                fee_exponent=self.fee_exponent,
+                fee_quote=self.fee_quote,
+                fee_schedule_sha256=fee_schedule_sha256,
+                quantity=self.quantity,
+                role=role,
+            )
         )
-        if any(accounting_values) and not all(accounting_values):
-            raise ValueError("fill fee accounting evidence is incomplete")
-        if all(accounting_values):
-            fee_rate = _decimal(
-                self.fee_rate,
-                name="fill fee rate",
-                nonnegative=True,
-            )
-            fee_exponent = _required_integer(
-                self.fee_exponent,
-                name="fill fee exponent",
-            )
-            fee_quote = _decimal(
-                self.fee_quote,
-                name="fill fee quote",
-                nonnegative=True,
-            )
-            if (
-                fee_rate > 1
-                or fee_exponent <= 0
-                or fee_quote > self.quantity
-                or re.fullmatch(r"[0-9a-f]{64}", fee_schedule_sha256) is None
-            ):
-                raise ValueError("fill fee accounting evidence is invalid")
-            if role == "MAKER" and fee_quote:
-                raise ValueError("maker fills cannot carry a Polymarket fee")
-            if fee_rate == 0 and fee_quote:
-                raise ValueError("zero-rate fill cannot carry a Polymarket fee")
-            object.__setattr__(self, "fee_rate", fee_rate)
-            object.__setattr__(self, "fee_exponent", fee_exponent)
-            object.__setattr__(self, "fee_quote", fee_quote)
-            object.__setattr__(
-                self,
-                "fee_schedule_sha256",
-                fee_schedule_sha256,
-            )
-        else:
-            object.__setattr__(self, "fee_rate", None)
-            object.__setattr__(self, "fee_exponent", None)
-            object.__setattr__(self, "fee_quote", None)
-            object.__setattr__(self, "fee_schedule_sha256", "")
-        transaction_hash = str(self.transaction_hash or "").strip().lower()
-        if transaction_hash and _BYTES32.fullmatch(transaction_hash) is None:
-            raise ValueError("fill transaction hash is invalid")
-        if status in {"MINED", "CONFIRMED"} and not transaction_hash:
-            raise ValueError("mined or confirmed fill requires a transaction hash")
+        object.__setattr__(self, "fee_rate", fee_rate)
+        object.__setattr__(self, "fee_exponent", fee_exponent)
+        object.__setattr__(self, "fee_quote", fee_quote)
+        object.__setattr__(self, "fee_schedule_sha256", fee_schedule_sha256)
+        transaction_hash = _validated_fill_transaction_hash(
+            self.transaction_hash,
+            status=status,
+        )
         object.__setattr__(self, "transaction_hash", transaction_hash)
 
     @property
@@ -1538,9 +1551,7 @@ class PolymarketLiveOrderLedger:
             raise
 
     @staticmethod
-    def _order_row_payload(
-        row: Mapping[str, object] | sqlite3.Row,
-    ) -> dict[str, object]:
+    def _order_row_payload(row: Mapping[str, object]) -> dict[str, object]:
         return {
             "intent_id": str(row["intent_id"]),
             "bot_id": str(row["bot_id"]),
@@ -1572,7 +1583,8 @@ class PolymarketLiveOrderLedger:
         cls,
         row: Mapping[str, object] | sqlite3.Row,
     ) -> None:
-        if str(row["record_sha256"]) != _canonical_sha256(cls._order_row_payload(row)):
+        payload = cls._order_row_payload(cast(Mapping[str, object], row))
+        if str(row["record_sha256"]) != _canonical_sha256(payload):
             raise PolymarketLiveError("live order snapshot hash differs")
 
     @classmethod
@@ -1688,9 +1700,7 @@ class PolymarketLiveOrderLedger:
             ) from exc
 
     @staticmethod
-    def _redemption_row_payload(
-        row: Mapping[str, object] | sqlite3.Row,
-    ) -> dict[str, object]:
+    def _redemption_row_payload(row: Mapping[str, object]) -> dict[str, object]:
         return {
             "redemption_id": str(row["redemption_id"]),
             "condition_id": str(row["condition_id"]),
@@ -1713,9 +1723,8 @@ class PolymarketLiveOrderLedger:
         cls,
         row: Mapping[str, object] | sqlite3.Row,
     ) -> None:
-        if str(row["record_sha256"]) != _canonical_sha256(
-            cls._redemption_row_payload(row)
-        ):
+        payload = cls._redemption_row_payload(cast(Mapping[str, object], row))
+        if str(row["record_sha256"]) != _canonical_sha256(payload):
             raise PolymarketLiveError("live redemption snapshot hash differs")
 
     @classmethod
