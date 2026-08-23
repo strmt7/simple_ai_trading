@@ -336,8 +336,14 @@ Super-Linter, and the Windows job. Linux completed the full suite but failed
 one test that required a Windows MLP training SHA-256 on Linux. The bounded
 replacement keeps exact input and evidence self-hashes, epoch/progress-to-trace
 reconciliation, and the production `1e-5` replay tolerance; model fitting and
-all financial behavior are unchanged. The replacement SHA still requires an
-exact hosted Linux result.
+all financial behavior are unchanged. Exact replacement `d93de892` passed all
+five GitHub workflows and DeepSource with zero changed-scope Python issues.
+
+The next security checkpoint enables pinned CodeQL `v4.37.8` with
+`security-extended` queries for Python and a manual native Win32 C++ build.
+The workflow has no model or trading authority. A green workflow proves scan
+completion only; the GitHub code-scanning alert API remains the finding
+authority and must be read after the first terminal run.
 
 ## Resume Here
 

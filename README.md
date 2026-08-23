@@ -3,6 +3,7 @@
 <!-- BEGIN GENERATED BADGES -->
 [![License](https://img.shields.io/github/license/strmt7/simple_ai_trading)](https://github.com/strmt7/simple_ai_trading/blob/main/LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/strmt7/simple_ai_trading/ci.yml?branch=main&label=CI)](https://github.com/strmt7/simple_ai_trading/actions/workflows/ci.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/strmt7/simple_ai_trading/codeql.yml?branch=main&logo=github&label=CodeQL)](https://github.com/strmt7/simple_ai_trading/actions/workflows/codeql.yml)
 [![super-linter](https://img.shields.io/github/actions/workflow/status/strmt7/simple_ai_trading/super-linter.yml?branch=main&label=super-linter)](https://github.com/strmt7/simple_ai_trading/actions/workflows/super-linter.yml)
 [![Ruff](https://img.shields.io/github/actions/workflow/status/strmt7/simple_ai_trading/ruff.yml?branch=main&logo=python&label=Ruff)](https://github.com/strmt7/simple_ai_trading/actions/workflows/ruff.yml)
 [![Vulture](https://img.shields.io/github/actions/workflow/status/strmt7/simple_ai_trading/vulture.yml?branch=main&logo=python&label=Vulture)](https://github.com/strmt7/simple_ai_trading/actions/workflows/vulture.yml)
