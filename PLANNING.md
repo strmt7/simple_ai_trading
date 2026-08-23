@@ -343,7 +343,11 @@ The next security checkpoint enables pinned CodeQL `v4.37.8` with
 `security-extended` queries for Python and a manual native Win32 C++ build.
 The workflow has no model or trading authority. A green workflow proves scan
 completion only; the GitHub code-scanning alert API remains the finding
-authority and must be read after the first terminal run.
+authority and must be read after the first terminal run. Its first native job
+also exposed an eagerly loaded optional Torch runtime and a Windows smoke step
+that could mask failed native commands. The corrective checkpoint defers the
+optional runtime and makes native PowerShell failures terminal; replacement
+hosted results remain mandatory evidence.
 
 ## Resume Here
 

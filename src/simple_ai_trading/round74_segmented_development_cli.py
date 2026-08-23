@@ -7,11 +7,19 @@ import json
 from pathlib import Path
 import sys
 import time
+from typing import Any
 
 from .compute import SUPPORTED_COMPUTE_BACKENDS
-from .round74_segmented_development_runtime import (
-    run_round74_segmented_development,
-)
+
+
+def run_round74_segmented_development(**kwargs: Any) -> dict[str, object]:
+    """Load the optional Torch runtime only when development actually starts."""
+
+    from .round74_segmented_development_runtime import (  # noqa: PLC0415
+        run_round74_segmented_development as run,
+    )
+
+    return run(**kwargs)
 
 
 def _emit(payload: dict[str, object]) -> None:

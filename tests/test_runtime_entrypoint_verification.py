@@ -3,6 +3,7 @@ from __future__ import annotations
 from importlib import metadata
 from pathlib import Path
 import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -23,6 +24,33 @@ def test_runtime_entrypoint_matches_source_parser_and_launcher() -> None:
     assert report["installed_entrypoint"] == "simple_ai_trading.entrypoint:main"
     assert report["required_command"] == "polymarket-live"
     assert Path(str(report["launcher"])).is_file()
+
+
+def test_runtime_parser_discovery_does_not_require_optional_torch() -> None:
+    code = """
+import sys
+sys.modules["torch"] = None
+from simple_ai_trading import entrypoint
+parser = entrypoint._build_parser()
+choices = next(
+    action.choices
+    for action in parser._actions
+    if isinstance(action, __import__("argparse")._SubParsersAction)
+)
+assert "binance-round74-develop" in choices
+assert "binance-round74-sealed-evaluate" in choices
+assert "polymarket-live" in choices
+"""
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_runtime_entrypoint_rejects_stale_installed_metadata(
@@ -50,7 +78,7 @@ def test_runtime_entrypoint_rejects_different_checkout(
     (tmp_path / "pyproject.toml").write_text(
         "[project]\n"
         'name = "simple-ai-trading"\n'
-        '[project.scripts]\n'
+        "[project.scripts]\n"
         'simple-ai-trading = "simple_ai_trading.entrypoint:main"\n',
         encoding="utf-8",
     )

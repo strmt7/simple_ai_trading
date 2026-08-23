@@ -655,6 +655,18 @@ workflow does not mean zero vulnerabilities: refresh the GitHub code-scanning
 alert API after its first terminal run. Dependency and secret scanning remain
 separate authorities; DeepSource SCA is inactive.
 
+The first native CodeQL job exposed a real CI contract defect before analysis:
+the base locked environment correctly omitted optional PyTorch, but command
+registration imported the Round 74 Torch runtime eagerly. The contemporaneous
+Windows smoke job logged the same failure three times and still appeared green
+because later native commands replaced the failing exit status. The bounded
+correction defers both Round 74 runtime imports until their commands execute,
+proves that the complete parser remains discoverable with `torch` unavailable,
+and enables PowerShell native-command error propagation for the Windows smoke
+step. Treat the correction as unverified until the replacement Windows and both
+CodeQL language jobs finish successfully; then query the alert API rather than
+inferring a zero-alert result from green workflow status.
+
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The 97 modified, 2 deleted,
 218 untracked, and 71 differing plus 26 locally-only path counts above are a

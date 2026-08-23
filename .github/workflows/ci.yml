@@ -110,6 +110,8 @@ jobs:
       - name: Smoke CLI and Windows launchers
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
           uv run --locked python -m simple_ai_trading --help
           uv run --locked python -m simple_ai_trading objectives
           uv run --locked powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
