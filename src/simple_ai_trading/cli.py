@@ -18056,7 +18056,9 @@ def command_autonomous(args: argparse.Namespace) -> int:
         if ai_gate.active:
             print(
                 "AI assist: active shadow-only per-entry review "
-                f"review={ai_gate.review_sha256} model_digest={ai_gate.model_digest}"
+                f"review={ai_gate.review_sha256} model={ai_gate.model} "
+                f"parameters={ai_gate.model_parameter_size} "
+                f"model_digest={ai_gate.model_digest}"
             )
         elif runtime.ai_enabled:
             print(
@@ -18153,7 +18155,11 @@ def command_autonomous(args: argparse.Namespace) -> int:
                 decision_fn = AIAssistedDecisionFunction(
                     decision_fn,
                     ai_reviewer,
+                    model_name=str(ai_gate.model or ""),
                     model_digest=str(ai_gate.model_digest or ""),
+                    model_metadata_sha256=str(ai_gate.model_metadata_sha256 or ""),
+                    model_parameter_count=int(ai_gate.model_parameter_count or 0),
+                    model_parameter_size=str(ai_gate.model_parameter_size or ""),
                     terminal_model_fingerprint=str(
                         ai_gate.terminal_model_fingerprint or ""
                     ),

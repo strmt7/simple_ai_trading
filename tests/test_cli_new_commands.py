@@ -844,9 +844,12 @@ def test_command_autonomous_live_reaches_signed_loop_when_readiness_passes(tmp_p
             review_path="test-ai-review.json",
             review_sha256="a" * 64,
             source_report_sha256="b" * 64,
-            model="test-model",
-            model_digest="c" * 64,
-            terminal_model_fingerprint="d" * 64,
+                model="qwen3:8b",
+                model_digest="c" * 64,
+                model_metadata_sha256="e" * 64,
+                model_parameter_count=8_200_000_000,
+                model_parameter_size="8.2B",
+                terminal_model_fingerprint="d" * 64,
         ),
     )
     monkeypatch.setattr("simple_ai_trading.autonomous.run_loop", fake_run_loop)

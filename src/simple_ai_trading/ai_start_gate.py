@@ -9,8 +9,9 @@ from typing import Callable, Mapping
 
 from .ai_review import (
     AIReviewReport,
+    OllamaModelIdentity,
     load_ai_review_report,
-    resolve_ollama_model_provenance,
+    resolve_ollama_model_identity,
 )
 from .ai_runtime import AIRuntimeConfig, AICapabilityReport, detect_ai_capabilities
 from .terminal_holdout_ledger import (
@@ -22,7 +23,7 @@ from .types import RuntimeConfig
 DEFAULT_AI_REVIEW_PATH = Path("data/model_lab/ai_risk_review.json")
 
 CapabilityDetector = Callable[[AIRuntimeConfig], AICapabilityReport]
-ModelProvenance = Callable[[str, str, float], tuple[str, str]]
+ModelIdentityResolver = Callable[[str, str, float], OllamaModelIdentity]
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,9 @@ class AIStartGateReport:
     source_report_sha256: str | None = None
     model: str | None = None
     model_digest: str | None = None
+    model_metadata_sha256: str | None = None
+    model_parameter_count: int | None = None
+    model_parameter_size: str | None = None
     terminal_model_fingerprint: str | None = None
 
     def asdict(self) -> dict[str, object]:
@@ -161,7 +165,7 @@ def evaluate_ai_start_gate(
     base_url: str = "http://127.0.0.1:11434",
     timeout_seconds: float = 10.0,
     capability_detector: CapabilityDetector = detect_ai_capabilities,
-    model_provenance: ModelProvenance = resolve_ollama_model_provenance,
+    model_identity_resolver: ModelIdentityResolver = resolve_ollama_model_identity,
 ) -> AIStartGateReport:
     """Require exact reviewed evidence before AI is active for a bot run."""
 
@@ -207,16 +211,21 @@ def evaluate_ai_start_gate(
             raise ValueError("AI review is not approved")
         if review.model != capability.model:
             raise ValueError("AI review model differs from the current runtime model")
-        current_digest, current_metadata_sha256 = model_provenance(
+        model_identity = model_identity_resolver(
             base_url,
             review.model,
             timeout_seconds,
-        )
+        ).validated()
         if (
-            current_digest != review.model_digest
-            or current_metadata_sha256 != review.model_metadata_sha256
+            model_identity.digest != review.model_digest
+            or model_identity.metadata_sha256 != review.model_metadata_sha256
         ):
             raise ValueError("installed AI model provenance differs from the review")
+        minimum_parameters_b = max(2.0, float(runtime.ai_min_model_parameters_b))
+        if model_identity.parameters_b < minimum_parameters_b:
+            raise ValueError(
+                "installed AI model parameter count is below the runtime minimum"
+            )
         source_path = Path(review.source_report)
         source = _strict_json_mapping(source_path)
         expected_quote = str(source.get("quote_asset") or "")
@@ -264,8 +273,11 @@ def evaluate_ai_start_gate(
         review_path=str(path),
         review_sha256=review.report_sha256,
         source_report_sha256=review.source_report_sha256,
-        model=review.model,
-        model_digest=review.model_digest,
+        model=model_identity.canonical_model,
+        model_digest=model_identity.digest,
+        model_metadata_sha256=model_identity.metadata_sha256,
+        model_parameter_count=model_identity.parameter_count,
+        model_parameter_size=model_identity.parameter_size,
         terminal_model_fingerprint=actual_fingerprint,
     )
 

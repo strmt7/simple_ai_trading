@@ -445,21 +445,71 @@ def _get_json(url: str, timeout: float) -> object:
     return response.json()
 
 
-def resolve_ollama_model_provenance(
+def canonical_ollama_model_name(model: str) -> str:
+    """Return one explicit local Ollama model identity, including its tag."""
+
+    if not isinstance(model, str):
+        raise ValueError("Ollama model name is invalid")
+    name = model.strip()
+    if (
+        not name
+        or len(name) > 240
+        or name.count(":") > 1
+        or name[0] in "./:-"
+        or name[-1] in "/:"
+        or any(
+            not character.isascii() or not (character.isalnum() or character in "._/-:")
+            for character in name
+        )
+    ):
+        raise ValueError("Ollama model name is invalid")
+    return name if ":" in name else f"{name}:latest"
+
+
+@dataclass(frozen=True)
+class OllamaModelIdentity:
+    canonical_model: str
+    digest: str
+    metadata_sha256: str
+    parameter_count: int
+    parameter_size: str
+
+    @property
+    def parameters_b(self) -> float:
+        return self.parameter_count / 1_000_000_000.0
+
+    def validated(self) -> OllamaModelIdentity:
+        if (
+            canonical_ollama_model_name(self.canonical_model) != self.canonical_model
+            or not _is_sha256(self.digest)
+            or not _is_sha256(self.metadata_sha256)
+            or isinstance(self.parameter_count, bool)
+            or not isinstance(self.parameter_count, int)
+            or self.parameter_count <= 0
+            or not isinstance(self.parameter_size, str)
+            or not self.parameter_size
+            or len(self.parameter_size) > 64
+        ):
+            raise ValueError("Ollama model identity is invalid")
+        return self
+
+
+def resolve_ollama_model_identity(
     base_url: str,
     model: str,
     timeout_seconds: float,
     *,
     get_json: GetJson = _get_json,
     post_json: PostJson = _post_json,
-) -> tuple[str, str]:
-    """Resolve the immutable Ollama digest and canonical local model metadata."""
+) -> OllamaModelIdentity:
+    """Resolve one immutable local model and its exact metadata parameter count."""
 
+    canonical_model = canonical_ollama_model_name(model)
     root = str(base_url).rstrip("/")
     tags = get_json(f"{root}/api/tags", timeout_seconds)
     if not isinstance(tags, Mapping) or not isinstance(tags.get("models"), list):
         raise ValueError("Ollama model inventory is malformed")
-    candidates = {model} if ":" in model else {model, f"{model}:latest"}
+    candidates = {model, canonical_model}
     matches: list[Mapping[str, object]] = []
     for raw in tags["models"]:
         if not isinstance(raw, Mapping):
@@ -472,8 +522,8 @@ def resolve_ollama_model_provenance(
     digests = {raw.get("digest") for raw in matches}
     if len(digests) != 1:
         raise ValueError(f"Ollama model provenance is ambiguous for {model}")
-    digest = next(iter(digests))
-    if not _is_sha256(digest):
+    raw_digest = next(iter(digests))
+    if not isinstance(raw_digest, str) or not _is_sha256(raw_digest):
         raise ValueError(f"Ollama model digest is invalid for {model}")
     metadata = post_json(
         f"{root}/api/show",
@@ -482,7 +532,47 @@ def resolve_ollama_model_provenance(
     )
     if not isinstance(metadata, Mapping):
         raise ValueError(f"Ollama model metadata is malformed for {model}")
-    return digest, _canonical_sha256(metadata)
+    model_info = metadata.get("model_info")
+    details = metadata.get("details")
+    if not isinstance(model_info, Mapping) or not isinstance(details, Mapping):
+        raise ValueError(f"Ollama model parameter metadata is unavailable for {model}")
+    parameter_count = model_info.get("general.parameter_count")
+    parameter_size = details.get("parameter_size")
+    if (
+        isinstance(parameter_count, bool)
+        or not isinstance(parameter_count, int)
+        or parameter_count <= 0
+        or not isinstance(parameter_size, str)
+        or not parameter_size.strip()
+    ):
+        raise ValueError(f"Ollama model parameter metadata is invalid for {model}")
+    return OllamaModelIdentity(
+        canonical_model=canonical_model,
+        digest=raw_digest,
+        metadata_sha256=_canonical_sha256(metadata),
+        parameter_count=parameter_count,
+        parameter_size=parameter_size.strip(),
+    ).validated()
+
+
+def resolve_ollama_model_provenance(
+    base_url: str,
+    model: str,
+    timeout_seconds: float,
+    *,
+    get_json: GetJson = _get_json,
+    post_json: PostJson = _post_json,
+) -> tuple[str, str]:
+    """Resolve the immutable Ollama digest and canonical local model metadata."""
+
+    identity = resolve_ollama_model_identity(
+        base_url,
+        model,
+        timeout_seconds,
+        get_json=get_json,
+        post_json=post_json,
+    )
+    return identity.digest, identity.metadata_sha256
 
 
 def _finite(value: object, default: float = 0.0) -> float:
