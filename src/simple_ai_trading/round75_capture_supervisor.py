@@ -90,14 +90,17 @@ class Round75CaptureSupervisorConfig:
             (self.startup_grace_ns, ROUND75_SERVICE_STARTUP_GRACE_NS),
         )
         if (
-            not self.python_executable.is_file()
+            not self.python_executable.is_absolute()
+            or not self.python_executable.is_file()
             or not self.service_tool_path.is_file()
             or not self.capture_tool_path.is_file()
             or self.service_tool_path.resolve()
             != (repository / "tools/run_round75_continuous_capture.py").resolve()
             or self.capture_tool_path.resolve()
             != (repository / "tools/run_round74_segmented_capture.py").resolve()
-            or any(path.is_symlink() for path in paths)
+            or any(
+                path != self.python_executable and path.is_symlink() for path in paths
+            )
             or any(
                 path != self.python_executable
                 and not (
@@ -558,8 +561,13 @@ def inspect_round75_capture_supervisor(
 
 def _service_command(config: Round75CaptureSupervisorConfig) -> list[str]:
     capture = config.capture
+    python_executable = (
+        config.python_executable
+        if _WINDOWS_VENV_LAUNCHER_SEMANTICS
+        else config.python_executable.resolve()
+    )
     return [
-        str(config.python_executable),
+        str(python_executable),
         str(config.service_tool_path),
         "--repository",
         str(capture.repository),

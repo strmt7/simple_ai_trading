@@ -177,11 +177,17 @@ def test_continuous_capture_terminalizes_every_elapsed_unstarted_slot_once(
 
 def test_continuous_capture_runs_one_open_slot_on_its_deterministic_shard(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     start = 1_900_000_000_000_000_000
     config, _plan, _contract_sha256 = _fixture(
         tmp_path,
         scheduled_start_wall_ns=start,
+    )
+    host_usage = shutil.disk_usage(tmp_path)
+    monkeypatch.setattr(
+        "simple_ai_trading.round75_continuous_capture.shutil.disk_usage",
+        lambda _path: host_usage._replace(free=config.minimum_free_bytes),
     )
     observed: list[Path] = []
 
