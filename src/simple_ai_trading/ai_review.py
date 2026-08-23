@@ -116,33 +116,48 @@ class AIReviewDecision:
         return asdict(self)
 
     def validated(self) -> AIReviewDecision:
-        if (
-            not isinstance(self.action, str)
-            or self.action not in {"approve", "veto", "needs_human_review"}
-            or isinstance(self.confidence, bool)
-            or not isinstance(self.confidence, (int, float))
-            or not math.isfinite(self.confidence)
-            or not 0.0 <= self.confidence <= 1.0
-            or isinstance(self.risk_score, bool)
-            or not isinstance(self.risk_score, (int, float))
-            or not math.isfinite(self.risk_score)
-            or not 0.0 <= self.risk_score <= 1.0
-            or not isinstance(self.rationale, str)
-            or not self.rationale
-            or len(self.rationale) > _MAX_REASON_CHARS
-            or not isinstance(self.concerns, list)
-            or not isinstance(self.required_actions, list)
-            or len(self.concerns) > _MAX_CONCERNS
-            or len(self.required_actions) > _MAX_ACTIONS
-            or any(
-                not isinstance(value, str)
-                or not value
-                or len(value) > _MAX_REASON_CHARS
-                for value in (*self.concerns, *self.required_actions)
+        if not (
+            _review_action_is_valid(self.action)
+            and _review_probability_is_valid(self.confidence)
+            and _review_probability_is_valid(self.risk_score)
+            and _review_text_is_valid(self.rationale)
+            and _review_text_list_is_valid(self.concerns, limit=_MAX_CONCERNS)
+            and _review_text_list_is_valid(
+                self.required_actions,
+                limit=_MAX_ACTIONS,
             )
         ):
             raise ValueError("AI review decision is invalid")
         return self
+
+
+def _review_action_is_valid(value: object) -> bool:
+    return isinstance(value, str) and value in {
+        "approve",
+        "veto",
+        "needs_human_review",
+    }
+
+
+def _review_probability_is_valid(value: object) -> bool:
+    return (
+        not isinstance(value, bool)
+        and isinstance(value, (int, float))
+        and math.isfinite(value)
+        and 0.0 <= value <= 1.0
+    )
+
+
+def _review_text_is_valid(value: object) -> bool:
+    return isinstance(value, str) and bool(value) and len(value) <= _MAX_REASON_CHARS
+
+
+def _review_text_list_is_valid(value: object, *, limit: int) -> bool:
+    return (
+        isinstance(value, list)
+        and len(value) <= limit
+        and all(_review_text_is_valid(item) for item in value)
+    )
 
 
 @dataclass(frozen=True)
@@ -180,97 +195,173 @@ class AIReviewReport:
 
     def validated(self) -> AIReviewReport:
         self.decision.validated()
-        capability_consistent = self.status == "blocked" or (
-            isinstance(self.capability, dict)
-            and self.capability.get("ok") is True
-            and self.capability.get("provider") == self.provider
-            and self.capability.get("model") == self.model
-            and self.capability.get("compute_backend_kind") != "cpu"
-            and self.capability.get("provider_available") is True
-            and self.capability.get("model_available") is True
-            and self.capability.get("model_local") is True
-            and _provider_runtime_is_valid(
-                self.capability.get("provider_runtime"),
-                model=self.model,
-                digest=self.model_digest,
-            )
-        )
-        status_consistent = (
-            (
-                self.status == "ok"
-                and self.approved
-                and self.decision.action == "approve"
-                and self.error is None
-                and self.prompt_chars > 0
-                and self.request_sha256 is not None
-                and self.response_sha256 is not None
-            )
-            or (
-                self.status == "review_required"
-                and not self.approved
-                and self.decision.action in {"veto", "needs_human_review"}
-                and self.error is None
-                and self.prompt_chars > 0
-                and self.request_sha256 is not None
-                and self.response_sha256 is not None
-            )
-            or (
-                self.status == "blocked"
-                and not self.approved
-                and self.decision.action == "veto"
-                and bool(self.error)
-            )
-        )
-        if (
-            self.schema_version != AI_REVIEW_REPORT_SCHEMA_VERSION
-            or isinstance(self.created_at_ms, bool)
-            or not isinstance(self.created_at_ms, int)
-            or self.created_at_ms <= 0
-            or not isinstance(self.status, str)
-            or not isinstance(self.approved, bool)
-            or not status_consistent
-            or not capability_consistent
-            or not isinstance(self.source_report, str)
-            or not self.source_report
-            or not _is_sha256(self.source_report_sha256)
-            or self.provider != "ollama"
-            or not isinstance(self.model, str)
-            or not self.model
-            or (self.model_digest is not None and not _is_sha256(self.model_digest))
-            or (
-                self.model_metadata_sha256 is not None
-                and not _is_sha256(self.model_metadata_sha256)
-            )
-            or (self.model_digest is None) != (self.model_metadata_sha256 is None)
-            or (
-                self.status in {"ok", "review_required"}
-                and (self.model_digest is None or self.model_metadata_sha256 is None)
-            )
-            or not isinstance(self.endpoint, str)
-            or not self.endpoint
-            or isinstance(self.latency_ms, bool)
-            or not isinstance(self.latency_ms, int)
-            or self.latency_ms < 0
-            or not _is_sha256(self.prompt_sha256)
-            or (self.request_sha256 is not None and not _is_sha256(self.request_sha256))
-            or (
-                self.response_sha256 is not None
-                and not _is_sha256(self.response_sha256)
-            )
-            or (self.prompt_chars == 0 and self.prompt_sha256 != _EMPTY_TEXT_SHA256)
-            or (self.prompt_chars == 0) != (self.request_sha256 is None)
-            or isinstance(self.prompt_chars, bool)
-            or not isinstance(self.prompt_chars, int)
-            or not 0 <= self.prompt_chars <= _MAX_PROMPT_CHARS
-            or not isinstance(self.deterministic_precheck, dict)
-            or not (self.capability is None or isinstance(self.capability, dict))
-            or not (self.output_path is None or isinstance(self.output_path, str))
-            or not (self.error is None or isinstance(self.error, str))
-            or not _is_sha256(self.report_sha256)
-            or self.report_sha256 != _canonical_sha256(self.identity_payload())
+        capability_consistent = _review_capability_is_consistent(self)
+        status_consistent = _review_status_is_consistent(self)
+        if not _review_report_fields_are_valid(
+            self,
+            capability_consistent=capability_consistent,
+            status_consistent=status_consistent,
         ):
             raise ValueError("AI review report is invalid")
         return self
+
+
+def _review_capability_is_consistent(report: AIReviewReport) -> bool:
+    return report.status == "blocked" or (
+        isinstance(report.capability, dict)
+        and report.capability.get("ok") is True
+        and report.capability.get("provider") == report.provider
+        and report.capability.get("model") == report.model
+        and report.capability.get("compute_backend_kind") != "cpu"
+        and report.capability.get("provider_available") is True
+        and report.capability.get("model_available") is True
+        and report.capability.get("model_local") is True
+        and _provider_runtime_is_valid(
+            report.capability.get("provider_runtime"),
+            model=report.model,
+            digest=report.model_digest,
+        )
+    )
+
+
+def _approved_review_status_is_consistent(report: AIReviewReport) -> bool:
+    return (
+        report.approved
+        and report.decision.action == "approve"
+        and report.error is None
+        and report.prompt_chars > 0
+        and report.request_sha256 is not None
+        and report.response_sha256 is not None
+    )
+
+
+def _required_review_status_is_consistent(report: AIReviewReport) -> bool:
+    return (
+        not report.approved
+        and report.decision.action in {"veto", "needs_human_review"}
+        and report.error is None
+        and report.prompt_chars > 0
+        and report.request_sha256 is not None
+        and report.response_sha256 is not None
+    )
+
+
+def _blocked_review_status_is_consistent(report: AIReviewReport) -> bool:
+    return (
+        not report.approved and report.decision.action == "veto" and bool(report.error)
+    )
+
+
+def _review_status_is_consistent(report: AIReviewReport) -> bool:
+    if report.status == "ok":
+        return _approved_review_status_is_consistent(report)
+    if report.status == "review_required":
+        return _required_review_status_is_consistent(report)
+    if report.status == "blocked":
+        return _blocked_review_status_is_consistent(report)
+    return False
+
+
+def _review_core_fields_are_valid(
+    report: AIReviewReport,
+    *,
+    capability_consistent: bool,
+    status_consistent: bool,
+) -> bool:
+    return (
+        report.schema_version == AI_REVIEW_REPORT_SCHEMA_VERSION
+        and not isinstance(report.created_at_ms, bool)
+        and isinstance(report.created_at_ms, int)
+        and report.created_at_ms > 0
+        and isinstance(report.status, str)
+        and isinstance(report.approved, bool)
+        and status_consistent
+        and capability_consistent
+        and isinstance(report.source_report, str)
+        and bool(report.source_report)
+        and _is_sha256(report.source_report_sha256)
+    )
+
+
+def _review_model_fields_are_valid(report: AIReviewReport) -> bool:
+    return (
+        report.provider == "ollama"
+        and isinstance(report.model, str)
+        and bool(report.model)
+        and (report.model_digest is None or _is_sha256(report.model_digest))
+        and (
+            report.model_metadata_sha256 is None
+            or _is_sha256(report.model_metadata_sha256)
+        )
+        and (report.model_digest is None) == (report.model_metadata_sha256 is None)
+        and (
+            report.status not in {"ok", "review_required"}
+            or (
+                report.model_digest is not None
+                and report.model_metadata_sha256 is not None
+            )
+        )
+    )
+
+
+def _review_endpoint_fields_are_valid(report: AIReviewReport) -> bool:
+    return (
+        isinstance(report.endpoint, str)
+        and bool(report.endpoint)
+        and not isinstance(report.latency_ms, bool)
+        and isinstance(report.latency_ms, int)
+        and report.latency_ms >= 0
+    )
+
+
+def _review_prompt_fields_are_valid(report: AIReviewReport) -> bool:
+    return (
+        _is_sha256(report.prompt_sha256)
+        and (report.request_sha256 is None or _is_sha256(report.request_sha256))
+        and (report.response_sha256 is None or _is_sha256(report.response_sha256))
+        and not (
+            report.prompt_chars == 0 and report.prompt_sha256 != _EMPTY_TEXT_SHA256
+        )
+        and (report.prompt_chars == 0) == (report.request_sha256 is None)
+        and not isinstance(report.prompt_chars, bool)
+        and isinstance(report.prompt_chars, int)
+        and 0 <= report.prompt_chars <= _MAX_PROMPT_CHARS
+    )
+
+
+def _review_container_fields_are_valid(report: AIReviewReport) -> bool:
+    return (
+        isinstance(report.deterministic_precheck, dict)
+        and (report.capability is None or isinstance(report.capability, dict))
+        and (report.output_path is None or isinstance(report.output_path, str))
+        and (report.error is None or isinstance(report.error, str))
+    )
+
+
+def _review_digest_is_valid(report: AIReviewReport) -> bool:
+    return _is_sha256(report.report_sha256) and report.report_sha256 == (
+        _canonical_sha256(report.identity_payload())
+    )
+
+
+def _review_report_fields_are_valid(
+    report: AIReviewReport,
+    *,
+    capability_consistent: bool,
+    status_consistent: bool,
+) -> bool:
+    return (
+        _review_core_fields_are_valid(
+            report,
+            capability_consistent=capability_consistent,
+            status_consistent=status_consistent,
+        )
+        and _review_model_fields_are_valid(report)
+        and _review_endpoint_fields_are_valid(report)
+        and _review_prompt_fields_are_valid(report)
+        and _review_container_fields_are_valid(report)
+        and _review_digest_is_valid(report)
+    )
 
 
 def _canonical_sha256(value: object) -> str:
@@ -468,6 +559,31 @@ def resolve_ollama_model_identity(
     canonical_model = canonical_ollama_model_name(model)
     root = str(base_url).rstrip("/")
     tags = get_json(f"{root}/api/tags", timeout_seconds)
+    matches = _ollama_inventory_matches(
+        tags,
+        model=model,
+        canonical_model=canonical_model,
+    )
+    raw_digest = _ollama_inventory_digest(matches, model=model)
+    metadata = post_json(
+        f"{root}/api/show",
+        {"model": model, "verbose": False},
+        timeout_seconds,
+    )
+    return _ollama_identity_from_metadata(
+        metadata,
+        model=model,
+        canonical_model=canonical_model,
+        digest=raw_digest,
+    )
+
+
+def _ollama_inventory_matches(
+    tags: object,
+    *,
+    model: str,
+    canonical_model: str,
+) -> list[Mapping[str, object]]:
     if not isinstance(tags, Mapping) or not isinstance(tags.get("models"), list):
         raise ValueError("Ollama model inventory is malformed")
     candidates = {model, canonical_model}
@@ -480,17 +596,30 @@ def resolve_ollama_model_identity(
             matches.append(raw)
     if not matches:
         raise ValueError(f"Ollama model provenance is unavailable for {model}")
+    return matches
+
+
+def _ollama_inventory_digest(
+    matches: list[Mapping[str, object]],
+    *,
+    model: str,
+) -> str:
     digests = {raw.get("digest") for raw in matches}
     if len(digests) != 1:
         raise ValueError(f"Ollama model provenance is ambiguous for {model}")
     raw_digest = next(iter(digests))
     if not isinstance(raw_digest, str) or not _is_sha256(raw_digest):
         raise ValueError(f"Ollama model digest is invalid for {model}")
-    metadata = post_json(
-        f"{root}/api/show",
-        {"model": model, "verbose": False},
-        timeout_seconds,
-    )
+    return raw_digest
+
+
+def _ollama_identity_from_metadata(
+    metadata: object,
+    *,
+    model: str,
+    canonical_model: str,
+    digest: str,
+) -> OllamaModelIdentity:
     if not isinstance(metadata, Mapping):
         raise ValueError(f"Ollama model metadata is malformed for {model}")
     model_info = metadata.get("model_info")
@@ -509,7 +638,7 @@ def resolve_ollama_model_identity(
         raise ValueError(f"Ollama model parameter metadata is invalid for {model}")
     return OllamaModelIdentity(
         canonical_model=canonical_model,
-        digest=raw_digest,
+        digest=digest,
         metadata_sha256=_canonical_sha256(metadata),
         parameter_count=parameter_count,
         parameter_size=parameter_size.strip(),
@@ -704,150 +833,6 @@ def _blocked_report(
 
 
 def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]:
-    outcomes = report.get("outcomes")
-    compact_outcomes: list[dict[str, object]] = []
-    if isinstance(outcomes, list):
-        for item in outcomes[:_MAX_OUTCOMES]:
-            if not isinstance(item, Mapping):
-                continue
-            stress = item.get("stress_validation")
-            stress_summary: dict[str, object] | None = None
-            if isinstance(stress, Mapping):
-                stress_summary = {
-                    "accepted": bool(stress.get("accepted")),
-                    "scenario_count": int(_finite(stress.get("scenario_count"))),
-                    "worst_realized_pnl": _finite(stress.get("worst_realized_pnl")),
-                    "worst_max_drawdown": _finite(stress.get("worst_max_drawdown")),
-                    **_compact_market_edge_validation(stress),
-                }
-            robustness = item.get("robustness_validation")
-            robustness_summary: dict[str, object] | None = None
-            if isinstance(robustness, Mapping):
-                robustness_summary = {
-                    "accepted": bool(robustness.get("accepted")),
-                    "window_count": int(_finite(robustness.get("window_count"))),
-                    "accepted_windows": int(
-                        _finite(robustness.get("accepted_windows"))
-                    ),
-                    "accepted_window_rate": _finite(
-                        robustness.get("accepted_window_rate")
-                    ),
-                    "worst_realized_pnl": _finite(robustness.get("worst_realized_pnl")),
-                    "worst_max_drawdown": _finite(robustness.get("worst_max_drawdown")),
-                    "statistical_edge_accepted": (
-                        bool(robustness.get("statistical_edge_accepted"))
-                        if "statistical_edge_accepted" in robustness
-                        else None
-                    ),
-                    "worst_sign_test_p_value": _finite(
-                        robustness.get("worst_sign_test_p_value")
-                    ),
-                    "worst_bootstrap_lower_mean_return": _finite(
-                        robustness.get("worst_bootstrap_lower_mean_return")
-                    ),
-                    **_compact_market_edge_validation(robustness),
-                }
-            regime = item.get("regime_validation")
-            if not isinstance(regime, Mapping) and isinstance(robustness, Mapping):
-                nested_regime = robustness.get("regime_summary")
-                regime = nested_regime if isinstance(nested_regime, Mapping) else None
-            regime_summary: dict[str, object] | None = None
-            if isinstance(regime, Mapping):
-                regime_summary = {
-                    "window_count": int(_finite(regime.get("window_count"))),
-                    "dominant_regime": _bounded_text(regime.get("dominant_regime")),
-                    "dominant_regime_window_share": _finite(
-                        regime.get("dominant_regime_window_share")
-                    ),
-                    "accepted_regime_count": int(
-                        _finite(regime.get("accepted_regime_count"))
-                    ),
-                    "concentration_warning": bool(regime.get("concentration_warning")),
-                    "notes": list(regime.get("notes") or [])[:6],
-                }
-            meta_labels = item.get("meta_label_validation")
-            meta_summary: dict[str, object] = {}
-            if isinstance(meta_labels, Mapping):
-                for objective, raw_meta in list(meta_labels.items())[:4]:
-                    if not isinstance(raw_meta, Mapping):
-                        continue
-                    meta_summary[str(objective)] = {
-                        "status": _bounded_text(raw_meta.get("status")),
-                        "sample_count": int(_finite(raw_meta.get("sample_count"))),
-                        "take_count": int(_finite(raw_meta.get("take_count"))),
-                        "downsize_count": int(_finite(raw_meta.get("downsize_count"))),
-                        "skip_count": int(_finite(raw_meta.get("skip_count"))),
-                        "take_precision": _finite(raw_meta.get("take_precision")),
-                        "target_precision": _finite(raw_meta.get("target_precision")),
-                    }
-            hybrid_ablation = _compact_ablation_map(
-                item.get("hybrid_ablation"),
-                group_key="removed_expert_kind",
-                delta_key="delta_vs_best",
-            )
-            feature_ablation = _compact_ablation_map(
-                item.get("feature_ablation"),
-                group_key="removed_group",
-                delta_key="delta_vs_selected",
-            )
-            walk_forward_gate = _compact_walk_forward_map(item.get("walk_forward_gate"))
-            selection_risk = _compact_selection_risk_map(item.get("selection_risk"))
-            ai_uplift = _compact_ai_uplift(item.get("ai_uplift"))
-            learning_feedback = _compact_learning_feedback(
-                item.get("learning_feedback")
-            )
-            data_coverage = _compact_data_coverage(item.get("data_coverage"))
-            compact_outcomes.append(
-                {
-                    "symbol": str(item.get("symbol") or ""),
-                    "accepted": bool(item.get("accepted")),
-                    "rows": int(_finite(item.get("rows"))),
-                    "error": _bounded_text(item.get("error")),
-                    "objective_scores": item.get("objective_scores")
-                    if isinstance(item.get("objective_scores"), Mapping)
-                    else {},
-                    "hybrid_profiles": item.get("hybrid_profiles")
-                    if isinstance(item.get("hybrid_profiles"), Mapping)
-                    else {},
-                    "walk_forward_gate": walk_forward_gate,
-                    "selection_risk": selection_risk,
-                    "stress_validation": stress_summary,
-                    "robustness_validation": robustness_summary,
-                    "regime_validation": regime_summary,
-                    "meta_label_validation": meta_summary,
-                    "hybrid_ablation": hybrid_ablation,
-                    "feature_ablation": feature_ablation,
-                    "ai_uplift": ai_uplift,
-                    "learning_feedback": learning_feedback,
-                    "data_coverage": data_coverage,
-                    "diagnostics": item.get("diagnostics")
-                    if isinstance(item.get("diagnostics"), Mapping)
-                    else None,
-                }
-            )
-    portfolio = report.get("portfolio_risk")
-    portfolio_summary: dict[str, object] | None = None
-    if isinstance(portfolio, Mapping):
-        portfolio_summary = {
-            "accepted": bool(portfolio.get("accepted")),
-            "reason": _bounded_text(portfolio.get("reason")),
-            "effective_symbol_count": _finite(portfolio.get("effective_symbol_count")),
-            "correlation_adjusted_effective_symbol_count": _finite(
-                portfolio.get("correlation_adjusted_effective_symbol_count")
-            ),
-            "max_pairwise_correlation": _finite(
-                portfolio.get("max_pairwise_correlation")
-            ),
-            "max_cluster_weight": _finite(portfolio.get("max_cluster_weight")),
-            "portfolio_cvar_95": _finite(portfolio.get("portfolio_cvar_95")),
-            "portfolio_max_drawdown": _finite(portfolio.get("portfolio_max_drawdown")),
-            "deployed_weight": _finite(portfolio.get("deployed_weight")),
-            "accepted_symbols": _bounded_list(
-                portfolio.get("accepted_symbols"),
-                limit=_MAX_OUTCOMES,
-            ),
-        }
-    learning_feedback = _compact_learning_feedback(report.get("learning_feedback"))
     return {
         "quote_asset": str(report.get("quote_asset") or ""),
         "interval": str(report.get("interval") or ""),
@@ -860,40 +845,175 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
             report.get("accepted_symbols"),
             limit=_MAX_OUTCOMES,
         ),
-        "portfolio_risk": portfolio_summary,
-        "learning_feedback": learning_feedback,
-        "outcomes": compact_outcomes,
+        "portfolio_risk": _compact_portfolio_risk(report.get("portfolio_risk")),
+        "learning_feedback": _compact_learning_feedback(
+            report.get("learning_feedback")
+        ),
+        "outcomes": _compact_model_lab_outcomes(report.get("outcomes")),
+    }
+
+
+def _compact_stress_validation(raw: object) -> dict[str, object] | None:
+    if not isinstance(raw, Mapping):
+        return None
+    return {
+        "accepted": bool(raw.get("accepted")),
+        "scenario_count": int(_finite(raw.get("scenario_count"))),
+        "worst_realized_pnl": _finite(raw.get("worst_realized_pnl")),
+        "worst_max_drawdown": _finite(raw.get("worst_max_drawdown")),
+        **_compact_market_edge_validation(raw),
+    }
+
+
+def _compact_robustness_validation(raw: object) -> dict[str, object] | None:
+    if not isinstance(raw, Mapping):
+        return None
+    return {
+        "accepted": bool(raw.get("accepted")),
+        "window_count": int(_finite(raw.get("window_count"))),
+        "accepted_windows": int(_finite(raw.get("accepted_windows"))),
+        "accepted_window_rate": _finite(raw.get("accepted_window_rate")),
+        "worst_realized_pnl": _finite(raw.get("worst_realized_pnl")),
+        "worst_max_drawdown": _finite(raw.get("worst_max_drawdown")),
+        "statistical_edge_accepted": (
+            bool(raw.get("statistical_edge_accepted"))
+            if "statistical_edge_accepted" in raw
+            else None
+        ),
+        "worst_sign_test_p_value": _finite(raw.get("worst_sign_test_p_value")),
+        "worst_bootstrap_lower_mean_return": _finite(
+            raw.get("worst_bootstrap_lower_mean_return")
+        ),
+        **_compact_market_edge_validation(raw),
+    }
+
+
+def _regime_validation_source(
+    item: Mapping[str, object],
+    robustness: object,
+) -> Mapping[str, object] | None:
+    regime = item.get("regime_validation")
+    if isinstance(regime, Mapping):
+        return regime
+    if isinstance(robustness, Mapping):
+        nested = robustness.get("regime_summary")
+        if isinstance(nested, Mapping):
+            return nested
+    return None
+
+
+def _compact_regime_validation(raw: object) -> dict[str, object] | None:
+    if not isinstance(raw, Mapping):
+        return None
+    return {
+        "window_count": int(_finite(raw.get("window_count"))),
+        "dominant_regime": _bounded_text(raw.get("dominant_regime")),
+        "dominant_regime_window_share": _finite(
+            raw.get("dominant_regime_window_share")
+        ),
+        "accepted_regime_count": int(_finite(raw.get("accepted_regime_count"))),
+        "concentration_warning": bool(raw.get("concentration_warning")),
+        "notes": list(raw.get("notes") or [])[:6],
+    }
+
+
+def _compact_meta_label_validation(raw: object) -> dict[str, object]:
+    if not isinstance(raw, Mapping):
+        return {}
+    compact: dict[str, object] = {}
+    for objective, raw_meta in list(raw.items())[:4]:
+        if not isinstance(raw_meta, Mapping):
+            continue
+        compact[str(objective)] = {
+            "status": _bounded_text(raw_meta.get("status")),
+            "sample_count": int(_finite(raw_meta.get("sample_count"))),
+            "take_count": int(_finite(raw_meta.get("take_count"))),
+            "downsize_count": int(_finite(raw_meta.get("downsize_count"))),
+            "skip_count": int(_finite(raw_meta.get("skip_count"))),
+            "take_precision": _finite(raw_meta.get("take_precision")),
+            "target_precision": _finite(raw_meta.get("target_precision")),
+        }
+    return compact
+
+
+def _compact_model_lab_outcome(item: Mapping[str, object]) -> dict[str, object]:
+    robustness = item.get("robustness_validation")
+    return {
+        "symbol": str(item.get("symbol") or ""),
+        "accepted": bool(item.get("accepted")),
+        "rows": int(_finite(item.get("rows"))),
+        "error": _bounded_text(item.get("error")),
+        "objective_scores": item.get("objective_scores")
+        if isinstance(item.get("objective_scores"), Mapping)
+        else {},
+        "hybrid_profiles": item.get("hybrid_profiles")
+        if isinstance(item.get("hybrid_profiles"), Mapping)
+        else {},
+        "walk_forward_gate": _compact_walk_forward_map(item.get("walk_forward_gate")),
+        "selection_risk": _compact_selection_risk_map(item.get("selection_risk")),
+        "stress_validation": _compact_stress_validation(item.get("stress_validation")),
+        "robustness_validation": _compact_robustness_validation(robustness),
+        "regime_validation": _compact_regime_validation(
+            _regime_validation_source(item, robustness)
+        ),
+        "meta_label_validation": _compact_meta_label_validation(
+            item.get("meta_label_validation")
+        ),
+        "hybrid_ablation": _compact_ablation_map(
+            item.get("hybrid_ablation"),
+            group_key="removed_expert_kind",
+            delta_key="delta_vs_best",
+        ),
+        "feature_ablation": _compact_ablation_map(
+            item.get("feature_ablation"),
+            group_key="removed_group",
+            delta_key="delta_vs_selected",
+        ),
+        "ai_uplift": _compact_ai_uplift(item.get("ai_uplift")),
+        "learning_feedback": _compact_learning_feedback(item.get("learning_feedback")),
+        "data_coverage": _compact_data_coverage(item.get("data_coverage")),
+        "diagnostics": item.get("diagnostics")
+        if isinstance(item.get("diagnostics"), Mapping)
+        else None,
+    }
+
+
+def _compact_model_lab_outcomes(raw: object) -> list[dict[str, object]]:
+    if not isinstance(raw, list):
+        return []
+    return [
+        _compact_model_lab_outcome(item)
+        for item in raw[:_MAX_OUTCOMES]
+        if isinstance(item, Mapping)
+    ]
+
+
+def _compact_portfolio_risk(raw: object) -> dict[str, object] | None:
+    if not isinstance(raw, Mapping):
+        return None
+    return {
+        "accepted": bool(raw.get("accepted")),
+        "reason": _bounded_text(raw.get("reason")),
+        "effective_symbol_count": _finite(raw.get("effective_symbol_count")),
+        "correlation_adjusted_effective_symbol_count": _finite(
+            raw.get("correlation_adjusted_effective_symbol_count")
+        ),
+        "max_pairwise_correlation": _finite(raw.get("max_pairwise_correlation")),
+        "max_cluster_weight": _finite(raw.get("max_cluster_weight")),
+        "portfolio_cvar_95": _finite(raw.get("portfolio_cvar_95")),
+        "portfolio_max_drawdown": _finite(raw.get("portfolio_max_drawdown")),
+        "deployed_weight": _finite(raw.get("deployed_weight")),
+        "accepted_symbols": _bounded_list(
+            raw.get("accepted_symbols"),
+            limit=_MAX_OUTCOMES,
+        ),
     }
 
 
 def _compact_market_edge_validation(
     validation: Mapping[str, object],
 ) -> dict[str, object]:
-    reports: list[Mapping[str, object]] = []
-    direct = validation.get("market_edge")
-    if isinstance(direct, Mapping):
-        reports.append(direct)
-    objectives = validation.get("objectives")
-    if isinstance(objectives, list):
-        for objective in objectives[:4]:
-            if not isinstance(objective, Mapping):
-                continue
-            objective_edge = objective.get("market_edge")
-            if isinstance(objective_edge, Mapping):
-                reports.append(objective_edge)
-            for collection_name in ("results", "windows"):
-                collection = objective.get(collection_name)
-                if not isinstance(collection, list):
-                    continue
-                for item in collection[:8]:
-                    if not isinstance(item, Mapping):
-                        continue
-                    result = item.get("result")
-                    if not isinstance(result, Mapping):
-                        continue
-                    edge = result.get("market_edge")
-                    if isinstance(edge, Mapping):
-                        reports.append(edge)
+    reports = _market_edge_reports(validation)
     if not reports:
         if "market_edge_accepted" in validation:
             return {
@@ -914,6 +1034,50 @@ def _compact_market_edge_validation(
         ),
         "market_edge_failed_reasons": failed_reasons[:_MAX_CONCERNS],
     }
+
+
+def _market_edge_reports(
+    validation: Mapping[str, object],
+) -> list[Mapping[str, object]]:
+    reports: list[Mapping[str, object]] = []
+    direct = validation.get("market_edge")
+    if isinstance(direct, Mapping):
+        reports.append(direct)
+    objectives = validation.get("objectives")
+    if not isinstance(objectives, list):
+        return reports
+    for objective in objectives[:4]:
+        if isinstance(objective, Mapping):
+            reports.extend(_objective_market_edge_reports(objective))
+    return reports
+
+
+def _objective_market_edge_reports(
+    objective: Mapping[str, object],
+) -> list[Mapping[str, object]]:
+    reports: list[Mapping[str, object]] = []
+    direct = objective.get("market_edge")
+    if isinstance(direct, Mapping):
+        reports.append(direct)
+    for collection_name in ("results", "windows"):
+        reports.extend(_result_market_edge_reports(objective.get(collection_name)))
+    return reports
+
+
+def _result_market_edge_reports(raw: object) -> list[Mapping[str, object]]:
+    if not isinstance(raw, list):
+        return []
+    reports: list[Mapping[str, object]] = []
+    for item in raw[:8]:
+        if not isinstance(item, Mapping):
+            continue
+        result = item.get("result")
+        if not isinstance(result, Mapping):
+            continue
+        edge = result.get("market_edge")
+        if isinstance(edge, Mapping):
+            reports.append(edge)
+    return reports
 
 
 def _compact_selection_risk_map(raw_map: object) -> dict[str, dict[str, object]]:
@@ -1287,53 +1451,76 @@ def _selection_risk_precheck_warnings(compact: Mapping[str, object]) -> list[str
         for objective, raw in raw_map.items():
             if not isinstance(raw, Mapping):
                 continue
-            explicit_failed = raw.get("passed") is False
-            raw_deflated = raw.get("deflated_score")
-            deflated_score = (
-                float(raw_deflated) if isinstance(raw_deflated, (int, float)) else None
-            )
-            terminal = raw.get("terminal_holdout")
-            terminal_reservation_passed = bool(
-                isinstance(terminal, Mapping)
-                and reservation_evidence_passed(
-                    terminal.get("reservation"),
-                    expected_dataset_fingerprint=str(
-                        terminal.get("dataset_fingerprint") or ""
-                    ),
-                    expected_result_fingerprint=str(
-                        terminal.get("result_fingerprint") or ""
-                    ),
-                    expected_rows=int(_finite(terminal.get("rows"))),
-                    expected_first_timestamp=int(
-                        _finite(terminal.get("start_timestamp"))
-                    ),
-                    expected_last_timestamp=int(_finite(terminal.get("end_timestamp"))),
-                    expected_objective=str(objective),
-                )
-            )
-            terminal_failed = not (
-                isinstance(terminal, Mapping)
-                and terminal.get("passed") is True
-                and int(_finite(terminal.get("evaluation_count"))) == 1
-                and terminal_reservation_passed
-            )
-            if (
-                explicit_failed
-                or terminal_failed
-                or (deflated_score is not None and deflated_score <= 0.0)
-            ):
-                reason = _bounded_text(raw.get("reason")) or "selection_risk_failed"
-                if terminal_failed and not explicit_failed:
-                    reason = "terminal_holdout_missing_or_failed"
-                deflated_text = (
-                    f"{deflated_score:.6g}" if deflated_score is not None else "missing"
-                )
-                warnings.append(
-                    f"{symbol} {objective} selection risk failed ({reason}); deflated_score={deflated_text}"
-                )
-                if len(warnings) >= _MAX_CONCERNS:
-                    return warnings
+            warning = _selection_risk_warning(symbol, objective, raw)
+            if warning is None:
+                continue
+            warnings.append(warning)
+            if len(warnings) >= _MAX_CONCERNS:
+                return warnings
     return warnings
+
+
+def _selection_terminal_reservation_passed(
+    terminal: object,
+    *,
+    objective: object,
+) -> bool:
+    if not isinstance(terminal, Mapping):
+        return False
+    return reservation_evidence_passed(
+        terminal.get("reservation"),
+        expected_dataset_fingerprint=str(terminal.get("dataset_fingerprint") or ""),
+        expected_result_fingerprint=str(terminal.get("result_fingerprint") or ""),
+        expected_rows=int(_finite(terminal.get("rows"))),
+        expected_first_timestamp=int(_finite(terminal.get("start_timestamp"))),
+        expected_last_timestamp=int(_finite(terminal.get("end_timestamp"))),
+        expected_objective=str(objective),
+    )
+
+
+def _selection_terminal_failed(terminal: object, *, objective: object) -> bool:
+    reservation_passed = _selection_terminal_reservation_passed(
+        terminal,
+        objective=objective,
+    )
+    return not (
+        isinstance(terminal, Mapping)
+        and terminal.get("passed") is True
+        and int(_finite(terminal.get("evaluation_count"))) == 1
+        and reservation_passed
+    )
+
+
+def _selection_deflated_score(raw: Mapping[str, object]) -> float | None:
+    value = raw.get("deflated_score")
+    return float(value) if isinstance(value, (int, float)) else None
+
+
+def _selection_risk_warning(
+    symbol: str,
+    objective: object,
+    raw: Mapping[str, object],
+) -> str | None:
+    explicit_failed = raw.get("passed") is False
+    deflated_score = _selection_deflated_score(raw)
+    terminal_failed = _selection_terminal_failed(
+        raw.get("terminal_holdout"),
+        objective=objective,
+    )
+    if not (
+        explicit_failed
+        or terminal_failed
+        or (deflated_score is not None and deflated_score <= 0.0)
+    ):
+        return None
+    reason = _bounded_text(raw.get("reason")) or "selection_risk_failed"
+    if terminal_failed and not explicit_failed:
+        reason = "terminal_holdout_missing_or_failed"
+    deflated_text = f"{deflated_score:.6g}" if deflated_score is not None else "missing"
+    return (
+        f"{symbol} {objective} selection risk failed ({reason}); "
+        f"deflated_score={deflated_text}"
+    )
 
 
 def _ai_uplift_precheck_warnings(
@@ -1452,29 +1639,40 @@ def _prompt(compact: Mapping[str, object]) -> str:
     return prompt
 
 
-def run_model_lab_ai_review(
+@dataclass(frozen=True)
+class _AIReviewRunContext:
+    source_path: Path
+    output_path: Path
+    created_at_ms: int
+    source_report_sha256: str
+    provider: str
+    selected_model: str
+    provider_root: str
+    endpoint: str
+    compact: dict[str, object]
+    precheck: dict[str, object]
+    timeout_seconds: float
+
+
+def _build_ai_review_context(
     report_path: Path,
     runtime: RuntimeConfig,
     *,
-    model: str | None = None,
-    base_url: str = DEFAULT_OLLAMA_URL,
-    timeout_seconds: float = 20.0,
-    output_path: Path | None = None,
-    post_json: PostJson = _post_json,
-    model_provenance: ModelProvenance | None = None,
-    residency_inspector: ResidencyInspector | None = None,
-) -> AIReviewReport:
+    model: str | None,
+    base_url: str,
+    timeout_seconds: float,
+    output_path: Path | None,
+) -> _AIReviewRunContext:
     source_path = Path(report_path)
-    output_path = output_path or (source_path.parent / "ai_risk_review.json")
+    resolved_output_path = output_path or (source_path.parent / "ai_risk_review.json")
     created_at_ms = int(time.time() * 1000)
     source_bytes = source_path.read_bytes()
     source_report_sha256 = hashlib.sha256(source_bytes).hexdigest()
-    provider = "ollama"
     selected_model = str(
         model
         or (runtime.ai_model if runtime.ai_model != "auto" else DEFAULT_AI_REVIEW_MODEL)
     )
-    endpoint = f"{str(base_url or DEFAULT_OLLAMA_URL).rstrip('/')}/api/chat"
+    provider_root = str(base_url or DEFAULT_OLLAMA_URL)
     report_payload = json.loads(source_bytes.decode("utf-8"))
     if not isinstance(report_payload, Mapping):
         raise ValueError("model-lab report must be a JSON object")
@@ -1484,114 +1682,109 @@ def run_model_lab_ai_review(
         require_ai_uplift=bool(runtime.ai_enabled),
         financial_report=report_payload,
     )
-    if not precheck["allowed_for_ai_review"]:
-        ablation_warnings = precheck.get("ablation_warnings")
-        data_coverage_warnings = precheck.get("data_coverage_warnings")
-        learning_feedback_warnings = precheck.get("learning_feedback_warnings")
-        selection_risk_warnings = precheck.get("selection_risk_warnings")
-        ai_uplift_warnings = precheck.get("ai_uplift_warnings")
-        financial_sanity_warnings = precheck.get("financial_sanity_warnings")
-        if isinstance(ablation_warnings, list) and ablation_warnings:
-            reason = "ablation evidence shows accepted model improves when a component is removed"
-        elif isinstance(data_coverage_warnings, list) and data_coverage_warnings:
-            reason = (
-                "data coverage evidence is missing or failed for an accepted symbol"
-            )
-        elif (
-            isinstance(learning_feedback_warnings, list) and learning_feedback_warnings
-        ):
-            reason = "learning feedback shows unresolved repeated-loss promotion risk"
-        elif isinstance(selection_risk_warnings, list) and selection_risk_warnings:
-            reason = "selection-risk evidence shows accepted model score does not survive trial burden"
-        elif isinstance(ai_uplift_warnings, list) and ai_uplift_warnings:
-            reason = (
-                "AI-vs-ML uplift evidence is missing or failed for an accepted symbol"
-            )
-        elif isinstance(financial_sanity_warnings, list) and financial_sanity_warnings:
-            reason = "financial sanity checks failed for an accepted model-lab artifact"
-        else:
-            reason = "deterministic gates did not produce an accepted portfolio for AI review"
-        result = _blocked_report(
-            source_report=source_path,
-            source_report_sha256=source_report_sha256,
-            created_at_ms=created_at_ms,
-            provider=provider,
-            model=selected_model,
-            endpoint=endpoint,
-            reason=reason,
-            deterministic_precheck=precheck,
-            output_path=output_path,
-        )
-        write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
-        return result
+    return _AIReviewRunContext(
+        source_path=source_path,
+        output_path=resolved_output_path,
+        created_at_ms=created_at_ms,
+        source_report_sha256=source_report_sha256,
+        provider="ollama",
+        selected_model=selected_model,
+        provider_root=provider_root,
+        endpoint=f"{provider_root.rstrip('/')}/api/chat",
+        compact=compact,
+        precheck=precheck,
+        timeout_seconds=timeout_seconds,
+    )
+
+
+def _precheck_block_reason(precheck: Mapping[str, object]) -> str:
+    ordered_reasons = (
+        (
+            "ablation_warnings",
+            "ablation evidence shows accepted model improves when a component is removed",
+        ),
+        (
+            "data_coverage_warnings",
+            "data coverage evidence is missing or failed for an accepted symbol",
+        ),
+        (
+            "learning_feedback_warnings",
+            "learning feedback shows unresolved repeated-loss promotion risk",
+        ),
+        (
+            "selection_risk_warnings",
+            "selection-risk evidence shows accepted model score does not survive trial burden",
+        ),
+        (
+            "ai_uplift_warnings",
+            "AI-vs-ML uplift evidence is missing or failed for an accepted symbol",
+        ),
+        (
+            "financial_sanity_warnings",
+            "financial sanity checks failed for an accepted model-lab artifact",
+        ),
+    )
+    for key, reason in ordered_reasons:
+        warnings = precheck.get(key)
+        if isinstance(warnings, list) and warnings:
+            return reason
+    return "deterministic gates did not produce an accepted portfolio for AI review"
+
+
+def _blocked_review_result(
+    context: _AIReviewRunContext,
+    reason: str,
+    *,
+    capability: AICapabilityReport | None = None,
+    model_digest: str | None = None,
+    model_metadata_sha256: str | None = None,
+    latency_ms: int = 0,
+    prompt_sha256: str = _EMPTY_TEXT_SHA256,
+    prompt_chars: int = 0,
+    request_sha256: str | None = None,
+    response_sha256: str | None = None,
+) -> AIReviewReport:
+    return _blocked_report(
+        source_report=context.source_path,
+        source_report_sha256=context.source_report_sha256,
+        created_at_ms=context.created_at_ms,
+        provider=context.provider,
+        model=context.selected_model,
+        model_digest=model_digest,
+        model_metadata_sha256=model_metadata_sha256,
+        endpoint=context.endpoint,
+        reason=reason,
+        deterministic_precheck=context.precheck,
+        capability=capability,
+        output_path=context.output_path,
+        latency_ms=latency_ms,
+        prompt_sha256=prompt_sha256,
+        prompt_chars=prompt_chars,
+        request_sha256=request_sha256,
+        response_sha256=response_sha256,
+    )
+
+
+def _persist_ai_review_result(
+    context: _AIReviewRunContext,
+    result: AIReviewReport,
+) -> AIReviewReport:
+    write_json_atomic(context.output_path, result.asdict(), indent=2, sort_keys=True)
+    return result
+
+
+def _detect_review_capability(
+    runtime: RuntimeConfig,
+    selected_model: str,
+) -> AICapabilityReport:
     capability_config = runtime.ai_runtime_config()
     if capability_config.model == "auto":
         capability_config = replace(capability_config, model=selected_model)
-    capability = detect_ai_capabilities(capability_config)
-    if not capability.ok:
-        reason = "; ".join(capability.messages) or "AI capability preflight failed"
-        result = _blocked_report(
-            source_report=source_path,
-            source_report_sha256=source_report_sha256,
-            created_at_ms=created_at_ms,
-            provider=provider,
-            model=selected_model,
-            endpoint=endpoint,
-            reason=reason,
-            deterministic_precheck=precheck,
-            capability=capability,
-            output_path=output_path,
-        )
-        write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
-        return result
-    model_digest: str | None = None
-    model_metadata_sha256: str | None = None
-    try:
-        provenance_fn = model_provenance or resolve_ollama_model_provenance
-        model_digest, model_metadata_sha256 = provenance_fn(
-            str(base_url or DEFAULT_OLLAMA_URL),
-            selected_model,
-            timeout_seconds,
-        )
-        if not _is_sha256(model_digest) or not _is_sha256(model_metadata_sha256):
-            raise ValueError("AI model provenance returned invalid digests")
-    except Exception as exc:
-        result = _blocked_report(
-            source_report=source_path,
-            source_report_sha256=source_report_sha256,
-            created_at_ms=created_at_ms,
-            provider=provider,
-            model=selected_model,
-            model_digest=model_digest,
-            model_metadata_sha256=model_metadata_sha256,
-            endpoint=endpoint,
-            reason=f"AI model provenance failed: {exc}",
-            deterministic_precheck=precheck,
-            capability=capability,
-            output_path=output_path,
-        )
-        write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
-        return result
-    try:
-        prompt = _prompt(compact)
-    except ValueError as exc:
-        result = _blocked_report(
-            source_report=source_path,
-            source_report_sha256=source_report_sha256,
-            created_at_ms=created_at_ms,
-            provider=provider,
-            model=selected_model,
-            model_digest=model_digest,
-            model_metadata_sha256=model_metadata_sha256,
-            endpoint=endpoint,
-            reason=f"AI review failed: {exc}",
-            deterministic_precheck=precheck,
-            capability=capability,
-            output_path=output_path,
-        )
-        write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
-        return result
-    request = {
+    return detect_ai_capabilities(capability_config)
+
+
+def _ai_review_request(selected_model: str, prompt: str) -> dict[str, object]:
+    return {
         "model": selected_model,
         "messages": [
             {
@@ -1606,77 +1799,204 @@ def run_model_lab_ai_review(
         "keep_alive": "30m",
         "options": {"temperature": 0, "num_ctx": 4096, "num_predict": 360},
     }
+
+
+def _validated_review_residency(
+    context: _AIReviewRunContext,
+    model_digest: str,
+    residency_inspector: ResidencyInspector | None,
+) -> OllamaResidencyReport:
+    residency_fn = residency_inspector or inspect_ollama_model_residency
+    residency = residency_fn(
+        context.provider_root,
+        context.selected_model,
+        min(context.timeout_seconds, 5.0),
+        expected_digest=model_digest,
+    ).validated()
+    if not residency.loaded:
+        raise ValueError("reviewed AI model is not resident after inference")
+    if not residency.fully_gpu_resident:
+        raise ValueError("reviewed AI model inference is not fully GPU-resident")
+    return residency
+
+
+def _successful_review_result(
+    context: _AIReviewRunContext,
+    *,
+    capability: AICapabilityReport,
+    residency: OllamaResidencyReport,
+    decision: AIReviewDecision,
+    model_digest: str,
+    model_metadata_sha256: str,
+    latency_ms: int,
+    prompt_sha256: str,
+    prompt_chars: int,
+    request_sha256: str,
+    response_sha256: str,
+) -> AIReviewReport:
+    capability_payload = capability.asdict()
+    capability_payload["provider_runtime"] = residency.asdict()
+    return _finalize_report(
+        AIReviewReport(
+            schema_version=AI_REVIEW_REPORT_SCHEMA_VERSION,
+            created_at_ms=context.created_at_ms,
+            status="ok" if decision.action == "approve" else "review_required",
+            approved=decision.approved,
+            source_report=str(context.source_path),
+            source_report_sha256=context.source_report_sha256,
+            provider=context.provider,
+            model=context.selected_model,
+            model_digest=model_digest,
+            model_metadata_sha256=model_metadata_sha256,
+            endpoint=context.endpoint,
+            latency_ms=latency_ms,
+            prompt_sha256=prompt_sha256,
+            request_sha256=request_sha256,
+            response_sha256=response_sha256,
+            decision=decision,
+            deterministic_precheck=context.precheck,
+            capability=_json_mapping(capability_payload),
+            prompt_chars=prompt_chars,
+            output_path=str(context.output_path),
+        )
+    )
+
+
+def _execute_ai_review(
+    context: _AIReviewRunContext,
+    *,
+    prompt: str,
+    capability: AICapabilityReport,
+    model_digest: str,
+    model_metadata_sha256: str,
+    post_json: PostJson,
+    residency_inspector: ResidencyInspector | None,
+) -> AIReviewReport:
+    request = _ai_review_request(context.selected_model, prompt)
     prompt_sha256 = _text_sha256(prompt)
     request_sha256 = _canonical_sha256(request)
     response_sha256: str | None = None
     started = time.perf_counter()
     try:
-        response = post_json(endpoint, request, timeout_seconds)
+        response = post_json(context.endpoint, request, context.timeout_seconds)
         latency_ms = int((time.perf_counter() - started) * 1000)
         response_sha256 = _canonical_sha256(response)
         if not isinstance(response, Mapping):
             raise ValueError("AI provider response was not a JSON object")
-        residency_fn = residency_inspector or inspect_ollama_model_residency
-        residency = residency_fn(
-            str(base_url or DEFAULT_OLLAMA_URL),
-            selected_model,
-            min(timeout_seconds, 5.0),
-            expected_digest=model_digest,
-        ).validated()
-        if not residency.loaded:
-            raise ValueError("reviewed AI model is not resident after inference")
-        if not residency.fully_gpu_resident:
-            raise ValueError("reviewed AI model inference is not fully GPU-resident")
+        residency = _validated_review_residency(
+            context,
+            model_digest,
+            residency_inspector,
+        )
         decision = _decision_from_mapping(
             _json_mapping_from_text(_ollama_response_text(response))
         )
-        status = "ok" if decision.action == "approve" else "review_required"
-        capability_payload = capability.asdict()
-        capability_payload["provider_runtime"] = residency.asdict()
-        result = _finalize_report(
-            AIReviewReport(
-                schema_version=AI_REVIEW_REPORT_SCHEMA_VERSION,
-                created_at_ms=created_at_ms,
-                status=status,
-                approved=decision.approved,
-                source_report=str(source_path),
-                source_report_sha256=source_report_sha256,
-                provider=provider,
-                model=selected_model,
-                model_digest=model_digest,
-                model_metadata_sha256=model_metadata_sha256,
-                endpoint=endpoint,
-                latency_ms=latency_ms,
-                prompt_sha256=prompt_sha256,
-                request_sha256=request_sha256,
-                response_sha256=response_sha256,
-                decision=decision,
-                deterministic_precheck=precheck,
-                capability=_json_mapping(capability_payload),
-                prompt_chars=len(prompt),
-                output_path=str(output_path),
-            )
-        )
-    except Exception as exc:
-        latency_ms = int((time.perf_counter() - started) * 1000)
-        result = _blocked_report(
-            source_report=source_path,
-            source_report_sha256=source_report_sha256,
-            created_at_ms=created_at_ms,
-            provider=provider,
-            model=selected_model,
+        return _successful_review_result(
+            context,
+            capability=capability,
+            residency=residency,
+            decision=decision,
             model_digest=model_digest,
             model_metadata_sha256=model_metadata_sha256,
-            endpoint=endpoint,
-            reason=f"AI review failed: {exc}",
-            deterministic_precheck=precheck,
-            capability=capability,
-            output_path=output_path,
             latency_ms=latency_ms,
             prompt_sha256=prompt_sha256,
             prompt_chars=len(prompt),
             request_sha256=request_sha256,
             response_sha256=response_sha256,
         )
-    write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
-    return result
+    except Exception as exc:
+        latency_ms = int((time.perf_counter() - started) * 1000)
+        return _blocked_review_result(
+            context,
+            f"AI review failed: {exc}",
+            capability=capability,
+            model_digest=model_digest,
+            model_metadata_sha256=model_metadata_sha256,
+            latency_ms=latency_ms,
+            prompt_sha256=prompt_sha256,
+            prompt_chars=len(prompt),
+            request_sha256=request_sha256,
+            response_sha256=response_sha256,
+        )
+
+
+def run_model_lab_ai_review(
+    report_path: Path,
+    runtime: RuntimeConfig,
+    *,
+    model: str | None = None,
+    base_url: str = DEFAULT_OLLAMA_URL,
+    timeout_seconds: float = 20.0,
+    output_path: Path | None = None,
+    post_json: PostJson = _post_json,
+    model_provenance: ModelProvenance | None = None,
+    residency_inspector: ResidencyInspector | None = None,
+) -> AIReviewReport:
+    context = _build_ai_review_context(
+        report_path,
+        runtime,
+        model=model,
+        base_url=base_url,
+        timeout_seconds=timeout_seconds,
+        output_path=output_path,
+    )
+    if not context.precheck["allowed_for_ai_review"]:
+        return _persist_ai_review_result(
+            context,
+            _blocked_review_result(
+                context,
+                _precheck_block_reason(context.precheck),
+            ),
+        )
+    capability = _detect_review_capability(runtime, context.selected_model)
+    if not capability.ok:
+        reason = "; ".join(capability.messages) or "AI capability preflight failed"
+        return _persist_ai_review_result(
+            context,
+            _blocked_review_result(context, reason, capability=capability),
+        )
+    model_digest: str | None = None
+    model_metadata_sha256: str | None = None
+    try:
+        provenance_fn = model_provenance or resolve_ollama_model_provenance
+        model_digest, model_metadata_sha256 = provenance_fn(
+            context.provider_root,
+            context.selected_model,
+            context.timeout_seconds,
+        )
+        if not _is_sha256(model_digest) or not _is_sha256(model_metadata_sha256):
+            raise ValueError("AI model provenance returned invalid digests")
+    except Exception as exc:
+        return _persist_ai_review_result(
+            context,
+            _blocked_review_result(
+                context,
+                f"AI model provenance failed: {exc}",
+                capability=capability,
+                model_digest=model_digest,
+                model_metadata_sha256=model_metadata_sha256,
+            ),
+        )
+    try:
+        prompt = _prompt(context.compact)
+    except ValueError as exc:
+        return _persist_ai_review_result(
+            context,
+            _blocked_review_result(
+                context,
+                f"AI review failed: {exc}",
+                capability=capability,
+                model_digest=model_digest,
+                model_metadata_sha256=model_metadata_sha256,
+            ),
+        )
+    result = _execute_ai_review(
+        context,
+        prompt=prompt,
+        capability=capability,
+        model_digest=model_digest,
+        model_metadata_sha256=model_metadata_sha256,
+        post_json=post_json,
+        residency_inspector=residency_inspector,
+    )
+    return _persist_ai_review_result(context, result)
