@@ -350,8 +350,13 @@ def test_vulture_scan_falls_back_to_api_on_windows_command_length() -> None:
     scanner.get_unused_code.assert_called_once_with(min_confidence=100)
 
 
-def test_vulture_scan_ignores_only_bound_protocol_keyword_false_positive() -> None:
+def test_vulture_scan_ignores_only_exact_protocol_false_positives() -> None:
     expected = {
+        (
+            "src/simple_ai_trading/round75_continuous_capture.py",
+            185,
+            "unused variable 'exc_type'",
+        ),
         (
             "src/simple_ai_trading/polymarket_round25_resolution_store.py",
             116,
