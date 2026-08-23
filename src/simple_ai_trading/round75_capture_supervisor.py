@@ -724,7 +724,9 @@ def _terminate_repairable_process(
     deadline = time.monotonic() + 15.0
     while any(row.process_id == process_id for row in refresh_inventory()):
         if time.monotonic() >= deadline:
-            raise RuntimeError("Round 75 owned process did not terminate before deadline")
+            raise RuntimeError(
+                "Round 75 owned process did not terminate before deadline"
+            )
         sleep(0.1)
     return True
 
