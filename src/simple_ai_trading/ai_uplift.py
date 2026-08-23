@@ -8,6 +8,7 @@ import math
 from dataclasses import asdict, dataclass, field
 from typing import Mapping, Sequence, SupportsFloat, SupportsIndex, TypedDict
 
+from .ai_model_identity import OllamaModelIdentity
 from .ai_runtime import estimate_model_parameters_b
 from .statistical_resampling import moving_block_bootstrap_mean
 
@@ -777,8 +778,25 @@ def _finite_model_parameters_b(value: object) -> float | None:
 def _model_parameter_evidence(
     model_name: str,
     supplied: float | None,
+    *,
+    attested_model_identity: OllamaModelIdentity | None = None,
+    model_artifact_sha256: str = "",
 ) -> tuple[float | None, tuple[str, ...]]:
-    inferred = _finite_model_parameters_b(estimate_model_parameters_b(model_name))
+    if attested_model_identity is not None:
+        try:
+            identity = attested_model_identity.validated()
+        except (AttributeError, TypeError, ValueError):
+            return None, ("attested_model_identity_invalid",)
+        identity_reasons: list[str] = []
+        if identity.canonical_model != model_name:
+            identity_reasons.append("attested_model_name_mismatch")
+        if identity.digest != model_artifact_sha256:
+            identity_reasons.append("attested_model_digest_mismatch")
+        if identity_reasons:
+            return None, tuple(identity_reasons)
+        inferred = identity.parameters_b
+    else:
+        inferred = _finite_model_parameters_b(estimate_model_parameters_b(model_name))
     reasons: list[str] = []
     if supplied is not None:
         asserted = _finite_model_parameters_b(supplied)
@@ -911,6 +929,7 @@ def assess_ai_uplift(
     model_name: str = "",
     model_parameters_b: float | None = None,
     model_artifact_sha256: str = "",
+    attested_model_identity: OllamaModelIdentity | None = None,
     matched_periods: Sequence[Mapping[str, object]] | None = None,
     policy: AIUpliftPolicy | None = None,
 ) -> AIUpliftReport:
@@ -922,6 +941,8 @@ def assess_ai_uplift(
     parameters_b, parameter_evidence_reasons = _model_parameter_evidence(
         model_name,
         model_parameters_b,
+        attested_model_identity=attested_model_identity,
+        model_artifact_sha256=model_artifact_sha256,
     )
     deltas = _uplift_deltas(baseline, ai)
     statistical = _statistical_evidence(

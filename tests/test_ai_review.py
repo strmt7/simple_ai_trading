@@ -1064,6 +1064,22 @@ def test_ollama_model_identity_requires_canonical_exact_parameter_metadata() -> 
             )
 
 
+@pytest.mark.parametrize(
+    "invalid_model",
+    (None, "", "/qwen3", "qwen3:", "qwen3::8b", "qwen 8b", "qw\u00e9n3"),
+)
+def test_canonical_ollama_model_name_rejects_ambiguous_or_unsafe_names(
+    invalid_model: object,
+) -> None:
+    with pytest.raises(ValueError, match="model name is invalid"):
+        canonical_ollama_model_name(invalid_model)  # type: ignore[arg-type]
+
+
+def test_ollama_model_identity_rejects_unsafe_display_size_label() -> None:
+    with pytest.raises(ValueError, match="model identity is invalid"):
+        replace(_model_identity(), parameter_size="8.2B\nforged").validated()
+
+
 def test_ai_review_blocks_before_chat_when_model_provenance_fails(
     tmp_path: Path,
     monkeypatch,

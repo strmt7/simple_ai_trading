@@ -47,11 +47,11 @@ size, metadata hash, model digest, and terminal-model fingerprint into each
 hash-chained case. Historical v2 records remain readable but can never satisfy
 the authoritative uplift gate.
 
-The remaining AI identity limitation is fail-closed: a custom or `:latest`
-model name whose size cannot be inferred by the generic uplift assessor may be
-rejected even when the live v3 record contains an exact count. Resolve this in
-a later bounded API change using provenance-attested parameter evidence; do not
-weaken the current gate or turn an operator assertion into evidence.
+The v3 live materializer passes this exact identity through a typed attestation
+to the generic uplift assessor. Custom and `:latest` names therefore use the
+bound exact count only when canonical name and model digest match the evaluated
+artifact. Without that attestation, legacy name inference remains fail-closed;
+an operator assertion still cannot create size evidence.
 
 ## Active Experiment Order
 

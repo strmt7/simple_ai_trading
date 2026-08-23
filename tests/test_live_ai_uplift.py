@@ -105,7 +105,13 @@ def _canonical_sha256(payload: object) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _case(observed_at_ms: int):
+def _case(
+    observed_at_ms: int,
+    *,
+    model_name: str = _MODEL_NAME,
+    model_parameter_count: int = _MODEL_PARAMETER_COUNT,
+    model_parameter_size: str = _MODEL_PARAMETER_SIZE,
+):
     return build_live_ai_entry_case(
         symbol="BTCUSDT",
         market_type="futures",
@@ -114,11 +120,11 @@ def _case(observed_at_ms: int):
         proposed_side="LONG",
         ml_confidence=0.7,
         maximum_risk_multiplier=0.4,
-        model_name=_MODEL_NAME,
+        model_name=model_name,
         model_digest=_MODEL_DIGEST,
         model_metadata_sha256=_MODEL_METADATA_DIGEST,
-        model_parameter_count=_MODEL_PARAMETER_COUNT,
-        model_parameter_size=_MODEL_PARAMETER_SIZE,
+        model_parameter_count=model_parameter_count,
+        model_parameter_size=model_parameter_size,
         terminal_model_fingerprint=_TERMINAL_FINGERPRINT,
         evidence=_approval_evidence(),
     )
@@ -330,8 +336,13 @@ def test_materializer_rejects_realized_only_drawdown_evidence() -> None:
     assert "intratrade_path_risk_not_verified" in report["reasons"]
 
 
+@pytest.mark.parametrize(
+    "model_name",
+    (_MODEL_NAME, "private-finance:latest"),
+)
 def test_materializer_builds_bound_daily_pairs_and_can_clear_existing_gate(
     tmp_path: Path,
+    model_name: str,
 ) -> None:
     records: list[dict[str, object]] = []
     trades: list[ClosedTrade] = []
@@ -344,7 +355,7 @@ def test_materializer_builds_bound_daily_pairs_and_can_clear_existing_gate(
         is_loss = index < 31
         action = "approve" if index == 30 or not is_loss else "veto"
         pnl = -1.0 if is_loss else 2.0
-        case = _case(observed)
+        case = _case(observed, model_name=model_name)
         record = _record(
             case,
             _decision(action),
@@ -373,7 +384,7 @@ def test_materializer_builds_bound_daily_pairs_and_can_clear_existing_gate(
         trades,
         verified_records,
         initial_capital=1_000.0,
-        model_name="qwen3:14b",
+        model_name=model_name,
         intratrade_paths=intratrade_paths,
         model_parameters_b=14.0,
     )
@@ -388,6 +399,7 @@ def test_materializer_builds_bound_daily_pairs_and_can_clear_existing_gate(
     assert len(report["matched_periods"]) >= 90
     assert report["uplift"]["baseline"]["realized_pnl"] == pytest.approx(-11.0)
     assert report["uplift"]["ai"]["realized_pnl"] == pytest.approx(19.0)
+    assert report["uplift"]["model_parameters_b"] == pytest.approx(14.0)
     assert report["intratrade_path_evidence"]["verified"] is True
     assert report["accepted"] is True
     assert len(report["report_sha256"]) == 64

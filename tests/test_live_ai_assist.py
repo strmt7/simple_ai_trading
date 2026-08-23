@@ -288,6 +288,20 @@ def test_case_identity_is_deterministic_and_tamper_evident() -> None:
         replace(first, model_parameter_count=8_200_000_000.5).validated()
 
 
+def test_assisted_decision_rejects_unvalidated_model_identity() -> None:
+    invalid_identity = _model_identity_kwargs()
+    invalid_identity["model_parameter_size"] = "8.2B\nforged"
+
+    with pytest.raises(ValueError, match="model parameter identity"):
+        AIAssistedDecisionFunction(
+            lambda *_args: None,
+            SimpleNamespace(),  # type: ignore[arg-type]
+            **invalid_identity,
+            model_digest=_DIGEST,
+            terminal_model_fingerprint=_FINGERPRINT,
+        )
+
+
 def test_provider_parser_is_exact_and_semantically_fail_closed() -> None:
     content = json.dumps(
         {

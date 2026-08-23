@@ -10,7 +10,7 @@ from pathlib import Path
 import sqlite3
 from typing import Mapping, Sequence
 
-from .ai_review import canonical_ollama_model_name
+from .ai_model_identity import OllamaModelIdentity, canonical_ollama_model_name
 from .ai_uplift import AIUpliftPolicy, assess_ai_uplift
 from .live_ai_assist import (
     LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION,
@@ -662,12 +662,28 @@ def assess_live_ai_shadow_uplift(
     audited_model_name = (
         next(iter(model_names)) if len(model_names) == 1 else requested_model_name
     )
+    attested_model_identity = None
+    if (
+        len(model_names) == 1
+        and len(model_digests) == 1
+        and len(model_metadata_digests) == 1
+        and len(model_parameter_counts) == 1
+        and len(model_parameter_sizes) == 1
+    ):
+        attested_model_identity = OllamaModelIdentity(
+            canonical_model=audited_model_name,
+            digest=model_digest,
+            metadata_sha256=next(iter(model_metadata_digests)),
+            parameter_count=next(iter(model_parameter_counts)),
+            parameter_size=next(iter(model_parameter_sizes)),
+        ).validated()
     uplift = assess_ai_uplift(
         baseline_metrics,
         ai_metrics,
         model_name=audited_model_name,
         model_parameters_b=None,
         model_artifact_sha256=model_digest,
+        attested_model_identity=attested_model_identity,
         matched_periods=matched_periods,
         policy=cfg,
     )

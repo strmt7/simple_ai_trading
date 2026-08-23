@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from simple_ai_trading import statistical_resampling
+from simple_ai_trading.ai_model_identity import OllamaModelIdentity
 from simple_ai_trading.ai_uplift import (
     AIUpliftPolicy,
     _binomial_upper_tail,
@@ -226,6 +227,137 @@ def test_ai_uplift_rejects_unverified_parameter_size_assertions(
     assert report.accepted is False
     assert report.model_parameters_b == expected_parameters_b
     assert reason in report.reasons
+
+
+def test_ai_uplift_accepts_exact_attested_custom_model_identity() -> None:
+    identity = OllamaModelIdentity(
+        canonical_model="private-finance:latest",
+        digest=_MODEL_SHA256,
+        metadata_sha256="e" * 64,
+        parameter_count=8_200_000_000,
+        parameter_size="8.2B",
+    ).validated()
+    baseline = _complete(
+        {
+            "realized_pnl": 12.0,
+            "roi_pct": 1.2,
+            "max_drawdown": 0.04,
+            "expectancy": 0.9,
+            "closed_trades": 30,
+        },
+        _BASELINE_SHA256,
+    )
+    ai = _complete(
+        {
+            "realized_pnl": 18.0,
+            "roi_pct": 1.8,
+            "max_drawdown": 0.035,
+            "expectancy": 1.2,
+            "closed_trades": 30,
+        },
+        _AI_SHA256,
+    )
+
+    accepted = assess_ai_uplift(
+        baseline,
+        ai,
+        model_name="private-finance:latest",
+        model_artifact_sha256=_MODEL_SHA256,
+        attested_model_identity=identity,
+        matched_periods=_matched_periods((0.002,) * 30),
+    )
+    assertion_mismatch = assess_ai_uplift(
+        baseline,
+        ai,
+        model_name="private-finance:latest",
+        model_parameters_b=14.0,
+        model_artifact_sha256=_MODEL_SHA256,
+        attested_model_identity=identity,
+        matched_periods=_matched_periods((0.002,) * 30),
+    )
+
+    assert accepted.accepted is True
+    assert accepted.model_parameters_b == pytest.approx(8.2)
+    assert "model_parameter_count_not_inferred_from_model_identity" not in (
+        accepted.reasons
+    )
+    assert assertion_mismatch.accepted is False
+    assert "model_parameter_count_mismatch" in assertion_mismatch.reasons
+
+
+@pytest.mark.parametrize(
+    ("model_name", "artifact_sha256", "reason"),
+    [
+        (
+            "different-private-model:latest",
+            _MODEL_SHA256,
+            "attested_model_name_mismatch",
+        ),
+        ("private-finance:latest", "f" * 64, "attested_model_digest_mismatch"),
+    ],
+)
+def test_ai_uplift_rejects_misbound_attested_model_identity(
+    model_name: str,
+    artifact_sha256: str,
+    reason: str,
+) -> None:
+    identity = OllamaModelIdentity(
+        canonical_model="private-finance:latest",
+        digest=_MODEL_SHA256,
+        metadata_sha256="e" * 64,
+        parameter_count=8_200_000_000,
+        parameter_size="8.2B",
+    ).validated()
+    report = assess_ai_uplift(
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "roi_pct": 1.2,
+                "max_drawdown": 0.04,
+                "expectancy": 0.9,
+                "closed_trades": 30,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 18.0,
+                "roi_pct": 1.8,
+                "max_drawdown": 0.035,
+                "expectancy": 1.2,
+                "closed_trades": 30,
+            },
+            _AI_SHA256,
+        ),
+        model_name=model_name,
+        model_artifact_sha256=artifact_sha256,
+        attested_model_identity=identity,
+        matched_periods=_matched_periods((0.002,) * 30),
+    )
+
+    assert report.accepted is False
+    assert report.model_parameters_b is None
+    assert reason in report.reasons
+
+
+def test_ai_uplift_rejects_structurally_invalid_attested_identity() -> None:
+    invalid_identity = OllamaModelIdentity(
+        canonical_model="private-finance:latest",
+        digest=_MODEL_SHA256,
+        metadata_sha256="e" * 64,
+        parameter_count=0,
+        parameter_size="unknown",
+    )
+    report = assess_ai_uplift(
+        {},
+        {},
+        model_name="private-finance:latest",
+        model_artifact_sha256=_MODEL_SHA256,
+        attested_model_identity=invalid_identity,
+    )
+
+    assert report.model_parameters_b is None
+    assert "attested_model_identity_invalid" in report.reasons
 
 
 def test_ai_uplift_rejection_reason_order_is_stable() -> None:
