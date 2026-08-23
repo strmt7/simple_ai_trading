@@ -8,6 +8,8 @@ import shutil
 import subprocess
 import sys
 
+import pytest
+
 import simple_ai_trading.round75_capture_supervisor as supervisor_module
 from simple_ai_trading.impact_absorption_event_segmented_cohort import (
     Round74SegmentedCohortPlan,
@@ -403,6 +405,36 @@ def test_capture_supervisor_repairs_stale_exact_family_child_first(
     assert result["terminated_process_ids"] == [4101, 4100]
     assert result["started_process_id"] == 4199
     assert result["action"] == "stale_owned_repaired_and_service_started"
+
+
+def test_capture_supervisor_fails_if_owned_process_does_not_terminate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config, plan, contract_sha256 = _fixture(tmp_path)
+    now = 1_900_000_100_000_000_000
+    service = _service_process(config, process_id=4150, creation_wall_ns=now - 10)
+    _write_state(
+        config,
+        plan,
+        contract_sha256,
+        process_id=4150,
+        heartbeat_wall_ns=now - ROUND75_SERVICE_STALE_AFTER_NS - 1,
+    )
+    clock = iter((100.0, 116.0))
+    monkeypatch.setattr(supervisor_module.time, "monotonic", lambda: next(clock))
+
+    with pytest.raises(RuntimeError, match="did not terminate before deadline"):
+        supervise_round75_capture(
+            config,
+            repair_stale_owned=True,
+            processes=(service,),
+            now_wall_ns=now,
+            terminate=lambda _process_id: None,
+            start_service=lambda _config: (_ for _ in ()).throw(AssertionError()),
+            refresh_inventory=lambda: (service,),
+            sleep=lambda _seconds: None,
+        )
 
 
 def test_capture_supervisor_does_not_repair_stale_family_without_flag(
