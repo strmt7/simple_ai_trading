@@ -421,11 +421,17 @@ zero open Dependabot, code-scanning, and secret-scanning alerts, with only
 `main` and no open pull request. This is bounded analyzer evidence, not proof
 that no undiscovered vulnerability exists.
 
-The only remaining finding from that eight-item AI complexity inventory is
-`ai_start_gate.evaluate_ai_start_gate` (Radon `24`). Keep it as a separate,
-behavior-frozen task with exact startup-status, provider-call-order, and
-persisted-evidence parity. No model input, prediction, score, threshold, risk
-authority, P&L, order path, or profitability behavior changed in this closeout.
+The immediate follow-up closes the last finding from that eight-item inventory.
+`ai_start_gate.evaluate_ai_start_gate` falls from Radon `24` to `7`; all gate
+helpers score `13` or lower. Parent/current comparison covers 17 startup
+scenarios with 34 exact result and call-order comparisons and zero mismatches.
+The focused gate matrix passes 80 tests, the complete affected AI matrix passes
+201 tests, and changed executable-line coverage is `39/39`. Scoped Mypy,
+Bandit, Ruff, formatting, Vulture, compilation, lock validation, terminology,
+and whitespace checks pass. Hosted analyzers on the exact pushed revision
+remain the publication authority. This closes the documented AI complexity
+queue only; it changes no model input, prediction, score, threshold, risk
+authority, P&L, order path, or profitability behavior.
 
 ## Resume Here
 
