@@ -26,21 +26,21 @@ the repository and on GitHub before changing code.
 
 ## Live Host Handoff: 2026-08-23
 
-The closeout state below was reverified at approximately `2026-08-23T01:38Z`.
+The closeout state below was reverified at approximately `2026-08-23T02:26Z`.
 It is host and repository evidence, not model evidence, and must be refreshed
 before any new action.
 
 - `main` and `origin/main` were clean and synchronized at
-  `6ba7e3261947a2f7f8067900b43c404540665677`. GitHub exposed only `main` and no
+  `42a3721f837dc0681399c0affc65d4b706e76fe3`. GitHub exposed only `main` and no
   open pull request. CI, Ruff, Vulture, Super-Linter, both CodeQL language jobs,
-  and DeepSource passed on that exact revision. The available alert APIs
-  returned zero open code-scanning, Dependabot, and secret-scanning alerts.
-  This is current scanner evidence, not proof that the repository has no
-  vulnerabilities.
-- Round 75 had rotated to wrapper PID `63300` and child PID `7104`; both command
-  lines remained bound to the frozen detached worktree and v4 capture contract.
-  Its scheduled supervisor last returned `0`, had no missed invocation, and
-  remained scheduled. Round 21 wrapper PID `35008` and child PID `35264` were
+  and DeepSource run `8f1d401b-159e-41af-bb76-7aca010e8be5` passed on that exact
+  revision. The available alert APIs returned zero open code-scanning,
+  Dependabot, and secret-scanning alerts. This is current scanner evidence, not
+  proof that the repository has no vulnerabilities.
+- At the latest read-only host check, the Round 75 supervisor task was ready,
+  its last invocation returned `0`, and it had no missed runs. Its worker is
+  short-lived and rotates between task invocations; do not use a prior PID as
+  current identity. Round 21 wrapper PID `35008` and child PID `35264` remained
   responsive. No capture worktree, process, state file, database, or schedule
   was changed during closeout.
 - The detailed capture snapshot below was gathered on `2026-08-22` and remains
@@ -103,9 +103,9 @@ blind overwrite. All new development after integration belongs on `main`.
 
 ### Security Snapshot
 
-- Exact revision `6ba7e3261947a2f7f8067900b43c404540665677` passed CI, Ruff,
+- Exact revision `42a3721f837dc0681399c0affc65d4b706e76fe3` passed CI, Ruff,
   Vulture, Super-Linter, Python and native C++ CodeQL, and DeepSource run
-  `2e13879b-c5ed-4a7e-9a34-b94c1584775f`. GitHub reported zero open
+  `8f1d401b-159e-41af-bb76-7aca010e8be5`. GitHub reported zero open
   code-scanning, Dependabot, and secret-scanning alerts, no open pull requests,
   and only `main`. These authorities have different scopes; a zero-open-alert
   snapshot is not a claim that no vulnerability exists.
@@ -744,9 +744,10 @@ is published, tested on current `main`, or safe to discard.
   and published as a GitHub artifact; the unavailable, unprovisioned Codecov
   upload is not treated as a repository quality gate. Before this commit, live
   GitHub showed zero open Dependabot alerts, zero open secret-scanning alerts,
-  and only `main`; code scanning was unavailable and remains unverified. Hosted
-  CI, Ruff, Vulture, Super-Linter, and DeepSource are never inferred from local
-  runs; this checkpoint is valid only if they pass on its pushed commit.
+  and only `main`; code scanning was unavailable at that historical checkpoint.
+  The current Security Snapshot above supersedes that scanner state. Hosted CI,
+  Ruff, Vulture, Super-Linter, and DeepSource are never inferred from local runs;
+  a checkpoint is valid only if they pass on its pushed commit.
 - Immutable Round 27 source-ledger and Round 28/29 preregistration hashes remain
   preserved. Canonical source-only remediation amendments bind every
   semantics-preserving analyzer refactor before any Stage 1 feature or outcome
@@ -806,7 +807,7 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    do not resurrect historical counts as current findings. Trace each candidate
    from source to sink, fix validated defects with direct regressions, and avoid
    broad suppressions or mechanical rewrites. The closeout authority is exact
-   revision `6ba7e326`: all hosted workflows and DeepSource passed, and the
+   revision `42a3721f`: all hosted workflows and DeepSource passed, and the
    available GitHub APIs reported zero open alerts. That snapshot does not prove
    absence of undiscovered vulnerabilities.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,

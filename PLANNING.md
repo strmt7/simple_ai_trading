@@ -77,12 +77,14 @@ Super-Linter, DeepSource, secret scanning, and available GitHub dependency and
 code-scanning checks have been verified. An unavailable scanner is reported as
 unverified, never as zero vulnerabilities.
 
-At the 2026-08-22 handoff, dependency audits and Zizmor passed and available
-GitHub alert APIs were clear, but GitHub code scanning was unavailable. Bandit
-still reported 522 source audit items and the last verified DeepSource project
-backlog was about 28000 issues. These are bounded triage queues, not permission
-for broad suppressions or risky mass rewrites. See `docs/CONTINUATION.md` for
-the exact inventory and integration hazard. Closeout revision `f50c3a83`
+At the `2026-08-23T02:26Z` closeout, exact revision `42a3721f` passed CI, Ruff,
+Vulture, Super-Linter, Python and native C++ CodeQL, and DeepSource. GitHub's
+available APIs reported zero open code-scanning, Dependabot, and secret-scanning
+alerts, with only `main` and no open pull request. This bounded snapshot is not
+proof that no undiscovered vulnerability exists. Historical Bandit and
+DeepSource inventories remain triage evidence, not current vulnerability counts
+or permission for broad suppressions. See `docs/CONTINUATION.md` for the exact
+inventory and integration hazard. Closeout revision `f50c3a83`
 removed the current AI-uplift type-contract blockers; DeepSource then displayed
 nine changed-scope complexity findings. All nine paths have now been decomposed
 in behavior-preserving batches. The five `financial_sanity.py` entry points fell
@@ -345,8 +347,8 @@ Torch runtime, masked Windows smoke failures, a DPI-audit mismatch, a six-pixel
 minimum-layout overflow, two URL host-confusion defects, and one
 environment-controlled smoke-log path. Those defects are fixed with focused
 regressions. The two credential-fingerprint findings were source-traced and
-dismissed individually as non-password false positives. Exact closeout revision
-`6ba7e3261947a2f7f8067900b43c404540665677` passed CI, Ruff, Vulture,
+dismissed individually as non-password false positives. Exact current authority
+`42a3721f837dc0681399c0affc65d4b706e76fe3` passed CI, Ruff, Vulture,
 Super-Linter, Python and native C++ CodeQL, and DeepSource. GitHub's available
 APIs reported zero open code-scanning, Dependabot, and secret-scanning alerts,
 with only `main` and no open pull request. This is bounded scanner evidence, not
