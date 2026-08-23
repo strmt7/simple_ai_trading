@@ -17,6 +17,11 @@ EXCLUDED_TOP_LEVEL_DIRS: frozenset[str] = frozenset({"docs", "tests"})
 IGNORED_FINDINGS: frozenset[tuple[str, int, str]] = frozenset(
     {
         (
+            "src/simple_ai_trading/round75_continuous_capture.py",
+            185,
+            "unused variable 'exc_type'",
+        ),
+        (
             "src/simple_ai_trading/polymarket_round25_resolution_store.py",
             116,
             "unused variable 'allow_redirects'",
@@ -139,7 +144,7 @@ def build_vulture_command(paths: list[str], *, min_confidence: int) -> list[str]
 
 
 def _filter_known_false_positives(output: str) -> str:
-    """Remove exact compatibility-signature findings from Vulture output."""
+    """Remove exact protocol-signature findings from Vulture output."""
 
     kept: list[str] = []
     for line in output.splitlines():
