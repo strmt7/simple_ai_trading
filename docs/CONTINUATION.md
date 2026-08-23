@@ -940,15 +940,25 @@ request representation. Malformed JSON, invalid UTF-8, unsupported objects,
 booleans, nested request payloads, and the normal numeric path have direct
 regressions.
 
-At the local checkpoint, 74 tests in `test_ai_review.py` and
-`test_ai_uplift.py` pass. The three changed source modules pass Mypy with an
-ephemeral `types-requests` overlay; Ruff and formatting pass; scoped Bandit
-reports no finding. Current Pylint no longer exposes DeepSource's `W0714`
-message code, so hosted DeepSource on the exact pushed revision remains the
-authority for those three closures. The eight complexity findings are
-deliberately deferred as maintainability work. No model input, prediction,
-uplift result, threshold, order path, risk limit, P&L, trading authority, or
-profitability claim changes.
+At the local checkpoint, 74 tests across `test_ai_type_boundaries.py`,
+`test_ai_review.py`, and `test_ai_uplift.py` pass. The three changed source
+modules pass Mypy with an ephemeral `types-requests` overlay; Ruff and formatting
+pass; scoped Bandit reports no finding. Current Pylint no longer exposes
+DeepSource's `W0714` message code, so hosted DeepSource on the exact pushed
+revision remains the authority for those three closures. The eight complexity
+findings are deliberately deferred as maintainability work. No model input,
+prediction, uplift result, threshold, order path, risk limit, P&L, trading
+authority, or profitability claim changes.
+
+First pushed type checkpoint `17beb4cdb9e69076c4ba28c354860f02d829695e`
+confirmed that all seven targeted source diagnostics were gone. DeepSource run
+`cb73e833-f006-40cb-b00a-a8f996fa54cf` rendered the expected eight source
+complexity findings plus four test-file findings because the new regressions
+touched two large legacy fixture modules. The narrow follow-up restores
+`test_ai_review.py` and `test_ai_uplift.py` byte-for-byte to their `71a22f38`
+versions and moves every new assertion into the small dedicated
+`test_ai_type_boundaries.py` module. This avoids an unrelated fixture refactor;
+hosted analysis of the exact follow-up remains required.
 
 ## Next Work
 
