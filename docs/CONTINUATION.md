@@ -24,29 +24,29 @@ the repository and on GitHub before changing code.
 - The old Round 21/27 PIDs (`33804`, `34228`, `65092`, `36844`) are no longer
   alive. Do not restart them from this historical note.
 
-## Live Host Handoff: 2026-08-22
+## Live Host Handoff: 2026-08-23
 
-The following state was reverified through approximately
-`2026-08-22T17:14Z`. It is host state, not model evidence, and must be
-rechecked before any action.
+The closeout state below was reverified at approximately `2026-08-23T01:38Z`.
+It is host and repository evidence, not model evidence, and must be refreshed
+before any new action.
 
-The `2026-08-23` closeout refresh found `main` synchronized with `origin/main`
-at parent `1ea2387cc905f1d9a4a7fab73061f842091e1c42` before the final bounded
-materializer edit. Round 21 wrapper PID `35008` and child PID `35264` were
-responsive. The Round 75 scheduled supervisor was `Ready` and its last result
-was `0`. Neither
-capture worktree, process, state file, database, or schedule was changed. These
-are ephemeral observations and must be reverified after resumption. GitHub
-exposed only `main`, no open pull request, zero open Dependabot alerts, and zero
-open secret-scanning alerts. Code scanning returned `404: no analysis found`;
-it remains unavailable and must not be represented as zero vulnerabilities.
-
-- Main and `origin/main` were synchronized at model-evidence refactor revision
-  `9f5efe1573281306a1dde413afe353fcc309bee3` before this documentation
-  closeout. GitHub's remote branch inventory contained only `main`, with no
-  open pull requests. Always verify
-  `git rev-parse HEAD`, `git rev-parse origin/main`, and the remote branch
-  inventory directly before resuming.
+- `main` and `origin/main` were clean and synchronized at
+  `6ba7e3261947a2f7f8067900b43c404540665677`. GitHub exposed only `main` and no
+  open pull request. CI, Ruff, Vulture, Super-Linter, both CodeQL language jobs,
+  and DeepSource passed on that exact revision. The available alert APIs
+  returned zero open code-scanning, Dependabot, and secret-scanning alerts.
+  This is current scanner evidence, not proof that the repository has no
+  vulnerabilities.
+- Round 75 had rotated to wrapper PID `63300` and child PID `7104`; both command
+  lines remained bound to the frozen detached worktree and v4 capture contract.
+  Its scheduled supervisor last returned `0`, had no missed invocation, and
+  remained scheduled. Round 21 wrapper PID `35008` and child PID `35264` were
+  responsive. No capture worktree, process, state file, database, or schedule
+  was changed during closeout.
+- The detailed capture snapshot below was gathered on `2026-08-22` and remains
+  preservation evidence only. Process IDs and counters are ephemeral. Always
+  reverify repository identity, process ancestry, scheduled-task state, and the
+  contract-defined state before acting.
 - Round 75 prospective Binance capture is active from the detached worktree
   `C:\trader\simple_ai_trading-model-dev`. The latest supervisor record was
   `service_healthy`, with no credentials, orders, or trading authority.
@@ -103,9 +103,12 @@ blind overwrite. All new development after integration belongs on `main`.
 
 ### Security Snapshot
 
-- GitHub reported zero open Dependabot alerts, zero open secret-scanning
-  alerts, no open pull requests, and only `main`. GitHub code scanning returned
-  `404: no analysis found`; it is unavailable, not zero.
+- Exact revision `6ba7e3261947a2f7f8067900b43c404540665677` passed CI, Ruff,
+  Vulture, Super-Linter, Python and native C++ CodeQL, and DeepSource run
+  `2e13879b-c5ed-4a7e-9a34-b94c1584775f`. GitHub reported zero open
+  code-scanning, Dependabot, and secret-scanning alerts, no open pull requests,
+  and only `main`. These authorities have different scopes; a zero-open-alert
+  snapshot is not a claim that no vulnerability exists.
 - `uv lock --check` passed. Dependency manifests and the lock have not changed
   since pip-audit found no known vulnerabilities in the complete exported GPU
   and DirectML dependency stacks. The exact pushed revision
@@ -678,7 +681,8 @@ defect: at `1280x860`, the reinvestment toggle ended six pixels beyond the outer
 frame. The overview settings row now uses compact, non-overlapping AI and
 reinvestment bounds that end at the padded client edge, and the validator can
 explicitly exercise `1280x860` in device-independent pixels. Hosted replacement
-evidence is still required.
+evidence passed on exact revision
+`6ba7e3261947a2f7f8067900b43c404540665677`.
 
 The first successful Python and native CodeQL uploads made the alert API
 available and returned five findings on `0d886254`: two incomplete URL-host
@@ -692,8 +696,11 @@ and both dry-run and real-compute native smoke checks pass locally. The two hash
 findings were dismissed individually as false positives with evidence comments:
 the Binance digest is transient in-memory change detection, while the Polymarket
 binding includes a validated 256-bit private key; neither path stores, accepts,
-or verifies a password. Do not call the three code fixes closed until a fresh
-CodeQL analysis marks those alerts fixed and the open-alert API is rechecked.
+or verifies a password. Fresh Python and native C++ CodeQL analysis passed on
+exact revision `6ba7e3261947a2f7f8067900b43c404540665677`. The two URL findings
+and native path finding are fixed, the two source-traced hash findings remain
+individually dismissed as false positives with evidence, and the open
+code-scanning alert API returned zero.
 
 This is an interruption-safe checkpoint, not product completion. Round 75 and
 Round 21 remain active under their frozen contracts. The 97 modified, 2 deleted,
@@ -794,46 +801,14 @@ evaluate it before Round 75 terminalization; it has no present edge claim.
    unverified until focused domain tests, contract hashes, generated CLI/native
    parity, and the affected analyzer gates pass on the integrated tree. Do not
    publish or infer their model claims from local file presence.
-5. Continue security triage in bounded batches. The `B110` and `B112` queue is
-   now zero. Trace remaining Bandit/DeepSource dynamic SQL source-to-sink paths.
-   Distinguish fixed or validated identifiers and trusted executable contracts
-   from actual injection or path-hijack exposure. Add direct regressions for
-   every behavior change; do not suppress the backlog broadly. Continue from
-   the exact DeepSource inventory on the final closeout SHA. The first
-   type-contract batch reduced the headline Python count from 107 to 86 and the
-   follow-up reduced it to 51. The nine changed-scope AI-uplift and
-   financial-sanity complexity findings were later closed in two bounded,
-   behavior-preserving batches. DeepSource then exposed the 13 smaller helper
-   findings listed above under its stricter threshold. Exact revision `67dab5d8`
-   closed four and confirmed the remaining nine. The subsequent local batch
-   addresses all nine, and exact revision `bb6abac7` confirmed their closure.
-   The seven-item type/test follow-up is closed at `13f33f8a`; continue from its
-   exact 27-item DeepSource inventory recorded above. The market-data batch
-   closed the coverage-complexity and unsafe-comparison family at exact
-   follow-up revision `8d5ecc1e`. The rule-alpha scorer and two static-method
-   findings are closed at follow-up `c349aca6`. The first SQL-safety checkpoint
-   removed one of ten `market_store.py` dynamic-query heuristics at `63ecb4f2`;
-   follow-up `646bbdbe` removes the other nine without suppression or index loss.
-   The current Ridge/MLP materializer batch removes four more internal-identifier
-   construction sites through explicit statement allowlists, and its bounded
-   type follow-up closes the two modules' 22 scoped Mypy diagnostics. Continue
-   from the exact `eef01801` DeepSource inventory above. The critical MLP lookup
-   and unbound fit-claim row boundary are closed in `75160c3d`. Preserve the
-   recorder finding until a cumulative source-ledger amendment can be reviewed.
-   Backend, member, and ensemble validation complexity is closed in the final
-   bounded closeout under canonical identity fingerprints and fail-closed tests.
-   Report validation is also closed under exact admitted/no-trade identities and
-   rejection tests. Fit-member training-loop complexity is closed under exact
-   numeric and progress fingerprints. Top-level orchestration is also closed
-   under exact full-report and callback fingerprints plus admission-gated test
-   mechanics. The materializer is now closed under real DuckDB idempotence,
-   transaction rollback, runtime-evidence repair, replay-drift, and tamper tests.
-   Continue source-to-sink triage in other modules from exact hosted results,
-   not assumed residual counts. Replace runtime
-   assertions only when an explicit fail-closed error and cleanup contract
-   exists; do not mechanically rewrite typing assertions.
-   Do not treat the narrow `5f6e790c` pass or any bounded follow-up as closure
-   of the broader backlog or as a project-wide security result.
+5. Continue security work only in bounded, evidence-driven batches. Start by
+   refreshing current alerts and analyzer output on the then-current `main`;
+   do not resurrect historical counts as current findings. Trace each candidate
+   from source to sink, fix validated defects with direct regressions, and avoid
+   broad suppressions or mechanical rewrites. The closeout authority is exact
+   revision `6ba7e326`: all hosted workflows and DeepSource passed, and the
+   available GitHub APIs reported zero open alerts. That snapshot does not prove
+   absence of undiscovered vulnerabilities.
 6. Evaluate a model only after source, causal split, cost, delay, access-ledger,
    sample, and implementation bindings are complete. AI remains veto/downsize
    only until matched, latency-charged causal uplift is demonstrated.
