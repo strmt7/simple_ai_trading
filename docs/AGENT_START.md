@@ -51,6 +51,10 @@ safety gate, blocks Stop, or submits an order.
 - Polymarket Round 29 source-bound selection is implemented, but its evaluation
   remains unopened until every source input validates. No Stage 1 rows,
   outcomes, PnL, or profitability evidence have been accessed.
+- A shared source-continuity gate now permits only slot-local failure
+  containment for future, separately activated Binance and Polymarket
+  campaigns. It is design-only: no future schedule, capture, target, model, or
+  authority is active.
 - The independent Round 21 sidecar remains protected until
   `2026-08-29T23:40:00Z`. Do not stop, restart, stage, clean, reset, switch,
   commit, or modify its process, worktree, state, database, or WAL.
