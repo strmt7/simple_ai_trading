@@ -13,7 +13,7 @@
     ],
     "scheduled_task_created": false
   },
-  "artifact_sha256": "9653c76c154ad316f11ee35a9e013f8dee412b29384cbbbe490575fa74c3411c",
+  "artifact_sha256": "ed8187d90509af58df459a718219da801689c05b4c9b5c50fbbcccdae3c3ad5e",
   "authority": {
     "ai_uplift_established": false,
     "credentials_used": false,
@@ -57,7 +57,7 @@
     "unsupported_slice_action": "abstain_from_new_exposure"
   },
   "implementation": {
-    "module_file_sha256": "1c806bafa2885f079de604f8df222d71da345e1ef90b477effd6776627851338",
+    "module_file_sha256": "384c15e75523b8e418a339656911bee7dc710ed0d47c4642d85902f4ce661b76",
     "module_path": "src/simple_ai_trading/prospective_capture_gate.py",
     "test_file_sha256": "6f59662ebc6d513dc880e73359140a9cbd08a09815c6d209168d564e06837f1c",
     "test_path": "tests/test_prospective_capture_gate.py"

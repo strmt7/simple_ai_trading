@@ -64,35 +64,48 @@ class CampaignPlan:
             raise ValueError("campaign slots are empty")
         for slot in self.slots:
             slot.validate()
-        slot_ids = tuple(slot.slot_id for slot in self.slots)
-        if len(set(slot_ids)) != len(slot_ids):
-            raise ValueError("capture slot identities must be unique")
-        namespaces = tuple(slot.storage_namespace for slot in self.slots)
-        if len(set(namespaces)) != len(namespaces):
-            raise ValueError("capture storage namespaces must be unique")
-        if tuple(self.slots) != tuple(
-            sorted(self.slots, key=lambda slot: slot.scheduled_start_wall_ns)
+        _validate_unique_slot_bindings(self.slots)
+        _validate_slot_schedule(self.slots)
+        _validate_role_quotas(self.slots, self.minimum_capacity_by_role)
+
+
+def _validate_unique_slot_bindings(slots: Sequence[PlannedCaptureSlot]) -> None:
+    slot_ids = tuple(slot.slot_id for slot in slots)
+    if len(set(slot_ids)) != len(slot_ids):
+        raise ValueError("capture slot identities must be unique")
+    namespaces = tuple(slot.storage_namespace for slot in slots)
+    if len(set(namespaces)) != len(namespaces):
+        raise ValueError("capture storage namespaces must be unique")
+
+
+def _validate_slot_schedule(slots: Sequence[PlannedCaptureSlot]) -> None:
+    if tuple(slots) != tuple(
+        sorted(slots, key=lambda slot: slot.scheduled_start_wall_ns)
+    ):
+        raise ValueError("capture slots are not chronological")
+    if any(
+        current.scheduled_start_wall_ns < previous.scheduled_end_wall_ns
+        for previous, current in zip(slots, slots[1:], strict=False)
+    ):
+        raise ValueError("capture slots overlap")
+
+
+def _validate_role_quotas(
+    slots: Sequence[PlannedCaptureSlot],
+    minimum_capacity_by_role: Mapping[str, int],
+) -> None:
+    roles = {slot.role for slot in slots}
+    if set(minimum_capacity_by_role) != roles:
+        raise ValueError("campaign role quota keys differ")
+    for role, minimum in minimum_capacity_by_role.items():
+        planned = sum(slot.planned_capacity for slot in slots if slot.role == role)
+        if (
+            isinstance(minimum, bool)
+            or not isinstance(minimum, int)
+            or minimum <= 0
+            or minimum > planned
         ):
-            raise ValueError("capture slots are not chronological")
-        if any(
-            current.scheduled_start_wall_ns < previous.scheduled_end_wall_ns
-            for previous, current in zip(self.slots, self.slots[1:], strict=False)
-        ):
-            raise ValueError("capture slots overlap")
-        roles = {slot.role for slot in self.slots}
-        if set(self.minimum_capacity_by_role) != roles:
-            raise ValueError("campaign role quota keys differ")
-        for role, minimum in self.minimum_capacity_by_role.items():
-            planned = sum(
-                slot.planned_capacity for slot in self.slots if slot.role == role
-            )
-            if (
-                isinstance(minimum, bool)
-                or not isinstance(minimum, int)
-                or minimum <= 0
-                or minimum > planned
-            ):
-                raise ValueError("campaign role quota differs")
+            raise ValueError("campaign role quota differs")
 
 
 @dataclass(frozen=True, slots=True)
@@ -201,6 +214,94 @@ def _slot_blockers(
     return tuple(f"{slot.slot_id}: {reason}" for reason in reasons)
 
 
+def _capacity_by_role(
+    plan: CampaignPlan,
+    indexed: Mapping[str, SlotEvidence],
+) -> dict[str, int]:
+    return {
+        role: sum(
+            item.admitted_capacity
+            for slot in plan.slots
+            if slot.role == role
+            for item in (indexed.get(slot.slot_id),)
+            if item is not None and item.status == "passed"
+        )
+        for role in sorted(plan.minimum_capacity_by_role)
+    }
+
+
+def _possible_remaining_by_role(
+    plan: CampaignPlan,
+    indexed: Mapping[str, SlotEvidence],
+    *,
+    observed_wall_ns: int,
+) -> dict[str, int]:
+    def can_still_pass(slot: PlannedCaptureSlot) -> bool:
+        item = indexed.get(slot.slot_id)
+        return (
+            item is None or item.status == "running"
+        ) and observed_wall_ns <= slot.scheduled_end_wall_ns + slot.terminal_grace_ns
+
+    return {
+        role: sum(
+            slot.planned_capacity
+            for slot in plan.slots
+            if slot.role == role and can_still_pass(slot)
+        )
+        for role in sorted(plan.minimum_capacity_by_role)
+    }
+
+
+def _unrecoverable_roles(
+    plan: CampaignPlan,
+    capacity: Mapping[str, int],
+    possible_remaining: Mapping[str, int],
+) -> tuple[str, ...]:
+    return tuple(
+        role
+        for role in sorted(plan.minimum_capacity_by_role)
+        if capacity[role] + possible_remaining[role]
+        < plan.minimum_capacity_by_role[role]
+    )
+
+
+def _next_open_slot(
+    plan: CampaignPlan,
+    indexed: Mapping[str, SlotEvidence],
+    *,
+    observed_wall_ns: int,
+) -> PlannedCaptureSlot | None:
+    return next(
+        (
+            slot
+            for slot in plan.slots
+            if slot.slot_id not in indexed
+            and slot.scheduled_start_wall_ns
+            <= observed_wall_ns
+            <= slot.scheduled_end_wall_ns + slot.terminal_grace_ns
+        ),
+        None,
+    )
+
+
+def _campaign_status(
+    *,
+    blockers: Sequence[str],
+    unrecoverable: Sequence[str],
+    source_ready: bool,
+    next_slot: PlannedCaptureSlot | None,
+) -> str:
+    if blockers:
+        return "blocked_integrity"
+    if unrecoverable:
+        return "blocked_unrecoverable"
+    if source_ready:
+        return "source_population_ready"
+    if next_slot is not None:
+        return "ready_for_next_slot"
+    return "waiting_for_fixed_slot"
+
+
 def evaluate_campaign_source_gate(
     plan: CampaignPlan,
     evidence: Sequence[SlotEvidence],
@@ -227,34 +328,13 @@ def evaluate_campaign_source_gate(
         )
     )
 
-    capacity = {
-        role: sum(
-            item.admitted_capacity
-            for slot in plan.slots
-            if slot.role == role
-            for item in (indexed.get(slot.slot_id),)
-            if item is not None and item.status == "passed"
-        )
-        for role in sorted(plan.minimum_capacity_by_role)
-    }
-    possible_remaining = {
-        role: sum(
-            slot.planned_capacity
-            for slot in plan.slots
-            if slot.role == role
-            and (
-                (item := indexed.get(slot.slot_id)) is None or item.status == "running"
-            )
-            and observed_wall_ns <= slot.scheduled_end_wall_ns + slot.terminal_grace_ns
-        )
-        for role in sorted(plan.minimum_capacity_by_role)
-    }
-    unrecoverable = tuple(
-        role
-        for role in sorted(plan.minimum_capacity_by_role)
-        if capacity[role] + possible_remaining[role]
-        < plan.minimum_capacity_by_role[role]
+    capacity = _capacity_by_role(plan, indexed)
+    possible_remaining = _possible_remaining_by_role(
+        plan,
+        indexed,
+        observed_wall_ns=observed_wall_ns,
     )
+    unrecoverable = _unrecoverable_roles(plan, capacity, possible_remaining)
     all_terminal = len(indexed) == len(plan.slots) and all(
         item.terminal for item in indexed.values()
     )
@@ -263,28 +343,17 @@ def evaluate_campaign_source_gate(
         for role, minimum in plan.minimum_capacity_by_role.items()
     )
     source_ready = not blockers and all_terminal and quotas_passed
-    next_slot = next(
-        (
-            slot
-            for slot in plan.slots
-            if slot.slot_id not in indexed
-            and slot.scheduled_start_wall_ns
-            <= observed_wall_ns
-            <= slot.scheduled_end_wall_ns + slot.terminal_grace_ns
-        ),
-        None,
+    next_slot = _next_open_slot(
+        plan,
+        indexed,
+        observed_wall_ns=observed_wall_ns,
     )
-
-    if blockers:
-        status = "blocked_integrity"
-    elif unrecoverable:
-        status = "blocked_unrecoverable"
-    elif source_ready:
-        status = "source_population_ready"
-    elif next_slot is not None:
-        status = "ready_for_next_slot"
-    else:
-        status = "waiting_for_fixed_slot"
+    status = _campaign_status(
+        blockers=blockers,
+        unrecoverable=unrecoverable,
+        source_ready=source_ready,
+        next_slot=next_slot,
+    )
 
     return CampaignSourceGateReport(
         campaign_id=plan.campaign_id,
