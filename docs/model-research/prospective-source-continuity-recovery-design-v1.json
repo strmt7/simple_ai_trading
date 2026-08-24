@@ -1,0 +1,123 @@
+{
+  "activation": {
+    "capture_started": false,
+    "exact_schedule_frozen": false,
+    "host_preflight_completed": false,
+    "required_before_activation": [
+      "verify_current_main_and_exact_source_hashes",
+      "verify_protected_round21_sidecar_terminal_boundary",
+      "freeze_venue_specific_schedule_storage_namespaces_role_quotas_and_capacity_units",
+      "prove_every_slot_uses_a_unique_database_path",
+      "prove_supervisor_restart_and_terminalization_on_the_target_host",
+      "publish_a_hash_bound_activation_receipt_before_first_market_message"
+    ],
+    "scheduled_task_created": false
+  },
+  "artifact_sha256": "9653c76c154ad316f11ee35a9e013f8dee412b29384cbbbe490575fa74c3411c",
+  "authority": {
+    "ai_uplift_established": false,
+    "credentials_used": false,
+    "edge_claim": false,
+    "execution_connected": false,
+    "live_trading_authority": false,
+    "model_or_target_access_permitted": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "common_source_policy": {
+    "adaptive_replacement_or_time_shift_permitted": false,
+    "all_elapsed_slots_require_terminal_dispositions": true,
+    "all_tried_model_families_and_parameter_grids_must_be_retained": true,
+    "database_or_wal_payload_opened_by_source_gate": false,
+    "failed_slot_may_change_later_fixed_schedule": false,
+    "failed_slot_storage_must_be_quarantined": true,
+    "future_books_fills_outcomes_pnl_or_resolutions_permitted": false,
+    "one_database_namespace_per_slot": true,
+    "passed_slot_may_retain_a_wal": false,
+    "prior_failed_or_incomplete_lineage_reuse_permitted": false,
+    "quarantined_failed_wal_may_poison_a_later_unique_slot": false,
+    "role_quota_must_remain_recoverable_before_starting_a_new_slot": true,
+    "source_pass_grants_model_or_target_access": false,
+    "target_or_market_dependent_slot_selection_permitted": false
+  },
+  "cross_regime_policy": {
+    "contract_file_sha256": "64b5df61d25223df43b75005d2cd24685404150fd7b03970b2d1813e27cbc364",
+    "contract_path": "docs/model-research/cross-regime-edge-acceptance-contract-v1.json",
+    "contract_sha256": "06068c3e5e8003dce4d3e5b47391a64c987941e6aa25b841f9e1079dcb6ecf23",
+    "required_slices": [
+      "bullish",
+      "bearish",
+      "sideways",
+      "choppy",
+      "high_volatility",
+      "stressed_liquidity",
+      "stressed_latency"
+    ],
+    "unsupported_slice_action": "abstain_from_new_exposure"
+  },
+  "implementation": {
+    "module_file_sha256": "1c806bafa2885f079de604f8df222d71da345e1ef90b477effd6776627851338",
+    "module_path": "src/simple_ai_trading/prospective_capture_gate.py",
+    "test_file_sha256": "6f59662ebc6d513dc880e73359140a9cbd08a09815c6d209168d564e06837f1c",
+    "test_path": "tests/test_prospective_capture_gate.py"
+  },
+  "lineage": {
+    "binance_round75_terminal_audit": {
+      "artifact_sha256": "94a556887adf33996168de260a8a172952bc64040273a7ff2dfb373f2c2f50d6",
+      "file_sha256": "1e1ab831e2f45dc832e493ed807a1b9c0998f0e81733bc44d6c3b2b6b4c86ade",
+      "path": "docs/model-research/action-value/round-075-terminal-campaign-audit-2026-08-23.json",
+      "reuse_permitted": false,
+      "status": "rejected_incomplete_campaign"
+    },
+    "binance_round76_source_adjudication": {
+      "artifact_sha256": "eea5d71fe093b05083dfd7287f1cfff4613b5a9135a7f3460e8073f4dbcc2ff1",
+      "file_sha256": "38e594d09a42ff9f6c6fb3598982f6559b2acbcacecffab0953e0bee6519288e",
+      "path": "docs/model-research/action-value/round-076-round75-source-gate-adjudication-v1.json",
+      "reuse_permitted": false,
+      "status": "blocked_before_implementation_by_round75_source_gate"
+    },
+    "polymarket_round29_source_adjudication": {
+      "artifact_sha256": "fe2f026d24f9e38a963269e7e9b58eee3ed11f98958fc8be4d7e7b0aebef8fcf",
+      "file_sha256": "2ffd5eb29c845d8a5eb72eb3238e45b0a4b58af89f6a1e660330091dc2f59686",
+      "path": "docs/model-research/polymarket/round-029-stage1-readiness-adjudication-2026-08-23.json",
+      "reuse_permitted": false,
+      "status": "blocked_incomplete_stage1_campaign"
+    }
+  },
+  "schema_version": "prospective-source-continuity-recovery-design-v1",
+  "status": "implementation_ready_design_only_not_activated",
+  "venue_designs": {
+    "binance": {
+      "assets": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "capacity_unit": "audited_eligible_anchor_nanoseconds_by_frozen_role",
+      "execution_scope": "public_capture_then_paper_testnet_or_demo_only",
+      "failed_round75_shared_shards_permitted": false,
+      "future_activation_identifier": "action-value-round77-source-recovery",
+      "required_roles": [
+        "training",
+        "tuning",
+        "test"
+      ],
+      "strategy_capital_ledger": "binance_only",
+      "venue": "binance"
+    },
+    "polymarket": {
+      "assets": [
+        "BTC"
+      ],
+      "capacity_unit": "audited_condition_local_executable_markets_by_frozen_role_and_utc_date",
+      "execution_scope": "public_capture_research_only_disabled_by_default",
+      "failed_round27_stage1_storage_permitted": false,
+      "future_activation_identifier": "polymarket-round30-source-recovery",
+      "minimum_distinct_primary_utc_dates": 3,
+      "minimum_eligible_markets": 300,
+      "strategy_capital_ledger": "polymarket_only",
+      "venue": "polymarket"
+    }
+  }
+}

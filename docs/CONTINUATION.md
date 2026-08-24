@@ -73,6 +73,29 @@ Round 75.
   completed model evaluation and was rejected. Rounds 73-76 contain no invented
   model, trade, ROI, or profitability metrics.
 
+## Source-Continuity Recovery Checkpoint
+
+The source-only recovery design is now implemented and hash-bound in
+`docs/model-research/prospective-source-continuity-recovery-design-v1.json`.
+Its generic `prospective_capture_gate.py` primitive is shared only for capture
+integrity; Binance and Polymarket schedules, storage, quotas, strategies,
+capital, targets, and promotion evidence remain independent.
+
+The key correction is slot-local failure containment. Every future capture
+window must use a unique database namespace. A failed slot and its WAL may be
+terminally quarantined, after which a later already-preregistered window may
+continue only if its role quota remains mathematically recoverable. Shared
+storage, a WAL on a passed slot, an elapsed slot without a terminal disposition,
+target or outcome access, adaptive replacement, or an unrecoverable role quota
+fails closed. This prevents the Round 75 pattern, where one shared-shard WAL
+blocked every later slot, without salvaging or reusing any failed lineage.
+
+This is a design-only implementation checkpoint. No exact future schedule is
+frozen, no host preflight or activation receipt exists, no scheduled task was
+created, and no capture, target, model, P&L, edge, profitability, paper, or live
+authority was opened. Direct behavior and publication-lineage coverage pass 31
+tests; the implementation module itself has 100% statement and branch coverage.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -113,9 +136,13 @@ lease, state, database, and WAL agree.
 2. Keep the completed model-dev three-way audit frozen. Do not bulk-integrate
    stale or divergent files; reevaluate a specific path only when a current task
    requires it.
-3. Do not run Polymarket Round 29 from the incomplete Stage 1 campaign. If this
-   hypothesis resumes, freeze a new target-blind prospective capture contract;
-   keep outcomes and economics sealed until every source gate passes.
+3. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
+   campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
+   use the source-continuity recovery design to freeze separate Round 77 Binance
+   and Round 30 Polymarket activation contracts. Each must bind an exact fixed
+   schedule, unique per-slot storage, role capacities, host supervision, and a
+   pre-market activation receipt. Do not share schedules or storage between
+   venues.
 4. Reject any candidate that fails bull, bear, sideways, choppy, high-volatility,
    liquidity-stress, or latency-stress after-cost slices. Abstention is required
    where evidence is unsupported; no strategy can guarantee profit or prevent
