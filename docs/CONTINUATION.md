@@ -179,17 +179,22 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-spot-maker-rebate-account-evidence-gate-v1.json`,
   result SHA-256
   `19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f`.
-- Binance Prediction Trading versus Polymarket is the next distinct structural
-  screen. The official Binance connector exposes unauthenticated market-list,
-  detail, and order-book endpoints with vendor, condition, collateral, fee,
-  outcome-token, and timestamp fields. The frozen screen permits only exact
-  BTC/ETH/SOL payout-rule equivalence; same titles do not qualify, and a shared
-  vendor, condition, or book is a distribution mirror rather than cross-venue
-  arbitrage. Pagination, candidate, exact-equivalence, book, cost, and terminal
-  limits were fixed before any market-list request. Canonical contract:
+- Binance Prediction Trading versus Polymarket was frozen as a distinct
+  structural screen, permitting only exact BTC/ETH/SOL payout-rule equivalence.
+  It stopped before market access. The official generated Markdown said market
+  list required no authorization, while the same pinned connector's generated
+  Java transport attached `binanceSignature`; the live no-key request returned
+  HTTP 400 with `-2014 API-key format invalid`. Two attempts of one exact URL
+  produced zero market payloads; no detail, Polymarket, or book request followed.
+  Do not inspect stored credentials or retry without explicit read-only
+  credential authority and a new frozen authenticated contract. Contract:
   `docs/model-research/action-value/cross-venue-prediction-parity-screen-contract-v1.json`,
   result SHA-256
   `6cfb13c1088ab4356f8a037df0d2f059e94fba03029a6746badfe3a6d2ea9f5c`.
+  Terminal result:
+  `docs/model-research/action-value/cross-venue-prediction-parity-screen-v1-2026-08-25.json`,
+  result SHA-256
+  `628e63106bc3c0e28c36dcad094b7d7ac500ecd14dfff827287030c2dbbb3d72`.
 - Binance options: 1,538 tradable unit-one BTCUSDT, ETHUSDT, and SOLUSDT
   contracts formed 50 same-underlying, same-expiry, same-side chains. Exact
   lot-aligned enumeration covered 26,688 vertical-dominance pairs and 338,904

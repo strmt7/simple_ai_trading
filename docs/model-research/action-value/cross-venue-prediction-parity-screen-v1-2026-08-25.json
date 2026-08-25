@@ -1,0 +1,53 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "market_payloads_viewed": 0,
+    "orders_placed": false,
+    "profitability_claim": false,
+    "signed_requests_sent": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/cross-venue-prediction-parity-screen-contract-v1.json",
+    "result_sha256": "6cfb13c1088ab4356f8a037df0d2f059e94fba03029a6746badfe3a6d2ea9f5c"
+  },
+  "created_at_utc": "2026-08-25T08:38:21.8140095Z",
+  "official_contract_adjudication": {
+    "generated_markdown_claim": "MarketDataApi.md says the list prediction markets endpoint requires no authorization",
+    "generated_transport_behavior": "MarketDataApi.java adds binanceSignature to the endpoint authentication names",
+    "generated_transport_git_blob_sha1": "c797941a6e851bc9143393b3237050a49332af22",
+    "generated_transport_path": "clients/w3w-prediction/src/main/java/com/binance/connector/client/w3w_prediction/rest/api/MarketDataApi.java",
+    "generated_transport_size_bytes": 41493,
+    "repository_commit": "fb9f065c28842fdfc637b4ba015d9b344037f637",
+    "status": "official_generated_documentation_and_transport_auth_contract_conflict"
+  },
+  "request_execution": {
+    "attempted_request_count": 2,
+    "binance_detail_request_count": 0,
+    "binance_market_payload_count": 0,
+    "binance_order_book_request_count": 0,
+    "exact_request_url": "https://api.binance.com/sapi/v1/w3w/wallet/prediction/market/list?l1Category=crypto&sortBy=END_DATE&orderBy=ASC&offset=0&limit=100",
+    "polymarket_market_list_request_count": 0,
+    "polymarket_order_book_request_count": 0,
+    "response_body": {
+      "code": -2014,
+      "msg": "API-key format invalid."
+    },
+    "response_body_bytes": 46,
+    "response_body_sha256": "e7712db7077e81c13ccaf23d57a54ffb8e54c18d680a7bc30979e711ebdffbf1",
+    "response_http_status": 400,
+    "unique_request_count": 1
+  },
+  "result_sha256": "628e63106bc3c0e28c36dcad094b7d7ac500ecd14dfff827287030c2dbbb3d72",
+  "schema_version": "cross-venue-prediction-parity-screen-v1",
+  "status": "terminal_before_market_access_live_endpoint_rejected_no_key_request_despite_no_authorization_doc_claim",
+  "terminal_adjudication": {
+    "authenticated_retry_authorized": false,
+    "public_cross_venue_screen_executable": false,
+    "reason": "the live surface requires at least an API-key-formatted request while the frozen contract authorizes public no-credential research only",
+    "required_before_any_future_retry": "explicit read-only credential authority plus a new frozen authenticated request and secret-handling contract",
+    "stored_application_configuration_checked": false,
+    "subset_selection_or_salvage_allowed": false
+  }
+}

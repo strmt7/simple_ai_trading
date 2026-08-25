@@ -149,14 +149,16 @@ safety gate, blocks Stop, or submits an order.
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
   authority is active.
-- A cross-venue prediction-parity screen is frozen but not yet executed. It may
-  compare only exact BTC/ETH/SOL payout rules between Binance Prediction Trading
-  and Polymarket. Matching titles are insufficient, and a shared vendor,
-  condition, or order book is a distribution mirror rather than a second venue.
-  The public-only bounded contract is
-  `cross-venue-prediction-parity-screen-contract-v1.json`, result SHA-256
-  `6cfb13c1088ab4356f8a037df0d2f059e94fba03029a6746badfe3a6d2ea9f5c`;
-  it grants no edge or trading authority.
+- The cross-venue Binance Prediction Trading versus Polymarket parity screen
+  stopped before market access. Official generated Markdown labeled market list
+  unauthenticated, but the generated Java transport attached
+  `binanceSignature`, and the live no-key request returned HTTP 400 with
+  `-2014 API-key format invalid`. Zero market payloads or books were viewed.
+  Do not inspect stored credentials or retry without explicit read-only
+  credential authority and a new frozen authenticated contract. Result artifact
+  `cross-venue-prediction-parity-screen-v1-2026-08-25.json`, result SHA-256
+  `628e63106bc3c0e28c36dcad094b7d7ac500ecd14dfff827287030c2dbbb3d72`;
+  no edge or trading authority exists.
 - The independent Round 21 sidecar remains protected until
   `2026-08-29T23:40:00Z`. Do not stop, restart, stage, clean, reset, switch,
   commit, or modify its process, worktree, state, database, or WAL.
