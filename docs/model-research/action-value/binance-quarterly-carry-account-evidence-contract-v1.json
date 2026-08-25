@@ -1,0 +1,141 @@
+{
+  "schema_version": "binance-quarterly-carry-account-evidence-contract-v1",
+  "purpose": "exact_account_fee_components_and_minimal_futures_configuration_for_direction_neutral_quarterly_cash_and_carry",
+  "created_at_utc": "2026-08-25T11:11:27.1945352Z",
+  "source_snapshot": {
+    "path": "docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json",
+    "result_sha256": "9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2",
+    "reuse_rule": "account evidence may overlay the frozen snapshot only as a non-synchronous fee gate and cannot create a current profitability claim"
+  },
+  "official_endpoint_sources": [
+    {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/account",
+      "binding": "GET /api/v3/account/commission is signed USER_DATA with symbol and timestamp and returns standard special tax buyer seller and discount fields"
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/account",
+      "binding": "GET /fapi/v1/commissionRate and GET /fapi/v1/accountConfig are signed USER_DATA endpoints"
+    }
+  ],
+  "credential_preflight": {
+    "api_key_variable": "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY",
+    "api_secret_variable": "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET",
+    "required_before_journal_or_network": true,
+    "missing_credentials_consume_attempt": false,
+    "credential_values_may_be_persisted": false
+  },
+  "request_contract": {
+    "method_allowlist": [
+      "GET"
+    ],
+    "retry_count": 0,
+    "recv_window_ms": 2000,
+    "maximum_timeout_seconds": 20,
+    "maximum_response_bytes": 32768,
+    "maximum_clock_round_trip_ns": 2000000000,
+    "redirects_allowed": false,
+    "fresh_exchange_clock_before_each_signed_get": true,
+    "durable_self_hashed_journal_before_and_after_each_request": true,
+    "signed_query_persisted": false,
+    "request_sequence": [
+      {
+        "venue": "spot",
+        "clock_path": "/api/v3/time",
+        "signed_path": "/api/v3/account/commission",
+        "symbols": [
+          "BTCUSDT",
+          "ETHUSDT"
+        ]
+      },
+      {
+        "venue": "usdm_futures",
+        "clock_path": "/fapi/v1/time",
+        "signed_path": "/fapi/v1/commissionRate",
+        "symbols": [
+          "BTCUSDT_260925",
+          "ETHUSDT_260925",
+          "BTCUSDT_261225",
+          "ETHUSDT_261225"
+        ]
+      },
+      {
+        "venue": "usdm_futures",
+        "clock_path": "/fapi/v1/time",
+        "signed_path": "/fapi/v1/accountConfig",
+        "symbols": []
+      }
+    ],
+    "public_get_count": 7,
+    "signed_get_count": 7,
+    "signed_request_weight": 125
+  },
+  "normalization_contract": {
+    "spot_fields": [
+      "symbol",
+      "standardCommission.maker",
+      "standardCommission.taker",
+      "standardCommission.buyer",
+      "standardCommission.seller",
+      "specialCommission.maker",
+      "specialCommission.taker",
+      "specialCommission.buyer",
+      "specialCommission.seller",
+      "taxCommission.maker",
+      "taxCommission.taker",
+      "taxCommission.buyer",
+      "taxCommission.seller",
+      "discount.enabledForAccount",
+      "discount.enabledForSymbol",
+      "discount.discountAsset",
+      "discount.discount"
+    ],
+    "futures_commission_fields": [
+      "symbol",
+      "makerCommissionRate",
+      "takerCommissionRate",
+      "rpiCommissionRate"
+    ],
+    "futures_configuration_fields": [
+      "feeTier",
+      "canTrade",
+      "dualSidePosition",
+      "multiAssetsMargin",
+      "tradeGroupId"
+    ],
+    "balances_persisted": false,
+    "positions_persisted": false,
+    "unknown_response_fields_persisted": false,
+    "discount_application_allowed": false,
+    "discount_non_application_reason": "fee_asset_balance_and_actual_payment_asset_not_proved"
+  },
+  "adjudication_contract": {
+    "accepted_edge_allowed": false,
+    "current_profitability_claim_allowed": false,
+    "fee_overlay_is_non_synchronous": true,
+    "unresolved_after_capture": [
+      "delivery_or_settlement_charge",
+      "exit_commissions_and_exit_prices_under_one_frozen_route",
+      "collateral_quantity_and_opportunity_cost",
+      "liquidation_buffer_and_margin_call_path",
+      "delivery_index_vs_realizable_spot_exit",
+      "prospective_basis_persistence_and_capacity",
+      "operational_outage_tax_and_custody_risk"
+    ]
+  },
+  "authority": {
+    "read_only_account_evidence_authorized": true,
+    "orders_submitted": false,
+    "orders_modified": false,
+    "orders_cancelled": false,
+    "transfers_requested": false,
+    "live_trading_authority": false,
+    "profitability_claim": false
+  },
+  "implementation": {
+    "module_path": "src/simple_ai_trading/quarterly_carry_account_evidence.py",
+    "module_sha256": "5cef9a6d23f9428883b70d78fa33b6c7a5dfc7666928a62ded3f666d56355903",
+    "tool_path": "tools/capture_binance_quarterly_carry_account_evidence.py",
+    "tool_sha256": "10a524a710f5a3af0020d8c9d33862544f4f0c48e310ea5122fc25e050c579b4"
+  },
+  "result_sha256": "901c16bf3e7e4082339f3ddd2a910a904a3cd46d51c0dc16f7074c16351145e5"
+}

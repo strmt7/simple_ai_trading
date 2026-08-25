@@ -6,7 +6,7 @@
     "profitability_claim": false
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
-  "updated_at_utc": "2026-08-25T09:44:40.5357708Z",
+  "updated_at_utc": "2026-08-25T11:12:28.2074225Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
@@ -50,12 +50,16 @@
         {
           "path": "docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json",
           "result_sha256": "9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-quarterly-carry-account-evidence-contract-v1.json",
+          "result_sha256": "901c16bf3e7e4082339f3ddd2a910a904a3cd46d51c0dc16f7074c16351145e5"
         }
       ],
-      "current_status": "strongest_binance_direction_neutral_hypothesis_gross_positive_at_all_tested_sizes_but_account_cost_and_exit_basis_unresolved",
+      "current_status": "read_only_authority_received_and_exact_get_only_fee_capture_frozen_but_required_ephemeral_environment_variables_are_absent_so_zero_authenticated_requests_were_made",
       "market_direction_forecast_required": false,
       "mechanism": "quarterly_spot_future_cash_and_carry",
-      "next_action": "freeze_a_new_account_cost_and_collateral_evidence_contract_only_after_explicit_read_only_credential_authority",
+      "next_action": "when_both_documented_ephemeral_environment_variables_are_available_run_the_frozen_capture_once_then_apply_the_exact_components_as_a_non_synchronous_fee_gate_before_any_new_book_sampling",
       "priority_rank": 2,
       "prohibited_shortcuts": [
         "35_bps_sensitivity_as_actual_account_cost",
@@ -63,7 +67,7 @@
         "flat expired-contract klines as executable unwind evidence",
         "kline presence as authenticated position or fill state"
       ],
-      "retry_trigger": "explicit_read_only_mainnet_account_evidence_authority_and_new_timing_safe_contract",
+      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
       "venue_scope": "binance_btc_eth_quarterly"
     },
     {
@@ -171,7 +175,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "dc453fd52c72bb7cfc30a75aedefa8a06ace4939dd051e03780caad24a652b40",
+  "result_sha256": "0ed493a151fbb87374db70896324428c15f4e8af1edffcfe2975050b60805a0b",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

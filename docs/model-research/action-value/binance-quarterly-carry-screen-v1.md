@@ -68,6 +68,31 @@ only with a frozen prospective sampling contract or materially new exact fee,
 collateral, settlement, execution, or fill evidence. No order was placed and no
 credential was used.
 
+## Frozen Account-Fee Gate
+
+Read-only mainnet account-evidence authority was received on 2026-08-25. The
+exact capture is frozen in
+[`binance-quarterly-carry-account-evidence-contract-v1.json`](binance-quarterly-carry-account-evidence-contract-v1.json),
+result SHA-256
+`901c16bf3e7e4082339f3ddd2a910a904a3cd46d51c0dc16f7074c16351145e5`.
+It permits only seven signed GETs: spot commission for BTCUSDT and ETHUSDT,
+quarterly-futures commission for the four source-snapshot contracts, and the
+minimal futures account configuration. Each signed request has a fresh exchange
+clock request, zero retries, and a durable self-hashed before/after journal.
+Balances, positions, API keys, secrets, signatures, and signed URLs are not
+persisted. The BNB discount is retained but cannot be applied because the fee
+payment asset and sufficient BNB balance are not proved.
+
+The required process variables were absent when the contract was frozen, so no
+authenticated request was attempted and no attempt was consumed. Do not recover
+secrets from chat, shell history, logs, or repository files and do not ask for
+them to be pasted. Once both documented environment variables are available,
+run the frozen capture once. Apply its exact buyer/seller and maker/taker
+components only as a non-synchronous overlay on this snapshot. That overlay can
+reject contracts on fees, but it cannot accept a current edge or justify fresh
+books until settlement, collateral, liquidation, exit-basis, persistence, and
+capacity gates are separately frozen.
+
 ## Delivery-Basis Adjudication
 
 A separately frozen historical audit attempted to compare the latest eight
