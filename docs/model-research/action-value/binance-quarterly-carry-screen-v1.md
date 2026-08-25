@@ -67,3 +67,22 @@ Do not repeat this snapshot merely because the basis moves. Reopen the study
 only with a frozen prospective sampling contract or materially new exact fee,
 collateral, settlement, execution, or fill evidence. No order was placed and no
 credential was used.
+
+## Delivery-Basis Adjudication
+
+A separately frozen historical audit compared the latest eight completed
+BTCUSDT and ETHUSDT USD-M quarterly delivery prices with the minimum spot trade
+low during the first five one-minute bars after delivery. The worst mismatches
+were `-183.7938` bps for BTC and `-222.8925` bps for ETH. Applying those fixed
+adverse observations to the current next-quarter results after the 35 bps
+hurdle made every tested size negative.
+
+This rejects the simple hold-to-delivery-then-sell-spot path. The spot lows are
+stress proxies, not executable depth, and do not prove future mismatch; even so,
+the frozen gate does not permit discarding the adverse completed deliveries.
+A materially distinct carry study would need synchronized pre-delivery spot and
+future unwind evidence, plus exact account fees, margin, liquidation, and
+capital costs. The authoritative audit is
+[`binance-quarterly-delivery-basis-audit-v1-2026-08-25.json`](binance-quarterly-delivery-basis-audit-v1-2026-08-25.json),
+result SHA-256
+`5476fdb43a24bd2d3a31c10321de968f63fd33eca20603e4891fa8d838a134a4`.

@@ -72,7 +72,11 @@ safety gate, blocks Stop, or submits an order.
   accepted edge. Binance quarterly spot/future basis was gross-positive at all
   12 tested sizes and cleared a stated 35-bps sensitivity hurdle at nine, but
   exact account costs, collateral/liquidation economics, and delivery-index
-  versus spot-exit basis remain unresolved. Polymarket paired-maker quoting had
+  versus spot-exit basis were initially unresolved. A frozen eight-delivery
+  audit then found worst post-delivery spot-low mismatches of -183.79 bps for
+  BTC and -222.89 bps for ETH, overwhelming every current next-quarter residual
+  after the 35 bps hurdle and rejecting hold-to-delivery. Polymarket
+  paired-maker quoting had
   a stale displayed both-fill surplus of 1.20 pUSD, but the public reward payout
   floor is zero and the 9.42 pUSD orphan-loss bound remains valid. Its reported
   conditional share, daily-equivalent, and payback are invalid because the

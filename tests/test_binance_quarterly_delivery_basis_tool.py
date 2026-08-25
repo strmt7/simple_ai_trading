@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 import hashlib
 import importlib.util
+import json
 from pathlib import Path
 from typing import Mapping
 
@@ -20,6 +21,13 @@ TOOL = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(TOOL)
 FIRST_DELIVERY_MS = 1_700_000_040_000
 DELIVERY_STEP_MS = 7_776_000_000
+AUDIT = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "binance-quarterly-delivery-basis-audit-v1-2026-08-25.json"
+)
 
 
 def _deliveries(pair: str) -> list[dict[str, object]]:
@@ -185,3 +193,50 @@ def test_canonical_request_payload_hash_reconstructs(
         ).hexdigest()
         == entry["canonical_payload_sha256"]
     )
+
+
+def test_live_audit_hash_sources_and_stress_reconstruct() -> None:
+    report = json.loads(AUDIT.read_text(encoding="ascii"))
+    expected_hash = report.pop("result_sha256")
+
+    assert (
+        hashlib.sha256(TOOL._canonical_json(report).encode("ascii")).hexdigest()
+        == expected_hash
+    )
+    source = report["source_contract"]
+    contract_path = ROOT / source["contract_path"]
+    assert (
+        hashlib.sha256(contract_path.read_bytes()).hexdigest()
+        == source["contract_file_sha256"]
+    )
+    implementation = source["implementation"]
+    for path_field, hash_field in (
+        ("tool_path", "tool_sha256"),
+        ("module_path", "module_sha256"),
+    ):
+        assert (
+            hashlib.sha256((ROOT / implementation[path_field]).read_bytes()).hexdigest()
+            == implementation[hash_field]
+        )
+    ledger = source["request_ledger"]
+    assert len(ledger) == 18
+    for entry in ledger:
+        assert (
+            hashlib.sha256(
+                TOOL._canonical_json(entry["decoded_payload"]).encode("ascii")
+            ).hexdigest()
+            == entry["canonical_payload_sha256"]
+        )
+    worst = {
+        row["pair"]: Decimal(row["minimum_low_mismatch_bips"])
+        for row in report["pair_results"]
+    }
+    for row in report["current_next_quarter_stress"]:
+        reconstructed = TOOL.stressed_after_hurdle_basis_bips(
+            after_hurdle_basis_bips=Decimal(row["after_35_bps_hurdle_basis_bips"]),
+            worst_observed_mismatch_bips=worst[row["pair"]],
+        )
+        assert str(reconstructed) == row["stressed_basis_bips"]
+        assert (reconstructed > 0) is row["stress_positive"]
+    assert report["verdict"]["all_next_quarter_sizes_stress_positive"] is False
+    assert report["verdict"]["accepted_edge"] is False
