@@ -266,6 +266,16 @@ make no later request, and do not adapt the window, symbol, endpoint, or order.
 Record the ordering defect in the adjudication so a different future hypothesis
 cannot silently repeat it.
 
+Before publishing a one-use gate, also prove that the frozen request budget can
+physically supply its required horizon. Do not infer an endpoint's effective
+page size from a requested `limit`; bind the documented maximum or a prior
+non-consumptive fixture, and preregister enough non-overlapping pages if the
+gate needs more rows or complete periods. If the live endpoint returns a
+smaller valid capped page, preserve the source-limited result. A separately
+published recovery may add only a predeclared non-overlapping page with no
+threshold, symbol, scenario, or endpoint change; it cannot turn an economic
+failure into permission for more pagination.
+
 Format and test the exact implementation before freezing and publishing it.
 Then publish the frozen contract and implementation before the live attempt.
 The terminal receipt must bind both source hashes and must state explicitly
@@ -279,6 +289,16 @@ but its generic failure writer discarded the accumulated payloads. The explicit
 v4 recovery was the only deliberate regeneration, removed the unnecessary
 daily-conversion assumption, and checkpointed all 20 funding responses before
 evaluation. It is terminal and grants no precedent for another regeneration.
+
+The 2026-08-25 delta-hedged BNB fee-discount screen exposed the complementary
+horizon defect: one request asked for 1,000 funding rows but the valid response
+contained 500, only four complete inner months against a six-month gate. Its
+separately committed and hosted-verified recovery added exactly one older,
+non-overlapping 500-row page. The merged 1,000-row history then failed the
+unchanged primary worst-month turnover gate. Both the initial screen and the
+recovery are terminal; do not request another page, resample BNB books, replace
+the account-specific commission evidence with a public fee example, or loosen
+the turnover gate.
 
 Do not treat the presence or absence of returned historical klines as proof of
 exchange order state, trading availability, or a delivery cutoff. An expired

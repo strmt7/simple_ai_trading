@@ -25,11 +25,55 @@ INITIAL_SCREEN_PATH = (
     / "action-value"
     / "binance-bnb-fee-discount-hedge-screen-v1-2026-08-25.json"
 )
+PUBLISHED_RESULT_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "binance-bnb-fee-discount-hedge-recovery-v1-2026-08-25.json"
+)
+PUBLISHED_JOURNAL_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "binance-bnb-fee-discount-hedge-recovery-journal-v1.json"
+)
+PUBLISHED_RAW_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "raw"
+    / "binance-bnb-fee-discount-hedge-recovery-v1"
+    / "01-older-futures-funding-history.json"
+)
+REGISTRY_PATH = (
+    ROOT / "docs" / "model-research" / "structural-edge-priority-registry-v1.json"
+)
 EXPECTED_CONTRACT_SHA256 = (
     "d226b7340aba624e53c6b49450ddcaeea5c31f101c57ca52e2a644c809e8ae5e"
 )
 EXPECTED_IMPLEMENTATION_SHA256 = (
     "7437aa4c4ed4e66e452e0afa01fd0bff2bc26f40593e491c16b36b30fe81e07a"
+)
+EXPECTED_PUBLISHED_RESULT_SHA256 = (
+    "85d0be66391b53bef87dda33ea73acaf6995d0200e6423de7999d44a8fed3c8f"
+)
+EXPECTED_PUBLISHED_RESULT_FILE_SHA256 = (
+    "7940951ec38fc82409692cad1a47a13eb5d74f5716989824310f114cfd0ec66e"
+)
+EXPECTED_PUBLISHED_JOURNAL_SHA256 = (
+    "347e14abf216c16ffb5cdbed24cb3fdabf0d41e5a011daad03cc41e7ba3946a7"
+)
+EXPECTED_PUBLISHED_JOURNAL_FILE_SHA256 = (
+    "6b1b25904b116063fb50ad4401c32162ac29bc0bf8a2247b08e86b9e7489cc13"
+)
+EXPECTED_PUBLISHED_RAW_SHA256 = (
+    "77e70b92af3492456f653294d9eedae548e17c45969ef67d5cbfc99042416cc7"
+)
+EXPECTED_REGISTRY_SHA256 = (
+    "94da171bd2ecb1a21c781f4f0efe545985f10eab3152d6439e63d173555010b4"
 )
 SPEC = importlib.util.spec_from_file_location(
     "recover_binance_bnb_fee_discount_hedge_history", TOOL_PATH
@@ -208,3 +252,63 @@ def test_invalid_recovery_body_is_retained_and_cannot_be_retried(
             journal_path=journal_path,
             raw_root=raw_root,
         )
+
+
+def test_published_recovery_is_reconstructable_and_terminal() -> None:
+    result = json.loads(PUBLISHED_RESULT_PATH.read_bytes())
+    journal = json.loads(PUBLISHED_JOURNAL_PATH.read_bytes())
+    registry = json.loads(REGISTRY_PATH.read_bytes())
+
+    assert result["result_sha256"] == EXPECTED_PUBLISHED_RESULT_SHA256
+    assert _embedded_hash(result, "result_sha256") == EXPECTED_PUBLISHED_RESULT_SHA256
+    assert hashlib.sha256(PUBLISHED_RESULT_PATH.read_bytes()).hexdigest() == (
+        EXPECTED_PUBLISHED_RESULT_FILE_SHA256
+    )
+    assert journal["journal_sha256"] == EXPECTED_PUBLISHED_JOURNAL_SHA256
+    assert _embedded_hash(journal, "journal_sha256") == (
+        EXPECTED_PUBLISHED_JOURNAL_SHA256
+    )
+    assert hashlib.sha256(PUBLISHED_JOURNAL_PATH.read_bytes()).hexdigest() == (
+        EXPECTED_PUBLISHED_JOURNAL_FILE_SHA256
+    )
+    assert hashlib.sha256(PUBLISHED_RAW_PATH.read_bytes()).hexdigest() == (
+        EXPECTED_PUBLISHED_RAW_SHA256
+    )
+    assert journal["responses"][0]["receipt"]["payload_sha256"] == (
+        EXPECTED_PUBLISHED_RAW_SHA256
+    )
+    assert result["history_recovery"]["overlap_count"] == 0
+    assert result["history_recovery"]["boundary_gap_ms"] == 8 * 60 * 60 * 1000
+    assert result["history_recovery"]["merged_row_count"] == 1000
+    assert result["funding_evaluation"]["complete_inner_month_count"] == 10
+    assert (
+        result["funding_evaluation"]["worst_complete_inner_month_short_funding_bips"]
+        == "-35.61290000"
+    )
+    assert result["failure_reasons"] == ["primary_worst_monthly_turnover_gate_failed"]
+    assert (
+        result["turnover_break_even_scenarios"][0][
+            "worst_monthly_turnover_multiple_to_cover_negative_funding"
+        ]
+        == "14.245160"
+    )
+    assert result["verdict"] == {
+        "accepted_edge": False,
+        "credentials_used": False,
+        "orders_placed": False,
+        "profitability_claim": False,
+        "qualified_public_prequalification": False,
+        "signed_requests_made": 0,
+        "status": "rejected_recovered_bnb_fee_discount_hedge_prequalification",
+        "trading_authority": False,
+    }
+
+    assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
+    assert _embedded_hash(registry, "result_sha256") == EXPECTED_REGISTRY_SHA256
+    terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
+    assert (
+        terminal["binance_delta_hedged_bnb_spot_fee_discount_inventory"][
+            "canonical_result_sha256"
+        ]
+        == EXPECTED_PUBLISHED_RESULT_SHA256
+    )
