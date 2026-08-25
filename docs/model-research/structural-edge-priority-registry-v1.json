@@ -6,7 +6,7 @@
     "profitability_claim": false
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
-  "updated_at_utc": "2026-08-25T11:12:28.2074225Z",
+  "updated_at_utc": "2026-08-25T12:41:42.1608486Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
@@ -175,7 +175,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "0ed493a151fbb87374db70896324428c15f4e8af1edffcfe2975050b60805a0b",
+  "result_sha256": "f1a24af4ea49af6d8350ec8d991acf7c18e616f25ced3b86b23c909057e35fff",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -207,6 +207,11 @@
       "canonical_result_sha256": "8e30be61daaecabd3546e41cdc204d20b8ad38e0fc80c3c9aa96092266a3abe5",
       "family": "binance_usdt_usdc_perpetual_funding_differential",
       "reason": "zero_of_two_recent_candidates_passed_the_frozen_2898_settlement_full_history_fx_stress_time_and_market_regime_gate"
+    },
+    {
+      "canonical_result_sha256": "4add8a3aea01ebb13e743a85793681b8ca7a8884035daf5cb371f3f2b09900b0",
+      "family": "binance_two_leg_quarterly_calendar_spread_as_locked_carry",
+      "reason": "initial_far_minus_near_credit_is_offset_by_unknown_exit_spread_or_terminal_far_basis_so_no_fixed_payoff_identity_exists"
     }
   ],
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"

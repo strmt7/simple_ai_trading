@@ -264,6 +264,17 @@ diagnostics, not accepted edges.
   the raw values. When both variables become available to the process, run the
   frozen capture once; use the result as a non-synchronous fee rejection gate,
   not as a current edge or reason to refresh books prematurely.
+- Binance two-leg quarterly calendar spread: long current-quarter and short
+  next-quarter futures in equal base quantity does not lock the initial
+  far-minus-near credit. Before expiry, gross PnL equals the initial spread
+  minus the exit spread; at near expiry, it equals the initial spread minus the
+  unknown next-quarter-future-minus-spot basis. This is residual curve exposure,
+  not a fixed payoff. The mechanism failed before estimation, so zero request
+  and no backtest were justified. Do not repeat this family as locked carry.
+  Canonical adjudication:
+  `docs/model-research/action-value/binance-quarterly-calendar-spread-mechanism-adjudication-v1.json`,
+  result SHA-256
+  `4add8a3aea01ebb13e743a85793681b8ca7a8884035daf5cb371f3f2b09900b0`.
 - Binance quarterly delivery basis: a separately frozen audit produced
   post-delivery spot mismatch values, but its time interpretation is invalid.
   All 16 historical `deliveryTime` values were at 00:00 UTC, while all four
@@ -390,7 +401,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`0ed493a151fbb87374db70896324428c15f4e8af1edffcfe2975050b60805a0b`.
+`f1a24af4ea49af6d8350ec8d991acf7c18e616f25ced3b86b23c909057e35fff`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

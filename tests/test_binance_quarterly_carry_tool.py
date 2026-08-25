@@ -26,6 +26,16 @@ SNAPSHOT = (
     / "action-value"
     / "binance-quarterly-carry-snapshot-v1-2026-08-25.json"
 )
+CALENDAR_ADJUDICATION = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "binance-quarterly-calendar-spread-mechanism-adjudication-v1.json"
+)
+CALENDAR_ADJUDICATION_SHA256 = (
+    "4add8a3aea01ebb13e743a85793681b8ca7a8884035daf5cb371f3f2b09900b0"
+)
 
 
 class _Response:
@@ -183,6 +193,27 @@ def test_source_snapshot_hash_and_depth_results_reconstruct() -> None:
             )
             assert reconstructed is not None
             assert TOOL._result_payload(reconstructed) == recorded
+
+
+def test_calendar_spread_mechanism_rejection_is_hash_bound_and_terminal() -> None:
+    report = json.loads(CALENDAR_ADJUDICATION.read_text(encoding="ascii"))
+    expected_hash = report.pop("result_sha256")
+
+    assert expected_hash == CALENDAR_ADJUDICATION_SHA256
+    assert (
+        hashlib.sha256(TOOL._canonical_json(report).encode("ascii")).hexdigest()
+        == expected_hash
+    )
+    payoff = report["payoff_identity"]
+    assert payoff["fixed_payoff_proved"] is False
+    assert payoff["near_expiry_exit"]["equivalent_identity"] == (
+        "(F2_t0-F1_t0)-(F2_T1-S_T1)"
+    )
+    assert "F2_T1" in payoff["variables"]
+    assert report["request_decision"]["new_public_requests"] == 0
+    assert report["request_decision"]["historical_backtest_justified"] is False
+    assert report["adjudication"]["accepted_edge"] is False
+    assert report["adjudication"]["terminal_for_claimed_mechanism"] is True
 
 
 def test_rate_limit_stops_without_retry() -> None:

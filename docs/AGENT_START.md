@@ -118,7 +118,11 @@ safety gate, blocks Stop, or submits an order.
   authenticated requests were made. Do not recover secrets from chat, shell
   history, logs, or repository files. When both variables are available, run
   the frozen capture once and use it only as a fee gate before any fresh book
-  sampling. Polymarket
+  sampling. A two-leg long-current/short-next quarterly calendar spread was also
+  rejected algebraically: its initial credit is reduced by the unknown exit
+  spread or terminal far basis, so it is residual curve exposure rather than
+  locked carry. Zero request and no backtest were justified; do not repeat it
+  as a fixed-payoff edge. Polymarket
   paired-maker quoting had
   a stale displayed both-fill surplus of 1.20 pUSD, but the public reward payout
   floor is zero and the 9.42 pUSD orphan-loss bound remains valid. Its reported

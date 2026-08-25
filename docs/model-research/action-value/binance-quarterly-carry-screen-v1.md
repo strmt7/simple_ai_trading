@@ -144,3 +144,19 @@ The authoritative correction is
 [`binance-quarterly-delivery-basis-timestamp-adjudication-v1.json`](binance-quarterly-delivery-basis-timestamp-adjudication-v1.json),
 result SHA-256
 `1f669b24c09917e8b080515e8733ba0adea68e74745e2cfafc9dd8f9a45c7f88`.
+
+## Two-Leg Calendar-Spread Rejection
+
+Long current-quarter and short next-quarter futures in equal base quantity is
+direction-reduced, but it is not locked carry. Before expiry, its gross PnL is
+the initial far-minus-near spread less the exit spread. At the near contract's
+expiry, it is the initial spread less the then-unknown far-future-minus-spot
+basis. The far contract remains live, so neither identity fixes the payoff.
+
+This hypothesis failed at the mechanism gate; zero new request and no backtest
+were justified. Do not treat the initial calendar credit as profit, assume the
+terminal far basis is zero, or use equal quantity as proof of a fixed payoff.
+The source-bound terminal artifact is
+[`binance-quarterly-calendar-spread-mechanism-adjudication-v1.json`](binance-quarterly-calendar-spread-mechanism-adjudication-v1.json),
+result SHA-256
+`4add8a3aea01ebb13e743a85793681b8ca7a8884035daf5cb371f3f2b09900b0`.
