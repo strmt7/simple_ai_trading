@@ -129,6 +129,17 @@ symbol commission, and spot rebate history; do not substitute a cached public
 program table. A rebate rate alone never proves fills, queue priority, adverse
 selection, inventory neutrality, capacity, or after-cost profit.
 
+For Binance Prediction Trading, do not trust a generated Markdown
+`No authorization required` label without checking the generated transport and
+one bounded live preflight. The 2026-08-25 connector Markdown labeled market
+list public, while its generated Java transport attached `binanceSignature` and
+the live no-key request returned `-2014 API-key format invalid`. That mismatch
+is terminal for public research; do not inspect stored credentials or retry with
+authentication without explicit authority and a newly frozen contract.
+Bounded HTTP preflights must capture the status code and size-limited response
+body on the first request, including non-2xx responses. Do not use a success-only
+body helper that discards the error payload and forces an identical retry.
+
 ## Verification Lanes
 
 Use the narrowest relevant checks while iterating, then the complete suite at a
