@@ -1,0 +1,191 @@
+{
+  "schema_version": "binance-option-future-settlement-equivalence-contract-v1",
+  "created_at_utc": "2026-08-25T13:15:28.6466773Z",
+  "status": "frozen_before_new_public_request",
+  "hypothesis": {
+    "venue": "binance",
+    "underlyings": [
+      "BTCUSDT",
+      "ETHUSDT"
+    ],
+    "mechanisms": {
+      "synthetic_long_short_future_profit_per_base": "F_bid+P_bid-C_ask-K",
+      "synthetic_short_long_future_profit_per_base": "K-F_ask+C_bid-P_ask"
+    },
+    "market_direction_forecast_required": false,
+    "fixed_payoff_condition": "option_real_strike_price_equals_quarterly_futures_delivery_price_for_the_same_underlying_and_expiry"
+  },
+  "official_semantics": {
+    "options_market_data_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-options/api/rest-api/market-data",
+    "options_fields": [
+      "optionContracts.settleAsset",
+      "optionSymbols.expiryDate",
+      "optionSymbols.unit",
+      "exerciseHistory.realStrikePrice"
+    ],
+    "quarterly_futures_market_data_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+    "quarterly_futures_fields": [
+      "exchangeInfo.symbols.deliveryDate",
+      "delivery-price.deliveryTime",
+      "delivery-price.deliveryPrice"
+    ],
+    "current_catalog_observation": "the_frozen_option_and_futures_catalogs_have_matching_BTCUSDT_and_ETHUSDT_expiries_at_2026_09_25T08_00_00Z_and_2026_12_25T08_00_00Z",
+    "unproved_before_audit": "the_option_and_futures_settlement_values_are_identical"
+  },
+  "implementation": {
+    "tool_path": "tools/audit_binance_option_future_settlement_equivalence.py",
+    "tool_sha256": "684301d30a589a8bebcea577c6c4fd2e14a34835454fe198b13c2913e6dc0cb7"
+  },
+  "receipt": {
+    "journal_path": "docs/model-research/action-value/binance-option-future-settlement-equivalence-journal-v1.json",
+    "result_path": "docs/model-research/action-value/binance-option-future-settlement-equivalence-v1-2026-08-25.json"
+  },
+  "source_binding": {
+    "option_snapshot": {
+      "path": "docs/model-research/action-value/binance-option-parity-snapshot-v1-2026-08-25.json",
+      "file_sha256": "22b7bca3909bfc335e26df421689b24d55df2164fbdc74417a7dfd7a15414e78",
+      "result_sha256": "ceca2f61ab1da16285190afcb90c276a10b032fb7d264c90656aaf2f7266c253"
+    },
+    "quarterly_snapshot": {
+      "path": "docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json",
+      "file_sha256": "d04d7618e30e07b72a894d413616f4ace8962cb1c7adecb82b5b59070d3622f2",
+      "result_sha256": "9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2"
+    },
+    "delivery_source": {
+      "path": "docs/model-research/action-value/binance-quarterly-delivery-basis-audit-v1-2026-08-25.json",
+      "file_sha256": "9bc3ff6a7c912eefa72f8aa9653940cd98e89958a07fa8eac99c510fe8b09595",
+      "result_sha256": "5476fdb43a24bd2d3a31c10321de968f63fd33eca20603e4891fa8d838a134a4",
+      "permitted_use": "raw_delivery_prices_matched_by_UTC_calendar_date_only"
+    }
+  },
+  "request_justification": {
+    "common_expiry_strike_pair_count": 192,
+    "ticker_path_available_pair_count": 184,
+    "non_synchronous_gross_positive_ticker_combination_count": 20,
+    "best_stale_gross_quote_per_base": "101.700",
+    "best_stale_candidate": "BTC_2026_09_25_strike_82000_synthetic_short_long_future",
+    "execution_evidence": false,
+    "reason": "the_existing_snapshots_show_a_material_gross_signal_but_the_fixed_payoff_identity_depends_on_unproved_settlement_benchmark_equivalence"
+  },
+  "requests": [
+    {
+      "request_id": "BTCUSDT_2025_09_26",
+      "method": "GET",
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory",
+      "params": {
+        "underlying": "BTCUSDT",
+        "startTime": 1758844800000,
+        "endTime": 1758931199999,
+        "limit": 100
+      }
+    },
+    {
+      "request_id": "ETHUSDT_2025_09_26",
+      "method": "GET",
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory",
+      "params": {
+        "underlying": "ETHUSDT",
+        "startTime": 1758844800000,
+        "endTime": 1758931199999,
+        "limit": 100
+      }
+    },
+    {
+      "request_id": "BTCUSDT_2025_12_26",
+      "method": "GET",
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory",
+      "params": {
+        "underlying": "BTCUSDT",
+        "startTime": 1766707200000,
+        "endTime": 1766793599999,
+        "limit": 100
+      }
+    },
+    {
+      "request_id": "ETHUSDT_2025_12_26",
+      "method": "GET",
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory",
+      "params": {
+        "underlying": "ETHUSDT",
+        "startTime": 1766707200000,
+        "endTime": 1766793599999,
+        "limit": 100
+      }
+    },
+    {
+      "request_id": "BTCUSDT_2026_03_27",
+      "method": "GET",
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory",
+      "params": {
+        "underlying": "BTCUSDT",
+        "startTime": 1774569600000,
+        "endTime": 1774655999999,
+        "limit": 100
+      }
+    },
+    {
+      "request_id": "ETHUSDT_2026_03_27",
+      "method": "GET",
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory",
+      "params": {
+        "underlying": "ETHUSDT",
+        "startTime": 1774569600000,
+        "endTime": 1774655999999,
+        "limit": 100
+      }
+    },
+    {
+      "request_id": "BTCUSDT_2026_06_26",
+      "method": "GET",
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory",
+      "params": {
+        "underlying": "BTCUSDT",
+        "startTime": 1782432000000,
+        "endTime": 1782518399999,
+        "limit": 100
+      }
+    },
+    {
+      "request_id": "ETHUSDT_2026_06_26",
+      "method": "GET",
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory",
+      "params": {
+        "underlying": "ETHUSDT",
+        "startTime": 1782432000000,
+        "endTime": 1782518399999,
+        "limit": 100
+      }
+    }
+  ],
+  "response_contract": {
+    "maximum_response_bytes_per_request": 1048576,
+    "required_option_expiry_time_utc": "08:00:00",
+    "required_sides_per_underlying_date": [
+      "CALL",
+      "PUT"
+    ],
+    "required_unique_real_strike_price_count": 1,
+    "exact_comparison": "Decimal(option_realStrikePrice)==Decimal(futures_deliveryPrice)",
+    "delivery_time_use": "calendar_date_marker_only_not_an_assumed_exact_settlement_epoch"
+  },
+  "decision_contract": {
+    "all_eight_exactly_equal": "historical_support_only_freeze_one_synchronized_candidate_depth_screen",
+    "any_mismatch": "reject_fixed_payoff_identity_and_do_not_refresh_books",
+    "historical_equality_can_accept_edge": false,
+    "ticker_signal_can_accept_edge": false
+  },
+  "safety": {
+    "new_public_get_count": 8,
+    "new_futures_requests": 0,
+    "credentials_used": false,
+    "orders_submitted": false,
+    "retries": 0,
+    "adaptive_requests": 0,
+    "redirects_allowed": false,
+    "journal_before_and_after_every_request": true,
+    "raw_body_persisted_before_validation": true,
+    "profitability_claim": false,
+    "trading_authority": false
+  },
+  "result_sha256": "63a57771fe7042381bea0ac052889550738b4890b6c01fadc279e793189b4291"
+}

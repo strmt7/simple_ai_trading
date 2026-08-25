@@ -238,6 +238,21 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-option-box-parity-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `e85b4e270e707c0faa47e3f373d6d345fce448fcbcbcf6a6f39bceec7d9eb229`.
+- Binance option put-call parity versus same-expiry quarterly futures is a
+  distinct fixed-payoff candidate. The frozen snapshots contain 192 common
+  BTC/ETH expiry-strike pairs, 184 with at least one complete ticker path, and
+  20 non-synchronous gross-positive combinations. The best stale value was
+  101.70 USDT per base unit, but ticker prices have no displayed quantity and
+  the futures books arrived about 2.25 hours later, so this is request
+  justification only. A frozen eight-GET audit will compare option
+  `realStrikePrice` with already-recorded quarterly `deliveryPrice` on four
+  dates for BTCUSDT and ETHUSDT. It uses the futures timestamp only as a UTC
+  calendar-date marker, persists each raw body before validation, permits no
+  retry, and makes no new futures request. Run it once only after its exact
+  implementation checkpoint is hosted-verified. Contract:
+  `docs/model-research/action-value/binance-option-future-settlement-equivalence-contract-v1.json`,
+  result SHA-256
+  `63a57771fe7042381bea0ac052889550738b4890b6c01fadc279e793189b4291`.
 - Binance quarterly cash-and-carry: one catalog fetch and one spot/futures book
   pair per selected contract covered BTCUSDT and ETHUSDT current/next quarters
   at 12 quantities. All 12 displayed gross bases were positive; nine cleared a
@@ -401,7 +416,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`f1a24af4ea49af6d8350ec8d991acf7c18e616f25ced3b86b23c909057e35fff`.
+`7af51add1ac987b9560e7b3047192930ec6fe267922f02114252efc6fc91cc2f`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -420,9 +435,13 @@ regeneration, not open-ended resampling.
 Evidence timestamps must use integer epochs or explicit invariant UTC/RFC3339
 parsing; locale-dependent implicit date parsing is prohibited. Similar quarter
 or expiry labels across Binance products do not establish a shared settlement
-timestamp or value. The option/future historical comparison showed different
-settlement times, so no cross-product parity identity may proceed without exact
-rule and numeric-epoch binding. For Polymarket rewards, the corrected
+timestamp or value. The historical futures settlement endpoint exposes a
+00:00 `deliveryTime` date marker while the current futures catalog and option
+catalog align relevant expiries at 08:00. This does not prove settlement-value
+equivalence and does not authorize adding eight hours to historical fields. A
+cross-product parity identity may proceed only through the frozen calendar-date
+comparison and then exact current rule and numeric-epoch binding. For
+Polymarket rewards, the corrected
 instantaneous denominator is old aggregate `Q1 + Q2`, never the minimum of the
 two aggregates. Public books do not reveal per-maker grouping, queue position,
 sampling persistence, or final reward allocation; without that evidence the

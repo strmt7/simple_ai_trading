@@ -6,7 +6,7 @@
     "profitability_claim": false
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
-  "updated_at_utc": "2026-08-25T12:41:42.1608486Z",
+  "updated_at_utc": "2026-08-25T13:22:03.2402227Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
@@ -41,6 +41,33 @@
     },
     {
       "blocking_evidence": [
+        "exact historical option realStrikePrice versus quarterly futures deliveryPrice equality",
+        "synchronized displayed depth for one exact call put and quarterly future combination",
+        "authenticated option and futures fees margin liquidation atomicity and capital cost",
+        "prospective capacity persistence and operational reconciliation"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-option-future-settlement-equivalence-contract-v1.json",
+          "result_sha256": "63a57771fe7042381bea0ac052889550738b4890b6c01fadc279e793189b4291"
+        }
+      ],
+      "current_status": "eight_get_historical_settlement_equivalence_audit_frozen_but_not_run",
+      "market_direction_forecast_required": false,
+      "mechanism": "same_expiry_option_put_call_parity_against_quarterly_future",
+      "next_action": "after_the_exact_implementation_and_contract_are_committed_pushed_and_hosted_verified_run_the_eight_get_audit_once",
+      "priority_rank": 2,
+      "prohibited_shortcuts": [
+        "matching expiry timestamps as proof of matching settlement values",
+        "non_synchronous ticker and futures snapshots as execution evidence",
+        "ticker prices as displayed quantity",
+        "historical equality as an accepted current edge"
+      ],
+      "retry_trigger": "exact_implementation_and_contract_committed_pushed_and_hosted_verified",
+      "venue_scope": "binance_btc_eth_options_and_quarterly_futures"
+    },
+    {
+      "blocking_evidence": [
         "exact account commissions settlement fees and collateral opportunity cost",
         "liquidation-safe collateral plan and authenticated position reconciliation",
         "executable spot-exit versus delivery-index basis under frozen timing semantics",
@@ -60,7 +87,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "quarterly_spot_future_cash_and_carry",
       "next_action": "when_both_documented_ephemeral_environment_variables_are_available_run_the_frozen_capture_once_then_apply_the_exact_components_as_a_non_synchronous_fee_gate_before_any_new_book_sampling",
-      "priority_rank": 2,
+      "priority_rank": 3,
       "prohibited_shortcuts": [
         "35_bps_sensitivity_as_actual_account_cost",
         "historical deliveryTime as exact delivery epoch",
@@ -87,7 +114,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "spot_market_maker_rebates",
       "next_action": "query_only_the_frozen_account_evidence_path_after_explicit_read_only_credential_authority",
-      "priority_rank": 3,
+      "priority_rank": 4,
       "prohibited_shortcuts": [
         "cached 2024 public fee table as current rate",
         "symbol commission response as maker-rebate proof",
@@ -113,7 +140,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "three_leg_spot_conversion",
       "next_action": "do_not_resample_books_until_exact_account_fees_first_prove_the_path_can_clear_the_frozen_break_even",
-      "priority_rank": 4,
+      "priority_rank": 5,
       "prohibited_shortcuts": [
         "USD-M futures commission as spot fee",
         "public VIP tier as account fee",
@@ -139,7 +166,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates",
       "next_action": "after_the_protected_boundary_freeze_a_prospective_authenticated_fill_rebate_and_orphan_study_only_if_explicit_authority_exists",
-      "priority_rank": 5,
+      "priority_rank": 6,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
         "both-fill assumption",
@@ -164,7 +191,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "cross_venue_prediction_complete_set",
       "next_action": "none_without_explicit_read_only_credential_authority_and_a_new_authenticated_contract",
-      "priority_rank": 6,
+      "priority_rank": 7,
       "prohibited_shortcuts": [
         "generated no-authorization label without live preflight",
         "title equality as payout equality",
@@ -175,7 +202,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "f1a24af4ea49af6d8350ec8d991acf7c18e616f25ced3b86b23c909057e35fff",
+  "result_sha256": "7af51add1ac987b9560e7b3047192930ec6fe267922f02114252efc6fc91cc2f",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

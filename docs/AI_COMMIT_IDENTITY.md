@@ -32,3 +32,9 @@ human is a policy violation. Do not publish another commit until the violation
 has been surfaced. Before a first push, rewrite the affected local history with
 `git filter-repo`; if the history is already shared, do not force-rewrite it
 without explicit approval and a coordinated correction plan.
+
+On PowerShell, use Git format delimiters such as `%x09`; a backtick inside a
+single-quoted Git format string is literal and can make a field-splitting audit
+silently inspect zero records. Fail closed unless every parsed identity record
+has the expected commit, author, author-email, committer, and committer-email
+fields.
