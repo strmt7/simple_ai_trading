@@ -1,0 +1,74 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_credentials_permitted": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T17:36:11.8863078Z",
+  "frozen_request": {
+    "method": "GET",
+    "name": "older_futures_funding_history",
+    "parameters": {
+      "endTime": 1773302399999,
+      "limit": 1000,
+      "symbol": "BNBUSDT"
+    },
+    "raw_filename": "01-older-futures-funding-history.json",
+    "url": "https://fapi.binance.com/fapi/v1/fundingRate"
+  },
+  "recovery_boundary": {
+    "adaptive_requests_after_publication": false,
+    "decision_threshold_changes": false,
+    "exact_end_time_identity": "initial_retained_page_earliest_fundingTime_1773302400000_minus_one_millisecond",
+    "maximum_boundary_gap_ms": 43200000,
+    "maximum_requests": 1,
+    "no_further_pagination_or_retry": true,
+    "non_overlapping_history_only": true,
+    "original_failure_reason": "insufficient_complete_inner_months",
+    "original_gate_required_complete_inner_months": 6,
+    "original_retained_complete_inner_months": 4,
+    "original_retained_row_count": 500,
+    "purpose": "extend_source_horizon_without_resampling_any_retained_row_book_threshold_scenario_or_orientation",
+    "raw_persistence": "atomically_write_the_raw_body_before_status_handling_decoding_or_validation",
+    "self_hashed_journal": "write_the_exact_request_before_GET_then_append_status_timestamps_raw_path_bytes_and_sha256_before_decoding",
+    "single_use": "an_existing_recovery_journal_prohibits_every_rerun"
+  },
+  "result_sha256": "d226b7340aba624e53c6b49450ddcaeea5c31f101c57ca52e2a644c809e8ae5e",
+  "schema_version": "binance-bnb-fee-discount-hedge-recovery-contract-v1",
+  "source_binding": {
+    "initial_contract_file_sha256": "4e753556f110838308aeab311cd0f79c3a4c6d4ad67bba60a86e5b34bdcaa7e6",
+    "initial_contract_path": "docs/model-research/action-value/binance-bnb-fee-discount-hedge-contract-v1.json",
+    "initial_contract_result_sha256": "388c6cc72d079b0fcbcafae5bb04a8466bb4ba92ae38725b0139693d62af1401",
+    "initial_funding_row_count": 500,
+    "initial_implementation_file_sha256": "ee21d67d2663177131a0b10f00a9afeb9063590b02d41b9cde6445f253a42b3c",
+    "initial_implementation_path": "tools/screen_binance_bnb_fee_discount_hedge.py",
+    "initial_journal_file_sha256": "e01a431790d0448094c8c493aaf89a3c6de7cd2920cf1c9965df00a2d4cd8479",
+    "initial_journal_path": "docs/model-research/action-value/binance-bnb-fee-discount-hedge-journal-v1.json",
+    "initial_journal_sha256": "d0a085527b1b61e6b37e1bfdab3c37bb4a7da209365d6ec4e15761eadf67efb5",
+    "initial_screen_file_sha256": "ea1b7c8a298affcecff850ab2770581d9dcdb8a190c7d613e9dd8f849c82f22e",
+    "initial_screen_path": "docs/model-research/action-value/binance-bnb-fee-discount-hedge-screen-v1-2026-08-25.json",
+    "initial_screen_result_sha256": "7b918a503f99f5fb1ff7d012a007f6aefa2586030f6d3f9233b0b08e2adb479f",
+    "recovery_implementation_file_sha256": "7437aa4c4ed4e66e452e0afa01fd0bff2bc26f40593e491c16b36b30fe81e07a",
+    "recovery_implementation_path": "tools/recover_binance_bnb_fee_discount_hedge_history.py"
+  },
+  "unchanged_evaluation": {
+    "cross_regime_partition": "derive_absolute_return_nearest-rank_75th-percentile_from_oldest_half_only_then_report_newest_half_direction_and_volatility_slices",
+    "decision_gate_source": "docs/model-research/action-value/binance-bnb-fee-discount-hedge-contract-v1.json",
+    "fee_savings_scenarios_changed": false,
+    "funding_orientation_changed": false,
+    "market_symbol_changed": false,
+    "minimum_complete_inner_months": 6,
+    "minimum_rows_per_newest_half_regime": 20,
+    "primary_non_authoritative_scenario": "ten_bips_standard_25_percent_discount",
+    "turnover_thresholds_changed": false
+  },
+  "verdict_limits": {
+    "authenticated_account_commission_turnover_balance_fee_funding_and_fill_evidence_still_required_after_public_pass": true,
+    "public_recovery_can_accept_edge": false,
+    "public_recovery_can_claim_profitability": false
+  },
+  "status": "frozen_before_non_overlapping_recovery_request"
+}
