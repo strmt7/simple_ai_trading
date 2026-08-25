@@ -25,7 +25,7 @@ READINESS_PATH = (
     / "complete-set-holding-reward-readiness-v2.json"
 )
 EXPECTED_READINESS_SHA256 = (
-    "0b30c235eb10a4a5994067cae6a354ee4f4fb5e6d95a4a7ad50315747a89f6db"
+    "2d3650d65f248294395fcac336c6650e0c6bc332cb490c6f0bac70bc11244e2c"
 )
 
 
@@ -132,6 +132,18 @@ def test_holding_reward_readiness_hash_and_public_candidate_reconstruct() -> Non
     )
     assert artifact["gasless_route"]["direct_user_gas_cost_pusd"] == "0"
     assert artifact["promotion_evidence_gate"]["generic_rewards_endpoint_exclusion"]
+    diagnostic = artifact["public_attribution_diagnostic"]
+    holders = diagnostic["exact_candidate_holders"]
+    rewards = diagnostic["aggregate_reward_activity"]
+    assert holders["holder_row_count"] == 40
+    assert holders["unique_wallet_count"] == 40
+    assert holders["cross_outcome_wallet_overlap_count"] == 0
+    assert rewards["row_count"] == 38
+    assert rewards["condition_id_blank_row_count"] == 38
+    assert rewards["condition_id_nonblank_row_count"] == 0
+    assert diagnostic["adjudication"] == (
+        "reject_public_reward_activity_as_exact_market_or_holding_reward_evidence"
+    )
     assert artifact["authority"]["publicly_proven_future_payout_lower_bound_pusd"] == (
         "0"
     )

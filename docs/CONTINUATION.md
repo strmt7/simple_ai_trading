@@ -17,6 +17,14 @@ Development belongs only on `main`; do not create another development branch.
 - The one historical cutoff is `2026-08-14T00:00:00Z`. Do not move it or fetch
   the newest history on each iteration. Prospective experiments remain isolated
   from that frozen snapshot.
+- A 2026-08-25 identity audit found that the already-shared commits
+  `187c9531ab796c5c583b6fe9a50ed03c1127dde5` and
+  `ac8e29e661bf3c259c0347c8637304684f520faa` used the prohibited
+  `Codex <codex@users.noreply.github.com>` author and committer instead of the
+  required `AI agent <>`. Older main history also contains legacy prohibited
+  AI-style identities. This is surfaced, not repaired: do not force-rewrite
+  shared history without explicit approval. Identity audit and commit are now
+  separate gates; inspect the audit result before any mutating Git command.
 
 ## Round 75 Terminal Verdict
 
@@ -294,11 +302,18 @@ diagnostics, not accepted edges.
   those relayed CTF calls remain unmeasured. Canonical readiness evidence:
   `docs/model-research/polymarket/complete-set-holding-reward-readiness-v2.json`,
   result SHA-256
-  `0b30c235eb10a4a5994067cae6a354ee4f4fb5e6d95a4a7ad50315747a89f6db`.
+  `2d3650d65f248294395fcac336c6650e0c6bc332cb490c6f0bac70bc11244e2c`.
   Generic CLOB rewards responses carrying maker, competitiveness, or liquidity
   configuration fields are not holding-reward proof without an explicit
   current official binding; require an account entry labeled as a holding
-  reward and reconcile the corresponding pUSD balance change.
+  reward and reconcile the corresponding pUSD balance change. A capped public
+  diagnostic found no cross-outcome wallet overlap among the returned top 20
+  holders per outcome for the exact candidate. One selected current top holder
+  had 38 public `REWARD` activity rows, but every row had a blank `conditionId`.
+  This cannot attribute a reward to the candidate, distinguish a holding reward,
+  prove split-origin eligibility, or establish a rate; it also cannot exclude
+  complete-set holders outside the cap. Do not widen this selection-heavy
+  shortcut or treat aggregate public rewards as payout evidence.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.

@@ -19,6 +19,17 @@ skills are intentionally not copied.
 | Agent skills | ECC `2.0.0` | `.agents/skills/` |
 | Karpathy guidelines | commit `2c606141936f1eeef17fa3043a72095b4765b9c2` | `.agents/skills/karpathy-guidelines/` |
 
+## AI Commit Identity Gate
+
+Run the author, committer, and trailer audit as a standalone read command and
+inspect its output before invoking `git add`, `git commit`, amend, merge,
+cherry-pick, squash, or rebase. Never combine the identity audit and a mutating
+Git command in one shell or tool call: a prohibited identity must stop
+publication before mutation. Use the command-scoped literal identity from
+`docs/AI_COMMIT_IDENTITY.md` for every AI-created commit. If a violation is
+already shared, surface its exact commit before publishing another checkpoint
+and do not rewrite shared history without explicit approval.
+
 A fresh 2026-07-18 upstream check found CocoIndex Code `0.2.37`, Vulture
 `2.16`, and Super-Linter `v8.7.0` still current. The pinned Karpathy commit is
 still its upstream `HEAD`; OMERO advanced to the exact commit above and its
@@ -94,6 +105,13 @@ official source explicitly binds them to the holding program. Official relayer
 documentation can establish zero direct user gas for successfully relayed split
 and merge operations; it does not erase transfer, wrapping, withdrawal,
 opportunity, custody, tax, failure, or availability costs.
+
+Do not attribute a Data API `REWARD` activity row to a particular condition or
+reward program when its `conditionId` is blank. A public transaction hash and
+amount without an exact condition and explicit holding-reward subtype cannot
+establish market eligibility, split-origin eligibility, the applicable rate, or
+realized holding-reward payout. Top-holder overlap is only a capped diagnostic;
+zero overlap within returned rows does not establish absence outside the cap.
 
 Do not reuse the Round 74 USD-M futures commission capture as Binance spot fee
 evidence. Spot triangles require signed `GET /api/v3/account/commission`

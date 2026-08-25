@@ -126,9 +126,13 @@ safety gate, blocks Stop, or submits an order.
   candidate had live YES+NO midpoints of 0.325+0.675=1.000 pUSD. Official
   relayer documentation also confirms zero direct user gas for successfully
   relayed split and merge operations. These facts strengthen the hypothesis but
-  do not prove account eligibility or future payout. The readiness artifact is
+  do not prove account eligibility or future payout. A capped exact-market
+  diagnostic found zero overlap among the returned top 20 holders per outcome;
+  all 38 aggregate `REWARD` rows for one selected current top holder had a blank
+  `conditionId`. Neither result proves eligibility or payout, and the cap cannot
+  exclude complete-set holders elsewhere. The readiness artifact is
   `complete-set-holding-reward-readiness-v2.json`, result SHA-256
-  `0b30c235eb10a4a5994067cae6a354ee4f4fb5e6d95a4a7ad50315747a89f6db`.
+  `2d3650d65f248294395fcac336c6650e0c6bc332cb490c6f0bac70bc11244e2c`.
   Do not call this an accepted edge or activate a payout study while Round 21
   is protected.
 - A shared source-continuity gate now permits only slot-local failure
