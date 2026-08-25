@@ -98,6 +98,19 @@ safety gate, blocks Stop, or submits an order.
   Do not rerun or adapt this contract. A future historical endpoint study with
   unproved retention must preregister newest-first ordering so availability is
   tested before older windows consume the one-use attempt.
+  A newly identified Binance stable-value yield-allocation candidate compares
+  BFUSD, RWUSD, and exact same-currency alternatives without forecasting crypto
+  direction. Official APIs expose signed read-only rate history and
+  account-specific subscription/redemption quota details for both products and
+  the current eligible USDT/USDC flexible alternatives.
+  Both designated ephemeral credentials were absent, so no signed request was
+  made and no current net-yield edge is claimed. A logged-out RWUSD promotion
+  was explicitly excluded from evidence. Canonical gate:
+  `binance-stable-yield-allocation-evidence-gate-v1.json`, result SHA-256
+  `3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a`.
+  Do not freeze another signed collector until both credentials exist; never
+  use a marketing APR, example fee, assumed daily cadence, or zero alternative
+  yield as a shortcut.
   Polymarket cross-condition duplicate discovery found
   one repeated exact question across 607 eligible binary markets, but its two
   canonical rule sets differed; zero exact payout-rule duplicates advanced to
