@@ -6,7 +6,7 @@
     "profitability_claim": false
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
-  "updated_at_utc": "2026-08-25T18:14:17.4106770Z",
+  "updated_at_utc": "2026-08-25T19:14:24.4801998Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
@@ -270,7 +270,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "94da171bd2ecb1a21c781f4f0efe545985f10eab3152d6439e63d173555010b4",
+  "result_sha256": "6f3bcf6d12fe4e41ca70d08cb577bf89bc040526803d0c17ff8eb69f8a9e1f0e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -322,6 +322,11 @@
       "canonical_result_sha256": "85d0be66391b53bef87dda33ea73acaf6995d0200e6423de7999d44a8fed3c8f",
       "family": "binance_delta_hedged_bnb_spot_fee_discount_inventory",
       "reason": "the_frozen_1000_settlement_recovery_failed_the_primary_worst_monthly_turnover_gate_because_35_6129_bips_of_negative_short_funding_required_14_24516_times_monthly_spot_turnover_to_break_even"
+    },
+    {
+      "canonical_result_sha256": "3df17e93866cbf53617340dd422a91945c8a1924d4ca736b76c5f78f4c9a5575",
+      "family": "binance_usds_margined_versus_coin_margined_perpetual_funding_pair",
+      "reason": "no_distinct_complete_payoff_identity_was_source_proved_and_neutralizing_coin_collateral_reintroduces_terminal_spot_or_linear_perpetual_carry_without_new_account_specific_collateral_evidence"
     },
     {
       "canonical_result_sha256": "509f63910c77a582680849e779317396962d06edeffa537e7d5ce8e18a984cb2",

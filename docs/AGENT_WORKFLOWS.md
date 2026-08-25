@@ -179,6 +179,18 @@ contract's basis to spot. Require a genuinely fixed terminal payoff identity or
 state an explicit term-structure forecast. If that identity fails, record the
 terminal mechanism rejection and do not spend requests on a price backtest.
 
+Do not treat a USD-M versus COIN-M perpetual funding-rate difference as a new
+direction-neutral edge merely because both contracts name the same underlying.
+Source-bind the inverse payoff, `contractSize`, `marginAsset`, collateral hedge,
+funding conversion, leverage, maintenance margin, liquidation, transfer, and
+same-account commission semantics before requesting funding history or books.
+Neutralizing required coin collateral with a spot-equivalent or linear
+perpetual hedge otherwise reintroduces the already-terminal spot/perpetual carry
+family. When generated account Markdown says `No authorization required` but an
+official transport calls `sign_request`, classify the endpoint as signed and
+fail closed; generated security boilerplate is not permission to probe an
+account endpoint.
+
 Binance spot maker-rebate work has a separate account-evidence boundary. The
 official symbol commission response explicitly excludes both the spot market-
 maker rebate rate and the BNB discount effect. Require the same account's

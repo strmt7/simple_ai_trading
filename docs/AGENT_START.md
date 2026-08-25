@@ -114,6 +114,19 @@ safety gate, blocks Stop, or submits an order.
   books, loosen the turnover gate, or substitute a public discount for the
   signed account commission response. Future one-use contracts must prove that
   their bounded request budget can physically supply the required horizon.
+  A source-first USD-M/COIN-M perpetual funding review also stopped before any
+  market request. Official schemas expose separate public funding endpoints and
+  COIN-M `contractSize` and `marginAsset`, but do not bind a complete
+  cross-product payoff, collateral hedge, funding conversion, or
+  liquidation-safe path. Neutralizing the required coin collateral otherwise
+  reintroduces the already-terminal spot/perpetual carry family. The generated
+  Go account Markdown also says `No authorization required` for commission
+  sections while Binance's official Python transport signs both commission
+  GETs; use the stricter signed classification. Canonical triage:
+  `structural-edge-source-triage-v2-2026-08-25.json`, result SHA-256
+  `3df17e93866cbf53617340dd422a91945c8a1924d4ca736b76c5f78f4c9a5575`.
+  Do not build a funding or book collector without materially new official
+  payoff/collateral semantics and the designated account evidence.
   A newly identified Binance stable-value yield-allocation candidate compares
   BFUSD, RWUSD, and exact same-currency alternatives without forecasting crypto
   direction. Official APIs expose signed read-only rate history and

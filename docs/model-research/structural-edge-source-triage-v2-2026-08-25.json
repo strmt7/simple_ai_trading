@@ -1,0 +1,114 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "signed_requests_made": 0,
+    "venue_market_data_requests_made": 0
+  },
+  "created_at_utc": "2026-08-25T19:14:24.4801998Z",
+  "preflight": {
+    "binance_ephemeral_api_key_present": false,
+    "binance_ephemeral_api_secret_present": false,
+    "local_head": "0ad219fd82c2f2eb7876c50f73cb8bcff82d4868",
+    "origin_main": "0ad219fd82c2f2eb7876c50f73cb8bcff82d4868",
+    "polymarket_protected_boundary_reached": false,
+    "polymarket_protected_boundary_utc": "2026-08-29T23:40:00Z",
+    "worktree_clean": true
+  },
+  "purpose": "source_first_adjudication_of_usds_margined_versus_coin_margined_perpetual_funding_without_repeating_terminal_carry_or_spending_market_data_requests_before_a_distinct_payoff_identity_is_proved",
+  "reviewed_mechanism": {
+    "account_evidence_required": [
+      "exact USD-M and COIN-M maker and taker commissions for the same account",
+      "COIN-M margin asset balance leverage bracket maintenance margin and liquidation state",
+      "USD-M collateral mode haircut leverage bracket maintenance margin and liquidation state",
+      "realized funding fee income and commission records on both product families"
+    ],
+    "analytical_boundary": [
+      "The source-bound official schemas prove that COIN-M contracts expose a contractSize and a marginAsset while USD-M and COIN-M expose different funding and commission endpoints.",
+      "They do not source-bind a complete cross-product terminal payoff identity collateral hedge funding conversion rule or liquidation-safe transfer path.",
+      "Neutralizing the required coin collateral by adding a spot-equivalent or linear perpetual hedge overlaps the already-terminal spot-perpetual carry family unless a materially new account-specific portfolio-margin or collateral rule proves otherwise.",
+      "A public difference between two funding-rate series would therefore be an incomplete gross component rather than a market-direction-independent executable edge."
+    ],
+    "collector_decision": "do_not_build_or_call_public_funding_or_book_collector",
+    "duplicate_family_boundary": {
+      "canonical_result_sha256": "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4",
+      "family": "binance_elevated_funding_spot_perpetual_carry",
+      "reason": "coin_collateral_neutralization_reintroduces_spot_or_linear_perpetual_carry_without_a_new_source_bound_account_rule"
+    },
+    "market_direction_forecast_required": "unproved_without_complete_payoff_and_collateral_semantics",
+    "mechanism": "binance_usds_margined_versus_coin_margined_perpetual_funding_pair",
+    "observed_official_facts": [
+      "The official COIN-M SDK exposes unauthenticated GET /dapi/v1/fundingRate and exchange information containing contractSize and marginAsset.",
+      "The official USD-M SDK exposes unauthenticated GET /fapi/v1/fundingRate.",
+      "The official Python futures connector signs GET /dapi/v1/commissionRate and GET /fapi/v1/commissionRate.",
+      "The generated Go AccountAPI Markdown labels those USER_DATA commission sections as No authorization required, contradicting the signed Python transport; security and evidence classification therefore fail closed to signed account evidence.",
+      "Both designated ephemeral Binance credential variables were absent, so no commission margin balance position income or signed request was attempted."
+    ],
+    "prohibited_shortcuts": [
+      "treating_equal_contract_labels_as_equal_base_delta",
+      "ignoring_coin_margin_asset_price_exposure",
+      "omitting collateral haircuts leverage liquidation or transfer failure",
+      "substituting public fee tiers for same-account commissions",
+      "trusting_generated_no_authorization_boilerplate_over_the_signed_transport",
+      "screening_funding_history_before_proving_a_distinct_complete_payoff_identity"
+    ],
+    "retry_trigger": "materially_new_official_payoff_and_collateral_semantics_plus_both_designated_ephemeral_credentials_and_a_source_bound_distinctness_proof",
+    "status": "terminal_as_a_separate_public_edge_family_no_collector_or_market_request_justified",
+    "venue_scope": "binance_usds_margined_and_coin_margined_perpetual_futures"
+  },
+  "result_sha256": "3df17e93866cbf53617340dd422a91945c8a1924d4ca736b76c5f78f4c9a5575",
+  "schema_version": "structural-edge-source-triage-v2",
+  "source_quality_correction": {
+    "decision": "when_generated_endpoint_security_labels_conflict_with_an_official_transport_use_the_stricter_signed_classification_and_make_no_request_without_explicit_authority",
+    "generated_go_account_markdown_claim": "No authorization required",
+    "official_python_transport_behavior": "sign_request_GET",
+    "reason": "a_generated_security_label_is_not_authoritative_enough_to_expose_an_account_endpoint"
+  },
+  "sources": [
+    {
+      "bytes": 59463,
+      "commit": "e034e7d97738ae1d2937fc8584e7b02b8ac8081a",
+      "path": "clients/derivativestradingcoinfutures/src/restapi/docs/MarketDataAPI.md",
+      "repository": "binance/binance-connector-go",
+      "sha256": "b41cbf7b807fa7a3dac26f01a6397b5db1f54f1eb76f49edd64d5841ec8aab01"
+    },
+    {
+      "bytes": 22652,
+      "commit": "e034e7d97738ae1d2937fc8584e7b02b8ac8081a",
+      "path": "clients/derivativestradingcoinfutures/src/restapi/docs/ExchangeInformationResponseSymbolsInner.md",
+      "repository": "binance/binance-connector-go",
+      "sha256": "4eab711bdacfc8bc1ff6da3fef4ffb77390d22dd9daf00cb083f5375ccb79a15"
+    },
+    {
+      "bytes": 69882,
+      "commit": "e034e7d97738ae1d2937fc8584e7b02b8ac8081a",
+      "path": "clients/derivativestradingusdsfutures/src/restapi/docs/MarketDataAPI.md",
+      "repository": "binance/binance-connector-go",
+      "sha256": "b8c43b80d672f7eba4b1e175c2f4892c190feecf5942c21903633d0f8c12c021"
+    },
+    {
+      "bytes": 28188,
+      "commit": "e034e7d97738ae1d2937fc8584e7b02b8ac8081a",
+      "path": "clients/derivativestradingcoinfutures/src/restapi/docs/AccountAPI.md",
+      "repository": "binance/binance-connector-go",
+      "sha256": "f9473a1d60663b2002cf97fb2ede2e1fbbf3a5c2ab456b81e69d2b662c2cbf7e"
+    },
+    {
+      "bytes": 29949,
+      "commit": "a6bfbbf10fe2c1b4eb76fc24ffb82eb94bf9df89",
+      "path": "binance/cm_futures/account.py",
+      "repository": "binance/binance-futures-connector-python",
+      "sha256": "c2ce9b36648f24aa3d81377280f01f6553cdfdae448b1895eb2837f2322ac147"
+    },
+    {
+      "bytes": 39751,
+      "commit": "a6bfbbf10fe2c1b4eb76fc24ffb82eb94bf9df89",
+      "path": "binance/um_futures/account.py",
+      "repository": "binance/binance-futures-connector-python",
+      "sha256": "a2b143a57a68584fdb73facac49136617907f09382e1a59f8f88c92f62d824d2"
+    }
+  ]
+}
