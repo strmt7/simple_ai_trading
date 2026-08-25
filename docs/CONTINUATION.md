@@ -179,6 +179,17 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-spot-maker-rebate-account-evidence-gate-v1.json`,
   result SHA-256
   `19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f`.
+- Binance Prediction Trading versus Polymarket is the next distinct structural
+  screen. The official Binance connector exposes unauthenticated market-list,
+  detail, and order-book endpoints with vendor, condition, collateral, fee,
+  outcome-token, and timestamp fields. The frozen screen permits only exact
+  BTC/ETH/SOL payout-rule equivalence; same titles do not qualify, and a shared
+  vendor, condition, or book is a distribution mirror rather than cross-venue
+  arbitrage. Pagination, candidate, exact-equivalence, book, cost, and terminal
+  limits were fixed before any market-list request. Canonical contract:
+  `docs/model-research/action-value/cross-venue-prediction-parity-screen-contract-v1.json`,
+  result SHA-256
+  `6cfb13c1088ab4356f8a037df0d2f059e94fba03029a6746badfe3a6d2ea9f5c`.
 - Binance options: 1,538 tradable unit-one BTCUSDT, ETHUSDT, and SOLUSDT
   contracts formed 50 same-underlying, same-expiry, same-side chains. Exact
   lot-aligned enumeration covered 26,688 vertical-dominance pairs and 338,904
