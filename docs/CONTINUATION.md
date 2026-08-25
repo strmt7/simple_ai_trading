@@ -184,6 +184,18 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2`.
+- Binance quarterly delivery basis: a separately frozen audit used the latest
+  eight completed BTCUSDT and ETHUSDT USD-M quarterly settlements and the
+  minimum spot trade low in the first five post-delivery one-minute bars. Worst
+  mismatch was -183.7938 bps for BTC and -222.8925 bps for ETH. Those fixed
+  stresses made every current next-quarter size negative after the existing 35
+  bps hurdle, rejecting the hold-to-delivery-then-sell-spot path. The trade lows
+  are not executable depth, so a distinct future study would require
+  synchronized pre-delivery spot/future unwind evidence rather than resampling
+  this audit. Canonical result:
+  `docs/model-research/action-value/binance-quarterly-delivery-basis-audit-v1-2026-08-25.json`,
+  result SHA-256
+  `5476fdb43a24bd2d3a31c10321de968f63fd33eca20603e4891fa8d838a134a4`.
 - Polymarket paired-maker rewards: the frozen Moonshot candidate's one-tick
   hypothetical 20-share YES+NO bids summed to 0.940 for 1.20 pUSD displayed
   both-fill gross. The books were 8,074 ms old and failed the 5,000 ms gate.
