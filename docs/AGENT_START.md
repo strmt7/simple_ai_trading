@@ -77,8 +77,11 @@ safety gate, blocks Stop, or submits an order.
   but the independently captured current exchange catalog uses 08:00 UTC for
   every quarterly `deliveryDate`. The eight-hour semantic mismatch invalidates
   the audit's post-delivery mismatch values and hold-to-delivery rejection. Do
-  not resample or assume an eight-hour correction; timing must be independently
-  source-bound first. Polymarket
+  not resample that audit. Binance's official quarterly-delivery rule now binds
+  the normal schedule to the last Friday at 08:00 UTC, while allowing extreme
+  postponements. A separate pre-delivery unwind contract is frozen, but no new
+  price request has run; it must validate every actual historical cutoff before
+  using any basis result. Polymarket
   paired-maker quoting had
   a stale displayed both-fill surplus of 1.20 pUSD, but the public reward payout
   floor is zero and the 9.42 pUSD orphan-loss bound remains valid. Its reported

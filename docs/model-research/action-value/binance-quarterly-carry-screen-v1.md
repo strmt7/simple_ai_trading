@@ -80,11 +80,24 @@ semantic equivalence. Its mismatch values and hold-to-delivery rejection are
 therefore invalid.
 
 The source-bound timestamp adjudication neither resamples nor assumes that
-adding eight hours is correct. A new study must first bind each historical
-contract to an authoritative expiry or trading schedule. Only then may a
-separately frozen synchronized pre-delivery spot/future unwind diagnostic access
-new price evidence. Exact account fees, margin, liquidation, capital cost, and
-executable fills remain unresolved. The original audit is
+adding eight hours is correct. Binance's official quarterly-delivery rule now
+binds the normal schedule to the last Friday at 08:00 UTC, while explicitly
+allowing postponement under extreme conditions. The timing artifact is
+[`binance-quarterly-delivery-time-semantics-v1.json`](binance-quarterly-delivery-time-semantics-v1.json),
+result SHA-256
+`2a52b558f8bc1332cbf2deb41c4e8d4f01bf44d4276ebcc901b3768d4d8516db`.
+
+A separately frozen 16-contract pre-delivery unwind contract must validate the
+actual historical futures cutoff before using any basis observation. Its one
+primary 10-minute horizon and adverse futures-high/spot-low arithmetic cannot
+accept an edge. It permits 32 public requests with no retry or replacement and
+has not yet accessed price data. Exact account fees, margin, liquidation,
+capital cost, and executable fills remain unresolved. The contract is
+[`binance-quarterly-pre-delivery-unwind-contract-v1.json`](binance-quarterly-pre-delivery-unwind-contract-v1.json),
+result SHA-256
+`f61a8c9dfd86274292c5dae154120871ea5358e2a5ca004b92574e6bdcb7657c`.
+
+The original invalid audit is
 [`binance-quarterly-delivery-basis-audit-v1-2026-08-25.json`](binance-quarterly-delivery-basis-audit-v1-2026-08-25.json),
 result SHA-256
 `5476fdb43a24bd2d3a31c10321de968f63fd33eca20603e4891fa8d838a134a4`.
