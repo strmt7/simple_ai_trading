@@ -128,7 +128,7 @@ safety gate, blocks Stop, or submits an order.
   relayed split and merge operations. These facts strengthen the hypothesis but
   do not prove account eligibility or future payout. The readiness artifact is
   `complete-set-holding-reward-readiness-v2.json`, result SHA-256
-  `c12bd9d75503c679c1e19800773a002f1d3e82dfad91338cb7bd3ea24dd6a964`.
+  `0b30c235eb10a4a5994067cae6a354ee4f4fb5e6d95a4a7ad50315747a89f6db`.
   Do not call this an accepted edge or activate a payout study while Round 21
   is protected.
 - A shared source-continuity gate now permits only slot-local failure

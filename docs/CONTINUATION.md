@@ -294,7 +294,11 @@ diagnostics, not accepted edges.
   those relayed CTF calls remain unmeasured. Canonical readiness evidence:
   `docs/model-research/polymarket/complete-set-holding-reward-readiness-v2.json`,
   result SHA-256
-  `c12bd9d75503c679c1e19800773a002f1d3e82dfad91338cb7bd3ea24dd6a964`.
+  `0b30c235eb10a4a5994067cae6a354ee4f4fb5e6d95a4a7ad50315747a89f6db`.
+  Generic CLOB rewards responses carrying maker, competitiveness, or liquidity
+  configuration fields are not holding-reward proof without an explicit
+  current official binding; require an account entry labeled as a holding
+  reward and reconcile the corresponding pUSD balance change.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.

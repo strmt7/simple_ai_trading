@@ -86,11 +86,14 @@ Treat public venue metadata as a candidate filter, not account evidence. In
 particular, Polymarket's public `holdingRewardsEnabled` Gamma field can identify
 an exact market for a later study, but it does not prove that the account, the
 balance's acquisition path, or a particular reward day is eligible. Promotion
-requires the authenticated rewards response, a reconciled daily balance change,
-and a complete split-to-merge cash-flow cycle. Official relayer documentation
-can establish zero direct user gas for successfully relayed split and merge
-operations; it does not erase transfer, wrapping, withdrawal, opportunity,
-custody, tax, failure, or availability costs.
+requires an authenticated account record explicitly labeled as a holding
+reward, a reconciled daily pUSD balance change, and a complete split-to-merge
+cash-flow cycle. Do not substitute generic CLOB rewards endpoints documented
+with maker, competitiveness, or liquidity-reward fields unless a current
+official source explicitly binds them to the holding program. Official relayer
+documentation can establish zero direct user gas for successfully relayed split
+and merge operations; it does not erase transfer, wrapping, withdrawal,
+opportunity, custody, tax, failure, or availability costs.
 
 Do not reuse the Round 74 USD-M futures commission capture as Binance spot fee
 evidence. Spot triangles require signed `GET /api/v3/account/commission`

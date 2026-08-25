@@ -25,7 +25,7 @@ READINESS_PATH = (
     / "complete-set-holding-reward-readiness-v2.json"
 )
 EXPECTED_READINESS_SHA256 = (
-    "c12bd9d75503c679c1e19800773a002f1d3e82dfad91338cb7bd3ea24dd6a964"
+    "0b30c235eb10a4a5994067cae6a354ee4f4fb5e6d95a4a7ad50315747a89f6db"
 )
 
 
@@ -131,6 +131,7 @@ def test_holding_reward_readiness_hash_and_public_candidate_reconstruct() -> Non
         candidate["midpoint_mark_per_complete_set_pusd"]
     )
     assert artifact["gasless_route"]["direct_user_gas_cost_pusd"] == "0"
+    assert artifact["promotion_evidence_gate"]["generic_rewards_endpoint_exclusion"]
     assert artifact["authority"]["publicly_proven_future_payout_lower_bound_pusd"] == (
         "0"
     )
