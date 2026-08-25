@@ -258,6 +258,21 @@ diagnostics, not accepted edges.
   This is not an edge: the publicly proven payout floor is zero, fill and queue
   evidence are absent, and one orphan can still lose 24.50 pUSD without rebate
   credit.
+- Polymarket complete-set holding rewards are a distinct market-direction-
+  independent hypothesis. Official mechanics allow splitting 1 pUSD into one
+  YES plus one NO and later merging the pair back to 1 pUSD. The Help Center
+  says eligible position value includes current YES and NO shares at their
+  latest mid-prices and lists BTC, ETH, and SOL 2026 price events. However, two
+  current official sources disagree on the annual rate (3.25% versus 4.00%). At
+  the lower rate, 35 bps of total friction needs 39.3077 days to break even.
+  The rate is discretionary, payout limits may be introduced, random hourly
+  sampling is not exact accrual, and split-originated paired eligibility has
+  not been explicitly or empirically proved. This is promising enough for a
+  later authenticated payout/cost study, but its future payout floor is zero
+  and it is not an accepted edge. Canonical economics:
+  `docs/model-research/polymarket/complete-set-holding-reward-economics-v1.json`,
+  result SHA-256
+  `b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561`.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.
@@ -355,6 +370,10 @@ lease, state, database, and WAL agree.
    frozen prospective contract measuring authenticated maker fills, queue and
    cancellation latency, adverse selection, realized rebate payment, and
    complete orphan P&L. Nominal rebate algebra is not a substitute.
+   The complete-set holding-reward hypothesis likewise requires an exact
+   eligible BTC/ETH/SOL market, authenticated paired balance and daily payout,
+   split/merge and transfer costs, alternative cash yield, and capacity. Do not
+   infer eligibility from prose or activate it before the protected boundary.
 5. Reject any candidate that fails bull, bear, sideways, choppy, high-volatility,
    liquidity-stress, or latency-stress after-cost slices. Abstention is required
    where evidence is unsupported; no strategy can guarantee profit or prevent

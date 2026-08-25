@@ -105,6 +105,18 @@ safety gate, blocks Stop, or submits an order.
   orphan protection; the one-fill settlement loss bound remains 24.50 pUSD
   without rebate credit. Do not turn this arithmetic into a profitability claim
   or activate a capture while the Round 21 sidecar is protected.
+- Polymarket complete-set holding rewards are the first newly identified
+  direction-neutral hypothesis worth preserving. Split/merge mechanics define
+  a paired 1 pUSD conversion identity before operational and custody risks, and
+  official eligible events include BTC, ETH, and SOL 2026 price events. The
+  official rate sources conflict at 3.25% versus 4.00%; the rate is
+  discretionary, future payout can
+  be capped, and split-originated paired eligibility and realized payment are
+  unproved. The canonical economics artifact is
+  `complete-set-holding-reward-economics-v1.json`, result SHA-256
+  `b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561`.
+  Do not call this an edge or activate a payout study while Round 21 is
+  protected.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
