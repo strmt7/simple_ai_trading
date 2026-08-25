@@ -144,8 +144,11 @@ and mean-reversion ideas therefore receive no new threshold; maker split/merge
 received an independent [point-in-time reward diagnostic](../paired-maker-reward-screen-v1.md).
 Its displayed both-fill surplus was stale, its publicly proven reward payout
 floor was zero, and orphan risk remained unbounded by fills or cancellation
-evidence. A prospective queue, reward-persistence, and orphan-risk capture is
-still required before any execution study.
+evidence. Its Moonshot candidate was also outside the frozen BTC/ETH/SOL scope;
+the [scope adjudication](../paired-maker-reward-scope-adjudication-v1.json)
+prohibits rerun or prospective continuation. A distinct in-scope candidate
+would require its own prospective queue, reward-persistence, and orphan-risk
+contract before any execution study.
 
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second

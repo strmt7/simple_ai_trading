@@ -75,8 +75,10 @@ safety gate, blocks Stop, or submits an order.
   versus spot-exit basis remain unresolved. Polymarket paired-maker quoting had
   a stale displayed both-fill surplus of 1.20 pUSD, but the public reward payout
   floor is zero and the 9.42 pUSD orphan-loss bound dwarfed the conditional
-  reward rate. Do not repeat either snapshot without the evidence gates in
-  their screen documents.
+  reward rate. Its Moonshot candidate is outside the BTC/ETH/SOL research scope
+  and is retained only as a negative methodology audit. Do not repeat either
+  snapshot; future Polymarket reward work must be BTC/ETH/SOL and satisfy the
+  evidence gates in the screen document.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or

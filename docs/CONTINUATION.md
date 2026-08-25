@@ -190,10 +190,15 @@ diagnostics, not accepted edges.
   Public data proves a zero reward payout floor; a separately labeled
   conditional calculation was only 0.2980 pUSD/day against 9.42 pUSD maximum
   orphan settlement loss. The event is augmented negative-risk, so no
-  event-wide payout identity was assumed. Canonical result:
+  event-wide payout identity was assumed. The Moonshot condition is outside the
+  frozen BTC/ETH/SOL Polymarket research scope and is retained only as a
+  negative methodology audit; no rerun or prospective continuation is allowed.
+  Canonical result:
   `docs/model-research/polymarket/paired-maker-reward-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `3ed963fe2ff3473dba6c9b5146d842130d4f67ed3a0e8673451330133c68c0b0`.
+  Scope adjudication:
+  `docs/model-research/polymarket/paired-maker-reward-scope-adjudication-v1.json`.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.
