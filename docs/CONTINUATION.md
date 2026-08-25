@@ -149,6 +149,19 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-option-parity-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `ceca2f61ab1da16285190afcb90c276a10b032fb7d264c90656aaf2f7266c253`.
+- Binance option boxes: the source-bound option snapshot formed 25
+  same-underlying, same-expiry chains with both calls and puts. Exact
+  minimum-lot enumeration covered 13,344 strike pairs; 5,637 long boxes and
+  8,917 short boxes had all four ticker sides. Six strict short boxes showed
+  ticker credits `0.028`-`0.088` USDT above their fixed expiry liabilities, and
+  one near-expiry long box showed `0.05` USDT nominal carry before costs. The
+  candidate-only depth sweep found zero executable boxes because each lacked at
+  least one required displayed side; every four-leg timestamp set also failed
+  the age/skew gate. No second sweep or fee/margin work was justified.
+  Canonical result:
+  `docs/model-research/action-value/binance-option-box-parity-snapshot-v1-2026-08-25.json`,
+  result SHA-256
+  `e85b4e270e707c0faa47e3f373d6d345fce448fcbcbcf6a6f39bceec7d9eb229`.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.
@@ -216,9 +229,9 @@ lease, state, database, and WAL agree.
 3. Do not rerun rejected Binance funding carry, two-sided touch making,
    Polymarket binary complete-set taking, negative-risk parity, logical
    threshold/deadline implication parity, Binance spot triangles, or Binance
-   option vertical/convexity parity as if repetition could create an edge. A
-   repeat is justified only by a frozen prospective sampling contract or
-   materially new fee/execution evidence.
+   option vertical/convexity parity, or option box parity as if repetition
+   could create an edge. A repeat is justified only by a frozen prospective
+   sampling contract or materially new fee/execution evidence.
 4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
    campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
    use the source-continuity recovery design to freeze separate Round 77 Binance
