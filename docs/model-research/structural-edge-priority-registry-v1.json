@@ -1,0 +1,203 @@
+{
+  "accepted_edge_count": 0,
+  "authority": {
+    "live_trading_authority": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T08:42:24.9432234Z",
+  "prioritized_hypotheses": [
+    {
+      "blocking_evidence": [
+        "authenticated exact-condition account record explicitly labeled holding-reward eligible",
+        "split-origin equal YES and NO balance lineage",
+        "authenticated holding-reward ledger entry and reconciled pUSD balance change",
+        "full split-to-merge cash flow every external cost alternative cash yield capacity and persistence"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/polymarket/complete-set-holding-reward-economics-v1.json",
+          "result_sha256": "b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561"
+        },
+        {
+          "path": "docs/model-research/polymarket/complete-set-holding-reward-readiness-v2.json",
+          "result_sha256": "2d3650d65f248294395fcac336c6650e0c6bc332cb490c6f0bac70bc11244e2c"
+        }
+      ],
+      "current_status": "strongest_polymarket_direction_neutral_hypothesis_public_mechanics_candidate_and_gasless_route_proved_realized_reward_not_proved",
+      "market_direction_forecast_required": false,
+      "mechanism": "complete_set_holding_reward",
+      "next_action": "after_the_protected_boundary_freeze_one_authenticated_minimum_size_payout_and_cost_study_only_if_explicit_account_and_funding_authority_exists",
+      "priority_rank": 1,
+      "prohibited_shortcuts": [
+        "Gamma holdingRewardsEnabled as account eligibility",
+        "generic maker or liquidity reward endpoint as holding-reward payout",
+        "blank-condition public REWARD activity as exact market attribution",
+        "top-holder non-overlap as population absence"
+      ],
+      "retry_trigger": "not_before_2026_08_29T23_40_00Z_and_only_with_explicit_read_only_then_separately_funded_authority",
+      "venue_scope": "polymarket_btc_eth_sol"
+    },
+    {
+      "blocking_evidence": [
+        "exact account commissions settlement fees and collateral opportunity cost",
+        "liquidation-safe collateral plan and authenticated position reconciliation",
+        "executable spot-exit versus delivery-index basis under frozen timing semantics",
+        "prospective persistence and stress evidence"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json",
+          "result_sha256": "9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2"
+        }
+      ],
+      "current_status": "strongest_binance_direction_neutral_hypothesis_gross_positive_at_all_tested_sizes_but_account_cost_and_exit_basis_unresolved",
+      "market_direction_forecast_required": false,
+      "mechanism": "quarterly_spot_future_cash_and_carry",
+      "next_action": "freeze_a_new_account_cost_and_collateral_evidence_contract_only_after_explicit_read_only_credential_authority",
+      "priority_rank": 2,
+      "prohibited_shortcuts": [
+        "35_bps_sensitivity_as_actual_account_cost",
+        "historical deliveryTime as exact delivery epoch",
+        "flat expired-contract klines as executable unwind evidence",
+        "kline presence as authenticated position or fill state"
+      ],
+      "retry_trigger": "explicit_read_only_mainnet_account_evidence_authority_and_new_timing_safe_contract",
+      "venue_scope": "binance_btc_eth_quarterly"
+    },
+    {
+      "blocking_evidence": [
+        "same-account liquidity program enrollment tier and pair scope",
+        "weekly final rebates reconciled to rebate history and balances",
+        "post-only queue fill adverse-selection inventory and capacity evidence",
+        "realized after-cost stress persistence"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-spot-maker-rebate-account-evidence-gate-v1.json",
+          "result_sha256": "19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f"
+        }
+      ],
+      "current_status": "account_evidence_path_proved_current_rate_enrollment_fills_and_realized_profit_absent",
+      "market_direction_forecast_required": false,
+      "mechanism": "spot_market_maker_rebates",
+      "next_action": "query_only_the_frozen_account_evidence_path_after_explicit_read_only_credential_authority",
+      "priority_rank": 3,
+      "prohibited_shortcuts": [
+        "cached 2024 public fee table as current rate",
+        "symbol commission response as maker-rebate proof",
+        "taker triangle prices as non-atomic maker execution",
+        "volume farming self-trading or wash trading"
+      ],
+      "retry_trigger": "explicit_read_only_mainnet_account_evidence_authority",
+      "venue_scope": "binance_spot"
+    },
+    {
+      "blocking_evidence": [
+        "same-account signed commission response for BTCUSDC BTCUSDT and USDCUSDT",
+        "all standard special tax side and discount components",
+        "fresh three-leg books and failure-bounded execution"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-spot-triangle-account-fee-gate-v1.json",
+          "result_sha256": "304a78180be3375a3453384ad71948c24e52ffeba2f1482cb97711e59aa4a688"
+        }
+      ],
+      "current_status": "gross_upper_bound_only_0_646183_bps_and_equal_fee_break_even_only_0_215385_bps_per_leg",
+      "market_direction_forecast_required": false,
+      "mechanism": "three_leg_spot_conversion",
+      "next_action": "do_not_resample_books_until_exact_account_fees_first_prove_the_path_can_clear_the_frozen_break_even",
+      "priority_rank": 4,
+      "prohibited_shortcuts": [
+        "USD-M futures commission as spot fee",
+        "public VIP tier as account fee",
+        "unproved BNB discount",
+        "more book snapshots without fee feasibility"
+      ],
+      "retry_trigger": "explicit_read_only_account_fee_authority_and_compounded_exact_fees_below_frozen_break_even",
+      "venue_scope": "binance_spot_btc_usdc_usdt"
+    },
+    {
+      "blocking_evidence": [
+        "authenticated maker fills and exact ownership",
+        "queue and cancellation latency adverse selection and orphan PnL",
+        "realized rebate payment and complete after-cost persistence"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/polymarket/crypto-maker-rebate-economics-v1.json",
+          "result_sha256": "09f67265772716873c625ada816140332430697894f30af22c05bd0dd6422c8a"
+        }
+      ],
+      "current_status": "conditional_rebate_arithmetic_only_public_payout_floor_zero_and_one_fill_loss_dominates",
+      "market_direction_forecast_required": false,
+      "mechanism": "paired_crypto_maker_rebates",
+      "next_action": "after_the_protected_boundary_freeze_a_prospective_authenticated_fill_rebate_and_orphan_study_only_if_explicit_authority_exists",
+      "priority_rank": 5,
+      "prohibited_shortcuts": [
+        "nominal rebate algebra as realized payout",
+        "both-fill assumption",
+        "public books as own fill or queue evidence"
+      ],
+      "retry_trigger": "not_before_2026_08_29T23_40_00Z_and_only_with_explicit_account_and_paper_or_funding_authority",
+      "venue_scope": "polymarket_btc_eth_sol"
+    },
+    {
+      "blocking_evidence": [
+        "read-only Binance Prediction Trading API access",
+        "exact independent payout-rule equivalence rather than shared-book mirroring",
+        "fresh executable books fees collateral FX transfers settlement and custody costs"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/cross-venue-prediction-parity-screen-v1-2026-08-25.json",
+          "result_sha256": "628e63106bc3c0e28c36dcad094b7d7ac500ecd14dfff827287030c2dbbb3d72"
+        }
+      ],
+      "current_status": "terminal_before_market_access_official_auth_contract_mismatch_and_no_credentials_authorized",
+      "market_direction_forecast_required": false,
+      "mechanism": "cross_venue_prediction_complete_set",
+      "next_action": "none_without_explicit_read_only_credential_authority_and_a_new_authenticated_contract",
+      "priority_rank": 6,
+      "prohibited_shortcuts": [
+        "generated no-authorization label without live preflight",
+        "title equality as payout equality",
+        "shared vendor condition or order book as independent venue",
+        "stored credential inspection without authority"
+      ],
+      "retry_trigger": "explicit_read_only_Binance_Prediction_credential_authority",
+      "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
+    }
+  ],
+  "result_sha256": "1c386c9f47a7f49830a17f5bd9e3b6f477060a9f61ffe97be83aebfb953725f6",
+  "schema_version": "structural-edge-priority-registry-v1",
+  "terminal_do_not_repeat": [
+    {
+      "canonical_result_sha256": "9d7a2c61ae29cb6b29fd3f417ed3e40f1ea08fb2cb6729d20372648abdc448e2",
+      "family": "polymarket_negative_risk_structural_parity",
+      "reason": "zero gross-positive path across the frozen in-scope event set"
+    },
+    {
+      "canonical_result_sha256": "c77c5c6e2e525898f334bd81c54d1b60673226b7488b2833f2f15e17e4de1f78",
+      "family": "polymarket_threshold_and_deadline_implication_parity",
+      "reason": "zero gross-positive implication pair across the frozen exact-rule set"
+    },
+    {
+      "canonical_result_sha256": "7eab53089f904d647538de29193dcfa33bfabaa73440161d5fdec706b7bcb5b1",
+      "family": "polymarket_cross_condition_duplicates",
+      "reason": "the only repeated exact question had different canonical payout rules"
+    },
+    {
+      "canonical_result_sha256": "ceca2f61ab1da16285190afcb90c276a10b032fb7d264c90656aaf2f7266c253",
+      "family": "binance_option_vertical_and_convexity_parity",
+      "reason": "ticker candidates were negative at exact displayed minimum depth and stale"
+    },
+    {
+      "canonical_result_sha256": "e85b4e270e707c0faa47e3f373d6d345fce448fcbcbcf6a6f39bceec7d9eb229",
+      "family": "binance_option_box_parity",
+      "reason": "every ticker candidate lacked at least one required executable displayed side"
+    }
+  ],
+  "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
+}

@@ -356,6 +356,13 @@ filters, atomicity, latency, fills, inventory, gas, capacity, persistence, and
 cross-regime adjudication. Public books never prove fills, and no snapshot
 grants paper, testnet, or live authority.
 
+The canonical structural-edge priority and retry-trigger registry is
+`docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
+`1c386c9f47a7f49830a17f5bd9e3b6f477060a9f61ffe97be83aebfb953725f6`.
+Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
+This prevents account-blocked or terminal screens from being rerun as if more
+snapshots could create an edge.
+
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
 all-symbol ticker once for discovery, and request depth only for ticker-positive

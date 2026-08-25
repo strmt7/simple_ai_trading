@@ -171,6 +171,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance model/backtest | `docs/model-research/action-value/latest/README.md` |
 | Polymarket model | `docs/model-research/polymarket/latest/README.md` |
 | Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
+| Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
 | Quarterly carry | `quarterly_carry.py` and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
 | Model promotion | `docs/MODEL_AND_SIGNAL_VALIDATION.md` and cross-regime contract |
