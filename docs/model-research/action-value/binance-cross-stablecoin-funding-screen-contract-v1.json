@@ -1,0 +1,155 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_credentials_permitted": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T09:17:36.8376971Z",
+  "economic_identity": {
+    "candidate": "equal_base_long_one_linear_usd_m_perpetual_and_short_the_other_across_usdt_and_usdc_quote_assets",
+    "direction_selection": "select_once_from_the_older_half_of_exactly_aligned_settled_funding_rows_then_hold_that_orientation_fixed_in_the_newer_half",
+    "exact_direction_neutrality_claim": false,
+    "first_order_crypto_direction_forecast_required": false,
+    "funding_cashflow_rate_upper_bound": "for_equal_base_quantity_q_and_near_equal_marks_the_short_leg_rate_minus_long_leg_rate_times_q_notional_before_all_costs",
+    "residual_risks": [
+      "usdt_usdc_fx_and_redemption_basis",
+      "different_contract_mark_and_index_prices",
+      "cross_leg_entry_exit_basis_and_slippage",
+      "funding_interval_or_cap_changes",
+      "margin_liquidation_and_collateral_haircuts",
+      "non_atomic_two_leg_execution"
+    ],
+    "round_trip_legs": 4
+  },
+  "eligibility": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "contract_type": "PERPETUAL",
+    "pairing": "same_base_asset_one_usdt_quote_and_margin_contract_one_usdc_quote_and_margin_contract",
+    "required_exchange_fields": [
+      "symbol",
+      "pair",
+      "contractType",
+      "status",
+      "baseAsset",
+      "quoteAsset",
+      "marginAsset",
+      "pricePrecision",
+      "quantityPrecision",
+      "LOT_SIZE",
+      "MARKET_LOT_SIZE",
+      "MIN_NOTIONAL"
+    ],
+    "status": "TRADING",
+    "unsupported_contract_action": "exclude_before_funding_or_book_analysis"
+  },
+  "frozen_public_request_plan": {
+    "base_url": "https://fapi.binance.com",
+    "maximum_requests": 9,
+    "requests": [
+      {
+        "endpoint": "GET /fapi/v1/exchangeInfo",
+        "maximum_requests": 1,
+        "purpose": "prove_current_contract_identity_and_filters"
+      },
+      {
+        "endpoint": "GET /fapi/v1/premiumIndex",
+        "maximum_requests": 1,
+        "purpose": "record_current_mark_index_last_funding_rate_and_next_funding_time_as_diagnostics_only"
+      },
+      {
+        "endpoint": "GET /fapi/v1/ticker/bookTicker",
+        "maximum_requests": 1,
+        "purpose": "record_current_executable_top_prices_and_quantities_without_orders"
+      },
+      {
+        "endpoint": "GET /fapi/v1/fundingRate",
+        "fixed_parameters": {
+          "limit": 1000
+        },
+        "maximum_requests": 6,
+        "purpose": "retrieve_recent_settled_funding_rows_once_per_eligible_symbol"
+      }
+    ],
+    "429_action": "write_terminal_failure_receipt_and_stop_without_retry",
+    "credentials_or_headers_permitted": false,
+    "order_preview_or_order_endpoint_permitted": false,
+    "payload_bytes_and_sha256_required": true,
+    "request_timestamps_and_elapsed_milliseconds_required": true
+  },
+  "historical_evaluation": {
+    "alignment": "inner_join_usdt_and_usdc_rows_on_exact_fundingTime_then_reject_duplicate_times",
+    "minimum_aligned_rows": 90,
+    "selection_partition": "older_half_only",
+    "evaluation_partition": "newer_half_only",
+    "orientation": "short_the_contract_with_larger_arithmetic_mean_settled_rate_in_the_selection_partition_and_long_the_other",
+    "selection_tie_action": "reject_pair",
+    "reported_evaluation_slices": [
+      "all_newer_half_rows",
+      "first_and_second_chronological_halves_of_the_evaluation_partition",
+      "calendar_month",
+      "positive_negative_and_mixed_differential_rows"
+    ],
+    "reported_metrics": [
+      "aligned_row_counts_and_time_bounds",
+      "mean_median_minimum_maximum_and_sum_of_oriented_rate_differences",
+      "positive_zero_and_negative_row_counts",
+      "worst_peak_to_trough_cumulative_rate_drawdown",
+      "current_open_and_close_top_book_spread_hurdle_bips_at_exact_common_quantity",
+      "equal_per_leg_fee_break_even_bips_as_evaluation_sum_bips_minus_current_two_book_round_trip_spread_hurdle_bips_then_divided_by_four"
+    ],
+    "no_resampling_rule": "one_frozen_history_fetch_and_one_fixed_split_only_no_window_or_orientation_optimization"
+  },
+  "decision_gate": {
+    "public_screen_can_only_prioritize_not_accept_an_edge": true,
+    "advance_to_authenticated_fee_and_collateral_contract_only_when": [
+      "eligible_usdt_and_usdc_linear_perpetual_pair_is_proved",
+      "selection_orientation_is_strictly_positive_in_both_chronological_halves_of_the_newer_evaluation_partition",
+      "every_complete_calendar_month_in_the_evaluation_partition_has_nonnegative_oriented_cumulative_funding",
+      "newer_half_total_oriented_funding_is_strictly_positive",
+      "equal_per_leg_fee_break_even_after_the_current_two_book_spread_hurdle_is_strictly_positive",
+      "current_top_books_cover_one_exact_common_minimum_quantity",
+      "stablecoin_fx_basis_and_contract_mark_divergence_are_reported_not_assumed_zero"
+    ],
+    "authenticated_evidence_still_required": [
+      "exact_same_account_commission_rates_for_both_symbols",
+      "multi_asset_or_separate_collateral_mode_and_haircuts",
+      "position_margin_liquidation_and_adl_state",
+      "realized_funding_ledger_reconciliation",
+      "two_leg_fill_and_unwind_slippage",
+      "prospective_persistence_under_a_frozen_schedule"
+    ],
+    "failure_action": "reject_this_mechanism_without_repeating_the_same_public_snapshot"
+  },
+  "official_source": {
+    "academy_funding_mechanics_url": "https://www.binance.com/en/academy/articles/what-are-funding-rates-in-crypto-markets",
+    "academy_mechanics_checked_at_utc": "2026-08-25T09:17:36.8376971Z",
+    "academy_mechanics_used": [
+      "positive_rate_means_longs_pay_shorts_and_negative_rate_means_shorts_pay_longs",
+      "funding_intervals_can_vary_by_contract",
+      "past_funding_patterns_do_not_guarantee_future_behavior"
+    ],
+    "catalog_url": "https://developers.binance.com/en/docs/catalog",
+    "documentation_url": "https://developers.binance.com/en/docs/llms-full.txt",
+    "documentation_bytes": 7978091,
+    "documentation_last_modified": "Mon, 24 Aug 2026 11:41:51 GMT",
+    "documentation_sha256": "05d03d6a21bd3c53a369066e4066473362b58beec7d55e061296bc7f9c84883e",
+    "documented_endpoints": [
+      "GET /fapi/v1/exchangeInfo",
+      "GET /fapi/v1/fundingRate",
+      "GET /fapi/v1/premiumIndex",
+      "GET /fapi/v1/ticker/bookTicker",
+      "GET /fapi/v1/commissionRate"
+    ],
+    "commission_endpoint_security": "USER_DATA"
+  },
+  "result_sha256": "d100faabf96afbd15478dcaa02688a365b46ba1c15279bcb575cdb8a8661a5a7",
+  "schema_version": "binance-cross-stablecoin-funding-screen-contract-v1",
+  "status": "frozen_before_any_binance_market_request"
+}

@@ -179,6 +179,24 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-spot-maker-rebate-account-evidence-gate-v1.json`,
   result SHA-256
   `19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f`.
+- Binance USDT/USDC perpetual funding differential: a distinct equal-base,
+  opposite-position screen initially found recent BTC and SOL candidates. The
+  corrected recent cash-flow screen retained them, but exact fee ceilings were
+  only 1.58 and 4.75 bps per leg after the captured spread. The fixed
+  full-history recovery then evaluated 2,898 common settlement epochs per
+  candidate from January 2024, selected orientation only on the oldest third,
+  and applied separate validation, test, time, direction, volatility,
+  reversal/continuation, and USDCUSDT 0.98/1.02 stress-test acceptance
+  criteria. BTC failed
+  selection stress, validation, and four market-regime slices. SOL failed
+  validation, test, most regimes, and its fee gate. Zero candidates passed.
+  The v3 attempt also violated the one-use evidence rule by discarding fetched
+  payloads after a later missing-FX validation error. Its sole v4 recovery
+  durably journaled all 20 responses before evaluation and is terminal; do not
+  repeat the backfill. Canonical result:
+  `docs/model-research/action-value/binance-cross-stablecoin-funding-recovery-v4-2026-08-25.json`,
+  result SHA-256
+  `8e30be61daaecabd3546e41cdc204d20b8ad38e0fc80c3c9aa96092266a3abe5`.
 - Binance Prediction Trading versus Polymarket was frozen as a distinct
   structural screen, permitting only exact BTC/ETH/SOL payout-rule equivalence.
   It stopped before market access. The official generated Markdown said market
@@ -358,7 +376,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`1c386c9f47a7f49830a17f5bd9e3b6f477060a9f61ffe97be83aebfb953725f6`.
+`dc453fd52c72bb7cfc30a75aedefa8a06ace4939dd051e03780caad24a652b40`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -427,7 +445,8 @@ lease, state, database, and WAL agree.
 2. Keep the completed model-dev three-way audit frozen. Do not bulk-integrate
    stale or divergent files; reevaluate a specific path only when a current task
    requires it.
-3. Do not rerun rejected Binance funding carry, quarterly carry, two-sided touch making,
+3. Do not rerun rejected Binance funding carry, USDT/USDC perpetual funding
+   differential, quarterly carry, two-sided touch making,
    Polymarket binary complete-set taking, negative-risk parity, logical
    threshold/deadline implication parity, Binance spot triangles, Binance
    option vertical/convexity parity, option box parity, or Polymarket exact

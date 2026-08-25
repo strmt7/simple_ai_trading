@@ -84,6 +84,18 @@ safety gate, blocks Stop, or submits an order.
   one repeated exact question across 607 eligible binary markets, but its two
   canonical rule sets differed; zero exact payout-rule duplicates advanced to
   pricing.
+- A distinct Binance USDT-versus-USDC perpetual funding differential is also
+  terminal. Two recent 500-settlement BTC/SOL candidates survived corrected
+  mark-price and conservative FX accounting, but the frozen 2,898-settlement
+  full-history recovery rejected both. BTC failed selection stress, validation,
+  and the up, sideways, regular-volatility, and continuation slices. SOL failed
+  validation, test, most regimes, and the fee gate. Zero of two candidates
+  passed. The terminal artifact is
+  `binance-cross-stablecoin-funding-recovery-v4-2026-08-25.json`, result SHA-256
+  `8e30be61daaecabd3546e41cdc204d20b8ad38e0fc80c3c9aa96092266a3abe5`.
+  Do not repeat this public backfill. Its v3 predecessor also exposed a workflow
+  defect by discarding fetched payloads after a later FX validation failure;
+  v4 was the sole recovery and durably journaled all 20 responses.
 - The 2026-08-25 direction-neutral carry/reward diagnostics also found no
   accepted edge. Binance quarterly spot/future basis was gross-positive at all
   12 tested sizes and cleared a stated 35-bps sensitivity hurdle at nine, but
