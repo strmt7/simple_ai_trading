@@ -60,8 +60,11 @@ safety gate, blocks Stop, or submits an order.
   edge. Binance option vertical/convexity parity covered 365,592 exact payoff
   identities across 1,538 unit-one contracts. Two ticker-only candidates
   disappeared at displayed depth, where every exact minimum portfolio was
-  already negative before fees. Do not repeat these screens without a frozen
-  prospective sampling contract or materially new execution evidence.
+  already negative before fees. A distinct fixed-payoff box screen found six
+  strict short-box and one nominal long-box ticker candidates across 13,344
+  strike pairs; every candidate lacked executable fresh depth. Do not repeat
+  these screens without a frozen prospective sampling contract or materially
+  new execution evidence.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
