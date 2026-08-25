@@ -93,6 +93,12 @@ a claim about model-specific token usage.
 
 ## Structural Edge Evidence Boundaries
 
+Before starting structural research, read
+`docs/model-research/structural-edge-priority-registry-v1.json`. Advance the
+highest-ranked hypothesis whose explicit retry trigger is satisfied. If no
+trigger is satisfied, do not compensate with more snapshots, broader search, or
+a nearby formula; record the blocker and preserve the evidence path instead.
+
 Treat public venue metadata as a candidate filter, not account evidence. In
 particular, Polymarket's public `holdingRewardsEnabled` Gamma field can identify
 an exact market for a later study, but it does not prove that the account, the
