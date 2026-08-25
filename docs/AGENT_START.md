@@ -83,11 +83,21 @@ safety gate, blocks Stop, or submits an order.
   new execution evidence. A separate option put-call parity versus quarterly
   future study found 20 non-synchronous gross-positive ticker combinations
   across 192 common expiry-strike pairs. It is not execution evidence. An exact
-  eight-GET historical settlement-value audit is frozen at
+  eight-GET historical settlement-value audit was frozen at
   `binance-option-future-settlement-equivalence-contract-v1.json`, result
   SHA-256
   `63a57771fe7042381bea0ac052889550738b4890b6c01fadc279e793189b4291`.
-  Run it once only after its implementation checkpoint is hosted-verified.
+  Its hosted-verified one-use run stopped after the first request returned a
+  valid empty array for the oldest window. The durable journal is terminal,
+  the remaining seven requests and any synchronized depth screen are
+  prohibited, and numeric settlement equivalence remains unproved. The
+  terminal adjudication is
+  `binance-option-future-settlement-equivalence-terminal-adjudication-v1.json`,
+  result SHA-256
+  `a5d34919c4e9c94ca794b73dea57c96bf9c6f9e968cc6c77f240f243c7597601`.
+  Do not rerun or adapt this contract. A future historical endpoint study with
+  unproved retention must preregister newest-first ordering so availability is
+  tested before older windows consume the one-use attempt.
   Polymarket cross-condition duplicate discovery found
   one repeated exact question across 607 eligible binary markets, but its two
   canonical rule sets differed; zero exact payout-rule duplicates advanced to

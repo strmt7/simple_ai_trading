@@ -1,0 +1,60 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T14:02:53.1833957Z",
+  "evidence": {
+    "contract_file_sha256": "43d1332c186ac6dffe602d9e4c4f7009bd20e0147c7f0a9ebb523d59b861a341",
+    "contract_path": "docs/model-research/action-value/binance-option-future-settlement-equivalence-contract-v1.json",
+    "contract_result_sha256": "63a57771fe7042381bea0ac052889550738b4890b6c01fadc279e793189b4291",
+    "first_request": {
+      "canonical_payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "completed_request_count": 1,
+      "elapsed_ms": 1113,
+      "http_status": 200,
+      "raw_response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "raw_response_size": 2,
+      "received_after_ms": 1787666385498,
+      "request_id": "BTCUSDT_2025_09_26",
+      "requested_before_ms": 1787666384385,
+      "row_count": 0,
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory?underlying=BTCUSDT&startTime=1758844800000&endTime=1758931199999&limit=100"
+    },
+    "frozen_commit_sha": "40b4cb90f33baca81f343dc34ce6f360d53b4110",
+    "journal_file_sha256": "c4789fcb803847ffe08e1259da6c0a26c08ff2678ab2bf4105eb97ae2d571343",
+    "journal_path": "docs/model-research/action-value/binance-option-future-settlement-equivalence-journal-v1.json",
+    "journal_sha256": "9c9116c457c2c2f645a97556cf39eae7a2fcf4184f29c7f673c1af378500ea6d",
+    "terminal_failure": {
+      "completed_request_count": 1,
+      "message": "exercise-history response row count is invalid",
+      "planned_request_count": 8,
+      "status": "terminal_failure_without_retry",
+      "type": "ValueError"
+    }
+  },
+  "limitations": {
+    "empty_response_interpretation": "the_valid_empty_response_establishes_no_historical_numeric_value_for_the_requested_window_and_does_not_establish_why_the_record_was_unavailable",
+    "official_rule_support": "official_clearing_rules_describe_common_price_index_final_thirty_minute_arithmetic_mean_semantics_but_do_not_substitute_for_the_frozen_contracts_required_numeric_endpoint_comparison",
+    "retention_or_archive_availability_proved": false
+  },
+  "methodology_correction": {
+    "future_design_requirement": "when_historical_endpoint_retention_is_not_source_bound_order_preregistered_windows_newest_first_and_require_the_first_response_to_prove_record_availability_before_spending_older_windows",
+    "invalid_design_choice": "the_frozen_contract_ordered_the_oldest_window_first_without_first_source_binding_endpoint_retention_or_archive_availability",
+    "remaining_requests_permitted": 0,
+    "rerun_or_adaptive_salvage_permitted": false,
+    "retry_trigger": "an_official_static_historical_source_or_explicit_retention_contract_becomes_available_or_a_new_prospective_contract_is_frozen_after_the_2026_09_25_matching_option_and_future_expiry"
+  },
+  "outcome": {
+    "accepted_edge": false,
+    "depth_screen_permitted": false,
+    "historical_pairs_accepted": 0,
+    "mechanism_status": "official_rule_support_but_numeric_settlement_equivalence_unproved",
+    "remaining_frozen_requests_permitted": 0,
+    "status": "terminal_empty_history_blocks_numeric_equivalence"
+  },
+  "result_sha256": "a5d34919c4e9c94ca794b73dea57c96bf9c6f9e968cc6c77f240f243c7597601",
+  "schema_version": "binance-option-future-settlement-equivalence-terminal-adjudication-v1"
+}

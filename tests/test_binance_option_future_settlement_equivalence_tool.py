@@ -18,6 +18,16 @@ assert SPEC is not None and SPEC.loader is not None
 TOOL = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(TOOL)
 CONTRACT_HASH = "63a57771fe7042381bea0ac052889550738b4890b6c01fadc279e793189b4291"
+ACTION_VALUE = ROOT / "docs" / "model-research" / "action-value"
+JOURNAL_PATH = (
+    ACTION_VALUE / "binance-option-future-settlement-equivalence-journal-v1.json"
+)
+ADJUDICATION_PATH = ACTION_VALUE / (
+    "binance-option-future-settlement-equivalence-terminal-adjudication-v1.json"
+)
+JOURNAL_HASH = "9c9116c457c2c2f645a97556cf39eae7a2fcf4184f29c7f673c1af378500ea6d"
+JOURNAL_FILE_HASH = "c4789fcb803847ffe08e1259da6c0a26c08ff2678ab2bf4105eb97ae2d571343"
+ADJUDICATION_HASH = "a5d34919c4e9c94ca794b73dea57c96bf9c6f9e968cc6c77f240f243c7597601"
 
 
 class _Response:
@@ -210,6 +220,40 @@ def test_journal_is_self_hashed_and_refuses_a_rerun(tmp_path: Path) -> None:
         )
     with pytest.raises(ValueError, match="inside the repository"):
         TOOL._repo_relative(ROOT.parent / "outside-settlement-receipt.json")
+
+
+def test_terminal_empty_history_evidence_is_bound_and_blocks_escalation() -> None:
+    journal = json.loads(JOURNAL_PATH.read_bytes())
+    journal_body = dict(journal)
+    claimed_journal_hash = journal_body.pop("journal_sha256")
+
+    assert claimed_journal_hash == JOURNAL_HASH
+    assert TOOL._sha256(TOOL._canonical_json(journal_body).encode("ascii")) == (
+        JOURNAL_HASH
+    )
+    assert TOOL._sha256(JOURNAL_PATH.read_bytes()) == JOURNAL_FILE_HASH
+    assert journal["status"] == "terminal_failure_without_retry"
+    assert journal["completed_request_count"] == 1
+    assert journal["planned_request_count"] == 8
+    assert journal["events"][-1]["row_count"] == 0
+    assert journal["adaptive_requests_used"] is False
+
+    adjudication = json.loads(ADJUDICATION_PATH.read_bytes())
+    adjudication_body = dict(adjudication)
+    claimed_result_hash = adjudication_body.pop("result_sha256")
+
+    assert claimed_result_hash == ADJUDICATION_HASH
+    assert TOOL._sha256(TOOL._canonical_json(adjudication_body).encode("ascii")) == (
+        ADJUDICATION_HASH
+    )
+    assert adjudication["evidence"]["journal_file_sha256"] == JOURNAL_FILE_HASH
+    assert adjudication["outcome"]["historical_pairs_accepted"] == 0
+    assert adjudication["outcome"]["depth_screen_permitted"] is False
+    assert adjudication["outcome"]["remaining_frozen_requests_permitted"] == 0
+    assert (
+        adjudication["methodology_correction"]["rerun_or_adaptive_salvage_permitted"]
+        is False
+    )
 
 
 @pytest.mark.parametrize(

@@ -1,0 +1,49 @@
+{
+  "schema_version": "binance-option-future-settlement-equivalence-journal-v1",
+  "status": "terminal_failure_without_retry",
+  "contract_result_sha256": "63a57771fe7042381bea0ac052889550738b4890b6c01fadc279e793189b4291",
+  "planned_request_count": 8,
+  "completed_request_count": 1,
+  "events": [
+    {
+      "phase": "reserved_before_request",
+      "request_id": "BTCUSDT_2025_09_26",
+      "method": "GET",
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory",
+      "params": {
+        "underlying": "BTCUSDT",
+        "startTime": 1758844800000,
+        "endTime": 1758931199999,
+        "limit": 100
+      }
+    },
+    {
+      "phase": "raw_response_persisted_before_validation",
+      "request_id": "BTCUSDT_2025_09_26",
+      "status_code": 200,
+      "requested_before_ms": 1787666384385,
+      "received_after_ms": 1787666385498,
+      "elapsed_ms": 1113,
+      "response_url": "https://eapi.binance.com/eapi/v1/exerciseHistory?underlying=BTCUSDT&startTime=1758844800000&endTime=1758931199999&limit=100",
+      "content_type": "application/json",
+      "retry_after": null,
+      "raw_response_size": 2,
+      "raw_response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "raw_response_base64": "W10="
+    },
+    {
+      "phase": "response_validated",
+      "request_id": "BTCUSDT_2025_09_26",
+      "row_count": 0,
+      "canonical_payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  ],
+  "orders_submitted": false,
+  "credentials_used": false,
+  "adaptive_requests_used": false,
+  "journal_sha256": "9c9116c457c2c2f645a97556cf39eae7a2fcf4184f29c7f673c1af378500ea6d",
+  "failure": {
+    "type": "ValueError",
+    "message": "exercise-history response row count is invalid"
+  }
+}
