@@ -1,0 +1,92 @@
+{
+  "adjudicated_claim": {
+    "artifact_path": "docs/model-research/action-value/binance-quarterly-delivery-basis-audit-v1-2026-08-25.json",
+    "artifact_raw_file_sha256": "9bc3ff6a7c912eefa72f8aa9653940cd98e89958a07fa8eac99c510fe8b09595",
+    "artifact_result_sha256": "5476fdb43a24bd2d3a31c10321de968f63fd33eca20603e4891fa8d838a134a4",
+    "invalidated_interpretation": "delivery_price_deliveryTime_is_the_exact_historical_spot_execution_window_start",
+    "previous_status": "rejected_hold_to_delivery_then_sell_spot"
+  },
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T07:13:27.637Z",
+  "current_exchange_catalog_evidence": {
+    "artifact_path": "docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json",
+    "artifact_raw_file_sha256": "d04d7618e30e07b72a894d413616f4ace8962cb1c7adecb82b5b59070d3622f2",
+    "artifact_result_sha256": "9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2",
+    "delivery_time_intraday_offset_ms": 28800000,
+    "exchange_information_payload_sha256": "e64968fe569b0295294fd177e93c6201768181066f6d40602a4e5fc6b5742961",
+    "selected_contracts": [
+      {
+        "delivery_time_ms": 1790323200000,
+        "symbol": "BTCUSDT_260925"
+      },
+      {
+        "delivery_time_ms": 1790323200000,
+        "symbol": "ETHUSDT_260925"
+      },
+      {
+        "delivery_time_ms": 1798185600000,
+        "symbol": "BTCUSDT_261225"
+      },
+      {
+        "delivery_time_ms": 1798185600000,
+        "symbol": "ETHUSDT_261225"
+      }
+    ]
+  },
+  "historical_settlement_endpoint_evidence": {
+    "delivery_time_intraday_offset_ms": 0,
+    "distinct_delivery_times_ms": [
+      1727395200000,
+      1735257600000,
+      1743120000000,
+      1750982400000,
+      1758844800000,
+      1766707200000,
+      1774569600000,
+      1782432000000
+    ],
+    "endpoint": "https://fapi.binance.com/futures/data/delivery-price",
+    "field": "deliveryTime",
+    "observation_count": 16
+  },
+  "official_api_catalog": {
+    "retrieved_at_utc": "2026-08-25T07:13:00Z",
+    "retrieved_bytes": 167471,
+    "retrieved_content_sha256": "6e3d397189c8de791e9b80cc99784f5220ad991ba933b6ae9afa04abe742ca98",
+    "url": "https://developers.binance.com/en/docs/llms.txt",
+    "verified_endpoint_labels": [
+      "GET /fapi/v1/exchangeInfo - Exchange Information",
+      "GET /futures/data/delivery-price - Quarterly Contract Settlement Price"
+    ]
+  },
+  "result_sha256": "1f669b24c09917e8b080515e8733ba0adea68e74745e2cfafc9dd8f9a45c7f88",
+  "schema_version": "binance-quarterly-delivery-basis-timestamp-adjudication-v1",
+  "status": "prior_delivery_spot_mismatch_rejection_invalidated_timestamp_semantics_unresolved",
+  "verdict": {
+    "new_prices_requested": false,
+    "original_one_use_artifact_retained_for_provenance": true,
+    "previous_mismatch_values_authoritative": false,
+    "previous_stressed_current_basis_authoritative": false,
+    "resampling_authorized": false,
+    "timestamp_substitution_authorized": false
+  },
+  "why": [
+    "All sixteen historical observations used a deliveryTime at 00:00 UTC.",
+    "All four independently captured current quarterly exchangeInfo deliveryDate values use 08:00 UTC.",
+    "The prior audit treated the historical deliveryTime as an exact spot execution epoch without proving that semantic equivalence.",
+    "The eight-hour disagreement invalidates the prior spot-window comparison; it does not prove that adding eight hours is correct for historical contracts."
+  ],
+  "required_next_evidence": [
+    "Freeze a separate timestamp-semantics contract before accessing any new historical price window.",
+    "Bind each historical contract to an authoritative expiry or trading schedule rather than deriving an hour offset.",
+    "Only after timing is resolved may a separate synchronized pre-delivery unwind diagnostic access spot and futures prices.",
+    "Neither correction may accept an edge; exact account fees, fills, collateral, liquidation, and capital costs remain unresolved."
+  ]
+}

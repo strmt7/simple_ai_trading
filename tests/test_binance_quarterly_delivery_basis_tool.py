@@ -28,6 +28,10 @@ AUDIT = (
     / "action-value"
     / "binance-quarterly-delivery-basis-audit-v1-2026-08-25.json"
 )
+ADJUDICATION = AUDIT.with_name(
+    "binance-quarterly-delivery-basis-timestamp-adjudication-v1.json"
+)
+CARRY = AUDIT.with_name("binance-quarterly-carry-snapshot-v1-2026-08-25.json")
 
 
 def _deliveries(pair: str) -> list[dict[str, object]]:
@@ -195,7 +199,7 @@ def test_canonical_request_payload_hash_reconstructs(
     )
 
 
-def test_live_audit_hash_sources_and_stress_reconstruct() -> None:
+def test_live_audit_hash_sources_and_stress_reconstruct_as_historical_record() -> None:
     report = json.loads(AUDIT.read_text(encoding="ascii"))
     expected_hash = report.pop("result_sha256")
 
@@ -240,3 +244,63 @@ def test_live_audit_hash_sources_and_stress_reconstruct() -> None:
         assert (reconstructed > 0) is row["stress_positive"]
     assert report["verdict"]["all_next_quarter_sizes_stress_positive"] is False
     assert report["verdict"]["accepted_edge"] is False
+
+
+def test_timestamp_adjudication_reconstructs_and_invalidates_prior_rejection() -> None:
+    adjudication = json.loads(ADJUDICATION.read_text(encoding="ascii"))
+    expected_hash = adjudication.pop("result_sha256")
+    audit = json.loads(AUDIT.read_text(encoding="ascii"))
+    carry = json.loads(CARRY.read_text(encoding="ascii"))
+
+    assert (
+        hashlib.sha256(TOOL._canonical_json(adjudication).encode("ascii")).hexdigest()
+        == expected_hash
+    )
+    assert (
+        hashlib.sha256(AUDIT.read_bytes()).hexdigest()
+        == adjudication["adjudicated_claim"]["artifact_raw_file_sha256"]
+    )
+    assert (
+        audit["result_sha256"]
+        == adjudication["adjudicated_claim"]["artifact_result_sha256"]
+    )
+    assert (
+        hashlib.sha256(CARRY.read_bytes()).hexdigest()
+        == adjudication["current_exchange_catalog_evidence"]["artifact_raw_file_sha256"]
+    )
+    assert (
+        carry["result_sha256"]
+        == adjudication["current_exchange_catalog_evidence"]["artifact_result_sha256"]
+    )
+
+    historical_times = {
+        observation["delivery_time_ms"]
+        for pair in audit["pair_results"]
+        for observation in pair["observations"]
+    }
+    current_contracts = carry["source_contract"]["selected_contracts"]
+    assert historical_times == set(
+        adjudication["historical_settlement_endpoint_evidence"][
+            "distinct_delivery_times_ms"
+        ]
+    )
+    assert {timestamp % 86_400_000 for timestamp in historical_times} == {0}
+    assert {
+        contract["delivery_time_ms"] % 86_400_000 for contract in current_contracts
+    } == {28_800_000}
+    assert [
+        {
+            "delivery_time_ms": contract["delivery_time_ms"],
+            "symbol": contract["symbol"],
+        }
+        for contract in current_contracts
+    ] == adjudication["current_exchange_catalog_evidence"]["selected_contracts"]
+    assert adjudication["verdict"] == {
+        "new_prices_requested": False,
+        "original_one_use_artifact_retained_for_provenance": True,
+        "previous_mismatch_values_authoritative": False,
+        "previous_stressed_current_basis_authoritative": False,
+        "resampling_authorized": False,
+        "timestamp_substitution_authorized": False,
+    }
+    assert adjudication["authority"]["accepted_edge"] is False

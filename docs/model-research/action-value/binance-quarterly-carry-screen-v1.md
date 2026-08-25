@@ -70,19 +70,25 @@ credential was used.
 
 ## Delivery-Basis Adjudication
 
-A separately frozen historical audit compared the latest eight completed
-BTCUSDT and ETHUSDT USD-M quarterly delivery prices with the minimum spot trade
-low during the first five one-minute bars after delivery. The worst mismatches
-were `-183.7938` bps for BTC and `-222.8925` bps for ETH. Applying those fixed
-adverse observations to the current next-quarter results after the 35 bps
-hurdle made every tested size negative.
+A separately frozen historical audit attempted to compare the latest eight
+completed BTCUSDT and ETHUSDT USD-M quarterly delivery prices with post-delivery
+spot bars. Its result is retained only for provenance. All 16 historical
+`deliveryTime` fields were at 00:00 UTC, while every quarterly `deliveryDate` in
+the independently captured current exchange catalog was at 08:00 UTC. The audit
+treated the historical field as an exact spot-window epoch without proving that
+semantic equivalence. Its mismatch values and hold-to-delivery rejection are
+therefore invalid.
 
-This rejects the simple hold-to-delivery-then-sell-spot path. The spot lows are
-stress proxies, not executable depth, and do not prove future mismatch; even so,
-the frozen gate does not permit discarding the adverse completed deliveries.
-A materially distinct carry study would need synchronized pre-delivery spot and
-future unwind evidence, plus exact account fees, margin, liquidation, and
-capital costs. The authoritative audit is
+The source-bound timestamp adjudication neither resamples nor assumes that
+adding eight hours is correct. A new study must first bind each historical
+contract to an authoritative expiry or trading schedule. Only then may a
+separately frozen synchronized pre-delivery spot/future unwind diagnostic access
+new price evidence. Exact account fees, margin, liquidation, capital cost, and
+executable fills remain unresolved. The original audit is
 [`binance-quarterly-delivery-basis-audit-v1-2026-08-25.json`](binance-quarterly-delivery-basis-audit-v1-2026-08-25.json),
 result SHA-256
 `5476fdb43a24bd2d3a31c10321de968f63fd33eca20603e4891fa8d838a134a4`.
+The authoritative correction is
+[`binance-quarterly-delivery-basis-timestamp-adjudication-v1.json`](binance-quarterly-delivery-basis-timestamp-adjudication-v1.json),
+result SHA-256
+`1f669b24c09917e8b080515e8733ba0adea68e74745e2cfafc9dd8f9a45c7f88`.
