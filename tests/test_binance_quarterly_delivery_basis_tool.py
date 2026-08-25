@@ -32,6 +32,7 @@ ADJUDICATION = AUDIT.with_name(
     "binance-quarterly-delivery-basis-timestamp-adjudication-v1.json"
 )
 CARRY = AUDIT.with_name("binance-quarterly-carry-snapshot-v1-2026-08-25.json")
+OFFICIAL_TIMING = AUDIT.with_name("binance-quarterly-delivery-time-semantics-v1.json")
 
 
 def _deliveries(pair: str) -> list[dict[str, object]]:
@@ -304,3 +305,50 @@ def test_timestamp_adjudication_reconstructs_and_invalidates_prior_rejection() -
         "timestamp_substitution_authorized": False,
     }
     assert adjudication["authority"]["accepted_edge"] is False
+
+
+def test_official_timing_source_resolves_normal_schedule_without_assuming_cutoff() -> (
+    None
+):
+    timing = json.loads(OFFICIAL_TIMING.read_text(encoding="ascii"))
+    expected_hash = timing.pop("result_sha256")
+    audit = json.loads(AUDIT.read_text(encoding="ascii"))
+
+    assert (
+        hashlib.sha256(TOOL._canonical_json(timing).encode("ascii")).hexdigest()
+        == expected_hash
+    )
+    assert timing["official_rules"] == {
+        "delivery_method": "cash settlement",
+        "delivery_time_utc": "last Friday of each calendar quarter at 08:00:00",
+        "extreme_condition_postponement_possible": True,
+        "quarterly_contract_families": [
+            "COIN-Margined Futures",
+            "USD-Margined Futures",
+        ],
+        "reduce_only_window_before_delivery_minutes": 10,
+        "settlement_price_window_end_utc": "08:00:00",
+        "settlement_price_window_minutes": 30,
+        "settlement_price_window_start_utc": "07:30:00",
+    }
+    historical_times = {
+        observation["delivery_time_ms"]
+        for pair in audit["pair_results"]
+        for observation in pair["observations"]
+    }
+    scheduled_times = {
+        timestamp
+        + timing["historical_timestamp_resolution"][
+            "normal_scheduled_delivery_intraday_offset_ms"
+        ]
+        for timestamp in historical_times
+    }
+    assert len(scheduled_times) == 8
+    assert {timestamp % 86_400_000 for timestamp in scheduled_times} == {28_800_000}
+    assert (
+        timing["historical_timestamp_resolution"][
+            "actual_delivery_postponement_checked"
+        ]
+        is False
+    )
+    assert timing["authority"]["accepted_edge"] is False

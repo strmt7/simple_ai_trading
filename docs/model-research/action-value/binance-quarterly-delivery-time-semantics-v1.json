@@ -1,0 +1,50 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T07:19:48.231Z",
+  "historical_timestamp_resolution": {
+    "actual_delivery_postponement_checked": false,
+    "historical_delivery_date_key_intraday_offset_ms": 0,
+    "normal_scheduled_delivery_intraday_offset_ms": 28800000,
+    "normal_scheduled_epoch_formula": "deliveryTime+28800000",
+    "resolved_semantics": "delivery_price_deliveryTime_is_a_utc_delivery_date_key_not_the_normal_scheduled_delivery_instant"
+  },
+  "official_rules": {
+    "delivery_method": "cash settlement",
+    "delivery_time_utc": "last Friday of each calendar quarter at 08:00:00",
+    "extreme_condition_postponement_possible": true,
+    "quarterly_contract_families": [
+      "COIN-Margined Futures",
+      "USD-Margined Futures"
+    ],
+    "reduce_only_window_before_delivery_minutes": 10,
+    "settlement_price_window_end_utc": "08:00:00",
+    "settlement_price_window_minutes": 30,
+    "settlement_price_window_start_utc": "07:30:00"
+  },
+  "result_sha256": "2a52b558f8bc1332cbf2deb41c4e8d4f01bf44d4276ebcc901b3768d4d8516db",
+  "schema_version": "binance-quarterly-delivery-time-semantics-v1",
+  "source": {
+    "article_code": "a3401595e1734084959c61491bc0dbe3",
+    "article_title": "Delivery and Settlement of Quarterly Futures",
+    "public_article_url": "https://www.binance.com/en/support/faq/a3401595e1734084959c61491bc0dbe3",
+    "published_at_utc": "2020-09-09T09:22:33.384Z",
+    "retrieval_url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=a3401595e1734084959c61491bc0dbe3",
+    "retrieved_at_utc": "2026-08-25T07:18:59Z",
+    "retrieved_bytes": 13932,
+    "retrieved_content_sha256": "877c68397860eac90f547ab0070ab43521c87d9b901ed9070e0b2ea1f062bec7"
+  },
+  "source_boundaries": [
+    "The delivery-time rule explicitly covers both quarterly contract families.",
+    "The public article permits postponement in extreme conditions, so the normal schedule alone does not prove each historical actual cutoff.",
+    "The settlement-price and fee sections are not treated as authenticated USD-M account cost evidence.",
+    "No historical price or account endpoint was accessed to produce this artifact."
+  ],
+  "status": "normal_schedule_resolved_historical_actual_cutoffs_still_require_evidence"
+}

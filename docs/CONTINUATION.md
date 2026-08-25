@@ -199,6 +199,17 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-quarterly-delivery-basis-timestamp-adjudication-v1.json`,
   result SHA-256
   `1f669b24c09917e8b080515e8733ba0adea68e74745e2cfafc9dd8f9a45c7f88`.
+  Binance's official rule now source-binds the normal quarterly schedule to the
+  last Friday at 08:00 UTC, with possible postponement under extreme conditions.
+  Timing artifact:
+  `docs/model-research/action-value/binance-quarterly-delivery-time-semantics-v1.json`,
+  result SHA-256
+  `2a52b558f8bc1332cbf2deb41c4e8d4f01bf44d4276ebcc901b3768d4d8516db`.
+  A separate 16-contract, 32-request pre-delivery unwind contract is frozen at
+  `docs/model-research/action-value/binance-quarterly-pre-delivery-unwind-contract-v1.json`,
+  result SHA-256
+  `f61a8c9dfd86274292c5dae154120871ea5358e2a5ca004b92574e6bdcb7657c`.
+  It has not accessed price data and cannot accept an edge.
 - Polymarket paired-maker rewards: the frozen Moonshot candidate's one-tick
   hypothetical 20-share YES+NO bids summed to 0.940 for 1.20 pUSD displayed
   both-fill gross. The books were 8,074 ms old and failed the 5,000 ms gate.

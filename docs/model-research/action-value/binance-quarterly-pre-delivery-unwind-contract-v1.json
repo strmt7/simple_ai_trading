@@ -1,0 +1,159 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_credentials_permitted": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T07:21:30.769Z",
+  "decision": {
+    "advance_status": "eligible_only_for_authenticated_cost_collateral_and_prospective_execution_design",
+    "advance_when": [
+      "all_sixteen_contract_windows_pass_exact_timestamp_and_completeness_validation",
+      "both_pairs_have_eight_primary_horizon_observations",
+      "every_current_next_quarter_quantity_remains_positive_after_the_existing_35_bps_hurdle_and_the_pair_maximum_primary_adverse_exit_basis"
+    ],
+    "edge_acceptance_possible": false,
+    "otherwise": "reject_without_resampling"
+  },
+  "frozen_contracts": [
+    {
+      "pair": "BTCUSDT",
+      "scheduled_delivery_ms": 1727424000000,
+      "symbol": "BTCUSDT_240927"
+    },
+    {
+      "pair": "BTCUSDT",
+      "scheduled_delivery_ms": 1735286400000,
+      "symbol": "BTCUSDT_241227"
+    },
+    {
+      "pair": "BTCUSDT",
+      "scheduled_delivery_ms": 1743148800000,
+      "symbol": "BTCUSDT_250328"
+    },
+    {
+      "pair": "BTCUSDT",
+      "scheduled_delivery_ms": 1751011200000,
+      "symbol": "BTCUSDT_250627"
+    },
+    {
+      "pair": "BTCUSDT",
+      "scheduled_delivery_ms": 1758873600000,
+      "symbol": "BTCUSDT_250926"
+    },
+    {
+      "pair": "BTCUSDT",
+      "scheduled_delivery_ms": 1766736000000,
+      "symbol": "BTCUSDT_251226"
+    },
+    {
+      "pair": "BTCUSDT",
+      "scheduled_delivery_ms": 1774598400000,
+      "symbol": "BTCUSDT_260327"
+    },
+    {
+      "pair": "BTCUSDT",
+      "scheduled_delivery_ms": 1782460800000,
+      "symbol": "BTCUSDT_260626"
+    },
+    {
+      "pair": "ETHUSDT",
+      "scheduled_delivery_ms": 1727424000000,
+      "symbol": "ETHUSDT_240927"
+    },
+    {
+      "pair": "ETHUSDT",
+      "scheduled_delivery_ms": 1735286400000,
+      "symbol": "ETHUSDT_241227"
+    },
+    {
+      "pair": "ETHUSDT",
+      "scheduled_delivery_ms": 1743148800000,
+      "symbol": "ETHUSDT_250328"
+    },
+    {
+      "pair": "ETHUSDT",
+      "scheduled_delivery_ms": 1751011200000,
+      "symbol": "ETHUSDT_250627"
+    },
+    {
+      "pair": "ETHUSDT",
+      "scheduled_delivery_ms": 1758873600000,
+      "symbol": "ETHUSDT_250926"
+    },
+    {
+      "pair": "ETHUSDT",
+      "scheduled_delivery_ms": 1766736000000,
+      "symbol": "ETHUSDT_251226"
+    },
+    {
+      "pair": "ETHUSDT",
+      "scheduled_delivery_ms": 1774598400000,
+      "symbol": "ETHUSDT_260327"
+    },
+    {
+      "pair": "ETHUSDT",
+      "scheduled_delivery_ms": 1782460800000,
+      "symbol": "ETHUSDT_260626"
+    }
+  ],
+  "hypothesis": {
+    "market_direction_dependency": "quantity_matched_long_spot_short_quarterly_future_with_a_fixed_scheduled_unwind_does_not_require_a_directional_price_forecast",
+    "statement": "the_current_next_quarter_displayed_entry_basis_survives_a_fixed_primary_pre_delivery_unwind_residual_basis_stress",
+    "status": "unobserved_under_this_contract"
+  },
+  "metric_contract": {
+    "adverse_exit_basis_bips_formula": "max((future_bar_high-spot_bar_low)/spot_bar_low*10000,0)",
+    "bar_at_horizon": "one_minute_bar_opening_scheduled_delivery_ms-horizon_minutes*60000",
+    "diagnostic_horizons_minutes": [
+      60,
+      30,
+      15,
+      5,
+      1
+    ],
+    "diagnostics_may_promote": false,
+    "execution_or_depth_claim_permitted": false,
+    "primary_horizon_minutes": 10,
+    "primary_pair_stress": "maximum_adverse_exit_basis_bips_across_eight_deliveries",
+    "stressed_current_basis_bips_formula": "current_after_35_bps_hurdle_basis_bips-primary_pair_stress_bips"
+  },
+  "request_contract": {
+    "429_action": "write_terminal_failure_receipt_then_stop_without_retry",
+    "futures_kline_endpoint": "https://fapi.binance.com/fapi/v1/klines",
+    "interval": "1m",
+    "maximum_public_requests": 32,
+    "requests": "one_futures_kline_and_one_spot_kline_request_per_frozen_contract",
+    "response_payloads_and_hashes_required": true,
+    "retry_or_replacement_permitted": false,
+    "spot_kline_endpoint": "https://api.binance.com/api/v3/klines",
+    "terminal_failure_receipt_required": true,
+    "window_end_offset_ms": 599999,
+    "window_limit": 70,
+    "window_start_offset_ms": -3600000
+  },
+  "result_sha256": "f61a8c9dfd86274292c5dae154120871ea5358e2a5ca004b92574e6bdcb7657c",
+  "schema_version": "binance-quarterly-pre-delivery-unwind-contract-v1",
+  "source_binding": {
+    "current_carry_path": "docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json",
+    "current_carry_raw_file_sha256": "d04d7618e30e07b72a894d413616f4ace8962cb1c7adecb82b5b59070d3622f2",
+    "current_carry_result_sha256": "9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2",
+    "timestamp_adjudication_path": "docs/model-research/action-value/binance-quarterly-delivery-basis-timestamp-adjudication-v1.json",
+    "timestamp_adjudication_raw_file_sha256": "40a608ec1fd3f4c1b3a8e964cfb9308f32beb241fa3c8bbe7e923c23af1f9a37",
+    "timestamp_adjudication_result_sha256": "1f669b24c09917e8b080515e8733ba0adea68e74745e2cfafc9dd8f9a45c7f88",
+    "timing_semantics_path": "docs/model-research/action-value/binance-quarterly-delivery-time-semantics-v1.json",
+    "timing_semantics_raw_file_sha256": "de898ad2513739795557b2f13035e23cf672f1f8e9582e4d7151899ac71e9da2",
+    "timing_semantics_result_sha256": "2a52b558f8bc1332cbf2deb41c4e8d4f01bf44d4276ebcc901b3768d4d8516db"
+  },
+  "status": "frozen_before_historical_spot_or_futures_kline_access",
+  "validation": {
+    "actual_cutoff_gate": "each_futures_response_has_exact_consecutive_bars_through_the_0759_utc_bar_and_no_bar_at_or_after_scheduled_delivery",
+    "future_symbol_replacement_permitted": false,
+    "postponed_or_ambiguous_delivery_action": "reject_without_replacement",
+    "required_pre_delivery_bars": 60,
+    "spot_window_requires_all_70_consecutive_bars": true
+  }
+}
