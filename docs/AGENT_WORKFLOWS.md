@@ -127,6 +127,18 @@ endpoint and symbol universe. Credential absence is a terminal missing-evidence
 state for the current assessment, not permission to substitute a public tier or
 invent a discount.
 
+For Binance quarterly cash-and-carry, preserve spot buyer and seller commission
+components separately; the generic conservative helper intentionally collapses
+them and is not exact route evidence. Capture fees before refreshing books.
+Credential presence is a preflight outside the one-use attempt: if either
+documented environment variable is absent, create no journal, make no request,
+and do not search chat, shell history, logs, or repository content for the raw
+secret. A signed capture must use GET only, a fresh venue clock before every
+signed request, zero retries, disabled redirects, a bounded streamed body, and a
+durable secret-free journal that records the bounded body hash before response
+validation or parsing. Query and retain only the minimum fields needed for
+adjudication; do not collect balances or positions during a fee gate.
+
 Binance spot maker-rebate work has a separate account-evidence boundary. The
 official symbol commission response explicitly excludes both the spot market-
 maker rebate rate and the BNB discount effect. Require the same account's

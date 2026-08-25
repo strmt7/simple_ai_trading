@@ -112,7 +112,13 @@ safety gate, blocks Stop, or submits an order.
   zero-trade rows at/after the scheduled cutoff, violating the frozen
   no-later-bar gate. Do not rerun or salvage its pre-delivery rows. Kline
   presence is not authenticated order-state evidence; no historical basis
-  result was accepted. Polymarket
+  result was accepted. Read-only mainnet evidence authority was subsequently
+  granted, and an exact seven-signed-GET commission/configuration contract is
+  frozen. The two required ephemeral process variables were absent, so zero
+  authenticated requests were made. Do not recover secrets from chat, shell
+  history, logs, or repository files. When both variables are available, run
+  the frozen capture once and use it only as a fee gate before any fresh book
+  sampling. Polymarket
   paired-maker quoting had
   a stale displayed both-fill surplus of 1.20 pUSD, but the public reward payout
   floor is zero and the 9.42 pUSD orphan-loss bound remains valid. Its reported
@@ -184,7 +190,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket model | `docs/model-research/polymarket/latest/README.md` |
 | Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
-| Quarterly carry | `quarterly_carry.py` and `binance-quarterly-carry-screen-v1.md` |
+| Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
 | Model promotion | `docs/MODEL_AND_SIGNAL_VALIDATION.md` and cross-regime contract |
 | Execution/risk | `docs/LIVE_MARKET_SIMULATION.md` and venue runbook |

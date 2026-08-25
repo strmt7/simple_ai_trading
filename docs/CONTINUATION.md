@@ -250,6 +250,20 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2`.
+  Read-only mainnet account-evidence authority was received afterward. A
+  GET-only capture is frozen at
+  `docs/model-research/action-value/binance-quarterly-carry-account-evidence-contract-v1.json`,
+  result SHA-256
+  `901c16bf3e7e4082339f3ddd2a910a904a3cd46d51c0dc16f7074c16351145e5`.
+  It binds two exact spot commission responses, four exact quarterly-futures
+  commission responses, one minimal futures account-configuration response,
+  fresh venue time before every signed GET, zero retries, and a durable
+  secret-free request journal. The required mainnet API key and secret process
+  variables were absent at preflight, so no authenticated request or one-use
+  attempt occurred. Do not search chat, logs, history, or repository files for
+  the raw values. When both variables become available to the process, run the
+  frozen capture once; use the result as a non-synchronous fee rejection gate,
+  not as a current edge or reason to refresh books prematurely.
 - Binance quarterly delivery basis: a separately frozen audit produced
   post-delivery spot mismatch values, but its time interpretation is invalid.
   All 16 historical `deliveryTime` values were at 00:00 UTC, while all four
@@ -376,7 +390,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`dc453fd52c72bb7cfc30a75aedefa8a06ace4939dd051e03780caad24a652b40`.
+`0ed493a151fbb87374db70896324428c15f4e8af1edffcfe2975050b60805a0b`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
