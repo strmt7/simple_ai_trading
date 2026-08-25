@@ -139,6 +139,13 @@ durable secret-free journal that records the bounded body hash before response
 validation or parsing. Query and retain only the minimum fields needed for
 adjudication; do not collect balances or positions during a fee gate.
 
+Do not classify an equal-base long-current/short-next quarterly futures spread
+as locked carry. Its pre-expiry payoff is the initial calendar spread minus the
+exit spread; at near expiry it is the initial spread minus the still-live far
+contract's basis to spot. Require a genuinely fixed terminal payoff identity or
+state an explicit term-structure forecast. If that identity fails, record the
+terminal mechanism rejection and do not spend requests on a price backtest.
+
 Binance spot maker-rebate work has a separate account-evidence boundary. The
 official symbol commission response explicitly excludes both the spot market-
 maker rebate rate and the BNB discount effect. Require the same account's
