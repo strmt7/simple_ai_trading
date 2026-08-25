@@ -89,6 +89,8 @@ Record each passing command, relevant tree state, and artifact. Do not rerun an
 unchanged gate merely for reassurance; invalidate it only when code,
 configuration, fixtures, dependencies, runtime artifacts, or platform inputs
 change. Run the complete required matrix once against the final release tree.
+Resolve focused test paths with `rg --files tests` before invoking pytest; do
+not infer filenames from module names.
 
 ```powershell
 uv run --group test ruff check .
