@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 from typing import Mapping
 
 import pytest
@@ -21,6 +23,13 @@ SPEC.loader.exec_module(TOOL)
 EPOCH = 1_787_640_000
 NOW_MS = EPOCH * 1_000 + 60_000
 ASSETS = ("BTC", "ETH", "SOL")
+FAILURE = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "crypto-paired-maker-reward-screen-attempt1-failure-v1.json"
+)
 
 
 def _iso(epoch_seconds: int) -> str:
@@ -29,6 +38,15 @@ def _iso(epoch_seconds: int) -> str:
         .isoformat()
         .replace("+00:00", "Z")
     )
+
+
+def _git_blob(commit: str, path: str) -> bytes:
+    return subprocess.run(
+        ["git", "show", f"{commit}:{path}"],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+    ).stdout
 
 
 def _identifiers(asset: str) -> tuple[str, str, str]:
@@ -262,3 +280,25 @@ def test_missing_gamma_asset_fails_closed(monkeypatch: pytest.MonkeyPatch) -> No
     with pytest.raises(ValueError, match="frozen three slugs"):
         TOOL.run(session=session)
     assert len(session.calls) == 1
+
+
+def test_first_live_attempt_failure_receipt_is_hash_bound_and_terminal() -> None:
+    receipt = json.loads(FAILURE.read_text(encoding="ascii"))
+    expected_hash = receipt.pop("result_sha256")
+
+    assert (
+        hashlib.sha256(TOOL._canonical_json(receipt).encode("ascii")).hexdigest()
+        == expected_hash
+    )
+    assert receipt["attempt"]["public_requests_completed"] == 2
+    assert receipt["attempt"]["books_requested"] is False
+    assert receipt["attempt"]["source_payloads_retained"] is False
+    assert receipt["adjudication"]["retry_or_replacement_market_permitted"] is False
+    assert receipt["authority"]["accepted_edge"] is False
+    implementation = receipt["implementation"]
+    assert (
+        hashlib.sha256(
+            _git_blob(implementation["commit"], implementation["tool_path"])
+        ).hexdigest()
+        == implementation["tool_sha256"]
+    )

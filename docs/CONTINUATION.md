@@ -202,6 +202,15 @@ diagnostics, not accepted edges.
   `3ed963fe2ff3473dba6c9b5146d842130d4f67ed3a0e8673451330133c68c0b0`.
   Scope adjudication:
   `docs/model-research/polymarket/paired-maker-reward-scope-adjudication-v1.json`.
+- The separately frozen BTC/ETH/SOL paired-maker reward screen made one bounded
+  live attempt. It stopped after the Gamma request and exact BTC reward request
+  because the reward configuration disagreed across those sources. No books or
+  candidate economics were reached, no output snapshot was created, and the
+  contract prohibits retry or replacement. The terminal receipt is
+  `docs/model-research/polymarket/crypto-paired-maker-reward-screen-attempt1-failure-v1.json`.
+  The failed tool also taught a workflow correction: every future one-use live
+  screen must retain its request ledger and decoded source payloads and write a
+  terminal failure receipt before propagating any validation exception.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.

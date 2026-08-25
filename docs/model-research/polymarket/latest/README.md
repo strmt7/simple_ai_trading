@@ -153,6 +153,14 @@ prohibits rerun or prospective continuation. A distinct in-scope candidate
 would require its own prospective queue, reward-persistence, and orphan-risk
 contract before any execution study.
 
+The first frozen in-scope BTC/ETH/SOL paired-maker source screen stopped after
+two public requests because Gamma and the exact CLOB reward source disagreed on
+BTC configuration. It reached no books or economics, and its one-attempt
+contract prohibits resampling. The
+[`terminal receipt`](../crypto-paired-maker-reward-screen-attempt1-failure-v1.json)
+also records that future one-use screens must persist source payloads and write
+failure evidence before raising validation errors.
+
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
 Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order

@@ -1,0 +1,45 @@
+{
+  "adjudication": {
+    "candidate_economics_observed": false,
+    "prospective_capture_design_eligible": false,
+    "reason": "btc_reward_configuration_disagreed_between_gamma_and_exact_clob_reward_sources",
+    "retry_or_replacement_market_permitted": false,
+    "status": "terminal_source_contract_failure_before_books",
+    "tool_improvement_required_before_any_distinct_future_screen": "persist_a_request_ledger_and_source_payloads_then_write_a_terminal_failure_receipt_before_raising_validation_errors"
+  },
+  "attempt": {
+    "attempt_utc_date": "2026-08-25",
+    "books_requested": false,
+    "command": "uv run python tools/screen_polymarket_crypto_paired_maker_rewards.py --output docs/model-research/polymarket/crypto-paired-maker-reward-snapshot-v1-2026-08-25.json",
+    "exact_started_at_available": false,
+    "observed_exception_message": "BTC reward configuration disagrees with Gamma",
+    "observed_exception_type": "ValueError",
+    "output_artifact_created": false,
+    "public_requests_completed": 2,
+    "request_sequence_proven_by_control_flow": [
+      "gamma_get_for_three_exact_current_epoch_slugs",
+      "btc_exact_condition_reward_get_with_sponsored_true"
+    ],
+    "source_payloads_retained": false
+  },
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "implementation": {
+    "commit": "2dc28faaafc5e4c3acb20caefaa067605b0573d5",
+    "tool_path": "tools/screen_polymarket_crypto_paired_maker_rewards.py",
+    "tool_sha256": "a09e99856fb6c69cf4964b32b1da37b1f34a773dcf22b94284ac6c943eac9f3a"
+  },
+  "result_sha256": "b53d3764c2d99d3c23642c4119e521e9a3e843819405eb927dfb6f5d4224de11",
+  "schema_version": "polymarket-crypto-paired-maker-reward-screen-failure-v1",
+  "screen_contract": {
+    "file_sha256": "d48d4bf1b4d8906c0f14a3252ee72662ad8ba3bf76d5e895e004769ee1650843",
+    "path": "docs/model-research/polymarket/crypto-paired-maker-reward-screen-contract-v1.json",
+    "result_sha256": "30737337626e61353019245b73235b284944909aad3269d499a0f59981609344"
+  }
+}
