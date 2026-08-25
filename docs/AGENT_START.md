@@ -68,6 +68,15 @@ safety gate, blocks Stop, or submits an order.
   one repeated exact question across 607 eligible binary markets, but its two
   canonical rule sets differed; zero exact payout-rule duplicates advanced to
   pricing.
+- The 2026-08-25 direction-neutral carry/reward diagnostics also found no
+  accepted edge. Binance quarterly spot/future basis was gross-positive at all
+  12 tested sizes and cleared a stated 35-bps sensitivity hurdle at nine, but
+  exact account costs, collateral/liquidation economics, and delivery-index
+  versus spot-exit basis remain unresolved. Polymarket paired-maker quoting had
+  a stale displayed both-fill surplus of 1.20 pUSD, but the public reward payout
+  floor is zero and the 9.42 pUSD orphan-loss bound dwarfed the conditional
+  reward rate. Do not repeat either snapshot without the evidence gates in
+  their screen documents.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -84,6 +93,8 @@ safety gate, blocks Stop, or submits an order.
 | Binance model/backtest | `docs/model-research/action-value/latest/README.md` |
 | Polymarket model | `docs/model-research/polymarket/latest/README.md` |
 | Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
+| Quarterly carry | `quarterly_carry.py` and `binance-quarterly-carry-screen-v1.md` |
+| Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
 | Model promotion | `docs/MODEL_AND_SIGNAL_VALIDATION.md` and cross-regime contract |
 | Execution/risk | `docs/LIVE_MARKET_SIMULATION.md` and venue runbook |
 | AI | `docs/ai/risk-review/latest/comparison.json` |

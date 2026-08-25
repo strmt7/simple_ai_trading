@@ -172,6 +172,28 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-option-box-parity-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `e85b4e270e707c0faa47e3f373d6d345fce448fcbcbcf6a6f39bceec7d9eb229`.
+- Binance quarterly cash-and-carry: one catalog fetch and one spot/futures book
+  pair per selected contract covered BTCUSDT and ETHUSDT current/next quarters
+  at 12 quantities. All 12 displayed gross bases were positive; nine cleared a
+  stated 35-bps sensitivity hurdle. December BTC retained 108.75-110.16 bps and
+  December ETH retained 48.54-51.49 bps after that hurdle. This is unqualified,
+  not accepted: the hurdle is not authenticated account cost evidence, while
+  collateral opportunity cost, liquidation protection, settlement charges,
+  and delivery-index versus executable spot-exit basis remain unresolved.
+  Canonical result:
+  `docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json`,
+  result SHA-256
+  `9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2`.
+- Polymarket paired-maker rewards: the frozen Moonshot candidate's one-tick
+  hypothetical 20-share YES+NO bids summed to 0.940 for 1.20 pUSD displayed
+  both-fill gross. The books were 8,074 ms old and failed the 5,000 ms gate.
+  Public data proves a zero reward payout floor; a separately labeled
+  conditional calculation was only 0.2980 pUSD/day against 9.42 pUSD maximum
+  orphan settlement loss. The event is augmented negative-risk, so no
+  event-wide payout identity was assumed. Canonical result:
+  `docs/model-research/polymarket/paired-maker-reward-snapshot-v1-2026-08-25.json`,
+  result SHA-256
+  `3ed963fe2ff3473dba6c9b5146d842130d4f67ed3a0e8673451330133c68c0b0`.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.
@@ -195,6 +217,17 @@ evidence. Once all candidates are nonpositive at depth, do not poll again.
 Format the module and tool before a source-bound run; changing either afterward
 invalidates its recorded implementation hash and permits only one deliberate
 regeneration, not open-ended resampling.
+
+Evidence timestamps must use integer epochs or explicit invariant UTC/RFC3339
+parsing; locale-dependent implicit date parsing is prohibited. Similar quarter
+or expiry labels across Binance products do not establish a shared settlement
+timestamp or value. The option/future historical comparison showed different
+settlement times, so no cross-product parity identity may proceed without exact
+rule and numeric-epoch binding. For Polymarket rewards, the corrected
+instantaneous denominator is old aggregate `Q1 + Q2`, never the minimum of the
+two aggregates. Public books do not reveal per-maker grouping, queue position,
+sampling persistence, or final reward allocation; without that evidence the
+provable payout lower bound is zero.
 
 ## Protected Local Work
 
@@ -236,11 +269,12 @@ lease, state, database, and WAL agree.
 2. Keep the completed model-dev three-way audit frozen. Do not bulk-integrate
    stale or divergent files; reevaluate a specific path only when a current task
    requires it.
-3. Do not rerun rejected Binance funding carry, two-sided touch making,
+3. Do not rerun rejected Binance funding carry, quarterly carry, two-sided touch making,
    Polymarket binary complete-set taking, negative-risk parity, logical
    threshold/deadline implication parity, Binance spot triangles, Binance
    option vertical/convexity parity, option box parity, or Polymarket exact
-   cross-condition duplicate discovery as if repetition could create an edge.
+   cross-condition duplicate discovery or paired-maker reward snapshots as if
+   repetition could create an edge.
    A repeat is justified only by a frozen prospective sampling contract or
    materially new fee/execution evidence.
 4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source

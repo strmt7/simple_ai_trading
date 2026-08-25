@@ -141,7 +141,11 @@ treats the supplied Reddit analysis as hypotheses, not data. Its open/close
 settlement assumption does not match the current 60-second TWAP product, and
 its dataset and code are unavailable for audit. Binance lead, late-favorite,
 and mean-reversion ideas therefore receive no new threshold; maker split/merge
-is deferred to an independent future queue, rebate, and orphan-risk study.
+received an independent [point-in-time reward diagnostic](../paired-maker-reward-screen-v1.md).
+Its displayed both-fill surplus was stale, its publicly proven reward payout
+floor was zero, and orphan risk remained unbounded by fills or cancellation
+evidence. A prospective queue, reward-persistence, and orphan-risk capture is
+still required before any execution study.
 
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
