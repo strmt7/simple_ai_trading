@@ -62,7 +62,17 @@ safety gate, blocks Stop, or submits an order.
   authorized or sent. The fee-gate artifact is
   `binance-spot-triangle-account-fee-gate-v1.json`, result SHA-256
   `304a78180be3375a3453384ad71948c24e52ffeba2f1482cb97711e59aa4a688`;
-  this remains non-executable and is not an edge. Binance option
+  this remains non-executable and is not an edge. A separate official API
+  review found account-specific liquidity-program overview, performance,
+  weekly final-rebate, and spot rebate-history endpoints. The symbol commission
+  endpoint explicitly excludes spot maker rebates and the BNB discount effect.
+  The public static program document returned 403, both designated ephemeral
+  variables were absent, and no signed request was sent. Maker rebates therefore
+  remain an unproved structural hypothesis, not a current fee or edge claim.
+  Canonical account gate: `binance-spot-maker-rebate-account-evidence-gate-v1.json`,
+  result SHA-256
+  `19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f`.
+  Binance option
   vertical/convexity parity covered 365,592 exact payoff
   identities across 1,538 unit-one contracts. Two ticker-only candidates
   disappeared at displayed depth, where every exact minimum portfolio was
