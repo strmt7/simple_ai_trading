@@ -147,6 +147,17 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-spot-structural-parity-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `53498bbf4c1ea7af78f3d05819d965ea3e227b1fa8457c958e5721982b1f3f69`.
+  Binance's official spot contract confirms that exact account evidence needs
+  one signed `GET /api/v3/account/commission` response per leg. The path's
+  sides are BUY BTCUSDC, SELL BTCUSDT, and BUY USDCUSDT; each fee must combine
+  the correct taker plus buyer/seller standard, special, and tax components.
+  BNB discount may be applied only when both returned flags and sufficient BNB
+  are proved. The current process had neither designated ephemeral credential
+  variable, so no signed query was attempted and application configuration was
+  not inspected. Canonical evidence gate:
+  `docs/model-research/action-value/binance-spot-triangle-account-fee-gate-v1.json`,
+  result SHA-256
+  `304a78180be3375a3453384ad71948c24e52ffeba2f1482cb97711e59aa4a688`.
 - Binance options: 1,538 tradable unit-one BTCUSDT, ETHUSDT, and SOLUSDT
   contracts formed 50 same-underlying, same-expiry, same-side chains. Exact
   lot-aligned enumeration covered 26,688 vertical-dominance pairs and 338,904
@@ -273,6 +284,17 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/complete-set-holding-reward-economics-v1.json`,
   result SHA-256
   `b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561`.
+  Current public readiness evidence now identifies 26 BTC, 15 ETH, and 14 SOL
+  markets whose Gamma records simultaneously report active, open, accepting
+  orders, an enabled order book, and holding rewards. One exact BTC $100,000
+  market had live midpoints 0.325 and 0.675, preserving a 1.000 pUSD reward
+  mark for the split complete set. Official relayer docs say successful relayed
+  split and merge operations have zero direct user gas. Gamma flags remain
+  candidate filters, not account eligibility or payout proof, and costs outside
+  those relayed CTF calls remain unmeasured. Canonical readiness evidence:
+  `docs/model-research/polymarket/complete-set-holding-reward-readiness-v2.json`,
+  result SHA-256
+  `c12bd9d75503c679c1e19800773a002f1d3e82dfad91338cb7bd3ea24dd6a964`.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.
@@ -371,9 +393,11 @@ lease, state, database, and WAL agree.
    cancellation latency, adverse selection, realized rebate payment, and
    complete orphan P&L. Nominal rebate algebra is not a substitute.
    The complete-set holding-reward hypothesis likewise requires an exact
-   eligible BTC/ETH/SOL market, authenticated paired balance and daily payout,
-   split/merge and transfer costs, alternative cash yield, and capacity. Do not
-   infer eligibility from prose or activate it before the protected boundary.
+   candidate BTC/ETH/SOL market, authenticated rewards eligibility, paired
+   balance and daily payout, a reconciled split-to-merge cycle, every cost
+   outside the documented gasless relayer path, alternative cash yield, and
+   capacity. Do not infer account eligibility from help prose or a Gamma flag,
+   and do not activate it before the protected boundary.
 5. Reject any candidate that fails bull, bear, sideways, choppy, high-volatility,
    liquidity-stress, or latency-stress after-cost slices. Abstention is required
    where evidence is unsupported; no strategy can guarantee profit or prevent

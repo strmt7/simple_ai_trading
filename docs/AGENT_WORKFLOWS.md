@@ -80,6 +80,26 @@ both characters and exact UTF-8 output bytes for broad `rg`, semantic routing,
 and the focused hybrid path. Bytes are a reproducible context-volume proxy, not
 a claim about model-specific token usage.
 
+## Structural Edge Evidence Boundaries
+
+Treat public venue metadata as a candidate filter, not account evidence. In
+particular, Polymarket's public `holdingRewardsEnabled` Gamma field can identify
+an exact market for a later study, but it does not prove that the account, the
+balance's acquisition path, or a particular reward day is eligible. Promotion
+requires the authenticated rewards response, a reconciled daily balance change,
+and a complete split-to-merge cash-flow cycle. Official relayer documentation
+can establish zero direct user gas for successfully relayed split and merge
+operations; it does not erase transfer, wrapping, withdrawal, opportunity,
+custody, tax, failure, or availability costs.
+
+Do not reuse the Round 74 USD-M futures commission capture as Binance spot fee
+evidence. Spot triangles require signed `GET /api/v3/account/commission`
+responses for every exact leg and must include standard, special, tax, buyer or
+seller, and discount fields. The existing futures capture uses a different
+endpoint and symbol universe. Credential absence is a terminal missing-evidence
+state for the current assessment, not permission to substitute a public tier or
+invent a discount.
+
 ## Verification Lanes
 
 Use the narrowest relevant checks while iterating, then the complete suite at a

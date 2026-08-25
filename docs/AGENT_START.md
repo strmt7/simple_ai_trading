@@ -56,8 +56,14 @@ safety gate, blocks Stop, or submits an order.
   negative-risk events and zero gross-positive logical-implication bundles
   across 2,572 threshold/deadline pairs. Binance's best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
-  break even; exact account fees remain unaudited, so this is not an executable
-  edge. Binance option vertical/convexity parity covered 365,592 exact payoff
+  break even. The exact three spot fee queries are now defined from Binance's
+  official commission contract, but the designated ephemeral credential
+  variables were absent from the current process and no signed request was
+  authorized or sent. The fee-gate artifact is
+  `binance-spot-triangle-account-fee-gate-v1.json`, result SHA-256
+  `304a78180be3375a3453384ad71948c24e52ffeba2f1482cb97711e59aa4a688`;
+  this remains non-executable and is not an edge. Binance option
+  vertical/convexity parity covered 365,592 exact payoff
   identities across 1,538 unit-one contracts. Two ticker-only candidates
   disappeared at displayed depth, where every exact minimum portfolio was
   already negative before fees. A distinct fixed-payoff box screen found six
@@ -115,8 +121,16 @@ safety gate, blocks Stop, or submits an order.
   unproved. The canonical economics artifact is
   `complete-set-holding-reward-economics-v1.json`, result SHA-256
   `b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561`.
-  Do not call this an edge or activate a payout study while Round 21 is
-  protected.
+  A later public readiness capture found 26 BTC, 15 ETH, and 14 SOL markets
+  with active/open/orderbook/holding-reward flags. The exact BTC $100,000
+  candidate had live YES+NO midpoints of 0.325+0.675=1.000 pUSD. Official
+  relayer documentation also confirms zero direct user gas for successfully
+  relayed split and merge operations. These facts strengthen the hypothesis but
+  do not prove account eligibility or future payout. The readiness artifact is
+  `complete-set-holding-reward-readiness-v2.json`, result SHA-256
+  `c12bd9d75503c679c1e19800773a002f1d3e82dfad91338cb7bd3ea24dd6a964`.
+  Do not call this an accepted edge or activate a payout study while Round 21
+  is protected.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
