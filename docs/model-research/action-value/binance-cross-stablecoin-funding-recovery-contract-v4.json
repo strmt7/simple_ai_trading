@@ -1,0 +1,132 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_credentials_permitted": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T09:39:00.5419909Z",
+  "recovery_boundary": {
+    "attempt3_error": "same_day_USDCUSDT_conversion_bar_is_absent",
+    "attempt3_failure_path": "docs/model-research/action-value/binance-cross-stablecoin-funding-full-history-v3-2026-08-25.json",
+    "attempt3_failure_result_sha256": "16069c43e49dfdcafb03306e62734646148c1ac784b6ae13c9fc2dd2508b7670",
+    "attempt3_failure_file_sha256": "04ec74ccbb38c6617e0e1cab0881d7485142b16cada433c0e39bd46f547f6698",
+    "attempt3_contract_path": "docs/model-research/action-value/binance-cross-stablecoin-funding-full-history-contract-v3.json",
+    "attempt3_contract_file_sha256": "ca5b24d6d929dbdec00dc8434a1b05588b93add53a207a2486ab54d2370bb05b",
+    "attempt3_contract_result_sha256": "41d512a4c5c8596bcfbbbfd1dc2e22dceed12c50564673054fa5b9094eebd2fc",
+    "attempt3_tool_path": "tools/backfill_binance_cross_stablecoin_funding.py",
+    "attempt3_tool_file_sha256": "18733b0faa166af79eb3e5ecf9ccfca874ed7f0fdfee440212a2dd18f0c92f81",
+    "defect": "the_terminal_failure_receipt_did_not_retain_the_successful_request_ledger_or_payloads_before_economic_evaluation_failed",
+    "repeated_market_request_exception": "one_deliberate_funding_only_recovery_is_permitted_because_attempt3_payloads_are_unrecoverable_and_attempt4_checkpoints_each_response_before_continuing",
+    "further_regeneration_after_attempt4": false
+  },
+  "source_binding": {
+    "recent_result_path": "docs/model-research/action-value/binance-cross-stablecoin-funding-snapshot-v1-2026-08-25.json",
+    "recent_result_sha256": "1588aa33751abd73430f6c3c80525e8cbd887877fc4ba57276f5f0710477df30",
+    "recent_history_start_time_ms": 1773273600000,
+    "recent_history_end_time_ms": 1787644800000,
+    "recent_rows_per_symbol": 500
+  },
+  "candidate_scope": [
+    {
+      "base_asset": "BTC",
+      "usdc_onboard_time_ms": 1704285000000,
+      "usdc_symbol": "BTCUSDC",
+      "usdt_symbol": "BTCUSDT"
+    },
+    {
+      "base_asset": "SOL",
+      "usdc_onboard_time_ms": 1704285900000,
+      "usdc_symbol": "SOLUSDC",
+      "usdt_symbol": "SOLUSDT"
+    }
+  ],
+  "durable_request_contract": {
+    "endpoint": "GET https://fapi.binance.com/fapi/v1/fundingRate",
+    "first_end_time_ms": 1773273599999,
+    "fixed_limit": 1000,
+    "maximum_requests_per_symbol": 8,
+    "maximum_total_requests": 32,
+    "pagination": "request_backwards_with_endTime_then_set_next_endTime_to_earliest_returned_fundingTime_minus_one",
+    "stop": "earliest_row_at_or_before_the_candidates_usdc_onboard_time_or_one_empty_proof_page",
+    "journal_path": "docs/model-research/action-value/binance-cross-stablecoin-funding-recovery-journal-v4.json",
+    "before_each_request": "atomically_write_the_exact_next_request_fingerprint",
+    "after_each_successful_response": "atomically_append_the_status_headers_payload_hash_timestamps_and_decoded_payload_before_any_next_request",
+    "resume": "verify_the_journal_self_hash_and_skip_every_completed_request_fingerprint",
+    "429_or_http_failure": "atomically_write_terminal_failure_with_all_accumulated_payloads_then_stop_without_retry",
+    "cap_action": "terminal_incomplete_without_using_a_truncated_symbol",
+    "credentials_or_headers_permitted": false,
+    "order_preview_or_order_endpoint_permitted": false
+  },
+  "native_cashflow_accounting": {
+    "position_size": "one_base_asset_unit_then_scale_linearly_to_the_exact_common_minimum_quantity",
+    "short_contract_funding_cash_native_quote": "positive_markPrice_times_fundingRate",
+    "long_contract_funding_cash_native_quote": "negative_markPrice_times_fundingRate",
+    "cash_vector": [
+      "cumulative_USDT",
+      "cumulative_USDC"
+    ],
+    "no_forced_settlement_time_fx_conversion": true,
+    "common_usdt_value_at_fx_x": "cumulative_USDT_plus_x_times_cumulative_USDC",
+    "reported_break_even_fx": "negative_cumulative_USDT_divided_by_cumulative_USDC_when_USDC_cash_is_nonzero_with_the_profitable_side_of_the_threshold_explicit",
+    "fixed_fx_stress_values": [
+      "0.98",
+      "1.02"
+    ],
+    "stress_pass": "common_usdt_value_is_strictly_positive_at_both_fixed_fx_values"
+  },
+  "frozen_evaluation": {
+    "partition": "oldest_floor_third_selection_second_floor_third_validation_remaining_newest_test",
+    "orientation": "choose_the_higher_cash_value_at_fx_one_in_selection_then_require_selection_to_pass_both_fx_stresses",
+    "direction_regimes": {
+      "mark_source": "same_base_USDT_perpetual_settlement_mark_price",
+      "missing_mark_action": "reject_pair_without_substitution",
+      "down": "return_bips_strictly_below_negative_10",
+      "sideways": "absolute_return_bips_at_most_10",
+      "up": "return_bips_strictly_above_10"
+    },
+    "volatility_regimes": {
+      "high": "absolute_return_at_or_above_selection_only_nearest_rank_75th_percentile_without_interpolation",
+      "regular": "absolute_return_below_the_frozen_selection_threshold"
+    },
+    "path_regimes": {
+      "previous_sign_scope": "complete_chronology_including_selection",
+      "reversal": "current_nonzero_return_sign_differs_from_previous_nonzero_sign",
+      "continuation": "current_nonzero_return_sign_equals_previous_nonzero_sign"
+    },
+    "minimum_rows_per_regime": 30,
+    "time_slices": "validation_test_their_chronological_halves_and_every_complete_inner_calendar_quarter",
+    "no_threshold_orientation_window_or_candidate_optimization": true
+  },
+  "execution_diagnostic": {
+    "current_perpetual_spread_cost": "sum_native_bid_minus_ask_round_trip_cash_with_USDC_cost_stressed_at_1_02",
+    "test_equal_per_leg_fee_break_even_bips": "worst_of_test_cash_at_fx_0_98_and_1_02_minus_current_stressed_spread_cost_divided_by_twice_the_current_stressed_sum_of_both_mid_notionals_then_times_10000",
+    "future_exit_prices_assumed_current": true,
+    "exact_account_fee_claim_permitted": false
+  },
+  "decision_gate": {
+    "public_screen_can_only_prioritize_not_accept_an_edge": true,
+    "advance_only_when": [
+      "selection_validation_and_test_each_pass_both_fx_stresses",
+      "both_halves_of_validation_and_both_halves_of_test_each_pass_both_fx_stresses",
+      "every_complete_inner_validation_and_test_quarter_passes_both_fx_stresses",
+      "up_down_sideways_high_regular_reversal_and_continuation_slices_each_have_at_least_30_rows_and_pass_both_fx_stresses",
+      "test_equal_per_leg_fee_break_even_after_current_stressed_spread_is_strictly_positive",
+      "all_four_current_perpetual_top_sides_cover_the_exact_common_minimum_quantity"
+    ],
+    "unresolved_after_public_pass": [
+      "exact_same_account_commission_rates",
+      "collateral_mode_haircuts_liquidation_and_adl",
+      "realized_two_margin_asset_funding_reconciliation",
+      "entry_exit_basis_and_non_atomic_fill_risk",
+      "capital_opportunity_cost",
+      "prospective_persistence"
+    ],
+    "failure_action": "reject_failed_pair_without_resampling_or_another_backfill"
+  },
+  "result_sha256": "94b61346768a77f8b2d1a8ae0224afbb358b4881f559f1ca3c439e17eb86edd1",
+  "schema_version": "binance-cross-stablecoin-funding-recovery-contract-v4",
+  "status": "frozen_before_the_one_deliberate_funding_backfill_recovery"
+}

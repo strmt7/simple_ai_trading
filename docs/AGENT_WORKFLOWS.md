@@ -185,13 +185,16 @@ must not be hand-edited.
 ## One-Use Public Source Runs
 
 Before the first network request, a bounded one-use research tool must create
-or reserve its terminal receipt path and initialize an append-only in-memory
-request ledger. Every completed response must retain its request timing,
-decoded payload, canonical payload hash, and raw-response hash. A validation,
-HTTP, rate-limit, or serialization failure must atomically write a rejected
-terminal receipt from that ledger before the exception is propagated. A
-traceback alone is not evidence and never permits a retry, replacement market,
-or adaptive time shift under a one-attempt contract.
+or reserve its terminal receipt path and initialize a self-hashed persistent
+request journal. Before each request, atomically persist its exact fingerprint.
+After every completed response, atomically persist its request timing, status,
+decoded payload, canonical payload hash, and raw-response hash before parsing,
+validation, or another request. An in-memory ledger alone is insufficient. A
+validation, HTTP, rate-limit, serialization, or later economic-evaluation
+failure must retain every accumulated response in the rejected terminal
+receipt or journal before the exception is propagated. A traceback alone is
+not evidence and never permits a retry, replacement market, or adaptive time
+shift under a one-attempt contract.
 
 Format and test the exact implementation before freezing and publishing it.
 Then publish the frozen contract and implementation before the live attempt.
@@ -199,6 +202,13 @@ The terminal receipt must bind both source hashes and must state explicitly
 whether books, economics, credentials, or orders were reached. Never repair a
 failed one-use artifact by resampling; fix the workflow for a separately frozen
 hypothesis only when its own nonadaptive contract permits a new attempt.
+
+The 2026-08-25 cross-stablecoin funding full-history v3 run violated this rule:
+it fetched the bounded source pages, then failed on a missing historical FX bar,
+but its generic failure writer discarded the accumulated payloads. The explicit
+v4 recovery was the only deliberate regeneration, removed the unnecessary
+daily-conversion assumption, and checkpointed all 20 funding responses before
+evaluation. It is terminal and grants no precedent for another regeneration.
 
 Do not treat the presence or absence of returned historical klines as proof of
 exchange order state, trading availability, or a delivery cutoff. An expired

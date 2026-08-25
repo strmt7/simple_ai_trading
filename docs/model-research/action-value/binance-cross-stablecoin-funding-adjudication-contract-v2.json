@@ -1,0 +1,98 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_credentials_permitted": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T09:26:15.2858455Z",
+  "correction": {
+    "attempt1_claim_preserved": "two_pairs_passed_the_frozen_rate_only_public_gate",
+    "attempt1_status": "not_economic_evidence_until_mark_price_and_quote_asset_conversion_are_adjudicated",
+    "observed_timestamp_fact": "all_six_captured_histories_have_the_same_500_unique_funding_times_from_2026_03_12T00_00_00Z_through_2026_08_25T08_00_00Z",
+    "remaining_defects": [
+      "funding_cash_is_position_notional_times_rate_not_rate_difference_alone",
+      "usdc_and_usdt_cashflows_are_not_the_same_numeraire",
+      "current_mark_price_divergence_does_not_reconstruct_historical_notional",
+      "stablecoin_fx_must_not_be_assumed_one_to_one"
+    ],
+    "reuse_rule": "reuse_and_verify_every_attempt1_payload_without_refetching_binance_futures"
+  },
+  "source_binding": {
+    "attempt1_contract_path": "docs/model-research/action-value/binance-cross-stablecoin-funding-screen-contract-v1.json",
+    "attempt1_contract_result_sha256": "d100faabf96afbd15478dcaa02688a365b46ba1c15279bcb575cdb8a8661a5a7",
+    "attempt1_contract_file_sha256": "780f6f170ad8728dfa3f6edc32d9a46daa7ea72a3b75e914bf04c3ed8fbed774",
+    "attempt1_result_path": "docs/model-research/action-value/binance-cross-stablecoin-funding-snapshot-v1-2026-08-25.json",
+    "attempt1_result_sha256": "1588aa33751abd73430f6c3c80525e8cbd887877fc4ba57276f5f0710477df30",
+    "attempt1_result_file_sha256": "f4e294e20541f2d4aa1b78679f9583a7e5c0a0570d7e31ff478477d9a0583410",
+    "attempt1_tool_path": "tools/screen_binance_cross_stablecoin_funding.py",
+    "attempt1_tool_file_sha256": "2133d8770778127b0c76b535b73d8d3249e8954e14ed6dc7a7c025adc79a1088"
+  },
+  "frozen_public_request_plan": {
+    "maximum_new_requests": 1,
+    "request": {
+      "endpoint": "GET https://api.binance.com/api/v3/klines",
+      "fixed_parameters": {
+        "endTime": 1787702399999,
+        "interval": "1d",
+        "limit": 1000,
+        "startTime": 1773273600000,
+        "symbol": "USDCUSDT"
+      },
+      "purpose": "bind_each_captured_usdc_funding_cashflow_to_conservative_same_utc_day_usdt_conversion_bounds"
+    },
+    "429_action": "write_terminal_failure_receipt_and_stop_without_retry",
+    "credentials_or_headers_permitted": false,
+    "futures_payload_refetch_permitted": false,
+    "order_preview_or_order_endpoint_permitted": false,
+    "payload_bytes_sha256_timestamps_and_elapsed_milliseconds_required": true
+  },
+  "cashflow_adjudication": {
+    "position_size": "one_base_asset_unit_for_reconstruction_then_scale_linearly_to_the_exact_common_minimum_quantity",
+    "short_contract_funding_cash_native_quote": "positive_markPrice_times_fundingRate",
+    "long_contract_funding_cash_native_quote": "negative_markPrice_times_fundingRate",
+    "usdt_cash_conversion": "identity",
+    "usdc_positive_cash_conversion": "multiply_by_same_utc_day_USDCUSDT_low",
+    "usdc_negative_cash_conversion": "multiply_by_same_utc_day_USDCUSDT_high",
+    "missing_daily_fx_bar_action": "reject_pair",
+    "timestamp_coverage": "evaluate_the_union_of_all_settlement_times_inside_the_common_history_window_and_use_zero_only_when_one_verified_complete_history_has_no_settlement_at_that_time",
+    "orientation": "choose_the_higher_cumulative_conservative_usdt_cashflow_from_the_older_half_then_hold_it_fixed_in_the_newer_half",
+    "selection_tie_or_nonpositive_action": "reject_pair",
+    "evaluation_slices": [
+      "first_and_second_chronological_halves",
+      "complete_inner_calendar_months",
+      "all_newer_half_settlements"
+    ]
+  },
+  "execution_adjudication": {
+    "current_round_trip_spread_cash": "sum_each_perpetuals_same_quantity_bid_minus_ask_cashflow_with_usdc_negative_cash_converted_at_the_current_utc_day_USDCUSDT_high",
+    "equal_per_leg_fee_break_even_bips": "evaluation_conservative_usdt_funding_cash_minus_current_round_trip_spread_cost_divided_by_twice_the_sum_of_both_current_mid_notionals_then_times_10000",
+    "exact_account_fee_claim_permitted": false,
+    "future_exit_prices_assumed_current": true,
+    "interpretation": "diagnostic_break_even_only_not_realized_or_prospective_profit"
+  },
+  "decision_gate": {
+    "public_screen_can_only_prioritize_not_accept_an_edge": true,
+    "advance_to_authenticated_fee_and_collateral_contract_only_when": [
+      "selection_orientation_is_strictly_positive",
+      "conservative_evaluation_cashflow_is_strictly_positive_in_both_chronological_halves",
+      "every_complete_inner_evaluation_month_is_nonnegative",
+      "equal_per_leg_fee_break_even_after_current_spread_is_strictly_positive",
+      "all_four_perpetual_top_sides_cover_the_exact_common_minimum_quantity"
+    ],
+    "authenticated_and_prospective_evidence_still_required": [
+      "exact_same_account_commission_rates_for_both_symbols",
+      "multi_asset_or_separate_collateral_mode_and_haircuts",
+      "position_margin_liquidation_and_adl_state",
+      "realized_funding_ledger_reconciliation_in_both_margin_assets",
+      "two_leg_fill_and_unwind_slippage",
+      "prospective_persistence_under_a_frozen_schedule"
+    ],
+    "failure_action": "reject_this_mechanism_without_repeating_the_public_screen"
+  },
+  "result_sha256": "c6906950fe3d6513d02c90566c454aaa461e17d39ea36010d222d265fdb666c7",
+  "schema_version": "binance-cross-stablecoin-funding-adjudication-contract-v2",
+  "status": "frozen_before_the_single_usdcusdt_fx_request"
+}

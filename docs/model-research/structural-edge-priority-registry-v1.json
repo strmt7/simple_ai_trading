@@ -6,6 +6,7 @@
     "profitability_claim": false
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
+  "updated_at_utc": "2026-08-25T09:44:40.5357708Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
@@ -170,7 +171,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "1c386c9f47a7f49830a17f5bd9e3b6f477060a9f61ffe97be83aebfb953725f6",
+  "result_sha256": "dc453fd52c72bb7cfc30a75aedefa8a06ace4939dd051e03780caad24a652b40",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -197,6 +198,11 @@
       "canonical_result_sha256": "e85b4e270e707c0faa47e3f373d6d345fce448fcbcbcf6a6f39bceec7d9eb229",
       "family": "binance_option_box_parity",
       "reason": "every ticker candidate lacked at least one required executable displayed side"
+    },
+    {
+      "canonical_result_sha256": "8e30be61daaecabd3546e41cdc204d20b8ad38e0fc80c3c9aa96092266a3abe5",
+      "family": "binance_usdt_usdc_perpetual_funding_differential",
+      "reason": "zero_of_two_recent_candidates_passed_the_frozen_2898_settlement_full_history_fx_stress_time_and_market_regime_gate"
     }
   ],
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"

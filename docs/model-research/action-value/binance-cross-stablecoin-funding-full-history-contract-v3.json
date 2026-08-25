@@ -1,0 +1,151 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_credentials_permitted": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T09:30:36.7371503Z",
+  "candidate_scope": {
+    "excluded_after_cashflow_corrected_gate": [
+      "ETHUSDT",
+      "ETHUSDC"
+    ],
+    "pairs": [
+      {
+        "base_asset": "BTC",
+        "usdc_onboard_time_ms": 1704285000000,
+        "usdc_symbol": "BTCUSDC",
+        "usdt_symbol": "BTCUSDT"
+      },
+      {
+        "base_asset": "SOL",
+        "usdc_onboard_time_ms": 1704285900000,
+        "usdc_symbol": "SOLUSDC",
+        "usdt_symbol": "SOLUSDT"
+      }
+    ],
+    "selection_after_full_history_prices_permitted": false
+  },
+  "source_binding": {
+    "adjudication_contract_path": "docs/model-research/action-value/binance-cross-stablecoin-funding-adjudication-contract-v2.json",
+    "adjudication_contract_file_sha256": "4248b34b0c4db95f5128910db2e719c981d69b078623e2e900b13a5db3c8b99c",
+    "adjudication_contract_result_sha256": "c6906950fe3d6513d02c90566c454aaa461e17d39ea36010d222d265fdb666c7",
+    "adjudication_result_path": "docs/model-research/action-value/binance-cross-stablecoin-funding-adjudication-v2-2026-08-25.json",
+    "adjudication_result_file_sha256": "e43bd7b65a9b2abb45b00e665b9391828809ac769f307a2a886e04e51e585940",
+    "adjudication_result_sha256": "7f2cfab714e0a4353ce143b735a13e4cdd6be5340fc13a09e5a82958448f942b",
+    "adjudication_tool_path": "tools/adjudicate_binance_cross_stablecoin_funding.py",
+    "adjudication_tool_file_sha256": "f98e28a1cc5b76c1a08c286342ddd97496c8cc225527591c9c68ec313984af44",
+    "recent_history_start_time_ms": 1773273600000,
+    "recent_history_end_time_ms": 1787644800000,
+    "recent_rows_per_symbol": 500
+  },
+  "frozen_public_request_plan": {
+    "maximum_new_requests": 33,
+    "funding_backfill": {
+      "endpoint": "GET https://fapi.binance.com/fapi/v1/fundingRate",
+      "first_end_time_ms": 1773273599999,
+      "fixed_limit": 1000,
+      "maximum_requests_per_symbol": 8,
+      "symbols": [
+        "BTCUSDT",
+        "BTCUSDC",
+        "SOLUSDT",
+        "SOLUSDC"
+      ],
+      "pagination": "request_backwards_with_endTime_then_set_the_next_endTime_to_the_earliest_returned_fundingTime_minus_one",
+      "stop": "earliest_row_at_or_before_the_symbols_usdc_onboard_time_or_one_empty_proof_page",
+      "cap_action": "terminal_incomplete_without_using_a_truncated_symbol"
+    },
+    "full_fx_history": {
+      "endpoint": "GET https://api.binance.com/api/v3/klines",
+      "fixed_parameters": {
+        "endTime": 1787702399999,
+        "interval": "1d",
+        "limit": 1000,
+        "startTime": 1704240000000,
+        "symbol": "USDCUSDT"
+      },
+      "maximum_requests": 1
+    },
+    "429_action": "write_terminal_failure_receipt_and_stop_without_retry",
+    "credentials_or_headers_permitted": false,
+    "order_preview_or_order_endpoint_permitted": false,
+    "payload_bytes_sha256_timestamps_and_elapsed_milliseconds_required": true,
+    "retry_or_replacement_request_permitted": false
+  },
+  "cashflow_accounting": {
+    "position_size": "one_base_asset_unit_then_scale_linearly_to_the_exact_common_minimum_quantity",
+    "short_contract_funding_cash_native_quote": "positive_markPrice_times_fundingRate",
+    "long_contract_funding_cash_native_quote": "negative_markPrice_times_fundingRate",
+    "usdc_positive_cash_conversion": "multiply_by_same_utc_day_USDCUSDT_low",
+    "usdc_negative_cash_conversion": "multiply_by_same_utc_day_USDCUSDT_high",
+    "usdt_cash_conversion": "identity",
+    "timestamp_coverage": "union_of_verified_complete_symbol_histories_inside_the_common_window_with_zero_only_for_a_verified_nonsettling_leg",
+    "missing_daily_fx_bar_action": "reject_pair"
+  },
+  "frozen_evaluation": {
+    "chronological_partition": {
+      "newest_test": "remaining_rows_after_two_floor_n_divided_by_three_partitions",
+      "oldest_selection": "first_floor_n_divided_by_three_rows",
+      "orientation": "choose_the_higher_positive_conservative_usdt_cashflow_in_selection_only",
+      "selection_tie_or_nonpositive_action": "reject_pair",
+      "validation": "second_floor_n_divided_by_three_rows"
+    },
+    "direction_regimes": {
+      "mark_source": "same_base_USDT_perpetual_settlement_mark_price",
+      "missing_usdt_mark_at_a_union_settlement_action": "reject_pair_without_substitution",
+      "return": "current_mark_divided_by_previous_mark_minus_one",
+      "sideways_absolute_return_bips_maximum": 10,
+      "up": "return_bips_strictly_above_10",
+      "down": "return_bips_strictly_below_negative_10",
+      "sideways": "absolute_return_bips_at_most_10"
+    },
+    "volatility_regimes": {
+      "high_volatility": "absolute_return_at_or_above_the_selection_only_75th_percentile",
+      "percentile_algorithm": "sort_selection_absolute_nonnull_return_bips_and_take_the_one_indexed_ceiling_of_0_75_times_row_count_nearest_rank_value_without_interpolation",
+      "regular_volatility": "absolute_return_below_the_selection_only_75th_percentile"
+    },
+    "path_regimes": {
+      "reversal": "nonzero_return_sign_differs_from_the_previous_nonzero_return_sign",
+      "continuation": "nonzero_return_sign_equals_the_previous_nonzero_return_sign",
+      "previous_sign_scope": "carry_the_previous_nonzero_sign_across_the_complete_chronology_including_selection",
+      "zero_return": "return_equals_zero"
+    },
+    "time_slices": [
+      "validation_total_and_two_chronological_halves",
+      "test_total_and_two_chronological_halves",
+      "every_complete_inner_calendar_quarter_in_validation_and_test"
+    ],
+    "minimum_rows_per_reported_regime": 30,
+    "no_window_threshold_orientation_or_candidate_optimization": true
+  },
+  "decision_gate": {
+    "public_screen_can_only_prioritize_not_accept_an_edge": true,
+    "advance_to_authenticated_fee_collateral_and_prospective_contract_only_when": [
+      "selection_orientation_is_strictly_positive",
+      "validation_and_test_totals_are_each_strictly_positive",
+      "both_halves_of_validation_and_both_halves_of_test_are_strictly_positive",
+      "every_complete_inner_validation_and_test_calendar_quarter_is_nonnegative",
+      "up_down_and_sideways_combined_validation_plus_test_slices_each_have_at_least_30_rows_and_strictly_positive_cash",
+      "high_and_regular_volatility_combined_validation_plus_test_slices_each_have_at_least_30_rows_and_strictly_positive_cash",
+      "reversal_and_continuation_combined_validation_plus_test_slices_each_have_at_least_30_rows_and_strictly_positive_cash",
+      "test_equal_per_leg_fee_break_even_after_current_spread_is_strictly_positive",
+      "all_four_current_top_sides_cover_the_exact_common_minimum_quantity"
+    ],
+    "unresolved_even_after_a_public_pass": [
+      "exact_same_account_commission_rates",
+      "collateral_mode_haircuts_liquidation_and_adl",
+      "realized_two_margin_asset_funding_reconciliation",
+      "entry_exit_basis_and_non_atomic_fill_risk",
+      "capital_opportunity_cost",
+      "prospective_persistence"
+    ],
+    "failure_action": "reject_failed_pair_without_resampling_or_threshold_changes"
+  },
+  "result_sha256": "41d512a4c5c8596bcfbbbfd1dc2e22dceed12c50564673054fa5b9094eebd2fc",
+  "schema_version": "binance-cross-stablecoin-funding-full-history-contract-v3",
+  "status": "frozen_before_any_full_history_backfill_request"
+}
