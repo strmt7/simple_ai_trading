@@ -223,6 +223,16 @@ diagnostics, not accepted edges.
   The failed tool also taught a workflow correction: every future one-use live
   screen must retain its request ledger and decoded source payloads and write a
   terminal failure receipt before propagating any validation exception.
+- The official crypto maker-rebate schedule is now isolated from liquidity
+  rewards. Its source-bound arithmetic artifact is
+  `docs/model-research/polymarket/crypto-maker-rebate-economics-v1.json`, result
+  SHA-256
+  `09f67265772716873c625ada816140332430697894f30af22c05bd0dd6422c8a`.
+  A 50+50 share example at 0.49+0.49 has 1.00 pUSD complete-set spread and
+  0.3498600 pUSD nominal unrounded rebates conditional on both maker fills.
+  This is not an edge: the publicly proven payout floor is zero, fill and queue
+  evidence are absent, and one orphan can still lose 24.50 pUSD without rebate
+  credit.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.
@@ -315,6 +325,11 @@ lease, state, database, and WAL agree.
    schedule, unique per-slot storage, role capacities, host supervision, and a
    pre-market activation receipt. Do not share schedules or storage between
    venues.
+   A distinct Polymarket maker-rebate study may be designed meanwhile, but it
+   may activate only after the protected sidecar boundary and only under a
+   frozen prospective contract measuring authenticated maker fills, queue and
+   cancellation latency, adverse selection, realized rebate payment, and
+   complete orphan P&L. Nominal rebate algebra is not a substitute.
 5. Reject any candidate that fails bull, bear, sideways, choppy, high-volatility,
    liquidity-stress, or latency-stress after-cost slices. Abstention is required
    where evidence is unsupported; no strategy can guarantee profit or prevent

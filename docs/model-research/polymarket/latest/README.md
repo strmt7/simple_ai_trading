@@ -161,6 +161,17 @@ contract prohibits resampling. The
 also records that future one-use screens must persist source payloads and write
 failure evidence before raising validation errors.
 
+The official crypto maker-rebate program is a distinct mechanism from those
+liquidity rewards. The source-bound
+[`conditional economics artifact`](../crypto-maker-rebate-economics-v1.json)
+reconstructs the documented unrounded fee-equivalent algebra. In its fixed
+50-share, 0.49+0.49 example, nominal rebates add 0.3498600 pUSD to the 1.00 pUSD
+complete-set spread only when both maker bids fill. This does not establish an
+edge: public evidence proves no positive payout lower bound, fill probability,
+queue priority, or orphan protection, while one fill can still lose 24.50 pUSD
+at settlement without rebate credit. A prospective execution study remains
+inactive while the independent Round 21 sidecar is protected.
+
 A same-day [live product-regime audit](../round-027-live-product-regime-audit-v1-2026-08-15.json)
 hash-bound an exact BTC five-minute market to `btc-5m-twap-60`, a 60-second
 Chainlink TWAP source, the current crypto fee curve, and an enabled taker-order

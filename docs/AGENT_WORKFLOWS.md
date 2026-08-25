@@ -91,11 +91,21 @@ configuration, fixtures, dependencies, runtime artifacts, or platform inputs
 change. Run the complete required matrix once against the final release tree.
 
 ```powershell
-python -m ruff check .
-python -m ruff format --check path/to/changed.py
+uv run --group test ruff check .
+uv run --group test ruff format --check path/to/changed.py
 uv run --with vulture==2.16 python tools/vulture_check.py
-python tools/update_readme_badges.py --check
-python -m pytest -q
+uv run --group test python tools/update_readme_badges.py --check
+uv run --group test python -m pytest -q
+```
+
+For 100% focused branch coverage of a newly isolated module, use the installed
+`coverage` executable directly; `pytest-cov` is not a project dependency and
+`--cov` arguments are therefore invalid:
+
+```powershell
+uv run --group test coverage erase
+uv run --group test coverage run --branch --source=simple_ai_trading.module_name -m pytest -q tests/test_module_name.py
+uv run --group test coverage report --show-missing --fail-under=100
 ```
 
 The badges in `README.md` are generated from `.github/readme_badges.json` and
