@@ -139,6 +139,27 @@ costs. Do not implement a signed collector while either designated ephemeral
 credential variable is absent. Subscription or redemption is a separate funded
 stage and requires new explicit authority after the read-only gate passes.
 
+For Binance liquid-staking-token conversion parity, do not sample WBETH or
+BNSOL books before same-account signed evidence proves the current conversion
+ratio, redemption quota, enabled state, commission, delay, and account
+eligibility. An executable discount is not direction-neutral while redemption
+leaves unhedged ETH or SOL exposure. Any later screen must price an equal-base
+hedge, spot and hedge fees, funding, basis movement, margin and liquidation,
+transfers, delay, custody, tax, and realized redemption reconciliation. Do not
+implement the signed prequalification while either designated ephemeral
+credential variable is absent.
+
+For Polymarket taker tiers, rebates may reduce fees on legitimate organic taker
+flow but do not create authority to manufacture volume. Never self-match, wash
+trade, generate inauthentic volume, assume a rebate is applied to trade notional,
+ignore fee rounding or market-specific minimum order and tick sizes, or amortize
+a one-time level-up bonus as persistent edge. Current liquidity-reward pool
+figures are configured caps, not payout floors; do not rush a study into the
+remaining tail of an allocation window after a protected boundary. Require a
+new documented allocation with enough preregistered horizon plus authenticated
+queue, fill, cancellation, adverse-selection, orphan-PnL, and realized-payout
+evidence.
+
 For Binance quarterly cash-and-carry, preserve spot buyer and seller commission
 components separately; the generic conservative helper intentionally collapses
 them and is not exact route evidence. Capture fees before refreshing books.

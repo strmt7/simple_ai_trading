@@ -111,6 +111,19 @@ safety gate, blocks Stop, or submits an order.
   Do not freeze another signed collector until both credentials exist; never
   use a marketing APR, example fee, assumed daily cadence, or zero alternative
   yield as a shortcut.
+  A source-first follow-up also identified WBETH/ETH and BNSOL/SOL conversion
+  parity as a distinct direction-neutral candidate. Binance's official staking
+  conversion-rate, quota, reward, and operation-history paths are signed, both
+  ephemeral credentials remained absent, and no collector or book screen was
+  opened. Public liquid-staking-token books do not prove the same account can
+  redeem at a current ratio, fee, quota, or arrival time. The source-triage
+  artifact is `structural-edge-source-triage-v1-2026-08-25.json`, result
+  SHA-256
+  `509f63910c77a582680849e779317396962d06edeffa537e7d5ce8e18a984cb2`.
+  The same artifact repairs the structural registry's missing terminal entry
+  for Round 61 elevated-funding spot/perpetual carry and prohibits manufactured
+  Polymarket taker-tier volume, self-matching, wash trading, and treating
+  one-time bonuses as persistent edge.
   Polymarket cross-condition duplicate discovery found
   one repeated exact question across 607 eligible binary markets, but its two
   canonical rule sets differed; zero exact payout-rule duplicates advanced to
@@ -225,6 +238,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket model | `docs/model-research/polymarket/latest/README.md` |
 | Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
+| Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
 | Model promotion | `docs/MODEL_AND_SIGNAL_VALIDATION.md` and cross-regime contract |

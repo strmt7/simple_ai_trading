@@ -20,7 +20,7 @@ EXPECTED_RESULT_SHA256 = (
     "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "163cba99ad76b6cd07ad71e16c41ad0a72f800d0fe93b2f539b6defcc895753a"
+    "6096affc5e0a04fc6e6f2b09d42ca91ec5ba4f5c0e3a4b8102b46f9297e00461"
 )
 
 
@@ -92,7 +92,7 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 9))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 10))
     candidate = next(
         row
         for row in hypotheses
