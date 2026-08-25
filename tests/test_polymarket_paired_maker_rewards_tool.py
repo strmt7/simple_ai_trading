@@ -26,6 +26,13 @@ SNAPSHOT = (
     / "polymarket"
     / "paired-maker-reward-snapshot-v1-2026-08-25.json"
 )
+SCOPE_ADJUDICATION = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "paired-maker-reward-scope-adjudication-v1.json"
+)
 
 
 def _clob_market() -> dict[str, object]:
@@ -231,6 +238,28 @@ def test_source_snapshot_hash_implementation_and_diagnostic_reconstruct() -> Non
         daily_reward_rate=Decimal(candidate["reward_daily_rate"]),
     )
     assert reconstructed == report["conditional_quote_diagnostic"]
+
+
+def test_scope_adjudication_reconstructs_and_blocks_candidate_continuation() -> None:
+    adjudication = json.loads(SCOPE_ADJUDICATION.read_text(encoding="ascii"))
+    expected_hash = adjudication.pop("result_sha256")
+
+    assert (
+        hashlib.sha256(TOOL._canonical_json(adjudication).encode("ascii")).hexdigest()
+        == expected_hash
+    )
+    assert adjudication["decision"]["status"] == (
+        "rejected_out_of_scope_before_prospective_research"
+    )
+    assert adjudication["decision"]["rerun_permitted"] is False
+    assert (
+        adjudication["authority"]["prospective_capture_permitted_for_this_candidate"]
+        is False
+    )
+    source = adjudication["source_artifact"]
+    assert source["file_sha256"] == hashlib.sha256(SNAPSHOT.read_bytes()).hexdigest()
+    snapshot = json.loads(SNAPSHOT.read_text(encoding="ascii"))
+    assert source["result_sha256"] == snapshot["result_sha256"]
 
 
 def test_rate_limit_stops_without_retry() -> None:

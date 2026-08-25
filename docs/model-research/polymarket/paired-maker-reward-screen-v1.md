@@ -5,6 +5,12 @@
 > but the books failed freshness and public data proves no reward payout or
 > orphan-fill control.
 
+**Scope correction:** this Moonshot condition is not BTC, ETH, or SOL and is
+outside the repository's frozen Polymarket research boundary. The snapshot is
+retained as a negative methodology audit, but it must not be rerun, captured
+prospectively, or used for promotion. The canonical correction is
+[`paired-maker-reward-scope-adjudication-v1.json`](paired-maker-reward-scope-adjudication-v1.json).
+
 This study is independent of market direction. It considers two resting BUY
 orders of equal size, one for YES and one for NO in the same binary condition.
 If both fill, the shares form a complete set worth 1 pUSD at settlement or
@@ -74,11 +80,12 @@ quote diagnostic from the embedded books.
 ## Reopening Gate
 
 Do not turn this into an order-placement loop or repeatedly poll snapshots.
-Reopen only under a frozen prospective public capture contract that records
-reward configuration drift, book changes, quote persistence opportunities,
-trade arrivals, and conservative orphan-risk proxies. Authenticated order,
-queue, fill, reward, and cancellation evidence would still be required before
-any paper or live promotion. No credential was used and no order was placed.
+Do not reopen this candidate. A distinct BTC/ETH/SOL market may advance only
+under a frozen prospective public capture contract that records reward
+configuration drift, book changes, quote persistence opportunities, trade
+arrivals, and conservative orphan-risk proxies. Authenticated order, queue,
+fill, reward, and cancellation evidence would still be required before any
+paper or live promotion. No credential was used and no order was placed.
 
 [fees]: https://docs.polymarket.com/trading/fees
 [reward-method]: https://docs.polymarket.com/programs/liquidity-rewards

@@ -1,0 +1,54 @@
+{
+  "adjudicated_commit": "d536c8264ae1e4ea8eb3678790c836fd75398dfd",
+  "allowed_polymarket_research_assets": [
+    "BTC",
+    "ETH",
+    "SOL"
+  ],
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "prospective_capture_permitted_for_this_candidate": false
+  },
+  "candidate": {
+    "condition_id": "0x321aa3f3983c61883c1ef938219a2aaa288261c5155fc72fd222285f2fec682f",
+    "event_id": "727197",
+    "question": "Will Moonshot be the third-best Chinese AI company at the end of August 2026?",
+    "scope_asset_match": false,
+    "tags": [
+      "AI",
+      "AI Rankings",
+      "China",
+      "Moonshot",
+      "Tech"
+    ]
+  },
+  "decision": {
+    "artifact_preserved_for_accountability": true,
+    "generic_arithmetic_may_be_reused_only_for_in_scope_markets": true,
+    "reason": "candidate_is_outside_the_frozen_BTC_ETH_SOL_polymarket_research_boundary",
+    "rerun_permitted": false,
+    "status": "rejected_out_of_scope_before_prospective_research"
+  },
+  "policy_sources": [
+    {
+      "file_sha256": "03670b362bfdde47b90344a8ff3cfd007bb77dff2ba605fd3adc18b0c1005bf4",
+      "path": "AGENTS.md"
+    },
+    {
+      "file_sha256": "3e905660fde253a9e2fe1ed65052647cf8cc15e4d2dffcca7235ca1bab1effa3",
+      "path": "docs/AGENT_START.md"
+    }
+  ],
+  "result_sha256": "11664fc42b7833e1308562af3913e0d603e2b9bfc3e90b59b3e1be8789348112",
+  "schema_version": "polymarket-paired-maker-reward-scope-adjudication-v1",
+  "source_artifact": {
+    "file_sha256": "80a90cdcaca1dff937b307817dfd15ffc5c0d07fe258547b16e7651157f4b4f3",
+    "path": "docs/model-research/polymarket/paired-maker-reward-snapshot-v1-2026-08-25.json",
+    "result_sha256": "3ed963fe2ff3473dba6c9b5146d842130d4f67ed3a0e8673451330133c68c0b0"
+  }
+}
