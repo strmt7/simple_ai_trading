@@ -6,7 +6,7 @@
     "profitability_claim": false
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
-  "updated_at_utc": "2026-08-25T13:22:03.2402227Z",
+  "updated_at_utc": "2026-08-25T14:02:53.1833957Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
@@ -41,7 +41,7 @@
     },
     {
       "blocking_evidence": [
-        "exact historical option realStrikePrice versus quarterly futures deliveryPrice equality",
+        "numeric option realStrikePrice versus quarterly futures deliveryPrice equality from an explicitly available historical source or a separately frozen prospective expiry",
         "synchronized displayed depth for one exact call put and quarterly future combination",
         "authenticated option and futures fees margin liquidation atomicity and capital cost",
         "prospective capacity persistence and operational reconciliation"
@@ -50,20 +50,29 @@
         {
           "path": "docs/model-research/action-value/binance-option-future-settlement-equivalence-contract-v1.json",
           "result_sha256": "63a57771fe7042381bea0ac052889550738b4890b6c01fadc279e793189b4291"
+        },
+        {
+          "journal_sha256": "9c9116c457c2c2f645a97556cf39eae7a2fcf4184f29c7f673c1af378500ea6d",
+          "path": "docs/model-research/action-value/binance-option-future-settlement-equivalence-journal-v1.json"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-option-future-settlement-equivalence-terminal-adjudication-v1.json",
+          "result_sha256": "a5d34919c4e9c94ca794b73dea57c96bf9c6f9e968cc6c77f240f243c7597601"
         }
       ],
-      "current_status": "eight_get_historical_settlement_equivalence_audit_frozen_but_not_run",
+      "current_status": "terminal_first_valid_empty_history_response_numeric_settlement_equivalence_unproved_and_depth_screen_prohibited",
       "market_direction_forecast_required": false,
       "mechanism": "same_expiry_option_put_call_parity_against_quarterly_future",
-      "next_action": "after_the_exact_implementation_and_contract_are_committed_pushed_and_hosted_verified_run_the_eight_get_audit_once",
+      "next_action": "none_until_an_official_static_history_or_explicit_retention_contract_exists_or_after_the_2026_09_25_matching_expiry_under_a_separately_frozen_prospective_contract",
       "priority_rank": 2,
       "prohibited_shortcuts": [
         "matching expiry timestamps as proof of matching settlement values",
         "non_synchronous ticker and futures snapshots as execution evidence",
         "ticker prices as displayed quantity",
-        "historical equality as an accepted current edge"
+        "historical equality as an accepted current edge",
+        "rerunning_reordering_or_adapting_the_terminal_eight_get_contract"
       ],
-      "retry_trigger": "exact_implementation_and_contract_committed_pushed_and_hosted_verified",
+      "retry_trigger": "official_static_history_or_explicit_retention_contract_available_or_post_2026_09_25_separately_frozen_prospective_settlement_contract",
       "venue_scope": "binance_btc_eth_options_and_quarterly_futures"
     },
     {
@@ -202,7 +211,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "7af51add1ac987b9560e7b3047192930ec6fe267922f02114252efc6fc91cc2f",
+  "result_sha256": "e7f7d371d2306677f6cebe7c8a47ef253fec13e31e1bd23ea2f6275eed953099",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -239,6 +248,11 @@
       "canonical_result_sha256": "4add8a3aea01ebb13e743a85793681b8ca7a8884035daf5cb371f3f2b09900b0",
       "family": "binance_two_leg_quarterly_calendar_spread_as_locked_carry",
       "reason": "initial_far_minus_near_credit_is_offset_by_unknown_exit_spread_or_terminal_far_basis_so_no_fixed_payoff_identity_exists"
+    },
+    {
+      "canonical_result_sha256": "a5d34919c4e9c94ca794b73dea57c96bf9c6f9e968cc6c77f240f243c7597601",
+      "family": "binance_option_future_settlement_equivalence_history_contract_v1",
+      "reason": "the_oldest_first_one_use_contract_stopped_terminally_on_its_first_valid_empty_history_response_and_permits_no_retry_reordering_or_depth_escalation"
     }
   ],
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"

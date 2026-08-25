@@ -224,6 +224,15 @@ receipt or journal before the exception is propagated. A traceback alone is
 not evidence and never permits a retry, replacement market, or adaptive time
 shift under a one-attempt contract.
 
+For a bounded historical endpoint whose retention or archive coverage is not
+explicitly source-bound, preregister request windows newest-first. The first
+response must prove that the required record shape is currently available
+before older windows consume the request budget. A valid empty response is a
+terminal source-availability failure under that frozen contract: preserve it,
+make no later request, and do not adapt the window, symbol, endpoint, or order.
+Record the ordering defect in the adjudication so a different future hypothesis
+cannot silently repeat it.
+
 Format and test the exact implementation before freezing and publishing it.
 Then publish the frozen contract and implementation before the live attempt.
 The terminal receipt must bind both source hashes and must state explicitly

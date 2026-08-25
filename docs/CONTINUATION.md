@@ -243,16 +243,28 @@ diagnostics, not accepted edges.
   BTC/ETH expiry-strike pairs, 184 with at least one complete ticker path, and
   20 non-synchronous gross-positive combinations. The best stale value was
   101.70 USDT per base unit, but ticker prices have no displayed quantity and
-  the futures books arrived about 2.25 hours later, so this is request
-  justification only. A frozen eight-GET audit will compare option
-  `realStrikePrice` with already-recorded quarterly `deliveryPrice` on four
-  dates for BTCUSDT and ETHUSDT. It uses the futures timestamp only as a UTC
-  calendar-date marker, persists each raw body before validation, permits no
-  retry, and makes no new futures request. Run it once only after its exact
-  implementation checkpoint is hosted-verified. Contract:
+  the futures books arrived about 2.25 hours later, so this was request
+  justification only. The frozen eight-GET audit was hosted-verified and run
+  exactly once. Its first request, for BTCUSDT on 2025-09-26, returned HTTP 200
+  with a valid empty array. The raw body was durably journaled before the
+  zero-row validation stopped the run. No other request, retry, adaptive time
+  shift, or depth screen is permitted. The empty response neither proves nor
+  disproves common settlement values; it leaves the required numeric identity
+  unproved. The contract had ordered its windows oldest-first without first
+  source-binding retention or archive availability. Future bounded historical
+  endpoint contracts with unknown retention must preregister newest-first
+  ordering and fail closed if the newest response cannot prove record
+  availability. Contract:
   `docs/model-research/action-value/binance-option-future-settlement-equivalence-contract-v1.json`,
   result SHA-256
   `63a57771fe7042381bea0ac052889550738b4890b6c01fadc279e793189b4291`.
+  Terminal adjudication:
+  `docs/model-research/action-value/binance-option-future-settlement-equivalence-terminal-adjudication-v1.json`,
+  result SHA-256
+  `a5d34919c4e9c94ca794b73dea57c96bf9c6f9e968cc6c77f240f243c7597601`.
+  Retry only if an official static history or explicit retention contract
+  becomes available, or after 2026-09-25 under a separately frozen prospective
+  contract.
 - Binance quarterly cash-and-carry: one catalog fetch and one spot/futures book
   pair per selected contract covered BTCUSDT and ETHUSDT current/next quarters
   at 12 quantities. All 12 displayed gross bases were positive; nine cleared a
@@ -416,7 +428,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`7af51add1ac987b9560e7b3047192930ec6fe267922f02114252efc6fc91cc2f`.
+`e7f7d371d2306677f6cebe7c8a47ef253fec13e31e1bd23ea2f6275eed953099`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
