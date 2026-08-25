@@ -203,6 +203,15 @@ must not be hand-edited.
 
 ## One-Use Public Source Runs
 
+For same-expiry Binance option/future parity, matching contract timestamps do
+not prove a fixed payoff. First bind the option `realStrikePrice` and quarterly
+futures `deliveryPrice` using exact historical records. A historical futures
+`deliveryTime` at 00:00 is only a calendar-date marker; do not silently add
+eight hours. Historical equality may justify one synchronized displayed-depth
+screen, but cannot accept an edge. Ticker-only option prices have no displayed
+quantity, and non-synchronous option/futures snapshots are never execution
+evidence.
+
 Before the first network request, a bounded one-use research tool must create
 or reserve its terminal receipt path and initialize a self-hashed persistent
 request journal. Before each request, atomically persist its exact fingerprint.
