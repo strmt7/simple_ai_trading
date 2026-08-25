@@ -53,9 +53,11 @@ safety gate, blocks Stop, or submits an order.
   primary date; it cannot satisfy the frozen three-date/300-market source gate.
 - The 2026-08-25 target-free structural-parity screens found no accepted edge.
   Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
-  negative-risk events. Binance's best three-leg spot cycle was only 0.6462 bps
-  gross and required less than 0.2154 bps fee per leg to break even; exact
-  account fees remain unaudited, so this is not an executable edge.
+  negative-risk events and zero gross-positive logical-implication bundles
+  across 2,572 threshold/deadline pairs. Binance's best three-leg spot cycle
+  was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
+  break even; exact account fees remain unaudited, so this is not an executable
+  edge.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -71,7 +73,7 @@ safety gate, blocks Stop, or submits an order.
 | Current plan or handoff | `docs/CONTINUATION.md` |
 | Binance model/backtest | `docs/model-research/action-value/latest/README.md` |
 | Polymarket model | `docs/model-research/polymarket/latest/README.md` |
-| Structural parity | `src/simple_ai_trading/structural_parity.py` and the two 2026-08-25 snapshots |
+| Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
 | Model promotion | `docs/MODEL_AND_SIGNAL_VALIDATION.md` and cross-regime contract |
 | Execution/risk | `docs/LIVE_MARKET_SIMULATION.md` and venue runbook |
 | AI | `docs/ai/risk-review/latest/comparison.json` |
