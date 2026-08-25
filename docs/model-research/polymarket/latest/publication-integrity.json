@@ -2,9 +2,9 @@
   "accepted_historical_predictive_edge": false,
   "artifacts": [
     {
-      "bytes": 64015,
+      "bytes": 64251,
       "path": "latest/README.md",
-      "sha256": "7a439d3ec3c215fb160c92edbba36cc8527312b7416320d45803117d450728ef"
+      "sha256": "148b1919186c4159371dbffe711f314ef7b547c791be0979c0f002376647dd58"
     },
     {
       "bytes": 77606,
@@ -629,7 +629,7 @@
   "latest_graph_round": 23,
   "latest_research_round": 29,
   "live_trading_authority": false,
-  "manifest_sha256": "21dd76cd036b441ac9efaf39658c75707be14f9fe9ac85fc94a6ed2a6ae6b477",
+  "manifest_sha256": "c648598162b26e9ceb47cebac000fe7316b445a90fba504af81466939688c4bf",
   "manual_chart_edits_permitted": false,
   "market_variant": "fiveminute",
   "paper_authority": false,

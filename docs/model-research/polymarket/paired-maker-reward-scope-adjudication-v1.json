@@ -29,6 +29,9 @@
   },
   "decision": {
     "artifact_preserved_for_accountability": true,
+    "both_fill_and_orphan_settlement_arithmetic_valid": true,
+    "conditional_reward_diagnostic_valid": false,
+    "conditional_reward_invalid_reason": "hypothetical_complementary_own_asks_were_omitted_from_post_quote_midpoints",
     "generic_arithmetic_may_be_reused_only_for_in_scope_markets": true,
     "reason": "candidate_is_outside_the_frozen_BTC_ETH_SOL_polymarket_research_boundary",
     "rerun_permitted": false,
@@ -44,7 +47,7 @@
       "path": "docs/AGENT_START.md"
     }
   ],
-  "result_sha256": "11664fc42b7833e1308562af3913e0d603e2b9bfc3e90b59b3e1be8789348112",
+  "result_sha256": "1092e78677a8a2fd8ed3e75a222b64bd5ea9744ee09f18728d1157d556ca9bfb",
   "schema_version": "polymarket-paired-maker-reward-scope-adjudication-v1",
   "source_artifact": {
     "file_sha256": "80a90cdcaca1dff937b307817dfd15ffc5c0d07fe258547b16e7651157f4b4f3",

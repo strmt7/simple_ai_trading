@@ -5,6 +5,7 @@ from decimal import Decimal
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 from typing import Mapping
 
 import pytest
@@ -33,6 +34,15 @@ SCOPE_ADJUDICATION = (
     / "polymarket"
     / "paired-maker-reward-scope-adjudication-v1.json"
 )
+
+
+def _git_blob(commit: str, path: str) -> bytes:
+    return subprocess.run(
+        ["git", "show", f"{commit}:{path}"],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+    ).stdout
 
 
 def _clob_market() -> dict[str, object]:
@@ -207,6 +217,8 @@ def test_run_uses_four_public_requests_and_never_accepts_snapshot(
 def test_source_snapshot_hash_implementation_and_diagnostic_reconstruct() -> None:
     report = json.loads(SNAPSHOT.read_text(encoding="ascii"))
     expected_hash = report.pop("result_sha256")
+    adjudication = json.loads(SCOPE_ADJUDICATION.read_text(encoding="ascii"))
+    source_commit = adjudication["adjudicated_commit"]
 
     assert (
         hashlib.sha256(TOOL._canonical_json(report).encode("ascii")).hexdigest()
@@ -216,15 +228,19 @@ def test_source_snapshot_hash_implementation_and_diagnostic_reconstruct() -> Non
     assert (
         implementation["tool_sha256"]
         == hashlib.sha256(
-            (ROOT / "tools" / "screen_polymarket_paired_maker_rewards.py").read_bytes()
+            _git_blob(
+                source_commit,
+                "tools/screen_polymarket_paired_maker_rewards.py",
+            )
         ).hexdigest()
     )
     assert (
         implementation["module_sha256"]
         == hashlib.sha256(
-            (
-                ROOT / "src" / "simple_ai_trading" / "polymarket_liquidity_rewards.py"
-            ).read_bytes()
+            _git_blob(
+                source_commit,
+                "src/simple_ai_trading/polymarket_liquidity_rewards.py",
+            )
         ).hexdigest()
     )
     books = {book["asset_id"]: book for book in report["source_contract"]["books"]}
@@ -252,6 +268,11 @@ def test_scope_adjudication_reconstructs_and_blocks_candidate_continuation() -> 
         "rejected_out_of_scope_before_prospective_research"
     )
     assert adjudication["decision"]["rerun_permitted"] is False
+    assert adjudication["decision"]["conditional_reward_diagnostic_valid"] is False
+    assert (
+        adjudication["decision"]["both_fill_and_orphan_settlement_arithmetic_valid"]
+        is True
+    )
     assert (
         adjudication["authority"]["prospective_capture_permitted_for_this_candidate"]
         is False

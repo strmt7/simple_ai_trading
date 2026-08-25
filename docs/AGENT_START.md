@@ -74,8 +74,10 @@ safety gate, blocks Stop, or submits an order.
   exact account costs, collateral/liquidation economics, and delivery-index
   versus spot-exit basis remain unresolved. Polymarket paired-maker quoting had
   a stale displayed both-fill surplus of 1.20 pUSD, but the public reward payout
-  floor is zero and the 9.42 pUSD orphan-loss bound dwarfed the conditional
-  reward rate. Its Moonshot candidate is outside the BTC/ETH/SOL research scope
+  floor is zero and the 9.42 pUSD orphan-loss bound remains valid. Its reported
+  conditional share, daily-equivalent, and payback are invalid because the
+  hypothetical complementary own asks were omitted from the post-quote
+  midpoints. Its Moonshot candidate is outside the BTC/ETH/SOL research scope
   and is retained only as a negative methodology audit. Do not repeat either
   snapshot; future Polymarket reward work must be BTC/ETH/SOL and satisfy the
   evidence gates in the screen document.

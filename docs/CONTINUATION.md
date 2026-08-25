@@ -188,8 +188,11 @@ diagnostics, not accepted edges.
   hypothetical 20-share YES+NO bids summed to 0.940 for 1.20 pUSD displayed
   both-fill gross. The books were 8,074 ms old and failed the 5,000 ms gate.
   Public data proves a zero reward payout floor; a separately labeled
-  conditional calculation was only 0.2980 pUSD/day against 9.42 pUSD maximum
-  orphan settlement loss. The event is augmented negative-risk, so no
+  conditional calculation reported 0.2980 pUSD/day against 9.42 pUSD maximum
+  orphan settlement loss, but its share, daily-equivalent, and payback values
+  are invalid because the hypothetical complementary own asks were omitted
+  from the post-quote midpoints. The both-fill and orphan settlement arithmetic
+  remain valid. The event is augmented negative-risk, so no
   event-wide payout identity was assumed. The Moonshot condition is outside the
   frozen BTC/ETH/SOL Polymarket research scope and is retained only as a
   negative methodology audit; no rerun or prospective continuation is allowed.
@@ -232,7 +235,9 @@ rule and numeric-epoch binding. For Polymarket rewards, the corrected
 instantaneous denominator is old aggregate `Q1 + Q2`, never the minimum of the
 two aggregates. Public books do not reveal per-maker grouping, queue position,
 sampling persistence, or final reward allocation; without that evidence the
-provable payout lower bound is zero.
+provable payout lower bound is zero. A physical binary BUY order also appears
+as a complementary ASK at `1-price`; hypothetical post-quote midpoints must
+include that mirrored own ask while the physical order is scored only once.
 
 ## Protected Local Work
 
