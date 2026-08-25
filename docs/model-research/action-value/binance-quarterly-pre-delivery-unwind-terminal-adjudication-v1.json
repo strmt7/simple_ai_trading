@@ -1,0 +1,63 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T07:46:34.546Z",
+  "evidence": {
+    "audit_path": "docs/model-research/action-value/binance-quarterly-pre-delivery-unwind-audit-v1-2026-08-25.json",
+    "audit_raw_file_sha256": "d6f45c2e37f2c2606ff00a321eaae6c5b5a1c5b1ca04ded49fbb947dd1c56444",
+    "audit_result_sha256": "07556c4c128fdde32b8bc3ade55134e25eedec157715585aac9e561d87ac9e5a",
+    "contract_file_sha256": "cae7750d3bbe6b5bdc09dbc035f6450f04d64ca97b32ed966521222c09ffbf24",
+    "contract_result_sha256": "f61a8c9dfd86274292c5dae154120871ea5358e2a5ca004b92574e6bdcb7657c",
+    "failure": {
+      "message": "futures requires exactly 60 bars",
+      "request_count": 2,
+      "status": "terminal_failure_without_retry",
+      "type": "ValueError"
+    },
+    "first_futures_response": {
+      "canonical_payload_sha256": "aef8b400def973a8054e6e6203d47d7ab3e601ff866facf1a87bed3109b5b570",
+      "decoded_bar_count": 70,
+      "first_bar_open_ms": 1727420400000,
+      "http_status": 200,
+      "last_bar_close_ms": 1727424599999,
+      "last_bar_open_ms": 1727424540000,
+      "post_schedule_bar_count": 10,
+      "post_schedule_first_open_ms": 1727424000000,
+      "post_schedule_last_open_ms": 1727424540000,
+      "post_schedule_rows_all_flat_at_price": "65426.0",
+      "post_schedule_rows_all_trade_count_zero": true,
+      "post_schedule_rows_all_volume_zero": true,
+      "pre_schedule_bar_count": 60,
+      "raw_response_sha256": "aef8b400def973a8054e6e6203d47d7ab3e601ff866facf1a87bed3109b5b570",
+      "scheduled_delivery_ms": 1727424000000,
+      "symbol": "BTCUSDT_240927",
+      "url": "https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT_240927&interval=1m&startTime=1727420400000&endTime=1727424599999&limit=70"
+    },
+    "paired_spot_response": {
+      "canonical_payload_sha256": "55f797349ce672d69c087697b853c612679a455927db4c1a96eba88d74616451",
+      "decoded_bar_count": 70,
+      "http_status": 200,
+      "raw_response_sha256": "55f797349ce672d69c087697b853c612679a455927db4c1a96eba88d74616451",
+      "symbol": "BTCUSDT",
+      "url": "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&startTime=1727420400000&endTime=1727424599999&limit=70"
+    }
+  },
+  "methodology_correction": {
+    "future_design_requirement": "authenticate_order_state_or_source_bind_explicit_trade_count_and_volume_semantics_before_using_returned_kline_presence_as_a_cutoff_test",
+    "invalid_criterion": "absence_of_a_returned_futures_kline_at_or_after_the_scheduled_delivery_epoch",
+    "reason": "the_frozen_endpoint_response_returned_ten_flat_zero_volume_zero_trade_rows_at_and_after_the_normal_schedule",
+    "salvage_or_rerun_permitted": false
+  },
+  "outcome": {
+    "current_carry_status": "unqualified_not_accepted",
+    "historical_basis_observations_accepted": 0,
+    "remaining_frozen_requests_permitted": 0,
+    "status": "terminal_source_shape_rejection_no_basis_result"
+  },
+  "result_sha256": "e45df8dbffdb8e8e09a542ad3cf2f2f7fe855a775c10f9c07cfa30b290505521",
+  "schema_version": "binance-quarterly-pre-delivery-unwind-terminal-adjudication-v1"
+}
