@@ -91,6 +91,39 @@
       "custody counterparty jurisdiction and tax costs"
     ]
   },
+  "public_attribution_diagnostic": {
+    "adjudication": "reject_public_reward_activity_as_exact_market_or_holding_reward_evidence",
+    "aggregate_reward_activity": {
+      "condition_id_blank_row_count": 38,
+      "condition_id_nonblank_row_count": 0,
+      "newest_timestamp": 1787616015,
+      "oldest_timestamp": 1773792169,
+      "response_bytes": 16823,
+      "response_sha256": "c2ac6479802fd51f356c472f5003ecc4cf9ae2791a73a7c2907da2a3735b1d05",
+      "row_count": 38,
+      "selected_wallet": "0x00ffb912f1bf01c0123869ddb92d4b6a6ad3f7ad",
+      "selection_basis": "one_current_exact_candidate_top_20_holder_used_only_to_test_public_attribution_not_as_a_representative_sample",
+      "source_url": "https://data-api.polymarket.com/activity?user=0x00ffb912f1bf01c0123869ddb92d4b6a6ad3f7ad&type=REWARD&limit=500&offset=0"
+    },
+    "conclusions": [
+      "no wallet in the capped current top 20 holders per outcome appeared in both returned outcome groups",
+      "the capped holder response does not prove that no complete-set holder exists outside the returned rows",
+      "aggregate REWARD rows with blank conditionId cannot prove the exact condition reward subtype split-origin eligibility or rate",
+      "authenticated explicitly labeled account evidence and reconciled pUSD balance change remain required"
+    ],
+    "exact_candidate_holders": {
+      "cross_outcome_wallet_overlap_count": 0,
+      "holder_row_count": 40,
+      "market_condition_id": "0xdaa4866bae18be58c5a79d2aeeffd035ec78f1bb49dbd88f72993997778a990f",
+      "outcome_group_count": 2,
+      "per_outcome_limit": 20,
+      "response_bytes": 14444,
+      "response_sha256": "ba9c446a9c91633e9c74918739af284175f5d7f3dcb624bd803dc72d19786316",
+      "source_url": "https://data-api.polymarket.com/holders?market=0xdaa4866bae18be58c5a79d2aeeffd035ec78f1bb49dbd88f72993997778a990f&limit=20&minBalance=1",
+      "unique_wallet_count": 40
+    },
+    "scope": "single_public_diagnostic_not_a_population_or_payout_study"
+  },
   "promotion_evidence_gate": {
     "account_eligibility": "an authenticated account record that explicitly labels the exact condition balance and reward day as holding-reward eligible",
     "capital_identity": "confirmed split transaction plus equal YES and NO balances followed by a confirmed merge restoring pUSD",
@@ -107,7 +140,7 @@
     "help_center_annual_rate": "0.0325",
     "status": "official_source_conflict_still_blocks_current_rate_claim"
   },
-  "result_sha256": "0b30c235eb10a4a5994067cae6a354ee4f4fb5e6d95a4a7ad50315747a89f6db",
+  "result_sha256": "2d3650d65f248294395fcac336c6650e0c6bc332cb490c6f0bac70bc11244e2c",
   "schema_version": "polymarket-complete-set-holding-reward-readiness-v2",
   "source_continuity": {
     "economics_v1_path": "docs/model-research/polymarket/complete-set-holding-reward-economics-v1.json",
@@ -116,5 +149,5 @@
     "positions_source_response_sha256": "bb131a3894d52149058f8554edaa6fafdd9ad72ab2351efbec605d4b3a6e2cc5",
     "positions_source_url": "https://docs.polymarket.com/concepts/positions-tokens.md"
   },
-  "status": "stronger_market_direction_independent_hypothesis_public_candidate_and_zero_user_gas_route_confirmed_realized_payout_still_required"
+  "status": "market_direction_independent_hypothesis_public_candidate_and_zero_user_gas_route_confirmed_public_reward_attribution_rejected_realized_payout_still_required"
 }
