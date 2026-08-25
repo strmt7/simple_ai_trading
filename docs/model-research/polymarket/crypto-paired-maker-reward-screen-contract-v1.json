@@ -1,0 +1,98 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_permitted": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "screen_may_accept_an_edge": false
+  },
+  "capture": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "book_max_event_age_ms": 5000,
+    "book_max_timestamp_skew_ms": 1000,
+    "market_duration_ms": 300000,
+    "market_epoch_rule": "floor(screen_started_at_ms/300000)*300",
+    "minimum_remaining_market_ms_for_diagnostic": 60000,
+    "one_attempt_only": true,
+    "receipt_max_span_ms": 2500,
+    "slug_rule": "lower(asset)-updown-5m-market_epoch_seconds",
+    "unexpected_or_missing_market_action": "reject_entire_screen",
+    "use_next_epoch_or_replacement_market_permitted": false
+  },
+  "created_at_utc": "2026-08-25T06:41:04.031Z",
+  "decision": {
+    "advance_only_to_prospective_capture_design_when": [
+      "all_three_assets_pass_identity_configuration_and_freshness",
+      "at_least_one_asset_has_non_crossing_paired_bids_below_one",
+      "at_least_one_asset_has_positive_daily_reward_configuration"
+    ],
+    "edge_acceptance_possible_from_this_screen": false,
+    "otherwise": "reject_without_resampling",
+    "prospective_capture_still_requires": [
+      "frozen_nonadaptive_schedule",
+      "reward_configuration_drift",
+      "book_and_quote_persistence",
+      "trade_arrivals_and_adverse_selection",
+      "orphan_fill_and_cancellation_risk",
+      "realized_authenticated_order_scoring_and_reward_evidence_before_promotion",
+      "after_cost_cross_regime_acceptance"
+    ]
+  },
+  "economics": {
+    "both_fill_identity": "equal_quantity_up_plus_down_settles_or_merges_to_one_pusd_per_pair",
+    "maker_fee_assumption_permitted": false,
+    "maker_fee_requirement": "gamma_fee_schedule_must_explicitly_be_taker_only_and_clob_book_must_match_gamma",
+    "maximum_orphan_settlement_loss": "max(up_bid_price,down_bid_price)*reward_minimum_size",
+    "publicly_proven_reward_payout_lower_bound": "0",
+    "rate_per_day_interpretation": "official_api_daily_reward_rate_only_not_a_five_minute_payout_forecast",
+    "reward_share_or_payout_claim_permitted": false
+  },
+  "frozen_source": {
+    "arithmetic_commit": "cb2b5001f8cc974dbed8d55f3964bdbce1347017",
+    "arithmetic_module_path": "src/simple_ai_trading/polymarket_liquidity_rewards.py",
+    "arithmetic_module_sha256": "9176eff0a8eb16d110fee86a8c6d71184f21919944d230606cb5505e0a209d19",
+    "documentation_urls": [
+      "https://docs.polymarket.com/programs/liquidity-rewards",
+      "https://docs.polymarket.com/api-reference/rewards/get-raw-rewards-for-a-specific-market",
+      "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "https://docs.polymarket.com/trading/fees"
+    ]
+  },
+  "hypothesis": {
+    "market_direction_dependency": "both_fill_complete_set_economics_are_direction_neutral_but_orphan_inventory_is_directional",
+    "statement": "paired_resting_up_and_down_bids_may_jointly_capture_complete_set_spread_and_liquidity_rewards_without_forecasting_direction",
+    "status": "unobserved_under_this_contract"
+  },
+  "quote_rule": {
+    "down_bid": "best_displayed_down_bid_plus_one_tick",
+    "hypothetical_only": true,
+    "include_complementary_own_asks_in_post_quote_midpoints": true,
+    "maximum_spread_source": "exact_condition_reward_configuration",
+    "physical_order_scored_once": true,
+    "post_quote_cross_action": "reject_asset",
+    "quantity": "exact_condition_reward_minimum_size",
+    "require_combined_bid_price_below_one": true,
+    "tick_size_source": "gamma_and_book_exact_match",
+    "up_bid": "best_displayed_up_bid_plus_one_tick"
+  },
+  "request_contract": {
+    "429_action": "stop_entire_screen_without_retry_and_record_retry_after_if_present",
+    "maximum_public_requests": 5,
+    "requests": [
+      "one_gamma_get_for_three_exact_current_epoch_slugs",
+      "three_exact_condition_reward_gets_with_sponsored_true",
+      "one_batch_books_post_for_all_six_tokens"
+    ],
+    "response_payloads_and_hashes_required": true,
+    "retry_permitted": false
+  },
+  "result_sha256": "30737337626e61353019245b73235b284944909aad3269d499a0f59981609344",
+  "schema_version": "polymarket-crypto-paired-maker-reward-screen-contract-v1",
+  "status": "frozen_before_first_live_screen"
+}
