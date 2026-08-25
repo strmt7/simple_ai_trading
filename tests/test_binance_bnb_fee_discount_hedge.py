@@ -19,11 +19,42 @@ CONTRACT_PATH = (
     / "action-value"
     / "binance-bnb-fee-discount-hedge-contract-v1.json"
 )
+RESULT_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "binance-bnb-fee-discount-hedge-screen-v1-2026-08-25.json"
+)
+JOURNAL_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "binance-bnb-fee-discount-hedge-journal-v1.json"
+)
+RAW_ROOT = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "raw"
+    / "binance-bnb-fee-discount-hedge-v1"
+)
 EXPECTED_CONTRACT_SHA256 = (
     "388c6cc72d079b0fcbcafae5bb04a8466bb4ba92ae38725b0139693d62af1401"
 )
 EXPECTED_IMPLEMENTATION_SHA256 = (
     "ee21d67d2663177131a0b10f00a9afeb9063590b02d41b9cde6445f253a42b3c"
+)
+EXPECTED_RESULT_SHA256 = (
+    "7b918a503f99f5fb1ff7d012a007f6aefa2586030f6d3f9233b0b08e2adb479f"
+)
+EXPECTED_JOURNAL_SHA256 = (
+    "d0a085527b1b61e6b37e1bfdab3c37bb4a7da209365d6ec4e15761eadf67efb5"
+)
+EXPECTED_JOURNAL_FILE_SHA256 = (
+    "e01a431790d0448094c8c493aaf89a3c6de7cd2920cf1c9965df00a2d4cd8479"
 )
 SPEC = importlib.util.spec_from_file_location(
     "screen_binance_bnb_fee_discount_hedge", TOOL_PATH
@@ -252,6 +283,40 @@ def test_mock_run_uses_exactly_six_gets_and_retains_every_raw_body(
     assert result["verdict"]["signed_requests_made"] == 0
     assert result["verdict"]["orders_placed"] is False
     assert result["mechanism"]["standalone_profit_strategy"] is False
+
+
+def test_published_result_journal_and_raw_bodies_reconstruct() -> None:
+    result = json.loads(RESULT_PATH.read_bytes())
+    journal_bytes = JOURNAL_PATH.read_bytes()
+    journal = json.loads(journal_bytes)
+
+    assert result["result_sha256"] == EXPECTED_RESULT_SHA256
+    assert _embedded_hash(result, "result_sha256") == EXPECTED_RESULT_SHA256
+    assert journal["journal_sha256"] == EXPECTED_JOURNAL_SHA256
+    assert _embedded_hash(journal, "journal_sha256") == EXPECTED_JOURNAL_SHA256
+    assert hashlib.sha256(journal_bytes).hexdigest() == EXPECTED_JOURNAL_FILE_SHA256
+    assert journal["status"] == "data_complete"
+    assert journal["completed_request_count"] == 6
+    assert len(journal["responses"]) == 6
+    assert result["source_binding"]["journal_file_sha256"] == (
+        EXPECTED_JOURNAL_FILE_SHA256
+    )
+    assert result["source_binding"]["journal_sha256"] == EXPECTED_JOURNAL_SHA256
+    assert result["source_binding"]["raw_response_count"] == 6
+    for response in journal["responses"]:
+        receipt = response["receipt"]
+        raw_path = RAW_ROOT / response["request"]["raw_filename"]
+        raw = raw_path.read_bytes()
+        assert len(raw) == receipt["payload_bytes"]
+        assert hashlib.sha256(raw).hexdigest() == receipt["payload_sha256"]
+        assert receipt["status_code"] == 200
+
+    assert result["failure_reasons"] == ["insufficient_complete_inner_months"]
+    assert result["funding_evaluation"]["row_count"] == 500
+    assert result["funding_evaluation"]["complete_inner_month_count"] == 4
+    assert result["verdict"]["qualified_public_prequalification"] is False
+    assert result["verdict"]["accepted_edge"] is False
+    assert result["verdict"]["profitability_claim"] is False
 
 
 def test_invalid_json_is_persisted_and_terminal_before_validation(
