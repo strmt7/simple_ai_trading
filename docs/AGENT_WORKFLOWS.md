@@ -127,6 +127,18 @@ endpoint and symbol universe. Credential absence is a terminal missing-evidence
 state for the current assessment, not permission to substitute a public tier or
 invent a discount.
 
+For BFUSD/RWUSD stable-value yield allocation, use the official signed
+`rateHistory`, `quota`, and exact USDT/USDC flexible-product-list GETs as a
+read-only prequalification stage. A public promotion or documentation example
+is not a current account rate or fee. Do not assume one history row represents
+one day; prove timestamp cadence before integrating APR. Compare the candidate
+with the best exact eligible
+same-currency alternative yield, never an assumed zero-yield cash balance, and
+subtract entry, redemption, transfer, delay, custody, tax, and opportunity
+costs. Do not implement a signed collector while either designated ephemeral
+credential variable is absent. Subscription or redemption is a separate funded
+stage and requires new explicit authority after the read-only gate passes.
+
 For Binance quarterly cash-and-carry, preserve spot buyer and seller commission
 components separately; the generic conservative helper intentionally collapses
 them and is not exact route evidence. Capture fees before refreshing books.

@@ -1,0 +1,144 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T14:40:24.7577544Z",
+  "discovery_observation": {
+    "adjudication": "exclude_from_economic_evidence",
+    "authenticated": false,
+    "bfusd_visible": false,
+    "observation": "The logged-out Binance Earn page displayed an RWUSD promotion at 3.36% APR but redirected the BFUSD product URL to the generic Earn page.",
+    "reason": "A logged-out promotion does not prove account eligibility, capacity, realized rate, entry cost, redemption cost, or a comparable BFUSD rate."
+  },
+  "economic_gate": {
+    "accepted_only_if": [
+      "the exact account can subscribe and redeem the selected product at the evaluated size",
+      "the rate-history timestamp cadence is proved before rates are time-weighted",
+      "the conservative integrated target reward exceeds the exact integrated alternative cash yield",
+      "the positive differential also exceeds every entry redemption transfer delay custody tax and opportunity cost",
+      "a separately authorized minimum-size cycle later reconciles subscription rewards redemption and balances"
+    ],
+    "alternative_yield_rule": "Compare against the best exact eligible same-currency cash yield available to the account, never against an assumed zero-yield balance.",
+    "break_even_identity": "break_even_days = 365 * total_fractional_friction / positive_conservative_annualized_reward_differential",
+    "integrated_reward_identity": "integrated_reward_fraction = sum(annual_percentage_rate_i * effective_interval_days_i / 365)",
+    "net_switch_identity": "net_switch_fraction = integrated_target_reward_fraction - integrated_source_or_best_alternative_reward_fraction - total_fractional_friction",
+    "rate_cadence_rule": "Do not assume one row equals one day. Derive effective intervals from returned timestamps and leave the final open interval uncredited unless its end is independently bound.",
+    "rejection_conditions": [
+      "nonpositive conservative reward differential",
+      "unknown entry or exit friction",
+      "unproved account eligibility or quota at the evaluated size",
+      "break-even horizon longer than the proved rate persistence horizon",
+      "using documentation examples marketing APR or a public promotion as current account evidence"
+    ]
+  },
+  "mechanism": {
+    "market_direction_forecast_required": false,
+    "name": "same_account_stable_value_yield_allocation_between_bfusd_rwusd_and_cash_alternatives",
+    "not_market_invariant": true,
+    "risk_boundary": "The candidate avoids a crypto price-direction forecast but remains exposed to variable reward rates, issuer and venue custody, redemption delay and fee changes, product availability, stablecoin conversion, tax, and opportunity cost."
+  },
+  "preflight": {
+    "checked_at_utc": "2026-08-25T14:38:43.9606280Z",
+    "environment_variables": [
+      "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY",
+      "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET"
+    ],
+    "request_count": 0,
+    "status": "both_designated_ephemeral_environment_variables_absent"
+  },
+  "read_only_prequalification": {
+    "endpoint_count": 6,
+    "endpoints": [
+      {
+        "evidence": "account-specific BFUSD reported subscription quota plus fast and standard redemption quota minimum fee and delay; the documented response does not separately expose enabled-state fields",
+        "method": "GET",
+        "path": "/sapi/v1/bfusd/quota",
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "descending BFUSD annualPercentageRate observations with timestamps",
+        "method": "GET",
+        "path": "/sapi/v1/bfusd/history/rateHistory",
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "account-specific RWUSD subscription capacity minimum and enabled state plus fast and standard redemption quota minimum fee and delay",
+        "method": "GET",
+        "path": "/sapi/v1/rwusd/quota",
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "descending RWUSD annualPercentageRate observations with timestamps",
+        "method": "GET",
+        "path": "/sapi/v1/rwusd/history/rateHistory",
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "eligible USDT flexible alternatives including current rate tiers purchase redemption sold-out status and minimum",
+        "method": "GET",
+        "path": "/sapi/v1/simple-earn/flexible/list",
+        "request_parameters": {
+          "asset": "USDT"
+        },
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "eligible USDC flexible alternatives including current rate tiers purchase redemption sold-out status and minimum",
+        "method": "GET",
+        "path": "/sapi/v1/simple-earn/flexible/list",
+        "request_parameters": {
+          "asset": "USDC"
+        },
+        "security_type": "USER_DATA"
+      }
+    ],
+    "execution_rule": "Do not implement or freeze a signed collector while either designated ephemeral credential variable is absent. Once both are present, separately source-bind and hosted-verify a GET-only capture before its one permitted run.",
+    "forbidden_methods": [
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE"
+    ],
+    "redaction_rule": "Never serialize headers signatures query strings credential values or secret-derived material."
+  },
+  "separately_authorized_realization_stage": {
+    "authority_required": "new explicit funded minimum-size authority after read-only prequalification passes",
+    "minimum_evidence": [
+      "exact subscription debit and received product amount",
+      "rewards history rows reconciled to held position and balance changes",
+      "exact redemption amount fee arrival time and received stablecoin",
+      "complete same-currency cash flow including all external costs and foregone alternative yield"
+    ],
+    "prohibited_now": [
+      "/sapi/v1/bfusd/subscribe",
+      "/sapi/v1/bfusd/redeem",
+      "/sapi/v1/rwusd/subscribe",
+      "/sapi/v1/rwusd/redeem"
+    ]
+  },
+  "sources": [
+    {
+      "retrieved_at_utc": "2026-08-25T14:38:43.9606280Z",
+      "source_binding": "official_current_documentation_url_and_endpoint_contract",
+      "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-simple-earn/api/rest-api/bfusd"
+    },
+    {
+      "retrieved_at_utc": "2026-08-25T14:38:43.9606280Z",
+      "source_binding": "official_current_documentation_url_and_endpoint_contract",
+      "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-simple-earn/api/rest-api/rwusd"
+    },
+    {
+      "retrieved_at_utc": "2026-08-25T14:46:07.7556976Z",
+      "source_binding": "official_current_documentation_url_and_endpoint_contract",
+      "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-simple-earn/api/rest-api/flexible-locked"
+    }
+  ],
+  "status": "direction_neutral_yield_candidate_requires_read_only_account_rate_quota_and_exact_alternative_yield_evidence",
+  "result_sha256": "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a",
+  "schema_version": "binance-stable-yield-allocation-evidence-gate-v1"
+}

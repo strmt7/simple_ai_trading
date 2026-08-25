@@ -6,7 +6,7 @@
     "profitability_claim": false
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
-  "updated_at_utc": "2026-08-25T14:02:53.1833957Z",
+  "updated_at_utc": "2026-08-25T14:40:24.7577544Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
@@ -41,6 +41,36 @@
     },
     {
       "blocking_evidence": [
+        "same-account BFUSD and RWUSD rate histories with proved timestamp cadence",
+        "same-account subscription availability and exact fast and standard redemption quota fee and delay",
+        "exact eligible same-currency alternative cash yield instead of a zero-yield assumption",
+        "all entry redemption transfer custody tax delay and opportunity costs",
+        "separately authorized minimum-size subscription reward redemption and balance reconciliation"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-stable-yield-allocation-evidence-gate-v1.json",
+          "result_sha256": "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
+        }
+      ],
+      "current_status": "official_read_only_rate_and_quota_paths_proved_but_both_ephemeral_credentials_absent_so_zero_signed_requests_and_no_current_net_yield_edge",
+      "market_direction_forecast_required": false,
+      "mechanism": "same_account_stable_value_yield_allocation",
+      "next_action": "when_both_documented_ephemeral_environment_variables_exist_source_bind_and_host_verify_one_get_only_six_endpoint_prequalification_then_run_it_once",
+      "priority_rank": 2,
+      "prohibited_shortcuts": [
+        "logged-out marketing APR as account rate evidence",
+        "documentation example fees or rates as current values",
+        "zero as the alternative cash yield",
+        "assuming one rate-history row equals one day",
+        "calling direction-neutral market-invariant or risk-free",
+        "freezing another signed collector while credentials are absent"
+      ],
+      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
+      "venue_scope": "binance_bfusd_rwusd_and_same_currency_cash_alternatives"
+    },
+    {
+      "blocking_evidence": [
         "numeric option realStrikePrice versus quarterly futures deliveryPrice equality from an explicitly available historical source or a separately frozen prospective expiry",
         "synchronized displayed depth for one exact call put and quarterly future combination",
         "authenticated option and futures fees margin liquidation atomicity and capital cost",
@@ -64,7 +94,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "same_expiry_option_put_call_parity_against_quarterly_future",
       "next_action": "none_until_an_official_static_history_or_explicit_retention_contract_exists_or_after_the_2026_09_25_matching_expiry_under_a_separately_frozen_prospective_contract",
-      "priority_rank": 2,
+      "priority_rank": 3,
       "prohibited_shortcuts": [
         "matching expiry timestamps as proof of matching settlement values",
         "non_synchronous ticker and futures snapshots as execution evidence",
@@ -96,7 +126,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "quarterly_spot_future_cash_and_carry",
       "next_action": "when_both_documented_ephemeral_environment_variables_are_available_run_the_frozen_capture_once_then_apply_the_exact_components_as_a_non_synchronous_fee_gate_before_any_new_book_sampling",
-      "priority_rank": 3,
+      "priority_rank": 4,
       "prohibited_shortcuts": [
         "35_bps_sensitivity_as_actual_account_cost",
         "historical deliveryTime as exact delivery epoch",
@@ -123,7 +153,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "spot_market_maker_rebates",
       "next_action": "query_only_the_frozen_account_evidence_path_after_explicit_read_only_credential_authority",
-      "priority_rank": 4,
+      "priority_rank": 5,
       "prohibited_shortcuts": [
         "cached 2024 public fee table as current rate",
         "symbol commission response as maker-rebate proof",
@@ -149,7 +179,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "three_leg_spot_conversion",
       "next_action": "do_not_resample_books_until_exact_account_fees_first_prove_the_path_can_clear_the_frozen_break_even",
-      "priority_rank": 5,
+      "priority_rank": 6,
       "prohibited_shortcuts": [
         "USD-M futures commission as spot fee",
         "public VIP tier as account fee",
@@ -175,7 +205,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates",
       "next_action": "after_the_protected_boundary_freeze_a_prospective_authenticated_fill_rebate_and_orphan_study_only_if_explicit_authority_exists",
-      "priority_rank": 6,
+      "priority_rank": 7,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
         "both-fill assumption",
@@ -200,7 +230,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "cross_venue_prediction_complete_set",
       "next_action": "none_without_explicit_read_only_credential_authority_and_a_new_authenticated_contract",
-      "priority_rank": 7,
+      "priority_rank": 8,
       "prohibited_shortcuts": [
         "generated no-authorization label without live preflight",
         "title equality as payout equality",
@@ -211,7 +241,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "e7f7d371d2306677f6cebe7c8a47ef253fec13e31e1bd23ea2f6275eed953099",
+  "result_sha256": "163cba99ad76b6cd07ad71e16c41ad0a72f800d0fe93b2f539b6defcc895753a",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

@@ -265,6 +265,22 @@ diagnostics, not accepted edges.
   Retry only if an official static history or explicit retention contract
   becomes available, or after 2026-09-25 under a separately frozen prospective
   contract.
+- Binance BFUSD/RWUSD stable-value yield allocation is a direction-neutral
+  candidate, not a market-invariant or accepted edge. Official current API
+  documentation exposes signed read-only `rateHistory` and `quota` GETs for
+  both products plus flexible-product-list GETs for exact eligible USDT/USDC
+  alternatives, including account-specific subscription capacity and fast and
+  standard redemption fee/delay fields. The current process had neither
+  designated ephemeral credential variable, so zero signed requests were made.
+  A logged-out Binance Earn page displayed an RWUSD 3.36% APR promotion but no
+  comparable BFUSD rate; that observation is excluded from economic evidence.
+  Prequalification must compare timestamp-integrated rates with the best exact
+  same-currency alternative yield and every entry, redemption, delay, custody,
+  tax, and opportunity cost. Subscription/redemption remains a separately
+  authorized funded stage. Canonical gate:
+  `docs/model-research/action-value/binance-stable-yield-allocation-evidence-gate-v1.json`,
+  result SHA-256
+  `3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a`.
 - Binance quarterly cash-and-carry: one catalog fetch and one spot/futures book
   pair per selected contract covered BTCUSDT and ETHUSDT current/next quarters
   at 12 quantities. All 12 displayed gross bases were positive; nine cleared a
@@ -428,7 +444,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`e7f7d371d2306677f6cebe7c8a47ef253fec13e31e1bd23ea2f6275eed953099`.
+`163cba99ad76b6cd07ad71e16c41ad0a72f800d0fe93b2f539b6defcc895753a`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -510,6 +526,10 @@ lease, state, database, and WAL agree.
    repetition could create an edge.
    A repeat is justified only by a frozen prospective sampling contract or
    materially new fee/execution evidence.
+   For BFUSD/RWUSD, wait until both designated ephemeral credential variables
+   exist, then source-bind and hosted-verify one six-GET rate, quota, and
+   flexible-alternative prequalification before its single run. Do not build
+   credential-dependent collection code while that trigger is false.
 4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
    campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
    use the source-continuity recovery design to freeze separate Round 77 Binance
