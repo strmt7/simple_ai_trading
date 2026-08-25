@@ -9,6 +9,7 @@ from typing import Mapping
 import pytest
 import requests
 
+import simple_ai_trading.quarterly_carry_account_evidence as evidence_module
 from simple_ai_trading.quarterly_carry_account_evidence import (
     FUTURES_SYMBOLS,
     SPOT_SYMBOLS,
@@ -304,3 +305,139 @@ def test_tool_missing_credential_preflight_makes_no_request_or_artifact(
         capture_tool.main(["--output", str(output), "--journal", str(journal)])
     assert not output.exists()
     assert not journal.exists()
+
+
+def test_low_level_validators_reject_ambiguous_values() -> None:
+    with pytest.raises(ValueError, match="must be an object"):
+        evidence_module._mapping([], label="candidate")
+    with pytest.raises(ValueError, match="must be a decimal rate"):
+        evidence_module._decimal_rate({}, label="rate")
+    with pytest.raises(ValueError, match="must be a decimal rate"):
+        evidence_module._decimal_rate("not-a-number", label="rate")
+    with pytest.raises(ValueError, match="must be an integer"):
+        evidence_module._integer(True, label="count")
+    with pytest.raises(ValueError, match="rate-limit response header differs"):
+        evidence_module._rate_limit_headers({"X-MBX-USED-WEIGHT-1M": ""})
+    with pytest.raises(ValueError, match="request evidence differs"):
+        evidence_module.RequestEvidence(
+            request_id="",
+            venue="spot",
+            path="/api/v3/time",
+            symbol=None,
+            request_started_wall_ns=1,
+            received_wall_ns=1,
+            request_started_monotonic_ns=1,
+            received_monotonic_ns=1,
+            payload_sha256="0" * 64,
+            response_bytes=1,
+            rate_limit_headers=(),
+        ).as_dict()
+
+
+def test_capture_result_rejects_incomplete_coverage() -> None:
+    spot = tuple((symbol, {}) for symbol in SPOT_SYMBOLS)
+    futures = tuple((symbol, {}) for symbol in FUTURES_SYMBOLS)
+    with pytest.raises(ValueError, match="spot commission symbol coverage differs"):
+        evidence_module.QuarterlyCarryAccountEvidence(
+            spot_commissions=(),
+            futures_commissions=(),
+            futures_account_configuration={},
+            requests=(),
+        ).as_dict()
+    with pytest.raises(ValueError, match="futures commission symbol coverage differs"):
+        evidence_module.QuarterlyCarryAccountEvidence(
+            spot_commissions=spot,
+            futures_commissions=(),
+            futures_account_configuration={},
+            requests=(),
+        ).as_dict()
+    with pytest.raises(ValueError, match="request evidence coverage differs"):
+        evidence_module.QuarterlyCarryAccountEvidence(
+            spot_commissions=spot,
+            futures_commissions=futures,
+            futures_account_configuration={},
+            requests=(),
+        ).as_dict()
+
+
+@pytest.mark.parametrize(
+    "body,match",
+    [
+        (b'{"a":1,"a":2}', "duplicate JSON keys"),
+        (b'{"a":NaN}', "non-finite JSON"),
+        (b"{", "not strict JSON"),
+    ],
+)
+def test_strict_json_rejects_ambiguous_or_malformed_body(
+    body: bytes, match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        evidence_module._strict_json(body)
+
+
+def test_normalizers_reject_missing_identity_fields() -> None:
+    spot = _spot_payload("BTCUSDT")
+    spot["discount"]["discountAsset"] = ""
+    with pytest.raises(ValueError, match="discount asset differs"):
+        evidence_module._normalize_spot_commission(spot, symbol="BTCUSDT")
+    with pytest.raises(ValueError, match="futures commission response symbol differs"):
+        evidence_module._normalize_futures_commission(
+            {
+                "symbol": "ETHUSDT_260925",
+                "makerCommissionRate": "0.0002",
+                "takerCommissionRate": "0.0004",
+                "rpiCommissionRate": "0.00005",
+            },
+            symbol="BTCUSDT_260925",
+        )
+    with pytest.raises(ValueError, match="capture arguments differ"):
+        capture_quarterly_carry_account_evidence(
+            api_key="contains whitespace",
+            api_secret="temporary-secret",
+        )
+
+
+def test_response_stream_and_json_failures_are_terminally_journaled() -> None:
+    class _RawResponse:
+        status_code = 200
+        headers: Mapping[str, object] = {}
+
+        def __init__(self, *, stream_error: bool) -> None:
+            self.stream_error = stream_error
+
+        def iter_content(self, chunk_size: int = 4_096):
+            assert chunk_size == 4_096
+            if self.stream_error:
+                raise requests.ConnectionError("synthetic stream failure")
+            yield b"{"
+
+        def close(self) -> None:
+            return None
+
+    def run(stream_error: bool) -> list[Mapping[str, object]]:
+        journal: list[Mapping[str, object]] = []
+
+        def request(*_args: object, **_kwargs: object) -> _RawResponse:
+            return _RawResponse(stream_error=stream_error)
+
+        match = "stream failed" if stream_error else "JSON differs"
+        with pytest.raises(RuntimeError, match=match):
+            evidence_module._request_json(
+                request,
+                request_id="01-clock",
+                venue="spot",
+                base_url="https://api.binance.com",
+                path="/api/v3/time",
+                symbol=None,
+                headers={},
+                params={},
+                timeout_seconds=5,
+                journal=journal.append,
+            )
+        return journal
+
+    stream_journal = run(True)
+    assert stream_journal[-1]["failure_type"] == "ConnectionError"
+    json_journal = run(False)
+    assert json_journal[-2]["phase"] == "response_persisted_before_validation"
+    assert json_journal[-1]["failure_type"] == "strict_json"
