@@ -93,5 +93,11 @@ arrivals, and conservative orphan-risk proxies. Authenticated order, queue,
 fill, reward, and cancellation evidence would still be required before any
 paper or live promotion. No credential was used and no order was placed.
 
+The first separately frozen BTC/ETH/SOL source screen stopped before books when
+Gamma and the exact CLOB reward endpoint disagreed on BTC reward configuration.
+Its contract permits no resampling. The terminal
+[`attempt receipt`](crypto-paired-maker-reward-screen-attempt1-failure-v1.json)
+preserves the failure and the missing-payload limitation.
+
 [fees]: https://docs.polymarket.com/trading/fees
 [reward-method]: https://docs.polymarket.com/programs/liquidity-rewards

@@ -80,7 +80,10 @@ safety gate, blocks Stop, or submits an order.
   midpoints. Its Moonshot candidate is outside the BTC/ETH/SOL research scope
   and is retained only as a negative methodology audit. Do not repeat either
   snapshot; future Polymarket reward work must be BTC/ETH/SOL and satisfy the
-  evidence gates in the screen document.
+  evidence gates in the screen document. The first frozen in-scope crypto
+  screen then stopped after two public requests because BTC reward settings
+  disagreed between Gamma and the exact CLOB reward endpoint. It reached no
+  books or economics and is terminal without resampling.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or

@@ -101,6 +101,24 @@ python -m pytest -q
 The badges in `README.md` are generated from `.github/readme_badges.json` and
 must not be hand-edited.
 
+## One-Use Public Source Runs
+
+Before the first network request, a bounded one-use research tool must create
+or reserve its terminal receipt path and initialize an append-only in-memory
+request ledger. Every completed response must retain its request timing,
+decoded payload, canonical payload hash, and raw-response hash. A validation,
+HTTP, rate-limit, or serialization failure must atomically write a rejected
+terminal receipt from that ledger before the exception is propagated. A
+traceback alone is not evidence and never permits a retry, replacement market,
+or adaptive time shift under a one-attempt contract.
+
+Format and test the exact implementation before freezing and publishing it.
+Then publish the frozen contract and implementation before the live attempt.
+The terminal receipt must bind both source hashes and must state explicitly
+whether books, economics, credentials, or orders were reached. Never repair a
+failed one-use artifact by resampling; fix the workflow for a separately frozen
+hypothesis only when its own nonadaptive contract permits a new attempt.
+
 After a current AI governance benchmark, use
 `tools/build_ai_model_provenance.py` to rescore the exact reports and verify the
 Ollama manifest, config, and every referenced blob before atomically writing
