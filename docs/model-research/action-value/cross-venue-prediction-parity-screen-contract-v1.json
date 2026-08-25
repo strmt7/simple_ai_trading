@@ -1,0 +1,156 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T08:35:05.1256883Z",
+  "economic_identity": {
+    "candidate_paths": [
+      "buy_binance_yes_plus_buy_polymarket_no",
+      "buy_polymarket_yes_plus_buy_binance_no"
+    ],
+    "gross_payoff_upper_bound": "one_common_numeraire_unit_only_after_exact_payout_equivalence_and_collateral_redeemability_are_proved",
+    "gross_positive_condition": "combined_executable_asks_plus_all_nonnegative_costs_strictly_below_the_proven_common_payoff",
+    "market_direction_forecast_required": false
+  },
+  "equivalence_gate": {
+    "canonical_fields": [
+      "underlying_asset",
+      "threshold_or_event",
+      "comparison_operator",
+      "touch_intraperiod_or_terminal_fixing_semantics",
+      "reference_price_or_resolution_source",
+      "start_epoch",
+      "end_epoch",
+      "timezone",
+      "rounding_and_boundary_treatment",
+      "dispute_cancellation_and_void_treatment",
+      "full_question_and_description"
+    ],
+    "missing_or_conflicting_field_action": "reject_pair_before_order_books",
+    "same_title_sufficient": false,
+    "same_vendor_condition_or_orderbook_action": "classify_as_same_book_mirror_and_exclude_cross_venue_edge",
+    "same_vendor_condition_or_orderbook_sufficiently_independent": false
+  },
+  "execution_gate": {
+    "book_age_maximum_milliseconds": 1000,
+    "cross_venue_book_skew_maximum_milliseconds": 500,
+    "minimum_complete_set_size": "5",
+    "required_costs": [
+      "both_venue_trading_fees",
+      "collateral_conversion_and_fx_haircut",
+      "deposit_transfer_bridge_and_withdrawal_costs",
+      "partial_fill_and_inventory_unwind",
+      "capital_opportunity_cost_until_both_redemptions",
+      "counterparty_custody_chain_and_resolution_divergence_risk"
+    ],
+    "required_depth": "every required ask must cover the exact common size after venue precision and minimum-size alignment",
+    "simultaneous_execution_assumed": false
+  },
+  "frozen_public_query_plan": {
+    "binance_detail": {
+      "endpoint": "GET https://api.binance.com/sapi/v1/w3w/wallet/prediction/market/detail",
+      "maximum_requests": 30,
+      "parameter": "marketTopicId_from_the_complete_scoped_list_only",
+      "precondition": "scoped_topic_count_must_not_exceed_30"
+    },
+    "binance_market_list": {
+      "endpoint": "GET https://api.binance.com/sapi/v1/w3w/wallet/prediction/market/list",
+      "fixed_parameters": {
+        "l1Category": "crypto",
+        "limit": 100,
+        "orderBy": "ASC",
+        "sortBy": "END_DATE"
+      },
+      "maximum_requests": 3,
+      "offsets": [
+        0,
+        100,
+        200
+      ],
+      "pagination_rule": "stop_after_first_page_with_fewer_than_100_topics_otherwise_three_full_pages_is_terminal_incomplete_coverage"
+    },
+    "book_requests": {
+      "binance_endpoint": "GET https://api.binance.com/sapi/v1/w3w/wallet/prediction/order-book",
+      "maximum_exact_equivalent_groups": 10,
+      "maximum_total_book_requests": 40,
+      "polymarket_endpoint": "GET https://clob.polymarket.com/book",
+      "precondition": "exact_equivalence_passed_and_group_count_at_most_10"
+    },
+    "polymarket_market_list": {
+      "endpoint": "GET https://gamma-api.polymarket.com/markets",
+      "fixed_parameters": {
+        "active": true,
+        "closed": false,
+        "limit": 500
+      },
+      "maximum_requests": 4,
+      "offsets": [
+        0,
+        500,
+        1000,
+        1500
+      ],
+      "pagination_rule": "stop_after_first_page_with_fewer_than_500_markets_otherwise_four_full_pages_is_terminal_incomplete_coverage"
+    },
+    "scope_filter": {
+      "assets": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "binance_topic_count_above_cap_action": "terminal_incomplete_without_selection_or_detail_queries",
+      "market_state": "active_open_binary_only",
+      "selection_after_prices_allowed": false,
+      "title_only_matching_allowed": false
+    }
+  },
+  "official_binance_contract_source": {
+    "commit": "fb9f065c28842fdfc637b4ba015d9b344037f637",
+    "files": [
+      {
+        "git_blob_sha1": "1c9d8bd18d077ec0364ff3ff07cb2c98902ddeb4",
+        "path": "clients/w3w-prediction/docs/MarketDataApi.md",
+        "size_bytes": 14475
+      },
+      {
+        "git_blob_sha1": "b2d716717d262d8f9a664f49c237d6ebb76a13e1",
+        "path": "clients/w3w-prediction/docs/ListPredictionMarketsResponseMarketTopicsInner.md",
+        "size_bytes": 1261
+      },
+      {
+        "git_blob_sha1": "51110f3907ff86bc732bb2ad75f7fdac8949227e",
+        "path": "clients/w3w-prediction/docs/GetMarketDetailResponse.md",
+        "size_bytes": 1558
+      },
+      {
+        "git_blob_sha1": "46918fc0ec873baded453d3c8e5d45df0a445a1c",
+        "path": "clients/w3w-prediction/docs/GetMarketDetailResponseMarketsInner.md",
+        "size_bytes": 841
+      },
+      {
+        "git_blob_sha1": "a64989a3727d6a9a5563e2f37f899d942c108725",
+        "path": "clients/w3w-prediction/docs/GetMarketDetailResponseMarketsInnerOutcomesInner.md",
+        "size_bytes": 392
+      },
+      {
+        "git_blob_sha1": "a66fbc5832634b158d5335876d120f4e87ab0436",
+        "path": "clients/w3w-prediction/docs/QueryOrderBookResponse.md",
+        "size_bytes": 517
+      }
+    ],
+    "repository": "https://github.com/binance/binance-connector-java"
+  },
+  "result_sha256": "6cfb13c1088ab4356f8a037df0d2f059e94fba03029a6746badfe3a6d2ea9f5c",
+  "schema_version": "cross-venue-prediction-parity-screen-contract-v1",
+  "terminal_rules": [
+    "stop_without_books_when_no_exact_payout_equivalent_group_exists",
+    "stop_without_economics_when_binance_is_a_same_book_distribution_mirror",
+    "stop_on_pagination_or_candidate_cap_incompleteness_without_selecting_a_subset",
+    "stop_when_any_gross_upper_bound_is_nonpositive_before_authenticated_execution_work",
+    "never_place_or_preview_an_order_under_this_public_research_contract"
+  ]
+}
