@@ -6,7 +6,7 @@
     "profitability_claim": false
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
-  "updated_at_utc": "2026-08-25T14:40:24.7577544Z",
+  "updated_at_utc": "2026-08-25T15:46:10.2678036Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
@@ -71,6 +71,35 @@
     },
     {
       "blocking_evidence": [
+        "same-account WBETH and BNSOL conversion-rate histories",
+        "current personal staking and redemption quotas enabled states commission fees and redemption periods",
+        "exact executable liquid-staking-token and base-asset books with account commissions",
+        "equal-base hedge fees funding basis margin liquidation transfer and delay costs",
+        "realized minimum-size redemption arrival and balance reconciliation"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/structural-edge-source-triage-v1-2026-08-25.json",
+          "result_sha256": "509f63910c77a582680849e779317396962d06edeffa537e7d5ce8e18a984cb2"
+        }
+      ],
+      "current_status": "official_signed_conversion_rate_quota_reward_and_operation_paths_proved_but_both_ephemeral_credentials_absent_so_zero_signed_requests_and_no_current_redeemable_discount_edge",
+      "market_direction_forecast_required": false,
+      "mechanism": "liquid_staking_token_conversion_parity",
+      "next_action": "when_both_documented_ephemeral_environment_variables_exist_source_bind_one_get_only_WBETH_BNSOL_conversion_quota_and_account_prequalification_before_any_public_book_or_hedge_sampling",
+      "priority_rank": 3,
+      "prohibited_shortcuts": [
+        "public_LST_book_as_redeemable_conversion_value",
+        "documentation_example_ratio_fee_or_delay_as_current_account_evidence",
+        "unhedged_redemption_carry_as_market_direction_independent",
+        "ignoring_funding_basis_margin_liquidation_transfer_or_delay_costs",
+        "freezing_a_signed_collector_while_credentials_are_absent"
+      ],
+      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
+      "venue_scope": "binance_wbeth_eth_bnsol_sol_and_equal_base_hedges"
+    },
+    {
+      "blocking_evidence": [
         "numeric option realStrikePrice versus quarterly futures deliveryPrice equality from an explicitly available historical source or a separately frozen prospective expiry",
         "synchronized displayed depth for one exact call put and quarterly future combination",
         "authenticated option and futures fees margin liquidation atomicity and capital cost",
@@ -94,7 +123,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "same_expiry_option_put_call_parity_against_quarterly_future",
       "next_action": "none_until_an_official_static_history_or_explicit_retention_contract_exists_or_after_the_2026_09_25_matching_expiry_under_a_separately_frozen_prospective_contract",
-      "priority_rank": 3,
+      "priority_rank": 4,
       "prohibited_shortcuts": [
         "matching expiry timestamps as proof of matching settlement values",
         "non_synchronous ticker and futures snapshots as execution evidence",
@@ -126,7 +155,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "quarterly_spot_future_cash_and_carry",
       "next_action": "when_both_documented_ephemeral_environment_variables_are_available_run_the_frozen_capture_once_then_apply_the_exact_components_as_a_non_synchronous_fee_gate_before_any_new_book_sampling",
-      "priority_rank": 4,
+      "priority_rank": 5,
       "prohibited_shortcuts": [
         "35_bps_sensitivity_as_actual_account_cost",
         "historical deliveryTime as exact delivery epoch",
@@ -153,7 +182,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "spot_market_maker_rebates",
       "next_action": "query_only_the_frozen_account_evidence_path_after_explicit_read_only_credential_authority",
-      "priority_rank": 5,
+      "priority_rank": 6,
       "prohibited_shortcuts": [
         "cached 2024 public fee table as current rate",
         "symbol commission response as maker-rebate proof",
@@ -179,7 +208,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "three_leg_spot_conversion",
       "next_action": "do_not_resample_books_until_exact_account_fees_first_prove_the_path_can_clear_the_frozen_break_even",
-      "priority_rank": 6,
+      "priority_rank": 7,
       "prohibited_shortcuts": [
         "USD-M futures commission as spot fee",
         "public VIP tier as account fee",
@@ -205,7 +234,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates",
       "next_action": "after_the_protected_boundary_freeze_a_prospective_authenticated_fill_rebate_and_orphan_study_only_if_explicit_authority_exists",
-      "priority_rank": 7,
+      "priority_rank": 8,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
         "both-fill assumption",
@@ -230,7 +259,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "cross_venue_prediction_complete_set",
       "next_action": "none_without_explicit_read_only_credential_authority_and_a_new_authenticated_contract",
-      "priority_rank": 8,
+      "priority_rank": 9,
       "prohibited_shortcuts": [
         "generated no-authorization label without live preflight",
         "title equality as payout equality",
@@ -241,7 +270,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "163cba99ad76b6cd07ad71e16c41ad0a72f800d0fe93b2f539b6defcc895753a",
+  "result_sha256": "6096affc5e0a04fc6e6f2b09d42ca91ec5ba4f5c0e3a4b8102b46f9297e00461",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -275,6 +304,11 @@
       "reason": "zero_of_two_recent_candidates_passed_the_frozen_2898_settlement_full_history_fx_stress_time_and_market_regime_gate"
     },
     {
+      "canonical_result_sha256": "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4",
+      "family": "binance_elevated_funding_spot_perpetual_carry",
+      "reason": "the_frozen_Round_61_matched_base_replay_failed_capacity_and_after_cost_economic_gates_across_BTCUSDT_ETHUSDT_and_SOLUSDT"
+    },
+    {
       "canonical_result_sha256": "4add8a3aea01ebb13e743a85793681b8ca7a8884035daf5cb371f3f2b09900b0",
       "family": "binance_two_leg_quarterly_calendar_spread_as_locked_carry",
       "reason": "initial_far_minus_near_credit_is_offset_by_unknown_exit_spread_or_terminal_far_basis_so_no_fixed_payoff_identity_exists"
@@ -283,6 +317,11 @@
       "canonical_result_sha256": "a5d34919c4e9c94ca794b73dea57c96bf9c6f9e968cc6c77f240f243c7597601",
       "family": "binance_option_future_settlement_equivalence_history_contract_v1",
       "reason": "the_oldest_first_one_use_contract_stopped_terminally_on_its_first_valid_empty_history_response_and_permits_no_retry_reordering_or_depth_escalation"
+    },
+    {
+      "canonical_result_sha256": "509f63910c77a582680849e779317396962d06edeffa537e7d5ce8e18a984cb2",
+      "family": "polymarket_manufactured_complete_set_taker_tier_volume",
+      "reason": "tier_rebates_are_cost_reductions_not_standalone_edge_and_manufactured_self_matched_wash_or_other_inauthentic_volume_is_prohibited"
     }
   ],
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"

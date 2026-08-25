@@ -444,10 +444,32 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`163cba99ad76b6cd07ad71e16c41ad0a72f800d0fe93b2f539b6defcc895753a`.
+`6096affc5e0a04fc6e6f2b09d42ca91ec5ba4f5c0e3a4b8102b46f9297e00461`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
+
+The 2026-08-25 source-first triage is canonical at
+`docs/model-research/structural-edge-source-triage-v1-2026-08-25.json`, result
+SHA-256 `509f63910c77a582680849e779317396962d06edeffa537e7d5ce8e18a984cb2`.
+It repairs an omission in the terminal registry: Round 61 already rejected
+matched-base elevated-funding spot/perpetual carry after capacity and after-cost
+gates, so that family must not be rediscovered from its earlier funding-only
+pass. It also preserves Binance WBETH/ETH and BNSOL/SOL conversion parity as a
+distinct direction-neutral hypothesis, but every official Binance REST
+conversion-rate and quota input reviewed is signed and both ephemeral credential
+variables remain absent.
+No collector, book sample, signed request, or edge claim was opened. Public LST
+books alone cannot prove redeemable value.
+
+Polymarket taker-tier rebates are cost reductions for legitimate organic taker
+flow, not authority to manufacture a complete-set volume loop. Do not self-match,
+wash trade, create inauthentic volume, ignore fee precision and market-specific
+minimums, or treat a one-time level-up bonus as persistent edge. The current
+August crypto TWAP liquidity-reward caps are materially relevant, but the
+protected boundary leaves too little of that stated window for a representative
+post-boundary study. Wait for a later documented allocation with enough frozen
+horizon and explicit account plus paper or funding authority.
 
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
@@ -517,7 +539,8 @@ lease, state, database, and WAL agree.
 2. Keep the completed model-dev three-way audit frozen. Do not bulk-integrate
    stale or divergent files; reevaluate a specific path only when a current task
    requires it.
-3. Do not rerun rejected Binance funding carry, USDT/USDC perpetual funding
+3. Do not rerun rejected Binance elevated-funding spot/perpetual carry,
+   USDT/USDC perpetual funding
    differential, quarterly carry, two-sided touch making,
    Polymarket binary complete-set taking, negative-risk parity, logical
    threshold/deadline implication parity, Binance spot triangles, Binance
@@ -530,6 +553,10 @@ lease, state, database, and WAL agree.
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build
    credential-dependent collection code while that trigger is false.
+   The same credential trigger applies to WBETH/ETH and BNSOL/SOL conversion
+   parity. Source-bind conversion history, quota, account eligibility, exact
+   fees, redemption delay, and an equal-base hedge before any public book
+   sampling; an unhedged redemption is not market-direction independent.
 4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
    campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
    use the source-continuity recovery design to freeze separate Round 77 Binance

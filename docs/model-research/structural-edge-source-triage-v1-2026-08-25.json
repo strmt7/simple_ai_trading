@@ -1,0 +1,121 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "live_trading_authority": false,
+    "venue_market_data_requests_made": 0,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "signed_requests_made": 0
+  },
+  "created_at_utc": "2026-08-25T15:46:10.2678036Z",
+  "existing_family_reconciliation": {
+    "binance_elevated_funding_spot_perpetual_carry": {
+      "canonical_report_sha256": "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4",
+      "design_path": "docs/model-research/action-value/round-061-carry-economic-replay-design.json",
+      "design_sha256": "eadab11fea709aa562f11557e08887a155a8d446cefa09c77153c2b1967159cc",
+      "historical_publication_commit": "c4f3434566d5dbb81894c100682792ef0d5e7eaf",
+      "historical_report_path": "docs/model-research/action-value/latest/report.json",
+      "observed_registry_gap": "The current progress ledger and continuation rejected this family, but the structural registry terminal_do_not_repeat list did not name it.",
+      "rejection_basis": "The frozen Round 61 matched-base long-spot short-perpetual replay failed capacity and after-cost economic gates across BTCUSDT ETHUSDT and SOLUSDT.",
+      "status": "terminal_do_not_repeat_without_materially_new_exogenous_execution_or_cost_evidence"
+    }
+  },
+  "preflight": {
+    "binance_ephemeral_api_key_present": false,
+    "binance_ephemeral_api_secret_present": false,
+    "polymarket_protected_boundary_reached": false,
+    "polymarket_protected_boundary_utc": "2026-08-29T23:40:00Z"
+  },
+  "purpose": "source_first_triage_of_distinct_market_direction_neutral_mechanisms_without_repeating_terminal_screens_or_building_collectors_before_their_triggers",
+  "reviewed_mechanisms": [
+    {
+      "blocking_evidence": [
+        "same-account WBETH and BNSOL conversion-rate histories",
+        "current personal staking and redemption quotas enabled states commission fees and redemption periods",
+        "exact executable LST and base-asset spot books with account commissions",
+        "equal-base hedge fees funding basis margin liquidation transfer and delay costs",
+        "realized minimum-size redemption arrival and balance reconciliation"
+      ],
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_liquid_staking_token_conversion_parity",
+      "observed_facts": [
+        "The official Binance ETH Staking REST API exposes signed GET account quota WBETH rate-history reward and operation-history endpoints; WBETH or BETH redemption is a signed TRADE POST whose response includes conversionRatio and arrivalTime.",
+        "The official Binance SOL Staking REST API exposes signed GET account quota BNSOL rate-history reward and operation-history endpoints; the quota response includes redeemPeriod commissionFee stakeable redeemable and soldOut fields.",
+        "Both designated ephemeral Binance credential variables were absent, so no signed request was made and no current conversion value eligibility fee capacity or edge was observed.",
+        "A public LST order book without the same-account redeemable conversion value cannot prove a discount or executable redemption edge."
+      ],
+      "residual_market_risks": [
+        "base-asset movement during redemption unless an equal-base hedge is maintained",
+        "LST conversion-rate and redemption-policy changes",
+        "perpetual funding and basis movement",
+        "margin liquidation and venue custody",
+        "redemption delay and transfer failure"
+      ],
+      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
+      "status": "distinct_candidate_trigger_false_no_collector_frozen_no_edge_claim",
+      "venue_scope": "binance_eth_sol_staking_spot_and_equal_base_hedge"
+    },
+    {
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_manufactured_complete_set_taker_tier_volume",
+      "observed_facts": [
+        "The official Taker Rebate Program gives weighted volume only to taker trades and defines weighted volume from trade size entry price category weight and bonuses.",
+        "Tier rebates apply only after the tier is reached and are not backfilled; level-up bonuses are one-time and every rate threshold weight and bonus is discretionary.",
+        "The official fee help says takers can earn a portion of fees back and defines the fee curve, while exact minimum order size tick size and fee parameters remain market-specific.",
+        "The program explicitly reserves adjustment or removal for wash trading self-matching or other inauthentic trading."
+      ],
+      "prohibited_shortcuts": [
+        "self_matching",
+        "wash_trading",
+        "manufactured_or_inauthentic_volume",
+        "assuming_the_tier_rebate_is_trade_notional_instead_of_a_portion_of_fees",
+        "ignoring_fee_rounding_minimum_order_size_tick_size_or_book_capacity",
+        "treating_a_one_time_bonus_as_persistent_trading_edge"
+      ],
+      "status": "not_a_permitted_edge_family_legitimate_organic_rebates_are_cost_reduction_only",
+      "venue_scope": "polymarket_btc_eth_sol"
+    },
+    {
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_crypto_twap_liquidity_rewards",
+      "observed_facts": [
+        "The current official page documents configured August reward caps for BTC ETH and SOL 5-minute 15-minute and 4-hour TWAP markets.",
+        "Actual payout is relative to other makers and random minute samples and the configured pool is only a cap.",
+        "The protected boundary is later than nearly the entire documented August allocation window, so a rushed post-boundary activation could not establish representative persistence.",
+        "Existing repository work already proved that public reward settings can disagree and that displayed paired quotes omit queue orphan-fill adverse-selection and realized-payout evidence."
+      ],
+      "retry_trigger": "after_2026_08_29T23_40_00Z_only_if_a_new_documented_allocation_leaves_enough_preregistered_horizon_and_explicit_account_and_paper_or_funding_authority_exists",
+      "status": "material_current_program_evidence_but_not_actionable_before_boundary_or_with_remaining_august_horizon",
+      "venue_scope": "polymarket_btc_eth_sol"
+    }
+  ],
+  "result_sha256": "509f63910c77a582680849e779317396962d06edeffa537e7d5ce8e18a984cb2",
+  "schema_version": "structural-edge-source-triage-v1",
+  "sources": [
+    {
+      "title": "Binance ETH Staking REST API",
+      "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-staking/api/rest-api/eth-staking"
+    },
+    {
+      "title": "Binance SOL Staking REST API",
+      "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-staking/api/rest-api/sol-staking"
+    },
+    {
+      "title": "Polymarket Taker Rebate Program",
+      "url": "https://docs.polymarket.com/programs/taker-rebates"
+    },
+    {
+      "title": "Polymarket Trading Fees Help",
+      "url": "https://help.polymarket.com/en/articles/13364478-trading-fees"
+    },
+    {
+      "title": "Polymarket CLOB market info",
+      "url": "https://docs.polymarket.com/api-reference/markets/get-clob-market-info"
+    },
+    {
+      "title": "Polymarket Liquidity Rewards",
+      "url": "https://docs.polymarket.com/programs/liquidity-rewards"
+    }
+  ]
+}
