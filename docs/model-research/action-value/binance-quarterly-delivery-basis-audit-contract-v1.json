@@ -1,0 +1,83 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_credentials_permitted": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T06:53:28.532Z",
+  "decision": {
+    "advance_only_to_collateral_and_liquidation_design_when": [
+      "both_pairs_have_eight_complete_historical_deliveries",
+      "every_historical_spot_window_is_complete",
+      "every_next_quarter_quantity_remains_positive_after_35_bps_hurdle_and_worst_observed_delivery_spot_low_mismatch"
+    ],
+    "edge_acceptance_possible": false,
+    "otherwise": "reject_without_resampling"
+  },
+  "fee_sources": {
+    "futures": {
+      "applicability": "informational_only_because_the_official_file_names_usdt_m_perpetual_not_quarterly_delivery",
+      "commit": "e0a3b6a1214c1cd8ba86b1a5ff26d360f22571bb",
+      "path": "src/exchanges/binance/fees.futures.v2026-06-09.json",
+      "repository": "binance/crypto-trade-analyzer"
+    },
+    "spot": {
+      "applicability": "regular_user_default_spot_schedule_for_btcusdt_and_ethusdt_only_not_authenticated_account_evidence",
+      "commit": "0a2ba6529fd43bcfe089a404e2d960cc28c0c08c",
+      "path": "src/exchanges/binance/fees.v2025-08-22.json",
+      "regular_user_maker_rate": "0.001",
+      "regular_user_taker_rate": "0.001",
+      "repository": "binance/crypto-trade-analyzer"
+    }
+  },
+  "historical_source": {
+    "completed_delivery_cutoff_ms": 1787640808532,
+    "completed_deliveries_per_pair": 8,
+    "delivery_endpoint": "https://fapi.binance.com/futures/data/delivery-price",
+    "delivery_selection": "latest_eight_unique_delivery_times_strictly_before_cutoff_per_pair",
+    "pairs": [
+      "BTCUSDT",
+      "ETHUSDT"
+    ],
+    "spot_kline_endpoint": "https://api.binance.com/api/v3/klines",
+    "spot_kline_interval": "1m",
+    "spot_kline_limit": 5,
+    "spot_window_end_offset_ms": 299999,
+    "spot_window_start_offset_ms": 0
+  },
+  "hypothesis": {
+    "market_direction_dependency": "cash_and_carry_entry_and_delivery_accounting_are_direction_neutral_when_quantity_matched_but_margin_liquidation_and_exit_basis_remain",
+    "statement": "historical_usd_m_quarterly_delivery_prices_track_realizable_spot_exit_proxies_closely_enough_that_the_current_next_quarter_depth_basis_survives_a_fixed_delivery_basis_stress",
+    "status": "unobserved_under_this_contract"
+  },
+  "request_contract": {
+    "429_action": "write_terminal_failure_receipt_then_stop_without_retry",
+    "maximum_public_requests": 18,
+    "requests": [
+      "two_delivery_price_gets_one_per_pair",
+      "sixteen_spot_kline_gets_one_per_selected_pair_delivery"
+    ],
+    "response_payloads_and_hashes_required": true,
+    "retry_or_replacement_permitted": false,
+    "terminal_failure_receipt_required": true
+  },
+  "result_sha256": "12c986c08563d72e9e32d6cea862ee2f6e746daa870e12a67987cf222355e7a7",
+  "schema_version": "binance-quarterly-delivery-basis-audit-contract-v1",
+  "spot_exit_proxies": {
+    "primary_stress": "minimum_trade_low_across_the_first_five_complete_one_minute_spot_bars_from_delivery_time",
+    "secondary_diagnostic": "close_of_the_fifth_one_minute_spot_bar",
+    "execution_or_depth_claim_permitted": false,
+    "mismatch_bips_formula": "(spot_proxy-delivery_price)/delivery_price*10000"
+  },
+  "source_binding": {
+    "current_carry_result_path": "docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json",
+    "current_carry_result_sha256": "9c9f75565128cd62372ad1971bab09d910583e27e5c47d8eeaeda4e9177b99a2",
+    "official_connector_commit": "714df9cdad3dd1646bb0238dc605d74c98817588",
+    "official_connector_delivery_model_path": "clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/models/quarterly_contract_settlement_price_response_inner.py",
+    "official_connector_repository": "binance/binance-connector-python"
+  },
+  "status": "frozen_before_historical_delivery_or_spot_price_access"
+}
