@@ -444,7 +444,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`94da171bd2ecb1a21c781f4f0efe545985f10eab3152d6439e63d173555010b4`.
+`6f3bcf6d12fe4e41ca70d08cb577bf89bc040526803d0c17ff8eb69f8a9e1f0e`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -485,6 +485,26 @@ reduction as a standalone edge. For every future one-use historical screen,
 bind the endpoint's effective page capacity or preregister sufficient
 non-overlapping pagination before activation; a requested `limit` is not proof
 of returned horizon.
+
+The source-first USD-M versus COIN-M perpetual funding hypothesis is also
+terminal as a separate public edge family without consuming market data. The
+official SDK exposes unauthenticated `/fapi/v1/fundingRate` and
+`/dapi/v1/fundingRate`, while COIN-M exchange information separately exposes
+`contractSize` and `marginAsset`. Those fields do not prove equal base delta, a
+complete inverse terminal payoff, collateral neutrality, funding conversion,
+or a liquidation-safe transfer path. Hedging the mandatory coin collateral
+with spot-equivalent or linear perpetual exposure otherwise reintroduces the
+already-terminal spot/perpetual carry family. Account fees remain signed: the
+official Python connector uses `sign_request` for both commission endpoints,
+despite generated Go AccountAPI Markdown incorrectly printing
+`No authorization required`. The stricter classification controls. With both
+designated credentials absent, zero signed or public venue requests were made.
+Canonical source triage:
+`docs/model-research/structural-edge-source-triage-v2-2026-08-25.json`, result
+SHA-256 `3df17e93866cbf53617340dd422a91945c8a1924d4ca736b76c5f78f4c9a5575`.
+Do not build a funding-history or book collector unless materially new official
+payoff and collateral semantics first prove a distinct identity and the exact
+account evidence trigger is satisfied.
 
 Polymarket taker-tier rebates are cost reductions for legitimate organic taker
 flow, not authority to manufacture a complete-set volume loop. Do not self-match,
