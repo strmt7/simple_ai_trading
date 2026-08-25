@@ -1,0 +1,152 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_credentials_permitted": false,
+    "live_trading_authority": false,
+    "orders_permitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-25T16:52:25.9614633Z",
+  "decision_gate": {
+    "authenticated_evidence_still_required": [
+      "GET /api/v3/account/commission for every actually traded spot symbol proving enabledForAccount enabledForSymbol discountAsset and discount",
+      "actual eligible spot turnover and standard commission by fill without counting tax or special commission as discounted",
+      "actual BNB balance consumption and fee ledger reconciliation",
+      "exact BNBUSDT futures commission margin liquidation ADL and funding ledger evidence",
+      "prospective equal-base inventory and hedge tracking including every rebalance fill",
+      "realized after-cost savings across bull bear sideways regular-volatility high-volatility liquidity-stress and latency-stress slices"
+    ],
+    "maximum_primary_combined_turnover_multiple": "10",
+    "maximum_primary_worst_monthly_turnover_multiple": "5",
+    "minimum_complete_inner_months": 6,
+    "minimum_rows_per_newest_half_regime": 20,
+    "primary_non_authoritative_scenario": "ten_bips_standard_25_percent_discount",
+    "public_prequalification_can_only_prioritize_not_accept_an_edge": true,
+    "rejection_action": "record_terminal_public_prequalification_without_resampling_the_same_history_or_books",
+    "success_action": "wait_for_designated_ephemeral_credentials_then_freeze_one_get_only_account_commission_balance_and_realized_fee_prequalification_before_any_order_or_position"
+  },
+  "economic_identity": {
+    "candidate": "hold_only_the_BNB_needed_for_eligible_spot_fee_payment_and_short_equal_base_BNBUSDT_perpetual",
+    "fee_savings_identity": "eligible_spot_notional_times_account_standard_commission_rate_times_account_discount_fraction",
+    "first_order_bnb_direction_neutrality": "requires_spot_BNB_inventory_to_equal_the_BNBUSDT_short_base_quantity_after_every_fee_burn_or_replenishment",
+    "market_direction_forecast_required": false,
+    "not_a_standalone_strategy": true,
+    "residual_risks": [
+      "account_or_symbol_discount_disabled or changed",
+      "insufficient BNB balance causes undiscounted fee payment",
+      "fee burn creates short overhedge until rebalanced",
+      "perpetual funding can reverse and become a cost",
+      "spot-perpetual basis changes and non-atomic entry exit",
+      "two-market fees spread slippage and minimum quantities",
+      "margin liquidation ADL collateral and operational interruption",
+      "capital opportunity cost and region product eligibility"
+    ]
+  },
+  "frozen_evaluation": {
+    "cross_regime_partition": "derive_absolute_return_nearest-rank_75th-percentile_from_oldest_half_only_then_report_newest_half_direction_and_volatility_slices",
+    "direction_regimes": {
+      "down": "funding_mark_return_bips_strictly_below_negative_10",
+      "sideways": "absolute_funding_mark_return_bips_at_most_10",
+      "up": "funding_mark_return_bips_strictly_above_10"
+    },
+    "fee_savings_scenarios_are_non_authoritative": true,
+    "funding_cashflow_orientation": "positive_funding_is_cash_received_by_the_short_and_negative_funding_is_cash_paid",
+    "historical_rows": 1000,
+    "minimum_rows": 270,
+    "no_window_threshold_scenario_or_symbol_optimization": true,
+    "reported_costs": [
+      "spot_and_futures_current_top-book_round-trip_spread",
+      "newest-half_funding_drawdown",
+      "worst_complete_inner_calendar_month_funding",
+      "current_spot-perpetual_basis_without_claiming_exit_basis_is_locked",
+      "minimum_common_base_quantity_and_inventory_notional"
+    ],
+    "turnover_break_even": "eligible_spot_notional_divided_by_BNB_inventory_notional_required_for_scenario_fee_savings_to_cover_each_reported_cost"
+  },
+  "frozen_public_request_plan": {
+    "429_or_non_200_action": "persist_raw_body_and_receipt_then_write_terminal_failure_without_retry",
+    "credentials_headers_or_signed_parameters_permitted": false,
+    "maximum_requests": 6,
+    "order_preview_or_order_endpoint_permitted": false,
+    "raw_persistence": "atomically_write_each_raw_body_before_status_handling_decoding_or_validation",
+    "requests": [
+      {
+        "method": "GET",
+        "name": "spot_exchange_info",
+        "parameters": {
+          "symbol": "BNBUSDT"
+        },
+        "raw_filename": "01-spot-exchange-info.json",
+        "url": "https://api.binance.com/api/v3/exchangeInfo"
+      },
+      {
+        "method": "GET",
+        "name": "spot_book_ticker",
+        "parameters": {
+          "symbol": "BNBUSDT"
+        },
+        "raw_filename": "02-spot-book-ticker.json",
+        "url": "https://api.binance.com/api/v3/ticker/bookTicker"
+      },
+      {
+        "method": "GET",
+        "name": "futures_exchange_info",
+        "parameters": {},
+        "raw_filename": "03-futures-exchange-info.json",
+        "url": "https://fapi.binance.com/fapi/v1/exchangeInfo"
+      },
+      {
+        "method": "GET",
+        "name": "futures_book_ticker",
+        "parameters": {
+          "symbol": "BNBUSDT"
+        },
+        "raw_filename": "04-futures-book-ticker.json",
+        "url": "https://fapi.binance.com/fapi/v1/ticker/bookTicker"
+      },
+      {
+        "method": "GET",
+        "name": "futures_premium_index",
+        "parameters": {
+          "symbol": "BNBUSDT"
+        },
+        "raw_filename": "05-futures-premium-index.json",
+        "url": "https://fapi.binance.com/fapi/v1/premiumIndex"
+      },
+      {
+        "method": "GET",
+        "name": "futures_funding_history",
+        "parameters": {
+          "limit": 1000,
+          "symbol": "BNBUSDT"
+        },
+        "raw_filename": "06-futures-funding-history.json",
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate"
+      }
+    ],
+    "self_hashed_journal": "write_exact_next_request_before_every_GET_then_append_response_status_timestamps_raw_path_bytes_and_sha256_before_decoding",
+    "single_use": "an_existing_journal_prohibits_every_rerun"
+  },
+  "result_sha256": "388c6cc72d079b0fcbcafae5bb04a8466bb4ba92ae38725b0139693d62af1401",
+  "schema_version": "binance-bnb-fee-discount-hedge-contract-v1",
+  "source_binding": {
+    "commission_faq_bytes": 6508,
+    "commission_faq_raw_sha256": "580cfa59c9f55adae0d27bf38d2bc7f268ad759fdf054486e356464c30bbd54c",
+    "commission_faq_url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/976cc580553890e92031b77306147c0ed1de5a46/faqs/commission_faq.md",
+    "implementation_path": "tools/screen_binance_bnb_fee_discount_hedge.py",
+    "implementation_sha256": "ee21d67d2663177131a0b10f00a9afeb9063590b02d41b9cde6445f253a42b3c",
+    "official_documentation_checked_at_utc": "2026-08-25T16:47:29.6103848Z",
+    "official_spot_documentation_commit": "976cc580553890e92031b77306147c0ed1de5a46",
+    "rest_api_bytes": 181189,
+    "rest_api_raw_sha256": "49ea6809243fc7fb426e07f2fe662097736c7bb405bd2da5eef637d715427999",
+    "rest_api_url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/976cc580553890e92031b77306147c0ed1de5a46/rest-api.md",
+    "source_limits": [
+      "official commission examples are explicitly fictional and do not prove the live account percentage",
+      "the signed account commission response is authoritative for enabledForAccount enabledForSymbol discountAsset and discount",
+      "the documented discount applies to standard commission only while tax and special commissions remain separate",
+      "sufficient BNB is required for BNB fee payment"
+    ]
+  },
+  "status": "frozen_before_any_binance_market_request"
+}
