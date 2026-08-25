@@ -114,6 +114,19 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/structural-parity-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `9d7a2c61ae29cb6b29fd3f417ed3e40f1ea08fb2cb6729d20372648abdc448e2`.
+- Polymarket logical implications: a later canonical fetch contained 1,473
+  unique scoped active events. Exact same-event rule identities yielded 53
+  threshold groups and 12 deadline groups: 2,572 implication pairs were
+  evaluated and 1,514 had five-share displayed depth. Buying
+  `YES(weaker) + NO(stronger)` produced no gross-positive pair. The best gross
+  pair, Bitcoin reaching $190,000 versus $200,000 by December 31, 2026, was
+  exactly flat and `-0.01372` pUSD after the recorded fee curve. One missing
+  market deadline, one missing fee schedule, and two Gamma/CLOB tick-size
+  disagreements were explicitly excluded; no term was inferred. Canonical
+  result:
+  `docs/model-research/polymarket/logical-implication-parity-snapshot-v1-2026-08-25.json`,
+  result SHA-256
+  `c77c5c6e2e525898f334bd81c54d1b60673226b7488b2833f2f15e17e4de1f78`.
 - Binance: ten tradable scoped spot symbols yielded 24 simple three-leg cycles.
   Seven were positive only in the zero-fee upper bound. The best was
   `USDC -> BTC -> USDT -> USDC` at `0.6461833` bps gross with a break-even
@@ -125,13 +138,16 @@ diagnostics, not accepted edges.
   result SHA-256
   `53498bbf4c1ea7af78f3d05819d965ea3e227b1fa8457c958e5721982b1f3f69`.
 
-The shared arithmetic is now in `structural_parity.py`. Do not repeat payoff
-formulas in shell snippets. First prove the payoff identity and current gross
-upper bound; stop immediately when it is nonpositive. Only a gross-positive
-candidate may consume time on exact fees, filters, atomicity, latency, fills,
-inventory, gas, capacity, persistence, and cross-regime adjudication. Public
-books never prove fills, and neither snapshot grants paper, testnet, or live
-authority.
+The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
+Do not repeat payoff formulas in shell snippets. Tag pages discover event IDs;
+canonical event endpoints bind contract terms. Missing market-level deadlines
+or fee schedules and Gamma/CLOB execution-term disagreements are exclusions,
+not invitations to substitute parent fields or defaults. First prove the payoff
+identity and current gross upper bound; stop immediately when it is
+nonpositive. Only a gross-positive candidate may consume time on exact fees,
+filters, atomicity, latency, fills, inventory, gas, capacity, persistence, and
+cross-regime adjudication. Public books never prove fills, and no snapshot
+grants paper, testnet, or live authority.
 
 ## Protected Local Work
 
@@ -174,8 +190,9 @@ lease, state, database, and WAL agree.
    stale or divergent files; reevaluate a specific path only when a current task
    requires it.
 3. Do not rerun rejected Binance funding carry, two-sided touch making,
-   Polymarket binary complete-set taking, or the 2026-08-25 parity snapshots as
-   if repetition could create an edge. A repeat is justified only by a frozen
+   Polymarket binary complete-set taking, negative-risk parity, logical
+   threshold/deadline implication parity, or Binance spot triangles as if
+   repetition could create an edge. A repeat is justified only by a frozen
    prospective sampling contract or materially new fee/execution evidence.
 4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
    campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
