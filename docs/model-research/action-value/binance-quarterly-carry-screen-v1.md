@@ -91,11 +91,25 @@ A separately frozen 16-contract pre-delivery unwind contract must validate the
 actual historical futures cutoff before using any basis observation. Its one
 primary 10-minute horizon and adverse futures-high/spot-low arithmetic cannot
 accept an edge. It permits 32 public requests with no retry or replacement and
-has not yet accessed price data. Exact account fees, margin, liquidation,
-capital cost, and executable fills remain unresolved. The contract is
+stopped terminally after the first futures/spot request pair. The expired
+futures endpoint returned 70 rows through 08:09 UTC, including ten flat rows
+at/after the scheduled 08:00 delivery with zero volume and zero trades. That
+violated the exact-60/no-later-bar cutoff gate. The 60 pre-delivery rows may not
+be salvaged and the audit may not be rerun. Returned-kline presence is not an
+authenticated order-state test; no historical basis observation was accepted.
+Exact account fees, margin, liquidation, capital cost, and executable fills
+remain unresolved. The contract is
 [`binance-quarterly-pre-delivery-unwind-contract-v1.json`](binance-quarterly-pre-delivery-unwind-contract-v1.json),
 result SHA-256
 `f61a8c9dfd86274292c5dae154120871ea5358e2a5ca004b92574e6bdcb7657c`.
+The terminal audit is
+[`binance-quarterly-pre-delivery-unwind-audit-v1-2026-08-25.json`](binance-quarterly-pre-delivery-unwind-audit-v1-2026-08-25.json),
+result SHA-256
+`07556c4c128fdde32b8bc3ade55134e25eedec157715585aac9e561d87ac9e5a`.
+Its source-bound adjudication is
+[`binance-quarterly-pre-delivery-unwind-terminal-adjudication-v1.json`](binance-quarterly-pre-delivery-unwind-terminal-adjudication-v1.json),
+result SHA-256
+`e45df8dbffdb8e8e09a542ad3cf2f2f7fe855a775c10f9c07cfa30b290505521`.
 
 The original invalid audit is
 [`binance-quarterly-delivery-basis-audit-v1-2026-08-25.json`](binance-quarterly-delivery-basis-audit-v1-2026-08-25.json),

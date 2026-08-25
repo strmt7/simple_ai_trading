@@ -131,6 +131,14 @@ whether books, economics, credentials, or orders were reached. Never repair a
 failed one-use artifact by resampling; fix the workflow for a separately frozen
 hypothesis only when its own nonadaptive contract permits a new attempt.
 
+Do not treat the presence or absence of returned historical klines as proof of
+exchange order state, trading availability, or a delivery cutoff. An expired
+Binance USD-M quarterly response on 2026-08-25 returned flat, zero-volume,
+zero-trade bars after its normal delivery schedule. A cutoff-dependent study
+must bind an authoritative state source or preregister explicitly sourced
+trade-count and volume semantics; otherwise it fails closed without salvaging
+the surrounding price rows.
+
 After a current AI governance benchmark, use
 `tools/build_ai_model_provenance.py` to rescore the exact reports and verify the
 Ollama manifest, config, and every referenced blob before atomically writing

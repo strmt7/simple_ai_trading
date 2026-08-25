@@ -79,9 +79,12 @@ safety gate, blocks Stop, or submits an order.
   the audit's post-delivery mismatch values and hold-to-delivery rejection. Do
   not resample that audit. Binance's official quarterly-delivery rule now binds
   the normal schedule to the last Friday at 08:00 UTC, while allowing extreme
-  postponements. A separate pre-delivery unwind contract is frozen, but no new
-  price request has run; it must validate every actual historical cutoff before
-  using any basis result. Polymarket
+  postponements. A separate pre-delivery unwind audit stopped terminally after
+  two requests: the expired futures endpoint returned ten flat, zero-volume,
+  zero-trade rows at/after the scheduled cutoff, violating the frozen
+  no-later-bar gate. Do not rerun or salvage its pre-delivery rows. Kline
+  presence is not authenticated order-state evidence; no historical basis
+  result was accepted. Polymarket
   paired-maker quoting had
   a stale displayed both-fill surplus of 1.20 pUSD, but the public reward payout
   floor is zero and the 9.42 pUSD orphan-loss bound remains valid. Its reported

@@ -209,7 +209,18 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-quarterly-pre-delivery-unwind-contract-v1.json`,
   result SHA-256
   `f61a8c9dfd86274292c5dae154120871ea5358e2a5ca004b92574e6bdcb7657c`.
-  It has not accessed price data and cannot accept an edge.
+  Its one-use audit stopped after the first futures/spot pair (two requests):
+  the expired futures endpoint returned 70 rows through 08:09 UTC, including
+  ten flat rows at/after the scheduled 08:00 delivery with zero volume and zero
+  trades. This violated the frozen exact-60/no-later-bar cutoff gate. Do not
+  rerun or salvage the 60 pre-delivery rows. Returned-kline presence is not an
+  authenticated order-state cutoff test; a future design needs authoritative
+  order-state evidence or source-bound trade-count/volume semantics. Terminal
+  audit result SHA-256
+  `07556c4c128fdde32b8bc3ade55134e25eedec157715585aac9e561d87ac9e5a`;
+  adjudication result SHA-256
+  `e45df8dbffdb8e8e09a542ad3cf2f2f7fe855a775c10f9c07cfa30b290505521`.
+  No historical basis result or accepted edge was produced.
 - Polymarket paired-maker rewards: the frozen Moonshot candidate's one-tick
   hypothetical 20-share YES+NO bids summed to 0.940 for 1.20 pUSD displayed
   both-fill gross. The books were 8,074 ms old and failed the 5,000 ms gate.
