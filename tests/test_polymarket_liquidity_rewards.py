@@ -9,8 +9,14 @@ from simple_ai_trading.polymarket_liquidity_rewards import (
     maker_minimum_score,
     minimum_reward_days_to_cover,
     paired_buy_economics,
+    paired_maker_bid_diagnostic,
     reward_order_score,
 )
+from simple_ai_trading.paper_execution import BookLevel
+
+
+def _level(price: str, size: str = "100") -> BookLevel:
+    return BookLevel(price=Decimal(price), quantity=Decimal(size))
 
 
 def test_reward_order_score_matches_documented_quadratic() -> None:
@@ -100,6 +106,77 @@ def test_reward_payback_handles_zero_loss_and_zero_reward() -> None:
         )
         == 0
     )
+
+
+def test_paired_maker_bid_diagnostic_includes_mirrored_own_asks() -> None:
+    result = paired_maker_bid_diagnostic(
+        yes_bids=(_level("0.400"), _level("0.468")),
+        yes_asks=(_level("0.900"), _level("0.535")),
+        no_bids=(_level("0.400"), _level("0.465")),
+        no_asks=(_level("0.900"), _level("0.532")),
+        tick_size=Decimal("0.001"),
+        reward_size=Decimal("20"),
+        maximum_spread=Decimal("0.045"),
+        daily_reward_rate=Decimal("6"),
+    )
+
+    assert result.economics.combined_price == Decimal("0.935")
+    assert result.post_quote_yes_ask == Decimal("0.534")
+    assert result.post_quote_no_ask == Decimal("0.531")
+    assert result.conditional_yes_midpoint == Decimal("0.5015")
+    assert result.conditional_no_midpoint == Decimal("0.4985")
+    assert result.conditional_yes_midpoint + result.conditional_no_midpoint == 1
+    assert result.conditional_yes_order_score == result.conditional_no_order_score
+    assert result.conditional_own_minimum_score > 0
+    assert result.conservative_old_aggregate_q_one > 0
+    assert result.conservative_old_aggregate_q_two > 0
+    assert result.conditional_instantaneous_share_lower_bound > 0
+    assert result.conditional_daily_rate_equivalent_lower_bound > 0
+    assert result.conditional_reward_days_to_cover_maximum_orphan_loss is not None
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"yes_bids": ()}, "empty"),
+        (
+            {"yes_bids": (_level("0.468"), _level("0.400"))},
+            "response order",
+        ),
+        (
+            {"yes_bids": (_level("0.400"), _level("0.400"))},
+            "duplicate",
+        ),
+        ({"tick_size": Decimal("0.004")}, "tick aligned"),
+        (
+            {
+                "yes_bids": (_level("0.400"), _level("0.499")),
+                "no_bids": (_level("0.400"), _level("0.499")),
+            },
+            "self-cross",
+        ),
+        (
+            {"yes_asks": (_level("0.900"), _level("0.469"))},
+            "post-quote book",
+        ),
+    ],
+)
+def test_paired_maker_bid_diagnostic_fails_closed(
+    kwargs: dict[str, object], message: str
+) -> None:
+    inputs: dict[str, object] = {
+        "yes_bids": (_level("0.400"), _level("0.468")),
+        "yes_asks": (_level("0.900"), _level("0.535")),
+        "no_bids": (_level("0.400"), _level("0.465")),
+        "no_asks": (_level("0.900"), _level("0.532")),
+        "tick_size": Decimal("0.001"),
+        "reward_size": Decimal("20"),
+        "maximum_spread": Decimal("0.045"),
+        "daily_reward_rate": Decimal("6"),
+    }
+    inputs.update(kwargs)
+    with pytest.raises(ValueError, match=message):
+        paired_maker_bid_diagnostic(**inputs)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize(

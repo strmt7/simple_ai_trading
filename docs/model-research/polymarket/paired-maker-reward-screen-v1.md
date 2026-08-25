@@ -36,12 +36,16 @@ the two old aggregate scores plus the hypothetical maker's own `Qmin`. Using
 `min(sum(old Q1), sum(old Q2))` would overstate the lower bound and is forbidden.
 The implementation has direct regression coverage for this correction.
 
-Public order books mirror binary orders across YES and NO representations. The
-diagnostic counts the hypothetical physical orders once and allows duplicated
-visible old liquidity in the denominator, which can only make this conditional
-share smaller. It still is not a proven payout: public books do not expose
-maker grouping, queue position, persistence across random samples, or the
-second epoch normalization.
+Public order books mirror binary orders across YES and NO representations. A
+physical BUY YES at price `p` is also a visible ASK NO at `1-p`, and conversely.
+The frozen snapshot's conditional calculation omitted those hypothetical
+complementary own asks when constructing its post-quote midpoints. Its
+conditional share, daily-equivalent, and payback values are therefore invalid
+and must not be used. The both-fill complete-set arithmetic and one-sided
+maximum settlement-loss arithmetic remain valid. The active implementation
+now includes the mirrored own asks while scoring each physical order only once.
+Public books still do not expose maker grouping, queue position, persistence
+across random samples, or the second epoch normalization.
 
 ## Source-Bound Result
 
@@ -58,12 +62,12 @@ One-tick-improved hypothetical bids were:
 | 20 | 0.469 | 0.471 | 0.940 | 1.200 pUSD | 9.420 pUSD |
 
 The public methodology does not define how its size-cutoff-adjusted midpoint is
-constructed. The artifact therefore labels its post-quote top-midpoint score as
-conditional. Under that condition, double-counting old mirrored liquidity for
-a conservative denominator produced a 4.9667% instantaneous share equivalent,
-0.2980 pUSD/day, and 31.61 idealized days to cover the maximum orphan loss.
-Those values are diagnostics, not payout forecasts or lower bounds on actual
-earnings. The publicly proven reward payout lower bound is exactly zero.
+constructed. The frozen artifact labeled its post-quote top-midpoint score as
+conditional, but that calculation also omitted the hypothetical orders'
+mirrored own asks. Its reported 4.9667% instantaneous share equivalent, 0.2980
+pUSD/day, and 31.61 idealized payback are invalidated diagnostics, not payout
+forecasts or lower bounds on actual earnings. The publicly proven reward payout
+lower bound is exactly zero.
 
 The book timestamps were synchronized with each other but the oldest was 8,074
 ms behind receipt, failing the frozen 5,000 ms age gate. The snapshot is
@@ -74,8 +78,10 @@ The authoritative evidence is
 [`paired-maker-reward-snapshot-v1-2026-08-25.json`](paired-maker-reward-snapshot-v1-2026-08-25.json),
 result SHA-256
 `3ed963fe2ff3473dba6c9b5146d842130d4f67ed3a0e8673451330133c68c0b0`.
-Its test reconstructs the artifact hash, implementation hashes, and conditional
-quote diagnostic from the embedded books.
+Its test reconstructs the preserved artifact hash, implementation hashes, and
+historical conditional quote diagnostic from the embedded books. That
+reconstruction proves provenance, not correctness; the scope adjudication
+records the methodology invalidation.
 
 ## Reopening Gate
 

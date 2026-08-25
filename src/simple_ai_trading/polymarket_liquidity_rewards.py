@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
+from typing import Sequence
+
+from .paper_execution import BookLevel
 
 
 _ONE = Decimal("1")
@@ -43,6 +46,25 @@ class PairedBuyEconomics:
     yes_only_maximum_loss: Decimal
     no_only_maximum_loss: Decimal
     maximum_orphan_loss: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class PairedMakerBidDiagnostic:
+    """Conditional score and settlement diagnostic for two physical BUY orders."""
+
+    economics: PairedBuyEconomics
+    post_quote_yes_ask: Decimal
+    post_quote_no_ask: Decimal
+    conditional_yes_midpoint: Decimal
+    conditional_no_midpoint: Decimal
+    conditional_yes_order_score: Decimal
+    conditional_no_order_score: Decimal
+    conditional_own_minimum_score: Decimal
+    conservative_old_aggregate_q_one: Decimal
+    conservative_old_aggregate_q_two: Decimal
+    conditional_instantaneous_share_lower_bound: Decimal
+    conditional_daily_rate_equivalent_lower_bound: Decimal
+    conditional_reward_days_to_cover_maximum_orphan_loss: Decimal | None
 
 
 def reward_order_score(
@@ -173,11 +195,166 @@ def minimum_reward_days_to_cover(
     return loss / reward
 
 
+def _book(
+    levels: Sequence[BookLevel],
+    *,
+    side: str,
+) -> tuple[BookLevel, ...]:
+    normalized = tuple(level.validated() for level in levels)
+    reverse = side == "asks"
+    if (
+        not normalized
+        or tuple(sorted(normalized, key=lambda level: level.price, reverse=reverse))
+        != normalized
+    ):
+        raise ValueError(f"reward {side} are empty or not in CLOB response order")
+    if len({level.price for level in normalized}) != len(normalized):
+        raise ValueError(f"reward {side} contain duplicate prices")
+    return normalized
+
+
+def _score_book(
+    levels: Sequence[BookLevel],
+    *,
+    midpoint: Decimal,
+    maximum_spread: Decimal,
+) -> Decimal:
+    return sum(
+        (
+            reward_order_score(
+                maximum_spread=maximum_spread,
+                distance=abs(level.price - midpoint),
+                size=level.quantity,
+            )
+            for level in levels
+        ),
+        Decimal("0"),
+    )
+
+
+def paired_maker_bid_diagnostic(
+    *,
+    yes_bids: Sequence[BookLevel],
+    yes_asks: Sequence[BookLevel],
+    no_bids: Sequence[BookLevel],
+    no_asks: Sequence[BookLevel],
+    tick_size: Decimal,
+    reward_size: Decimal,
+    maximum_spread: Decimal,
+    daily_reward_rate: Decimal,
+) -> PairedMakerBidDiagnostic:
+    """Evaluate one-tick-improved paired bids with their mirrored own asks.
+
+    The midpoint and reward values remain conditional because Polymarket does
+    not publicly define the size-cutoff-adjusted midpoint algorithm. Public
+    books also cannot establish maker grouping, persistence, queue, or payout.
+    """
+
+    yes_bid_levels = _book(yes_bids, side="bids")
+    yes_ask_levels = _book(yes_asks, side="asks")
+    no_bid_levels = _book(no_bids, side="bids")
+    no_ask_levels = _book(no_asks, side="asks")
+    tick = _decimal(tick_size, name="reward tick size", positive=True)
+    size = _decimal(reward_size, name="reward quote size", positive=True)
+    maximum = _decimal(
+        maximum_spread,
+        name="reward maximum spread",
+        positive=True,
+    )
+    daily_rate = _decimal(
+        daily_reward_rate,
+        name="daily reward rate",
+        positive=True,
+    )
+    yes_quote = yes_bid_levels[-1].price + tick
+    no_quote = no_bid_levels[-1].price + tick
+    if yes_quote % tick != 0 or no_quote % tick != 0:
+        raise ValueError("paired reward quotes are not tick aligned")
+    economics = paired_buy_economics(
+        yes_price=yes_quote,
+        no_price=no_quote,
+        quantity=size,
+    )
+    if economics.combined_price >= _ONE:
+        raise ValueError("paired reward bids would self-cross or lack gross surplus")
+
+    # Each physical bid is also a complementary ask. Include those asks when
+    # constructing the hypothetical post-quote books, while scoring each own
+    # physical order only once.
+    post_yes_ask = min(yes_ask_levels[-1].price, _ONE - no_quote)
+    post_no_ask = min(no_ask_levels[-1].price, _ONE - yes_quote)
+    if yes_quote >= post_yes_ask or no_quote >= post_no_ask:
+        raise ValueError("paired reward bids would cross the post-quote book")
+    yes_midpoint = (yes_quote + post_yes_ask) / 2
+    no_midpoint = (no_quote + post_no_ask) / 2
+    yes_score = reward_order_score(
+        maximum_spread=maximum,
+        distance=abs(yes_quote - yes_midpoint),
+        size=size,
+    )
+    no_score = reward_order_score(
+        maximum_spread=maximum,
+        distance=abs(no_quote - no_midpoint),
+        size=size,
+    )
+    own_minimum = maker_minimum_score(
+        q_one=yes_score,
+        q_two=no_score,
+        midpoint=yes_midpoint,
+    )
+    old_q_one = _score_book(
+        yes_bid_levels,
+        midpoint=yes_midpoint,
+        maximum_spread=maximum,
+    ) + _score_book(
+        no_ask_levels,
+        midpoint=no_midpoint,
+        maximum_spread=maximum,
+    )
+    old_q_two = _score_book(
+        yes_ask_levels,
+        midpoint=yes_midpoint,
+        maximum_spread=maximum,
+    ) + _score_book(
+        no_bid_levels,
+        midpoint=no_midpoint,
+        maximum_spread=maximum,
+    )
+    share = conservative_instantaneous_share(
+        own_minimum_score=own_minimum,
+        old_aggregate_q_one=old_q_one,
+        old_aggregate_q_two=old_q_two,
+    )
+    daily_equivalent = daily_rate * share
+    return PairedMakerBidDiagnostic(
+        economics=economics,
+        post_quote_yes_ask=post_yes_ask,
+        post_quote_no_ask=post_no_ask,
+        conditional_yes_midpoint=yes_midpoint,
+        conditional_no_midpoint=no_midpoint,
+        conditional_yes_order_score=yes_score,
+        conditional_no_order_score=no_score,
+        conditional_own_minimum_score=own_minimum,
+        conservative_old_aggregate_q_one=old_q_one,
+        conservative_old_aggregate_q_two=old_q_two,
+        conditional_instantaneous_share_lower_bound=share,
+        conditional_daily_rate_equivalent_lower_bound=daily_equivalent,
+        conditional_reward_days_to_cover_maximum_orphan_loss=(
+            minimum_reward_days_to_cover(
+                maximum_orphan_loss=economics.maximum_orphan_loss,
+                daily_reward_bound=daily_equivalent,
+            )
+        ),
+    )
+
+
 __all__ = [
     "PairedBuyEconomics",
+    "PairedMakerBidDiagnostic",
     "conservative_instantaneous_share",
     "maker_minimum_score",
     "minimum_reward_days_to_cover",
     "paired_buy_economics",
+    "paired_maker_bid_diagnostic",
     "reward_order_score",
 ]
