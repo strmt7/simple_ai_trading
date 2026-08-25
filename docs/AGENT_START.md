@@ -88,6 +88,14 @@ safety gate, blocks Stop, or submits an order.
   screen then stopped after two public requests because BTC reward settings
   disagreed between Gamma and the exact CLOB reward endpoint. It reached no
   books or economics and is terminal without resampling.
+- The separate official crypto maker-rebate schedule has exact conditional
+  filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
+  at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the
+  conditional both-fill value from 1.00 to 1.3498600 pUSD. Public evidence still
+  proves no positive payout lower bound, queue position, fill probability, or
+  orphan protection; the one-fill settlement loss bound remains 24.50 pUSD
+  without rebate credit. Do not turn this arithmetic into a profitability claim
+  or activate a capture while the Round 21 sidecar is protected.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or

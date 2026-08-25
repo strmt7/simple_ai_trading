@@ -1,0 +1,62 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "publicly_proven_rebate_payout_lower_bound": "0"
+  },
+  "created_at_utc": "2026-08-25T07:03:16.106Z",
+  "documented_contract": {
+    "crypto_maker_fee_rate": "0",
+    "crypto_maker_rebate_fraction": "0.20",
+    "crypto_taker_fee_rate": "0.07",
+    "daily_payout": true,
+    "fee_equivalent_formula": "shares*taker_fee_rate*price*(1-price)",
+    "minimum_accrued_payout_pusd": "1",
+    "nominal_filled_order_rebate_before_rounding": "maker_rebate_fraction*fee_equivalent"
+  },
+  "implementation": {
+    "module_path": "src/simple_ai_trading/polymarket_maker_rebates.py",
+    "module_sha256": "059db170ac9e55fe0d454b26006f324580314995cded1b8328b77c27b6a524b0"
+  },
+  "example": {
+    "combined_bid_price": "0.98",
+    "conditional_down_fill_fee_equivalent": "0.874650",
+    "conditional_down_fill_nominal_rebate": "0.1749300",
+    "conditional_nominal_both_fill_profit_including_rebates": "1.3498600",
+    "conditional_nominal_total_maker_rebate": "0.3498600",
+    "conditional_up_fill_fee_equivalent": "0.874650",
+    "conditional_up_fill_nominal_rebate": "0.1749300",
+    "down_bid_price": "0.49",
+    "maximum_orphan_settlement_loss_without_rebate_credit": "24.50",
+    "paired_quantity": "50",
+    "settlement_both_fill_gross_profit": "1.00",
+    "up_bid_price": "0.49"
+  },
+  "limitations": [
+    "Nominal rebate algebra is conditional on the maker order filling and does not prove queue position or fill probability.",
+    "Fee and rebate rounding order is not inferred from the public prose, so the example is explicitly unrounded.",
+    "No rebate is credited against orphan loss because the public payout lower bound is zero before daily accrual and payment evidence.",
+    "One-sided fills remain directional and can lose far more than the nominal rebate.",
+    "The rebate percentage is at Polymarket discretion and may change over time.",
+    "The protected Round 21 sidecar prevents activation of a new prospective capture schedule before its terminal boundary."
+  ],
+  "result_sha256": "09f67265772716873c625ada816140332430697894f30af22c05bd0dd6422c8a",
+  "schema_version": "polymarket-crypto-maker-rebate-economics-v1",
+  "sources": [
+    {
+      "retrieved_bytes": 5945,
+      "retrieved_content_sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a",
+      "url": "https://docs.polymarket.com/programs/maker-rebates.md"
+    },
+    {
+      "retrieved_bytes": 8128,
+      "retrieved_content_sha256": "8e246189f6ca85b8b8782e1d76a769cf98672a98c4c63d8bbe6150d659db8d7c",
+      "url": "https://docs.polymarket.com/trading/fees.md"
+    }
+  ],
+  "status": "conditional_filled_order_economics_only_requires_prospective_execution_evidence"
+}
