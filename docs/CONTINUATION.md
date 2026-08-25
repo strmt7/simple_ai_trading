@@ -127,6 +127,16 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/logical-implication-parity-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `c77c5c6e2e525898f334bd81c54d1b60673226b7488b2833f2f15e17e4de1f78`.
+- Polymarket cross-condition duplicates: 1,478 unique active BTC/ETH/SOL-tagged
+  events contained 607 eligible non-negative-risk binary order-book markets.
+  Exact question matching produced one candidate group: two separate
+  MicroStrategy-bankruptcy conditions. Canonical payout-rule fingerprints
+  differed in both `description` and `group_item_title`, so the title was not
+  treated as proof of equivalence. Zero exact payout-rule duplicate groups
+  advanced to depth or fees. Canonical result:
+  `docs/model-research/polymarket/duplicate-contract-parity-snapshot-v1-2026-08-25.json`,
+  result SHA-256
+  `7eab53089f904d647538de29193dcfa33bfabaa73440161d5fdec706b7bcb5b1`.
 - Binance: ten tradable scoped spot symbols yielded 24 simple three-leg cycles.
   Seven were positive only in the zero-fee upper bound. The best was
   `USDC -> BTC -> USDT -> USDC` at `0.6461833` bps gross with a break-even
@@ -228,10 +238,11 @@ lease, state, database, and WAL agree.
    requires it.
 3. Do not rerun rejected Binance funding carry, two-sided touch making,
    Polymarket binary complete-set taking, negative-risk parity, logical
-   threshold/deadline implication parity, Binance spot triangles, or Binance
-   option vertical/convexity parity, or option box parity as if repetition
-   could create an edge. A repeat is justified only by a frozen prospective
-   sampling contract or materially new fee/execution evidence.
+   threshold/deadline implication parity, Binance spot triangles, Binance
+   option vertical/convexity parity, option box parity, or Polymarket exact
+   cross-condition duplicate discovery as if repetition could create an edge.
+   A repeat is justified only by a frozen prospective sampling contract or
+   materially new fee/execution evidence.
 4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
    campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
    use the source-continuity recovery design to freeze separate Round 77 Binance

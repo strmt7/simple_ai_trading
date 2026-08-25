@@ -64,7 +64,10 @@ safety gate, blocks Stop, or submits an order.
   strict short-box and one nominal long-box ticker candidates across 13,344
   strike pairs; every candidate lacked executable fresh depth. Do not repeat
   these screens without a frozen prospective sampling contract or materially
-  new execution evidence.
+  new execution evidence. Polymarket cross-condition duplicate discovery found
+  one repeated exact question across 607 eligible binary markets, but its two
+  canonical rule sets differed; zero exact payout-rule duplicates advanced to
+  pricing.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
