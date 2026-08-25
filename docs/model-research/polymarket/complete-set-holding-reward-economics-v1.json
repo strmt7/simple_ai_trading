@@ -1,0 +1,112 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "publicly_proven_future_payout_lower_bound_pusd": "0"
+  },
+  "created_at_utc": "2026-08-25T07:53:50.835Z",
+  "documented_mechanics": {
+    "complete_set_backing": "every_yes_no_pair_is_backed_by_exactly_1_pusd",
+    "holding_reward_base": "current_yes_shares_times_latest_yes_mid_plus_current_no_shares_times_latest_no_mid",
+    "merge": "equal_yes_and_no_tokens_convert_back_to_pusd",
+    "reward_distribution": "daily",
+    "reward_sampling": "randomly_once_each_hour",
+    "split": "1_pusd_creates_1_yes_and_1_no_token"
+  },
+  "economic_sensitivity_per_1_pusd_position_value": {
+    "break_even_days_by_total_friction_bips": [
+      {
+        "annual_rate": "0.0325",
+        "break_even_days": {
+          "1": "1.123076923076923076923076923076923076923",
+          "10": "11.23076923076923076923076923076923076923",
+          "100": "112.3076923076923076923076923076923076923",
+          "35": "39.30769230769230769230769230769230769231",
+          "50": "56.15384615384615384615384615384615384615"
+        }
+      },
+      {
+        "annual_rate": "0.04",
+        "break_even_days": {
+          "1": "0.9125",
+          "10": "9.125",
+          "100": "91.25",
+          "35": "31.9375",
+          "50": "45.625"
+        }
+      }
+    ],
+    "formula": "position_value*annual_rate*holding_days/365",
+    "rate_scenarios": [
+      {
+        "annual_rate": "0.0325",
+        "daily_reward": "0.00008904109589041095890410958904109589041096",
+        "hourly_reward": "0.000003710045662100456621004566210045662100457",
+        "nominal_30_day_reward": "0.002671232876712328767123287671232876712329"
+      },
+      {
+        "annual_rate": "0.04",
+        "daily_reward": "0.0001095890410958904109589041095890410958904",
+        "hourly_reward": "0.0000045662100456621004566210045662100456621",
+        "nominal_30_day_reward": "0.003287671232876712328767123287671232876712"
+      }
+    ]
+  },
+  "in_scope_officially_listed_eligible_events": [
+    "What price will Bitcoin hit in 2026?",
+    "What price will Ethereum hit in 2026?",
+    "What price will Solana hit in 2026?"
+  ],
+  "limitations": [
+    "The two current official sources disagree on the annualized rate, so neither rate is treated as authenticated current account economics.",
+    "The sources describe all eligible YES and NO shares but do not explicitly state that split-originated paired balances cannot be excluded from rewards.",
+    "The rate may change and Polymarket reserves the right to introduce aggregate payout limits, so future payout has a zero public lower bound.",
+    "Random hourly sampling prevents exact accrual timing from being inferred from a static balance duration.",
+    "No exact eligible market flag, midpoint pair, account balance, realized reward payment, pUSD transfer cost, split or merge gas, alternative cash yield, tax, jurisdiction, capacity, or counterparty risk is measured here.",
+    "Nominal positive yield is not an arbitrage or profitability claim and cannot promote without exact realized account evidence."
+  ],
+  "rate_source_adjudication": {
+    "conservative_sensitivity_rate": "0.0325",
+    "conflict_resolved": false,
+    "documentation_annual_rate": "0.04",
+    "help_center_annual_rate": "0.0325",
+    "status": "official_source_conflict_blocks_current_rate_claim"
+  },
+  "result_sha256": "b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561",
+  "schema_version": "polymarket-complete-set-holding-reward-economics-v1",
+  "sources": [
+    {
+      "claims_used": [
+        "complete_set_backing",
+        "split",
+        "merge",
+        "documentation_annual_rate",
+        "hourly_random_sampling",
+        "daily_distribution"
+      ],
+      "retrieved_bytes": 4127,
+      "retrieved_content_sha256": "bb131a3894d52149058f8554edaa6fafdd9ad72ab2351efbec605d4b3a6e2cc5",
+      "url": "https://docs.polymarket.com/concepts/positions-tokens.md"
+    },
+    {
+      "claims_used": [
+        "help_center_annual_rate",
+        "yes_plus_no_midpoint_valuation",
+        "hourly_random_sampling",
+        "daily_distribution",
+        "rate_discretion",
+        "possible_future_payout_limits",
+        "eligible_event_list"
+      ],
+      "published_date": "2026-06-01",
+      "retrieved_bytes": 86981,
+      "retrieved_content_sha256": "b2a87d1711e8439676b38e0162069f5ba3f5c666e18751598030d1cd7167c0e4",
+      "url": "https://help.polymarket.com/en/articles/13364459-holding-rewards"
+    }
+  ],
+  "status": "promising_market_direction_independent_hypothesis_requires_realized_eligibility_and_cost_evidence"
+}

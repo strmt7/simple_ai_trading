@@ -90,7 +90,10 @@ unchanged gate merely for reassurance; invalidate it only when code,
 configuration, fixtures, dependencies, runtime artifacts, or platform inputs
 change. Run the complete required matrix once against the final release tree.
 Resolve focused test paths with `rg --files tests` before invoking pytest; do
-not infer filenames from module names.
+not infer filenames from module names. Copy the returned path into the command.
+When bundling PowerShell verification gates, join dependent commands with
+`&&` or run them separately; `;` continues after a failed gate and a later
+successful command can mask the nonzero exit status.
 
 ```powershell
 uv run --group test ruff check .
