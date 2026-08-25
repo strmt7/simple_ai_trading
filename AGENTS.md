@@ -56,6 +56,8 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    and never revert unrelated work.
 6. Keep numeric evidence in canonical JSON/CSV and regenerate charts from it.
    Generated charts and prose are not result authority.
+7. Format code before generating implementation-hash-bound evidence; later
+   source edits require regeneration.
 
 Do not broadly read the README, historical round designs, generated SVG, or
 large CSV files. The detailed workflow and imported-tool provenance are in

@@ -57,7 +57,11 @@ safety gate, blocks Stop, or submits an order.
   across 2,572 threshold/deadline pairs. Binance's best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even; exact account fees remain unaudited, so this is not an executable
-  edge.
+  edge. Binance option vertical/convexity parity covered 365,592 exact payoff
+  identities across 1,538 unit-one contracts. Two ticker-only candidates
+  disappeared at displayed depth, where every exact minimum portfolio was
+  already negative before fees. Do not repeat these screens without a frozen
+  prospective sampling contract or materially new execution evidence.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or

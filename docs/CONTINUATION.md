@@ -137,8 +137,21 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-spot-structural-parity-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `53498bbf4c1ea7af78f3d05819d965ea3e227b1fa8457c958e5721982b1f3f69`.
+- Binance options: 1,538 tradable unit-one BTCUSDT, ETHUSDT, and SOLUSDT
+  contracts formed 50 same-underlying, same-expiry, same-side chains. Exact
+  lot-aligned enumeration covered 26,688 vertical-dominance pairs and 338,904
+  arbitrary-strike convexity triples. Two ticker-only convexity candidates
+  showed `0.05` USDT credits, but displayed depth repriced both exact minimum
+  portfolios to a `-0.15` USDT gross loss. Both candidate paths also failed the
+  frozen age/skew gate. The screen therefore stopped after one depth sweep,
+  before authenticated commission, margin, or atomic-execution work. Canonical
+  result:
+  `docs/model-research/action-value/binance-option-parity-snapshot-v1-2026-08-25.json`,
+  result SHA-256
+  `ceca2f61ab1da16285190afcb90c276a10b032fb7d264c90656aaf2f7266c253`.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
+Binance option payoff arithmetic is isolated in `option_parity.py`.
 Do not repeat payoff formulas in shell snippets. Tag pages discover event IDs;
 canonical event endpoints bind contract terms. Missing market-level deadlines
 or fee schedules and Gamma/CLOB execution-term disagreements are exclusions,
@@ -148,6 +161,17 @@ nonpositive. Only a gross-positive candidate may consume time on exact fees,
 filters, atomicity, latency, fills, inventory, gas, capacity, persistence, and
 cross-regime adjudication. Public books never prove fills, and no snapshot
 grants paper, testnet, or live authority.
+
+The Binance option workflow adds a request-efficiency contract learned from a
+failed exploratory confirmation: fetch the contract catalog once, fetch the
+all-symbol ticker once for discovery, and request depth only for ticker-positive
+candidates. A 429 must stop without an immediate retry and honor
+`Retry-After`; contract metadata must never be fetched again inside confirmation
+sweeps. Ticker prices have no displayed quantities and are never execution
+evidence. Once all candidates are nonpositive at depth, do not poll again.
+Format the module and tool before a source-bound run; changing either afterward
+invalidates its recorded implementation hash and permits only one deliberate
+regeneration, not open-ended resampling.
 
 ## Protected Local Work
 
@@ -191,9 +215,10 @@ lease, state, database, and WAL agree.
    requires it.
 3. Do not rerun rejected Binance funding carry, two-sided touch making,
    Polymarket binary complete-set taking, negative-risk parity, logical
-   threshold/deadline implication parity, or Binance spot triangles as if
-   repetition could create an edge. A repeat is justified only by a frozen
-   prospective sampling contract or materially new fee/execution evidence.
+   threshold/deadline implication parity, Binance spot triangles, or Binance
+   option vertical/convexity parity as if repetition could create an edge. A
+   repeat is justified only by a frozen prospective sampling contract or
+   materially new fee/execution evidence.
 4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
    campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
    use the source-continuity recovery design to freeze separate Round 77 Binance
