@@ -5,8 +5,8 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Closeout State
 
-- The last fully hosted-verified baseline before this model-gate publication is
-  `3c3d499a41836940924d5940533cc09512871c7f`. CI, Ruff, Vulture,
+- The last fully hosted-verified baseline before this structural-parity
+  checkpoint is `336114411aab0ad4ed6fae18047245dc420789b2`. CI, Ruff, Vulture,
   Super-Linter, CodeQL, and DeepSource passed that exact revision. GitHub exposed
   only `main`, and the available APIs reported zero open Dependabot,
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
@@ -96,6 +96,43 @@ created, and no capture, target, model, P&L, edge, profitability, paper, or live
 authority was opened. Direct behavior and publication-lineage coverage pass 31
 tests; the implementation module itself has 100% statement and branch coverage.
 
+## Structural-Parity Triage
+
+The 2026-08-25 screens deliberately moved away from another directional model
+iteration. They evaluate target-free payoff identities whose economics do not
+depend on predicting bull, bear, or sideways markets. Both are current-state
+diagnostics, not accepted edges.
+
+- Polymarket: the official BTC/ETH/SOL tags contained 1,427 unique active events,
+  22 fixed negative-risk events, and one augmented event that was excluded. At
+  five-share displayed depth, every possible NO-subset conversion was evaluated
+  together with all-YES buy/hold and mint/sell identities. No event had a
+  gross-positive path. The closest event, `Bitcoin vs. Gold vs. S&P 500 in
+  2026`, was exactly flat before fees and `-0.11804` pUSD after the recorded
+  fee curve. Every event's on-chain question count and zero conversion fee were
+  independently checked. Canonical result:
+  `docs/model-research/polymarket/structural-parity-snapshot-v1-2026-08-25.json`,
+  result SHA-256
+  `9d7a2c61ae29cb6b29fd3f417ed3e40f1ea08fb2cb6729d20372648abdc448e2`.
+- Binance: ten tradable scoped spot symbols yielded 24 simple three-leg cycles.
+  Seven were positive only in the zero-fee upper bound. The best was
+  `USDC -> BTC -> USDT -> USDC` at `0.6461833` bps gross with a break-even
+  commission below `0.21539` bps per leg. It fell to `-21.8384` bps under a
+  7.5-bps reference and `-29.3258` bps under a 10-bps reference. Those scenarios
+  are not assertions about an account's actual fees; exact account/pair fees
+  require authenticated evidence. Canonical result:
+  `docs/model-research/action-value/binance-spot-structural-parity-snapshot-v1-2026-08-25.json`,
+  result SHA-256
+  `53498bbf4c1ea7af78f3d05819d965ea3e227b1fa8457c958e5721982b1f3f69`.
+
+The shared arithmetic is now in `structural_parity.py`. Do not repeat payoff
+formulas in shell snippets. First prove the payoff identity and current gross
+upper bound; stop immediately when it is nonpositive. Only a gross-positive
+candidate may consume time on exact fees, filters, atomicity, latency, fills,
+inventory, gas, capacity, persistence, and cross-regime adjudication. Public
+books never prove fills, and neither snapshot grants paper, testnet, or live
+authority.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -136,25 +173,29 @@ lease, state, database, and WAL agree.
 2. Keep the completed model-dev three-way audit frozen. Do not bulk-integrate
    stale or divergent files; reevaluate a specific path only when a current task
    requires it.
-3. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
+3. Do not rerun rejected Binance funding carry, two-sided touch making,
+   Polymarket binary complete-set taking, or the 2026-08-25 parity snapshots as
+   if repetition could create an edge. A repeat is justified only by a frozen
+   prospective sampling contract or materially new fee/execution evidence.
+4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
    campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
    use the source-continuity recovery design to freeze separate Round 77 Binance
    and Round 30 Polymarket activation contracts. Each must bind an exact fixed
    schedule, unique per-slot storage, role capacities, host supervision, and a
    pre-market activation receipt. Do not share schedules or storage between
    venues.
-4. Reject any candidate that fails bull, bear, sideways, choppy, high-volatility,
+5. Reject any candidate that fails bull, bear, sideways, choppy, high-volatility,
    liquidity-stress, or latency-stress after-cost slices. Abstention is required
    where evidence is unsupported; no strategy can guarantee profit or prevent
    every future loss.
-5. Keep Binance and Polymarket strategies, capital, ownership ledgers, Stop, and
+6. Keep Binance and Polymarket strategies, capital, ownership ledgers, Stop, and
    promotion evidence independent. Binance data may be a causal Polymarket
    feature only when timing provenance proves it arrives first.
-6. Evaluate the night-effect idea as a separate stock-market hypothesis using
+7. Evaluate the night-effect idea as a separate stock-market hypothesis using
    exact exchange calendars, auction mechanics, overnight gaps, spreads, fees,
    taxes, borrow, capacity, and causal timestamps. It has no current crypto or
    trading authority.
-7. Perform final walk-forward validation only after source continuity,
+8. Perform final walk-forward validation only after source continuity,
    representative train/tune/test coverage, after-cost economic gates, and
    cross-regime gates pass. Walk-forward is not a substitute for those gates.
 

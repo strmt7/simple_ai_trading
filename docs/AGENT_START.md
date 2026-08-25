@@ -48,9 +48,14 @@ safety gate, blocks Stop, or submits an order.
 - The exact Round 75 sources are preserved under
   `docs/model-research/action-value/round-075-frozen-v4-source/`. Active
   supervisor v3 treats an expired campaign as non-restartable.
-- Polymarket Round 29 source-bound selection is implemented, but its evaluation
-  remains unopened until every source input validates. No Stage 1 rows,
-  outcomes, PnL, or profitability evidence have been accessed.
+- Polymarket Round 29 is blocked before feature, target, or model access. Stage
+  1 produced one terminal primary slot, one incomplete slot, and no third
+  primary date; it cannot satisfy the frozen three-date/300-market source gate.
+- The 2026-08-25 target-free structural-parity screens found no accepted edge.
+  Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
+  negative-risk events. Binance's best three-leg spot cycle was only 0.6462 bps
+  gross and required less than 0.2154 bps fee per leg to break even; exact
+  account fees remain unaudited, so this is not an executable edge.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -66,6 +71,7 @@ safety gate, blocks Stop, or submits an order.
 | Current plan or handoff | `docs/CONTINUATION.md` |
 | Binance model/backtest | `docs/model-research/action-value/latest/README.md` |
 | Polymarket model | `docs/model-research/polymarket/latest/README.md` |
+| Structural parity | `src/simple_ai_trading/structural_parity.py` and the two 2026-08-25 snapshots |
 | Model promotion | `docs/MODEL_AND_SIGNAL_VALIDATION.md` and cross-regime contract |
 | Execution/risk | `docs/LIVE_MARKET_SIMULATION.md` and venue runbook |
 | AI | `docs/ai/risk-review/latest/comparison.json` |
