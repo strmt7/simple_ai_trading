@@ -98,6 +98,22 @@ safety gate, blocks Stop, or submits an order.
   Do not rerun or adapt this contract. A future historical endpoint study with
   unproved retention must preregister newest-first ordering so availability is
   tested before older windows consume the one-use attempt.
+  A separate Binance delta-hedged BNB fee-inventory screen tested whether an
+  equal-base BNB perpetual short could neutralize BNB held only for eligible
+  spot-fee discounts. The first valid funding response returned 500 rows rather
+  than the requested 1,000 and was source-limited to four complete inner
+  months. A separately frozen recovery added exactly one older non-overlapping
+  page and merged 1,000 rows without changing the symbol, scenarios, or gate.
+  It rejected the mechanism: the worst complete month cost the short hedge
+  35.6129 bps, requiring 14.24516 times monthly spot turnover to break even in
+  the primary non-authoritative 10-bps-fee/25%-discount scenario. Canonical
+  recovery: `binance-bnb-fee-discount-hedge-recovery-v1-2026-08-25.json`,
+  result SHA-256
+  `85d0be66391b53bef87dda33ea73acaf6995d0200e6423de7999d44a8fed3c8f`.
+  This is terminal and not an accepted edge. Do not paginate again, resample
+  books, loosen the turnover gate, or substitute a public discount for the
+  signed account commission response. Future one-use contracts must prove that
+  their bounded request budget can physically supply the required horizon.
   A newly identified Binance stable-value yield-allocation candidate compares
   BFUSD, RWUSD, and exact same-currency alternatives without forecasting crypto
   direction. Official APIs expose signed read-only rate history and

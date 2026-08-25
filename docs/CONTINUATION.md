@@ -444,7 +444,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`6096affc5e0a04fc6e6f2b09d42ca91ec5ba4f5c0e3a4b8102b46f9297e00461`.
+`94da171bd2ecb1a21c781f4f0efe545985f10eab3152d6439e63d173555010b4`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -461,6 +461,30 @@ conversion-rate and quota input reviewed is signed and both ephemeral credential
 variables remain absent.
 No collector, book sample, signed request, or edge claim was opened. Public LST
 books alone cannot prove redeemable value.
+
+The Binance delta-hedged BNB spot-fee-discount inventory mechanism is now
+terminal. It holds BNB only to pay eligible spot commissions and shorts equal
+base BNBUSDT perpetual inventory; fee consumption would still require hedge
+rebalancing. The initial hosted-verified one-use screen made six public GETs,
+used no credentials, and placed no orders. Its requested 1,000-row funding page
+validly returned 500 rows, leaving only four complete inner months and exposing
+a planning defect: the request budget had not been proved capable of supplying
+the gate's six-month horizon. A separately committed, hosted-verified recovery
+made exactly one older non-overlapping request, merged 1,000 settlements across
+ten complete inner months, and retained the original symbol, scenarios, and
+decision thresholds. Aggregate short funding was positive 164.9780 bps, but
+the worst complete month was negative 35.6129 bps. Under the primary
+non-authoritative 10-bps standard commission and 25% discount scenario, that
+loss requires 14.24516 times monthly spot turnover to offset, so the unchanged
+primary robustness gate failed. The terminal recovery is
+`docs/model-research/action-value/binance-bnb-fee-discount-hedge-recovery-v1-2026-08-25.json`,
+result SHA-256
+`85d0be66391b53bef87dda33ea73acaf6995d0200e6423de7999d44a8fed3c8f`.
+Do not request another page, resample books, loosen the gate, or treat this cost
+reduction as a standalone edge. For every future one-use historical screen,
+bind the endpoint's effective page capacity or preregister sufficient
+non-overlapping pagination before activation; a requested `limit` is not proof
+of returned horizon.
 
 Polymarket taker-tier rebates are cost reductions for legitimate organic taker
 flow, not authority to manufacture a complete-set volume loop. Do not self-match,
