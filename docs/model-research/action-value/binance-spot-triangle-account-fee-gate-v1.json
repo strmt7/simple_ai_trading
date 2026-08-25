@@ -1,0 +1,115 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "profitability_claim": false,
+    "signed_requests_sent": false
+  },
+  "created_at_utc": "2026-08-25T08:05:29.7478482Z",
+  "credential_state": {
+    "checked_scope": "current_process_environment_only",
+    "key_environment_variable": "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY",
+    "key_present": false,
+    "secret_environment_variable": "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET",
+    "secret_present": false,
+    "stored_application_configuration_checked": false,
+    "values_read_or_persisted": false
+  },
+  "exact_fee_evidence_contract": {
+    "bnb_discount_rule": "when both discount flags are true and sufficient BNB is available the standard commission amount is multiplied by the returned discount value; tax and special commissions are not discounted",
+    "endpoint": "GET /api/v3/account/commission",
+    "endpoint_security": "USER_DATA_signed",
+    "query_weight_per_symbol": 20,
+    "required_legs": [
+      {
+        "conversion": "USDC_to_BTC",
+        "side": "BUY",
+        "symbol": "BTCUSDC",
+        "taker_rate_without_bnb_discount": "sum_of_standard_special_tax_taker_plus_buyer_components"
+      },
+      {
+        "conversion": "BTC_to_USDT",
+        "side": "SELL",
+        "symbol": "BTCUSDT",
+        "taker_rate_without_bnb_discount": "sum_of_standard_special_tax_taker_plus_seller_components"
+      },
+      {
+        "conversion": "USDT_to_USDC",
+        "side": "BUY",
+        "symbol": "USDCUSDT",
+        "taker_rate_without_bnb_discount": "sum_of_standard_special_tax_taker_plus_buyer_components"
+      }
+    ],
+    "total_query_weight": 60
+  },
+  "implementation_adjudication": {
+    "existing_authenticated_method": "src/simple_ai_trading/api.py BinanceClient.get_commission_rates",
+    "existing_method_behavior": "conservative spot maker and taker totals include standard special tax and the worse buyer or seller component without applying the optional BNB discount",
+    "round74_capture_reusable_for_spot": false,
+    "round74_non_reuse_reason": "it binds USD-M futures GET /fapi/v1/commissionRate and BTCUSDT ETHUSDT SOLUSDT rather than the three spot triangle symbols"
+  },
+  "official_sources": [
+    {
+      "claims_used": [
+        "spot_account_commission_endpoint",
+        "signed_user_data_security",
+        "symbol_required",
+        "weight_20",
+        "standard_special_tax_and_discount_response_fields"
+      ],
+      "retrieved_bytes": 181189,
+      "retrieved_content_sha256": "49ea6809243fc7fb426e07f2fe662097736c7bb405bd2da5eef637d715427999",
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/rest-api.md"
+    },
+    {
+      "claims_used": [
+        "buy_uses_taker_plus_buyer",
+        "sell_uses_taker_plus_seller",
+        "discount_requires_both_flags_and_sufficient_bnb",
+        "discount_applies_only_to_standard_commission"
+      ],
+      "retrieved_bytes": 6508,
+      "retrieved_content_sha256": "580cfa59c9f55adae0d27bf38d2bc7f268ad759fdf054486e356464c30bbd54c",
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/faqs/commission_faq.md"
+    }
+  ],
+  "promotion_evidence_gate": {
+    "account_fees": "same-account signed responses for all three symbols with every standard special tax side and discount field retained",
+    "discount": "sufficient BNB balance must be proven for every leg before discounted fees may be used",
+    "execution": "atomic or explicitly failure-bounded three-leg execution including step size notional latency partial fill and inventory unwind",
+    "freshness": "commission evidence and market books must satisfy a prospectively frozen maximum age and skew",
+    "profitability": "the exact directional compounded fee multiplier plus slippage and all execution costs must remain below the captured gross multiplier"
+  },
+  "result_sha256": "304a78180be3375a3453384ad71948c24e52ffeba2f1482cb97711e59aa4a688",
+  "schema_version": "binance-spot-triangle-account-fee-gate-v1",
+  "snapshot": {
+    "best_zero_fee_path": {
+      "assets": [
+        "USDC",
+        "BTC",
+        "USDT",
+        "USDC"
+      ],
+      "break_even_equal_fee_bips_per_leg": "0.2153851488809958342253560000",
+      "gross_multiplier": "1.000064618328209962300416523",
+      "gross_net_bips": "0.646183282099623004165230000",
+      "symbols": [
+        "BTCUSDC",
+        "BTCUSDT",
+        "USDCUSDT"
+      ]
+    },
+    "file_bytes": 8856,
+    "file_path": "docs/model-research/action-value/binance-spot-structural-parity-snapshot-v1-2026-08-25.json",
+    "file_sha256": "19f53569552bf0bb27d131b368caafe490d2f429a298f0e3e06bb3a12cec24ce",
+    "result_sha256": "53498bbf4c1ea7af78f3d05819d965ea3e227b1fa8457c958e5721982b1f3f69",
+    "scenario_outcomes": {
+      "0_bips_positive_path_count": 7,
+      "10_bips_positive_path_count": 0,
+      "7_5_bips_positive_path_count": 0
+    }
+  },
+  "status": "no_edge_claim_exact_account_fee_evidence_absent_and_break_even_fee_extremely_low"
+}

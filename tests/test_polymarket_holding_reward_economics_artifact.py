@@ -17,6 +17,16 @@ ARTIFACT_PATH = (
 EXPECTED_RESULT_SHA256 = (
     "b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561"
 )
+READINESS_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "complete-set-holding-reward-readiness-v2.json"
+)
+EXPECTED_READINESS_SHA256 = (
+    "c12bd9d75503c679c1e19800773a002f1d3e82dfad91338cb7bd3ea24dd6a964"
+)
 
 
 def _artifact() -> dict[str, object]:
@@ -97,3 +107,32 @@ def test_holding_reward_sources_and_crypto_scope_are_exact() -> None:
         "What price will Ethereum hit in 2026?",
         "What price will Solana hit in 2026?",
     ]
+
+
+def test_holding_reward_readiness_hash_and_public_candidate_reconstruct() -> None:
+    artifact = json.loads(READINESS_PATH.read_bytes())
+    expected = artifact.pop("result_sha256")
+    canonical = json.dumps(
+        artifact,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+
+    assert expected == EXPECTED_READINESS_SHA256
+    assert hashlib.sha256(canonical).hexdigest() == EXPECTED_READINESS_SHA256
+    assert [
+        row["active_open_orderbook_holding_reward_market_count"]
+        for row in artifact["current_public_eligibility"]["events"]
+    ] == [26, 15, 14]
+    candidate = artifact["exact_public_candidate"]
+    assert sum(Decimal(row["midpoint"]) for row in candidate["tokens"]) == Decimal(
+        candidate["midpoint_mark_per_complete_set_pusd"]
+    )
+    assert artifact["gasless_route"]["direct_user_gas_cost_pusd"] == "0"
+    assert artifact["authority"]["publicly_proven_future_payout_lower_bound_pusd"] == (
+        "0"
+    )
+    assert artifact["authority"]["accepted_edge"] is False
+    assert artifact["authority"]["profitability_claim"] is False

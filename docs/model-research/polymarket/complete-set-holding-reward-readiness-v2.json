@@ -1,0 +1,119 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "publicly_proven_future_payout_lower_bound_pusd": "0"
+  },
+  "created_at_utc": "2026-08-25T08:05:29.7478482Z",
+  "current_public_eligibility": {
+    "events": [
+      {
+        "active_open_orderbook_holding_reward_market_count": 26,
+        "event_id": "89502",
+        "event_market_count": 47,
+        "event_slug": "what-price-will-bitcoin-hit-before-2027",
+        "event_title": "What price will Bitcoin hit in 2026?",
+        "source_response_bytes": 174285,
+        "source_response_sha256": "b8e5fe154dac5948009872b99e0ff41c9a0b1e3b63735438cde1fa40acc05afa",
+        "source_url": "https://gamma-api.polymarket.com/events/slug/what-price-will-bitcoin-hit-before-2027"
+      },
+      {
+        "active_open_orderbook_holding_reward_market_count": 15,
+        "event_id": "89519",
+        "event_market_count": 30,
+        "event_slug": "what-price-will-ethereum-hit-before-2027",
+        "event_title": "What price will Ethereum hit in 2026?",
+        "source_response_bytes": 110031,
+        "source_response_sha256": "aed346e1eb40decb1503794abfd8aec943ffcae5c6f6dc589ee785ea607f06db",
+        "source_url": "https://gamma-api.polymarket.com/events/slug/what-price-will-ethereum-hit-before-2027"
+      },
+      {
+        "active_open_orderbook_holding_reward_market_count": 14,
+        "event_id": "89525",
+        "event_market_count": 29,
+        "event_slug": "what-price-will-solana-hit-before-2027",
+        "event_title": "What price will Solana hit in 2026?",
+        "source_response_bytes": 105985,
+        "source_response_sha256": "0b91f416c01d273d12d061ad57572e37ec1b52bff4a503c19c8a8c4b63690a7d",
+        "source_url": "https://gamma-api.polymarket.com/events/slug/what-price-will-solana-hit-before-2027"
+      }
+    ],
+    "flag_interpretation": "public_candidate_filter_only_not_account_eligibility_or_payout_proof"
+  },
+  "exact_public_candidate": {
+    "accepting_orders": true,
+    "condition_id": "0xdaa4866bae18be58c5a79d2aeeffd035ec78f1bb49dbd88f72993997778a990f",
+    "end_date": "2027-01-01T05:00:00Z",
+    "holding_rewards_enabled": true,
+    "market_id": "701496",
+    "midpoint_mark_per_complete_set_pusd": "1.000",
+    "question": "Will Bitcoin reach $100,000 by December 31, 2026?",
+    "selection_basis": "exact_binary_market_inside_the_officially_listed_bitcoin_event_with_two_live_midpoints_not_claimed_economically_superior",
+    "tokens": [
+      {
+        "midpoint": "0.325",
+        "midpoint_response_bytes": 16,
+        "midpoint_response_sha256": "70e90daba0b2af9aa8be3faa261e7bc323b8f13f46ffff558f2560f67bda6a47",
+        "midpoint_url": "https://clob.polymarket.com/midpoint?token_id=56078938060096976448086754249497300447360333783952000147427828224794011030104",
+        "outcome": "Yes",
+        "token_id": "56078938060096976448086754249497300447360333783952000147427828224794011030104"
+      },
+      {
+        "midpoint": "0.675",
+        "midpoint_response_bytes": 16,
+        "midpoint_response_sha256": "28b3615dce5ed5f44636a4a64f0c194d109cdb4fc3b46363acfdffec90d82fec",
+        "midpoint_url": "https://clob.polymarket.com/midpoint?token_id=11291662904897713174667903388388696640643610556195928998276904135282270136756",
+        "outcome": "No",
+        "token_id": "11291662904897713174667903388388696640643610556195928998276904135282270136756"
+      }
+    ]
+  },
+  "gasless_route": {
+    "claim": "Polymarket pays gas for CTF split and merge operations routed through its relayer",
+    "direct_user_gas_cost_pusd": "0",
+    "preconditions": [
+      "valid relayer API key and owning address",
+      "user signer and compatible deployed wallet",
+      "successful relayer acceptance and confirmed onchain transaction"
+    ],
+    "source_response_bytes": 1206308,
+    "source_response_sha256": "5fb14858dab5d92392941d84ff14ed46c4fb8ae49725a4ef1bda7c32c9be0255",
+    "source_url": "https://docs.polymarket.com/trading/gasless.md",
+    "unmeasured_costs": [
+      "capital transfer or bridge costs outside the relayed CTF operations",
+      "pUSD wrapping or withdrawal costs",
+      "capital opportunity cost",
+      "failed or delayed relayer operational cost",
+      "custody counterparty jurisdiction and tax costs"
+    ]
+  },
+  "promotion_evidence_gate": {
+    "account_eligibility": "authenticated rewards user markets response for the exact condition and reward day",
+    "capital_identity": "confirmed split transaction plus equal YES and NO balances followed by a confirmed merge restoring pUSD",
+    "consistency": "a prospectively frozen observation horizon and precision rule must be chosen before any funded observation; one payout proves only that reward day",
+    "costs": "all external transfer wrapping withdrawal opportunity custody tax and failed-transaction costs must be measured from actual receipts or binding account terms",
+    "payout": "authenticated daily earnings response and independently reconciled pUSD balance change for the split-originated pair",
+    "promotion_rule": "only full-cycle realized reward minus every measured cost and alternative cash yield may enter later persistence and stress validation"
+  },
+  "rate_source_adjudication": {
+    "conservative_sensitivity_rate": "0.0325",
+    "conflict_resolved": false,
+    "documentation_annual_rate": "0.04",
+    "help_center_annual_rate": "0.0325",
+    "status": "official_source_conflict_still_blocks_current_rate_claim"
+  },
+  "result_sha256": "c12bd9d75503c679c1e19800773a002f1d3e82dfad91338cb7bd3ea24dd6a964",
+  "schema_version": "polymarket-complete-set-holding-reward-readiness-v2",
+  "source_continuity": {
+    "economics_v1_path": "docs/model-research/polymarket/complete-set-holding-reward-economics-v1.json",
+    "economics_v1_result_sha256": "b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561",
+    "positions_source_response_bytes": 4127,
+    "positions_source_response_sha256": "bb131a3894d52149058f8554edaa6fafdd9ad72ab2351efbec605d4b3a6e2cc5",
+    "positions_source_url": "https://docs.polymarket.com/concepts/positions-tokens.md"
+  },
+  "status": "stronger_market_direction_independent_hypothesis_public_candidate_and_zero_user_gas_route_confirmed_realized_payout_still_required"
+}
