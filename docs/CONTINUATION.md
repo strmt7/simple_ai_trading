@@ -166,6 +166,19 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-spot-triangle-account-fee-gate-v1.json`,
   result SHA-256
   `304a78180be3375a3453384ad71948c24e52ffeba2f1482cb97711e59aa4a688`.
+- Binance spot maker rebates: current official API documentation exposes the
+  same account's liquidity-program overview, daily/weekly performance, weekly
+  final rebates, and spot rebate history. It also explicitly says the symbol
+  commission endpoint excludes the spot market-maker rebate rate and BNB
+  discount effect. The public static program document returned HTTP 403 from
+  this host, both designated ephemeral credential variables were absent, and no
+  signed request or stored-configuration inspection occurred. No current tier,
+  pair applicability, fill, rebate, or profitability is proved. Do not reuse the
+  taker-price triangle as maker economics or substitute an indexed fee table.
+  Canonical evidence gate:
+  `docs/model-research/action-value/binance-spot-maker-rebate-account-evidence-gate-v1.json`,
+  result SHA-256
+  `19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f`.
 - Binance options: 1,538 tradable unit-one BTCUSDT, ETHUSDT, and SOLUSDT
   contracts formed 50 same-underlying, same-expiry, same-side chains. Exact
   lot-aligned enumeration covered 26,688 vertical-dominance pairs and 338,904

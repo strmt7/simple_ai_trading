@@ -121,6 +121,14 @@ endpoint and symbol universe. Credential absence is a terminal missing-evidence
 state for the current assessment, not permission to substitute a public tier or
 invent a discount.
 
+Binance spot maker-rebate work has a separate account-evidence boundary. The
+official symbol commission response explicitly excludes both the spot market-
+maker rebate rate and the BNB discount effect. Require the same account's
+liquidity-program overview, performance, weekly final-rebate result, exact
+symbol commission, and spot rebate history; do not substitute a cached public
+program table. A rebate rate alone never proves fills, queue priority, adverse
+selection, inventory neutrality, capacity, or after-cost profit.
+
 ## Verification Lanes
 
 Use the narrowest relevant checks while iterating, then the complete suite at a

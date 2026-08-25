@@ -1,0 +1,86 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "profitability_claim": false,
+    "signed_requests_sent": false
+  },
+  "created_at_utc": "2026-08-25T08:30:05Z",
+  "credential_state": {
+    "checked_scope": "current_process_environment_only",
+    "key_environment_variable": "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY",
+    "key_present": false,
+    "secret_environment_variable": "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET",
+    "secret_present": false,
+    "stored_application_configuration_checked": false,
+    "values_read_or_persisted": false
+  },
+  "current_account_evidence_contract": {
+    "liquidity_program_overview": {
+      "claim": "returns the user liquidity program overview",
+      "endpoint": "GET /sapi/v1/vip/liquidity-programs/overview"
+    },
+    "liquidity_program_performance": {
+      "claim": "returns user liquidity program daily and weekly performance",
+      "endpoint": "GET /sapi/v1/vip/liquidity-programs/performance"
+    },
+    "realized_spot_rebate_history": {
+      "claim": "returns spot rebate history records",
+      "endpoint": "GET /sapi/v1/rebate/taxQuery",
+      "endpoint_security": "USER_DATA"
+    },
+    "symbol_commission": {
+      "endpoint": "GET /sapi/v1/commission/queryCommissionFee",
+      "explicit_exclusions": [
+        "spot_market_maker_rebate_rate",
+        "bnb_discount_effect"
+      ]
+    },
+    "weekly_final_rebates": {
+      "claim": "returns liquidity program weekly results with final rebates",
+      "endpoint": "GET /sapi/v1/vip/liquidity-programs/weekly-result",
+      "update_cadence": "after_each_evaluation_cycle_each_monday_around_10_00_utc"
+    }
+  },
+  "hypothesis_boundary": {
+    "directional_forecast_required": false,
+    "market_direction_independent_realized_profit_proven": false,
+    "ordinary_symbol_commission_response_sufficient": false,
+    "reason": "a maker rebate does not by itself prove enrollment pair applicability fills queue priority adverse selection inventory neutrality capacity or realized after-cost profit",
+    "spot_triangle_snapshot_reusable_as_maker_execution_economics": false,
+    "spot_triangle_non_reuse_reason": "the existing 0.646183 bps path consumes displayed taker prices while resting maker legs are non-atomic and require a separately frozen price fill and inventory contract"
+  },
+  "official_source": {
+    "claims_used": [
+      "liquidity_program_overview_endpoint",
+      "liquidity_program_performance_endpoint",
+      "weekly_final_rebate_endpoint_and_update_cadence",
+      "symbol_commission_excludes_spot_market_maker_rebate_and_bnb_discount",
+      "spot_rebate_history_endpoint_and_user_data_security"
+    ],
+    "last_modified_response_header": "Mon, 24 Aug 2026 11:41:51 GMT",
+    "retrieved_bytes": 7978091,
+    "retrieved_content_sha256": "05d03d6a21bd3c53a369066e4066473362b58beec7d55e061296bc7f9c84883e",
+    "url": "https://developers.binance.com/en/docs/llms-full.txt"
+  },
+  "promotion_evidence_gate": {
+    "account_program_state": "same-account liquidity program overview must prove current enrollment tier and exact applicable product scope",
+    "capacity": "weekly volume share or volume requirement and capital turnover must be feasible without self-trading wash trading or uneconomic volume farming",
+    "execution": "prospectively frozen post-only placement queue cancellation latency partial-fill and inventory-unwind evidence is required",
+    "fees": "exact symbol commission fields BNB state and maker rebate treatment must be reconciled without double counting",
+    "persistence": "weekly final rebate records must reconcile to realized spot rebate history and balances across a frozen horizon",
+    "profitability": "realized spread plus rebate minus adverse selection inventory hedge slippage fees opportunity cost and operational costs must remain positive across required stress slices"
+  },
+  "public_schedule_adjudication": {
+    "accepted_as_current_rate_evidence": false,
+    "direct_fetch_http_status": 403,
+    "rate_or_tier_claim_from_public_schedule": false,
+    "reason": "the static document was not retrievable from the current host and cannot establish current same-account enrollment tier pair applicability or realized rebate",
+    "url": "https://public.bnbstatic.com/vip/portal/public/liquidity_prog_spot_spec_v11"
+  },
+  "result_sha256": "19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f",
+  "schema_version": "binance-spot-maker-rebate-account-evidence-gate-v1",
+  "status": "no_edge_claim_current_account_program_and_realized_rebate_evidence_absent"
+}
