@@ -23,7 +23,7 @@ BFUSD_HASH = "54fe3d3e23a92290debdc67d1e7e19ecac6c06441c045f1aa21fe3e62558c03c"
 SMART_ARBITRAGE_HASH = (
     "03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3"
 )
-REGISTRY_HASH = "174b255ac0ede946a0e7ec12cc482ac848d9f0e2ec857e8938e98c65db78bc0a"
+REGISTRY_HASH = "71ef65dd40283f77baaf7137cf26e2624bb3b14dc566ba951d6fdfd0cad814c0"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -133,7 +133,7 @@ def test_registry_binds_new_edge_conflict_and_terminal_adjudication() -> None:
     assert _canonical_hash(registry) == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 16
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 33))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 34))
 
     builder = next(
         row

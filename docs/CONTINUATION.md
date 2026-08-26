@@ -874,7 +874,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`174b255ac0ede946a0e7ec12cc482ac848d9f0e2ec857e8938e98c65db78bc0a`.
+`71ef65dd40283f77baaf7137cf26e2624bb3b14dc566ba951d6fdfd0cad814c0`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1518,6 +1518,24 @@ official campaign announcement. Canonical candidate:
 result SHA-256
 `f898914a56fe61c063ca0eaf8d02fc91ea8bf527dd3ff49289527db524d286c3`.
 
+Polymarket's Positions Framework exposes a materially distinct exact Boolean
+parity candidate between underlying CLOB outcomes and Combo RFQ positions. For
+all terminal redeemable values `A,B` in `[0,1]`, including `0.5` cancellation
+payouts, `A+B = (A*B) + (1-((1-A)*(1-B)))`: two underlying outcomes exactly
+replicate `YES(A and B)` plus `NO(not A and not B)`. The retained public Combo
+catalog boundary contains 500 unique volume-descending markets and current
+Combo-enabled same-game WNBA legs, but its non-null cursor proves incomplete
+coverage. Catalog prices are not Combo quotes. No approved-builder credentials,
+authenticated quote, CLOB batch, account state, order, or after-cost recurrence
+was obtained, so this is an unaccepted candidate with a zero public profit
+floor. The earlier broad catalog population screen remains terminal; this new
+candidate is a payoff identity and should advance only when approved-builder
+access plus explicit quote-request-only authority permits minimum-size
+nonaccepted BUY and SELL RFQs. Canonical candidate:
+`docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json`,
+result SHA-256
+`08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1594,6 +1612,12 @@ not grant account, funding, order, or transaction authority.
    own stablecoin pool, exact window, allocation, eligibility, and distribution
    terms is the only public retry trigger. Account GETs and every lock, unlock,
    transfer, conversion, or reward sale retain their separate authority gates.
+   For the Polymarket Combo Boolean identity, do not repaginate the terminal
+   broad catalog or treat catalog prices as quotes. Advance only when approved-
+   builder access and explicit quote-request-only authority exist. Request one
+   minimum nonaccepted BUY and SELL RFQ first; fetch synchronized underlying
+   books only if the exact RFQ totals leave positive conservative headroom.
+   Quote acceptance, account mutation, and any order remain separately gated.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build

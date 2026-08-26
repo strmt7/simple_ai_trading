@@ -200,7 +200,8 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-round27-complete-set-taker-rebate-overlay-v1-2026-08-26.json`,
   SHA-256
   `948f47d9d0c2fb6cbf441da1147ae07006a897f307141dfd6ae25c85e47f13d2`.
-  The accepted edge count is thirteen. Binance's best three-leg spot cycle
+  The current structural-edge registry accepted count is sixteen. Binance's
+  best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even. The exact three spot fee queries are now defined from Binance's
   official commission contract, but the designated ephemeral credential
@@ -877,6 +878,21 @@ safety gate, blocks Stop, or submits an order.
   `binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json`,
   result SHA-256
   `f898914a56fe61c063ca0eaf8d02fc91ea8bf527dd3ff49289527db524d286c3`.
+- Polymarket's Positions Framework exposes a materially distinct exact Boolean
+  parity candidate between two underlying CLOB outcomes and Combo RFQ
+  positions. For terminal values `A,B` in `[0,1]`, including fractional
+  cancellation payouts, `A+B = YES(A and B) + NO(not A and not B)`. Current
+  public catalog evidence includes Combo-enabled same-game WNBA legs, but the
+  catalog is not a quote and no approved-builder credentials, authenticated
+  RFQ, executable CLOB batch, or after-cost recurrence was available. The
+  candidate is unaccepted. Do not repeat the terminal broad Combo catalog
+  screen or treat implication alone as the identity. Only when approved-builder
+  access and explicit quote-request-only authority exist, request minimum-size
+  nonaccepted BUY and SELL quotes; inspect CLOB books only if exact RFQ fields
+  leave positive conservative headroom. Canonical candidate:
+  `polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json`, result
+  SHA-256
+  `08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -909,6 +925,7 @@ safety gate, blocks Stop, or submits an order.
 | Live NBA moneyline/spread implication candidate | `docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json` |
 | Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |
 | Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
+| Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |
