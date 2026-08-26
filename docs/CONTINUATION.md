@@ -135,6 +135,33 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/structural-parity-snapshot-v1-2026-08-25.json`,
   result SHA-256
   `9d7a2c61ae29cb6b29fd3f417ed3e40f1ea08fb2cb6729d20372648abdc448e2`.
+  That artifact is terminal only as a frozen one-state snapshot, not as a
+  lifetime verdict on event-time recurrence. A new primary study,
+  `Executable Arbitrage and Market Efficiency in Prediction Markets`
+  (`arXiv:2608.00666v1`, submitted 2026-08-01), reports 2,098 positive
+  unsupported YES-side CLOB episodes but 36 positive adapter-supported NO-side
+  episodes, with only five exact-duration NO-side episodes and a 7.99-second
+  median. It also estimates approximately 1.086 million USDC of converter-linked
+  profit. The estimate combines realized proceeds with imputed values for
+  residual/merged YES inventory and imputed opportunity values for split-minted
+  NO inventory; it is therefore a mechanism lead, not current cash-realized
+  after-cost profit. The official adapter at pinned commit
+  `f78b35b0863b4308a431ca307d06f49b2ea65e78` independently confirms the
+  executable NO-to-YES subset conversion and optional per-event conversion fee.
+  A retained public PMXT preflight filtered all 24 hourly 2026-08-09 partitions
+  to the six tokens in event `106981`. Once every token had an authoritative
+  full book, 796 exact received-timestamp-batched five-share states spanning
+  11,100.796 seconds had zero gross-positive path and zero crossed state. This
+  rejects that bounded event-day preflight but does not estimate the broader
+  recurrence reported by the paper. Do not repeat another isolated snapshot or
+  call historical mark-to-market estimates realized profit. The now-actionable
+  research contract is one bounded source-continuous event-time study across
+  fixed non-augmented active BTC/ETH/SOL negative-risk events; exact fees,
+  latency, atomicity, capacity, and cash-realized outputs are gated behind a
+  continuity-valid gross-positive state. Canonical gate:
+  `docs/model-research/action-value/polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json`,
+  result SHA-256
+  `ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030`.
 - Polymarket logical implications: a later canonical fetch contained 1,473
   unique scoped active events. Exact same-event rule identities yielded 53
   threshold groups and 12 deadline groups: 2,572 implication pairs were

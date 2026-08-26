@@ -119,7 +119,22 @@ safety gate, blocks Stop, or submits an order.
 - The 2026-08-25 target-free structural-parity screens found no accepted edge.
   Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
   negative-risk events and zero gross-positive logical-implication bundles
-  across 2,572 threshold/deadline pairs. Binance's best three-leg spot cycle
+  across 2,572 threshold/deadline pairs. Negative-risk conversion is no longer
+  globally terminal as a research family: the new primary paper
+  `arXiv:2608.00666` reports 36 adapter-supported positive NO-side CLOB episodes
+  and approximately 1.086 million USDC of historical converter-linked estimated
+  profit. That estimate mixes realized proceeds with imputed residual and merged
+  inventory, so it is not current cash-realized after-cost profit. A retained
+  2026-08-09 replay for the fixed three-outcome `Bitcoin vs. Gold vs. S&P 500 in
+  2026` event initialized all six books and evaluated 796 exact
+  received-timestamp-batched five-share states; zero was gross positive. The old
+  one-state snapshot remains terminal only under its exact contract. The
+  materially distinct next step is one source-continuous event-time
+  recurrence/capacity study of adapter-supported NO-to-YES paths, not another
+  snapshot. Canonical gate:
+  `polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json`, result
+  SHA-256 `ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030`.
+  The accepted edge count remains nine. Binance's best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even. The exact three spot fee queries are now defined from Binance's
   official commission contract, but the designated ephemeral credential

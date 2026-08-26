@@ -1,0 +1,176 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_edge": true,
+    "deployment_ready": false,
+    "distinct_research_contract": true,
+    "market_direction_forecast_required": false,
+    "reason": "A new primary paper and the current official adapter contract establish that negative-risk NO-to-YES conversion is a real protocol-executable structural mechanism with historically observed exploitation. The prior repository result was only one synchronized current snapshot and cannot establish recurrence. A retained recent archive preflight for one in-scope event also found zero gross-positive paths in 796 valid timestamp-batched states, so neither the paper nor this bounded replay establishes a current accessible after-cost edge.",
+    "status": "material_primary_evidence_reopens_event_time_recurrence_research_only_no_current_edge"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "live_trading_authority": false,
+    "orders_or_conversions_submitted": 0,
+    "public_read_only_research": true,
+    "signed_requests_made": 0
+  },
+  "created_at_utc": "2026-08-26T17:27:06.0214316Z",
+  "historical_paper_evidence": {
+    "actor_transaction_panel": "events listed through 2025-12-31",
+    "clob_market_state_panel": "hour-stratified level-2 states from 2026-04-14T00:00:00Z through 2026-05-19T06:00:00Z",
+    "clob_positive_episode_counts": {
+      "adapter_supported_NO_to_YES": 36,
+      "unsupported_YES_to_NO": 2098
+    },
+    "exact_duration_evidence": {
+      "NO_side_episode_count": 5,
+      "NO_side_median_seconds": "7.99",
+      "YES_side_episode_count": 253,
+      "YES_side_median_seconds": "16.15",
+      "interpretation": "The five exact-duration NO-side episodes are far too few for a reliable distributional comparison; duration is a lead for latency design, not an execution guarantee."
+    },
+    "mechanism_linked_profit_estimates_USDC": {
+      "converter_enabled": "1086000",
+      "settlement_based_complete_baskets": "32283",
+      "total_approximate": "1118000"
+    },
+    "material_limitations": [
+      "The converter estimate combines realized proceeds with imputed values for merged and residual YES positions and combines observed purchases with imputed opportunity values for split-minted NO positions.",
+      "The actor transaction panel and the 2026 level-2 market-state panel are separate and cannot match individual conversions to observed simultaneous order-book opportunities.",
+      "The market-state study assumes taker execution for token trades but omits relayer-routed gas costs.",
+      "The paper's historical profit estimate is not current BTC ETH SOL account-accessible cash-realized after-cost profit.",
+      "A reported anomalous 75-conversion cluster on 2025-12-12 with approximately 381748 USDC estimated profit was excluded by the paper as likely nonrepresentative or coordinated transfer activity.",
+      "The paper reports declining typical estimated profit, reaching approximately 0.08 USDC by early 2026 with a persistent negative lower tail."
+    ],
+    "paper": {
+      "arxiv_id": "2608.00666v1",
+      "exact_html_bytes": 254275,
+      "exact_html_sha256": "0e17c0a35a808babbdcf35b198ba8b62d4d6c5220a4e07923784e60b7f381114",
+      "retrieved_at_utc": "2026-08-26T17:21:00Z",
+      "submitted_at_utc": "2026-08-01T13:42:28Z",
+      "title": "Executable Arbitrage and Market Efficiency in Prediction Markets",
+      "url": "https://arxiv.org/html/2608.00666v1"
+    }
+  },
+  "implementation_equivalence": {
+    "existing_repository_screen": "The existing structural parity implementation walks displayed depth for complete YES acquisition, complete YES mint-and-sell, and every NO subset conversion into collateral plus complementary YES sales.",
+    "module_path": "src/simple_ai_trading/structural_parity.py",
+    "module_sha256": "f7048945d0ed800f7246672ae56e50d3ce5d6f87d52674ce029937247b295163",
+    "prior_snapshot_path": "docs/model-research/polymarket/structural-parity-snapshot-v1-2026-08-25.json",
+    "prior_snapshot_result_sha256": "9d7a2c61ae29cb6b29fd3f417ed3e40f1ea08fb2cb6729d20372648abdc448e2",
+    "prior_snapshot_scope": "one synchronized five-share state across 22 fixed active BTC ETH SOL negative-risk events; zero gross-positive and zero after-cost-positive events",
+    "tool_path": "tools/screen_polymarket_structural_parity.py",
+    "tool_sha256": "ab684a33d8965a25c446826eec63807f74eeee056d4be35ea163cd752d43ab64"
+  },
+  "official_adapter_contract": {
+    "adapter_repository_commit": "f78b35b0863b4308a431ca307d06f49b2ea65e78",
+    "commit_api_payload_bytes": 41488,
+    "commit_api_payload_sha256": "61c06ed6d33b5a8ef7b31860bf0f73c0e56c222faac8f425384fce348f50c6fb",
+    "convert_positions_identity": "For an event with n questions, converting amount q of m selected NO positions returns q times m minus 1 collateral plus q of every complementary YES position before any configured conversion fee.",
+    "directionality": "The official adapter exposes NO-to-YES conversion and does not expose the reverse YES-to-NO transformation.",
+    "documentation_bytes": 4008,
+    "documentation_sha256": "dd6c4d63773e7323f9b90fd5cd9716d59aab34efb907b56f8843f368a3a06ecd",
+    "documentation_url": "https://raw.githubusercontent.com/Polymarket/neg-risk-ctf-adapter/f78b35b0863b4308a431ca307d06f49b2ea65e78/docs/NegRiskAdapter.md",
+    "fee_gate": "Each event's on-chain conversion fee bips must be source-bound at the same state; zero cannot be assumed from another event.",
+    "payoff_caveat": "The identity requires a mutually exclusive and exhaustive event in which exactly one question resolves YES; augmented or incomplete events remain excluded fail closed."
+  },
+  "pmxt_archive_contract": {
+    "access": "public HTTPS without credentials",
+    "archive_index_observation": {
+      "bytes": 73836,
+      "first_visible_partition": "2026-08-07T23",
+      "last_visible_partition": "2026-08-10T00",
+      "sha256": "67eda0649cc517f6c4fd81263dab816a4396d54ed3b0f6a1c692ac23e2924475",
+      "visible_partition_count": 50,
+      "warning": "The observed index page is not proof of full historical population completeness. It does show no later partition on that visible page and therefore cannot serve as a current 2026-08-26 feed."
+    },
+    "coverage_start": "2026-04-13T19:00:00Z",
+    "direct_object_pattern": "https://r2v2.pmxt.dev/polymarket_orderbook_YYYY-MM-DDTHH.parquet",
+    "documentation_bytes": 53381,
+    "documentation_sha256": "1189fef4bb5ad3f01a7b49e794d2d023ddab5cb67fbd5c11770daccab004c07d",
+    "documentation_url": "https://archive.pmxt.dev/docs/v2-data-overview",
+    "source": "Polymarket public CLOB market WebSocket",
+    "state_contract": "Initialize each token from a full book row, then apply price_change rows. Apply every row belonging to one original update together before evaluation, and require source continuity plus reported-best-quote checksum agreement before trusting duration or edge state."
+  },
+  "recent_archive_preflight": {
+    "cache": {
+      "bytes": 45890,
+      "book_rows": 14,
+      "event_types": {
+        "book": 14,
+        "last_trade_price": 6,
+        "price_change": 7996
+      },
+      "filtered_row_count": 8016,
+      "sha256": "bb5621829c77299028949d4e9e6dd78000700fa95dedd8d4b2686845f749f224",
+      "source_partitions": "all 24 hourly objects for 2026-08-09",
+      "token_count": 6
+    },
+    "event": {
+      "event_id": "106981",
+      "gamma_payload_bytes": 22034,
+      "gamma_payload_sha256": "f1944ea2e86c32a42e446beb74a9e2e4995bafda4e81c94516f554b3798ee97a",
+      "gamma_url": "https://gamma-api.polymarket.com/events/106981",
+      "market_title": "Bitcoin vs. Gold vs. S&P 500 in 2026",
+      "negative_risk_augmented": false,
+      "negative_risk_fixed": true,
+      "outcomes": [
+        "Bitcoin",
+        "Gold",
+        "S&P 500"
+      ],
+      "published_minimum_order_size_shares": "5"
+    },
+    "initialization": {
+      "all_six_tokens_initialized_at_utc": "2026-08-09T20:54:52.523Z",
+      "reason_for_late_start": "Incremental rows before each token's first authoritative full-book row were not used to invent missing depth.",
+      "trusted_evaluation_end_utc": "2026-08-09T23:59:53.319Z",
+      "trusted_observation_seconds": "11100.796"
+    },
+    "method": {
+      "conversion_fee_bips": 0,
+      "fee_interpretation": "Zero-fee is an optimistic gross preflight only, not a historical fee claim. Because no gross-positive state existed, adding nonnegative fees cannot make the candidate profitable.",
+      "quantity_shares": "5",
+      "timestamp_batching": true
+    },
+    "result": {
+      "crossed_or_locked_invalid_states": 0,
+      "evaluated_states": 796,
+      "gross_positive_episode_count": 0,
+      "gross_positive_path_occurrences": 0,
+      "gross_positive_state_count": 0,
+      "status": "rejected_bounded_event_day_preflight_zero_gross_positive_paths"
+    },
+    "scope_limitations": [
+      "This is one event and one UTC day, not the complete archive population and not a current feed.",
+      "Only the final 11100.796 seconds had authoritative initialization for every token.",
+      "The replay rules out a positive five-share gross path in its trusted states; it does not estimate broader recurrence or current capacity.",
+      "The normalized archive does not expose an explicit original-message identifier. Exact timestamp_received batching reduces partial-update artifacts but does not independently prove atomic message grouping.",
+      "The archive is a third-party export of the public source and requires continuity validation before promotion-grade use."
+    ]
+  },
+  "research_decision": {
+    "accepted_edge_count_change": 0,
+    "current_accepted_edge_count": 9,
+    "do_not_repeat": [
+      "another isolated current snapshot of the unchanged event set",
+      "the same 2026-08-09 event-day replay",
+      "paper profit arithmetic presented as current realized cash profit",
+      "unsupported YES-to-NO violations presented as pre-settlement executable arbitrage"
+    ],
+    "material_change_to_prior_terminal_rule": "The prior frozen snapshot remains terminal under its exact one-state contract. The family is no longer globally terminal because the 2026-08-01 primary paper supplies material event-time recurrence and realized-conversion evidence that the snapshot could not test.",
+    "next_action": "Run one bounded source-continuous event-time recurrence and capacity study across the fixed non-augmented active BTC ETH SOL negative-risk population. Screen only executable adapter-supported NO-to-YES paths at exact current minimum size and a preregistered depth ladder. Escalate costs only after a positive gross state survives atomic message batching and continuity checks.",
+    "promotion_gate": "Require repeated independent adapter-supported gross-positive episodes across non-overlapping time and liquidity regimes, exact displayed depth and minimum size, on-chain event conversion fee, CLOB fees, conversion and relayer accessibility, gas or relayer cost, latency, atomicity or leg-risk stress, adverse selection, capacity, and cash-realized output reconciliation. Any unsupported regime rejects promotion or abstains."
+  },
+  "result_sha256": "ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030",
+  "schema_version": "polymarket-negrisk-converter-recurrence-gate-v1",
+  "source_request_contract": {
+    "public_requests_only": true,
+    "raw_evidence_retained_before_calculation": true,
+    "request_bounds": "one arXiv HTML document, one official adapter main-commit response, one pinned official adapter document, one PMXT documentation page, one visible PMXT archive index page, one Gamma event response, and 24 exact hourly Parquet objects queried only for six event token IDs",
+    "state_changes": 0
+  }
+}

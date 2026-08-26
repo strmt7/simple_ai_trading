@@ -47,6 +47,15 @@ override prose.
   push, or hosted CI run before exploratory public requests. The stricter
   frozen one-use workflow remains mandatory for authenticated, account-specific,
   funded, order-capable, or state-changing operations.
+- A frozen current-state screen terminalizes only its exact population, time,
+  size, and source contract. Material new primary evidence of recurrent
+  event-time violations may reopen a separately preregistered recurrence study;
+  it does not justify repeating an isolated snapshot or promoting the family.
+- Historical mechanism-linked profit that mixes realized cash flows with
+  imputed residual, merged, minted, or opportunity-valued inventory is a
+  research lead, not after-cost profit. Separate the cash-realized core from
+  mark-to-market inventory and bind every unwind, fee, delay, and capacity cost
+  before using it in an edge claim.
 - Before every venue HTTP request, classify the exact endpoint and method from
   a current primary API contract. Never infer that an endpoint is public from
   its path, product name, nearby public endpoints, or an unauthenticated error;
