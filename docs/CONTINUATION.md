@@ -512,6 +512,24 @@ diagnostics, not accepted edges.
   This is not an edge: the publicly proven payout floor is zero, fill and queue
   evidence are absent, and one orphan can still lose 24.50 pUSD without rebate
   credit.
+  A distinct public recurrence pass then proved realized program payments but
+  not profitable making. All top ten weekly crypto-volume wallets received
+  `MAKER_REBATE` activity on all seven queried UTC dates. For the top monthly
+  crypto-volume wallet, the 2026-08-25 market-level endpoint returned 905 rows
+  totaling 7,457.259568 USDC. An exhaustive condition join found 668 BTC, ETH,
+  and SOL markets paying 7,017.331032 USDC, or 94.10% of that wallet-day total,
+  across 5m, 15m, and 4h contracts. The weekly cohort's 38.5082-bp aggregate
+  receipt-to-crypto-volume number is diagnostic only: activity can include
+  other categories, leaderboard volume is not maker-only, period boundaries
+  are not identical, and public PnL accounting semantics are unspecified.
+  Neither source exposes queue, quote duration, paired fills, inventory path,
+  adverse selection, orphan loss, or complete costs. The payout floor for a
+  fresh hypothetical order remains zero and no edge is accepted. Canonical
+  recurrence:
+  `docs/model-research/polymarket/crypto-maker-rebate-public-recurrence-v2-2026-08-26.json`,
+  result SHA-256
+  `c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612`.
+  Do not repeat public wallet polling unless the program terms change.
 - Polymarket complete-set holding yield is now an accepted structural edge
   after direct relayer split/merge cost only for existing idle pUSD already on
   Polymarket. Official mechanics
@@ -603,7 +621,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`c9592d8c559b92c33361212394a26b6f10b63f024c9747fe2168939e3a419774`.
+`ab4328c1ee4ab7bd1553ebf23e7b973f43535ae99cdeda1158a23d07a3c2fbf5`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

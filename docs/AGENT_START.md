@@ -406,6 +406,21 @@ safety gate, blocks Stop, or submits an order.
   orphan protection; the one-fill settlement loss bound remains 24.50 pUSD
   without rebate credit. Do not turn this arithmetic into a profitability claim
   or activate a capture while the Round 21 sidecar is protected.
+  A later public recurrence study proved that the program does make material
+  payments, without proving a trading edge. All top ten weekly crypto-volume
+  wallets had `MAKER_REBATE` receipts on each of seven UTC dates. The top
+  monthly crypto-volume wallet's 2026-08-25 payment decomposed into 905 markets;
+  668 BTC/ETH/SOL rows paid 7,017.331032 USDC, 94.10% of its 7,457.259568-USDC
+  daily total, across 5m, 15m, and 4h markets. Public activity omits fills,
+  queue, capital, adverse selection, inventory, and orphan P&L, and wallet-level
+  receipt-to-volume ratios mix incompatible public fields. The fresh-order
+  payout floor therefore remains zero and no edge is accepted. Canonical
+  recurrence:
+  `crypto-maker-rebate-public-recurrence-v2-2026-08-26.json`, result SHA-256
+  `c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612`.
+  Do not poll public wallets again unless terms change. After the protected
+  boundary, only owned authenticated fills and complete after-cost inventory
+  reconciliation can decide this candidate.
 - Polymarket complete-set holding yield is now a validated, narrowly scoped
   structural edge after direct relayer split/merge cost for existing idle pUSD
   already on Polymarket. It does
