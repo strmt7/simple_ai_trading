@@ -293,6 +293,23 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-bfusd-spot-redemption-parity-v1-2026-08-26.json`,
   result SHA-256
   `566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb`.
+- Binance bStock structural parity is a promising research-only candidate
+  outside the current BTC/ETH/SOL execution scope. A public 67-symbol screen
+  selected `SNXXBUSDT`; exact displayed depth stayed positive at 1,000 and
+  5,000 USDT after a labeled 20-bps spot-plus-stock cost sensitivity, by only
+  0.6463 and 2.0877 USDT. Binance documents eligible-user 1:1 stock/bStock
+  conversion with no conversion fee, but its public external reference price
+  is not an executable Binance Stocks sale quote. Separately, direction-neutral
+  long-bStock / short-matching-TradFi-perpetual diagnostics for DRAM, MU, MRVL,
+  and SNDK cleared a labeled 30-bps round-trip sensitivity in every available
+  complete inner month; the histories contain only two or three complete
+  months. Account eligibility, exact commissions, synchronous stock quotes,
+  conversion state, hedge-unit mapping, margin/capital costs, prospective
+  persistence, and permanent scope authority remain absent. Canonical artifact:
+  `docs/model-research/action-value/binance-bstock-reference-parity-v1-2026-08-26.json`,
+  result SHA-256
+  `73fec22cc61fc8be0c792a78c0340fcb163b9bf7862708796d50521a9c44a8ac`.
+  It is not an accepted edge and must not trigger repeated public polling.
 - Binance quarterly cash-and-carry: one catalog fetch and one spot/futures book
   pair per selected contract covered BTCUSDT and ETHUSDT current/next quarters
   at 12 quantities. All 12 displayed gross bases were positive; nine cleared a
@@ -470,7 +487,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`5e79c25a2aff8e9dab08b4b2ac51b3dbdd02d62be5e740a28d62138f34948530`.
+`ccc93d256f0662cee02aa557748b5b3aa782fe2bfc8b267648dcee2ddf68856c`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
