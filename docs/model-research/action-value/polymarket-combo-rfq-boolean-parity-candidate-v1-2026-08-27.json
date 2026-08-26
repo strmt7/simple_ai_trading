@@ -1,0 +1,288 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "materially_new_exact_boolean_combo_rfq_vs_clob_parity_candidate_current_combo_enabled_same_game_markets_proved_executable_combo_quotes_and_after_cost_recurrence_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "combo_quote_requests_created": 0,
+    "credentials_present": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_combo_catalog_requests": 5,
+    "public_gamma_market_detail_requests": 7,
+    "public_order_book_requests": 0,
+    "retained_public_http_responses": 19
+  },
+  "created_at_utc": "2026-08-26T22:08:00Z",
+  "distinctness": {
+    "new_family": "polymarket_positions_framework_combo_rfq_boolean_identity_vs_underlying_clob",
+    "not_a_repeat_of": [
+      "separate_market_all_taker_subset_parity",
+      "single_condition_complete_set_parity",
+      "negative_risk_conversion",
+      "ordinary_maker_rebate_or_liquidity_reward_quoting"
+    ],
+    "reason": "the Positions Framework creates separately tradable fully collateralized conjunction YES and complement NO positions and the RFQ returns an executable net_of_fee quote; exact algebra can compare those positions with their underlying CLOB outcomes without predicting the event"
+  },
+  "exact_payoff_identity": {
+    "definitions": {
+      "A": "terminal redeemable value of one selected underlying outcome in [0,1]",
+      "B": "terminal redeemable value of a second selected underlying outcome in [0,1]",
+      "combo_NO_notA_and_notB": "1 - ((1 - A) * (1 - B))",
+      "combo_YES_A_and_B": "A * B"
+    },
+    "identity": "A + B = (A * B) + (1 - ((1 - A) * (1 - B)))",
+    "machine_reconstruction": "(A * B) + 1 - (1 - A - B + (A * B)) = A + B",
+    "terminal_state_scope": "all A and B values in [0,1], including ordinary 0_or_1 resolution and fractional 0.5 cancellation resolution",
+    "why_naive_implication_is_rejected": "when both related markets cancel 50_50, YES(A_and_B) redeems for 0.25 while a single 0.5 leg redeems for 0.5; implication alone is therefore not an exact identity",
+    "why_the_full_identity_survives_cancellation": "at A=B=0.5 the underlying side pays 1.0 and the combo side pays 0.25 + 0.75 = 1.0"
+  },
+  "execution_economics_contract": {
+    "combo_quote_access": "approved builder credentials plus authenticated account access are required to request and accept quotes; none was present or used",
+    "combo_quote_directions": "current builder documentation targets Combo YES and supports BUY by collateral notional and SELL by exact Combo share size",
+    "effective_NO_acquisition": "split one pUSD into the YES and NO pair for the notA_and_notB Combo, sell the YES through an exact net_receive RFQ, and retain the NO; include split collateral, returned sale proceeds, fees, relayer cost, delay, and residual inventory",
+    "minimum_profitable_inequality": "guaranteed_equal_payoff_value_of_expensive_portfolio_minus_total_executable_acquisition_and_inventory_cost_of_cheaper_portfolio_minus_all_quote_CLOB_split_merge_compress_relayer_latency_orphan_capital_and_exit_costs > 0",
+    "price_inputs": [
+      "exact accepted Combo RFQ total_required_e6 or net_receive_e6, never catalog outcome_prices",
+      "one synchronized public CLOB books response for every required underlying outcome",
+      "exact per-market feeSchedule and venue rounding",
+      "exact executable common size after six_decimal Combo sizing CLOB minimums displayed depth and every inventory transform"
+    ],
+    "two_orientations_required": "evaluate long_underlyings_short_combo_replica and long_combo_replica_short_underlyings separately because fees inventory creation collateral locks and executable sides are asymmetric",
+    "public_after_cost_floor": "0"
+  },
+  "current_partial_catalog_evidence": {
+    "boundary": "first_500_markets_by_documented_descending_volume_only",
+    "complete_population_claim": false,
+    "cross_page_volume_descending": true,
+    "duplicate_condition_count": 0,
+    "duplicate_market_id_count": 0,
+    "final_next_cursor": "NDg5MTA",
+    "market_count": 500,
+    "page_count": 5,
+    "page_size": 100,
+    "required_parallel_array_shape_failures": 0,
+    "top_500_basketball_market_count": 10,
+    "top_500_crypto_tagged_market_count": 1,
+    "warning": "the non_null final cursor proves the catalog is incomplete; the one crypto tagged result is a political Bitcoin question and no BTC_ETH_SOL price_threshold family was proved in the retained boundary"
+  },
+  "current_same_game_examples": [
+    {
+      "combo_catalog_pending": false,
+      "combo_status": "enabled",
+      "game_start_utc": "2026-08-27T02:00:00Z",
+      "legacy_or_undocumented_rfqEnabled": false,
+      "moneyline_market_id": "3558710",
+      "moneyline_outcomes": [
+        "Toronto Tempo",
+        "Seattle Storm"
+      ],
+      "relationship": "each Seattle negative half_point spread win implies a Seattle moneyline win in every completed game including overtime",
+      "spread_market_ids": [
+        "3865075",
+        "3887949",
+        "3895958"
+      ],
+      "spread_thresholds": [
+        "Seattle wins by 5 or more",
+        "Seattle wins by 6 or more",
+        "Seattle wins by 7 or more"
+      ]
+    },
+    {
+      "combo_catalog_pending": false,
+      "combo_status": "enabled",
+      "game_start_utc": "2026-08-26T23:00:00Z",
+      "legacy_or_undocumented_rfqEnabled": false,
+      "moneyline_market_id": "3558709",
+      "moneyline_outcomes": [
+        "Golden State Valkyries",
+        "Connecticut Sun"
+      ],
+      "relationship": "a Golden State minus_13_5 spread win implies a Golden State moneyline win in every completed game including overtime",
+      "spread_market_ids": [
+        "3869248"
+      ],
+      "spread_thresholds": [
+        "Golden State wins by 14 or more"
+      ]
+    }
+  ],
+  "current_evidence_limits": [
+    "The public Combo catalog proves eligible underlying legs, not that an approved builder will receive a quote for a requested combination or size.",
+    "Catalog outcome_prices are underlying market reference fields, not Combo RFQ bids, asks, displayed depth, or fills.",
+    "Gamma returned comboStatus enabled and the authoritative Combo catalog included the markets, while an undocumented or legacy rfqEnabled field was false; no meaning is inferred from that field conflict and an authenticated successful quote remains required.",
+    "The same-game examples were current and accepting orders during the retained observation window but will expire; they prove mechanism availability, not recurring profit.",
+    "Two Combo RFQs plus CLOB or inventory-transform legs are not an atomic cross-system execution and remain exposed to quote expiry, Last Look decline, CLOB movement, partial fills, and orphan inventory.",
+    "No approved builder status, account fee, Combo quote, CLOB book, owned position, fill, or realized pUSD result was observed."
+  ],
+  "prohibited_shortcuts": [
+    "treating catalog outcome_prices as executable Combo quotes",
+    "using A_and_B equals B under implication without pricing fractional 50_50 cancellation",
+    "assuming combo catalog inclusion or comboStatus enabled overrides an unresolved rfqEnabled field or proves account quote access",
+    "requesting or accepting an authenticated Combo quote without separate account and external_state authority",
+    "accepting a quote or placing a CLOB order without explicit trading authority",
+    "ignoring complete_set inventory collateral fees rounding compression residual positions or relayer costs",
+    "assuming two RFQs and CLOB legs execute atomically",
+    "calling one current same_game catalog cohort recurrence profitability or an accepted edge",
+    "continuing pagination beyond the frozen top_500 boundary and describing the partial catalog as complete"
+  ],
+  "prospective_gate": {
+    "account_precondition": "approved builder credentials and exact authenticated requester account availability under explicit quote_request_only authority",
+    "first_stage": "request one minimum_notional nonaccepted BUY quote and one minimum_size nonaccepted SELL quote for a machine_proved exact identity only if creating an unsigned RFQ is explicitly authorized; retain exact total_required_e6 net_receive_e6 fees deadlines and terminal status",
+    "second_stage": "only if the nonaccepted quotes leave a positive conservative headroom request one synchronized underlying CLOB book batch and calculate both orientations with exact size and every inventory transform",
+    "promotion_gate": "multiple independent event dates with positive worst_episode after_cost economics, successful quote availability, exact cancellation_robust payoff proof, and a separately authorized paper execution study",
+    "stop_conditions": [
+      "any resolution or fractional payout state breaks the symbolic identity",
+      "no executable quote or quote fields are incomplete",
+      "any required CLOB side depth fee or common size is absent",
+      "conservative after_cost floor is not strictly positive",
+      "quote Last Look or CLOB timing cannot meet a preregistered synchronization ceiling",
+      "program API contract fee or Positions Framework semantics change"
+    ]
+  },
+  "result_sha256": "08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116",
+  "schema_version": "polymarket-combo-rfq-boolean-parity-candidate-v1",
+  "sources": {
+    "combo_catalog_pages": [
+      {
+        "http_date_utc": "2026-08-26T22:03:28Z",
+        "input_cursor": null,
+        "market_count": 100,
+        "next_cursor": "MTUyNg",
+        "page": 1,
+        "payload_bytes": 71696,
+        "payload_sha256": "1268c770798207a999947da94274380c938d5f2a3253b0ab5cf8ae17d8f7466c"
+      },
+      {
+        "input_cursor": "MTUyNg",
+        "market_count": 100,
+        "next_cursor": "MTQwNDg",
+        "page": 2,
+        "payload_bytes": 66799,
+        "payload_sha256": "673ad2cb3865d3da70bcff878dd3e69b736caf0abbb97a52735550e79ca687ca",
+        "received_after_utc": "2026-08-26T22:04:33.6285257Z",
+        "requested_before_utc": "2026-08-26T22:04:33.4822574Z"
+      },
+      {
+        "input_cursor": "MTQwNDg",
+        "market_count": 100,
+        "next_cursor": "MjY0ODM",
+        "page": 3,
+        "payload_bytes": 63029,
+        "payload_sha256": "3e08d3e265bf5576742ccf77e9ac6888bbb0568a0a358814dcc9aba34d2bef55",
+        "received_after_utc": "2026-08-26T22:04:34.0150827Z",
+        "requested_before_utc": "2026-08-26T22:04:33.9168442Z"
+      },
+      {
+        "input_cursor": "MjY0ODM",
+        "market_count": 100,
+        "next_cursor": "MzczOTM",
+        "page": 4,
+        "payload_bytes": 61862,
+        "payload_sha256": "252c170f9778f8e04b60be1672f3f83410eefd03113c6c49a08b2e5d3c0121d2",
+        "received_after_utc": "2026-08-26T22:04:34.3905532Z",
+        "requested_before_utc": "2026-08-26T22:04:34.2901202Z"
+      },
+      {
+        "input_cursor": "MzczOTM",
+        "market_count": 100,
+        "next_cursor": "NDg5MTA",
+        "page": 5,
+        "payload_bytes": 61646,
+        "payload_sha256": "ca4616d24dcc39f1297504d1f97f66363d6e3f306a9d65d942b60af7e0a5ba18",
+        "received_after_utc": "2026-08-26T22:04:34.7617820Z",
+        "requested_before_utc": "2026-08-26T22:04:34.6609535Z"
+      }
+    ],
+    "official_documents": [
+      {
+        "payload_bytes": 3131,
+        "payload_sha256": "fdd9b73a3892bb77e24be7cbe5153bb230780b2a38101c32b24092a639b1ca67",
+        "role": "Combo RFQ auction execution and Last Look sequence",
+        "url": "https://docs.polymarket.com/trading/combos/overview.md"
+      },
+      {
+        "payload_bytes": 2868,
+        "payload_sha256": "67fd5594b083affa3b6909b619e08ee6f5f456c5b27c9c61a086e1743f4293af",
+        "role": "Positions Framework conjunction token and complement semantics",
+        "url": "https://docs.polymarket.com/trading/positions/combinatorial.md"
+      },
+      {
+        "payload_bytes": 145702,
+        "payload_sha256": "2ebce652431e732c07356c207c623181d880d3e9c1beb61a77790357837d2232",
+        "role": "maker quote sizing inventory source Last Look fractional payout product rule and reconciliation",
+        "url": "https://docs.polymarket.com/trading/combos/market-makers.md"
+      },
+      {
+        "payload_bytes": 32667,
+        "payload_sha256": "117c3990aa64d0691e617f45d21074bd5ea626838584fca733e6fbc85e622ff8",
+        "role": "approved builder access BUY SELL exact net fee fields and execution terminal states",
+        "url": "https://docs.polymarket.com/trading/combos/builders.md"
+      },
+      {
+        "payload_bytes": 44910,
+        "payload_sha256": "ea6c5c9133673b86bdf38d9645cbd95817e98bac4d26a4801c32004da0e75be1",
+        "role": "collateral return decomposition residual positions and exact plan workflow",
+        "url": "https://docs.polymarket.com/trading/combos/collateral-return.md"
+      },
+      {
+        "payload_bytes": 5989,
+        "payload_sha256": "8f57a5996b0d014175e26c9de83973c9bdf0f87ad21abd09bf0b42a887fe96cb",
+        "role": "public combo market catalog endpoint pagination and response schema",
+        "url": "https://docs.polymarket.com/api-reference/combo-markets/get-combo-markets.md"
+      },
+      {
+        "payload_bytes": 28377,
+        "payload_sha256": "1d93fa0ffea97cac405ad54123b20617e872214934d924bfb61ed626521dea4c",
+        "role": "public Gamma market by numeric id endpoint contract used for catalog alignment and current market metadata",
+        "url": "https://docs.polymarket.com/api-reference/markets/get-market-by-id.md"
+      }
+    ],
+    "same_game_gamma_payloads": [
+      {
+        "market_id": "665374",
+        "payload_bytes": 3654,
+        "payload_sha256": "a7bb72bcee60b622deb932c6eae61ba761dbd1435acf61b39feaaf498ae47009",
+        "role": "first_page_catalog_to_Gamma_id_condition_slug_active_open_alignment"
+      },
+      {
+        "market_id": "3558710",
+        "payload_bytes": 3595,
+        "payload_sha256": "f80e2cda623f2b90ca3b7637289de5b71c79b5e482f4e01966d47547777dd891"
+      },
+      {
+        "market_id": "3865075",
+        "payload_bytes": 3701,
+        "payload_sha256": "2553c567f71abad821b5c659a449e539c781211c04878891b8aa45fb80ffcd74"
+      },
+      {
+        "market_id": "3887949",
+        "payload_bytes": 3660,
+        "payload_sha256": "a1aca559403602381bc46be03de51b98d79fa124860de82d5004b4fcdbfc2e17"
+      },
+      {
+        "market_id": "3895958",
+        "payload_bytes": 3627,
+        "payload_sha256": "50783a5f9a0f2c2c6cca67614ff42c00fed5c53dedea6d6a99c2aee668a05020"
+      },
+      {
+        "market_id": "3558709",
+        "payload_bytes": 3682,
+        "payload_sha256": "f737a04b7a7fe8d5dd970d5eb5af5bb6950d180a5f7fad442f72c703708f062d"
+      },
+      {
+        "market_id": "3869248",
+        "payload_bytes": 3730,
+        "payload_sha256": "970f599c6d5bba4588d642c6fe1d9b8800f6f77f6cbd5d5643b72bb01390cd84"
+      }
+    ]
+  }
+}

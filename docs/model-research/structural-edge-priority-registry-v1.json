@@ -1120,9 +1120,41 @@
       ],
       "retry_trigger": "new_official_active_or_upcoming_Binance_Launchpool_campaign_with_an_exact_supported_stablecoin_pool_and_complete_farming_and_distribution_terms",
       "venue_scope": "binance_Launchpool_already_held_idle_supported_stablecoin_principal"
+    },
+    {
+      "blocking_evidence": [
+        "approved Polymarket builder and authenticated requester account availability under separate quote_request_only authority",
+        "one minimum-notional nonaccepted Combo BUY quote and one minimum-size nonaccepted Combo SELL quote with exact total_required_e6 net_receive_e6 fees deadlines and terminal status",
+        "one synchronized public CLOB book batch only after the RFQ quotes leave positive conservative headroom",
+        "exact common size split merge collateral compression residual inventory relayer latency Last Look decline and orphan-risk economics",
+        "positive worst-episode after-cost economics across multiple independent event dates before any paper execution request"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json",
+          "result_sha256": "08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116"
+        }
+      ],
+      "current_status": "materially_new_direction_independent_exact_boolean_payoff_identity_between_two_underlying_CLOB_outcomes_and_Combo_YES_plus_complement_Combo_NO_survives_fractional_50_50_cancellation_current_public_catalog_contains_combo_enabled_same_game_WNBA_examples_but_no_approved_builder_authenticated_quote_executable_CLOB_batch_after_cost_recurrence_or_profit_is_proved_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_combo_rfq_boolean_identity_against_underlying_clob",
+      "next_action": "only_when_approved_builder_credentials_and_explicit_quote_request_only_authority_exist_request_one_nonaccepted_minimum_BUY_and_SELL_quote_for_a_machine_proved_identity_then_fetch_CLOB_books_only_if_exact_RFQ_fields_leave_positive_conservative_headroom",
+      "priority_rank": 33,
+      "prohibited_shortcuts": [
+        "treating_catalog_outcome_prices_as_executable_Combo_quotes",
+        "using_implication_alone_without_fractional_cancellation_payoffs",
+        "assuming_catalog_inclusion_comboStatus_or_an_undocumented_rfqEnabled_field_proves_quote_access",
+        "requesting_accepting_or_trading_without_separate_explicit_authority",
+        "ignoring_split_merge_compression_collateral_fees_rounding_relayer_delay_or_residual_inventory",
+        "assuming_two_RFQs_and_CLOB_legs_are_atomic",
+        "calling_one_current_same_game_cohort_recurrence_profit_or_an_accepted_edge",
+        "repeating_the_terminal_broad_combo_catalog_population_screen_instead_of_testing_only_the_exact_identity_when_its_quote_access_trigger_is_satisfied"
+      ],
+      "retry_trigger": "approved_builder_credentials_plus_explicit_quote_request_only_authority_or_a_documented_public_unauthenticated_executable_Combo_quote_endpoint",
+      "venue_scope": "polymarket_combo_enabled_exact_relationship_markets_without_persistent_live_scope_broadening"
     }
   ],
-  "result_sha256": "174b255ac0ede946a0e7ec12cc482ac848d9f0e2ec857e8938e98c65db78bc0a",
+  "result_sha256": "71ef65dd40283f77baaf7137cf26e2624bb3b14dc566ba951d6fdfd0cad814c0",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1246,6 +1278,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T21:52:51.9062336Z",
+  "updated_at_utc": "2026-08-26T22:12:02.7263763Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
