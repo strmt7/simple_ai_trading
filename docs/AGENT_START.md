@@ -940,6 +940,24 @@ safety gate, blocks Stop, or submits an order.
   `binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json`,
   result SHA-256
   `8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475`.
+- A new primary paper materially supports a maker-first/taker-hedge complete-set
+  execution design, but the strict public-fill reconstruction rejects a stable
+  edge claim. In one exact 2026-04-27 Polymarket-v1 daily partition, 159
+  conservative same-actor sequences across 105 BTC/ETH/SOL markets had only 75
+  current-fee-sensitive positives, a `1.012037` median complete-set cost, and
+  `-9.33095786` pUSD aggregate sensitivity P&L. ETH was negative overall, SOL
+  had zero sequences despite 203,085 scoped fills, and 12 of 24 UTC hour bins
+  were aggregate-negative. Positive delayed sequences require favorable price
+  movement unless the opposite executable ask existed at the maker fill; the
+  dataset has no placements, cancellations, books, or queue. Do not expand the
+  historical tape. After the protected boundary and only with explicit
+  authenticated paper authority, test one minimum post-only maker order only
+  when a synchronized opposite ask locks positive after every cost, then hedge
+  an owned fill immediately at exact quantity and reconcile every orphan.
+  Canonical candidate:
+  `polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json`,
+  result SHA-256
+  `4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -976,6 +994,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
+| Polymarket maker-first/taker-hedge complete-set candidate | `docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |

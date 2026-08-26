@@ -631,7 +631,8 @@
     {
       "blocking_evidence": [
         "authenticated maker fills and exact ownership",
-        "queue and cancellation latency adverse selection and orphan PnL",
+        "creation-time synchronized opposite executable ask and exact post-fill taker hedge lineage",
+        "queue hedge and cancellation latency adverse selection and orphan PnL",
         "realized rebate payment and complete after-cost persistence"
       ],
       "canonical_artifacts": [
@@ -642,17 +643,23 @@
         {
           "path": "docs/model-research/polymarket/crypto-maker-rebate-public-recurrence-v2-2026-08-26.json",
           "result_sha256": "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json",
+          "result_sha256": "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
         }
       ],
-      "current_status": "realized_public_program_recurrence_proved_top_10_weekly_crypto_volume_wallets_received_rebates_on_all_7_dates_and_one_wallets_2026_08_25_payment_joined_to_668_BTC_ETH_SOL_markets_for_7017_331032_USDC_but_fresh_order_payout_floor_complete_PnL_queue_fill_adverse_selection_orphan_and_capital_evidence_remain_unproved",
+      "current_status": "realized_public_program_recurrence_proved_but_a_new_primary_maker_first_taker_hedge_mechanism_diagnostic_rejects_a_stable_edge_claim_159_strict_one_day_sequences_were_only_47_17_percent_current_fee_sensitive_positive_with_median_cost_1_012037_aggregate_PnL_minus_9_33095786_ETH_negative_SOL_zero_and_12_of_24_hours_negative_creation_time_opposite_ask_queue_owned_fill_hedge_orphan_rebate_and_complete_after_cost_evidence_remain_unproved",
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates",
-      "next_action": "do_not_poll_public_wallets_again_unless_terms_change_then_after_the_protected_boundary_freeze_a_prospective_authenticated_owned_fill_rebate_inventory_adverse_selection_and_orphan_study_only_if_explicit_authority_exists",
+      "next_action": "do_not_expand_the_historical_fill_tape_or_poll_public_wallets_after_the_protected_boundary_and_only_with_explicit_authenticated_paper_authority_freeze_one_minimum_prospective_post_only_maker_first_exact_quantity_FOK_or_FAK_opposite_hedge_study_that_admits_orders_only_when_the_creation_time_synchronized_opposite_ask_is_positive_after_every_cost_and_records_every_orphan",
       "priority_rank": 17,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
         "both-fill assumption",
         "public books as own fill or queue evidence",
+        "future opposite fill price as a creation-time executable hedge",
+        "favorable unhedged price movement as direction-independent arbitrage",
         "aggregate wallet activity as crypto specific without a condition join",
         "top volume wallet receipts or receipt to volume diagnostics as complete profit"
       ],
@@ -1246,7 +1253,7 @@
       "venue_scope": "Binance_NOKBUSDT_bStock_and_NOKUSDT_TradFi_perpetual_dividend_adjustment"
     }
   ],
-  "result_sha256": "57ea9bd59d8bd9ae43d4100dea192a1c19f272ef4844790d04d2da8e69f5630c",
+  "result_sha256": "0d038efb7a32d61b97f7efc0e0643b88fcc3dd73e6c5b702ffd0c516f59bbf9d",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1375,6 +1382,6 @@
       "reason": "AMAT_and_MSFT_special_negative_short_funding_debits_matched_their_declared_gross_dividends_within_three_micro_USDT_while_bStock_reinvests_only_the_net_dividend_so_the_direct_dividend_contribution_is_N_minus_D_equal_to_negative_deductions_before_every_other_cost"
     }
   ],
-  "updated_at_utc": "2026-08-26T23:03:24.8464560Z",
+  "updated_at_utc": "2026-08-26T23:33:53.6309110Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

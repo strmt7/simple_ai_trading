@@ -874,7 +874,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`57ea9bd59d8bd9ae43d4100dea192a1c19f272ef4844790d04d2da8e69f5630c`.
+`0d038efb7a32d61b97f7efc0e0643b88fcc3dd73e6c5b702ffd0c516f59bbf9d`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1600,6 +1600,41 @@ the quote leaves conservative after-cost headroom. Canonical candidate:
 result SHA-256
 `8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475`.
 
+A new primary paper, *Taker vs. Maker Arbitrage*, distinguishes the execution
+mechanism in which an arbitrageur passively supplies one payoff-equivalent leg
+and, after that leg fills, aggressively completes the bundle. This materially
+extends the existing paired crypto maker-rebate family, but it does not prove a
+stable edge. A reproducible DuckDB diagnostic conservatively deduplicated one
+exact 2026-04-27 Polymarket-v1 daily partition and required a public actor to
+have exactly two condition participations: first an outcome buy as maker, then
+an exact-equal-quantity opposite-outcome buy as taker 1-60 seconds later and at
+least 10 seconds before close. Across 3,111,951 scoped BTC/ETH/SOL fills, 159
+strict sequences in 105 conditions survived. Applying the current crypto taker
+fee curve as a sensitivity left only 75 positive sequences (`47.1698113208%`),
+a median complete-set cost of `1.012037`, and aggregate sensitivity P&L of
+`-9.33095786` pUSD on 1,305.82 matched shares. BTC and ETH were negative in
+aggregate; SOL had zero sequences despite 203,085 scoped fills. Twelve of 24
+UTC hour bins were aggregate-negative and four contained zero positive
+sequences.
+
+This rejects market-situation independence for the observed sequence. Without
+the opposite executable ask at the maker fill, a later profitable completion
+requires the opposite leg to become cheaper during an unhedged interval. The
+dataset explicitly omits order placements, cancellations, books, and queue
+position, is historical v1 rather than current v2, and cannot establish that
+the hedge was lockable at order creation. Do not download more historical days
+or treat the paper headline, the 75 favorable paths, or current-fee sensitivity
+as realized profit. After the protected boundary and only with explicit
+authenticated paper authority, a minimum prospective study may post one leg
+only when its price plus a synchronized exact-quantity opposite ask and every
+cost is strictly below one. On an owned maker fill it must immediately submit a
+frozen-cost FOK/FAK hedge, then reconcile acceptance, latency, partial or failed
+hedges, cancellations, orphan P&L, fees, rebates, merge/redemption, capital, and
+all cross-regime slices. Canonical candidate:
+`docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json`,
+result SHA-256
+`4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1743,11 +1778,16 @@ not grant account, funding, order, or transaction authority.
    schedule, unique per-slot storage, role capacities, host supervision, and a
    pre-market activation receipt. Do not share schedules or storage between
    venues.
-   A distinct Polymarket maker-rebate study may be designed meanwhile, but it
-   may activate only after the protected sidecar boundary and only under a
-   frozen prospective contract measuring authenticated maker fills, queue and
-   cancellation latency, adverse selection, realized rebate payment, and
-   complete orphan P&L. Nominal rebate algebra is not a substitute.
+   The distinct Polymarket maker-rebate study now includes the maker-first,
+   exact-quantity taker-hedge mechanism. Its one-day historical diagnostic is
+   negative in aggregate and unstable across assets and hours; do not expand
+   the public historical tape. It may activate only after the protected
+   sidecar boundary and only under a frozen prospective contract that admits a
+   maker order when a synchronized opposite executable ask is already positive
+   after every cost, then measures authenticated owned fills, immediate FOK/FAK
+   hedge success, queue and cancellation latency, adverse selection, realized
+   rebate payment, merge/redemption, and complete orphan P&L. Nominal rebate
+   algebra and a favorable future hedge fill are not substitutes.
    The finalized-winner-before-adapter-close lead now outranks that broader
    maker study. Do not expand its public history. After the protected boundary
    and only with explicit authenticated paper authority, freeze one minimum-size
