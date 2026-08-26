@@ -1,0 +1,234 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "conditional_time_limited_candidate_rejected_as_stable_edge_before_start_and_exact_account_cost_evidence",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T11:06:13.9617837Z",
+  "credential_preflight": {
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_present": false,
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_present": false,
+    "values_inspected": false
+  },
+  "economics": {
+    "capital_usd1": "1500",
+    "headline_case": {
+      "incremental_reward_bips_before_conversion_and_peg_risk": "39.269406392694063926940639",
+      "incremental_reward_usdt_equivalent": "5.8904109589041095890410958897",
+      "usd1_approximate_realtime_reward_30_days": "1.8493150684931506849315068493",
+      "usd1_fixed_bonus_reward_29_days": "8.342465753424657534246575342",
+      "usdt_approximate_realtime_reward_30_days": "3.6986301369863013698630136986",
+      "usdt_fixed_bonus_reward_11_days_on_first_500": "0.6027397260273972602739726027",
+      "warning": "Both Real-Time APR inputs are approximate and variable, so this is a headline sensitivity rather than a conservative guaranteed differential."
+    },
+    "conservative_fixed_target_cases": [
+      {
+        "incremental_reward_bips_before_conversion_and_peg_risk": "26.940639269406392694063927",
+        "incremental_reward_usdt_equivalent": "4.0410958904109589041095890407",
+        "usd1_fixed_bonus_accrual_days": 29
+      },
+      {
+        "incremental_reward_bips_before_conversion_and_peg_risk": "25.022831050228310502283105",
+        "incremental_reward_usdt_equivalent": "3.7534246575342465753424657537",
+        "usd1_fixed_bonus_accrual_days": 28
+      }
+    ],
+    "comparison_assumptions": {
+      "horizon_days": 30,
+      "usd1_realtime_apr_percent_approximate": "1.5",
+      "usdt_alternative_bonus_apr_percent": "4",
+      "usdt_alternative_bonus_cap": "500",
+      "usdt_alternative_bonus_days_remaining_from_usd1_start": 11,
+      "usdt_alternative_realtime_apr_percent_approximate": "3",
+      "usdt_realtime_rate_persists_for_full_horizon": "unproved_conservative_comparison_assumption"
+    },
+    "current_displayed_book_round_trip": {
+      "acquisition_ask": "0.99980",
+      "acquisition_cost_usdt": "1499.70000",
+      "exit_bid": "0.99979",
+      "exit_proceeds_usdt": "1499.68500",
+      "round_trip_spread_bips_of_1500": "0.1",
+      "round_trip_spread_loss_usdt": "0.01500",
+      "top_level_capacity_sufficient_for_1500_each_side": true
+    },
+    "fail_closed_margin": {
+      "fixed_28_day_increment_bips": "25.022831050228310502283105",
+      "margin_after_worst_historical_30_day_close_move_and_current_displayed_spread_bips": "0.968344574532110502283105",
+      "margin_after_same_move_spread_and_10_bips_other_costs": "-9.031655425467889497716895",
+      "margin_after_same_move_spread_and_20_bips_other_costs": "-19.031655425467889497716895",
+      "maximum_all_other_costs_for_historical_worst_close_case_to_remain_positive_bips": "0.968344574532110502283105",
+      "result": "exact commissions conversion quote costs and account eligibility are decisive; a positive edge is not established"
+    }
+  },
+  "historical_usd1usdt_risk": {
+    "daily_high_max": "1.0300",
+    "daily_low_min": "0.9000",
+    "first_open_time_utc": "2025-05-22T00:00:00.000Z",
+    "last_open_time_utc": "2026-08-26T00:00:00.000Z",
+    "limitations": [
+      "Daily klines are not executable fills or depth.",
+      "Historical peg behavior is not a bound on a future depeg, issuer loss, venue freeze, or redemption delay.",
+      "The 0.9000 intraday low shows that close-to-close stability does not eliminate liquidation or urgent-exit risk."
+    ],
+    "row_count": 462,
+    "rolling_30_day_close_window_count": 432,
+    "rolling_30_day_windows_worse_than_minus_19_1694_bips": 1,
+    "rolling_30_day_windows_worse_than_minus_29_1694_bips": 0,
+    "rolling_30_day_windows_worse_than_minus_39_1694_bips": 0,
+    "worst_29_day_close_return_fraction": "-0.0024952590078850184649166583",
+    "worst_29_day_end_utc": "2026-02-21T00:00:00.000Z",
+    "worst_29_day_start_utc": "2026-01-23T00:00:00.000Z",
+    "worst_30_day_close_return_bips": "-23.95448647569617726319992",
+    "worst_30_day_close_return_fraction": "-0.002395448647569617726319992",
+    "worst_30_day_end_utc": "2026-02-22T00:00:00.000Z",
+    "worst_30_day_intrawindow_low_return_fraction": "-0.1",
+    "worst_30_day_start_utc": "2026-01-23T00:00:00.000Z"
+  },
+  "market_access": {
+    "convert_catalog": {
+      "USD1_to_USDT": {
+        "from_min": "0.01",
+        "to_min": "0.01"
+      },
+      "USDT_to_USD1": {
+        "from_min": "0.01",
+        "to_min": "0.01"
+      },
+      "limitation": "The public catalog proves bounds only; it does not prove an executable conversion rate, fee, account eligibility, quote validity, or settlement delay."
+    },
+    "spot_symbol": {
+      "lot_size_min_and_step_usd1": "1",
+      "minimum_notional_usdt": "5",
+      "price_tick": "0.00001",
+      "status": "TRADING"
+    }
+  },
+  "overlap_adjudication": {
+    "distinct_from_terminal_cross_stablecoin_funding_family": true,
+    "reason": "This candidate reallocates stable-value cash into a fixed capped Simple Earn bonus and requires no BTC ETH or SOL perpetual position. The terminal USDT-versus-USDC funding study did not cover USD1 or this reward contract.",
+    "usd1_margined_perpetual_not_used_as_hedge": true,
+    "usd1_perpetual_rejection_reason": "Pairing USD1-margined and USDT-margined crypto perpetuals would reintroduce funding basis margin liquidation and collateral risks and would not create direct issuer redemption parity."
+  },
+  "promotion_terms": {
+    "account_gates": [
+      "master account",
+      "identity verification",
+      "eligible region",
+      "product capacity available first come first served"
+    ],
+    "bonus_accrual": "starts the next day at 00:00 UTC from a random daily balance snapshot; redeeming during a UTC day forfeits the redeemed amount's bonus for that day",
+    "bonus_apr_percent": "7",
+    "bonus_tier_cap_usd1": "1500",
+    "maximum_subscription_per_user_usd1": "1000000",
+    "minimum_subscription_usd1": "0.01",
+    "period_end_utc": "2026-09-25T23:59:59Z",
+    "period_start_utc": "2026-08-27T00:00:00Z",
+    "realtime_apr_percent_approximate": "1.5",
+    "realtime_rate_variable_every_minute": true,
+    "redemption": "stated instant but large redemption demand may delay it temporarily",
+    "terms_mutable_by_binance": true
+  },
+  "reserve_and_redemption_risk": {
+    "current_public_live_proof_of_reserves_observation": "dashboard returned unavailable reserves collateralization and supply because reserve and supply reads failed",
+    "direct_bitgo_redemption_available_to_logged_out_binance_user": "unproved",
+    "issuer_claim": "USD1 is redeemable 1 to 1 and backed by dollar deposits government money market funds short-term government securities and cash equivalents",
+    "latest_attestation_month_listed_on_official_page": "2026-06",
+    "material_gap": "The latest listed monthly attestation lags the evaluation date and the live proof-of-reserves dashboard did not provide a contemporaneous collateralization ratio."
+  },
+  "result_sha256": "230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1",
+  "retry_contract": {
+    "earliest_public_refresh_utc": "2026-08-27T00:00:00Z",
+    "public_refresh": [
+      "confirm the article terms and promotion status did not change at activation",
+      "refresh one bounded USD1USDT book and kline observation only if the offer is active",
+      "check whether a current primary Binance source unambiguously proves USD1 entry and exit fee treatment"
+    ],
+    "signed_prequalification_only_when_both_designated_credentials_exist": [
+      "prove USD1 and USDT Flexible Product eligibility current exact Real-Time APR tiers quota and sold-out state",
+      "prove exact account USD1USDT commission or exact authenticated Convert quote cost before choosing a route",
+      "do not serialize headers signatures query strings credentials or secret-derived material"
+    ],
+    "separate_funded_authority_required_for": "any conversion subscription redemption trade or reconciliation"
+  },
+  "schema_version": "binance-usd1-simple-earn-promotion-gate-v1",
+  "sources": [
+    {
+      "article_code": "81971865baf546b3b37e60cb4a76dd11",
+      "payload_sha256": "3a2c72ee78e5f2ad342a5047662642eade50049fe5bdd9827f1ee3e9a2b7fb4e",
+      "published_at_ms": 1787713206101,
+      "role": "official_current_USD1_promotion_terms",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=81971865baf546b3b37e60cb4a76dd11"
+    },
+    {
+      "article_code": "04663ce7cbc64165b060bf4065e43299",
+      "payload_sha256": "563459072022ac4c1825a33b4309db80d33269f233c193c4de740b29098c5525",
+      "published_at_ms": 1787623205891,
+      "role": "official_current_USDT_alternative_terms",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=04663ce7cbc64165b060bf4065e43299"
+    },
+    {
+      "observed_by_utc": "2026-08-26T11:03:27.1403806Z",
+      "payload_sha256": "af2cb86d9dc8ade0a20b2a2a17cc6361aacb297587a0adba401961d8ddd209f0",
+      "role": "official_public_USD1USDT_symbol_contract",
+      "server_time_ms": 1787742205605,
+      "url": "https://api.binance.com/api/v3/exchangeInfo?symbol=USD1USDT"
+    },
+    {
+      "observed_by_utc": "2026-08-26T11:03:27.1403806Z",
+      "payload_sha256": "d0e7e11b83a1b3718ad314f2a67de25cd0cb7dd99a0127e0f1f6d0b1da7fbc42",
+      "role": "official_public_USD1USDT_top_book",
+      "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=USD1USDT"
+    },
+    {
+      "observed_by_utc": "2026-08-26T11:03:27.1403806Z",
+      "payload_sha256": "cbb16983c48118bcbe7c4f05dca5643807e291dbcf86985dd7346a4136716bae",
+      "role": "official_public_USD1USDT_daily_history",
+      "url": "https://api.binance.com/api/v3/klines?symbol=USD1USDT&interval=1d&limit=1000"
+    },
+    {
+      "observed_by_utc": "2026-08-26T11:03:27.1403806Z",
+      "payload_sha256": "4660bd23b3a72eeba3c27d6d595a05636427ee023c6e018761eb139613cddb86",
+      "role": "official_public_USDT_to_USD1_Convert_catalog",
+      "url": "https://api.binance.com/sapi/v1/convert/exchangeInfo?fromAsset=USDT&toAsset=USD1"
+    },
+    {
+      "observed_by_utc": "2026-08-26T11:03:27.1403806Z",
+      "payload_sha256": "ba499357a1ab2bf8a4fd1f810f6d1451798c303f06afcb44321072345228b162",
+      "role": "official_public_USD1_to_USDT_Convert_catalog",
+      "url": "https://api.binance.com/sapi/v1/convert/exchangeInfo?fromAsset=USD1&toAsset=USDT"
+    },
+    {
+      "observed_at_utc": "2026-08-26T11:03:27.1403806Z",
+      "payload_sha256": "7adf4d4a34bcab6a3ba91d585c3f29d74b36611101acf77e332b4f08be03aca2",
+      "role": "official_attestation_month_index",
+      "url": "https://www.bitgo.com/usd1/attestations/"
+    },
+    {
+      "observed_at_utc": "2026-08-26T11:03:27.1403806Z",
+      "payload_sha256": "ed91512c27580c5a78d5348065348f00eebb92af7aa5ba2b8d123dcd039223ed",
+      "role": "official_proof_of_reserves_documentation",
+      "url": "https://docs.worldlibertyfinancial.com/usd1-token/proof-of-reserves"
+    },
+    {
+      "observed_at_utc": "2026-08-26T11:03:27.1403806Z",
+      "payload_sha256": "e6e7ed46877306ce4ed38f7a677e9e18e83a8f85b03f0f1ddd882e1b09540fbc",
+      "role": "official_open_source_live_reserve_oracle_contract_binding",
+      "url": "https://raw.githubusercontent.com/worldliberty/cre-por-dashboard/main/lib/contracts/por-oracle.ts"
+    },
+    {
+      "observed_at_utc": "2026-08-26T11:03:27.1403806Z",
+      "role": "official_live_proof_of_reserves_dashboard_unavailable_observation",
+      "url": "https://por.worldlibertyfinancial.com/"
+    }
+  ]
+}

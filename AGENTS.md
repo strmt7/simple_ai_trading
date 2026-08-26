@@ -43,6 +43,10 @@ override prose.
   push, or hosted CI run before exploratory public requests. The stricter
   frozen one-use workflow remains mandatory for authenticated, account-specific,
   funded, order-capable, or state-changing operations.
+- Before every venue HTTP request, classify the exact endpoint and method from
+  a current primary API contract. Never infer that an endpoint is public from
+  its path, product name, nearby public endpoints, or an unauthenticated error;
+  if the security classification is absent or contradictory, do not call it.
 
 ## Working Method
 

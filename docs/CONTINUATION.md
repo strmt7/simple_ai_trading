@@ -344,6 +344,25 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json`,
   result SHA-256
   `fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c`.
+  A separate public USD1 Flexible promotion begins 2026-08-27 and ends
+  2026-09-25. It offers a fixed 7% bonus on at most 1,500 USD1 plus an
+  approximately 1.5% variable base rate. The conservative 28-bonus-day case
+  exceeds the contemporaneous USDT alternative by 25.0228 bps. However, the
+  worst observed 30-day USD1USDT close move was -23.9545 bps, so only 0.9683
+  bps remain after the current displayed 0.1-bp round-trip spread and before
+  every unknown commission, conversion, eligibility, reserve, and redemption
+  cost. One public 30-day window was worse than -19.1694 bps; none was worse
+  than -29.1694 bps, but an intraday low reached 0.9000. The latest attestation
+  month listed by BitGo was June 2026 and the live public reserve dashboard did
+  not return a current collateralization ratio. The offer had not started at
+  evaluation time. It is a high-priority conditional allocation candidate, not
+  a stable edge or deployment authority. Canonical gate:
+  `docs/model-research/action-value/binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json`,
+  result SHA-256
+  `230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1`.
+  At activation, refresh the terms and fee treatment once. Exact account
+  product eligibility, current rates, capacity, entry and exit costs remain
+  signed evidence and any funded action still needs separate authority.
 - Binance bStock structural parity is a promising research-only candidate
   outside the current BTC/ETH/SOL execution scope. A public 67-symbol screen
   selected `SNXXBUSDT`; exact displayed depth stayed positive at 1,000 and
@@ -584,7 +603,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`825bae9b054c09dd37060260982bd72c47770da24b1b67f290cf24fcbe25eff8`.
+`c9592d8c559b92c33361212394a26b6f10b63f024c9747fe2168939e3a419774`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

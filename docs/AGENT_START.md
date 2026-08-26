@@ -274,6 +274,22 @@ safety gate, blocks Stop, or submits an order.
   Observe the fixed August 28 and September 4 RLUSD updates; do not extrapolate
   one week, illustrative examples, or system timezone into profitability or
   account eligibility.
+  Binance has also announced a USD1 Flexible promotion from 2026-08-27 through
+  2026-09-25: 7% fixed Bonus Tiered APR on at most 1,500 USD1 plus an
+  approximately 1.5% variable Real-Time APR. Against the current USDT Flexible
+  alternative, the conservative 28-bonus-day target case adds 25.0228 bps.
+  The worst public 30-day USD1USDT close move was -23.9545 bps, leaving only
+  0.9683 bps after the contemporaneous 0.1-bp displayed round-trip spread and
+  before unknown commissions, account eligibility, reserve, and redemption
+  risk. The promotion had not started, the latest listed attestation was June
+  2026, and the live public reserve dashboard returned no collateralization
+  ratio. This is therefore a high-priority conditional time-limited candidate,
+  not a stable accepted edge. Canonical gate:
+  `binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json`, result SHA-256
+  `230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1`.
+  At activation, confirm terms and exact fee treatment once; do not assume
+  public Convert bounds, a displayed spread, or an issuer redemption claim is
+  an executable fee-free round trip.
   A separate 2026 bStock screen covered 67 trading tokenized-stock symbols
   against Binance's public external reference price. `SNXXBUSDT` was the only
   selected live outlier and remained gross-positive at 1,000 and 5,000 USDT
