@@ -326,6 +326,21 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-bfusd-spot-redemption-parity-v1-2026-08-26.json`,
   result SHA-256
   `566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb`.
+  A current public-promotion triage then found a conditional, direction-neutral
+  RLUSD reward candidate. The first completed campaign week published 8.07%
+  effective APR with no stated individual cap, but participation requires an
+  eligible account, RLUSD collateral, and at least 500 USD average daily genuine
+  Margin or Futures volume. Future weekly APRs are unknown and the campaign ends
+  2026-09-11. Treat qualifying activity as zero incremental cost only when it is
+  independently genuine pre-existing volume; never create churn or self-trades.
+  Current 14-day USDT and USDC Flexible promotions are positive but tiny: their
+  capped combined gross rewards are only about 1.34 USD and 0.58 USD at the
+  advertised approximate base rates. Neither mechanism is accepted as stable.
+  Observe the scheduled 2026-08-28 and 2026-09-04 RLUSD updates without
+  extrapolating the first week. Canonical triage:
+  `docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json`,
+  result SHA-256
+  `fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c`.
 - Binance bStock structural parity is a promising research-only candidate
   outside the current BTC/ETH/SOL execution scope. A public 67-symbol screen
   selected `SNXXBUSDT`; exact displayed depth stayed positive at 1,000 and
@@ -556,7 +571,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`e9ab2f4fc4f61d55b040469a2cea22c022f6d41af0aa45cd759dd60c4a73856c`.
+`f61bff5690399aef2b644b9ef26a021512e15c3d481741789737268424c92665`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

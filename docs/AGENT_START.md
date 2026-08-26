@@ -168,6 +168,20 @@ safety gate, blocks Stop, or submits an order.
   `566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb`.
   Do not poll the book until signed account commission, quota, exact fee, and
   reward evidence sets executable thresholds.
+  Current public promotions add one conditional path, not a stable accepted
+  edge. Binance published an 8.07% effective APR for the first completed week
+  of its RLUSD/XRP campaign. It has no stated individual cap, but requires an
+  eligible account, RLUSD collateral, and at least 500 USD average daily genuine
+  Margin or Futures volume; future weekly APRs are unknown and the campaign ends
+  2026-09-11. Never manufacture volume to qualify. The contemporaneous 14-day
+  USDT and USDC Flexible bonuses have maximum combined gross rewards of only
+  about 1.34 USD and 0.58 USD at their public approximate base rates and capped
+  bonus tiers. Canonical triage:
+  `binance-public-promotion-yield-triage-v1-2026-08-26.json`, result SHA-256
+  `fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c`.
+  Observe the fixed August 28 and September 4 RLUSD updates; do not extrapolate
+  one week, illustrative examples, or system timezone into profitability or
+  account eligibility.
   A separate 2026 bStock screen covered 67 trading tokenized-stock symbols
   against Binance's public external reference price. `SNXXBUSDT` was the only
   selected live outlier and remained gross-positive at 1,000 and 5,000 USDT

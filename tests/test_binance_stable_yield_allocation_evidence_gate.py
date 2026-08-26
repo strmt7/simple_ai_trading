@@ -13,6 +13,13 @@ ARTIFACT_PATH = (
     / "action-value"
     / "binance-stable-yield-allocation-evidence-gate-v1.json"
 )
+PROMOTION_TRIAGE_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "binance-public-promotion-yield-triage-v1-2026-08-26.json"
+)
 REGISTRY_PATH = (
     ROOT / "docs" / "model-research" / "structural-edge-priority-registry-v1.json"
 )
@@ -20,7 +27,10 @@ EXPECTED_RESULT_SHA256 = (
     "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "e9ab2f4fc4f61d55b040469a2cea22c022f6d41af0aa45cd759dd60c4a73856c"
+    "f61bff5690399aef2b644b9ef26a021512e15c3d481741789737268424c92665"
+)
+EXPECTED_PROMOTION_TRIAGE_SHA256 = (
+    "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c"
 )
 
 
@@ -117,4 +127,28 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
                 "566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb"
             ),
         },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "binance-public-promotion-yield-triage-v1-2026-08-26.json"
+            ),
+            "result_sha256": EXPECTED_PROMOTION_TRIAGE_SHA256,
+        },
     ]
+
+
+def test_public_promotion_triage_is_conditional_and_not_accepted() -> None:
+    artifact = _load(PROMOTION_TRIAGE_PATH)
+
+    assert artifact["result_sha256"] == EXPECTED_PROMOTION_TRIAGE_SHA256
+    assert _embedded_hash(artifact) == EXPECTED_PROMOTION_TRIAGE_SHA256
+    assert (
+        artifact["rlusd_xrp_campaign"]["published_completed_week"][
+            "effective_apr_percent"
+        ]
+        == "8.07"
+    )
+    adjudication = artifact["adjudication"]
+    assert adjudication["rlusd_public_conditional_candidate"] is True
+    assert adjudication["accepted_stable_edge"] is False
+    assert adjudication["profitability_claim"] is False

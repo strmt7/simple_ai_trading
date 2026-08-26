@@ -1,0 +1,133 @@
+{
+  "schema_version": "binance-public-promotion-yield-triage-v1",
+  "created_at_utc": "2026-08-26T08:44:19.2903434Z",
+  "result_sha256": "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c",
+  "authority": {
+    "research_only": true,
+    "credentials_used": false,
+    "orders_submitted": 0,
+    "live_or_paper_authority": false,
+    "account_eligibility_proved": false,
+    "accepted_stable_edge": false
+  },
+  "credential_preflight": {
+    "checked_at_utc": "2026-08-26T08:44:19.2903434Z",
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_present": false,
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_present": false,
+    "values_inspected": false
+  },
+  "sources": [
+    {
+      "article_code": "87614899ce0346beb103f58075d8c8cc",
+      "article_url": "https://www.binance.com/en/support/announcement/detail/87614899ce0346beb103f58075d8c8cc",
+      "cms_detail_url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=87614899ce0346beb103f58075d8c8cc",
+      "last_update_time_ms": 1787560980000,
+      "observed_at_utc": "2026-08-26T08:42:00Z",
+      "title": "Hold RLUSD in Binance Earn and Margin Accounts to Share 1 Million XRP in Rewards"
+    },
+    {
+      "article_code": "ca03b33b8dba44669a3f685d2d1c0ccb",
+      "article_url": "https://www.binance.com/en/support/announcement/detail/ca03b33b8dba44669a3f685d2d1c0ccb",
+      "cms_detail_url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=ca03b33b8dba44669a3f685d2d1c0ccb",
+      "observed_at_utc": "2026-08-26T08:42:00Z",
+      "title": "Binance Earn Yield Arena: Earn Up to $5,888 Rewards With This Week's New Limited-Time Offers! (2026-08-26)"
+    }
+  ],
+  "rlusd_xrp_campaign": {
+    "campaign_period_utc": {
+      "start": "2026-08-14T00:00:00Z",
+      "end": "2026-09-11T00:00:00Z"
+    },
+    "pool": "1000000 XRP over four weekly installments",
+    "published_completed_week": {
+      "reward_period_start": "2026-08-14T00:00:00Z",
+      "reward_period_end": "2026-08-21T00:00:00Z",
+      "effective_apr_percent": "8.07",
+      "xrp_token_value_usd": "1.2681",
+      "weekly_reward_fraction": "0.001547671232876712328767123288",
+      "reward_per_1000_rlusd_usd": "1.547671232876712328767123288",
+      "reward_per_10000_rlusd_usd": "15.47671232876712328767123288"
+    },
+    "remaining_week_aprs": "unknown_until_each_distribution",
+    "balance_rule": "seven-day average of each day's lowest RLUSD balance across hourly snapshots",
+    "eligible_balance_locations": [
+      "RLUSD Flexible Savings in Earn",
+      "RLUSD net assets in Cross Margin Isolated Margin or Portfolio Margin"
+    ],
+    "minimum_balance_rlusd": "0.01",
+    "qualifying_volume_rule": "at least 500 USD average daily Margin or Futures volume on any pairs while using RLUSD as collateral",
+    "borrowed_other_stablecoin_haircut_percent": "60",
+    "individual_reward_cap": "none stated",
+    "account_gates": [
+      "KYC",
+      "eligible jurisdiction",
+      "no active account restrictions",
+      "RLUSD collateral support",
+      "actual qualifying Margin or Futures volume"
+    ],
+    "source_consistency_note": "The worked examples still use an explicitly illustrative 20 percent APR while the completed-week table reports 8.07 percent; only the completed-week table value is admitted as observed realized-period evidence."
+  },
+  "qualification_cost_sensitivity": {
+    "weekly_minimum_qualifying_notional_usd": "3500",
+    "illustrative_total_commission_rate_bips": "4",
+    "illustrative_weekly_commission_usd": "1.4",
+    "rlusd_balance_break_even_against_commission_only": "904.5848822800495662949194546",
+    "excluded_from_break_even": [
+      "spread and slippage",
+      "funding cash flows",
+      "directional exposure",
+      "RLUSD acquisition and exit",
+      "custody stablecoin tax and opportunity costs"
+    ],
+    "usage_rule": "This sensitivity never authorizes volume created solely to qualify. Treat qualifying volume as zero incremental cost only when it is independently genuine pre-existing activity."
+  },
+  "current_capped_simple_earn_offers": [
+    {
+      "asset": "USDT",
+      "period_start_utc": "2026-08-25T00:00:00Z",
+      "period_end_utc": "2026-09-07T23:59:59Z",
+      "observed_realtime_apr_percent_approximate": "3",
+      "bonus_apr_percent": "4",
+      "bonus_tier_cap": "500 USDT",
+      "maximum_14_day_bonus_usd": "0.7671232876712328767123287671",
+      "maximum_14_day_combined_gross_usd_at_observed_approximate_rate": "1.342465753424657534246575342"
+    },
+    {
+      "asset": "USDC",
+      "period_start_utc": "2026-08-25T00:00:00Z",
+      "period_end_utc": "2026-09-07T23:59:59Z",
+      "observed_realtime_apr_percent_approximate": "2.5",
+      "bonus_apr_percent": "5",
+      "bonus_tier_cap": "200 USDC",
+      "maximum_14_day_bonus_usd": "0.3835616438356164383561643836",
+      "maximum_14_day_combined_gross_usd_at_observed_approximate_rate": "0.5753424657534246575342465753"
+    }
+  ],
+  "adjudication": {
+    "market_direction_forecast_required": false,
+    "rlusd_public_conditional_candidate": true,
+    "rlusd_candidate_scope": "eligible account with already-held RLUSD and independently genuine pre-existing qualifying volume",
+    "simple_earn_public_small_cap_opportunities": true,
+    "accepted_stable_edge": false,
+    "profitability_claim": false,
+    "reasons_not_accepted": [
+      "only one completed RLUSD reward week is published",
+      "future RLUSD APR is unknown and campaign ends on 2026-09-11",
+      "account and jurisdiction eligibility are unproved",
+      "exact incremental qualification entry exit and opportunity costs are unproved",
+      "the USDT and USDC offers are temporary first-come variable-rate offers with very small bonus caps"
+    ],
+    "next_evidence": [
+      "observe the second and third published RLUSD effective APRs without refitting this scope",
+      "if credentials and authority become available prove account eligibility and existing organic qualifying volume without inspecting or serializing credential values",
+      "compare exact account RLUSD and USDT or USDC yields and all frictions before any funded action"
+    ],
+    "prohibited_shortcuts": [
+      "infer residence or account eligibility from system timezone",
+      "manufacture churn self-trades wash trades or otherwise inauthentic volume",
+      "treat the illustrative 20 percent examples as the completed-week APR",
+      "extrapolate one observed week across the remaining campaign",
+      "call a temporary capped promotion a stable persistent edge"
+    ]
+  }
+}
