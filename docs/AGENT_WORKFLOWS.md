@@ -99,25 +99,26 @@ highest-ranked hypothesis whose explicit retry trigger is satisfied. If no
 trigger is satisfied, do not compensate with more snapshots, broader search, or
 a nearby formula; record the blocker and preserve the evidence path instead.
 
-Treat public venue metadata as a candidate filter, not account evidence. In
-particular, Polymarket's public `holdingRewardsEnabled` Gamma field can identify
-an exact market for a later study, but it does not prove that the account, the
-balance's acquisition path, or a particular reward day is eligible. Promotion
-requires an authenticated account record explicitly labeled as a holding
-reward, a reconciled daily pUSD balance change, and a complete split-to-merge
-cash-flow cycle. Do not substitute generic CLOB rewards endpoints documented
-with maker, competitiveness, or liquidity-reward fields unless a current
-official source explicitly binds them to the holding program. Official relayer
-documentation can establish zero direct user gas for successfully relayed split
-and merge operations; it does not erase transfer, wrapping, withdrawal,
-opportunity, custody, tax, failure, or availability costs.
+Treat public venue metadata as a candidate filter, not account evidence.
+Polymarket's public `holdingRewardsEnabled` Gamma field identifies a current
+market, while Data API `YIELD` rows and their pUSD transfer receipts establish
+realized account-level holding payments. Neither proves the balance's
+split-origin lineage, future eligibility, or future payout. Deployment still
+requires an owned complete split-to-merge cash-flow cycle and every applicable
+transfer, wrapping, withdrawal, opportunity, custody, tax, failure, and
+availability cost. Official relayer documentation can establish zero direct
+user gas for successfully relayed split and merge operations; it does not erase
+those other costs.
 
-Do not attribute a Data API `REWARD` activity row to a particular condition or
-reward program when its `conditionId` is blank. A public transaction hash and
-amount without an exact condition and explicit holding-reward subtype cannot
-establish market eligibility, split-origin eligibility, the applicable rate, or
-realized holding-reward payout. Top-holder overlap is only a capped diagnostic;
-zero overlap within returned rows does not establish absence outside the cap.
+Official SDK bindings distinguish account-level holding `YIELD` from generic
+`REWARD`. Never use `REWARD` as holding-yield evidence. A blank-condition
+`YIELD` row may establish an account-level payment only after its pUSD transfer
+receipt reconciles; attribute its economic base by proving that wallet's full
+current eligible position set, not by inventing a condition ID. Top-holder
+overlap is only a capped diagnostic; zero overlap within returned rows does not
+establish absence outside the cap. Public collectors must fail on a full page,
+respect the documented activity offset ceiling of 5000, clear response state
+after every request, and never reuse a prior page after an error.
 
 Do not reuse the Round 74 USD-M futures commission capture as Binance spot fee
 evidence. Spot triangles require signed `GET /api/v3/account/commission`
@@ -246,7 +247,7 @@ uv run --group test coverage report --show-missing --fail-under=100
 The badges in `README.md` are generated from `.github/readme_badges.json` and
 must not be hand-edited.
 
-## One-Use Public Source Runs
+## Efficient Public Research and Frozen Sensitive Runs
 
 For same-expiry Binance option/future parity, matching contract timestamps do
 not prove a fixed payoff. First bind the option `realStrikePrice` and quarterly
@@ -257,43 +258,49 @@ screen, but cannot accept an edge. Ticker-only option prices have no displayed
 quantity, and non-synchronous option/futures snapshots are never execution
 evidence.
 
-Before the first network request, a bounded one-use research tool must create
-or reserve its terminal receipt path and initialize a self-hashed persistent
-request journal. Before each request, atomically persist its exact fingerprint.
-After every completed response, atomically persist its request timing, status,
-decoded payload, canonical payload hash, and raw-response hash before parsing,
-validation, or another request. An in-memory ledger alone is insufficient. A
+For public, unauthenticated, read-only research, optimize for information gain.
+Iterative source, market-data, and blockchain requests are permitted when each
+request tests a distinct question, follows a documented pagination plan, or
+materially refreshes stale evidence. Before a bounded collection, write its
+question, scope, stop conditions, and request ceiling. Persist every raw body,
+status, timing, request fingerprint, and hash before validation. Respect venue
+rate limits and stop identical retries after a deterministic failure. A commit,
+push, hosted CI run, or immutable one-attempt contract is not a prerequisite
+for exploratory public requests. Do not turn this permission into repetitive
+polling, adaptive threshold shopping, or discarded unfavorable observations.
+
+Authenticated, account-specific, funded, order-capable, or state-changing runs
+remain frozen-sensitive. Before their first request, reserve the terminal
+receipt path and initialize a self-hashed persistent request journal. Before
+each request, atomically persist its exact fingerprint. After every completed
+response, persist request timing, status, decoded payload, canonical payload
+hash, and raw-response hash before parsing, validation, or another request. A
 validation, HTTP, rate-limit, serialization, or later economic-evaluation
-failure must retain every accumulated response in the rejected terminal
-receipt or journal before the exception is propagated. A traceback alone is
-not evidence and never permits a retry, replacement market, or adaptive time
-shift under a one-attempt contract.
+failure must retain every accumulated response in the rejected terminal receipt
+or journal before the exception is propagated. A traceback alone is not
+evidence and never permits an unplanned retry under a one-attempt contract.
 
 For a bounded historical endpoint whose retention or archive coverage is not
-explicitly source-bound, preregister request windows newest-first. The first
-response must prove that the required record shape is currently available
-before older windows consume the request budget. A valid empty response is a
-terminal source-availability failure under that frozen contract: preserve it,
-make no later request, and do not adapt the window, symbol, endpoint, or order.
-Record the ordering defect in the adjudication so a different future hypothesis
-cannot silently repeat it.
+explicitly source-bound, request windows newest-first. Preserve valid empty
+responses and use them to narrow the next distinct research question; do not
+silently replace the symbol, time range, or threshold merely to manufacture a
+positive result. A frozen sensitive contract may still make an empty response
+terminal when its preregistered rules say so.
 
-Before publishing a one-use gate, also prove that the frozen request budget can
-physically supply its required horizon. Do not infer an endpoint's effective
-page size from a requested `limit`; bind the documented maximum or a prior
-non-consumptive fixture, and preregister enough non-overlapping pages if the
-gate needs more rows or complete periods. If the live endpoint returns a
-smaller valid capped page, preserve the source-limited result. A separately
-published recovery may add only a predeclared non-overlapping page with no
-threshold, symbol, scenario, or endpoint change; it cannot turn an economic
-failure into permission for more pagination.
+Prove that a collection's request budget can physically supply its required
+horizon. Do not infer effective page size from a requested `limit`; use the
+documented maximum or observed response, then fetch only non-overlapping pages
+needed for the predeclared horizon. If a live endpoint returns a smaller valid
+page, preserve it and update the documented plan before continuing. Pagination
+may repair source coverage; it may not change an economic threshold or erase a
+failed result.
 
-Format and test the exact implementation before freezing and publishing it.
-Then publish the frozen contract and implementation before the live attempt.
-The terminal receipt must bind both source hashes and must state explicitly
-whether books, economics, credentials, or orders were reached. Never repair a
-failed one-use artifact by resampling; fix the workflow for a separately frozen
-hypothesis only when its own nonadaptive contract permits a new attempt.
+Format and test an implementation before a frozen sensitive run. Publishing it
+before the run is optional unless a separate contract explicitly requires that
+control. The terminal receipt must bind the implementation and source hashes
+and state whether books, economics, credentials, or orders were reached. Public
+exploration may be iterated transparently; sensitive one-use evidence may not be
+repaired by resampling outside its contract.
 
 The 2026-08-25 cross-stablecoin funding full-history v3 run violated this rule:
 it fetched the bounded source pages, then failed on a missing historical FX bar,

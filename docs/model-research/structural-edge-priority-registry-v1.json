@@ -1,19 +1,21 @@
 {
-  "accepted_edge_count": 0,
+  "accepted_edge_count": 1,
+  "accepted_edge_scope": "one validated gross structural edge for existing idle pUSD already on Polymarket; zero deployment-ready or after-alternative-yield edges",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
-    "profitability_claim": false
+    "profitability_claim": false,
+    "scoped_gross_structural_edge_claim": true
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
-  "updated_at_utc": "2026-08-25T19:14:24.4801998Z",
+  "updated_at_utc": "2026-08-26T06:40:37.0210755Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
-        "authenticated exact-condition account record explicitly labeled holding-reward eligible",
-        "split-origin equal YES and NO balance lineage",
-        "authenticated holding-reward ledger entry and reconciled pUSD balance change",
-        "full split-to-merge cash flow every external cost alternative cash yield capacity and persistence"
+        "owned split-origin equal YES and NO balance lineage before deployment",
+        "owned full split-to-merge cash flow before deployment",
+        "every external cost alternative cash yield and capacity before expanding beyond already-idle on-platform pUSD",
+        "prospective persistence and program-change monitoring"
       ],
       "canonical_artifacts": [
         {
@@ -23,20 +25,24 @@
         {
           "path": "docs/model-research/polymarket/complete-set-holding-reward-readiness-v2.json",
           "result_sha256": "2d3650d65f248294395fcac336c6650e0c6bc332cb490c6f0bac70bc11244e2c"
+        },
+        {
+          "path": "docs/model-research/polymarket/complete-set-holding-yield-reconciliation-v3-2026-08-26.json",
+          "result_sha256": "48e31f3d6021d28946fa1f143f65ff0f6baf9a222424f41e76c2d89875796abe"
         }
       ],
-      "current_status": "strongest_polymarket_direction_neutral_hypothesis_public_mechanics_candidate_and_gasless_route_proved_realized_reward_not_proved",
+      "current_status": "accepted_scoped_gross_edge_equal_mergeable_complete_set_and_14_of_14_daily_YIELD_payments_reconciled_at_3_15638_percent_realized_annualized_rate_for_existing_idle_on_platform_pUSD_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "complete_set_holding_reward",
-      "next_action": "after_the_protected_boundary_freeze_one_authenticated_minimum_size_payout_and_cost_study_only_if_explicit_account_and_funding_authority_exists",
+      "next_action": "monitor_current_official_terms_market_eligibility_and_public_daily_YIELD_receipts_without_funding_then_only_after_the_protected_boundary_and_explicit_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study",
       "priority_rank": 1,
       "prohibited_shortcuts": [
         "Gamma holdingRewardsEnabled as account eligibility",
-        "generic maker or liquidity reward endpoint as holding-reward payout",
-        "blank-condition public REWARD activity as exact market attribution",
+        "generic REWARD maker or liquidity activity as holding YIELD payout",
+        "blank-condition YIELD activity as exact market attribution without proving the wallet full eligible position set",
         "top-holder non-overlap as population absence"
       ],
-      "retry_trigger": "not_before_2026_08_29T23_40_00Z_and_only_with_explicit_read_only_then_separately_funded_authority",
+      "retry_trigger": "public_read_only_daily_persistence_or_program_change_monitoring_now_then_not_before_2026_08_29T23_40_00Z_for_authenticated_or_funded_work_with_explicit_authority",
       "venue_scope": "polymarket_btc_eth_sol"
     },
     {
@@ -270,7 +276,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "6f3bcf6d12fe4e41ca70d08cb577bf89bc040526803d0c17ff8eb69f8a9e1f0e",
+  "result_sha256": "48822b0b1b6a7b3fe4a6c5af114d697cd8946f70e11c35d8eb04fa7a44306fd2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edge | None |
+| Accepted edge | One scoped gross structural edge: Polymarket complete-set holding yield for existing idle on-platform pUSD; not deployment-ready |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -216,30 +216,38 @@ safety gate, blocks Stop, or submits an order.
   orphan protection; the one-fill settlement loss bound remains 24.50 pUSD
   without rebate credit. Do not turn this arithmetic into a profitability claim
   or activate a capture while the Round 21 sidecar is protected.
-- Polymarket complete-set holding rewards are the first newly identified
-  direction-neutral hypothesis worth preserving. Split/merge mechanics define
-  a paired 1 pUSD conversion identity before operational and custody risks, and
-  official eligible events include BTC, ETH, and SOL 2026 price events. The
-  official rate sources conflict at 3.25% versus 4.00%; the rate is
-  discretionary, future payout can
-  be capped, and split-originated paired eligibility and realized payment are
-  unproved. The canonical economics artifact is
+- Polymarket complete-set holding yield is now a validated, narrowly scoped
+  gross structural edge for existing idle pUSD already on Polymarket. It does
+  not require a market-direction forecast: equal mergeable YES and NO shares
+  preserve the complete-set value while the current holding program pays yield.
+  The canonical economics artifact is
   `complete-set-holding-reward-economics-v1.json`, result SHA-256
   `b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561`.
   A later public readiness capture found 26 BTC, 15 ETH, and 14 SOL markets
   with active/open/orderbook/holding-reward flags. The exact BTC $100,000
   candidate had live YES+NO midpoints of 0.325+0.675=1.000 pUSD. Official
   relayer documentation also confirms zero direct user gas for successfully
-  relayed split and merge operations. These facts strengthen the hypothesis but
-  do not prove account eligibility or future payout. A capped exact-market
-  diagnostic found zero overlap among the returned top 20 holders per outcome;
-  all 38 aggregate `REWARD` rows for one selected current top holder had a blank
-  `conditionId`. Neither result proves eligibility or payout, and the cap cannot
-  exclude complete-set holders elsewhere. The readiness artifact is
+  relayed split and merge operations. A capped exact-market diagnostic then
+  used the wrong activity subtype: official SDK bindings distinguish holding
+  `YIELD` from generic `REWARD`, so its blank-condition `REWARD` rows were
+  liquidity rewards and not holding-yield evidence. The readiness artifact is
   `complete-set-holding-reward-readiness-v2.json`, result SHA-256
   `2d3650d65f248294395fcac336c6650e0c6bc332cb490c6f0bac70bc11244e2c`.
-  Do not call this an accepted edge or activate a payout study while Round 21
-  is protected.
+  The corrected public reconciliation found one wallet with 150 YES plus 150
+  NO mergeable shares in the BTC $45,000 condition and no other currently
+  holding-reward-eligible position value. Fourteen consecutive `YIELD` rows
+  paid 0.1816 pUSD; all 14 Polygon receipts exactly reconcile transfers from
+  the holding-yield distributor to that wallet. The realized annualized gross
+  rate was 3.15638%, and every payout maps to 21-24 hourly samples under the
+  current official 3.25% formula; the stale 4% rate does not fit. Canonical
+  reconciliation:
+  `complete-set-holding-yield-reconciliation-v3-2026-08-26.json`, result SHA-256
+  `48e31f3d6021d28946fa1f143f65ff0f6baf9a222424f41e76c2d89875796abe`.
+  This accepted scope excludes bridging, wrapping, withdrawal, custody, tax,
+  and capital opportunity costs. It proves neither split-origin lineage for
+  this wallet nor future rewards; the rate is discretionary and caps may be
+  introduced. No deployment, account, funding, transaction, paper, or live
+  authority exists. Continue public monitoring without touching Round 21.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -257,6 +265,8 @@ safety gate, blocks Stop, or submits an order.
 - The independent Round 21 sidecar remains protected until
   `2026-08-29T23:40:00Z`. Do not stop, restart, stage, clean, reset, switch,
   commit, or modify its process, worktree, state, database, or WAL.
+  This protection applies only to that capture and its assets; it does not
+  block separate read-only Polymarket research in the main worktree.
 
 ## Task Routing
 

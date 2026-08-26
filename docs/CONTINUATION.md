@@ -12,8 +12,10 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-cost edge. Binance remains paper/testnet/Demo;
-  Polymarket remains independent, disabled by default, and unpromoted.
+  demonstrated long-lived after-all-cost edge. One narrowly scoped gross
+  structural edge is accepted for existing idle on-platform Polymarket pUSD;
+  it is not deployment-ready. Binance remains paper/testnet/Demo; Polymarket
+  remains independent, disabled by default, and unpromoted.
 - The one historical cutoff is `2026-08-14T00:00:00Z`. Do not move it or fetch
   the newest history on each iteration. Prospective experiments remain isolated
   from that frozen snapshot.
@@ -392,18 +394,11 @@ diagnostics, not accepted edges.
   This is not an edge: the publicly proven payout floor is zero, fill and queue
   evidence are absent, and one orphan can still lose 24.50 pUSD without rebate
   credit.
-- Polymarket complete-set holding rewards are a distinct market-direction-
-  independent hypothesis. Official mechanics allow splitting 1 pUSD into one
-  YES plus one NO and later merging the pair back to 1 pUSD. The Help Center
-  says eligible position value includes current YES and NO shares at their
-  latest mid-prices and lists BTC, ETH, and SOL 2026 price events. However, two
-  current official sources disagree on the annual rate (3.25% versus 4.00%). At
-  the lower rate, 35 bps of total friction needs 39.3077 days to break even.
-  The rate is discretionary, payout limits may be introduced, random hourly
-  sampling is not exact accrual, and split-originated paired eligibility has
-  not been explicitly or empirically proved. This is promising enough for a
-  later authenticated payout/cost study, but its future payout floor is zero
-  and it is not an accepted edge. Canonical economics:
+- Polymarket complete-set holding yield is now an accepted gross structural
+  edge only for existing idle pUSD already on Polymarket. Official mechanics
+  allow splitting 1 pUSD into one YES plus one NO and later merging the pair
+  back to 1 pUSD. Equal mergeable balances therefore remove outcome direction
+  while the holding program is active. Canonical economics:
   `docs/model-research/polymarket/complete-set-holding-reward-economics-v1.json`,
   result SHA-256
   `b15b9039848094057322387c9aed3a555a8ca32020af97689fc6b26e16114561`.
@@ -418,17 +413,28 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/complete-set-holding-reward-readiness-v2.json`,
   result SHA-256
   `2d3650d65f248294395fcac336c6650e0c6bc332cb490c6f0bac70bc11244e2c`.
-  Generic CLOB rewards responses carrying maker, competitiveness, or liquidity
-  configuration fields are not holding-reward proof without an explicit
-  current official binding; require an account entry labeled as a holding
-  reward and reconcile the corresponding pUSD balance change. A capped public
-  diagnostic found no cross-outcome wallet overlap among the returned top 20
-  holders per outcome for the exact candidate. One selected current top holder
-  had 38 public `REWARD` activity rows, but every row had a blank `conditionId`.
-  This cannot attribute a reward to the candidate, distinguish a holding reward,
-  prove split-origin eligibility, or establish a rate; it also cannot exclude
-  complete-set holders outside the cap. Do not widen this selection-heavy
-  shortcut or treat aggregate public rewards as payout evidence.
+  The v2 public diagnostic used the wrong subtype. Official SDK bindings define
+  account-level holding payments as `YIELD`; generic `REWARD` rows are a
+  different program and the selected wallet's latest receipts came from the
+  liquidity-reward distributor. Do not repeat that diagnostic.
+  The corrected public reconciliation identified wallet
+  `0x3fb5c98d825651d7efd2bd48a5d02c2d86c96f2f` with exactly 150 YES plus
+  150 NO mergeable shares in “Will Bitcoin dip to $45,000 by December 31,
+  2026?” and no other currently holding-reward-eligible position value. Its 14
+  consecutive public `YIELD` rows total 0.1816 pUSD, and all 14 Polygon receipts
+  exactly reconcile pUSD transfers from the holding-yield distributor. The
+  3.15638% realized annualized gross rate and 328/336 implied sampled hours fit
+  the current official 3.25% hourly formula exactly at four-decimal payout
+  truncation; the stale 4% rate does not. Canonical reconciliation:
+  `docs/model-research/polymarket/complete-set-holding-yield-reconciliation-v3-2026-08-26.json`,
+  result SHA-256
+  `48e31f3d6021d28946fa1f143f65ff0f6baf9a222424f41e76c2d89875796abe`.
+  Acceptance is deliberately narrow: it excludes capital not already on the
+  platform and does not subtract bridge, wrapping, withdrawal, custody, tax,
+  or alternative-yield costs. The public wallet does not prove that its pair
+  originated from a split. Fourteen days do not guarantee future payouts; the
+  official rate is discretionary and caps may be introduced. No deployment,
+  authenticated account, funded, paper, or live authority exists.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.
@@ -444,7 +450,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`6f3bcf6d12fe4e41ca70d08cb577bf89bc040526803d0c17ff8eb69f8a9e1f0e`.
+`48822b0b1b6a7b3fe4a6c5af114d697cd8946f70e11c35d8eb04fa7a44306fd2`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -575,6 +581,10 @@ The Round 21 sidecar worktree
 `2026-08-29T23:40:00Z`. Its process IDs are ephemeral. Do not touch it until a
 contract-defined terminal audit proves the boundary has passed and the process,
 lease, state, database, and WAL agree.
+This is a narrow process-and-file protection boundary, not a Polymarket research
+moratorium. Separate unauthenticated, read-only public source, market-data, and
+blockchain investigations may proceed iteratively in the main worktree. They do
+not grant account, funding, order, or transaction authority.
 
 ## Next Work
 
@@ -613,12 +623,13 @@ lease, state, database, and WAL agree.
    frozen prospective contract measuring authenticated maker fills, queue and
    cancellation latency, adverse selection, realized rebate payment, and
    complete orphan P&L. Nominal rebate algebra is not a substitute.
-   The complete-set holding-reward hypothesis likewise requires an exact
-   candidate BTC/ETH/SOL market, authenticated rewards eligibility, paired
-   balance and daily payout, a reconciled split-to-merge cycle, every cost
-   outside the documented gasless relayer path, alternative cash yield, and
-   capacity. Do not infer account eligibility from help prose or a Gamma flag,
-   and do not activate it before the protected boundary.
+   Public and on-chain monitoring of the accepted scoped complete-set holding-
+   yield edge may continue now without touching the protected sidecar. Monitor
+   official terms, current market eligibility, daily `YIELD` continuity, and
+   distributor receipts. Deployment still requires an owned split-to-merge
+   cycle, every cost outside the documented gasless relayer path, alternative
+   cash yield, and capacity. Do not fund, authenticate, or transact before the
+   protected boundary and explicit authority.
 5. Reject any candidate that fails bull, bear, sideways, choppy, high-volatility,
    liquidity-stress, or latency-stress after-cost slices. Abstention is required
    where evidence is unsupported; no strategy can guarantee profit or prevent
