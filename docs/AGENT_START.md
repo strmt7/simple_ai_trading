@@ -545,6 +545,18 @@ safety gate, blocks Stop, or submits an order.
   wallets. None proves future rewards; the rate is discretionary and caps may
   be introduced. No deployment, account, funding, transaction, paper, or live
   authority exists. Continue public monitoring without touching Round 21.
+- The active Binance USD1/WLFI holding airdrop is accepted only for already-held
+  idle USD1 in a published eligible account category. The current realized base
+  APR is 5.46%; the 6.55% boost is creditable only when at least 300 USD1 of
+  lowest-hourly daily Futures open interest already exists for an independently
+  justified organic strategy. Simple Earn is not in the closed eligible-account
+  list, so the same principal cannot receive both yields under the published
+  contract. Credentials, region eligibility, exact account rates, reward-sale
+  costs, and USD1 principal risk remain unresolved. Do not acquire USD1 or open
+  Futures exposure for this promotion. Refresh only on the fixed 2026-08-27,
+  2026-08-28, and 2026-09-04 triggers. Canonical gate:
+  `binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json`, result SHA-256
+  `c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -576,6 +588,7 @@ safety gate, blocks Stop, or submits an order.
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
+| USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
