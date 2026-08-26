@@ -74,13 +74,46 @@
     "profitability": "realized spread plus rebate minus adverse selection inventory hedge slippage fees opportunity cost and operational costs must remain positive across required stress slices"
   },
   "public_schedule_adjudication": {
-    "accepted_as_current_rate_evidence": false,
-    "direct_fetch_http_status": 403,
-    "rate_or_tier_claim_from_public_schedule": false,
-    "reason": "the static document was not retrievable from the current host and cannot establish current same-account enrollment tier pair applicability or realized rebate",
-    "url": "https://public.bnbstatic.com/vip/portal/public/liquidity_prog_spot_spec_v11"
+    "accepted_as_current_rate_evidence": true,
+    "current_dynamic_page_capture": {
+      "captured_at_utc": "2026-08-26T16:45:00Z",
+      "normalized_visible_schedule_characters": 1774,
+      "normalized_visible_schedule_sha256": "6128075722bafe971daf72db627ae2d0fed38095f809c0a2ec6993c477d70ac7",
+      "url": "https://www.binance.com/en/fee/tradingPromote"
+    },
+    "historical_static_document_fetch_http_status": 403,
+    "published_schedule": [
+      {
+        "maker_fee_percent": "0.0000",
+        "tier": 1,
+        "weekly_maker_volume_percentage_requirement": "0.05",
+        "weekly_maker_volume_USD_alternative": "25000000"
+      },
+      {
+        "maker_fee_percent": "-0.0040",
+        "tier": 2,
+        "weekly_maker_volume_percentage_requirement": "0.15",
+        "weekly_maker_volume_USD_alternative": null
+      },
+      {
+        "maker_fee_percent": "-0.0060",
+        "tier": 3,
+        "weekly_maker_volume_percentage_requirement": "0.50",
+        "weekly_maker_volume_USD_alternative": null
+      },
+      {
+        "maker_fee_percent": "-0.0080",
+        "tier": 4,
+        "weekly_maker_volume_percentage_requirement": "1.00",
+        "weekly_maker_volume_USD_alternative": null
+      }
+    ],
+    "reason_edge_still_unproved": "the current page proves the public enrollment schedule and a maximum displayed rebate of 0.8 bips per maker notional but cannot establish same-account enrollment tier pair applicability organic qualifying volume owned fills queue adverse selection inventory unwind or realized after-cost profit",
+    "schedule_description": "participants receive zero maker fee by enrollment and may earn rebates when qualified for higher performance tiers",
+    "source_hash_method": "SHA256 of UTF-8 visible DOM snapshot text from the Spot Maker Program description through the final tier row with CRLF normalized to LF and outer whitespace trimmed"
   },
-  "result_sha256": "19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f",
+  "result_sha256": "d2adda1c5ab4b561e0c238e1e874cc72edaee15ebadafbb76703251f9cd99e10",
   "schema_version": "binance-spot-maker-rebate-account-evidence-gate-v1",
-  "status": "no_edge_claim_current_account_program_and_realized_rebate_evidence_absent"
+  "status": "current_public_schedule_proved_no_edge_claim_account_program_organic_volume_owned_execution_and_realized_after_cost_rebate_evidence_absent",
+  "updated_at_utc": "2026-08-26T16:45:00Z"
 }
