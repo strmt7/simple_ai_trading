@@ -158,6 +158,22 @@ safety gate, blocks Stop, or submits an order.
   `22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7`.
   Do not resample until an exact payoff mapping appears or a two-sided model
   wedge exceeds 4.27 points, then freeze a prospective executable-cost study.
+  The retained Round 26 public BTC capture also exposed a distinct conditional
+  execution lead. In 10 consecutive complete 5-minute conditions, the exact
+  closing Chainlink TWAP direction matched the later resolution, aggregate
+  winner bids grew only after local receipt of that observation, and later
+  winner-side seller fills implied 13.40488 pUSD gross at public event prices.
+  Both Up and Down conditions contributed, so no direction forecast is needed.
+  This is not yet an accepted edge: aggregate book events do not prove a fresh
+  authenticated order was accepted after observation, public trades do not
+  prove owned fill lineage or queue position, the capture was one degraded BTC
+  hour, and all costs remain unbound. Canonical gate:
+  `polymarket-post-observation-maker-window-gate-v1-2026-08-26.json`, result
+  SHA-256
+  `d6f790d7de78fc4f1c527b9a6528ebb3faa31fc11d810d9daccec3e4a7d9084e`.
+  Run public prospective BTC/ETH/SOL monitoring now. Do not submit an order;
+  only after `2026-08-29T23:40:00Z` and explicit authority may one minimum-size
+  no-crossing authenticated order-acceptance probe be frozen.
   A source-first USD-M/COIN-M perpetual funding review also stopped before any
   market request. Official schemas expose separate public funding endpoints and
   COIN-M `contractSize` and `marginAsset`, but do not bind a complete
@@ -420,6 +436,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket model | `docs/model-research/polymarket/latest/README.md` |
 | Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
+| Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |

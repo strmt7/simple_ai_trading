@@ -59,6 +59,35 @@
     },
     {
       "blocking_evidence": [
+        "prospective public recurrence across BTC ETH and SOL 5-minute and 15-minute conditions",
+        "authenticated proof that a fresh no-crossing order is accepted only after local receipt of the exact closing oracle observation",
+        "owned order fill lineage queue position cancellation behavior and achievable quantity",
+        "exact maker fees rebates redemption relayer opportunity and pUSD availability costs",
+        "cross-regime persistence without relying on one degraded historical capture"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json",
+          "result_sha256": "d6f790d7de78fc4f1c527b9a6528ebb3faa31fc11d810d9daccec3e4a7d9084e"
+        }
+      ],
+      "current_status": "high_priority_conditional_execution_lead_10_of_10_consecutive_exact_BTC_5_minute_rows_matched_the_later_resolution_showed_post_observation_winner_bid_growth_and_later_winner_side_sell_fills_with_13_40488_pUSD_public_observed_gross_but_fresh_authenticated_order_acceptance_owned_fill_lineage_and_all_costs_remain_unproved",
+      "market_direction_forecast_required": false,
+      "mechanism": "post_observation_oracle_to_clob_close_maker_window",
+      "next_action": "run_a_public_prospective_BTC_ETH_SOL_monitor_now_then_only_after_2026_08_29T23_40_00Z_and_explicit_authority_freeze_one_minimum_size_no_crossing_authenticated_order_acceptance_probe",
+      "priority_rank": 2,
+      "prohibited_shortcuts": [
+        "aggregate_public_bid_growth_as_proof_of_fresh_account_order_acceptance",
+        "public_trade_events_as_owned_fill_lineage_or_queue_evidence",
+        "one_degraded_BTC_hour_as_cross_asset_or_cross_regime_persistence",
+        "gross_one_minus_fill_price_as_after_cost_profit",
+        "submitting_any_order_before_the_protected_boundary_and_explicit_authority"
+      ],
+      "retry_trigger": "public_prospective_monitoring_now_then_not_before_2026_08_29T23_40_00Z_for_authenticated_order_acceptance_with_explicit_authority",
+      "venue_scope": "polymarket_btc_eth_sol_5m_15m"
+    },
+    {
+      "blocking_evidence": [
         "same-account BFUSD and RWUSD rate histories with proved timestamp cadence",
         "same-account subscription availability and exact fast and standard redemption quota fee and delay",
         "exact account BFUSDUSDT spot commission before setting subscription or redemption parity triggers",
@@ -84,7 +113,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
       "next_action": "observe_the_fixed_2026_08_28_and_2026_09_04_RLUSD_effective_APR_updates_without_refitting_and_when_both_credentials_exist_prove_account_eligibility_organic_volume_exact_rates_quotas_and_costs",
-      "priority_rank": 2,
+      "priority_rank": 3,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
         "documentation example fees or rates as current values",
@@ -122,7 +151,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "delta_hedged_bnb_simple_earn_and_airdrop_reward_stack",
       "next_action": "when_both_designated_ephemeral_credentials_exist_source_bind_one_GET_only_principal_reward_and_dividend_capture_over_the_frozen_hedge_interval_without_refreshing_funding_or_books",
-      "priority_rank": 3,
+      "priority_rank": 4,
       "prohibited_shortcuts": [
         "treating_the_public_0_35_percent_APR_or_airdrop_label_as_realized_account_yield",
         "dividing_public_token_allocations_by_an_assumed_eligible_BNB_denominator",
@@ -152,7 +181,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "cross_venue_option_implied_prediction_threshold_wedge",
       "next_action": "do_not_resample_until_an_exact_payoff_mapping_appears_or_a_two_sided_same_date_same_strike_model_gap_exceeds_4_27_percentage_points_then_freeze_one_prospective_executable_cost_and_cross_regime_study",
-      "priority_rank": 4,
+      "priority_rank": 5,
       "prohibited_shortcuts": [
         "same_calendar_date_as_same_expiry_instant",
         "vanilla_call_as_exact_cash_or_nothing_claim",
@@ -182,7 +211,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "liquid_staking_token_conversion_parity",
       "next_action": "when_both_documented_ephemeral_environment_variables_exist_source_bind_one_get_only_WBETH_BNSOL_conversion_quota_and_account_prequalification_before_any_public_book_or_hedge_sampling",
-      "priority_rank": 5,
+      "priority_rank": 6,
       "prohibited_shortcuts": [
         "public_LST_book_as_redeemable_conversion_value",
         "documentation_example_ratio_fee_or_delay_as_current_account_evidence",
@@ -221,7 +250,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "bstock_reference_conversion_and_delta_neutral_perpetual_funding",
       "next_action": "do_not_retry_bStock_funding_parameters_or_baskets_only_revisit_conversion_parity_after_explicit_permanent_scope_authority_and_same_account_eligibility_quote_conversion_and_exact_cost_evidence",
-      "priority_rank": 6,
+      "priority_rank": 7,
       "prohibited_shortcuts": [
         "external_reference_price_as_an_executable_stock_quote",
         "public_1_to_1_terms_as_same_account_eligibility",
@@ -258,7 +287,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "same_expiry_option_put_call_parity_against_quarterly_future",
       "next_action": "none_until_an_official_static_history_or_explicit_retention_contract_exists_or_after_the_2026_09_25_matching_expiry_under_a_separately_frozen_prospective_contract",
-      "priority_rank": 7,
+      "priority_rank": 8,
       "prohibited_shortcuts": [
         "matching expiry timestamps as proof of matching settlement values",
         "non_synchronous ticker and futures snapshots as execution evidence",
@@ -290,7 +319,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "quarterly_spot_future_cash_and_carry",
       "next_action": "when_both_documented_ephemeral_environment_variables_are_available_run_the_frozen_capture_once_then_apply_the_exact_components_as_a_non_synchronous_fee_gate_before_any_new_book_sampling",
-      "priority_rank": 8,
+      "priority_rank": 9,
       "prohibited_shortcuts": [
         "35_bps_sensitivity_as_actual_account_cost",
         "historical deliveryTime as exact delivery epoch",
@@ -317,7 +346,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "spot_market_maker_rebates",
       "next_action": "query_only_the_frozen_account_evidence_path_after_explicit_read_only_credential_authority",
-      "priority_rank": 9,
+      "priority_rank": 10,
       "prohibited_shortcuts": [
         "cached 2024 public fee table as current rate",
         "symbol commission response as maker-rebate proof",
@@ -343,7 +372,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "three_leg_spot_conversion",
       "next_action": "do_not_resample_books_until_exact_account_fees_first_prove_the_path_can_clear_the_frozen_break_even",
-      "priority_rank": 10,
+      "priority_rank": 11,
       "prohibited_shortcuts": [
         "USD-M futures commission as spot fee",
         "public VIP tier as account fee",
@@ -369,7 +398,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates",
       "next_action": "after_the_protected_boundary_freeze_a_prospective_authenticated_fill_rebate_and_orphan_study_only_if_explicit_authority_exists",
-      "priority_rank": 11,
+      "priority_rank": 12,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
         "both-fill assumption",
@@ -394,7 +423,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "cross_venue_prediction_complete_set",
       "next_action": "none_without_explicit_read_only_credential_authority_and_a_new_authenticated_contract",
-      "priority_rank": 12,
+      "priority_rank": 13,
       "prohibited_shortcuts": [
         "generated no-authorization label without live preflight",
         "title equality as payout equality",
@@ -405,7 +434,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "73363631d72664d21a5458cc773eb1cb44d46000b1f09f51feec3d5442bc208f",
+  "result_sha256": "35adedbfbb8b11776592602a9c64b692b90b12c7fe458f0e52b65ee218ca6d10",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -494,6 +523,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T09:25:15.3872941Z",
+  "updated_at_utc": "2026-08-26T10:20:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
