@@ -18,6 +18,15 @@
     "public_read_only_research": true,
     "signed_requests_made": 0
   },
+  "adjacent_on_chain_yield_adjudication": {
+    "accepted_edge": false,
+    "current_public_apr_range_percent": "0.2~0.41",
+    "current_public_duration": "Locked",
+    "market_direction_independent_stable_edge": false,
+    "reason": "The higher current BTC headline is explicitly an Advanced Earn on-chain protocol product. Binance calls the product high risk, says rewards are not guaranteed and depend on the protocol, assigns smart-contract risk to users, warns protocol failure can cause asset loss, and disclaims liability for protocol-caused losses. The current BTC page does not identify the exact offering or bind its principal-return, reward-asset, lock, redemption, fee, slashing, or protocol contract.",
+    "retry_trigger": "A materially new current official BTC offering that identifies the exact protocol and source-binds principal return, lock and redemption, every fee, reward asset and sale path, slashing and smart-contract loss allocation, capacity, account eligibility, and an after-risk hurdle above the already-held BTC alternative.",
+    "status": "rejected_current_high_risk_protocol_dependent_locked_BTC_yield_not_a_stable_edge"
+  },
   "created_at_utc": "2026-08-26T16:58:49.7130367Z",
   "credential_preflight": {
     "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_present": false,
@@ -84,7 +93,7 @@
     "enabling Auto-Subscribe or subscribing redeeming transferring or changing account state without separate explicit authority",
     "calling a public calculator estimate an account quote realized reward after-cost profit or future guarantee"
   ],
-  "result_sha256": "09aba801a6c400c5595190ea88bf023d5910dfe4467fc6fa20742de9b17f3671",
+  "result_sha256": "193495029148d0022fe1bf4158442226705a7f62a22dbf0eafdbf9a53bece785",
   "signed_read_contract_provenance": {
     "current_official_catalog": "The current Binance developer catalog lists Simple Earn with 41 REST endpoints, but the linked dynamic product page returned a zero-character accessibility snapshot and did not independently refresh the exact endpoint bodies.",
     "exact_contracts_reused_from_hash_bound_repository_evidence": [
@@ -145,14 +154,37 @@
       "reviewed_no_later_than_utc": "2026-08-26T17:05:37.8296788Z",
       "role": "official_current_Simple_Earn_API_catalog_landing_page_not_exact_endpoint_body_refresh",
       "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-simple-earn/api/rest-api"
+    },
+    {
+      "normalized_visible_evidence_characters": 576,
+      "normalized_visible_evidence_records": [
+        "product_url=https://www.binance.com/en/earn/BTC",
+        "current_product=BTC|On-chain Yields|0.2%~0.41%|Locked",
+        "risk_url=https://www.binance.com/en/blog/earn/4485327793740129779",
+        "risk_classification=high-risk product",
+        "returns=depend on the specific protocol",
+        "rewards=not guaranteed",
+        "smart_contract_risk=technical vulnerabilities; users bear associated risks",
+        "market_risk=returns can fluctuate and asset devaluation can impact earnings",
+        "protocol_failure_risk=operational or technical issues may lead to asset losses",
+        "liability=Binance is not liable for losses caused by on-chain protocol issues"
+      ],
+      "normalized_visible_evidence_sha256": "6b91d752f46cd7d277a6d88d30c3e604a69901068e155720d6307435957234e6",
+      "retrieved_no_later_than_utc": "2026-08-26T17:08:12.2552469Z",
+      "role": "official_current_BTC_on_chain_yield_range_and_official_product_risk_allocation",
+      "urls": [
+        "https://www.binance.com/en/earn/BTC",
+        "https://www.binance.com/en/blog/earn/4485327793740129779"
+      ]
     }
   ],
-  "updated_at_utc": "2026-08-26T17:05:37.8296788Z",
+  "updated_at_utc": "2026-08-26T17:08:12.2552469Z",
   "unresolved_gates": [
     "The exact BTC minimum, maximum subscription, Bonus Tiered APR cap, bonus end date, Real-Time APR tier schedule, purchase availability, redemption availability, and sold-out state are not public on the current product page.",
     "The public calculator does not expose the selected time-horizon state and explicitly says its output can differ from actual earnings.",
     "No current official source reviewed here proves zero BTC subscription or redemption fees.",
     "The current official developer catalog confirms that the Simple Earn REST family exists, but its linked page exposed no inspectable endpoint body; exact endpoint details are reused from the two named hash-bound repository artifacts rather than claimed as freshly refreshed.",
+    "The adjacent current BTC On-Chain Yields listing does not identify the protocol or bind its exact loss, lock, redemption, fee, reward, capacity, or eligibility contract and is rejected under current evidence.",
     "Account region identity verification product eligibility subscribed balance realized rewards redemption behavior custody tax and alternative-yield costs are unproved.",
     "No credentials account request subscription redemption transfer deposit conversion trade or other funded action occurred."
   ],

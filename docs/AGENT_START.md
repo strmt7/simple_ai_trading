@@ -111,7 +111,11 @@ safety gate, blocks Stop, or submits an order.
   credentials and explicit read-only authority exist; every subscription or
   redemption still needs separate funded authority. Canonical candidate:
   `binance-btc-simple-earn-idle-yield-candidate-v1-2026-08-26.json`, SHA-256
-  `09aba801a6c400c5595190ea88bf023d5910dfe4467fc6fa20742de9b17f3671`.
+  `193495029148d0022fe1bf4158442226705a7f62a22dbf0eafdbf9a53bece785`.
+  The same artifact rejects the adjacent current `0.2%~0.41%` locked BTC
+  On-Chain Yields headline: Binance classifies it as high risk, makes rewards
+  protocol-dependent and unguaranteed, and says protocol failure can lose
+  assets. Do not trade a higher headline for an unbound principal-loss path.
 - The 2026-08-25 target-free structural-parity screens found no accepted edge.
   Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
   negative-risk events and zero gross-positive logical-implication bundles
