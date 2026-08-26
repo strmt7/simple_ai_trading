@@ -217,14 +217,31 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/polymarket-organic-taker-rebate-overlay-v1-2026-08-26.json`,
   result SHA-256
   `6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865`.
+  Applying those exact tier fractions to the retained NegRisk state closes the
+  queue-free alternative without another market request. The exact nonzero
+  `0.04` event fee establishes documented fee-enabled eligibility; its mixed
+  subject matter is not assigned a category by assumption. At both five and
+  twenty shares, all-taker break-even requires a 58.6161231584% rebate before
+  external costs, above the maximum documented 50% Obsidian tier. Obsidian
+  therefore still leaves `-0.010410` and `-0.041640` pUSD. A confirmed Gold tier
+  would improve the maker-input twenty-share pre-external-cost margin from
+  `0.02960` to `0.096272` pUSD, but queue ownership, one-NO conversion access,
+  causally subsequent output books, and exact tier activation remain unproved.
+  Even the Gold five-share direct-gas overlay is only
+  `0.0037250280188902383064000` pUSD minus USDT, not same-unit after-cost profit.
+  This does not change the NegRisk or accepted-edge verdict. Canonical overlay:
+  `docs/model-research/action-value/polymarket-negrisk-taker-rebate-overlay-v1-2026-08-26.json`,
+  result SHA-256
+  `fbbaf4ff7a7d93f8cf5d306a829ff00518d82c9802be674fdace864cea907a60`.
   Accepted edges are now ten. One frozen 24-hour public capture of only the six
   event tokens was launched under internal contract SHA-256
   `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
   Before acting, verify the process and terminal artifact. Never consume its
   partial raw file, restart it, or launch a duplicate. Its only decision is
   whether a queue-censored 0.82 fill can be joined to the first causally
-  subsequent twenty-share output unwind. The five-share direct-gas sensitivity
-  is already negative.
+  subsequent twenty-share output unwind. The no-rebate five-share direct-gas
+  sensitivity is negative; a hypothetical tier-adjusted cross-unit sensitivity
+  does not replace the protected post-fill evidence.
 - Polymarket logical implications: a later canonical fetch contained 1,473
   unique scoped active events. Exact same-event rule identities yielded 53
   threshold groups and 12 deadline groups: 2,572 implication pairs were

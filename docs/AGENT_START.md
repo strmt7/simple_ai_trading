@@ -178,6 +178,15 @@ safety gate, blocks Stop, or submits an order.
   Canonical overlay:
   `polymarket-organic-taker-rebate-overlay-v1-2026-08-26.json`, SHA-256
   `6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865`.
+  A retained-state-only NegRisk overlay proves the queue-free all-taker route
+  still fails: it needs a 58.6161231584% rebate before external costs, above the
+  documented 50% maximum, which leaves `-0.010410` and `-0.041640` pUSD at five
+  and twenty shares. Gold would raise the maker-input twenty-share margin from
+  `0.02960` to `0.096272` pUSD before external costs, but does not prove the
+  wallet tier, queue fill, conversion, subsequent books, or same-unit costs.
+  Canonical non-promoting overlay:
+  `polymarket-negrisk-taker-rebate-overlay-v1-2026-08-26.json`, SHA-256
+  `fbbaf4ff7a7d93f8cf5d306a829ff00518d82c9802be674fdace864cea907a60`.
   The accepted edge count is ten. Binance's best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even. The exact three spot fee queries are now defined from Binance's

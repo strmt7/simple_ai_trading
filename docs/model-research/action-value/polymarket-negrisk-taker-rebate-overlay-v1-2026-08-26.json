@@ -1,0 +1,165 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "accepted_edge_count_change": 0,
+    "candidate_edge": true,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "reason": "The current taker rebate materially improves the retained NegRisk state but does not create a queue-free edge. At five and twenty shares, the all-taker path requires a 58.6161231584% rebate to break even before external costs, above the documented maximum 50% Obsidian tier. The maker-input path improves at an effective tier, but still requires an owned passive Bitcoin NO fill followed by conversion and executable output sales. Exact wallet eligibility, completed tier activation, conversion access, pUSD-versus-USDT costs, post-fill books, latency, adverse selection, and after-cost profit remain unproved.",
+    "status": "all_taker_rejected_even_at_maximum_documented_rebate_maker_input_margin_improves_but_remains_queue_conversion_post_fill_execution_account_tier_and_after_cost_conditional",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_channel_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "live_money_authority": false,
+    "orders_or_conversions_submitted": 0,
+    "public_read_only_research": true,
+    "signed_requests_made": 0
+  },
+  "calculation_contract": {
+    "arithmetic": "Decimal exact arithmetic over retained five-decimal per-level fees; no new order-book, trade, account, or chain state was sampled",
+    "fee_formula": "fee = shares * 0.04 * price * (1-price)",
+    "rebated_net_formula": "gross_before_fee - taker_fee * (1 - effective_rebate_fraction)",
+    "scoped_quantities_shares": [
+      "5",
+      "20"
+    ],
+    "scope_reason": "Both quantities are fully covered by the retained top-of-book sizes. The 100-share predecessor path consumes deeper levels and is not needed to decide whether the queue-free route survives the maximum rebate.",
+    "units": "All retained exchange cash flows and fees are pUSD. The predecessor direct-gas field remains explicitly pUSD minus USDT and is not converted or assumed at parity."
+  },
+  "created_at_utc": "2026-08-26T19:22:12.2279893Z",
+  "economics": {
+    "all_taker": {
+      "break_even_rebate_fraction_before_external_costs": "0.58616123158417480549577884456215858301605694421453",
+      "break_even_rebate_percent_before_external_costs": "58.616123158417480549577884456215858301605694421453",
+      "gross_before_fee_per_share_pusd": "0.01",
+      "maximum_documented_rebate_fraction": "0.50",
+      "maximum_tier_shortfall_percentage_points": "8.616123158417480549577884456215858301605694421453",
+      "taker_fee_per_share_pusd": "0.024164",
+      "tier_scenarios": [
+        {
+          "net_pusd_before_external_costs": "-0.04907240",
+          "quantity_shares": "5",
+          "rebate_fraction": "0.18",
+          "tier": "Gold"
+        },
+        {
+          "net_pusd_before_external_costs": "-0.1962896",
+          "quantity_shares": "20",
+          "rebate_fraction": "0.18",
+          "tier": "Gold"
+        },
+        {
+          "net_pusd_before_external_costs": "-0.010410",
+          "quantity_shares": "5",
+          "rebate_fraction": "0.50",
+          "tier": "Obsidian"
+        },
+        {
+          "net_pusd_before_external_costs": "-0.041640",
+          "quantity_shares": "20",
+          "rebate_fraction": "0.50",
+          "tier": "Obsidian"
+        }
+      ],
+      "verdict": "rejected_even_at_maximum_documented_rebate_before_external_costs"
+    },
+    "maker_input_then_taker_outputs": {
+      "gross_before_fee_per_share_pusd": "0.02",
+      "taker_output_fee_per_share_pusd": "0.01852",
+      "tier_scenarios": [
+        {
+          "net_pusd_before_external_costs": "0.024068",
+          "predecessor_direct_gas_sensitivity_after_rebate_pusd_minus_usdt": "0.0037250280188902383064000",
+          "quantity_shares": "5",
+          "rebate_fraction": "0.18",
+          "rebate_improvement_pusd": "0.016668",
+          "tier": "Gold"
+        },
+        {
+          "net_pusd_before_external_costs": "0.096272",
+          "predecessor_direct_gas_sensitivity_after_rebate_pusd_minus_usdt": "0.0759290280188902383064000",
+          "quantity_shares": "20",
+          "rebate_fraction": "0.18",
+          "rebate_improvement_pusd": "0.066672",
+          "tier": "Gold"
+        },
+        {
+          "net_pusd_before_external_costs": "0.05370",
+          "predecessor_direct_gas_sensitivity_after_rebate_pusd_minus_usdt": "0.0333570280188902383064000",
+          "quantity_shares": "5",
+          "rebate_fraction": "0.50",
+          "rebate_improvement_pusd": "0.04630",
+          "tier": "Obsidian"
+        },
+        {
+          "net_pusd_before_external_costs": "0.21480",
+          "predecessor_direct_gas_sensitivity_after_rebate_pusd_minus_usdt": "0.1944570280188902383064000",
+          "quantity_shares": "20",
+          "rebate_fraction": "0.50",
+          "rebate_improvement_pusd": "0.18520",
+          "tier": "Obsidian"
+        }
+      ],
+      "verdict": "improved_but_not_locked_or_after_cost; tier scenarios do not prove the wallet has that tier, owns a maker fill, can convert, or can execute the retained output books after the fill"
+    }
+  },
+  "eligibility_resolution": {
+    "event_fee_enabled": true,
+    "event_retained_taker_fee_rate": "0.04",
+    "official_rule": "All fee-enabled categories earn weighted volume and the tier rebate applies to taker trades going forward; only fee-free Geopolitical and world-events markets are excluded.",
+    "result": "The retained event is within the documented fee-enabled category scope. Its mixed subject matter is not classified by assumption; the exact nonzero fee parameters establish fee-enabled status.",
+    "wallet_tier_effective_now": "unproved"
+  },
+  "predecessors": [
+    {
+      "path": "docs/model-research/action-value/polymarket-negrisk-maker-input-gate-v1-2026-08-26.json",
+      "result_sha256": "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a",
+      "role": "retained_event_books_fee_schedule_role_economics_conversion_route_and_direct_gas_sensitivity"
+    },
+    {
+      "path": "docs/model-research/action-value/polymarket-organic-taker-rebate-overlay-v1-2026-08-26.json",
+      "result_sha256": "6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865",
+      "role": "current_tier_fractions_exact_realized_Gold_reconciliation_and_pUSD_fee_unit"
+    }
+  ],
+  "protected_capture": {
+    "contract_internal_sha256": "9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da",
+    "result_status": "pending_terminal_capture_do_not_infer_from_partial_file",
+    "rule": "This overlay neither reads nor changes the partial capture. Do not restart, duplicate, or consume it before terminal adjudication.",
+    "unchanged_decision_use": "The capture remains necessary to test whether an observed passive input fill can be joined to the first causally subsequent executable twenty-share output unwind. The rebate does not solve queue ownership or post-fill execution."
+  },
+  "research_decision": {
+    "accepted_edge_count_change": 0,
+    "do_not_repeat": [
+      "resample the unchanged retained books to recalculate the same rebate scenarios",
+      "claim that the maximum tier rescues the all-taker route",
+      "treat a public wallets tier as the users eligibility",
+      "treat pUSD-minus-USDT direct-gas sensitivity as same-unit after-cost profit",
+      "consume or duplicate the protected 24-hour capture before its terminal artifact"
+    ],
+    "next_evidence": "After the protected capture terminates, adjudicate only owned-price maker-fill occurrence and the first causally subsequent twenty-share output unwind. Separately, an authenticated account check may establish a completed effective tier, but no signed request is authorized by this artifact.",
+    "registry_change": "none; this is a non-promoting refinement of the existing Polymarket NegRisk hypothesis family",
+    "verdict_change": "none; the queue-free route is now more strongly rejected and the maker-input route remains conditional"
+  },
+  "result_sha256": "fbbaf4ff7a7d93f8cf5d306a829ff00518d82c9802be674fdace864cea907a60",
+  "schema_version": "polymarket-negrisk-taker-rebate-overlay-v1",
+  "sources": [
+    {
+      "role": "official_current_tier_fractions_scope_daily_activation_and_anti_abuse_terms",
+      "url": "https://docs.polymarket.com/programs/taker-rebates"
+    },
+    {
+      "role": "official_current_taker_fee_formula_category_rates_precision_and_taker_rebate_link",
+      "url": "https://docs.polymarket.com/trading/fees"
+    }
+  ],
+  "verification": {
+    "fresh_official_documentation_reads": 2,
+    "new_market_or_account_requests": 0,
+    "new_orders_quotes_conversions_or_mutations": 0,
+    "retained_state_only": true
+  }
+}
