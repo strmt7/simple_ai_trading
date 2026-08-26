@@ -1,0 +1,171 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "signed_requests_made": 0
+  },
+  "created_at_utc": "2026-08-26T09:01:39.2867380Z",
+  "current_public_offer": {
+    "advertised_apr_percent": "0.35",
+    "advertised_reward_stack": [
+      "BNB Simple Earn locked-product reward",
+      "ongoing Launchpool rewards where applicable",
+      "Megadrop score and rewards where applicable",
+      "HODLer Airdrops where applicable"
+    ],
+    "announcement_article_code": "ca03b33b8dba44669a3f685d2d1c0ccb",
+    "announcement_date_utc": "2026-08-26",
+    "duration_days": 7,
+    "maximum_subscription_bnb": "1200000",
+    "minimum_subscription_bnb": "0.05",
+    "product_asset": "BNB",
+    "public_offer_is_account_eligibility_or_realized_reward_evidence": false,
+    "seven_day_advertised_base_reward_bips": "0.6712328767123287671232876712"
+  },
+  "economic_gate": {
+    "accepted_only_if": [
+      "timestamp-matched BNB Simple Earn principal and status prove the account held the evaluated eligible balance",
+      "realized Simple Earn and dividend rows reconcile to account balance changes without double counting",
+      "each non-BNB reward is valued at conservative executable sale proceeds available after distribution rather than a later high or announcement price",
+      "the frozen equal-base BNBUSDT short funding cash flows are combined with exact account entry exit and rebalancing costs",
+      "every seven-day and monthly robustness window remains positive after basis margin liquidation transfer tax custody opportunity and alternative-yield costs",
+      "bull bear sideways choppy volatility liquidity and latency stress slices pass or the mechanism abstains"
+    ],
+    "airdrop_value_rule": "Use executable post-distribution sale proceeds net of exact account fees and spread. A public token allocation or future price is not per-BNB realized value.",
+    "net_return_identity": "net_bips = realized_simple_earn_base_reward_bips + realized_launchpool_megadrop_hodler_reward_sale_value_bips + short_perpetual_funding_cashflow_bips - spot_and_futures_entry_exit_rebalance_bips - basis_slippage_bips - collateral_liquidation_transfer_tax_custody_opportunity_and_alternative_yield_bips",
+    "principal_matching_rule": "For every reward interval use the lower timestamp-supported eligible BNB principal across the Simple Earn position and reward records; an unknown denominator rejects the interval.",
+    "rejection_conditions": [
+      "any account eligibility principal reward or sale-value interval is unproved",
+      "the realized incremental airdrop stack does not clear the frozen hedge-cost hurdle after all costs",
+      "a public pool allocation is divided by an assumed eligible BNB denominator",
+      "future or maximum token prices are used to value historical distributions",
+      "the hedge is opened or BNB is acquired merely to chase an unannounced retroactive snapshot",
+      "a failed robustness window is hidden by an aggregate positive result"
+    ]
+  },
+  "frozen_hedge_evidence_reuse": {
+    "canonical_result_path": "docs/model-research/action-value/binance-bnb-fee-discount-hedge-recovery-v1-2026-08-25.json",
+    "canonical_result_sha256": "85d0be66391b53bef87dda33ea73acaf6995d0200e6423de7999d44a8fed3c8f",
+    "funding_row_count": 1000,
+    "history_end_time_ms": 1787673600005,
+    "history_start_time_ms": 1758902400008,
+    "new_market_requests_justified": false,
+    "reuse_rule": "Do not paginate funding again or resample BNB books. Recompute only the new reward-stack economics against this frozen hedge history until materially new execution evidence exists.",
+    "seven_day_fixed_base_reward_shortfall_bips_before_other_costs": "17.82046712328767123287671233",
+    "worst_complete_inner_month_short_funding_bips": "-35.61290000",
+    "worst_rolling_21_payment_end_time_ms": 1761350400000,
+    "worst_rolling_21_payment_short_funding_bips": "-18.49170000",
+    "worst_rolling_21_payment_start_time_ms": 1760774400002
+  },
+  "mechanism": {
+    "distinct_from_terminal_fee_discount_only_family": true,
+    "first_order_direction_neutral_condition": "eligible long BNB Simple Earn principal and short BNBUSDT perpetual base quantity remain equal after every reward fee and redemption change",
+    "market_direction_forecast_required": false,
+    "name": "delta_hedged_bnb_simple_earn_and_airdrop_reward_stack",
+    "not_market_invariant": true,
+    "risk_boundary": "Equal base quantity removes first-order BNB direction only. Funding basis margin liquidation variable or absent rewards token-sale liquidity account eligibility redemption delay custody tax and opportunity costs remain."
+  },
+  "preflight": {
+    "checked_at_utc": "2026-08-26T09:01:39.2867380Z",
+    "environment_variables": [
+      "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY",
+      "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET"
+    ],
+    "request_count": 0,
+    "status": "both_designated_ephemeral_environment_variables_absent"
+  },
+  "read_only_account_prequalification": {
+    "endpoint_count": 7,
+    "endpoints": [
+      {
+        "evidence": "current BNB flexible product rate airdrop rate purchase redemption and sold-out state",
+        "method": "GET",
+        "path": "/sapi/v1/simple-earn/flexible/list",
+        "request_parameters": {"asset": "BNB"},
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "current BNB locked projects APR duration quota reward assets and sold-out state",
+        "method": "GET",
+        "path": "/sapi/v1/simple-earn/locked/list",
+        "request_parameters": {"asset": "BNB"},
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "held BNB flexible principal latest rate airdrop rate airdrop asset and cumulative reward fields",
+        "method": "GET",
+        "path": "/sapi/v1/simple-earn/flexible/position",
+        "request_parameters": {"asset": "BNB"},
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "held BNB locked principal status dates base and extra reward fields and redemption state",
+        "method": "GET",
+        "path": "/sapi/v1/simple-earn/locked/position",
+        "request_parameters": {"asset": "BNB"},
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "timestamped BNB flexible base bonus realtime and reward distributions",
+        "method": "GET",
+        "path": "/sapi/v1/simple-earn/flexible/history/rewardsRecord",
+        "request_parameters": {
+          "asset": "BNB",
+          "type_values": ["BONUS", "REALTIME", "REWARDS"]
+        },
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "timestamped BNB locked reward distributions bound to position identifiers",
+        "method": "GET",
+        "path": "/sapi/v1/simple-earn/locked/history/rewardsRecord",
+        "request_parameters": {"asset": "BNB"},
+        "security_type": "USER_DATA"
+      },
+      {
+        "evidence": "all-asset dividend rows with amount asset distribution time transaction identifier and description for realized Launchpool Megadrop HODLer or other distributions",
+        "method": "GET",
+        "pagination_rule": "Freeze newest-first non-overlapping windows no wider than 90 days; if total exceeds returned rows or 500 rows are returned stop and redesign narrower windows before any one-use activation.",
+        "path": "/sapi/v1/asset/assetDividend",
+        "security_type": "USER_DATA"
+      }
+    ],
+    "execution_rule": "Do not implement or freeze a signed collector while either designated ephemeral credential variable is absent. Once both are present source-bind and hosted-verify a GET-only capture whose windows cover the frozen hedge interval before its one permitted run.",
+    "forbidden_methods": ["POST", "PUT", "PATCH", "DELETE"],
+    "redaction_rule": "Never serialize headers signatures query strings credential values or secret-derived material."
+  },
+  "result_sha256": "0bfc615af743f4ba352201ff2f06e2abf0f0c8fec56b548a0e19791faf25f8ed",
+  "schema_version": "binance-bnb-stacked-reward-hedge-evidence-gate-v1",
+  "sources": [
+    {
+      "retrieved_at_utc": "2026-08-26T09:01:39.2867380Z",
+      "source_binding": "official_current_announcement_permalink_and_CMS_article_code",
+      "url": "https://www.binance.com/en/support/announcement/detail/ca03b33b8dba44669a3f685d2d1c0ccb"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T09:01:39.2867380Z",
+      "source_binding": "official_current_Simple_Earn_API_contract",
+      "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-simple-earn/api/rest-api/flexible-locked"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T09:01:39.2867380Z",
+      "source_binding": "official_current_Wallet_API_asset_dividend_contract",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-wallet/api/rest-api/asset"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T09:01:39.2867380Z",
+      "source_binding": "official_Binance_API_Swagger_commit_64b327c0addadd191ca0dca8e6b4cebd8a97c05c",
+      "url": "https://github.com/binance/binance-api-swagger/blob/64b327c0addadd191ca0dca8e6b4cebd8a97c05c/spot_api.yaml"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T09:01:39.2867380Z",
+      "source_binding": "official_current_Binance_Academy_mechanism_description",
+      "url": "https://academy.binance.com/en/articles/your-guide-to-binance-launchpad-and-launchpool"
+    }
+  ],
+  "status": "materially_new_direction_neutral_reward_stack_candidate_blocked_on_realized_account_principal_distribution_sale_value_and_exact_cost_evidence"
+}

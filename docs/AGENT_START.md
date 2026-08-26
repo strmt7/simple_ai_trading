@@ -129,6 +129,20 @@ safety gate, blocks Stop, or submits an order.
   books, loosen the turnover gate, or substitute a public discount for the
   signed account commission response. Future one-use contracts must prove that
   their bounded request budget can physically supply the required horizon.
+  A materially different BNB candidate now stacks BNB Simple Earn base rewards
+  with realized Launchpool, Megadrop, and HODLer distributions while keeping the
+  equal-base BNBUSDT short. Binance's current seven-day BNB offer advertises
+  0.35% APR plus applicable airdrop rewards. The base rate is only 0.67123 bps
+  over seven days, versus an 18.4917-bps worst rolling 21-payment short-funding
+  cost in the already-frozen 1,000-row hedge history. Realized account airdrops
+  must therefore clear at least 17.82047 bps before every other cost in that
+  window. Both credential variables remain absent, so no signed request was
+  made and no edge is claimed. Canonical gate:
+  `binance-bnb-stacked-reward-hedge-evidence-gate-v1.json`, result SHA-256
+  `0bfc615af743f4ba352201ff2f06e2abf0f0c8fec56b548a0e19791faf25f8ed`.
+  This does not reopen the terminal fee-discount-only family: do not refresh its
+  funding or books. Once both credentials exist, account principal, Simple Earn
+  reward, and all-asset dividend history are the decisive new evidence.
   A source-first USD-M/COIN-M perpetual funding review also stopped before any
   market request. Official schemas expose separate public funding endpoints and
   COIN-M `contractSize` and `marginAsset`, but do not bind a complete

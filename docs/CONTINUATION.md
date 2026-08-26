@@ -581,7 +581,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`230fcb9d2dc3c3a8412c743a942f828e04b03eff9bec294e816c34352ba8bd1e`.
+`f0ea713ec59667feee3570ec683215d33acc302c1ce0d01c421c9a9e30ea8ada`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -622,6 +622,27 @@ reduction as a standalone edge. For every future one-use historical screen,
 bind the endpoint's effective page capacity or preregister sufficient
 non-overlapping pagination before activation; a requested `limit` is not proof
 of returned horizon.
+
+A distinct Binance BNB reward-stack candidate now reuses that frozen hedge
+history without reopening the fee-discount-only screen. The current seven-day
+BNB Simple Earn offer advertises 0.35% APR plus applicable Launchpool, Megadrop,
+and HODLer rewards. The advertised base rate supplies only 0.67123 bps over
+seven days, while the worst rolling 21-payment window in the frozen 1,000-row
+BNBUSDT short history cost 18.4917 bps. Realized account airdrops must therefore
+clear at least 17.82047 bps before commissions, spread, basis, collateral,
+liquidation protection, tax, custody, opportunity cost, and alternative yield.
+Public token allocations cannot establish per-BNB yield because the eligible
+denominator and executable sale proceeds are unknown. The required signed
+Simple Earn position/reward and all-asset dividend endpoints are source-bound,
+but both designated ephemeral credentials are absent; zero signed requests were
+made. Canonical gate:
+`docs/model-research/action-value/binance-bnb-stacked-reward-hedge-evidence-gate-v1.json`,
+result SHA-256
+`0bfc615af743f4ba352201ff2f06e2abf0f0c8fec56b548a0e19791faf25f8ed`.
+Do not acquire BNB or open a hedge to chase an unannounced retrospective
+snapshot. When both credentials exist, capture only account principal, realized
+rewards, conservative reward sale values, and exact costs against the frozen
+hedge history; do not paginate funding or resample books.
 
 The source-first USD-M versus COIN-M perpetual funding hypothesis is also
 terminal as a separate public edge family without consuming market data. The
@@ -742,6 +763,10 @@ not grant account, funding, order, or transaction authority.
    parity. Source-bind conversion history, quota, account eligibility, exact
    fees, redemption delay, and an equal-base hedge before any public book
    sampling; an unhedged redemption is not market-direction independent.
+   It also applies to the delta-hedged BNB Simple Earn and airdrop reward stack.
+   Source-bind eligible BNB principal, realized Simple Earn and dividend rows,
+   conservative executable reward sale values, and exact account costs against
+   the frozen hedge history. Do not refresh BNB funding or books.
 4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
    campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
    use the source-continuity recovery design to freeze separate Round 77 Binance
