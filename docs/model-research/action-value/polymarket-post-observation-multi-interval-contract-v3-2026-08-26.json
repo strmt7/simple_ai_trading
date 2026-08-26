@@ -1,0 +1,77 @@
+{
+  "acceptance_gates": {
+    "all_complete_conditions_have_post_observation_winner_bid_growth": true,
+    "capture_status": "complete",
+    "each_asset_has_both_up_and_down_outcomes": true,
+    "minimum_complete_conditions_per_asset": 4,
+    "minimum_later_winner_sell_fill_fraction_per_asset": "0.75",
+    "positive_public_observed_gross_required_per_asset": true,
+    "required_assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "stream_error_count": 0,
+    "stream_gap_count": 0
+  },
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "capture": {
+    "database_path": "data/polymarket-post-observation-monitor-v3.duckdb",
+    "duration_seconds": 1380,
+    "expected_minimum_complete_conditions": 12,
+    "include_binance_futures": false,
+    "include_binance_spot": true,
+    "include_polymarket_core": true,
+    "include_rtds_binance": true,
+    "market_subscription_grace_seconds": 120,
+    "report_path": "data/polymarket-post-observation-monitor-v3-report.json",
+    "required_chainlink_topic": "crypto_prices_twap_sixty",
+    "required_clob_lanes": [
+      "clob"
+    ],
+    "required_streams": [
+      "binance_spot",
+      "clob_market",
+      "polymarket_rtds"
+    ],
+    "source_files_must_not_exist_before_start": true
+  },
+  "created_at_utc": "2026-08-26T11:36:45.111Z",
+  "frozen_method": {
+    "fill_filter": "winner-token CLOB last_trade_price with side SELL and source time at or after local receipt of the exact closing TWAP",
+    "fresh_bid_proxy": "positive aggregate winner-token BUY size change at 0.99 or 0.999 after local receipt of the exact closing TWAP",
+    "no_parameter_changes_after_capture_start": true,
+    "no_refit_or_outcome_conditioned_threshold_change": true,
+    "oracle_observation": "exact Chainlink 60-second TWAP event whose source timestamp equals market end, using local receipt time",
+    "outcome_rule": "Up when closing TWAP is greater than or equal to opening TWAP, otherwise Down"
+  },
+  "implementation": {
+    "analyzer_path": "tools/analyze_polymarket_post_observation_monitor.py",
+    "analyzer_sha256": "01daa299ae64ad54169169f5c8f05ae862d06d529e7e4de5cb94b8eec59be8f9",
+    "capture_path": "tools/capture_polymarket_post_observation_monitor.py",
+    "capture_sha256": "1a5f870d35654972e0dfa735c53979e719464868f8e195bbc0467ea7381af72c"
+  },
+  "interpretation": {
+    "failure_action": "do not repeat this unchanged public mechanism unless program terms or execution architecture materially changes",
+    "pass_action": "retain as a conditional public recurrence lead only; authenticated fresh-order acceptance owned fills queue position fees rebates and after-cost economics remain mandatory",
+    "public_pass_cannot_accept_edge": true
+  },
+  "prior_evidence": {
+    "historical_gate_path": "docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json",
+    "historical_gate_result_sha256": "03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f49392",
+    "prospective_v2_path": "docs/model-research/action-value/polymarket-post-observation-prospective-v2-2026-08-26.json",
+    "prospective_v2_result_sha256": "079925ec06eda0cdfc5851d71d7fc76df96de6f03883bcc70edc0f36da28d421"
+  },
+  "purpose": "freeze_a_non_overlapping_multi_interval_public_test_of_direction_independent_oracle_to_clob_close_execution_recurrence",
+  "result_output_path": "docs/model-research/action-value/polymarket-post-observation-prospective-v3-2026-08-26.json",
+  "result_sha256": "b199a7c7d3907d0b18d5ce6ea965d907f781affa83f04af5e79d8ca63f763c81",
+  "schema_version": "polymarket-post-observation-multi-interval-contract-v3"
+}
