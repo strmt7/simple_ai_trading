@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Eight scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; and current USDT Flexible bonus yield only for independently held idle eligible USDT. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Nine scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; and current USDT Flexible bonus yield only for independently held idle eligible USDT. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -197,6 +197,22 @@ safety gate, blocks Stop, or submits an order.
   authority for one `0.01` USDT maximum fully consuming reconciliation. The
   reverse public minimum is `0.000014` BNB, so do not assume a partial residual
   from the minimum inbound buffer is independently unwindable.
+  A second, non-overlapping Binance fee overlay is accepted for already-intended
+  quote-native BTC/ETH/SOL Spot flow. The current official table lists zero
+  maker fees on all six FDUSD and U pairs; VIP2-9 additionally receive zero U
+  taker fees and zero maker/taker fees on the three USD1 pairs. BTC/ETH/SOL USDC
+  remain in the all-user taker promotion: a regular user pays `0.09500%` instead
+  of `0.100%`, or `0.071250%` instead of `0.07500%` with BNB. The deterministic
+  filled-notional saving is therefore 10 or 7.5 bps for a regular zero-maker
+  fill and 0.5 or 0.375 bps for a regular USDC taker fill. This does not justify
+  acquiring a promotional quote asset, chasing VIP status, changing execution
+  role, or creating volume; spread, basis, conversion, queue, fill, settlement,
+  and opportunity cost remain with the independently profitable strategy. Never
+  credit BNB against a zero commission or double-count any adjustment. Canonical
+  gate: `binance-spot-promotional-fee-overlay-v1-2026-08-26.json`, result SHA-256
+  `f951d167b3abbb89afc39a29671b9a4cb6929661f13a957e553a8fad439ce9e6`.
+  Both credentials remain absent, so account/region eligibility and exact-order
+  commission evidence remain unproved and no signed or funded action occurred.
   A materially different BNB candidate now stacks BNB Simple Earn base rewards
   with realized Launchpool, Megadrop, and HODLer distributions while keeping the
   equal-base BNBUSDT short. Binance's current seven-day BNB offer advertises

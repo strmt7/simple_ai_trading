@@ -12,13 +12,15 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Four narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Nine narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
-  pUSD, Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot
-  inventory not needed for prompt liquidity, Binance LDUSDT yield only for
-  already-required futures collateral, and Binance just-in-time BNB fee
-  reduction only for independently justified organic BTC/ETH/SOL Spot flow
-  under exact full-consumption and risk gates.
+  pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot
+  inventory; LDUSDT yield only for already-required futures collateral;
+  just-in-time BNB fee reduction; current quote-native BTC/ETH/SOL promotional
+  fee reduction; USD1/WLFI holding-airdrop yield; U Flexible yield; automatic
+  RWUSD VIP bonus yield; and current USDT Flexible bonus yield. Each Binance
+  edge is limited to independently required inventory or organic flow under its
+  canonical account, liquidity, cost, and non-manufactured-volume gates.
   None is deployment-ready. Binance remains paper/testnet/Demo; Polymarket
   remains independent, disabled by default, and unpromoted.
 - The one historical cutoff is `2026-08-14T00:00:00Z`. Do not move it or fetch
@@ -953,6 +955,26 @@ residual cannot be assumed independently unwindable. Once both credentials
 exist, freeze one exact-symbol commission and exact-order test contract; only
 after it passes and separate funded authority exists may one `0.01` USDT maximum
 quote and immediate fully consuming organic fee deduction be reconciled.
+
+A separate current Binance promotional-fee overlay is accepted for exact
+quote-native BTC/ETH/SOL Spot flow that was independently justified before the
+discount. The dynamic official fee page lists `0%` maker fees on BTC, ETH, and
+SOL against both FDUSD and U. Pre-existing VIP2-9 accounts also receive `0%`
+taker fees on the three U pairs and `0%` maker/taker fees on the three USD1
+pairs. The current USDC promotion explicitly includes BTC/USDC, ETH/USDC, and
+SOL/USDC; a regular taker pays `0.09500%` rather than `0.100%`, or `0.071250%`
+rather than `0.07500%` when independently eligible to pay fees in BNB. Thus the
+regular-user direct saving is 10 or 7.5 bps for an actual promotional maker fill
+and 0.5 or 0.375 bps for an actual USDC taker fill. Never acquire or retain a
+promotional quote asset, chase VIP status, change execution role, or create
+volume for this overlay. A quote switch requires separate executable spread,
+basis, conversion, fill, settlement, and opportunity-cost proof; a zero fee may
+not be double-counted with BNB, rebates, or rewards. Both credentials remain
+absent, so exact account/region eligibility and exact-order commission evidence
+are unproved; no signed or funded action occurred. Canonical gate:
+`docs/model-research/action-value/binance-spot-promotional-fee-overlay-v1-2026-08-26.json`,
+result SHA-256
+`f951d167b3abbb89afc39a29671b9a4cb6929661f13a957e553a8fad439ce9e6`.
 
 A distinct Binance BNB reward-stack candidate now reuses that frozen hedge
 history without reopening the fee-discount-only screen. The current seven-day

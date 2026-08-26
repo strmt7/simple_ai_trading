@@ -1,0 +1,200 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current_quote_native_incremental_fee_reduction_for_independently_justified_organic_BTC_ETH_SOL_spot_flow_on_explicitly_listed_Binance_promotional_pairs_without_quote_asset_acquisition_or_extra_volume",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_current_spot_fee_overlay_account_region_execution_quality_and_exact_order_role_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_quotes_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T16:35:38Z",
+  "credential_preflight": {
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_present": false,
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_present": false,
+    "checked_at_utc": "2026-08-26T16:26:50.7599327Z",
+    "values_inspected": false
+  },
+  "economics": {
+    "fee_savings_bips_per_filled_order_notional": {
+      "all_eligible_users_FDUSD_or_U_maker_vs_regular_standard_without_BNB": "10",
+      "all_eligible_users_FDUSD_or_U_maker_vs_regular_standard_with_BNB": "7.5",
+      "regular_user_USDC_taker_vs_standard_without_BNB": "0.5",
+      "regular_user_USDC_taker_vs_standard_with_BNB": "0.375",
+      "VIP2_U_taker_vs_VIP2_standard_without_BNB": "10",
+      "VIP2_U_taker_vs_VIP2_standard_with_BNB": "7.5",
+      "VIP2_USD1_maker_vs_VIP2_standard_without_BNB": "8",
+      "VIP2_USD1_maker_vs_VIP2_standard_with_BNB": "6",
+      "VIP2_USD1_taker_vs_VIP2_standard_without_BNB": "10",
+      "VIP2_USD1_taker_vs_VIP2_standard_with_BNB": "7.5"
+    },
+    "reconstruction": {
+      "fee_saving_bips": "10000 * (comparison_fee_fraction - promotional_fee_fraction)",
+      "regular_standard_spot_maker_and_taker_fraction": "0.00100",
+      "regular_standard_spot_maker_and_taker_fraction_with_BNB": "0.00075",
+      "regular_USDC_taker_fraction": "0.00095",
+      "regular_USDC_taker_fraction_with_BNB": "0.0007125",
+      "VIP2_standard_maker_fraction": "0.00080",
+      "VIP2_standard_maker_fraction_with_BNB": "0.00060",
+      "VIP2_standard_taker_fraction": "0.00100",
+      "VIP2_standard_taker_fraction_with_BNB": "0.00075"
+    },
+    "scope_interpretation": "These are deterministic commission reductions only after a qualifying order fills in the exact role. They are not trading alpha, fill probability, spread capture, or authority to change the strategy's quote asset."
+  },
+  "execution_policy": {
+    "eligible_quote_native_routes": [
+      {
+        "account_gate": "pair_available_and_promotion_eligible",
+        "assets": [
+          "BTC",
+          "ETH",
+          "SOL"
+        ],
+        "fee_role": "maker",
+        "promotional_fee": "0%",
+        "quote_assets": [
+          "FDUSD",
+          "U"
+        ]
+      },
+      {
+        "account_gate": "pre_existing_VIP2_through_VIP9_and_pair_available",
+        "assets": [
+          "BTC",
+          "ETH",
+          "SOL"
+        ],
+        "fee_role": "taker",
+        "promotional_fee": "0%",
+        "quote_assets": [
+          "U"
+        ]
+      },
+      {
+        "account_gate": "pre_existing_VIP2_through_VIP9_and_pair_available",
+        "assets": [
+          "BTC",
+          "ETH",
+          "SOL"
+        ],
+        "fee_role": "maker_and_taker",
+        "promotional_fee": "0%",
+        "quote_assets": [
+          "USD1"
+        ]
+      },
+      {
+        "account_gate": "pair_listed_in_current_USDC_promotion_and_available",
+        "assets": [
+          "BTC",
+          "ETH",
+          "SOL"
+        ],
+        "fee_role": "taker",
+        "promotional_fee_regular_user": "0.09500%",
+        "promotional_fee_regular_user_with_BNB": "0.071250%",
+        "quote_assets": [
+          "USDC"
+        ]
+      }
+    ],
+    "all_required_before_crediting_savings": [
+      "The trade and its maker or taker role were independently selected by an after-cost organic strategy before this overlay is credited.",
+      "The exact base and quote pair is present in a fresh current official promotion table and is available to the account and region.",
+      "FDUSD U or USD1 is already the independently required quote and settlement asset; no acquisition conversion borrowing deposit retention or additional leg is permitted merely to reach the promotional pair.",
+      "A maker saving is credited only to an actual maker fill and a taker saving only to an actual taker fill.",
+      "A fresh exact-order commission estimate and owned fill reconciliation establish the effective account symbol role special commission tax and discount treatment before scaling.",
+      "Execution price spread depth queue fill probability adverse selection settlement inventory and quote-asset basis remain inside the independently justified strategy's own bounds."
+    ],
+    "precedence_and_non_overlap": [
+      "Never apply a BNB discount to a zero commission or credit both the zero-fee saving and the BNB saving to the same fee component.",
+      "For a zero-maker-only pair the maker component is zero; any taker BNB treatment is separate and must come from exact account evidence.",
+      "For a zero-maker-and-taker promotion Binance states that BNB discounts referral rebates and other adjustments do not apply to the promotional volume.",
+      "The USDC taker rate may use the published BNB-adjusted rate only when the account's BNB fee setting and exact order evidence independently qualify."
+    ]
+  },
+  "limitations": [
+    "The official fee page is dynamic and the promotions are current until changed or withdrawn; a fresh same-page check is mandatory at use time.",
+    "Public tables do not prove exact account region pair or tax eligibility and no signed commission endpoint was called.",
+    "Zero commission cannot compensate for a worse executable price spread queue position fill probability adverse selection stablecoin basis or extra conversion leg.",
+    "VIP2 through VIP9 benefits are conditional on an already-existing tier. This artifact forbids trading or holding BNB merely to create or retain VIP status.",
+    "The U announcement source initially documented BTC/U; the current official fee table is the source for the later displayed ETH/U and SOL/U promotional rows.",
+    "The overlay can reduce a direct cost on organic flow but cannot make a standalone profit guarantee or prove long-run strategy profitability."
+  ],
+  "prohibited_actions": [
+    "buying borrowing converting depositing or retaining FDUSD U USD1 USDC or BNB solely to reach a promotion",
+    "switching quote assets without a source-bound executable all-cost comparison",
+    "creating enlarging churning self-matching or wash trading volume",
+    "chasing or maintaining VIP status for the zero-fee route",
+    "assuming a maker order fills as maker or a current page remains unchanged",
+    "double-counting zero fees BNB discounts referral rebates liquidity rewards or any other adjustment",
+    "using fee savings to rescue a trade that failed its independently frozen economics"
+  ],
+  "result_sha256": "f951d167b3abbb89afc39a29671b9a4cb6929661f13a957e553a8fad439ce9e6",
+  "retry_policy": {
+    "public_refresh": "Refresh the exact official fee table once immediately before an otherwise authorized organic execution or after a published fee change; do not poll books merely because the promotion exists.",
+    "signed_prequalification_only_after_both_credentials_and_explicit_read_only_authority": [
+      "exact account region and pair availability",
+      "current VIP tier without any status chase",
+      "exact symbol maker and taker standard special tax and discount commission fields",
+      "exact-order commission estimate for the independently selected organic order"
+    ],
+    "separate_funded_authority_required_for": "any conversion transfer deposit trade order or account-setting change"
+  },
+  "schema_version": "binance-spot-promotional-fee-overlay-v1",
+  "sources": [
+    {
+      "captured_visible_rows": [
+        "BTC/FDUSD maker 0%; taker Standard VIP Rates",
+        "ETH/FDUSD maker 0%; taker Standard VIP Rates",
+        "SOL/FDUSD maker 0%; taker Standard VIP Rates",
+        "BTC/U maker 0%; taker Standard VIP Rates and 0% for VIP2-9",
+        "ETH/U maker 0%; taker Standard VIP Rates and 0% for VIP2-9",
+        "SOL/U maker 0%; taker Standard VIP Rates and 0% for VIP2-9",
+        "BTC/USD1 maker and taker Standard VIP Rates and 0% for VIP2-9",
+        "ETH/USD1 maker and taker Standard VIP Rates and 0% for VIP2-9",
+        "SOL/USD1 maker and taker Standard VIP Rates and 0% for VIP2-9"
+      ],
+      "normalized_current_fee_evidence_characters": 1558,
+      "normalized_current_fee_evidence_sha256": "f7aad764e1065f3e41b2319d896188d7e491029463eabbc15dba0ba80c2d8179",
+      "role": "official_current_zero_fee_rows_general_adjustment_notes_and_regular_plus_VIP2_spot_fee_baselines",
+      "url": "https://www.binance.com/en/fee/tradingPromote"
+    },
+    {
+      "captured_promotional_pairs": [
+        "BTC/USDC",
+        "ETH/USDC",
+        "SOL/USDC"
+      ],
+      "normalized_current_USDC_promo_evidence_characters": 587,
+      "normalized_current_USDC_promo_evidence_sha256": "25486f144307b850c54243bc8180b2dc3d18b115bfc3b80ea97f8abfa0010a96",
+      "role": "official_current_USDC_promotional_pair_rows_and_regular_fee_row",
+      "url": "https://www.binance.com/en/fee/tradingPromote"
+    },
+    {
+      "article_code": "9fa9574a9aaa47279b43d1c7cd46abf7",
+      "normalized_visible_article_characters": 6028,
+      "normalized_visible_article_sha256": "67fa0962f35de27019d11db06010b5d9765ead784a4e5378d5d4e391d7bc9bea",
+      "role": "official_U_zero_maker_and_initial_BTC_U_VIP2_9_zero_taker_terms_until_further_notice",
+      "url": "https://www.binance.com/en/support/announcement/detail/9fa9574a9aaa47279b43d1c7cd46abf7"
+    },
+    {
+      "article_code": "8341d41a9d7d4361babd25b65e96b945",
+      "normalized_visible_article_characters": 5191,
+      "normalized_visible_article_sha256": "57b5d755c710521b738e57c7ddd54f31e9529e56fec51c1a2ae27f201ba8edeb",
+      "role": "official_USDC_taker_fee_terms_until_further_notice",
+      "url": "https://www.binance.com/en/support/announcement/8341d41a9d7d4361babd25b65e96b945"
+    }
+  ],
+  "source_hash_methods": {
+    "announcement_articles": "SHA256 of UTF-8 DOM snapshot text from the first exact H1 title occurrence through the Binance Team date, with CRLF normalized to LF and outer whitespace trimmed.",
+    "current_fee_page": "SHA256 of UTF-8 newline-joined URL tab identity exact visible target rows applicable fee baseline rows and the three official promotion adjustment notes."
+  }
+}
