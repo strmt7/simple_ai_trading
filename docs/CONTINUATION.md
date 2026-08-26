@@ -581,7 +581,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`5e11f6f85dd79c3e0c651c3d7cbcdf97d7e08bf4b4a27cfb3682f5db14cd4886`.
+`5d77b8319fd2608a3dfe3efed60c7d7ff097597f208796baed2337947126aea9`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -627,10 +627,23 @@ Canonical gate:
 `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json`,
 result SHA-256
 `03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f49392`.
-Run a public prospective BTC/ETH/SOL monitor now. Only after
-`2026-08-29T23:40:00Z` and explicit authority may one minimum-size no-crossing
-authenticated order-acceptance probe be frozen; this artifact grants no order,
-paper, account, funding, or live authority.
+A clean 660-second prospective capture then retained 578,480 raw messages,
+578,430 normalized events, 12 conditions, and zero gaps or integrity errors.
+The one fully observed interval for each asset showed winning-side 0.99/0.999
+bid growth after local receipt of the exact closing TWAP in 3/3 conditions.
+Only BTC had qualifying later winner-token seller fills: three events implied
+0.01022 pUSD public gross; ETH and SOL had none during the retained 113.766
+second post-close window. All three conditions resolved Up. This disproves a
+strong current cross-asset fill-recurrence claim and is neither direction
+balance nor regime persistence. Prospective artifact:
+`docs/model-research/action-value/polymarket-post-observation-prospective-v2-2026-08-26.json`,
+result SHA-256
+`079925ec06eda0cdfc5851d71d7fc76df96de6f03883bcc70edc0f36da28d421`.
+Before another capture, freeze a non-overlapping multi-interval contract and do
+not refit to this interval. Only after `2026-08-29T23:40:00Z` and explicit
+authority may one minimum-size no-crossing authenticated order-acceptance probe
+be frozen; these artifacts grant no order, paper, account, funding, or live
+authority.
 
 The 2026-08-25 source-first triage is canonical at
 `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json`, result
@@ -752,7 +765,11 @@ Evidence timestamps must use integer epochs or explicit invariant UTC/RFC3339
 parsing; locale-dependent implicit date parsing is prohibited. Artifact creation
 and update times must come from the host clock or a captured source epoch, never
 from an estimated narrative time, and must not be later than the committing
-checkpoint. Similar quarter
+checkpoint. Every Polymarket recorder preregistration manifest must include its
+`manifest_sha256`, computed over the canonical body before insertion. Validate
+that body before opening the target evidence database when practical. If
+validation has already created a database and then fails, preserve it and use a
+new filename; never overwrite the failed attempt. Similar quarter
 or expiry labels across Binance products do not establish a shared settlement
 timestamp or value. The historical futures settlement endpoint exposes a
 00:00 `deliveryTime` date marker while the current futures catalog and option

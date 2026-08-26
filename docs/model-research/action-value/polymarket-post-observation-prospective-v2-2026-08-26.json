@@ -1,0 +1,81 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-26T10:26:53.766Z",
+  "economic_summary": {
+    "complete_conditions": 3,
+    "conditions_with_later_winner_sell_fills": 1,
+    "conditions_with_post_observation_winner_bid_growth": 3,
+    "public_observed_gross_pusd": "0.01022"
+  },
+  "evidence_rows": [
+    {
+      "asset": "BTC",
+      "closing_twap": "78553.71505743865",
+      "first_later_winner_sell_fill_delay_ms": 16527,
+      "first_winner_bid_growth_delay_ms": 1508,
+      "later_winner_sell_fill_count": 3,
+      "observed_gross_pusd": "0.01022",
+      "opening_twap": "78502.59826040793",
+      "oracle_receipt_delay_ms": 1450,
+      "outcome": "Up",
+      "post_close_observation_ms": 113766,
+      "slug": "btc-updown-5m-1787739600"
+    },
+    {
+      "asset": "ETH",
+      "closing_twap": "2452.1612288508477",
+      "first_later_winner_sell_fill_delay_ms": null,
+      "first_winner_bid_growth_delay_ms": 1512,
+      "later_winner_sell_fill_count": 0,
+      "observed_gross_pusd": "0",
+      "opening_twap": "2450.9822351219996",
+      "oracle_receipt_delay_ms": 1371,
+      "outcome": "Up",
+      "post_close_observation_ms": 113766,
+      "slug": "eth-updown-5m-1787739600"
+    },
+    {
+      "asset": "SOL",
+      "closing_twap": "96.59384485676239",
+      "first_later_winner_sell_fill_delay_ms": null,
+      "first_winner_bid_growth_delay_ms": 1784,
+      "later_winner_sell_fill_count": 0,
+      "observed_gross_pusd": "0",
+      "opening_twap": "96.52221912050003",
+      "oracle_receipt_delay_ms": 1432,
+      "outcome": "Up",
+      "post_close_observation_ms": 113766,
+      "slug": "sol-updown-5m-1787739600"
+    }
+  ],
+  "limitations": [
+    "Only one fully observed five-minute interval was available for each asset, and all three resolved Up; this is neither a regime-persistence nor direction-balance result.",
+    "Winning-side bid growth recurred in all three conditions, but qualifying later seller-aggressed winner fills appeared only for BTC.",
+    "The capture ended before a full 120-second post-close window elapsed, so the absence of later ETH and SOL fills is bounded by the retained observation window.",
+    "Public events cannot prove a fresh account order was accepted after the oracle receipt or establish owned fill lineage, queue position, achievable size, fees, or after-cost profit."
+  ],
+  "result_sha256": "079925ec06eda0cdfc5851d71d7fc76df96de6f03883bcc70edc0f36da28d421",
+  "schema_version": "polymarket-post-observation-prospective-v2",
+  "source": {
+    "database_path": "data/polymarket-post-observation-monitor-v2.duckdb",
+    "database_sha256": "0695c5e0fe541f4c6b4c6b6445547faf47305350fd66ce3488fcee24bc4c59b4",
+    "report_path": "data/polymarket-post-observation-monitor-v2-report.json",
+    "report_sha256": "f3886b93e2e1cbd8caee5d7d373990af522aad220e44d10d8b9091787e7f55e3",
+    "run_id": "b9c3f9ba7f6c4501a624e4986537c25a",
+    "stream_gap_count": 0
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "cross_asset_public_recurrence": false,
+    "deployment_ready": false,
+    "reason": "Public recurrence cannot prove fresh account order acceptance, owned fills, queue position, achievable size, or after-cost profit."
+  }
+}

@@ -13,7 +13,7 @@ PATH = (
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d"
-EXPECTED_REGISTRY_HASH = "5e11f6f85dd79c3e0c651c3d7cbcdf97d7e08bf4b4a27cfb3682f5db14cd4886"
+EXPECTED_REGISTRY_HASH = "5d77b8319fd2608a3dfe3efed60c7d7ff097597f208796baed2337947126aea9"
 
 
 def _load(path: Path = PATH) -> dict[str, object]:
