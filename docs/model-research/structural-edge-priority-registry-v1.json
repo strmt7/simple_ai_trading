@@ -8,7 +8,7 @@
     "scoped_gross_structural_edge_claim": true
   },
   "created_at_utc": "2026-08-25T08:42:24.9432234Z",
-  "updated_at_utc": "2026-08-26T06:40:37.0210755Z",
+  "updated_at_utc": "2026-08-26T06:56:07.1771855Z",
   "prioritized_hypotheses": [
     {
       "blocking_evidence": [
@@ -49,6 +49,7 @@
       "blocking_evidence": [
         "same-account BFUSD and RWUSD rate histories with proved timestamp cadence",
         "same-account subscription availability and exact fast and standard redemption quota fee and delay",
+        "exact account BFUSDUSDT spot commission before setting subscription or redemption parity triggers",
         "exact eligible same-currency alternative cash yield instead of a zero-yield assumption",
         "all entry redemption transfer custody tax delay and opportunity costs",
         "separately authorized minimum-size subscription reward redemption and balance reconciliation"
@@ -57,18 +58,23 @@
         {
           "path": "docs/model-research/action-value/binance-stable-yield-allocation-evidence-gate-v1.json",
           "result_sha256": "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-bfusd-spot-redemption-parity-v1-2026-08-26.json",
+          "result_sha256": "566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb"
         }
       ],
-      "current_status": "official_read_only_rate_and_quota_paths_proved_but_both_ephemeral_credentials_absent_so_zero_signed_requests_and_no_current_net_yield_edge",
+      "current_status": "public_BFUSDUSDT_spot_subscription_redemption_route_proved_but_no_current_positive_direct_path_at_reference_costs_and_signed_rate_quota_exact_fee_and_alternative_yield_evidence_remain_absent",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "when_both_documented_ephemeral_environment_variables_exist_source_bind_and_host_verify_one_get_only_six_endpoint_prequalification_then_run_it_once",
+      "next_action": "when_both_documented_ephemeral_environment_variables_exist_source_bind_BFUSDUSDT_commission_plus_the_six_endpoint_yield_prequalification_then_set_exact_public_depth_triggers_without_repetitive_polling",
       "priority_rank": 2,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
         "documentation example fees or rates as current values",
         "zero as the alternative cash yield",
         "assuming one rate-history row equals one day",
+        "daily kline extremes as historical executable depth or fills",
         "calling direction-neutral market-invariant or risk-free",
         "freezing another signed collector while credentials are absent"
       ],
@@ -276,7 +282,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "48822b0b1b6a7b3fe4a6c5af114d697cd8946f70e11c35d8eb04fa7a44306fd2",
+  "result_sha256": "329428f42b068fedb66ea823efbd9f2e3d1f8907aee451681b47fc045aa788e2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

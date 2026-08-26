@@ -283,6 +283,16 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-stable-yield-allocation-evidence-gate-v1.json`,
   result SHA-256
   `3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a`.
+  A new public BFUSD spot route was then screened against the 1:1 subscription
+  and redemption identity. `BFUSDUSDT` had a 1.0000 bid and 1.0001 ask; no
+  100, 1,000, or 10,000 BFUSD buy/redeem or subscribe/sell path was positive
+  under the labeled 10-bps spot and typical 10-bps product-fee sensitivities.
+  Its 379 public daily bars ranged from 0.995 to 1.08, so a prospective depth
+  trigger is justified after exact account costs are known, but those trade
+  extrema are not historical depth or fill evidence. Canonical screen:
+  `docs/model-research/action-value/binance-bfusd-spot-redemption-parity-v1-2026-08-26.json`,
+  result SHA-256
+  `566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb`.
 - Binance quarterly cash-and-carry: one catalog fetch and one spot/futures book
   pair per selected contract covered BTCUSDT and ETHUSDT current/next quarters
   at 12 quantities. All 12 displayed gross bases were positive; nine cleared a
@@ -450,7 +460,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`48822b0b1b6a7b3fe4a6c5af114d697cd8946f70e11c35d8eb04fa7a44306fd2`.
+`329428f42b068fedb66ea823efbd9f2e3d1f8907aee451681b47fc045aa788e2`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
