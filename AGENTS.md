@@ -51,6 +51,13 @@ override prose.
   a rate, fee, eligibility rule, or effective date by page location, apparent
   recency, or convenience; preserve both sources and require an explicit
   effective-date source or realized post-change evidence before promotion.
+- Before freezing a time-bounded prospective capture, prove that its duration,
+  phase alignment, retained observation tail, and required source timestamps can
+  supply every minimum-sample gate. Elapsed duration and zero transport gaps do
+  not prove analyzable intervals; record source-boundary continuity separately.
+  If an unchanged mechanism already fails an economic gate, do not spend another
+  capture merely to repair sample count unless a precommitted decision could
+  still change.
 
 ## Working Method
 

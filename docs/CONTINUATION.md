@@ -633,7 +633,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`dc7cc3a7ba04f820523fe08f9fbbb133e79de29fe1c8ea7fb78bd8aa926c1ff9`.
+`5be46743ddcfa82d7526450272d35528d01e2d81e75b803924e7f947178d820d`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -691,11 +691,21 @@ balance nor regime persistence. Prospective artifact:
 `docs/model-research/action-value/polymarket-post-observation-prospective-v2-2026-08-26.json`,
 result SHA-256
 `079925ec06eda0cdfc5851d71d7fc76df96de6f03883bcc70edc0f36da28d421`.
-Before another capture, freeze a non-overlapping multi-interval contract and do
-not refit to this interval. Only after `2026-08-29T23:40:00Z` and explicit
-authority may one minimum-size no-crossing authenticated order-acceptance probe
-be frozen; these artifacts grant no order, paper, account, funding, or live
-authority.
+A frozen non-overlapping 1,380-second follow-up then completed with 1,227,321
+raw messages, 1,227,214 normalized events, and zero stream gaps, recorder
+errors, or integrity errors. It produced two complete intervals per asset with
+both Up and Down represented. Winner high-bid growth recurred in 6/6, but the
+qualifying later winner sell-fill fractions were only 1/2 BTC, 1/2 ETH, and 0/2
+SOL versus the frozen 75% gate; SOL public gross was zero. The mechanism is a
+terminal public recurrence failure and must not receive another unchanged
+capture. An exact 11:45 UTC Chainlink TWAP boundary was absent for all assets,
+which also exposed that fixed duration plus zero transport gaps does not prove
+analyzable sample supply. Canonical result:
+`docs/model-research/action-value/polymarket-post-observation-prospective-v3-2026-08-26.json`,
+result SHA-256
+`7b9f21cf3c1a65a709d5e52867877b9d79a9bf17f7a4df448a2fb92a32757e16`.
+Only a material program-term or execution-architecture change may reopen it;
+these artifacts grant no order, paper, account, funding, or live authority.
 
 The 2026-08-25 source-first triage is canonical at
 `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json`, result
