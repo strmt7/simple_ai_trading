@@ -65,6 +65,48 @@ def _quote(at_ms: int, cost: str) -> _PairedQuote:
     )
 
 
+def _fee_quote(at_ms: int, cost: str, fee: str) -> _PairedQuote:
+    quote = _quote(at_ms, cost)
+    half_fee = Decimal(fee) / 2
+    return _PairedQuote(
+        condition_id=quote.condition_id,
+        slug=quote.slug,
+        segment_id=quote.segment_id,
+        received_monotonic_ns=quote.received_monotonic_ns,
+        received_wall_ms=quote.received_wall_ms,
+        interval_end_ms=quote.interval_end_ms,
+        market_end_ms=quote.market_end_ms,
+        taker_delay_ms=quote.taker_delay_ms,
+        up_best_ask=quote.up_best_ask,
+        down_best_ask=quote.down_best_ask,
+        up_buy_cost=quote.up_buy_cost,
+        down_buy_cost=quote.down_buy_cost,
+        up_sell_value=quote.up_sell_value,
+        down_sell_value=quote.down_sell_value,
+        up_buy_fee=half_fee,
+        down_buy_fee=half_fee,
+    )
+
+
+def _ordered_quote(at_ms: int, up_cost: str, down_cost: str) -> _PairedQuote:
+    return _PairedQuote(
+        condition_id="condition",
+        slug="btc-updown-5m-1",
+        segment_id="segment",
+        received_monotonic_ns=at_ms * 1_000_000,
+        received_wall_ms=1_000 + at_ms,
+        interval_end_ms=10_000,
+        market_end_ms=20_000,
+        taker_delay_ms=250,
+        up_best_ask=Decimal(up_cost),
+        down_best_ask=Decimal(down_cost),
+        up_buy_cost=Decimal(up_cost),
+        down_buy_cost=Decimal(down_cost),
+        up_sell_value=Decimal("0.4"),
+        down_sell_value=Decimal("0.4"),
+    )
+
+
 def test_complete_set_quote_must_survive_delay_and_sequential_legs() -> None:
     result = _latency_benchmarks(
         (
@@ -97,6 +139,49 @@ def test_complete_set_quote_counts_a_surviving_minimum_sequence() -> None:
     assert result["venue_delay_survivor_count"] == 1
     assert result["minimum_sequential_survivor_count"] == 1
     assert result["best_minimum_sequential_cost"] == "0.985"
+
+
+def test_taker_rebate_is_applied_to_each_latency_qualified_fee_component() -> None:
+    quotes = (
+        _fee_quote(0, "1.004", "0.010"),
+        _fee_quote(250, "1.003", "0.010"),
+        _fee_quote(500, "1.004", "0.010"),
+    )
+
+    without_rebate = _latency_benchmarks(quotes)
+    with_rebate = _latency_benchmarks(
+        quotes,
+        taker_rebate_fraction=Decimal("0.50"),
+    )
+
+    assert without_rebate["same_state_episode_count"] == 0
+    assert with_rebate == {
+        "same_state_episode_count": 1,
+        "venue_delay_survivor_count": 1,
+        "minimum_sequential_survivor_count": 1,
+        "best_same_state_cost": "0.99900",
+        "best_venue_delay_cost": "0.99800",
+        "best_minimum_sequential_cost": "0.99850",
+    }
+
+
+def test_ex_post_best_leg_order_is_not_a_causal_sequential_survivor() -> None:
+    result = _latency_benchmarks(
+        (
+            _ordered_quote(0, "0.59", "0.40"),
+            _ordered_quote(250, "0.40", "0.60"),
+            _ordered_quote(500, "0.42", "0.58"),
+        ),
+        include_ordering_details=True,
+    )
+
+    assert result["minimum_sequential_survivor_count"] == 1
+    assert result["best_minimum_sequential_cost"] == "0.98"
+    assert result["up_then_down_survivor_count"] == 1
+    assert result["down_then_up_survivor_count"] == 0
+    assert result["lower_source_cost_first_survivor_count"] == 0
+    assert result["both_orders_survivor_count"] == 0
+    assert result["best_lower_source_cost_first_cost"] == "1.02"
 
 
 def test_pair_evaluation_applies_every_token_update_in_one_message_first() -> None:
@@ -161,8 +246,7 @@ def test_stage0_mechanics_lineage_binds_capture_result_and_condition_audit() -> 
         "preregistration_sha256",
     )
     capture_contract = _artifact(
-        "docs/model-research/polymarket/"
-        "round-027-stage0-mechanics-capture-v1.json",
+        "docs/model-research/polymarket/round-027-stage0-mechanics-capture-v1.json",
         "contract_sha256",
     )
     capture_result = _artifact(
@@ -225,15 +309,11 @@ def test_mechanics_graph_uses_result_coverage_instead_of_hard_coded_cohort() -> 
 
 def test_published_stage0_mechanics_binds_exact_latency_rejection() -> None:
     manifest = json.loads(
-        (PUBLISHED_MECHANICS / "publication-manifest.json").read_text(
-            encoding="ascii"
-        )
+        (PUBLISHED_MECHANICS / "publication-manifest.json").read_text(encoding="ascii")
     )
     manifest_claim = manifest.pop("manifest_sha256")
     result = json.loads(
-        (PUBLISHED_MECHANICS / "mechanics-diagnostic.json").read_text(
-            encoding="ascii"
-        )
+        (PUBLISHED_MECHANICS / "mechanics-diagnostic.json").read_text(encoding="ascii")
     )
     mechanics_claim = result.pop("mechanics_sha256")
 
@@ -249,8 +329,6 @@ def test_published_stage0_mechanics_binds_exact_latency_rejection() -> None:
     assert result["coverage"]["paired_quote_state_count"] == 268_393
     assert result["complete_set_latency"]["same_state_episode_count"] == 6
     assert result["complete_set_latency"]["venue_delay_survivor_count"] == 0
-    assert result["complete_set_latency"][
-        "minimum_sequential_survivor_count"
-    ] == 0
+    assert result["complete_set_latency"]["minimum_sequential_survivor_count"] == 0
     assert result["interpretation"]["edge_claim"] is False
     assert result["interpretation"]["profitability_claim"] is False

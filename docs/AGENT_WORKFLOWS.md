@@ -107,6 +107,14 @@ Start with `rg --files` or a filename filter, search the small registry and
 handoff documents directly, and add explicit exclusion globs before searching
 any broader R&D tree. Open one identified artifact with a fixed output budget.
 
+For sequential multi-leg execution research, bind the leg order before the
+future execution books are observed. Never promote the minimum across possible
+leg orderings when that minimum is selected after both later books are known;
+it is only an optimistic lower bound. Record the causal source-time ordering
+rule, each fixed ordering, and the both-order worst case separately. A candidate
+gate must name which causal rule passed and retain interim directional fill,
+network, order-response, atomicity, and unwind risk.
+
 Treat public venue metadata as a candidate filter, not account evidence.
 Polymarket's public `holdingRewardsEnabled` Gamma field identifies a current
 market, while Data API `YIELD` rows and their pUSD transfer receipts establish

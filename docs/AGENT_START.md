@@ -187,6 +187,19 @@ safety gate, blocks Stop, or submits an order.
   Canonical non-promoting overlay:
   `polymarket-negrisk-taker-rebate-overlay-v1-2026-08-26.json`, SHA-256
   `fbbaf4ff7a7d93f8cf5d306a829ff00518d82c9802be674fdace864cea907a60`.
+  A distinct retained Round 27 binary complete-set rescore exactly reproduced
+  the zero-tier latency baseline, then found that Gold's one sub-unit sequential
+  minimum was ex-post ordering hindsight, not causal. Diamond is the first tier
+  with one source-time lower-cost-leg-first historical survivor at `0.98407728`
+  pUSD per complete set, or `0.07961360` pUSD at five shares before external
+  costs. Zero episodes survived the venue-delay simultaneous check or both leg
+  orders, and the opposite order cost `1.09417472`. This is a historical
+  candidate only. Do not replay or refit it; retry only after a direct wallet
+  confirms Diamond or Obsidian after a completed daily update, then preregister
+  one current prospective causal capture. Canonical overlay:
+  `polymarket-round27-complete-set-taker-rebate-overlay-v1-2026-08-26.json`,
+  SHA-256
+  `948f47d9d0c2fb6cbf441da1147ae07006a897f307141dfd6ae25c85e47f13d2`.
   The accepted edge count is ten. Binance's best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even. The exact three spot fee queries are now defined from Binance's

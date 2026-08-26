@@ -242,6 +242,26 @@ diagnostics, not accepted edges.
   subsequent twenty-share output unwind. The no-rebate five-share direct-gas
   sensitivity is negative; a hypothetical tier-adjusted cross-unit sensitivity
   does not replace the protected post-fill evidence.
+  A separate retained-data binary complete-set rescore found a new historical
+  candidate without another venue request. The five-hour 2026-08-15 Round 27
+  cohort covered 53 BTC five-minute markets; its zero-tier path exactly
+  reproduced six same-state episodes, zero venue-delay survivors, and zero
+  sequential survivors. Gold creates one `0.99986788` optimistic sequential
+  minimum only by choosing the better leg order after both later books are
+  known; the source-time lower-rebated-cost-leg-first rule has zero Gold
+  survivors and a best cost of `1.00870748`. Diamond is the first tier with one
+  causal historical survivor: `0.98407728` pUSD per complete set, leaving
+  `0.01592272` pUSD per share or `0.07961360` pUSD at five shares before every
+  external cost. It still has zero venue-delay and zero both-order survivors;
+  the opposite ordering costs `1.09417472`. This is one historical episode, not
+  an accepted edge or profit claim. Do not replay, resize, or refit the cohort,
+  use the ex-post minimum as an execution rule, or manufacture tier volume.
+  Retry only after a direct wallet confirms Diamond or Obsidian after a completed
+  daily update, then freeze one separate current prospective causal capture.
+  Canonical overlay:
+  `docs/model-research/action-value/polymarket-round27-complete-set-taker-rebate-overlay-v1-2026-08-26.json`,
+  result SHA-256
+  `948f47d9d0c2fb6cbf441da1147ae07006a897f307141dfd6ae25c85e47f13d2`.
 - Polymarket logical implications: a later canonical fetch contained 1,473
   unique scoped active events. Exact same-event rule identities yielded 53
   threshold groups and 12 deadline groups: 2,572 implication pairs were
@@ -835,7 +855,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`52189781ff4e97f9e73aa1fc429fc72adfe370b188739bcc535f60b9c1ad0d64`.
+`6f334d3cc8a0cbbbaeb32c1150fda25ce5a48533f2124143bb9764c5238347e4`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
