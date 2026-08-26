@@ -1,0 +1,435 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "signed_requests_made": 0
+  },
+  "created_at_utc": "2026-08-26T09:22:19.816Z",
+  "current_public_catalog_gate": {
+    "active_btc_tagged_event_count": 505,
+    "active_point_threshold_market_count": 83,
+    "binance_btc_call_count": 337,
+    "exact_same_strike_and_expiry_pair_count": 0,
+    "gamma_pages": [
+      {
+        "response_bytes": 1699637,
+        "response_sha256": "cf08e7764feabad0d383dc335ca48afbc430974fea958c77a8d8b10bdc7c2f71",
+        "row_count": 100,
+        "url": "https://gamma-api.polymarket.com/events?tag_id=235&active=true&closed=false&limit=100&offset=0"
+      },
+      {
+        "response_bytes": 677533,
+        "response_sha256": "b7b93e41381adb7ee1316a2cb8aced19335ac23a15c4745bb2bd0de9bfc1427d",
+        "row_count": 100,
+        "url": "https://gamma-api.polymarket.com/events?tag_id=235&active=true&closed=false&limit=100&offset=100"
+      },
+      {
+        "response_bytes": 735140,
+        "response_sha256": "6302c2f3a96cb9d45c83aea4a68cc9ee0794f62b0a7f805d6b0da1758e9ae557",
+        "row_count": 100,
+        "url": "https://gamma-api.polymarket.com/events?tag_id=235&active=true&closed=false&limit=100&offset=200"
+      },
+      {
+        "response_bytes": 669438,
+        "response_sha256": "639a87418b0efea63ffb0966292adb3c057f8cf4413e89f110fa5e5f8090f0",
+        "row_count": 100,
+        "url": "https://gamma-api.polymarket.com/events?tag_id=235&active=true&closed=false&limit=100&offset=300"
+      },
+      {
+        "response_bytes": 825545,
+        "response_sha256": "d6d2c9bc742688383cb737e68d18b3d9563e507f71b5a5a415df29241e33aa02",
+        "row_count": 100,
+        "url": "https://gamma-api.polymarket.com/events?tag_id=235&active=true&closed=false&limit=100&offset=400"
+      },
+      {
+        "response_bytes": 33445,
+        "response_sha256": "5fcd2eafbac70ae28dafb520c94c40f49ebed30c2fa49c2fd6834ca7642036b3",
+        "row_count": 5,
+        "url": "https://gamma-api.polymarket.com/events?tag_id=235&active=true&closed=false&limit=100&offset=500"
+      }
+    ],
+    "live_binance_btc_call_expiry_instants_utc": [
+      "2026-08-27T08:00:00Z",
+      "2026-08-28T08:00:00Z",
+      "2026-08-29T08:00:00Z",
+      "2026-09-04T08:00:00Z",
+      "2026-09-11T08:00:00Z",
+      "2026-09-25T08:00:00Z",
+      "2026-10-30T08:00:00Z",
+      "2026-12-25T08:00:00Z",
+      "2027-03-26T08:00:00Z",
+      "2027-06-25T08:00:00Z"
+    ],
+    "live_polymarket_point_threshold_end_instants_utc": [
+      "2026-08-26T16:00:00Z",
+      "2026-08-27T16:00:00Z",
+      "2026-08-28T16:00:00Z",
+      "2026-08-29T16:00:00Z",
+      "2026-08-30T16:00:00Z",
+      "2026-08-31T16:00:00Z",
+      "2026-09-01T16:00:00Z"
+    ],
+    "same_calendar_date_and_strike_pair_count": 20,
+    "same_calendar_date_pair_expiry_offset_hours": "8",
+    "settlement_identity": {
+      "exact": false,
+      "polymarket_rule": "The active markets resolve from the final Close of the Binance BTCUSDT one-minute candle at 12:00 ET, represented by Gamma as 16:00 UTC.",
+      "reason": "Every same-date same-strike Binance call expires at 08:00 UTC, eight hours before the Polymarket observation. The terminal states can differ after an intervening BTC move."
+    }
+  },
+  "current_public_model_snapshot": {
+    "capture_completed_at_ms": 1787736139816,
+    "capture_started_at_ms": 1787736136305,
+    "input_sources": [
+      {
+        "response_bytes": 46827,
+        "response_sha256": "66fbbd4812c45c7da2c3c6f9e50e5474ca5b4f2fc3f24ec183f1e27c4c7002af",
+        "status_code": 200,
+        "url": "https://gamma-api.polymarket.com/events/881213"
+      },
+      {
+        "response_bytes": 40483,
+        "response_sha256": "1bcda5d3b9addd6966c58701ab616d6da4baaaefd750eef697915edc24685cdf",
+        "status_code": 200,
+        "url": "https://gamma-api.polymarket.com/events/885895"
+      },
+      {
+        "response_bytes": 43361,
+        "response_sha256": "f2f34c7a779746eec51eb9af4742d8a4c28ffb5d035cb32c6581f724c5949e1c",
+        "status_code": 200,
+        "url": "https://gamma-api.polymarket.com/events/890359"
+      },
+      {
+        "response_bytes": 477153,
+        "response_sha256": "a8d7ad177175ada86c8e0bca8420a043bf05a7b8fcc4c5bd10ee38ff270e824b",
+        "status_code": 200,
+        "url": "https://eapi.binance.com/eapi/v1/mark"
+      },
+      {
+        "response_bytes": 607993,
+        "response_sha256": "0539817a176e94242271fc15ccd1a70ab86e13edb7c1ec21729f75086a2276d8",
+        "status_code": 200,
+        "url": "https://eapi.binance.com/eapi/v1/ticker"
+      },
+      {
+        "response_bytes": 1124032,
+        "response_sha256": "49b15832a0ceaae397a0ce0cea5cc099acbcbe8bd8e38e34f81396e451888859",
+        "status_code": 200,
+        "url": "https://eapi.binance.com/eapi/v1/exchangeInfo"
+      },
+      {
+        "response_bytes": 45,
+        "response_sha256": "4bb07437dcb9fb5c0c0ceb20430d8f46d250758c2adc19e7da92353e238cf5ff",
+        "status_code": 200,
+        "url": "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
+      }
+    ],
+    "method": {
+      "description": "For each live same-date same-strike pair, carry the Binance option mark IV to the later Polymarket horizon and evaluate exp(-r*tau)*Phi(d2) from the contemporaneous BTCUSDT spot, Binance mark IV, Binance published risk-free input, strike, and Polymarket end time. Compare that model value with the Gamma best-bid/best-ask midpoint.",
+      "execution_value": false,
+      "formula": "model_fair = exp(-r*tau) * Phi((ln(spot/strike) + (r - 0.5*iv^2)*tau) / (iv*sqrt(tau)))",
+      "limitations": "This follows the paper's model bridge but is not a cash-or-nothing instrument, an executable synthetic, a settlement identity, or a fill. Mark IV is extrapolated eight hours beyond option expiry."
+    },
+    "paper_mean_friction_screen": {
+      "current_exact_cost_evidence": false,
+      "historical_mean_friction_term": "0.0427",
+      "pairs_whose_absolute_model_midpoint_gap_exceeded_historical_mean_friction": 0,
+      "usage": "Early rejection screen only. The paper's historical mean friction is not a substitute for current account fees, displayed quantity, hedge rebalancing, or fills."
+    },
+    "pair_rows": [
+      {
+        "binance_mark_iv": "0.549",
+        "binance_option_ask": "10",
+        "binance_option_bid": "5",
+        "market_id": "3829645",
+        "model_fair": "0.016736057355",
+        "model_mid_gap": "-0.003236057355",
+        "option_symbol": "BTC-260827-84000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.017000",
+        "polymarket_best_bid": "0.010000"
+      },
+      {
+        "binance_mark_iv": "0.361",
+        "binance_option_ask": "870",
+        "binance_option_bid": "865",
+        "market_id": "3746435",
+        "model_fair": "0.599431028027",
+        "model_mid_gap": "0.019068971973",
+        "option_symbol": "BTC-260827-78000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.626000",
+        "polymarket_best_bid": "0.611000"
+      },
+      {
+        "binance_mark_iv": "0.396",
+        "binance_option_ask": "155",
+        "binance_option_bid": "150",
+        "market_id": "3746437",
+        "model_fair": "0.196696196769",
+        "model_mid_gap": "0.027803803231",
+        "option_symbol": "BTC-260827-80000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.231000",
+        "polymarket_best_bid": "0.218000"
+      },
+      {
+        "binance_mark_iv": "0.466",
+        "binance_option_ask": "30",
+        "binance_option_bid": "25",
+        "market_id": "3746439",
+        "model_fair": "0.052057691798",
+        "model_mid_gap": "-0.000557691798",
+        "option_symbol": "BTC-260827-82000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.052000",
+        "polymarket_best_bid": "0.051000"
+      },
+      {
+        "binance_mark_iv": "0.615",
+        "binance_option_ask": "0",
+        "binance_option_bid": "1625",
+        "market_id": "3746429",
+        "model_fair": "0.990102217168",
+        "model_mid_gap": "0.000897782832",
+        "option_symbol": "BTC-260827-72000-C",
+        "option_two_sided_quote": false,
+        "polymarket_best_ask": "0.992000",
+        "polymarket_best_bid": "0.990000"
+      },
+      {
+        "binance_mark_iv": "0.518",
+        "binance_option_ask": "0",
+        "binance_option_bid": "1245",
+        "market_id": "3746431",
+        "model_fair": "0.970213175667",
+        "model_mid_gap": "0.015786824333",
+        "option_symbol": "BTC-260827-74000-C",
+        "option_two_sided_quote": false,
+        "polymarket_best_ask": "0.987000",
+        "polymarket_best_bid": "0.985000"
+      },
+      {
+        "binance_mark_iv": "0.411",
+        "binance_option_ask": "0",
+        "binance_option_bid": "735",
+        "market_id": "3746433",
+        "model_fair": "0.900882843670",
+        "model_mid_gap": "0.014117156330",
+        "option_symbol": "BTC-260827-76000-C",
+        "option_two_sided_quote": false,
+        "polymarket_best_ask": "0.920000",
+        "polymarket_best_bid": "0.910000"
+      },
+      {
+        "binance_mark_iv": "0.589",
+        "binance_option_ask": "0",
+        "binance_option_bid": "5890",
+        "market_id": "3763312",
+        "model_fair": "0.965405657062",
+        "model_mid_gap": "0.017094342938",
+        "option_symbol": "BTC-260828-72000-C",
+        "option_two_sided_quote": false,
+        "polymarket_best_ask": "0.984000",
+        "polymarket_best_bid": "0.981000"
+      },
+      {
+        "binance_mark_iv": "0.395",
+        "binance_option_ask": "7985",
+        "binance_option_bid": "2355",
+        "market_id": "3763317",
+        "model_fair": "0.841469665710",
+        "model_mid_gap": "-0.006469665710",
+        "option_symbol": "BTC-260828-76000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.840000",
+        "polymarket_best_bid": "0.830000"
+      },
+      {
+        "binance_mark_iv": "0.429",
+        "binance_option_ask": "100",
+        "binance_option_bid": "95",
+        "market_id": "3763323",
+        "model_fair": "0.092844772853",
+        "model_mid_gap": "0.022155227147",
+        "option_symbol": "BTC-260828-82000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.120000",
+        "polymarket_best_bid": "0.110000"
+      },
+      {
+        "binance_mark_iv": "0.534",
+        "binance_option_ask": "15",
+        "binance_option_bid": "10",
+        "market_id": "3763327",
+        "model_fair": "0.013899240056",
+        "model_mid_gap": "0.003100759944",
+        "option_symbol": "BTC-260828-86000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.025000",
+        "polymarket_best_bid": "0.009000"
+      },
+      {
+        "binance_mark_iv": "0.610",
+        "binance_option_ask": "10",
+        "binance_option_bid": "5",
+        "market_id": "3763328",
+        "model_fair": "0.008000569554",
+        "model_mid_gap": "0.005499430446",
+        "option_symbol": "BTC-260828-88000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.017000",
+        "polymarket_best_bid": "0.010000"
+      },
+      {
+        "binance_mark_iv": "0.804",
+        "binance_option_ask": "14000",
+        "binance_option_bid": "9720",
+        "market_id": "3763309",
+        "model_fair": "0.986460029308",
+        "model_mid_gap": "0.013039970692",
+        "option_symbol": "BTC-260828-68000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "1.000000",
+        "polymarket_best_bid": "0.999000"
+      },
+      {
+        "binance_mark_iv": "0.695",
+        "binance_option_ask": "9100",
+        "binance_option_bid": "750",
+        "market_id": "3763311",
+        "model_fair": "0.979451748199",
+        "model_mid_gap": "0.014048251801",
+        "option_symbol": "BTC-260828-70000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.997000",
+        "polymarket_best_bid": "0.990000"
+      },
+      {
+        "binance_mark_iv": "0.477",
+        "binance_option_ask": "4820",
+        "binance_option_bid": "4105",
+        "market_id": "3763315",
+        "model_fair": "0.936871605095",
+        "model_mid_gap": "0.018628394905",
+        "option_symbol": "BTC-260828-74000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.960000",
+        "polymarket_best_bid": "0.951000"
+      },
+      {
+        "binance_mark_iv": "0.376",
+        "binance_option_ask": "1135",
+        "binance_option_bid": "1105",
+        "market_id": "3763319",
+        "model_fair": "0.570841355060",
+        "model_mid_gap": "0.014158644940",
+        "option_symbol": "BTC-260828-78000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.590000",
+        "polymarket_best_bid": "0.580000"
+      },
+      {
+        "binance_mark_iv": "0.395",
+        "binance_option_ask": "350",
+        "binance_option_bid": "345",
+        "market_id": "3763321",
+        "model_fair": "0.260111402836",
+        "model_mid_gap": "0.024888597164",
+        "option_symbol": "BTC-260828-80000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.290000",
+        "polymarket_best_bid": "0.280000"
+      },
+      {
+        "binance_mark_iv": "0.478",
+        "binance_option_ask": "40",
+        "binance_option_bid": "35",
+        "market_id": "3763324",
+        "model_fair": "0.033638255794",
+        "model_mid_gap": "-0.001138255794",
+        "option_symbol": "BTC-260828-84000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.039000",
+        "polymarket_best_bid": "0.026000"
+      },
+      {
+        "binance_mark_iv": "0.448",
+        "binance_option_ask": "4945",
+        "binance_option_bid": "4240",
+        "market_id": "3779853",
+        "model_fair": "0.912353401028",
+        "model_mid_gap": "0.025146598972",
+        "option_symbol": "BTC-260829-74000-C",
+        "option_two_sided_quote": true,
+        "polymarket_best_ask": "0.955000",
+        "polymarket_best_bid": "0.920000"
+      },
+      {
+        "binance_mark_iv": "0.419",
+        "binance_option_ask": "0",
+        "binance_option_bid": "0",
+        "market_id": "3779856",
+        "model_fair": "0.782859973338",
+        "model_mid_gap": "0.027140026662",
+        "option_symbol": "BTC-260829-76000-C",
+        "option_two_sided_quote": false,
+        "polymarket_best_ask": "0.820000",
+        "polymarket_best_bid": "0.800000"
+      }
+    ],
+    "summary": {
+      "maximum_absolute_mid_gap": "0.027803803231",
+      "maximum_mid_gap": "0.027803803231",
+      "mean_mid_gap": "0.012558655683",
+      "median_mid_gap": "0.014137900635",
+      "minimum_mid_gap": "-0.006469665710",
+      "negative_mid_gap_count": 4,
+      "pair_count": 20,
+      "positive_mid_gap_count": 16,
+      "spot_btcusdt": "78424.31000000",
+      "two_sided_option_quote_count": 15
+    }
+  },
+  "paper_research_input": {
+    "arxiv_id": "2606.19517v1",
+    "contract_mapping_exact": false,
+    "contract_mapping_scope_note": "The paper itself states that Polymarket oracle procedures and option exchange conventions make the mapping close but not exact.",
+    "mean_friction_term": "0.0427",
+    "pooled_historical_mean_gap": "0.0633",
+    "pooled_net_alpha": "0.067",
+    "pooled_net_alpha_hac_95_percent_ci": [
+      "-0.008",
+      "0.143"
+    ],
+    "pooled_net_alpha_p_value": "0.053",
+    "proxy_trade_count": 16,
+    "source_url": "https://arxiv.org/abs/2606.19517",
+    "use": "Research lead only. The paper reports a model-based rebalanced proxy, not a locked cross-venue payoff, and its pooled net-alpha interval crosses zero."
+  },
+  "prohibited_shortcuts": [
+    "calling_same_calendar_date_the_same_expiry_instant",
+    "calling_a_vanilla_call_an_exact_cash_or_nothing_claim",
+    "treating_mark_iv_or_a_model_midpoint_as_executable_value",
+    "ignoring_the_eight_hour_unhedged_terminal_interval",
+    "using_paper_historical_mean_friction_as_current_account_cost",
+    "claiming_persistence_from_one_current_snapshot_or_sixteen_historical_proxy_trades",
+    "resampling_until_a_model_gap_looks_positive"
+  ],
+  "result_sha256": "22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7",
+  "schema_version": "binance-polymarket-option-threshold-wedge-gate-v1",
+  "verdict": {
+    "accepted_edge": false,
+    "current_exact_payoff_family": "terminal_for_this_catalog_zero_exact_expiry_pairs",
+    "current_statistical_wedge_status": "conditional_research_lead_not_current_economic_edge",
+    "market_direction_forecast_required": false,
+    "model_midpoint_profitability_claim": false,
+    "reason": "The historical paper identifies a plausible segmented-venue overpricing mechanism, but its mapping is non-exact and its net-alpha interval crosses zero. The current catalog has zero exact expiry matches, all 20 same-date pairs retain eight hours of terminal BTC risk, only 15 have two-sided Binance quotes, and zero current absolute midpoint gaps clear even the paper's 4.27-point historical mean friction screen.",
+    "retry_trigger": "A newly listed pair must first have the same strike, exact expiry instant, and settlement observation, or a two-sided same-date model gap must exceed 0.0427 before one separately frozen prospective executable-book, exact-fee, hedge-rebalancing, capacity, and cross-regime study."
+  }
+}

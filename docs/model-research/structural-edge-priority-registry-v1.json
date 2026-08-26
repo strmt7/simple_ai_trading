@@ -136,6 +136,36 @@
     },
     {
       "blocking_evidence": [
+        "an exact same-strike same-expiry same-settlement-observation pair or a materially larger two-sided model wedge",
+        "synchronized displayed Binance option spot and Polymarket depth with executable hedge quantities",
+        "exact account option spot and Polymarket fees plus hourly hedge-rebalancing cash flows",
+        "prospective multi-contract train validation test and cross-regime persistence",
+        "capital margin liquidation transfer custody latency and settlement-risk costs"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-polymarket-option-threshold-wedge-gate-v1-2026-08-26.json",
+          "result_sha256": "22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7"
+        }
+      ],
+      "current_status": "historical_paper_reports_a_6_33_point_mean_model_wedge_but_its_16_trade_net_alpha_interval_crosses_zero_and_current_20_pair_snapshot_has_zero_exact_expiries_an_8_hour_terminal_gap_only_15_two_sided_option_quotes_and_zero_model_midpoint_gaps_above_the_paper_4_27_point_mean_friction_term",
+      "market_direction_forecast_required": false,
+      "mechanism": "cross_venue_option_implied_prediction_threshold_wedge",
+      "next_action": "do_not_resample_until_an_exact_payoff_mapping_appears_or_a_two_sided_same_date_same_strike_model_gap_exceeds_4_27_percentage_points_then_freeze_one_prospective_executable_cost_and_cross_regime_study",
+      "priority_rank": 4,
+      "prohibited_shortcuts": [
+        "same_calendar_date_as_same_expiry_instant",
+        "vanilla_call_as_exact_cash_or_nothing_claim",
+        "mark_iv_or_model_midpoint_as_executable_value",
+        "ignoring_the_eight_hour_terminal_BTC_exposure",
+        "historical_mean_friction_as_current_account_cost",
+        "repeated_snapshot_search_until_a_positive_gap_appears"
+      ],
+      "retry_trigger": "exact_same_strike_expiry_and_settlement_pair_or_two_sided_same_date_model_gap_above_0_0427",
+      "venue_scope": "binance_BTC_options_spot_and_polymarket_BTC_point_thresholds"
+    },
+    {
+      "blocking_evidence": [
         "same-account WBETH and BNSOL conversion-rate histories",
         "current personal staking and redemption quotas enabled states commission fees and redemption periods",
         "exact executable liquid-staking-token and base-asset books with account commissions",
@@ -152,7 +182,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "liquid_staking_token_conversion_parity",
       "next_action": "when_both_documented_ephemeral_environment_variables_exist_source_bind_one_get_only_WBETH_BNSOL_conversion_quota_and_account_prequalification_before_any_public_book_or_hedge_sampling",
-      "priority_rank": 4,
+      "priority_rank": 5,
       "prohibited_shortcuts": [
         "public_LST_book_as_redeemable_conversion_value",
         "documentation_example_ratio_fee_or_delay_as_current_account_evidence",
@@ -191,7 +221,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "bstock_reference_conversion_and_delta_neutral_perpetual_funding",
       "next_action": "do_not_retry_bStock_funding_parameters_or_baskets_only_revisit_conversion_parity_after_explicit_permanent_scope_authority_and_same_account_eligibility_quote_conversion_and_exact_cost_evidence",
-      "priority_rank": 5,
+      "priority_rank": 6,
       "prohibited_shortcuts": [
         "external_reference_price_as_an_executable_stock_quote",
         "public_1_to_1_terms_as_same_account_eligibility",
@@ -228,7 +258,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "same_expiry_option_put_call_parity_against_quarterly_future",
       "next_action": "none_until_an_official_static_history_or_explicit_retention_contract_exists_or_after_the_2026_09_25_matching_expiry_under_a_separately_frozen_prospective_contract",
-      "priority_rank": 6,
+      "priority_rank": 7,
       "prohibited_shortcuts": [
         "matching expiry timestamps as proof of matching settlement values",
         "non_synchronous ticker and futures snapshots as execution evidence",
@@ -260,7 +290,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "quarterly_spot_future_cash_and_carry",
       "next_action": "when_both_documented_ephemeral_environment_variables_are_available_run_the_frozen_capture_once_then_apply_the_exact_components_as_a_non_synchronous_fee_gate_before_any_new_book_sampling",
-      "priority_rank": 7,
+      "priority_rank": 8,
       "prohibited_shortcuts": [
         "35_bps_sensitivity_as_actual_account_cost",
         "historical deliveryTime as exact delivery epoch",
@@ -287,7 +317,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "spot_market_maker_rebates",
       "next_action": "query_only_the_frozen_account_evidence_path_after_explicit_read_only_credential_authority",
-      "priority_rank": 8,
+      "priority_rank": 9,
       "prohibited_shortcuts": [
         "cached 2024 public fee table as current rate",
         "symbol commission response as maker-rebate proof",
@@ -313,7 +343,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "three_leg_spot_conversion",
       "next_action": "do_not_resample_books_until_exact_account_fees_first_prove_the_path_can_clear_the_frozen_break_even",
-      "priority_rank": 9,
+      "priority_rank": 10,
       "prohibited_shortcuts": [
         "USD-M futures commission as spot fee",
         "public VIP tier as account fee",
@@ -339,7 +369,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates",
       "next_action": "after_the_protected_boundary_freeze_a_prospective_authenticated_fill_rebate_and_orphan_study_only_if_explicit_authority_exists",
-      "priority_rank": 10,
+      "priority_rank": 11,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
         "both-fill assumption",
@@ -364,7 +394,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "cross_venue_prediction_complete_set",
       "next_action": "none_without_explicit_read_only_credential_authority_and_a_new_authenticated_contract",
-      "priority_rank": 11,
+      "priority_rank": 12,
       "prohibited_shortcuts": [
         "generated no-authorization label without live preflight",
         "title equality as payout equality",
@@ -375,7 +405,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "f0ea713ec59667feee3570ec683215d33acc302c1ce0d01c421c9a9e30ea8ada",
+  "result_sha256": "73363631d72664d21a5458cc773eb1cb44d46000b1f09f51feec3d5442bc208f",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -397,6 +427,11 @@
       "canonical_result_sha256": "33cdc53555f8bbdecf6a9977a77d2c3bc004dab4bff27abb36eac4452f96e5a3",
       "family": "polymarket_complete_set_holding_midpoint_valuation_uplift",
       "reason": "all_55_currently_eligible_BTC_ETH_SOL_complete_sets_had_exactly_unit_midpoint_value_and_zero_cleared_the_frozen_economic_escalation_threshold"
+    },
+    {
+      "canonical_result_sha256": "22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7",
+      "family": "binance_polymarket_exact_point_threshold_payoff_parity_current_catalog",
+      "reason": "zero_of_83_active_polymarket_BTC_point_thresholds_had_an_exact_same_strike_and_expiry_Binance_call_and_all_20_same_date_pairs_retained_an_eight_hour_terminal_payoff_mismatch"
     },
     {
       "canonical_result_sha256": "ceca2f61ab1da16285190afcb90c276a10b032fb7d264c90656aaf2f7266c253",
@@ -459,6 +494,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T09:07:01Z",
+  "updated_at_utc": "2026-08-26T09:25:15.3872941Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
