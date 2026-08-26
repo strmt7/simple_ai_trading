@@ -589,9 +589,38 @@
       ],
       "retry_trigger": "both_designated_Binance_credentials_and_permitted_authenticated_Polymarket_reward_evidence_then_exact_same_period_BFUSD_rate_above_14_1066194737_percent_for_already_held_collateral_or_above_25_6329352632_percent_for_new_collateral_before_any_book_request",
       "venue_scope": "polymarket_BTC_Perps_and_binance_BTC_perpetual_with_BFUSD_collateral"
+    },
+    {
+      "blocking_evidence": [
+        "a publicly accessible proposal batching path rather than unexplained proposer contracts and relayers",
+        "multi-day proof that independent proposers can win the first-block competition",
+        "exact same-token gas conversion and all service approval execution and settlement costs",
+        "every observed batch positive after collateral opportunity cost and a preregistered gas stress",
+        "dispute and wrong-resolution loss controls whose downside is proportionate to the small reward"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-resolution-proposer-reward-gate-v1-2026-08-26.json",
+          "result_sha256": "ee76a40a86e1c777006c697798d0ad3da20609cadd1c2d8f6bf039ecb79f2155"
+        }
+      ],
+      "current_status": "terminal_current_state_one_39_market_cluster_left_4_3644_USDCe_equivalent_under_USDCe_USDT_unit_parity_after_full_resolution_transaction_gas_and_10_percent_annual_capital_cost_but_one_of_five_actual_batches_was_negative_aggregate_POL_price_headroom_was_only_22_9723_percent_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block",
+      "market_direction_forecast_required": false,
+      "mechanism": "uma_resolution_proposer_reward",
+      "next_action": "do_not_repeat_current_cluster_or_poll_unchanged_rewards_reopen_only_after_material_source_bound_reward_bond_liveness_batching_or_public_access_change_then_freeze_an_all_cost_multi_day_competition_study_before_any_wallet_or_transaction_work",
+      "priority_rank": 18,
+      "prohibited_shortcuts": [
+        "calling_aggregate_unit_parity_sensitivity_exact_after_cost_profit",
+        "treating_protocol_or_private_automation_as_publicly_accessible_execution",
+        "ignoring_the_observed_negative_batch_or_first_block_race",
+        "assuming_zero_disputes_in_one_cluster_eliminates_bond_loss",
+        "sending_a_proposal_resolution_approval_or_funded_transaction_without_separate_authority"
+      ],
+      "retry_trigger": "material_source_bound_change_in_reward_bond_liveness_batching_or_public_proposer_access_that_can_support_a_preregistered_all_cost_gas_stress_and_multi_day_competition_gate",
+      "venue_scope": "polymarket_BTC_ETH_SOL_resolution"
     }
   ],
-  "result_sha256": "ed4fe8edf5ed532d7cbcf56016e762869d0850cdb33f48df08138c666894bba7",
+  "result_sha256": "cf72fe18bd3a46d04089b7c679958c17c3e43c1fe3d8d02bd91919c413c24e7d",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -698,8 +727,13 @@
       "canonical_result_sha256": "c15f1e131aa18d705aa6ce507c0f921b7a559664db91a352a244d8df9ddb0f99",
       "family": "polymarket_pusd_external_wrap_unwrap_parity_at_current_pool_state",
       "reason": "the_exact_USDCe_wrap_sell_loop_lost_22_4388_bips_after_the_30_bip_pool_fee_at_the_optimistic_marginal_price_and_the_native_USDC_buy_unwrap_route_lost_0_3328_bips_after_its_1_bip_fee_before_price_impact_gas_and_USDC_USDCe_basis"
+    },
+    {
+      "canonical_result_sha256": "ee76a40a86e1c777006c697798d0ad3da20609cadd1c2d8f6bf039ecb79f2155",
+      "family": "polymarket_uma_resolution_proposer_reward_at_current_reward_gas_and_competition_state",
+      "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T13:17:47.6439960Z",
+  "updated_at_utc": "2026-08-26T15:11:53.6641784Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
