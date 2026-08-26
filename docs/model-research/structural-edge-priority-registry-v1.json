@@ -647,12 +647,16 @@
         {
           "path": "docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json",
           "result_sha256": "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json",
+          "result_sha256": "7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387"
         }
       ],
-      "current_status": "realized_public_program_recurrence_proved_but_a_new_primary_maker_first_taker_hedge_mechanism_diagnostic_rejects_a_stable_edge_claim_159_strict_one_day_sequences_were_only_47_17_percent_current_fee_sensitive_positive_with_median_cost_1_012037_aggregate_PnL_minus_9_33095786_ETH_negative_SOL_zero_and_12_of_24_hours_negative_creation_time_opposite_ask_queue_owned_fill_hedge_orphan_rebate_and_complete_after_cost_evidence_remain_unproved",
+      "current_status": "realized_public_program_recurrence_proved_but_both_local_fill_reconstruction_and_new_primary_regime_evidence_reject_a_stable_edge_claim_159_strict_sequences_were_negative_in_aggregate_and_BTC_five_minute_market_makers_lost_0_62M_in_top_decile_manipulation_pressure_cycles_while_making_3_11M_in_normal_cycles_before_the_papers_unmodeled_dynamic_fees_fifteen_minute_manipulation_was_largely_absent_but_profitability_unproved",
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates",
-      "next_action": "do_not_expand_the_historical_fill_tape_or_poll_public_wallets_after_the_protected_boundary_and_only_with_explicit_authenticated_paper_authority_freeze_one_minimum_prospective_post_only_maker_first_exact_quantity_FOK_or_FAK_opposite_hedge_study_that_admits_orders_only_when_the_creation_time_synchronized_opposite_ask_is_positive_after_every_cost_and_records_every_orphan",
+      "next_action": "do_not_expand_history_after_the_protected_boundary_and_only_with_explicit_authenticated_paper_authority_start_with_one_minimum_fifteen_minute_only_post_only_maker_first_exact_quantity_FOK_or_FAK_hedge_study_five_minute_remains_excluded_until_a_separate_current_cancel_safety_preflight_proves_every_owned_order_cancel_confirmed_before_the_settlement_risk_window_under_latency_stress",
       "priority_rank": 17,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
@@ -660,6 +664,9 @@
         "public books as own fill or queue evidence",
         "future opposite fill price as a creation-time executable hedge",
         "favorable unhedged price movement as direction-independent arbitrage",
+        "normal cycle maker PnL as an all situation or current after fee edge",
+        "future push intensity as a live filter or any attempt to influence settlement",
+        "fifteen minute null manipulation evidence as profitability",
         "aggregate wallet activity as crypto specific without a condition join",
         "top volume wallet receipts or receipt to volume diagnostics as complete profit"
       ],
@@ -1253,7 +1260,7 @@
       "venue_scope": "Binance_NOKBUSDT_bStock_and_NOKUSDT_TradFi_perpetual_dividend_adjustment"
     }
   ],
-  "result_sha256": "0d038efb7a32d61b97f7efc0e0643b88fcc3dd73e6c5b702ffd0c516f59bbf9d",
+  "result_sha256": "9c1c159abe9ff97c2bf8703447084b72091956f89317cbdbce5acf8e3bc3d83f",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1382,6 +1389,6 @@
       "reason": "AMAT_and_MSFT_special_negative_short_funding_debits_matched_their_declared_gross_dividends_within_three_micro_USDT_while_bStock_reinvests_only_the_net_dividend_so_the_direct_dividend_contribution_is_N_minus_D_equal_to_negative_deductions_before_every_other_cost"
     }
   ],
-  "updated_at_utc": "2026-08-26T23:33:53.6309110Z",
+  "updated_at_utc": "2026-08-26T23:44:14.1423249Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -874,7 +874,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`0d038efb7a32d61b97f7efc0e0643b88fcc3dd73e6c5b702ffd0c516f59bbf9d`.
+`9c1c159abe9ff97c2bf8703447084b72091956f89317cbdbce5acf8e3bc3d83f`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1635,6 +1635,34 @@ all cross-regime slices. Canonical candidate:
 result SHA-256
 `4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69`.
 
+A second primary paper, *Settlement Manipulation in Prediction Markets*,
+rejects treating even ordinary spread capture as an all-situation BTC
+five-minute edge. Its P3 sample classifies 227 market makers from 243,155 public
+wallets. In 1,613 top-decile manipulation-pressure cycles the cohort lost
+`0.62M` USD (`381` USD per cycle) and was negative in `58.6%`; across 14,460
+normal cycles it made `3.11M` USD (`215` USD per cycle) and was negative in
+`37.7%`. The sign reversal is a regime failure, and the paper explicitly leaves
+net-of-changing-fee P&L to future work. Its manipulation label divides final-
+ten-second Binance order flow by the completed cycle's median body flow, making
+it ex-post and inadmissible as a live filter. The paper also finds that, when a
+favored side traded from `0.90` to `1.00` ten seconds before close, a push
+reversed resolution in `34.2%` of identified push cycles versus `1.0%` without
+a push. This evidence is used only to avoid toxic settlement exposure; never
+attempt, facilitate, or simulate trading the underlying to influence resolution.
+
+The paper's P2 fifteen-minute BTC test has 229 near-the-money and 5,870 far-
+from-money classified cycles and finds the manipulation footprint largely
+absent, without proving market-maker profit. Consequently, the first future
+maker cohort is fifteen-minute only and must still satisfy the full creation-
+time complete-set lock, owned-fill, hedge, fee, rebate, inventory, orphan,
+capital, and cross-regime gates. Five-minute remains excluded until a separate
+current source-continuous latency-stress preflight proves every owned maker
+order cancel-confirmed before a source-bound settlement-risk window without
+using future PushIntensity or reversal. Canonical regime gate:
+`docs/model-research/action-value/polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json`,
+result SHA-256
+`7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1787,7 +1815,12 @@ not grant account, funding, order, or transaction authority.
    after every cost, then measures authenticated owned fills, immediate FOK/FAK
    hedge success, queue and cancellation latency, adverse selection, realized
    rebate payment, merge/redemption, and complete orphan P&L. Nominal rebate
-   algebra and a favorable future hedge fill are not substitutes.
+   algebra and a favorable future hedge fill are not substitutes. Start with a
+   fifteen-minute-only cohort. Keep five-minute excluded until a separate
+   current preflight proves every owned order cancel-confirmed before the
+   settlement-risk window under latency stress; completed-cycle PushIntensity
+   and post-settlement reversal are forbidden live inputs. Never trade the
+   underlying to influence resolution.
    The finalized-winner-before-adapter-close lead now outranks that broader
    maker study. Do not expand its public history. After the protected boundary
    and only with explicit authenticated paper authority, freeze one minimum-size

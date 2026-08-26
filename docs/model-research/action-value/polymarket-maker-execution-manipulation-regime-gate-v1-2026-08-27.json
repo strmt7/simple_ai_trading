@@ -1,0 +1,153 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "existing_accepted_edge_count_changes": 0,
+    "market_direction_independent_edge_proved": false,
+    "profitability_claim": false,
+    "public_after_cost_profit_floor_pusd": "0",
+    "status": "primary_cross_venue_microstructure_evidence_rejects_all_situation_BTC_five_minute_market_making_and_makes_fifteen_minute_only_the_safer_first_prospective_cohort_but_no_current_after_cost_edge_is_proved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_inspected_or_used": false,
+    "funded_actions": 0,
+    "orders_cancellations_or_spot_trades_submitted": 0,
+    "public_arxiv_pdf_requests": 1,
+    "public_ssrn_pdf_requests": 1,
+    "ssrn_pdf_result": "HTTP_403_no_file_retained"
+  },
+  "completed_after_utc": "2026-08-26T23:43:43.4583443Z",
+  "distinctness": {
+    "classification": "new_regime_rejection_and_prospective_population_filter_for_the_existing_paired_crypto_maker_rebate_family",
+    "existing_candidate_result_sha256": "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69",
+    "existing_candidate_path": "docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json",
+    "not_a_new_edge": true,
+    "reason": "the_new_source_does_not_supply_a_trade_rule_or_current_profit_floor_it_identifies_a_five_minute_settlement_regime_in_which_market_makers_lose_and_a_fifteen_minute_horizon_with_a_largely_absent_manipulation_footprint"
+  },
+  "primary_source": {
+    "authors": [
+      "David Dai",
+      "Ruizhe Jia",
+      "Shihao Yu"
+    ],
+    "paper": "Settlement Manipulation in Prediction Markets",
+    "paper_current_version_date": "2026-07-02",
+    "source_version": "arXiv_2606.31675v1",
+    "source_role": "primary_model_on_chain_Polymarket_books_and_Binance_spot_empirics",
+    "url": "https://arxiv.org/abs/2606.31675"
+  },
+  "source_sample": {
+    "binance_spot_role": "reference_spot_market_for_BTC_order_flow_and_five_level_100_millisecond_books",
+    "five_minute_live_period": "2026-02-12_through_2026-04-08",
+    "manipulated_cycle_definition": "top_decile_of_final_10_second_absolute_Binance_order_flow_divided_by_the_within_cycle_median_absolute_body_bin_order_flow",
+    "manipulated_cycle_definition_is_causal_at_quote_time": false,
+    "manipulated_cycle_count": 1613,
+    "market_maker_classification": "not_a_manipulator_at_least_85_percent_resting_fills_at_least_50_fills_per_active_cycle_and_median_close_directional_inventory_at_most_20_percent_of_gross_shares",
+    "market_maker_wallet_count": 227,
+    "normal_cycle_count": 14460,
+    "on_chain_Polymarket_cycle_count": 16073,
+    "retail_or_other_wallet_count": 242107,
+    "settlement": "Chainlink_where_available_otherwise_last_secondary_trade_in_0_to_30_seconds_after_close_for_the_small_missing_fraction",
+    "total_distinct_wallet_count": 243155,
+    "wallet_identity_limit": "multiple_wallets_controlled_by_one_actor_are_unobserved",
+    "manipulator_wallet_count": 821
+  },
+  "exact_five_minute_evidence": {
+    "fee_boundary": "the_paper_states_that_the_fee_schedule_changed_mid_sample_and_leaves_net_of_fee_PnL_to_future_work",
+    "manipulated_cycles": {
+      "market_maker_losing_cycle_fraction": "0.586",
+      "market_maker_loss_share": "0.093",
+      "market_maker_reported_PnL_per_cycle_usd": "-381",
+      "market_maker_total_reported_PnL_usd": "-620000",
+      "retail_or_other_total_reported_PnL_usd": "-7610000",
+      "manipulator_total_reported_PnL_usd": "8220000"
+    },
+    "normal_cycles": {
+      "market_maker_losing_cycle_fraction": "0.377",
+      "market_maker_loss_share": "0.108",
+      "market_maker_reported_PnL_per_cycle_usd": "215",
+      "market_maker_total_reported_PnL_usd": "3110000",
+      "retail_or_other_total_reported_PnL_usd": "-3200000",
+      "manipulator_total_reported_PnL_usd": "90000"
+    },
+    "near_certain_resolution_flip": {
+      "confidence_bin": "favored_side_price_in_0_90_to_1_00_ten_seconds_before_close",
+      "resolution_reversed_with_push_fraction": "0.342",
+      "resolution_reversed_without_push_fraction": "0.010"
+    },
+    "interpretation": "reported_market_maker_spread_capture_is_regime_dependent_and_not_current_after_fee_profit_the_ex_post_push_intensity_label_cannot_be_used_as_a_quote_time_filter"
+  },
+  "exact_fifteen_minute_evidence": {
+    "classification_period": "P2_2025-10-09_through_2026-02-11_before_five_minute_launch",
+    "far_from_money_cycle_count": 5870,
+    "near_the_money_cycle_count": 229,
+    "near_the_money_rule": "Up_token_price_within_0_10_of_0_50_at_10_to_12_seconds_before_close",
+    "paper_verdict": "largely_null_manipulation_footprint_with_no_liquidity_withdrawal_versus_provision_pattern_or_deeper_near_the_money_post_settlement_reversal",
+    "profitability_or_current_execution_proved": false,
+    "why_not_an_edge": "the_table_tests_manipulation_activity_and_reversal_not_owned_fills_fees_rebates_inventory_or_after_cost_market_maker_PnL"
+  },
+  "relation_to_local_historical_diagnostic": {
+    "diagnostic_result_sha256": "d11d0f42a082fc19b1cd6ee3ee6cd226f95b28db2e1f9c5cf965913e35ce6b07",
+    "diagnostic_path": "docs/model-research/polymarket/maker-first-taker-hedge-historical-diagnostic-v1-2026-08-27.json",
+    "five_minute_sequences": 152,
+    "five_minute_aggregate_current_fee_sensitive_PnL_pusd": "-5.13994527",
+    "fifteen_minute_sequences": 7,
+    "fifteen_minute_aggregate_current_fee_sensitive_PnL_pusd": "-4.19101259",
+    "one_hour_sequences": 0,
+    "interpretation": "the_local_delayed_complete_set_heuristic_is_negative_in_both_observed_five_and_fifteen_minute_slices_and_cannot_convert_the_papers_normal_cycle_market_maker_result_into_a_current_edge"
+  },
+  "prospective_population_and_risk_gate": {
+    "first_cohort": "BTC_ETH_SOL_fifteen_minute_only",
+    "first_cohort_reason": "primary_evidence_reports_the_settlement_manipulation_footprint_largely_absent_at_fifteen_minutes_while_five_minute_market_maker_PnL_changes_sign_across_manipulation_regimes",
+    "fifteen_minute_admission": "still_require_creation_time_complete_set_lock_owned_post_only_fill_exact_FOK_or_FAK_hedge_current_fee_and_rebate_account_state_every_orphan_and_all_costs_no_profit_is_imported_from_the_paper",
+    "five_minute_default": "reject_from_the_first_prospective_cohort",
+    "five_minute_reopen_gate": "a_separate_current_source_continuous_cancel_safety_preflight_must_prove_every_owned_maker_order_is_cancel_confirmed_before_the_settlement_risk_window_under_latency_stress_and_must_define_that_window_without_using_future_push_intensity",
+    "causal_filters_only": [
+      "current_time_to_close",
+      "current_market_price_and_moneyness",
+      "current_source_timestamps",
+      "owned_order_acceptance_and_cancel_confirmation",
+      "precommitted_latency_and_staleness_limits"
+    ],
+    "forbidden_filter": "future_or_full_cycle_PushIntensity_or_post_settlement_reversal",
+    "promotion_gate": "positive_worst_episode_after_every_current_fee_rebate_inventory_orphan_capital_and_settlement_cost_in_every_required_asset_time_volatility_liquidity_and_latency_slice_with_no_unknown_state",
+    "stop_conditions": [
+      "any_current_fifteen_minute_slice_is_negative_or_unsupported",
+      "creation_time_opposite_ask_or_exact_hedge_is_missing",
+      "owned_order_cancel_confirmation_cannot_precede_the_settlement_risk_window_under_stress",
+      "fees_rebates_inventory_or_settlement_state_are_unknown",
+      "any_rule_would_require_trading_the_underlying_to_influence_settlement"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "attempting_facilitating_or_simulating_settlement_manipulation_as_a_profit_strategy",
+    "trading_Binance_spot_to_influence_a_Polymarket_resolution",
+    "calling_normal_cycle_market_maker_spread_capture_an_all_situation_edge",
+    "calling_the_papers_reported_PnL_net_of_current_fees",
+    "using_top_decile_future_PushIntensity_as_a_live_filter",
+    "treating_a_largely_null_fifteen_minute_manipulation_test_as_profitability",
+    "assuming_the_historical_wallet_cohort_is_owned_reproducible_or_current",
+    "continuing_to_quote_when_cancel_confirmation_or_source_state_is_unknown"
+  ],
+  "result_sha256": "7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387",
+  "schema_version": "polymarket-maker-execution-manipulation-regime-gate-v1",
+  "sources": [
+    {
+      "payload_bytes": 889497,
+      "payload_sha256": "5dc7e9b48622f43415f18a02e6053cd7c4f2633547d2e392e337e5b52b4dd8ca",
+      "received_after_utc": "2026-08-26T23:36:30.3892011Z",
+      "requested_before_utc": "2026-08-26T23:36:29.4270038Z",
+      "role": "complete_primary_arxiv_PDF_tables_definitions_fee_limit_and_empirical_results",
+      "url": "https://arxiv.org/pdf/2606.31675v1"
+    },
+    {
+      "request_result": "HTTP_403_no_payload_file",
+      "requested_before_utc": "2026-08-26T23:36:29.3328900Z",
+      "role": "primary_SSRN_Who_Profits_from_Prediction_Markets_PDF_attempt_not_used_for_table_claims",
+      "url": "https://papers.ssrn.com/sol3/Delivery.cfm/6191618.pdf?abstractid=6191618&mirid=1"
+    }
+  ]
+}
