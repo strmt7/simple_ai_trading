@@ -235,6 +235,18 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-u-usdt-funding-differential-v1-2026-08-26.json`,
   result SHA-256
   `486b1aa261ae41fd8d8aeb19f0fea5bb01305d24927ccd72624bdd8afb7895d7`.
+- Binance USD1-settled BTC/ETH perpetual versus matched USDT perpetual funding
+  is terminal under its frozen static orientation and conservative FX stress.
+  BTC had 309 aligned settlements and ETH had 165; training selected short
+  USD1 and long USDT for both. Although raw funding remained positive in each
+  chronological role, every training, validation, and test result was negative
+  after the frozen 20-bps execution hurdle, two-leg capital hurdle, and the
+  observed 23.9545-bps worst 30-day USD1USDT decline stress. Zero of two public
+  candidates passed. Do not repeat this unchanged screen or escalate to account
+  data. Canonical result:
+  `docs/model-research/action-value/binance-usd1-usdt-funding-differential-v1-2026-08-26.json`,
+  result SHA-256
+  `0d82da55d7687b0f26dc12103f38394b3325542a62af10abf4d34609fa5a6e79`.
 - Binance Prediction Trading versus Polymarket was frozen as a distinct
   structural screen, permitting only exact BTC/ETH/SOL payout-rule equivalence.
   It stopped before market access. The official generated Markdown said market
@@ -633,7 +645,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`5be46743ddcfa82d7526450272d35528d01e2d81e75b803924e7f947178d820d`.
+`066debe7a70e50432005f7284135e3ab54b08e599fc28469e5ff4ad7b3885212`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

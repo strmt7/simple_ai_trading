@@ -1,0 +1,76 @@
+{
+  "acceptance_boundary": {
+    "accepted_edge_requires_additionally": [
+      "same-account regional USD1 and Futures eligibility",
+      "exact account BTCUSD1 ETHUSD1 BTCUSDT and ETHUSDT commissions",
+      "synchronized executable entry and exit depth at one common quantity",
+      "USD1 collateral conversion borrow depeg and haircut evidence",
+      "margin liquidation auto-exchange and capital reconciliation",
+      "bull bear sideways choppy volatility liquidity and latency slices",
+      "prospective paper fills and persistence"
+    ],
+    "failed_public_gate_action": "terminal_do_not_request_more_history_books_or_account_evidence",
+    "public_persistence_candidate_requires": [
+      "training validation and test net after frozen execution capital and observed USD1 FX stress positive",
+      "each chronological half inside validation and test gross positive",
+      "worst cumulative drawdown no greater than 50 bips",
+      "at least 60 percent positive settlements in validation and test"
+    ]
+  },
+  "authority": {
+    "credentials_permitted": false,
+    "orders_permitted": false,
+    "paper_or_live_authority": false,
+    "research_only": true
+  },
+  "causal_roles": {
+    "fractions": ["0.50", "0.25", "0.25"],
+    "minimum_aligned_rows": 120,
+    "minimum_rows_per_role": 30,
+    "ordered_split": ["training", "validation", "test"],
+    "orientation_selection_uses_only": "training_mean_funding_rate",
+    "validation_and_test_cannot_change_orientation_or_hurdles": true
+  },
+  "economic_hurdles": {
+    "annual_opportunity_hurdle_bips_per_capital_leg": "500",
+    "gross_capital_legs": "2",
+    "round_trip_execution_stress_bips": "20",
+    "usd1_fx_stress": "worst_observed_30_day_USD1USDT_close_decline_applied_independently_to_each_role"
+  },
+  "implementation_path": "tools/screen_binance_usd1_usdt_funding_differential.py",
+  "implementation_sha256": "2218e58e3a0a562305a3a418bfbf9647a51076f66fa5556151eee58d326463df",
+  "purpose": "test whether BTC and ETH USD1-settled perpetuals have a persistent static funding differential versus matched USDT perpetuals without forecasting market direction",
+  "request_contract": {
+    "maximum_get_requests": 8,
+    "requests": [
+      "GET https://fapi.binance.com/fapi/v1/exchangeInfo",
+      "GET https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSD1&limit=500",
+      "GET https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=500",
+      "GET https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSD1&limit=500",
+      "GET https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=500",
+      "GET https://fapi.binance.com/fapi/v1/ticker/bookTicker",
+      "GET https://api.binance.com/api/v3/klines?symbol=USD1USDT&interval=1d&limit=500",
+      "GET https://api.binance.com/api/v3/ticker/bookTicker?symbol=USD1USDT"
+    ],
+    "raw_persistence": "atomically_rewrite_a_canonical_journal_after_every_successful_response_before_evaluation",
+    "retry_policy": "none",
+    "one_shot_rule": "do_not_rerun_reorder_paginate_or_change_gates_after_the_first_funding_response"
+  },
+  "result_sha256": "e487ee1ca43dec3f7e237ea2a19b1b068c1510603622af13e9fc7f4f23209bc7",
+  "schema_version": "binance-usd1-usdt-funding-differential-contract-v1",
+  "source_boundary": {
+    "futures_market_data_contract": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+    "spot_market_data_contract": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market",
+    "security_classification": "all_eight_exact_GET_requests_are_current_public_market_data",
+    "undocumented_fee_or_product_term_action": "fail_closed_no_exact_account_cost_claim"
+  },
+  "status": "frozen_before_any_usd1_funding_history_access",
+  "universe": {
+    "pairs": [
+      {"base": "BTC", "usd1_symbol": "BTCUSD1", "usdt_symbol": "BTCUSDT"},
+      {"base": "ETH", "usd1_symbol": "ETHUSD1", "usdt_symbol": "ETHUSDT"}
+    ],
+    "required_contract_type": "PERPETUAL",
+    "required_status": "TRADING"
+  }
+}
