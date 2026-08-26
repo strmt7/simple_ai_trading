@@ -588,6 +588,18 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/complete-set-holding-yield-net-economics-v5-2026-08-26.json`,
   SHA-256
   `dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85`.
+  A bounded same-day continuity check then found contradictory current
+  Polymarket terms: the dated Help Center page still says 3.25%, while the
+  developer `Positions & Tokens` page says 4.00%. No new `YIELD` row existed
+  after either source capture, so 4.00% is not adopted as operative or
+  realized. BTC's 150 and ETH's 440 complete sets were unchanged; SOL had
+  increased from 449 to 591.11, so its post-change denominator must be reset.
+  The accepted historical 3.182019% result remains intact, but the current
+  prospective rate is unqualified until realized post-conflict evidence or an
+  explicit effective-date source resolves the contradiction. Canonical gate:
+  `docs/model-research/polymarket/complete-set-holding-yield-rate-conflict-gate-v6-2026-08-26.json`,
+  SHA-256
+  `17c23b1bf821256a573b8685ea4c5725d1c1315a4ca6449395e75635b51678d9`.
   A separate frozen valuation-uplift screen covered every currently eligible
   BTC/ETH/SOL market in four public requests. All 55 markets returned both
   token midpoints, and every equal YES-plus-NO complete set summed to exactly
@@ -621,7 +633,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`ab4328c1ee4ab7bd1553ebf23e7b973f43535ae99cdeda1158a23d07a3c2fbf5`.
+`dc7cc3a7ba04f820523fe08f9fbbb133e79de29fe1c8ea7fb78bd8aa926c1ff9`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

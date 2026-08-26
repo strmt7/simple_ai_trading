@@ -47,6 +47,10 @@ override prose.
   a current primary API contract. Never infer that an endpoint is public from
   its path, product name, nearby public endpoints, or an unauthenticated error;
   if the security classification is absent or contradictory, do not call it.
+- Conflicting current primary-source terms are an unresolved gate. Do not pick
+  a rate, fee, eligibility rule, or effective date by page location, apparent
+  recency, or convenience; preserve both sources and require an explicit
+  effective-date source or realized post-change evidence before promotion.
 
 ## Working Method
 

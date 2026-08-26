@@ -38,23 +38,28 @@
           "result_sha256": "dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85"
         },
         {
+          "path": "docs/model-research/polymarket/complete-set-holding-yield-rate-conflict-gate-v6-2026-08-26.json",
+          "result_sha256": "17c23b1bf821256a573b8685ea4c5725d1c1315a4ca6449395e75635b51678d9"
+        },
+        {
           "path": "docs/model-research/polymarket/complete-set-midpoint-uplift-v1-2026-08-26.json",
           "result_sha256": "33cdc53555f8bbdecf6a9977a77d2c3bc004dab4bff27abb36eac4452f96e5a3"
         }
       ],
-      "current_status": "accepted_scoped_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_42_of_42_positive_daily_YIELD_payments_3_1820_percent_realized_rate_positive_through_3_percent_alternative_before_external_friction_and_all_55_current_eligible_complete_set_midpoint_sums_exactly_1_with_zero_valuation_uplift_not_deployment_ready",
+      "current_status": "accepted_scoped_historical_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_42_of_42_positive_daily_YIELD_payments_3_1820_percent_realized_rate_positive_through_3_percent_alternative_before_external_friction_current_official_3_25_vs_4_percent_source_conflict_unresolved_no_post_conflict_payout_and_SOL_denominator_reset_to_591_11_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "complete_set_holding_reward",
-      "next_action": "monitor_current_official_terms_market_eligibility_and_public_daily_YIELD_receipts_without_funding_then_only_after_the_protected_boundary_and_explicit_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study",
+      "next_action": "do_not_poll_before_2026_08_28T00_20_00Z_then_reconcile_the_first_daily_distribution_wholly_postdating_the_conflicting_source_snapshot_against_unchanged_exact_pair_balances_and_only_after_the_protected_boundary_and_explicit_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study",
       "priority_rank": 1,
       "prohibited_shortcuts": [
         "Gamma holdingRewardsEnabled as account eligibility",
         "generic REWARD maker or liquidity activity as holding YIELD payout",
         "blank-condition YIELD activity as exact market attribution without proving the wallet full eligible position set",
         "top-holder non-overlap as population absence",
+        "choosing_between_conflicting_primary_rates_by_page_location_apparent_recency_or_convenience",
         "public_wallet_split_origin_as_owned_account_eligibility_or_cost_evidence"
       ],
-      "retry_trigger": "public_read_only_daily_persistence_or_program_change_monitoring_now_then_not_before_2026_08_29T23_40_00Z_for_authenticated_or_funded_work_with_explicit_authority",
+      "retry_trigger": "not_before_2026_08_28T00_20_00Z_for_one_public_post_conflict_distribution_refresh_then_not_before_2026_08_29T23_40_00Z_for_authenticated_or_funded_work_with_explicit_authority",
       "venue_scope": "polymarket_btc_eth_sol"
     },
     {
@@ -509,7 +514,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "ab4328c1ee4ab7bd1553ebf23e7b973f43535ae99cdeda1158a23d07a3c2fbf5",
+  "result_sha256": "dc7cc3a7ba04f820523fe08f9fbbb133e79de29fe1c8ea7fb78bd8aa926c1ff9",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -598,6 +603,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T11:17:06.0167913Z",
+  "updated_at_utc": "2026-08-26T11:30:21.9682715Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
