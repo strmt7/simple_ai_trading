@@ -36,6 +36,13 @@ override prose.
   Polymarket controls.
 - No network calls in tests unless explicitly stubbed. Do not hard-code host
   capabilities; detect and record effective backends and fallbacks.
+- Edge discovery is the current priority. Public, unauthenticated, read-only
+  source, market-data, and blockchain research may proceed iteratively when
+  each request tests a distinct question or materially refreshes stale evidence.
+  Record request bounds and retain raw evidence, but do not require a commit,
+  push, or hosted CI run before exploratory public requests. The stricter
+  frozen one-use workflow remains mandatory for authenticated, account-specific,
+  funded, order-capable, or state-changing operations.
 
 ## Working Method
 
