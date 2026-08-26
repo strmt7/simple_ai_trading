@@ -847,7 +847,14 @@ history prequalification; subscription and redemption require separate funded
 authority. Canonical candidate:
 `docs/model-research/action-value/binance-btc-simple-earn-idle-yield-candidate-v1-2026-08-26.json`,
 result SHA-256
-`09aba801a6c400c5595190ea88bf023d5910dfe4467fc6fa20742de9b17f3671`.
+`193495029148d0022fe1bf4158442226705a7f62a22dbf0eafdbf9a53bece785`.
+The same artifact rejects the adjacent current `0.2%~0.41%` locked BTC
+On-Chain Yields headline. Binance classifies On-Chain Yields as high risk,
+states rewards depend on the protocol and are not guaranteed, assigns smart-
+contract risk to users, and warns protocol failure can lose assets. The public
+BTC page does not identify the exact offering or bind principal return, reward
+asset, lock, redemption, fees, slashing, or protocol terms. Do not reopen on a
+higher APR alone.
 
 The next accepted Binance structural edge is LDUSDT incremental margin
 yield. Official product guidance says eligible USDT Simple Earn Flexible assets
