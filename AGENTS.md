@@ -60,6 +60,11 @@ override prose.
   a rate, fee, eligibility rule, or effective date by page location, apparent
   recency, or convenience; preserve both sources and require an explicit
   effective-date source or realized post-change evidence before promotion.
+- A displayed `Max` or `Up to` APR is not a full-principal account rate. Bind
+  the exact base and bonus tiers, caps, minimum, end time, account eligibility,
+  and fees before promotion. A public calculator is only a sensitivity: if its
+  horizon, tier, or campaign state is not source-exposed, do not reverse-engineer
+  those terms from outputs or call the estimate realized economics.
 - Before sampling variants of a reward endpoint, source-bind its filter and
   aggregation semantics and request the documented superset once. For
   Polymarket raw market rewards, `sponsored=true` folds sponsored daily rates

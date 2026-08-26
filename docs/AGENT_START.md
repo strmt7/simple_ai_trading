@@ -98,6 +98,20 @@ safety gate, blocks Stop, or submits an order.
   state-changing signed `GET` and needs separate authority. Canonical gate:
   `binance-soft-staking-idle-spot-yield-gate-v1-2026-08-26.json`, SHA-256
   `9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7`.
+- BTC Simple Earn is a new extension candidate for that same idle-native-token
+  family, not a tenth accepted edge. The current official page shows BTC
+  Flexible at `0.27% Max` with an APR breakdown of `0.02% + 0.25%`; it does
+  not expose the minimum, bonus cap, bonus end, account eligibility, or fees.
+  After requesting the public one-year calculator control, visible estimates
+  were 0.00002172 BTC on 0.01 BTC, 0.00003997 on 0.1 BTC, 0.00022247 on 1 BTC,
+  and 0.00202922 on 10 BTC. This confirms that the maximum is not a whole-
+  balance rate but cannot prove the hidden tier contract. Do not buy or retain
+  BTC, reverse-engineer the cap, or subscribe. Exact signed product, position,
+  and reward-history GETs are the next evidence gate only after both ephemeral
+  credentials and explicit read-only authority exist; every subscription or
+  redemption still needs separate funded authority. Canonical candidate:
+  `binance-btc-simple-earn-idle-yield-candidate-v1-2026-08-26.json`, SHA-256
+  `09aba801a6c400c5595190ea88bf023d5910dfe4467fc6fa20742de9b17f3671`.
 - The 2026-08-25 target-free structural-parity screens found no accepted edge.
   Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
   negative-risk events and zero gross-positive logical-implication bundles
