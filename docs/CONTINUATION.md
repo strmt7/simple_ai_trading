@@ -581,14 +581,36 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`35adedbfbb8b11776592602a9c64b692b90b12c7fe458f0e52b65ee218ca6d10`.
+`b5a65a83cdf1abaadf7d2a0215720b80266e06c50c23992f5a3ed3d6c638a1b4`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
 
-The highest-priority conditional execution lead is now Polymarket's
-post-observation oracle-to-CLOB-close maker window. The retained Round 26 public
-capture contains 10 consecutive complete BTC 5-minute conditions. In every row,
+The highest-priority Binance structural lead is now LDUSDT incremental margin
+yield. Official product guidance says eligible USDT Simple Earn Flexible assets
+can become LDUSDT, remain usable as USD-M Multi-Assets margin, and continue
+earning Real-Time APR. A public source-bound normalization of LDUSDTUSD by
+USDTUSD contains 505 aligned daily closes over 504 days. It returned 2.78729%
+cumulative appreciation, 2.01091% compound annualized over the full horizon,
+and a 2.74952% annualized latest-seven-day pace. Public exchange information
+still marks LDUSDT margin-eligible. This is a validated public gross incremental
+mechanism only for collateral already required by an independently justified
+futures strategy; it is not an accepted edge, standalone strategy, or reason to
+open risk. Same-account eligibility, exact Real-Time APR and position limits,
+conversion cash flow, owned reward lineage, normal conversion costs, and
+incremental margin, auto-exchange, liquidation, delay, tax, custody, and
+operational costs remain unproved. Canonical gate:
+`docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json`,
+result SHA-256
+`39b66e63c6131d13ff6e6df7f19521745b0de8a715eb3969bf333c485a9ab5f0`.
+When both designated ephemeral credentials exist, freeze one GET-only account
+prequalification. Only a positive gate plus separate explicit funded authority
+permits one minimum-size conversion round trip without opening a futures
+position.
+
+The next conditional execution lead is Polymarket's post-observation
+oracle-to-CLOB-close maker window. The retained Round 26 public capture contains
+10 consecutive complete BTC 5-minute conditions. In every row,
 the exact closing Chainlink TWAP direction matched the later resolution,
 aggregate winner bids grew only after local receipt of that observation, and a
 later public winner-token seller fill was recorded. Both Up and Down rows
@@ -600,7 +622,7 @@ redemption, relayer, opportunity, and pUSD-availability costs remain unbound.
 Canonical gate:
 `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json`,
 result SHA-256
-`d6f790d7de78fc4f1c527b9a6528ebb3faa31fc11d810d9daccec3e4a7d9084e`.
+`03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f49392`.
 Run a public prospective BTC/ETH/SOL monitor now. Only after
 `2026-08-29T23:40:00Z` and explicit authority may one minimum-size no-crossing
 authenticated order-acceptance probe be frozen; this artifact grants no order,
@@ -723,7 +745,10 @@ invalidates its recorded implementation hash and permits only one deliberate
 regeneration, not open-ended resampling.
 
 Evidence timestamps must use integer epochs or explicit invariant UTC/RFC3339
-parsing; locale-dependent implicit date parsing is prohibited. Similar quarter
+parsing; locale-dependent implicit date parsing is prohibited. Artifact creation
+and update times must come from the host clock or a captured source epoch, never
+from an estimated narrative time, and must not be later than the committing
+checkpoint. Similar quarter
 or expiry labels across Binance products do not establish a shared settlement
 timestamp or value. The historical futures settlement endpoint exposes a
 00:00 `deliveryTime` date marker while the current futures catalog and option
