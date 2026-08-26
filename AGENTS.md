@@ -63,6 +63,10 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    candidate in live source. Never build its index during high system load.
 4. Freeze causal inputs, costs, roles, rejection gates, and test access before
    viewing a new model outcome.
+   Before a multi-request public screen, validate parsing and aggregation on one
+   retained response. Use non-alias helper names and property-bearing objects;
+   retain raw responses before downstream calculations so a local calculation
+   failure reuses evidence instead of refetching it.
 5. Keep edits scoped, match existing patterns, remove only resulting orphans,
    and never revert unrelated work.
 6. Keep numeric evidence in canonical JSON/CSV and regenerate charts from it.

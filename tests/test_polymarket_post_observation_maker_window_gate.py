@@ -12,7 +12,7 @@ EXPECTED_HASH = "03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f4939
 PROSPECTIVE_PATH = ROOT / "docs/model-research/action-value/polymarket-post-observation-prospective-v2-2026-08-26.json"
 EXPECTED_PROSPECTIVE_HASH = "079925ec06eda0cdfc5851d71d7fc76df96de6f03883bcc70edc0f36da28d421"
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-EXPECTED_REGISTRY_HASH = "c9592d8c559b92c33361212394a26b6f10b63f024c9747fe2168939e3a419774"
+EXPECTED_REGISTRY_HASH = "ab4328c1ee4ab7bd1553ebf23e7b973f43535ae99cdeda1158a23d07a3c2fbf5"
 
 
 def _load() -> dict[str, object]:

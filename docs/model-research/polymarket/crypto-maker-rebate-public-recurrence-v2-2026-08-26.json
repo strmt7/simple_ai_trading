@@ -1,0 +1,147 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "public_program_payment_recurrence_proved": true,
+    "publicly_proven_payout_for_a_fresh_hypothetical_order": "0",
+    "status": "realized_public_crypto_rebate_recurrence_proved_but_complete_after_cost_maker_edge_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_owned_by_project": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T11:17:06.0167913Z",
+  "exact_scope_day": {
+    "date": "2026-08-25",
+    "gamma_market_join": {
+      "batch_size": 50,
+      "batches": [
+        {"batch_index": 0, "payload_sha256": "a618973c581a3838b523ca5aff9a8fd4d24b9fcf6be14898f682a37edbee5a55", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 1, "payload_sha256": "3b2552518f41a999a94158a59d1afd3b7466bc51f8c13fcd5411009b03969788", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 2, "payload_sha256": "d98e6a6830f81a2dd02de2ffecffa2ba3f3a97a988e61b0982faf6241e34c393", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 3, "payload_sha256": "2b72ea2d8b3ed50cfc45b08dba7b188ca6692ad1d3bfdb5ae7cb983602104433", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 4, "payload_sha256": "e50442637c666b042b8bfa51f726faac9babb7cbd18fc9b75dd5c41f275af364", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 5, "payload_sha256": "bf2a6e76022b0e29e61564257c557701c9159bdfea7680febcdb7124ee8baa92", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 6, "payload_sha256": "abc4fbcfc5d07f644ad318e1fd393e294dd4e7588b3634fe30036ec3cb2765a7", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 7, "payload_sha256": "345c6e93dba0707f7bb670d1f200c79577fbb8c1f1eb74daaf3c3de1a5646967", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 8, "payload_sha256": "0af4d98723bf04901167989420de18bf072fb584c9ed2c876218278027b09d56", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 9, "payload_sha256": "45ee7ebe21953d3cb269c4e91b34f591d0a053fc56698bd681851ef19a3869b7", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 10, "payload_sha256": "c563a09cd6d78d9575ea6781342ba540b7bcef7b49d363f06ee8064eebab0c5a", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 11, "payload_sha256": "0fa7115d830ed0743dae5f085d9b4c38555e0a9d3a255565b6b60967a036fe2f", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 12, "payload_sha256": "a7687eae8bd75eda144ea4c648853cb54f56a161c8b2a9e7b04f75780c0ab830", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 13, "payload_sha256": "268a33f12f46748f325b9d08fa5a806fb2c067776417dfd382dc72b01eba417d", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 14, "payload_sha256": "0c286259274df04af9832bb005990a95bc0323ffc983e4e2163b55f1437a2a78", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 15, "payload_sha256": "c861939b0e685d57820cbd9bad14b6846e3944394af2631a51bf503b8e9ae78f", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 16, "payload_sha256": "9ca92610a8e61348535b5ea35de88e6a19ec69f49c546c2cbeb83319a76e2445", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 17, "payload_sha256": "af7f118a8faae03e49f3a9202523d77f01f249b0a8c49708d2565c556e2cdc73", "requested_conditions": 50, "returned_markets": 50},
+        {"batch_index": 18, "payload_sha256": "faf7ea21d2ee36bfbe85db7463dd7ce4a3556f8629ca2f913b3bbe0ab3a6d751", "requested_conditions": 5, "returned_markets": 5}
+      ],
+      "joined_market_count": 905,
+      "missing_market_count": 0
+    },
+    "maker_wallet": "0xb27bc932bf8110d8f78e55da7d5f0497a18b5b82",
+    "rebate_response": {
+      "payload_sha256": "e5295a5325f36df799601d0cc4b2fab13439999a340347468afcb1a7f8bf3e72",
+      "row_count": 905,
+      "total_rebate_usdc": "7457.259568",
+      "url": "https://clob.polymarket.com/rebates/current?date=2026-08-25&maker_address=0xb27bc932bf8110d8f78e55da7d5f0497a18b5b82"
+    },
+    "scoped_btc_eth_sol": {
+      "all_fee_rates": ["0.07"],
+      "all_fees_enabled": true,
+      "all_rebate_rates": ["0.2"],
+      "assets": [
+        {"asset": "btc", "durations": ["15m", "4h", "5m"], "maximum_rebate_usdc": "153.534793", "minimum_rebate_usdc": "0.001456", "row_count": 185, "total_rebate_usdc": "5337.144383"},
+        {"asset": "eth", "durations": ["4h", "5m"], "maximum_rebate_usdc": "54.610023", "minimum_rebate_usdc": "0.179116", "row_count": 294, "total_rebate_usdc": "1108.140324"},
+        {"asset": "sol", "durations": ["15m", "4h", "5m"], "maximum_rebate_usdc": "25.722460", "minimum_rebate_usdc": "0.256686", "row_count": 189, "total_rebate_usdc": "572.046325"}
+      ],
+      "durations": [
+        {"duration": "5m", "row_count": 458, "total_rebate_usdc": "4594.159434"},
+        {"duration": "15m", "row_count": 192, "total_rebate_usdc": "2043.669095"},
+        {"duration": "4h", "row_count": 18, "total_rebate_usdc": "379.502503"}
+      ],
+      "row_count": 668,
+      "share_of_wallet_total_rebate": "0.9410066751749133415618889251",
+      "total_rebate_usdc": "7017.331032"
+    }
+  },
+  "limitations": [
+    "The top-volume cohorts are selected after observing public volume and are not representative random samples or causal strategy cohorts.",
+    "MAKER_REBATE activity rows are aggregate wallet payments with blank condition and title fields; they may include non-crypto categories unless joined through the market-level rebate endpoint.",
+    "Only one wallet-day was exhaustively joined to markets, so the 94.10 percent BTC ETH SOL share cannot be applied to other wallets or dates.",
+    "The seven-day leaderboard period is not documented as sharing the exact activity query second boundaries, and leaderboard volume includes no public maker-only decomposition. Receipt-to-volume figures are diagnostics, not rebate yields.",
+    "The public leaderboard does not document whether its PnL field includes rebates, unrealized positions, settlement timing, deposits, withdrawals, or every execution cost. PnL and rebates must not be added or netted from this evidence.",
+    "A rebate receipt proves a payout after prior maker fills. It does not reveal queue position, quote duration, paired-fill probability, cancellation latency, adverse selection, inventory path, orphan loss, capital at risk, or complete after-cost profit.",
+    "Public wallets are not project-owned accounts and do not prove project eligibility, execution, or authority.",
+    "Large rebates to the highest-volume wallets do not authorize manufactured volume, self-matching, wash trading, or copying an unidentified wallet strategy."
+  ],
+  "month_volume_cohort_14_day_receipts": {
+    "activity_end_epoch": 1787742856,
+    "activity_start_epoch": 1786533256,
+    "aggregate_rebate_usdc": "234881.8839",
+    "leaderboard_payload_sha256": "2bb6f7dd66e6d928ec8aca91fd4503a69c9d01b1038ec2f0c39cabfaefd26f70",
+    "leaderboard_url": "https://data-api.polymarket.com/v1/leaderboard?category=CRYPTO&timePeriod=MONTH&orderBy=VOL&limit=10&offset=0",
+    "wallet_count": 10,
+    "wallets_with_all_14_utc_dates": 8,
+    "wallets_with_receipts": 10,
+    "wallets": [
+      {"activity_payload_sha256": "1665f3efbb86bffc407b8625a67175918f72b7552b6f05dbd7f0d84ac983b62a", "distinct_utc_dates": 14, "rank": 1, "receipt_count": 14, "total_rebate_usdc": "97775.3626", "wallet": "0xb27bc932bf8110d8f78e55da7d5f0497a18b5b82"},
+      {"activity_payload_sha256": "dcdd0017fb515d9c9d6faed2e2c4052a45565de43dba7bbf13be711dfa99a776", "distinct_utc_dates": 14, "rank": 2, "receipt_count": 14, "total_rebate_usdc": "14069.3994", "wallet": "0xeebde7a0e019a63e6b476eb425505b7b3e6eba30"},
+      {"activity_payload_sha256": "4750436fa234628c5c252fd7050655f556dcd582c188d178a4dd0f7092c0a322", "distinct_utc_dates": 14, "rank": 3, "receipt_count": 14, "total_rebate_usdc": "9103.3404", "wallet": "0xb55fa1296e6ec55d0ce53d93b9237389f11764d4"},
+      {"activity_payload_sha256": "9ed933d2a37ed21bead712e88fb891220690ab5dc02c99caaecd6314966666cf", "distinct_utc_dates": 14, "rank": 4, "receipt_count": 14, "total_rebate_usdc": "13296.5290", "wallet": "0x0cb038487586d1119b165466072e9baf666f3a90"},
+      {"activity_payload_sha256": "fc8d96f3c470faf06fba25f3fd3c5da37a016d7aa6c33ca76258529ca2cae7eb", "distinct_utc_dates": 14, "rank": 5, "receipt_count": 14, "total_rebate_usdc": "8751.3710", "wallet": "0x06dc51826bc524d9a83770e7de9dd7e005b04524"},
+      {"activity_payload_sha256": "fc4201e0db2d7ee29e0d1d81254532e4c27fdbaa8dbb8cfeb9c603f086c6ec99", "distinct_utc_dates": 13, "rank": 6, "receipt_count": 13, "total_rebate_usdc": "38426.7752", "wallet": "0xaa1a4f31c010d4a63fc49770d4ca2d69ea370602"},
+      {"activity_payload_sha256": "870a58957aa59c601f0e028f534e57d998315b16963dbf7c8927fae49bf7334c", "distinct_utc_dates": 14, "rank": 7, "receipt_count": 14, "total_rebate_usdc": "7298.8384", "wallet": "0x997cda7b31612e3c394bfb55440619f3f689251e"},
+      {"activity_payload_sha256": "dd28c904a7dfd03e1e856886d4efe8b11f02e36d15fc9ccd3266d29c6d57292d", "distinct_utc_dates": 14, "rank": 8, "receipt_count": 14, "total_rebate_usdc": "821.5437", "wallet": "0x48ac40fc545cf327edd5365435c3a9f385614a7e"},
+      {"activity_payload_sha256": "9312309e6c07a1c83f549ca8005639fb8e1f295ca60a3270df4a3a9a5de6de56", "distinct_utc_dates": 12, "rank": 9, "receipt_count": 12, "total_rebate_usdc": "17668.4047", "wallet": "0x21f4c1a1be34a39a7bc20985df4b7e5a39fb691d"},
+      {"activity_payload_sha256": "0f2cf48dc3942fa549db1bfaea2df9c4f2d2ffeeaf1934aab589a91d58cd5c45", "distinct_utc_dates": 14, "rank": 10, "receipt_count": 14, "total_rebate_usdc": "27670.3195", "wallet": "0xa0e72d5575095199ae08ce0dce447f21b7249461"}
+    ]
+  },
+  "request_ledger": {
+    "canonical_evidence_response_count": 46,
+    "discarded_exploratory_or_repeated_response_count": 34,
+    "direct_public_http_response_count": 80,
+    "inefficiency": "A PowerShell helper name collided with Get-History and ordered hashtables were then passed to property-based aggregation, causing avoidable repeat retrieval after otherwise valid responses.",
+    "workflow_correction": "Future multi-request screens must validate aggregation on one retained response, use non-alias helper names and PSCustomObject rows, retain every raw response before downstream calculation, and reuse retained evidence after local calculation failures instead of refetching."
+  },
+  "result_sha256": "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612",
+  "schema_version": "polymarket-crypto-maker-rebate-public-recurrence-v2",
+  "sources": [
+    {"payload_sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a", "role": "official_current_maker_rebate_terms", "url": "https://docs.polymarket.com/market-makers/maker-rebates.md"},
+    {"payload_sha256": "eb667be31894ac4128d4051c8e2155bbb10449fa2d616d6cf9eeb5619093c9fc", "role": "official_public_activity_endpoint_contract", "url": "https://docs.polymarket.com/api-reference/core/get-user-activity.md"},
+    {"payload_sha256": "9c2fad5dc525c3c62d0cdc8d0b3ebc8a9f9eaaac24afbf628fa67915bdc56005", "role": "official_public_market_level_rebate_endpoint_contract", "url": "https://docs.polymarket.com/api-reference/rebates/get-current-rebated-fees-for-a-maker.md"},
+    {"payload_sha256": "ab99ae165ab0d0f689b095ec193758401668249ee0cc43d201d79df17b9aec6c", "role": "official_public_crypto_leaderboard_endpoint_contract", "url": "https://docs.polymarket.com/api-reference/core/get-trader-leaderboard-rankings.md"}
+  ],
+  "week_volume_cohort_7_day_diagnostic": {
+    "activity_end_epoch": 1787742951,
+    "activity_start_epoch": 1787138151,
+    "aggregate_crypto_volume": "36883007.879367",
+    "aggregate_public_rebate_usdc": "142029.9551",
+    "aggregate_receipt_to_crypto_volume_bips_diagnostic_only": "38.5082354358236",
+    "leaderboard_payload_sha256": "fd3513ccb245c2be9f12f48ada7fc9029083bf53ea1dd24a1ce29c1bc3d79b1a",
+    "leaderboard_url": "https://data-api.polymarket.com/v1/leaderboard?category=CRYPTO&timePeriod=WEEK&orderBy=VOL&limit=10&offset=0",
+    "maximum_wallet_ratio_bips_diagnostic_only": "88.8101942615428",
+    "minimum_wallet_ratio_bips_diagnostic_only": "1.54653987333974",
+    "negative_public_pnl_wallet_count_do_not_net_with_rebates": 2,
+    "wallet_count": 10,
+    "wallets_with_receipts_on_all_7_utc_dates": 10,
+    "wallets": [
+      {"activity_payload_sha256": "dec11a6e7f8b0fb408d4d53dbf5d3ba829f4b2f4305b68bc1f77d07e1056d11f", "crypto_pnl_do_not_net": "9753.9891892944", "crypto_volume": "9151382.121815", "rank": 1, "receipt_to_volume_bips_diagnostic_only": "88.8101942615428", "receipt_total_usdc": "81273.6024", "wallet": "0xb27bc932bf8110d8f78e55da7d5f0497a18b5b82"},
+      {"activity_payload_sha256": "74a5f5ff6c80ef7c742062313bb63cb1fa1eaa1a2738bd75ae42501105fd4967", "crypto_pnl_do_not_net": "10777.56612645", "crypto_volume": "4943074.025674", "rank": 2, "receipt_to_volume_bips_diagnostic_only": "17.5951334226966", "receipt_total_usdc": "8697.4047", "wallet": "0xeebde7a0e019a63e6b476eb425505b7b3e6eba30"},
+      {"activity_payload_sha256": "5ecc3b25ae312caeecd8d6e7c5e9d951c1b243ffc3c39a1247aeda47224fade2", "crypto_pnl_do_not_net": "7770.19210066382", "crypto_volume": "3868605.066652", "rank": 3, "receipt_to_volume_bips_diagnostic_only": "42.8703853566345", "receipt_total_usdc": "16584.8590", "wallet": "0x21f4c1a1be34a39a7bc20985df4b7e5a39fb691d"},
+      {"activity_payload_sha256": "9b64ac50428f7d9722da8586dae7de3b1d37d822934d9c7252de20ea26f46ee5", "crypto_pnl_do_not_net": "17369.1562915408", "crypto_volume": "3429152.347368", "rank": 4, "receipt_to_volume_bips_diagnostic_only": "7.75782709695549", "receipt_total_usdc": "2660.2771", "wallet": "0xb55fa1296e6ec55d0ce53d93b9237389f11764d4"},
+      {"activity_payload_sha256": "01549cb23f3a872ca27f3c4e76f091f505e2aefdd41c37e9018e10ae873394ec", "crypto_pnl_do_not_net": "28188.3995867297", "crypto_volume": "3080547.052454", "rank": 5, "receipt_to_volume_bips_diagnostic_only": "20.5809412810281", "receipt_total_usdc": "6340.0558", "wallet": "0x0cb038487586d1119b165466072e9baf666f3a90"},
+      {"activity_payload_sha256": "57fe924b7df5b117c40ca0fdf8fab66c680b411a09048ae149dc6b71de9ddb8b", "crypto_pnl_do_not_net": "6206.85130853151", "crypto_volume": "2984335.603673", "rank": 6, "receipt_to_volume_bips_diagnostic_only": "26.2063260927304", "receipt_total_usdc": "7820.8472", "wallet": "0x9d57c42e847173d06841703825d3fe2299e456ea"},
+      {"activity_payload_sha256": "e78cfa75bc7047c6aba07220c7d58cc01435de26cdfe06b8ae3fdef7ba08ec18", "crypto_pnl_do_not_net": "8379.10838749364", "crypto_volume": "2728017.604156", "rank": 7, "receipt_to_volume_bips_diagnostic_only": "1.54653987333974", "receipt_total_usdc": "421.8988", "wallet": "0xee65685de42f8de9a03b4c53ee77d56a20d2cfc9"},
+      {"activity_payload_sha256": "b6c559bfa5ea1dffaaea2554c83d68ed2e5113603c3812265b97ca1d5c9cb185", "crypto_pnl_do_not_net": "34873.3183089023", "crypto_volume": "2378081.501354", "rank": 8, "receipt_to_volume_bips_diagnostic_only": "24.7295262868477", "receipt_total_usdc": "5880.8829", "wallet": "0x06dc51826bc524d9a83770e7de9dd7e005b04524"},
+      {"activity_payload_sha256": "782eae3c81ab1993b4abae820fa296f235bc8e568c082e0c3450a8cf697dc824", "crypto_pnl_do_not_net": "-2846.22510844824", "crypto_volume": "2196180.783222", "rank": 9, "receipt_to_volume_bips_diagnostic_only": "46.7010465547965", "receipt_total_usdc": "10256.3941", "wallet": "0x31393e2f8333d4a6e2e31ca6424defe8b6cb9e2e"},
+      {"activity_payload_sha256": "384ad47d05bedc30a578493777db8e23dfa72485c287824b4345f6d1d1c7bf23", "crypto_pnl_do_not_net": "-109864.616979944", "crypto_volume": "2123631.772999", "rank": 10, "receipt_to_volume_bips_diagnostic_only": "9.85920971149920", "receipt_total_usdc": "2093.7331", "wallet": "0x1465b79bff7992bc703e1aafb3683b1089647072"}
+    ]
+  }
+}

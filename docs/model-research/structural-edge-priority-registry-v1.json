@@ -461,17 +461,23 @@
         {
           "path": "docs/model-research/polymarket/crypto-maker-rebate-economics-v1.json",
           "result_sha256": "09f67265772716873c625ada816140332430697894f30af22c05bd0dd6422c8a"
+        },
+        {
+          "path": "docs/model-research/polymarket/crypto-maker-rebate-public-recurrence-v2-2026-08-26.json",
+          "result_sha256": "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
         }
       ],
-      "current_status": "conditional_rebate_arithmetic_only_public_payout_floor_zero_and_one_fill_loss_dominates",
+      "current_status": "realized_public_program_recurrence_proved_top_10_weekly_crypto_volume_wallets_received_rebates_on_all_7_dates_and_one_wallets_2026_08_25_payment_joined_to_668_BTC_ETH_SOL_markets_for_7017_331032_USDC_but_fresh_order_payout_floor_complete_PnL_queue_fill_adverse_selection_orphan_and_capital_evidence_remain_unproved",
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates",
-      "next_action": "after_the_protected_boundary_freeze_a_prospective_authenticated_fill_rebate_and_orphan_study_only_if_explicit_authority_exists",
+      "next_action": "do_not_poll_public_wallets_again_unless_terms_change_then_after_the_protected_boundary_freeze_a_prospective_authenticated_owned_fill_rebate_inventory_adverse_selection_and_orphan_study_only_if_explicit_authority_exists",
       "priority_rank": 14,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
         "both-fill assumption",
-        "public books as own fill or queue evidence"
+        "public books as own fill or queue evidence",
+        "aggregate wallet activity as crypto specific without a condition join",
+        "top volume wallet receipts or receipt to volume diagnostics as complete profit"
       ],
       "retry_trigger": "not_before_2026_08_29T23_40_00Z_and_only_with_explicit_account_and_paper_or_funding_authority",
       "venue_scope": "polymarket_btc_eth_sol"
@@ -503,7 +509,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "c9592d8c559b92c33361212394a26b6f10b63f024c9747fe2168939e3a419774",
+  "result_sha256": "ab4328c1ee4ab7bd1553ebf23e7b973f43535ae99cdeda1158a23d07a3c2fbf5",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -592,6 +598,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T11:06:13.9617837Z",
+  "updated_at_utc": "2026-08-26T11:17:06.0167913Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
