@@ -1111,6 +1111,22 @@ Canonical gate:
 result SHA-256
 `076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51`.
 
+Current USDT Flexible bonuses are accepted as one scoped, time-limited
+same-asset gross-yield family only for independently held idle USDT in an
+eligible verified master account. The global offer adds 4% Bonus APR to the
+first 500 USDT through 2026-09-07; a subscription before 2026-08-27 has at most
+12 bonus-accrual days, producing 13.1507 bips or 0.6575 USDT. Separate new-user
+offers add 30% for seven days on the first 200 USDT for a closed published LATAM
+country list, or 15% for Brazil; those produce 57.5342 and 28.7671 bips on capped
+principal. Do not assume bonuses stack, infer region or new-user status, or
+register, deposit, acquire USDT, or move operational principal to chase them.
+Exact account eligibility, product capacity, variable Real-Time APR, owned
+distributions, and redemption behavior remain unproved; credentials are absent
+and no subscription or account request was made. Canonical gate:
+`docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json`.
+Result SHA-256
+`0126a1feef4e8bb5c46a7b7cab45e2471857a2e105fe0f41d73d4710b6abceda`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
