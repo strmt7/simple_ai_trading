@@ -1,5 +1,5 @@
 {
-  "accepted_edge_count": 13,
+  "accepted_edge_count": 14,
   "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one current Polymarket pUSD taker-fee rebate overlay for independently justified legitimate organic BTC ETH SOL taker flow after the direct wallet tier is effective without manufactured volume, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current Binance quote-native promotional fee reduction for independently justified organic BTC ETH SOL spot flow without quote acquisition VIP chasing or extra volume, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion, and one current automatic same-token USDe holding-reward edge only for eligible USDe already independently held on Binance for at least 24 hours without acquisition or balance retention for the reward; zero deployment-ready or fully external-cost-and-account-condition edges",
   "authority": {
     "live_trading_authority": false,
@@ -937,9 +937,40 @@
       ],
       "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority_and_an_independently_existing_or_required_Flexible_Loan_question",
       "venue_scope": "binance_Flexible_Loans_and_Simple_Earn_Flexible_collateral"
+    },
+    {
+      "blocking_evidence": [
+        "exact account KYC and regional Write to Earn eligibility",
+        "owned eligible genuinely useful Binance Square posts cashtags or chart widgets and seven-day attribution windows",
+        "authentic external reader clicks eligible fee-bearing trades and exact fee rows without self controlled linked circular or manufactured activity",
+        "owned weekly base commission rows threshold treatment and USDC Funding Account payouts",
+        "audience acquisition content production moderation legal compliance tax support and operating costs"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json",
+          "result_sha256": "29ec95146998535fde295dfc830a2639b9d10964e7f9e36c17e44e628dc454d1"
+        }
+      ],
+      "current_status": "accepted_scoped_current_direction_independent_base_20_percent_gross_USDC_creator_commission_only_on_authentic_external_reader_fee_bearing_trades_attributed_after_engagement_with_genuinely_useful_eligible_content_KYC_region_attribution_owned_payout_audience_demand_and_all_content_compliance_and_operating_costs_unproved_not_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_square_organic_write_to_earn_fee_overlay",
+      "next_action": "do_not_publish_or_request_reader_trades_when_explicit_read_only_account_authority_and_ephemeral_credentials_exist_prove_KYC_region_eligibility_owned_eligible_post_attribution_authentic_external_reader_fee_rows_weekly_base_commission_threshold_handling_and_USDC_payout_without_double_counting_referral_or_other_commissions",
+      "priority_rank": 27,
+      "prohibited_shortcuts": [
+        "self_earning_operator_controlled_linked_account_circular_wash_or_manufactured_reader_trading",
+        "encouraging_unnecessary_unsuitable_leveraged_or_loss_making_trades_for_commission",
+        "misleading_deceptive_plagiarized_spammy_or_undisclosed_promotional_content",
+        "crediting_zero_fee_unattributed_older_than_seven_day_or_sub_threshold_activity",
+        "crediting_30_or_50_percent_before_owned_finalized_weekly_rank_and_payout",
+        "double_counting_the_same_reader_fee_with_referral_affiliate_broker_or_other_commission",
+        "calling_gross_USDC_commission_after_cost_profit"
+      ],
+      "retry_trigger": "account_confirmed_KYC_and_regional_eligibility_plus_authentic_independently_existing_external_reader_engagement_and_explicit_read_only_evidence_authority_separate_authority_for_any_content_publication_account_change_transfer_withdrawal_or_operator_trade",
+      "venue_scope": "binance_Square_eligible_content_and_authentic_external_reader_fee_bearing_trades"
     }
   ],
-  "result_sha256": "69039bd49ca43a23822a5ce8997c80bc7cf7d629bf4c08f8ffc00507644864b7",
+  "result_sha256": "03a280849e16d8dcf171947e909342d37dd1a6ae4bd0ecca906b864fdea33304",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1063,6 +1094,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T21:19:18.3535339Z",
+  "updated_at_utc": "2026-08-26T21:23:36.4245858Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

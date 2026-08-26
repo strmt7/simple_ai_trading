@@ -19,7 +19,7 @@ REFERRAL_HASH = "f7aec4a5340cba42abb120a43cda1ed1fa4d5b03632b3c062c0d00d7b5636cf
 FLEXIBLE_LOAN_HASH = (
     "ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182"
 )
-REGISTRY_HASH = "69039bd49ca43a23822a5ce8997c80bc7cf7d629bf4c08f8ffc00507644864b7"
+REGISTRY_HASH = "03a280849e16d8dcf171947e909342d37dd1a6ae4bd0ecca906b864fdea33304"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -124,9 +124,9 @@ def test_registry_binds_referral_and_flexible_loan_without_overpromotion() -> No
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 13
+    assert registry["accepted_edge_count"] == 14
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 27))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 28))
 
     referral = next(
         row
