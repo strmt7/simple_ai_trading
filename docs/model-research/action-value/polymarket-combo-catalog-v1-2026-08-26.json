@@ -1,0 +1,65 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "catalog_complete": false,
+    "decision": "rejected_incomplete_catalog_and_no_observed_scoped_multi_leg_candidate",
+    "reason": "The frozen 50-request ceiling retained 5000 volume-ranked markets but the last page still returned a continuation cursor. The observed population contained one genuine BTC-related market, no ETH market, no Solana market, and one false SOL substring from the sports team Solihull Moors FC. A Combo requires at least two compatible legs, and executable quote economics are authenticated and unobserved.",
+    "rerun_permitted": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-combo-catalog-contract-v1.json",
+    "result_sha256": "7f921ac664272fe193a6d2d1a729a555303a561ca44a309a3067538f4a660ff0"
+  },
+  "observed_population": {
+    "ambiguous_multi_asset_matches": 0,
+    "first_market_volume": "59984216.73799799",
+    "genuine_scoped_asset_counts": {"BTC": 1, "ETH": 0, "SOL": 0},
+    "last_market_volume": "7.142856",
+    "market_count": 5000,
+    "page_count": 50,
+    "page_size": 100,
+    "sorted_nonincreasing_by_volume": true,
+    "terminal_cursor_seen": false,
+    "unique_condition_count": 5000
+  },
+  "raw_evidence": {
+    "directory": "data/polymarket-combo-catalog-v1",
+    "first_page_sha256": "b170fdf90e5d5e5df3cf6d5d630f004baa9a081d3182f773d18e604fe97bf6fc",
+    "last_page_sha256": "e3dbbb064c79c8f50184e1119b6e725cc725288e23ea355dad2a0238f9c1faf7",
+    "manifest_canonical_sha256": "99029fa53aa1e20d1f5f0d436586a82b876bb70cf870c7b7e86052bc9d834cc1",
+    "observed_first_file_mtime_ms": 1787747590849,
+    "observed_last_file_mtime_ms": 1787747596359
+  },
+  "result_sha256": "61dd2782963295bae975ed4f929b6191f23bfe0970ea02d56c6ec0fc9412a2ae",
+  "schema_version": "polymarket-combo-catalog-result-v1",
+  "scoped_market": {
+    "asset": "BTC",
+    "condition_id": "0x4bd2d6744cfb40bd33520963069947643140e9facccec0b44d1e61944aa96997",
+    "market_id": "665258",
+    "outcome_prices": ["0.0205", "0.9795"],
+    "outcomes": ["Yes", "No"],
+    "position_ids": [
+      "539336374603501151128676107814175974189098698382616506942842761162575052800",
+      "539336374603501151128676107814175974189098698382616506942842761162575052801"
+    ],
+    "rank_by_volume": 108,
+    "slug": "will-china-unban-bitcoin-by-2027",
+    "title": "Will China unban Bitcoin by 2027?",
+    "volume": "1060440.8978619997"
+  },
+  "source_terms": {
+    "combo_execution_is_atomic_after_accepted_quote": true,
+    "combo_market_catalog_is_public": true,
+    "combo_quote_is_public": false,
+    "combo_requires_leg_count_minimum": 2,
+    "combo_yes_payoff": "one_pUSD_only_when_every_selected_leg_wins_else_zero",
+    "market_catalog_order": "volume_descending"
+  },
+  "substring_false_positive": {
+    "market_id": "3602688",
+    "matched_term": "sol",
+    "reason": "slug abbreviation denotes Solihull Moors FC in a sports market and is unrelated to Solana",
+    "slug": "enl-scu-sol-2026-08-28-spread-home-1pt5",
+    "title": "Spread: Scunthorpe United FC (-1.5)"
+  }
+}

@@ -247,6 +247,41 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-usd1-usdt-funding-differential-v1-2026-08-26.json`,
   result SHA-256
   `0d82da55d7687b0f26dc12103f38394b3325542a62af10abf4d34609fa5a6e79`.
+- Polymarket Combos are source-proved atomic multi-leg RFQ executions, but
+  executable quote requests require authenticated builder/account access. The
+  public combo-leg catalog screen retained 5,000 unique volume-ranked markets
+  under its frozen 50-request ceiling and still received a continuation cursor,
+  so complete-catalog coverage is unproved. The observed population contained
+  one genuine BTC-related leg, zero ETH legs, zero Solana legs, and one rejected
+  sports false positive caused by `sol` abbreviating Solihull. No scoped
+  multi-leg candidate existed. Do not repeat or enlarge the same incomplete
+  contract. Canonical result:
+  `docs/model-research/action-value/polymarket-combo-catalog-v1-2026-08-26.json`,
+  result SHA-256
+  `61dd2782963295bae975ed4f929b6191f23bfe0970ea02d56c6ec0fc9412a2ae`.
+- Polymarket Perps now expose BTC, ETH, and SOL perpetuals plus a documented
+  conditional 6% APR OI reward, but the account or mapped entity must sustain at
+  least $1 million of daily-average gross OI. The frozen Perps-versus-Binance
+  perpetual attempt retained a complete BTC source window, then stopped without
+  retry on the first `429` during ETH pagination. It also exposed an unfrozen
+  exact-timestamp assumption: Polymarket funding rows arrived 4-172 ms after the
+  UTC hour, so exact equality produced zero aligned rows. A non-authoritative
+  nearest-hour BTC diagnostic failed all training, validation, and test roles
+  after conditional reward, 20-bps execution, and two-leg capital hurdles.
+  Terminal artifact SHA-256:
+  `01bf5ea0a3f293e8e14b2f484ac2715c6c326ddfab57dba51873bf16e76a62e4`.
+  A separate offline source-derived hedge then tested short Polymarket BTC Perps
+  against equal-base long Binance BTC spot, which avoids a second funding leg.
+  Missing Polymarket hours were valued at zero. All three fixed ten-day roles and
+  every direction/volatility slice had positive excess before one-time friction,
+  but only 25.7920876712 bps remained after the conditional reward and two
+  unlevered 5% annual capital hurdles. The frozen 50-bps round-trip-and-basis
+  gate therefore rejected it at -24.2079123288 bps. It is a ranked conditional
+  lead, not an edge; require exact authenticated eligibility and an all-in cost
+  ceiling below 25.7920876712 bps before any book request. Canonical result:
+  `docs/model-research/action-value/polymarket-perps-binance-spot-oi-carry-v1-2026-08-26.json`,
+  result SHA-256
+  `0d89a4fee61cf51c2f5f8c2491c9d8c3cc4a5e08046206dbe2ba20f7ba3ea934`.
 - Binance Prediction Trading versus Polymarket was frozen as a distinct
   structural screen, permitting only exact BTC/ETH/SOL payout-rule equivalence.
   It stopped before market access. The official generated Markdown said market
@@ -645,7 +680,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`066debe7a70e50432005f7284135e3ab54b08e599fc28469e5ff4ad7b3885212`.
+`544ea6c0980e8be15d08c7b887637f7ac05803ded687cb7b28b948266a0951a4`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -939,8 +974,9 @@ not grant account, funding, order, or transaction authority.
    Polymarket binary complete-set taking, negative-risk parity, logical
    threshold/deadline implication parity, Binance spot triangles, Binance
    option vertical/convexity parity, option box parity, or Polymarket exact
-   cross-condition duplicate discovery or paired-maker reward snapshots as if
-   repetition could create an edge.
+   cross-condition duplicate discovery, the incomplete Combo catalog contract,
+   the terminal Polymarket/Binance Perps OI-carry contract, or paired-maker
+   reward snapshots as if repetition could create an edge.
    A repeat is justified only by a frozen prospective sampling contract or
    materially new fee/execution evidence.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables

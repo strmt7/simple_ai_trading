@@ -516,9 +516,43 @@
       ],
       "retry_trigger": "explicit_read_only_Binance_Prediction_credential_authority",
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
+    },
+    {
+      "blocking_evidence": [
+        "authenticated realized proof of the exact accounts 1000000 USD daily-average gross-OI reward eligibility and payment",
+        "exact Polymarket crypto Perps and Binance BTC spot account fees",
+        "synchronized equal-base entry and exit depth with total round-trip basis conversion and transfer friction below 25.7920876712 bips",
+        "pUSD USDT basis custody withdrawal liquidation auto-deleveraging and reconciliation evidence",
+        "liquidity latency and prospective owned paper-fill persistence"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-binance-perps-oi-carry-terminal-v1-2026-08-26.json",
+          "result_sha256": "01bf5ea0a3f293e8e14b2f484ac2715c6c326ddfab57dba51873bf16e76a62e4"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-perps-binance-spot-oi-carry-v1-2026-08-26.json",
+          "result_sha256": "0d89a4fee61cf51c2f5f8c2491c9d8c3cc4a5e08046206dbe2ba20f7ba3ea934"
+        }
+      ],
+      "current_status": "BTC_short_Polymarket_Perps_long_Binance_spot_was_positive_before_one_time_friction_in_all_three_fixed_ten_day_roles_and_every_direction_and_volatility_slice_with_88_3333_percent_hourly_source_coverage_but_only_25_7920876712_bips_remained_after_conditional_6_percent_OI_reward_and_two_leg_5_percent_annual_capital_hurdles_so_the_frozen_50_bips_round_trip_and_basis_gate_rejected_it_the_related_perp_perp_attempt_stopped_on_rate_limit_and_its_BTC_diagnostic_failed_every_role",
+      "market_direction_forecast_required": false,
+      "mechanism": "conditional_polymarket_perps_OI_reward_and_funding_hedged_by_binance_spot",
+      "next_action": "do_not_refresh_public_history_or_books_when_exact_authenticated_account_eligibility_and_fee_evidence_exists_first_prove_a_total_all_in_friction_ceiling_below_25_7920876712_bips_then_freeze_a_separate_synchronized_execution_and_basis_study",
+      "priority_rank": 16,
+      "prohibited_shortcuts": [
+        "calling_the_documented_6_percent_reward_realized_without_authenticated_account_rows",
+        "using_leverage_to_turn_sub_hurdle_carry_into_edge",
+        "ignoring_the_1000000_USD_daily_average_gross_OI_threshold",
+        "treating_missing_funding_hours_as_persistent_payments",
+        "assuming_the_public_equity_only_fee_response_proves_crypto_Perps_fees",
+        "using_non_atomic_cross_venue_quotes_as_synchronized_fills"
+      ],
+      "retry_trigger": "exact_authenticated_reward_eligibility_and_total_fee_evidence_that_leaves_a_positive_budget_below_25_7920876712_bips_before_any_book_request",
+      "venue_scope": "polymarket_BTC_Perps_and_binance_BTC_spot"
     }
   ],
-  "result_sha256": "066debe7a70e50432005f7284135e3ab54b08e599fc28469e5ff4ad7b3885212",
+  "result_sha256": "544ea6c0980e8be15d08c7b887637f7ac05803ded687cb7b28b948266a0951a4",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -610,8 +644,18 @@
       "canonical_result_sha256": "f44f283b311ebf8b3302dba4e1d5d6be0b956a2657483786229611f82ed5da88",
       "family": "binance_zero_fee_stablecoin_triangular_conversion",
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
+    },
+    {
+      "canonical_result_sha256": "61dd2782963295bae975ed4f929b6191f23bfe0970ea02d56c6ec0fc9412a2ae",
+      "family": "polymarket_combo_catalog_contract_v1",
+      "reason": "the_frozen_50_page_ceiling_stopped_with_a_non_null_cursor_after_5000_volume_ranked_markets_and_the_observed_population_contained_only_one_genuine_BTC_leg_zero_ETH_and_zero_SOL_legs_so_no_scoped_multi_leg_combo_candidate_existed_and_the_same_incomplete_contract_must_not_be_repeated"
+    },
+    {
+      "canonical_result_sha256": "01bf5ea0a3f293e8e14b2f484ac2715c6c326ddfab57dba51873bf16e76a62e4",
+      "family": "polymarket_binance_perps_OI_carry_contract_v1",
+      "reason": "the_one_use_multi_asset_attempt_stopped_on_the_first_429_after_15_successes_without_retry_exact_cross_source_timestamps_did_not_align_and_the_retained_BTC_diagnostic_failed_every_role_after_conditional_reward_execution_and_two_leg_capital_hurdles"
     }
   ],
-  "updated_at_utc": "2026-08-26T12:19:42.0028122Z",
+  "updated_at_utc": "2026-08-26T12:52:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

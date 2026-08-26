@@ -1,0 +1,78 @@
+{
+  "acceptance_boundary": {
+    "accepted_edge_requires_additionally": [
+      "authenticated proof that the exact account or mapped entity qualifies for the 1000000 USD daily-average gross-OI threshold",
+      "realized OI reward rows matching the documented 6 percent APR",
+      "exact Binance account commissions and exact Polymarket account fee tier",
+      "synchronized executable entry and exit depth at one equal-base quantity",
+      "pUSD-to-USDT conversion basis fees latency custody and withdrawal evidence",
+      "margin liquidation insurance-fund auto-deleveraging and reconciliation evidence on both venues",
+      "bull bear sideways choppy high-volatility low-volatility liquidity-stress and latency-stress acceptance",
+      "prospective paper fills and persistence"
+    ],
+    "failed_public_gate_action": "terminal_do_not_request_current_books_or_authenticated_account_evidence",
+    "public_persistence_candidate_requires": [
+      "training validation and test net carry positive after the conditional OI reward frozen execution hurdle and two-leg capital hurdle",
+      "up down sideways high-volatility and low-volatility slices each contain at least 5 aligned settlements and positive aggregate gross carry including reward"
+    ],
+    "reward_is_conditional_not_assumed": true
+  },
+  "annual_oi_reward_bips": "600",
+  "annual_opportunity_hurdle_bips_per_leg": "500",
+  "authority": {
+    "authenticated_reads_permitted": false,
+    "credentials_permitted": false,
+    "orders_permitted": false,
+    "paper_or_live_authority": false,
+    "research_only": true
+  },
+  "causal_roles": {
+    "ordered_split": ["training", "validation", "test"],
+    "split_rule": "oldest_50_percent_then_next_half_of_remainder_then_newest_remainder",
+    "static_orientation": "select_only_from_training_mean_of_polymarket_8h_sum_minus_binance_8h_funding",
+    "validation_and_test_cannot_change_orientation_or_hurdles": true
+  },
+  "execution_hurdle_bips": "20",
+  "implementation_path": "tools/screen_polymarket_binance_perps_oi_carry.py",
+  "implementation_sha256": "a1afa82fd14e553e6f27bd192c1cb2be20952e60b9eefa4674f60f2d472e609b",
+  "minimum_aligned_rows": 60,
+  "purpose": "test whether Polymarket Perps' conditional 6 percent OI reward plus a static opposite-position funding differential versus Binance creates persistent BTC ETH or SOL carry without predicting market direction",
+  "request_contract": {
+    "end_timestamp_ms": 1786665600000,
+    "historical_cutoff_utc": "2026-08-14T00:00:00Z",
+    "maximum_get_requests": 32,
+    "maximum_polymarket_funding_pages_per_asset": 8,
+    "polymarket_pagination": "follow_the_official_Python_SDK_newest_first_rule_by_setting_end_timestamp_to_the_last_returned_timestamp_minus_one",
+    "raw_directory": "data/polymarket-binance-perps-oi-carry-v1",
+    "raw_persistence": "persist_every_response_and_rewrite_the_canonical_journal_before_parsing_or_requesting_more",
+    "requests": [
+      "one GET https://api.perpetuals.polymarket.com/v1/info/instruments",
+      "one GET https://api.perpetuals.polymarket.com/v1/info/fees",
+      "up to eight GET https://api.perpetuals.polymarket.com/v1/info/funding pages per present BTC ETH or SOL instrument",
+      "only after at least 480 complete Polymarket hourly rows one GET Binance funding history and one GET Binance 8h klines per surviving asset"
+    ],
+    "retry_policy": "none",
+    "start_timestamp_ms": 1784073600000,
+    "one_shot_rule": "do_not_rerun_extend_the_window_change_orientation_or_weaken_hurdles_after_the_first_successful_response"
+  },
+  "result_sha256": "2a2c45a599bc0f385964d2fb15ffa1e80b7901a3b6ddafaccee94a6cb20c3c21",
+  "reward_contract": {
+    "first_period_start_utc": "2026-07-06T12:00:00Z",
+    "gross_oi_threshold_usd": "1000000",
+    "rate_apr": "0.06",
+    "reward_period": "12:00_UTC_to_12:00_UTC",
+    "scope": "full_daily_average_gross_OI_across_all_instruments_for_the_account_or_mapped_entity"
+  },
+  "schema_version": "polymarket-binance-perps-oi-carry-contract-v1",
+  "source_boundary": {
+    "binance_market_data_contract": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+    "polymarket_fees_contract": "https://docs.polymarket.com/api-reference/get-fees.md",
+    "polymarket_funding_contract": "https://docs.polymarket.com/api-reference/get-historical-funding.md",
+    "polymarket_market_data_contract": "https://docs.polymarket.com/perps/market-data.md",
+    "polymarket_official_sdk_pagination_source": "https://github.com/Polymarket/py-sdk/blob/main/src/polymarket/_internal/actions/perps/public.py",
+    "polymarket_reward_contract": "https://docs.polymarket.com/api-reference/get-account-rewards.md",
+    "security_classification": "all_frozen_GETs_are_explicitly_public_market_data; account_rewards_is_authenticated_and_will_not_be_called"
+  },
+  "status": "frozen_before_any_polymarket_perps_market_data_access",
+  "universe": ["BTC", "ETH", "SOL"]
+}

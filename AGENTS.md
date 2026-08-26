@@ -58,6 +58,15 @@ override prose.
   If an unchanged mechanism already fails an economic gate, do not spend another
   capture merely to repair sample count unless a precommitted decision could
   still change.
+- Before claiming complete coverage from a paginated public catalog, prove a
+  source-bound population/page ceiling or freeze an explicitly partial rank or
+  cursor boundary. A non-null cursor at the request ceiling is incomplete, not
+  a zero-candidate universe, and does not justify a larger adaptive rerun.
+- For weighted or rate-limited APIs, freeze both the cumulative request weight
+  and a limit-derived pacing schedule. After the first retained page, validate
+  ordering, timestamp phase, cursor progression, and cross-source alignment on
+  retained evidence before continuing pagination; successful JSON parsing alone
+  is not an aggregation preflight.
 
 ## Working Method
 

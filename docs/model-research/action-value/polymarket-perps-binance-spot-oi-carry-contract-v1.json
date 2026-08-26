@@ -1,0 +1,63 @@
+{
+  "acceptance_boundary": {
+    "accepted_edge_requires_additionally": [
+      "authenticated realized proof that the exact account or mapped entity sustains at least 1000000 USD daily-average gross OI and receives the documented reward",
+      "exact Polymarket crypto Perps fee tier and exact Binance BTC spot commissions",
+      "synchronized executable equal-base entry and exit depth on Polymarket BTC-USD Perps and Binance BTC spot",
+      "measured pUSD-to-spot-funding-currency basis conversion fees latency custody withdrawal and transfer risk",
+      "liquidation insurance-fund auto-deleveraging ownership reconciliation and stop controls",
+      "liquidity-stress latency-stress and prospective paper-fill acceptance"
+    ],
+    "public_candidate_requires": [
+      "at least 80 percent hourly Polymarket funding coverage with every missing hour valued at zero",
+      "positive excess carry before one-time friction in each fixed ten-day chronological role",
+      "positive full-window net after the frozen 50-bips round-trip-and-basis hurdle",
+      "positive excess carry in up down sideways high-volatility and low-volatility Binance BTC return slices"
+    ],
+    "public_candidate_is_not_an_accepted_or_deployment_ready_edge": true
+  },
+  "annual_oi_reward_bips": "600",
+  "annual_opportunity_hurdle_bips_per_leg": "500",
+  "authority": {
+    "account_access_permitted": false,
+    "network_requests_permitted": false,
+    "orders_permitted": false,
+    "paper_or_live_authority": false,
+    "retained_public_evidence_only": true
+  },
+  "design": {
+    "binance_leg": "long_equal_base_BTC_spot_without_funding_payments",
+    "capital_legs": 2,
+    "market_direction_forecast_used": false,
+    "missing_polymarket_funding_rate": "zero",
+    "polymarket_leg": "short_BTC_USD_perpetual",
+    "role_boundaries": [
+      "2026-07-15T00:00:00Z_to_2026-07-25T00:00:00Z",
+      "2026-07-25T00:00:00Z_to_2026-08-04T00:00:00Z",
+      "2026-08-04T00:00:00Z_to_2026-08-14T00:00:00Z"
+    ]
+  },
+  "end_timestamp_ms": 1786665600000,
+  "implementation_path": "tools/adjudicate_polymarket_perps_binance_spot_oi_carry.py",
+  "implementation_sha256": "c5d9c31a201df68d1307265e8cc1d7c75148255090570b63161718e781cd8889",
+  "journal_sha256": "d6754dadf864c962b670503ff37b8416727922013a14c4858a14b5c88d1bb139",
+  "minimum_funding_coverage_fraction": "0.80",
+  "purpose": "test whether documented Polymarket BTC Perps funding plus the conditional 6 percent OI reward can support a market-direction-neutral short-perp long-Binance-spot carry after two-leg capital and conservative friction",
+  "raw_directory": "data/polymarket-binance-perps-oi-carry-v1",
+  "research_role_disclosure": "This secondary mechanism was frozen after the retained BTC payloads had been used for a different perp-versus-perp diagnostic. It is deterministic source-derived reuse, not a blind preregistered discovery result.",
+  "result_sha256": "bb1a2278e72cce8745995630291e454c97f53865bd74564bb9ee9e6e33af6b81",
+  "round_trip_and_basis_hurdle_bips": "50",
+  "schema_version": "polymarket-perps-binance-spot-oi-carry-contract-v1",
+  "source_boundary": {
+    "binance_spot_leg_has_no_perpetual_funding": true,
+    "polymarket_funding_formula": "https://docs.polymarket.com/perps/learn-about-trading/funding.md",
+    "polymarket_reward_contract": "https://docs.polymarket.com/api-reference/get-account-rewards.md",
+    "reward_rate_apr": "0.06",
+    "reward_threshold_usd_daily_average_gross_oi": "1000000",
+    "source_attempt_terminal_artifact": "docs/model-research/action-value/polymarket-binance-perps-oi-carry-terminal-v1-2026-08-26.json"
+  },
+  "start_timestamp_ms": 1784073600000,
+  "status": "frozen_before_polymarket_funding_only_economics_computation",
+  "timestamp_normalization": "nearest_UTC_hour_only_when_absolute_residual_is_at_most_500_ms",
+  "timestamp_tolerance_ms": 500
+}
