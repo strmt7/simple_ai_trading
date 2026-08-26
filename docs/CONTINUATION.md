@@ -867,7 +867,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`1ed5fe0750affe5d6d5331034f900673dd5a6604ca32abb0f5489c493a5b1ab6`.
+`69039bd49ca43a23822a5ce8997c80bc7cf7d629bf4c08f8ffc00507644864b7`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1403,6 +1403,20 @@ yield. Canonical gate:
 `docs/model-research/action-value/binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json`,
 result SHA-256
 `ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182`.
+
+Binance Advanced Earn Discount Buy and Dual Investment are terminal for this
+market-situation-independent search. Discount Buy is a locked non-principal-
+protected structured product whose settlement can convert 50% or 100% of the
+stablecoin principal into crypto at the target price. Dual Investment Buy Low
+and Sell High likewise embed cash-secured-put-like downside or covered-call-like
+foregone upside. Their nominal APR is compensation within a direction-dependent
+conditional-conversion payoff, not a positive worst-state floor. No account
+quote or subscription was requested. Do not run APR, strike, or duration grids
+without a materially new principal subsidy or complete executable option-
+equivalent mispricing. Canonical adjudication:
+`docs/model-research/action-value/binance-advanced-earn-conditional-conversion-terminal-adjudication-v1-2026-08-26.json`,
+result SHA-256
+`15f160e3d54f0be09611bb36901b1d9061a2a173643c0562996ecb2824320a3f`.
 
 ## Protected Local Work
 

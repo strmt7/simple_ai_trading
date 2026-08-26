@@ -1,0 +1,106 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": true,
+    "profitability_claim": false,
+    "status": "terminal_direction_dependent_conditional_conversion_family_no_market_invariant_after_cost_floor_or_distinct_subsidy_proved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "product_or_quote_requests_sent": 0,
+    "public_read_only_research": true,
+    "subscriptions_submitted": 0
+  },
+  "break_even_contract": {
+    "discount_buy_required_inequality": "discount_and_any_stablecoin_reward > fair_value_of_embedded_conditional_downside_conversion + lockup_opportunity_cost + settlement_basis + custody_tax_and_operational_costs",
+    "dual_investment_required_inequality": "interest > fair_value_of_embedded_buy_low_or_sell_high_conversion_option + foregone_upside_or_downside_loss + lockup_settlement_custody_tax_and_operational_costs",
+    "public_current_after_cost_floor": "0",
+    "reason": "headline APR and buying below the pre-subscription spot price do not value the conditional conversion obligation; no complete option-equivalent fair-value quote, execution hedge, or external subsidy was source-proved"
+  },
+  "created_at_utc": "2026-08-26T21:19:18.3535339Z",
+  "family_identity": {
+    "discount_buy": "option_like_locked_stablecoin_position_with_zero_half_or_full_target_price_crypto_conversion_selected_by_settlement_price",
+    "dual_investment_buy_low": "cash_secured_put_like_conditional_crypto_purchase_at_target_price",
+    "dual_investment_sell_high": "covered_call_like_conditional_crypto_sale_at_target_price",
+    "not_exact_exchange_option_equivalence_claim": true,
+    "shared_failure": "settlement direction selects the delivered asset or conversion amount so nominal yield is compensation for path and terminal price risk rather than a market-invariant return"
+  },
+  "official_mechanism": {
+    "discount_buy": {
+      "cannot_cancel_or_redeem_early_after_subscription": true,
+      "non_principal_protected_high_yield_structured_product": true,
+      "preset_terms": [
+        "target buy price",
+        "knockout price",
+        "APR",
+        "settlement date"
+      ],
+      "settlement_price_at_or_above_knockout": "stablecoin principal plus stated APR reward",
+      "settlement_price_at_or_below_target": "100 percent of stablecoin principal buys crypto at the target buy price",
+      "settlement_price_between_target_and_knockout": "50 percent of stablecoin principal buys crypto at the target buy price and 50 percent is returned"
+    },
+    "dual_investment": {
+      "buy_low_downside": "when settlement is at or below the target the stablecoin deposit converts to crypto at the target and can immediately be worth less if the market is further below",
+      "conditional_conversion": "if the target condition is met the deposited asset converts at the target price; otherwise the original asset is returned",
+      "interest_does_not_remove_opportunity_cost": true,
+      "sell_high_upside_cap": "when settlement is at or above the target the crypto deposit converts to stablecoin at the target and can forgo gains above it",
+      "target_price_and_settlement_date_fixed_by_product": true
+    }
+  },
+  "limitations": [
+    "The current Binance Developer catalog proves the active product and endpoint families but does not expose complete public payoff economics in its catalog summary.",
+    "The current Discount Buy payoff text was available through a Binance-origin announcement mirror because the direct logged-out regional product surface redirected away from the product.",
+    "No account-specific product list, quote, eligibility, fee, capacity, position, or settlement evidence was accessed.",
+    "No claim is made that either product is identical to one standardized exchange option; the terminal result needs only the documented conditional conversion and locked downside or upside exposure.",
+    "A user who independently wants a target-price purchase or sale may value the product differently, but that is an inventory objective and market view rather than a situation-independent edge."
+  ],
+  "prohibited_actions": [
+    "treating earn either way or high APR language as principal protection or market-neutral profit",
+    "calling a target price below current spot a discount without valuing the obligation to buy when settlement is still lower",
+    "calling Dual Investment double-sided positions market-neutral when one conditional conversion can still trigger",
+    "simulating strike APR or duration grids without a source-proved option-equivalent fair-value identity and frozen out-of-sample decision rule",
+    "requesting account quotes or subscribing to either product without explicit read-only or funded authority as applicable",
+    "using leverage reinvestment averaging down or an unpriced hedge to manufacture a positive result"
+  ],
+  "result_sha256": "15f160e3d54f0be09611bb36901b1d9061a2a173643c0562996ecb2824320a3f",
+  "retry_policy": {
+    "reopen_only_for": "a newly source-proved principal guarantee external subsidy mispricing versus a complete executable option-equivalent hedge or a materially different payoff identity that creates a positive worst-state after-cost floor",
+    "signed_account_access": "not justified while the public payoff remains terminal for a market-situation-independent edge search",
+    "trading_authority": "always separately required for any subscription redemption conversion transfer or hedge"
+  },
+  "schema_version": "binance-advanced-earn-conditional-conversion-terminal-adjudication-v1",
+  "sources": [
+    {
+      "observed_at_utc": "2026-08-26T21:19:18.3535339Z",
+      "raw_character_count": 410397,
+      "raw_sha256": "00a49b77dbe79cea275fd940918ae6c6a87963d020422a5b1e8282ce2c200e35",
+      "role": "current_official_dual_investment_conditional_conversion_opportunity_cost_and_downside_contract",
+      "url": "https://academy.binance.com/ur-PK/articles/top-6-dual-investment-trading-strategies"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:19:18.3535339Z",
+      "raw_character_count": 7971896,
+      "raw_sha256": "3399639eb6123ccfed85881a5437dde37b073d0b98e4a8df51ad80d5372eaaab",
+      "role": "current_official_developer_catalog_and_endpoint_contract_for_discount_buy_and_dual_investment",
+      "url": "https://developers.binance.com/en/docs/llms-full.txt"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:19:18.3535339Z",
+      "raw_character_count": 17063,
+      "raw_sha256": "d1c945d585111315df597000ded8ce1a981c1284a62970d61418f915b59fd607",
+      "role": "transparent_mirror_of_2026_06_18_Binance_EN_announcement_with_discount_buy_three_state_payoff_and_risk_language",
+      "source_limitation": "not treated as independent confirmation; retained because the direct Binance announcement link resolved to the current announcement list in the logged-out regional surface",
+      "url": "https://www.treeofalpha.com/preview_article?id=1781758801745"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:19:18.3535339Z",
+      "role": "current_logged_out_product_surface_redirected_to_regional_home_no_quote_or_product_evidence",
+      "url": "https://www.binance.com/en/earn/discount-buy"
+    }
+  ]
+}
