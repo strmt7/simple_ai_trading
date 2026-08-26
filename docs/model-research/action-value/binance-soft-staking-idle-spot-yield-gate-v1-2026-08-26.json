@@ -1,0 +1,101 @@
+{
+  "authority": {
+    "account_state_changed": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "public_read_only_research": true,
+    "signed_requests_made": 0
+  },
+  "created_at_utc": "2026-08-26T15:42:23.6546299Z",
+  "decision": {
+    "accepted_edge": true,
+    "accepted_scope": "Account-eligible ETH or SOL already held idle in Binance Spot, not frozen in pending orders, not needed for prompt execution or withdrawal, not allocated by Auto-Subscribe, and below the published eligible cap.",
+    "after_direct_cost": true,
+    "after_every_external_cost_and_best_alternative": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "market_direction_forecast_required": false,
+    "reason": "The current official Soft Staking page displays a positive 0.50 percent estimated APR for both ETH and SOL, the official FAQ defines daily native-token rewards from daily-average eligible Spot balances, and participation has no additional fee. This is incremental only relative to holding the same idle native asset without Soft Staking; acquiring ETH or SOL, displacing a superior use, or depending on immediate liquidity is outside the accepted edge.",
+    "stable_market_invariant_edge": true,
+    "status": "accepted_scoped_current_idle_spot_native_token_yield_not_deployment_ready"
+  },
+  "direct_economics": {
+    "additional_participation_fee_fraction": "0",
+    "eth": {
+      "annual_reward_at_minimum_eth": "0.0005",
+      "daily_reward_at_minimum_eth": "0.00000136986301369863013698630137",
+      "estimated_apr_fraction": "0.005",
+      "maximum_eligible_holding_eth": "4000",
+      "minimum_eligible_holding_eth": "0.1"
+    },
+    "incremental_net_identity": "native_token_rewards_received - reward_rounding - tax - custody_risk - liquidity_delay_risk - value_of_any_displaced_higher_yield_or_operational_use",
+    "reward_formula": "daily_reward = eligible_daily_average_native_token_balance * current_APR / 365",
+    "sol": {
+      "annual_reward_at_minimum_sol": "0.005",
+      "daily_reward_at_minimum_sol": "0.0000136986301369863013698630137",
+      "estimated_apr_fraction": "0.005",
+      "maximum_eligible_holding_sol": "400000",
+      "minimum_eligible_holding_sol": "1"
+    }
+  },
+  "mechanism": {
+    "name": "binance_soft_staking_idle_spot_native_token_yield",
+    "not_a_standalone_trading_strategy": true,
+    "purpose": "earn native-token staking rewards on otherwise idle organic ETH or SOL Spot inventory without opening a directional position for the reward",
+    "scope_boundary": "The edge is measured against continuing to hold the identical ETH or SOL quantity idle on Binance. Buying the asset, retaining inventory for a forecast, manufacturing balances, or counting assets frozen in pending orders is prohibited."
+  },
+  "official_operational_contract": {
+    "activation_scope": "Activating Soft Staking automatically includes all eligible Spot tokens; individual tokens cannot be selected.",
+    "auto_subscribe_priority": "If Auto-Subscribe and Soft Staking are both enabled, Auto-Subscribe allocates eligible assets first and those assets do not participate in Soft Staking.",
+    "first_reward_timing": "Snapshots start at 00:00 UTC on the day after activation and first rewards are distributed two days after activation between 00:00 and 08:00 UTC.",
+    "liquidity_claim": "Official product prose says users can trade withdraw or use eligible tokens anytime.",
+    "liquidity_warning": "The official disclaimer also says assets are allocated to Soft Staking rather than held in Spot while utilised, and prompt return can be delayed when simultaneous withdrawals exceed managed liquidity; redemption and conversion timeframes are not guaranteed.",
+    "pending_order_rule": "Assets frozen in pending Spot orders receive no Soft Staking rewards.",
+    "rate_rule": "APR is estimated, adjusted daily, and not fixed.",
+    "reward_asset": "the respective native token",
+    "reward_cadence": "daily"
+  },
+  "result_sha256": "9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7",
+  "schema_version": "binance-soft-staking-idle-spot-yield-gate-v1",
+  "signed_api_contract": {
+    "account_mutation_warning": "GET /sapi/v1/soft-staking/set changes account state despite using HTTP GET and must never be treated as read-only evidence.",
+    "activation_endpoint": "GET /sapi/v1/soft-staking/set with required softStaking boolean; USER_DATA signed endpoint",
+    "product_list_endpoint": "GET /sapi/v1/soft-staking/list; USER_DATA signed endpoint returning status totalRewardsUsdt rows and per-row asset minAmount maxCap apr stakedAmount totalProfit",
+    "rewards_history_endpoint": "GET /sapi/v1/soft-staking/history/rewardsRecord; USER_DATA signed endpoint returning asset rewards rewardAsset avgAmount and time",
+    "safe_next_request": "Only after both designated ephemeral Binance credentials exist and explicit read-only authority is given, call the product-list endpoint for ETH and SOL. Activation remains a separate account mutation requiring explicit authority even though its documented method is GET."
+  },
+  "sources": {
+    "official_announcement": {
+      "retrieved_at_utc": "2026-08-26T15:42:23.6546299Z",
+      "url": "https://www.binance.com/en/support/announcement/detail/0f8071e9f6ec4924a4d996b0d801a954",
+      "use": "ETH launch date supported assets daily native-token reward cadence daily-average balance calculation activation timing and liquidity warning"
+    },
+    "official_developer_api": {
+      "retrieved_at_utc": "2026-08-26T15:42:23.6546299Z",
+      "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-staking/api/rest-api/soft-staking",
+      "use": "signed product list rewards history and state-changing activation endpoint contracts"
+    },
+    "official_faq": {
+      "retrieved_at_utc": "2026-08-26T15:42:23.6546299Z",
+      "updated_at_source": "2026-03-30T20:05:00Z",
+      "url": "https://www.binance.com/en/support/faq/detail/8d8d863d61284809a1e16b3eb68aca3c",
+      "use": "reward formula zero additional fee pending-order exclusion Auto-Subscribe priority all-token activation and liquidity warning"
+    },
+    "official_public_product_page": {
+      "retrieved_at_utc": "2026-08-26T15:42:23.6546299Z",
+      "url": "https://www.binance.com/en/earn/soft-staking",
+      "use": "current public ETH and SOL minimum maximum and estimated APR values"
+    }
+  },
+  "unresolved_gates": [
+    "The public page does not prove this account's regional eligibility activation status current signed APR credited balance or reward history.",
+    "The 0.50 percent APR is estimated and can change daily, including becoming economically immaterial or zero.",
+    "Assets in pending orders receive no rewards, so this cannot be credited to active quoted inventory or assumed across an order's frozen lifetime.",
+    "Binance advertises flexible use but also disclaims guaranteed redemption and conversion timing under liquidity stress. Inventory needed for prompt execution withdrawal collateral or settlement is excluded.",
+    "The comparison is only identical already-held idle ETH or SOL. Native-token rewards do not remove the asset's price risk and no asset purchase is justified by this yield.",
+    "Tax custody jurisdiction reward rounding and the value of alternative yield uses remain unmeasured.",
+    "No credentials account activation reward claim order balance transfer or funded action occurred."
+  ]
+}

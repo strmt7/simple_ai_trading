@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Three scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance LDUSDT yield only for already-required futures collateral; and bounded just-in-time BNB fee reduction only for independently justified organic BTC/ETH/SOL Spot flow under exact full-consumption and risk gates. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Four scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory not needed for prompt liquidity; Binance LDUSDT yield only for already-required futures collateral; and bounded just-in-time BNB fee reduction only for independently justified organic BTC/ETH/SOL Spot flow under exact full-consumption and risk gates. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -87,6 +87,17 @@ safety gate, blocks Stop, or submits an order.
   freeze one minimum-size post-finality order-acceptance probe. Canonical gate:
   `polymarket-finalized-winner-redemption-latency-gate-v1-2026-08-26.json`,
   SHA-256 `3df84b6639c409ffca472bb4566e623ac78f160e7d8bc66795009f619edfdcb1`.
+- Binance Soft Staking is now an accepted scoped incremental-yield edge only
+  for identical ETH or SOL already held idle in Spot, outside pending orders,
+  outside Auto-Subscribe, and not needed for prompt execution or withdrawal.
+  The current official page displays 0.50% estimated APR for both assets and
+  the current FAQ specifies daily native-token rewards with no additional fee.
+  Do not buy or retain either asset for this yield, count frozen order balances,
+  or treat advertised flexibility as guaranteed liquidity under stress. The
+  signed product list and reward history remain unproved; activation is a
+  state-changing signed `GET` and needs separate authority. Canonical gate:
+  `binance-soft-staking-idle-spot-yield-gate-v1-2026-08-26.json`, SHA-256
+  `9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7`.
 - The 2026-08-25 target-free structural-parity screens found no accepted edge.
   Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
   negative-risk events and zero gross-positive logical-implication bundles

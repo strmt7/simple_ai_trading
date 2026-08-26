@@ -12,11 +12,13 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Three narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Four narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
-  pUSD, Binance LDUSDT yield only for already-required futures collateral, and
-  Binance just-in-time BNB fee reduction only for independently justified
-  organic BTC/ETH/SOL Spot flow under exact full-consumption and risk gates.
+  pUSD, Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot
+  inventory not needed for prompt liquidity, Binance LDUSDT yield only for
+  already-required futures collateral, and Binance just-in-time BNB fee
+  reduction only for independently justified organic BTC/ETH/SOL Spot flow
+  under exact full-consumption and risk gates.
   None is deployment-ready. Binance remains paper/testnet/Demo; Polymarket
   remains independent, disabled by default, and unpromoted.
 - The one historical cutoff is `2026-08-14T00:00:00Z`. Do not move it or fetch
@@ -697,7 +699,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`62385d01b8fb0047bfde3bac0049a8aeae9f0549a7a899b5343b40fcefb8292d`.
+`63bedbf06782411b008fcf4accdf086a778f97c102c4027becea411122b19917`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -770,7 +772,34 @@ redemption, or funded action occurred. Canonical gate:
 `docs/model-research/action-value/polymarket-finalized-winner-redemption-latency-gate-v1-2026-08-26.json`,
 SHA-256 `3df84b6639c409ffca472bb4566e623ac78f160e7d8bc66795009f619edfdcb1`.
 
-The highest-priority Binance structural lead is now LDUSDT incremental margin
+The highest-priority current Binance structural edge is now Soft Staking for
+otherwise idle ETH or SOL already held in Spot. The public product page
+currently displays 0.50% estimated APR, a 0.1-ETH minimum and 4,000-ETH cap,
+and a 1-SOL minimum and 400,000-SOL cap. The official FAQ specifies daily
+native-token rewards calculated as eligible daily-average balance times current
+APR divided by 365, with no additional participation fee. At the displayed
+rate, the minimum balances accrue 0.0005 ETH or 0.005 SOL per year before
+rounding and external costs. This is accepted only relative to continuing to
+hold the identical native-token quantity idle. It does not justify buying,
+retaining, or forecasting ETH or SOL.
+
+The scope is narrower than the product headline. Pending-order frozen assets
+earn no reward, Auto-Subscribe allocations take priority, activation enrolls
+all eligible Spot tokens rather than a selected asset, APR can change daily,
+and the liquidity disclaimer says prompt return is not guaranteed under stress.
+Inventory required for orders, withdrawal, collateral, settlement, or any
+latency-sensitive operation is excluded. Exact account eligibility, signed APR,
+eligible balance, activation, reward rounding, and owned distribution history
+remain unproved. The official API exposes signed product-list and reward-history
+GETs. Its separate `/sapi/v1/soft-staking/set` operation changes account state
+despite also using GET, so it requires explicit mutation authority and must not
+be called during read-only prequalification. No credential or account action
+occurred. Canonical gate:
+`docs/model-research/action-value/binance-soft-staking-idle-spot-yield-gate-v1-2026-08-26.json`,
+result SHA-256
+`9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7`.
+
+The next accepted Binance structural edge is LDUSDT incremental margin
 yield. Official product guidance says eligible USDT Simple Earn Flexible assets
 can become LDUSDT, remain usable as USD-M Multi-Assets margin, and continue
 earning Real-Time APR. A public source-bound normalization of LDUSDTUSD by
@@ -1079,6 +1108,11 @@ not grant account, funding, order, or transaction authority.
    Source-bind eligible BNB principal, realized Simple Earn and dividend rows,
    conservative executable reward sale values, and exact account costs against
    the frozen hedge history. Do not refresh BNB funding or books.
+   For Soft Staking, do not poll the unchanged public page. When both designated
+   ephemeral credentials exist and explicit read-only authority is given,
+   freeze one signed ETH/SOL product-list and rewards-history prequalification.
+   Never call the state-changing activation GET under read-only authority, and
+   never credit pending-order, Auto-Subscribe, or prompt-liquidity inventory.
    Do not resample the Binance-option/Polymarket-threshold model wedge unless
    an exact strike-expiry-settlement match appears or a two-sided same-date
    model gap exceeds the frozen 4.27-percentage-point escalation threshold.
