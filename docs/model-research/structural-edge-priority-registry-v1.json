@@ -70,12 +70,16 @@
         {
           "path": "docs/model-research/action-value/binance-bfusd-spot-redemption-parity-v1-2026-08-26.json",
           "result_sha256": "566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json",
+          "result_sha256": "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c"
         }
       ],
-      "current_status": "public_BFUSDUSDT_spot_subscription_redemption_route_proved_but_no_current_positive_direct_path_at_reference_costs_and_signed_rate_quota_exact_fee_and_alternative_yield_evidence_remain_absent",
+      "current_status": "public_BFUSDUSDT_direct_parity_is_not_positive_and_the_RLUSD_campaign_is_a_conditional_8_07_percent_first_week_candidate_only_for_eligible_accounts_with_genuine_pre_existing_qualifying_volume_while_current_USDT_USDC_bonus_caps_are_economically_tiny",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "when_both_documented_ephemeral_environment_variables_exist_source_bind_BFUSDUSDT_commission_plus_the_six_endpoint_yield_prequalification_then_set_exact_public_depth_triggers_without_repetitive_polling",
+      "next_action": "observe_the_fixed_2026_08_28_and_2026_09_04_RLUSD_effective_APR_updates_without_refitting_and_when_both_credentials_exist_prove_account_eligibility_organic_volume_exact_rates_quotas_and_costs",
       "priority_rank": 2,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
@@ -83,11 +87,14 @@
         "zero as the alternative cash yield",
         "assuming one rate-history row equals one day",
         "daily kline extremes as historical executable depth or fills",
+        "manufactured_churn_self_trading_wash_trading_or_other_inauthentic_volume_to_qualify_for_rewards",
+        "extrapolating_one_RLUSD_reward_week_or_an_illustrative_example_into_future_APR",
+        "inferring_jurisdiction_or_account_eligibility_from_system_timezone",
         "calling direction-neutral market-invariant or risk-free",
         "freezing another signed collector while credentials are absent"
       ],
-      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
-      "venue_scope": "binance_bfusd_rwusd_and_same_currency_cash_alternatives"
+      "retry_trigger": "2026_08_28_RLUSD_second_distribution_update_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
+      "venue_scope": "binance_bfusd_rwusd_rlusd_and_same_currency_cash_alternatives"
     },
     {
       "blocking_evidence": [
@@ -330,7 +337,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "e9ab2f4fc4f61d55b040469a2cea22c022f6d41af0aa45cd759dd60c4a73856c",
+  "result_sha256": "f61bff5690399aef2b644b9ef26a021512e15c3d481741789737268424c92665",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -409,6 +416,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T08:33:51Z",
+  "updated_at_utc": "2026-08-26T08:45:39Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
