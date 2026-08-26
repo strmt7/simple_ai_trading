@@ -1,0 +1,160 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_edge": true,
+    "deployment_ready": false,
+    "distinct_edge_family": false,
+    "extension_target": "binance_idle_spot_native_token_yield",
+    "market_direction_forecast_required": false,
+    "reason": "The current public BTC Earn page shows a positive same-token Flexible Simple Earn product, but the displayed 0.27 percent is explicitly a maximum assembled from a 0.02 plus 0.25 percent APR breakdown. The public page does not expose the minimum, bonus tier cap, bonus end date, current account eligibility, or participation fees. Public calculator outputs also vary sharply by principal. Therefore this is a credible extension candidate for already-held idle BTC, not an accepted or deployment-ready edge.",
+    "status": "candidate_positive_gross_idle_BTC_same_token_yield_exact_tier_cost_and_account_gates_unproved"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "live_trading_authority": false,
+    "orders_or_subscriptions_submitted": 0,
+    "public_read_only_research": true,
+    "signed_requests_made": 0
+  },
+  "created_at_utc": "2026-08-26T16:58:49.7130367Z",
+  "credential_preflight": {
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_present": false,
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_present": false,
+    "checked_at_utc": "2026-08-26T16:56:52.0329023Z",
+    "values_inspected": false
+  },
+  "economics": {
+    "headline_maximum_sensitivity_not_credited": {
+      "annual_reward_BTC_if_0_27_percent_applied_to_one_full_BTC": "0.0027",
+      "daily_reward_BTC_if_0_27_percent_applied_to_one_full_BTC": "0.000007397260273972602739726027397",
+      "daily_reward_sats_if_0_27_percent_applied_to_one_full_BTC": "739.7260273972602739726027397",
+      "displayed_max_apr_bips": "27",
+      "reason_not_credited": "The page labels 0.27 percent Max, displays a 0.02 plus 0.25 percent breakdown, and does not publish the bonus cap or end date. It is not a full-principal account quote."
+    },
+    "incremental_identity": "same_token_rewards_received - any_subscription_or_redemption_fee - reward_rounding - liquidity_delay_cost - custody_tax_and_operational_cost - displaced_alternative_yield",
+    "public_calculator_observations": {
+      "account_quote": false,
+      "auto_compounding_checkbox_accessibility_state": "checked",
+      "method": "Clicked the exact public 1 year control, filled one principal at a time, waited three seconds after each fill, and retained the visible BTC-denominated Estimated Earnings value. The page did not expose a selected-state flag for the horizon control.",
+      "points": [
+        {
+          "effective_reward_bips_of_principal": "21.72",
+          "estimated_earnings_BTC": "0.00002172",
+          "principal_BTC": "0.01"
+        },
+        {
+          "effective_reward_bips_of_principal": "3.997",
+          "estimated_earnings_BTC": "0.00003997",
+          "principal_BTC": "0.1"
+        },
+        {
+          "effective_reward_bips_of_principal": "2.2247",
+          "estimated_earnings_BTC": "0.00022247",
+          "principal_BTC": "1"
+        },
+        {
+          "effective_reward_bips_of_principal": "2.02922",
+          "estimated_earnings_BTC": "0.00202922",
+          "principal_BTC": "10"
+        }
+      ],
+      "use": "The monotone but sharply declining reward rate is evidence that the maximum APR is tiered or time-bounded. It is not sufficient to infer an exact cap, campaign end, account rate, or realized reward."
+    }
+  },
+  "official_public_contract": {
+    "apr_breakdown_display": "0.02% + 0.25%",
+    "calculator_disclaimer": "The calculation is an estimate, does not display an actual or predicted fiat APR, APR can change at any time, and actual earnings may differ.",
+    "duration": "Flexible",
+    "headline_max_apr_percent": "0.27",
+    "identity_verification_required": true,
+    "minimum_amount": "not exposed on the public BTC page",
+    "principal_protection_claim_scope": "token amount marketing label; not fiat value, custody, liquidity, or insolvency protection",
+    "product": "BTC Simple Earn Flexible",
+    "region_availability_may_vary": true,
+    "subscription_instruction": "Enter the amount of BTC to deposit after selecting a product.",
+    "terms_review_required": true
+  },
+  "prohibited_actions": [
+    "buying borrowing converting depositing or retaining BTC solely to obtain this yield",
+    "applying the 0.27 percent maximum APR to an entire balance without exact current tier evidence",
+    "inferring the exact bonus cap or promotion end from calculator outputs",
+    "moving BTC needed for orders settlement collateral withdrawal or prompt liquidity into Simple Earn",
+    "enabling Auto-Subscribe or subscribing redeeming transferring or changing account state without separate explicit authority",
+    "calling a public calculator estimate an account quote realized reward after-cost profit or future guarantee"
+  ],
+  "result_sha256": "09aba801a6c400c5595190ea88bf023d5910dfe4467fc6fa20742de9b17f3671",
+  "signed_read_contract_provenance": {
+    "current_official_catalog": "The current Binance developer catalog lists Simple Earn with 41 REST endpoints, but the linked dynamic product page returned a zero-character accessibility snapshot and did not independently refresh the exact endpoint bodies.",
+    "exact_contracts_reused_from_hash_bound_repository_evidence": [
+      {
+        "path": "docs/model-research/action-value/binance-bnb-stacked-reward-hedge-evidence-gate-v1.json",
+        "result_sha256": "0bfc615af743f4ba352201ff2f06e2abf0f0c8fec56b548a0e19791faf25f8ed",
+        "use": "BTC-adapted flexible product list position and reward-history path security and parameter structure"
+      },
+      {
+        "path": "docs/model-research/action-value/binance-stable-yield-allocation-evidence-gate-v1.json",
+        "result_sha256": "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a",
+        "use": "independent flexible product list USER_DATA contract corroboration"
+      }
+    ],
+    "fresh_exact_endpoint_body_refresh_succeeded": false
+  },
+  "retry_policy": {
+    "public_refresh": "Do not poll the unchanged page. Reopen on a published BTC Simple Earn rate tier minimum cap eligibility fee or term change.",
+    "separate_funded_authority_required_for": "any subscription redemption Auto-Subscribe transfer deposit conversion or trade",
+    "signed_prequalification_only_after_both_credentials_and_explicit_read_only_authority": [
+      "GET /sapi/v1/simple-earn/flexible/list with asset=BTC for current rate tiers minimum purchase redemption and sold-out state",
+      "GET /sapi/v1/simple-earn/flexible/position with asset=BTC for owned subscribed principal and current credited rates",
+      "GET /sapi/v1/simple-earn/flexible/history/rewardsRecord with asset=BTC and each required documented reward type for owned timestamped distributions"
+    ]
+  },
+  "schema_version": "binance-btc-simple-earn-idle-yield-candidate-v1",
+  "sources": [
+    {
+      "normalized_visible_evidence_characters": 1218,
+      "normalized_visible_evidence_records": [
+        "url=https://www.binance.com/en/earn/BTC",
+        "heading=Binance Earn BTC",
+        "filter=BTC",
+        "popular_product=BTC|Simple Earn|Principal Protected|0.27%|Max|Flexible",
+        "apr_breakdown=0.02%+0.25%",
+        "calculator_warning=This calculation is an estimate of rewards you will earn in cryptocurrency over the selected timeframe. It does not display the actual or predicted APR in any fiat currency. APR is subject to change at any time and the estimated earnings may be different from the actual earnings generated.",
+        "eligibility=As long as you have the minimum amount of BTC indicated in your chosen product, and you have completed all necessary Identity Verification checks, you are good to go. Please note that some Earn products and services may not be available in your region. Please refer to relevant terms & conditions for more details.",
+        "how_to_earn=Choose a BTC Product: Select an option like Flexible products (redeem anytime), Locked products or other Earn products|Subscribe with BTC: Enter the amount of BTC you’d like to deposit.|Earn Rewards: Enjoy the rewards and track your rewards history via Binance Earn dashboard.",
+        "product_note=Please always review details like APR rewards, lockup periods, or eligibility criteria before subscribing."
+      ],
+      "normalized_visible_evidence_sha256": "8f76396f0315eb15b0ae968500a4003bc4d3713699b7c7b94b3eb07d7730dcf6",
+      "exact_retrieval_timestamp_frozen": false,
+      "retrieved_no_later_than_utc": "2026-08-26T16:58:49.7130367Z",
+      "role": "official_current_BTC_product_max_APR_breakdown_calculator_disclaimer_and_eligibility",
+      "url": "https://www.binance.com/en/earn/BTC"
+    },
+    {
+      "normalized_visible_evidence_characters": 1986,
+      "normalized_visible_evidence_sha256": "3fa1c62c1a04f91dcd56b4f47b8e291185517c505f3410f3ee45ac9e276c0737",
+      "exact_retrieval_timestamp_frozen": false,
+      "retrieved_no_later_than_utc": "2026-08-26T16:58:49.7130367Z",
+      "role": "official_current_Simple_Earn_BTC_row_and_Flexible_reward_and_redemption_FAQ",
+      "url": "https://www.binance.com/en/earn/simple-earn"
+    },
+    {
+      "browser_accessibility_snapshot_characters": 0,
+      "exact_retrieval_timestamp_frozen": false,
+      "reviewed_no_later_than_utc": "2026-08-26T17:05:37.8296788Z",
+      "role": "official_current_Simple_Earn_API_catalog_landing_page_not_exact_endpoint_body_refresh",
+      "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-simple-earn/api/rest-api"
+    }
+  ],
+  "updated_at_utc": "2026-08-26T17:05:37.8296788Z",
+  "unresolved_gates": [
+    "The exact BTC minimum, maximum subscription, Bonus Tiered APR cap, bonus end date, Real-Time APR tier schedule, purchase availability, redemption availability, and sold-out state are not public on the current product page.",
+    "The public calculator does not expose the selected time-horizon state and explicitly says its output can differ from actual earnings.",
+    "No current official source reviewed here proves zero BTC subscription or redemption fees.",
+    "The current official developer catalog confirms that the Simple Earn REST family exists, but its linked page exposed no inspectable endpoint body; exact endpoint details are reused from the two named hash-bound repository artifacts rather than claimed as freshly refreshed.",
+    "Account region identity verification product eligibility subscribed balance realized rewards redemption behavior custody tax and alternative-yield costs are unproved.",
+    "No credentials account request subscription redemption transfer deposit conversion trade or other funded action occurred."
+  ],
+  "visible_evidence_hash_method": "SHA256 of UTF-8 newline-joined exact field=value records for URL, heading, BTC filter, visible product row, APR breakdown, calculator warning, eligibility FAQ, how-to FAQ, and product note, with LF line endings."
+}

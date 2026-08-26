@@ -21,6 +21,10 @@ Development belongs only on `main`; do not create another development branch.
   RWUSD VIP bonus yield; and current USDT Flexible bonus yield. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
+  A current BTC Simple Earn Flexible product is only an extension candidate:
+  its public `0.27% Max` headline is a hidden-tier `0.02% + 0.25%` breakdown,
+  not a whole-balance rate, and exact account tiers, costs, and eligibility are
+  unproved. It does not increase the accepted count.
   None is deployment-ready. Binance remains paper/testnet/Demo; Polymarket
   remains independent, disabled by default, and unpromoted.
 - The one historical cutoff is `2026-08-14T00:00:00Z`. Do not move it or fetch
@@ -824,6 +828,27 @@ occurred. Canonical gate:
 result SHA-256
 `9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7`.
 
+BTC Simple Earn is now recorded as an unaccepted candidate extension to this
+same idle-native-token family. The official current BTC page displays Flexible
+Simple Earn as principal protected in token amount at `0.27% Max`, with an APR
+breakdown of `0.02% + 0.25%`. Its own FAQ requires the product-specific minimum,
+identity verification, and regional availability, but the public page exposes
+neither the minimum nor the bonus cap, end date, exact account eligibility, or
+fees. After clicking the public one-year control and waiting three seconds per
+input, the calculator showed 0.00002172 BTC on 0.01 BTC, 0.00003997 on 0.1 BTC,
+0.00022247 on 1 BTC, and 0.00202922 on 10 BTC. The declining effective return
+proves the headline maximum cannot be credited to the whole balance; the page's
+own disclaimer and hidden horizon/tier state prevent reverse-engineering an
+exact contract from those estimates. No credential or account action occurred.
+Do not acquire or retain BTC for this yield, use operational BTC, enable Auto-
+Subscribe, or subscribe. With both ephemeral credentials and explicit read-only
+authority, freeze one exact BTC Flexible product-list, position, and reward-
+history prequalification; subscription and redemption require separate funded
+authority. Canonical candidate:
+`docs/model-research/action-value/binance-btc-simple-earn-idle-yield-candidate-v1-2026-08-26.json`,
+result SHA-256
+`09aba801a6c400c5595190ea88bf023d5910dfe4467fc6fa20742de9b17f3671`.
+
 The next accepted Binance structural edge is LDUSDT incremental margin
 yield. Official product guidance says eligible USDT Simple Earn Flexible assets
 can become LDUSDT, remain usable as USD-M Multi-Assets margin, and continue
@@ -1223,11 +1248,14 @@ not grant account, funding, order, or transaction authority.
    Source-bind eligible BNB principal, realized Simple Earn and dividend rows,
    conservative executable reward sale values, and exact account costs against
    the frozen hedge history. Do not refresh BNB funding or books.
-   For Soft Staking, do not poll the unchanged public page. When both designated
-   ephemeral credentials exist and explicit read-only authority is given,
-   freeze one signed ETH/SOL product-list and rewards-history prequalification.
+   For the idle-native-token family, do not poll unchanged public pages. When
+   both designated ephemeral credentials exist and explicit read-only authority
+   is given, freeze one signed ETH/SOL Soft Staking product-list and reward-
+   history prequalification plus BTC Simple Earn product-list, position, and
+   reward-history prequalification.
    Never call the state-changing activation GET under read-only authority, and
-   never credit pending-order, Auto-Subscribe, or prompt-liquidity inventory.
+   never subscribe, redeem, or credit pending-order, Auto-Subscribe, or prompt-
+   liquidity inventory without the separately required authority and evidence.
    Do not resample the Binance-option/Polymarket-threshold model wedge unless
    an exact strike-expiry-settlement match appears or a two-sided same-date
    model gap exceeds the frozen 4.27-percentage-point escalation threshold.

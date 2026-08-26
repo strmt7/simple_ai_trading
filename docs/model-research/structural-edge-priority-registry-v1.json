@@ -69,8 +69,9 @@
     },
     {
       "blocking_evidence": [
-        "same-account regional eligibility activation status exact signed ETH and SOL APR caps and current eligible balances",
-        "owned daily-average balance reward amount rounding and distribution lineage",
+        "same-account regional eligibility activation status exact signed ETH and SOL Soft Staking APR caps and current eligible balances",
+        "same-account BTC Simple Earn minimum base and bonus tiers bonus end cap fees purchase redemption and sold-out state",
+        "owned ETH and SOL daily-average balance or BTC subscribed principal reward amount rounding and distribution lineage",
         "proof that scoped inventory is idle not frozen in pending orders not allocated by Auto-Subscribe and not required for prompt execution withdrawal collateral or settlement",
         "liquidity-delay custody tax and displaced-alternative-yield costs"
       ],
@@ -78,22 +79,28 @@
         {
           "path": "docs/model-research/action-value/binance-soft-staking-idle-spot-yield-gate-v1-2026-08-26.json",
           "result_sha256": "9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-btc-simple-earn-idle-yield-candidate-v1-2026-08-26.json",
+          "result_sha256": "09aba801a6c400c5595190ea88bf023d5910dfe4467fc6fa20742de9b17f3671"
         }
       ],
-      "current_status": "accepted_scoped_current_idle_spot_native_token_yield_official_public_ETH_and_SOL_estimated_APR_0_50_percent_daily_native_token_rewards_and_zero_additional_fee_only_for_identical_already_held_non_order_inventory_not_needed_for_prompt_liquidity_not_deployment_ready",
+      "current_status": "accepted_scoped_current_idle_spot_native_token_yield_for_ETH_and_SOL_Soft_Staking_only_plus_unaccepted_BTC_Simple_Earn_extension_candidate_public_0_27_percent_max_is_0_02_plus_0_25_percent_with_minimum_bonus_cap_end_fee_and_account_state_unproved_not_deployment_ready",
       "market_direction_forecast_required": false,
-      "mechanism": "soft_staking_idle_spot_native_token_yield",
-      "next_action": "monitor_official_public_rate_and_terms_without_polling_then_when_both_designated_ephemeral_credentials_exist_and_explicit_read_only_authority_is_given_freeze_one_signed_product_list_and_rewards_history_prequalification_for_ETH_and_SOL_activation_is_a_separate_state_change_requiring_explicit_authority_despite_its_documented_GET_method",
+      "mechanism": "binance_idle_spot_native_token_yield",
+      "next_action": "do_not_poll_unchanged_public_pages_when_both_designated_ephemeral_credentials_exist_and_explicit_read_only_authority_is_given_freeze_one_signed_ETH_SOL_Soft_Staking_product_list_and_rewards_history_plus_BTC_Simple_Earn_product_list_position_and_reward_history_prequalification_activation_or_subscription_remains_a_separate_state_change_requiring_explicit_authority",
       "priority_rank": 2,
       "prohibited_shortcuts": [
-        "buying_or_retaining_ETH_or_SOL_only_to_obtain_the_reward",
+        "buying_or_retaining_BTC_ETH_or_SOL_only_to_obtain_the_reward",
         "crediting_pending_order_frozen_assets_or_Auto_Subscribe_allocations",
         "treating_advertised_full_flexibility_as_guaranteed_immediate_liquidity_under_stress",
         "using_the_public_estimated_APR_as_exact_account_reward_or_future_fixed_rate",
+        "applying_a_Max_or_Up_to_APR_to_full_principal_without_exact_base_bonus_tier_cap_minimum_end_and_fee_evidence",
+        "reverse_engineering_BTC_bonus_terms_from_public_calculator_outputs",
         "calling_GET_sapi_v1_soft_staking_set_read_only_because_it_mutates_account_activation_state"
       ],
-      "retry_trigger": "official_ETH_or_SOL_Soft_Staking_rate_term_or_eligibility_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority",
-      "venue_scope": "binance_ETH_SOL_Spot_and_Soft_Staking"
+      "retry_trigger": "official_BTC_Simple_Earn_or_ETH_SOL_Soft_Staking_rate_tier_term_fee_or_eligibility_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority",
+      "venue_scope": "binance_BTC_Simple_Earn_and_ETH_SOL_Spot_Soft_Staking"
     },
     {
       "blocking_evidence": [
@@ -721,7 +728,7 @@
       "venue_scope": "polymarket_BTC_ETH_SOL_resolution"
     }
   ],
-  "result_sha256": "81550b4062b17678f68a15c4bd475ecc8011d4621daf664c44c08ea6899754fb",
+  "result_sha256": "75fc136e89a7152eaff85458b26718fb17a91e83318550033fb432433f5a84a9",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -835,6 +842,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T16:45:00Z",
+  "updated_at_utc": "2026-08-26T17:05:37Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
