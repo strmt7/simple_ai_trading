@@ -71,6 +71,12 @@ override prose.
   after-cost profitability claim. Public evidence that an automation contract
   captured a reward also does not prove independent access to its batching,
   relayer, permissions, fees, or first-block execution path.
+- Treat venue fee promotions as exact pair-and-order-role overlays, never as a
+  reason to change quote inventory or create volume. A zero maker fee may be
+  credited only to an owned maker fill on the currently listed pair; it cannot
+  be double-counted with a BNB discount, rebate, or reward. Any quote-asset
+  switch first requires its own executable spread, basis, conversion, fill,
+  settlement, and opportunity-cost proof.
 - Before freezing a time-bounded prospective capture, prove that its duration,
   phase alignment, retained observation tail, and required source timestamps can
   supply every minimum-sample gate. Elapsed duration and zero transport gaps do

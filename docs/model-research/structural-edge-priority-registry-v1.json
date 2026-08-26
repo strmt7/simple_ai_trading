@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 8,
-  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, and one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion; zero deployment-ready or fully external-cost-and-account-condition edges",
+  "accepted_edge_count": 9,
+  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current Binance quote-native promotional fee reduction for independently justified organic BTC ETH SOL spot flow without quote acquisition VIP chasing or extra volume, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, and one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion; zero deployment-ready or fully external-cost-and-account-condition edges",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -130,18 +130,24 @@
         "fresh exact-order commission estimate for the independently selected organic spot order",
         "executable USDT-to-BNB Convert quote and quote-to-balance delay against a contemporaneous reference",
         "owned immediate fill BNB commission deduction residual and unwind reconciliation",
-        "account regional symbol promotional tax rebate and precision behavior"
+        "account regional symbol promotional tax rebate and precision behavior",
+        "fresh current official promotional pair and exact maker_or_taker role plus account and region availability",
+        "owned promotional fill commission reconciliation without quote acquisition VIP chasing extra volume or double counting"
       ],
       "canonical_artifacts": [
         {
           "path": "docs/model-research/action-value/binance-bnb-just-in-time-fee-buffer-gate-v1-2026-08-26.json",
           "result_sha256": "b97eed6a93070d5e29b26d1a47757c9be49e0296332c8019a64388ba936c3b6b"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-spot-promotional-fee-overlay-v1-2026-08-26.json",
+          "result_sha256": "f951d167b3abbb89afc39a29671b9a4cb6929661f13a957e553a8fad439ce9e6"
         }
       ],
-      "current_status": "accepted_scoped_incremental_cost_reduction_official_current_spot_BNB_discount_25_percent_public_Convert_USDT_to_BNB_minimum_0_01_USDT_is_561_864_times_smaller_than_the_current_5_61864_USDT_spot_fallback_and_full_consumption_at_100_bips_acquisition_cost_breaks_even_only_after_a_24_2424_percent_BNB_decline_not_deployment_ready",
+      "current_status": "two_accepted_scoped_non_overlapping_spot_fee_reductions_BNB_just_in_time_buffer_for_positive_standard_commission_and_current_quote_native_BTC_ETH_SOL_promotions_zero_maker_on_FDUSD_and_U_VIP2_9_zero_taker_on_U_and_zero_maker_taker_on_USD1_plus_regular_USDC_taker_saving_0_5_bips_without_BNB_or_0_375_with_BNB_not_deployment_ready",
       "market_direction_forecast_required": false,
-      "mechanism": "bounded_just_in_time_bnb_spot_fee_buffer",
-      "next_action": "do_not_poll_public_books_or_refit_then_when_both_designated_ephemeral_credentials_exist_freeze_one_exact_symbol_commission_and_exact_order_test_contract_and_only_after_a_positive_gate_plus_separate_funded_authority_reconcile_one_0_01_USDT_maximum_Convert_quote_and_immediate_fully_consuming_organic_fee_deduction",
+      "mechanism": "binance_spot_fee_minimization_overlays",
+      "next_action": "for_an_otherwise_authorized_organic_order_refresh_the_exact_official_promotional_pair_once_and_prefer_the_quote_native_exact_role_fee_if_account_eligible_without_conversion_else_when_both_credentials_exist_freeze_one_exact_symbol_commission_and_order_test_for_the_bounded_BNB_fallback_then_require_separate_funded_authority_for_any_reconciliation",
       "priority_rank": 4,
       "prohibited_shortcuts": [
         "manufacturing_enlarging_churning_self_matching_or_wash_trading_volume",
@@ -149,10 +155,14 @@
         "holding_a_standing_BNB_inventory_or_reopening_the_terminal_perpetual_hedge",
         "assuming_public_25_percent_discount_as_exact_account_or_symbol_eligibility",
         "accepting_a_Convert_quote_without_exact_cost_consumption_price_risk_and_residual_bounds",
+        "acquiring_or_retaining_FDUSD_U_USD1_USDC_or_BNB_to_chase_a_fee_promotion",
+        "switching_quote_asset_without_executable_spread_basis_conversion_fill_settlement_and_opportunity_cost_proof",
+        "double_counting_zero_fees_BNB_discounts_rebates_or_rewards",
+        "chasing_VIP_status_or_assuming_maker_fills",
         "calling_the_capped_incremental_cost_policy_risk_free_arbitrage_or_guaranteed_profit"
       ],
-      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
-      "venue_scope": "binance_BTC_ETH_SOL_spot_organic_fee_flow_and_USDT_to_BNB_Convert"
+      "retry_trigger": "fresh_official_fee_table_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process_for_one_exact_organic_order_prequalification",
+      "venue_scope": "binance_BTC_ETH_SOL_spot_organic_fee_flow_USDC_FDUSD_U_USD1_quotes_and_USDT_to_BNB_Convert"
     },
     {
       "blocking_evidence": [
@@ -711,7 +721,7 @@
       "venue_scope": "polymarket_BTC_ETH_SOL_resolution"
     }
   ],
-  "result_sha256": "63bedbf06782411b008fcf4accdf086a778f97c102c4027becea411122b19917",
+  "result_sha256": "69fe7978b4d3e8d273f7072dc3afc7c6a1d63832be1a94412043a4500f2d9443",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -825,6 +835,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T16:08:52.4971331Z",
+  "updated_at_utc": "2026-08-26T16:35:38.1600616Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
