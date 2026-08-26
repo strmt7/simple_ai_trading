@@ -86,7 +86,9 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    Before a multi-request public screen, validate parsing and aggregation on one
    retained response. Use non-alias helper names and property-bearing objects;
    retain raw responses before downstream calculations so a local calculation
-   failure reuses evidence instead of refetching it.
+   failure reuses evidence instead of refetching it. For a large discovery or
+   inventory response, persist it and print only a bounded aggregate in the same
+   request; never stream the full payload to the console as the only copy.
 5. Keep edits scoped, match existing patterns, remove only resulting orphans,
    and never revert unrelated work.
 6. Keep numeric evidence in canonical JSON/CSV and regenerate charts from it.

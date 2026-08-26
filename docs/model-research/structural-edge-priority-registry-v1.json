@@ -591,7 +591,7 @@
       "venue_scope": "polymarket_BTC_Perps_and_binance_BTC_perpetual_with_BFUSD_collateral"
     }
   ],
-  "result_sha256": "0a3ffdb12a029221385782a45a5aeb54b3d7b06422c927cab7f850150b3e6b21",
+  "result_sha256": "ed4fe8edf5ed532d7cbcf56016e762869d0850cdb33f48df08138c666894bba7",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -693,8 +693,13 @@
       "canonical_result_sha256": "01bf5ea0a3f293e8e14b2f484ac2715c6c326ddfab57dba51873bf16e76a62e4",
       "family": "polymarket_binance_perps_OI_carry_contract_v1",
       "reason": "the_one_use_multi_asset_attempt_stopped_on_the_first_429_after_15_successes_without_retry_exact_cross_source_timestamps_did_not_align_and_the_retained_BTC_diagnostic_failed_every_role_after_conditional_reward_execution_and_two_leg_capital_hurdles"
+    },
+    {
+      "canonical_result_sha256": "c15f1e131aa18d705aa6ce507c0f921b7a559664db91a352a244d8df9ddb0f99",
+      "family": "polymarket_pusd_external_wrap_unwrap_parity_at_current_pool_state",
+      "reason": "the_exact_USDCe_wrap_sell_loop_lost_22_4388_bips_after_the_30_bip_pool_fee_at_the_optimistic_marginal_price_and_the_native_USDC_buy_unwrap_route_lost_0_3328_bips_after_its_1_bip_fee_before_price_impact_gas_and_USDC_USDCe_basis"
     }
   ],
-  "updated_at_utc": "2026-08-26T13:00:14.8468093Z",
+  "updated_at_utc": "2026-08-26T13:17:47.6439960Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

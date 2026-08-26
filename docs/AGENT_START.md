@@ -51,6 +51,15 @@ safety gate, blocks Stop, or submits an order.
 - Polymarket Round 29 is blocked before feature, target, or model access. Stage
   1 produced one terminal primary slot, one incomplete slot, and no third
   primary date; it cannot satisfy the frozen three-date/300-market source gate.
+- A public Polygon pUSD parity screen stopped at the optimistic marginal fee
+  gate. At pinned block 92,696,858, the exact USDC.e wrap-then-sell loop lost
+  22.4388 bps after the 30-bps Uniswap v3 pool fee, while the native-USDC
+  buy-then-unwrap route lost 0.3328 bps after its 1-bp fee before price impact,
+  gas, and the unclosed native-USDC/USDC.e basis. Do not request quotes or
+  resample unchanged pools. Reopen only for a materially lower-fee same-asset
+  route or a source-bound deviation exceeding fee, gas, and finite-size impact.
+  Canonical result: `polymarket-pusd-external-parity-v1-2026-08-26.json`,
+  SHA-256 `c15f1e131aa18d705aa6ce507c0f921b7a559664db91a352a244d8df9ddb0f99`.
 - The 2026-08-25 target-free structural-parity screens found no accepted edge.
   Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
   negative-risk events and zero gross-positive logical-implication bundles

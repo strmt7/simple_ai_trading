@@ -697,10 +697,21 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`0a3ffdb12a029221385782a45a5aeb54b3d7b06422c927cab7f850150b3e6b21`.
+`ed4fe8edf5ed532d7cbcf56016e762869d0850cdb33f48df08138c666894bba7`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
+
+The public Polygon pUSD external-parity lead is terminal at its captured pool
+state. Official contracts prove exact one-to-one USDC.e-to-pUSD wrapping and
+pUSD-to-USDC.e unwrapping, but the block-pinned USDC.e pool exposed only a
+7.5839-bps pUSD premium against a 30-bps fee. The optimistic marginal complete
+loop therefore lost 22.4388 bps before price impact and gas. The distinct
+native-USDC pool exposed only a 0.6673-bps pUSD discount against a 1-bp fee, so
+it lost 0.3328 bps before price impact, gas, and the still-unclosed
+native-USDC/USDC.e basis. No Quoter or wallet call was justified. Canonical
+result: `docs/model-research/action-value/polymarket-pusd-external-parity-v1-2026-08-26.json`,
+SHA-256 `c15f1e131aa18d705aa6ce507c0f921b7a559664db91a352a244d8df9ddb0f99`.
 
 The highest-priority Binance structural lead is now LDUSDT incremental margin
 yield. Official product guidance says eligible USDT Simple Earn Flexible assets
@@ -994,6 +1005,9 @@ not grant account, funding, order, or transaction authority.
    cross-condition duplicate discovery, the incomplete Combo catalog contract,
    the terminal Polymarket/Binance Perps OI-carry contract, or paired-maker
    reward snapshots as if repetition could create an edge.
+   Do not resample the rejected pUSD external parity pools or request finite-size
+   quotes unless a materially lower-fee same-asset route appears or a
+   source-bound deviation first clears fee, conservative gas, and price impact.
    A repeat is justified only by a frozen prospective sampling contract or
    materially new fee/execution evidence.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
