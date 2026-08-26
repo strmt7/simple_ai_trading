@@ -330,7 +330,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "a84a770c1c82c0c632c7ad70dee1bfdcc57f028c07c40a0087b83953fcdf8a8f",
+  "result_sha256": "4cb5267f0649961f98bd155819d5ba413de605dca7dc511f4d5df381fedbaa49",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -397,8 +397,13 @@
       "canonical_result_sha256": "0cf6e3aae168e0c483634e78fd824a80be9e58269f02e9b01a6d9c9c46578a8f",
       "family": "binance_bstock_perpetual_funding_individual_and_training_ranked_basket",
       "reason": "zero_of_57_unexposed_exact_multiplier_symbols_passed_the_frozen_training_gate_and_the_frozen_top_20_percent_basket_failed_validation_test_and_every_aggregate_regime_slice_after_execution_and_capital_hurdles"
+    },
+    {
+      "canonical_result_sha256": "f44f283b311ebf8b3302dba4e1d5d6be0b956a2657483786229611f82ed5da88",
+      "family": "binance_zero_fee_stablecoin_triangular_conversion",
+      "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T08:05:42.6472077Z",
+  "updated_at_utc": "2026-08-26T08:20:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

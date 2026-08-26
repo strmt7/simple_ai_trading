@@ -63,6 +63,21 @@ safety gate, blocks Stop, or submits an order.
   `binance-spot-triangle-account-fee-gate-v1.json`, result SHA-256
   `304a78180be3375a3453384ad71948c24e52ffeba2f1482cb97711e59aa4a688`;
   this remains non-executable and is not an edge. A separate official API
+  review identified two new all-stablecoin triangles whose six spot legs were
+  advertised at zero maker and taker fees for eligible users. The first frozen
+  attempt stopped before admitting a book sample because Binance reports zero
+  `MARKET_LOT_SIZE` steps and the implementation did not fall back to positive
+  `LOT_SIZE`; that failure is preserved and not reused. The sole corrected
+  recovery then journaled 600 synchronized six-symbol book responses over
+  299.729 seconds. Across both orientations and 100, 1,000, and 10,000 quote
+  sizes, zero of 7,200 evaluations was positive after exact whole-token
+  rounding, displayed top-level capacity, and a 3-bps operational stress. The
+  best observed maximum was still -5.0008 bps. Canonical recovery:
+  `binance-zero-fee-stablecoin-cycle-recovery-v2-2026-08-26.json`, result
+  SHA-256
+  `f44f283b311ebf8b3302dba4e1d5d6be0b956a2657483786229611f82ed5da88`.
+  This exact zero-fee stablecoin-cycle family is terminal; do not resample,
+  reduce stress, or substitute nonsynchronous trades. A separate official API
   review found account-specific liquidity-program overview, performance,
   weekly final-rebate, and spot rebate-history endpoints. The symbol commission
   endpoint explicitly excludes spot maker rebates and the BNB discount effect.
