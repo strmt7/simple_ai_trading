@@ -1,0 +1,187 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "already-held idle USD1 already located in an eligible Spot or Funding account, or already-required USD1 collateral in an eligible Margin or USD-M Futures account, while the published campaign remains active; credit only the base reward unless the minimum daily organic USD1 Futures open interest already exists independently",
+    "after_all_external_costs_and_best_alternative_yield": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_current_time_limited_gross_holding_yield_for_identical_already_held_USD1_principal_without_acquisition_or_manufactured_open_interest",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T15:52:31.7217994Z",
+  "credential_preflight": {
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_present": false,
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_present": false,
+    "values_inspected": false
+  },
+  "economics": {
+    "current_published_rates": {
+      "first_distribution_base_apr_percent": "4.85",
+      "first_distribution_boosted_apr_percent": "5.82",
+      "second_distribution_base_apr_percent": "5.46",
+      "second_distribution_boosted_apr_percent": "6.55",
+      "third_distribution_rate_published": false,
+      "third_distribution_update_due_utc": "2026-08-28",
+      "fourth_distribution_rate_published": false,
+      "fourth_distribution_update_due_utc": "2026-09-04"
+    },
+    "current_second_distribution_rate_sensitivities": {
+      "base_reward_bips_per_eligible_day": "1.49589041",
+      "base_reward_bips_per_seven_eligible_days": "10.47123288",
+      "boosted_reward_bips_per_seven_eligible_days": "12.56164384",
+      "boost_increment_bips_per_seven_eligible_days": "2.09041096",
+      "base_reward_usd_value_per_1500_USD1_seven_days": "1.57068493",
+      "base_reward_usd_value_per_10000_USD1_seven_days": "10.47123288",
+      "boost_increment_usd_value_per_10000_USD1_seven_days": "2.09041096"
+    },
+    "simple_earn_allocation_boundary_from_2026_08_27": {
+      "airdrop_eligible_account_categories_are_a_closed_published_list": true,
+      "simple_earn_is_not_in_the_published_airdrop_eligible_account_categories": true,
+      "published_USD1_simple_earn_bonus_apr_percent": "7",
+      "published_USD1_simple_earn_bonus_cap_USD1": "1500",
+      "published_USD1_simple_earn_realtime_apr_percent_approximate": "1.5",
+      "headline_simple_earn_total_apr_percent_on_first_1500": "8.5",
+      "headline_simple_earn_advantage_over_current_airdrop_base_bips_over_eight_days_on_first_1500": "6.66301370",
+      "headline_airdrop_base_advantage_over_approximate_simple_earn_realtime_bips_over_eight_days_above_bonus_cap": "8.67945205",
+      "adjudication": "the published terms support mutually exclusive account locations, but exact same-account Simple Earn activation eligibility quota and Real-Time APR remain unproved; therefore these are allocation sensitivities rather than deployment instructions"
+    },
+    "reward_liquidation_observation": {
+      "WLFIUSDT_status": "TRADING",
+      "bid": "0.05830000",
+      "bid_quantity_WLFI": "354628.40",
+      "ask": "0.05840000",
+      "ask_quantity_WLFI": "93506.30",
+      "spot_minimum_notional_USDT": "5",
+      "spot_minimum_quantity_WLFI": "0.10",
+      "public_convert_minimum_from_WLFI": "0.17",
+      "public_convert_minimum_to_USDT": "0.01",
+      "second_distribution_WLFI_valuation_USD": "0.0599",
+      "second_distribution_valuation_to_current_bid_haircut_bips_of_reward": "267.11185309",
+      "seven_day_base_reward_bips_of_principal_after_same_reward_haircut": "10.19153383",
+      "limitations": [
+        "The current book is not a distribution-time executable sale and does not bound future WLFI price movement.",
+        "The public Convert catalog proves amount bounds only, not an executable quote, fee, account eligibility, or settlement delay.",
+        "Exact account Spot commission is signed and unknown.",
+        "A reward-price haircut applies only to the reward, while USD1 issuer, peg, custody, redemption, and venue risks apply to principal."
+      ]
+    }
+  },
+  "eligibility_contract": {
+    "campaign_end_utc": "2026-09-04T00:00:00Z",
+    "campaign_start_utc": "2026-08-07T00:00:00Z",
+    "eligible_account_categories": [
+      "Spot Account",
+      "Funding Account",
+      "Margin Account with USD1 as collateral in Cross Margin, Isolated Margin, or Portfolio Margin",
+      "USD-M Futures Account with USD1 as collateral, including Multi-Assets mode"
+    ],
+    "individual_reward_cap": null,
+    "kyc_required": true,
+    "lowest_hourly_snapshot_sets_each_daily_qualifying_balance": true,
+    "margin_or_futures_boost_multiplier": "1.2",
+    "minimum_daily_lowest_USD1_futures_open_interest_for_boost": "300",
+    "minimum_supported_asset_balance_at_snapshot_USD1": "greater_than_0.01",
+    "other_stablecoin_borrowed_USD1_haircut_percent_after_liabilities": "70",
+    "region_eligibility_proved_for_account": false,
+    "rewards_rounded_down_decimal_places": 2,
+    "weekly_distribution_deadline": "Friday 18:00 UTC",
+    "weekly_reward_formula": "seven_day_average_qualifying_balance_times_effective_APR_on_distribution_day_times_7_divided_by_365",
+    "WLFI_distribution_value_basis": "official Binance market closing price one day before distribution"
+  },
+  "overlap_adjudication": {
+    "distinct_from_USD1_simple_earn_bonus": true,
+    "distinct_reason": "Simple Earn is not one of the four enumerated airdrop-eligible account categories, so principal allocated to it cannot be credited with the holding airdrop under the published contract.",
+    "organic_margin_or_futures_collateral_only": true,
+    "organic_open_interest_only": true,
+    "reason_not_to_open_300_USD1_futures_interest_for_boost": "the current 1.09 percentage-point annualized boost is only 2.09041096 bips over seven days before funding fees spread basis liquidation margin and operations; creating exposure solely for rewards is not independently justified",
+    "same_principal_risk_scope": "The accepted scope does not acquire USD1 and therefore does not claim that USD1 is superior to USDT USDC fiat or any other principal choice."
+  },
+  "prohibited_shortcuts": [
+    "acquiring USD1 solely because the gross published APR is positive",
+    "inferring jurisdiction or account eligibility from the host timezone",
+    "treating a logged-out campaign page as exact account reward proof",
+    "moving the same principal to Simple Earn while also crediting the holding airdrop",
+    "opening maintaining enlarging churning self-matching or wash trading USD1 Futures positions to farm the 1.2x multiplier",
+    "using an illustrative 20 percent example as an observed or future rate",
+    "using the prior distribution valuation or current WLFI book as a guaranteed executable reward sale",
+    "ignoring lowest-hourly-snapshot behavior rounding account restrictions reward delays term changes tax or custody risk",
+    "calling the time-limited campaign stable persistent risk-free or deployment-ready"
+  ],
+  "result_sha256": "c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6",
+  "retry_contract": {
+    "public_refresh": [
+      "on 2026-08-27 confirm the separate USD1 Simple Earn activation and published terms once",
+      "on 2026-08-28 capture the third airdrop distribution base and boosted APR WLFI valuation and any eligibility-term change once",
+      "on 2026-09-04 capture the final distribution and campaign termination once"
+    ],
+    "signed_prequalification_only_when_both_designated_credentials_exist_and_explicit_read_only_authority_is_given": [
+      "prove account campaign regional and product eligibility without serializing request or secret-derived material",
+      "prove exact USD1 Simple Earn Real-Time APR bonus tier quota and current position",
+      "prove eligible USD1 balances and owned WLFI distribution lineage",
+      "prove exact WLFIUSDT commission or exact authenticated Convert quote cost before choosing a reward liquidation route"
+    ],
+    "separate_funded_authority_required_for": "any trade conversion transfer subscription redemption margin action futures position or reward sale"
+  },
+  "schema_version": "binance-usd1-wlfi-holding-airdrop-gate-v1",
+  "sources": [
+    {
+      "article_code": "79f451fec45544f8ad941647165f22a8",
+      "article_id": 281845,
+      "last_update_time_ms": 1787561340000,
+      "observed_by_utc": "2026-08-26T15:52:31.7217994Z",
+      "payload_sha256": "7df4eb1958bc889f7d29c50b2185716da7a1ae37f343a35da597345f53a10bde",
+      "role": "official_current_USD1_WLFI_airdrop_extension_terms_and_realized_APRs",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=79f451fec45544f8ad941647165f22a8"
+    },
+    {
+      "article_code": "81971865baf546b3b37e60cb4a76dd11",
+      "payload_sha256": "3a2c72ee78e5f2ad342a5047662642eade50049fe5bdd9827f1ee3e9a2b7fb4e",
+      "role": "official_upcoming_USD1_Simple_Earn_promotion_terms",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=81971865baf546b3b37e60cb4a76dd11"
+    },
+    {
+      "observed_by_utc": "2026-08-26T15:52:31.7217994Z",
+      "payload_sha256": "2c5ac9595123b00392ccdd81859c5fd772a293cdfad504b0f91de2fd7529f2ab",
+      "role": "official_public_WLFIUSDT_symbol_contract",
+      "url": "https://api.binance.com/api/v3/exchangeInfo?symbol=WLFIUSDT"
+    },
+    {
+      "observed_by_utc": "2026-08-26T15:52:31.7217994Z",
+      "payload_sha256": "2c4c373aafcc2178a78ebb81957c856d55fa38cd0d0ccc58a906f0db1c201746",
+      "role": "official_public_WLFIUSDT_top_book",
+      "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=WLFIUSDT"
+    },
+    {
+      "observed_by_utc": "2026-08-26T15:52:31.7217994Z",
+      "payload_sha256": "1b877d3240302fe15cdf4841950203c56d0797232b110599b8b1fe13368d1fd7",
+      "role": "official_public_WLFIUSDT_five_level_depth",
+      "url": "https://api.binance.com/api/v3/depth?symbol=WLFIUSDT&limit=5"
+    },
+    {
+      "observed_by_utc": "2026-08-26T15:52:31.7217994Z",
+      "payload_sha256": "a00cc88aa852992ec44802324c2c41c9680b7d09c418669fadb78473649de268",
+      "role": "official_public_WLFI_to_USDT_Convert_catalog",
+      "url": "https://api.binance.com/sapi/v1/convert/exchangeInfo?fromAsset=WLFI&toAsset=USDT"
+    },
+    {
+      "observed_by_utc": "2026-08-26T15:52:31.7217994Z",
+      "payload_sha256": "103e2096dd8fbc5a7848c7e979c445ab115d67159ec75520263626233f99d38f",
+      "role": "official_public_USDT_to_WLFI_Convert_catalog",
+      "url": "https://api.binance.com/sapi/v1/convert/exchangeInfo?fromAsset=USDT&toAsset=WLFI"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json",
+      "result_sha256": "230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1",
+      "role": "source_bound_USD1_acquisition_peg_reserve_and_alternative_yield_risk_gate"
+    }
+  ]
+}

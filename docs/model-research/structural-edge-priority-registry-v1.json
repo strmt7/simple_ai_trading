@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 4,
-  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, and one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates; zero deployment-ready or fully external-cost-and-account-condition edges",
+  "accepted_edge_count": 5,
+  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, and one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest; zero deployment-ready or fully external-cost-and-account-condition edges",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -241,12 +241,16 @@
         {
           "path": "docs/model-research/action-value/binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json",
           "result_sha256": "230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json",
+          "result_sha256": "c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6"
         }
       ],
-      "current_status": "USD1_7_percent_fixed_bonus_is_a_time_limited_conditional_candidate_not_a_stable_edge_the_28_day_fixed_target_case_exceeds_the_current_USDT_alternative_by_25_0228_bips_but_only_0_9683_bips_remain_after_the_worst_observed_30_day_close_move_and_current_displayed_spread_before_unknown_fees_eligibility_and_reserve_risk_RLUSD_remains_conditional_after_one_published_8_07_percent_week",
+      "current_status": "accepted_scoped_current_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_current_second_distribution_base_APR_5_46_percent_and_6_55_percent_boost_only_for_independently_existing_300_USD1_daily_lowest_organic_futures_open_interest_Simple_Earn_is_not_an_eligible_airdrop_account_category_and_exact_account_eligibility_costs_and_best_alternative_remain_unproved",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "at_2026_08_27T00_00_00Z_confirm_USD1_offer_activation_terms_and_primary_fee_treatment_once_then_when_both_credentials_exist_prove_exact_USD1_and_USDT_product_eligibility_rates_quota_and_entry_exit_costs_also_observe_the_fixed_2026_08_28_and_2026_09_04_RLUSD_updates_without_refitting",
+      "next_action": "at_2026_08_27T00_00_00Z_confirm_USD1_Simple_Earn_activation_terms_once_then_at_2026_08_28_capture_the_third_USD1_airdrop_APR_and_RLUSD_update_once_and_when_both_credentials_exist_with_explicit_read_only_authority_prove_exact_account_region_product_rates_quota_eligible_balances_owned_distributions_and_reward_liquidation_costs",
       "priority_rank": 7,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
@@ -257,12 +261,15 @@
         "manufactured_churn_self_trading_wash_trading_or_other_inauthentic_volume_to_qualify_for_rewards",
         "extrapolating_one_RLUSD_reward_week_or_an_illustrative_example_into_future_APR",
         "calling_a_temporary_USD1_bonus_a_stable_edge_or_ignoring_issuer_peg_redemption_and_reserve_freshness_risk",
+        "moving_the_same_USD1_principal_to_Simple_Earn_while_also_crediting_the_holding_airdrop",
+        "opening_maintaining_enlarging_churning_self_matching_or_wash_trading_USD1_Futures_open_interest_to_farm_the_1_2x_multiplier",
+        "crediting_the_6_55_percent_boost_without_independently_required_organic_open_interest_and_exact_daily_lowest_snapshot_evidence",
         "assuming_public_Convert_bounds_or_a_displayed_spread_prove_an_executable_fee_free_round_trip",
         "inferring_jurisdiction_or_account_eligibility_from_system_timezone",
         "calling direction-neutral market-invariant or risk-free",
         "freezing another signed collector while credentials are absent"
       ],
-      "retry_trigger": "2026_08_27_USD1_promotion_activation_or_2026_08_28_RLUSD_second_distribution_update_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
+      "retry_trigger": "2026_08_27_USD1_Simple_Earn_activation_or_2026_08_28_USD1_third_airdrop_and_RLUSD_distribution_updates_or_2026_09_04_USD1_final_airdrop_update_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority",
       "venue_scope": "binance_bfusd_rwusd_rlusd_usd1_usdt_and_same_currency_cash_alternatives"
     },
     {
@@ -792,6 +799,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T15:42:23.6546299Z",
+  "updated_at_utc": "2026-08-26T15:54:20.0755331Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

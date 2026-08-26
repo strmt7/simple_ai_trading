@@ -1038,6 +1038,28 @@ provable payout lower bound is zero. A physical binary BUY order also appears
 as a complementary ASK at `1-price`; hypothetical post-quote midpoints must
 include that mirrored own ask while the physical order is scored only once.
 
+The active Binance USD1/WLFI holding airdrop is now accepted only as a scoped,
+time-limited gross holding-yield edge for USD1 that is already held in an
+eligible published account category. The official extension reports 4.85% then
+5.46% realized base APR and 5.82% then 6.55% boosted APR through the first two
+weekly distributions. The boost requires the lowest hourly USD1 Futures open
+interest to remain at least 300 USD1 each day; never open or retain a position
+to farm it because the current boost adds only 2.0904 bips over seven days
+before funding, spread, basis, liquidation, margin, and operational costs.
+Simple Earn is absent from the announcement's closed list of eligible account
+categories, so never credit the airdrop and Simple Earn to the same principal.
+From 2026-08-27, the public headline allocation is 8.5% on the first 1,500 USD1
+in Simple Earn versus the current 5.46% airdrop base, while above the bonus cap
+the current airdrop base exceeds the approximate 1.5% Real-Time APR by 8.6795
+bips over eight days. These are public sensitivities, not account instructions:
+credentials are absent, region and product eligibility are unproved, USD1
+principal risk remains, and exact reward-sale costs are unknown. Refresh the
+Simple Earn activation once on 2026-08-27, the third airdrop APR once on
+2026-08-28, and the final airdrop once on 2026-09-04. Canonical gate:
+`docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json`,
+result SHA-256
+`c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
