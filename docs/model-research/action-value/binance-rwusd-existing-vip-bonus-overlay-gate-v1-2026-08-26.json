@@ -1,0 +1,113 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "incremental automatic Bonus Tiered APR on an eligible master account's RWUSD position that was already independently required and held before considering this promotion, without a new subscription redemption stablecoin conversion or VIP-status chase",
+    "after_all_external_costs_and_best_alternative_yield": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "market_direction_forecast_required": false,
+    "new_RWUSD_subscription_accepted": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_current_time_limited_incremental_bonus_on_existing_RWUSD_only",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T16:07:54.6510492Z",
+  "credential_preflight": {
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_present": false,
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_present": false,
+    "values_inspected": false
+  },
+  "economics": {
+    "base_apr_percent": "3.36",
+    "conservative_forward_days_from_2026_08_27_through_2026_09_17": 22,
+    "promotion_end_utc": "2026-09-17T23:59:00Z",
+    "promotion_start_utc": "2026-08-18T00:00:00Z",
+    "VIP_1_to_3": {
+      "bonus_apr_percent": "0.19",
+      "bonus_tier_cap_RWUSD": "30000",
+      "incremental_bonus_bips_over_22_days": "1.14520548",
+      "maximum_incremental_bonus_RWUSD_over_22_days": "3.43561644",
+      "total_apr_percent": "3.55",
+      "total_reward_bips_over_22_days": "21.39726027"
+    },
+    "VIP_4_to_9": {
+      "bonus_apr_percent": "0.76",
+      "bonus_tier_cap_RWUSD": "200000",
+      "incremental_bonus_bips_over_22_days": "4.58082192",
+      "maximum_incremental_bonus_RWUSD_over_22_days": "91.61643836",
+      "total_apr_percent": "4.12",
+      "total_reward_bips_over_22_days": "24.83287671"
+    },
+    "incremental_cost_contract": {
+      "accepted_scope_subscription_cost": "zero because no new subscription is performed",
+      "accepted_scope_principal_conversion_cost": "zero because principal remains in its independently selected existing RWUSD position",
+      "bonus_distribution": "one-time payment to eligible Spot Accounts by 2026-10-08",
+      "bonus_measurement": "each day's lowest RWUSD account balance subject to the applicable VIP tier cap",
+      "remaining_risks": "account eligibility VIP-level changes term changes delayed or failed distribution custody tax and the independent RWUSD principal decision"
+    }
+  },
+  "product_boundary": {
+    "bonus_accrual": "begins at the applicable Bonus APR following the day of subscription",
+    "bonus_eligibility_changes_with_daily_VIP_level": true,
+    "master_accounts_only": true,
+    "new_subscription_requires_existing_signed_gate": true,
+    "RWUSD_characterization": "Binance states RWUSD is a yield product and not a stablecoin security fund tokenized RWA or on-chain asset",
+    "RWUSD_transfer_or_withdrawal": "cannot be transferred to another user or withdrawn on-chain",
+    "RWUSD_redemption_asset": "USDC",
+    "RWUSD_redemption_guaranteed_immediate_or_uninterrupted": false,
+    "subaccounts_eligible_for_bonus": false,
+    "US_persons_eligible": false
+  },
+  "overlap_adjudication": {
+    "same_family_as_stable_value_yield_allocation": true,
+    "why_not_a_new_principal_edge": "The promotion does not prove that entering RWUSD beats the exact account's best same-currency alternative after subscription redemption delay custody tax and product risks.",
+    "why_the_increment_is_accepted": "For qualifying RWUSD that is already held for an independent reason, the published VIP bonus changes no principal position and adds a positive reward before account-specific operational and tax costs."
+  },
+  "prohibited_shortcuts": [
+    "subscribing to RWUSD solely because the headline total APR is positive",
+    "changing or manufacturing trading volume asset balance or VIP status to qualify for the bonus",
+    "crediting the VIP 4 to 9 rate to VIP 1 to 3 or an unproved account",
+    "crediting balances above the applicable bonus tier cap",
+    "using the logged-out promotion as exact account rate quota or eligibility evidence",
+    "treating RWUSD as a stablecoin transferable token direct RWA claim or guaranteed instant USDC redemption",
+    "ignoring the lowest-daily-balance rule distribution delay term changes custody tax or alternative yield",
+    "calling the time-limited bonus stable persistent risk-free or deployment-ready"
+  ],
+  "result_sha256": "076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51",
+  "retry_contract": {
+    "public_refresh": [
+      "refresh only on a published RWUSD base rate bonus tier promotion period product or redemption-term change",
+      "capture campaign termination once after 2026-09-17T23:59:00Z",
+      "capture the stated bonus distribution status once after 2026-10-08"
+    ],
+    "signed_prequalification_only_when_both_designated_credentials_exist_and_explicit_read_only_authority_is_given": [
+      "prove exact account VIP level regional and RWUSD eligibility",
+      "prove existing RWUSD position size daily-lowest-balance history and independently documented reason for holding it",
+      "prove current base rate quota subscription and fast and standard redemption fee delay contracts without serializing request or secret-derived material"
+    ],
+    "separate_funded_authority_required_for": "any new subscription redemption conversion transfer or other state-changing action"
+  },
+  "schema_version": "binance-rwusd-existing-vip-bonus-overlay-gate-v1",
+  "sources": [
+    {
+      "article_code": "4695cf9b97714209b77151f6c7af9f81",
+      "article_id": 282720,
+      "observed_by_utc": "2026-08-26T16:07:54.6510492Z",
+      "payload_sha256": "1e093be33a7cfccfc0ae3a49980e3434664708e2d3f3904912c5089337d57459",
+      "role": "official_current_RWUSD_VIP_promotion_extension_terms",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=4695cf9b97714209b77151f6c7af9f81"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-stable-yield-allocation-evidence-gate-v1.json",
+      "result_sha256": "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a",
+      "role": "existing_signed_RWUSD_rate_quota_redemption_and_alternative_yield_prequalification_gate"
+    }
+  ]
+}
