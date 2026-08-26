@@ -1,0 +1,78 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "rejected_current_primary_source_reward_asset_conflict_blocks_same_unit_existing_holding_economics",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T20:56:35.1172149Z",
+  "current_public_mechanism": {
+    "daily_balance_rule": "daily lowest BFUSD balance across the listed eligible Binance account locations",
+    "holding_limit": "none stated on the current product page",
+    "last_day_apr_percent": "5.12",
+    "purchase_fee": "0",
+    "purchase_redemption_identity": "purchase and redeem with supported USD stablecoin at 1:1 before applicable redemption fees delays and restrictions",
+    "seven_day_average_apr_percent": "5.03"
+  },
+  "reward_asset_conflict": {
+    "current_product_page": "daily rewards are distributed in BFUSD to Spot the next day",
+    "current_rate_faq": "rewards are distributed in a USD stablecoin",
+    "governing_terms_effective_2026_01_05": "rewards are ordinarily credited in a USD Stablecoin and Binance may change the supported or reward stablecoin",
+    "same_unit_forward_reward_floor": "0",
+    "terminal_rule": "do not select BFUSD or assume one-for-one stablecoin conversion while current primary sources disagree"
+  },
+  "limitations": [
+    "The current product page and current governing legal terms disagree on the reward asset, so no same-token BFUSD reward calculation can be promoted.",
+    "The displayed APR is discretionary and may be zero; account eligibility exact daily balances owned reward history and actual payout asset were not accessed.",
+    "BFUSD is a Binance credit-risk product rather than segregated property; holders may be general unsecured creditors and redemptions may be delayed suspended or subject to mandatory repurchase.",
+    "A 1:1 purchase or redemption rule does not close fees delay market divergence custody tax liquidity or opportunity costs.",
+    "The separate Polymarket-perpetual BFUSD collateral stack remains rejected below its 14.1066194737 percent fixed-role persistence threshold."
+  ],
+  "prohibited_actions": [
+    "choosing the product-page reward asset over the governing terms or vice versa",
+    "assuming BFUSD USDT USDC or another USD stablecoin are one-for-one for economics",
+    "buying subscribing retaining redeeming or converting BFUSD to test the conflict without separate funded authority",
+    "crediting displayed APR to an unproved account balance or treating it as guaranteed",
+    "double-counting BFUSD rewards as both same-token yield and collateral efficiency",
+    "repeating the already rejected BFUSD Polymarket-perpetual collateral stack below its frozen threshold"
+  ],
+  "result_sha256": "54fe3d3e23a92290debdc67d1e7e19ecac6c06441c045f1aa21fe3e62558c03c",
+  "retry_policy": {
+    "public_refresh": "only after Binance publishes a source that explicitly reconciles the current BFUSD reward asset and effective date",
+    "signed_prequalification_only_after_both_credentials_and_explicit_read_only_authority": "owned post_change reward history that identifies the exact credited asset plus exact eligible balances and applicable APR",
+    "separate_funded_authority_required_for": "any BFUSD purchase subscription retention redemption conversion transfer or trade"
+  },
+  "schema_version": "binance-bfusd-existing-holding-reward-unit-conflict-gate-v1",
+  "sources": [
+    {
+      "normalized_live_visible_page_characters": 6285,
+      "normalized_live_visible_page_sha256": "ec9b9cab96da3732a02c367b62ed1b81ffa4afff6af9a8a92291fd05b44174d7",
+      "observed_at_utc": "2026-08-26T20:56:35.1172149Z",
+      "role": "current_APR_balance_purchase_redemption_and_product_page_BFUSD_reward_asset_language",
+      "url": "https://www.binance.com/en/bfusd"
+    },
+    {
+      "article_code": "b839e9bcaa03440fa5682de0895410f8",
+      "last_updated": "2025-08-19",
+      "observed_at_utc": "2026-08-26T20:56:35.1172149Z",
+      "role": "current_rate_formula_lowest_balance_and_USD_stablecoin_reward_language",
+      "url": "https://www.binance.com/en/support/faq/detail/b839e9bcaa03440fa5682de0895410f8"
+    },
+    {
+      "effective_date": "2026-01-05",
+      "observed_at_utc": "2026-08-26T20:56:35.1172149Z",
+      "role": "governing_reward_asset_discretion_redemption_delay_mandatory_repurchase_credit_and_market_risk_terms",
+      "url": "https://bin.bnbstatic.com/static/cms/cg08ou2ak0tn7mcplvfg/file/c1dd5e9f6a6191ca85b3cd256bd831884372530e3b4204b9006bf273650c6f5b.pdf",
+      "version": "1.0"
+    }
+  ]
+}

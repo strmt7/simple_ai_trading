@@ -1,0 +1,70 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "terminal_extension_of_rejected_matched_base_spot_perpetual_funding_carry_no_distinct_fee_execution_or_capital_subsidy_proved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true
+  },
+  "break_even_contract": {
+    "required_inequality": "cumulative_received_funding > spot_maker_entry_fee + spot_maker_exit_fee + futures_taker_entry_fee + futures_taker_exit_fee + entry_basis_and_spread + exit_basis_and_spread + capital_liquidation_and_operational_costs",
+    "public_current_after_cost_floor": "0",
+    "reason": "the current public product surface did not expose a live portfolio rate or any subsidy that changes the already rejected matched-base funding-carry economics"
+  },
+  "created_at_utc": "2026-08-26T20:56:35.1172149Z",
+  "official_mechanism": {
+    "delta_neutral_is_an_aim_not_a_guarantee": true,
+    "legs": "equal-notional spot and opposite perpetual positions",
+    "liquidation_risk": "mark-price divergence and repeated opposite funding can consume margin and cause liquidation",
+    "negative_initial_pnl_expected": "fees and spread can make PnL negative immediately after subscription",
+    "published_entry_exit_fees": "spot maker fees plus futures taker fees on subscription and redemption, account VIP dependent",
+    "spread_control_default_absolute_percent": "0.1",
+    "strategy_end_on_funding_reversal": "manual; alerts do not close the strategy"
+  },
+  "limitations": [
+    "No current portfolio catalog rate exact symbol fee schedule spread basis fill owned funding history liquidation buffer or capital cost was available from the logged-out product surface.",
+    "Trailing three-day funding or a displayed APR cannot prove forward persistence across funding reversals and stressed basis regimes.",
+    "Automation of the same spot-perpetual legs is operational packaging, not a new payoff identity or market-independent subsidy.",
+    "The frozen Round 61 matched-base BTC ETH and SOL replay already failed capacity and after-cost economic gates; no material new source evidence reopens it."
+  ],
+  "prohibited_actions": [
+    "treating the delta-neutral label as market-invariant risk-free or liquidation-proof",
+    "crediting displayed trailing APR without exact current fees spread basis capital and persistence",
+    "using leverage or reinvestment to turn a rejected gross mechanism into an edge",
+    "opening subscribing redeeming or closing a Smart Arbitrage strategy without separate funded trading authority",
+    "rerunning Round 61 or resampling ordinary spot-perpetual funding carry without a material fee execution or capital subsidy"
+  ],
+  "result_sha256": "03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3",
+  "retry_policy": {
+    "reopen_only_for": "a newly published material fee rebate execution guarantee principal subsidy or capital credit unique to Smart Arbitrage that changes the frozen matched-base break-even identity",
+    "signed_account_access": "not justified while the public mechanism remains the same terminal family",
+    "trading_authority": "always separately required for subscription redemption or any position change"
+  },
+  "schema_version": "binance-smart-arbitrage-terminal-family-adjudication-v1",
+  "sources": [
+    {
+      "article_code": "2c65b90111e14be6b0156d32e0ff94d9",
+      "published": "2024-10-02",
+      "observed_at_utc": "2026-08-26T20:56:35.1172149Z",
+      "role": "official_leg_fee_spread_funding_reversal_liquidation_and_manual_exit_contract",
+      "url": "https://www.binance.com/en/support/faq/detail/2c65b90111e14be6b0156d32e0ff94d9"
+    },
+    {
+      "observed_at_utc": "2026-08-26T20:56:35.1172149Z",
+      "role": "current_logged_out_product_surface_unavailable_no_live_rate_or_portfolio_evidence",
+      "url": "https://www.binance.com/en/earn/smart-arbitrage"
+    },
+    {
+      "role": "terminal_predecessor_matched_base_family",
+      "sha256": "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4"
+    }
+  ]
+}

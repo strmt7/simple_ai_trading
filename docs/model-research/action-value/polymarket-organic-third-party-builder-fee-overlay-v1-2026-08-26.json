@@ -1,0 +1,97 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current_gross_pUSD_builder_fee_only_on_bona_fide_independently_existing_third_party_orders_routed_through_an_owned_application_with_an_account_confirmed_active_builder_code_and_explicitly_configured_disclosed_positive_fee_rate",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_direction_independent_incremental_builder_fee_overlay_account_eligibility_organic_external_flow_and_owned_payout_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "builder_profile_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T20:56:35.1172149Z",
+  "economics": {
+    "fee_formula": "matched_trade_notional_pUSD * configured_builder_fee_rate_bps / 10000",
+    "gross_pusd_per_1000_matched_pusd": {
+      "at_100_bps_taker_maximum": "10",
+      "at_10_bps": "1",
+      "at_1_bp": "0.1",
+      "at_50_bps_maker_maximum": "5"
+    },
+    "maker_rate_limit_bps": 50,
+    "minimum_positive_rate_bps": 1,
+    "rate_granularity_bps": 1,
+    "taker_rate_limit_bps": 100,
+    "unit_binding": "The official fee formula and example denominate matched notional and builder fee in pUSD; no stablecoin parity or fiat conversion is used.",
+    "zero_flow_floor_pusd": "0"
+  },
+  "eligibility_and_terms": {
+    "attribution": "The bytes32 builder code is included in the signed V2 order and indexed from OrderFilled events after a match.",
+    "builder_fee_behavior": "additive to any platform fee and independently configurable for maker and taker orders",
+    "disabled_code_behavior": "orders carrying a disabled builder code are rejected",
+    "payout": "earned builder fees accrue after matched attributed trades and are distributed to the wallet associated with the builder profile",
+    "rate_change_policy": {
+      "advance_notice_days": 3,
+      "changes_per_7_days": 1,
+      "maximum_pending_changes": 1
+    },
+    "tier_eligibility_conflict": "The current tier comparison marks Builder Fees as available for Unverified Verified and Partner, while the same page says Verified unlocks monetization with Builder fees. The accepted scope therefore requires an account-confirmed active positive fee configuration and does not infer eligibility from the public tier table.",
+    "volume_condition": "only matched bona fide third-party orders independently initiated through the owned application count"
+  },
+  "limitations": [
+    "No builder profile code tier active fee configuration external user flow attributed match or owned payout was accessed.",
+    "A configured fee can reduce routing conversion retention and matched volume; those demand effects and all application support compliance tax custody and operating costs are unproved.",
+    "Polymarket may revoke builder-fee capability or disable a builder code at its discretion.",
+    "The mechanism is gross incremental platform revenue conditional on independent organic third-party flow, not a claim that the trading strategy or the application is net profitable.",
+    "User disclosure consent consumer protection jurisdiction and other legal obligations remain unproved and must be satisfied before deployment."
+  ],
+  "prohibited_actions": [
+    "attaching the builder code to the operator's own orders or any self-referred related-party wash circular or manufactured activity",
+    "creating increasing or rerouting trades merely to collect builder fees or qualify for a tier reward grant or rate limit",
+    "silently charging a fee without explicit user-facing disclosure and applicable consent",
+    "crediting the maximum displayed fee rate when the exact active configured maker or taker rate is unknown",
+    "counting unmatched orders leaderboard volume grants weekly discretionary rewards relayer gas subsidies or maker rebates as builder-fee revenue",
+    "calling gross collected fees after-cost profit before owned payouts demand effects and all operating costs reconcile",
+    "submitting any order account change fee-rate change transfer or withdrawal without separate explicit authority"
+  ],
+  "result_sha256": "8c070b6a4b07070ffdd5ba703da1ca3788faffcb4d748633a18269dc02c17885",
+  "retry_policy": {
+    "account_prequalification_only_after_both_credentials_and_explicit_read_only_authority": [
+      "exact builder profile code tier and fee-charging eligibility",
+      "active maker and taker fee rates including pending effective changes",
+      "owned attributed bona fide third-party matched notional and exact fee accruals",
+      "owned wallet payouts in the exact settlement asset"
+    ],
+    "public_refresh": "only after a published Builder Fee formula rate-limit payout tier or policy change",
+    "separate_mutation_and_trading_authority_required_for": "any builder profile creation fee-rate change user order submission relayer action transfer or withdrawal"
+  },
+  "schema_version": "polymarket-organic-third-party-builder-fee-overlay-v1",
+  "sources": [
+    {
+      "observed_at_utc": "2026-08-26T20:56:35.1172149Z",
+      "raw_html_characters": 416653,
+      "raw_html_sha256": "706c71d2c553783cc21ea912b66bbdc2d7ee901a199cdf445f5a075d3d7c86a8",
+      "role": "current_fee_formula_maker_and_taker_limits_rate_change_policy_onchain_attribution_payout_and_non_bona_fide_prohibition",
+      "url": "https://docs.polymarket.com/programs/builders/fees"
+    },
+    {
+      "observed_at_utc": "2026-08-26T20:56:35.1172149Z",
+      "raw_html_characters": 391020,
+      "raw_html_sha256": "556349eda28d9b0ebaf2bab848cda2ea05ea57c4c0206a9865080504bbaed811",
+      "role": "current_tier_feature_table_and_conflicting_unverified_versus_verified_builder_fee_eligibility_language",
+      "url": "https://docs.polymarket.com/programs/builders/tiers"
+    },
+    {
+      "observed_at_utc": "2026-08-26T20:56:35.1172149Z",
+      "role": "current_public_builder_code_attachment_and_matched_trade_attribution_contract",
+      "url": "https://docs.polymarket.com/trading/place-orders#builder-attribution"
+    }
+  ]
+}
