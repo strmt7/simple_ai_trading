@@ -51,6 +51,11 @@ override prose.
   a current primary API contract. Never infer that an endpoint is public from
   its path, product name, nearby public endpoints, or an unauthenticated error;
   if the security classification is absent or contradictory, do not call it.
+- HTTP `GET` does not prove read-only semantics. Classify account mutation from
+  the documented operation as well as the verb; Binance
+  `/sapi/v1/soft-staking/set` changes activation state and requires separate
+  mutation authority. Never credit Soft Staking yield to pending-order frozen
+  assets, Auto-Subscribe allocations, or inventory needed for prompt liquidity.
 - Conflicting current primary-source terms are an unresolved gate. Do not pick
   a rate, fee, eligibility rule, or effective date by page location, apparent
   recency, or convenience; preserve both sources and require an explicit
