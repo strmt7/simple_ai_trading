@@ -1,0 +1,99 @@
+{
+  "attempt": {
+    "completed_result_written": false,
+    "http_200_responses": 15,
+    "rate_limit_error": "ip_rate_limited",
+    "rate_limited_label": "polymarket-eth-funding-05",
+    "request_count": 16,
+    "retry_attempted": false,
+    "status": "terminal_stopped_on_first_429",
+    "terminal_reason": "The frozen contract specified no retry and one-use access. The implementation omitted a request-weight-derived pacing schedule and reached the Polymarket Perps IP token bucket after four retained ETH pages."
+  },
+  "btc_offline_diagnostic": {
+    "alignment_authoritative": false,
+    "alignment_rule": "nearest_UTC_hour_only_when_absolute_residual_is_at_most_500_ms",
+    "alignment_rule_frozen_before_access": false,
+    "binance_funding_rows": 91,
+    "binance_kline_rows": 92,
+    "conditional_reward_economics_bips": {
+      "aggregate_funding": "12.00830000",
+      "aggregate_reward": "40.54794520547945205479452054",
+      "aggregate_two_leg_opportunity_hurdle": "67.57990867579908675799086758",
+      "single_round_trip_execution_hurdle": "20",
+      "whole_window_net": "-35.02366347031963470319634704"
+    },
+    "conditional_reward_public_candidate": false,
+    "exact_timestamp_aligned_rows": 0,
+    "nearest_hour_diagnostic_aligned_rows": 74,
+    "orientation_selected_on_oldest_half": "short_polymarket_long_binance",
+    "polymarket_funding_rows": 637,
+    "polymarket_timestamp_residual_ms": {"maximum": 172, "minimum": 4},
+    "role_results_bips": {
+      "test": {
+        "funding": "2.46340000",
+        "net_after_conditional_reward_execution_and_capital": "-24.47723926940639269406392694",
+        "opportunity_hurdle": "17.35159817351598173515981735",
+        "reward": "10.41095890410958904109589041"
+      },
+      "training": {
+        "funding": "4.05500000",
+        "net_after_conditional_reward_execution_and_capital": "-29.46098173515981735159817352",
+        "opportunity_hurdle": "33.78995433789954337899543379",
+        "reward": "20.27397260273972602739726027"
+      },
+      "validation": {
+        "funding": "5.48990000",
+        "net_after_conditional_reward_execution_and_capital": "-21.08544246575342465753424658",
+        "opportunity_hurdle": "16.43835616438356164383561644",
+        "reward": "9.863013698630136986301369862"
+      }
+    },
+    "source_gaps": {
+      "largest_polymarket_settlement_gap_ms": 284400030,
+      "missing_hourly_intervals": true,
+      "two_hour_gaps": 5
+    }
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-binance-perps-oi-carry-contract-v1.json",
+    "result_sha256": "2a2c45a599bc0f385964d2fb15ffa1e80b7901a3b6ddafaccee94a6cb20c3c21"
+  },
+  "decision": {
+    "accepted_edge": false,
+    "account_or_execution_escalation_permitted": false,
+    "btc_result": "rejected_even_under_conditional_6_percent_OI_reward_in_non_authoritative_alignment_diagnostic",
+    "family_result": "incomplete_ETH_and_SOL_not_evaluated",
+    "same_contract_rerun_permitted": false
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_binance_perps_oi_carry.py",
+    "sha256": "a1afa82fd14e553e6f27bd192c1cb2be20952e60b9eefa4674f60f2d472e609b"
+  },
+  "observed_market_contract": {
+    "BTC": {"funding_interval": "1h", "instrument_id": 6, "min_notional": "10", "quote_asset": "pUSD", "symbol": "BTC-USD"},
+    "ETH": {"funding_interval": "1h", "instrument_id": 7, "min_notional": "10", "quote_asset": "pUSD", "symbol": "ETH-USD"},
+    "SOL": {"funding_interval": "1h", "instrument_id": 8, "min_notional": "10", "quote_asset": "pUSD", "symbol": "SOL-USD"},
+    "ui_live_time_ms": 1785542400000
+  },
+  "raw_evidence": {
+    "btc_binance_funding_sha256": "f6c79756b288c610b6abddec430f27142ec7193c20fac94ac3477b4091617146",
+    "btc_binance_klines_sha256": "e3b62bdba55c05dbee72e33e5a479e8ebb115112ddb70fddb26f54b7dbc21e6c",
+    "directory": "data/polymarket-binance-perps-oi-carry-v1",
+    "fee_schedule_sha256": "a23d70a1be6db49235bbb139091a9c331afb65b34877de3890334addbd62091e",
+    "instruments_sha256": "c740a018e2995dd1ed0343b965f86f0f1914a951867ccc9e6513b3e351090aeb",
+    "journal_sha256": "d6754dadf864c962b670503ff37b8416727922013a14c4858a14b5c88d1bb139"
+  },
+  "result_sha256": "01bf5ea0a3f293e8e14b2f484ac2715c6c326ddfab57dba51873bf16e76a62e4",
+  "schema_version": "polymarket-binance-perps-oi-carry-terminal-v1",
+  "source_conflicts_and_omissions": {
+    "crypto_fee_schedule_missing_from_public_response": true,
+    "fee_response_categories": ["equity"],
+    "funding_timestamp_phase_not_defined_by_primary_contract": true,
+    "reward_requires_authenticated_realization": true
+  },
+  "workflow_corrections": [
+    "freeze a rate-limit-derived pacing schedule for weighted APIs",
+    "validate timestamp phase and cross-source alignment after one retained page before pagination",
+    "never call a non-null cursor at a catalog request ceiling complete coverage"
+  ]
+}
