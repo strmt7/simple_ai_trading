@@ -893,6 +893,23 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json`, result
   SHA-256
   `08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116`.
+- Binance bStock dividend reinvestment versus stock TradFi-perpetual funding
+  has one closed family and one materially distinct timing candidate. Historical
+  AMAT and MSFT special negative funding debits matched their declared gross
+  dividends within three micro-USDT per matched unit. Because bStock
+  receives only the net dividend after deductions, direct pre-adjustment long
+  bStock plus short perpetual contributes `N-D=-F<0` before every other cost;
+  do not repeat it. GLW is different only because its Friday 2026-08-28 ex-date
+  precedes the Monday 2026-08-31 bStock snapshot. Do not assume the special
+  funding time or credit the gross dividend. After 2026-08-28, check funding
+  history once. Only if the actual special debit occurs before the snapshot may
+  one synchronized post-adjustment public book batch run after the conversion
+  pause and before the deposit-withdrawal pause. The public net-distribution
+  floor is zero, so this is unaccepted and not deployment ready. Canonical
+  candidate:
+  `binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json`,
+  result SHA-256
+  `c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -926,6 +943,7 @@ safety gate, blocks Stop, or submits an order.
 | Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |
 | Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
 | Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |
+| Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |

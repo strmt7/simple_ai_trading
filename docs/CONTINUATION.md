@@ -874,7 +874,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`71ef65dd40283f77baaf7137cf26e2624bb3b14dc566ba951d6fdfd0cad814c0`.
+`9f5f556eb439f368de1456bc61e5ebc0276f1b4b689cf0434b2d4bae3ddb03df`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1536,6 +1536,33 @@ nonaccepted BUY and SELL RFQs. Canonical candidate:
 result SHA-256
 `08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116`.
 
+Binance bStock dividend reinvestment versus stock TradFi-perpetual funding has
+now been separated into a terminal direct family and a materially distinct
+calendar-timing candidate. At the 2026-08-20 AMAT and MSFT bStock snapshot, the
+special negative funding debits charged to shorts were respectively
+`0.529999005708` and `0.909997601100` USDT per matched unit, matching the
+declared gross dividends of `0.53` and `0.91` within three micro-USDT.
+Since Binance reinvests only the net bStock dividend after deductions, direct
+pre-adjustment long bStock plus short perpetual has dividend contribution
+`N-D=-F<0` before basis, fees, slippage, and capital costs. Do not repeat that
+same-day capture or treat closing and reopening the short as a free hedge.
+
+GLW has a separate prospective ordering question: its Friday 2026-08-28
+ex-date precedes Binance's Monday 2026-08-31T00:00Z bStock snapshot. No special
+GLW funding row, post-adjustment executable book, positive net-distribution
+floor, recurrence, or profit is yet proved. After 2026-08-28, check public
+GLWUSDT funding history once without assuming the adjustment timestamp. Only
+if an actual negative row matches the `0.28` gross dividend within one
+micro-USDT and occurs before the bStock snapshot may one synchronized public
+depth-20 GLWBUSDT/GLWUSDT book batch run after the 2026-08-28T23:30Z conversion
+pause and before the 2026-08-30T23:30Z deposit-withdrawal pause. Gross headroom
+is diagnostic only; the current conservative net-distribution floor is zero.
+GS has no distinct weekend gap and remains inside the rejected direct family.
+Canonical candidate:
+`docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json`,
+result SHA-256
+`c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1618,6 +1645,15 @@ not grant account, funding, order, or transaction authority.
    minimum nonaccepted BUY and SELL RFQ first; fetch synchronized underlying
    books only if the exact RFQ totals leave positive conservative headroom.
    Quote acceptance, account mutation, and any order remain separately gated.
+   For Binance bStock dividends, do not repeat direct pre-adjustment long-bStock
+   short-perpetual capture: historical AMAT and MSFT prove the short pays the
+   gross dividend while bStock receives only net reinvestment. For GLW, do not
+   poll before the 2026-08-28 ex-date or infer its adjustment time. Check public
+   funding history once after that date. A synchronized public book batch is
+   permitted only after an actual matching special debit occurs before the
+   snapshot, after the conversion pause, and before the deposit-withdrawal
+   pause. No account access, order, gross-dividend credit, or profit claim is
+   authorized.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build

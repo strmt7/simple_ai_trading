@@ -1,0 +1,267 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "same_day_snapshot_family_terminal": true,
+    "status": "materially_new_GLW_weekend_ex_date_to_bStock_snapshot_timing_gap_candidate_direct_same_day_dividend_capture_closed_by_near_exact_gross_dividend_short_funding_debit_current_post_adjustment_executable_basis_and_net_distribution_floor_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_present": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_market_data_requests_retained": 12,
+    "public_official_document_responses_retained": 3,
+    "retained_public_http_responses": 15,
+    "web_rendered_primary_issuer_sources_read": 4
+  },
+  "created_at_utc": "2026-08-26T22:27:06.5180402Z",
+  "economic_contract": {
+    "definitions": {
+      "D": "gross declared cash dividend per matched underlying-share exposure",
+      "F": "all withholding tax fees costs and other deductions applied before bStock reinvestment",
+      "N": "net bStock dividend entitlement equal to D minus F",
+      "basis_entry": "TradFi perpetual executable bid minus bStock executable ask for matched share exposure"
+    },
+    "direct_pre_adjustment_pair": "long_bStock_plus_short_TradFi_perpetual receives N on the bStock but the short pays the observed special negative funding debit approximately equal to D; dividend contribution N-D=-F<0 before basis trading fees slippage and capital costs",
+    "post_adjustment_timing_gap_pair": "only after an actually observed special dividend funding row may long_bStock_plus_short_TradFi_perpetual avoid that debit; profit then requires the still_cum_distribution bStock entitlement plus executable entry and exit basis to exceed every fee and risk cost",
+    "minimum_profitable_inequality": "conservative_net_bStock_distribution + executable_perpetual_short_entry - executable_bStock_long_entry + conservative_exit_basis - all_spot_perpetual_funding_slippage_latency_liquidation_capital_tax_custody_and_operating_costs > 0",
+    "public_net_distribution_floor": "0",
+    "why_zero_floor": "the current announcement and FAQ permit withholding taxes fees costs other deductions rounding timing operational limits and issuer discretion; no exact positive forward net multiplier increment is guaranteed",
+    "why_close_and_reopen_is_not_a_free_shortcut": "closing the short before the special debit removes the hedge across bStock entitlement repricing; reopening later creates only a new spot_perpetual basis position and cannot credit the dividend twice"
+  },
+  "historical_mechanism_evidence": [
+    {
+      "bStock_snapshot_utc": "2026-08-20T00:00:00Z",
+      "declared_gross_dividend_per_share": "0.53",
+      "dividend_primary_source": "https://ir.appliedmaterials.com/stock-information/dividend-history",
+      "funding_debit_absolute_difference_from_gross_dividend": "0.000000994292",
+      "funding_debit_match_percent": "99.999812397736",
+      "funding_debit_per_short_contract_unit": "0.529999005708",
+      "funding_mark_price": "501.25219247",
+      "funding_rate": "-0.00105735",
+      "funding_time_ms": 1787184001002,
+      "funding_time_utc": "2026-08-20T00:00:01.002Z",
+      "symbol": "AMAT"
+    },
+    {
+      "bStock_snapshot_utc": "2026-08-20T00:00:00Z",
+      "declared_gross_dividend_per_share": "0.91",
+      "dividend_primary_source": "https://www.microsoft.com/en-us/investor/dividends-and-stock-history",
+      "funding_debit_absolute_difference_from_gross_dividend": "0.000002398900",
+      "funding_debit_match_percent": "99.999736384615",
+      "funding_debit_per_short_contract_unit": "0.909997601100",
+      "funding_mark_price": "485.49000000",
+      "funding_rate": "-0.00187439",
+      "funding_time_ms": 1787184001002,
+      "funding_time_utc": "2026-08-20T00:00:01.002Z",
+      "symbol": "MSFT"
+    }
+  ],
+  "historical_snapshot_repricing_diagnostic": {
+    "claim_boundary": "one_minute_klines_are_not_executable_books_and_do_not_localize_the_within_minute_adjustment",
+    "evidence": [
+      {
+        "bStock_close_2026_08_19T23_59Z": "501.42000000",
+        "bStock_close_2026_08_20T00_00Z": "498.64000000",
+        "bStock_one_minute_change": "-2.78000000",
+        "perpetual_close_2026_08_19T23_59Z": "501.10000",
+        "perpetual_close_2026_08_20T00_00Z": "500.90000",
+        "symbol": "AMAT"
+      },
+      {
+        "bStock_close_2026_08_19T23_59Z": "485.60000000",
+        "bStock_close_2026_08_20T00_00Z": "484.97000000",
+        "bStock_one_minute_change": "-0.63000000",
+        "perpetual_close_2026_08_19T23_59Z": "485.49000",
+        "perpetual_close_2026_08_20T00_00Z": "485.74000",
+        "symbol": "MSFT"
+      }
+    ],
+    "interpretation": "the MSFT bStock repriced materially in the snapshot minute while the perpetual did not fall; together with the separate gross-dividend funding debit this rejects treating a close_reopen maneuver as a locked dividend payment, but the bars do not prove an executable after_cost episode"
+  },
+  "current_prospective_cases": [
+    {
+      "bStock_record_snapshot_utc": "2026-08-31T00:00:00Z",
+      "bStock_spot_trading_unaffected_by_announcement": true,
+      "conversion_pause_utc": "2026-08-28T23:30:00Z",
+      "declared_gross_dividend_per_share": "0.28",
+      "ex_date": "2026-08-28",
+      "ex_date_day": "Friday",
+      "gross_dividend_cap_current_diagnostic_headroom_bips_before_special_funding_fees_and_exit": "16.6091733742",
+      "gross_dividend_cap_current_diagnostic_headroom_per_share": "0.26",
+      "perpetual_bid": "156.52000",
+      "perpetual_last_funding_rate": "0.00000000",
+      "perpetual_symbol": "GLWUSDT",
+      "record_date": "2026-08-31",
+      "record_date_day": "Monday",
+      "spot_ask": "156.54000000",
+      "spot_symbol": "GLWBUSDT",
+      "status": "material_weekend_timing_gap_candidate_only_if_an_actual_gross_dividend_special_funding_adjustment_occurs_before_the_bStock_snapshot_and_post_adjustment_books_retain_positive_conservative_headroom",
+      "symbol": "GLW"
+    },
+    {
+      "bStock_record_snapshot_utc": "2026-09-01T00:00:00Z",
+      "bStock_spot_trading_unaffected_by_announcement": true,
+      "conversion_pause_utc": "2026-08-31T23:30:00Z",
+      "declared_gross_dividend_per_share": "5.00",
+      "gross_dividend_cap_current_diagnostic_headroom_bips_before_special_funding_fees_and_exit": "29.4813013889",
+      "gross_dividend_cap_current_diagnostic_headroom_per_share": "3.08",
+      "perpetual_bid": "1042.81000",
+      "perpetual_last_funding_rate": "0.00000000",
+      "perpetual_symbol": "GSUSDT",
+      "record_date": "2026-09-01",
+      "record_date_day": "Tuesday",
+      "spot_ask": "1044.73000000",
+      "spot_symbol": "GSBUSDT",
+      "status": "same_day_record_structure_no_distinct_weekend_gap_direct_capture_rejected_by_historical_gross_dividend_short_debit_mechanism_unless_current_rules_or_actual_funding_behavior_change",
+      "symbol": "GS"
+    }
+  ],
+  "prospective_gate": {
+    "first_observation": "do_not_assume_the_GLW_adjustment_time; after 2026_08_28 begin with one public funding_history check and proceed only if a new special negative row exists whose per_unit_debit matches the 0.28 gross dividend within the preregistered one_micro_USDT tolerance",
+    "frozen_public_book_window": "after_the_actual_special_funding_row_and_after_2026_08_28T23_30_00Z_conversion_pause_but_before_2026_08_30T23_30_00Z_deposit_withdrawal_pause_and_2026_08_31T00_00_00Z_snapshot",
+    "second_observation": "one synchronized depth_20 public GLWBUSDT spot and GLWUSDT perpetual book batch plus current funding and exact filters; stop if any required side or matched size is absent",
+    "economic_rule": "a positive gross_dividend_cap is diagnostic only; no paper or funded escalation until an exact conservative positive net distribution floor is source_bound and all entry exit funding fee depth latency and capital terms remain positive",
+    "recurrence_gate": "at_least_three_independent_weekend_or_holiday_ex_date_to_bStock_snapshot_episodes_with_the_same_adjustment_ordering_and_positive_worst_episode_after_cost_economics",
+    "stop_conditions": [
+      "no special GLW dividend funding row before the bStock snapshot",
+      "special debit timing overlaps or follows the bStock snapshot",
+      "post_adjustment bStock premium consumes the conservative net distribution",
+      "net distribution floor remains zero",
+      "matched executable depth or exact filters are absent",
+      "any orientation requires an unhedged snapshot interval or double counts entitlement repricing",
+      "any account eligibility tax fee corporate_action funding or multiplier rule is unresolved"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "treating_the_current_zero_lastFundingRate_as_proof_no_special_dividend_adjustment_will_occur",
+    "using_the_current_pre_adjustment_GLW_or_GS_books_as_post_adjustment_executable_evidence",
+    "assuming_the_GLW_special_funding_timestamp_from_AMAT_and_MSFT",
+    "crediting_the_gross_dividend_when_bStock_receives_only_net_reinvestment",
+    "assuming_a_30_percent_withholding_example_is_the_complete_forward_deduction_contract",
+    "closing_and_reopening_the_perpetual_across_the_adjustment_without_pricing_the_unhedged_bStock_entitlement_repricing_interval",
+    "using_one_minute_closes_as_executable_or_synchronized_quotes",
+    "calling_the_weekend_calendar_gap_recurrence_profitability_or_an_accepted_edge",
+    "placing_any_order_or_accessing_account_state_without_separate_explicit_authority"
+  ],
+  "result_sha256": "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d",
+  "schema_version": "binance-bstock-dividend-perp-funding-timing-gap-candidate-v1",
+  "sources": {
+    "retained_public_http_responses": [
+      {
+        "label": "binance_current_dividend_announcement",
+        "payload_bytes": 68789,
+        "payload_sha256": "3fbbdbad2a93504fcc1a3d979e0f3f6f05780604e9e51e739343d12af94c3ce3",
+        "received_after_utc": "2026-08-26T22:24:06.1743421Z",
+        "requested_before_utc": "2026-08-26T22:24:06.1176457Z",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=976184f11cda4cfeb7717379177de027"
+      },
+      {
+        "label": "binance_prior_dividend_announcement",
+        "payload_bytes": 57684,
+        "payload_sha256": "439246b6bd6c74757baa8c101efcf6b439a4b02ce928b6fb59adf44411dfd9a4",
+        "received_after_utc": "2026-08-26T22:24:06.2133588Z",
+        "requested_before_utc": "2026-08-26T22:24:06.1868511Z",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=122b4caa33224565a302cb1d1de544a7"
+      },
+      {
+        "label": "binance_bstocks_faq",
+        "payload_bytes": 76949,
+        "payload_sha256": "801da23d5b230fb57a365d658b3b37aaef72924bb0f63b29da3afd9c89674a73",
+        "received_after_utc": "2026-08-26T22:24:06.2537772Z",
+        "requested_before_utc": "2026-08-26T22:24:06.2152352Z",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=f0c03cd6509a4085b4cce1636f16be38"
+      },
+      {
+        "label": "AMATUSDT_funding_history",
+        "payload_bytes": 3627,
+        "payload_sha256": "964efe8500f441ff4d8e1bb52ebfbb2876003714bdd54f36c026fd807ce7a5b9",
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=AMATUSDT&startTime=1787097600000&limit=100"
+      },
+      {
+        "label": "MSFTUSDT_funding_history",
+        "payload_bytes": 3627,
+        "payload_sha256": "f9a2b1d8cf2b6f954d87ce71acf75d1e67dabd99f386be2e18d6a33912e01561",
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=MSFTUSDT&startTime=1787097600000&limit=100"
+      },
+      {
+        "label": "GLWBUSDT_spot_book",
+        "payload_bytes": 117,
+        "payload_sha256": "0c2977cdb236ea8c817d79cf3cd8ffc9ae8d44fd75e78525269eec0bd846e2fa"
+      },
+      {
+        "label": "GLWUSDT_perpetual_book",
+        "payload_bytes": 149,
+        "payload_sha256": "1bcee79e72141dd93cf3c06d569e8c49af74622a827d7ec3d6ff30a7aaa19710"
+      },
+      {
+        "label": "GLWUSDT_premium_index",
+        "payload_bytes": 225,
+        "payload_sha256": "dd4f240d89485f9654bbcc45575196e8165cab19ddcac55e96658f68fc52dd3d"
+      },
+      {
+        "label": "GSBUSDT_spot_book",
+        "payload_bytes": 118,
+        "payload_sha256": "c976cdfce199052fdc744fa4158aac7c6b193eba114a0b06ac1031b9989a2b16"
+      },
+      {
+        "label": "GSUSDT_perpetual_book",
+        "payload_bytes": 150,
+        "payload_sha256": "558b0915ddd7d6ce8c6003710e5f5dcb22e798d656ddc18f2e5a59da921da2c9"
+      },
+      {
+        "label": "GSUSDT_premium_index",
+        "payload_bytes": 227,
+        "payload_sha256": "3b7c2e06ce20a8799732ea293ed6895bb66683d0983bdc9843ecd7ced1abc34f"
+      },
+      {
+        "label": "AMATBUSDT_spot_1m_snapshot",
+        "payload_bytes": 3892,
+        "payload_sha256": "c21b34d654a092a8b5edafd1553d6f30f9387ba7e2d5b2b20938b2fbaa12ccb8"
+      },
+      {
+        "label": "AMATUSDT_perpetual_1m_snapshot",
+        "payload_bytes": 3241,
+        "payload_sha256": "44efdb48bfb7e1862145acb1fe5a876744b70e8a0737121b915837bb3829ba40"
+      },
+      {
+        "label": "MSFTBUSDT_spot_1m_snapshot",
+        "payload_bytes": 3914,
+        "payload_sha256": "774132db93c67497855128cb3d7484f422eadb103143fb7c2d01a0732215f79a"
+      },
+      {
+        "label": "MSFTUSDT_perpetual_1m_snapshot",
+        "payload_bytes": 3428,
+        "payload_sha256": "7269508ce7223fc269d09b75ec163f6c9d4d1558901c89b5b93d5050d54eb425"
+      }
+    ],
+    "web_rendered_primary_sources": [
+      {
+        "claim": "GLW 0.28 dividend ex_date 2026_08_28 record_date 2026_08_31",
+        "payload_retained": false,
+        "url": "https://investor.corning.com/stock-info/dividend-history/default.aspx"
+      },
+      {
+        "claim": "AMAT 0.53 dividend ex_and_record_date 2026_08_20",
+        "payload_retained": false,
+        "url": "https://ir.appliedmaterials.com/stock-information/dividend-history"
+      },
+      {
+        "claim": "MSFT current quarterly dividend 0.91 per share",
+        "payload_retained": false,
+        "url": "https://www.microsoft.com/en-us/investor/dividends-and-stock-history"
+      },
+      {
+        "claim": "GS 5.00 dividend payable 2026_09_29 to holders of record 2026_09_01",
+        "payload_retained": false,
+        "url": "https://www.sec.gov/Archives/edgar/data/886982/000088698226000294/a2q26gsearningsresults.htm"
+      }
+    ]
+  }
+}
