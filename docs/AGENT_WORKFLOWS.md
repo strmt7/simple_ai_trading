@@ -177,6 +177,19 @@ new documented allocation with enough preregistered horizon plus authenticated
 queue, fill, cancellation, adverse-selection, orphan-PnL, and realized-payout
 evidence.
 
+The current Polymarket crypto fee formula is a pUSD amount per shares and price,
+not a percentage of trade notional: `fee = shares * 0.07 * p * (1-p)`. Relative
+to `shares * p` trade value, the fee fraction is `0.07 * (1-p)`; at `p=0.50`
+it is 3.5%, not 1.75%. Apply the tier fraction to the source-bound charged fee,
+never directly to notional. Current official terms conflict between immediate
+threshold activation and the next daily update, so credit no tier until exact
+account evidence confirms it after the completed daily update. Public payout
+reconciliation proves the mechanism, not the current user's tier or eligibility.
+The fee page's generic `USDC` label is not permission to assume token parity:
+bind the live V2 exchange `getCollateral()` result to the official collateral
+address and verify that token's identity. The current deployed path resolves to
+pUSD; any future address or identity change must fail closed and be re-proved.
+
 For Binance quarterly cash-and-carry, preserve spot buyer and seller commission
 components separately; the generic conservative helper intentionally collapses
 them and is not exact route evidence. Capture fees before refreshing books.

@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Nine scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; and current USDT Flexible bonus yield only for independently held idle eligible USDT. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Ten scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; and current USDT Flexible bonus yield only for independently held idle eligible USDT. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -161,7 +161,24 @@ safety gate, blocks Stop, or submits an order.
   Verify its process and terminal file before acting; never use its partial raw
   file, restart it, or start a duplicate. It may only decide queue-censored fill
   and causally subsequent unwind feasibility, not trading authority.
-  The accepted edge count remains nine. Binance's best three-leg spot cycle
+  A separate current organic-taker overlay is accepted only as a pUSD fee
+  reduction on independently justified legitimate BTC/ETH/SOL taker flow. One
+  complete public UTC day contained 1,202 BTC/ETH/SOL and other crypto taker
+  trades whose current crypto fee curve reconstructs 302.8176185015 pUSD; the
+  next on-chain `TAKER_REBATE`
+  payment was 54.5062 pUSD, matching the documented Gold 18% rate within 0.001
+  pUSD. At a 0.50 entry, the 0.07 fee curve is 3.5% of trade notional, so Gold
+  saves 63 bips; do not misread 1.75 pUSD per 100 shares as 1.75% of the 50
+  pUSD trade. The fee page retains a generic `USDC` label, but current V2 source
+  defines fees in exchange collateral and the deployed exchange returns the
+  official pUSD proxy, whose on-chain symbol is `pUSD`; no parity assumption is
+  used. Current terms conflict between immediate threshold activation and
+  the next daily update, so credit only an account-confirmed tier after the
+  completed daily update. Never manufacture volume or count a level-up bonus.
+  Canonical overlay:
+  `polymarket-organic-taker-rebate-overlay-v1-2026-08-26.json`, SHA-256
+  `6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865`.
+  The accepted edge count is ten. Binance's best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even. The exact three spot fee queries are now defined from Binance's
   official commission contract, but the designated ephemeral credential

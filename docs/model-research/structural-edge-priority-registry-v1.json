@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 9,
-  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current Binance quote-native promotional fee reduction for independently justified organic BTC ETH SOL spot flow without quote acquisition VIP chasing or extra volume, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, and one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion; zero deployment-ready or fully external-cost-and-account-condition edges",
+  "accepted_edge_count": 10,
+  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one current Polymarket pUSD taker-fee rebate overlay for independently justified legitimate organic BTC ETH SOL taker flow after the direct wallet tier is effective without manufactured volume, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current Binance quote-native promotional fee reduction for independently justified organic BTC ETH SOL spot flow without quote acquisition VIP chasing or extra volume, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, and one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion; zero deployment-ready or fully external-cost-and-account-condition edges",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -772,9 +772,40 @@
       ],
       "retry_trigger": "material_source_bound_change_in_reward_bond_liveness_batching_or_public_proposer_access_that_can_support_a_preregistered_all_cost_gas_stress_and_multi_day_competition_gate",
       "venue_scope": "polymarket_BTC_ETH_SOL_resolution"
+    },
+    {
+      "blocking_evidence": [
+        "current direct-wallet account eligibility and tier after a completed daily update",
+        "owned exact BTC ETH or SOL taker fill shares price charged fee and bot lineage",
+        "realized account TAKER_REBATE payout reconciliation in pUSD",
+        "proof that the underlying trade was independently after-cost positive before this overlay and no volume was manufactured",
+        "external conversion withdrawal custody tax delay and opportunity costs where applicable"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-organic-taker-rebate-overlay-v1-2026-08-26.json",
+          "result_sha256": "6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865"
+        }
+      ],
+      "current_status": "accepted_scoped_current_incremental_pUSD_fee_rebate_for_independently_justified_legitimate_organic_BTC_ETH_SOL_taker_flow_public_one_day_1202_trade_reconstruction_implied_302_8176185015_pUSD_crypto_fees_and_the_next_54_5062_pUSD_onchain_payment_matched_the_documented_Gold_18_percent_rate_to_within_0_001_pUSD_account_tier_owned_fills_and_external_costs_unproved_not_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_organic_taker_fee_rebate_overlay",
+      "next_action": "do_not_poll_public_wallets_or_create_volume_for_an_otherwise_authorized_independently_positive_organic_taker_order_refresh_current_crypto_fee_and_tier_terms_once_then_require_account_confirmed_post_daily_update_tier_exact_owned_taker_fee_and_realized_pUSD_rebate_reconciliation",
+      "priority_rank": 22,
+      "prohibited_shortcuts": [
+        "self_matching_wash_trading_inauthentic_or_manufactured_complete_set_volume",
+        "changing_market_category_price_size_or_direction_to_earn_weighted_volume",
+        "assuming_the_rebate_is_a_percentage_of_trade_notional",
+        "counting_a_one_time_level_up_bonus_as_recurring_edge",
+        "using_monthly_leaderboard_volume_or_a_public_wallet_as_account_tier_or_eligibility_proof",
+        "selecting_the_immediate_tier_interpretation_while_current_terms_also_require_the_next_daily_update",
+        "double_counting_fee_rebate_fee_waiver_maker_rebate_liquidity_reward_or_referral_reward"
+      ],
+      "retry_trigger": "otherwise_authorized_independently_positive_organic_BTC_ETH_or_SOL_taker_flow_with_fresh_terms_and_explicit_read_only_account_evidence_then_separate_funded_authority_for_any_order",
+      "venue_scope": "polymarket_BTC_ETH_SOL_fee_enabled_markets"
     }
   ],
-  "result_sha256": "f9aa3089e2b402af10ac0f5e225f1b74ace5eb6cf8b1b0ab6672d9eb524424cc",
+  "result_sha256": "52189781ff4e97f9e73aa1fc429fc72adfe370b188739bcc535f60b9c1ad0d64",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -888,6 +919,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T18:00:23.1015783Z",
+  "updated_at_utc": "2026-08-26T19:00:44.8577166Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
