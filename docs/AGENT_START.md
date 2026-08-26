@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edge | One scoped gross structural edge: Polymarket complete-set holding yield for existing idle on-platform pUSD; not deployment-ready |
+| Accepted edge | One scoped structural edge positive after direct relayer split/merge cost: Polymarket complete-set holding yield for existing idle on-platform pUSD; not deployment-ready or fully external-cost-qualified |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -259,7 +259,8 @@ safety gate, blocks Stop, or submits an order.
   without rebate credit. Do not turn this arithmetic into a profitability claim
   or activate a capture while the Round 21 sidecar is protected.
 - Polymarket complete-set holding yield is now a validated, narrowly scoped
-  gross structural edge for existing idle pUSD already on Polymarket. It does
+  structural edge after direct relayer split/merge cost for existing idle pUSD
+  already on Polymarket. It does
   not require a market-direction forecast: equal mergeable YES and NO shares
   preserve the complete-set value while the current holding program pays yield.
   The canonical economics artifact is
@@ -294,8 +295,21 @@ safety gate, blocks Stop, or submits an order.
   cross-asset reconciliation:
   `complete-set-holding-yield-cross-asset-v4-2026-08-26.json`, result SHA-256
   `eda29a314218e1724e39984e2712a4351d9e697503d4583d391c89a060ba53ea`.
-  This accepted scope excludes bridging, wrapping, withdrawal, custody, tax,
-  and capital opportunity costs. The BTC wallet still lacks split-origin
+  The v5 net-economics adjudication combines the three cases: 1,039 pUSD of
+  demonstrated principal produced 1.2681 pUSD over 14 days across 42 of 42
+  positive daily payouts, or 3.182019% principal-weighted annualized. Because
+  the documented relayer pays split/merge gas and the CTF identities restore
+  one pUSD per complete set, all three cases remain positive after direct
+  mechanism cost. They also remain positive against a 3% annual alternative
+  before external friction, but the weighted spread is only 18.2019 bps: a
+  10-bps external friction needs 200.53 days to break even, and only 6.3333
+  bps can be tolerated over 127 days. No case beats a 3.25% alternative after
+  realized hourly sampling and payout rounding. Canonical adjudication:
+  `complete-set-holding-yield-net-economics-v5-2026-08-26.json`, result SHA-256
+  `dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85`.
+  The accepted scope still excludes bridging, wrapping, withdrawal, custody,
+  tax, failed operations, and the exact best eligible alternative yield. The
+  BTC wallet still lacks split-origin
   lineage, while the ETH and SOL cases close that limitation for their public
   wallets. None proves future rewards; the rate is discretionary and caps may
   be introduced. No deployment, account, funding, transaction, paper, or live

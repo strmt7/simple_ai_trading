@@ -442,8 +442,9 @@ diagnostics, not accepted edges.
   This is not an edge: the publicly proven payout floor is zero, fill and queue
   evidence are absent, and one orphan can still lose 24.50 pUSD without rebate
   credit.
-- Polymarket complete-set holding yield is now an accepted gross structural
-  edge only for existing idle pUSD already on Polymarket. Official mechanics
+- Polymarket complete-set holding yield is now an accepted structural edge
+  after direct relayer split/merge cost only for existing idle pUSD already on
+  Polymarket. Official mechanics
   allow splitting 1 pUSD into one YES plus one NO and later merging the pair
   back to 1 pUSD. Equal mergeable balances therefore remove outcome direction
   while the holding program is active. Canonical economics:
@@ -486,9 +487,23 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/complete-set-holding-yield-cross-asset-v4-2026-08-26.json`,
   result SHA-256
   `eda29a314218e1724e39984e2712a4351d9e697503d4583d391c89a060ba53ea`.
-  Acceptance is deliberately narrow: it excludes capital not already on the
-  platform and does not subtract bridge, wrapping, withdrawal, custody, tax,
-  or alternative-yield costs. The original BTC wallet still lacks split-origin
+  The source-bound v5 net-economics adjudication aggregates 1,039 pUSD of
+  demonstrated principal, 1.2681 pUSD of reward over 14 days, and 42/42
+  positive daily payouts. The principal-weighted realized rate is 3.182019%.
+  The documented relayer pays successful split/merge gas and the CTF split and
+  merge identities preserve principal, so this is positive after direct
+  mechanism cost. All three cases remain positive versus a 3% annual
+  alternative before external friction, but the weighted spread is only
+  18.2019 bps. Ten bps of external friction takes 200.53 days to recover at
+  that alternative yield, the 127-day friction budget is only 6.3333 bps, and
+  none of the realized cases beats a 3.25% alternative. Canonical result:
+  `docs/model-research/polymarket/complete-set-holding-yield-net-economics-v5-2026-08-26.json`,
+  SHA-256
+  `dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85`.
+  Acceptance remains deliberately narrow: it excludes capital not already on
+  the platform and does not zero bridge, wrapping, withdrawal, custody, tax,
+  failed-operation, or exact best-alternative-yield costs. The original BTC
+  wallet still lacks split-origin
   proof, but that limitation is closed for the two new public cases. Fourteen
   days do not guarantee future payouts; the official rate is discretionary and
   caps may be introduced. No deployment, authenticated account, funded, paper,
@@ -508,7 +523,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`16ea0d3e4d621903fd76ffb76373e3a5249ae861acaff88efe29bc5d1d56bddb`.
+`a84a770c1c82c0c632c7ad70dee1bfdcc57f028c07c40a0087b83953fcdf8a8f`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

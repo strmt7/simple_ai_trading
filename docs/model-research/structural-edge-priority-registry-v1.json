@@ -1,6 +1,6 @@
 {
   "accepted_edge_count": 1,
-  "accepted_edge_scope": "one validated gross structural edge for existing idle pUSD already on Polymarket; zero deployment-ready or after-alternative-yield edges",
+  "accepted_edge_scope": "one validated structural edge positive after direct relayer split and merge costs for existing idle pUSD already on Polymarket; zero deployment-ready or fully external-cost-and-best-alternative-yield edges",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -32,9 +32,13 @@
         {
           "path": "docs/model-research/polymarket/complete-set-holding-yield-cross-asset-v4-2026-08-26.json",
           "result_sha256": "eda29a314218e1724e39984e2712a4351d9e697503d4583d391c89a060ba53ea"
+        },
+        {
+          "path": "docs/model-research/polymarket/complete-set-holding-yield-net-economics-v5-2026-08-26.json",
+          "result_sha256": "dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85"
         }
       ],
-      "current_status": "accepted_scoped_gross_edge_BTC_ETH_SOL_equal_mergeable_complete_sets_42_of_42_daily_YIELD_payments_reconciled_ETH_SOL_split_origin_proved_about_3_16_to_3_19_percent_realized_annualized_gross_for_existing_idle_on_platform_pUSD_not_deployment_ready",
+      "current_status": "accepted_scoped_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_demonstrated_principal_42_of_42_daily_YIELD_payments_1_2681_pUSD_over_14_days_3_1820_percent_principal_weighted_realized_rate_positive_through_3_percent_annual_alternative_yield_before_external_friction_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "complete_set_holding_reward",
       "next_action": "monitor_current_official_terms_market_eligibility_and_public_daily_YIELD_receipts_without_funding_then_only_after_the_protected_boundary_and_explicit_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study",
@@ -326,7 +330,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "16ea0d3e4d621903fd76ffb76373e3a5249ae861acaff88efe29bc5d1d56bddb",
+  "result_sha256": "a84a770c1c82c0c632c7ad70dee1bfdcc57f028c07c40a0087b83953fcdf8a8f",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -395,6 +399,6 @@
       "reason": "zero_of_57_unexposed_exact_multiplier_symbols_passed_the_frozen_training_gate_and_the_frozen_top_20_percent_basket_failed_validation_test_and_every_aggregate_regime_slice_after_execution_and_capital_hurdles"
     }
   ],
-  "updated_at_utc": "2026-08-26T07:53:25.8656318Z",
+  "updated_at_utc": "2026-08-26T08:05:42.6472077Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
