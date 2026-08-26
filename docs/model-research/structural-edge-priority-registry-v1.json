@@ -518,19 +518,19 @@
       "canonical_artifacts": [
         {
           "path": "docs/model-research/action-value/binance-spot-maker-rebate-account-evidence-gate-v1.json",
-          "result_sha256": "19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f"
+          "result_sha256": "d2adda1c5ab4b561e0c238e1e874cc72edaee15ebadafbb76703251f9cd99e10"
         }
       ],
-      "current_status": "account_evidence_path_proved_current_rate_enrollment_fills_and_realized_profit_absent",
+      "current_status": "current_public_schedule_proved_zero_maker_fee_by_enrollment_tier1_0_05_percent_weekly_share_or_25_million_USD_and_tiers2_4_rebate_0_4_to_0_8_bips_after_0_15_to_1_00_percent_share_but_account_enrollment_organic_volume_owned_execution_and_realized_after_cost_profit_absent",
       "market_direction_forecast_required": false,
       "mechanism": "spot_market_maker_rebates",
       "next_action": "query_only_the_frozen_account_evidence_path_after_explicit_read_only_credential_authority",
       "priority_rank": 14,
       "prohibited_shortcuts": [
-        "cached 2024 public fee table as current rate",
+        "dynamic public schedule as same_account enrollment or realized rebate proof",
         "symbol commission response as maker-rebate proof",
         "taker triangle prices as non-atomic maker execution",
-        "volume farming self-trading or wash trading"
+        "volume farming self-trading or wash trading for a maximum displayed 0_8_bip rebate"
       ],
       "retry_trigger": "explicit_read_only_mainnet_account_evidence_authority",
       "venue_scope": "binance_spot"
@@ -721,7 +721,7 @@
       "venue_scope": "polymarket_BTC_ETH_SOL_resolution"
     }
   ],
-  "result_sha256": "69fe7978b4d3e8d273f7072dc3afc7c6a1d63832be1a94412043a4500f2d9443",
+  "result_sha256": "81550b4062b17678f68a15c4bd475ecc8011d4621daf664c44c08ea6899754fb",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -835,6 +835,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T16:35:38.1600616Z",
+  "updated_at_utc": "2026-08-26T16:45:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -199,15 +199,19 @@ diagnostics, not accepted edges.
   same account's liquidity-program overview, daily/weekly performance, weekly
   final rebates, and spot rebate history. It also explicitly says the symbol
   commission endpoint excludes the spot market-maker rebate rate and BNB
-  discount effect. The public static program document returned HTTP 403 from
-  this host, both designated ephemeral credential variables were absent, and no
-  signed request or stored-configuration inspection occurred. No current tier,
-  pair applicability, fill, rebate, or profitability is proved. Do not reuse the
-  taker-price triangle as maker economics or substitute an indexed fee table.
+  discount effect. The historical static document returned HTTP 403, but the
+  current dynamic official fee page now proves zero maker fees by enrollment;
+  tier 1 requires `0.05%` weekly maker-volume share or `25,000,000` USD, while
+  tiers 2-4 publish `-0.0040%`, `-0.0060%`, and `-0.0080%` after `0.15%`,
+  `0.50%`, and `1.00%` share hurdles. This closes only the public-rate gap. Both
+  credential variables remain absent, so same-account enrollment, pair scope,
+  organic qualifying volume, owned fills, queue/adverse selection, inventory
+  unwind, realized rebates, and after-cost profit remain unproved. Do not reuse
+  taker triangles as maker economics or manufacture volume for at most 0.8 bps.
   Canonical evidence gate:
   `docs/model-research/action-value/binance-spot-maker-rebate-account-evidence-gate-v1.json`,
   result SHA-256
-  `19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f`.
+  `d2adda1c5ab4b561e0c238e1e874cc72edaee15ebadafbb76703251f9cd99e10`.
 - Binance USDT/USDC perpetual funding differential: a distinct equal-base,
   opposite-position screen initially found recent BTC and SOL candidates. The
   corrected recent cash-flow screen retained them, but exact fee ceilings were

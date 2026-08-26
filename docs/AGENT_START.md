@@ -128,12 +128,18 @@ safety gate, blocks Stop, or submits an order.
   review found account-specific liquidity-program overview, performance,
   weekly final-rebate, and spot rebate-history endpoints. The symbol commission
   endpoint explicitly excludes spot maker rebates and the BNB discount effect.
-  The public static program document returned 403, both designated ephemeral
-  variables were absent, and no signed request was sent. Maker rebates therefore
-  remain an unproved structural hypothesis, not a current fee or edge claim.
+  The old static program document returned 403, but the current dynamic official
+  fee page now source-proves enrollment at zero maker fee and higher tiers of
+  `-0.0040%`, `-0.0060%`, and `-0.0080%` after weekly maker-volume-share hurdles
+  of `0.15%`, `0.50%`, and `1.00%`; tier 1 also publishes `0.05%` share or
+  `25,000,000` USD weekly volume. This closes the public-rate gap only. Both
+  designated ephemeral variables remain absent and no signed request was sent;
+  account enrollment, organic qualifying volume, owned fills, queue/adverse
+  selection, inventory unwind, and realized rebates remain unproved. Do not
+  manufacture volume for a maximum displayed rebate of only 0.8 bps.
   Canonical account gate: `binance-spot-maker-rebate-account-evidence-gate-v1.json`,
   result SHA-256
-  `19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f`.
+  `d2adda1c5ab4b561e0c238e1e874cc72edaee15ebadafbb76703251f9cd99e10`.
   Binance option
   vertical/convexity parity covered 365,592 exact payoff
   identities across 1,538 unit-one contracts. Two ticker-only candidates
