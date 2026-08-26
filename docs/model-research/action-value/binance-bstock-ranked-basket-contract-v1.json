@@ -1,0 +1,50 @@
+{
+  "claim_boundary": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "exact_account_costs_and_eligibility_available": false,
+    "failing_result_action": "reject_ranked_basket_without_parameter_retry",
+    "historical_executable_basis_available": false,
+    "passing_result_label": "persistent_after_frozen_sensitivity_research_candidate_only",
+    "research_only_outside_current_btc_eth_sol_execution_scope": true
+  },
+  "contract_sha256": "3f2b39ab03f246d0d31a015d8aff40c0a5e806eb4ccd646bcefea04f48f9a6d1",
+  "development_source": {
+    "path": "docs/model-research/action-value/binance-bstock-funding-full-universe-v1-2026-08-26.json",
+    "permitted_fields": [
+      "training_screen",
+      "scope",
+      "sources"
+    ],
+    "result_sha256": "ad3fbc7a09ff6b467955eeef8bf1e8df4ba7d20ca9e7659fcaf75069da622d3f",
+    "validation_and_test_were_not_calculated_by_the_source": true
+  },
+  "evaluation": {
+    "bootstrap_seed_policy": "sha256_of_schema_and_role",
+    "cross_sectional_bootstrap_confidence": "0.95",
+    "cross_sectional_bootstrap_repetitions": 50000,
+    "portfolio_net_bips": "arithmetic_mean_of_selected_symbol_role_net_bips",
+    "required_aggregate_direction_volatility_and_path_slice_net_bips": "0",
+    "required_bootstrap_net_lower_bound_bips": "0",
+    "required_contributing_symbols_per_slice": 8,
+    "required_positive_symbol_fraction": "0.75",
+    "required_worst_leave_one_symbol_out_net_bips": "0",
+    "reuse_original_per_symbol_chronological_roles_thresholds_costs_and_capital_hurdles": true,
+    "validation_and_test_must_each_pass_every_gate": true
+  },
+  "frozen_at_ms": 1787730632128,
+  "hypothesis": "persistent cross-sectional short-demand can make a diversified training-ranked long-bStock short-TRADIFI-perpetual basket direction-neutral after conservative execution and capital hurdles",
+  "schema_version": "binance-bstock-ranked-basket-contract-v1",
+  "selector": {
+    "rank_direction": "descending",
+    "rank_field": "training.net_after_frozen_hurdles_bips",
+    "require_positive_training_net": true,
+    "selected_count_rule": "ceiling_of_universe_count_times_top_fraction",
+    "tie_breaker": "ticker_ascending",
+    "top_fraction": "0.20",
+    "universe": "57 confirmation-eligible exact-1:1 symbols from the development source",
+    "validation_or_test_may_not_change_membership_or_weights": true,
+    "weights": "equal_notional_per_selected_symbol"
+  },
+  "status": "frozen_after_training_summary_and_before_validation_or_test_outcome_calculation"
+}

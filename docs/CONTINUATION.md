@@ -309,7 +309,28 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-bstock-reference-parity-v1-2026-08-26.json`,
   result SHA-256
   `73fec22cc61fc8be0c792a78c0340fcb163b9bf7862708796d50521a9c44a8ac`.
-  It is not an accepted edge and must not trigger repeated public polling.
+  A frozen full-universe follow-up matched 66 bStock/perpetual pairs, retained
+  60 exact-multiplier pairs, and excluded three previously observed exact
+  tickers from 57 confirmation candidates. Zero passed the training-only gate
+  after the 60-bps round-trip stress, 10%-annual two-leg capital hurdle,
+  family-adjusted block bootstrap, risk limits, and eight regime slices.
+  Sixteen had positive point-estimate training net, but all 57 had nonpositive
+  adjusted bootstrap lower bounds and 56 failed at least one slice. Canonical
+  result:
+  `docs/model-research/action-value/binance-bstock-funding-full-universe-v1-2026-08-26.json`,
+  SHA-256
+  `ad3fbc7a09ff6b467955eeef8bf1e8df4ba7d20ca9e7659fcaf75069da622d3f`.
+  Before opening validation/test outcomes, a distinct top-20% training-ranked
+  equal-weight basket was frozen. It failed validation at -81.80 bps and test
+  at -108.20 bps; only 1/12 then 0/12 symbols were positive and every
+  aggregate direction, volatility, and path slice was negative. Canonical
+  result:
+  `docs/model-research/action-value/binance-bstock-ranked-basket-v1-2026-08-26.json`,
+  SHA-256
+  `0cf6e3aae168e0c483634e78fd824a80be9e58269f02e9b01a6d9c9c46578a8f`.
+  The funding family is terminal without parameter retry. Conversion parity
+  remains account, executable-stock-quote, exact-cost, and permanent-scope
+  gated. Neither path is an accepted edge and neither permits repeated polls.
 - Binance quarterly cash-and-carry: one catalog fetch and one spot/futures book
   pair per selected contract covered BTCUSDT and ETHUSDT current/next quarters
   at 12 quantities. All 12 displayed gross bases were positive; nine cleared a
@@ -487,7 +508,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`ccc93d256f0662cee02aa557748b5b3aa782fe2bfc8b267648dcee2ddf68856c`.
+`16ea0d3e4d621903fd76ffb76373e3a5249ae861acaff88efe29bc5d1d56bddb`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

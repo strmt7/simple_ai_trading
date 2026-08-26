@@ -52,7 +52,7 @@ EXPECTED_JOURNAL_FILE_HASH = (
     "2686ccc31249b03ba2c12279282324fdbb5be3589047ca4510e61654efa7d49b"
 )
 EXPECTED_REGISTRY_HASH = (
-    "ccc93d256f0662cee02aa557748b5b3aa782fe2bfc8b267648dcee2ddf68856c"
+    "16ea0d3e4d621903fd76ffb76373e3a5249ae861acaff88efe29bc5d1d56bddb"
 )
 EXPECTED_TOOL_HASHES = {
     "screen_binance_cross_stablecoin_funding.py": (
