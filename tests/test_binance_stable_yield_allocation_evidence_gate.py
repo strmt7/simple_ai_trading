@@ -27,7 +27,7 @@ EXPECTED_RESULT_SHA256 = (
     "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "825bae9b054c09dd37060260982bd72c47770da24b1b67f290cf24fcbe25eff8"
+    "c9592d8c559b92c33361212394a26b6f10b63f024c9747fe2168939e3a419774"
 )
 EXPECTED_PROMOTION_TRIAGE_SHA256 = (
     "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c"
@@ -133,6 +133,15 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
                 "binance-public-promotion-yield-triage-v1-2026-08-26.json"
             ),
             "result_sha256": EXPECTED_PROMOTION_TRIAGE_SHA256,
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json"
+            ),
+            "result_sha256": (
+                "230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1"
+            ),
         },
     ]
 

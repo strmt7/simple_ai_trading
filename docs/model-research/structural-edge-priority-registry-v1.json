@@ -170,12 +170,16 @@
         {
           "path": "docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json",
           "result_sha256": "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json",
+          "result_sha256": "230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1"
         }
       ],
-      "current_status": "public_BFUSDUSDT_direct_parity_is_not_positive_and_the_RLUSD_campaign_is_a_conditional_8_07_percent_first_week_candidate_only_for_eligible_accounts_with_genuine_pre_existing_qualifying_volume_while_current_USDT_USDC_bonus_caps_are_economically_tiny",
+      "current_status": "USD1_7_percent_fixed_bonus_is_a_time_limited_conditional_candidate_not_a_stable_edge_the_28_day_fixed_target_case_exceeds_the_current_USDT_alternative_by_25_0228_bips_but_only_0_9683_bips_remain_after_the_worst_observed_30_day_close_move_and_current_displayed_spread_before_unknown_fees_eligibility_and_reserve_risk_RLUSD_remains_conditional_after_one_published_8_07_percent_week",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "observe_the_fixed_2026_08_28_and_2026_09_04_RLUSD_effective_APR_updates_without_refitting_and_when_both_credentials_exist_prove_account_eligibility_organic_volume_exact_rates_quotas_and_costs",
+      "next_action": "at_2026_08_27T00_00_00Z_confirm_USD1_offer_activation_terms_and_primary_fee_treatment_once_then_when_both_credentials_exist_prove_exact_USD1_and_USDT_product_eligibility_rates_quota_and_entry_exit_costs_also_observe_the_fixed_2026_08_28_and_2026_09_04_RLUSD_updates_without_refitting",
       "priority_rank": 5,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
@@ -185,12 +189,14 @@
         "daily kline extremes as historical executable depth or fills",
         "manufactured_churn_self_trading_wash_trading_or_other_inauthentic_volume_to_qualify_for_rewards",
         "extrapolating_one_RLUSD_reward_week_or_an_illustrative_example_into_future_APR",
+        "calling_a_temporary_USD1_bonus_a_stable_edge_or_ignoring_issuer_peg_redemption_and_reserve_freshness_risk",
+        "assuming_public_Convert_bounds_or_a_displayed_spread_prove_an_executable_fee_free_round_trip",
         "inferring_jurisdiction_or_account_eligibility_from_system_timezone",
         "calling direction-neutral market-invariant or risk-free",
         "freezing another signed collector while credentials are absent"
       ],
-      "retry_trigger": "2026_08_28_RLUSD_second_distribution_update_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
-      "venue_scope": "binance_bfusd_rwusd_rlusd_and_same_currency_cash_alternatives"
+      "retry_trigger": "2026_08_27_USD1_promotion_activation_or_2026_08_28_RLUSD_second_distribution_update_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
+      "venue_scope": "binance_bfusd_rwusd_rlusd_usd1_usdt_and_same_currency_cash_alternatives"
     },
     {
       "blocking_evidence": [
@@ -497,7 +503,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "825bae9b054c09dd37060260982bd72c47770da24b1b67f290cf24fcbe25eff8",
+  "result_sha256": "c9592d8c559b92c33361212394a26b6f10b63f024c9747fe2168939e3a419774",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -586,6 +592,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T10:46:12.037000Z",
+  "updated_at_utc": "2026-08-26T11:06:13.9617837Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
