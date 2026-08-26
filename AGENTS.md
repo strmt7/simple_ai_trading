@@ -51,6 +51,12 @@ override prose.
   a rate, fee, eligibility rule, or effective date by page location, apparent
   recency, or convenience; preserve both sources and require an explicit
   effective-date source or realized post-change evidence before promotion.
+- Cross-token cost and reward comparisons must use a source-bound executable
+  conversion into one exact unit. A one-for-one stablecoin assumption or a
+  different quote currency is a labeled sensitivity only and cannot support an
+  after-cost profitability claim. Public evidence that an automation contract
+  captured a reward also does not prove independent access to its batching,
+  relayer, permissions, fees, or first-block execution path.
 - Before freezing a time-bounded prospective capture, prove that its duration,
   phase alignment, retained observation tail, and required source timestamps can
   supply every minimum-sample gate. Elapsed duration and zero transport gaps do

@@ -697,7 +697,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`ed4fe8edf5ed532d7cbcf56016e762869d0850cdb33f48df08138c666894bba7`.
+`cf72fe18bd3a46d04089b7c679958c17c3e43c1fe3d8d02bd91919c413c24e7d`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -712,6 +712,28 @@ it lost 0.3328 bps before price impact, gas, and the still-unclosed
 native-USDC/USDC.e basis. No Quoter or wallet call was justified. Canonical
 result: `docs/model-research/action-value/polymarket-pusd-external-parity-v1-2026-08-26.json`,
 SHA-256 `c15f1e131aa18d705aa6ce507c0f921b7a559664db91a352a244d8df9ddb0f99`.
+
+A distinct public Polymarket UMA resolution-proposer reward screen is terminal
+at the current reward, gas, and competition state. Thirty-nine recently closed
+BTC/ETH/SOL questions each offered 0.6 USDC.e reward against a 250-USDC.e
+custom bond plus 250-USDC.e final fee for 600 seconds. Every request settled
+without dispute and the proposed price matched the resolved price. The five
+scoped proposal transactions consumed 159.7365077952 POL; charging all eight
+resolution transactions added 9.5001027951 POL. At the captured 0.11226
+POLUSDT sensitivity and a 10%-annual collateral hurdle, the 23.4-USDC.e reward
+pool left 4.3644 USDC.e equivalent, or 2.2382 bps on 19,500 USDC.e, only if
+USDC.e is valued one-for-one with USDT. This is not a stable or accessible
+edge: one actual two-market proposal batch was already negative after observed
+proposal gas, pro-rata resolution gas, and capital cost; full-charge aggregate
+break-even had only 22.9723% POL-price headroom; 38 of 39 scoped proposals
+landed in the first Polygon block; and public events do not prove access to the
+observed proposer contracts or relayers. No wallet, approval, proposal,
+resolution, credential, account, or funded action occurred. Do not resample an
+unchanged cluster. Reopen only after a material source-bound reward, bond,
+liveness, batching, or public-access change and then freeze an all-cost,
+gas-stressed, multi-day competition study. Canonical gate:
+`docs/model-research/action-value/polymarket-resolution-proposer-reward-gate-v1-2026-08-26.json`,
+SHA-256 `ee76a40a86e1c777006c697798d0ad3da20609cadd1c2d8f6bf039ecb79f2155`.
 
 The highest-priority Binance structural lead is now LDUSDT incremental margin
 yield. Official product guidance says eligible USDT Simple Earn Flexible assets

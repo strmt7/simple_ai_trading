@@ -1,0 +1,243 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "profitability_claim": false,
+    "public_read_only_research": true,
+    "wallet_transactions_sent": false
+  },
+  "created_at_utc": "2026-08-26T15:11:53.6641784Z",
+  "decision": {
+    "accepted_edge": false,
+    "market_direction_forecast_required": false,
+    "next_trigger": "reopen only after a source-bound material change in reward bond liveness batching or public proposer access can support a separately preregistered all-cost gas-stress and multi-day competition study",
+    "reason": "the one observed cluster was positive only under a USDCe-equals-USDT valuation sensitivity; one of five actual scoped proposal batches was already negative after observed proposal gas allocated resolution gas and capital cost, the aggregate full-resolution-charge break-even POL price was only 22.9723 percent above the captured POLUSDT price, and 38 of 39 scoped rewards were claimed in the first Polygon block",
+    "stable_market_invariant_edge": false,
+    "status": "rejected_as_stable_or_publicly_accessible_edge_at_current_reward_gas_and_competition_state"
+  },
+  "mechanism": {
+    "adapter_address": "0x65070BE91477460D8A7AeEb94ef92fe056C2f2A7",
+    "name": "polymarket_uma_resolution_proposer_reward",
+    "optimistic_oracle_v2_address": "0x2c0367a9db231ddebd88a94b4f6461a6e47c58b1",
+    "purpose": "test whether permissionless correct-resolution proposal rewards form a market-direction-independent operational edge after collateral opportunity cost and Polygon gas",
+    "reward_and_bond_token": {
+      "address": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+      "symbol": "USDC.e"
+    },
+    "scoped_assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ]
+  },
+  "observed_cluster": {
+    "automatically_resolved_market_count": 39,
+    "bond_per_request_usdce": "250",
+    "capital_opportunity_cost": {
+      "annual_rate_sensitivity": "0.10",
+      "cost_usdce": "0.0371004566210045662100456621",
+      "formula": "19500 * 0.10 * 600 / 31536000"
+    },
+    "custom_liveness_seconds": 600,
+    "disputed_request_count": 0,
+    "final_fee_per_request_usdce": "250",
+    "first_block_scoped_proposal_count": 38,
+    "latest_scoped_proposal_delay_seconds": 3,
+    "lock_per_request_usdce": "500",
+    "market_count": 39,
+    "proposal_block_first": 92696115,
+    "proposal_block_first_timestamp_utc": "2026-08-26T13:00:00Z",
+    "proposal_event_count_all_markets": 53,
+    "proposal_transaction_count_all_markets": 8,
+    "proposal_transaction_count_scoped": 5,
+    "proposed_price_matched_resolved_price_count": 39,
+    "proposer_count": 3,
+    "proposer_market_counts": {
+      "0x560acca61a3bfc3789634d1ddbba3cd527544f85": 16,
+      "0x9051949487605cd494c47daa82b6ae100a054125": 1,
+      "0x94f7ef03ec6b2028bf80facabf8c997bfde36faf": 22
+    },
+    "request_count": 39,
+    "resolution_event_count_in_full_transactions": 54,
+    "resolution_event_count_scoped": 39,
+    "resolution_transaction_count": 8,
+    "reward_per_request_usdce": "0.6",
+    "settled_request_count": 39,
+    "total_locked_collateral_usdce": "19500",
+    "total_reward_usdce": "23.4"
+  },
+  "observed_cost_sensitivity": {
+    "allocation_rule": "allocated resolution gas divides each successful resolution transaction's full POL cost equally across every UmaCtfAdapter QuestionResolved event in that transaction; the conservative full-transaction view charges all eight complete transaction costs to the 39 scoped rewards even though the receipts contain 54 QuestionResolved events",
+    "batch_results_under_usdce_equals_usdt": [
+      {
+        "allocated_resolution_gas_pol": "3.3520036073256928797272727270",
+        "market_count": 20,
+        "net_bips_on_locked_collateral": "1.0164920125743860791816290000",
+        "net_usdce_equivalent": "1.016492012574386079181628844",
+        "proposal_gas_pol": "94.31842318971114276",
+        "proposal_transaction": "0xb7a5a4d2e717c058151bbd3b5b5226b9b3965fbc3127fdcdc477e3ad9f9668ff",
+        "reward_usdce": "12.0"
+      },
+      {
+        "allocated_resolution_gas_pol": "2.3979254097392489848181818181",
+        "market_count": 14,
+        "net_bips_on_locked_collateral": "3.0868589109894747760969710000",
+        "net_usdce_equivalent": "2.1608012376926323432678796458",
+        "proposal_gas_pol": "53.061549467101892387",
+        "proposal_transaction": "0xf833ff8e523f50907b2800d0ac48bc679be5a282dacfe4d9cde770a772e43590",
+        "reward_usdce": "8.4"
+      },
+      {
+        "allocated_resolution_gas_pol": "0.348879123275200887",
+        "market_count": 2,
+        "net_bips_on_locked_collateral": "10.389354056342473350124012000",
+        "net_usdce_equivalent": "1.0389354056342473350124012481",
+        "proposal_gas_pol": "1.068918906715239072",
+        "proposal_transaction": "0x0b80cc809e42eb3d2c370982728528707b18e9f9b6cc3f6e580f79ef63a6753c",
+        "reward_usdce": "1.2"
+      },
+      {
+        "allocated_resolution_gas_pol": "0.3247440569535117524545454545",
+        "market_count": 2,
+        "net_bips_on_locked_collateral": "-0.118200212463061259776060000",
+        "net_usdce_equivalent": "-0.0118200212463061259776060246",
+        "proposal_gas_pol": "10.45307024669231268",
+        "proposal_transaction": "0x7db280b95a95b3897a36f95c2262520d2a53d313e08f2e5d61738954a0e21d2e",
+        "reward_usdce": "1.2"
+      },
+      {
+        "allocated_resolution_gas_pol": "0.163236854175831219",
+        "market_count": 1,
+        "net_bips_on_locked_collateral": "9.740752094292164995198612000",
+        "net_usdce_equivalent": "0.487037604714608249759930624",
+        "proposal_gas_pol": "0.834545985",
+        "proposal_transaction": "0x8dc610426c623ba2772a4c5c88f8bf7c08aef9e7f09b1b0cf57e37b711fcb44e",
+        "reward_usdce": "0.6"
+      }
+    ],
+    "captured_polusdt": "0.11226000",
+    "full_resolution_charge": {
+      "break_even_polusdt": "0.1380487322565270124781265389",
+      "break_even_price_headroom_percent": "22.972325188425986529597843310",
+      "net_bips_on_locked_collateral_under_unit_parity": "2.2381526351357566825770430000",
+      "net_usdce_equivalent_under_unit_parity": "4.3643976385147255310252343379",
+      "proposal_gas_pol": "159.736507795220586899",
+      "resolution_gas_pol": "9.500102795054398873",
+      "total_gas_pol": "169.236610590274985772",
+      "total_gas_usdt": "18.99850190486426990276472"
+    },
+    "pro_rata_resolution_charge": {
+      "allocated_resolution_gas_pol": "6.586789051469484",
+      "net_bips_on_locked_collateral_under_unit_parity": "2.4058698663433446744615380000",
+      "net_usdce_equivalent_under_unit_parity": "4.6914462393695221152",
+      "total_gas_pol": "166.32329684669048",
+      "total_gas_usdt": "18.6714533040094732848"
+    },
+    "proposal_only_if_an_independent_party_resolves": {
+      "net_usdce_equivalent_under_unit_parity": "5.4308791782875323485082143379"
+    },
+    "two_times_full_gas_sensitivity_net_usdce_equivalent_under_unit_parity": "-14.634104266349544371739485662"
+  },
+  "result_sha256": "ee76a40a86e1c777006c697798d0ad3da20609cadd1c2d8f6bf039ecb79f2155",
+  "safety_and_limits": [
+    "The reward and locked collateral are USDC.e on Polygon, while the captured gas conversion is Binance POLUSDT. Every net figure is explicitly a one-USDC.e-equals-one-USDT sensitivity, not an exact cross-stablecoin after-cost profit claim.",
+    "The full-resolution-charge calculation is deliberately conservative because the eight resolution receipts contain 54 adapter resolutions and only 39 are scoped; the pro-rata view is also shown and still contains one negative observed proposal batch.",
+    "A successful undisputed proposal returns locked collateral plus reward, but an incorrect or disputed proposal can lose bond capital. Zero disputes in one cluster does not establish zero future resolution risk.",
+    "The observed proposer destinations and relayers may be private or protocol-operated automation. Public contract events do not prove that an independent user can access the same batching path or win the first-block race.",
+    "One contemporaneous cluster cannot establish multi-day recurrence, capacity, operational availability, or gas-regime persistence.",
+    "No account wallet approval proposal resolution order or funded transaction was used or sent."
+  ],
+  "schema_version": "polymarket-resolution-proposer-reward-gate-v1",
+  "sources": [
+    {
+      "retrieved_at_utc": "2026-08-26T15:11:53.6641784Z",
+      "url": "https://docs.polymarket.com/concepts/resolution",
+      "use": "official proposer bond challenge reward and settlement mechanics"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T15:11:53.6641784Z",
+      "url": "https://github.com/Polymarket/uma-ctf-adapter/blob/main/src/interfaces/IUmaCtfAdapter.sol",
+      "use": "official adapter event and function contract including QuestionResolved"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T15:11:53.6641784Z",
+      "url": "https://github.com/Polymarket/uma-ctf-adapter/blob/main/src/UmaCtfAdapter.sol",
+      "use": "official adapter resolution path through Optimistic Oracle settlement and CTF payout reporting"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T15:11:53.6641784Z",
+      "url": "https://github.com/UMAprotocol/protocol/blob/master/packages/core/contracts/optimistic-oracle-v2/implementation/OptimisticOracleV2.sol",
+      "use": "official undisputed proposer settlement and reward transfer implementation"
+    },
+    {
+      "path": "data/polymarket-resolution-reward-v1/recent-ended-closed-crypto-markets.raw.json",
+      "payload_sha256": "f873fd89a8e9e9b6e00c8dace9df17bbcc3c38c91bcdc9040794f8ef87c0e19a",
+      "request_count": 1,
+      "url": "https://gamma-api.polymarket.com/markets?closed=true&limit=100&order=endDate&ascending=false&tag_id=21&end_date_max=2026-08-26T13%3A26%3A14Z",
+      "use": "bounded current closed crypto market population and exact question IDs market IDs and close timestamps"
+    },
+    {
+      "block_number_hex": "0x58680ec",
+      "path": "data/polymarket-resolution-reward-v1/rewarded-questions-current-pinned-publicnode.raw.json",
+      "payload_sha256": "b8313eb3d2e4da57bb4e149a95b0fda9355c4dfccb060a92bc692e427b052d14",
+      "request_count": 39,
+      "url": "https://polygon-bor-rpc.publicnode.com",
+      "use": "block-pinned public getQuestion batch for the 39 rewarded scoped questions"
+    },
+    {
+      "block_number_hex": "0x58680ec",
+      "path": "data/polymarket-resolution-reward-v1/rewarded-oo-requests-current-pinned-publicnode.raw.json",
+      "payload_sha256": "3b6af3f5da454d2c486ffa56687e3b91450dac257bccdfa5b7bf739fbe85f920",
+      "request_count": 39,
+      "url": "https://polygon-bor-rpc.publicnode.com",
+      "use": "block-pinned public Optimistic Oracle request state for proposer disputer bond final fee reward liveness and settlement"
+    },
+    {
+      "from_block_hex": "0x5866e33",
+      "path": "data/polymarket-resolution-reward-v1/rewarded-propose-price-logs-10-blocks.raw.json",
+      "payload_sha256": "208947c7439d8e3af7ae3cf84e67c1f4f41cd7280abc55f7295762a28be990c8",
+      "request_count": 1,
+      "to_block_hex": "0x5866e3c",
+      "url": "https://polygon-bor-rpc.publicnode.com",
+      "use": "bounded public ProposePrice event log window covering 53 proposals and exact market IDs"
+    },
+    {
+      "path": "data/polymarket-resolution-reward-v1/proposal-transactions-and-receipts.raw.json",
+      "payload_sha256": "6c23a46ff63ceb9aadb757960a1aac0d1f75968f7737a727f0614d2d97c40aff",
+      "request_count": 16,
+      "url": "https://polygon-bor-rpc.publicnode.com",
+      "use": "eight public proposal transactions and eight receipts for success gas and batching evidence"
+    },
+    {
+      "path": "data/polymarket-resolution-reward-v1/binance-polusdt-price.raw.json",
+      "payload_sha256": "69f8abebd4bde286fa200a8c0110c8efe69a5ab2a21bd81e44d6524286830a02",
+      "request_count": 1,
+      "url": "https://api.binance.com/api/v3/ticker/price?symbol=POLUSDT",
+      "use": "public POLUSDT conversion sensitivity for observed Polygon gas"
+    },
+    {
+      "path": "data/polymarket-resolution-reward-v1/resolution-block-anchor-candidates.raw.json",
+      "payload_sha256": "2aecf0dd2aeda07670c93255a8f141cfbea3fe28eef006ae2f3de3f15c890b3c",
+      "request_count": 8,
+      "url": "https://polygon-bor-rpc.publicnode.com",
+      "use": "public exact block timestamp mapping for the eight unique Gamma close times"
+    },
+    {
+      "path": "data/polymarket-resolution-reward-v1/rewarded-question-resolved-logs-exact-block.raw.json",
+      "payload_sha256": "7748d6f9d375d5c761ef92a6ce0d3f794ade2cf8fcefd7de157da0552235ea1f",
+      "request_count": 39,
+      "url": "https://polygon-bor-rpc.publicnode.com",
+      "use": "public exact-block and exact-question adapter resolution logs mapping all 39 scoped markets to eight transactions"
+    },
+    {
+      "path": "data/polymarket-resolution-reward-v1/resolution-transactions-and-receipts.raw.json",
+      "payload_sha256": "73e6d1b9d2fb5e0c85660312ce5fb1d902f38708909f91e20fe5831ac7f91849",
+      "request_count": 16,
+      "url": "https://polygon-bor-rpc.publicnode.com",
+      "use": "eight public resolution transactions and eight receipts for success gas and complete QuestionResolved event counts"
+    }
+  ]
+}

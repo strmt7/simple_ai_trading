@@ -60,6 +60,19 @@ safety gate, blocks Stop, or submits an order.
   route or a source-bound deviation exceeding fee, gas, and finite-size impact.
   Canonical result: `polymarket-pusd-external-parity-v1-2026-08-26.json`,
   SHA-256 `c15f1e131aa18d705aa6ce507c0f921b7a559664db91a352a244d8df9ddb0f99`.
+- A separate public Polymarket UMA proposer-reward screen found positive
+  aggregate observed economics but rejected a stable or publicly accessible
+  edge. Thirty-nine BTC/ETH/SOL questions offered 23.4 USDC.e total reward
+  against 19,500 USDC.e locked for 600 seconds. Under an explicitly
+  non-authoritative USDC.e-equals-USDT valuation, charging all scoped proposal
+  transactions and all eight resolution transactions left 4.3644 USDC.e
+  equivalent, or 2.2382 bps. However, one of five actual proposal batches was
+  already negative after observed gas, allocated resolution gas, and capital
+  cost; aggregate POL-price headroom was only 22.9723%; and 38 of 39 scoped
+  rewards were claimed in the first Polygon block. Do not repeat the current
+  cluster or treat protocol/private automation as public execution. Canonical
+  gate: `polymarket-resolution-proposer-reward-gate-v1-2026-08-26.json`,
+  SHA-256 `ee76a40a86e1c777006c697798d0ad3da20609cadd1c2d8f6bf039ecb79f2155`.
 - The 2026-08-25 target-free structural-parity screens found no accepted edge.
   Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
   negative-risk events and zero gross-positive logical-implication bundles
