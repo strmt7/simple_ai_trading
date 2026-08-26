@@ -167,7 +167,21 @@ safety gate, blocks Stop, or submits an order.
   research-only artifact:
   `binance-bstock-reference-parity-v1-2026-08-26.json`, result SHA-256
   `73fec22cc61fc8be0c792a78c0340fcb163b9bf7862708796d50521a9c44a8ac`.
-  Do not call this an accepted edge or poll it again before those gates change.
+  A later one-shot causal screen removed the apparent funding promise. Of 66
+  matched bStock/perpetual pairs, 60 had an exact multiplier and 57 were
+  unexposed confirmation candidates. Zero passed the frozen training gate
+  after a 60-bps round-trip stress, a 10%-annual two-leg capital hurdle,
+  family-adjusted block bootstrap, risk gates, and eight regime slices. A
+  separately frozen top-20% equal-weight basket then averaged -81.80 bps in
+  validation and -108.20 bps in test; only 1/12 and 0/12 symbols respectively
+  were positive, and every aggregate regime slice was negative. Canonical
+  results are `binance-bstock-funding-full-universe-v1-2026-08-26.json`, SHA
+  `ad3fbc7a09ff6b467955eeef8bf1e8df4ba7d20ca9e7659fcaf75069da622d3f`,
+  and `binance-bstock-ranked-basket-v1-2026-08-26.json`, SHA
+  `0cf6e3aae168e0c483634e78fd824a80be9e58269f02e9b01a6d9c9c46578a8f`.
+  The funding family is terminal: do not weaken, rerank, or resample it. The
+  reference-conversion hypothesis remains account, quote, cost, and scope
+  gated; neither result is an accepted edge.
   A source-first follow-up also identified WBETH/ETH and BNSOL/SOL conversion
   parity as a distinct direction-neutral candidate. Binance's official staking
   conversion-rate, quota, reward, and operation-history paths are signed, both

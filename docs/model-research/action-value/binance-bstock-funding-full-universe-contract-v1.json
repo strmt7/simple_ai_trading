@@ -1,0 +1,115 @@
+{
+  "schema_version": "binance-bstock-funding-full-universe-contract-v1",
+  "status": "frozen_before_unobserved_full_universe_funding_outcome_access",
+  "frozen_at_ms": 1787730074514,
+  "contract_sha256": "5c86b4cf42e74a1feb2fa75895aeddfd0db120c93b63952609b66068bf5aa342",
+  "purpose": "test whether direction-neutral long-bStock short-matched-TRADIFI-perpetual funding carry persists causally across the full structurally matched public universe",
+  "authority": {
+    "research_only": true,
+    "credentials_permitted": false,
+    "orders_permitted": false,
+    "conversions_permitted": false,
+    "scope_expansion_permitted": false
+  },
+  "outcome_exposure_control": {
+    "previously_observed_tickers": [
+      "DRAM",
+      "MRVL",
+      "MU",
+      "SNDK"
+    ],
+    "previously_observed_exact_multiplier_tickers_excluded_from_confirmation": [
+      "DRAM",
+      "MRVL",
+      "SNDK"
+    ],
+    "non_exact_multiplier_policy": "exclude_from_confirmation_and_report_structurally",
+    "one_shot_rule": "do_not_change_this_contract_after_the_new_histories_are_captured"
+  },
+  "universe": {
+    "bstock_type": 3,
+    "spot_status": "TRADING",
+    "future_contract_type": "TRADIFI_PERPETUAL",
+    "future_status": "TRADING",
+    "required_multiplier": "1",
+    "funding_history_limit": 1000,
+    "reject_empty_or_limit_saturated_history": true
+  },
+  "causal_roles": {
+    "ordered_split": [
+      "training",
+      "validation",
+      "test"
+    ],
+    "fractions": [
+      "0.50",
+      "0.25",
+      "0.25"
+    ],
+    "minimum_observations_per_role": 60,
+    "selection_uses_only": "training",
+    "validation_and_test_cannot_select_symbols_or_thresholds": true
+  },
+  "cost_and_capital_hurdles": {
+    "round_trip_execution_stress_bips": "60",
+    "annual_opportunity_hurdle_bips_per_capital_leg": "500",
+    "gross_capital_legs": "2",
+    "role_evaluated_as_standalone_round_trip": true,
+    "exact_account_cost_claim": false
+  },
+  "regimes": {
+    "feature_lag": "funding_at_t_uses_mark_return_ending_at_t_minus_1",
+    "direction_threshold_absolute_return": "0.0025",
+    "direction_slices": [
+      "bullish",
+      "bearish",
+      "sideways"
+    ],
+    "volatility_training_quantiles": [
+      "0.50",
+      "0.80"
+    ],
+    "volatility_slices": [
+      "low_or_normal_volatility",
+      "high_volatility",
+      "stress_volatility"
+    ],
+    "path_slices": [
+      "directional",
+      "choppy"
+    ],
+    "minimum_observations_per_slice": 12,
+    "slice_cost_allocation": "prorata_share_of_each_roles_frozen_execution_and_capital_hurdle",
+    "unsupported_or_negative_slice_result": "reject_always_hold_candidate"
+  },
+  "statistical_and_risk_gates": {
+    "family_confidence": "0.95",
+    "multiple_testing_control": "bonferroni_over_confirmation_eligible_symbols",
+    "moving_block_bootstrap_repetitions": 20000,
+    "moving_block_length_settlements": 9,
+    "bootstrap_seed_policy": "sha256_of_schema_symbol_and_role",
+    "required_bootstrap_net_lower_bound_bips": "0",
+    "maximum_net_drawdown_bips": "100",
+    "minimum_net_expected_shortfall_97_5_bips": "-20",
+    "maximum_positive_week_concentration": "0.50"
+  },
+  "acceptance_boundary": {
+    "empirical_gate_requires": [
+      "training_selection_pass",
+      "untouched_validation_pass",
+      "untouched_test_pass",
+      "every_required_regime_slice_passes_in_each_role",
+      "family_adjusted_bootstrap_lower_bound_positive_in_each_role",
+      "risk_and_concentration_gates_pass_in_each_role",
+      "current_1000_and_5000_usdt_two_leg_depth_available"
+    ],
+    "accepted_edge_requires_additionally": [
+      "same_account_eligibility",
+      "exact_account_fees_taxes_and_rounding",
+      "verified_conversion_and_inventory_reconciliation",
+      "historical_executable_basis_and_exit_fill_evidence",
+      "explicit_execution_scope_expansion"
+    ],
+    "missing_additional_evidence_action": "retain_as_research_only_and_set_accepted_edge_false"
+  }
+}
