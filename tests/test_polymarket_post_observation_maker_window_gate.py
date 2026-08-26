@@ -9,8 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / "docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json"
 EXPECTED_HASH = "03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f49392"
+PROSPECTIVE_PATH = ROOT / "docs/model-research/action-value/polymarket-post-observation-prospective-v2-2026-08-26.json"
+EXPECTED_PROSPECTIVE_HASH = "079925ec06eda0cdfc5851d71d7fc76df96de6f03883bcc70edc0f36da28d421"
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-EXPECTED_REGISTRY_HASH = "5e11f6f85dd79c3e0c651c3d7cbcdf97d7e08bf4b4a27cfb3682f5db14cd4886"
+EXPECTED_REGISTRY_HASH = "5d77b8319fd2608a3dfe3efed60c7d7ff097597f208796baed2337947126aea9"
 
 
 def _load() -> dict[str, object]:
@@ -57,6 +59,19 @@ def test_gate_preserves_the_decisive_execution_unknown() -> None:
     assert "one degraded BTC hour" in limitations
 
 
+def test_prospective_cross_asset_result_rejects_strong_fill_recurrence() -> None:
+    artifact = json.loads(PROSPECTIVE_PATH.read_bytes())
+    assert artifact["result_sha256"] == EXPECTED_PROSPECTIVE_HASH
+    assert _embedded_hash(artifact) == EXPECTED_PROSPECTIVE_HASH
+    summary = artifact["economic_summary"]
+    assert summary["complete_conditions"] == 3
+    assert summary["conditions_with_post_observation_winner_bid_growth"] == 3
+    assert summary["conditions_with_later_winner_sell_fills"] == 1
+    assert Decimal(summary["public_observed_gross_pusd"]) == Decimal("0.01022")
+    assert artifact["verdict"]["cross_asset_public_recurrence"] is False
+    assert artifact["verdict"]["accepted_edge"] is False
+
+
 def test_registry_promotes_only_a_conditional_lead() -> None:
     registry = json.loads(REGISTRY_PATH.read_bytes())
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
@@ -71,4 +86,5 @@ def test_registry_promotes_only_a_conditional_lead() -> None:
     assert lead["priority_rank"] == 3
     assert lead["market_direction_forecast_required"] is False
     assert lead["canonical_artifacts"][0]["result_sha256"] == EXPECTED_HASH
+    assert lead["canonical_artifacts"][1]["result_sha256"] == EXPECTED_PROSPECTIVE_HASH
     assert "authenticated_order_acceptance" in lead["current_status"]

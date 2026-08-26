@@ -171,9 +171,17 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-post-observation-maker-window-gate-v1-2026-08-26.json`, result
   SHA-256
   `03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f49392`.
-  Run public prospective BTC/ETH/SOL monitoring now. Do not submit an order;
-  only after `2026-08-29T23:40:00Z` and explicit authority may one minimum-size
-  no-crossing authenticated order-acceptance probe be frozen.
+  A clean prospective BTC/ETH/SOL interval then showed post-observation winning
+  bid growth in 3/3 conditions, but qualifying later winner-side seller fills
+  recurred only for BTC (1/3 conditions; 0.01022 pUSD public gross). All three
+  resolved Up, so direction balance and cross-regime persistence remain absent.
+  Prospective artifact:
+  `polymarket-post-observation-prospective-v2-2026-08-26.json`, result SHA-256
+  `079925ec06eda0cdfc5851d71d7fc76df96de6f03883bcc70edc0f36da28d421`.
+  Freeze a non-overlapping multi-interval public contract before collecting
+  more; do not refit to this interval. Do not submit an order. Only after
+  `2026-08-29T23:40:00Z` and explicit authority may one minimum-size no-crossing
+  authenticated order-acceptance probe be frozen.
   Binance LDUSDT is now the highest-priority Binance structural lead. Official
   product guidance says eligible USDT Simple Earn Flexible assets can become
   LDUSDT, remain USD-M Multi-Assets margin, and keep Real-Time APR rewards.
