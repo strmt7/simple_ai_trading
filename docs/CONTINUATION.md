@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Fourteen narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Fifteen narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -29,7 +29,9 @@ Development belongs only on `main`; do not create another development branch.
   account independently cleared the lifetime-volume threshold; and Binance
   Square's base 20% Write to Earn commission only on authentic external readers'
   independently existing eligible fee-bearing trades attributed to genuinely
-  useful content. Each Binance
+  useful content; and Binance Referral Pro's base 20% Spot/Margin and 10%
+  one-year Futures fee commission only for authentic independently acquired new
+  external users. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
   A current BTC Simple Earn Flexible product is only an extension candidate:
@@ -870,7 +872,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`03a280849e16d8dcf171947e909342d37dd1a6ae4bd0ecca906b864fdea33304`.
+`579f1e5261cadaf51a2c175f82a04c673d46213963988c8ea88f2b7f7ac4db11`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1435,6 +1437,20 @@ profit. Canonical overlay:
 `docs/model-research/action-value/binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json`,
 result SHA-256
 `29ec95146998535fde295dfc830a2639b9d10964e7f9e36c17e44e628dc454d1`.
+
+Binance Referral Pro is accepted only as a direction-independent gross fee
+overlay at the public base tier: 20% of authentic referred users' fee-bearing
+Spot and Margin fees and 10% of their Futures fees for one year after Futures
+activation. Referral Lite and Pro are mutually exclusive for the same new user.
+Do not credit higher performance tiers, self or controlled accounts, zero-fee
+or invalidated trades, restricted regions, prohibited advertising, or the same
+fee under Write to Earn, Affiliate, Broker, or another commission program.
+Account eligibility, attribution, payout asset and timing, acquisition,
+disclosure, compliance, tax, and operating costs remain unproved, so gross
+commission is not net profit. Canonical overlay:
+`docs/model-research/action-value/binance-organic-referral-pro-fee-overlay-v1-2026-08-26.json`,
+result SHA-256
+`8a29116879fd90cb0f8fc11d9780a8dccbff8afc2d3ea685e671921f651e64d1`.
 
 ## Protected Local Work
 

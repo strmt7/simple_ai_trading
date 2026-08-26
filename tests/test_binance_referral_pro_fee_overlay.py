@@ -8,10 +8,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json"
+    "binance-organic-referral-pro-fee-overlay-v1-2026-08-26.json"
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-EXPECTED_HASH = "29ec95146998535fde295dfc830a2639b9d10964e7f9e36c17e44e628dc454d1"
+EXPECTED_HASH = "8a29116879fd90cb0f8fc11d9780a8dccbff8afc2d3ea685e671921f651e64d1"
 REGISTRY_HASH = "579f1e5261cadaf51a2c175f82a04c673d46213963988c8ea88f2b7f7ac4db11"
 
 
@@ -32,7 +32,7 @@ def _canonical_hash(payload: dict[str, object]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def test_write_to_earn_overlay_is_hash_bound_scoped_and_non_trading() -> None:
+def test_referral_pro_overlay_is_hash_bound_scoped_and_non_trading() -> None:
     artifact = _load(ARTIFACT)
 
     assert artifact["result_sha256"] == EXPECTED_HASH
@@ -43,38 +43,40 @@ def test_write_to_earn_overlay_is_hash_bound_scoped_and_non_trading() -> None:
     assert artifact["adjudication"]["profitability_claim"] is False
     assert artifact["authority"] == {
         "account_state_accessed": False,
-        "content_published": 0,
         "credentials_used": False,
         "funded_actions": 0,
         "orders_or_transfers_submitted": 0,
         "public_read_only_research": True,
-        "reader_activity_created_or_requested": 0,
+        "referral_links_created_or_shared": 0,
+        "referred_activity_created_or_requested": 0,
     }
 
 
-def test_only_base_commission_is_accepted_with_threshold_and_integrity_guards() -> None:
+def test_only_public_base_rates_are_accepted_with_mode_and_integrity_guards() -> None:
     artifact = _load(ARTIFACT)
     economics = artifact["economics"]
     terms = artifact["eligibility_and_terms"]
 
-    assert Decimal(economics["accepted_base_commission_rate_of_reader_trading_fee"]) == (
+    assert Decimal(economics["accepted_spot_and_margin_base_commission_rate"]) == (
         Decimal("0.20")
     )
-    assert Decimal(1) * Decimal(
-        economics["accepted_base_commission_rate_of_reader_trading_fee"]
-    ) == Decimal(economics["accepted_gross_USDC_per_1_USDC_equivalent_eligible_reader_fee"])
-    assert economics["minimum_weekly_payout_USDC"] == "0.1"
-    assert economics["sub_threshold_balance_carry_forward"] is False
-    assert terms["content_reward_lifetime_days"] == 7
-    assert terms["self_trades_eligible"] is False
-    assert terms["zero_fee_trades_eligible"] is False
+    assert Decimal(economics["accepted_futures_base_commission_rate"]) == Decimal(
+        "0.10"
+    )
+    assert economics["accepted_futures_base_commission_time_limit"].startswith(
+        "1 year"
+    )
+    assert economics["payout_asset_and_timing_publicly_unproved"] is True
+    assert "only one" in terms["new_user_single_mode"]
+    assert terms["restricted_region_users_eligible"] is False
     prohibited = " ".join(artifact["prohibited_actions"])
-    assert "manufactured reader trading" in prohibited
-    assert "encouraging unnecessary unsuitable leveraged or loss-making trades" in prohibited
-    assert "double-counting the same reader fee" in prohibited
+    assert "inauthentic referral" in prohibited
+    assert "unnecessary unsuitable leveraged or loss-making trades" in prohibited
+    assert "double-counting the same user or fee" in prohibited
+    assert "assuming the commission payout asset" in prohibited
 
 
-def test_registry_accepts_overlay_without_crediting_unproved_bonus_rates() -> None:
+def test_registry_accepts_referral_pro_without_crediting_performance_tiers() -> None:
     registry = _load(REGISTRY)
 
     assert registry["result_sha256"] == REGISTRY_HASH
@@ -86,17 +88,17 @@ def test_registry_accepts_overlay_without_crediting_unproved_bonus_rates() -> No
     row = next(
         row
         for row in registry["prioritized_hypotheses"]
-        if row["mechanism"] == "binance_square_organic_write_to_earn_fee_overlay"
+        if row["mechanism"] == "binance_organic_referral_pro_fee_overlay"
     )
-    assert row["priority_rank"] == 27
+    assert row["priority_rank"] == 28
     assert row["canonical_artifacts"] == [
         {
             "path": (
                 "docs/model-research/action-value/"
-                "binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json"
+                "binance-organic-referral-pro-fee-overlay-v1-2026-08-26.json"
             ),
             "result_sha256": EXPECTED_HASH,
         }
     ]
-    assert "base_20_percent" in row["current_status"]
-    assert "50_percent" not in row["current_status"]
+    assert "base_20_percent_Spot_and_Margin" in row["current_status"]
+    assert "base_10_percent_Futures" in row["current_status"]

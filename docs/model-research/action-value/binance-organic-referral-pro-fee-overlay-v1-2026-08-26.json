@@ -1,0 +1,97 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current_base_tier_gross_referral_commission_only_on_authentic_independently_acquired_new_external_users_fee_bearing_Spot_Margin_and_Futures_trades_under_Referral_Pro_without_creating_or_increasing_trading_activity",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_direction_independent_organic_referral_pro_fee_overlay_account_eligibility_attribution_exact_fee_asset_owned_payout_acquisition_compliance_and_operating_costs_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true,
+    "referral_links_created_or_shared": 0,
+    "referred_activity_created_or_requested": 0
+  },
+  "created_at_utc": "2026-08-26T21:28:00.9264146Z",
+  "economics": {
+    "accepted_futures_base_commission_rate": "0.10",
+    "accepted_futures_base_commission_time_limit": "1 year after the invitee opens a Futures Account",
+    "accepted_spot_and_margin_base_commission_rate": "0.20",
+    "fee_base": "only referred-user trades that incur a trading fee",
+    "formula": "eligible_authentic_referred_user_trading_fee * applicable_public_base_commission_rate",
+    "higher_quarterly_performance_tiers_not_credited": {
+      "futures": [
+        "0.30",
+        "0.40",
+        "0.50"
+      ],
+      "spot_and_margin": [
+        "0.30",
+        "0.41",
+        "0.50"
+      ]
+    },
+    "payout_asset_and_timing_publicly_unproved": true,
+    "zero_eligible_referred_fee_floor": "0"
+  },
+  "eligibility_and_terms": {
+    "base_commission_evaluation": "eligible users participate by default in an automated three-calendar-month performance evaluation",
+    "futures_evaluation_requires": "a Futures Account and at least one referred user who opens a Futures Account",
+    "new_user_single_mode": "each new user can be referred through only one of Referral Lite or Referral Pro",
+    "prohibited_advertising_examples": [
+      "redirecting users from unofficial or imitation websites",
+      "posting referral links as search-engine advertisements"
+    ],
+    "referral_lite_relationship": "mutually exclusive for the same new user and produces one-time vouchers rather than ongoing Referral Pro fee commission",
+    "restricted_region_users_eligible": false,
+    "spot_evaluation_requires": "at least one referred user",
+    "sub_accounts_brokers_wealth_and_co_inviter_users_excluded_from_evaluation": true,
+    "write_to_earn_relationship": "the same external user fee must not be credited to both Referral Pro and Write to Earn without explicit owned attribution proving distinct fee rows"
+  },
+  "limitations": [
+    "No Referral Pro eligibility link attribution referred-user fee row commission asset distribution timestamp or owned payout was accessed.",
+    "The public guide provides percentage commission rates but not the exact payout asset timing rounding minimum threshold clawback or tax treatment.",
+    "Referral acquisition content support compliance disclosure legal and operating costs are unproved, so gross commission is not net profit.",
+    "Referral activity can be zero and public rates or regional availability can change; accepted status is per independently existing eligible fee, not guaranteed recurring income.",
+    "The higher tiers require large quarterly referred trading volumes and new-trader counts and are deliberately excluded from the accepted base floor.",
+    "The Binance surface returned WAF challenge HTTP 202 and an empty body to the local direct fetch; the current terms were read from the same official page through the independent read-only web fetch and no raw-page hash is claimed."
+  ],
+  "prohibited_actions": [
+    "self-referral operator-controlled linked-account circular wash or otherwise inauthentic referral activity",
+    "creating increasing or encouraging unnecessary unsuitable leveraged or loss-making trades to generate fees or reach a commission tier",
+    "using unofficial imitation deceptive spam search-engine-ad or otherwise prohibited referral advertising",
+    "crediting zero-fee trades Referral Lite users restricted regions invalidated referrals or activity outside the one-year Futures base window",
+    "crediting 30 40 41 or 50 percent before an owned finalized quarterly evaluation and exact commission payout",
+    "double-counting the same user or fee with Referral Lite Write to Earn affiliate broker co-inviter or another commission program",
+    "assuming the commission payout asset equals the referred user's fee asset or a USD stablecoin",
+    "calling gross referral commission after-cost profit before owned payout and all acquisition support compliance tax and operating costs reconcile",
+    "creating or sharing a referral link requesting referred-user activity or changing account state without separate explicit authority"
+  ],
+  "result_sha256": "8a29116879fd90cb0f8fc11d9780a8dccbff8afc2d3ea685e671921f651e64d1",
+  "retry_policy": {
+    "account_prequalification_only_after_explicit_read_only_authority_and_ephemeral_credentials": [
+      "exact account Referral Pro KYC regional and product eligibility",
+      "authentic external referral attribution and mode exclusivity",
+      "owned fee commission asset rate timing clawback and payout rows"
+    ],
+    "public_refresh": "only after a published mode eligibility base rate evaluation window time limit fee base payout asset or advertising-policy change",
+    "separate_referral_or_mutation_authority_required_for": "any referral-link creation or sharing account change transfer or withdrawal",
+    "separate_trading_authority_required_for": "any operator order; referred-user activity is never authorized or requested by this artifact"
+  },
+  "schema_version": "binance-organic-referral-pro-fee-overlay-v1",
+  "sources": [
+    {
+      "article_published": "2024-08-06T16:09:00Z",
+      "article_updated": "2026-03-25T09:18:00Z",
+      "observed_at_utc": "2026-08-26T21:28:00.9264146Z",
+      "raw_fetch_limitation": "local direct fetch returned WAF challenge HTTP 202 with zero content bytes so no raw source hash is claimed",
+      "role": "current_official_referral_mode_exclusivity_base_and_performance_rates_fee_bearing_trade_rule_futures_time_limit_evaluation_eligibility_and_advertising_policy",
+      "url": "https://www.binance.com/en/support/faq/detail/d10f95a5ac8847bdb6f422a26921745d"
+    }
+  ]
+}
