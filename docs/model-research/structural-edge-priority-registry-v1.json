@@ -1090,9 +1090,39 @@
       ],
       "retry_trigger": "future_active_accepting_orders_market_pair_with_complete_exact_rules_and_deterministic_multi_outcome_subset_indicator_equality_not_already_covered_by_the_specialized_NBA_family",
       "venue_scope": "polymarket_two_separately_traded_exact_rule_multi_outcome_markets"
+    },
+    {
+      "blocking_evidence": [
+        "new official active or upcoming Launchpool campaign with its own supported stablecoin pool farming window allocation eligibility caps and distribution or listing terms",
+        "exact account KYC regional pool eligibility independently already-held idle principal lock state and owned hourly reward rows",
+        "contemporaneous executable reward-token sale bids exact fees depth settlement and same-principal conversion",
+        "forfeited alternative yield measured unlock latency stablecoin basis tax custody support and operating costs",
+        "strictly positive every-interval and aggregate net reward without acquiring retaining borrowing or redirecting principal"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json",
+          "result_sha256": "f898914a56fe61c063ca0eaf8d02fc91ea8bf527dd3ff49289527db524d286c3"
+        }
+      ],
+      "current_status": "candidate_direction_independent_incremental_new_project_token_reward_only_on_independently_already_held_idle_supported_stablecoin_current_official_guide_confirms_USDC_FDUSD_style_pools_hourly_accrual_and_early_unlock_but_direct_current_page_was_WAF_empty_and_no_active_offer_account_eligibility_owned_reward_executable_sale_or_after_cost_value_is_proved_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_stablecoin_launchpool_idle_inventory_reward_overlay",
+      "next_action": "do_not_poll_the_empty_page_or_reuse_the_ended_OPN_example_wait_for_one_new_official_campaign_announcement_then_source_bind_its_exact_stablecoin_pool_before_any_GET_only_account_prequalification_or_separately_authorized_lock_or_sale",
+      "priority_rank": 32,
+      "prohibited_shortcuts": [
+        "acquiring_swapping_retaining_borrowing_or_redirecting_stablecoin_principal_for_eligibility",
+        "locking_inventory_needed_for_orders_margin_collateral_withdrawal_or_prompt_liquidity",
+        "crediting_headline_APY_project_allocation_or_reward_quantity_before_owned_distribution_and_executable_sale",
+        "assuming_USDC_FDUSD_U_USD1_or_reward_token_parity",
+        "ignoring_alternative_yield_unlock_delay_dilution_caps_eligibility_tax_custody_or_operations",
+        "treating_the_ended_OPN_campaign_or_WAF_empty_page_as_a_current_offer"
+      ],
+      "retry_trigger": "new_official_active_or_upcoming_Binance_Launchpool_campaign_with_an_exact_supported_stablecoin_pool_and_complete_farming_and_distribution_terms",
+      "venue_scope": "binance_Launchpool_already_held_idle_supported_stablecoin_principal"
     }
   ],
-  "result_sha256": "af7c29a7ef470e9405b1b3c19b522234c1d7ad7735c755dcb3cb41c51821918b",
+  "result_sha256": "174b255ac0ede946a0e7ec12cc482ac848d9f0e2ec857e8938e98c65db78bc0a",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1216,6 +1246,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T21:48:24.2067790Z",
+  "updated_at_utc": "2026-08-26T21:52:51.9062336Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

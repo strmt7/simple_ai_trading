@@ -862,6 +862,21 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json`,
   result SHA-256
   `0838bea50b70a8d9e102f40146b2ddf041bc06db3039736d312b9f309c72fc6d`.
+- Binance Launchpool is a distinct direction-independent candidate only for an
+  independently already-held idle supported stablecoin. Current official
+  guidance describes USDC/FDUSD-style pools, hourly rewards, early unlock with
+  accrued rewards retained, and principal returned to Spot. The latest concrete
+  2026 example used USDC, U, and USD1 for a two-day OPN campaign beginning
+  March 3; it is historical, and its exact end timestamp is not stated. The
+  current Launchpool page returned WAF-empty HTTP 202, so no active project,
+  account eligibility, allocation, APY, owned reward, or executable sale value
+  is proved. Do not acquire or redirect principal, poll the empty page, assume
+  stablecoin parity, or value token allocation before owned distribution and
+  an executable sale. Wait for a new official campaign announcement. Canonical
+  candidate:
+  `binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json`,
+  result SHA-256
+  `f898914a56fe61c063ca0eaf8d02fc91ea8bf527dd3ff49289527db524d286c3`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -893,6 +908,7 @@ safety gate, blocks Stop, or submits an order.
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
 | Live NBA moneyline/spread implication candidate | `docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json` |
 | Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |
+| Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |

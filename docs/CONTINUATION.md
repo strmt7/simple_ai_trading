@@ -874,7 +874,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`af7c29a7ef470e9405b1b3c19b522234c1d7ad7735c755dcb3cb41c51821918b`.
+`174b255ac0ede946a0e7ec12cc482ac848d9f0e2ec857e8938e98c65db78bc0a`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1502,6 +1502,22 @@ count the specialized NBA family. Canonical contract:
 result SHA-256
 `0838bea50b70a8d9e102f40146b2ddf041bc06db3039736d312b9f309c72fc6d`.
 
+Binance Launchpool is a distinct direction-independent candidate only for an
+independently already-held idle supported stablecoin. Current official guidance
+describes USDC/FDUSD-style pools, hourly accrual, early unlock with accrued
+rewards retained, and principal returned to Spot. The latest concrete 2026
+example used USDC, U, and USD1 for a two-day OPN campaign beginning March 3;
+it is historical, and the retained source does not state its exact end timestamp.
+The current Launchpool page returned WAF-empty HTTP 202, so no active project,
+account eligibility, allocation, APY, owned reward, or executable reward-token
+sale value is proved. The public forward floor is zero. Do not acquire, swap,
+borrow, retain, or redirect principal; do not assume stablecoin parity or value
+an allocation before owned distribution and an executable sale. Wait for a new
+official campaign announcement. Canonical candidate:
+`docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json`,
+result SHA-256
+`f898914a56fe61c063ca0eaf8d02fc91ea8bf527dd3ff49289527db524d286c3`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1573,6 +1589,11 @@ not grant account, funding, order, or transaction authority.
    future pair first needs complete source rules and an exhaustive deterministic
    joint payoff table; only then may the frozen one-batch current-fee recurrence
    contract run. Keep specialized NBA observations out of the general count.
+   For Binance Launchpool, do not poll the WAF-empty current page or reuse the
+   historical OPN campaign. A new official active or upcoming project with its
+   own stablecoin pool, exact window, allocation, eligibility, and distribution
+   terms is the only public retry trigger. Account GETs and every lock, unlock,
+   transfer, conversion, or reward sale retain their separate authority gates.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build
