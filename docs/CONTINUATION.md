@@ -874,7 +874,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`6494e425bfa70f9fd72a2ba635dca50785b55bd253f5493bcedc3daa44528e08`.
+`af7c29a7ef470e9405b1b3c19b522234c1d7ad7735c755dcb3cb41c51821918b`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1484,6 +1484,24 @@ or single-market complete-set families. Canonical contract:
 result SHA-256
 `70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3`.
 
+A separate primary paper materially reopens exact dependent-subset parity
+across two multi-outcome Polymarket markets, but its headline must not be
+misstated. The four numerically enumerated cross-market pair profits sum to
+`95,156.71` USD; `39,587,585.02` USD covers all reported strategies and is
+dominated by single-condition and within-market activity. Its analysis used
+executed-trade VWAPs, up to 5000 blocks or about 2.5 hours of forward-fill, a
+historical no-fee regime, and semantic dependency discovery. The text also says
+five cross-market extraction cases but enumerates only four numeric pairs. A
+New York dependency justified by historical voting behavior is expressly
+rejected as non-deterministic. The candidate therefore admits only a complete
+machine-checked joint payoff truth table proving subset-indicator equality,
+followed by one-batch all-leg asks, exact current fees, displayed common depth,
+synchronization, and every external cost. It is unaccepted and must not double-
+count the specialized NBA family. Canonical contract:
+`docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json`,
+result SHA-256
+`0838bea50b70a8d9e102f40146b2ddf041bc06db3039736d312b9f309c72fc6d`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1549,6 +1567,12 @@ not grant account, funding, order, or transaction authority.
    fee schedules, then run only the preregistered synchronized public all-taker
    recurrence contract. Any uncovered push, overtime, cancellation, or forfeit
    state rejects the pair.
+   The general two-market dependent-subset candidate is also materially
+   reopened, but only for exact multi-outcome subset-indicator equality. Do not
+   replay the historical VWAP study or search semantically guessed pairs. A
+   future pair first needs complete source rules and an exhaustive deterministic
+   joint payoff table; only then may the frozen one-batch current-fee recurrence
+   contract run. Keep specialized NBA observations out of the general count.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build

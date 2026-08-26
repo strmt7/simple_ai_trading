@@ -846,6 +846,22 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json`,
   result SHA-256
   `70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3`.
+- A separate primary paper materially reopens exact dependent-subset parity
+  across two multi-outcome Polymarket markets, but not its headline profit
+  claim. The paper's four numerically enumerated cross-market pairs total
+  `95,156.71` USD; its `39,587,585.02` USD headline spans mostly single-
+  condition and within-market strategies. It used executed-trade VWAPs, up to
+  2.5 hours of forward-fill, no current fees, and semantic dependency labels;
+  it also says five cross-market cases but gives only four values. This is an
+  unaccepted candidate. Admit a future pair only after a machine-checked
+  exhaustive joint payoff table proves exact subset-indicator equality, then
+  require one-batch all-leg asks, current per-market fees, displayed common
+  depth, synchronization, and every external cost. Do not use LLM or historical
+  likelihood as payoff proof, truncate outcomes, or double-count the NBA
+  subfamily. Canonical contract:
+  `polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json`,
+  result SHA-256
+  `0838bea50b70a8d9e102f40146b2ddf041bc06db3039736d312b9f309c72fc6d`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -876,6 +892,7 @@ safety gate, blocks Stop, or submits an order.
 | Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
 | Live NBA moneyline/spread implication candidate | `docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json` |
+| Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |

@@ -1060,9 +1060,39 @@
       ],
       "retry_trigger": "first_future_active_accepting_orders_NBA_full_game_event_with_source_proved_same_game_moneyline_spread_payoff_implication_and_exact_current_market_fee_schedules",
       "venue_scope": "polymarket_future_NBA_full_game_same_game_moneyline_and_point_spread_markets"
+    },
+    {
+      "blocking_evidence": [
+        "future active separately traded market pair with complete exact outcome sets resolution sources and exceptional settlement rules",
+        "machine_proved exhaustive joint-state equality between one subset indicator in each market without LLM semantic or historical likelihood admission",
+        "current per-market fee status fee schedules tick sizes minimum order sizes and acceptingOrders state for every leg",
+        "recurrent one-batch all-taker bundles after exact fee rounding displayed common depth and frozen synchronization cancellation orphan and external costs",
+        "owned every-leg fill reconciliation and complete unwind before any deployment or profitability claim"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json",
+          "result_sha256": "0838bea50b70a8d9e102f40146b2ddf041bc06db3039736d312b9f309c72fc6d"
+        }
+      ],
+      "current_status": "materially_reopened_distinct_direction_independent_two_market_exact_multi_outcome_subset_equivalence_candidate_primary_historical_paper_enumerates_95156_71_USD_across_four_cross_market_pairs_but_uses_trade_VWAP_up_to_2_5_hour_forward_fill_no_current_fees_and_semantic_dependency_labels_current_executable_after_fee_recurrence_unproved_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
+      "next_action": "do_not_replay_historical_VWAP_or_semantic_pair_grids_when_a_future_active_pair_has_complete_rules_first_build_an_exhaustive_machine_checked_joint_payoff_table_then_run_only_one_public_read_only_all_leg_batch_book_current_fee_recurrence_contract_without_double_counting_the_NBA_subfamily",
+      "priority_rank": 31,
+      "prohibited_shortcuts": [
+        "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
+        "admitting_dependency_from_LLM_embedding_topic_date_or_historical_tendency",
+        "truncating_estimating_ignoring_or_synthesizing_outcomes_or_prices",
+        "using_trade_VWAP_midpoint_last_trade_forward_fill_or_post_event_quotes_as_executable_asks",
+        "reusing_the_historical_fee_free_assumption_or_rolling_one_hour_user_fills_as_simultaneous_execution",
+        "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit"
+      ],
+      "retry_trigger": "future_active_accepting_orders_market_pair_with_complete_exact_rules_and_deterministic_multi_outcome_subset_indicator_equality_not_already_covered_by_the_specialized_NBA_family",
+      "venue_scope": "polymarket_two_separately_traded_exact_rule_multi_outcome_markets"
     }
   ],
-  "result_sha256": "6494e425bfa70f9fd72a2ba635dca50785b55bd253f5493bcedc3daa44528e08",
+  "result_sha256": "af7c29a7ef470e9405b1b3c19b522234c1d7ad7735c755dcb3cb41c51821918b",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1186,6 +1216,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T21:40:07.4765196Z",
+  "updated_at_utc": "2026-08-26T21:48:24.2067790Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
