@@ -1,0 +1,137 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "profitability_claim": false,
+    "public_read_only_research": true,
+    "wallet_transactions_sent": false
+  },
+  "calculation": {
+    "fee_identity": "effective_marginal_output_ratio = spot_output_ratio * (1 - pool_fee_ppm / 1000000)",
+    "price_identity": "token1_per_token0 = (sqrtPriceX96 / 2^96)^2 because every scoped token has 6 decimals",
+    "same_asset_usdce_wrap_then_sell": {
+      "effective_usdce_out_per_pusd_before_price_impact": "0.99775611556902981442712651693340341447243179250791942790849725157906974498622453",
+      "net_bips_before_price_impact_and_gas": "-22.438844309701855728734830665965855275682074920805720915027484209302550137754700",
+      "route": "wrap 1 USDC.e into 1 pUSD then sell pUSD for USDC.e",
+      "spot_usdce_per_pusd": "1.0007583907412535751525842697426313083976246665074417531680012553451050601667247"
+    },
+    "unclosed_native_usdc_buy_then_unwrap": {
+      "effective_pusd_out_per_native_usdc_before_price_impact": "0.99996672354512824596499197605735960142947733184116836049284352857059535962157537",
+      "net_bips_before_price_impact_gas_and_usdc_basis": "-0.33276454871754035008023942640398570522668158831639507156471429404640378424630000",
+      "route": "buy pUSD with native USDC then unwrap pUSD into USDC.e",
+      "spot_pusd_per_native_usdc": "1.0000667302181500609710890849658561870481821500561739778906325918297783374553209"
+    }
+  },
+  "created_at_utc": "2026-08-26T13:17:47.6439960Z",
+  "decision": {
+    "accepted_edge": false,
+    "market_direction_forecast_required": false,
+    "next_trigger": "reopen only after a material lower-fee same-asset pUSD-USDC.e route appears or a source-bound marginal deviation exceeds the exact route fee plus conservative gas and finite-size price impact",
+    "reason": "the only exact 1-to-1 same-asset loop loses 22.4388 bips at the marginal price after the 30-bip pool fee, while the native-USDC route already loses 0.3328 bips after its 1-bip fee and settles into different USDC.e before price impact gas and USDC basis",
+    "stable_market_invariant_edge": false,
+    "status": "rejected_at_optimistic_marginal_fee_gate"
+  },
+  "mechanism": {
+    "name": "polymarket_pusd_external_wrap_unwrap_parity",
+    "onchain_identity": "Polymarket's CollateralOnramp wraps USDC.e to pUSD 1-to-1 and CollateralOfframp unwraps pUSD to USDC.e 1-to-1",
+    "purpose": "test a market-direction-independent external parity loop before any quote account wallet or transaction work",
+    "scoped_assets": [
+      "pUSD",
+      "USDC.e",
+      "native USDC"
+    ]
+  },
+  "onchain_snapshot": {
+    "block_number_decimal": 92696858,
+    "block_number_hex": "0x586711a",
+    "chain": "polygon_pos",
+    "pools": [
+      {
+        "fee_bips": "30",
+        "fee_ppm": 3000,
+        "liquidity": "5868904536272",
+        "pool_address": "0xef2406f844d59EC4a0FC55357aD4318729ea0567",
+        "sqrtPriceX96": "79198136639245931252330651012",
+        "tick": -8,
+        "token0": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "token0_symbol": "USDC.e",
+        "token1": "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb",
+        "token1_symbol": "pUSD"
+      },
+      {
+        "fee_bips": "1",
+        "fee_ppm": 100,
+        "liquidity": "32411923930432",
+        "pool_address": "0xd65B69b78f6AbFB274652A744934BA2E2bCF0f14",
+        "sqrtPriceX96": "79230805926450307964366388619",
+        "tick": 0,
+        "token0": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+        "token0_symbol": "native USDC",
+        "token1": "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb",
+        "token1_symbol": "pUSD"
+      }
+    ],
+    "rpc_endpoint": "https://polygon.drpc.org"
+  },
+  "result_sha256": "c15f1e131aa18d705aa6ce507c0f921b7a559664db91a352a244d8df9ddb0f99",
+  "safety_and_limits": [
+    "The marginal calculation deliberately ignores finite-size price impact and gas, so a negative result is already terminal for the captured state.",
+    "The native-USDC route is not a closed same-asset payoff because the official unwrap returns USDC.e; USDC-to-USDC.e basis and conversion costs can only worsen the captured negative marginal result.",
+    "DEX Screener was used only to discover pool addresses; its displayed prices liquidity and volume are not execution evidence.",
+    "The first unpinned latest-state RPC batch is excluded from the decision; the canonical calculation uses only the later block-pinned batch.",
+    "No Quoter call or finite-size book was requested because both candidate directions failed the cheaper optimistic marginal fee gate.",
+    "The result is a point-in-time terminal rejection, not evidence that future dislocations cannot occur."
+  ],
+  "schema_version": "polymarket-pusd-external-parity-v1",
+  "sources": [
+    {
+      "retrieved_at_utc": "2026-08-26T13:17:47.6439960Z",
+      "url": "https://docs.polymarket.com/concepts/pusd",
+      "use": "official one-to-one USDC.e wrap and pUSD unwrap identity plus token and onramp/offramp addresses"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T13:17:47.6439960Z",
+      "url": "https://docs.polymarket.com/resources/contracts",
+      "use": "official Polygon contract-address source of truth"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T13:17:47.6439960Z",
+      "url": "https://docs.polymarket.com/trading/bridge/withdraw",
+      "use": "official proof that direct pUSD unwrap returns USDC.e and native-USDC withdrawal adds a Uniswap v3 conversion"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T13:17:47.6439960Z",
+      "url": "https://developers.uniswap.org/docs/protocols/v3/concepts/architecture",
+      "use": "official Uniswap v3 pool price fee and Q64.96 arithmetic routing"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T13:17:47.6439960Z",
+      "url": "https://developers.uniswap.org/docs/protocols/v3/deployments/v3-polygon-deployments",
+      "use": "official Polygon Uniswap v3 deployment context"
+    },
+    {
+      "path": "data/polymarket-pusd-external-parity-v1/dexscreener-token-pairs.raw.json",
+      "payload_sha256": "f618d20fefc4aae15a4a3a441aa23cd8c3106af4cf52b5b1e98be8bbe4c62287",
+      "url": "https://api.dexscreener.com/token-pairs/v1/polygon/0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+      "use": "one public discovery request identifying the two relevant Uniswap pool addresses"
+    },
+    {
+      "block_number_hex": "0x586711a",
+      "path": "data/polymarket-pusd-external-parity-v1/polygon-pool-state-pinned.raw.json",
+      "payload_sha256": "f8bc0bd75a400734a59046902e29694e9ef035cd4659ee1e4a73358724a08c1a",
+      "request_count": 10,
+      "selectors": [
+        "token0 0x0dfe1681",
+        "token1 0xd21220a7",
+        "fee 0xddca3f43",
+        "slot0 0x3850c7bd",
+        "liquidity 0x1a686502"
+      ],
+      "url": "https://polygon.drpc.org",
+      "use": "one block-pinned public JSON-RPC batch covering token identities fee slot0 and liquidity for both pools"
+    }
+  ]
+}
