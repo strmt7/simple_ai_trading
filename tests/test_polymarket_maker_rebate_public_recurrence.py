@@ -21,7 +21,7 @@ EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "03a280849e16d8dcf171947e909342d37dd1a6ae4bd0ecca906b864fdea33304"
+    "579f1e5261cadaf51a2c175f82a04c673d46213963988c8ea88f2b7f7ac4db11"
 )
 
 
@@ -96,7 +96,7 @@ def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
-    assert registry["accepted_edge_count"] == 14
+    assert registry["accepted_edge_count"] == 15
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]
