@@ -12,10 +12,12 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Nine narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Ten narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
-  pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot
-  inventory; LDUSDT yield only for already-required futures collateral;
+  pUSD; Polymarket pUSD taker-fee rebates only for independently justified
+  legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
+  effective; Binance Soft Staking yield for already-held idle non-order ETH/SOL
+  Spot inventory; LDUSDT yield only for already-required futures collateral;
   just-in-time BNB fee reduction; current quote-native BTC/ETH/SOL promotional
   fee reduction; USD1/WLFI holding-airdrop yield; U Flexible yield; automatic
   RWUSD VIP bonus yield; and current USDT Flexible bonus yield. Each Binance
@@ -193,7 +195,29 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/polymarket-negrisk-maker-input-gate-v1-2026-08-26.json`,
   result SHA-256
   `d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a`.
-  Accepted edges remain nine. One frozen 24-hour public capture of only the six
+  A distinct organic-taker fee overlay is now accepted without changing the
+  NegRisk verdict. The official fee page defines the current crypto fee as
+  `shares * 0.07 * price * (1-price)` and says takers can earn a portion back.
+  One complete public 2026-08-25 UTC window contained 1,202 BTC/ETH/SOL and
+  other crypto taker trades. Their fee curve reconstructs 302.8176185015 pUSD;
+  the next public activity row and exact successful on-chain pUSD transfer both
+  equal 54.5062 pUSD, or 17.999679% of that fee, matching the documented Gold
+  18% tier within 0.001 pUSD. The fee rate is per fee curve, not trade notional:
+  at 0.50 the fee is 3.5% of trade value and Gold saves 63 bips. This is a
+  current V2 pUSD calculation: although the fee page retains a generic `USDC`
+  label, official current source denominates fees in exchange collateral, the
+  deployed exchange returns the official pUSD proxy from `getCollateral()`, and
+  that token returns `pUSD`. No USDC/pUSD parity assumption is used. This is only a
+  direct-cost reduction on independently justified legitimate organic taker
+  flow. It grants no volume, order, account, or profit authority; never
+  self-match, wash trade, manufacture volume, count a one-time bonus, or use a
+  public wallet as account eligibility. Current official text conflicts between
+  immediate threshold activation and the next daily update, so the stricter
+  completed-update rule controls. Canonical overlay:
+  `docs/model-research/action-value/polymarket-organic-taker-rebate-overlay-v1-2026-08-26.json`,
+  result SHA-256
+  `6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865`.
+  Accepted edges are now ten. One frozen 24-hour public capture of only the six
   event tokens was launched under internal contract SHA-256
   `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
   Before acting, verify the process and terminal artifact. Never consume its
@@ -794,7 +818,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`f9aa3089e2b402af10ac0f5e225f1b74ace5eb6cf8b1b0ab6672d9eb524424cc`.
+`52189781ff4e97f9e73aa1fc429fc72adfe370b188739bcc535f60b9c1ad0d64`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

@@ -1,0 +1,180 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_edge_count_change": 1,
+    "accepted_scope": "current_incremental_pUSD_fee_rebate_only_for_independently_justified_legitimate_organic_BTC_ETH_SOL_Polymarket_taker_flow_after_the_direct_wallets_tier_is_effective",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "standalone_trading_strategy": false,
+    "status": "accepted_scoped_current_organic_taker_fee_overlay_exact_account_tier_eligibility_owned_fill_and_payout_reconciliation_required",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_quotes_submitted": 0,
+    "public_read_only_research": true
+  },
+  "calculation_contract": {
+    "crypto_fee_formula_pusd": "shares * 0.07 * price * (1 - price)",
+    "fee_source_unit": "current V2 collateral pUSD; the official fee page retains a generic USDC label, but the current exchange source defines fee and cash value in collateral, the deployed exchange returns the official pUSD proxy from getCollateral(), and that token returns symbol pUSD and name Polymarket USD",
+    "overlay_formula_pusd": "source_bound_crypto_fee_pusd * effective_tier_rebate_fraction",
+    "savings_bips_of_trade_value": "10000 * 0.07 * (1 - price) * effective_tier_rebate_fraction",
+    "trade_value": "shares * price",
+    "weighted_volume_formula_for_crypto": "trade_value * (1 - price) * 2.3",
+    "wrong_formula_rejected": "0.07 * price * (1 - price) is fee per share, not fee fraction of trade value; at price 0.50 the fee is 3.5 percent of trade value, not 1.75 percent"
+  },
+  "created_at_utc": "2026-08-26T18:58:49.1224945Z",
+  "economics": {
+    "crypto_price_0_50_savings_bips_of_trade_value": {
+      "Bronze_3_percent": "10.5",
+      "Diamond_44_percent": "154",
+      "Gold_18_percent": "63",
+      "Obsidian_50_percent": "175",
+      "Platinum_32_percent": "112",
+      "Silver_8_percent": "28"
+    },
+    "interpretation": "The overlay deterministically reduces a direct fee only after an independently selected organic taker fill qualifies. It does not establish spread capture, fill quality, prediction alpha, or standalone profit.",
+    "observed_public_reconciliation": {
+      "all_rows_match_BTC_ETH_SOL_or_other_crypto_up_down_slug_contract": true,
+      "calculated_crypto_fee_pusd_before_internal_rounding": "302.8176185015188749532108586006",
+      "calculated_crypto_weighted_volume": "9949.721750764191605605499639734",
+      "calculated_taker_trade_value_pusd": "11295.7482229632271828",
+      "distinct_conditions": 355,
+      "expected_Gold_18_percent_rebate_pusd_before_internal_rounding": "54.507171330273397491577954548108",
+      "maximum_trade_timestamp_utc": "2026-08-25T23:59:16Z",
+      "minimum_trade_timestamp_utc": "2026-08-25T00:07:16Z",
+      "observed_minus_expected_pusd": "-0.000971330273397491577954548108",
+      "observed_payout_divided_by_calculated_fee": "0.17999679235878610999784989101052157077320609939893",
+      "observed_payout_pusd": "54.5062",
+      "observed_trade_rows": 1202,
+      "page_complete_under_documented_10000_row_limit": true,
+      "payout_activity_timestamp_utc": "2026-08-26T00:10:18Z",
+      "payout_transaction_hash": "0xad84ca790960dd73c6b4a03dfecebf8e09b63c44977ca7bf97ded6224d5d0fc9",
+      "wallet": "0xb27bc932bf8110d8f78e55da7d5f0497a18b5b82"
+    }
+  },
+  "evidence": {
+    "official_terms": {
+      "crypto_category_weight": "2.3",
+      "crypto_taker_fee_rate": "0.07",
+      "fee_precision_decimals": 5,
+      "minimum_nonzero_fee_pusd": "0.00001",
+      "payout_asset": "pUSD",
+      "payout_minimum_pusd": "1",
+      "payout_schedule": "daily_at_midnight_UTC_subject_to_observed_batch_delay",
+      "rebate_base": "the Fees page says takers earn a portion of fees back; the exact public one-day reconciliation independently matches the Gold fee fraction",
+      "tier_rebate_fractions": {
+        "Bronze": "0.03",
+        "Diamond": "0.44",
+        "Gold": "0.18",
+        "Obsidian": "0.50",
+        "Platinum": "0.32",
+        "Silver": "0.08"
+      }
+    },
+    "realized_payout": {
+      "activity_rows_for_wallet": 63,
+      "activity_type": "TAKER_REBATE",
+      "latest_activity_amount_pusd": "54.5062",
+      "latest_receipt_block_hex": "0x585f5ef",
+      "latest_receipt_status": "0x1",
+      "observed_batch_sender": "0x520bf77d9d34c34a6a9723f50e1dcb887ed238c5",
+      "official_pUSD_proxy": "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb",
+      "pUSD_transfer_amount_base_units": "54506200",
+      "pUSD_transfer_amount_matches_activity": true,
+      "pUSD_transfer_recipient_matches_wallet": true
+    },
+    "v2_fee_unit_resolution": {
+      "deployed_exchange": "0xe111180000d2663c0091e4f400237545b87b996b",
+      "deployed_exchange_getCollateral": "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb",
+      "fee_page_legacy_label": "USDC",
+      "official_current_exchange_source_commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+      "official_source_contract": "Fees.sol defines fee and cashValue as collateral-denominated; AssetOperations.sol routes asset id zero including collected fees through getCollateral()",
+      "onchain_collateral_name": "Polymarket USD",
+      "onchain_collateral_symbol": "pUSD",
+      "resolution": "The current V2 fee calculation and collection unit is the deployed collateral token pUSD. No USDC-to-pUSD exchange-rate or parity assumption is used."
+    },
+    "semantic_conflicts_and_conservative_resolution": [
+      "The program says the rebate applies from the moment a threshold is reached, while its example and FAQ say tier changes take effect at the next daily update.",
+      "This artifact never selects the more permissive interpretation. Credit begins only after the profile or account evidence confirms the tier at a completed daily update.",
+      "The fee page retains the legacy or generic label USDC. Current V2 source and deployed-contract calls independently bind fee accounting to the exchange collateral token at the official pUSD address, so no token-parity assumption is made.",
+      "The observed fee reconstruction differs from the payout by less than 0.001 pUSD, so it validates the fee base and Gold fraction but does not claim the public trade feed reproduces internal per-fill rounding exactly."
+    ]
+  },
+  "execution_policy": {
+    "all_required_before_crediting_savings": [
+      "The BTC ETH or SOL taker trade is independently selected by a source-bound after-cost organic strategy before this overlay is credited.",
+      "The exact market remains fee-enabled with a current crypto fee rate of 0.07 and the direct wallet is eligible for the program.",
+      "The wallet tier is account-confirmed after the completed daily update; threshold crossing alone is not enough.",
+      "The order is bot-owned and reconciled as an actual taker fill with exact shares price charged fee and no omnibus-wallet ineligibility.",
+      "The expected rebate clears the 1 pUSD accrued payout minimum without manufacturing or enlarging volume and the realized TAKER_REBATE credit is reconciled before relying on it for future sizing.",
+      "Execution price spread depth slippage latency settlement inventory and all non-fee costs remain inside the independently justified strategy's own bounds."
+    ],
+    "scope_assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "scope_role": "taker_only",
+    "scope_venue": "Polymarket"
+  },
+  "limitations": [
+    "The public wallet is evidence of program mechanics and realized payment, not evidence that the user's account has the same tier eligibility or economics.",
+    "The program terms can change without notice and Polymarket can adjust or remove rebates or tier status.",
+    "The public trade endpoint returns the wallet's taker rows but not its exact charged per-fill fee or account tier; the near-exact reconciliation is not a substitute for owned exact-order fee evidence.",
+    "pUSD is the trading and payout unit. External conversion, withdrawal, custody, tax, and opportunity costs remain unproved.",
+    "A fee rebate cannot rescue a trade whose independently frozen pre-rebate economics are nonpositive unless the exact account-confirmed rebate is explicitly part of that prior decision contract."
+  ],
+  "prohibited_actions": [
+    "self matching wash trading inauthentic trading or any manufactured complete-set volume",
+    "creating enlarging churning or changing category price or market risk merely to earn weighted volume or reach a tier",
+    "counting a one-time level-up bonus as recurring fee savings",
+    "assuming a rebate is a percentage of trade notional",
+    "using monthly leaderboard volume as proof of weighted volume or tier",
+    "using a public wallet payout as account eligibility trading authority or profit proof",
+    "crediting the more permissive immediate-tier interpretation while current official terms conflict",
+    "double counting the taker rebate with a fee waiver maker rebate liquidity reward referral reward or any other adjustment"
+  ],
+  "raw_evidence": [
+    {"bytes": 2182, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/01-leaderboard-month-crypto-volume.json", "sha256": "3ce0ace422eea1ba77a538915cf1d73f18242a498a11a1baaeba3e192bb09314"},
+    {"bytes": 27263, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/02-top-wallet-taker-rebate-activity.json", "sha256": "80fef50b2b8a1d5b047a26c2a1b506aff3b8d4e514556dfa840cc1d9e0e062df"},
+    {"bytes": 142, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/03-latest-rebate-receipt-request.json", "sha256": "e5e4b2b837e27500619dc50843c9518717970b574ccea3b6cd0140ff6db0f745"},
+    {"bytes": 256395, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/04-latest-rebate-receipt-response.json", "sha256": "cba99f26a10626f07e40864c6084038cdbbfaf5d6fd45c2b0adf95e02bc5d103"},
+    {"bytes": 852232, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/05-top-wallet-taker-trades-2026-08-25.json", "sha256": "230490065b2e808f9aa17f00537223b034aa5e76c002879d2c3db04c4e9aa6c0"},
+    {"bytes": 408446, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/06-taker-rebate-program.html", "sha256": "821eb369f5b94fcd1d264ff30097294520935c1fc3169d2f0eef892b796c89ab"},
+    {"bytes": 393002, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/07-fees.html", "sha256": "998abde974e94e88784c26915969b2a216f2f283bc09ad64b4ee1d0f82ebf5c8"},
+    {"bytes": 384374, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/08-contracts.html", "sha256": "411a65aa10a48d996f31901f64fb261bdee8c141a0e4ae68c78cb128fc90b936"},
+    {"bytes": 532811, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/09-api-leaderboard.html", "sha256": "f1b5470e4f7a2f66e7754bb50e4abee3481c93a747bf807418d81bb5e10318f1"},
+    {"bytes": 604998, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/10-api-activity.html", "sha256": "17c59e7a9b3ef07680f244c2316151b85de15e6eb4524eb75294fdf59107ce70"},
+    {"bytes": 584412, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/11-api-trades.html", "sha256": "8649b32d6a3ce6f6a3176dccee45b3256e7349ead3429a073ecf6994149e42ca"},
+    {"bytes": 327890, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/12-polygon-rpc-endpoints.html", "sha256": "1e4d097ae211cf03fafc664392a2d760da4ab476a5c01ea42ffc847eb8994b8c"},
+    {"bytes": 1236, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/13-ts-sdk-common.ts", "sha256": "ceb3536779650312e157b566c2f8f17dacc8b0e522989f255e8de84c8cbfa338"},
+    {"bytes": 10162, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/14-ts-sdk-activity.ts", "sha256": "5e2fa07bc74ce7cdf25bd2eb1fbfaf9d396e68bf3e8cb3e73b39a4223902cfa3"},
+    {"bytes": 413, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/15-v2-collateral-rpc-request.json", "sha256": "306d251aad027693138f54330e3e4dcdbf5ad307450ef8aa51f474c3a87243db"},
+    {"bytes": 567, "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/16-v2-collateral-rpc-response.json", "sha256": "f96f87354ed69f9e7a01c68d9b304a1fd80500774f00a165b1308a120e32b873"}
+  ],
+  "request_contract": {
+    "activity": "one GET for the top ranked wallet with type TAKER_REBATE limit 100 offset 0 descending timestamp",
+    "leaderboard": "one GET for CRYPTO MONTH VOL limit 10 offset 0",
+    "polygon_collateral_calls": "one public batch JSON-RPC request containing eth_call for the deployed V2 exchange getCollateral and that collateral tokens symbol and name",
+    "polygon_receipt": "one public JSON-RPC eth_getTransactionReceipt request for the latest returned rebate transaction",
+    "security": "official public unauthenticated read-only contracts only; no account order quote conversion or mutation endpoint",
+    "trade_window": "one GET for the top wallet with takerOnly true start 1787616000 end 1787702400 limit 10000 offset 0; 1202 rows returned so the documented page ceiling was not reached"
+  },
+  "result_sha256": "6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865",
+  "schema_version": "polymarket-organic-taker-rebate-overlay-v1",
+  "sources": [
+    {"role": "official_current_program_tiers_weighted_volume_payout_eligibility_and_anti_abuse_terms", "url": "https://docs.polymarket.com/programs/taker-rebates"},
+    {"role": "official_current_crypto_fee_formula_rate_precision_and_statement_that_takers_earn_a_portion_of_fees_back", "url": "https://docs.polymarket.com/trading/fees"},
+    {"role": "official_pUSD_proxy_address", "url": "https://docs.polymarket.com/resources/contracts"},
+    {"role": "official_public_leaderboard_GET_contract", "url": "https://docs.polymarket.com/api-reference/core/get-trader-leaderboard-rankings"},
+    {"role": "official_public_user_activity_GET_contract", "url": "https://docs.polymarket.com/api-reference/core/get-user-activity"},
+    {"role": "official_public_taker_only_windowed_trades_GET_contract", "url": "https://docs.polymarket.com/api-reference/core/get-trades-for-a-user-or-markets"},
+    {"commit": "ebe887bc279197893725dcd49874e8a793aebac0", "role": "official_current_SDK_TAKER_REBATE_activity_type_and_filter_support", "url": "https://github.com/Polymarket/ts-sdk"},
+    {"commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b", "role": "official_current_V2_exchange_deployment_collateral_fee_denomination_and_collateral_transfer_source", "urls": ["https://github.com/Polymarket/ctf-exchange-v2/blob/ccc0596074f4dfd62c944fbca4de252893b82b4b/README.md", "https://github.com/Polymarket/ctf-exchange-v2/blob/ccc0596074f4dfd62c944fbca4de252893b82b4b/src/exchange/mixins/Fees.sol", "https://github.com/Polymarket/ctf-exchange-v2/blob/ccc0596074f4dfd62c944fbca4de252893b82b4b/src/exchange/mixins/AssetOperations.sol", "https://github.com/Polymarket/ctf-exchange-v2/blob/ccc0596074f4dfd62c944fbca4de252893b82b4b/src/collateral/CollateralToken.sol"]},
+    {"role": "official_Polygon_public_RPC_endpoint_contract", "url": "https://docs.polygon.technology/pos/reference/rpc-endpoints"}
+  ]
+}

@@ -20,7 +20,7 @@ EXPECTED_ARTIFACT_HASH = (
     "22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7"
 )
 EXPECTED_REGISTRY_HASH = (
-    "f9aa3089e2b402af10ac0f5e225f1b74ace5eb6cf8b1b0ab6672d9eb524424cc"
+    "52189781ff4e97f9e73aa1fc429fc72adfe370b188739bcc535f60b9c1ad0d64"
 )
 
 
@@ -111,7 +111,7 @@ def test_registry_separates_statistical_lead_from_terminal_exact_parity() -> Non
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 22)
+        range(1, 23)
     )
     lead = next(
         row

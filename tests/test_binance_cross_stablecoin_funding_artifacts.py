@@ -52,7 +52,7 @@ EXPECTED_JOURNAL_FILE_HASH = (
     "2686ccc31249b03ba2c12279282324fdbb5be3589047ca4510e61654efa7d49b"
 )
 EXPECTED_REGISTRY_HASH = (
-    "f9aa3089e2b402af10ac0f5e225f1b74ace5eb6cf8b1b0ab6672d9eb524424cc"
+    "52189781ff4e97f9e73aa1fc429fc72adfe370b188739bcc535f60b9c1ad0d64"
 )
 EXPECTED_TOOL_HASHES = {
     "screen_binance_cross_stablecoin_funding.py": (
@@ -280,7 +280,7 @@ def test_failed_v3_run_and_terminal_registry_remain_explicit() -> None:
             "binance-cross-stablecoin-funding-recovery-v4-2026-08-25.json"
         ]
     )
-    assert registry["accepted_edge_count"] == 9
+    assert registry["accepted_edge_count"] == 10
     assert EXPECTED_REGISTRY_HASH in continuation
     assert "USDT/USDC perpetual funding" in continuation
     assert "initialize a self-hashed persistent" in workflow
