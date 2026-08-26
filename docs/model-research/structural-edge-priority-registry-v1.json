@@ -1,6 +1,6 @@
 {
   "accepted_edge_count": 16,
-  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one current Polymarket pUSD taker-fee rebate overlay for independently justified legitimate organic BTC ETH SOL taker flow after the direct wallet tier is effective without manufactured volume, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current Binance quote-native promotional fee reduction for independently justified organic BTC ETH SOL spot flow without quote acquisition VIP chasing or extra volume, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion, and one current automatic same-token USDe holding-reward edge only for eligible USDe already independently held on Binance for at least 24 hours without acquisition or balance retention for the reward; zero deployment-ready or fully external-cost-and-account-condition edges",
+  "accepted_edge_scope": "sixteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; and Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; none is deployment-ready or fully account-and-external-cost-qualified",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -1183,9 +1183,70 @@
       ],
       "retry_trigger": "actual_GLWUSDT_special_negative_dividend_funding_row_observed_before_2026_08_31T00_00_00Z_and_2026_08_28T23_30_00Z_conversion_pause_passed",
       "venue_scope": "binance_GLWBUSDT_bStock_and_GLWUSDT_TradFi_perpetual_weekend_dividend_adjustment_timing_gap"
+    },
+    {
+      "blocking_evidence": [
+        "one minimum-notional nonexecuting executable Ondo buy quote with exact output fee gas slippage expiry and minimum-receive fields from an approved configured read-only quote capability",
+        "one synchronized displayed-depth CEX batch for the exact multiplier-normalized share quantity only after the quote retains conservative headroom",
+        "exact wrapper transfer conversion settlement short availability funding entry exit fee gas basis and non-atomic orphan costs",
+        "multiple independent positive worst-episode after-cost observations across regular postmarket high-volatility low-liquidity and latency-stress states",
+        "separate account eligibility jurisdiction and paper execution authority before any owned order or fill study"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json",
+          "result_sha256": "8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475"
+        }
+      ],
+      "current_status": "materially_new_market_direction_independent_exact_multiplier_normalized_Ondo_bStock_stock_perpetual_wrapper_parity_candidate_60_three_way_overlaps_and_10_point_gaps_at_least_10_bips_but_the_Ondo_value_is_a_nonexecuting_on_chain_reference_not_an_ask_and_no_quote_after_cost_recurrence_or_authority_is_proved_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_Ondo_bStock_stock_perpetual_exact_multiplier_wrapper_parity",
+      "next_action": "only_after_an_approved_configured_read_only_baw_quote_capability_or_documented_public_unauthenticated_executable_quote_endpoint_exists_request_one_minimum_notional_nonexecuting_Ondo_buy_quote_for_the_highest_current_normalized_candidate_then_capture_one_CEX_depth_batch_only_if_exact_all_cost_headroom_remains",
+      "priority_rank": 35,
+      "prohibited_shortcuts": [
+        "treating_Ondo_tokenInfo_price_referencePrice_or_oracle_value_as_an_executable_ask",
+        "using_midpoints_last_trades_or_asynchronous_point_values_as_fills",
+        "ignoring_sharesMultiplier_UI_quantity_or_wrapper_conversion_semantics",
+        "assuming_Ondo_bStock_and_perpetual_legs_are_atomic_or_freely_convertible",
+        "installing_signing_into_or_mutating_a_wallet_without_separate_authority",
+        "calling_one_point_screen_recurrence_profit_or_an_accepted_edge"
+      ],
+      "retry_trigger": "approved_configured_read_only_baw_market_order_quote_capability_or_a_documented_public_unauthenticated_executable_Ondo_quote_endpoint",
+      "venue_scope": "Binance_Web3_Ondo_BSC_wrapper_Binance_bStock_spot_and_matching_stock_TradFi_perpetual"
+    },
+    {
+      "blocking_evidence": [
+        "exact historical pre-event and post-event NOKB uiMultiplier values update event timing and net increment from a primary archive or exact on-chain event",
+        "source-proved entitlement after sale and exact UI-share hedge quantity through the record snapshot",
+        "executable NOKBUSDT and NOKUSDT entry exit depth fees funding basis latency liquidation and capital costs",
+        "new official Nokia board-resolved dividend amount plus matching Binance NOKB announcement before any prospective capture",
+        "at least three independent non-US dividend events with positive worst-episode after-cost economics across market liquidity and latency stress"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json",
+          "result_sha256": "79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb"
+        }
+      ],
+      "current_status": "materially_new_market_direction_independent_non_US_NOKB_dividend_perpetual_underdebit_candidate_two_snapshot_funding_debits_totaled_0_008865103_USDT_against_the_0_0462_USD_gross_dividend_but_net_multiplier_increment_executable_books_after_cost_recurrence_entitlement_and_authority_are_unproved_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_NOK_bStock_dividend_perpetual_special_funding_underdebit",
+      "next_action": "do_not_poll_wait_for_a_new_official_Nokia_board_resolution_with_exact_amount_and_matching_Binance_NOKB_announcement_then_preregister_one_public_event_time_multiplier_funding_and_executable_depth_capture_after_historical_multiplier_lineage_is_closed",
+      "priority_rank": 36,
+      "prohibited_shortcuts": [
+        "crediting_the_gross_0_0462_USD_dividend_as_the_net_bStock_distribution",
+        "treating_current_lastCashAmount_or_multiplier_as_historical_owned_payout_evidence",
+        "using_one_minute_closes_as_executable_or_synchronized_quotes",
+        "assuming_only_two_funding_rows_or_ignoring_later_funding_and_basis",
+        "manufacturing_volume_or_assuming_liquidity_program_enrollment",
+        "calling_one_NOK_exception_recurrence_profit_or_an_accepted_edge",
+        "placing_orders_or_accessing_account_state_without_separate_authority"
+      ],
+      "retry_trigger": "new_official_Nokia_board_resolution_with_exact_per_share_amount_plus_matching_official_Binance_NOKB_dividend_announcement",
+      "venue_scope": "Binance_NOKBUSDT_bStock_and_NOKUSDT_TradFi_perpetual_dividend_adjustment"
     }
   ],
-  "result_sha256": "9f5f556eb439f368de1456bc61e5ebc0276f1b4b689cf0434b2d4bae3ddb03df",
+  "result_sha256": "57ea9bd59d8bd9ae43d4100dea192a1c19f272ef4844790d04d2da8e69f5630c",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1314,6 +1375,6 @@
       "reason": "AMAT_and_MSFT_special_negative_short_funding_debits_matched_their_declared_gross_dividends_within_three_micro_USDT_while_bStock_reinvests_only_the_net_dividend_so_the_direct_dividend_contribution_is_N_minus_D_equal_to_negative_deductions_before_every_other_cost"
     }
   ],
-  "updated_at_utc": "2026-08-26T22:31:09.2866031Z",
+  "updated_at_utc": "2026-08-26T23:03:24.8464560Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

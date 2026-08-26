@@ -874,7 +874,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`9f5f556eb439f368de1456bc61e5ebc0276f1b4b689cf0434b2d4bae3ddb03df`.
+`57ea9bd59d8bd9ae43d4100dea192a1c19f272ef4844790d04d2da8e69f5630c`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1563,6 +1563,43 @@ Canonical candidate:
 result SHA-256
 `c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d`.
 
+NOK is a materially distinct non-US dividend exception. Nokia's primary source
+states a `0.0462` USD gross NYSE amount, 2026-07-27 ex-date, 2026-07-28 record
+date, and 2026-08-06 payment. Binance made the 2026-07-28T00:00Z NOKB snapshot
+eligible for a net dividend multiplier adjustment. The NOKUSDT short paid only
+`0.001941732` and `0.006923371` USDT per matched unit at the snapshot and eight
+hours later, totaling `0.008865103`; the signed short cash flow from ex-date
+through payment date was `-0.0053709158406413` USDT because ordinary later
+funding partly offset those debits. The `0.037334897` gross upper headroom is
+not profit. The exact net historical multiplier increment, update time,
+entitlement, synchronized executable books, fees, basis, funding horizon, and
+recurrence are unproved. The current on-chain and Binance multiplier agree at
+`1.002349416320445721`, but current state cannot reconstruct historical state.
+Do not poll the preliminary 2026-10-27 record date. Reopen only after a new
+Nokia Board resolution gives an exact amount and Binance publishes a matching
+NOKB announcement. Canonical candidate:
+`docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json`,
+result SHA-256
+`79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb`.
+
+A separate exact three-wrapper screen normalized current Ondo tokenized-stock
+point values by `sharesMultiplier` and matched them to bStock Spot and stock
+perpetual executable top-of-book symbols. Sixty exact tickers overlapped, 41
+had positive point gaps, and ten were at least 10 bps; AXTI led at `22.2047`
+bps. This is a candidate population, not an executable spread. Official
+Binance source says `referencePrice = tokenInfo.price / sharesMultiplier` and
+warns that the on-chain token and stock feeds update at different frequencies.
+No executable Ondo ask, fee, gas, slippage, transfer, settlement, short-funding,
+exit, or atomicity evidence exists. The nonexecuting Agentic Wallet quote client
+is not installed, and no quote was requested. Do not repeat the point screen.
+Only after an approved configured read-only quote capability or a documented
+public unauthenticated executable quote endpoint exists may one minimum-size
+nonexecuting top-candidate quote run; capture a matching CEX depth batch only if
+the quote leaves conservative after-cost headroom. Canonical candidate:
+`docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json`,
+result SHA-256
+`8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1602,8 +1639,10 @@ not grant account, funding, order, or transaction authority.
 
 ## Next Work
 
-1. Reverify `main`, GitHub branches, alerts, and exact-SHA hosted workflows for
-   this closeout.
+1. Advance only the highest-ranked structural-edge hypothesis whose exact retry
+   trigger is currently satisfied. Keep R&D on source-bound mechanism and
+   executable after-cost evidence; defer broad CI, alert, and hosted-workflow
+   rechecks until a coherent code or research checkpoint is ready to publish.
 2. Keep the completed model-dev three-way audit frozen. Do not bulk-integrate
    stale or divergent files; reevaluate a specific path only when a current task
    requires it.
@@ -1654,6 +1693,20 @@ not grant account, funding, order, or transaction authority.
    snapshot, after the conversion pause, and before the deposit-withdrawal
    pause. No account access, order, gross-dividend credit, or profit claim is
    authorized.
+   For the NOK under-debit exception, do not infer the net historical payout
+   from the `0.0462` gross amount, current multiplier, or `lastCashAmount`, and
+   do not poll the preliminary 2026-10-27 record date. Reopen only when Nokia's
+   Board resolves an exact new amount and Binance publishes a matching NOKB
+   announcement; close the historical multiplier event lineage before any
+   prospective event-time capture.
+   For Ondo/bStock/stock-perpetual wrapper parity, do not repeat the current
+   point screen or treat `tokenInfo.price / sharesMultiplier` as an ask. Advance
+   only when an approved configured read-only nonexecuting quote capability or
+   a documented public unauthenticated executable quote endpoint exists. Quote
+   one minimum-notional top candidate first and fetch one matching CEX depth
+   batch only if exact fee, gas, slippage, quantity, settlement, funding, and
+   exit headroom remains positive. Installing or signing into a wallet,
+   approvals, transfers, swaps, and orders retain separate authority gates.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build

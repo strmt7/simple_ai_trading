@@ -1,0 +1,205 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_cost_profit_floor_usdt": "0",
+    "status": "materially_new_non_US_bStock_dividend_perpetual_underdebit_candidate_with_positive_gross_upper_headroom_but_unknown_net_multiplier_increment_execution_costs_recurrence_and_entitlement",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "retained_public_http_responses": 10
+  },
+  "created_at_utc": "2026-08-26T22:57:24.4805202Z",
+  "current_multiplier_evidence": {
+    "bsc_contract_address": "0x7c4d7a180d737dd5a70d8065a90e6746a69c37ea",
+    "binance_dynamic_last_cash_amount": "0.025000",
+    "binance_dynamic_shares_multiplier": "1.002349416320445721",
+    "binance_dynamic_symbol": "NOKB",
+    "binance_dynamic_token_price": "10.68504477797595138586",
+    "bsc_eth_call_uiMultiplier_raw_uint256": "1002349416320445721",
+    "bsc_uiMultiplier_selector": "0xa60bf13d",
+    "interpretation_limit": "current_multiplier_is_exact_and_on_chain_but_the_public_capture_does_not_bind_the_pre_event_multiplier_exact_increment_update_time_or_whether_lastCashAmount_is_the_owned_net_distribution"
+  },
+  "economic_contract": {
+    "candidate_pair": "hold_an_existing_eligible_NOKB_long_through_the_exact_record_snapshot_and_short_the_same_UI_share_quantity_of_NOKUSDT_perpetual_only_if_the_net_multiplier_increment_is_source_bound_and_exceeds_all_short_funding_basis_execution_and_external_costs",
+    "gross_dividend_upper_bound_usd_per_share": "0.0462",
+    "market_direction_forecast_required": false,
+    "public_net_distribution_floor_usdt": "0",
+    "snapshot_funding_gross_upper_headroom_before_all_other_costs": "0.037334897000",
+    "snapshot_funding_pair_cashflow": "net_bStock_multiplier_entitlement_minus_0.008865103_USDT_per_matched_share_before_basis_entry_exit_and_external_costs",
+    "why_distinct_from_terminal_US_cases": "AMAT_MSFT_AAPL_IBM_and_MU_had_special_short_funding_debits_approximately_equal_to_their_gross_dividends_but_NOKs_two_negative_rows_around_the_record_snapshot_total_only_0.008865103_USDT_against_a_0.0462_USD_gross_issuer_amount"
+  },
+  "historical_event": {
+    "binance_conversion_deposit_withdrawal_pause_utc": "2026-07-27T23:45:00Z",
+    "binance_record_snapshot_utc": "2026-07-28T00:00:00Z",
+    "binance_terms": "eligible_NOKB_holders_receive_the_net_cash_dividend_after_withholding_taxes_fees_costs_and_other_deductions_as_additional_units_or_fractions_and_on_chain_holders_receive_it_through_a_multiplier_adjustment",
+    "issuer_ex_date": "2026-07-27",
+    "issuer_gross_nyse_amount_usd": "0.0462",
+    "issuer_payment_date": "2026-08-06",
+    "issuer_record_date": "2026-07-28"
+  },
+  "historical_funding": {
+    "ex_date_through_payment_date": {
+      "end_utc": "2026-08-06T23:59:59Z",
+      "row_count": 33,
+      "short_cashflow_per_matched_unit_usdt": "-0.0053709158406413",
+      "start_utc": "2026-07-27T00:00:00Z"
+    },
+    "snapshot_rows": [
+      {
+        "funding_rate": "-0.00021060",
+        "funding_time_utc": "2026-07-28T00:00:00.000Z",
+        "mark_price": "9.22000000",
+        "short_cashflow_per_unit_usdt": "-0.001941732000"
+      },
+      {
+        "funding_rate": "-0.00076081",
+        "funding_time_utc": "2026-07-28T08:00:00.000Z",
+        "mark_price": "9.10000000",
+        "short_cashflow_per_unit_usdt": "-0.006923371000"
+      }
+    ],
+    "snapshot_rows_short_cashflow_total_usdt": "-0.008865103000",
+    "source_window_end_utc": "2026-08-13T00:00:00Z",
+    "source_window_row_count": 72,
+    "source_window_start_utc": "2026-07-20T00:00:00Z"
+  },
+  "historical_one_minute_close_diagnostic": [
+    {
+      "basis_spot_minus_perpetual_close": "0.03",
+      "perpetual_close": "9.21",
+      "spot_close": "9.24",
+      "spot_trades": 1,
+      "time_utc": "2026-07-27T23:58:00.000Z"
+    },
+    {
+      "basis_spot_minus_perpetual_close": "0.04",
+      "perpetual_close": "9.18",
+      "spot_close": "9.22",
+      "spot_trades": 11,
+      "time_utc": "2026-07-28T00:00:00.000Z"
+    },
+    {
+      "basis_spot_minus_perpetual_close": "0.03",
+      "perpetual_close": "9.17",
+      "spot_close": "9.20",
+      "spot_trades": 6,
+      "time_utc": "2026-07-28T00:01:00.000Z"
+    },
+    {
+      "basis_spot_minus_perpetual_close": "0.00",
+      "perpetual_close": "9.06",
+      "spot_close": "9.06",
+      "spot_trades": 38,
+      "time_utc": "2026-07-28T08:00:00.000Z"
+    }
+  ],
+  "liquidity_program_overlay": {
+    "decision": "existing_qualified_LP_cost_modifier_only_not_an_edge_or_a_reason_to_create_volume",
+    "final_tier_end_utc": "2026-10-26T23:59:00Z",
+    "final_tier_start_utc": "2026-10-20T00:00:00Z",
+    "maker_fee_or_rebate_rates": [
+      "0%",
+      "-0.0040%",
+      "-0.0060%",
+      "-0.0080%"
+    ],
+    "tier_one_public_hurdle": "0.05_percent_weekly_maker_volume_share_or_25000000_USD_weekly_maker_volume_or_0.05_percent_bStock_maker_share",
+    "trial_hurdle": "more_than_20000000_USD_30_day_spot_volume",
+    "why_not_credited": "account_enrollment_organic_qualifying_volume_owned_maker_fills_queue_adverse_selection_and_realized_rebate_are_unproved_and_the_current_final_tier_expires_before_the_preliminary_2026_10_27_Nokia_record_date"
+  },
+  "prospective_gate": {
+    "candidate_date": "2026-10-27",
+    "first_trigger": "a_new_official_Nokia_board_resolution_with_exact_per_share_amount_plus_a_matching_official_Binance_NOKB_dividend_announcement",
+    "historical_reconstruction_required": "bind_the_2026_07_28_pre_and_post_multiplier_from_a_primary_archive_or_exact_UIMultiplierUpdated_event_and_the_owned_entitlement_semantics_before_using_the_historical_event_as_profit_evidence",
+    "next_observation": "only_after_the_first_trigger_preregister_one_public_event_time_capture_of_pending_or_effective_multiplier_NOKBUSDT_and_NOKUSDT_executable_depth_funding_and_exact_fee_terms_without_account_or_order_access",
+    "recurrence_gate": "at_least_three_independent_non_US_dividend_events_with_positive_worst_episode_after_cost_economics_across_market_and_liquidity_stress",
+    "stop_conditions": "stop_if_the_board_amount_or_Binance_announcement_is_absent_the_net_multiplier_increment_is_unknown_special_funding_consumes_headroom_executable_depth_is_missing_or_any_after_cost_interval_is_nonpositive",
+    "trigger_limit": "Nokia_currently_labels_2026_10_27_only_as_a_preliminary_record_date_and_no_future_amount_is_resolved"
+  },
+  "prohibited_shortcuts": [
+    "crediting_the_0.0462_USD_gross_amount_as_the_net_bStock_distribution",
+    "treating_lastCashAmount_as_an_owned_net_payout_without_exact_field_semantics",
+    "deriving_the_historical_multiplier_increment_from_the_current_token_price",
+    "using_one_minute_closes_as_executable_or_synchronized_quotes",
+    "assuming_the_short_only_pays_the_two_snapshot_rows_or_that_later_funding_is_free",
+    "manufacturing_volume_or_assuming_liquidity_program_enrollment",
+    "calling_one_NOK_exception_recurrence_profit_or_an_accepted_edge",
+    "placing_orders_accessing_account_state_or_changing_wallet_state"
+  ],
+  "result_sha256": "79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb",
+  "schema_version": "binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1",
+  "sources": {
+    "retained_public_http_responses": [
+      {
+        "label": "binance_nok_dividend_announcement",
+        "payload_bytes": 53116,
+        "payload_sha256": "81f17196e3b90f1313eac4d41b89674aca784b3a8cf265eed44f7e051ab22cf0",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=6ec640f5b2e847df894b9c66456824cd"
+      },
+      {
+        "label": "binance_bstocks_faq",
+        "payload_bytes": 76949,
+        "payload_sha256": "801da23d5b230fb57a365d658b3b37aaef72924bb0f63b29da3afd9c89674a73",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=f0c03cd6509a4085b4cce1636f16be38"
+      },
+      {
+        "label": "binance_type3_bstock_list",
+        "payload_bytes": 14867,
+        "payload_sha256": "87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d",
+        "url": "https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/market/token/rwa/stock/detail/list/ai?type=3"
+      },
+      {
+        "label": "binance_nok_bstock_dynamic",
+        "payload_bytes": 1257,
+        "payload_sha256": "bfa41d9aeaf6e1f74cd564266b68c122e5afaef5b1bfaf6018dede08532b9489",
+        "url": "https://www.binance.com/bapi/defi/v2/public/wallet-direct/buw/wallet/market/token/rwa/dynamic/ai?chainId=56&contractAddress=0x7c4d7a180d737dd5a70d8065a90e6746a69c37ea"
+      },
+      {
+        "label": "binance_nokusdt_funding_20260720_20260813",
+        "payload_bytes": 8804,
+        "payload_sha256": "e3439034ee338091a2b94fda63d26228b22a106affdf2de3b793ef611d284fe0",
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=NOKUSDT&startTime=1784505600000&endTime=1786579200000&limit=1000"
+      },
+      {
+        "label": "binance_nokbusdt_spot_1m_20260727T2350_20260728T0810",
+        "payload_bytes": 70594,
+        "payload_sha256": "8799b6afd0ae1b26730be3489e23b586e92c161a92e3916d9e68e30348eb686f",
+        "url": "https://api.binance.com/api/v3/klines?symbol=NOKBUSDT&interval=1m&startTime=1785196200000&endTime=1785226200000&limit=1000"
+      },
+      {
+        "label": "binance_nokusdt_perp_1m_20260727T2350_20260728T0810",
+        "payload_bytes": 57976,
+        "payload_sha256": "b51686e67b0305d8fa4591384b687b496f68bb45ec615323c94085c246d85124",
+        "url": "https://fapi.binance.com/fapi/v1/klines?symbol=NOKUSDT&interval=1m&startTime=1785196200000&endTime=1785226200000&limit=1000"
+      },
+      {
+        "label": "binance_bstock_spot_lp_promotion",
+        "payload_bytes": 98179,
+        "payload_sha256": "03353fbbb34ede4f65834900434a55f67bcda4c6444c1ed0a3aa736c05c3aa0c",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=5ac98eff7ca3466583ffd0d81db4ad9e"
+      },
+      {
+        "label": "nokia_official_dividend_page",
+        "payload_bytes": 226480,
+        "payload_sha256": "5acfd4ebf7c8b88428abc91548fe72131519e76761273256bf1da5ad4187f2d9",
+        "url": "https://www.nokia.com/about-us/investors/stock-information/dividend/"
+      },
+      {
+        "label": "bsc_nok_contract_current_uiMultiplier_eth_call",
+        "payload_bytes": 102,
+        "payload_sha256": "49d252ae3fc11ba54d7aadd919321289f696383296b89b07eeec0efa211a7b6a",
+        "request_method": "POST",
+        "rpc_method": "eth_call",
+        "selector": "0xa60bf13d",
+        "url": "https://bsc-dataseed.binance.org/"
+      }
+    ]
+  }
+}
