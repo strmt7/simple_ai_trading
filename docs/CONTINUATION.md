@@ -439,12 +439,22 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/complete-set-holding-yield-reconciliation-v3-2026-08-26.json`,
   result SHA-256
   `48e31f3d6021d28946fa1f143f65ff0f6baf9a222424f41e76c2d89875796abe`.
+  The independent ETH/SOL follow-up reconciles split-origin lineage on-chain:
+  ETH has 440 complete sets remaining from a 550 split after 110 merged, while
+  SOL has 449 remaining from a 550 split after 101 merged. Each wallet contains
+  only its equal mergeable pair. All 28 daily `YIELD` transfers reconcile to
+  successful Polygon receipts; both assets map to 330/336 sampled hours and
+  about 3.186% realized annualized gross. Canonical cross-asset evidence:
+  `docs/model-research/polymarket/complete-set-holding-yield-cross-asset-v4-2026-08-26.json`,
+  result SHA-256
+  `eda29a314218e1724e39984e2712a4351d9e697503d4583d391c89a060ba53ea`.
   Acceptance is deliberately narrow: it excludes capital not already on the
   platform and does not subtract bridge, wrapping, withdrawal, custody, tax,
-  or alternative-yield costs. The public wallet does not prove that its pair
-  originated from a split. Fourteen days do not guarantee future payouts; the
-  official rate is discretionary and caps may be introduced. No deployment,
-  authenticated account, funded, paper, or live authority exists.
+  or alternative-yield costs. The original BTC wallet still lacks split-origin
+  proof, but that limitation is closed for the two new public cases. Fourteen
+  days do not guarantee future payouts; the official rate is discretionary and
+  caps may be introduced. No deployment, authenticated account, funded, paper,
+  or live authority exists.
 
 The shared arithmetic is now in `structural_parity.py` and `logical_parity.py`.
 Binance option payoff arithmetic is isolated in `option_parity.py`.
@@ -460,7 +470,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`329428f42b068fedb66ea823efbd9f2e3d1f8907aee451681b47fc045aa788e2`.
+`5e79c25a2aff8e9dab08b4b2ac51b3dbdd02d62be5e740a28d62138f34948530`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

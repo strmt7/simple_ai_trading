@@ -256,10 +256,20 @@ safety gate, blocks Stop, or submits an order.
   reconciliation:
   `complete-set-holding-yield-reconciliation-v3-2026-08-26.json`, result SHA-256
   `48e31f3d6021d28946fa1f143f65ff0f6baf9a222424f41e76c2d89875796abe`.
+  A separate cross-asset capture then reconciled explicit on-chain split origin,
+  subsequent merges, the remaining equal complete sets, and 28 of 28 positive
+  daily `YIELD` transfers for ETH and SOL. ETH retained 440 of 550 split sets
+  after 110 merged and received 0.5377 pUSD over 14 days; SOL retained 449 of
+  550 after 101 merged and received 0.5488 pUSD. Both map to 330 of 336 possible
+  hourly samples and realized about 3.186% annualized gross. Canonical
+  cross-asset reconciliation:
+  `complete-set-holding-yield-cross-asset-v4-2026-08-26.json`, result SHA-256
+  `eda29a314218e1724e39984e2712a4351d9e697503d4583d391c89a060ba53ea`.
   This accepted scope excludes bridging, wrapping, withdrawal, custody, tax,
-  and capital opportunity costs. It proves neither split-origin lineage for
-  this wallet nor future rewards; the rate is discretionary and caps may be
-  introduced. No deployment, account, funding, transaction, paper, or live
+  and capital opportunity costs. The BTC wallet still lacks split-origin
+  lineage, while the ETH and SOL cases close that limitation for their public
+  wallets. None proves future rewards; the rate is discretionary and caps may
+  be introduced. No deployment, account, funding, transaction, paper, or live
   authority exists. Continue public monitoring without touching Round 21.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
