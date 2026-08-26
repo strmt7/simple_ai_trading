@@ -99,6 +99,14 @@ highest-ranked hypothesis whose explicit retry trigger is satisfied. If no
 trigger is satisfied, do not compensate with more snapshots, broader search, or
 a nearby formula; record the blocker and preserve the evidence path instead.
 
+Keep repository searches bounded. Do not run recursive content searches across
+`data/`, `**/raw/**`, or the full `docs/model-research/action-value/` tree:
+many retained responses are megabyte single-line files, and piping `rg` into a
+line limiter does not prevent those files from being read or emitted first.
+Start with `rg --files` or a filename filter, search the small registry and
+handoff documents directly, and add explicit exclusion globs before searching
+any broader R&D tree. Open one identified artifact with a fixed output budget.
+
 Treat public venue metadata as a candidate filter, not account evidence.
 Polymarket's public `holdingRewardsEnabled` Gamma field identifies a current
 market, while Data API `YIELD` rows and their pUSD transfer receipts establish
