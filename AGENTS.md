@@ -74,6 +74,10 @@ override prose.
   and fees before promotion. A public calculator is only a sensitivity: if its
   horizon, tier, or campaign state is not source-exposed, do not reverse-engineer
   those terms from outputs or call the estimate realized economics.
+- Promotion dates stated for one named asset or product do not flow into adjacent
+  rows in a current-offers table. Bind each asset's own effective start and end;
+  without them its guaranteed forward public reward floor is zero, even when a
+  current APR and tier cap are displayed.
 - Before sampling variants of a reward endpoint, source-bind its filter and
   aggregation semantics and request the documented superset once. For
   Polymarket raw market rewards, `sponsored=true` folds sponsored daily rates

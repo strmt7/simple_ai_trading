@@ -137,7 +137,7 @@
     "ignoring first-come quota redemption delay reward snapshot tax custody or displaced alternative yield",
     "calling the time-limited promotion stable persistent risk-free or deployment-ready"
   ],
-  "result_sha256": "1dd11be5bb81d7d9bf278a27cdb0df4dc25a1db41c3bce005308c7aa639cbf25",
+  "result_sha256": "6f44b65e5aa85d33cc02e8611a372162cf00f4162fdff99828a31cf498ced6f9",
   "retry_contract": {
     "public_refresh": [
       "refresh only on a published U Flexible term rate quota fee reserve attestation or redemption-contract change",
@@ -218,7 +218,7 @@
     },
     {
       "path": "docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json",
-      "result_sha256": "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c",
+      "result_sha256": "26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac",
       "role": "source_bound_current_USDT_alternative_terms"
     },
     {

@@ -27,10 +27,10 @@ EXPECTED_RESULT_SHA256 = (
     "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "6f334d3cc8a0cbbbaeb32c1150fda25ce5a48533f2124143bb9764c5238347e4"
+    "190bff09d8bfeed6ad77674cbf3a2e6592be45e465afb3e342a6211d0c543ca1"
 )
 EXPECTED_PROMOTION_TRIAGE_SHA256 = (
-    "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c"
+    "26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac"
 )
 
 
@@ -144,6 +144,13 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
             ),
         },
     ]
+    assert {
+        row["path"]: row["result_sha256"]
+        for row in candidate["canonical_artifacts"]
+    }[
+        "docs/model-research/action-value/"
+        "binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json"
+    ] == "6f44b65e5aa85d33cc02e8611a372162cf00f4162fdff99828a31cf498ced6f9"
 
 
 def test_public_promotion_triage_is_conditional_and_not_accepted() -> None:
@@ -161,3 +168,14 @@ def test_public_promotion_triage_is_conditional_and_not_accepted() -> None:
     assert adjudication["rlusd_public_conditional_candidate"] is True
     assert adjudication["accepted_stable_edge"] is False
     assert adjudication["profitability_claim"] is False
+    usdc = next(
+        row
+        for row in artifact["current_capped_simple_earn_offers"]
+        if row["asset"] == "USDC"
+    )
+    assert usdc["explicit_promotion_period_in_source"] is False
+    assert usdc["forward_bonus_reward_floor_usdc"] == "0"
+    assert "period_start_utc" not in usdc
+    assert "period_end_utc" not in usdc
+    assert "maximum_14_day_bonus_usd" not in usdc
+    assert artifact["source_binding_correction"]["venue_requests_added"] == 0

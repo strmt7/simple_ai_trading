@@ -1,7 +1,7 @@
 {
   "schema_version": "binance-public-promotion-yield-triage-v1",
   "created_at_utc": "2026-08-26T08:44:19.2903434Z",
-  "result_sha256": "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c",
+  "result_sha256": "26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac",
   "authority": {
     "research_only": true,
     "credentials_used": false,
@@ -29,7 +29,9 @@
       "article_code": "ca03b33b8dba44669a3f685d2d1c0ccb",
       "article_url": "https://www.binance.com/en/support/announcement/detail/ca03b33b8dba44669a3f685d2d1c0ccb",
       "cms_detail_url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=ca03b33b8dba44669a3f685d2d1c0ccb",
-      "observed_at_utc": "2026-08-26T08:42:00Z",
+      "normalized_live_visible_page_characters": 10236,
+      "normalized_live_visible_page_sha256": "8f1d46f46e4ec00a1bf1bce11d0b7c4cdba37ce4a4074e124923523bc0975bab",
+      "observed_at_utc": "2026-08-26T20:32:13.1380301Z",
       "title": "Binance Earn Yield Arena: Earn Up to $5,888 Rewards With This Week's New Limited-Time Offers! (2026-08-26)"
     }
   ],
@@ -94,15 +96,24 @@
     },
     {
       "asset": "USDC",
-      "period_start_utc": "2026-08-25T00:00:00Z",
-      "period_end_utc": "2026-09-07T23:59:59Z",
+      "explicit_promotion_period_in_source": false,
+      "forward_bonus_reward_floor_usdc": "0",
       "observed_realtime_apr_percent_approximate": "2.5",
       "bonus_apr_percent": "5",
       "bonus_tier_cap": "200 USDC",
-      "maximum_14_day_bonus_usd": "0.3835616438356164383561643836",
-      "maximum_14_day_combined_gross_usd_at_observed_approximate_rate": "0.5753424657534246575342465753"
+      "minimum_subscription": "0.01 USDC",
+      "maximum_subscription_per_user": "300000000 USDC",
+      "source_binding": "The dated Simple Earn promotion sentence names only USDT Flexible Products. USDC appears only in the current-offers table, which states no USDC start or end time. The USDT dates must not be transferred to USDC."
     }
   ],
+  "source_binding_correction": {
+    "corrected_at_utc": "2026-08-26T20:32:13.1380301Z",
+    "error": "The first publication treated the USDC current-offers table row as if it inherited the USDT-only 2026-08-25 through 2026-09-07 promotion sentence.",
+    "live_official_article_observation": "The rendered article explicitly attaches 2026-08-25T00:00:00Z through 2026-09-07T23:59:59Z to users who subscribe to USDT Flexible Products. The USDC row separately displays approximately 2.5 percent Real-Time APR plus 5 percent Bonus Tiered APR on the first 200 USDC but exposes no effective or end date.",
+    "economic_effect": "No fixed forward USDC accrual duration is source-bound, so the guaranteed forward public USDC bonus reward floor is zero and the prior 14-day reward sensitivity is withdrawn.",
+    "visible_source_hash_method": "SHA256 of UTF-8 full rendered visible body text with CRLF normalized to LF and outer whitespace trimmed.",
+    "venue_requests_added": 0
+  },
   "adjudication": {
     "market_direction_forecast_required": false,
     "rlusd_public_conditional_candidate": true,
@@ -115,7 +126,8 @@
       "future RLUSD APR is unknown and campaign ends on 2026-09-11",
       "account and jurisdiction eligibility are unproved",
       "exact incremental qualification entry exit and opportunity costs are unproved",
-      "the USDT and USDC offers are temporary first-come variable-rate offers with very small bonus caps"
+      "the USDT offer is temporary and first-come with a very small bonus cap",
+      "the USDC current-offers row has a small bonus cap but no source-bound effective or end date and therefore no positive guaranteed forward reward floor"
     ],
     "next_evidence": [
       "observe the second and third published RLUSD effective APRs without refitting this scope",
@@ -129,5 +141,6 @@
       "extrapolate one observed week across the remaining campaign",
       "call a temporary capped promotion a stable persistent edge"
     ]
-  }
+  },
+  "updated_at_utc": "2026-08-26T20:32:13.1380301Z"
 }

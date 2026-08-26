@@ -304,7 +304,7 @@
         },
         {
           "path": "docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json",
-          "result_sha256": "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c"
+          "result_sha256": "26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac"
         },
         {
           "path": "docs/model-research/action-value/binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json",
@@ -316,7 +316,7 @@
         },
         {
           "path": "docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json",
-          "result_sha256": "1dd11be5bb81d7d9bf278a27cdb0df4dc25a1db41c3bce005308c7aa639cbf25"
+          "result_sha256": "6f44b65e5aa85d33cc02e8611a372162cf00f4162fdff99828a31cf498ced6f9"
         },
         {
           "path": "docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json",
@@ -725,13 +725,13 @@
         },
         {
           "path": "docs/model-research/action-value/polymarket-perps-binance-bfusd-collateral-stack-gate-v1-2026-08-26.json",
-          "result_sha256": "5919c6fdf73b15c7774feefb8b0a57129c3a43f668b2e4d5f6aed528a094dbe3"
+          "result_sha256": "a6ff387d70d33c40951e36de93eff7c810b2291dbefff5ecb0f3953880fe7878"
         }
       ],
-      "current_status": "the_retained_non_authoritative_BTC_diagnostic_needs_5_1825556081_percent_annual_BFUSD_yield_to_clear_the_full_window_for_already_held_collateral_but_fixed_role_persistence_needs_14_1066194737_percent_and_new_subscription_plus_redemption_at_the_guides_typical_20_bips_total_friction_needs_25_6329352632_percent_in_the_worst_role_the_current_rate_is_signed_account_evidence_and_variable_so_no_edge_is_claimed",
+      "current_status": "the_official_live_BFUSD_page_displays_5_03_percent_seven_day_average_APR_and_5_12_percent_last_day_APR_both_below_the_14_1066194737_percent_fixed_role_persistence_threshold_even_with_already_held_or_fee_free_under_500_collateral_current_zero_purchase_fee_and_lower_redemption_terms_improve_the_old_guide_sensitivity_but_do_not_rescue_the_mechanism",
       "market_direction_forecast_required": false,
       "mechanism": "conditional_polymarket_perps_OI_reward_and_funding_hedged_by_binance_perpetual_with_BFUSD_collateral_rewards",
-      "next_action": "do_not_refresh_public_funding_or_books_when_both_Binance_credentials_exist_and_the_protected_Polymarket_account_boundary_permits_access_first_capture_exact_same_period_BFUSD_rate_rewards_quota_collateral_value_and_authenticated_OI_reward_eligibility_then_reject_unless_every_fixed_role_clears_exact_costs",
+      "next_action": "do_not_request_credentials_accounts_funding_or_books_while_the_official_public_BFUSD_APR_is_below_14_1066194737_percent_reopen_only_after_a_materially_new_official_displayed_rate_clears_that_gate_then_require_exact_same_period_account_rewards_quota_collateral_treatment_costs_and_authenticated_Polymarket_OI_reward_eligibility",
       "priority_rank": 20,
       "prohibited_shortcuts": [
         "using_a_public_or_marketing_BFUSD_APY_as_current_account_rate_evidence",
@@ -741,7 +741,7 @@
         "double_counting_leverage_or_reward_bearing_collateral_as_free_capital",
         "requesting_books_before_account_rate_reward_and_fee_evidence_pass"
       ],
-      "retry_trigger": "both_designated_Binance_credentials_and_permitted_authenticated_Polymarket_reward_evidence_then_exact_same_period_BFUSD_rate_above_14_1066194737_percent_for_already_held_collateral_or_above_25_6329352632_percent_for_new_collateral_before_any_book_request",
+      "retry_trigger": "materially_new_official_BFUSD_displayed_APR_at_or_above_14_1066194737_percent_then_both_designated_Binance_credentials_and_permitted_authenticated_Polymarket_reward_evidence_before_any_book_request",
       "venue_scope": "polymarket_BTC_Perps_and_binance_BTC_perpetual_with_BFUSD_collateral"
     },
     {
@@ -835,7 +835,7 @@
       "venue_scope": "polymarket_BTC_five_minute_fee_enabled_binary_markets"
     }
   ],
-  "result_sha256": "6f334d3cc8a0cbbbaeb32c1150fda25ce5a48533f2124143bb9764c5238347e4",
+  "result_sha256": "190bff09d8bfeed6ad77674cbf3a2e6592be45e465afb3e342a6211d0c543ca1",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
