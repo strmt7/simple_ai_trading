@@ -581,7 +581,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`b5a65a83cdf1abaadf7d2a0215720b80266e06c50c23992f5a3ed3d6c638a1b4`.
+`5e11f6f85dd79c3e0c651c3d7cbcdf97d7e08bf4b4a27cfb3682f5db14cd4886`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -595,14 +595,18 @@ cumulative appreciation, 2.01091% compound annualized over the full horizon,
 and a 2.74952% annualized latest-seven-day pace. Public exchange information
 still marks LDUSDT margin-eligible. This is a validated public gross incremental
 mechanism only for collateral already required by an independently justified
-futures strategy; it is not an accepted edge, standalone strategy, or reason to
-open risk. Same-account eligibility, exact Real-Time APR and position limits,
-conversion cash flow, owned reward lineage, normal conversion costs, and
-incremental margin, auto-exchange, liquidation, delay, tax, custody, and
-operational costs remain unproved. Canonical gate:
+futures strategy. Official current guidance binds a 99.9% collateral value
+ratio, the same current conversion ratio in both directions, accumulated reward
+value on redemption, zero additional swap fees, and a 300,000 LDUSDT VIP-0
+limit. The observed 2.01091% annualized increment remains above 2.00% even after
+assigning a 10% annual alternative yield to only the extra principal required by
+the 0.1% collateral-value haircut. This is now accepted only for eligible
+LDUSDT already held as already-required margin, with the haircut fully budgeted
+and no liquidation or auto-exchange. It is not a standalone strategy, reason to
+open risk, or deployment-ready result. Canonical gate:
 `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json`,
 result SHA-256
-`39b66e63c6131d13ff6e6df7f19521745b0de8a715eb3969bf333c485a9ab5f0`.
+`6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d`.
 When both designated ephemeral credentials exist, freeze one GET-only account
 prequalification. Only a positive gate plus separate explicit funded authority
 permits one minimum-size conversion round trip without opening a futures

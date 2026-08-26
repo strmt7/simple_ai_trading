@@ -181,12 +181,14 @@ safety gate, blocks Stop, or submits an order.
   over 504 days: normalized LDUSDT appreciated 2.78729%, or 2.01091% compound
   annualized; the latest 7-day pace was 2.74952% annualized. Public exchange
   information still marks LDUSDT margin-eligible. This is a validated gross
-  incremental collateral-yield mechanism, not an accepted edge or a reason to
-  open a futures position. Same-account eligibility, conversion cash flow,
-  reward lineage, normal conversion cost, and incremental margin/auto-exchange
-  risk remain unproved. Canonical gate:
+  incremental collateral-yield mechanism. Official current terms bind a 99.9%
+  collateral value ratio, the same conversion ratio both ways, and zero
+  additional swap fees. It is accepted only for eligible LDUSDT already held as
+  margin already required by an independently justified futures strategy, with
+  the haircut fully budgeted and no liquidation or auto-exchange. It is not a
+  reason to open a futures position and is not deployment-ready. Canonical gate:
   `binance-ldusdt-margin-yield-gate-v1-2026-08-26.json`, result SHA-256
-  `39b66e63c6131d13ff6e6df7f19521745b0de8a715eb3969bf333c485a9ab5f0`.
+  `6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d`.
   When both designated ephemeral credentials exist, freeze one GET-only account
   prequalification. A minimum-size conversion round trip then requires separate
   explicit funded authority and must not open a futures position.

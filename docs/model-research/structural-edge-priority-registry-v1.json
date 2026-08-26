@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 1,
-  "accepted_edge_scope": "one validated structural edge positive after direct relayer split and merge costs for existing idle pUSD already on Polymarket; zero deployment-ready or fully external-cost-and-best-alternative-yield edges",
+  "accepted_edge_count": 2,
+  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD and one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy; zero deployment-ready or fully external-cost-and-best-alternative-yield edges",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -68,13 +68,13 @@
       "canonical_artifacts": [
         {
           "path": "docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json",
-          "result_sha256": "39b66e63c6131d13ff6e6df7f19521745b0de8a715eb3969bf333c485a9ab5f0"
+          "result_sha256": "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d"
         }
       ],
-      "current_status": "validated_public_incremental_gross_collateral_yield_505_normalized_daily_closes_over_504_days_returned_2_78729_percent_and_2_01091_percent_compound_annualized_with_current_7_day_pace_2_74952_percent_but_account_eligibility_conversion_cash_flow_owned_lineage_and_incremental_risk_costs_remain_unproved",
+      "current_status": "accepted_scoped_incremental_collateral_yield_505_normalized_daily_closes_over_504_days_returned_2_78729_percent_and_2_01091_percent_compound_annualized_official_normal_swap_fee_zero_and_99_9_percent_collateral_value_ratio_positive_through_10_percent_extra_principal_opportunity_cost_sensitivity_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "ldusdt_reward_bearing_futures_margin_increment",
-      "next_action": "when_both_designated_ephemeral_credentials_exist_freeze_one_GET_only_account_prequalification_for_USDT_Simple_Earn_LDUSDT_and_multi_assets_margin_state_then_only_after_a_positive_gate_and_separate_funded_authority_reconcile_one_minimum_size_conversion_round_trip_without_opening_a_futures_position",
+      "next_action": "monitor_public_normalized_index_and_official_terms_without_refitting_then_when_both_designated_ephemeral_credentials_exist_freeze_one_GET_only_account_prequalification_and_only_after_a_positive_gate_and_separate_funded_authority_reconcile_one_minimum_size_conversion_round_trip_without_opening_a_futures_position",
       "priority_rank": 2,
       "prohibited_shortcuts": [
         "opening_a_futures_position_or_adding_leverage_only_to_obtain_collateral_rewards",
@@ -83,7 +83,7 @@
         "assuming_idle_USDT_has_zero_alternative_yield_without_same_strategy_proof",
         "generic_futures_convert_catalog_as_the_LDUSDT_product_conversion_contract"
       ],
-      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
+      "retry_trigger": "public_LDUSDT_term_or_index_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
       "venue_scope": "binance_USDT_Simple_Earn_LDUSDT_and_USD_M_Futures_multi_assets_margin"
     },
     {
@@ -463,7 +463,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "b5a65a83cdf1abaadf7d2a0215720b80266e06c50c23992f5a3ed3d6c638a1b4",
+  "result_sha256": "5e11f6f85dd79c3e0c651c3d7cbcdf97d7e08bf4b4a27cfb3682f5db14cd4886",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
