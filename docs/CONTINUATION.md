@@ -1079,6 +1079,19 @@ Canonical gate:
 result SHA-256
 `1dd11be5bb81d7d9bf278a27cdb0df4dc25a1db41c3bce005308c7aa639cbf25`.
 
+The RWUSD VIP promotion extension is accepted only as an automatic incremental
+bonus on an independently required existing RWUSD position. Over a conservative
+22 forward days, VIP 1-3 adds 1.1452 bips on at most 30,000 RWUSD and VIP 4-9
+adds 4.5808 bips on at most 200,000 RWUSD. A new RWUSD subscription is not
+accepted: exact account rate, quota, alternative yield, USDC redemption fees
+and delay, and product risks remain behind the existing signed six-GET gate.
+Do not chase VIP status, enlarge RWUSD, or treat RWUSD as a stablecoin,
+transferable token, direct RWA claim, or guaranteed instant redemption.
+Canonical gate:
+`docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json`,
+result SHA-256
+`076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at

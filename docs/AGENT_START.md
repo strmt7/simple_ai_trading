@@ -569,6 +569,15 @@ safety gate, blocks Stop, or submits an order.
   Canonical gate: `binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json`,
   result SHA-256
   `1dd11be5bb81d7d9bf278a27cdb0df4dc25a1db41c3bce005308c7aa639cbf25`.
+- The RWUSD VIP extension is accepted only as an automatic bonus on RWUSD
+  already held for an independent reason: 1.1452 bips over 22 days for VIP 1-3
+  up to 30,000 RWUSD or 4.5808 bips for VIP 4-9 up to 200,000 RWUSD. Do not
+  subscribe to RWUSD or chase VIP status for this bonus. Exact account quota,
+  alternative yield, and USDC redemption costs remain behind the existing
+  signed prequalification gate. Canonical gate:
+  `binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json`, result
+  SHA-256
+  `076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -602,6 +611,7 @@ safety gate, blocks Stop, or submits an order.
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
+| Existing RWUSD VIP bonus overlay | `docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
