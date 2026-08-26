@@ -1,0 +1,193 @@
+{
+  "adjudication": {
+    "dedicated_negrisk_convert_helper_present": false,
+    "generic_execute_transaction_present": true,
+    "high_level_merge_split_redeem_present": true,
+    "selector_literal_convertPositions_present": false
+  },
+  "files_scanned": 169,
+  "method_matches": [
+    {
+      "async": false,
+      "line": 148,
+      "name": "split_position_call",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/calls.py"
+    },
+    {
+      "async": false,
+      "line": 169,
+      "name": "merge_positions_call",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/calls.py"
+    },
+    {
+      "async": false,
+      "line": 190,
+      "name": "ctf_redeem_positions_call",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/calls.py"
+    },
+    {
+      "async": false,
+      "line": 208,
+      "name": "split_v2_call",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/calls.py"
+    },
+    {
+      "async": false,
+      "line": 216,
+      "name": "merge_v2_call",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/calls.py"
+    },
+    {
+      "async": false,
+      "line": 224,
+      "name": "redeem_v2_call",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/calls.py"
+    },
+    {
+      "async": false,
+      "line": 167,
+      "name": "calculate_max_merge_amount",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/positions.py"
+    },
+    {
+      "async": false,
+      "line": 172,
+      "name": "resolve_merge_amount",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/positions.py"
+    },
+    {
+      "async": false,
+      "line": 194,
+      "name": "resolve_merge_amount_from_balances",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/positions.py"
+    },
+    {
+      "async": false,
+      "line": 216,
+      "name": "calculate_max_merge_amount_from_balances",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/positions.py"
+    },
+    {
+      "async": false,
+      "line": 282,
+      "name": "normalize_batch_merge_position_request",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/positions.py"
+    },
+    {
+      "async": true,
+      "line": 99,
+      "name": "_eth_call_batch_with_split",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/eoa/rpc.py"
+    },
+    {
+      "async": false,
+      "line": 210,
+      "name": "_eth_call_batch_with_split",
+      "path": ".venv/Lib/site-packages/polymarket/_internal/eoa/rpc.py"
+    },
+    {
+      "async": true,
+      "line": 2400,
+      "name": "execute_transaction",
+      "path": ".venv/Lib/site-packages/polymarket/clients/async_secure.py"
+    },
+    {
+      "async": true,
+      "line": 2480,
+      "name": "split_position",
+      "path": ".venv/Lib/site-packages/polymarket/clients/async_secure.py"
+    },
+    {
+      "async": true,
+      "line": 2539,
+      "name": "merge_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/async_secure.py"
+    },
+    {
+      "async": true,
+      "line": 2617,
+      "name": "merge_multiple_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/async_secure.py"
+    },
+    {
+      "async": true,
+      "line": 2713,
+      "name": "redeem_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/async_secure.py"
+    },
+    {
+      "async": true,
+      "line": 2717,
+      "name": "redeem_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/async_secure.py"
+    },
+    {
+      "async": true,
+      "line": 2721,
+      "name": "redeem_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/async_secure.py"
+    },
+    {
+      "async": true,
+      "line": 2724,
+      "name": "redeem_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/async_secure.py"
+    },
+    {
+      "async": false,
+      "line": 2192,
+      "name": "execute_transaction",
+      "path": ".venv/Lib/site-packages/polymarket/clients/secure.py"
+    },
+    {
+      "async": false,
+      "line": 2210,
+      "name": "split_position",
+      "path": ".venv/Lib/site-packages/polymarket/clients/secure.py"
+    },
+    {
+      "async": false,
+      "line": 2269,
+      "name": "merge_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/secure.py"
+    },
+    {
+      "async": false,
+      "line": 2347,
+      "name": "merge_multiple_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/secure.py"
+    },
+    {
+      "async": false,
+      "line": 2443,
+      "name": "redeem_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/secure.py"
+    },
+    {
+      "async": false,
+      "line": 2447,
+      "name": "redeem_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/secure.py"
+    },
+    {
+      "async": false,
+      "line": 2451,
+      "name": "redeem_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/secure.py"
+    },
+    {
+      "async": false,
+      "line": 2454,
+      "name": "redeem_positions",
+      "path": ".venv/Lib/site-packages/polymarket/clients/secure.py"
+    }
+  ],
+  "package": "polymarket-client",
+  "package_version": "0.2.0",
+  "relevant_file_sha256": {
+    ".venv/Lib/site-packages/polymarket/_internal/actions/relayer/calls.py": "7600c843ae8064bb940bf8563e3791428e0697d49ced94424df0af8ce45128b3",
+    ".venv/Lib/site-packages/polymarket/clients/secure.py": "fec5c07eef610638a657395392e068bbe198133684b684ebd80e7f8f755d34a0"
+  },
+  "scope": ".venv/Lib/site-packages/polymarket/**/*.py",
+  "selector_literal_matches": []
+}

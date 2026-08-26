@@ -1,0 +1,59 @@
+{
+  "contract_result_sha256": "aa4ed80dbad23cce692d10694ecd83668a0dfe3f94c564337650e6ed97f5f1f7",
+  "created_at_ms": 1787768752977,
+  "journal_sha256": "8b1216bc8ada5bc3597022136ffac0d08c0960955649f55250a92a49b1b47edc",
+  "requests": [
+    {
+      "name": "v2-readme",
+      "request_sha256": "fed982856678bbd89df7849cb06b8be463a4b145b68551a34d25825f34c3ebf0",
+      "response_bytes": 14235,
+      "response_headers": {
+        "content_type": "text/plain; charset=utf-8",
+        "date": "Wed, 26 Aug 2026 18:25:53 GMT"
+      },
+      "response_sha256": "41def0727a8adbaccefb3c25bce4e50166915f98ea3e9588323304c2851fac7c",
+      "response_status": 200,
+      "response_url": "https://raw.githubusercontent.com/Polymarket/ctf-exchange-v2/ccc0596074f4dfd62c944fbca4de252893b82b4b/README.md",
+      "retained_path": ".tmp/negrisk-v2-conversion-cost-v1/raw/source-01-v2-readme.raw"
+    },
+    {
+      "name": "v2-negrisk-collateral-adapter",
+      "request_sha256": "2b44949ab66c4731927fcd050e3633488e5aad8945118fb1efe12f0f90719407",
+      "response_bytes": 7227,
+      "response_headers": {
+        "content_type": "text/plain; charset=utf-8",
+        "date": "Wed, 26 Aug 2026 18:25:53 GMT"
+      },
+      "response_sha256": "2461eb793fa5571a6902a52c5276f02a8621814fdc026cf3a7814879b1b3db76",
+      "response_status": 200,
+      "response_url": "https://raw.githubusercontent.com/Polymarket/ctf-exchange-v2/ccc0596074f4dfd62c944fbca4de252893b82b4b/src/adapters/NegRiskCtfCollateralAdapter.sol",
+      "retained_path": ".tmp/negrisk-v2-conversion-cost-v1/raw/source-02-v2-negrisk-collateral-adapter.raw"
+    },
+    {
+      "name": "legacy-negrisk-adapter",
+      "request_sha256": "5d266b5e7b78d2bfafe89e556d435c6302dc66045db65799ad65532f1d146c29",
+      "response_bytes": 18734,
+      "response_headers": {
+        "content_type": "text/plain; charset=utf-8",
+        "date": "Wed, 26 Aug 2026 18:25:53 GMT"
+      },
+      "response_sha256": "f76ace5aa16dad8e71412e4d2b3bd11f9caf28f846c6783dc39d5eb756413656",
+      "response_status": 200,
+      "response_url": "https://raw.githubusercontent.com/Polymarket/neg-risk-ctf-adapter/f78b35b0863b4308a431ca307d06f49b2ea65e78/src/NegRiskAdapter.sol",
+      "retained_path": ".tmp/negrisk-v2-conversion-cost-v1/raw/source-03-legacy-negrisk-adapter.raw"
+    },
+    {
+      "name": "logs-92658087-92708086",
+      "request_sha256": "17e23267c774e6de5939afb8e4e0769aac7614b5bc28715620e9adad666ae069",
+      "response_bytes": 95,
+      "response_headers": {
+        "content_type": "application/json",
+        "date": "Wed, 26 Aug 2026 18:25:53 GMT"
+      },
+      "response_sha256": "5a15b53a55cc91248a33d88aea7e635cf2331a819101f7f5db76878d683b0e65",
+      "response_status": 200,
+      "response_url": "https://polygon-bor-rpc.publicnode.com/",
+      "retained_path": ".tmp/negrisk-v2-conversion-cost-v1/raw/rpc-logs-01.json"
+    }
+  ]
+}

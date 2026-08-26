@@ -1,0 +1,14 @@
+{
+  "authority": {
+    "account_requests_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_conversions_permitted": false,
+    "public_read_only_rpc_only": true,
+    "signed_requests_permitted": false
+  },
+  "contract_result_sha256": "c1b5b8d4c83a666168f8ae16295f170597eb7a04bb19da9d67a417575abfad6b",
+  "result_sha256": "43dbcafb542c666be9f058a4c3a178578b8ec59bc2f2ee4bf4e2933900d7a0a5",
+  "schema_version": "polymarket-negrisk-v2-conversion-cost-result-v1",
+  "status": "terminal_failure",
+  "terminal_error": "eth_getLogs error: {'code': -32701, 'message': 'History has been pruned for this block. To remove restrictions, order a dedicated full node here: https://www.allnodes.com/pol/host'}"
+}

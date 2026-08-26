@@ -1,0 +1,84 @@
+{
+  "authority": {
+    "account_requests_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_conversions_permitted": false,
+    "public_read_only_rpc_only": true,
+    "signed_requests_permitted": false
+  },
+  "collection": {
+    "end_block_decimal": 92708086,
+    "end_block_hex": "0x5869cf6",
+    "legacy_adapter_address": "0xd91e80cf2e7be2e162c6513ced06f1dd0da35296",
+    "log_page_count_ceiling": 50,
+    "log_page_size_blocks": 10000,
+    "market_id": "0x339a89111ad048709ef27ac9da11e70a28ceaae3a4f494e949c9d68be7c39a00",
+    "maximum_newest_unique_transactions": 20,
+    "positions_converted_topic0": "0xb03d19dddbc72a87e735ff0ea3b57bef133ebe44e1894284916a84044deb367e",
+    "receipt_request_ceiling": 20,
+    "rpc_url": "https://polygon-bor-rpc.publicnode.com",
+    "source_request_ceiling": 3,
+    "start_block_decimal": 92208087,
+    "start_block_hex": "0x57efbd7",
+    "v2_collateral_adapter_address": "0xada200001000ef00d07553cee7006808f895c6f1"
+  },
+  "created_at_utc": "2026-08-26T18:26:37.9704519Z",
+  "decision_question": "Within the unchanged exact newest 500000-block window ending at the previously frozen adapter-state block, did event 106981 have actual PositionsConverted transactions, were they routed through the official V2 pUSD NegRisk collateral adapter, and what whole-transaction gas cost and converted amount did their receipts prove?",
+  "implementation": {
+    "bytes": 13152,
+    "path": ".tmp/collect_negrisk_v2_conversion_cost_v2.py",
+    "sha256": "a79534fb944a97e02ffb61552aa755490120edbbd13a692ce3d3c67bb3ad0fbc"
+  },
+  "method": {
+    "deduplication": "transaction_hash",
+    "log_filter": "legacy adapter address plus PositionsConverted topic0 plus event market_id at indexed topic2",
+    "page_order": "newest_first_non_overlapping",
+    "pagination_only_recovery": "provider returned exact maximum block range 10000; economic scope topics thresholds and stop count are unchanged",
+    "receipt_fields": [
+      "blockNumber",
+      "effectiveGasPrice",
+      "from",
+      "gasUsed",
+      "status",
+      "to",
+      "transactionHash"
+    ],
+    "retention": "persist every raw JSON-RPC response before parsing",
+    "route_test": "PositionsConverted indexed stakeholder topic1 equals the deployed official V2 collateral adapter address",
+    "whole_transaction_warning": "receipt gas includes the entire outer transaction and is not an isolated convertPositions call"
+  },
+  "predecessor_failure": {
+    "contract_file_sha256": "09948b24133181e23beeedae667a2293604dc2cd6e0aaf6341cc2579a5194d69",
+    "contract_result_sha256": "aa4ed80dbad23cce692d10694ecd83668a0dfe3f94c564337650e6ed97f5f1f7",
+    "error": "eth_getLogs error: {'code': -32701, 'message': 'exceed maximum block range: 10000'}",
+    "journal_file_sha256": "9f595dad44ba89fcb97468186117d07c2584534864984506f472b44480d8a588",
+    "journal_sha256": "8b1216bc8ada5bc3597022136ffac0d08c0960955649f55250a92a49b1b47edc",
+    "result_file_sha256": "5997d9abf9a2790c7b4461bc777ebe0ea17f299215856cc7694a9a57da8ad86b",
+    "result_sha256": "45fdeb28ea18d229da42c8516248407e6eb9b5a1b51dd3ce77d8d5af1b7d949c"
+  },
+  "result_sha256": "c1b5b8d4c83a666168f8ae16295f170597eb7a04bb19da9d67a417575abfad6b",
+  "schema_version": "polymarket-negrisk-v2-conversion-cost-contract-v2",
+  "source_contracts": [
+    {
+      "commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+      "path": "README.md",
+      "repository": "https://github.com/Polymarket/ctf-exchange-v2"
+    },
+    {
+      "commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+      "path": "src/adapters/NegRiskCtfCollateralAdapter.sol",
+      "repository": "https://github.com/Polymarket/ctf-exchange-v2"
+    },
+    {
+      "commit": "f78b35b0863b4308a431ca307d06f49b2ea65e78",
+      "path": "src/NegRiskAdapter.sol",
+      "repository": "https://github.com/Polymarket/neg-risk-ctf-adapter"
+    }
+  ],
+  "stop_conditions": [
+    "stop after collecting the newest 20 unique matching transaction hashes",
+    "otherwise stop after exhausting the unchanged exact 500000-block scope",
+    "stop immediately on a deterministic JSON-RPC error and retain it without an identical retry",
+    "do not request transaction calldata block timestamps token prices or account state unless the retained receipts leave a distinct preregistered question"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "authority": {
+    "account_requests_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_conversions_permitted": false,
+    "public_read_only_rpc_only": true,
+    "signed_requests_permitted": false
+  },
+  "contract_result_sha256": "7e85584611324d1c19fb9492e6842be9c15d6efda85462b5f74cfc80524cd8a8",
+  "conversion_log": {
+    "amount_base_units": 16700000,
+    "amount_shares": "16.7",
+    "block_number": 92661066,
+    "index_set": 7,
+    "stakeholder": "0xada2005600dec949baf300f4c6120000bdb6eaab",
+    "transaction_hash": "0x31c433246cf0249ae2de194ce3e549c9f58c3162bbbebbfd4ae2c70e9df3932f"
+  },
+  "economic_bounds": {
+    "conditional_q20_break_even_native_price_pusd": "0.1886687204176217827281924510",
+    "conditional_q5_break_even_native_price_pusd": "0.04716718010440544568204811276",
+    "interpretation": "These thresholds compare the whole historical transaction gas to the non-contemporaneous live maker-input margins. They are not a current native-token price, user relayer charge, or profitability proof."
+  },
+  "receipt": {
+    "block_number": 92661066,
+    "effective_gas_price_wei": 327229242782,
+    "from": "0xf105cd06bf6ff2e8c9233a64ebf79ab85034709b",
+    "gas_cost_native": "0.156888751534858772",
+    "gas_cost_wei": 156888751534858772,
+    "gas_used": 479446,
+    "status": 1,
+    "to": "0x00000000000fb5c9adea0298d729a0cb3823cc07",
+    "transaction_hash": "0x31c433246cf0249ae2de194ce3e549c9f58c3162bbbebbfd4ae2c70e9df3932f"
+  },
+  "result_sha256": "42d0ffe274a078ad1fb4d3b2380679587af1ce63e362d2f7e474022bd84573d8",
+  "schema_version": "polymarket-negrisk-known-conversion-receipt-v1",
+  "status": "completed",
+  "terminal_error": null
+}
