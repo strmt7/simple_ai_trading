@@ -1030,9 +1030,39 @@
       ],
       "retry_trigger": "account_confirmed_available_Perps_invite_and_fee_share_plus_authentic_independently_acquired_new_external_trader_attribution_and_explicit_read_only_evidence_authority_separate_authority_for_any_link_or_invite_creation_code_application_account_change_transfer_withdrawal_or_operator_trade",
       "venue_scope": "polymarket_Perps_authentic_external_referred_traders_fee_bearing_activity"
+    },
+    {
+      "blocking_evidence": [
+        "future active NBA full-game same-game moneyline and spread pair with exact source-proved team handicap overtime push tie cancellation postponement forfeit and correction resolution mapping",
+        "current per-market feesEnabled feeSchedule rate exponent takerOnly rebateRate tick size minimum order size and acceptingOrders state",
+        "recurrent synchronized batch-book all-taker violations after exact fee rounding displayed bottleneck depth and frozen latency cancellation orphan and external-cost stress",
+        "multiple independent games with positive aggregate and worst-game economics and no value assigned to the historically unrealized middle payout",
+        "owned simultaneous or otherwise causally complete both-leg fills reconciliation and unwind costs before any deployment or profitability claim"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json",
+          "result_sha256": "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
+        }
+      ],
+      "current_status": "materially_reopened_distinct_direction_independent_live_NBA_full_game_moneyline_spread_payoff_implication_candidate_primary_2026_paper_reports_290_executable_episodes_and_101_01_bips_median_under_a_now_stale_zero_fee_assumption_current_official_sports_category_taker_rate_is_0_05_exact_market_fee_recurrence_resolution_and_fill_evidence_unproved_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication",
+      "next_action": "do_not_resample_the_current_offseason_when_future_active_NBA_full_game_events_exist_first_source_prove_exhaustive_pair_payoffs_and_exact_current_market_fees_then_run_one_public_read_only_synchronized_batch_book_recurrence_capture_under_the_frozen_all_taker_contract",
+      "priority_rank": 30,
+      "prohibited_shortcuts": [
+        "reusing_the_paper_zero_fee_median_as_current_profit",
+        "assuming_integer_handicap_push_or_other_unmapped_settlement_states_preserve_the_one_dollar_floor",
+        "valuing_the_zero_realization_middle_jackpot",
+        "forward_filling_stale_asynchronous_books_or_using_post_game_quotes",
+        "crediting_midpoints_last_trades_uncapped_depth_maker_fees_or_rebates_without_causal_owned_fills",
+        "calling_public_recurrence_profitable_without_owned_both_leg_fill_reconciliation_and_all_external_costs"
+      ],
+      "retry_trigger": "first_future_active_accepting_orders_NBA_full_game_event_with_source_proved_same_game_moneyline_spread_payoff_implication_and_exact_current_market_fee_schedules",
+      "venue_scope": "polymarket_future_NBA_full_game_same_game_moneyline_and_point_spread_markets"
     }
   ],
-  "result_sha256": "c6d12c4f5a220912541fe69d9165072bebd309cd010e580e93f65cd4d93600e4",
+  "result_sha256": "6494e425bfa70f9fd72a2ba635dca50785b55bd253f5493bcedc3daa44528e08",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1156,6 +1186,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T21:32:20.5200347Z",
+  "updated_at_utc": "2026-08-26T21:40:07.4765196Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
