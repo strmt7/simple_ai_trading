@@ -557,6 +557,18 @@ safety gate, blocks Stop, or submits an order.
   2026-08-28, and 2026-09-04 triggers. Canonical gate:
   `binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json`, result SHA-256
   `c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6`.
+- The Binance U Flexible promotion is accepted only for already-held idle U in
+  an eligible non-EEA master account: regular users receive a public headline
+  8.5% APR on the first 5,000 U through 2026-09-14. Buying U for the promotion
+  is rejected because only 10.3422 bips remain after the current USDT
+  alternative, displayed zero-fee spread, and worst observed 19-day close move
+  before issuer and account risks. The issuer's terms give ordinary secondary
+  holders no direct redemption right or reserve claim, and its homepage lists
+  only a December 2025 attestation. Do not infer region from the host timezone,
+  acquire U for the reward, or call the promotion stable or deployment-ready.
+  Canonical gate: `binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json`,
+  result SHA-256
+  `1dd11be5bb81d7d9bf278a27cdb0df4dc25a1db41c3bce005308c7aa639cbf25`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -589,6 +601,7 @@ safety gate, blocks Stop, or submits an order.
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |
+| U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |

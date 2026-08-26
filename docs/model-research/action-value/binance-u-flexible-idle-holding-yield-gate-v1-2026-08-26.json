@@ -1,0 +1,230 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "already-held idle U that an independently eligible non-EEA master account does not need for trading withdrawal collateral settlement or prompt liquidity, subscribed within the available regular-user bonus tier while the published promotion remains active",
+    "acquisition_candidate_accepted": false,
+    "after_all_external_costs_and_best_alternative_yield": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_current_time_limited_gross_idle_U_yield_without_acquisition_and_rejected_USDT_to_U_promotion_purchase",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T16:03:07.2111096Z",
+  "credential_preflight": {
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_present": false,
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_present": false,
+    "values_inspected": false
+  },
+  "economics": {
+    "promotion": {
+      "bonus_accrual_starts": "next day at 00:00 UTC after subscription using one random daily subscribed-balance snapshot",
+      "bonus_redemption_rule": "any redemption during a UTC day stops bonus accrual on the redeemed amount for that day",
+      "end_utc": "2026-09-14T23:59:59Z",
+      "first_come_first_served": true,
+      "master_account_only": true,
+      "minimum_subscription_U": "0.01",
+      "regular_user_bonus_apr_percent": "8",
+      "regular_user_bonus_tier_cap_U": "5000",
+      "regular_user_realtime_apr_percent_approximate": "0.5",
+      "regular_user_total_headline_apr_percent": "8.5",
+      "start_utc": "2026-08-16T00:00:00Z",
+      "unavailable_for_EEA_users": true,
+      "VIP_1_to_9_bonus_apr_percent": "5",
+      "VIP_1_to_9_bonus_pool_U": "500000",
+      "VIP_1_to_9_bonus_tier_cap_U": "500000",
+      "VIP_1_to_9_realtime_apr_percent_approximate": "0.5",
+      "VIP_1_to_9_total_headline_apr_percent": "5.5"
+    },
+    "regular_user_remaining_horizon_sensitivity": {
+      "eligible_accrual_days_if_subscribed_before_2026_08_27_00_00_UTC": 19,
+      "gross_reward_U_equivalent_on_5000_U_at_8_5_percent": "22.12328767",
+      "gross_reward_bips_of_5000_U": "44.24657534"
+    },
+    "rejected_USDT_to_U_acquisition_sensitivity": {
+      "current_displayed_UUSDT_ask": "0.99930000",
+      "current_displayed_UUSDT_ask_quantity_U": "179684",
+      "current_displayed_UUSDT_bid": "0.99920000",
+      "current_displayed_UUSDT_bid_quantity_U": "1951147",
+      "displayed_round_trip_spread_bips": "1.00070049",
+      "displayed_round_trip_spread_loss_on_5000_U_USDT": "0.5",
+      "gross_U_reward_on_5000_U_over_19_days": "22.12328767",
+      "headline_USDT_alternative_reward_over_same_horizon_USDT": "8.46575342",
+      "headline_USDT_alternative_rule": "approximately 3 percent Real-Time APR on 5000 USDT for 19 days plus 4 percent Bonus APR on the first 500 USDT for 12 remaining days",
+      "increment_before_U_spread_and_peg_risk_USDT": "13.65753425",
+      "worst_observed_19_day_close_return_bips": "-15.97284616",
+      "worst_observed_19_day_close_return_window": "2026-02-04 through 2026-02-23 UTC",
+      "worst_observed_19_day_close_loss_on_5000_U_USDT": "7.98642308",
+      "headroom_after_headline_alternative_displayed_spread_and_worst_observed_19_day_close_move_USDT": "5.17111117",
+      "headroom_after_same_inputs_bips_of_5000_USDT": "10.34222233",
+      "worst_observed_same_day_low_from_prior_close_bips": "-159.01590159",
+      "result": "the residual is too small to establish a purchase edge after exact account eligibility quota rates settlement operations tax custody reserve redemption and future depeg risks"
+    },
+    "zero_fee_contract": {
+      "current_public_promotion_end": "until further notice",
+      "eligible_pairs": [
+        "UUSDT Spot and Margin",
+        "UUSDC Spot and Margin"
+      ],
+      "maker_fee": "zero under the published promotion",
+      "taker_fee": "zero under the published promotion",
+      "limitations": "The public promotion is discretionary and does not prove exact account or future fee treatment."
+    }
+  },
+  "issuer_and_principal_risk": {
+    "direct_redemption_for_secondary_holders": false,
+    "direct_redemption_condition": "only separately onboarded and approved Mint Users may request issuer redemption",
+    "deposit_or_investor_insurance": false,
+    "issuer": "United Stables Limited BVI",
+    "latest_attestation_label_on_public_homepage": "Dec 2025",
+    "ordinary_holder_claim_on_reserves": false,
+    "proof_of_reserves_live_values_captured": false,
+    "proof_of_reserves_page_observation": "the server-rendered page exposed loading skeletons and a disclaimer, not current numeric reserve supply or collateralization values",
+    "regulatory_registration_claim": "the issuer states it has not obtained registration authorization or licensing under EU MiCA the Hong Kong Stablecoins Ordinance the United States GENIUS Act or the listed securities and stablecoin laws",
+    "reserve_composition_terms": "cash US Treasury bills and or fiat-referenced stablecoins in proportions and custody arrangements chosen by the issuer and changeable without notice",
+    "reserve_exact_composition_or_liquidity_assurance": false,
+    "reserve_segregation_required_by_contract_unless_law_requires_it": false,
+    "insolvency_preferential_secured_or_proprietary_claim_for_holders": false,
+    "risk_conclusion": "The promotion yield does not compensate by proof for issuer insolvency depeg reserve stablecoin contagion redemption venue or custody loss; those risks prohibit treating the acquisition sensitivity as a stable or deployment-ready edge."
+  },
+  "market_history": {
+    "daily_kline_count": 226,
+    "first_open_utc": "2026-01-13T00:00:00Z",
+    "last_open_utc": "2026-08-26T00:00:00Z",
+    "limitations": [
+      "Daily closes and lows are not executable fills or depth.",
+      "The 226-day history is short and contains no issuer-failure event.",
+      "The historical worst move is not a bound on a future depeg freeze delisting redemption failure or insolvency."
+    ],
+    "worst_18_day_close_return_bips": "-14.97454328",
+    "worst_19_day_close_return_bips": "-15.97284616",
+    "worst_same_day_low_from_prior_close_bips": "-159.01590159"
+  },
+  "market_access": {
+    "UUSDT_lot_minimum_and_step_U": "1",
+    "UUSDT_minimum_notional_USDT": "5",
+    "UUSDT_price_tick": "0.0001",
+    "UUSDT_status": "TRADING",
+    "public_convert_bounds": {
+      "USDT_to_U_from_minimum": "0.01",
+      "USDT_to_U_maximum": "38000",
+      "U_to_USDT_from_minimum": "0.01",
+      "limitation": "The public catalog proves amount bounds only, not an executable quote, fee, account eligibility, or settlement delay."
+    }
+  },
+  "overlap_adjudication": {
+    "distinct_from_zero_fee_stablecoin_triangle": true,
+    "reason": "The existing terminal triangle tested synchronized conversion cycles and found no after-rounding positive loop. This edge is an incremental reward on unchanged already-held U principal and executes no cycle.",
+    "same_family_as_stable_value_yield_allocation": true,
+    "USDT_acquisition_and_exit_rejected": true
+  },
+  "prohibited_shortcuts": [
+    "buying or retaining U solely because the gross promotion APR is positive",
+    "inferring EEA status residence jurisdiction or account eligibility from the host timezone",
+    "treating approximate public Real-Time APR as exact account rate",
+    "treating until-further-notice zero fees as permanent or exact account proof",
+    "calling issuer-stated reserve backing a legal holder claim or current numeric reserve proof",
+    "assuming ordinary holders can redeem directly with the issuer",
+    "using historical daily closes as executable fills or a bound on future depeg loss",
+    "ignoring first-come quota redemption delay reward snapshot tax custody or displaced alternative yield",
+    "calling the time-limited promotion stable persistent risk-free or deployment-ready"
+  ],
+  "result_sha256": "1dd11be5bb81d7d9bf278a27cdb0df4dc25a1db41c3bce005308c7aa639cbf25",
+  "retry_contract": {
+    "public_refresh": [
+      "refresh only on a published U Flexible term rate quota fee reserve attestation or redemption-contract change",
+      "capture campaign termination once after 2026-09-14T23:59:59Z"
+    ],
+    "signed_prequalification_only_when_both_designated_credentials_exist_and_explicit_read_only_authority_is_given": [
+      "prove non-EEA account and U Flexible eligibility current exact Real-Time APR bonus tier quota and sold-out state",
+      "prove current eligible U balance is already held idle and not required for prompt liquidity trading collateral settlement or withdrawal",
+      "prove exact account UUSDT commission flags without serializing request or secret-derived material"
+    ],
+    "separate_funded_authority_required_for": "any subscription redemption trade conversion transfer withdrawal or reward sale"
+  },
+  "schema_version": "binance-u-flexible-idle-holding-yield-gate-v1",
+  "sources": [
+    {
+      "article_code": "b2ece09a8aeb4002bc8197c52cad411b",
+      "article_id": 282469,
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "c5a1cb5e23b632519802c21a075801140e2a0a736ef7d78414f92d253c92b077",
+      "role": "official_current_U_Flexible_promotion_terms",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=b2ece09a8aeb4002bc8197c52cad411b"
+    },
+    {
+      "article_code": "54de0a1147d04cf382707002a30901fd",
+      "article_id": 262240,
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "026fbcfa2c7f9fe026c4ff7a68ce3fbb846bcf68751011cf557a2689d7b0cc6a",
+      "role": "official_U_listing_and_current_until_further_notice_zero_fee_terms",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=54de0a1147d04cf382707002a30901fd"
+    },
+    {
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "c08a2e3fece410f0eeaaceafe8a69e07e94f154a8a1cc7640360ec0659e552fd",
+      "role": "official_public_UUSDT_symbol_contract",
+      "url": "https://api.binance.com/api/v3/exchangeInfo?symbol=UUSDT"
+    },
+    {
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "2e9a8314ea67496ef514824ef4d812e2b4184bde05d7e91d5e6066ad604773e1",
+      "role": "official_public_UUSDT_top_book",
+      "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=UUSDT"
+    },
+    {
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "89c037e03f56cf91d06386e522ebf4095980c7d28164531c7b7bda7f5d452926",
+      "role": "official_public_UUSDT_daily_history",
+      "url": "https://api.binance.com/api/v3/klines?symbol=UUSDT&interval=1d&limit=1000"
+    },
+    {
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "9f290b652cb319d25a2492e136f8e866f79c82f393c72c223835a96b9afb911a",
+      "role": "official_public_U_to_USDT_Convert_catalog",
+      "url": "https://api.binance.com/sapi/v1/convert/exchangeInfo?fromAsset=U&toAsset=USDT"
+    },
+    {
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "3bdb473752c7c4e66b4a70b4e901613befae93206dc2c5bba2d2fa14010d2761",
+      "role": "official_public_USDT_to_U_Convert_catalog",
+      "url": "https://api.binance.com/sapi/v1/convert/exchangeInfo?fromAsset=USDT&toAsset=U"
+    },
+    {
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "4c20749df09606baa8fcc97e92fd9036e39718be01e08df51fe1bde4d54b5f08",
+      "role": "official_issuer_homepage_attestation_index_and_regulatory_disclaimer",
+      "url": "https://www.u.tech/"
+    },
+    {
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "b56b7854fdcc761cee97f956970bfaf1f4f49603ee9f036e12ad928af9764ee3",
+      "role": "official_issuer_terms_reserve_holder_claim_and_redemption_contract",
+      "url": "https://u.tech/terms/"
+    },
+    {
+      "observed_by_utc": "2026-08-26T16:03:07.2111096Z",
+      "payload_sha256": "6e352e64bb0629b66885630c1c8a6ef0c419e6e2517e484e98aa7060599763ab",
+      "role": "official_issuer_live_proof_of_reserves_page_without_server_rendered_numeric_values",
+      "url": "https://www.u.tech/por/"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json",
+      "result_sha256": "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c",
+      "role": "source_bound_current_USDT_alternative_terms"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-zero-fee-stablecoin-cycle-recovery-v2-2026-08-26.json",
+      "result_sha256": "f44f283b311ebf8b3302dba4e1d5d6be0b956a2657483786229611f82ed5da88",
+      "role": "terminal_zero_fee_stablecoin_triangle_overlap_gate"
+    }
+  ]
+}

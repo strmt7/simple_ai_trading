@@ -1060,6 +1060,25 @@ Simple Earn activation once on 2026-08-27, the third airdrop APR once on
 result SHA-256
 `c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6`.
 
+The current Binance U Flexible promotion is also accepted only as a scoped,
+time-limited gross yield overlay for U that is already held idle in an eligible
+non-EEA master account. Regular users are offered approximately 0.5% Real-Time
+APR plus 8% Bonus APR on the first 5,000 U through 2026-09-14; VIP 1-9 users
+are offered the same approximate base plus 5% on the first 500,000 U. For a
+regular user subscribing before 2026-08-27, 19 eligible days produce 44.2466
+bips gross. Buying U for the promotion is rejected: only 10.3422 bips remain
+after the current USDT alternative, displayed zero-fee round-trip spread, and
+the worst observed 19-day U close move, before every exact account and issuer
+risk. United Stables' own terms say ordinary secondary holders have no direct
+redemption right or claim on reserves; the public homepage lists only a
+December 2025 attestation, and the live PoR page did not server-render numeric
+reserve values. Never infer EEA status from the host timezone, buy U for the
+headline APR, or treat issuer reserve language as insolvency protection.
+Canonical gate:
+`docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json`,
+result SHA-256
+`1dd11be5bb81d7d9bf278a27cdb0df4dc25a1db41c3bce005308c7aa639cbf25`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
