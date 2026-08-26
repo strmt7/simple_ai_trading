@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 7,
-  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, and one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase; zero deployment-ready or fully external-cost-and-account-condition edges",
+  "accepted_edge_count": 8,
+  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, and one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion; zero deployment-ready or fully external-cost-and-account-condition edges",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -258,12 +258,16 @@
         {
           "path": "docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json",
           "result_sha256": "076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json",
+          "result_sha256": "0126a1feef4e8bb5c46a7b7cab45e2471857a2e105fe0f41d73d4710b6abceda"
         }
       ],
-      "current_status": "accepted_scoped_current_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_at_5_46_percent_current_base_APR_accepted_scoped_U_Flexible_yield_for_already_held_idle_U_at_8_5_percent_regular_headline_APR_on_first_5000_U_without_acquisition_and_accepted_scoped_RWUSD_VIP_bonus_only_on_independently_required_existing_RWUSD_all_require_exact_account_eligibility_and_none_is_deployment_ready",
+      "current_status": "accepted_scoped_current_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_at_5_46_percent_current_base_APR_accepted_scoped_U_Flexible_yield_for_already_held_idle_U_at_8_5_percent_regular_headline_APR_on_first_5000_U_without_acquisition_accepted_scoped_RWUSD_VIP_bonus_only_on_independently_required_existing_RWUSD_and_accepted_scoped_current_USDT_Flexible_bonus_family_only_for_independently_held_idle_USDT_all_require_exact_account_eligibility_and_none_is_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "at_2026_08_27T00_00_00Z_confirm_USD1_Simple_Earn_activation_terms_once_then_at_2026_08_28_capture_the_third_USD1_airdrop_APR_and_RLUSD_update_once_monitor_U_and_RWUSD_only_on_published_term_or_evidence_changes_and_when_both_credentials_exist_with_explicit_read_only_authority_prove_exact_account_region_VIP_product_rates_quota_eligible_balances_owned_distributions_and_redemption_or_reward_liquidation_costs",
+      "next_action": "at_2026_08_27T00_00_00Z_confirm_USD1_Simple_Earn_activation_terms_once_then_at_2026_08_28_capture_the_third_USD1_airdrop_APR_and_RLUSD_update_once_monitor_U_RWUSD_and_USDT_only_on_published_term_changes_or_the_USDT_2026_09_07_global_and_2026_09_21_regional_end_triggers_and_when_both_credentials_exist_with_explicit_read_only_authority_prove_exact_account_region_VIP_product_rates_quota_eligible_balances_owned_distributions_and_redemption_or_reward_liquidation_costs",
       "priority_rank": 7,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
@@ -283,12 +287,15 @@
         "subscribing_to_RWUSD_or_chasing_VIP_status_only_to_obtain_the_public_bonus",
         "crediting_RWUSD_bonus_above_the_exact_daily_VIP_tier_cap_or_to_an_unproved_master_account",
         "treating_RWUSD_as_a_stablecoin_transferable_token_direct_RWA_claim_or_guaranteed_instant_USDC_redemption",
+        "stacking_global_LATAM_or_Brazil_USDT_Flexible_bonuses_without_explicit_combination_terms",
+        "registering_depositing_acquiring_or_retaining_USDT_only_to_obtain_a_new_user_or_global_bonus",
+        "inferring_USDT_promotion_region_registration_date_identity_verification_or_master_account_eligibility",
         "assuming_public_Convert_bounds_or_a_displayed_spread_prove_an_executable_fee_free_round_trip",
         "inferring_jurisdiction_or_account_eligibility_from_system_timezone",
         "calling direction-neutral market-invariant or risk-free",
         "freezing another signed collector while credentials are absent"
       ],
-      "retry_trigger": "2026_08_27_USD1_Simple_Earn_activation_or_2026_08_28_USD1_third_airdrop_and_RLUSD_distribution_updates_or_2026_09_04_USD1_final_airdrop_update_or_published_U_or_RWUSD_rate_quota_fee_reserve_product_or_redemption_change_or_2026_09_14_U_campaign_end_or_2026_09_17_RWUSD_campaign_end_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority",
+      "retry_trigger": "2026_08_27_USD1_Simple_Earn_activation_or_2026_08_28_USD1_third_airdrop_and_RLUSD_distribution_updates_or_2026_09_04_USD1_final_airdrop_update_or_published_U_RWUSD_or_USDT_rate_quota_fee_product_eligibility_or_redemption_change_or_2026_09_07_USDT_global_campaign_end_or_2026_09_14_U_campaign_end_or_2026_09_17_RWUSD_campaign_end_or_2026_09_21_USDT_regional_campaign_end_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority",
       "venue_scope": "binance_bfusd_rwusd_rlusd_usd1_usdt_and_same_currency_cash_alternatives"
     },
     {

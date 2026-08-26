@@ -1,0 +1,168 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current_same_asset_gross_bonus_yield_on_independently_held_idle_USDT_for_an_eligible_verified_master_account_without_registration_deposit_or_USDT_acquisition_for_the_promotion",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_time_limited_USDT_Flexible_bonus_overlay_account_eligibility_and_action_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_subscriptions_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T16:27:00Z",
+  "credential_preflight": {
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_present": false,
+    "SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_present": false,
+    "checked_at_utc": "2026-08-26T16:26:50.7599327Z",
+    "values_inspected": false
+  },
+  "economics": {
+    "brazil_new_user_variant": {
+      "bonus_apr_percent": "15",
+      "bonus_days": 7,
+      "bonus_principal_cap_USDT": "200",
+      "bonus_reward_USDT": "0.5753424657534246575342465753",
+      "bonus_reward_bips_of_capped_principal": "28.76712328767123287671232877"
+    },
+    "global_variant_if_subscribed_before_2026_08_27_utc": {
+      "bonus_accrual_days_through_promotion_end": 12,
+      "bonus_apr_percent": "4",
+      "bonus_principal_cap_USDT": "500",
+      "bonus_reward_USDT": "0.6575342465753424657534246575",
+      "bonus_reward_bips_of_capped_principal": "13.15068493150684931506849315"
+    },
+    "global_variant_if_first_bonus_accrual_is_2026_08_28": {
+      "bonus_accrual_days_through_promotion_end": 11,
+      "bonus_reward_USDT": "0.6027397260273972602739726027",
+      "bonus_reward_bips_of_capped_principal": "12.05479452054794520547945205"
+    },
+    "latam_new_user_variant": {
+      "bonus_apr_percent": "30",
+      "bonus_days": 7,
+      "bonus_principal_cap_USDT": "200",
+      "bonus_reward_USDT": "1.150684931506849315068493151",
+      "bonus_reward_bips_of_capped_principal": "57.53424657534246575342465755"
+    },
+    "variable_realtime_apr": {
+      "global_article_display_percent_approximate": "3",
+      "credited_in_fixed_bonus_economics": false,
+      "reason": "The rate can change every minute and exact account product evidence is absent."
+    }
+  },
+  "eligibility_and_terms": {
+    "brazil_new_user": {
+      "bonus_duration_days": 7,
+      "identity_verification_country": "Brazil",
+      "new_registration_after_utc": "2026-08-21T12:00:00Z",
+      "promotion_end_utc": "2026-09-21T23:59:59Z",
+      "promotion_start_utc": "2026-08-21T12:00:00Z"
+    },
+    "common": [
+      "identity verification during the promotion period",
+      "master account only",
+      "region and product availability",
+      "first come first served capacity",
+      "bonus accrual begins on the next UTC day from a random subscribed-balance snapshot",
+      "redemption during a UTC day stops bonus accrual on the redeemed amount for that day",
+      "redemption is stated as instant but large demand may delay it",
+      "terms rates eligibility and promotion duration may be changed by Binance"
+    ],
+    "global": {
+      "bonus_apr_percent_first_500_USDT": "4",
+      "maximum_subscription_per_user": "unlimited",
+      "minimum_subscription_USDT": "0.01",
+      "promotion_end_utc": "2026-09-07T23:59:59Z",
+      "promotion_start_utc": "2026-08-25T00:00:00Z",
+      "published_headline_apr_percent": "7",
+      "published_realtime_apr_percent_approximate": "3"
+    },
+    "latam_new_user": {
+      "bonus_duration_days": 7,
+      "eligible_identity_verification_countries_and_regions": [
+        "Argentina",
+        "Antigua and Barbuda",
+        "Bolivia",
+        "Barbados",
+        "Colombia",
+        "El Salvador",
+        "Honduras",
+        "Jamaica",
+        "Mexico",
+        "Nicaragua",
+        "Paraguay",
+        "Saint Lucia",
+        "Saint Vincent and the Grenadines",
+        "Suriname",
+        "Turks and Caicos Islands",
+        "Peru",
+        "Venezuela",
+        "Anguilla",
+        "Bermuda",
+        "British Virgin Islands",
+        "Cayman Islands",
+        "Pitcairn Islands"
+      ],
+      "new_registration_after_utc": "2026-08-21T12:00:00Z",
+      "promotion_end_utc": "2026-09-21T23:59:59Z",
+      "promotion_start_utc": "2026-08-21T12:00:00Z"
+    }
+  },
+  "limitations": [
+    "No account region registration date identity-verification status master-account status product capacity subscribed balance or exact Real-Time APR was accessed.",
+    "The regional promotions mention a deposit; this artifact does not authorize registration deposit acquisition or transfer activity to qualify.",
+    "The global and regional bonuses are not assumed to stack. Credit at most the single explicitly proven applicable bonus to any principal.",
+    "USDT already held on Binance avoids a new token conversion for this narrow comparison, but Simple Earn adds redemption-delay product custody operational tax and opportunity-cost uncertainties.",
+    "A public stated APR does not prove an account distribution, future persistence, after-tax yield, or deployment readiness.",
+    "The accepted edge is time limited and market-direction independent, not risk free, permanent, or guaranteed."
+  ],
+  "prohibited_actions": [
+    "registering an account to chase a new-user bonus",
+    "making a deposit solely to qualify",
+    "buying borrowing converting or retaining USDT solely for the promotion",
+    "crediting multiple promotion bonuses to the same principal without explicit combination terms",
+    "moving USDT needed for orders collateral settlement withdrawals or prompt liquidity into Simple Earn",
+    "subscribing redeeming or changing account state without separate explicit funded authority"
+  ],
+  "result_sha256": "0126a1feef4e8bb5c46a7b7cab45e2471857a2e105fe0f41d73d4710b6abceda",
+  "retry_policy": {
+    "public_refresh": "one terms and status check at the 2026-09-07 global end and the 2026-09-21 regional end or earlier only after a published term change",
+    "signed_prequalification_only_after_both_credentials_and_explicit_read_only_authority": [
+      "exact account region master-account and identity-verification eligibility",
+      "USDT Flexible product availability capacity current Real-Time APR tiers and existing subscribed balance",
+      "owned bonus and Real-Time reward distribution history"
+    ],
+    "separate_funded_authority_required_for": "any subscription redemption deposit transfer conversion or trade"
+  },
+  "schema_version": "binance-usdt-flexible-current-bonus-overlay-v1",
+  "sources": [
+    {
+      "article_code": "04663ce7cbc64165b060bf4065e43299",
+      "normalized_visible_article_characters": 7524,
+      "normalized_visible_article_sha256": "06266e2b0607e5a6767be0ed1e36a6021074ce91469f6a0dccb4725d065a7d79",
+      "prior_same_day_cms_payload_sha256": "563459072022ac4c1825a33b4309db80d33269f233c193c4de740b29098c5525",
+      "role": "official_global_USDT_Flexible_promotion_terms",
+      "url": "https://www.binance.com/en/support/announcement/detail/04663ce7cbc64165b060bf4065e43299"
+    },
+    {
+      "article_code": "b4ed9299fb2d4277aff614d3afacab0d",
+      "normalized_visible_article_characters": 10905,
+      "normalized_visible_article_sha256": "05da77d032ef7195c7968043927321571e8b1810e24507a7aee6fcdb9bde861f",
+      "role": "official_LATAM_new_user_USDT_Flexible_promotion_terms",
+      "url": "https://www.binance.com/en/support/announcement/detail/b4ed9299fb2d4277aff614d3afacab0d"
+    },
+    {
+      "article_code": "a2085f7878324b26b91c95a63df01bdd",
+      "normalized_visible_article_characters": 10060,
+      "normalized_visible_article_sha256": "52dbd6e0db46f75a0b185d03572c30b6c389f455a6fbb8b7d795b7f3a86a7868",
+      "role": "official_Brazil_new_user_USDT_Flexible_promotion_terms",
+      "url": "https://www.binance.com/en/support/announcement/detail/a2085f7878324b26b91c95a63df01bdd"
+    }
+  ],
+  "visible_article_hash_method": "SHA256 of UTF-8 visible body text from the first exact H1 title occurrence through immediately before the final Share section, with CRLF normalized to LF and outer whitespace trimmed."
+}

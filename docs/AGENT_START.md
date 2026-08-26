@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Seven scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; and the automatic RWUSD VIP bonus only on independently required existing RWUSD. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Eight scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; and current USDT Flexible bonus yield only for independently held idle eligible USDT. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -578,6 +578,18 @@ safety gate, blocks Stop, or submits an order.
   `binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json`, result
   SHA-256
   `076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51`.
+- Current USDT Flexible bonuses are accepted as one scoped, time-limited
+  same-asset yield family only for independently held idle USDT in an eligible
+  verified master account. The global offer adds 4% Bonus APR to the first 500
+  USDT through 2026-09-07; subscribing before 2026-08-27 exposes at most 12
+  accrual days, or 13.1507 bips and 0.6575 USDT. Mutually exclusive new-user
+  variants offer 30% for seven days on the first 200 USDT in a published LATAM
+  country list, or 15% in Brazil. Never assume those offers stack, infer region,
+  register, deposit, acquire USDT, or move prompt-liquidity/collateral principal
+  to chase them. Canonical gate:
+  `binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json`, result
+  SHA-256
+  `0126a1feef4e8bb5c46a7b7cab45e2471857a2e105fe0f41d73d4710b6abceda`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -612,6 +624,7 @@ safety gate, blocks Stop, or submits an order.
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
 | Existing RWUSD VIP bonus overlay | `docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json` |
+| Current USDT Flexible bonus overlay | `docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
