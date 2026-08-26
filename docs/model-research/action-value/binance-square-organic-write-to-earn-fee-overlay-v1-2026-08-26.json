@@ -1,0 +1,96 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current_base_20_percent_gross_USDC_creator_commission_only_on_authentic_external_readers_fee_bearing_trades_attributed_after_engagement_with_genuinely_useful_eligible_Binance_Square_content",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_direction_independent_organic_external_reader_fee_overlay_account_eligibility_attribution_owned_payout_audience_demand_and_all_content_compliance_and_operating_costs_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "content_published": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true,
+    "reader_activity_created_or_requested": 0
+  },
+  "created_at_utc": "2026-08-26T21:23:36.4245858Z",
+  "economics": {
+    "accepted_base_commission_rate_of_reader_trading_fee": "0.20",
+    "accepted_gross_USDC_per_1_USDC_equivalent_eligible_reader_fee": "0.20",
+    "formula": "eligible_attributed_external_reader_fee * 0.20_base_commission_rate",
+    "leaderboard_bonus_rates_not_credited": {
+      "other_creators_total": "0.20",
+      "top_1_to_30_total": "0.50",
+      "top_31_to_100_total": "0.30"
+    },
+    "minimum_weekly_payout_USDC": "0.1",
+    "sub_threshold_balance_carry_forward": false,
+    "zero_eligible_reader_fee_floor_USDC": "0"
+  },
+  "eligibility_and_terms": {
+    "automatic_enrollment_trigger": "first eligible Binance Square content publication",
+    "content_formats": [
+      "short post",
+      "long article",
+      "video",
+      "poll"
+    ],
+    "content_reward_lifetime_days": 7,
+    "eligible_regions_only": true,
+    "identity_verification_required": true,
+    "payout": "USDC to the Binance Funding Account by the Thursday after the Monday through Sunday calculation week",
+    "reader_attribution": "reader clicks a cashtag or chart widget in eligible content and then makes an eligible fee-bearing trade shortly afterward",
+    "referral_precedence": "a reader who registered through the creator referral link generally produces standard referral rewards rather than Write to Earn commission",
+    "self_trades_eligible": false,
+    "zero_fee_trades_eligible": false
+  },
+  "limitations": [
+    "No KYC regional eligibility eligible-post attribution reader-fee row weekly commission row or owned USDC payout was accessed.",
+    "The exact meaning of shortly afterward and the complete eligible trade product universe are not specified by the current public Academy article.",
+    "Audience acquisition useful-content production moderation legal compliance tax support and operating costs are unproved, so the gross base commission is not net profit.",
+    "The 30 and 50 percent totals require a variable weekly top-100 rank and are deliberately excluded from the accepted floor.",
+    "A week below 0.1 USDC pays nothing and resets instead of carrying the balance forward.",
+    "Reader demand and fee-bearing trade activity can be zero; the accepted edge is a nonnegative gross overlay per independently existing eligible fee, not guaranteed recurring income."
+  ],
+  "prohibited_actions": [
+    "self-earning operator-controlled linked-account circular wash or otherwise manufactured reader trading activity",
+    "encouraging unnecessary unsuitable leveraged or loss-making trades merely to increase creator commission",
+    "misleading deceptive plagiarized spammy or undisclosed promotional content",
+    "crediting zero-fee trades posts older than seven days unattributed clicks or sub-threshold weekly balances",
+    "crediting 30 or 50 percent before an owned finalized weekly creator rank and payout",
+    "double-counting the same reader fee under Write to Earn referral affiliate broker or another commission program",
+    "calling gross USDC commission after-cost profit before owned payout and all audience content compliance tax and operating costs reconcile",
+    "publishing content creating a referral path requesting reader trades or changing account state without separate explicit authority"
+  ],
+  "result_sha256": "29ec95146998535fde295dfc830a2639b9d10964e7f9e36c17e44e628dc454d1",
+  "retry_policy": {
+    "account_prequalification_only_after_explicit_read_only_authority_and_ephemeral_credentials": [
+      "exact KYC and regional program eligibility",
+      "owned eligible post attribution and seven-day windows",
+      "owned external reader fee rows weekly rank commission rows threshold handling and USDC payouts"
+    ],
+    "public_refresh": "only after a published eligibility attribution base rate bonus rank content window threshold payout asset or program-term change",
+    "separate_content_or_mutation_authority_required_for": "any publication cashtag widget referral creation account change transfer or withdrawal",
+    "separate_trading_authority_required_for": "any operator order; reader activity is never authorized or requested by this artifact"
+  },
+  "schema_version": "binance-square-organic-write-to-earn-fee-overlay-v1",
+  "sources": [
+    {
+      "article_updated": "2026-07-31",
+      "observed_at_utc": "2026-08-26T21:23:36.4245858Z",
+      "raw_html_characters": 425888,
+      "raw_html_sha256": "2f0ab1e97f600e387245b4e4bb17b9df038a48566f7d15ec463b8fe5a3f46243",
+      "role": "current_official_program_eligibility_attribution_base_and_bonus_rates_weekly_USDC_payout_threshold_content_window_referral_precedence_zero_fee_and_self_trade_rules",
+      "url": "https://academy.binance.com/ur-PK/articles/write-to-earn-on-binance-square-all-you-need-to-know"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:23:36.4245858Z",
+      "role": "official_program_surface_no_logged_out_account_or_payout_evidence",
+      "url": "https://www.binance.com/en/square/WritetoEarn"
+    }
+  ]
+}

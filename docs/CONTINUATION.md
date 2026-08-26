@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Thirteen narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Fourteen narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -26,7 +26,10 @@ Development belongs only on `main`; do not create another development branch.
   bona fide independently existing third-party matched orders routed through an
   owned app with an account-confirmed active disclosed positive rate; and
   Polymarket referral rewards only for authentic external referrals after the
-  account independently cleared the lifetime-volume threshold. Each Binance
+  account independently cleared the lifetime-volume threshold; and Binance
+  Square's base 20% Write to Earn commission only on authentic external readers'
+  independently existing eligible fee-bearing trades attributed to genuinely
+  useful content. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
   A current BTC Simple Earn Flexible product is only an extension candidate:
@@ -867,7 +870,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`69039bd49ca43a23822a5ce8997c80bc7cf7d629bf4c08f8ffc00507644864b7`.
+`03a280849e16d8dcf171947e909342d37dd1a6ae4bd0ecca906b864fdea33304`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1417,6 +1420,21 @@ equivalent mispricing. Canonical adjudication:
 `docs/model-research/action-value/binance-advanced-earn-conditional-conversion-terminal-adjudication-v1-2026-08-26.json`,
 result SHA-256
 `15f160e3d54f0be09611bb36901b1d9061a2a173643c0562996ecb2824320a3f`.
+
+Binance Square Write to Earn is accepted only as a direction-independent gross
+USDC overlay at the current base 20% rate on authentic external readers'
+independently existing eligible fee-bearing trades after engagement with
+genuinely useful attributed content. Do not credit conditional 30% or 50%
+leaderboard totals, self or zero-fee trades, content older than seven days,
+unattributed activity, or weekly earnings below the 0.1 USDC payout threshold.
+Never manufacture reader activity or encourage unnecessary, unsuitable,
+leveraged, or loss-making trades for commission. Account KYC and region,
+attribution, owned USDC payout, audience demand, content production, compliance,
+tax, and operating costs remain unproved, so the gross commission is not net
+profit. Canonical overlay:
+`docs/model-research/action-value/binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json`,
+result SHA-256
+`29ec95146998535fde295dfc830a2639b9d10964e7f9e36c17e44e628dc454d1`.
 
 ## Protected Local Work
 

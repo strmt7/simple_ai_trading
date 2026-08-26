@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Thirteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; and the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Fourteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; and Binance Square's base 20% Write to Earn commission only on authentic external readers' independently existing eligible fee-bearing trades attributed to genuinely useful content. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -796,6 +796,19 @@ safety gate, blocks Stop, or submits an order.
   `binance-advanced-earn-conditional-conversion-terminal-adjudication-v1-2026-08-26.json`,
   result SHA-256
   `15f160e3d54f0be09611bb36901b1d9061a2a173643c0562996ecb2824320a3f`.
+- Binance Square Write to Earn is accepted only as a direction-independent
+  gross USDC overlay at the current base 20% rate on authentic external
+  readers' independently existing eligible fee-bearing trades after engagement
+  with genuinely useful attributed content. Do not credit conditional 30% or
+  50% weekly leaderboard totals, zero-fee or self trades, content older than
+  seven days, unattributed activity, or weekly earnings below the 0.1 USDC
+  payout threshold. Never manufacture reader activity or encourage unsuitable,
+  leveraged, or loss-making trades for commission. KYC and regional eligibility,
+  owned attribution and payouts, audience demand, content, compliance, tax, and
+  operating costs remain unproved. Canonical overlay:
+  `binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json`,
+  result SHA-256
+  `29ec95146998535fde295dfc830a2639b9d10964e7f9e36c17e44e628dc454d1`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -838,6 +851,7 @@ safety gate, blocks Stop, or submits an order.
 | Organic Polymarket referral net-fee overlay | `docs/model-research/action-value/polymarket-organic-referral-net-fee-overlay-v1-2026-08-26.json` |
 | Binance Flexible Loan collateral-yield gate | `docs/model-research/action-value/binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json` |
 | Binance Advanced Earn conditional-conversion terminal adjudication | `docs/model-research/action-value/binance-advanced-earn-conditional-conversion-terminal-adjudication-v1-2026-08-26.json` |
+| Binance Square organic Write to Earn fee overlay | `docs/model-research/action-value/binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
