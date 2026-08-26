@@ -153,6 +153,21 @@ safety gate, blocks Stop, or submits an order.
   `566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb`.
   Do not poll the book until signed account commission, quota, exact fee, and
   reward evidence sets executable thresholds.
+  A separate 2026 bStock screen covered 67 trading tokenized-stock symbols
+  against Binance's public external reference price. `SNXXBUSDT` was the only
+  selected live outlier and remained gross-positive at 1,000 and 5,000 USDT
+  after a labeled 20-bps spot-plus-stock cost sensitivity, by 0.6463 and 2.0877
+  USDT respectively. The reference is not an executable Binance Stocks sale
+  quote, so this is not after-cost evidence. A direction-neutral long-bStock /
+  short-same-underlying-perpetual diagnostic found DRAM, MU, MRVL, and SNDK;
+  each cleared a labeled 30-bps round-trip sensitivity in every available
+  complete inner month, but only two or three complete months exist. Exact
+  account costs, eligibility, conversion state, multiplier-to-hedge mapping,
+  margin/capital costs, and permanent scope authority are absent. Canonical
+  research-only artifact:
+  `binance-bstock-reference-parity-v1-2026-08-26.json`, result SHA-256
+  `73fec22cc61fc8be0c792a78c0340fcb163b9bf7862708796d50521a9c44a8ac`.
+  Do not call this an accepted edge or poll it again before those gates change.
   A source-first follow-up also identified WBETH/ETH and BNSOL/SOL conversion
   parity as a distinct direction-neutral candidate. Binance's official staking
   conversion-rate, quota, reward, and operation-history paths are signed, both

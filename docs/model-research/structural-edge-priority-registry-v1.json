@@ -116,6 +116,38 @@
     },
     {
       "blocking_evidence": [
+        "same-account bStock and Binance Stocks eligibility for each selected symbol",
+        "synchronous executable Binance Stocks buy or sale quote rather than an external reference price",
+        "exact account spot stock and futures commissions taxes and rounding",
+        "proved bStock multiplier to stock and perpetual hedge-unit mapping through corporate actions",
+        "conversion availability limits cadence completion and balance reconciliation",
+        "margin liquidation capital and opportunity costs plus prospective trigger persistence",
+        "explicit permanent scope expansion beyond BTC ETH and SOL before execution work"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-bstock-reference-parity-v1-2026-08-26.json",
+          "result_sha256": "73fec22cc61fc8be0c792a78c0340fcb163b9bf7862708796d50521a9c44a8ac"
+        }
+      ],
+      "current_status": "public_67_bStock_reference_screen_found_SNXX_gross_positive_at_1000_and_5000_USDT_after_labeled_20_bps_sensitivity_and_four_delta_neutral_funding_candidates_cleared_labeled_30_bps_round_trip_sensitivity_in_every_available_complete_inner_month_but_account_execution_and_scope_gates_prevent_edge_acceptance",
+      "market_direction_forecast_required": false,
+      "mechanism": "bstock_reference_conversion_and_delta_neutral_perpetual_funding",
+      "next_action": "only_after_explicit_permanent_scope_authority_and_same_account_eligibility_capture_one_synchronous_stock_quote_conversion_limit_and_exact_commission_prequalification_before_any_order_or_repeated_market_polling",
+      "priority_rank": 4,
+      "prohibited_shortcuts": [
+        "external_reference_price_as_an_executable_stock_quote",
+        "public_1_to_1_terms_as_same_account_eligibility",
+        "aligned_kline_closes_as_fills",
+        "labeled_fee_sensitivity_as_exact_after_cost_profit",
+        "campaign_rewards_self_trading_or_wash_volume_as_persistent_edge",
+        "changing_the_BTC_ETH_SOL_execution_scope_from_a_research_snapshot"
+      ],
+      "retry_trigger": "explicit_permanent_bStock_scope_authority_plus_eligible_same_account_read_only_stock_quote_conversion_and_commission_evidence",
+      "venue_scope": "binance_bstocks_stocks_and_matching_tradifi_perpetuals_research_only"
+    },
+    {
+      "blocking_evidence": [
         "numeric option realStrikePrice versus quarterly futures deliveryPrice equality from an explicitly available historical source or a separately frozen prospective expiry",
         "synchronized displayed depth for one exact call put and quarterly future combination",
         "authenticated option and futures fees margin liquidation atomicity and capital cost",
@@ -139,7 +171,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "same_expiry_option_put_call_parity_against_quarterly_future",
       "next_action": "none_until_an_official_static_history_or_explicit_retention_contract_exists_or_after_the_2026_09_25_matching_expiry_under_a_separately_frozen_prospective_contract",
-      "priority_rank": 4,
+      "priority_rank": 5,
       "prohibited_shortcuts": [
         "matching expiry timestamps as proof of matching settlement values",
         "non_synchronous ticker and futures snapshots as execution evidence",
@@ -171,7 +203,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "quarterly_spot_future_cash_and_carry",
       "next_action": "when_both_documented_ephemeral_environment_variables_are_available_run_the_frozen_capture_once_then_apply_the_exact_components_as_a_non_synchronous_fee_gate_before_any_new_book_sampling",
-      "priority_rank": 5,
+      "priority_rank": 6,
       "prohibited_shortcuts": [
         "35_bps_sensitivity_as_actual_account_cost",
         "historical deliveryTime as exact delivery epoch",
@@ -198,7 +230,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "spot_market_maker_rebates",
       "next_action": "query_only_the_frozen_account_evidence_path_after_explicit_read_only_credential_authority",
-      "priority_rank": 6,
+      "priority_rank": 7,
       "prohibited_shortcuts": [
         "cached 2024 public fee table as current rate",
         "symbol commission response as maker-rebate proof",
@@ -224,7 +256,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "three_leg_spot_conversion",
       "next_action": "do_not_resample_books_until_exact_account_fees_first_prove_the_path_can_clear_the_frozen_break_even",
-      "priority_rank": 7,
+      "priority_rank": 8,
       "prohibited_shortcuts": [
         "USD-M futures commission as spot fee",
         "public VIP tier as account fee",
@@ -250,7 +282,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates",
       "next_action": "after_the_protected_boundary_freeze_a_prospective_authenticated_fill_rebate_and_orphan_study_only_if_explicit_authority_exists",
-      "priority_rank": 8,
+      "priority_rank": 9,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
         "both-fill assumption",
@@ -275,7 +307,7 @@
       "market_direction_forecast_required": false,
       "mechanism": "cross_venue_prediction_complete_set",
       "next_action": "none_without_explicit_read_only_credential_authority_and_a_new_authenticated_contract",
-      "priority_rank": 9,
+      "priority_rank": 10,
       "prohibited_shortcuts": [
         "generated no-authorization label without live preflight",
         "title equality as payout equality",
@@ -286,7 +318,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "5e79c25a2aff8e9dab08b4b2ac51b3dbdd02d62be5e740a28d62138f34948530",
+  "result_sha256": "ccc93d256f0662cee02aa557748b5b3aa782fe2bfc8b267648dcee2ddf68856c",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -350,6 +382,6 @@
       "reason": "tier_rebates_are_cost_reductions_not_standalone_edge_and_manufactured_self_matched_wash_or_other_inauthentic_volume_is_prohibited"
     }
   ],
-  "updated_at_utc": "2026-08-26T07:11:19.481347Z",
+  "updated_at_utc": "2026-08-26T07:29:25.336710Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
