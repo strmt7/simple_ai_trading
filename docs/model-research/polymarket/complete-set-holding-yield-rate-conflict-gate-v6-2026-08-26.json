@@ -1,0 +1,168 @@
+{
+  "authority": {
+    "authenticated_requests": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_placed": false,
+    "trading_authority": false
+  },
+  "capture_started_at_ms": 1787743531109,
+  "created_at_ms": 1787743690481,
+  "current_snapshots": [
+    {
+      "asset": "BTC",
+      "condition_id": "0x024b68f77bfc019341ee3db8f57c103334e4b9430bba4746d8c94aafd8b36fee",
+      "current_complete_set_shares": "150",
+      "current_pair_mergeable": true,
+      "current_position_row_count": 46,
+      "new_yield_rows_after_prior_capture": 0,
+      "prior_complete_set_shares": "150",
+      "prior_last_yield_timestamp": 1787703198,
+      "question": "Will Bitcoin dip to $45,000 by December 31, 2026?",
+      "wallet": "0x3fb5c98d825651d7efd2bd48a5d02c2d86c96f2f"
+    },
+    {
+      "asset": "ETH",
+      "condition_id": "0x201f51d2d892c41c5bfa6568a0a2f93ab2ea426e87dddfd5fb0191f7ec34a441",
+      "current_complete_set_shares": "440",
+      "current_pair_mergeable": true,
+      "current_position_row_count": 2,
+      "new_yield_rows_after_prior_capture": 0,
+      "prior_complete_set_shares": "440",
+      "prior_last_yield_timestamp": 1787703046,
+      "question": "Will Ethereum reach $10,000 by December 31, 2026?",
+      "wallet": "0x40db77fc612f07c73e9d4dde5f9fdeb154406c09"
+    },
+    {
+      "asset": "SOL",
+      "condition_id": "0x488999d62b8760a76d4e00e784f354a3bd03947c36073562ce65c0f3864185b3",
+      "current_complete_set_shares": "591.11",
+      "current_pair_mergeable": true,
+      "current_position_row_count": 2,
+      "new_yield_rows_after_prior_capture": 0,
+      "position_denominator_changed": true,
+      "prior_complete_set_shares": "449",
+      "prior_last_yield_timestamp": 1787703159,
+      "question": "Will Solana reach $600 by December 31, 2026?",
+      "wallet": "0xaa898d69f9abc17f0fdea7999e4c8d60beae2c28"
+    }
+  ],
+  "limitations": [
+    "The two current official pages conflict and neither captured source provides a binding effective date for a rate transition.",
+    "No post-conflict daily YIELD payment was available, so 4.00 percent is neither an operative-rate nor a realized-rate claim.",
+    "The SOL complete-set balance changed after the prior observation and must use the new 591.11 baseline for any future payout-rate inference.",
+    "Public evidence grants no authority to authenticate, fund, transact, or deploy."
+  ],
+  "prior_realized_evidence": {
+    "cross_asset_path": "docs/model-research/polymarket/complete-set-holding-yield-cross-asset-v4-2026-08-26.json",
+    "cross_asset_result_sha256": "eda29a314218e1724e39984e2712a4351d9e697503d4583d391c89a060ba53ea",
+    "net_economics_path": "docs/model-research/polymarket/complete-set-holding-yield-net-economics-v5-2026-08-26.json",
+    "net_economics_result_sha256": "dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85",
+    "realized_annualized_rate": "0.03182019111783308",
+    "reconciliation_path": "docs/model-research/polymarket/complete-set-holding-yield-reconciliation-v3-2026-08-26.json",
+    "reconciliation_result_sha256": "48e31f3d6021d28946fa1f143f65ff0f6baf9a222424f41e76c2d89875796abe",
+    "total_daily_payments": 42,
+    "total_positive_daily_payments": 42
+  },
+  "purpose": "public_direction_neutral_complete_set_holding_yield_current_rate_conflict_gate",
+  "request_budget": {
+    "actual_get_requests": 7,
+    "historical_requests_repeated": 0,
+    "planned_get_requests": 7
+  },
+  "result_sha256": "17c23b1bf821256a573b8685ea4c5725d1c1315a4ca6449395e75635b51678d9",
+  "schema_version": "polymarket-complete-set-holding-yield-rate-conflict-gate-v6",
+  "source_conflict": {
+    "adjudication": "unresolved_current_primary_source_conflict_retain_realized_3_25_percent_history_and_do_not_project_4_percent",
+    "developer_docs": {
+      "annual_rate": "0.04",
+      "capture_started_at_ms": 1787743531109,
+      "daily_distribution": true,
+      "hourly_random_sampling": true,
+      "rate_variable": true,
+      "source": {
+        "method": "GET",
+        "raw_path": "data/polymarket-holding-yield-current-v6/raw/official-positions-tokens.raw",
+        "response_bytes": 4127,
+        "response_sha256": "bb131a3894d52149058f8554edaa6fafdd9ad72ab2351efbec605d4b3a6e2cc5",
+        "status_code": 200,
+        "url": "https://docs.polymarket.com/concepts/positions-tokens.md"
+      }
+    },
+    "help_center": {
+      "annual_rate": "0.0325",
+      "article_date": "2026-06-01",
+      "capture_started_at_ms": 1787726675336,
+      "daily_distribution": true,
+      "hourly_random_sampling": true,
+      "rate_variable": true,
+      "source": {
+        "method": "GET",
+        "raw_path": "data/polymarket-holding-yield-v3/raw/official-holding-rewards-help.raw",
+        "response_bytes": 86629,
+        "response_sha256": "43031e7482696ce53fb780033164fd7c4e5be61d2667c13fa42f1227e1049e88",
+        "status_code": 200,
+        "url": "https://help.polymarket.com/en/articles/13364459-holding-rewards"
+      }
+    },
+    "precedence_assumed": false
+  },
+  "sources": [
+    {
+      "method": "GET",
+      "raw_path": "data/polymarket-holding-yield-current-v6/raw/btc-positions.raw",
+      "response_bytes": 46748,
+      "response_sha256": "924a3f29b9c5c7d1ea0538320afafecc3b69f7a6b00e4dc3f34df28c75bed23c",
+      "status_code": 200,
+      "url": "https://data-api.polymarket.com/positions?user=0x3fb5c98d825651d7efd2bd48a5d02c2d86c96f2f&limit=500&offset=0&sizeThreshold=0"
+    },
+    {
+      "method": "GET",
+      "raw_path": "data/polymarket-holding-yield-current-v6/raw/btc-yield.raw",
+      "response_bytes": 5923,
+      "response_sha256": "9e71e82f2113e371ec552d76dccb0b9d95ee17545da1294e8df63bae7d791ebe",
+      "status_code": 200,
+      "url": "https://data-api.polymarket.com/activity?user=0x3fb5c98d825651d7efd2bd48a5d02c2d86c96f2f&type=YIELD&limit=500&offset=0"
+    },
+    {
+      "method": "GET",
+      "raw_path": "data/polymarket-holding-yield-current-v6/raw/eth-positions.raw",
+      "response_bytes": 1904,
+      "response_sha256": "45c94606e3307b01ae3d3786d0cfb5a2bbd20db8b3f1da43d8c2290f9a34ee80",
+      "status_code": 200,
+      "url": "https://data-api.polymarket.com/positions?user=0x40db77fc612f07c73e9d4dde5f9fdeb154406c09&limit=500&offset=0&sizeThreshold=0"
+    },
+    {
+      "method": "GET",
+      "raw_path": "data/polymarket-holding-yield-current-v6/raw/eth-yield.raw",
+      "response_bytes": 69816,
+      "response_sha256": "96bb0dfb09fd10881d3c5acdf301548b2484317f268869660eebc10f1c723c23",
+      "status_code": 200,
+      "url": "https://data-api.polymarket.com/activity?user=0x40db77fc612f07c73e9d4dde5f9fdeb154406c09&type=YIELD&limit=500&offset=0"
+    },
+    {
+      "method": "GET",
+      "raw_path": "data/polymarket-holding-yield-current-v6/raw/sol-positions.raw",
+      "response_bytes": 1924,
+      "response_sha256": "1b42ea025913cc7a2b8b5b67f9cad26031cc5c299724552d99134a3d7280d677",
+      "status_code": 200,
+      "url": "https://data-api.polymarket.com/positions?user=0xaa898d69f9abc17f0fdea7999e4c8d60beae2c28&limit=500&offset=0&sizeThreshold=0"
+    },
+    {
+      "method": "GET",
+      "raw_path": "data/polymarket-holding-yield-current-v6/raw/sol-yield.raw",
+      "response_bytes": 67192,
+      "response_sha256": "61aad403713cf94041d424da15293f7dad374adfbbb1130a4cba4a2e083fe9b3",
+      "status_code": 200,
+      "url": "https://data-api.polymarket.com/activity?user=0xaa898d69f9abc17f0fdea7999e4c8d60beae2c28&type=YIELD&limit=500&offset=0"
+    }
+  ],
+  "verdict": {
+    "accepted_historical_scoped_edge_preserved": true,
+    "current_operating_rate_qualified": false,
+    "deployment_ready": false,
+    "next_public_refresh": "after at least one daily distribution wholly postdating the 2026-08-26T11:25:31Z conflicting-source snapshot, with unchanged exact pair balances; SOL uses 591.11 as its new baseline",
+    "profitability_claim_at_4_percent": false,
+    "status": "accepted_historical_edge_current_rate_conflict_unresolved"
+  }
+}
