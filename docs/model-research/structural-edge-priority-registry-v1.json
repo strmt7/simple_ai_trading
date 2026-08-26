@@ -330,7 +330,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "4cb5267f0649961f98bd155819d5ba413de605dca7dc511f4d5df381fedbaa49",
+  "result_sha256": "e9ab2f4fc4f61d55b040469a2cea22c022f6d41af0aa45cd759dd60c4a73856c",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -362,6 +362,11 @@
       "canonical_result_sha256": "8e30be61daaecabd3546e41cdc204d20b8ad38e0fc80c3c9aa96092266a3abe5",
       "family": "binance_usdt_usdc_perpetual_funding_differential",
       "reason": "zero_of_two_recent_candidates_passed_the_frozen_2898_settlement_full_history_fx_stress_time_and_market_regime_gate"
+    },
+    {
+      "canonical_result_sha256": "486b1aa261ae41fd8d8aeb19f0fea5bb01305d24927ccd72624bdd8afb7895d7",
+      "family": "binance_u_usdt_static_perpetual_funding_differential",
+      "reason": "training_selected_short_USDT_long_U_reversed_in_validation_and_test_for_BTC_and_ETH_and_every_role_failed_frozen_execution_and_two_leg_capital_hurdles"
     },
     {
       "canonical_result_sha256": "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4",
@@ -404,6 +409,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T08:20:00Z",
+  "updated_at_utc": "2026-08-26T08:33:51Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -219,6 +219,19 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-cross-stablecoin-funding-recovery-v4-2026-08-25.json`,
   result SHA-256
   `8e30be61daaecabd3546e41cdc204d20b8ad38e0fc80c3c9aa96092266a3abe5`.
+- Binance U-settled BTC/ETH perpetual versus matched USDT perpetual funding is
+  also terminal under the frozen static orientation. Each base had 171 aligned
+  settlements split oldest-first into 85 training, 43 validation, and 43 test
+  rows. Training selected short USDT and long U; gross funding then reversed
+  negative in validation and test for both bases, and all six base-role results
+  were negative after the frozen execution and two-leg capital hurdles. Zero
+  candidates passed, so the contract forbids book/account escalation. Do not
+  repeat an unchanged quote-stable funding-differential screen or hindsight
+  switch orientation by role. A materially new payoff or incentive is required.
+  Canonical result:
+  `docs/model-research/action-value/binance-u-usdt-funding-differential-v1-2026-08-26.json`,
+  result SHA-256
+  `486b1aa261ae41fd8d8aeb19f0fea5bb01305d24927ccd72624bdd8afb7895d7`.
 - Binance Prediction Trading versus Polymarket was frozen as a distinct
   structural screen, permitting only exact BTC/ETH/SOL payout-rule equivalence.
   It stopped before market access. The official generated Markdown said market
@@ -543,7 +556,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`4cb5267f0649961f98bd155819d5ba413de605dca7dc511f4d5df381fedbaa49`.
+`e9ab2f4fc4f61d55b040469a2cea22c022f6d41af0aa45cd759dd60c4a73856c`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

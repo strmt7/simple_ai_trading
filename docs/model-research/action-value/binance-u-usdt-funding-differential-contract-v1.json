@@ -1,0 +1,90 @@
+{
+  "schema_version": "binance-u-usdt-funding-differential-contract-v1",
+  "status": "frozen_before_any_u_usdt_funding_history_access",
+  "frozen_at_ms": 1787733033942,
+  "contract_sha256": "0d7ee07f3641e8e2978b13ff11dec14feb34732037a8572b7c70b73f13dc1003",
+  "purpose": "test whether newly launched U-settled BTC and ETH perpetuals have a persistent static funding differential versus matched USDT perpetuals without forecasting market direction",
+  "authority": {
+    "research_only": true,
+    "credentials_permitted": false,
+    "orders_permitted": false,
+    "paper_or_live_authority": false
+  },
+  "source_boundary": {
+    "launch_announcement": "https://www.binance.com/en/support/announcement/detail/25da4614ffff435fa28544b27fd33a39",
+    "fee_announcement_indexed_snapshot": "https://www.treeofalpha.com/preview_article?id=1782957617735",
+    "fee_snapshot_provenance": "indexed verbatim snapshot labeled Source Binance EN; exact Binance detail URL was not recovered and is not assumed",
+    "funding_endpoint": "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Get-Funding-Rate-History",
+    "launch_semantics": "BTCU and ETHU are perpetual contracts settled in U with eight-hour funding",
+    "current_public_fee_semantics": "U-margined perpetual maker fee zero and regular-to-VIP3 taker fee 0.04 percent until further notice",
+    "fee_or_product_change_action": "fail_closed"
+  },
+  "universe": {
+    "pairs": [
+      {"base": "BTC", "u_symbol": "BTCU", "usdt_symbol": "BTCUSDT"},
+      {"base": "ETH", "u_symbol": "ETHU", "usdt_symbol": "ETHUSDT"}
+    ],
+    "required_contract_type": "PERPETUAL",
+    "required_status": "TRADING",
+    "required_u_margin_and_quote_asset": "U",
+    "required_usdt_margin_and_quote_asset": "USDT"
+  },
+  "request_contract": {
+    "maximum_get_requests": 5,
+    "requests": [
+      "GET /fapi/v1/exchangeInfo",
+      "GET /fapi/v1/fundingRate?symbol=BTCU&limit=500",
+      "GET /fapi/v1/fundingRate?symbol=BTCUSDT&limit=500",
+      "GET /fapi/v1/fundingRate?symbol=ETHU&limit=500",
+      "GET /fapi/v1/fundingRate?symbol=ETHUSDT&limit=500"
+    ],
+    "raw_persistence": "atomically rewrite a canonical journal after every successful response before parsing or evaluation",
+    "retry_policy": "none",
+    "one_shot_rule": "do not rerun reorder paginate or change gates after the first funding response"
+  },
+  "causal_roles": {
+    "ordered_split": ["training", "validation", "test"],
+    "fractions": ["0.50", "0.25", "0.25"],
+    "minimum_aligned_rows": 120,
+    "minimum_rows_per_role": 30,
+    "orientation_selection_uses_only": "training_mean_funding_rate",
+    "validation_and_test_cannot_change_orientation_or_hurdles": true
+  },
+  "economic_hurdles": {
+    "round_trip_execution_stress_bips": "20",
+    "annual_opportunity_hurdle_bips_per_capital_leg": "500",
+    "gross_capital_legs": "2",
+    "each_role_is_standalone_round_trip": true,
+    "u_fx_or_depeg_cost_assumed_zero": false,
+    "exact_account_cost_claim": false
+  },
+  "acceptance_boundary": {
+    "public_persistence_candidate_requires": [
+      "training net after frozen execution and capital hurdles positive",
+      "validation net after frozen execution and capital hurdles positive",
+      "test net after frozen execution and capital hurdles positive",
+      "each chronological half inside validation and test gross positive",
+      "worst cumulative drawdown no greater than 50 bips",
+      "at least 60 percent positive settlements in validation and test"
+    ],
+    "accepted_edge_requires_additionally": [
+      "same-account regional U and Futures eligibility",
+      "exact account USDT and U contract commissions",
+      "synchronized executable entry and exit depth",
+      "U settlement conversion spreads and depeg stress",
+      "collateral haircuts margin liquidation and capital reconciliation",
+      "bull bear sideways choppy volatility liquidity and latency slices",
+      "prospective paper fills and persistence"
+    ],
+    "failed_public_gate_action": "terminal_do_not_request_books_or_account_evidence",
+    "missing_additional_evidence_action": "retain_as_research_only_and_set_accepted_edge_false"
+  },
+  "prohibited_shortcuts": [
+    "dynamic hindsight orientation switching",
+    "treating the U and USDT marks as identical settlement cash",
+    "zeroing U depeg conversion collateral or liquidation risk",
+    "reducing costs after outcome access",
+    "reusing the terminal USDT versus USDC history",
+    "calling a short newly launched history stable or deployment-ready"
+  ]
+}
