@@ -226,6 +226,17 @@ safety gate, blocks Stop, or submits an order.
   Do not repeat this public backfill. Its v3 predecessor also exposed a workflow
   defect by discarding fetched payloads after a later FX validation failure;
   v4 was the sole recovery and durably journaled all 20 responses.
+- The newer Binance U-settled BTC/ETH perpetual versus matched USDT perpetual
+  funding differential is terminal under its frozen static orientation. Across
+  171 aligned settlements per base, training selected short USDT and long U,
+  but gross funding reversed negative in both validation and test for BTC and
+  ETH. Every role was negative after the frozen 20-bps round-trip execution and
+  two-leg capital hurdles. Zero candidates passed, so no book or account
+  escalation is permitted. Canonical result:
+  `binance-u-usdt-funding-differential-v1-2026-08-26.json`, result SHA-256
+  `486b1aa261ae41fd8d8aeb19f0fea5bb01305d24927ccd72624bdd8afb7895d7`.
+  Treat unchanged static quote-stable perpetual funding differentials as the
+  same terminal family unless a new payoff or incentive changes the economics.
 - The 2026-08-25 direction-neutral carry/reward diagnostics also found no
   accepted edge. Binance quarterly spot/future basis was gross-positive at all
   12 tested sizes and cleared a stated 35-bps sensitivity hurdle at nine, but
