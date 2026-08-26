@@ -1,0 +1,165 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "materially_reopened_distinct_live_NBA_moneyline_spread_implication_candidate_current_fee_recurrence_and_exact_settlement_contract_required",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "market_catalog_or_order_book_requests_sent": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T21:40:07.4765196Z",
+  "current_fee_break_even": {
+    "all_taker_net_payout_per_share_formula": "1 - ask_ML_A - ask_Spread_B - fee_ML_A - fee_Spread_B - external_and_operational_costs",
+    "current_category_reference_only_sports_fee_rate": "0.05",
+    "current_fee_formula_per_leg": "shares * feeSchedule.rate * price * (1 - price) for exponent 1; use each market's exact current feeSchedule rather than assuming the category reference",
+    "fee_precision": "5_decimal_places_with_0.00001_USDC_minimum_and_smaller_amounts_rounded_to_zero",
+    "illustrative_not_evidence": [
+      {
+        "combined_asks": "0.99",
+        "leg_asks": [
+          "0.50",
+          "0.49"
+        ],
+        "net_before_external_costs_per_share": "-0.014995",
+        "net_before_external_costs_bips_of_guaranteed_payout": "-149.95",
+        "two_leg_taker_fee_per_share_at_current_category_rate": "0.024995"
+      },
+      {
+        "combined_asks": "0.99",
+        "leg_asks": [
+          "0.98",
+          "0.01"
+        ],
+        "net_before_external_costs_per_share": "0.008525",
+        "net_before_external_costs_bips_of_guaranteed_payout": "85.25",
+        "two_leg_taker_fee_per_share_at_current_category_rate": "0.001475"
+      }
+    ],
+    "maker_path_policy": "do_not_credit_zero_maker_fee_or_rebate_without_owned_queue_causal_both_leg_fills_and_full_orphan_inventory_unwind_cost; the primary recurrence screen is all_taker"
+  },
+  "distinctness_from_terminal_families": {
+    "new_family": "polymarket_live_NBA_full_game_moneyline_spread_monotone_payoff_implication",
+    "not_reopened": [
+      "polymarket_threshold_and_deadline_implication_parity",
+      "polymarket_single_market_complete_set_parity"
+    ],
+    "reason": "the prior threshold_deadline screen froze a different exact-rule population and found zero gross-positive pairs; the 2026 NBA primary study reports recurrent event-time violations across isolated live full-game moneyline and spread books with a deterministic same-game payoff implication",
+    "single_market_result": "the paper's seven single-market episodes remain within the already-terminal complete-set family and do_not_reopen_it"
+  },
+  "historical_primary_evidence": {
+    "arxiv_id": "2605.00864v1",
+    "combinatorial_evaluated_states": 8591339,
+    "combinatorial_executable_episodes_after_post_game_exclusion": 290,
+    "combinatorial_in_game_episodes": 279,
+    "combinatorial_median_duration_seconds": "16.0",
+    "combinatorial_median_yield_bips_under_paper_zero_fee_assumption": "101.01",
+    "games": 173,
+    "middle_jackpot_realizations": 0,
+    "period_end": "2026-03-04",
+    "period_start": "2026-02-04",
+    "paper_average_executable_shares_when_budget_constrained": "14.79",
+    "paper_capped_profit_usdc_before_current_fees_and_external_costs": "559.59",
+    "paper_population": "NBA_full_game_moneyline_and_point_spread_markets",
+    "paper_states_with_less_than_100_USDC_deployable_fraction": "0.769",
+    "warning": "the paper explicitly used zero NBA trading fees and therefore does not establish current after-fee profitability"
+  },
+  "limitations": [
+    "No current NBA market catalog order book fee schedule episode fill or after-cost result was sampled in this adjudication.",
+    "The primary paper covers one month and one sport and reports top-of-book availability rather than owned simultaneous fills.",
+    "The paper forward-filled asynchronous books and polled each market every 3.6 to 5.5 seconds, so reported durations are upper bounds and some detected states may be stale for a faster executor.",
+    "The paper's zero-fee assumption conflicts with the current official category schedule, which lists a 0.05 sports taker rate; exact market fee schedules can differ and must be read per market.",
+    "A spread with an integer handicap can introduce a push or equality state; the guaranteed one-dollar floor is unproved unless the exact paired resolution rules cover that state.",
+    "The possible two-dollar middle had zero realizations in the historical sample and receives zero value in the acceptance gate.",
+    "Retail-scale historical depth does not establish recurring capacity after current fees latency cancellations partial fills and external costs."
+  ],
+  "payoff_identity": {
+    "candidate_pair": "YES_favorite_full_game_moneyline_plus_YES_underdog_full_game_spread",
+    "guaranteed_floor_claim": "one_pUSD_per_paired_share_only_after_exact_same_game_team_handicap_and_resolution_rules_prove_every_final_score_state_pays_at_least_one",
+    "logical_relation": "favorite_covers_positive_handicap_implies_favorite_wins_moneyline",
+    "middle_value_in_acceptance": "0",
+    "paper_condition_before_fees": "ask_ML_A + ask_Spread_B < 1",
+    "required_push_tie_overtime_gate": "exact market rules must prove overtime inclusion and settlement for push equality cancellation postponement forfeit and correction states; any uncovered state rejects the pair"
+  },
+  "prospective_recurrence_contract": {
+    "admissible_population": "future active accepting_orders NBA full-game same-game moneyline and spread pairs only; no player props totals first-half markets or cross-game pairs",
+    "capture_authority": "public_unauthenticated_read_only_only; no order or account action",
+    "current_market_inputs": [
+      "exact event market IDs condition IDs token IDs questions outcomes and complete resolution rules",
+      "active closed acceptingOrders enableOrderBook restricted gameStartTime and secondsDelay",
+      "each leg feesEnabled feeSchedule rate exponent takerOnly and rebateRate",
+      "one POST_books batch response containing both selected YES token books with per-book source timestamps hashes best asks sizes minimum order sizes and tick sizes",
+      "local request start receipt and parse timestamps"
+    ],
+    "economic_gate": "for one identical feasible share quantity at displayed top-of-book depth net guaranteed payout after both exact taker fees fee rounding every external cost and a preregistered operational_orphan stress must be strictly positive",
+    "episode_policy": "deduplicate consecutive source states and count at most one executable quantity per episode; never sum repeated snapshots as replenished liquidity",
+    "execution_causality_gate": "both legs must coexist in the same retained batch response and remain within a source-age and inter-book timestamp ceiling frozen from a separate no-outcome preflight before the first recurrence observation; stale forward-fill is not accepted",
+    "fee_gate": "use each exact market fee schedule at observation time; a missing contradictory or changed fee field rejects the state",
+    "minimum_evidence_for_promotion": "recurrent positive all-taker episodes across multiple independent games including pre-game and in-game phase reporting with no reliance on the middle payout and with positive aggregate and worst-game after-cost economics",
+    "resolution_gate": "machine-checked exhaustive final-score payoff table from the exact paired market rules before any book is admitted",
+    "stop_conditions": [
+      "no exact full-game same-game mapping",
+      "integer or other handicap equality state without source-proved non-loss settlement",
+      "post-game physical conclusion halted stale closed or non-accepting market",
+      "either best ask or sufficient displayed size missing",
+      "combined asks plus exact taker fees plus frozen costs not strictly below guaranteed payout",
+      "source timestamps violate the frozen synchronization ceiling",
+      "rate_limit_or_source_contract_change"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "reusing the paper's zero-fee median as current profit",
+    "assuming all spreads are complements or that integer-handicap pushes pay one dollar across the pair",
+    "valuing the unobserved middle jackpot",
+    "forward-filling a stale leg until an apparent arbitrage appears",
+    "using midpoint last trade uncapped depth or post-game quotes as executable asks",
+    "crediting maker economics without causal owned both-leg fills and orphan unwind",
+    "calling a read-only recurrence profitable or deployment-ready without owned fill reconciliation and all external costs",
+    "placing either leg or accepting legging risk without separate explicit trading authority"
+  ],
+  "result_sha256": "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3",
+  "retry_policy": {
+    "public_recurrence_trigger": "first future active NBA full-game event population whose exact market rules expose at least one valid moneyline_spread implication pair under the prospective contract",
+    "research_now": "retain this source-bound contract and do not repeatedly sample the current off-season or unrelated sports",
+    "separate_trading_authority_required_for": "any order approval transfer redemption or account action"
+  },
+  "schema_version": "polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1",
+  "sources": [
+    {
+      "observed_at_utc": "2026-08-26T21:38:49.2899262Z",
+      "raw_html_characters": 136068,
+      "raw_html_sha256": "5e724700099987c37fb58ae8f8c00cbcac059cf26b7ae4711efd51381276a6c9",
+      "role": "primary_historical_NBA_moneyline_spread_payoff_identity_episode_frequency_duration_capacity_and_zero_fee_method",
+      "url": "https://arxiv.org/html/2605.00864"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:38:49.4260570Z",
+      "raw_html_characters": 392989,
+      "raw_html_sha256": "04a6098ab583f1fdba3c4d17d17104bfecf5e3c232c74eccde6294b08f0882bd",
+      "role": "current_official_fee_formula_category_sports_rate_maker_taker_roles_and_rounding",
+      "url": "https://docs.polymarket.com/trading/fees"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:39:19.1228473Z",
+      "raw_html_characters": 950614,
+      "raw_html_sha256": "b6bc4eb6298eded656a8fd5a2feecd0dfe32d68e270b8c9155d575506c312e76",
+      "role": "current_official_per_market_status_timing_constraints_and_exact_fee_schedule_fields",
+      "url": "https://docs.polymarket.com/market-data/market-details"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:40:07.4765196Z",
+      "raw_html_characters": 1122587,
+      "raw_html_sha256": "2d047eb80530cfcce7d2f34235da151b09deb043995939cc4c9b89ce600fbe81",
+      "role": "current_official_public_batch_order_book_contract_max_500_per_request_source_timestamps_hashes_depth_and_constraints",
+      "url": "https://docs.polymarket.com/market-data/prices-order-books"
+    }
+  ]
+}

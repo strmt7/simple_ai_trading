@@ -28,7 +28,7 @@ EXPECTED_TRIAGE_V2_SHA256 = (
     "3df17e93866cbf53617340dd422a91945c8a1924d4ca736b76c5f78f4c9a5575"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "c6d12c4f5a220912541fe69d9165072bebd309cd010e580e93f65cd4d93600e4"
+    "6494e425bfa70f9fd72a2ba635dca50785b55bd253f5493bcedc3daa44528e08"
 )
 ROUND61_REPORT_SHA256 = (
     "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4"
@@ -77,7 +77,7 @@ def test_registry_binds_round61_and_liquid_staking_without_repeating_carry() -> 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 30))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 31))
 
     staking = next(
         row

@@ -874,7 +874,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`c6d12c4f5a220912541fe69d9165072bebd309cd010e580e93f65cd4d93600e4`.
+`6494e425bfa70f9fd72a2ba635dca50785b55bd253f5493bcedc3daa44528e08`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1467,6 +1467,23 @@ unproved, so gross fee share is not net profit. Canonical overlay:
 result SHA-256
 `4bebea610dc9406d598627035f4e6e815e6a4daeb64944d7ba2ec9f55b6b7d71`.
 
+A new primary study materially reopens only the distinct Polymarket live NBA
+full-game moneyline/spread implication family. Across 173 games from 2026-02-04
+through 2026-03-04 it reports 290 active episodes, a 16-second median duration,
+101.01-bps median yield, and average executable size of about 14.79 shares when
+the $100 budget was constrained. Those are historical leads, not current
+profit: the paper explicitly assumed zero NBA fees, forward-filled asynchronous
+books sampled every 3.6 to 5.5 seconds, and observed zero middle payouts.
+Current official terms list a `0.05` sports taker rate and say exact fee schedules
+must be read per market. The current contract therefore assigns zero value to
+the middle, rejects unmapped integer-handicap push or overtime states, and waits
+for future active NBA full-game events before one synchronized public all-taker
+after-fee recurrence capture. It does not reopen the terminal threshold/deadline
+or single-market complete-set families. Canonical contract:
+`docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json`,
+result SHA-256
+`70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1525,6 +1542,13 @@ not grant account, funding, order, or transaction authority.
    source-bound deviation first clears fee, conservative gas, and price impact.
    A repeat is justified only by a frozen prospective sampling contract or
    materially new fee/execution evidence.
+   The live NBA moneyline/spread candidate is the one separate implication
+   family materially reopened by new primary recurrence evidence. Do not sample
+   unrelated sports or the off-season repeatedly. When future active NBA
+   full-game markets exist, first bind exact same-game settlement and per-market
+   fee schedules, then run only the preregistered synchronized public all-taker
+   recurrence contract. Any uncovered push, overtime, cancellation, or forfeit
+   state rejects the pair.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build

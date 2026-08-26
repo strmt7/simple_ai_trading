@@ -831,6 +831,21 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-perps-organic-referral-fee-overlay-v1-2026-08-26.json`, result
   SHA-256
   `4bebea610dc9406d598627035f4e6e815e6a4daeb64944d7ba2ec9f55b6b7d71`.
+- A new primary study materially reopens only the distinct Polymarket live NBA
+  full-game moneyline/spread implication family. Across 173 games in February-
+  March 2026 it reports 290 active episodes, a 16-second median duration, and
+  101.01-bps median yield, but it assumed zero NBA trading fees. Current
+  official terms instead list a `0.05` sports taker rate and require each
+  market's exact fee schedule. The paper's forward-filled 3.6-to-5.5-second
+  books, retail depth, and zero realized middle payouts do not prove current
+  profit. This remains an unaccepted candidate. Wait for future active NBA
+  full-game markets; then first prove exhaustive same-game payoff rules,
+  including integer-handicap push and overtime states, before one synchronized
+  public all-taker after-fee recurrence capture. Do not reopen the terminal
+  threshold/deadline or single-market complete-set families. Canonical contract:
+  `polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json`,
+  result SHA-256
+  `70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -860,6 +875,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket model | `docs/model-research/polymarket/latest/README.md` |
 | Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
+| Live NBA moneyline/spread implication candidate | `docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |
