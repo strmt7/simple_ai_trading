@@ -20,7 +20,7 @@ EXPECTED_ARTIFACT_HASH = (
 )
 EXPECTED_HEDGE_HASH = "85d0be66391b53bef87dda33ea73acaf6995d0200e6423de7999d44a8fed3c8f"
 EXPECTED_REGISTRY_HASH = (
-    "5d77b8319fd2608a3dfe3efed60c7d7ff097597f208796baed2337947126aea9"
+    "825bae9b054c09dd37060260982bd72c47770da24b1b67f290cf24fcbe25eff8"
 )
 
 
@@ -102,13 +102,13 @@ def test_registry_separates_reward_stack_from_terminal_fee_only_family() -> None
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 15))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 16))
     candidate = next(
         row
         for row in hypotheses
         if row["mechanism"] == "delta_hedged_bnb_simple_earn_and_airdrop_reward_stack"
     )
-    assert candidate["priority_rank"] == 5
+    assert candidate["priority_rank"] == 6
     assert candidate["market_direction_forecast_required"] is False
     assert candidate["canonical_artifacts"][0]["result_sha256"] == (
         EXPECTED_ARTIFACT_HASH

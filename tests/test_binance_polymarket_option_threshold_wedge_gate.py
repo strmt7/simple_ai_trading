@@ -20,7 +20,7 @@ EXPECTED_ARTIFACT_HASH = (
     "22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7"
 )
 EXPECTED_REGISTRY_HASH = (
-    "5d77b8319fd2608a3dfe3efed60c7d7ff097597f208796baed2337947126aea9"
+    "825bae9b054c09dd37060260982bd72c47770da24b1b67f290cf24fcbe25eff8"
 )
 
 
@@ -111,14 +111,14 @@ def test_registry_separates_statistical_lead_from_terminal_exact_parity() -> Non
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 15)
+        range(1, 16)
     )
     lead = next(
         row
         for row in registry["prioritized_hypotheses"]
         if row["mechanism"] == "cross_venue_option_implied_prediction_threshold_wedge"
     )
-    assert lead["priority_rank"] == 6
+    assert lead["priority_rank"] == 7
     assert lead["market_direction_forecast_required"] is False
     assert lead["canonical_artifacts"] == [
         {

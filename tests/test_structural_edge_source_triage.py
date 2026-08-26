@@ -28,7 +28,7 @@ EXPECTED_TRIAGE_V2_SHA256 = (
     "3df17e93866cbf53617340dd422a91945c8a1924d4ca736b76c5f78f4c9a5575"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "5d77b8319fd2608a3dfe3efed60c7d7ff097597f208796baed2337947126aea9"
+    "825bae9b054c09dd37060260982bd72c47770da24b1b67f290cf24fcbe25eff8"
 )
 ROUND61_REPORT_SHA256 = (
     "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4"
@@ -77,14 +77,14 @@ def test_registry_binds_round61_and_liquid_staking_without_repeating_carry() -> 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 15))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 16))
 
     staking = next(
         row
         for row in hypotheses
         if row["mechanism"] == "liquid_staking_token_conversion_parity"
     )
-    assert staking["priority_rank"] == 7
+    assert staking["priority_rank"] == 8
     assert staking["market_direction_forecast_required"] is False
     assert staking["canonical_artifacts"] == [
         {

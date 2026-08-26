@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edge | One scoped structural edge positive after direct relayer split/merge cost: Polymarket complete-set holding yield for existing idle on-platform pUSD; not deployment-ready or fully external-cost-qualified |
+| Accepted edges | Three scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance LDUSDT yield only for already-required futures collateral; and bounded just-in-time BNB fee reduction only for independently justified organic BTC/ETH/SOL Spot flow under exact full-consumption and risk gates. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -129,6 +129,27 @@ safety gate, blocks Stop, or submits an order.
   books, loosen the turnover gate, or substitute a public discount for the
   signed account commission response. Future one-use contracts must prove that
   their bounded request budget can physically supply the required horizon.
+  A materially distinct bounded just-in-time BNB fee buffer is now an accepted
+  scoped incremental cost edge for already-intended independently profitable
+  organic Spot flow. The official current Spot BNB discount is 25%, and the
+  public Convert catalog permits a `0.01` USDT USDT-to-BNB minimum, about 562
+  times smaller than the current `5.61864` USDT spot-lot fallback. With full
+  immediate consumption and a 100-bps acquisition-cost stress, that minimum
+  buffer saves `0.0032` USDT at zero BNB move and does not break even until a
+  `24.2424%` adverse BNB move; principal at risk is capped at one cent for the
+  first reconciliation. This is not deployment-ready, standing inventory,
+  hedging, risk-free arbitrage, or authority to create volume. Exact signed
+  account/symbol eligibility, positive standard commission, exact-order fee,
+  executable quote cost, consumption, short holding interval, residual, and
+  owned deduction remain mandatory. Canonical gate:
+  `binance-bnb-just-in-time-fee-buffer-gate-v1-2026-08-26.json`, result SHA-256
+  `b97eed6a93070d5e29b26d1a47757c9be49e0296332c8019a64388ba936c3b6b`.
+  Both credential variables remain absent, so no signed or funded action was
+  made. Do not poll public books or refit; when both credentials exist, freeze
+  one commission plus exact-order test contract, then require separate funded
+  authority for one `0.01` USDT maximum fully consuming reconciliation. The
+  reverse public minimum is `0.000014` BNB, so do not assume a partial residual
+  from the minimum inbound buffer is independently unwindable.
   A materially different BNB candidate now stacks BNB Simple Earn base rewards
   with realized Launchpool, Megadrop, and HODLer distributions while keeping the
   equal-base BNBUSDT short. Binance's current seven-day BNB offer advertises
