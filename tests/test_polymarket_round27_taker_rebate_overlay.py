@@ -20,7 +20,7 @@ CAPTURE = POLYMARKET / ("round-027-stage0-mechanics-capture-result-v1-2026-08-15
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "948f47d9d0c2fb6cbf441da1147ae07006a897f307141dfd6ae25c85e47f13d2"
 EXPECTED_REGISTRY_HASH = (
-    "579f1e5261cadaf51a2c175f82a04c673d46213963988c8ea88f2b7f7ac4db11"
+    "c6d12c4f5a220912541fe69d9165072bebd309cd010e580e93f65cd4d93600e4"
 )
 
 
@@ -138,9 +138,9 @@ def test_candidate_is_registered_without_changing_the_accepted_edge_count() -> N
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry, "result_sha256") == EXPECTED_REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 15
+    assert registry["accepted_edge_count"] == 16
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 29))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 30))
     candidate = next(
         row
         for row in hypotheses

@@ -1,0 +1,91 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current_gross_20_percent_Perps_fee_share_only_on_authentic_independently_acquired_new_external_traders_attributed_to_the_account_code_within_account_confirmed_available_invites_without_creating_trading_volume_to_unlock_more_invites",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_direction_independent_organic_Perps_referral_fee_overlay_account_eligibility_available_invites_attribution_exact_fee_asset_owned_weekly_payout_and_all_acquisition_compliance_and_operating_costs_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true,
+    "referral_links_created_or_shared": 0,
+    "referred_activity_created_or_requested": 0
+  },
+  "created_at_utc": "2026-08-26T21:32:20.5200347Z",
+  "economics": {
+    "formula": "eligible_authentic_referred_Perps_trader_fees * 0.20",
+    "gross_fee_share_rate": "0.20",
+    "per_referred_trader_reward_cap": null,
+    "payout_asset_publicly_unproved": true,
+    "payout_timing": "weekly",
+    "zero_eligible_referred_fee_floor": "0"
+  },
+  "eligibility_and_terms": {
+    "account_code_count": 1,
+    "code_application": "the first Perps referral code applied to an account is permanent and cannot be switched",
+    "higher_invite_limits_not_credited": {
+      "100_total_invites_requires_combined_eligible_Perps_volume": "100000",
+      "250_total_invites_requires_combined_eligible_Perps_volume": "500000",
+      "500_total_invites_requires_combined_eligible_Perps_volume": "1000000"
+    },
+    "initial_available_invites": 10,
+    "prediction_market_referral_program_separate": true,
+    "self_code_application_allowed": false,
+    "standard_limit_after_initial_active_referrals": 25,
+    "volume_tier_input_includes_own_Perps_volume": true,
+    "volume_tier_input_includes_direct_referral_volume": true
+  },
+  "limitations": [
+    "No account code available-invite count referred trader fee row referral earning row payout asset or owned weekly payout was accessed.",
+    "The public page states a 20 percent fee share and weekly payout but does not identify the payout asset rounding minimum threshold clawback tax or exact distribution time.",
+    "Referral acquisition content support disclosure legal compliance tax and operating costs are unproved, so gross fee share is not net profit.",
+    "The program terms attribution rules invite limits and other mechanics may change as the Perps program expands.",
+    "The accepted scope does not credit 100 250 or 500 invite tiers because their unlock metric includes trading volume and does not prove an after-cost subsidy.",
+    "Perps referred-user trading activity can be zero; accepted status is per independently existing eligible fee within an available invite, not guaranteed recurring income."
+  ],
+  "prohibited_actions": [
+    "self-referral operator-controlled linked-account circular wash or otherwise inauthentic referral activity",
+    "creating increasing or encouraging unnecessary unsuitable leveraged or loss-making Perps trades to generate fees activate users or unlock invite tiers",
+    "using the operator's own Perps volume to unlock 100 250 or 500 invite tiers",
+    "crediting an invite after the account-confirmed available-invite count is exhausted",
+    "assuming the weekly payout asset or one-for-one stablecoin conversion",
+    "double-counting the same user or fee with the separate prediction-market referral Builder Fees or another commission program",
+    "calling gross referral fee share after-cost profit before owned payout and all acquisition support compliance tax and operating costs reconcile",
+    "creating or sharing a referral link applying a code requesting referred-user activity or changing account state without separate explicit authority"
+  ],
+  "result_sha256": "4bebea610dc9406d598627035f4e6e815e6a4daeb64944d7ba2ec9f55b6b7d71",
+  "retry_policy": {
+    "account_prequalification_only_after_explicit_read_only_authority_and_ephemeral_credentials": [
+      "exact Perps account referral code fee share rate and referrals_left",
+      "authentic external child attribution registration and active status",
+      "owned child fee referral earning payout asset timing and weekly payout rows"
+    ],
+    "public_refresh": "only after a published rate attribution invite-limit payout timing payout asset or program-term change",
+    "separate_referral_or_mutation_authority_required_for": "any invite or referral-link creation or sharing code application account change transfer or withdrawal",
+    "separate_trading_authority_required_for": "any operator order; referred-user activity is never authorized or requested by this artifact"
+  },
+  "schema_version": "polymarket-perps-organic-referral-fee-overlay-v1",
+  "sources": [
+    {
+      "observed_at_utc": "2026-08-26T21:32:20.5200347Z",
+      "raw_html_characters": 341337,
+      "raw_html_sha256": "4816cb58fb64a2a63618443abeb8506afa4a5fc074f93ca18c39c3c5a5c47c98",
+      "role": "current_official_Perps_referral_attribution_rate_no_per_user_cap_invite_limits_volume_unlock_inputs_weekly_payout_and_prediction_program_separation",
+      "url": "https://docs.polymarket.com/perps/referral-program"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:32:20.6661433Z",
+      "raw_html_characters": 497507,
+      "raw_html_sha256": "fb55e8ed94b2bf505077a6632f5bfe77bf6d2574683290c719e569f2193ba004",
+      "role": "current_authenticated_read_only_account_endpoint_contract_for_code_counts_volume_fees_referrals_left_and_default_fee_share_rate",
+      "url": "https://docs.polymarket.com/api-reference/get-account-referral"
+    }
+  ]
+}

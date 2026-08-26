@@ -1,5 +1,5 @@
 {
-  "accepted_edge_count": 15,
+  "accepted_edge_count": 16,
   "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one current Polymarket pUSD taker-fee rebate overlay for independently justified legitimate organic BTC ETH SOL taker flow after the direct wallet tier is effective without manufactured volume, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current Binance quote-native promotional fee reduction for independently justified organic BTC ETH SOL spot flow without quote acquisition VIP chasing or extra volume, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion, and one current automatic same-token USDe holding-reward edge only for eligible USDe already independently held on Binance for at least 24 hours without acquisition or balance retention for the reward; zero deployment-ready or fully external-cost-and-account-condition edges",
   "authority": {
     "live_trading_authority": false,
@@ -999,9 +999,40 @@
       ],
       "retry_trigger": "account_confirmed_Referral_Pro_eligibility_plus_authentic_independently_acquired_new_external_user_attribution_and_explicit_read_only_evidence_authority_separate_authority_for_any_link_publication_account_change_transfer_withdrawal_or_operator_trade",
       "venue_scope": "binance_Referral_Pro_authentic_external_users_fee_bearing_Spot_Margin_and_Futures_trades"
+    },
+    {
+      "blocking_evidence": [
+        "exact Perps account referral code default fee share rate and account-confirmed referrals_left",
+        "authentic independently acquired new external trader attribution registration active state and proof the first permanent code belongs to this account",
+        "owned referred-trader Perps fee rows referral earning rows payout asset timing and weekly payouts",
+        "proof that the same user and fee are not double-counted with the separate prediction referral Builder Fees or another program",
+        "referral acquisition content support disclosure legal compliance tax and operating costs"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-perps-organic-referral-fee-overlay-v1-2026-08-26.json",
+          "result_sha256": "4bebea610dc9406d598627035f4e6e815e6a4daeb64944d7ba2ec9f55b6b7d71"
+        }
+      ],
+      "current_status": "accepted_scoped_current_direction_independent_gross_20_percent_Perps_fee_share_only_on_authentic_independently_acquired_new_external_traders_attributed_to_the_account_code_within_account_confirmed_available_invites_without_creating_trading_volume_to_unlock_more_invites_account_eligibility_attribution_exact_fee_asset_owned_weekly_payout_and_all_acquisition_compliance_and_operating_costs_unproved_not_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_Perps_organic_referral_fee_overlay",
+      "next_action": "do_not_create_or_share_links_apply_codes_or_request_trades_when_explicit_read_only_account_authority_and_ephemeral_credentials_exist_prove_account_code_fee_share_referrals_left_authentic_external_attribution_exact_child_fee_and_earning_rows_payout_asset_and_owned_weekly_payout_without_double_counting_prediction_referral_or_other_programs",
+      "priority_rank": 29,
+      "prohibited_shortcuts": [
+        "self_referral_operator_controlled_linked_account_circular_wash_or_inauthentic_activity",
+        "creating_increasing_or_encouraging_unnecessary_unsuitable_leveraged_or_loss_making_Perps_trades_for_fees_active_status_or_invite_tiers",
+        "using_operator_Perps_volume_to_unlock_100_250_or_500_invite_tiers",
+        "crediting_referrals_after_account_confirmed_available_invites_are_exhausted",
+        "assuming_the_weekly_payout_asset_or_one_for_one_stablecoin_conversion",
+        "double_counting_the_same_user_or_fee_with_prediction_referral_Builder_Fees_or_another_program",
+        "calling_gross_fee_share_after_cost_profit"
+      ],
+      "retry_trigger": "account_confirmed_available_Perps_invite_and_fee_share_plus_authentic_independently_acquired_new_external_trader_attribution_and_explicit_read_only_evidence_authority_separate_authority_for_any_link_or_invite_creation_code_application_account_change_transfer_withdrawal_or_operator_trade",
+      "venue_scope": "polymarket_Perps_authentic_external_referred_traders_fee_bearing_activity"
     }
   ],
-  "result_sha256": "579f1e5261cadaf51a2c175f82a04c673d46213963988c8ea88f2b7f7ac4db11",
+  "result_sha256": "c6d12c4f5a220912541fe69d9165072bebd309cd010e580e93f65cd4d93600e4",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1125,6 +1156,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T21:28:00.9264146Z",
+  "updated_at_utc": "2026-08-26T21:32:20.5200347Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
