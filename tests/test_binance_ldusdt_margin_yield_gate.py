@@ -13,7 +13,7 @@ PATH = (
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d"
-EXPECTED_REGISTRY_HASH = "6494e425bfa70f9fd72a2ba635dca50785b55bd253f5493bcedc3daa44528e08"
+EXPECTED_REGISTRY_HASH = "af7c29a7ef470e9405b1b3c19b522234c1d7ad7735c755dcb3cb41c51821918b"
 
 
 def _load(path: Path = PATH) -> dict[str, object]:
@@ -96,7 +96,7 @@ def test_registry_prioritizes_the_accepted_scoped_increment() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 31))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 32))
     lead = next(
         row
         for row in hypotheses

@@ -13,7 +13,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
-REGISTRY_HASH = "6494e425bfa70f9fd72a2ba635dca50785b55bd253f5493bcedc3daa44528e08"
+REGISTRY_HASH = "af7c29a7ef470e9405b1b3c19b522234c1d7ad7735c755dcb3cb41c51821918b"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -78,9 +78,14 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
     assert _canonical_hash(registry) == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 16
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 31)
+        range(1, 32)
     )
-    row = registry["prioritized_hypotheses"][-1]
+    row = next(
+        item
+        for item in registry["prioritized_hypotheses"]
+        if item["mechanism"]
+        == "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication"
+    )
     assert row["priority_rank"] == 30
     assert row["mechanism"] == (
         "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication"

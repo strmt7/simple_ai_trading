@@ -1,0 +1,138 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "materially_reopened_distinct_cross_market_exact_dependent_subset_parity_candidate_current_executable_after_fee_recurrence_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "market_catalog_or_order_book_requests_sent": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T21:48:24.2067790Z",
+  "distinctness_from_existing_families": {
+    "new_family": "polymarket_two_market_exact_multi_outcome_subset_equivalence",
+    "not_reopened": [
+      "polymarket_single_condition_complete_set_parity",
+      "polymarket_negative_risk_single_market_structural_parity_isolated_snapshot_contract",
+      "polymarket_threshold_and_deadline_implication_parity"
+    ],
+    "reason": "the candidate requires an equality between exhaustive subsets of two separately traded multi-outcome markets; the frozen prior families cover one binary condition one NegRisk market or one binary crypto threshold implication",
+    "relationship_to_live_NBA_candidate": "the NBA moneyline_spread pair is a specialized fast event_time binary implication subfamily with sport-specific push and game-state gates; never double_count the same episode under both families"
+  },
+  "exact_payoff_identity": {
+    "dependent_subsets": "choose S from market_1 and S_prime from market_2 only when exact resolution rules prove indicator(S) equals indicator(S_prime) for every admissible joint terminal state",
+    "orientation_if_subset_1_is_cheaper": "buy one YES share of every outcome in S and one YES share of every outcome in complement(S_prime)",
+    "orientation_if_subset_2_is_cheaper": "buy one YES share of every outcome in complement(S) and one YES share of every outcome in S_prime",
+    "terminal_floor": "exactly_one_pUSD_per_complete_equal_quantity_bundle_when_each_market_is_exhaustive_and_the_subset_indicators_are_equal_in_every_state",
+    "truth_table_gate": "enumerate every source-admissible joint terminal state including other invalid cancellation tie postponement replacement correction and market-specific exceptional resolutions; any state with bundle payout_below_one rejects the pair"
+  },
+  "historical_primary_evidence": {
+    "arxiv_id": "2508.03474v1",
+    "headline_all_strategy_estimated_extracted_usd": "39587585.02",
+    "market_resolution_period_end": "2025-04-01",
+    "market_resolution_period_start": "2024-04-01",
+    "manually_retained_dependent_pair_count": 13,
+    "reported_cross_market_pairs_with_extraction_sentence_count": 5,
+    "reported_cross_market_pairs_with_numeric_profit_count": 4,
+    "reported_numeric_cross_market_profit_by_pair_usd": {
+      "pair_1": "15818.53",
+      "pair_2": "60236.71",
+      "pair_3": "629.16",
+      "pair_4": "18472.31"
+    },
+    "reported_numeric_cross_market_profit_sum_usd": "95156.71",
+    "scope_warning": "the headline all_strategy estimate is dominated by single_condition and within_market strategies and is not evidence of 39.6_million_USD from cross_market subset parity"
+  },
+  "methodological_rejections": [
+    "Historical prices were executed-bid volume-weighted averages rather than executable contemporaneous asks and depth.",
+    "A last trade could be forward-filled for up to 5000 Polygon blocks or about 2.5 hours; absent later activity was then assigned zero price.",
+    "The opportunity study imposed a five-cent profit threshold but did not price current per-market taker fees external costs cancellation latency or orphan exposure.",
+    "The extraction study grouped a user's fills inside a 950-block or about one-hour rolling window, which does not establish simultaneous multi-leg executability.",
+    "The paper explicitly ignored trading fees because its historical regime was fee-free; current Polymarket markets can charge nonlinear taker fees.",
+    "Within-market calculations sometimes estimated missing low-probability positions and allowed ignoring outcomes below a probability threshold; neither shortcut is admissible for a guaranteed payoff.",
+    "An LLM proposed dependencies and manual review retained a New York pair whose explanation relied on historical voting behavior; historical likelihood is not a deterministic arbitrage identity.",
+    "The text says extraction occurred in five cross-market cases but numerically enumerates only four pairs; only the four stated values are retained and the discrepancy remains unresolved."
+  ],
+  "prospective_recurrence_contract": {
+    "admissible_population": "future active accepting_orders pairs of separately traded Polymarket markets whose complete exact resolution rules permit a machine_proved subset_indicator_equality",
+    "capture_authority": "public_unauthenticated_read_only_only; no account order transfer or redemption action",
+    "dependency_admission": "deterministic parser plus exhaustive truth table from exact source rules with independent human-readable witness states; embeddings LLM labels topic similarity historical frequency and shared dates are discovery hints only",
+    "economic_gate": "for one identical feasible share quantity across every required YES leg guaranteed_payout minus displayed multi_leg ask cost minus each exact current taker fee with venue rounding minus frozen cancellation latency orphan and all external costs must be strictly positive",
+    "fee_gate": "read feesEnabled and the complete feeSchedule for every market at observation time; missing contradictory or changed fields reject the state",
+    "input_completeness": [
+      "full market_1 and market_2 outcome sets without top_four truncation or synthetic other buckets",
+      "exact question description resolution source start end and exceptional settlement rules for every outcome",
+      "active closed acceptingOrders enableOrderBook restricted and timing state",
+      "all required token IDs fee schedules tick sizes and minimum order sizes",
+      "one POST_books response containing every required leg with source timestamps hashes asks and displayed sizes",
+      "local request start receipt and parse timestamps"
+    ],
+    "recurrence_gate": "positive all_taker bundles on multiple independent market pairs or independent event dates with positive aggregate and worst_pair economics; repeated snapshots of one state do not establish recurrence",
+    "synchronization_gate": "all legs must coexist in one retained batch response and satisfy a source-age and inter-book timestamp ceiling frozen by a separate no-outcome transport preflight; no last-trade carry-forward is admitted",
+    "stop_conditions": [
+      "any outcome or terminal state is omitted estimated ignored or semantically ambiguous",
+      "subset indicator equality fails in any admissible joint state",
+      "either market is post-event halted stale closed or not accepting orders",
+      "any required ask depth exact fee field or executable common quantity is absent",
+      "current all-taker net after every frozen cost is not strictly positive",
+      "source timestamps violate the frozen synchronization ceiling",
+      "rate_limit_source_contract_or_resolution_rule_change"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "calling the paper's 39.6_million_USD all_strategy estimate cross_market subset profit",
+    "admitting a dependency because an LLM embedding shared date topic or historical tendency says it is likely",
+    "truncating outcomes merging a synthetic other bucket estimating a missing price or ignoring a low_probability outcome",
+    "using executed trade VWAP midpoint last trade stale forward_fill or post_event quotes as current executable asks",
+    "reusing the historical fee_free assumption or a category rate instead of every exact current market fee schedule",
+    "summing repeated snapshots or treating one user's one_hour rolling fills as simultaneous execution",
+    "crediting maker economics without causal owned every_leg fills and complete orphan unwind",
+    "double_counting an NBA episode under the specialized and general family",
+    "placing any leg or accepting non_atomic legging risk without separate explicit trading authority"
+  ],
+  "result_sha256": "0838bea50b70a8d9e102f40146b2ddf041bc06db3039736d312b9f309c72fc6d",
+  "retry_policy": {
+    "public_discovery_trigger": "a future active market pair whose complete exact rules support a deterministic subset indicator equality not already covered by the specialized NBA family",
+    "research_now": "retain the source-bound general contract; do not replay the paper's historical VWAP analysis or scan semantically guessed pairs as if they were guaranteed",
+    "separate_trading_authority_required_for": "any order approval transfer redemption or account action"
+  },
+  "schema_version": "polymarket-cross-market-dependent-subset-parity-reopen-v1",
+  "sources": [
+    {
+      "observed_at_utc": "2026-08-26T21:48:24.2067790Z",
+      "raw_html_characters": 358779,
+      "raw_html_sha256": "132d0e15523b4970d1893f2c403624d471f5995b108b406fe212c810521ccd41",
+      "role": "primary_historical_dependency_taxonomy_cross_market_pair_results_extraction_estimates_and_method_limitations",
+      "url": "https://arxiv.org/html/2508.03474"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:38:49.4260570Z",
+      "raw_html_characters": 392989,
+      "raw_html_sha256": "04a6098ab583f1fdba3c4d17d17104bfecf5e3c232c74eccde6294b08f0882bd",
+      "role": "current_official_fee_formula_category_rates_maker_taker_roles_and_rounding",
+      "url": "https://docs.polymarket.com/trading/fees"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:39:19.1228473Z",
+      "raw_html_characters": 950614,
+      "raw_html_sha256": "b6bc4eb6298eded656a8fd5a2feecd0dfe32d68e270b8c9155d575506c312e76",
+      "role": "current_official_per_market_status_resolution_timing_constraints_and_exact_fee_schedule_fields",
+      "url": "https://docs.polymarket.com/market-data/market-details"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:40:07.4765196Z",
+      "raw_html_characters": 1122587,
+      "raw_html_sha256": "2d047eb80530cfcce7d2f34235da151b09deb043995939cc4c9b89ce600fbe81",
+      "role": "current_official_public_batch_order_book_contract_source_timestamps_hashes_depth_and_constraints",
+      "url": "https://docs.polymarket.com/market-data/prices-order-books"
+    }
+  ]
+}
