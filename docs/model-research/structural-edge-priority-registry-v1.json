@@ -939,7 +939,7 @@
       "venue_scope": "binance_Flexible_Loans_and_Simple_Earn_Flexible_collateral"
     }
   ],
-  "result_sha256": "1ed5fe0750affe5d6d5331034f900673dd5a6604ca32abb0f5489c493a5b1ab6",
+  "result_sha256": "69039bd49ca43a23822a5ce8997c80bc7cf7d629bf4c08f8ffc00507644864b7",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1003,6 +1003,11 @@
       "reason": "the_official_product_uses_the_same_equal_notional_spot_and_opposite_perpetual_legs_with_spot_maker_and_futures_taker_fees_spread_funding_reversal_and_liquidation_risk_and_no_distinct_fee_execution_or_capital_subsidy_reopens_the_terminal_Round_61_family"
     },
     {
+      "canonical_result_sha256": "15f160e3d54f0be09611bb36901b1d9061a2a173643c0562996ecb2824320a3f",
+      "family": "binance_advanced_earn_discount_buy_and_dual_investment_conditional_conversion",
+      "reason": "both_products_are_direction_dependent_conditional_conversion_structures_whose_nominal_APR_does_not_create_a_market_invariant_after_cost_floor_and_no_distinct_principal_subsidy_or_complete_executable_option_equivalent_mispricing_was_proved"
+    },
+    {
       "canonical_result_sha256": "4add8a3aea01ebb13e743a85793681b8ca7a8884035daf5cb371f3f2b09900b0",
       "family": "binance_two_leg_quarterly_calendar_spread_as_locked_carry",
       "reason": "initial_far_minus_near_credit_is_offset_by_unknown_exit_spread_or_terminal_far_basis_so_no_fixed_payoff_identity_exists"
@@ -1058,6 +1063,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T20:43:49.4423830Z",
+  "updated_at_utc": "2026-08-26T21:19:18.3535339Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

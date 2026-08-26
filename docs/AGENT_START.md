@@ -784,6 +784,18 @@ safety gate, blocks Stop, or submits an order.
   `binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json`,
   result SHA-256
   `ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182`.
+- Binance Advanced Earn Discount Buy and Dual Investment are terminal for the
+  market-situation-independent search. Their nominal APR accompanies locked,
+  settlement-price-dependent conversion: Discount Buy can use 50% or 100% of
+  stablecoin principal to buy crypto at the preset target, while Dual
+  Investment Buy Low and Sell High have cash-secured-put-like and covered-call-
+  like exposure. This is option-like direction risk, not neutral yield. Do not
+  simulate APR, target, or duration grids unless materially new evidence proves
+  a complete executable option-equivalent mispricing or external subsidy.
+  Canonical adjudication:
+  `binance-advanced-earn-conditional-conversion-terminal-adjudication-v1-2026-08-26.json`,
+  result SHA-256
+  `15f160e3d54f0be09611bb36901b1d9061a2a173643c0562996ecb2824320a3f`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -825,6 +837,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance Smart Arbitrage terminal adjudication | `docs/model-research/action-value/binance-smart-arbitrage-terminal-family-adjudication-v1-2026-08-26.json` |
 | Organic Polymarket referral net-fee overlay | `docs/model-research/action-value/polymarket-organic-referral-net-fee-overlay-v1-2026-08-26.json` |
 | Binance Flexible Loan collateral-yield gate | `docs/model-research/action-value/binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json` |
+| Binance Advanced Earn conditional-conversion terminal adjudication | `docs/model-research/action-value/binance-advanced-earn-conditional-conversion-terminal-adjudication-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
