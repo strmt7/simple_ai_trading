@@ -568,6 +568,25 @@ diagnostics, not accepted edges.
   The failed tool also taught a workflow correction: every future one-use live
   screen must retain its request ledger and decoded source payloads and write a
   terminal failure receipt before propagating any validation exception.
+- A distinct complete-set inventory stack screen did not repeat paired-maker
+  books or wallet polling. Gamma metadata showed 12 of the 55 currently
+  holding-reward-eligible BTC/ETH/SOL annual thresholds with positive reward
+  spread and size fields, but exact-condition reward requests with
+  `sponsored=true` proved that only five have any current pool. Each is capped
+  at 0.001 pUSD/day, all ETH candidates and seven others have zero current
+  configuration, and the combined five-market pool is only 0.005 pUSD/day.
+  Even assigning an entire market pool to one 20-share minimum order is only
+  0.5 bp/day; an illustrative BTC $160,000 one-leg settlement orphan is 18.64
+  pUSD, or 18,640 days of that whole pool. Official sources also do not state
+  that tokens committed to resting orders continue earning the holding program.
+  No books, authentication, or order experiment is economically warranted.
+  Canonical terminal gate:
+  `docs/model-research/polymarket/complete-set-liquidity-reward-stack-gate-v1-2026-08-26.json`.
+  Result SHA-256
+  `f0df2e95e36315850b7f4e8b6600e742490ee34151317628a5304e35c037146e`.
+  Do not poll unchanged configurations. Reopen only after explicit official
+  stacking semantics, a materially larger exact-condition pool, and a frozen
+  loss-bounded restoration design.
 - The official crypto maker-rebate schedule is now isolated from liquidity
   rewards. Its source-bound arithmetic artifact is
   `docs/model-research/polymarket/crypto-maker-rebate-economics-v1.json`, result

@@ -60,6 +60,11 @@ override prose.
   a rate, fee, eligibility rule, or effective date by page location, apparent
   recency, or convenience; preserve both sources and require an explicit
   effective-date source or realized post-change evidence before promotion.
+- Before sampling variants of a reward endpoint, source-bind its filter and
+  aggregation semantics and request the documented superset once. For
+  Polymarket raw market rewards, `sponsored=true` folds sponsored daily rates
+  into `rate_per_day`; a default response cannot close total reward funding,
+  and Gamma spread/size metadata does not prove a current funded pool.
 - Cross-token cost and reward comparisons must use a source-bound executable
   conversion into one exact unit. A one-for-one stablecoin assumption or a
   different quote currency is a labeled sensitivity only and cannot support an
