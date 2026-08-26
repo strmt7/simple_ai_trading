@@ -1,0 +1,105 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current_same_asset_gross_USDe_reward_only_for_eligible_USDe_already_independently_held_on_Binance_for_at_least_24_hours_without_acquisition_or_balance_retention_for_the_reward",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_current_automatic_USDe_holding_reward_account_eligibility_and_owned_distribution_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T20:39:42.8864155Z",
+  "economics": {
+    "current_reference_apr_percent": "4",
+    "daily_reward_bips_of_eligible_balance": "1.095890410958904109589041096",
+    "daily_reward_fraction": "0.0001095890410958904109589041096",
+    "daily_reward_usde_per_1000_eligible_usde": "0.1095890410958904109589041096",
+    "formula": "minimum_daily_eligible_USDe_snapshot * current_APR / 365",
+    "seven_day_reward_bips_of_eligible_balance": "7.671232876712328767123287671",
+    "seven_day_reward_usde_per_1000_eligible_usde": "0.7671232876712328767123287671",
+    "same_asset_unit": "USDe principal and reward; no stablecoin conversion or fiat parity is used in the scoped gross-yield claim"
+  },
+  "eligibility_and_terms": {
+    "campaign_period": {
+      "end": "until_further_notice",
+      "start_utc": "2025-09-22T00:00:00Z"
+    },
+    "eligible_accounts": [
+      "Spot",
+      "Funding",
+      "Futures",
+      "Margin",
+      "master account",
+      "sub-accounts"
+    ],
+    "identity_verification_required": true,
+    "jurisdiction_and_user_status_restrictions_apply": true,
+    "minimum_holding_duration_hours_before_accrual": 24,
+    "minimum_eligible_balance_usde": "0.01",
+    "no_daily_reward_limit": true,
+    "reward_asset": "USDe",
+    "reward_claim_required": false,
+    "reward_distribution": "automatic weekly credit to Spot Account every Monday",
+    "reward_distribution_time_conflict": "The legal terms say by 10:00 UTC while the current product page says before 12:00 PM Monday; no exact payout-time claim is used.",
+    "reward_rate_control": "Binance determines APR at its discretion based on market conditions and product sustainability and may update it weekly.",
+    "snapshot": "random daily time between 00:00 and 23:59 UTC using the minimum eligible balance of the day"
+  },
+  "limitations": [
+    "No account KYC jurisdiction restriction eligible balance holding duration reward history or owned weekly distribution was accessed.",
+    "USDe can deviate from its reference value and has issuer strategy counterparty custody liquidity regulatory and operational risks; same-token yield is not fiat profit or principal protection.",
+    "The current four-percent reference APR can be changed weekly or the campaign can be amended suspended or terminated without notice.",
+    "The scope credits only USDe already independently held for a separate reason. It does not authorize buying depositing converting borrowing or retaining USDe to earn the reward.",
+    "Using USDe as collateral does not prove margin efficiency liquidation safety borrowing economics or prompt liquidity and is not credited as an additional edge here.",
+    "Tax withdrawal transfer custody and opportunity costs remain account-specific and unproved."
+  ],
+  "prohibited_actions": [
+    "acquiring depositing converting borrowing or retaining USDe solely for the reward",
+    "moving USDe needed for prompt settlement withdrawal or risk reduction merely to preserve a daily snapshot",
+    "counting an unproved account balance KYC jurisdiction or reward distribution",
+    "treating the four-percent reference APR as guaranteed persistent fiat return",
+    "double-counting collateral efficiency borrowing benefits or any separate Ethena yield",
+    "submitting an order transfer deposit conversion or account mutation without separate explicit authority"
+  ],
+  "result_sha256": "4640635514ad43ed846660c204a95c0d59ed75ac3ccbf5f17a0b70f3d5726f6a",
+  "retry_policy": {
+    "public_refresh": "only after a published USDe APR eligibility account snapshot distribution or campaign-term change",
+    "signed_prequalification_only_after_both_credentials_and_explicit_read_only_authority": [
+      "exact account KYC and jurisdiction eligibility",
+      "existing independently required USDe balances by eligible account and completed 24-hour duration",
+      "owned daily reward-history rows and weekly distributions at the exact applicable APR"
+    ],
+    "separate_funded_authority_required_for": "any acquisition deposit transfer conversion borrow repayment trade or other balance-changing action"
+  },
+  "schema_version": "binance-usde-existing-holding-reward-edge-v1",
+  "sources": [
+    {
+      "normalized_live_visible_page_characters": 6287,
+      "normalized_live_visible_page_sha256": "4ca89a40bbb750bb07ae9d0876e395fad2b06ed26cc026067af193ee2f962a02",
+      "observed_at_utc": "2026-08-26T20:39:42.8864155Z",
+      "role": "current_reference_APR_automatic_accrual_minimum_balance_no_cap_snapshot_accounts_and_distribution_semantics",
+      "url": "https://www.binance.com/en/earn/usde-page",
+      "visible_source_hash_method": "SHA256 of UTF-8 full rendered visible body text with CRLF normalized to LF and outer whitespace trimmed"
+    },
+    {
+      "effective_date": "2026-01-05",
+      "observed_at_utc": "2026-08-26T20:39:42.8864155Z",
+      "role": "official_campaign_eligibility_duration_formula_account_scope_rate_discretion_risk_and_termination_terms",
+      "url": "https://bin.bnbstatic.com/static/cms/cg08ou2ak0tn7mcplvfg/file/fced23db7e53b5667fcc2fbdd06acc5b5d949f3a2f3bcea17b85c337a85b0e44.pdf",
+      "version": "1.0"
+    },
+    {
+      "article_code": "ca03b33b8dba44669a3f685d2d1c0ccb",
+      "normalized_live_visible_page_sha256": "8f1d46f46e4ec00a1bf1bce11d0b7c4cdba37ce4a4074e124923523bc0975bab",
+      "observed_at_utc": "2026-08-26T20:32:13.1380301Z",
+      "role": "independent_current_four_percent_USDe_spotlight_rate_with_explicit_2026_08_21_through_2026_08_27_window",
+      "url": "https://www.binance.com/en/support/announcement/detail/ca03b33b8dba44669a3f685d2d1c0ccb"
+    }
+  ]
+}

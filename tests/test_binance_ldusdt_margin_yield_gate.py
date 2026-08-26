@@ -13,7 +13,7 @@ PATH = (
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d"
-EXPECTED_REGISTRY_HASH = "190bff09d8bfeed6ad77674cbf3a2e6592be45e465afb3e342a6211d0c543ca1"
+EXPECTED_REGISTRY_HASH = "9646724dc11354e2779405bbede7e4ae1deb3f759e6c828d38c0f79c32161571"
 
 
 def _load(path: Path = PATH) -> dict[str, object]:
@@ -105,4 +105,4 @@ def test_registry_prioritizes_the_accepted_scoped_increment() -> None:
     assert lead["priority_rank"] == 4
     assert lead["market_direction_forecast_required"] is False
     assert lead["canonical_artifacts"][0]["result_sha256"] == EXPECTED_HASH
-    assert registry["accepted_edge_count"] == 10
+    assert registry["accepted_edge_count"] == 11
