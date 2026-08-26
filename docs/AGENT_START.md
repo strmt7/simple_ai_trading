@@ -140,6 +140,19 @@ safety gate, blocks Stop, or submits an order.
   Do not freeze another signed collector until both credentials exist; never
   use a marketing APR, example fee, assumed daily cadence, or zero alternative
   yield as a shortcut.
+  A materially new public route now exists: `BFUSDUSDT` and `BFUSDUSDC` are
+  live spot markets, so BFUSD can be screened against its 1:1 subscription and
+  redemption identity without predicting BTC, ETH, or SOL direction. The exact
+  `BFUSDUSDT` depth had a 1.0000 bid and 1.0001 ask; at 100, 1,000, and 10,000
+  BFUSD, neither buy-then-redeem nor subscribe-then-sell was positive under the
+  clearly labeled 10-bps spot and typical 10-bps product-fee sensitivities.
+  Public daily trade bars since 2025-08-13 ranged from 0.995 to 1.08, which
+  justifies a future executable-depth trigger but does not prove historical
+  depth or fills. Canonical screen:
+  `binance-bfusd-spot-redemption-parity-v1-2026-08-26.json`, result SHA-256
+  `566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb`.
+  Do not poll the book until signed account commission, quota, exact fee, and
+  reward evidence sets executable thresholds.
   A source-first follow-up also identified WBETH/ETH and BNSOL/SOL conversion
   parity as a distinct direction-neutral candidate. Binance's official staking
   conversion-rate, quota, reward, and operation-history paths are signed, both

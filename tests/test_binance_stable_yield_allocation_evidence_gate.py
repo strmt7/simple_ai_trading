@@ -20,7 +20,7 @@ EXPECTED_RESULT_SHA256 = (
     "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "48822b0b1b6a7b3fe4a6c5af114d697cd8946f70e11c35d8eb04fa7a44306fd2"
+    "329428f42b068fedb66ea823efbd9f2e3d1f8907aee451681b47fc045aa788e2"
 )
 
 
@@ -107,5 +107,14 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
                 "binance-stable-yield-allocation-evidence-gate-v1.json"
             ),
             "result_sha256": EXPECTED_RESULT_SHA256,
-        }
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "binance-bfusd-spot-redemption-parity-v1-2026-08-26.json"
+            ),
+            "result_sha256": (
+                "566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb"
+            ),
+        },
     ]
