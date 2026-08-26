@@ -1,0 +1,60 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "signed_requests_made": 0
+  },
+  "candidate_status": "high_priority_conditional_execution_lead_not_an_accepted_edge",
+  "created_at_utc": "2026-08-26T10:20:00Z",
+  "economic_summary": {
+    "complete_conditions": 10,
+    "conditions_with_post_observation_winner_bid_growth": 10,
+    "conditions_with_later_winner_sell_fills": 10,
+    "down_condition_count": 7,
+    "down_condition_observed_gross_pusd": "11.63485",
+    "gross_definition": "sum(fill_size * (1 - fill_price)) for public winner-token last_trade_price events whose CLOB source time followed local receipt of the exact closing TWAP and whose side was SELL",
+    "observed_gross_pusd": "13.40488",
+    "up_condition_count": 3,
+    "up_condition_observed_gross_pusd": "1.77003"
+  },
+  "evidence_rows": [
+    {"slug":"btc-updown-5m-1786737300","outcome":"Down","oracle_receipt_delay_ms":1219,"first_winner_bid_growth_delay_ms":1277,"first_later_winner_sell_fill_delay_ms":5140,"observed_gross_pusd":"3.7598"},
+    {"slug":"btc-updown-5m-1786737600","outcome":"Up","oracle_receipt_delay_ms":1570,"first_winner_bid_growth_delay_ms":1780,"first_later_winner_sell_fill_delay_ms":19976,"observed_gross_pusd":"0.16062"},
+    {"slug":"btc-updown-5m-1786737900","outcome":"Up","oracle_receipt_delay_ms":1634,"first_winner_bid_growth_delay_ms":1665,"first_later_winner_sell_fill_delay_ms":4965,"observed_gross_pusd":"1.38153"},
+    {"slug":"btc-updown-5m-1786738200","outcome":"Down","oracle_receipt_delay_ms":1463,"first_winner_bid_growth_delay_ms":1526,"first_later_winner_sell_fill_delay_ms":4970,"observed_gross_pusd":"0.05610"},
+    {"slug":"btc-updown-5m-1786738500","outcome":"Down","oracle_receipt_delay_ms":1336,"first_winner_bid_growth_delay_ms":1437,"first_later_winner_sell_fill_delay_ms":13386,"observed_gross_pusd":"1.5695"},
+    {"slug":"btc-updown-5m-1786738800","outcome":"Up","oracle_receipt_delay_ms":2001,"first_winner_bid_growth_delay_ms":2455,"first_later_winner_sell_fill_delay_ms":4749,"observed_gross_pusd":"0.22788"},
+    {"slug":"btc-updown-5m-1786739100","outcome":"Down","oracle_receipt_delay_ms":1557,"first_winner_bid_growth_delay_ms":1652,"first_later_winner_sell_fill_delay_ms":12556,"observed_gross_pusd":"2.93443"},
+    {"slug":"btc-updown-5m-1786739400","outcome":"Down","oracle_receipt_delay_ms":1668,"first_winner_bid_growth_delay_ms":1856,"first_later_winner_sell_fill_delay_ms":8524,"observed_gross_pusd":"0.8488"},
+    {"slug":"btc-updown-5m-1786739700","outcome":"Down","oracle_receipt_delay_ms":2192,"first_winner_bid_growth_delay_ms":2327,"first_later_winner_sell_fill_delay_ms":38624,"observed_gross_pusd":"0.63172"},
+    {"slug":"btc-updown-5m-1786740000","outcome":"Down","oracle_receipt_delay_ms":1754,"first_winner_bid_growth_delay_ms":1809,"first_later_winner_sell_fill_delay_ms":4441,"observed_gross_pusd":"1.8345"}
+  ],
+  "method": {
+    "causal_observation": "The exact Chainlink BTC/USD TWAP-60 event whose source timestamp equaled market end, using local receipt time rather than future resolution time.",
+    "fill_filter": "Winner-token CLOB last_trade_price event, side SELL, CLOB source time at or after exact closing-TWAP local receipt.",
+    "fresh_bid_proxy": "A positive change in aggregate winner-token BUY size at price 0.99 or 0.999 after exact closing-TWAP local receipt.",
+    "outcome_check": "Exact opening and closing TWAP values implied Up or Down and matched the later public market_resolved winner in every complete row."
+  },
+  "result_sha256": "d6f790d7de78fc4f1c527b9a6528ebb3faa31fc11d810d9daccec3e4a7d9084e",
+  "source": {
+    "capture_report_sha256": "271ecdb323288689a90c9a45298f5facd541fb8730a4f543d3d488a3e75a2ce9",
+    "capture_result_sha256": "862cd38bdb8ed45b3ab52bbf7ba6f33444e81392d398c2e39cc45a76cee356b1",
+    "capture_status": "degraded",
+    "database_filename": "round26-twap60-development-pilot-v2.duckdb",
+    "run_id": "5543a49ffff24716b37f719fee43abbb",
+    "stream_gap_count": 2
+  },
+  "unresolved_gates": [
+    "Aggregate public price_change growth does not expose account order creation time or prove that a new authenticated order was accepted after the oracle observation.",
+    "Public last_trade_price events prove market matching but not bot-owned fill lineage, queue position, cancellation behavior, or achievable prospective quantity.",
+    "The retained run is one degraded BTC hour from 2026-08-14; ETH SOL date and current-regime persistence are unproved.",
+    "Exact account maker fees rebates settlement redemption relayer opportunity cost and pUSD availability are unbound.",
+    "No live-money authority exists and no order may be submitted from this artifact."
+  ],
+  "next_action": "Freeze one minimum-size no-crossing authenticated order-acceptance probe only after the protected boundary and explicit authority; before that, run a public prospective BTC ETH SOL observation-to-close monitor that records exact oracle receipt, CLOB source time, bid growth, trade side, and book clear time without orders."
+}

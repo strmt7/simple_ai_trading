@@ -581,10 +581,30 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`73363631d72664d21a5458cc773eb1cb44d46000b1f09f51feec3d5442bc208f`.
+`35adedbfbb8b11776592602a9c64b692b90b12c7fe458f0e52b65ee218ca6d10`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
+
+The highest-priority conditional execution lead is now Polymarket's
+post-observation oracle-to-CLOB-close maker window. The retained Round 26 public
+capture contains 10 consecutive complete BTC 5-minute conditions. In every row,
+the exact closing Chainlink TWAP direction matched the later resolution,
+aggregate winner bids grew only after local receipt of that observation, and a
+later public winner-token seller fill was recorded. Both Up and Down rows
+contributed 13.40488 pUSD of gross `size * (1 - price)` in total. This is not an
+accepted edge: aggregate events do not prove a fresh authenticated order was
+accepted after observation, public fills do not prove owned lineage or queue
+position, the evidence is one degraded BTC hour, and fees, rebates, settlement,
+redemption, relayer, opportunity, and pUSD-availability costs remain unbound.
+Canonical gate:
+`docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json`,
+result SHA-256
+`d6f790d7de78fc4f1c527b9a6528ebb3faa31fc11d810d9daccec3e4a7d9084e`.
+Run a public prospective BTC/ETH/SOL monitor now. Only after
+`2026-08-29T23:40:00Z` and explicit authority may one minimum-size no-crossing
+authenticated order-acceptance probe be frozen; this artifact grants no order,
+paper, account, funding, or live authority.
 
 The 2026-08-25 source-first triage is canonical at
 `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json`, result
