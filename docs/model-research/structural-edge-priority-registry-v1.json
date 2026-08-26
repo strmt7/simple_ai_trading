@@ -137,12 +137,16 @@
         {
           "path": "docs/model-research/action-value/polymarket-post-observation-prospective-v2-2026-08-26.json",
           "result_sha256": "079925ec06eda0cdfc5851d71d7fc76df96de6f03883bcc70edc0f36da28d421"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-post-observation-prospective-v3-2026-08-26.json",
+          "result_sha256": "7b9f21cf3c1a65a709d5e52867877b9d79a9bf17f7a4df448a2fb92a32757e16"
         }
       ],
-      "current_status": "conditional_execution_lead_historical_BTC_10_of_10_rows_recurred_prospectively_as_winner_bid_growth_in_3_of_3_BTC_ETH_SOL_conditions_but_later_winner_sell_fills_recurred_only_for_BTC_1_of_3_with_0_01022_pUSD_public_observed_gross_and_fresh_authenticated_order_acceptance_owned_fill_lineage_and_all_costs_remain_unproved",
+      "current_status": "terminal_public_recurrence_failure_the_frozen_follow_up_had_both_up_and_down_and_winner_bid_growth_in_6_of_6_complete_conditions_but_later_winner_sell_fill_fractions_were_only_1_of_2_BTC_1_of_2_ETH_and_0_of_2_SOL_versus_75_percent_and_SOL_gross_was_zero",
       "market_direction_forecast_required": false,
       "mechanism": "post_observation_oracle_to_clob_close_maker_window",
-      "next_action": "freeze_a_non_overlapping_multi_interval_public_monitor_before_any_additional_capture_and_require_cross_asset_fill_recurrence_without_refitting_then_only_after_2026_08_29T23_40_00Z_and_explicit_authority_freeze_one_minimum_size_no_crossing_authenticated_order_acceptance_probe",
+      "next_action": "do_not_repeat_the_unchanged_public_mechanism_only_a_material_program_term_or_execution_architecture_change_can_reopen_research",
       "priority_rank": 4,
       "prohibited_shortcuts": [
         "aggregate_public_bid_growth_as_proof_of_fresh_account_order_acceptance",
@@ -151,7 +155,7 @@
         "gross_one_minus_fill_price_as_after_cost_profit",
         "submitting_any_order_before_the_protected_boundary_and_explicit_authority"
       ],
-      "retry_trigger": "public_prospective_monitoring_now_then_not_before_2026_08_29T23_40_00Z_for_authenticated_order_acceptance_with_explicit_authority",
+      "retry_trigger": "material_program_term_or_execution_architecture_change",
       "venue_scope": "polymarket_btc_eth_sol_5m_15m"
     },
     {
@@ -514,7 +518,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "dc7cc3a7ba04f820523fe08f9fbbb133e79de29fe1c8ea7fb78bd8aa926c1ff9",
+  "result_sha256": "5be46743ddcfa82d7526450272d35528d01e2d81e75b803924e7f947178d820d",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -603,6 +607,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T11:30:21.9682715Z",
+  "updated_at_utc": "2026-08-26T12:09:33.0871278Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

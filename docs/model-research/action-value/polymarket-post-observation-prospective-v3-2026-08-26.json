@@ -1,0 +1,174 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_submitted": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false
+  },
+  "created_at_utc": "2026-08-26T12:02:43.903Z",
+  "economic_summary": {
+    "complete_conditions": 6,
+    "conditions_with_later_winner_sell_fills": 2,
+    "conditions_with_post_observation_winner_bid_growth": 6,
+    "public_observed_gross_pusd": "0.17395"
+  },
+  "evidence_rows": [
+    {
+      "asset": "BTC",
+      "closing_twap": "78507.48217331994",
+      "first_later_winner_sell_fill_delay_ms": 53738,
+      "first_winner_bid_growth_delay_ms": 1670,
+      "later_winner_sell_fill_count": 1,
+      "observed_gross_pusd": "0.01515",
+      "opening_twap": "78384.5679595965",
+      "oracle_receipt_delay_ms": 1520,
+      "outcome": "Up",
+      "post_close_observation_ms": 463903,
+      "slug": "btc-updown-5m-1787745000"
+    },
+    {
+      "asset": "ETH",
+      "closing_twap": "2464.5952377967683",
+      "first_later_winner_sell_fill_delay_ms": null,
+      "first_winner_bid_growth_delay_ms": 1761,
+      "later_winner_sell_fill_count": 0,
+      "observed_gross_pusd": "0",
+      "opening_twap": "2459.463007706941",
+      "oracle_receipt_delay_ms": 1525,
+      "outcome": "Up",
+      "post_close_observation_ms": 463903,
+      "slug": "eth-updown-5m-1787745000"
+    },
+    {
+      "asset": "SOL",
+      "closing_twap": "97.06948177404757",
+      "first_later_winner_sell_fill_delay_ms": null,
+      "first_winner_bid_growth_delay_ms": 1313,
+      "later_winner_sell_fill_count": 0,
+      "observed_gross_pusd": "0",
+      "opening_twap": "96.82544072945257",
+      "oracle_receipt_delay_ms": 1292,
+      "outcome": "Up",
+      "post_close_observation_ms": 463903,
+      "slug": "sol-updown-5m-1787745000"
+    },
+    {
+      "asset": "BTC",
+      "closing_twap": "78463.94154897687",
+      "first_later_winner_sell_fill_delay_ms": null,
+      "first_winner_bid_growth_delay_ms": 2077,
+      "later_winner_sell_fill_count": 0,
+      "observed_gross_pusd": "0",
+      "opening_twap": "78507.48217331994",
+      "oracle_receipt_delay_ms": 2067,
+      "outcome": "Down",
+      "post_close_observation_ms": 163903,
+      "slug": "btc-updown-5m-1787745300"
+    },
+    {
+      "asset": "ETH",
+      "closing_twap": "2462.4920050715773",
+      "first_later_winner_sell_fill_delay_ms": 52286,
+      "first_winner_bid_growth_delay_ms": 2045,
+      "later_winner_sell_fill_count": 1,
+      "observed_gross_pusd": "0.1588",
+      "opening_twap": "2464.5952377967683",
+      "oracle_receipt_delay_ms": 2038,
+      "outcome": "Down",
+      "post_close_observation_ms": 163903,
+      "slug": "eth-updown-5m-1787745300"
+    },
+    {
+      "asset": "SOL",
+      "closing_twap": "97.0120853656099",
+      "first_later_winner_sell_fill_delay_ms": null,
+      "first_winner_bid_growth_delay_ms": 2076,
+      "later_winner_sell_fill_count": 0,
+      "observed_gross_pusd": "0",
+      "opening_twap": "97.06948177404757",
+      "oracle_receipt_delay_ms": 1941,
+      "outcome": "Down",
+      "post_close_observation_ms": 163903,
+      "slug": "sol-updown-5m-1787745300"
+    }
+  ],
+  "frozen_contract": {
+    "canonical_result_sha256": "b199a7c7d3907d0b18d5ce6ea965d907f781affa83f04af5e79d8ca63f763c81",
+    "file_sha256": "b1612ea2a24836ddec4f42e9139cdaed7237e8d6a7f00e1ad9351cfaf167f8ca",
+    "path": "docs/model-research/action-value/polymarket-post-observation-multi-interval-contract-v3-2026-08-26.json"
+  },
+  "gate_results": {
+    "all_complete_conditions_have_post_observation_winner_bid_growth": true,
+    "capture_status_complete": true,
+    "each_asset_has_both_up_and_down_outcomes": true,
+    "minimum_complete_conditions_per_asset": false,
+    "minimum_later_winner_sell_fill_fraction_per_asset": false,
+    "overall_pass": false,
+    "positive_public_observed_gross_per_asset": false,
+    "stream_error_count_zero": true,
+    "stream_gap_count_zero": true
+  },
+  "per_asset": {
+    "BTC": {
+      "complete_conditions": 2,
+      "later_winner_sell_fill_condition_fraction": "0.5",
+      "later_winner_sell_fill_conditions": 1,
+      "outcomes": ["Down", "Up"],
+      "post_observation_winner_bid_growth_conditions": 2,
+      "public_observed_gross_pusd": "0.01515"
+    },
+    "ETH": {
+      "complete_conditions": 2,
+      "later_winner_sell_fill_condition_fraction": "0.5",
+      "later_winner_sell_fill_conditions": 1,
+      "outcomes": ["Down", "Up"],
+      "post_observation_winner_bid_growth_conditions": 2,
+      "public_observed_gross_pusd": "0.1588"
+    },
+    "SOL": {
+      "complete_conditions": 2,
+      "later_winner_sell_fill_condition_fraction": "0",
+      "later_winner_sell_fill_conditions": 0,
+      "outcomes": ["Down", "Up"],
+      "post_observation_winner_bid_growth_conditions": 2,
+      "public_observed_gross_pusd": "0"
+    }
+  },
+  "planning_correction": {
+    "classification": "capture_duration_did_not_prove_required_analyzable_sample_supply",
+    "exact_five_minute_boundary_timestamps_present_ms": [1787744400000, 1787745000000, 1787745300000, 1787745600000],
+    "missing_boundary_timestamp_ms": 1787744700000,
+    "missing_for_assets": ["BTC", "ETH", "SOL"],
+    "reason_only_two_intervals_per_asset_were_complete": "the missing exact 11:45 UTC TWAP breaks both adjacent five-minute windows even though the public stream remained connected",
+    "required_future_contract_rule": "prove sample-supply math and exact source-boundary continuity; elapsed duration and transport gap counts do not prove analyzable interval count"
+  },
+  "result_sha256": "7b9f21cf3c1a65a709d5e52867877b9d79a9bf17f7a4df448a2fb92a32757e16",
+  "schema_version": "polymarket-post-observation-prospective-v3",
+  "source": {
+    "analyzer_output_path": "data/polymarket-post-observation-monitor-v3-analysis.json",
+    "analyzer_output_sha256": "f539c54e35985e100dc22ac5be4c0587cf4d03dc85c398738f6ec8ea12a029fd",
+    "analyzer_path": "tools/analyze_polymarket_post_observation_monitor.py",
+    "analyzer_sha256": "01daa299ae64ad54169169f5c8f05ae862d06d529e7e4de5cb94b8eec59be8f9",
+    "database_path": "data/polymarket-post-observation-monitor-v3.duckdb",
+    "database_sha256": "02ab56e2c21ab2129b5b06004d645b440fdaa6a7d06be173ad8c24f32c9be274",
+    "evidence_manifest_sha256": "93f49022a0a5db17fe19c23214e6a115fa241d2283330c552a341176390c89930",
+    "normalized_event_count": 1227214,
+    "raw_message_count": 1227321,
+    "report_path": "data/polymarket-post-observation-monitor-v3-report.json",
+    "report_sha256": "dc73b2dfff032b7d4ea5c67caacefa9a30d3e5295dd11acf8f7d369e5fbd9c4c",
+    "run_id": "82c179d3d1174fdd851e2066640651b6",
+    "stream_error_count": 0,
+    "stream_gap_count": 0
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "next_action": "do_not_repeat_the_unchanged_public_mechanism_unless_program_terms_or_execution_architecture_materially_changes",
+    "profitability_claim": false,
+    "reason": "The frozen public recurrence gates failed for every asset: qualifying later winner sell-fill fractions were 0.5 for BTC, 0.5 for ETH, and 0 for SOL versus the required 0.75, and SOL public observed gross was zero. Public evidence also cannot establish fresh-order acceptance, owned fills, queue position, fees, rebates, or after-cost profit.",
+    "status": "terminal_public_recurrence_failure"
+  }
+}
