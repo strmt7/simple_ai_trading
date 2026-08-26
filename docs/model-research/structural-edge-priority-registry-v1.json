@@ -36,9 +36,13 @@
         {
           "path": "docs/model-research/polymarket/complete-set-holding-yield-net-economics-v5-2026-08-26.json",
           "result_sha256": "dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85"
+        },
+        {
+          "path": "docs/model-research/polymarket/complete-set-midpoint-uplift-v1-2026-08-26.json",
+          "result_sha256": "33cdc53555f8bbdecf6a9977a77d2c3bc004dab4bff27abb36eac4452f96e5a3"
         }
       ],
-      "current_status": "accepted_scoped_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_demonstrated_principal_42_of_42_daily_YIELD_payments_1_2681_pUSD_over_14_days_3_1820_percent_principal_weighted_realized_rate_positive_through_3_percent_annual_alternative_yield_before_external_friction_not_deployment_ready",
+      "current_status": "accepted_scoped_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_42_of_42_positive_daily_YIELD_payments_3_1820_percent_realized_rate_positive_through_3_percent_alternative_before_external_friction_and_all_55_current_eligible_complete_set_midpoint_sums_exactly_1_with_zero_valuation_uplift_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "complete_set_holding_reward",
       "next_action": "monitor_current_official_terms_market_eligibility_and_public_daily_YIELD_receipts_without_funding_then_only_after_the_protected_boundary_and_explicit_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study",
@@ -337,7 +341,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "f61bff5690399aef2b644b9ef26a021512e15c3d481741789737268424c92665",
+  "result_sha256": "230fcb9d2dc3c3a8412c743a942f828e04b03eff9bec294e816c34352ba8bd1e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -354,6 +358,11 @@
       "canonical_result_sha256": "7eab53089f904d647538de29193dcfa33bfabaa73440161d5fdec706b7bcb5b1",
       "family": "polymarket_cross_condition_duplicates",
       "reason": "the only repeated exact question had different canonical payout rules"
+    },
+    {
+      "canonical_result_sha256": "33cdc53555f8bbdecf6a9977a77d2c3bc004dab4bff27abb36eac4452f96e5a3",
+      "family": "polymarket_complete_set_holding_midpoint_valuation_uplift",
+      "reason": "all_55_currently_eligible_BTC_ETH_SOL_complete_sets_had_exactly_unit_midpoint_value_and_zero_cleared_the_frozen_economic_escalation_threshold"
     },
     {
       "canonical_result_sha256": "ceca2f61ab1da16285190afcb90c276a10b032fb7d264c90656aaf2f7266c253",
@@ -416,6 +425,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T08:45:39Z",
+  "updated_at_utc": "2026-08-26T08:54:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

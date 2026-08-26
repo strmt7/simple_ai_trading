@@ -1,0 +1,69 @@
+{
+  "schema_version": "polymarket-complete-set-midpoint-uplift-contract-v1",
+  "status": "frozen_before_current_gamma_or_midpoint_access",
+  "frozen_at_utc": "2026-08-26T08:51:06.0021666Z",
+  "contract_sha256": "5ae9c7ad1a7a3e7f68f546b76501bf72bf1558ba3d9a570efd1050798d08b5ad",
+  "purpose": "test whether any currently holding-reward-eligible BTC ETH or SOL binary market publicly values an equal mergeable YES plus NO complete set far enough above one pUSD to improve the accepted direction-neutral holding-yield economics",
+  "authority": {
+    "research_only": true,
+    "credentials_permitted": false,
+    "orders_or_transactions_permitted": false,
+    "paper_or_live_authority": false
+  },
+  "universe": {
+    "event_slugs": [
+      "what-price-will-bitcoin-hit-before-2027",
+      "what-price-will-ethereum-hit-before-2027",
+      "what-price-will-solana-hit-before-2027"
+    ],
+    "market_requirements": [
+      "active true",
+      "closed false",
+      "acceptingOrders true",
+      "enableOrderBook true",
+      "holdingRewardsEnabled true",
+      "exactly two outcomes and two CLOB token ids"
+    ]
+  },
+  "request_contract": {
+    "requests": [
+      "one GET Gamma event by slug for each frozen event slug",
+      "one POST CLOB /midpoints containing every admitted token id"
+    ],
+    "maximum_requests": 4,
+    "retry_policy": "none",
+    "raw_persistence": "persist each successful response before decoding or evaluating it",
+    "failure_action": "write a terminal failure result and do not substitute markets endpoints or rerun"
+  },
+  "economic_identity": {
+    "principal_per_equal_complete_set_pusd": "1",
+    "holding_reward_mark_per_complete_set": "YES midpoint plus NO midpoint",
+    "official_current_annual_rate": "0.0325",
+    "comparison_annual_rate": "0.0325",
+    "external_friction_sensitivity_fraction": "0.001",
+    "maximum_horizon_days": "127",
+    "minimum_midpoint_sum_for_escalation": "1.088431253785584494245911569",
+    "threshold_identity": "(comparison annual rate + external friction sensitivity * 365 / maximum horizon days) / official annual rate"
+  },
+  "acceptance_boundary": {
+    "public_uplift_candidate_requires": [
+      "complete-set midpoint sum at least the frozen escalation threshold",
+      "both token midpoint responses present and numeric",
+      "market passes every frozen eligibility flag"
+    ],
+    "accepted_edge_requires_additionally": [
+      "prospective persistence across randomized hourly reward sampling",
+      "owned account eligibility and full split hold merge lineage",
+      "exact alternative yield and every external cost",
+      "no reliance on stale crossed or unavailable books"
+    ],
+    "failed_public_gate_action": "record the current-state uplift screen as negative and do not collect history or books"
+  },
+  "prohibited_shortcuts": [
+    "treating a sub-threshold midpoint sum as economically meaningful",
+    "using last trade prices instead of the documented midpoint valuation",
+    "including noneligible inactive closed or nonbinary markets",
+    "assuming one current snapshot proves persistence",
+    "altering the friction horizon rate or threshold after midpoint access"
+  ]
+}
