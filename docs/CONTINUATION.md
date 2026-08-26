@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Fifteen narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Sixteen narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -29,9 +29,11 @@ Development belongs only on `main`; do not create another development branch.
   account independently cleared the lifetime-volume threshold; and Binance
   Square's base 20% Write to Earn commission only on authentic external readers'
   independently existing eligible fee-bearing trades attributed to genuinely
-  useful content; and Binance Referral Pro's base 20% Spot/Margin and 10%
+  useful content; Binance Referral Pro's base 20% Spot/Margin and 10%
   one-year Futures fee commission only for authentic independently acquired new
-  external users. Each Binance
+  external users; and Polymarket Perps' separate 20% fee share only for authentic
+  external traders within account-confirmed available invites without volume-
+  based invite unlocking. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
   A current BTC Simple Earn Flexible product is only an extension candidate:
@@ -872,7 +874,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`579f1e5261cadaf51a2c175f82a04c673d46213963988c8ea88f2b7f7ac4db11`.
+`c6d12c4f5a220912541fe69d9165072bebd309cd010e580e93f65cd4d93600e4`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1451,6 +1453,19 @@ commission is not net profit. Canonical overlay:
 `docs/model-research/action-value/binance-organic-referral-pro-fee-overlay-v1-2026-08-26.json`,
 result SHA-256
 `8a29116879fd90cb0f8fc11d9780a8dccbff8afc2d3ea685e671921f651e64d1`.
+
+Polymarket Perps referrals are a separate accepted direction-independent gross
+fee overlay: 20% of authentic external referred traders' Perps fees, paid
+weekly, only while the account has a confirmed available invite. Never use the
+operator's or referred users' trading volume to unlock the 100, 250, or 500
+invite tiers; never self-refer, request trades, or double-count the separate
+prediction-market referral program, Builder Fees, or another commission.
+Account code, available invites, attribution, exact fee and payout asset, owned
+weekly payout, acquisition, compliance, tax, and operating costs remain
+unproved, so gross fee share is not net profit. Canonical overlay:
+`docs/model-research/action-value/polymarket-perps-organic-referral-fee-overlay-v1-2026-08-26.json`,
+result SHA-256
+`4bebea610dc9406d598627035f4e6e815e6a4daeb64944d7ba2ec9f55b6b7d71`.
 
 ## Protected Local Work
 
