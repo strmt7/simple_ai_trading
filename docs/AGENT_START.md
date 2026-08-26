@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Four scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory not needed for prompt liquidity; Binance LDUSDT yield only for already-required futures collateral; and bounded just-in-time BNB fee reduction only for independently justified organic BTC/ETH/SOL Spot flow under exact full-consumption and risk gates. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Seven scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; and the automatic RWUSD VIP bonus only on independently required existing RWUSD. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 

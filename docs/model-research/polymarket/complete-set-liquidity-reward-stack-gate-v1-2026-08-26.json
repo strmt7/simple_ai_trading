@@ -1,0 +1,248 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "authenticated_follow_up_warranted": false,
+    "deployment_ready": false,
+    "holding_and_liquidity_reward_stack_proved": false,
+    "profitability_claim": false,
+    "publicly_proven_incremental_payout_for_a_fresh_order": "0",
+    "status": "rejected_current_reward_pool_is_zero_or_0_001_pUSD_per_day_and_same_inventory_stack_compatibility_is_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transactions_submitted": 0,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T16:18:00Z",
+  "economics": {
+    "configured_candidate_count": 5,
+    "configured_pool_rate_per_day_each_pUSD": "0.001",
+    "combined_pool_rate_per_day_across_five_markets_pUSD": "0.005",
+    "maximum_annualized_pool_share_bips_if_sole_scorer_at_exact_20_share_minimum": "182.5",
+    "maximum_daily_pool_share_bips_if_sole_scorer_at_exact_20_share_minimum": "0.5",
+    "pool_share_upper_bound_limitations": [
+      "The calculation assigns the entire market pool to one minimum-size order and is an upper bound, not an expected payout.",
+      "It credits no competition, missed scoring epochs, partial duration, fills, queue effects, cancellation latency, external costs, or displaced holding yield.",
+      "It does not prove that resting orders using complete-set inventory remain eligible for hourly holding-reward samples."
+    ],
+    "settlement_orphan_sensitivity_not_execution_claim": {
+      "candidate": "BTC reach 160000",
+      "complete_sets": "20",
+      "current_yes_reference_price": "0.033",
+      "maximum_spread_decimal": "0.035",
+      "loss_minimizing_maximum_eligible_yes_ask_sensitivity": "0.068",
+      "loss_if_all_20_yes_shares_sell_then_yes_settles_and_no_restoration_occurs_pUSD": "18.64",
+      "days_of_entire_current_0_001_pool_to_cover_that_loss": "18640",
+      "years_at_365_days": "51.0684931506849",
+      "interpretation": "A one-leg fill destroys the complete-set identity until the missing side is restored. This sensitivity is not a fill forecast, but it proves that the current pool is immaterial relative to a permitted orphan settlement path."
+    }
+  },
+  "gamma_metadata_screen": {
+    "active_open_orderbook_holding_reward_market_count": 55,
+    "candidates_with_positive_rewardsMaxSpread_and_rewardsMinSize": 12,
+    "candidate_counts": {
+      "BTC": 3,
+      "ETH": 2,
+      "SOL": 7
+    },
+    "event_payloads": [
+      {
+        "asset": "BTC",
+        "payload_sha256": "bbe3f731f6b2b22c9b95badb9a8e8af8e41b330cc29d64534f63719080b4fe07"
+      },
+      {
+        "asset": "ETH",
+        "payload_sha256": "5651ee41a98eb7106bddfc7c1cfba6b8ed34a1e8c8d3d84ff906bd01145909dc"
+      },
+      {
+        "asset": "SOL",
+        "payload_sha256": "38358c4d2eacfb242eaca453de9f1e3fbe4bd6686a23fb92d480f469dce9c671"
+      }
+    ],
+    "finding": "Gamma reward spread and size fields identify scoring geometry but do not prove that a positive current reward configuration exists."
+  },
+  "limitations": [
+    "Official holding-reward terms say total position value is sampled hourly, and official liquidity-reward terms say resting limit orders are eligible, but neither captured source states that the same token balance simultaneously earns both programs while committed to an open order.",
+    "An off-chain signed resting order does not by itself prove the holding distributor's eligibility treatment, and no authenticated scoring or owned YIELD evidence was requested.",
+    "The five positive configurations are daily market pools shared by scorers, not guaranteed per-order payments.",
+    "A resting sell order can fill partially or fully and thereby remove one side of the direction-neutral complete set before cancellation or restoration.",
+    "No public source proves queue position, owned order duration, reward share, fill path, restoration cost, cancellation latency, or after-cost incremental profit.",
+    "The conflicting current official 3.25 percent versus 4.00 percent holding-reward rate remains unresolved and is not used to make this candidate pass."
+  ],
+  "request_efficiency": {
+    "canonical_direct_candidate_requests": 12,
+    "canonical_parameter": "sponsored=true",
+    "correction": "For reward-pool maximum screens, read the endpoint parameter contract before sampling and use sponsored=true once because the official raw-reward contract says it folds sponsored daily rates into rate_per_day.",
+    "discarded_default_parameter_requests": 12,
+    "mistake": "The initial exact-condition probes used the default parameter before the sponsored aggregation rule was source-bound, so they could not close the total-pool question and had to be superseded.",
+    "no_books_or_history_requested": true
+  },
+  "result_sha256": "f0df2e95e36315850b7f4e8b6600e742490ee34151317628a5304e35c037146e",
+  "retry_policy": {
+    "do_not_run_authenticated_compatibility_experiment_on_current_economics": true,
+    "do_not_poll_unchanged_configs_or_books": true,
+    "reopen_only_if": [
+      "official terms explicitly confirm simultaneous holding and liquidity rewards on the same open-order token balance",
+      "a current exact BTC ETH or SOL condition has a materially larger source-bound total daily pool",
+      "a frozen execution design bounds one-leg fill restoration loss and complete external costs below a conservative expected reward floor"
+    ]
+  },
+  "schema_version": "polymarket-complete-set-liquidity-reward-stack-gate-v1",
+  "source_contract": {
+    "active_rewards_doc": {
+      "payload_sha256": "7e84c318dce41591da3aa54752f6b0fb2fd966417b4a26bd80eb3d6d94f9d13a",
+      "url": "https://docs.polymarket.com/api-reference/rewards/get-current-active-rewards-configurations.md"
+    },
+    "holding_rewards_doc": {
+      "payload_sha256": "bb131a3894d52149058f8554edaa6fafdd9ad72ab2351efbec605d4b3a6e2cc5",
+      "url": "https://docs.polymarket.com/concepts/positions-tokens.md"
+    },
+    "liquidity_rewards_doc": {
+      "payload_sha256": "27e11fc522c0aa9ee586e838add32b176a27ec5e216a7d18f27a2298e62efc63",
+      "url": "https://docs.polymarket.com/programs/liquidity-rewards.md"
+    },
+    "order_scoring_doc": {
+      "payload_sha256": "c6c33419cd111c8d86b25e7fd0db03a18fc59e0f8b2e2d9c50ac8cea7b46ead2",
+      "url": "https://docs.polymarket.com/api-reference/trade/get-order-scoring-status.md"
+    },
+    "raw_market_rewards_doc": {
+      "payload_sha256": "f974ebb810f56693cbd0893e45f947ae542d532e0a9f56e3bf9c7ffd0bc9bccc",
+      "url": "https://docs.polymarket.com/api-reference/rewards/get-raw-rewards-for-a-specific-market.md"
+    }
+  },
+  "sponsored_folded_exact_condition_probes": [
+    {
+      "asset": "BTC",
+      "condition_id": "0x472c9035786b390c08e674fc60bddda488957e1b8aecad3f5480cc531a0754b0",
+      "count": 1,
+      "payload_sha256": "ff751dd865502ab23d3349872ba601a3b475a7db6ad4be522c8a32411883402f",
+      "question": "Will Bitcoin reach $160,000 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0.001",
+      "received_at_utc": "2026-08-26T16:16:23.0520777Z",
+      "requested_at_utc": "2026-08-26T16:16:22.9196173Z",
+      "rewards_max_spread_cents": "3.5",
+      "rewards_min_size_shares": "20"
+    },
+    {
+      "asset": "BTC",
+      "condition_id": "0xe71b9d788ce662d967ff2c90749ff8b26cee290455ef6cb84f33d1393ffae115",
+      "count": 1,
+      "payload_sha256": "dfe9040182c7fe872a155fc7348c437c39868e2e5f84730627c0fa36fe98fb65",
+      "question": "Will Bitcoin reach $190,000 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0.001",
+      "received_at_utc": "2026-08-26T16:17:53.8822406Z",
+      "requested_at_utc": "2026-08-26T16:17:53.7474942Z",
+      "rewards_max_spread_cents": "3.5",
+      "rewards_min_size_shares": "20"
+    },
+    {
+      "asset": "BTC",
+      "condition_id": "0x9affeb38bce1e9a6de30e9ecada1ecfaf636574d3961cf3b9177299786214234",
+      "count": 1,
+      "payload_sha256": "ef5d6ff275b67eb856eecb69a59acbbe2d4fa2b32a13efdf740fd57f2e6245c0",
+      "question": "Will Bitcoin reach $170,000 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0.001",
+      "received_at_utc": "2026-08-26T16:17:53.9829379Z",
+      "requested_at_utc": "2026-08-26T16:17:53.9398808Z",
+      "rewards_max_spread_cents": "3.5",
+      "rewards_min_size_shares": "20"
+    },
+    {
+      "asset": "ETH",
+      "condition_id": "0x0f0499d1049385b1d53ffee6c42a1de7424e551c765211ff2cc6d66329f43a80",
+      "count": 0,
+      "payload_sha256": "cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148",
+      "question": "Will Ethereum reach $6,500 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0",
+      "received_at_utc": "2026-08-26T16:17:54.0244148Z",
+      "requested_at_utc": "2026-08-26T16:17:53.9853089Z"
+    },
+    {
+      "asset": "ETH",
+      "condition_id": "0xc4c41407dd3e1be7fae485778117cd12832edebb652609cd34ba8eb60b817ee2",
+      "count": 0,
+      "payload_sha256": "cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148",
+      "question": "Will Ethereum dip to $1,750 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0",
+      "received_at_utc": "2026-08-26T16:17:54.0721303Z",
+      "requested_at_utc": "2026-08-26T16:17:54.0282427Z"
+    },
+    {
+      "asset": "SOL",
+      "condition_id": "0x5c1d1a216a212d9a99177c940685192888473c890fa704427321bcd02a869ab8",
+      "count": 0,
+      "payload_sha256": "cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148",
+      "question": "Will Solana reach $280 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0",
+      "received_at_utc": "2026-08-26T16:17:54.1473189Z",
+      "requested_at_utc": "2026-08-26T16:17:54.0731580Z"
+    },
+    {
+      "asset": "SOL",
+      "condition_id": "0x19ecee81e16eda5912046379f31ed8f3b75ca55955a014d579813a4a4770cd89",
+      "count": 0,
+      "payload_sha256": "cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148",
+      "question": "Will Solana reach $240 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0",
+      "received_at_utc": "2026-08-26T16:17:54.2320333Z",
+      "requested_at_utc": "2026-08-26T16:17:54.1480927Z"
+    },
+    {
+      "asset": "SOL",
+      "condition_id": "0x53351e50bb5281f05a6e193aa9ccf79b041ae6386c8a66d2b6934817cfbd6c1f",
+      "count": 0,
+      "payload_sha256": "cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148",
+      "question": "Will Solana reach $200 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0",
+      "received_at_utc": "2026-08-26T16:17:54.2839270Z",
+      "requested_at_utc": "2026-08-26T16:17:54.2333371Z"
+    },
+    {
+      "asset": "SOL",
+      "condition_id": "0x715479b7c428c778fba2e26bbf30e0c06c9e878acdcf1be461be736ef0f554a3",
+      "count": 1,
+      "payload_sha256": "27d765e88ef88d0da5b73231a70d721df975675ae6c8dec9e54ce0d3c9d6539c",
+      "question": "Will Solana reach $160 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0.001",
+      "received_at_utc": "2026-08-26T16:17:54.3191213Z",
+      "requested_at_utc": "2026-08-26T16:17:54.2850228Z",
+      "rewards_max_spread_cents": "3.5",
+      "rewards_min_size_shares": "20"
+    },
+    {
+      "asset": "SOL",
+      "condition_id": "0x5a353d8c813b4d64760281674d63d1232080fd895c9ffe6b23fab2aec55ebdee",
+      "count": 0,
+      "payload_sha256": "cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148",
+      "question": "Will Solana reach $260 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0",
+      "received_at_utc": "2026-08-26T16:17:54.3604774Z",
+      "requested_at_utc": "2026-08-26T16:17:54.3200244Z"
+    },
+    {
+      "asset": "SOL",
+      "condition_id": "0x7b24842f374b36510468c724cbea586384fe621b6547a40d3dad77f1ac3ac4cb",
+      "count": 0,
+      "payload_sha256": "cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148",
+      "question": "Will Solana reach $220 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0",
+      "received_at_utc": "2026-08-26T16:17:54.3968766Z",
+      "requested_at_utc": "2026-08-26T16:17:54.3614114Z"
+    },
+    {
+      "asset": "SOL",
+      "condition_id": "0x0bccf8ce01fcd188575a96ab88ed928260e72cc4c3aacf0e82fa5ab4570dbae6",
+      "count": 1,
+      "payload_sha256": "062b74f097dcade96b38c46e7544871e109211c1ed5635be4f10efdb2526d6a9",
+      "question": "Will Solana dip to $20 by December 31, 2026?",
+      "rate_per_day_total_pUSD": "0.001",
+      "received_at_utc": "2026-08-26T16:17:54.4862451Z",
+      "requested_at_utc": "2026-08-26T16:17:54.3977880Z",
+      "rewards_max_spread_cents": "3.5",
+      "rewards_min_size_shares": "20"
+    }
+  ]
+}
