@@ -1,0 +1,19 @@
+{
+  "contract_result_sha256": "7e85584611324d1c19fb9492e6842be9c15d6efda85462b5f74cfc80524cd8a8",
+  "created_at_ms": 1787769202034,
+  "journal_sha256": "3ffaf7f5ccd1b1684f4d82c30824f6c85cddbdde79c75c7864acbcbc3f4c46df",
+  "request": {
+    "method": "eth_getTransactionReceipt",
+    "request_sha256": "4f2280a621f3a84e77f5e32165ca8e883c2725e3299ce139524754523537a708",
+    "rpc_url": "https://polygon.drpc.org"
+  },
+  "response": {
+    "bytes": 13290,
+    "content_type": "application/json",
+    "date": "Wed, 26 Aug 2026 18:33:22 GMT",
+    "path": ".tmp/negrisk-v2-conversion-cost-v4/raw/transaction-receipt.json",
+    "sha256": "690470a5106a55e293f96009b023d8596663ea04247a393adca2aeb55930ab41",
+    "status_code": 200,
+    "url": "https://polygon.drpc.org/"
+  }
+}

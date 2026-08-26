@@ -1,0 +1,50 @@
+{
+  "authority": {
+    "account_requests_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_conversions_permitted": false,
+    "public_read_only_rpc_only": true,
+    "signed_requests_permitted": false
+  },
+  "created_at_utc": "2026-08-26T18:31:47.7550472Z",
+  "current_sdk_address_source": {
+    "bytes": 4536,
+    "commit": "41c642c2d056e5a697fd5962498ca5a7313ac8ef",
+    "path": ".tmp/negrisk-v2-conversion-cost-v3/raw/source-01-py-sdk-environments.raw",
+    "repository_path": "src/polymarket/environments.py",
+    "sha256": "903bdf1fde8c28c43acd3a6e801ea6bc74b534be9af19ec4e15f1c083d9f1228",
+    "url": "https://github.com/Polymarket/py-sdk"
+  },
+  "current_v2_collateral_adapter_address": "0xada2005600dec949baf300f4c6120000bdb6eaab",
+  "decision_question": "What whole-transaction gas usage and native gas cost does the receipt prove for the one exact event-106981 conversion already retained from a successful bounded log page?",
+  "implementation": {
+    "bytes": 6947,
+    "path": ".tmp/collect_negrisk_known_conversion_receipt.py",
+    "sha256": "f167822c80938183aebeede8dd74eee82dd4036534ee865910c49254171a30fe"
+  },
+  "request_ceiling": 1,
+  "retained_conversion_log": {
+    "amount_base_units": 16700000,
+    "block_number": 92661066,
+    "bytes": 741,
+    "index_set": 7,
+    "path": ".tmp/negrisk-v2-conversion-cost-v2/raw/rpc-logs-05.json",
+    "sha256": "60173ab09b47ac88d8d3106fbbb351f116e4351b8f9813173c727be96f806096",
+    "stakeholder": "0xada2005600dec949baf300f4c6120000bdb6eaab"
+  },
+  "result_sha256": "7e85584611324d1c19fb9492e6842be9c15d6efda85462b5f74cfc80524cd8a8",
+  "rpc_url": "https://polygon.drpc.org",
+  "schema_version": "polymarket-negrisk-known-conversion-receipt-contract-v1",
+  "stop_conditions": [
+    "make exactly one eth_getTransactionReceipt request for the retained transaction hash",
+    "persist the raw body before status or payload validation",
+    "make no identical retry after any HTTP JSON-RPC parse or receipt error",
+    "do not request transaction calldata block timestamp native-token price or account state"
+  ],
+  "transaction_hash": "0x31c433246cf0249ae2de194ce3e549c9f58c3162bbbebbfd4ae2c70e9df3932f",
+  "warnings": [
+    "receipt gas covers the whole outer transaction and is not an isolated convertPositions call",
+    "historical gas and a non-contemporaneous live book margin cannot prove current realized profit",
+    "native gas paid by the outer transaction does not prove the user's relayer charge or account accessibility"
+  ]
+}

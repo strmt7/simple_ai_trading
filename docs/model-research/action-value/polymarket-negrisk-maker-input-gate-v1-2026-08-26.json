@@ -4,8 +4,8 @@
     "candidate_edge": true,
     "deployment_ready": false,
     "market_direction_forecast_required": false,
-    "reason": "The exact live event state produced an after-fee positive path only when the Bitcoin NO input is acquired as maker. A public Polygon receipt independently proves that an exact 0.82 Bitcoin NO maker bid filled 66.72 shares two days earlier. The live state and the historical fill are not simultaneous evidence: no post-fill Gold YES and S&P 500 YES books exist, queue ownership is unknown, conversion latency and account accessibility are unproved, and the available historical-price endpoints violated their requested time bounds. The all-taker path is negative after exact published fees.",
-    "status": "maker_input_candidate_exact_price_fill_proved_but_queue_post_fill_unwind_conversion_access_latency_and_after_external_cost_profit_unproved"
+    "reason": "The exact live event state produced an after-fee positive path only when the Bitcoin NO input is acquired as maker. A public Polygon receipt independently proves that an exact 0.82 Bitcoin NO maker bid filled 66.72 shares two days earlier. Official source and one exact successful on-chain conversion now prove the deployed V2-to-legacy adapter route, but the observed conversion used index set 7 rather than the candidate's one-NO index set and its 479,446 gas units cover the whole outer transaction. Reusing those units at one current Polygon fee recommendation and executable POLUSDT ask makes the five-share margin negative and leaves the twenty-share margin at only 0.0092570280188902383064000 pUSD minus a USDT-denominated sensitivity before every other cost. USDT is not assumed equal to pUSD. Queue ownership, causally subsequent output books, account conversion access, exact user gas or relayer charge, approvals, latency, and after-cost profit remain unproved.",
+    "status": "maker_input_candidate_v2_conversion_route_and_exact_index7_conversion_proved_q5_direct_gas_sensitivity_negative_q20_only_0_009257_pUSD_minus_USDT_before_other_costs_queue_post_fill_unwind_exact_account_access_latency_and_after_cost_profit_unproved"
   },
   "authority": {
     "account_channel_accessed": false,
@@ -17,6 +17,7 @@
     "signed_requests_made": 0
   },
   "created_at_utc": "2026-08-26T18:00:23.1015783Z",
+  "updated_at_utc": "2026-08-26T18:38:39.085542Z",
   "predecessor": {
     "path": "docs/model-research/action-value/polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json",
     "result_sha256": "ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030"
@@ -109,11 +110,39 @@
     "maker_rebate_url": "https://docs.polymarket.com/programs/maker-rebates",
     "onchain_adapter_state": {
       "adapter_address": "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296",
+      "adapter_role": "legacy_negative_risk_adapter_called_by_the_v2_collateral_adapter",
       "block_number": 92708086,
       "block_tag": "0x5869cf6",
       "conversion_fee_bips": 0,
       "market_id": "0x339a89111ad048709ef27ac9da11e70a28ceaae3a4f494e949c9d68be7c39a00",
       "question_count": 3
+    },
+    "v2_collateral_adapter_route": {
+      "actual_conversion": {
+        "amount_shares": "16.7",
+        "block_number": 92661066,
+        "event_stakeholder": "0xadA2005600Dec949baf300f4C6120000bDB6eAab",
+        "index_set": 7,
+        "index_set_interpretation": "all three NO positions; this is not the candidate's one-NO complementary-YES conversion",
+        "legacy_positions_converted_topic0": "0xb03d19dddbc72a87e735ff0ea3b57bef133ebe44e1894284916a84044deb367e",
+        "status": "successful",
+        "transaction_hash": "0x31c433246cf0249ae2de194ce3e549c9f58c3162bbbebbfd4ae2c70e9df3932f"
+      },
+      "ctf_exchange_v2_commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+      "current_official_python_sdk_address": "0xadA2005600Dec949baf300f4C6120000bDB6eAab",
+      "current_official_python_sdk_commit": "41c642c2d056e5a697fd5962498ca5a7313ac8ef",
+      "deployed_route_proved_by": "the current official Python SDK address and the exact successful legacy PositionsConverted event agree",
+      "function_signature": "convertPositions(bytes32,uint256,uint256)",
+      "legacy_adapter_commit": "f78b35b0863b4308a431ca307d06f49b2ea65e78",
+      "readme_conflicting_address": "0xAdA200001000ef00D07553cEE7006808F895c6F1",
+      "readme_conflict_status": "unresolved_current_primary_source_deployment_address_mismatch_do_not_silently_select_the_readme_address",
+      "route": "pull selected legacy CTF NO positions from caller; invoke legacy adapter conversion; send complementary legacy CTF YES positions; wrap any returned USDC.e into pUSD for caller",
+      "source_urls": [
+        "https://github.com/Polymarket/ctf-exchange-v2/blob/main/README.md",
+        "https://github.com/Polymarket/ctf-exchange-v2/blob/main/src/adapters/NegRiskCtfCollateralAdapter.sol",
+        "https://github.com/Polymarket/neg-risk-ctf-adapter/blob/main/src/NegRiskAdapter.sol",
+        "https://github.com/Polymarket/py-sdk/blob/main/src/polymarket/environments.py"
+      ]
     }
   },
   "role_economics_at_live_state": {
@@ -293,13 +322,49 @@
   },
   "conversion_access_and_latency": {
     "conversion_gas_or_relayer_cost_bound": false,
+    "exact_successful_conversion_receipt": {
+      "amount_shares": "16.7",
+      "effective_gas_price_wei": 327229242782,
+      "gas_cost_native_pol": "0.156888751534858772",
+      "gas_used_whole_outer_transaction": 479446,
+      "index_set": 7,
+      "outer_from": "0xf105cd06bf6ff2e8c9233a64ebf79ab85034709b",
+      "outer_to": "0x00000000000fb5c9adea0298d729a0cb3823cc07",
+      "status": 1,
+      "transaction_hash": "0x31c433246cf0249ae2de194ce3e549c9f58c3162bbbebbfd4ae2c70e9df3932f",
+      "warning": "The receipt proves a successful route and whole-transaction native gas, not isolated convertPositions gas, the candidate index set, user relayer charge, or this account's access."
+    },
     "installed_official_sdk_version": "0.2.0",
     "installed_sdk_high_level_negrisk_convert_method": false,
     "installed_sdk_low_level_execute_transaction_method": true,
+    "installed_sdk_method_audit": {
+      "dedicated_convert_method_matches": 0,
+      "files_scanned": 169,
+      "high_level_merge_split_redeem_present": true,
+      "selector_literal_convertPositions_matches": 0,
+      "scope": ".venv/Lib/site-packages/polymarket/**/*.py"
+    },
+    "current_whole_transaction_gas_sensitivity": {
+      "adjudication": "sensitivity_only_not_cross_stablecoin_after_cost_proof",
+      "binance_endpoint_security": "NONE_public_market_data",
+      "captured_at_utc": "2026-08-26T18:38:39.085542Z",
+      "gas_station_block_number": 92709659,
+      "gas_station_max_fee_gwei": "389.696575195",
+      "margin_20_pusd_minus_usdt_sensitivity": "0.0092570280188902383064000",
+      "margin_5_pusd_minus_usdt_sensitivity": "-0.0129429719811097616936000",
+      "polygon_gas_station_estimated_base_fee_gwei": "243.13105013",
+      "polusdt_best_ask": "0.10888000",
+      "polusdt_best_ask_quantity": "1716.90000000",
+      "request_count": 2,
+      "result_sha256": "81bf0d8ef3c41f352e6a1a0f4cced6087f3873b093ac24944bd7ca76efed9a19",
+      "reused_whole_transaction_gas_cost_pol": "0.18683846419094197",
+      "reused_whole_transaction_gas_cost_usdt_sensitivity": "0.0203429719811097616936000",
+      "warning": "The five-share branch is negative under this exact direct-gas sensitivity. The twenty-share remainder cannot support an after-cost claim because pUSD versus USDT, isolated conversion gas, user relayer charge, approvals, latency, adverse selection, and output execution costs remain unbound."
+    },
     "relayer_auth_contract": "Submitting a relayer transaction requires Builder API Keys or Relayer API Keys.",
     "relayer_documentation_url": "https://docs.polymarket.com/api-reference/relayer/submit-a-transaction",
     "relayer_or_builder_credentials_available": false,
-    "warning": "A generic transaction-call method does not prove that the exact account can perform this conversion gaslessly, with approvals already present, or within the 0.00148 pUSD per-share maker-input margin."
+    "warning": "The installed SDK exposes a generic transaction-call escape hatch but no dedicated NegRisk convert helper. Source and one public conversion prove the route exists; neither proves that the exact account can perform the candidate index-set conversion gaslessly, with approvals already present, or within the remaining margin."
   },
   "prospective_fill_and_unwind_capture": {
     "active_result_claim": false,
@@ -318,12 +383,15 @@
       "aggregate Data API price filtering presented as price-level maker-fill probability",
       "historical price requests with guessed parameter names after both documented endpoints violated the exact time window",
       "maker-output economics presented as locked profit without pre-existing inventory and full holding-risk accounting",
-      "crediting an uncertain maker rebate or unproved gasless conversion"
+      "crediting an uncertain maker rebate or unproved gasless conversion",
+      "treating the V2 README address as resolved despite its conflict with the current official SDK and observed conversion",
+      "counting an all-three-NO index-set conversion as an observed candidate one-NO conversion",
+      "treating a pUSD-minus-USDT sensitivity as same-unit after-cost profit"
     ],
-    "next_action": "Terminally audit the frozen 24-hour six-token capture. If a Bitcoin NO sell fill reaches the hypothetical 0.82 maker bid, reconstruct queue-censored eligibility and the first causally subsequent Gold YES and S&P 500 YES taker unwind at five and twenty shares. Reject on no eligible fill, stale or discontinuous books, nonpositive after-fee unwind, or any unbound conversion-access, latency, approval, gas, adverse-selection, or external-cost hurdle.",
-    "promotion_gate": "Require multiple independent owned or conservatively queue-censored maker-input fills, causally subsequent executable output books, exact on-chain conversion availability and fee, authenticated account accessibility, approvals, conversion and two-leg completion latency, every fee and external cost, capacity, adverse selection, and non-overlapping time, liquidity, and volatility regimes."
+    "next_action": "Leave the frozen 24-hour six-token capture running and terminally audit it only after completion. The five-share direct-gas branch is rejected under the exact current sensitivity. For twenty shares, if a Bitcoin NO sell fill reaches the hypothetical 0.82 maker bid, reconstruct queue-censored eligibility and the first causally subsequent Gold YES and S&P 500 YES taker unwind. Reject on no eligible fill, stale or discontinuous books, nonpositive after-fee unwind, or any unbound same-unit conversion-access, user-charge, latency, approval, adverse-selection, or external-cost hurdle.",
+    "promotion_gate": "Require multiple independent owned or conservatively queue-censored maker-input fills, causally subsequent executable output books, an exact candidate one-NO index-set conversion, authenticated account accessibility, approvals, user-paid or relayer-paid cost attribution, conversion and two-leg completion latency, pUSD-denominated executable external costs, capacity, adverse selection, and non-overlapping time, liquidity, and volatility regimes."
   },
-  "result_sha256": "99cb35d065cfd2c12eb6947264b838c2c7407fba7582b14a94f30a856e8f0652",
+  "result_sha256": "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a",
   "schema_version": "polymarket-negrisk-maker-input-gate-v1",
   "tracked_evidence": [
     {
@@ -383,6 +451,141 @@
       "bytes": 41,
       "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/single-price-history-window-violation.json",
       "sha256": "d67a29fe0574d21af8156efd2bdeecf16fd477735f5022c2eaf2d7c9ea37f250"
+    },
+    {
+      "bytes": 741,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/conversion-log.json",
+      "sha256": "60173ab09b47ac88d8d3106fbbb351f116e4351b8f9813173c727be96f806096"
+    },
+    {
+      "bytes": 14235,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/ctf-exchange-v2-readme.raw",
+      "sha256": "41def0727a8adbaccefb3c25bce4e50166915f98ea3e9588323304c2851fac7c"
+    },
+    {
+      "bytes": 116,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/current-binance-polusdt-book-ticker.json",
+      "sha256": "ad80df406424dbd7a2b109ea8a7ec67c66e68a1d7c99c32fb19b38dcc8397585"
+    },
+    {
+      "bytes": 2344,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/current-gas-contract.json",
+      "sha256": "328c9443818f3e85c67a5d08787317c6cb32e1564f278256549e8b5b66f46cde"
+    },
+    {
+      "bytes": 788,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/current-gas-journal.jsonl",
+      "sha256": "7ad079c31ab4a722798fe7582b890a5efc2d17e1336aef8e1c3d93312341ff5d"
+    },
+    {
+      "bytes": 2885,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/current-gas-summary.json",
+      "sha256": "25eb57ea84d841eb41022d5165bcfdfb8c3d11abaf2cca8e9c3bbabc31960b6d"
+    },
+    {
+      "bytes": 263,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/current-polygon-gas-station.json",
+      "sha256": "1aab6d50de7f11e2a02c0f4692c6d12c521d1dbe9975d17c461b6c42832b525f"
+    },
+    {
+      "bytes": 3449,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v1-contract.json",
+      "sha256": "09948b24133181e23beeedae667a2293604dc2cd6e0aaf6341cc2579a5194d69"
+    },
+    {
+      "bytes": 2877,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v1-journal.json",
+      "sha256": "9f595dad44ba89fcb97468186117d07c2584534864984506f472b44480d8a588"
+    },
+    {
+      "bytes": 95,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v1-provider-error.json",
+      "sha256": "5a15b53a55cc91248a33d88aea7e635cf2331a819101f7f5db76878d683b0e65"
+    },
+    {
+      "bytes": 619,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v1-summary.json",
+      "sha256": "5997d9abf9a2790c7b4461bc777ebe0ea17f299215856cc7694a9a57da8ad86b"
+    },
+    {
+      "bytes": 4313,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v2-contract.json",
+      "sha256": "f85baa405f0d8f25fabe46cc0d2be58ca12e0f0f5d2611459f18ad12a1051d8d"
+    },
+    {
+      "bytes": 7447,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v2-journal.json",
+      "sha256": "c887aa0c032cd6dcf219f991dda1c7ef4004ba3dc02a504a1771447c0a124afd"
+    },
+    {
+      "bytes": 193,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v2-provider-error.json",
+      "sha256": "606753c1c45d6e302ab6fbda594c42fae789d1ae9988345f4127003fe28c7c29"
+    },
+    {
+      "bytes": 717,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v2-summary.json",
+      "sha256": "ba1f243481f555a54fb7bd0fe6854dee66c737fd656007d8ec830b55d56e3d94"
+    },
+    {
+      "bytes": 5543,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v3-contract.json",
+      "sha256": "5f89ef0880926d84779e3a3b26c22cc708c97faf8fe1be6ccfc9b83345d55e8b"
+    },
+    {
+      "bytes": 8140,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v3-journal.json",
+      "sha256": "23d4fe26045a9ec670547b696afbf434a8ba9551fc0012bed931fedd3d070bac"
+    },
+    {
+      "bytes": 112,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v3-provider-error.json",
+      "sha256": "1dbe29a877c29d2d2626bf27b182cc3e1816345bd38fb78b01062b928634ff39"
+    },
+    {
+      "bytes": 565,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/log-attempt-v3-summary.json",
+      "sha256": "0b14835081bb6a60742cc743b9ea39ed11e4f4c3828d1b07043274115a9389b8"
+    },
+    {
+      "bytes": 18734,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/NegRiskAdapter.sol",
+      "sha256": "f76ace5aa16dad8e71412e4d2b3bd11f9caf28f846c6783dc39d5eb756413656"
+    },
+    {
+      "bytes": 7227,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/NegRiskCtfCollateralAdapter.sol",
+      "sha256": "2461eb793fa5571a6902a52c5276f02a8621814fdc026cf3a7814879b1b3db76"
+    },
+    {
+      "bytes": 4536,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/py-sdk-environments.py",
+      "sha256": "903bdf1fde8c28c43acd3a6e801ea6bc74b534be9af19ec4e15f1c083d9f1228"
+    },
+    {
+      "bytes": 2518,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/receipt-contract.json",
+      "sha256": "f3d4bf77f469e9fcbc68394d30b08f03b528842e49b738499829267501f5d282"
+    },
+    {
+      "bytes": 766,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/receipt-journal.json",
+      "sha256": "3f4fdab35602aa8e02d8c4ecba51fd6e7d6a435305af712d9c4c806a249d4465"
+    },
+    {
+      "bytes": 1686,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/receipt-summary.json",
+      "sha256": "c9f7e368d249ec7be40d5567c2677b217c1a89d882d777a025884bbc6d027f64"
+    },
+    {
+      "bytes": 5883,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/sdk-method-audit.json",
+      "sha256": "097f20b474ec410ce160e5d4baad5dcc97c37a80f9b4d7025ccdec1edbb285c6"
+    },
+    {
+      "bytes": 13290,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/transaction-receipt.json",
+      "sha256": "690470a5106a55e293f96009b023d8596663ea04247a393adca2aeb55930ab41"
     }
   ]
 }

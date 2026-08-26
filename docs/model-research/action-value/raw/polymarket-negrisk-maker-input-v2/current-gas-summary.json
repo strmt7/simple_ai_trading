@@ -1,0 +1,61 @@
+{
+  "adjudication": "sensitivity_only_not_cross_stablecoin_after_cost_proof",
+  "captured_at_utc": "2026-08-26T18:38:39.085542Z",
+  "contract_sha256": "328c9443818f3e85c67a5d08787317c6cb32e1564f278256549e8b5b66f46cde",
+  "gas_station_block_number": 92709659,
+  "gas_station_estimated_base_fee_gwei": 243.13105013,
+  "interpretation": [
+    "The observed gas units belong to the whole outer transaction and do not isolate convertPositions.",
+    "A current fee recommendation is not the historical fee and does not prove a future inclusion price or latency.",
+    "POLUSDT is an executable top-of-book valuation sensitivity; USDT is not assumed equal to pUSD.",
+    "The screen cannot prove relayer eligibility, who pays gas, approvals, conversion access, or account execution.",
+    "No positive sensitivity result may promote an edge. A negative result may reject direct-gas economics only for these exact inputs."
+  ],
+  "request_count": 2,
+  "result_sha256": "81bf0d8ef3c41f352e6a1a0f4cced6087f3873b093ac24944bd7ca76efed9a19",
+  "scenarios": {
+    "fast": {
+      "gas_units_reused": 479446,
+      "margin_20_pusd_minus_usdt_sensitivity": "0.0092570280188902383064000",
+      "margin_5_pusd_minus_usdt_sensitivity": "-0.0129429719811097616936000",
+      "max_fee_gwei": "389.696575195",
+      "native_cost_pol": "0.18683846419094197",
+      "polusdt_ask": "0.10888000",
+      "top_ask_capacity_sufficient": true,
+      "top_ask_quantity_pol": "1716.90000000",
+      "whole_transaction_gas_cost_usdt_sensitivity": "0.0203429719811097616936000"
+    },
+    "safeLow": {
+      "gas_units_reused": 479446,
+      "margin_20_pusd_minus_usdt_sensitivity": "0.0092570280188902383064000",
+      "margin_5_pusd_minus_usdt_sensitivity": "-0.0129429719811097616936000",
+      "max_fee_gwei": "389.696575195",
+      "native_cost_pol": "0.18683846419094197",
+      "polusdt_ask": "0.10888000",
+      "top_ask_capacity_sufficient": true,
+      "top_ask_quantity_pol": "1716.90000000",
+      "whole_transaction_gas_cost_usdt_sensitivity": "0.0203429719811097616936000"
+    },
+    "standard": {
+      "gas_units_reused": 479446,
+      "margin_20_pusd_minus_usdt_sensitivity": "0.0092570280188902383064000",
+      "margin_5_pusd_minus_usdt_sensitivity": "-0.0129429719811097616936000",
+      "max_fee_gwei": "389.696575195",
+      "native_cost_pol": "0.18683846419094197",
+      "polusdt_ask": "0.10888000",
+      "top_ask_capacity_sufficient": true,
+      "top_ask_quantity_pol": "1716.90000000",
+      "whole_transaction_gas_cost_usdt_sensitivity": "0.0203429719811097616936000"
+    }
+  },
+  "source_raw": {
+    "binance_polusdt_book_ticker": {
+      "bytes": 116,
+      "sha256": "ad80df406424dbd7a2b109ea8a7ec67c66e68a1d7c99c32fb19b38dcc8397585"
+    },
+    "polygon_gas_station": {
+      "bytes": 263,
+      "sha256": "1aab6d50de7f11e2a02c0f4692c6d12c521d1dbe9975d17c461b6c42832b525f"
+    }
+  }
+}

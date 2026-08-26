@@ -1,0 +1,103 @@
+{
+  "authority": {
+    "account_requests_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_conversions_permitted": false,
+    "public_read_only_rpc_only": true,
+    "signed_requests_permitted": false
+  },
+  "collection": {
+    "end_block_decimal": 92628086,
+    "end_block_hex": "0x5856476",
+    "legacy_adapter_address": "0xd91e80cf2e7be2e162c6513ced06f1dd0da35296",
+    "log_page_count_ceiling": 42,
+    "log_page_size_blocks": 10000,
+    "market_id": "0x339a89111ad048709ef27ac9da11e70a28ceaae3a4f494e949c9d68be7c39a00",
+    "maximum_newest_unique_transactions": 20,
+    "overall_end_block_decimal": 92708086,
+    "overall_end_block_hex": "0x5869cf6",
+    "positions_converted_topic0": "0xb03d19dddbc72a87e735ff0ea3b57bef133ebe44e1894284916a84044deb367e",
+    "receipt_request_ceiling": 20,
+    "rpc_url": "https://polygon.drpc.org",
+    "source_request_ceiling": 1,
+    "start_block_decimal": 92208087,
+    "start_block_hex": "0x57efbd7",
+    "v2_collateral_adapter_address": "0xada2005600dec949baf300f4c6120000bdb6eaab"
+  },
+  "created_at_utc": "2026-08-26T18:30:05.9366768Z",
+  "decision_question": "Across the unchanged exact newest 500000-block scope, combining eight retained valid newest pages with a non-overlapping archive-provider continuation, did event 106981 have actual PositionsConverted transactions, were they routed through the official current Python SDK pUSD NegRisk collateral adapter, and what whole-transaction gas cost and converted amount did their receipts prove?",
+  "deployment_address_correction": {
+    "actual_retained_event_stakeholder": "0xada2005600dec949baf300f4c6120000bdb6eaab",
+    "official_current_py_sdk_address": "0xada2005600dec949baf300f4c6120000bdb6eaab",
+    "official_v2_readme_address": "0xada200001000ef00d07553cee7006808f895c6f1",
+    "rule": "classify the route against the current official SDK environment and observed on-chain caller; retain the README mismatch rather than silently choosing it"
+  },
+  "implementation": {
+    "bytes": 14939,
+    "path": ".tmp/collect_negrisk_v2_conversion_cost_v3.py",
+    "sha256": "77184c4e84bf14390212ea18b84a4b8b690deb4398b6f719f4b85a706d8ffcfe"
+  },
+  "method": {
+    "deduplication": "transaction_hash",
+    "log_filter": "legacy adapter address plus PositionsConverted topic0 plus event market_id at indexed topic2",
+    "page_order": "newest_first_non_overlapping",
+    "provider_only_recovery": "PublicNode retained eight valid newest pages then returned a pruned-history error; reuse those exact raw pages and query only the unobserved older continuation through the official Python SDK Polygon RPC URL",
+    "receipt_fields": [
+      "blockNumber",
+      "effectiveGasPrice",
+      "from",
+      "gasUsed",
+      "status",
+      "to",
+      "transactionHash"
+    ],
+    "retention": "persist every new raw response before parsing and hash-verify every reused predecessor receipt",
+    "route_test": "PositionsConverted indexed stakeholder topic1 equals the current official Python SDK neg_risk_collateral_adapter address",
+    "whole_transaction_warning": "receipt gas includes the entire outer transaction and is not an isolated convertPositions call"
+  },
+  "predecessor_failure": {
+    "contract_file_sha256": "f85baa405f0d8f25fabe46cc0d2be58ca12e0f0f5d2611459f18ad12a1051d8d",
+    "contract_result_sha256": "c1b5b8d4c83a666168f8ae16295f170597eb7a04bb19da9d67a417575abfad6b",
+    "error": "eth_getLogs error: {'code': -32701, 'message': 'History has been pruned for this block. To remove restrictions, order a dedicated full node here: https://www.allnodes.com/pol/host'}",
+    "journal_file_sha256": "c887aa0c032cd6dcf219f991dda1c7ef4004ba3dc02a504a1771447c0a124afd",
+    "journal_sha256": "5e91f622304ea9ceecf449dc687a493eaefc37b6335e67cbec24083949fb4726",
+    "result_file_sha256": "ba1f243481f555a54fb7bd0fe6854dee66c737fd656007d8ec830b55d56e3d94",
+    "result_sha256": "43dbcafb542c666be9f058a4c3a178578b8ec59bc2f2ee4bf4e2933900d7a0a5",
+    "retained_valid_coverage": {
+      "end_block_decimal": 92708086,
+      "matching_log_count": 1,
+      "page_count": 8,
+      "start_block_decimal": 92628087
+    }
+  },
+  "result_sha256": "a451518520dde2373f26c282e91d94f89e35991d40a319cb0be14ca1ef1808fd",
+  "schema_version": "polymarket-negrisk-v2-conversion-cost-contract-v3",
+  "source_contracts": [
+    {
+      "commit": "41c642c2d056e5a697fd5962498ca5a7313ac8ef",
+      "path": "src/polymarket/environments.py",
+      "repository": "https://github.com/Polymarket/py-sdk"
+    },
+    {
+      "commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+      "path": "README.md",
+      "repository": "https://github.com/Polymarket/ctf-exchange-v2"
+    },
+    {
+      "commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+      "path": "src/adapters/NegRiskCtfCollateralAdapter.sol",
+      "repository": "https://github.com/Polymarket/ctf-exchange-v2"
+    },
+    {
+      "commit": "f78b35b0863b4308a431ca307d06f49b2ea65e78",
+      "path": "src/NegRiskAdapter.sol",
+      "repository": "https://github.com/Polymarket/neg-risk-ctf-adapter"
+    }
+  ],
+  "stop_conditions": [
+    "stop after collecting the newest 20 unique matching transaction hashes across reused and new pages",
+    "otherwise stop after exhausting the unchanged exact 500000-block overall scope",
+    "stop immediately on a deterministic JSON-RPC error and retain it without an identical retry",
+    "do not request transaction calldata block timestamps token prices or account state unless the retained receipts leave a distinct preregistered question"
+  ]
+}

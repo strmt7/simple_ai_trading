@@ -15,6 +15,7 @@ docs/model-research/action-value/**/*.json text eol=lf
 docs/model-research/action-value/**/*.csv text eol=lf
 docs/model-research/action-value/**/*.svg text eol=lf
 docs/model-research/action-value/**/*.md text eol=lf
+docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/** binary -eol
 docs/model-research/action-value/round-075-frozen-v4-source/**/*.txt text eol=lf
 docs/archive/agent-history/*.md.txt text eol=lf
 docs/optimization/iteration-progress/**/*.csv text eol=lf

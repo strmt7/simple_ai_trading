@@ -1,0 +1,14 @@
+{
+  "authority": {
+    "account_requests_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_conversions_permitted": false,
+    "public_read_only_rpc_only": true,
+    "signed_requests_permitted": false
+  },
+  "contract_result_sha256": "aa4ed80dbad23cce692d10694ecd83668a0dfe3f94c564337650e6ed97f5f1f7",
+  "result_sha256": "45fdeb28ea18d229da42c8516248407e6eb9b5a1b51dd3ce77d8d5af1b7d949c",
+  "schema_version": "polymarket-negrisk-v2-conversion-cost-result-v1",
+  "status": "terminal_failure",
+  "terminal_error": "eth_getLogs error: {'code': -32701, 'message': 'exceed maximum block range: 10000'}"
+}

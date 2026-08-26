@@ -73,12 +73,12 @@
         "owned or explicitly queue-censored Bitcoin NO maker fills joined to the first causally subsequent Gold YES and S&P 500 YES executable output books",
         "repeated independent adapter-supported maker-input positive episodes across non-overlapping time volatility and liquidity regimes",
         "exact current minimum order size displayed depth CLOB fee and on-chain event conversion fee at every episode",
-        "authenticated conversion accessibility approvals relayer or gas cost latency adverse-selection capacity and cash-realized output reconciliation"
+        "authenticated candidate index-set conversion accessibility approvals exact user-paid or relayer-paid same-unit pUSD cost latency adverse-selection capacity and cash-realized output reconciliation"
       ],
       "canonical_artifacts": [
         {
           "path": "docs/model-research/action-value/polymarket-negrisk-maker-input-gate-v1-2026-08-26.json",
-          "result_sha256": "99cb35d065cfd2c12eb6947264b838c2c7407fba7582b14a94f30a856e8f0652"
+          "result_sha256": "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a"
         },
         {
           "path": "docs/model-research/action-value/polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json",
@@ -89,10 +89,10 @@
           "result_sha256": "9d7a2c61ae29cb6b29fd3f417ed3e40f1ea08fb2cb6729d20372648abdc448e2"
         }
       ],
-      "current_status": "highest_priority_market_direction_independent_candidate_one_five_minute_22_event_live_capture_found_one_positive_event_frame_at_5_and_20_shares_but_all_taker_was_negative_after_fees_maker_input_was_positive_by_only_0_00740_and_0_02960_pUSD_before_external_costs_and_an_exact_recent_onchain_receipt_proved_66_72_Bitcoin_NO_shares_filled_as_maker_at_0_82_but_queue_ownership_post_fill_output_books_conversion_access_latency_and_after_external_cost_profit_remain_unproved",
+      "current_status": "highest_priority_market_direction_independent_candidate_one_five_minute_22_event_live_capture_found_one_positive_event_frame_at_5_and_20_shares_but_all_taker_was_negative_after_fees_maker_input_was_positive_by_only_0_00740_and_0_02960_pUSD_before_external_costs_an_exact_recent_receipt_proved_66_72_Bitcoin_NO_shares_filled_as_maker_at_0_82_and_official_source_plus_one_successful_index7_conversion_proved_the_V2_to_legacy_route_but_reusing_479446_whole_outer_transaction_gas_units_at_one_current_gas_and_POLUSDT_ask_sensitivity_rejected_5_shares_and_left_only_0_009257_pUSD_minus_USDT_at_20_shares_before_other_costs_queue_post_fill_output_books_candidate_index_set_exact_account_access_user_charge_latency_and_after_cost_profit_remain_unproved",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_negative_risk_NO_to_YES_converter_recurrence",
-      "next_action": "terminally_audit_the_active_frozen_24_hour_six_token_capture_then_if_a_Bitcoin_NO_sell_fill_reaches_0_82_join_queue_censored_entry_to_the_first_causally_subsequent_5_and_20_share_Gold_YES_and_SP500_YES_taker_unwind_reject_on_no_fill_stale_or_discontinuous_books_nonpositive_after_fee_unwind_or_any_unbound_conversion_access_latency_approval_gas_adverse_selection_or_external_cost",
+      "next_action": "leave_the_active_frozen_24_hour_six_token_capture_untouched_and_terminally_audit_only_after_completion_the_5_share_direct_gas_branch_is_rejected_for_20_shares_if_a_Bitcoin_NO_sell_fill_reaches_0_82_join_queue_censored_entry_to_the_first_causally_subsequent_Gold_YES_and_SP500_YES_taker_unwind_then_reject_on_no_fill_stale_or_discontinuous_books_nonpositive_after_fee_unwind_or_any_unbound_candidate_index_set_account_access_same_unit_user_charge_latency_approval_adverse_selection_or_external_cost",
       "priority_rank": 2,
       "prohibited_shortcuts": [
         "calling_historical_mark_to_market_converter_profit_current_cash_realized_profit",
@@ -103,6 +103,9 @@
         "calling_a_transport_clean_subscription_source_continuous_when_cross_token_source_timestamps_are_stale_or_skewed",
         "filtering_aggregate_Data_API_trade_prices_as_price_level_maker_fill_probability",
         "calling_output_maker_economics_locked_without_pre_existing_inventory_and_holding_risk",
+        "silently_selecting_the_V2_README_adapter_address_despite_its_conflict_with_the_current_official_SDK_and_observed_conversion",
+        "counting_an_index7_all_three_NO_conversion_as_an_observed_candidate_one_NO_conversion",
+        "calling_a_pUSD_minus_USDT_sensitivity_same_unit_after_cost_profit",
         "ignoring_augmented_or_non_exhaustive_event_risk_conversion_fees_CLOB_fees_latency_atomicity_or_capacity",
         "placing_orders_approvals_or_conversions_without_separate_explicit_authority"
       ],
@@ -771,7 +774,7 @@
       "venue_scope": "polymarket_BTC_ETH_SOL_resolution"
     }
   ],
-  "result_sha256": "06adf4d2c6bca1894d96c258e407134aa52b113f4c6f32abe17c282b8c729297",
+  "result_sha256": "f9aa3089e2b402af10ac0f5e225f1b74ace5eb6cf8b1b0ab6672d9eb524424cc",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

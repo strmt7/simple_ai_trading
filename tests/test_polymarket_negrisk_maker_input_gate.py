@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+from decimal import Decimal
 from pathlib import Path
 
 
@@ -13,10 +14,10 @@ ARTIFACT_PATH = (
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_ARTIFACT_HASH = (
-    "99cb35d065cfd2c12eb6947264b838c2c7407fba7582b14a94f30a856e8f0652"
+    "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a"
 )
 EXPECTED_REGISTRY_HASH = (
-    "06adf4d2c6bca1894d96c258e407134aa52b113f4c6f32abe17c282b8c729297"
+    "f9aa3089e2b402af10ac0f5e225f1b74ace5eb6cf8b1b0ab6672d9eb524424cc"
 )
 
 
@@ -59,6 +60,72 @@ def test_gate_is_hash_bound_fail_closed_and_direction_independent() -> None:
     assert (
         economics[("maker_input_Bitcoin_NO_then_taker_sell_both_outputs", "20")]
         == "0.02960"
+    )
+    route = artifact["current_fee_and_conversion_contract"][
+        "v2_collateral_adapter_route"
+    ]
+    assert route["current_official_python_sdk_address"].lower() == (
+        route["actual_conversion"]["event_stakeholder"].lower()
+    )
+    assert route["actual_conversion"]["index_set"] == 7
+    assert route["readme_conflicting_address"].lower() != (
+        route["current_official_python_sdk_address"].lower()
+    )
+
+
+def test_exact_conversion_and_current_cost_sensitivity_remain_fail_closed() -> None:
+    artifact = _load(ARTIFACT_PATH)
+    access = artifact["conversion_access_and_latency"]
+    receipt = access["exact_successful_conversion_receipt"]
+    sensitivity = access["current_whole_transaction_gas_sensitivity"]
+
+    assert receipt["status"] == 1
+    assert receipt["index_set"] == 7
+    assert receipt["gas_used_whole_outer_transaction"] == 479446
+    assert access["conversion_gas_or_relayer_cost_bound"] is False
+    assert access["installed_sdk_method_audit"] == {
+        **access["installed_sdk_method_audit"],
+        "dedicated_convert_method_matches": 0,
+        "selector_literal_convertPositions_matches": 0,
+    }
+    assert sensitivity["request_count"] == 2
+    assert sensitivity["margin_5_pusd_minus_usdt_sensitivity"].startswith("-")
+    assert sensitivity["margin_20_pusd_minus_usdt_sensitivity"] == (
+        "0.0092570280188902383064000"
+    )
+    assert sensitivity["adjudication"] == (
+        "sensitivity_only_not_cross_stablecoin_after_cost_proof"
+    )
+
+
+def test_current_whole_transaction_gas_sensitivity_recomputes_exactly() -> None:
+    artifact = _load(ARTIFACT_PATH)
+    sensitivity = artifact["conversion_access_and_latency"][
+        "current_whole_transaction_gas_sensitivity"
+    ]
+    raw_root = (
+        ROOT
+        / "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2"
+    )
+    gas = _load(raw_root / "current-polygon-gas-station.json")
+    ticker = _load(raw_root / "current-binance-polusdt-book-ticker.json")
+
+    gas_cost_pol = (
+        Decimal(479446)
+        * Decimal(str(gas["standard"]["maxFee"]))
+        / Decimal(1_000_000_000)
+    )
+    gas_cost_usdt = gas_cost_pol * Decimal(ticker["askPrice"])
+
+    assert str(gas_cost_pol) == sensitivity["reused_whole_transaction_gas_cost_pol"]
+    assert str(gas_cost_usdt) == (
+        sensitivity["reused_whole_transaction_gas_cost_usdt_sensitivity"]
+    )
+    assert Decimal("0.00740") - gas_cost_usdt == Decimal(
+        sensitivity["margin_5_pusd_minus_usdt_sensitivity"]
+    )
+    assert Decimal("0.02960") - gas_cost_usdt == Decimal(
+        sensitivity["margin_20_pusd_minus_usdt_sensitivity"]
     )
 
 

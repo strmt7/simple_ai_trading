@@ -136,12 +136,22 @@ safety gate, blocks Stop, or submits an order.
   current fees. A Bitcoin-NO maker input at 0.82 left only `0.00740` and
   `0.02960` pUSD before conversion and external costs. An exact recent Polygon
   receipt independently proves 66.72 Bitcoin-NO shares filled as maker at 0.82,
-  but no source-bound post-fill Gold-YES/S&P-YES books, queue ownership,
-  conversion accessibility, latency, or external-cost profit exists. Both
+  and official source plus one exact successful conversion prove the current
+  V2-collateral-adapter-to-legacy-adapter route. That conversion used all three
+  NO positions (`indexSet=7`), not the candidate one-NO route, and its 479,446
+  gas units cover the whole outer transaction. Reusing those units at one
+  current Polygon gas recommendation and executable POLUSDT ask makes the
+  five-share margin negative and leaves only `0.0092570280188902383064000`
+  pUSD minus a USDT sensitivity at twenty shares before every other cost; USDT
+  is not assumed equal to pUSD. The V2 README address also conflicts with the
+  current official SDK address that agrees with the observed conversion. No
+  source-bound post-fill Gold-YES/S&P-YES books, queue ownership, candidate
+  index-set account access, exact user gas/relayer charge, latency, or
+  after-cost profit exists. Both
   documented historical-price endpoints returned points outside their requested
   time window and were rejected. Canonical maker-input gate:
   `polymarket-negrisk-maker-input-gate-v1-2026-08-26.json`, result SHA-256
-  `99cb35d065cfd2c12eb6947264b838c2c7407fba7582b14a94f30a856e8f0652`.
+  `d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a`.
   Its predecessor is the recurrence gate:
   `polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json`, result
   SHA-256 `ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030`.

@@ -1,0 +1,14 @@
+{
+  "authority": {
+    "account_requests_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_conversions_permitted": false,
+    "public_read_only_rpc_only": true,
+    "signed_requests_permitted": false
+  },
+  "contract_result_sha256": "a451518520dde2373f26c282e91d94f89e35991d40a319cb0be14ca1ef1808fd",
+  "result_sha256": "f81bf3f037a92138f7105a89c4cdb31bc62191f5a3ee8ea94cf412a986207ddb",
+  "schema_version": "polymarket-negrisk-v2-conversion-cost-result-v3",
+  "status": "terminal_failure",
+  "terminal_error": "eth_getLogs returned HTTP 400"
+}
