@@ -69,13 +69,17 @@
     },
     {
       "blocking_evidence": [
-        "one bounded source-continuous event-time capture across the fixed non-augmented active BTC ETH SOL negative-risk population",
-        "atomic original-message batching full-book initialization and reported-best-quote checksum agreement for every token",
-        "repeated independent adapter-supported NO-to-YES positive episodes across non-overlapping time volatility and liquidity regimes",
-        "exact current minimum order size displayed depth CLOB fee and on-chain event conversion fee",
-        "relayer or gas accessibility latency atomicity leg-risk adverse-selection capacity and cash-realized output reconciliation"
+        "terminal audit of the active frozen 24-hour six-token maker-input fill-and-unwind capture without using its partial file",
+        "owned or explicitly queue-censored Bitcoin NO maker fills joined to the first causally subsequent Gold YES and S&P 500 YES executable output books",
+        "repeated independent adapter-supported maker-input positive episodes across non-overlapping time volatility and liquidity regimes",
+        "exact current minimum order size displayed depth CLOB fee and on-chain event conversion fee at every episode",
+        "authenticated conversion accessibility approvals relayer or gas cost latency adverse-selection capacity and cash-realized output reconciliation"
       ],
       "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-negrisk-maker-input-gate-v1-2026-08-26.json",
+          "result_sha256": "99cb35d065cfd2c12eb6947264b838c2c7407fba7582b14a94f30a856e8f0652"
+        },
         {
           "path": "docs/model-research/action-value/polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json",
           "result_sha256": "ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030"
@@ -85,21 +89,25 @@
           "result_sha256": "9d7a2c61ae29cb6b29fd3f417ed3e40f1ea08fb2cb6729d20372648abdc448e2"
         }
       ],
-      "current_status": "materially_reopened_research_only_new_primary_paper_reports_36_adapter_supported_positive_NO_side_CLOB_episodes_and_1_086_million_USDC_converter_linked_estimated_profit_but_profit_mixes_realized_and_imputed_inventory_the_prior_22_event_snapshot_was_zero_and_a_retained_recent_one_event_796_state_replay_was_also_zero_gross_positive_no_current_edge",
+      "current_status": "highest_priority_market_direction_independent_candidate_one_five_minute_22_event_live_capture_found_one_positive_event_frame_at_5_and_20_shares_but_all_taker_was_negative_after_fees_maker_input_was_positive_by_only_0_00740_and_0_02960_pUSD_before_external_costs_and_an_exact_recent_onchain_receipt_proved_66_72_Bitcoin_NO_shares_filled_as_maker_at_0_82_but_queue_ownership_post_fill_output_books_conversion_access_latency_and_after_external_cost_profit_remain_unproved",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_negative_risk_NO_to_YES_converter_recurrence",
-      "next_action": "run_one_bounded_public_event_time_recurrence_and_capacity_study_not_another_snapshot_screen_only_adapter_supported_NO_to_YES_paths_at_exact_minimum_size_and_a_preregistered_depth_ladder_then_stop_at_gross_failure_or_escalate_exact_costs_only_for_atomic_continuity_valid_positive_episodes",
+      "next_action": "terminally_audit_the_active_frozen_24_hour_six_token_capture_then_if_a_Bitcoin_NO_sell_fill_reaches_0_82_join_queue_censored_entry_to_the_first_causally_subsequent_5_and_20_share_Gold_YES_and_SP500_YES_taker_unwind_reject_on_no_fill_stale_or_discontinuous_books_nonpositive_after_fee_unwind_or_any_unbound_conversion_access_latency_approval_gas_adverse_selection_or_external_cost",
       "priority_rank": 2,
       "prohibited_shortcuts": [
         "calling_historical_mark_to_market_converter_profit_current_cash_realized_profit",
         "crediting_unsupported_YES_to_NO_violations_as_pre_settlement_executable",
         "evaluating_partial_incremental_updates_before_their_original_message_batch_is_complete",
         "inventing_depth_before_every_token_has_an_authoritative_full_book",
+        "counting_two_quantity_evaluations_of_one_frame_as_two_states_or_recurrence",
+        "calling_a_transport_clean_subscription_source_continuous_when_cross_token_source_timestamps_are_stale_or_skewed",
+        "filtering_aggregate_Data_API_trade_prices_as_price_level_maker_fill_probability",
+        "calling_output_maker_economics_locked_without_pre_existing_inventory_and_holding_risk",
         "ignoring_augmented_or_non_exhaustive_event_risk_conversion_fees_CLOB_fees_latency_atomicity_or_capacity",
         "placing_orders_approvals_or_conversions_without_separate_explicit_authority"
       ],
-      "retry_trigger": "satisfied_now_by_the_2026_08_01_primary_event_time_and_onchain_conversion_study_for_public_read_only_recurrence_research_only",
-      "venue_scope": "polymarket_fixed_non_augmented_BTC_ETH_SOL_negative_risk_events"
+      "retry_trigger": "one_frozen_24_hour_six_token_prospective_capture_is_active_do_not_start_a_duplicate_use_only_its_terminal_result",
+      "venue_scope": "polymarket_event_106981_bitcoin_gold_sp500_fixed_non_augmented_negative_risk"
     },
     {
       "blocking_evidence": [
@@ -763,7 +771,7 @@
       "venue_scope": "polymarket_BTC_ETH_SOL_resolution"
     }
   ],
-  "result_sha256": "72060ab3f76aa696bd1cd99b7f48bdf769339a590ba2ada2290dedaea01b703c",
+  "result_sha256": "06adf4d2c6bca1894d96c258e407134aa52b113f4c6f32abe17c282b8c729297",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -877,6 +885,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T17:32:00Z",
+  "updated_at_utc": "2026-08-26T18:00:23.1015783Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

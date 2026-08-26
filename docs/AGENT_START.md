@@ -128,12 +128,29 @@ safety gate, blocks Stop, or submits an order.
   2026-08-09 replay for the fixed three-outcome `Bitcoin vs. Gold vs. S&P 500 in
   2026` event initialized all six books and evaluated 796 exact
   received-timestamp-batched five-share states; zero was gross positive. The old
-  one-state snapshot remains terminal only under its exact contract. The
-  materially distinct next step is one source-continuous event-time
-  recurrence/capacity study of adapter-supported NO-to-YES paths, not another
-  snapshot. Canonical gate:
+  one-state snapshot remains terminal only under its exact contract. A completed
+  five-minute public event-time capture then screened all 22 fixed events and
+  found one gross-positive source frame for the same three-outcome event at five
+  and twenty shares. The two positives were two size evaluations of one frame,
+  not recurrence. The all-taker paths were `-0.07082` and `-0.28328` pUSD after
+  current fees. A Bitcoin-NO maker input at 0.82 left only `0.00740` and
+  `0.02960` pUSD before conversion and external costs. An exact recent Polygon
+  receipt independently proves 66.72 Bitcoin-NO shares filled as maker at 0.82,
+  but no source-bound post-fill Gold-YES/S&P-YES books, queue ownership,
+  conversion accessibility, latency, or external-cost profit exists. Both
+  documented historical-price endpoints returned points outside their requested
+  time window and were rejected. Canonical maker-input gate:
+  `polymarket-negrisk-maker-input-gate-v1-2026-08-26.json`, result SHA-256
+  `99cb35d065cfd2c12eb6947264b838c2c7407fba7582b14a94f30a856e8f0652`.
+  Its predecessor is the recurrence gate:
   `polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json`, result
   SHA-256 `ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030`.
+  One frozen 24-hour public capture of only the six event tokens was launched
+  under contract SHA-256
+  `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
+  Verify its process and terminal file before acting; never use its partial raw
+  file, restart it, or start a duplicate. It may only decide queue-censored fill
+  and causally subsequent unwind feasibility, not trading authority.
   The accepted edge count remains nine. Binance's best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even. The exact three spot fee queries are now defined from Binance's

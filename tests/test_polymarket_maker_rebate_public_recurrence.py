@@ -21,7 +21,7 @@ EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "066debe7a70e50432005f7284135e3ab54b08e599fc28469e5ff4ad7b3885212"
+    "06adf4d2c6bca1894d96c258e407134aa52b113f4c6f32abe17c282b8c729297"
 )
 
 
@@ -96,13 +96,13 @@ def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
-    assert registry["accepted_edge_count"] == 3
+    assert registry["accepted_edge_count"] == 9
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]
         if row["mechanism"] == "paired_crypto_maker_rebates"
     )
-    assert candidate["priority_rank"] == 14
+    assert candidate["priority_rank"] == 17
     assert candidate["canonical_artifacts"][-1] == {
         "path": (
             "docs/model-research/polymarket/"

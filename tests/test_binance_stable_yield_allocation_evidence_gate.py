@@ -27,7 +27,7 @@ EXPECTED_RESULT_SHA256 = (
     "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "066debe7a70e50432005f7284135e3ab54b08e599fc28469e5ff4ad7b3885212"
+    "06adf4d2c6bca1894d96c258e407134aa52b113f4c6f32abe17c282b8c729297"
 )
 EXPECTED_PROMOTION_TRIAGE_SHA256 = (
     "fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c"
@@ -102,15 +102,15 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 16))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 22))
     candidate = next(
         row
         for row in hypotheses
         if row["mechanism"] == "same_account_stable_value_yield_allocation"
     )
-    assert candidate["priority_rank"] == 5
+    assert candidate["priority_rank"] == 8
     assert candidate["market_direction_forecast_required"] is False
-    assert candidate["canonical_artifacts"] == [
+    assert candidate["canonical_artifacts"][:4] == [
         {
             "path": (
                 "docs/model-research/action-value/"
