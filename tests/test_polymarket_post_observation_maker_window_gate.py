@@ -8,9 +8,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / "docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json"
-EXPECTED_HASH = "d6f790d7de78fc4f1c527b9a6528ebb3faa31fc11d810d9daccec3e4a7d9084e"
+EXPECTED_HASH = "03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f49392"
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-EXPECTED_REGISTRY_HASH = "35adedbfbb8b11776592602a9c64b692b90b12c7fe458f0e52b65ee218ca6d10"
+EXPECTED_REGISTRY_HASH = "b5a65a83cdf1abaadf7d2a0215720b80266e06c50c23992f5a3ed3d6c638a1b4"
 
 
 def _load() -> dict[str, object]:
@@ -62,13 +62,13 @@ def test_registry_promotes_only_a_conditional_lead() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 14))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 15))
     lead = next(
         row
         for row in hypotheses
         if row["mechanism"] == "post_observation_oracle_to_clob_close_maker_window"
     )
-    assert lead["priority_rank"] == 2
+    assert lead["priority_rank"] == 3
     assert lead["market_direction_forecast_required"] is False
     assert lead["canonical_artifacts"][0]["result_sha256"] == EXPECTED_HASH
     assert "authenticated_order_acceptance" in lead["current_status"]

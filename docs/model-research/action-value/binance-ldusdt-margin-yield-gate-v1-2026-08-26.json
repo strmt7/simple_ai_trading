@@ -1,0 +1,123 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "profitability_claim": false,
+    "signed_requests_made": 0
+  },
+  "candidate_status": "validated_public_incremental_gross_collateral_yield_not_an_accepted_edge",
+  "created_at_utc": "2026-08-26T10:00:01Z",
+  "economic_summary": {
+    "aligned_daily_close_count": 505,
+    "compound_annualized_return_fraction": "0.0201090505946087",
+    "cumulative_return_fraction": "0.0278728995537161893183999857",
+    "elapsed_days": 504,
+    "first_normalized_close_ldusdt_per_usdt": "1.104040674526676028696572515",
+    "last_normalized_close_ldusdt_per_usdt": "1.1348134893509751376015801468",
+    "maximum_drawdown_fraction": "-0.0012315894276011451234286739",
+    "negative_daily_change_count": 115,
+    "positive_daily_change_count": 389,
+    "worst_daily_change_fraction": "-0.00123158942760115",
+    "zero_daily_change_count": 0
+  },
+  "incremental_edge_identity": {
+    "description": "Replace USDT that would otherwise remain idle as required USD-M Futures collateral with account-eligible LDUSDT while preserving the same legitimate futures risk budget and earning Simple Earn USDT Real-Time APR through appreciation of LDUSDT relative to USDT.",
+    "market_direction_forecast_required": false,
+    "not_a_standalone_trading_strategy": true,
+    "net_incremental_return": "realized_LDUSDT_USDT_appreciation - foregone_USDT_collateral_yield - LDUSDT_conversion_and_unwind_costs - incremental_margin_haircut_auto_exchange_liquidation_delay_tax_custody_and_operational_costs",
+    "scope_boundary": "Only collateral already required for an independently justified futures position is incremental. Borrowing, adding leverage, manufacturing volume, or opening a position solely to obtain LDUSDT rewards is outside the mechanism."
+  },
+  "normalized_windows": [
+    {
+      "compound_annualized_return_fraction": "0.0274951893023287",
+      "days": 7,
+      "return_fraction": "0.0005203213422160218432414991"
+    },
+    {
+      "compound_annualized_return_fraction": "0.0196799605131139",
+      "days": 30,
+      "return_fraction": "0.0016031039166214180617743032"
+    },
+    {
+      "compound_annualized_return_fraction": "0.0159086056458304",
+      "days": 90,
+      "return_fraction": "0.003899377670859083947932113"
+    },
+    {
+      "compound_annualized_return_fraction": "0.018060569048175",
+      "days": 365,
+      "return_fraction": "0.0180605690481748412114014413"
+    }
+  ],
+  "public_current_snapshot": {
+    "asset_index_received_after_ms": 1787738221370,
+    "ldusdtusd": {
+      "ask_buffer": "0.00100000",
+      "ask_rate": "1.13565220",
+      "bid_buffer": "0.00100000",
+      "bid_rate": "1.13338316",
+      "index": "1.13451768"
+    },
+    "normalized_current_index_ldusdt_per_usdt": "1.134804955874579649838356579968218954628",
+    "usdtusd": {
+      "ask_buffer": "0.00010000",
+      "ask_rate": "0.99984682",
+      "bid_buffer": "0.00010000",
+      "bid_rate": "0.99964688",
+      "index": "0.99974685"
+    },
+    "usd_m_exchange_info_received_after_ms": 1787738309687,
+    "usd_m_margin_assets": {
+      "LDUSDT": {
+        "auto_asset_exchange": "0",
+        "margin_available": true
+      },
+      "USDT": {
+        "auto_asset_exchange": "-10000",
+        "margin_available": true
+      }
+    }
+  },
+  "result_sha256": "39b66e63c6131d13ff6e6df7f19521745b0de8a715eb3969bf333c485a9ab5f0",
+  "risk_engine_buffer_sensitivity": {
+    "classification": "public_risk_engine_quote_buffer_sensitivity_not_normal_conversion_cost_or_account_liquidation_evidence",
+    "incremental_buffer_fraction_ldusdt_minus_usdt": "0.0009",
+    "recovery_days_at_504_day_compound_rate": "16.33592786762751931773150169992042514005",
+    "recovery_days_at_7_day_compound_rate": "11.94754458272370406739521194488581935109"
+  },
+  "sources": {
+    "historical_index_capture": {
+      "aligned_first_open_ms": 1744156800000,
+      "aligned_last_open_ms": 1787702400000,
+      "ldusdt_request_url": "https://fapi.binance.com/fapi/v1/indexPriceKlines?pair=LDUSDTUSD&interval=1d&limit=1500",
+      "ldusdt_response_sha256": "c75aed5a330e190f71a1694b19e76a982379da078d267954cfc7492fbc37f88c",
+      "requested_before_ms": 1787738294370,
+      "received_after_ms": 1787738294940,
+      "usdt_request_url": "https://fapi.binance.com/fapi/v1/indexPriceKlines?pair=USDTUSD&interval=1d&limit=1500",
+      "usdt_response_sha256": "9d61a0fd43ef9d56609f04d3c34d867e65ae574ccf57e0afe24db27cd58c1e67"
+    },
+    "official_ldusdt_product_guide_url": "https://www.binance.bh/ru-UA/support/faq/detail/3bd1a6eba20a445da1e94bf6cfa52e80",
+    "official_multi_assets_index_documentation_url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Multi-Assets-Mode-Asset-Index",
+    "public_futures_convert_probe": {
+      "interpretation": "The generic public Futures Convert catalog exposed no LDUSDT-to-USDT pair, so it cannot prove the product conversion route, amount, fee, delay, or account eligibility.",
+      "request_url": "https://fapi.binance.com/fapi/v1/convert/exchangeInfo?fromAsset=LDUSDT&toAsset=USDT",
+      "requested_before_ms": 1787738374228,
+      "response": [],
+      "response_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "unresolved_gates": [
+    "The public normalized index proves realized gross appreciation, not this account's Simple Earn or Futures eligibility, position limit, conversion availability, or credited balance lineage.",
+    "The normal Simple Earn USDT to LDUSDT conversion amount fee timing and reverse-conversion cash flow are not exposed by the generic public Futures Convert catalog.",
+    "The public bid and ask buffers are risk-engine quote fields, not proof of the account's normal conversion cost; forced auto-exchange liquidation and margin behavior remain unproved.",
+    "The correct alternative is the exact yield on collateral otherwise available to the same futures strategy, never an assumed zero unless USDT collateral demonstrably earns zero.",
+    "The retained history includes 115 negative normalized daily changes and a 12.3159-basis-point maximum drawdown, so LDUSDT appreciation is persistent over the full horizon but not monotonic daily.",
+    "No existing or proposed futures strategy becomes profitable merely by adding this collateral yield; its own fees funding basis execution liquidation and after-cost regime evidence remain controlling.",
+    "No account, conversion, funding, paper, order, or live authority exists."
+  ],
+  "next_action": "When both designated ephemeral credentials exist, source-bind and freeze one GET-only account prequalification for exact USDT Simple Earn eligibility Real-Time APR position limits USD-M multi-assets mode LDUSDT balance and account margin state. Only after a positive read-only gate and separate explicit funded authority may one minimum-size USDT Simple Earn to LDUSDT to USDT round-trip reconcile exact amounts fees delays rewards and balances without opening a futures position."
+}

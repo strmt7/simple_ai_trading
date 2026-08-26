@@ -10,7 +10,7 @@
     "signed_requests_made": 0
   },
   "candidate_status": "high_priority_conditional_execution_lead_not_an_accepted_edge",
-  "created_at_utc": "2026-08-26T10:20:00Z",
+  "created_at_utc": "2026-08-26T10:00:01Z",
   "economic_summary": {
     "complete_conditions": 10,
     "conditions_with_post_observation_winner_bid_growth": 10,
@@ -40,7 +40,7 @@
     "fresh_bid_proxy": "A positive change in aggregate winner-token BUY size at price 0.99 or 0.999 after exact closing-TWAP local receipt.",
     "outcome_check": "Exact opening and closing TWAP values implied Up or Down and matched the later public market_resolved winner in every complete row."
   },
-  "result_sha256": "d6f790d7de78fc4f1c527b9a6528ebb3faa31fc11d810d9daccec3e4a7d9084e",
+  "result_sha256": "03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f49392",
   "source": {
     "capture_report_sha256": "271ecdb323288689a90c9a45298f5facd541fb8730a4f543d3d488a3e75a2ce9",
     "capture_result_sha256": "862cd38bdb8ed45b3ab52bbf7ba6f33444e81392d398c2e39cc45a76cee356b1",

@@ -170,10 +170,26 @@ safety gate, blocks Stop, or submits an order.
   hour, and all costs remain unbound. Canonical gate:
   `polymarket-post-observation-maker-window-gate-v1-2026-08-26.json`, result
   SHA-256
-  `d6f790d7de78fc4f1c527b9a6528ebb3faa31fc11d810d9daccec3e4a7d9084e`.
+  `03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f49392`.
   Run public prospective BTC/ETH/SOL monitoring now. Do not submit an order;
   only after `2026-08-29T23:40:00Z` and explicit authority may one minimum-size
   no-crossing authenticated order-acceptance probe be frozen.
+  Binance LDUSDT is now the highest-priority Binance structural lead. Official
+  product guidance says eligible USDT Simple Earn Flexible assets can become
+  LDUSDT, remain USD-M Multi-Assets margin, and keep Real-Time APR rewards.
+  Public LDUSDTUSD and USDTUSD index histories produced 505 aligned daily closes
+  over 504 days: normalized LDUSDT appreciated 2.78729%, or 2.01091% compound
+  annualized; the latest 7-day pace was 2.74952% annualized. Public exchange
+  information still marks LDUSDT margin-eligible. This is a validated gross
+  incremental collateral-yield mechanism, not an accepted edge or a reason to
+  open a futures position. Same-account eligibility, conversion cash flow,
+  reward lineage, normal conversion cost, and incremental margin/auto-exchange
+  risk remain unproved. Canonical gate:
+  `binance-ldusdt-margin-yield-gate-v1-2026-08-26.json`, result SHA-256
+  `39b66e63c6131d13ff6e6df7f19521745b0de8a715eb3969bf333c485a9ab5f0`.
+  When both designated ephemeral credentials exist, freeze one GET-only account
+  prequalification. A minimum-size conversion round trip then requires separate
+  explicit funded authority and must not open a futures position.
   A source-first USD-M/COIN-M perpetual funding review also stopped before any
   market request. Official schemas expose separate public funding endpoints and
   COIN-M `contractSize` and `marginAsset`, but do not bind a complete
@@ -437,6 +453,7 @@ safety gate, blocks Stop, or submits an order.
 | Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
+| LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
