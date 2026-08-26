@@ -1,0 +1,219 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "execution_lock_proved": false,
+    "market_direction_forecast_required_by_intended_identity": false,
+    "market_direction_independence_proved_by_observed_sequences": false,
+    "profitability_claim": false,
+    "public_after_cost_profit_floor_pusd": "0",
+    "status": "material_new_primary_research_support_for_maker_first_taker_hedge_execution_design_but_strict_one_day_public_fill_reconstruction_is_negative_in_aggregate_unstable_across_assets_and_hours_and_cannot_bind_creation_time_executable_hedge_or_queue",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_inspected_or_used": false,
+    "funded_actions": 0,
+    "orders_cancellations_merges_redemptions_or_transfers_submitted": 0,
+    "public_dataset_files_downloaded": 4,
+    "public_paper_delivery_attempts": 1
+  },
+  "completed_before_utc": "2026-08-26T23:26:48.2087824Z",
+  "distinctness": {
+    "classification": "evidence_backed_extension_of_existing_paired_crypto_maker_rebates_family_not_a_new_accepted_edge",
+    "existing_registry_mechanism": "paired_crypto_maker_rebates",
+    "new_mechanism_detail": "rest_one_complete_set_leg_as_post_only_maker_then_after_an_owned_fill_take_the_opposite_leg_at_exact_equal_quantity",
+    "not_a_repeat_of": [
+      "two_passive_leg_paired_maker_fill_assumption",
+      "all_taker_binary_complete_set_snapshot",
+      "negative_risk_conversion",
+      "maker_rebate_receipt_recurrence_only"
+    ],
+    "reason": "the new paper distinguishes maker arbitrage as one passive payoff_leg followed by an aggressive completion leg while the prior registry evidence proved public rebate recurrence but not this execution sequence"
+  },
+  "mechanism_identity": {
+    "complete_set_terminal_payout_per_matched_share_pusd": "1",
+    "creation_time_lock_condition": "maker_limit_price + synchronized_opposite_executable_ask + exact_taker_fee + every_other_cost < 1",
+    "historical_sequence_condition": "same_public_actor_first_buys_one_outcome_as_maker_then_1_to_60_seconds_later_buys_the_exact_equal_quantity_of_the_opposite_outcome_as_taker_at_least_10_seconds_before_close",
+    "historical_current_fee_sensitive_cost_per_share": "maker_fill_price + hedge_fill_price + 0.07 * hedge_fill_price * (1 - hedge_fill_price)",
+    "why_a_positive_historical_sequence_is_not_direction_independent_proof": "without_the_opposite_executable_ask_at_the_maker_fill_a_positive_sequence_requires_the_opposite_leg_to_become_cheap_enough_during_the_unhedged_delay_which_is_favorable_directional_price_movement_not_a_creation_time_lock",
+    "why_a_prospective_design_can_still_be_direction_neutral": "only_a_precommitted_creation_time_inequality_plus_immediate_exact_quantity_fill_or_kill_hedge_and_full_orphan_accounting_can_test_whether_both_payoff_equivalent_legs_lock_below_one_without_predicting_the_final_outcome"
+  },
+  "primary_research_lead": {
+    "paper": "Taker vs. Maker Arbitrage",
+    "authors": [
+      "Marco Gortan",
+      "Angelo Ranaldo"
+    ],
+    "paper_date": "2026-08-07",
+    "ssrn_posted_date": "2026-08-12",
+    "ssrn_abstract_id": "7269858",
+    "source_bound_claims": [
+      "the_study_uses_more_than_8_million_arbitrage_transactions_from_a_leading_prediction_market",
+      "more_than_half_of_observed_arbitrage_bundles_are_maker_arbitrage",
+      "maker_arbitrage_supplies_liquidity_on_one_payoff_equivalent_leg_then_completes_by_taking_the_other_leg_after_fill",
+      "maker_arbitrages_are_reported_more_often_profitable_and_taker_fee_burdens_for_taker_arbitrage_are_reported_more_than_twice_as_large"
+    ],
+    "admissibility": "mechanism_reopening_evidence_only_not_a_current_execution_or_profit_claim",
+    "full_text_obtained": false,
+    "direct_delivery_result": "HTTP_403_Cloudflare_HTML_retained_once_and_not_retried"
+  },
+  "historical_diagnostic": {
+    "analysis_tool": "tools/analyze_polymarket_maker_first_taker_hedge.py",
+    "canonical_diagnostic": "docs/model-research/polymarket/maker-first-taker-hedge-historical-diagnostic-v1-2026-08-27.json",
+    "canonical_diagnostic_result_sha256": "d11d0f42a082fc19b1cd6ee3ee6cd226f95b28db2e1f9c5cf965913e35ce6b07",
+    "dataset_partition": "TimeSeventeen/Polymarket-v1_daily_aligned_2026_04_27",
+    "source_rows": 3986210,
+    "deduplicated_source_rows": 3862074,
+    "exact_duplicate_rows_removed": 124136,
+    "scoped_btc_eth_sol_short_window_fills": 3111951,
+    "scoped_conditions": 1260,
+    "strict_sequence_count": 159,
+    "strict_actor_count": 122,
+    "strict_condition_count": 105,
+    "current_fee_sensitive_positive_sequence_count": 75,
+    "current_fee_sensitive_positive_fraction": "0.471698113208",
+    "median_current_fee_sensitive_cost_per_share_pusd": "1.012037",
+    "minimum_current_fee_sensitive_cost_per_share_pusd": "0.682037",
+    "maximum_current_fee_sensitive_cost_per_share_pusd": "1.575232",
+    "aggregate_current_fee_sensitive_pnl_pusd": "-9.33095786",
+    "matched_shares": "1305.82",
+    "median_hedge_delay_seconds": "34",
+    "asset_results": [
+      {
+        "aggregate_current_fee_sensitive_pnl_pusd": "-8.32779986",
+        "asset": "BTC",
+        "positive_sequence_count": 74,
+        "sequence_count": 156
+      },
+      {
+        "aggregate_current_fee_sensitive_pnl_pusd": "-1.003158",
+        "asset": "ETH",
+        "positive_sequence_count": 1,
+        "sequence_count": 3
+      },
+      {
+        "aggregate_current_fee_sensitive_pnl_pusd": "0",
+        "asset": "SOL",
+        "positive_sequence_count": 0,
+        "scoped_fill_count": 203085,
+        "sequence_count": 0
+      }
+    ],
+    "hourly_stability": {
+      "aggregate_negative_hour_bins": 12,
+      "aggregate_positive_hour_bins": 12,
+      "hour_bins_with_zero_positive_sequences": 4,
+      "observed_utc_hour_bins": 24,
+      "positive_sequence_fraction_range": [
+        "0",
+        "1"
+      ]
+    },
+    "result": "reject_market_situation_independent_edge_claim_and_retain_only_as_a_prospective_execution_design_candidate"
+  },
+  "historical_diagnostic_limits": [
+    "only_one_UTC_daily_partition_was_downloaded_and_analyzed",
+    "the_public_dataset_is_historical_Polymarket_v1_and_does_not_establish_current_v2_execution",
+    "the_cleaned_layer_has_no_order_placements_cancellations_quote_updates_queue_positions_or_order_books",
+    "the_cleaned_layer_omits_on_chain_event_identifiers_and_exact_row_deduplication_can_collapse_indistinguishable_real_fills",
+    "actor_condition_exactly_two_participations_is_a_conservative_pairing_heuristic_not_exact_order_lineage",
+    "the_dataset_fee_usdc_field_was_not_used_because_it_does_not_bind_the_current_fee_contract",
+    "the_current_0_07_crypto_taker_fee_curve_is_a_sensitivity_not_a_historical_realized_fee",
+    "no_owned_inventory_rebates_merges_redemptions_external_costs_or_realized_profit_were_observed",
+    "no_cross_regime_acceptance_slice_is_satisfied"
+  ],
+  "prospective_execution_contract": {
+    "activation_preconditions": [
+      "protected_Round_21_sidecar_boundary_has_passed_and_terminal_audit_agrees",
+      "explicit_authenticated_paper_authority_exists",
+      "exact_current_market_fee_schedule_and_owned_account_tier_are_source_bound",
+      "one_fixed_BTC_ETH_SOL_market_population_size_and_observation_window_are_preregistered"
+    ],
+    "maker_order_gate": "post_only_one_leg_only_when_its_limit_plus_a_synchronized_executable_opposite_ask_at_exact_quantity_plus_current_taker_fee_and_every_conservative_cost_is_strictly_below_one",
+    "owned_fill_response": "on_exact_owned_maker_fill_submit_an_immediate_fill_or_kill_or_fill_and_kill_opposite_buy_for_the_exact_fill_quantity_under_a_frozen_maximum_cost_and_latency_ceiling",
+    "measurement_requirements": [
+      "maker_order_acceptance_hash_price_size_and_timestamp",
+      "queue_position_proxy_fill_probability_and_time_to_fill",
+      "opposite_book_source_timestamp_at_order_creation_and_at_fill",
+      "hedge_acceptance_fill_or_clean_failure_and_end_to_end_latency",
+      "cancellation_race_and_every_unhedged_orphan_mark_and_realized_PnL",
+      "exact_maker_taker_fees_rebate_payment_merge_redemption_and_capital_cost",
+      "bull_bear_sideways_choppy_high_volatility_liquidity_stress_and_latency_stress_slices"
+    ],
+    "promotion_gate": "positive_worst_episode_after_all_costs_across_every_required_regime_and_stress_slice_with_no_unreconciled_orphan_unknown_order_or_inventory_state",
+    "stop_conditions": [
+      "creation_time_opposite_executable_ask_is_missing_stale_or_nonpositive_after_cost",
+      "post_only_or_exact_quantity_semantics_are_unproved",
+      "hedge_rejects_partially_fills_or_exceeds_the_frozen_cost_or_latency_ceiling",
+      "any_order_fill_fee_rebate_inventory_merge_redemption_or_ownership_state_is_unknown",
+      "any_required_regime_or_stress_slice_is_negative_or_unsupported"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "treating_the_paper_abstract_or_headline_profit_frequency_as_current_profit",
+    "using_a_future_hedge_fill_as_if_its_price_were_executable_at_maker_order_creation",
+    "calling_favorable_price_movement_during_unhedged_delay_arbitrage",
+    "assuming_a_public_wallet_fill_is_owned_or_reproducible_queue_access",
+    "using_the_dataset_fee_usdc_as_the_current_fee",
+    "ignoring_exact_duplicate_rows_or_multi_maker_taker_transactions",
+    "pooling_BTC_ETH_and_SOL_to_hide_missing_or_negative_asset_slices",
+    "placing_orders_before_the_protected_boundary_or_without_explicit_authority",
+    "manufacturing_volume_for_rebates"
+  ],
+  "result_sha256": "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69",
+  "schema_version": "polymarket-maker-first-taker-hedge-complete-set-candidate-v1",
+  "sources": {
+    "paper": [
+      {
+        "delivery_attempt_payload_bytes": 5550,
+        "delivery_attempt_payload_sha256": "d372bbcc0d821a64c3d4bceb62104b9b5235095c0e474593adf754836bc8bfe2",
+        "delivery_attempt_status": "HTTP_403_HTML_not_paper_content",
+        "role": "SSRN_primary_abstract_metadata_and_mechanism_claims",
+        "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7269858"
+      },
+      {
+        "role": "author_primary_announcement_identifying_Polymarket_and_8_7_million_transactions",
+        "url": "https://ch.linkedin.com/in/angelo-ranaldo"
+      }
+    ],
+    "public_dataset": [
+      {
+        "payload_bytes": 24443,
+        "payload_sha256": "b83f9875a7600e0a5d5e5fa50d1c7de6cc7880f0877214da59a9b560a12a5cba",
+        "role": "dataset_schema_provenance_granularity_and_explicit_no_order_book_limit",
+        "url": "https://huggingface.co/datasets/TimeSeventeen/Polymarket-v1/raw/main/README.md"
+      },
+      {
+        "final_cursor": "nonterminal_at_1000_entries",
+        "payload_bytes": 310499,
+        "payload_sha256": "54478fcc139367d8b93b768e738ff560c2b14f42ae0bfa7042562e93eb696c7d",
+        "role": "partial_daily_aligned_tree_used_only_to_locate_the_exact_final_day_partition",
+        "url": "https://huggingface.co/api/datasets/TimeSeventeen/Polymarket-v1/tree/main/daily_aligned?recursive=false&expand=false&limit=1000"
+      },
+      {
+        "payload_bytes": 90897877,
+        "payload_sha256": "9d6fb8c41aa1f283581d491a30ae27b7f9cd8bc5d32c4e86df80101038b00ebb",
+        "received_after_utc": "2026-08-26T23:13:54.7123528Z",
+        "requested_before_utc": "2026-08-26T23:13:10.3161704Z",
+        "role": "exact_one_day_daily_aligned_fill_partition_analyzed_once_without_refetch",
+        "url": "https://huggingface.co/datasets/TimeSeventeen/Polymarket-v1/resolve/main/daily_aligned/2026_04_27.parquet"
+      }
+    ],
+    "official_current_polymarket_terms": [
+      {
+        "payload_bytes": 5945,
+        "payload_sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a",
+        "role": "current_crypto_maker_rebate_program_and_zero_maker_fee_terms",
+        "url": "https://docs.polymarket.com/programs/maker-rebates.md"
+      },
+      {
+        "payload_bytes": 8128,
+        "payload_sha256": "8e246189f6ca85b8b8782e1d76a769cf98672a98c4c63d8bbe6150d659db8d7c",
+        "role": "current_crypto_taker_fee_formula",
+        "url": "https://docs.polymarket.com/trading/fees.md"
+      }
+    ]
+  }
+}

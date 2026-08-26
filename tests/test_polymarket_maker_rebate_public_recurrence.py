@@ -14,6 +14,20 @@ ARTIFACT_PATH = (
     / "polymarket"
     / "crypto-maker-rebate-public-recurrence-v2-2026-08-26.json"
 )
+MAKER_FIRST_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json"
+)
+MAKER_FIRST_DIAGNOSTIC_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "maker-first-taker-hedge-historical-diagnostic-v1-2026-08-27.json"
+)
 REGISTRY_PATH = (
     ROOT / "docs" / "model-research" / "structural-edge-priority-registry-v1.json"
 )
@@ -21,7 +35,13 @@ EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "57ea9bd59d8bd9ae43d4100dea192a1c19f272ef4844790d04d2da8e69f5630c"
+    "0d038efb7a32d61b97f7efc0e0643b88fcc3dd73e6c5b702ffd0c516f59bbf9d"
+)
+EXPECTED_MAKER_FIRST_SHA256 = (
+    "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
+)
+EXPECTED_MAKER_FIRST_DIAGNOSTIC_RESULT_SHA256 = (
+    "d11d0f42a082fc19b1cd6ee3ee6cd226f95b28db2e1f9c5cf965913e35ce6b07"
 )
 
 
@@ -91,6 +111,27 @@ def test_cohort_recurrence_does_not_promote_diagnostic_ratio() -> None:
     assert "reuse retained evidence" in ledger["workflow_correction"]
 
 
+def test_maker_first_diagnostic_rejects_stable_edge_claim() -> None:
+    candidate = _load(MAKER_FIRST_PATH)
+    diagnostic = _load(MAKER_FIRST_DIAGNOSTIC_PATH)
+
+    assert candidate["result_sha256"] == EXPECTED_MAKER_FIRST_SHA256
+    assert _embedded_hash(candidate) == EXPECTED_MAKER_FIRST_SHA256
+    assert diagnostic["result_sha256"] == EXPECTED_MAKER_FIRST_DIAGNOSTIC_RESULT_SHA256
+    assert _embedded_hash(diagnostic) == EXPECTED_MAKER_FIRST_DIAGNOSTIC_RESULT_SHA256
+    assert not candidate["adjudication"]["accepted_edge"]
+    assert candidate["adjudication"]["public_after_cost_profit_floor_pusd"] == "0"
+    assert diagnostic["results"]["overall"]["sequence_count"] == 159
+    assert diagnostic["results"]["overall"][
+        "current_fee_sensitive_positive_count"
+    ] == 75
+    assert diagnostic["results"]["overall"][
+        "aggregate_current_fee_sensitive_pnl"
+    ] < 0
+    assert diagnostic["results"]["zero_sequence_assets"] == ["SOL"]
+    assert not diagnostic["verdict"]["market_direction_independent_edge_proved"]
+
+
 def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
     registry = _load(REGISTRY_PATH)
 
@@ -103,10 +144,17 @@ def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
         if row["mechanism"] == "paired_crypto_maker_rebates"
     )
     assert candidate["priority_rank"] == 17
-    assert candidate["canonical_artifacts"][-1] == {
+    assert candidate["canonical_artifacts"][-2] == {
         "path": (
             "docs/model-research/polymarket/"
             "crypto-maker-rebate-public-recurrence-v2-2026-08-26.json"
         ),
         "result_sha256": EXPECTED_RESULT_SHA256,
+    }
+    assert candidate["canonical_artifacts"][-1] == {
+        "path": (
+            "docs/model-research/action-value/"
+            "polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json"
+        ),
+        "result_sha256": EXPECTED_MAKER_FIRST_SHA256,
     }
