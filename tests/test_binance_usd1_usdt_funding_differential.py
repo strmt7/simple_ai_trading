@@ -24,7 +24,7 @@ EXPECTED_CONTRACT_HASH = (
 )
 EXPECTED_TOOL_HASH = "2218e58e3a0a562305a3a418bfbf9647a51076f66fa5556151eee58d326463df"
 EXPECTED_REGISTRY_HASH = (
-    "9f5f556eb439f368de1456bc61e5ebc0276f1b4b689cf0434b2d4bae3ddb03df"
+    "57ea9bd59d8bd9ae43d4100dea192a1c19f272ef4844790d04d2da8e69f5630c"
 )
 EXPECTED_TERMINAL_REASON = (
     "zero_of_two_public_candidates_passed_and_every_BTC_and_ETH_training_"

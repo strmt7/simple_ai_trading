@@ -910,6 +910,36 @@ safety gate, blocks Stop, or submits an order.
   `binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json`,
   result SHA-256
   `c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d`.
+- A distinct NOK event is the first observed non-US bStock dividend exception
+  to the gross-dividend perpetual-debit pattern. Nokia declared a `0.0462` USD
+  gross NYSE amount with 2026-07-27 ex-date and 2026-07-28 record date. The
+  two negative NOKUSDT funding rows at the Binance NOKB snapshot and eight
+  hours later cost a matched short only `0.008865103` USDT per unit. This is
+  positive gross upper headroom, not profit: Binance reinvests only the net
+  dividend, and the exact historical multiplier increment, entitlement,
+  executable books, every cost, and recurrence remain unproved. The current
+  multiplier is source-bound at `1.002349416320445721`; it cannot reconstruct
+  the historical increment. Do not poll. Reopen only after a new Nokia Board
+  resolution states an exact amount and Binance publishes a matching NOKB
+  announcement. Canonical candidate:
+  `binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json`,
+  result SHA-256
+  `79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb`.
+- A public exact-ticker screen normalized Ondo, bStock Spot, and stock
+  perpetual wrappers by each Ondo `sharesMultiplier`. Sixty tickers overlapped;
+  41 had a positive point gap and ten were at least 10 bps, led by AXTI at
+  `22.2047` bps. These are not executable spreads: official Binance source
+  classifies `tokenInfo.price / sharesMultiplier` as a reference value whose
+  feeds can update asynchronously, and no Ondo market-order quote was available.
+  The local `baw` quote client is absent. Do not repeat the point screen or
+  install, authenticate, or transact. Advance only when an approved configured
+  read-only quote capability or documented public unauthenticated executable
+  quote endpoint exists; request one minimum nonexecuting quote first and fetch
+  one matching CEX depth batch only if exact after-cost headroom remains.
+  Canonical candidate:
+  `binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json`,
+  result SHA-256
+  `8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -944,6 +974,8 @@ safety gate, blocks Stop, or submits an order.
 | Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
 | Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |
 | Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
+| Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
+| Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |

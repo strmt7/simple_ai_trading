@@ -20,7 +20,7 @@ EXPECTED_ARTIFACT_HASH = (
 )
 EXPECTED_HEDGE_HASH = "85d0be66391b53bef87dda33ea73acaf6995d0200e6423de7999d44a8fed3c8f"
 EXPECTED_REGISTRY_HASH = (
-    "9f5f556eb439f368de1456bc61e5ebc0276f1b4b689cf0434b2d4bae3ddb03df"
+    "57ea9bd59d8bd9ae43d4100dea192a1c19f272ef4844790d04d2da8e69f5630c"
 )
 
 
@@ -102,7 +102,7 @@ def test_registry_separates_reward_stack_from_terminal_fee_only_family() -> None
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 35))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 37))
     candidate = next(
         row
         for row in hypotheses

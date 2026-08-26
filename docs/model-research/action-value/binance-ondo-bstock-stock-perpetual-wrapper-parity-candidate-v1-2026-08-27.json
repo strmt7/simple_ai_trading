@@ -1,0 +1,288 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_cost_profit_floor_usdt": "0",
+    "status": "materially_new_direction_independent_three_wrapper_parity_candidate_with_exact_multiplier_normalization_but_no_executable_Ondo_quote_after_cost_recurrence_or_trading_authority",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "quote_client_installed": false,
+    "quote_requests_sent": 0,
+    "retained_public_http_responses": 70
+  },
+  "capture": {
+    "completed_after_utc": "2026-08-26T22:53:48.3337851Z",
+    "exact_three_way_overlap_count": 60,
+    "point_gap_at_least_10_bps_count": 10,
+    "positive_point_gap_count": 41,
+    "requested_before_utc": "2026-08-26T22:53:41.5857869Z",
+    "screen_contract": "one_public_current_type_1_Ondo_list_one_type_3_bStock_list_one_spot_exchange_info_one_perpetual_exchange_info_one_spot_book_ticker_population_one_perpetual_book_ticker_population_and_exactly_one_dynamic_response_for_each_of_the_60_exact_three_way_ticker_overlaps",
+    "supporting_contract_response_count": 4,
+    "wrapper_screen_response_count": 66
+  },
+  "economic_identity": {
+    "candidate_pair": "buy_one_exact_Ondo_wrapper_at_an_executable_normalized_ask_and_sell_the_same_underlying_share_quantity_on_the_cheaper_of_bStock_spot_or_stock_perpetual_at_an_executable_bid_then_close_every_leg",
+    "market_direction_forecast_required": false,
+    "normalization": "Ondo_reference_price_per_share=tokenInfo.price/sharesMultiplier_and_Ondo_UI_share_quantity=raw_token_quantity_times_sharesMultiplier",
+    "point_gap_formula": "best_CEX_bid_per_share_minus_Ondo_reference_price_per_share",
+    "why_point_gap_is_not_profit": "tokenInfo.price_is_an_on_chain_point_value_not_an_executable_buy_ask_and_the_official_source_warns_that_the_oracle_and_stock_feed_update_at_different_frequencies_so_quote_fee_gas_slippage_transfer_settlement_short_funding_exit_and_atomicity_costs_are_unbound"
+  },
+  "exact_point_screen_top_ten": [
+    {
+      "best_short_leg": "AXTIUSDT_perpetual",
+      "bstock_ask": "69.96",
+      "bstock_bid": "69.89",
+      "contract_address": "0x0c50323af81d5c33822c6add256fb9093d42bc74",
+      "dynamic_payload_sha256": "531c1315e5ec827310343f147926c9723139ed8f73fcefd977edb33c2421797e",
+      "gross_point_gap_bps": "22.2047",
+      "gross_point_gap_usdt_per_share": "0.155",
+      "ondo_reference_price_per_share": "69.805",
+      "ondo_shares_multiplier": "1",
+      "ondo_token_price": "69.805",
+      "perpetual_ask": "69.97",
+      "perpetual_bid": "69.96",
+      "ticker": "AXTI"
+    },
+    {
+      "best_short_leg": "ARMUSDT_perpetual",
+      "bstock_ask": "262.97",
+      "bstock_bid": "262.7",
+      "contract_address": "0x527c6436e1eaa4f2065cde4090f798cb5d031dd6",
+      "dynamic_payload_sha256": "dd19810a3d63ebecebcf421e8cd27dbac3825411909351b30b144be3fcb9882f",
+      "gross_point_gap_bps": "19.0585",
+      "gross_point_gap_usdt_per_share": "0.5",
+      "ondo_reference_price_per_share": "262.35",
+      "ondo_shares_multiplier": "1",
+      "ondo_token_price": "262.35",
+      "perpetual_ask": "262.92",
+      "perpetual_bid": "262.85",
+      "ticker": "ARM"
+    },
+    {
+      "best_short_leg": "BEUSDT_perpetual",
+      "bstock_ask": "226.96",
+      "bstock_bid": "226.68",
+      "contract_address": "0x17d03ae104a9d12e9e5794efb109b817dd7f3404",
+      "dynamic_payload_sha256": "efa5c5ac0ee5606777ee9ab3ff48d8a170f5dfe9796de8e2bd5535868a8377df",
+      "gross_point_gap_bps": "13.6714",
+      "gross_point_gap_usdt_per_share": "0.31",
+      "ondo_reference_price_per_share": "226.75",
+      "ondo_shares_multiplier": "1",
+      "ondo_token_price": "226.75",
+      "perpetual_ask": "227.12",
+      "perpetual_bid": "227.06",
+      "ticker": "BE"
+    },
+    {
+      "best_short_leg": "MSTRUSDT_perpetual",
+      "bstock_ask": "124.1",
+      "bstock_bid": "124.08",
+      "contract_address": "0x7313ea16493b2f55054df0131a3a14b043ec8992",
+      "dynamic_payload_sha256": "442137e533ce59e39a6433fa389dbed78f0671a26f2dabc4914c6e1d7e15348e",
+      "gross_point_gap_bps": "12.9043",
+      "gross_point_gap_usdt_per_share": "0.16",
+      "ondo_reference_price_per_share": "123.99",
+      "ondo_shares_multiplier": "1",
+      "ondo_token_price": "123.99",
+      "perpetual_ask": "124.16",
+      "perpetual_bid": "124.15",
+      "ticker": "MSTR"
+    },
+    {
+      "best_short_leg": "NBISUSDT_perpetual",
+      "bstock_ask": "227.32",
+      "bstock_bid": "227.2",
+      "contract_address": "0xee268780473e7a0e47bac41547c6e01512555a16",
+      "dynamic_payload_sha256": "641e9b9cb9c62ee9db3bb941880bbfc872ef80c5113433b2507d757aa15b30eb",
+      "gross_point_gap_bps": "12.8951",
+      "gross_point_gap_usdt_per_share": "0.292857",
+      "ondo_reference_price_per_share": "227.107143",
+      "ondo_shares_multiplier": "1",
+      "ondo_token_price": "227.107143",
+      "perpetual_ask": "227.41",
+      "perpetual_bid": "227.4",
+      "ticker": "NBIS"
+    },
+    {
+      "best_short_leg": "NFLXUSDT_perpetual",
+      "bstock_ask": "81.02",
+      "bstock_bid": "81",
+      "contract_address": "0x7048f5227b032326cc8dbc53cf3fddd947a2c757",
+      "dynamic_payload_sha256": "64d2ddda67973f7722fd779a56fc89aeb14d5623f20b11cdf5216e66d5801bef",
+      "gross_point_gap_bps": "12.3594",
+      "gross_point_gap_usdt_per_share": "0.1",
+      "ondo_reference_price_per_share": "80.91",
+      "ondo_shares_multiplier": "10",
+      "ondo_token_price": "809.1",
+      "perpetual_ask": "81.04",
+      "perpetual_bid": "81.01",
+      "ticker": "NFLX"
+    },
+    {
+      "best_short_leg": "SOXSUSDT_perpetual",
+      "bstock_ask": "45.19",
+      "bstock_bid": "45.13",
+      "contract_address": "0x335dd4112704f108b5ddd8f8a44bd9ed68522a80",
+      "dynamic_payload_sha256": "d6c927e8d5e4ca8b3b2d16f8a1b4551ddf4f854f7eaa188a292b49c1b64be33d",
+      "gross_point_gap_bps": "12.1911",
+      "gross_point_gap_usdt_per_share": "0.055",
+      "ondo_reference_price_per_share": "45.115",
+      "ondo_shares_multiplier": "0.10079128853123",
+      "ondo_token_price": "4.54719898",
+      "perpetual_ask": "45.18",
+      "perpetual_bid": "45.17",
+      "ticker": "SOXS"
+    },
+    {
+      "best_short_leg": "ASTSUSDT_perpetual",
+      "bstock_ask": "61",
+      "bstock_bid": "60.97",
+      "contract_address": "0x45abf29515bc23f8c0ed2a06584444ce473a75fb",
+      "dynamic_payload_sha256": "6eac1b2fcc019bd5613b4804ed8006da9f632517640fc56671d7feffdde0c608",
+      "gross_point_gap_bps": "11.6188",
+      "gross_point_gap_usdt_per_share": "0.070769",
+      "ondo_reference_price_per_share": "60.909231",
+      "ondo_shares_multiplier": "1",
+      "ondo_token_price": "60.909231",
+      "perpetual_ask": "60.99",
+      "perpetual_bid": "60.98",
+      "ticker": "ASTS"
+    },
+    {
+      "best_short_leg": "MSFTUSDT_perpetual",
+      "bstock_ask": "496.26",
+      "bstock_bid": "496.13",
+      "contract_address": "0x6bfe75d1ad432050ea973c3a3dcd88f02e2444c3",
+      "dynamic_payload_sha256": "437cf89879d027e57092e2833a199868840d8172a782d2fae251bf22bd155e9b",
+      "gross_point_gap_bps": "10.3470",
+      "gross_point_gap_usdt_per_share": "0.513333",
+      "ondo_reference_price_per_share": "496.116667",
+      "ondo_shares_multiplier": "1.00573085689278",
+      "ondo_token_price": "498.95984062",
+      "perpetual_ask": "496.69",
+      "perpetual_bid": "496.63",
+      "ticker": "MSFT"
+    },
+    {
+      "best_short_leg": "METABUSDT_bStock_spot",
+      "bstock_ask": "579.37",
+      "bstock_bid": "579.2",
+      "contract_address": "0xd7df5863a3e742f0c767768cdfcb63f09e0422f6",
+      "dynamic_payload_sha256": "2fea282e8de2fb81e9d1cbb1d2266e35147df7ec544954c93a142f92543b23c5",
+      "gross_point_gap_bps": "10.0238",
+      "gross_point_gap_usdt_per_share": "0.58",
+      "ondo_reference_price_per_share": "578.62",
+      "ondo_shares_multiplier": "1.0022791066933",
+      "ondo_token_price": "579.93873671",
+      "perpetual_ask": "579.16",
+      "perpetual_bid": "579.11",
+      "ticker": "META"
+    }
+  ],
+  "execution_gate": {
+    "first_observation": "only_after_an_approved_configured_read_only_baw_quote_capability_or_a_documented_public_unauthenticated_executable_quote_endpoint_exists_request_one_minimum_notional_nonexecuting_Ondo_buy_quote_for_the_highest_current_normalized_candidate",
+    "recurrence_gate": "require_positive_worst_episode_after_all_costs_at_multiple_independent_times_covering_open_regular_postmarket_high_volatility_low_liquidity_and_latency_stress",
+    "second_observation": "only_if_the_exact_Ondo_quote_after_all_quote_fee_gas_and_slippage_fields_retains_conservative_headroom_capture_one_current_synchronized_CEX_depth_batch_for_the_same_exact_share_quantity",
+    "stop_conditions": "stop_on_no_quote_no_liquidity_stale_or_expired_quote_nonpositive_after_cost_headroom_quantity_or_settlement_mismatch_unavailable_short_or_any_authority_gap",
+    "unbound_costs": [
+      "Ondo_executable_buy_price_and_size",
+      "Web3_Wallet_trading_fee",
+      "BSC_gas",
+      "slippage_and_minimum_receive",
+      "CEX_spot_or_perpetual_entry_and_exit_fees",
+      "perpetual_funding_or_bStock_borrow_and_short_availability",
+      "wrapper_transfer_conversion_and_settlement_latency",
+      "basis_drift_orphan_and_nonatomic_execution",
+      "capital_tax_custody_jurisdiction_and_operational_costs"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "treating_tokenInfo_price_or_referencePrice_as_an_executable_Ondo_ask",
+    "using_midpoints_last_trades_or_oracle_values_as_fills",
+    "assuming_multiplier_one_or_ignoring_UI_quantity_scaling",
+    "assuming_bStock_and_Ondo_wrappers_are_freely_convertible_or_atomic",
+    "installing_or_signing_into_a_wallet_or_requesting_a_quote_without_separate_authority",
+    "placing_any_order_transfer_approval_or_swap",
+    "calling_one_point_screen_recurrence_profit_or_an_accepted_edge"
+  ],
+  "result_sha256": "8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475",
+  "schema_version": "binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1",
+  "sources": {
+    "common_screen_responses": [
+      {
+        "label": "ondo_type_1_list",
+        "payload_bytes": 241155,
+        "payload_sha256": "d1a3f38fe51125a7bc8e20ffd282b85c532957b6b01e0b11322241de6835167b",
+        "url": "https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/market/token/rwa/stock/detail/list/ai?type=1"
+      },
+      {
+        "label": "bstock_type_3_list",
+        "payload_bytes": 14867,
+        "payload_sha256": "87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d",
+        "url": "https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/market/token/rwa/stock/detail/list/ai?type=3"
+      },
+      {
+        "label": "spot_exchange_info",
+        "payload_bytes": 17532880,
+        "payload_sha256": "177d6fe2814f91bb705eba6b7f42ef68101cf31f4ccc52de4495e30cc45ab9af",
+        "url": "https://api.binance.com/api/v3/exchangeInfo"
+      },
+      {
+        "label": "perpetual_exchange_info",
+        "payload_bytes": 1084769,
+        "payload_sha256": "4a3ae811f9b0879ab1ac26ce8db4a86343c510e126f4f6392f242d3d11e9c550",
+        "url": "https://fapi.binance.com/fapi/v1/exchangeInfo"
+      },
+      {
+        "label": "spot_book_ticker_population",
+        "payload_bytes": 424167,
+        "payload_sha256": "46705b1089136111aa04e800c167c7ae85400054f3eb5a73f524cc0562fdf635",
+        "url": "https://api.binance.com/api/v3/ticker/bookTicker"
+      },
+      {
+        "label": "perpetual_book_ticker_population",
+        "payload_bytes": 112575,
+        "payload_sha256": "84d517ad3eef7329fcce07c5872f205b2295c14f336e1caeb4efc7a9b1296db5",
+        "url": "https://fapi.binance.com/fapi/v1/ticker/bookTicker"
+      }
+    ],
+    "dynamic_response_manifest": {
+      "record_count": 60,
+      "sorted_ticker_contract_bytes_payload_sha256_manifest_sha256": "d88532038b972acbf6646db73c2a7bca621534a49d2b020670d78abbe3a403f5",
+      "total_payload_bytes": 89904
+    },
+    "retained_official_contract_responses": [
+      {
+        "label": "binance_tokenized_securities_info_skill",
+        "payload_bytes": 31033,
+        "payload_sha256": "9331ea094a9862a27c1e9bdb578b430450294f5230f5085cfceaed141217f008",
+        "url": "https://raw.githubusercontent.com/binance/binance-skills-hub/main/skills/binance-web3/binance-tokenized-securities-info/SKILL.md"
+      },
+      {
+        "label": "binance_agentic_wallet_campaign_reference",
+        "payload_bytes": 31916,
+        "payload_sha256": "81e846422b0dbdbc700029cd5e7d0daddd9d721b6fbf1f89b821604166d8f001",
+        "url": "https://raw.githubusercontent.com/binance/binance-skills-hub/main/skills/binance-web3/binance-agentic-wallet/references/campaign.md"
+      },
+      {
+        "label": "binance_agentic_wallet_market_order_reference",
+        "payload_bytes": 8816,
+        "payload_sha256": "3c6e7454c6b017246675061c5d3320e6c04a8c1e1fc9bf41e35d8f2cbeb35592",
+        "url": "https://raw.githubusercontent.com/binance/binance-skills-hub/main/skills/binance-web3/binance-agentic-wallet/references/market-order.md"
+      },
+      {
+        "label": "bnb_chain_scaled_ui_amount_docs",
+        "payload_bytes": 62544,
+        "payload_sha256": "4bbf733dd9761e7fdff127d14f67b757a8d11a56051316bbaf242f42e30b72a6",
+        "url": "https://docs.bnbchain.org/developer-kit/scaled-ui-amount/"
+      }
+    ]
+  }
+}
