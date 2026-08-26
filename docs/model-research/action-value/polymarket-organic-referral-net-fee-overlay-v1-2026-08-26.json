@@ -1,0 +1,77 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current_gross_pUSD_referral_reward_only_for_authentic_independently_acquired_external_users_when_the_referrer_account_already_independently_exceeds_10000_USD_lifetime_Polymarket_volume_without_creating_volume_to_qualify",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_direction_independent_organic_referral_net_fee_overlay_account_eligibility_referral_attribution_and_owned_payout_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true,
+    "referral_links_created": 0
+  },
+  "created_at_utc": "2026-08-26T21:09:41.7359620Z",
+  "economics": {
+    "direct_referral_rate_of_net_fees": "0.10",
+    "direct_reward_pusd_per_100_pusd_net_fees": "10",
+    "formula": "eligible_referred_user_net_trading_fees_pUSD * applicable_direct_or_indirect_referral_rate",
+    "indirect_referral_rate_of_net_fees": "0.05",
+    "indirect_reward_pusd_per_100_pusd_net_fees": "5",
+    "net_fee_definition": "fees retained by Polymarket after the referred user's own tier rebate",
+    "same_unit": "The official terms denominate both the fee base and daily reward in pUSD; no stablecoin parity or fiat conversion is used.",
+    "zero_eligible_referral_floor_pusd": "0"
+  },
+  "eligibility_and_terms": {
+    "attribution_window_after_link_click_days": 30,
+    "effective_date": "2026-05-28",
+    "lifetime_trading_volume_threshold_usd": "10000",
+    "omnibus_third_party_integrations_eligible": false,
+    "payout": "daily at midnight UTC in pUSD directly to the referrer account",
+    "reward_end": "the earlier of the referred user reaching Platinum or 30 days after signup",
+    "rewarded_markets": "fee-enabled markets only",
+    "terms_change_control": "rates windows tier caps and other terms may change at any time without notice"
+  },
+  "limitations": [
+    "No referrer lifetime volume eligibility referral attribution referred-user tier net fee row or owned pUSD payout was accessed.",
+    "The 30-day-or-Platinum cap makes each referral reward time-limited and Polymarket may change terms without notice.",
+    "Referral acquisition content support compliance tax and opportunity costs are unproved, so gross pUSD rewards are not net profit.",
+    "The public terms do not prove that Builder Fees and Referral rewards can be credited on the same user flow without conflict or double counting.",
+    "No reward is earned on fee-free markets or from users who fail the signup attribution window."
+  ],
+  "prohibited_actions": [
+    "self-referral referring an account controlled by the operator linked-account activity or any inauthentic referral",
+    "manufacturing self-matching wash circular or otherwise unnecessary volume to cross the 10000 USD eligibility threshold or increase net fees",
+    "crediting gross trading fees before subtracting the referred user's own tier rebate",
+    "crediting rewards after Platinum or after the first 30 days",
+    "assuming an omnibus third-party integration is eligible",
+    "double-counting the same fee base with Builder Fees taker rebates maker rebates liquidity rewards or another referral overlay without explicit combination terms",
+    "calling gross referral rewards after-cost profit before owned payout and all acquisition operating compliance and tax costs reconcile",
+    "creating a referral link submitting an order or changing account state without separate explicit authority"
+  ],
+  "result_sha256": "f7aec4a5340cba42abb120a43cda1ed1fa4d5b03632b3c062c0d00d7b5636cf0",
+  "retry_policy": {
+    "account_prequalification_only_after_both_credentials_and_explicit_read_only_authority": [
+      "exact independently accumulated lifetime trading volume eligibility",
+      "authentic direct and indirect referral attribution with signup timestamps and current tiers",
+      "owned net-fee accrual rows and daily pUSD payouts"
+    ],
+    "public_refresh": "only after a published referral rate eligibility window tier cap payout asset or program-term change",
+    "separate_mutation_or_trading_authority_required_for": "any referral-link creation order account change transfer or withdrawal"
+  },
+  "schema_version": "polymarket-organic-referral-net-fee-overlay-v1",
+  "sources": [
+    {
+      "observed_at_utc": "2026-08-26T21:09:41.7359620Z",
+      "raw_html_characters": 380566,
+      "raw_html_sha256": "307628e353d2524c4407d8357f46ff6dd3d9c5f64a10db559b62904cb8847ce0",
+      "role": "current_effective_date_eligibility_attribution_rates_net_fee_definition_caps_payout_asset_and_inauthentic_activity_rules",
+      "url": "https://docs.polymarket.com/programs/referral-program"
+    }
+  ]
+}

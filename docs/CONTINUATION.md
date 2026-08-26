@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Twelve narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Thirteen narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -22,9 +22,11 @@ Development belongs only on `main`; do not create another development branch.
   fee reduction; USD1/WLFI holding-airdrop yield; U Flexible yield; automatic
   RWUSD VIP bonus yield; current USDT Flexible bonus yield; and the current
   automatic USDe holding reward only for eligible USDe already independently
-  held on Binance for at least 24 hours; and Polymarket builder fees only on
+  held on Binance for at least 24 hours; Polymarket builder fees only on
   bona fide independently existing third-party matched orders routed through an
-  owned app with an account-confirmed active disclosed positive rate. Each Binance
+  owned app with an account-confirmed active disclosed positive rate; and
+  Polymarket referral rewards only for authentic external referrals after the
+  account independently cleared the lifetime-volume threshold. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
   A current BTC Simple Earn Flexible product is only an extension candidate:
@@ -237,7 +239,7 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/polymarket-negrisk-taker-rebate-overlay-v1-2026-08-26.json`,
   result SHA-256
   `fbbaf4ff7a7d93f8cf5d306a829ff00518d82c9802be674fdace864cea907a60`.
-  Accepted edges are now twelve. One frozen 24-hour public capture of only the six
+  Accepted edges are now thirteen. One frozen 24-hour public capture of only the six
   event tokens was launched under internal contract SHA-256
   `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
   Before acting, verify the process and terminal artifact. Never consume its
@@ -865,7 +867,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`c7cc5deefff2f84daab8b43334ca7dc5574f123b148792ce94c917c7a29bd5bc`.
+`1ed5fe0750affe5d6d5331034f900673dd5a6604ca32abb0f5489c493a5b1ab6`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1373,6 +1375,34 @@ Canonical adjudication:
 `docs/model-research/action-value/binance-smart-arbitrage-terminal-family-adjudication-v1-2026-08-26.json`,
 result SHA-256
 `03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3`.
+
+Polymarket's current Referral Program is accepted only as a gross pUSD overlay
+for authentic independently acquired external users when the referrer already
+independently exceeds 10,000 USD lifetime Polymarket volume. Direct referrals
+pay 10% and indirect referrals 5% of net fees after the referred user's own tier
+rebate, daily until the earlier of Platinum or 30 days after signup. Never self-
+refer, use controlled or linked accounts, manufacture qualifying or fee volume,
+or double-count the same fee base with Builder Fees or another reward without
+explicit combination terms. Omnibus third-party integrations are ineligible.
+Account eligibility, attribution, owned payouts, acquisition costs, compliance,
+tax, and operating costs are unproved, so gross reward is not after-cost profit.
+Canonical overlay:
+`docs/model-research/action-value/polymarket-organic-referral-net-fee-overlay-v1-2026-08-26.json`,
+result SHA-256
+`f7aec4a5340cba42abb120a43cda1ed1fa4d5b03632b3c062c0d00d7b5636cf0`.
+
+Binance Flexible Loan collateral-yield retention is a distinct candidate, not
+an accepted edge. Current official sources say Simple Earn Flexible collateral
+continues earning while pledged to an isolated overcollateralized open-term
+loan, but exact current collateral and loan eligibility, reward and interest
+rates, LTV thresholds, positions, income, and owned rewards are all signed
+USER_DATA. The designated ephemeral credentials are absent, so no signed request
+was sent and the public after-cost floor is zero. Never borrow, subscribe, repay,
+adjust LTV, acquire collateral, reinvest loan proceeds, or double-count idle
+yield. Canonical gate:
+`docs/model-research/action-value/binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json`,
+result SHA-256
+`ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182`.
 
 ## Protected Local Work
 

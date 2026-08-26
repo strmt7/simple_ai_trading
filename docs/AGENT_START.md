@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Twelve scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; and the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Thirteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; and the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -200,7 +200,7 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-round27-complete-set-taker-rebate-overlay-v1-2026-08-26.json`,
   SHA-256
   `948f47d9d0c2fb6cbf441da1147ae07006a897f307141dfd6ae25c85e47f13d2`.
-  The accepted edge count is twelve. Binance's best three-leg spot cycle
+  The accepted edge count is thirteen. Binance's best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even. The exact three spot fee queries are now defined from Binance's
   official commission contract, but the designated ephemeral credential
@@ -762,6 +762,28 @@ safety gate, blocks Stop, or submits an order.
   `binance-smart-arbitrage-terminal-family-adjudication-v1-2026-08-26.json`,
   result SHA-256
   `03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3`.
+- Polymarket's current referral program is accepted only as a gross pUSD
+  overlay for authentic independently acquired external users when the account
+  already independently exceeds 10,000 USD lifetime Polymarket volume. Direct
+  rewards are 10% and indirect rewards 5% of net fees after the referred user's
+  tier rebate, paid daily until the earlier of Platinum or 30 days. Never self-
+  refer, use controlled or linked accounts, manufacture qualifying volume, or
+  double-count Builder Fees or another reward without explicit combination
+  terms. Eligibility, attribution, owned payouts, and all acquisition and
+  operating costs remain unproved. Canonical overlay:
+  `polymarket-organic-referral-net-fee-overlay-v1-2026-08-26.json`, result
+  SHA-256
+  `f7aec4a5340cba42abb120a43cda1ed1fa4d5b03632b3c062c0d00d7b5636cf0`.
+- Binance Flexible Loan collateral-yield retention is a candidate, not an
+  accepted edge. Current official sources say Simple Earn Flexible collateral
+  continues earning, but all current asset, rate, LTV, position, income, and
+  reward inputs are signed USER_DATA. The designated credentials are absent;
+  no signed request was sent and the public after-cost floor is zero. Do not
+  borrow, subscribe, repay, adjust LTV, acquire collateral, use leverage, or
+  double-count idle yield. Canonical gate:
+  `binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json`,
+  result SHA-256
+  `ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -801,6 +823,8 @@ safety gate, blocks Stop, or submits an order.
 | Organic third-party Polymarket builder-fee overlay | `docs/model-research/action-value/polymarket-organic-third-party-builder-fee-overlay-v1-2026-08-26.json` |
 | BFUSD reward-unit conflict gate | `docs/model-research/action-value/binance-bfusd-existing-holding-reward-unit-conflict-gate-v1-2026-08-26.json` |
 | Binance Smart Arbitrage terminal adjudication | `docs/model-research/action-value/binance-smart-arbitrage-terminal-family-adjudication-v1-2026-08-26.json` |
+| Organic Polymarket referral net-fee overlay | `docs/model-research/action-value/polymarket-organic-referral-net-fee-overlay-v1-2026-08-26.json` |
+| Binance Flexible Loan collateral-yield gate | `docs/model-research/action-value/binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |
