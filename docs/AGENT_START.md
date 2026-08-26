@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Ten scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; and current USDT Flexible bonus yield only for independently held idle eligible USDT. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Eleven scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; and the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -200,7 +200,7 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-round27-complete-set-taker-rebate-overlay-v1-2026-08-26.json`,
   SHA-256
   `948f47d9d0c2fb6cbf441da1147ae07006a897f307141dfd6ae25c85e47f13d2`.
-  The accepted edge count is ten. Binance's best three-leg spot cycle
+  The accepted edge count is eleven. Binance's best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even. The exact three spot fee queries are now defined from Binance's
   official commission contract, but the designated ephemeral credential
@@ -719,6 +719,19 @@ safety gate, blocks Stop, or submits an order.
   `binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json`, result
   SHA-256
   `0126a1feef4e8bb5c46a7b7cab45e2471857a2e105fe0f41d73d4710b6abceda`.
+- The current Binance USDe automatic holding reward is accepted only as a
+  same-token gross increment on eligible USDe already independently held on
+  Binance for at least 24 hours. The current reference APR is 4%, producing
+  1.09589041096 bips per eligible day or 0.7671232877 USDe per 1,000 over seven
+  days. The campaign is ongoing until further notice, uses a random daily
+  minimum-balance snapshot, and pays automatically each Monday. Do not acquire,
+  deposit, convert, borrow, or retain USDe for this reward; do not treat the APR
+  as guaranteed fiat return or principal protection; and do not double-count
+  collateral use or separate Ethena yield. Exact KYC, jurisdiction, eligible
+  balance, completed holding duration, and owned distribution remain unproved.
+  Canonical gate:
+  `binance-usde-existing-holding-reward-edge-v1-2026-08-26.json`, result SHA-256
+  `4640635514ad43ed846660c204a95c0d59ed75ac3ccbf5f17a0b70f3d5726f6a`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -754,6 +767,7 @@ safety gate, blocks Stop, or submits an order.
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
 | Existing RWUSD VIP bonus overlay | `docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json` |
 | Current USDT Flexible bonus overlay | `docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json` |
+| Existing USDe automatic holding reward | `docs/model-research/action-value/binance-usde-existing-holding-reward-edge-v1-2026-08-26.json` |
 | Structural source triage | `docs/model-research/structural-edge-source-triage-v1-2026-08-25.json` |
 | Quarterly carry | `quarterly_carry.py`, `quarterly_carry_account_evidence.py`, and `binance-quarterly-carry-screen-v1.md` |
 | Maker rewards | `polymarket_liquidity_rewards.py` and `paired-maker-reward-screen-v1.md` |

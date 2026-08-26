@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 10,
-  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one current Polymarket pUSD taker-fee rebate overlay for independently justified legitimate organic BTC ETH SOL taker flow after the direct wallet tier is effective without manufactured volume, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current Binance quote-native promotional fee reduction for independently justified organic BTC ETH SOL spot flow without quote acquisition VIP chasing or extra volume, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, and one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion; zero deployment-ready or fully external-cost-and-account-condition edges",
+  "accepted_edge_count": 11,
+  "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one current Polymarket pUSD taker-fee rebate overlay for independently justified legitimate organic BTC ETH SOL taker flow after the direct wallet tier is effective without manufactured volume, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current Binance quote-native promotional fee reduction for independently justified organic BTC ETH SOL spot flow without quote acquisition VIP chasing or extra volume, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion, and one current automatic same-token USDe holding-reward edge only for eligible USDe already independently held on Binance for at least 24 hours without acquisition or balance retention for the reward; zero deployment-ready or fully external-cost-and-account-condition edges",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -291,7 +291,8 @@
         "exact account BFUSDUSDT spot commission before setting subscription or redemption parity triggers",
         "exact eligible same-currency alternative cash yield instead of a zero-yield assumption",
         "all entry redemption transfer custody tax delay and opportunity costs",
-        "separately authorized minimum-size subscription reward redemption and balance reconciliation"
+        "separately authorized minimum-size subscription reward redemption and balance reconciliation",
+        "exact USDe account KYC jurisdiction eligibility existing independently required eligible-account balance completed 24-hour duration and owned weekly reward distribution"
       ],
       "canonical_artifacts": [
         {
@@ -325,12 +326,16 @@
         {
           "path": "docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json",
           "result_sha256": "0126a1feef4e8bb5c46a7b7cab45e2471857a2e105fe0f41d73d4710b6abceda"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-usde-existing-holding-reward-edge-v1-2026-08-26.json",
+          "result_sha256": "4640635514ad43ed846660c204a95c0d59ed75ac3ccbf5f17a0b70f3d5726f6a"
         }
       ],
-      "current_status": "accepted_scoped_current_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_at_5_46_percent_current_base_APR_accepted_scoped_U_Flexible_yield_for_already_held_idle_U_at_8_5_percent_regular_headline_APR_on_first_5000_U_without_acquisition_accepted_scoped_RWUSD_VIP_bonus_only_on_independently_required_existing_RWUSD_and_accepted_scoped_current_USDT_Flexible_bonus_family_only_for_independently_held_idle_USDT_all_require_exact_account_eligibility_and_none_is_deployment_ready",
+      "current_status": "accepted_scoped_current_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_at_5_46_percent_current_base_APR_accepted_scoped_U_Flexible_yield_for_already_held_idle_U_at_8_5_percent_regular_headline_APR_on_first_5000_U_without_acquisition_accepted_scoped_RWUSD_VIP_bonus_only_on_independently_required_existing_RWUSD_accepted_scoped_current_USDT_Flexible_bonus_family_only_for_independently_held_idle_USDT_and_accepted_scoped_current_automatic_4_percent_reference_APR_USDe_holding_reward_only_for_eligible_USDe_already_independently_held_for_24_hours_all_require_exact_account_eligibility_and_none_is_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "at_2026_08_27T00_00_00Z_confirm_USD1_Simple_Earn_activation_terms_once_then_at_2026_08_28_capture_the_third_USD1_airdrop_APR_and_RLUSD_update_once_monitor_U_RWUSD_and_USDT_only_on_published_term_changes_or_the_USDT_2026_09_07_global_and_2026_09_21_regional_end_triggers_and_when_both_credentials_exist_with_explicit_read_only_authority_prove_exact_account_region_VIP_product_rates_quota_eligible_balances_owned_distributions_and_redemption_or_reward_liquidation_costs",
+      "next_action": "at_2026_08_27T00_00_00Z_confirm_USD1_Simple_Earn_activation_terms_once_then_at_2026_08_28_capture_the_third_USD1_airdrop_APR_and_RLUSD_update_once_monitor_U_RWUSD_USDT_and_USDe_only_on_published_term_changes_or_fixed_campaign_end_triggers_and_when_both_credentials_exist_with_explicit_read_only_authority_prove_exact_account_region_VIP_KYC_jurisdiction_product_rates_quota_eligible_balances_holding_duration_owned_distributions_and_redemption_or_reward_liquidation_costs",
       "priority_rank": 8,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
@@ -353,13 +358,17 @@
         "stacking_global_LATAM_or_Brazil_USDT_Flexible_bonuses_without_explicit_combination_terms",
         "registering_depositing_acquiring_or_retaining_USDT_only_to_obtain_a_new_user_or_global_bonus",
         "inferring_USDT_promotion_region_registration_date_identity_verification_or_master_account_eligibility",
+        "acquiring_depositing_converting_borrowing_or_retaining_USDe_solely_for_the_automatic_holding_reward",
+        "treating_the_current_USDe_reference_APR_as_guaranteed_persistent_fiat_return_or_principal_protection",
+        "double_counting_USDe_collateral_efficiency_borrowing_benefits_or_any_separate_Ethena_yield",
+        "crediting_USDe_reward_without_exact_KYC_jurisdiction_eligible_account_balance_24_hour_duration_and_owned_distribution_evidence",
         "assuming_public_Convert_bounds_or_a_displayed_spread_prove_an_executable_fee_free_round_trip",
         "inferring_jurisdiction_or_account_eligibility_from_system_timezone",
         "calling direction-neutral market-invariant or risk-free",
         "freezing another signed collector while credentials are absent"
       ],
-      "retry_trigger": "2026_08_27_USD1_Simple_Earn_activation_or_2026_08_28_USD1_third_airdrop_and_RLUSD_distribution_updates_or_2026_09_04_USD1_final_airdrop_update_or_published_U_RWUSD_or_USDT_rate_quota_fee_product_eligibility_or_redemption_change_or_2026_09_07_USDT_global_campaign_end_or_2026_09_14_U_campaign_end_or_2026_09_17_RWUSD_campaign_end_or_2026_09_21_USDT_regional_campaign_end_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority",
-      "venue_scope": "binance_bfusd_rwusd_rlusd_usd1_usdt_and_same_currency_cash_alternatives"
+      "retry_trigger": "2026_08_27_USD1_Simple_Earn_activation_or_2026_08_28_USD1_third_airdrop_and_RLUSD_distribution_updates_or_2026_09_04_USD1_final_airdrop_update_or_published_U_RWUSD_USDT_or_USDe_rate_quota_fee_product_eligibility_snapshot_distribution_or_redemption_change_or_2026_09_07_USDT_global_campaign_end_or_2026_09_14_U_campaign_end_or_2026_09_17_RWUSD_campaign_end_or_2026_09_21_USDT_regional_campaign_end_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority",
+      "venue_scope": "binance_bfusd_rwusd_rlusd_usd1_usdt_usde_and_same_currency_cash_alternatives"
     },
     {
       "blocking_evidence": [
@@ -835,7 +844,7 @@
       "venue_scope": "polymarket_BTC_five_minute_fee_enabled_binary_markets"
     }
   ],
-  "result_sha256": "190bff09d8bfeed6ad77674cbf3a2e6592be45e465afb3e342a6211d0c543ca1",
+  "result_sha256": "9646724dc11354e2779405bbede7e4ae1deb3f759e6c828d38c0f79c32161571",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -949,6 +958,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T20:13:36.2427653Z",
+  "updated_at_utc": "2026-08-26T20:43:49.4423830Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Ten narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Eleven narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -20,7 +20,9 @@ Development belongs only on `main`; do not create another development branch.
   Spot inventory; LDUSDT yield only for already-required futures collateral;
   just-in-time BNB fee reduction; current quote-native BTC/ETH/SOL promotional
   fee reduction; USD1/WLFI holding-airdrop yield; U Flexible yield; automatic
-  RWUSD VIP bonus yield; and current USDT Flexible bonus yield. Each Binance
+  RWUSD VIP bonus yield; current USDT Flexible bonus yield; and the current
+  automatic USDe holding reward only for eligible USDe already independently
+  held on Binance for at least 24 hours. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
   A current BTC Simple Earn Flexible product is only an extension candidate:
@@ -233,7 +235,7 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/polymarket-negrisk-taker-rebate-overlay-v1-2026-08-26.json`,
   result SHA-256
   `fbbaf4ff7a7d93f8cf5d306a829ff00518d82c9802be674fdace864cea907a60`.
-  Accepted edges are now ten. One frozen 24-hour public capture of only the six
+  Accepted edges are now eleven. One frozen 24-hour public capture of only the six
   event tokens was launched under internal contract SHA-256
   `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
   Before acting, verify the process and terminal artifact. Never consume its
@@ -861,7 +863,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`190bff09d8bfeed6ad77674cbf3a2e6592be45e465afb3e342a6211d0c543ca1`.
+`9646724dc11354e2779405bbede7e4ae1deb3f759e6c828d38c0f79c32161571`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1318,6 +1320,22 @@ and no subscription or account request was made. Canonical gate:
 Result SHA-256
 `0126a1feef4e8bb5c46a7b7cab45e2471857a2e105fe0f41d73d4710b6abceda`.
 
+The current Binance USDe automatic holding reward is accepted only as a scoped
+same-token gross increment for eligible USDe already independently held on
+Binance for at least 24 hours. The current reference APR is 4%; that equals
+1.09589041096 bips per eligible day and 0.7671232877 USDe per 1,000 over seven
+days. Official terms make the campaign ongoing until further notice, calculate
+rewards from a random daily minimum eligible-balance snapshot, and distribute
+USDe automatically each Monday. The product page and legal terms disagree on
+the exact Monday payout hour, so no exact hour is claimed. Never acquire,
+deposit, convert, borrow, or retain USDe for the reward; treat USDe as fiat or
+principal protected; or double-count collateral use or separate Ethena yield.
+Exact KYC, jurisdiction, eligible-account balance, completed holding duration,
+owned reward rows, and weekly distributions remain unproved. Canonical gate:
+`docs/model-research/action-value/binance-usde-existing-holding-reward-edge-v1-2026-08-26.json`,
+result SHA-256
+`4640635514ad43ed846660c204a95c0d59ed75ac3ccbf5f17a0b70f3d5726f6a`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1396,6 +1414,12 @@ not grant account, funding, order, or transaction authority.
    Never call the state-changing activation GET under read-only authority, and
    never subscribe, redeem, or credit pending-order, Auto-Subscribe, or prompt-
    liquidity inventory without the separately required authority and evidence.
+   For USDe, refresh the public page only after a published APR, eligibility,
+   account-scope, snapshot, distribution, or campaign-term change. Exact KYC,
+   jurisdiction, eligible balance, completed 24-hour duration, and owned weekly
+   distributions require both ephemeral credentials and explicit read-only
+   authority. Never acquire, deposit, convert, borrow, or retain USDe for the
+   reward, and never double-count collateral use or a separate Ethena yield.
    Do not resample the Binance-option/Polymarket-threshold model wedge unless
    an exact strike-expiry-settlement match appears or a two-sided same-date
    model gap exceeds the frozen 4.27-percentage-point escalation threshold.
