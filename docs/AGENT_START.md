@@ -73,6 +73,20 @@ safety gate, blocks Stop, or submits an order.
   cluster or treat protocol/private automation as public execution. Canonical
   gate: `polymarket-resolution-proposer-reward-gate-v1-2026-08-26.json`,
   SHA-256 `ee76a40a86e1c777006c697798d0ad3da20609cadd1c2d8f6bf039ecb79f2155`.
+- The strongest new Polymarket execution lead is buying a finalized winner at
+  0.999 after an undisputed UMA proposal expires but before the adapter closes
+  the market. A fixed five-hour public screen covered 195 BTC/ETH/SOL hourly
+  markets. Two of five clusters contained on-chain-confirmed taker sells into
+  maker bids after exact finality, totaling 278.14 winning shares and 0.27814
+  pUSD gross. Current exact market terms make fees taker-only, official terms
+  make the maker fee zero, and successful relayed redemption is user-gasless.
+  This is a positive direct-cost execution lead, not an accepted edge: public
+  history does not reveal when the maker bids were created, and a bid resting
+  before finality has directional risk. Do not expand history. After the
+  protected boundary and only with explicit authenticated paper authority,
+  freeze one minimum-size post-finality order-acceptance probe. Canonical gate:
+  `polymarket-finalized-winner-redemption-latency-gate-v1-2026-08-26.json`,
+  SHA-256 `3df84b6639c409ffca472bb4566e623ac78f160e7d8bc66795009f619edfdcb1`.
 - The 2026-08-25 target-free structural-parity screens found no accepted edge.
   Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
   negative-risk events and zero gross-positive logical-implication bundles

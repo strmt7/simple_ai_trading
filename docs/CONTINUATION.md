@@ -697,7 +697,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`cf72fe18bd3a46d04089b7c679958c17c3e43c1fe3d8d02bd91919c413c24e7d`.
+`62385d01b8fb0047bfde3bac0049a8aeae9f0549a7a899b5343b40fcefb8292d`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -734,6 +734,41 @@ liveness, batching, or public-access change and then freeze an all-cost,
 gas-stressed, multi-day competition study. Canonical gate:
 `docs/model-research/action-value/polymarket-resolution-proposer-reward-gate-v1-2026-08-26.json`,
 SHA-256 `ee76a40a86e1c777006c697798d0ad3da20609cadd1c2d8f6bf039ecb79f2155`.
+
+The highest-priority Polymarket execution lead is now the short interval after
+an undisputed UMA request becomes `Expired` but before the adapter resolves and
+closes the market. OptimisticOracleV2 makes this a fixed proposed-price state:
+with no disputer and `expirationTime <= current time`, `hasPrice` is true and
+settlement copies `proposedPrice` into `resolvedPrice`. A fixed public screen
+covered five consecutive 09:00-13:00 UTC hourly clusters, 39 initialized
+BTC/ETH/SOL questions per cluster, and 195 proposed-price-equals-resolved-price
+markets in total. The bounded multi-market trade endpoint reached no row
+ceiling. Two clusters contained one qualifying trade each. At 12:10:16 UTC,
+193.67 finalized ETH Down shares sold at 0.999, 16 seconds after finality and
+45 seconds before adapter close. At 13:10:52 UTC, 84.47 finalized BTC Down
+shares sold at 0.999, 52 seconds after finality and 26 seconds before close.
+Both Polygon settlements succeeded. Because the public endpoint was frozen to
+taker-side rows, `SELL` implies the maker bought the winning token. The two
+fills total 278.14 shares and 0.27814 pUSD fixed redemption discount. Both exact
+CLOB markets report a 0.001 tick, five-share minimum, and taker-only fee curve;
+official current terms charge makers zero, and successful relayed redemption
+costs the user zero gas. A 10%-annual opportunity-cost sensitivity from each
+fill to adapter close is only 0.00003457 pUSD; the same hurdle breaks even after
+3.6537 days of redemption delay.
+
+This is positive observed direct-mechanism evidence, not an accepted or stable
+edge. Three of five clusters had no qualifying trade, both observed winners
+were Down, capacity is only 278.14 shares, and public history does not expose
+maker order creation time. A bid resting before UMA finality bears outcome risk
+and is prohibited from this mechanism. Do not expand historical pages. After
+`2026-08-29T23:40:00Z` and only with explicit authenticated paper authority,
+freeze one minimum-size post-only bid created after a pinned exact Expired,
+undisputed, non-ignore, unpaused, unflagged, unresolved state; require clean
+acceptance, fill or rejection/cancellation, owned lineage, and gasless
+redemption reconciliation. No credential, account, order, approval, wallet,
+redemption, or funded action occurred. Canonical gate:
+`docs/model-research/action-value/polymarket-finalized-winner-redemption-latency-gate-v1-2026-08-26.json`,
+SHA-256 `3df84b6639c409ffca472bb4566e623ac78f160e7d8bc66795009f619edfdcb1`.
 
 The highest-priority Binance structural lead is now LDUSDT incremental margin
 yield. Official product guidance says eligible USDT Simple Earn Flexible assets
@@ -1059,6 +1094,12 @@ not grant account, funding, order, or transaction authority.
    frozen prospective contract measuring authenticated maker fills, queue and
    cancellation latency, adverse selection, realized rebate payment, and
    complete orphan P&L. Nominal rebate algebra is not a substitute.
+   The finalized-winner-before-adapter-close lead now outranks that broader
+   maker study. Do not expand its public history. After the protected boundary
+   and only with explicit authenticated paper authority, freeze one minimum-size
+   post-only order created after exact on-chain finality and reconcile its full
+   acceptance, fill or clean rejection/cancellation, ownership, and redemption
+   path without any pre-finality resting exposure.
    Public and on-chain monitoring of the accepted scoped complete-set holding-
    yield edge may continue now without touching the protected sidecar. Monitor
    official terms, current market eligibility, daily `YIELD` continuity, and

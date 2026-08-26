@@ -26,6 +26,10 @@ override prose.
 - Future books, labels, resolutions, fills, and PnL never enter inference.
   Unknown order or redemption state blocks new exposure. Polymarket settlement
   never auto-deploys wallets or creates token approvals.
+- A public fill after an oracle deadline does not prove its maker order was
+  created after finality. Any finalized-winner latency study must bind the exact
+  undisputed non-ignore on-chain state before hypothetical or owned order entry;
+  a bid resting before that state is directional exposure, not structural carry.
 - Never print, prompt, log, serialize, test, document, or commit credentials,
   secrets, tokens, signed requests, or unredacted secret fields.
 - Preserve testnet, dry-run, diversification, liquidity gating, and the app's

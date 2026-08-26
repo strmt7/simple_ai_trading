@@ -1,0 +1,277 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "profitability_claim": false,
+    "public_read_only_research": true,
+    "wallet_transactions_sent": false
+  },
+  "created_at_utc": "2026-08-26T15:31:40.8167240Z",
+  "decision": {
+    "accepted_edge": false,
+    "market_direction_forecast_required": false,
+    "next_trigger": "after 2026-08-29T23:40:00Z and only with explicit authenticated paper authority freeze one minimum-size post-only order that is created after exact onchain Expired-state observation and prove acceptance fill or clean rejection cancellation owned lineage and gasless redemption without pre-finality exposure",
+    "priority": "highest_priority_polymarket_execution_lead",
+    "reason": "two of five consecutive hourly clusters contained onchain-confirmed taker sells into 0.999 maker bids after the undisputed UMA proposal was already Expired and before adapter resolution, producing 0.27814 pUSD direct gross with zero maker fee and documented gasless redemption; public history cannot prove that the maker bids were created only after finality, so pre-finality directional exposure and post-finality order acceptance remain unresolved",
+    "stable_market_invariant_edge": false,
+    "status": "validated_positive_direct_cost_execution_lead_not_accepted_pending_post_finality_order_acceptance_and_owned_lineage"
+  },
+  "mechanism": {
+    "fixed_payoff_identity": "after an undisputed non-ignore UMA proposal reaches Expired state its proposed price is the final settleable price; buying the corresponding winning token at p below 1 and later redeeming returns 1 pUSD so gross value is shares * (1 - p)",
+    "name": "polymarket_finalized_winner_before_adapter_close",
+    "oracle_finality_identity": "OptimisticOracleV2 reports Expired when no disputer exists and expirationTime is not later than current time; hasPrice returns true for Expired and settlement copies proposedPrice into resolvedPrice",
+    "required_execution_sequence": [
+      "observe the exact question and Optimistic Oracle request at a pinned block",
+      "require settled false or true with disputer zero proposedPrice equal to the non-ignore binary winner and current block time at or after expirationTime",
+      "require adapter question unpaused unflagged and unresolved before order entry",
+      "submit only a post-only winner bid after that observation and never leave a bid resting before finality",
+      "require owned fill lineage then gasless redeem after adapter resolution"
+    ],
+    "scoped_assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ]
+  },
+  "screen": {
+    "cluster_count": 5,
+    "cluster_market_count": 39,
+    "clusters": [
+      {
+        "candidate_market_count": 0,
+        "candidate_trade_count": 0,
+        "cluster_hour_utc": "2026-08-26T09:00:00Z",
+        "gross_discount_pusd": "0",
+        "retrieved_trade_rows": 0
+      },
+      {
+        "candidate_market_count": 0,
+        "candidate_trade_count": 0,
+        "cluster_hour_utc": "2026-08-26T10:00:00Z",
+        "gross_discount_pusd": "0",
+        "retrieved_trade_rows": 0
+      },
+      {
+        "candidate_market_count": 0,
+        "candidate_trade_count": 0,
+        "cluster_hour_utc": "2026-08-26T11:00:00Z",
+        "gross_discount_pusd": "0",
+        "retrieved_trade_rows": 0
+      },
+      {
+        "candidate_market_count": 1,
+        "candidate_trade_count": 1,
+        "cluster_hour_utc": "2026-08-26T12:00:00Z",
+        "gross_discount_pusd": "0.19367",
+        "retrieved_trade_rows": 1
+      },
+      {
+        "candidate_market_count": 1,
+        "candidate_trade_count": 1,
+        "cluster_hour_utc": "2026-08-26T13:00:00Z",
+        "gross_discount_pusd": "0.08447",
+        "retrieved_trade_rows": 1
+      }
+    ],
+    "filters": {
+      "candidate_trade": "winner outcome trade with exact onchain timestamp greater than or equal to that market's Optimistic Oracle expirationTime and strictly before its adapter QuestionResolved close timestamp",
+      "data_api_limit_per_cluster": 10000,
+      "data_api_taker_only": true,
+      "market_scope": "39 initialized UmaCtfAdapterV4 automatically resolved BTC ETH and SOL hourly questions in each retained cluster",
+      "row_ceiling_reached_count": 0
+    },
+    "market_count": 195,
+    "proposed_price_equal_resolved_price_count": 195,
+    "candidate_cluster_count": 2,
+    "candidate_market_count": 2,
+    "candidate_trade_count": 2,
+    "candidate_trades": [
+      {
+        "condition_id": "0xf6ec59dfad95b455e0257bfdda91acecb9ba1a5ed20321f9c3c8af2da5684068",
+        "expiration_timestamp": 1787746200,
+        "gross_discount_pusd": "0.19367",
+        "maker_inference": "takerOnly response side SELL means the matched maker bought the winning token",
+        "market_id": "3840864",
+        "onchain_trade_block": 92694126,
+        "outcome": "Down",
+        "price": "0.999",
+        "question": "Ethereum Up or Down - August 26, 7AM ET",
+        "seconds_after_finality": 16,
+        "seconds_before_adapter_close": 45,
+        "shares": "193.67",
+        "side": "SELL",
+        "trade_timestamp": 1787746216,
+        "transaction_hash": "0x6a26b7f7285cc827f57b085ccf0e52f7ad3d61a787485ba82c1e5e72e29508ac"
+      },
+      {
+        "condition_id": "0x6ce0dce007a097033b9a53634b291b0bca30e5d9f9ea973dbf5aae82c713f8ca",
+        "expiration_timestamp": 1787749800,
+        "gross_discount_pusd": "0.08447",
+        "maker_inference": "takerOnly response side SELL means the matched maker bought the winning token",
+        "market_id": "3840863",
+        "onchain_trade_block": 92696550,
+        "outcome": "Down",
+        "price": "0.999",
+        "question": "Bitcoin Up or Down - August 26, 8AM ET",
+        "seconds_after_finality": 52,
+        "seconds_before_adapter_close": 26,
+        "shares": "84.47",
+        "side": "SELL",
+        "trade_timestamp": 1787749852,
+        "transaction_hash": "0xc053c1e007aaca988c08847bff9534a4bfd509d7adf0067048fb4394f0f32fbd"
+      }
+    ]
+  },
+  "direct_cost_economics": {
+    "break_even_redemption_delay_at_10_percent_annual_days": "3.65365365365365365365365365",
+    "direct_mechanism_net_before_unproved_order_access_and_redemption_delay_pusd": "0.27814",
+    "gross_discount_pusd": "0.27814",
+    "maker_fee_pusd": "0",
+    "maker_rebate_credited_pusd": "0",
+    "minimum_order_size_shares": "5",
+    "minimum_tick_size": "0.001",
+    "observed_price": "0.999",
+    "opportunity_cost_from_exact_fills_to_adapter_close_at_10_percent_annual_pusd": "0.0000345651275684931506849315",
+    "post_opportunity_cost_to_adapter_close_pusd": "0.2781054348724315068493150685",
+    "successful_relayer_redemption_user_gas_pusd": "0",
+    "total_paid_principal_pusd": "277.86186",
+    "total_winning_shares": "278.14"
+  },
+  "result_sha256": "3df84b6639c409ffca472bb4566e623ac78f160e7d8bc66795009f619edfdcb1",
+  "safety_and_limits": [
+    "The two public trade rows prove executed prices sizes sides and settlement blocks, not the maker orders' creation timestamps. An order resting before UMA expiration would be outcome-risk exposure and is outside this mechanism.",
+    "Only two of five clusters and two of 195 markets contained a qualifying trade. Three clusters produced no trade, so recurrence and capacity are sparse rather than stable.",
+    "Both observed winners were Down. The payoff does not require a direction forecast after exact finality, but the retained sample does not establish broad operational persistence.",
+    "The maker fee is zero under current official terms and both exact markets report takerOnly fee schedules. Maker rebate is conservatively valued at zero.",
+    "Successful relayed redemption is documented as user-gasless, but relayer credentials eligibility failure handling redemption latency custody tax and every external pUSD cost remain unproved.",
+    "Adapter pause flag reset emergency or manual-resolution state must be checked at order time. An Expired Oracle request alone is insufficient if the adapter question is not clean and unresolved.",
+    "No public history expansion beyond the frozen five clusters is justified before the exact post-finality order-acceptance and owned-lineage blocker is closed.",
+    "No account credential order wallet approval redemption or funded transaction was used or sent."
+  ],
+  "schema_version": "polymarket-finalized-winner-redemption-latency-gate-v1",
+  "sources": {
+    "official": [
+      {
+        "retrieved_at_utc": "2026-08-26T15:31:40.8167240Z",
+        "url": "https://docs.polymarket.com/concepts/resolution",
+        "use": "official trading-stop and one-pUSD winning-token redemption semantics"
+      },
+      {
+        "retrieved_at_utc": "2026-08-26T15:31:40.8167240Z",
+        "url": "https://github.com/UMAprotocol/protocol/blob/master/packages/core/contracts/optimistic-oracle-v2/implementation/OptimisticOracleV2.sol",
+        "use": "official Expired-state hasPrice and proposedPrice-to-resolvedPrice settlement identity"
+      },
+      {
+        "retrieved_at_utc": "2026-08-26T15:31:40.8167240Z",
+        "url": "https://github.com/Polymarket/uma-ctf-adapter/blob/main/src/UmaCtfAdapter.sol",
+        "use": "official adapter hasPrice resolution ignore reset and CTF payout path"
+      },
+      {
+        "retrieved_at_utc": "2026-08-26T15:31:40.8167240Z",
+        "url": "https://docs.polymarket.com/api-reference/core/get-trades-for-a-user-or-markets",
+        "use": "official unauthenticated multi-market bounded trade endpoint and time filters"
+      },
+      {
+        "retrieved_at_utc": "2026-08-26T15:31:40.8167240Z",
+        "url": "https://docs.polymarket.com/api-reference/markets/get-clob-market-info",
+        "use": "official public CLOB token tick size minimum order and fee-detail contract"
+      },
+      {
+        "retrieved_at_utc": "2026-08-26T15:31:40.8167240Z",
+        "url": "https://docs.polymarket.com/trading/fees",
+        "use": "official maker-zero and taker-only fee identity"
+      },
+      {
+        "retrieved_at_utc": "2026-08-26T15:31:40.8167240Z",
+        "url": "https://docs.polymarket.com/trading/gasless",
+        "use": "official successful relayed redeem user-gas coverage"
+      }
+    ],
+    "raw_cluster_evidence": [
+      {
+        "cluster_hour_utc": "2026-08-26T13:00:00Z",
+        "market_catalog_path": "data/polymarket-resolution-reward-v1/recent-ended-closed-crypto-markets.raw.json",
+        "market_catalog_sha256": "f873fd89a8e9e9b6e00c8dace9df17bbcc3c38c91bcdc9040794f8ef87c0e19a",
+        "oo_requests_path": "data/polymarket-resolution-reward-v1/rewarded-oo-requests-current-pinned-publicnode.raw.json",
+        "oo_requests_sha256": "3b6af3f5da454d2c486ffa56687e3b91450dac257bccdfa5b7bf739fbe85f920",
+        "questions_path": "data/polymarket-resolution-reward-v1/rewarded-questions-current-pinned-publicnode.raw.json",
+        "questions_sha256": "b8313eb3d2e4da57bb4e149a95b0fda9355c4dfccb060a92bc692e427b052d14",
+        "trades_path": "data/polymarket-finalized-redemption-latency-v1/scoped-cluster-trades.raw.json",
+        "trades_sha256": "8e5d832d4123f884db9a8013be6d0d52421da35f34db54affb33cbf65e25e90f"
+      },
+      {
+        "cluster_hour_utc": "2026-08-26T12:00:00Z",
+        "market_catalog_path": "data/polymarket-finalized-redemption-latency-v1/prior-hour-page-markets.raw.json",
+        "market_catalog_sha256": "fda709705d09e889296460309b3b3414f2f3af805abba0bd4d2e64d6b542a3e7",
+        "oo_requests_path": "data/polymarket-finalized-redemption-latency-v1/prior-hour-oo-requests-current-pinned.raw.json",
+        "oo_requests_sha256": "f1db1990594dfae9101323d10e41f32499c921b141cfa1d3da07ef6fcd043066",
+        "questions_path": "data/polymarket-finalized-redemption-latency-v1/prior-hour-questions-current-pinned.raw.json",
+        "questions_sha256": "b1abf7328caba64cd2dda02a7a94812f925110a9df8d132a8ff9a5eacdf78f7a",
+        "trades_path": "data/polymarket-finalized-redemption-latency-v1/prior-hour-cluster-trades.raw.json",
+        "trades_sha256": "579c08bbef1594c92b456272d6f7c53a5113436cef0889d28c21d26df13b585e"
+      },
+      {
+        "cluster_hour_utc": "2026-08-26T11:00:00Z",
+        "market_catalog_path": "data/polymarket-finalized-redemption-latency-v1/hour-11-markets.raw.json",
+        "market_catalog_sha256": "1f4f4e75bac6ae367ca9186c17dfacab83788e9ae8f7c3e46d21c3a57cff8c23",
+        "oo_requests_path": "data/polymarket-finalized-redemption-latency-v1/hour-11-oo-recovery-current-pinned.raw.json",
+        "oo_requests_sha256": "e7a266cf27c347628a964385ff456b00952d84e6b010100bb72ad0fa756a1397",
+        "questions_path": "data/polymarket-finalized-redemption-latency-v1/hour-11-questions-recovery-current-pinned.raw.json",
+        "questions_sha256": "c96bca527976710c5c7401cf1ac6d9319e2d8e5e1de714774b091d8cc4e035ec",
+        "trades_path": "data/polymarket-finalized-redemption-latency-v1/hour-11-trades.raw.json",
+        "trades_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "cluster_hour_utc": "2026-08-26T10:00:00Z",
+        "market_catalog_path": "data/polymarket-finalized-redemption-latency-v1/hour-10-markets.raw.json",
+        "market_catalog_sha256": "47c6c1f5b5aa77b04bbfb676dc3858d67e146ae1717afecd9ef028af27307d09",
+        "oo_requests_path": "data/polymarket-finalized-redemption-latency-v1/hour-10-oo-recovery-current-pinned.raw.json",
+        "oo_requests_sha256": "77cb1935583dff682ccd855c195298c668a139f59355296eaa51311f6ed1118e",
+        "questions_path": "data/polymarket-finalized-redemption-latency-v1/hour-10-questions-recovery-current-pinned.raw.json",
+        "questions_sha256": "08377b9c3b6fd9ba2e3d7eca2aeca3aa99ccead94c713099597d0a65917dfbcb",
+        "trades_path": "data/polymarket-finalized-redemption-latency-v1/hour-10-trades.raw.json",
+        "trades_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "cluster_hour_utc": "2026-08-26T09:00:00Z",
+        "market_catalog_path": "data/polymarket-finalized-redemption-latency-v1/hour-09-markets.raw.json",
+        "market_catalog_sha256": "abf3b06ab6be8576a46b471b7c382c36efd9af8667519aabe30479e4ed59287c",
+        "oo_requests_path": "data/polymarket-finalized-redemption-latency-v1/hour-09-oo-recovery-current-pinned.raw.json",
+        "oo_requests_sha256": "5c0c3be7f467c690d3f61d5d8ed0db8e844eba64b404d42359bd1988b10c1711",
+        "questions_path": "data/polymarket-finalized-redemption-latency-v1/hour-09-questions-recovery-current-pinned.raw.json",
+        "questions_sha256": "e36c6a5ae332b0a7357c9fbc1bd30b0b66bd5073fcd0cb3b492cc1d406c87a6d",
+        "trades_path": "data/polymarket-finalized-redemption-latency-v1/hour-09-trades.raw.json",
+        "trades_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ],
+    "raw_candidate_evidence": [
+      {
+        "market_info_path": "data/polymarket-finalized-redemption-latency-v1/prior-hour-candidate-clob-market-info.raw.json",
+        "market_info_sha256": "1c4d19051a39bf5ee223b6fd655db277c680dab7d696127375113803cc07065f",
+        "transaction_path": "data/polymarket-finalized-redemption-latency-v1/prior-hour-candidate-trade-transaction-and-receipt.raw.json",
+        "transaction_sha256": "ab397e69d1124c439d3425f5a8cbab5121a33d396ec16622d7e210752fa44709"
+      },
+      {
+        "market_info_path": "data/polymarket-finalized-redemption-latency-v1/candidate-clob-market-info.raw.json",
+        "market_info_sha256": "3c4fcc504c883701910a6ffa3eb029929a4af587b0d10922f65a0518809cd460",
+        "transaction_path": "data/polymarket-finalized-redemption-latency-v1/candidate-trade-transaction-and-receipt.raw.json",
+        "transaction_sha256": "8cb8e025669e9a36aa9d7f18643bb396de82a358c37e5e5a963dee99b7efc660"
+      }
+    ],
+    "retained_failures_excluded_from_decision": [
+      {
+        "path": "data/polymarket-finalized-redemption-latency-v1/additional-questions-pinned.raw.json",
+        "reason": "the provider returned historical-state-unavailable for all 22 routing calls; a later current-block batch proved these short-duration auto-resolved markets were not initialized in UmaCtfAdapterV4",
+        "sha256": "2a07bad5f66af4886d40468c06cedfaa3976973c020de5df5f1154886be2ff45"
+      },
+      {
+        "path": "data/polymarket-finalized-redemption-latency-v1/hour-11-questions.raw.json",
+        "reason": "the provider returned historical-state-unavailable for all 60 calls; the sole recovery used a newly captured block without changing markets or gates",
+        "sha256": "dfd9bffe91142794ca7a39b752e12fef438c63272c8dbefd69195a65209ac78f"
+      }
+    ]
+  }
+}
