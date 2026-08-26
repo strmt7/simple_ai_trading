@@ -110,6 +110,22 @@ availability cost. Official relayer documentation can establish zero direct
 user gas for successfully relayed split and merge operations; it does not erase
 those other costs.
 
+A transport-clean market-data connection is not source-continuous evidence by
+itself. Record transport continuity, per-token source timestamps, cross-token
+timestamp span, full-book initialization, and original-message batching as
+separate fields. A stale multi-book subscription snapshot cannot establish an
+atomic event-time opportunity merely because all books arrived in one frame.
+Size-ladder evaluations of one book state are not independent states or
+recurrence; count unique source frames and non-overlapping episodes separately
+from event/quantity evaluations, and never promote persistence without a later
+causal source update.
+
+A displayed maker quote is not executable edge evidence until an owned fill or
+explicitly queue-censored fill bound is joined to the first causally subsequent
+executable unwind. Bind conversion access, approvals, fees, latency, adverse
+selection, capacity, and every external cost. An output-maker path also carries
+inventory risk unless pre-existing inventory and its holding cost are explicit.
+
 Official SDK bindings distinguish account-level holding `YIELD` from generic
 `REWARD`. Never use `REWARD` as holding-yield evidence. A blank-condition
 `YIELD` row may establish an account-level payment only after its pUSD transfer

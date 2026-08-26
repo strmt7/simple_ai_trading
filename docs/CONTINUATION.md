@@ -162,6 +162,34 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json`,
   result SHA-256
   `ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030`.
+  That bounded public study is now complete. One five-minute connection captured
+  14,156 frames across all 22 fixed events. Only event `106981` was gross
+  positive, and only in one delivered source frame at the five- and twenty-share
+  ladder points. Those are two quantity evaluations, not two independent states.
+  Current all-taker fees make the paths `-0.07082` and `-0.28328` pUSD. Moving
+  only the Bitcoin-NO input to a zero-fee maker fill leaves merely `0.00740` and
+  `0.02960` pUSD before conversion and every external cost. The relevant full
+  books arrived in one subscription frame but their source timestamps span
+  202.407 seconds, so transport continuity does not prove atomic event-time
+  continuity. A separate exact Polygon V2 receipt from 2026-08-24 proves one
+  85.1-share Bitcoin-NO taker sell consumed 7.38 maker shares at 0.83 and 66.72
+  at exactly 0.82, both with zero maker fee. This proves price-level maker-fill
+  feasibility for some queue position. It does not bind a newly placed order's
+  queue, the first post-fill Gold-YES and S&P-YES books, conversion access,
+  approvals, relayer or gas, latency, adverse selection, or after-external-cost
+  profit. The official batch and single-token historical-price endpoints both
+  returned current points outside the requested 2026-08-24 window; those
+  responses were retained and rejected without guessed retries. Canonical gate:
+  `docs/model-research/action-value/polymarket-negrisk-maker-input-gate-v1-2026-08-26.json`,
+  result SHA-256
+  `99cb35d065cfd2c12eb6947264b838c2c7407fba7582b14a94f30a856e8f0652`.
+  Accepted edges remain nine. One frozen 24-hour public capture of only the six
+  event tokens was launched under internal contract SHA-256
+  `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
+  Before acting, verify the process and terminal artifact. Never consume its
+  partial raw file, restart it, or launch a duplicate. Its only decision is
+  whether a queue-censored 0.82 fill can be joined to the first causally
+  subsequent five- or twenty-share output unwind.
 - Polymarket logical implications: a later canonical fetch contained 1,473
   unique scoped active events. Exact same-event rule identities yielded 53
   threshold groups and 12 deadline groups: 2,572 implication pairs were
@@ -755,7 +783,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`63bedbf06782411b008fcf4accdf086a778f97c102c4027becea411122b19917`.
+`06adf4d2c6bca1894d96c258e407134aa52b113f4c6f32abe17c282b8c729297`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

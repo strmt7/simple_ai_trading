@@ -14,7 +14,7 @@ ARTIFACT = ROOT / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "b97eed6a93070d5e29b26d1a47757c9be49e0296332c8019a64388ba936c3b6b"
 EXPECTED_REGISTRY_HASH = (
-    "066debe7a70e50432005f7284135e3ab54b08e599fc28469e5ff4ad7b3885212"
+    "06adf4d2c6bca1894d96c258e407134aa52b113f4c6f32abe17c282b8c729297"
 )
 
 
@@ -106,13 +106,13 @@ def test_public_minimums_and_registry_promotion_are_exact() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 3
+    assert registry["accepted_edge_count"] == 9
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 16))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 22))
     candidate = next(
         row
         for row in hypotheses
-        if row["mechanism"] == "bounded_just_in_time_bnb_spot_fee_buffer"
+        if row["mechanism"] == "binance_spot_fee_minimization_overlays"
     )
-    assert candidate["priority_rank"] == 3
+    assert candidate["priority_rank"] == 5
     assert candidate["canonical_artifacts"][0]["result_sha256"] == EXPECTED_HASH

@@ -1,0 +1,388 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_edge": true,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "reason": "The exact live event state produced an after-fee positive path only when the Bitcoin NO input is acquired as maker. A public Polygon receipt independently proves that an exact 0.82 Bitcoin NO maker bid filled 66.72 shares two days earlier. The live state and the historical fill are not simultaneous evidence: no post-fill Gold YES and S&P 500 YES books exist, queue ownership is unknown, conversion latency and account accessibility are unproved, and the available historical-price endpoints violated their requested time bounds. The all-taker path is negative after exact published fees.",
+    "status": "maker_input_candidate_exact_price_fill_proved_but_queue_post_fill_unwind_conversion_access_latency_and_after_external_cost_profit_unproved"
+  },
+  "authority": {
+    "account_channel_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "live_money_authority": false,
+    "orders_or_conversions_submitted": 0,
+    "public_read_only_research": true,
+    "signed_requests_made": 0
+  },
+  "created_at_utc": "2026-08-26T18:00:23.1015783Z",
+  "predecessor": {
+    "path": "docs/model-research/action-value/polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json",
+    "result_sha256": "ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030"
+  },
+  "completed_live_capture": {
+    "contract": {
+      "duration_seconds": 300,
+      "event_count": 22,
+      "internal_contract_sha256": "3e96caa41a4a773361121e24e9a5c61b21ff06d22080faa8bfa19498a49b5dbc",
+      "quantity_ladder_shares": [
+        "published_event_minimum",
+        "20",
+        "100"
+      ],
+      "token_count": 468,
+      "transport": "one public unauthenticated Polymarket market WebSocket connection"
+    },
+    "result": {
+      "book_event_count": 468,
+      "elapsed_seconds": "303.016",
+      "evaluation_count": 24276,
+      "frame_count": 14156,
+      "internal_result_sha256": "935a4126bc03031c87351f12d59b0ef8ce58a77d4a3ed85cb845a310c3df2d0d",
+      "positive_event_quantity_evaluations": 2,
+      "positive_unique_episode_count": 1,
+      "positive_unique_source_frame_count": 1,
+      "price_change_event_count": 14142,
+      "raw_bytes": 12464604,
+      "raw_sha256": "208ab17f541143c30d53f8a63f5bf63faf12722c2654b9c73d2850e2f1f33190",
+      "terminal_error": null,
+      "transport_continuity_admitted": true
+    },
+    "semantic_corrections": [
+      "The pilot summary field gross_positive_state_count equals two size-ladder evaluations of one source frame, not two independent states or episodes.",
+      "The pilot summary field source_continuity_admitted proves only that the single WebSocket connection ended without a terminal error. It does not prove cross-token event-time simultaneity.",
+      "The positive event received no subsequent event update during the five-minute window. Persistence of one delivered state is not recurrence."
+    ],
+    "source_documentation_url": "https://docs.polymarket.com/market-data/realtime-data"
+  },
+  "sole_positive_live_state": {
+    "event_id": "106981",
+    "event_title": "Bitcoin vs. Gold vs. S&P 500 in 2026",
+    "frame_received_wall_ms": 1787765952869,
+    "frame_sha256": "6b1b11cfe0945bfea8e9fcdd8ffd615c011802e685e6ce7014212afa9d8c5463",
+    "negative_risk_market_id": "0x339a89111ad048709ef27ac9da11e70a28ceaae3a4f494e949c9d68be7c39a00",
+    "source_timestamp_span_ms": 202407,
+    "source_timestamp_warning": "The three relevant full books arrived in one subscription frame but their source timestamps span 202.407 seconds. This is a current-state snapshot, not an atomic cross-market event-time update.",
+    "top_books": [
+      {
+        "asset": "Bitcoin NO",
+        "asset_id": "95097331309577172647133042426866339261719483395475071583274489760894986349855",
+        "ask_price": "0.83",
+        "ask_size": "59.3",
+        "bid_price": "0.82",
+        "bid_size": "98.74",
+        "source_timestamp_ms": 1787765747688
+      },
+      {
+        "asset": "Gold YES",
+        "asset_id": "4655209727295513535859117642120184432334179761721646415109648555849060899062",
+        "ask_price": "0.32",
+        "ask_size": "7580.81",
+        "bid_price": "0.31",
+        "bid_size": "1999.2",
+        "source_timestamp_ms": 1787765943744
+      },
+      {
+        "asset": "S&P 500 YES",
+        "asset_id": "32825140231045567473519733823753658145488577746690815504132235066565756510499",
+        "ask_price": "0.54",
+        "ask_size": "175.61",
+        "bid_price": "0.53",
+        "bid_size": "25.62",
+        "source_timestamp_ms": 1787765950095
+      }
+    ]
+  },
+  "current_fee_and_conversion_contract": {
+    "clob_fee_formula": "fee = shares * rate * p * (1-p), rounded conservatively to five decimals for each consumed price level",
+    "clob_fee_schedule": {
+      "exponent": 1,
+      "maker_fee": "0",
+      "rate": "0.04",
+      "rebate_rate": "0.25",
+      "taker_only": true
+    },
+    "fee_documentation_url": "https://docs.polymarket.com/trading/fees",
+    "maker_rebate_credit_in_economics": "0",
+    "maker_rebate_reason": "A fresh order has no positive payout lower bound. Payment requires an owned filled liquidity-adding order, depends on daily market share, and has a one pUSD minimum accrued payout.",
+    "maker_rebate_url": "https://docs.polymarket.com/programs/maker-rebates",
+    "onchain_adapter_state": {
+      "adapter_address": "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296",
+      "block_number": 92708086,
+      "block_tag": "0x5869cf6",
+      "conversion_fee_bips": 0,
+      "market_id": "0x339a89111ad048709ef27ac9da11e70a28ceaae3a4f494e949c9d68be7c39a00",
+      "question_count": 3
+    }
+  },
+  "role_economics_at_live_state": {
+    "external_costs_included": false,
+    "fee_rounding_implementation": "src/simple_ai_trading/polymarket_fees.py",
+    "paths": [
+      {
+        "net_quote": "-0.07082",
+        "path": "all_taker",
+        "quantity_shares": "5"
+      },
+      {
+        "net_quote": "-0.28328",
+        "path": "all_taker",
+        "quantity_shares": "20"
+      },
+      {
+        "net_quote": "-2.65171",
+        "path": "all_taker",
+        "quantity_shares": "100"
+      },
+      {
+        "net_quote": "0.00740",
+        "path": "maker_input_Bitcoin_NO_then_taker_sell_both_outputs",
+        "quantity_shares": "5"
+      },
+      {
+        "net_quote": "0.02960",
+        "path": "maker_input_Bitcoin_NO_then_taker_sell_both_outputs",
+        "quantity_shares": "20"
+      },
+      {
+        "net_quote": "-0.69121",
+        "path": "maker_input_Bitcoin_NO_then_taker_sell_both_outputs",
+        "quantity_shares": "100"
+      },
+      {
+        "net_quote": "0.02196",
+        "path": "taker_input_then_maker_sell_Gold_YES_and_taker_sell_SP_YES",
+        "quantity_shares": "5"
+      },
+      {
+        "net_quote": "0.08784",
+        "path": "taker_input_then_maker_sell_Gold_YES_and_taker_sell_SP_YES",
+        "quantity_shares": "20"
+      },
+      {
+        "net_quote": "-0.79611",
+        "path": "taker_input_then_maker_sell_Gold_YES_and_taker_sell_SP_YES",
+        "quantity_shares": "100"
+      },
+      {
+        "net_quote": "0.02900",
+        "path": "taker_input_then_taker_sell_Gold_YES_and_maker_sell_SP_YES",
+        "quantity_shares": "5"
+      },
+      {
+        "net_quote": "0.11600",
+        "path": "taker_input_then_taker_sell_Gold_YES_and_maker_sell_SP_YES",
+        "quantity_shares": "20"
+      },
+      {
+        "net_quote": "0.18390",
+        "path": "taker_input_then_taker_sell_Gold_YES_and_maker_sell_SP_YES",
+        "quantity_shares": "100"
+      }
+    ],
+    "interpretation": {
+      "all_taker": "rejected after exact published taker fees",
+      "maker_input": "the only operationally inventory-neutral candidate before fill; it has no exposure until a passive input fill, then requires prompt conversion and two taker output sales",
+      "maker_output": "not a locked edge without pre-existing inventory because input acquisition and conversion precede an uncertain passive output fill"
+    }
+  },
+  "public_trade_history": {
+    "data_api_contract_url": "https://docs.polymarket.com/api-reference/core/get-trades-for-a-user-or-markets",
+    "endpoint": "https://data-api.polymarket.com/trades?eventId=106981&takerOnly=true&limit=10000&offset=0",
+    "http_status": 200,
+    "raw_bytes": 7219693,
+    "raw_sha256": "34c387b001547d5e050ecda4bbf5821b8c740fe277f01b2c6b295737cc657bef",
+    "tracked_raw": {
+      "compression": "gzip_mtime_zero",
+      "decompressed_bytes": 7219693,
+      "decompressed_sha256": "34c387b001547d5e050ecda4bbf5821b8c740fe277f01b2c6b295737cc657bef",
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/event-106981-taker-trades.json.gz",
+      "stored_bytes": 777466,
+      "stored_sha256": "12bba7820ea9905031888f0d5a17cc91e51e3a8c83b1b72ec91081c6261786cb"
+    },
+    "response_rows": 9201,
+    "response_timestamp_bounds": {
+      "maximum": 1787740309,
+      "minimum": 1766427929
+    },
+    "result": {
+      "Bitcoin_NO_rows": 2077,
+      "Bitcoin_NO_rows_labeled_SELL": 854,
+      "event_rows_during_live_capture": 0,
+      "latest_Bitcoin_NO_SELL_row": {
+        "price": "0.83",
+        "size": "13",
+        "timestamp": 1787696622
+      },
+      "rows_in_last_30_days_with_Bitcoin_NO_SELL_average_price_at_or_below_0_82": 0
+    },
+    "warning": "A Data API row is an aggregate trade record, not a price-level queue reconstruction. The exact receipt below proves that one 0.822159812 aggregate row contained a 66.72-share maker fill at 0.82, so filtering aggregate row prices would undercount price-eligible maker fills."
+  },
+  "exact_recent_maker_fill": {
+    "aggregate_data_api_row": {
+      "asset": "Bitcoin NO",
+      "price": "0.822159812",
+      "side": "SELL",
+      "size": "85.1",
+      "timestamp": 1787584485,
+      "transaction_hash": "0x33091a5c27e2931b18b33e1183fa50afde2386f0f9178fef4f86a0de0245673a"
+    },
+    "contract": "Polymarket NegRisk CTF Exchange V2",
+    "contract_address": "0xe2222d279d744050d28e00520010520000310f59",
+    "contract_interface_url": "https://github.com/Polymarket/ctf-exchange-v2/blob/main/src/exchange/interfaces/ITrading.sol",
+    "decoded_target_token_OrderFilled_rows": [
+      {
+        "fee_pUSD": "0",
+        "maker_amount_pUSD": "6.1254",
+        "maker_order_price": "0.83",
+        "maker_order_side": "BUY",
+        "shares": "7.38"
+      },
+      {
+        "fee_pUSD": "0",
+        "maker_amount_pUSD": "54.7104",
+        "maker_order_price": "0.82",
+        "maker_order_side": "BUY",
+        "shares": "66.72"
+      },
+      {
+        "fee_pUSD": "0.4977",
+        "gross_proceeds_pUSD": "69.9658",
+        "shares": "85.1",
+        "taker_order_average_price": "0.8221598119858989424206815511",
+        "taker_order_side": "SELL"
+      }
+    ],
+    "receipt_block_number_hex": "0x584c141",
+    "receipt_raw_sha256": "b8a8a5472370ff77329de8bd01d3bfb681c45a01a17532f9cbc824449221f7d5",
+    "result": "An exact 0.82 passive Bitcoin NO maker bid filled 66.72 shares with zero maker fee. This proves price-level fill feasibility for some queue position, not fill ownership or probability for a newly placed order."
+  },
+  "post_fill_unwind_evidence": {
+    "historical_price_endpoint_failures": [
+      {
+        "endpoint": "POST https://clob.polymarket.com/batch-prices-history",
+        "requested_end_timestamp": 1787584785,
+        "requested_start_timestamp": 1787584185,
+        "response_point_timestamps": [
+          1787766917,
+          1787766930,
+          1787766931
+        ],
+        "response_raw_sha256": "b447dd5e0891fcccf1aa813b192af70cf73935cdaf9df51048fd2a3344733fd0",
+        "status": "rejected_response_violated_requested_window"
+      },
+      {
+        "endpoint": "GET https://clob.polymarket.com/prices-history",
+        "requested_end_timestamp": 1787584785,
+        "requested_start_timestamp": 1787584185,
+        "response_point_timestamps": [
+          1787766917
+        ],
+        "response_raw_sha256": "d67a29fe0574d21af8156efd2bdeecf16fd477735f5022c2eaf2d7c9ea37f250",
+        "status": "rejected_response_violated_requested_window"
+      }
+    ],
+    "historical_price_source_contract_url": "https://docs.polymarket.com/api-reference/markets/get-prices-history",
+    "historical_price_use_permitted": false,
+    "historical_price_warning": "Even an in-window price point would not prove executable bid depth. Both documented endpoints also failed the more basic timestamp contract.",
+    "pmxt_archive_latest_visible_partition": "2026-08-10T00",
+    "post_fill_Gold_YES_book_available": false,
+    "post_fill_SP_YES_book_available": false,
+    "status": "unproved_no_source_bound_historical_output_books_at_fill_time"
+  },
+  "conversion_access_and_latency": {
+    "conversion_gas_or_relayer_cost_bound": false,
+    "installed_official_sdk_version": "0.2.0",
+    "installed_sdk_high_level_negrisk_convert_method": false,
+    "installed_sdk_low_level_execute_transaction_method": true,
+    "relayer_auth_contract": "Submitting a relayer transaction requires Builder API Keys or Relayer API Keys.",
+    "relayer_documentation_url": "https://docs.polymarket.com/api-reference/relayer/submit-a-transaction",
+    "relayer_or_builder_credentials_available": false,
+    "warning": "A generic transaction-call method does not prove that the exact account can perform this conversion gaslessly, with approvals already present, or within the 0.00148 pUSD per-share maker-input margin."
+  },
+  "prospective_fill_and_unwind_capture": {
+    "active_result_claim": false,
+    "contract_internal_sha256": "9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da",
+    "duration_seconds": 86400,
+    "event_id": "106981",
+    "purpose": "Retain only the six-token event feed so a public fill can be joined to the immediately subsequent executable output books without broad resampling.",
+    "result_status": "pending_terminal_capture_do_not_infer_from_partial_file",
+    "token_count": 6
+  },
+  "research_decision": {
+    "accepted_edge_count_change": 0,
+    "current_accepted_edge_count": 9,
+    "do_not_repeat": [
+      "another all-taker fee calculation for this unchanged state",
+      "aggregate Data API price filtering presented as price-level maker-fill probability",
+      "historical price requests with guessed parameter names after both documented endpoints violated the exact time window",
+      "maker-output economics presented as locked profit without pre-existing inventory and full holding-risk accounting",
+      "crediting an uncertain maker rebate or unproved gasless conversion"
+    ],
+    "next_action": "Terminally audit the frozen 24-hour six-token capture. If a Bitcoin NO sell fill reaches the hypothetical 0.82 maker bid, reconstruct queue-censored eligibility and the first causally subsequent Gold YES and S&P 500 YES taker unwind at five and twenty shares. Reject on no eligible fill, stale or discontinuous books, nonpositive after-fee unwind, or any unbound conversion-access, latency, approval, gas, adverse-selection, or external-cost hurdle.",
+    "promotion_gate": "Require multiple independent owned or conservatively queue-censored maker-input fills, causally subsequent executable output books, exact on-chain conversion availability and fee, authenticated account accessibility, approvals, conversion and two-leg completion latency, every fee and external cost, capacity, adverse selection, and non-overlapping time, liquidity, and volatility regimes."
+  },
+  "result_sha256": "99cb35d065cfd2c12eb6947264b838c2c7407fba7582b14a94f30a856e8f0652",
+  "schema_version": "polymarket-negrisk-maker-input-gate-v1",
+  "tracked_evidence": [
+    {
+      "bytes": 208,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/adapter-state.json",
+      "sha256": "6eef93cd4a12a8a9553a643f30c715bad79a83760e023591fd5e93e0077212fa"
+    },
+    {
+      "bytes": 340,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/batch-price-history-window-violation.json",
+      "sha256": "b447dd5e0891fcccf1aa813b192af70cf73935cdaf9df51048fd2a3344733fd0"
+    },
+    {
+      "bytes": 46,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/block-number.json",
+      "sha256": "5949ca96e63c6f442b30c7deb881f96e8c3f313feceebb8398d39520e750bd1e"
+    },
+    {
+      "bytes": 22030,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/event-106981-gamma.json",
+      "sha256": "f2b05697cacc9e976b09a8a57e07985b438accc75e758b400c223ad2fc8fc7f3"
+    },
+    {
+      "bytes": 777466,
+      "decompressed_bytes": 7219693,
+      "decompressed_sha256": "34c387b001547d5e050ecda4bbf5821b8c740fe277f01b2c6b295737cc657bef",
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/event-106981-taker-trades.json.gz",
+      "sha256": "12bba7820ea9905031888f0d5a17cc91e51e3a8c83b1b72ec91081c6261786cb"
+    },
+    {
+      "bytes": 82474,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/live-contract.json",
+      "sha256": "437b95dcd519560697eb68a467cf95c31669252ce66d510fbe33503f2110c43d"
+    },
+    {
+      "bytes": 2508079,
+      "decompressed_sha256": "208ab17f541143c30d53f8a63f5bf63faf12722c2654b9c73d2850e2f1f33190",
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/live-raw-frames.jsonl.gz",
+      "sha256": "1530eb4872c686700eba8d3a7f07d6a443b5c569c456f7298b878a897fb82ad4"
+    },
+    {
+      "bytes": 13336,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/live-summary.json",
+      "sha256": "d92f3f242aab730e46b71dc9b0a9158566afcacae12a662c3429d9beb0ec2a7a"
+    },
+    {
+      "bytes": 2056,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/prospective-contract.json",
+      "sha256": "6a8b08e5af532d91f83fac0fb6c46e0f2d691a95fee926f55f9e4dbfdd45324d"
+    },
+    {
+      "bytes": 23630,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/receipt-33091a5c.json",
+      "sha256": "b8a8a5472370ff77329de8bd01d3bfb681c45a01a17532f9cbc824449221f7d5"
+    },
+    {
+      "bytes": 41,
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/single-price-history-window-violation.json",
+      "sha256": "d67a29fe0574d21af8156efd2bdeecf16fd477735f5022c2eaf2d7c9ea37f250"
+    }
+  ]
+}
