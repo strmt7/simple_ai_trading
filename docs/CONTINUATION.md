@@ -282,6 +282,23 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/polymarket-perps-binance-spot-oi-carry-v1-2026-08-26.json`,
   result SHA-256
   `0d89a4fee61cf51c2f5f8c2491c9d8c3cc4a5e08046206dbe2ba20f7ba3ea934`.
+  A distinct reward-stack sensitivity reused the retained BTC diagnostic without
+  another venue request: short Polymarket BTC Perps, long Binance BTCUSDT
+  perpetual, and use BFUSD as reward-bearing collateral on the Binance leg.
+  The full 592-hour window would need at least 5.1825556081% annual BFUSD yield
+  for already-held collateral, but the fixed-role persistence gate needs
+  14.1066194737% in the worst role. Applying the current guide's typical 10-bps
+  subscription plus 10-bps redemption sensitivities raises that worst-role
+  threshold to 25.6329352632%. The validated 2.01091% LDUSDT alternative would
+  contribute only 13.5897 bps and leave the full window 21.4340 bps negative.
+  Binance's current public guide says BFUSD rates vary daily, while the exact
+  rate, rewards, and quota endpoints are signed USER_DATA. Both designated
+  credential variables remain absent. This is an account-evidence lead, not a
+  stable or accepted edge, and the inherited alignment remains non-authoritative.
+  Do not request funding or books. Canonical gate:
+  `docs/model-research/action-value/polymarket-perps-binance-bfusd-collateral-stack-gate-v1-2026-08-26.json`,
+  result SHA-256
+  `5919c6fdf73b15c7774feefb8b0a57129c3a43f668b2e4d5f6aed528a094dbe3`.
 - Binance Prediction Trading versus Polymarket was frozen as a distinct
   structural screen, permitting only exact BTC/ETH/SOL payout-rule equivalence.
   It stopped before market access. The official generated Markdown said market
@@ -680,7 +697,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`544ea6c0980e8be15d08c7b887637f7ac05803ded687cb7b28b948266a0951a4`.
+`0a3ffdb12a029221385782a45a5aeb54b3d7b06422c927cab7f850150b3e6b21`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

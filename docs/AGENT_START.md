@@ -260,6 +260,19 @@ safety gate, blocks Stop, or submits an order.
   `566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb`.
   Do not poll the book until signed account commission, quota, exact fee, and
   reward evidence sets executable thresholds.
+  A separate offline stack used BFUSD as reward-bearing collateral for the long
+  Binance BTCUSDT perpetual hedge against a short Polymarket BTC Perpetual. It
+  reused the retained non-authoritative BTC diagnostic and made no venue
+  request. The aggregate already-held-collateral break-even is 5.1825556081%
+  annual BFUSD yield, but every fixed role clears only above 14.1066194737% in
+  the worst role; typical 10-bps subscription plus 10-bps redemption friction
+  raises that worst-role threshold to 25.6329352632%. The current public guide
+  states that BFUSD rates vary daily and exact rate, reward, and quota evidence
+  is signed USER_DATA. Both designated credentials are absent, so no edge is
+  claimed and no book request is justified. Canonical gate:
+  `polymarket-perps-binance-bfusd-collateral-stack-gate-v1-2026-08-26.json`,
+  result SHA-256
+  `5919c6fdf73b15c7774feefb8b0a57129c3a43f668b2e4d5f6aed528a094dbe3`.
   Current public promotions add one conditional path, not a stable accepted
   edge. Binance published an 8.07% effective APR for the first completed week
   of its RLUSD/XRP campaign. It has no stated individual cap, but requires an

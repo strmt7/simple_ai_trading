@@ -1,0 +1,117 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "profitability_claim": false
+  },
+  "calculation": {
+    "annualization_hours": "8760",
+    "full_window": {
+      "aligned_eight_hour_rows": 74,
+      "bfusd_annual_rate_required_for_already_held_collateral_bips": "518.2555608108108108108108109297297297297",
+      "bfusd_annual_rate_required_for_already_held_collateral_percent": "5.182555608108108108108108109297297297297",
+      "bfusd_annual_rate_required_with_typical_20_bips_subscription_and_redemption_bips": "814.2015067567567567567567568756756756757",
+      "bfusd_annual_rate_required_with_typical_20_bips_subscription_and_redemption_percent": "8.142015067567567567567567568756756756757",
+      "duration_hours": "592",
+      "ldusdt_2_01090505946087_percent_annual_contribution_bips": "13.5896780274067926940639269406392694063926940639269406392694",
+      "ldusdt_net_after_existing_hurdles_bips": "-21.4339854429128420091324200993607305936073059360730593607306",
+      "net_deficit_before_bfusd_yield_bips": "35.02366347031963470319634704"
+    },
+    "identity": "required_annual_bips = remaining_deficit_bips * 8760 / observed_hours",
+    "role_persistence": {
+      "test": {
+        "duration_hours": "152",
+        "required_existing_collateral_annual_percent": "14.10661947368421052631578947331578947368",
+        "required_new_collateral_annual_percent_at_typical_20_bips_entry_exit": "25.63293526315789473684210526278947368421"
+      },
+      "training": {
+        "duration_hours": "296",
+        "required_existing_collateral_annual_percent": "8.718858108108108108108108109297297297297",
+        "required_new_collateral_annual_percent_at_typical_20_bips_entry_exit": "14.63777702702702702702702702821621621622"
+      },
+      "validation": {
+        "duration_hours": "144",
+        "required_existing_collateral_annual_percent": "12.82697750000000000000000000283333333333",
+        "required_new_collateral_annual_percent_at_typical_20_bips_entry_exit": "24.9936441666666666666666666695"
+      },
+      "worst_role_existing_collateral_annual_percent": "14.10661947368421052631578947331578947368",
+      "worst_role_new_collateral_annual_percent_at_typical_20_bips_entry_exit": "25.63293526315789473684210526278947368421"
+    },
+    "unit_sensitivity": "one BFUSD of reward-bearing balance per one USD of Binance long-perpetual notional; exact account collateral-value ratio, margin requirement, and eligible reward balance remain unproved",
+    "underlying_components_bips": {
+      "conditional_polymarket_OI_reward": "40.54794520547945205479452054",
+      "oriented_polymarket_minus_binance_funding": "12.00830000",
+      "single_round_trip_execution_hurdle": "20",
+      "two_leg_5_percent_annual_opportunity_hurdle": "67.57990867579908675799086758"
+    }
+  },
+  "created_at_utc": "2026-08-26T13:00:14.8468093Z",
+  "decision": {
+    "accepted_edge": false,
+    "account_evidence_escalation_permitted_now": false,
+    "market_direction_forecast_required": false,
+    "next_trigger": "only when both designated Binance credential variables exist and the protected Polymarket account boundary permits access, capture exact same-period BFUSD rate and rewards, exact quota and collateral-value ratio, exact fees, and authenticated Polymarket OI-reward eligibility before any book request",
+    "reason": "the aggregate lower-bound threshold is only 5.1825556081 percent annual for already-held collateral, but the fixed-role persistence gate requires at least 14.1066194737 percent and newly acquiring and redeeming BFUSD at the guide's typical friction raises the worst-role sensitivity to 25.6329352632 percent; no public current rate or account eligibility proves either threshold",
+    "stable_market_invariant_edge": false,
+    "status": "conditional_account_evidence_lead_not_an_edge"
+  },
+  "limitations": [
+    "The inherited 74-row BTC alignment is explicitly non-authoritative because its nearest-hour timestamp rule was not frozen before source access.",
+    "The source attempt did not complete ETH or SOL and therefore provides no multi-asset persistence evidence.",
+    "The documented six-percent Polymarket OI reward requires one-million-USD daily-average gross OI and authenticated realization evidence.",
+    "BFUSD daily reward rates vary with funding and ETH staking income and are not guaranteed to remain constant.",
+    "The typical 0.1-percent subscription and redemption fees are guide sensitivities, not exact account quota evidence.",
+    "Nearly 100-percent collateral value is not an exact account collateral ratio or proof of liquidation-safe capital efficiency.",
+    "pUSD-USDT basis, cross-venue execution, custody, redemption delay, liquidation, auto-deleveraging, tax, and operational costs remain unmeasured."
+  ],
+  "mechanism": {
+    "binance_leg": "long BTCUSDT perpetual with BFUSD used as reward-bearing Multi-Assets collateral",
+    "name": "conditional_polymarket_perps_funding_and_OI_reward_hedged_by_binance_perpetual_with_BFUSD_collateral_rewards",
+    "polymarket_leg": "short BTC-USD perpetual",
+    "purpose": "stack two direction-neutral reward mechanisms on required hedge capital without using leverage as edge"
+  },
+  "preflight": {
+    "binance_api_key_present": false,
+    "binance_api_secret_present": false,
+    "official_document_pages_reviewed": 2,
+    "signed_requests": 0,
+    "venue_market_or_account_http_requests": 0
+  },
+  "result_sha256": "5919c6fdf73b15c7774feefb8b0a57129c3a43f668b2e4d5f6aed528a094dbe3",
+  "schema_version": "polymarket-perps-binance-bfusd-collateral-stack-gate-v1",
+  "sources": [
+    {
+      "path": "docs/model-research/action-value/polymarket-binance-perps-oi-carry-terminal-v1-2026-08-26.json",
+      "result_sha256": "01bf5ea0a3f293e8e14b2f484ac2715c6c326ddfab57dba51873bf16e76a62e4",
+      "use": "retained BTC funding reward opportunity-hurdle and fixed-role diagnostic"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-stable-yield-allocation-evidence-gate-v1.json",
+      "result_sha256": "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a",
+      "use": "signed BFUSD rate quota reward and alternative-yield evidence contract"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-bfusd-spot-redemption-parity-v1-2026-08-26.json",
+      "result_sha256": "566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb",
+      "use": "public spot-route and typical guide-friction evidence"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json",
+      "result_sha256": "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d",
+      "use": "accepted scoped 2.01090505946087-percent annual collateral-yield comparison"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T13:00:14.8468093Z",
+      "url": "https://www.binance.com/en/academy/articles/what-is-bfusd",
+      "use": "current official reward variability collateral use collateral-value and redemption-risk semantics"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T13:00:14.8468093Z",
+      "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-simple-earn/api/rest-api/bfusd",
+      "use": "current official USER_DATA classification for exact BFUSD account quota rate and rewards history"
+    }
+  ]
+}

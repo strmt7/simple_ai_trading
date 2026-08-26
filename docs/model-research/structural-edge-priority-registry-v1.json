@@ -550,9 +550,48 @@
       ],
       "retry_trigger": "exact_authenticated_reward_eligibility_and_total_fee_evidence_that_leaves_a_positive_budget_below_25_7920876712_bips_before_any_book_request",
       "venue_scope": "polymarket_BTC_Perps_and_binance_BTC_spot"
+    },
+    {
+      "blocking_evidence": [
+        "exact same-period account BFUSD rate and realized reward history with proved timestamp cadence",
+        "exact account BFUSD reward-eligible balance quota collateral-value ratio subscription and redemption costs",
+        "authenticated proof of the exact Polymarket accounts one-million-USD daily-average gross-OI reward eligibility and payment",
+        "authoritative cross-source funding timestamp alignment and complete ETH and SOL evidence",
+        "exact Polymarket crypto Perps and Binance BTC perpetual fees plus synchronized entry exit basis and depth",
+        "pUSD USDT custody transfer liquidation auto-deleveraging tax and reconciliation costs"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-binance-perps-oi-carry-terminal-v1-2026-08-26.json",
+          "result_sha256": "01bf5ea0a3f293e8e14b2f484ac2715c6c326ddfab57dba51873bf16e76a62e4"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-stable-yield-allocation-evidence-gate-v1.json",
+          "result_sha256": "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-perps-binance-bfusd-collateral-stack-gate-v1-2026-08-26.json",
+          "result_sha256": "5919c6fdf73b15c7774feefb8b0a57129c3a43f668b2e4d5f6aed528a094dbe3"
+        }
+      ],
+      "current_status": "the_retained_non_authoritative_BTC_diagnostic_needs_5_1825556081_percent_annual_BFUSD_yield_to_clear_the_full_window_for_already_held_collateral_but_fixed_role_persistence_needs_14_1066194737_percent_and_new_subscription_plus_redemption_at_the_guides_typical_20_bips_total_friction_needs_25_6329352632_percent_in_the_worst_role_the_current_rate_is_signed_account_evidence_and_variable_so_no_edge_is_claimed",
+      "market_direction_forecast_required": false,
+      "mechanism": "conditional_polymarket_perps_OI_reward_and_funding_hedged_by_binance_perpetual_with_BFUSD_collateral_rewards",
+      "next_action": "do_not_refresh_public_funding_or_books_when_both_Binance_credentials_exist_and_the_protected_Polymarket_account_boundary_permits_access_first_capture_exact_same_period_BFUSD_rate_rewards_quota_collateral_value_and_authenticated_OI_reward_eligibility_then_reject_unless_every_fixed_role_clears_exact_costs",
+      "priority_rank": 17,
+      "prohibited_shortcuts": [
+        "using_a_public_or_marketing_BFUSD_APY_as_current_account_rate_evidence",
+        "using_the_5_1825556081_percent_aggregate_threshold_while_ignoring_the_14_1066194737_percent_fixed_role_threshold",
+        "assuming_nearly_100_percent_collateral_value_is_an_exact_account_ratio",
+        "treating_the_non_authoritative_74_row_alignment_as_promotion_evidence",
+        "double_counting_leverage_or_reward_bearing_collateral_as_free_capital",
+        "requesting_books_before_account_rate_reward_and_fee_evidence_pass"
+      ],
+      "retry_trigger": "both_designated_Binance_credentials_and_permitted_authenticated_Polymarket_reward_evidence_then_exact_same_period_BFUSD_rate_above_14_1066194737_percent_for_already_held_collateral_or_above_25_6329352632_percent_for_new_collateral_before_any_book_request",
+      "venue_scope": "polymarket_BTC_Perps_and_binance_BTC_perpetual_with_BFUSD_collateral"
     }
   ],
-  "result_sha256": "544ea6c0980e8be15d08c7b887637f7ac05803ded687cb7b28b948266a0951a4",
+  "result_sha256": "0a3ffdb12a029221385782a45a5aeb54b3d7b06422c927cab7f850150b3e6b21",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -656,6 +695,6 @@
       "reason": "the_one_use_multi_asset_attempt_stopped_on_the_first_429_after_15_successes_without_retry_exact_cross_source_timestamps_did_not_align_and_the_retained_BTC_diagnostic_failed_every_role_after_conditional_reward_execution_and_two_leg_capital_hurdles"
     }
   ],
-  "updated_at_utc": "2026-08-26T12:52:00Z",
+  "updated_at_utc": "2026-08-26T13:00:14.8468093Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
