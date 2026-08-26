@@ -13,8 +13,8 @@
       "aligned_eight_hour_rows": 74,
       "bfusd_annual_rate_required_for_already_held_collateral_bips": "518.2555608108108108108108109297297297297",
       "bfusd_annual_rate_required_for_already_held_collateral_percent": "5.182555608108108108108108109297297297297",
-      "bfusd_annual_rate_required_with_typical_20_bips_subscription_and_redemption_bips": "814.2015067567567567567567568756756756757",
-      "bfusd_annual_rate_required_with_typical_20_bips_subscription_and_redemption_percent": "8.142015067567567567567567568756756756757",
+      "bfusd_annual_rate_required_with_current_10_bips_fast_redemption_percent_conservative_all_balance_sensitivity": "6.6622853378378397297297297297",
+      "bfusd_annual_rate_required_with_current_2_5_bips_standard_redemption_percent": "5.5524880405405424324324324324",
       "duration_hours": "592",
       "ldusdt_2_01090505946087_percent_annual_contribution_bips": "13.5896780274067926940639269406392694063926940639269406392694",
       "ldusdt_net_after_existing_hurdles_bips": "-21.4339854429128420091324200993607305936073059360730593607306",
@@ -25,20 +25,50 @@
       "test": {
         "duration_hours": "152",
         "required_existing_collateral_annual_percent": "14.10661947368421052631578947331578947368",
-        "required_new_collateral_annual_percent_at_typical_20_bips_entry_exit": "25.63293526315789473684210526278947368421"
+        "required_new_collateral_annual_percent_at_current_10_bips_fast_redemption_conservative_all_balance_sensitivity": "19.869777368421042105263157895",
+        "required_new_collateral_annual_percent_at_current_2_5_bips_standard_redemption": "15.547408947368410526315789474",
+        "required_new_collateral_annual_percent_at_current_free_fast_redemption_up_to_500_bfusd": "14.10661947368421052631578947331578947368"
       },
       "training": {
         "duration_hours": "296",
         "required_existing_collateral_annual_percent": "8.718858108108108108108108109297297297297",
-        "required_new_collateral_annual_percent_at_typical_20_bips_entry_exit": "14.63777702702702702702702702821621621622"
+        "required_new_collateral_annual_percent_at_current_10_bips_fast_redemption_conservative_all_balance_sensitivity": "11.678317567567569459459459460",
+        "required_new_collateral_annual_percent_at_current_2_5_bips_standard_redemption": "9.458722972972974864864864865",
+        "required_new_collateral_annual_percent_at_current_free_fast_redemption_up_to_500_bfusd": "8.718858108108108108108108109297297297297"
       },
       "validation": {
         "duration_hours": "144",
         "required_existing_collateral_annual_percent": "12.82697750000000000000000000283333333333",
-        "required_new_collateral_annual_percent_at_typical_20_bips_entry_exit": "24.9936441666666666666666666695"
+        "required_new_collateral_annual_percent_at_current_10_bips_fast_redemption_conservative_all_balance_sensitivity": "18.910310833333333333333333333",
+        "required_new_collateral_annual_percent_at_current_2_5_bips_standard_redemption": "14.347810833333333333333333333",
+        "required_new_collateral_annual_percent_at_current_free_fast_redemption_up_to_500_bfusd": "12.82697750000000000000000000283333333333"
       },
       "worst_role_existing_collateral_annual_percent": "14.10661947368421052631578947331578947368",
-      "worst_role_new_collateral_annual_percent_at_typical_20_bips_entry_exit": "25.63293526315789473684210526278947368421"
+      "worst_role_new_collateral_annual_percent_at_current_10_bips_fast_redemption_conservative_all_balance_sensitivity": "19.869777368421042105263157895",
+      "worst_role_new_collateral_annual_percent_at_current_2_5_bips_standard_redemption": "15.547408947368410526315789474",
+      "worst_role_new_collateral_annual_percent_at_current_free_fast_redemption_up_to_500_bfusd": "14.10661947368421052631578947331578947368"
+    },
+    "current_public_bfusd_product_page": {
+      "collateral_value_ratio_percent": "99.9",
+      "fast_redemption": {
+        "daily_limit_large_holder_bfusd": "500000",
+        "daily_limit_normal_holder_bfusd": "10000",
+        "fee_free_first_bfusd": "500",
+        "fee_rate_percent_after_free_tranche": "0.1",
+        "settlement": "real_time"
+      },
+      "last_day_apr_percent": "5.12",
+      "purchase_fee_percent": "0",
+      "standard_redemption": {
+        "daily_limit_bfusd": "10000000",
+        "fee_rate_percent": "0.025",
+        "settlement_days": "2"
+      },
+      "supply_bfusd": "1310972144.4307554",
+      "up_to_180_day_apr_percent": "5.56",
+      "seven_day_average_apr_percent": "5.03",
+      "worst_role_existing_collateral_shortfall_vs_last_day_apr_percentage_points": "8.98661947368421052631578947331578947368",
+      "worst_role_existing_collateral_shortfall_vs_seven_day_average_apr_percentage_points": "9.07661947368421052631578947331578947368"
     },
     "unit_sensitivity": "one BFUSD of reward-bearing balance per one USD of Binance long-perpetual notional; exact account collateral-value ratio, margin requirement, and eligible reward balance remain unproved",
     "underlying_components_bips": {
@@ -53,18 +83,18 @@
     "accepted_edge": false,
     "account_evidence_escalation_permitted_now": false,
     "market_direction_forecast_required": false,
-    "next_trigger": "only when both designated Binance credential variables exist and the protected Polymarket account boundary permits access, capture exact same-period BFUSD rate and rewards, exact quota and collateral-value ratio, exact fees, and authenticated Polymarket OI-reward eligibility before any book request",
-    "reason": "the aggregate lower-bound threshold is only 5.1825556081 percent annual for already-held collateral, but the fixed-role persistence gate requires at least 14.1066194737 percent and newly acquiring and redeeming BFUSD at the guide's typical friction raises the worst-role sensitivity to 25.6329352632 percent; no public current rate or account eligibility proves either threshold",
+    "next_trigger": "do not request credentials accounts funding or books while the official public BFUSD seven-day average and last-day APR remain below 14.1066194737 percent; reopen only after a materially new official displayed APR first clears that threshold, then require both designated Binance credentials, permitted authenticated Polymarket OI-reward evidence, exact same-period BFUSD rewards quota collateral treatment and realized costs before any book request",
+    "reason": "the official live BFUSD page displays 5.03 percent seven-day average APR and 5.12 percent last-day APR, both far below the fixed-role persistence requirement of 14.1066194737 percent even for already-held or fee-free-under-500 collateral; the current zero purchase fee and lower redemption terms improve the former guide sensitivity but cannot rescue the role-persistence failure",
     "stable_market_invariant_edge": false,
-    "status": "conditional_account_evidence_lead_not_an_edge"
+    "status": "current_public_rate_below_role_persistence_gate_not_an_edge"
   },
   "limitations": [
     "The inherited 74-row BTC alignment is explicitly non-authoritative because its nearest-hour timestamp rule was not frozen before source access.",
     "The source attempt did not complete ETH or SOL and therefore provides no multi-asset persistence evidence.",
     "The documented six-percent Polymarket OI reward requires one-million-USD daily-average gross OI and authenticated realization evidence.",
     "BFUSD daily reward rates vary with funding and ETH staking income and are not guaranteed to remain constant.",
-    "The typical 0.1-percent subscription and redemption fees are guide sensitivities, not exact account quota evidence.",
-    "Nearly 100-percent collateral value is not an exact account collateral ratio or proof of liquidation-safe capital efficiency.",
+    "The current public page states no purchase fee, free Fast Redemption for the first 500 BFUSD then 0.1 percent, and 0.025-percent two-day Standard Redemption; Binance may change these terms and an actual quote remains required before any transaction.",
+    "The public 99.9-percent collateral value ratio is not proof of an account's margin requirement, liquidation-safe capital efficiency, or reward-eligible balance.",
     "pUSD-USDT basis, cross-venue execution, custody, redemption delay, liquidation, auto-deleveraging, tax, and operational costs remain unmeasured."
   ],
   "mechanism": {
@@ -76,11 +106,12 @@
   "preflight": {
     "binance_api_key_present": false,
     "binance_api_secret_present": false,
-    "official_document_pages_reviewed": 2,
+    "official_document_pages_reviewed": 3,
+    "public_product_page_browser_reads": 1,
     "signed_requests": 0,
     "venue_market_or_account_http_requests": 0
   },
-  "result_sha256": "5919c6fdf73b15c7774feefb8b0a57129c3a43f668b2e4d5f6aed528a094dbe3",
+  "result_sha256": "a6ff387d70d33c40951e36de93eff7c810b2291dbefff5ecb0f3953880fe7878",
   "schema_version": "polymarket-perps-binance-bfusd-collateral-stack-gate-v1",
   "sources": [
     {
@@ -112,6 +143,12 @@
       "retrieved_at_utc": "2026-08-26T13:00:14.8468093Z",
       "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-simple-earn/api/rest-api/bfusd",
       "use": "current official USER_DATA classification for exact BFUSD account quota rate and rewards history"
+    },
+    {
+      "retrieved_at_utc": "2026-08-26T20:24:01.2642412Z",
+      "url": "https://www.binance.com/en/bfusd",
+      "use": "official live rendered seven-day and last-day APR collateral-value ratio purchase fee redemption fee limit settlement and eligible-account snapshot semantics"
     }
-  ]
+  ],
+  "updated_at_utc": "2026-08-26T20:24:01.2642412Z"
 }

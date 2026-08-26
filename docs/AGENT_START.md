@@ -433,25 +433,33 @@ safety gate, blocks Stop, or submits an order.
   reused the retained non-authoritative BTC diagnostic and made no venue
   request. The aggregate already-held-collateral break-even is 5.1825556081%
   annual BFUSD yield, but every fixed role clears only above 14.1066194737% in
-  the worst role; typical 10-bps subscription plus 10-bps redemption friction
-  raises that worst-role threshold to 25.6329352632%. The current public guide
-  states that BFUSD rates vary daily and exact rate, reward, and quota evidence
-  is signed USER_DATA. Both designated credentials are absent, so no edge is
-  claimed and no book request is justified. Canonical gate:
+  the worst role. The official live product page displays only 5.03% seven-day
+  average APR and 5.12% last-day APR. It now states zero purchase fee, Fast
+  Redemption free for the first 500 BFUSD then 0.1%, and two-day Standard
+  Redemption at 0.025%. Those terms improve the older guide sensitivity, but
+  even fee-free-under-500 collateral misses the fixed-role gate by more than
+  8.98 percentage points. Do not request credentials, accounts, funding, or
+  books unless a materially new official displayed APR first reaches
+  14.1066194737%. Exact rate, reward, and quota evidence remains signed
+  USER_DATA. Canonical gate:
   `polymarket-perps-binance-bfusd-collateral-stack-gate-v1-2026-08-26.json`,
   result SHA-256
-  `5919c6fdf73b15c7774feefb8b0a57129c3a43f668b2e4d5f6aed528a094dbe3`.
+  `a6ff387d70d33c40951e36de93eff7c810b2291dbefff5ecb0f3953880fe7878`.
   Current public promotions add one conditional path, not a stable accepted
   edge. Binance published an 8.07% effective APR for the first completed week
   of its RLUSD/XRP campaign. It has no stated individual cap, but requires an
   eligible account, RLUSD collateral, and at least 500 USD average daily genuine
   Margin or Futures volume; future weekly APRs are unknown and the campaign ends
-  2026-09-11. Never manufacture volume to qualify. The contemporaneous 14-day
-  USDT and USDC Flexible bonuses have maximum combined gross rewards of only
-  about 1.34 USD and 0.58 USD at their public approximate base rates and capped
-  bonus tiers. Canonical triage:
+  2026-09-11. Never manufacture volume to qualify. The contemporaneous USDT
+  promotion has a source-bound 14-day window and maximum combined gross reward
+  of about 1.34 USDT at the advertised approximate base rate and capped bonus.
+  The same article's USDC table row displays approximately 2.5% Real-Time APR
+  plus 5% on the first 200 USDC, but the dated promotion sentence names only
+  USDT. No USDC start or end time is published there, so its guaranteed forward
+  public reward floor is zero; never transfer USDT's dates to USDC. Canonical
+  triage:
   `binance-public-promotion-yield-triage-v1-2026-08-26.json`, result SHA-256
-  `fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c`.
+  `26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac`.
   Observe the fixed August 28 and September 4 RLUSD updates; do not extrapolate
   one week, illustrative examples, or system timezone into profitability or
   account eligibility.
@@ -689,7 +697,7 @@ safety gate, blocks Stop, or submits an order.
   acquire U for the reward, or call the promotion stable or deployment-ready.
   Canonical gate: `binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json`,
   result SHA-256
-  `1dd11be5bb81d7d9bf278a27cdb0df4dc25a1db41c3bce005308c7aa639cbf25`.
+  `6f44b65e5aa85d33cc02e8611a372162cf00f4162fdff99828a31cf498ced6f9`.
 - The RWUSD VIP extension is accepted only as an automatic bonus on RWUSD
   already held for an independent reason: 1.1452 bips over 22 days for VIP 1-3
   up to 30,000 RWUSD or 4.5808 bips for VIP 4-9 up to 200,000 RWUSD. Do not

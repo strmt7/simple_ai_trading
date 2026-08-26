@@ -426,18 +426,20 @@ diagnostics, not accepted edges.
   perpetual, and use BFUSD as reward-bearing collateral on the Binance leg.
   The full 592-hour window would need at least 5.1825556081% annual BFUSD yield
   for already-held collateral, but the fixed-role persistence gate needs
-  14.1066194737% in the worst role. Applying the current guide's typical 10-bps
-  subscription plus 10-bps redemption sensitivities raises that worst-role
-  threshold to 25.6329352632%. The validated 2.01091% LDUSDT alternative would
+  14.1066194737% in the worst role. The official live product page displays
+  5.03% seven-day average APR and 5.12% last-day APR. It now states zero
+  purchase fee, Fast Redemption free for the first 500 BFUSD then 0.1%, and
+  two-day Standard Redemption at 0.025%; even fee-free-under-500 collateral
+  misses the fixed-role gate by more than 8.98 percentage points. The validated
+  2.01091% LDUSDT alternative would
   contribute only 13.5897 bps and leave the full window 21.4340 bps negative.
-  Binance's current public guide says BFUSD rates vary daily, while the exact
-  rate, rewards, and quota endpoints are signed USER_DATA. Both designated
-  credential variables remain absent. This is an account-evidence lead, not a
+  Exact rate, rewards, and quota endpoints are signed USER_DATA. This is not a
   stable or accepted edge, and the inherited alignment remains non-authoritative.
-  Do not request funding or books. Canonical gate:
+  Do not request credentials, accounts, funding, or books unless a materially
+  new official displayed APR first reaches 14.1066194737%. Canonical gate:
   `docs/model-research/action-value/polymarket-perps-binance-bfusd-collateral-stack-gate-v1-2026-08-26.json`,
   result SHA-256
-  `5919c6fdf73b15c7774feefb8b0a57129c3a43f668b2e4d5f6aed528a094dbe3`.
+  `a6ff387d70d33c40951e36de93eff7c810b2291dbefff5ecb0f3953880fe7878`.
 - Binance Prediction Trading versus Polymarket was frozen as a distinct
   structural screen, permitting only exact BTC/ETH/SOL payout-rule equivalence.
   It stopped before market access. The official generated Markdown said market
@@ -539,14 +541,18 @@ diagnostics, not accepted edges.
   Margin or Futures volume. Future weekly APRs are unknown and the campaign ends
   2026-09-11. Treat qualifying activity as zero incremental cost only when it is
   independently genuine pre-existing volume; never create churn or self-trades.
-  Current 14-day USDT and USDC Flexible promotions are positive but tiny: their
-  capped combined gross rewards are only about 1.34 USD and 0.58 USD at the
-  advertised approximate base rates. Neither mechanism is accepted as stable.
+  The current USDT Flexible promotion has a source-bound 14-day window and a
+  capped combined gross reward of about 1.34 USDT at the advertised approximate
+  base rate. The same article's USDC current-offers row displays approximately
+  2.5% Real-Time APR plus 5% on the first 200 USDC, but its dated promotion
+  sentence names only USDT. No USDC start or end time is published there, so
+  USDT's dates must not be transferred to USDC and its guaranteed forward public
+  reward floor is zero. Neither public observation proves account eligibility.
   Observe the scheduled 2026-08-28 and 2026-09-04 RLUSD updates without
   extrapolating the first week. Canonical triage:
   `docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json`,
   result SHA-256
-  `fe34f9aaf64a0ec920b0cf7cc7fd1141d30880d1205454779327e41fd7521b1c`.
+  `26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac`.
   A separate public USD1 Flexible promotion begins 2026-08-27 and ends
   2026-09-25. It offers a fixed 7% bonus on at most 1,500 USD1 plus an
   approximately 1.5% variable base rate. The conservative 28-bonus-day case
@@ -855,7 +861,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`6f334d3cc8a0cbbbaeb32c1150fda25ce5a48533f2124143bb9764c5238347e4`.
+`190bff09d8bfeed6ad77674cbf3a2e6592be45e465afb3e342a6211d0c543ca1`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1281,7 +1287,7 @@ headline APR, or treat issuer reserve language as insolvency protection.
 Canonical gate:
 `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json`,
 result SHA-256
-`1dd11be5bb81d7d9bf278a27cdb0df4dc25a1db41c3bce005308c7aa639cbf25`.
+`6f44b65e5aa85d33cc02e8611a372162cf00f4162fdff99828a31cf498ced6f9`.
 
 The RWUSD VIP promotion extension is accepted only as an automatic incremental
 bonus on an independently required existing RWUSD position. Over a conservative
