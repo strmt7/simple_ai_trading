@@ -1,5 +1,5 @@
 {
-  "accepted_edge_count": 12,
+  "accepted_edge_count": 13,
   "accepted_edge_scope": "one validated Polymarket holding-yield edge for existing idle on-platform pUSD, one current Polymarket pUSD taker-fee rebate overlay for independently justified legitimate organic BTC ETH SOL taker flow after the direct wallet tier is effective without manufactured volume, one validated Binance Soft Staking yield edge for already-held idle non-order ETH or SOL Spot inventory not needed for prompt liquidity, one validated Binance incremental LDUSDT yield edge for already-held margin already required by an independently justified futures strategy, one validated Binance just-in-time BNB standard-commission cost reduction for imminent independently justified organic spot flow under exact account quote consumption and price-risk gates, one current Binance quote-native promotional fee reduction for independently justified organic BTC ETH SOL spot flow without quote acquisition VIP chasing or extra volume, one current time-limited Binance USD1 holding-airdrop yield edge for already-held idle USD1 in an eligible published account category without acquisition or manufactured futures open interest, one current time-limited Binance U Flexible yield edge for already-held idle U in an eligible non-EEA master account without acquiring U, one current time-limited automatic RWUSD VIP bonus overlay for independently required existing RWUSD without a new subscription or VIP-status chase, one current time-limited USDT Flexible bonus-yield family for independently held idle USDT in an eligible verified master account without registration deposit or acquisition for the promotion, and one current automatic same-token USDe holding-reward edge only for eligible USDe already independently held on Binance for at least 24 hours without acquisition or balance retention for the reward; zero deployment-ready or fully external-cost-and-account-condition edges",
   "authority": {
     "live_trading_authority": false,
@@ -877,9 +877,69 @@
       ],
       "retry_trigger": "account_confirmed_active_positive_builder_fee_configuration_plus_independently_existing_bona_fide_third_party_flow_and_explicit_read_only_evidence_authority_separate_mutation_and_trading_authority_for_any_profile_rate_order_relayer_transfer_or_withdrawal_action",
       "venue_scope": "polymarket_external_user_orders_routed_through_owned_application"
+    },
+    {
+      "blocking_evidence": [
+        "exact account lifetime Polymarket trading volume eligibility independently accumulated without referral farming",
+        "authentic external direct and indirect referral attribution signup timestamps and current tiers",
+        "owned referred-user net-fee accrual rows and daily pUSD payouts",
+        "proof that the same flow is not double-counted with Builder Fees or another program without combination terms",
+        "all referral acquisition support compliance tax and operating costs"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-organic-referral-net-fee-overlay-v1-2026-08-26.json",
+          "result_sha256": "f7aec4a5340cba42abb120a43cda1ed1fa4d5b03632b3c062c0d00d7b5636cf0"
+        }
+      ],
+      "current_status": "accepted_scoped_current_direction_independent_gross_pUSD_referral_overlay_only_for_authentic_independently_acquired_external_users_when_the_referrer_already_independently_exceeds_10000_USD_lifetime_volume_direct_rewards_are_10_percent_and_indirect_5_percent_of_net_fees_paid_daily_until_the_earlier_of_Platinum_or_30_days_account_eligibility_attribution_owned_payout_and_all_costs_unproved_not_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_organic_referral_net_fee_overlay",
+      "next_action": "do_not_create_volume_or_referrals_when_explicit_read_only_account_authority_exists_prove_independently_accumulated_eligibility_authentic_attribution_exact_referred_user_tier_adjusted_net_fees_and_owned_daily_pUSD_payouts_without_double_counting_builder_or_other_rewards",
+      "priority_rank": 25,
+      "prohibited_shortcuts": [
+        "self_referral_operator_controlled_or_linked_accounts_and_inauthentic_referrals",
+        "manufacturing_trading_volume_to_cross_the_10000_USD_threshold_or_increase_net_fees",
+        "crediting_gross_fees_before_the_referred_user_tier_rebate",
+        "crediting_after_Platinum_or_after_30_days_or_to_an_omnibus_integration",
+        "double_counting_the_same_fee_base_with_builder_taker_maker_liquidity_or_other_referral_rewards",
+        "calling_gross_referral_payout_after_cost_profit"
+      ],
+      "retry_trigger": "account_confirmed_independently_accumulated_eligibility_plus_authentic_external_referral_attribution_and_explicit_read_only_evidence_authority_separate_authority_for_link_creation_orders_transfers_or_withdrawals",
+      "venue_scope": "polymarket_authentic_external_referrals"
+    },
+    {
+      "blocking_evidence": [
+        "exact account flexible loanable and collateral asset eligibility",
+        "exact independently required loan asset quantity variable interest history and duration",
+        "exact pledged Simple Earn collateral position reward tiers and owned reward history",
+        "initial margin-call and liquidation LTV with collateral and borrowed-asset stress",
+        "liquidation fee repayment conversion capital opportunity custody tax and operational costs"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json",
+          "result_sha256": "ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182"
+        }
+      ],
+      "current_status": "candidate_not_accepted_current_official_sources_say_existing_Simple_Earn_Flexible_collateral_continues_earning_while_securing_an_isolated_overcollateralized_open_term_Flexible_Loan_but_every_current_asset_rate_LTV_position_income_and_reward_input_is_signed_USER_DATA_the_designated_credentials_are_absent_and_the_public_after_cost_floor_is_zero",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_flexible_loan_simple_earn_collateral_yield_retention",
+      "next_action": "do_not_borrow_subscribe_repay_or_adjust_LTV_if_both_designated_ephemeral_credentials_become_available_under_explicit_read_only_authority_freeze_one_bounded_exact_asset_position_interest_and_reward_prequalification_then_stop_before_every_TRADE_or_balance_mutation",
+      "priority_rank": 26,
+      "prohibited_shortcuts": [
+        "borrowing_or_acquiring_collateral_to_create_the_reward",
+        "logged_out_headline_APR_as_owned_collateral_reward",
+        "ignoring_variable_interest_LTV_liquidation_collateral_basis_and_opportunity_costs",
+        "double_counting_the_same_Simple_Earn_reward_as_idle_and_loan_collateral_yield",
+        "using_loan_proceeds_reinvestment_or_leverage_as_the_edge",
+        "calling_collateral_rewards_profitable_loan_economics_before_the_full_exact_unit_break_even_passes"
+      ],
+      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority_and_an_independently_existing_or_required_Flexible_Loan_question",
+      "venue_scope": "binance_Flexible_Loans_and_Simple_Earn_Flexible_collateral"
     }
   ],
-  "result_sha256": "c7cc5deefff2f84daab8b43334ca7dc5574f123b148792ce94c917c7a29bd5bc",
+  "result_sha256": "1ed5fe0750affe5d6d5331034f900673dd5a6604ca32abb0f5489c493a5b1ab6",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

@@ -1,0 +1,95 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "candidate_direction_independent_collateral_yield_retention_current_account_rates_LTV_positions_rewards_interest_and_after_cost_margin_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_present": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "signed_requests": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_read_only_research": true
+  },
+  "break_even_contract": {
+    "current_public_after_cost_floor": "0",
+    "incremental_collateral_reward": "owned realized Simple Earn rewards on the exact collateral while pledged",
+    "required_total_inequality": "independently_justified_value_of_borrowed_asset_use + realized_collateral_Simple_Earn_rewards > variable_loan_interest + liquidation_risk_and_fees + collateral_price_and_basis_risk + capital_opportunity_custody_tax_and_operational_costs",
+    "same_loan_incremental_overlay": "realized_collateral_Simple_Earn_rewards must be positive without changing collateral asset quantity loan asset quantity LTV duration or independently justified borrowing decision"
+  },
+  "created_at_utc": "2026-08-26T21:09:41.7359620Z",
+  "current_public_mechanism": {
+    "collateral": "existing Binance Simple Earn Flexible assets remain in the Earn wallet as locked loan collateral and continue earning rewards",
+    "loan_structure": "isolated overcollateralized open-term positions",
+    "rate_behavior": "loan and eligible collateral reward rates are variable and account-specific",
+    "repayment": "Flexible Loans can be repaid early without an early-repayment penalty",
+    "risk": "collateral value and accrued loan interest change LTV and can trigger partial or full liquidation"
+  },
+  "endpoint_contract": {
+    "classification_source": "current official Binance Developer llms.txt Crypto Loan REST API 1.0.0 section",
+    "read_only_signed_user_data_endpoints": [
+      "GET /sapi/v2/loan/flexible/loanable/data",
+      "GET /sapi/v2/loan/flexible/collateral/data",
+      "GET /sapi/v2/loan/interestRateHistory",
+      "GET /sapi/v2/loan/flexible/ongoing/orders",
+      "GET /sapi/v1/loan/income"
+    ],
+    "state_changing_trade_endpoints_not_authorized": [
+      "POST /sapi/v2/loan/flexible/borrow",
+      "POST /sapi/v2/loan/flexible/repay",
+      "POST /sapi/v2/loan/flexible/adjust/ltv"
+    ]
+  },
+  "limitations": [
+    "The designated mainnet API key and secret variables were absent, so no signed USER_DATA request was sent.",
+    "No exact current collateral asset eligibility Simple Earn tier APR loan interest rate initial margin-call or liquidation LTV quantity duration reward history income row or repayment conversion cost was accessed.",
+    "Keeping collateral rewards does not prove the loan is cheaper than no borrowing sale of collateral or an external loan alternative.",
+    "Overcollateralization liquidation and collateral or borrowed-asset price movement make the total position market-sensitive even though the collateral reward overlay itself needs no price-direction forecast.",
+    "Borrowed assets cannot be treated as free capital and collateral rewards cannot be double-counted with any already accepted idle-balance yield."
+  ],
+  "prohibited_actions": [
+    "borrowing merely to capture Simple Earn collateral rewards",
+    "subscribing acquiring or retaining a collateral asset merely to make it loan-eligible",
+    "crediting a logged-out Max or headline APR instead of the exact owned collateral reward",
+    "ignoring variable loan interest LTV liquidation fee collateral price basis and opportunity costs",
+    "double-counting the same Simple Earn reward as both idle-balance yield and loan-collateral yield",
+    "using leverage loan proceeds or reinvestment as the edge",
+    "calling the collateral reward a profitable loan before the full exact-unit break-even contract passes",
+    "sending a signed request without both ephemeral credentials and read-only authority or calling any TRADE endpoint without separate funded authority"
+  ],
+  "result_sha256": "ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182",
+  "retry_policy": {
+    "signed_one_use_prequalification_when_credentials_are_present_and_read_only_authority_remains_explicit": [
+      "one exact flexible loanable asset response",
+      "one exact flexible collateral asset response",
+      "bounded interest-rate history for only the independently required loan asset",
+      "owned ongoing orders and loan income only if an independently existing position is present",
+      "matching Simple Earn position and reward history for only the exact pledged collateral"
+    ],
+    "stop_condition": "stop before any borrow repay LTV adjustment Simple Earn subscription redemption transfer conversion or trade",
+    "public_refresh": "only after a published Flexible Loan reward-retention interest LTV liquidation or endpoint-contract change"
+  },
+  "schema_version": "binance-flexible-loan-simple-earn-collateral-yield-gate-v1",
+  "sources": [
+    {
+      "last_updated": "2026-06-26",
+      "observed_at_utc": "2026-08-26T21:09:41.7359620Z",
+      "raw_html_characters": 440974,
+      "raw_html_sha256": "77df5b72ebc7ba5f0c3e568184724a253db38166f38471b80213da5babb976e0",
+      "role": "current_official_overview_of_reward_retention_open_term_overcollateralization_repayment_and_LTV_liquidation_risk",
+      "url": "https://academy.binance.com/ky-KG/articles/a-beginners-guide-to-binance-loans"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:09:41.7359620Z",
+      "raw_text_characters": 165301,
+      "raw_text_sha256": "435c83818a61656f7ca8e0aa333b7bb48d774ed0710e31cf68413d1645678ce5",
+      "role": "current_exact_Crypto_Loan_endpoint_paths_and_USER_DATA_versus_TRADE_security_classification",
+      "url": "https://developers.binance.com/en/docs/llms.txt"
+    }
+  ]
+}
