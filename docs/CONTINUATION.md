@@ -168,6 +168,26 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-spot-triangle-account-fee-gate-v1.json`,
   result SHA-256
   `304a78180be3375a3453384ad71948c24e52ffeba2f1482cb97711e59aa4a688`.
+- Binance zero-fee stablecoin cycles: official current promotion evidence
+  justified two distinct triangles, `USDT-U-RLUSD-USDT` and
+  `USDC-U-USD1-USDC`, with all selected legs advertised at zero maker and taker
+  fees for eligible users. The first frozen attempt failed before admitting a
+  book sample because every symbol exposed a zero `MARKET_LOT_SIZE.stepSize`
+  and the implementation incorrectly rejected it instead of falling back to
+  the positive whole-token `LOT_SIZE`. Its one-record exchange-info journal and
+  implementation hash are preserved in the terminal-failure artifact. The sole
+  recovery fixed both that interpretation and the evidence-order defect by
+  fsyncing every raw response before parsing or economics. It captured 600
+  synchronized six-symbol responses over 299.729 seconds. Both orientations at
+  100, 1,000, and 10,000 quote units produced zero stressed-positive samples;
+  the best of all 7,200 evaluations was -5.0008 bps after exact whole-token
+  rounding, displayed top-level capacity, and the frozen 3-bps operational
+  stress. Canonical recovery:
+  `docs/model-research/action-value/binance-zero-fee-stablecoin-cycle-recovery-v2-2026-08-26.json`,
+  result SHA-256
+  `f44f283b311ebf8b3302dba4e1d5d6be0b956a2657483786229611f82ed5da88`.
+  The family is terminal and not an edge. Do not resample it, weaken the
+  operational stress, or use nonsynchronous trades/candles as fills.
 - Binance spot maker rebates: current official API documentation exposes the
   same account's liquidity-program overview, daily/weekly performance, weekly
   final rebates, and spot rebate history. It also explicitly says the symbol
@@ -523,7 +543,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`a84a770c1c82c0c632c7ad70dee1bfdcc57f028c07c40a0087b83953fcdf8a8f`.
+`4cb5267f0649961f98bd155819d5ba413de605dca7dc511f4d5df381fedbaa49`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

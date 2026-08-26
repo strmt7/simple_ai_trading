@@ -1,0 +1,93 @@
+{
+  "schema_version": "binance-zero-fee-stablecoin-cycle-contract-v1",
+  "status": "frozen_before_unobserved_synchronized_book_outcome_access",
+  "frozen_at_ms": 1787732079054,
+  "contract_sha256": "6276634f08d24330871c505c5721bb1f81afc9d494f3e15df9f965543b957eec",
+  "purpose": "test whether currently advertised zero-maker-and-taker-fee stablecoin triangles produce persistent direction-neutral executable surplus without forecasting BTC ETH or SOL direction",
+  "authority": {
+    "research_only": true,
+    "credentials_permitted": false,
+    "orders_permitted": false,
+    "margin_permitted": false,
+    "live_or_paper_authority_granted": false
+  },
+  "source_boundary": {
+    "official_fee_page": "https://www.binance.com/en/fee/tradingPromote",
+    "u_listing_announcement": "https://www.binance.com/en/support/announcement/detail/54de0a1147d04cf382707002a30901fd",
+    "rlusd_listing_announcement": "https://www.binance.com/en/support/announcement/detail/29ba8e4cfa1b45ea88653c029cedd0cd",
+    "usd1_u_announcement": "https://www.binance.com/en/support/announcement/detail/4b7538cd0646462d8579a8c5a7d675f0",
+    "current_confirmation": "later official Binance activity exclusions identify the selected pairs as zero-fee; every promotion remains revocable and account-region eligibility is unproved",
+    "fee_semantics": "zero maker and taker fee for eligible users until further notice",
+    "promotion_change_action": "fail_closed"
+  },
+  "universe": {
+    "venue": "binance_spot_mainnet_public_market_data",
+    "cycles": [
+      {
+        "cycle_id": "USDT_U_RLUSD",
+        "assets": ["USDT", "U", "RLUSD"],
+        "symbols": ["UUSDT", "RLUSDU", "RLUSDUSDT"]
+      },
+      {
+        "cycle_id": "USDC_U_USD1",
+        "assets": ["USDC", "U", "USD1"],
+        "symbols": ["UUSDC", "USD1U", "USD1USDC"]
+      }
+    ],
+    "required_symbol_status": "TRADING",
+    "required_spot_allowed": true,
+    "required_market_order": true,
+    "required_quote_order_qty_market_allowed": true,
+    "fee_rate_per_leg": "0",
+    "starting_quote_sizes": ["100", "1000", "10000"]
+  },
+  "capture": {
+    "endpoint": "GET https://api.binance.com/api/v3/ticker/bookTicker with all six symbols in one response",
+    "sample_count": 600,
+    "interval_ms": 500,
+    "minimum_elapsed_ms": 295000,
+    "maximum_request_elapsed_ms": 1500,
+    "one_shot_rule": "do not alter universe thresholds sizes or sample ordering after book access",
+    "raw_evidence": "append and fsync one canonical JSON line per response before evaluation",
+    "retry_policy": "up to two retries per scheduled sample; any missing or invalid final sample rejects the screen"
+  },
+  "execution_model": {
+    "all_legs": "immediate_taker_at_displayed_top_of_book",
+    "quantity_rounding": "floor each submitted base quantity to the symbol MARKET_LOT_SIZE step",
+    "leftover_value": "zero",
+    "top_level_capacity": "reject a size when any leg exceeds displayed top quantity",
+    "cycle_ordering": "evaluate both orientations from the same multi-symbol response",
+    "operational_stress_bips": "3",
+    "atomic_execution_claim": false,
+    "fill_claim": false
+  },
+  "acceptance_boundary": {
+    "empirical_candidate_requires_for_one_cycle_orientation_and_size": [
+      "all 600 scheduled samples valid",
+      "capture elapsed at least 295000 milliseconds",
+      "every request elapsed at most 1500 milliseconds",
+      "at least 30 samples positive after 3 bips operational stress",
+      "at least one positive stressed sample in each of five sequential 120-sample blocks",
+      "positive stressed median among positive opportunities",
+      "displayed top-level capacity for the tested size in every counted opportunity"
+    ],
+    "accepted_edge_requires_additionally": [
+      "same-account regional and product eligibility",
+      "account confirmation that all three pair fees are zero at decision time",
+      "prospective paper fills proving three-leg completion and realized slippage",
+      "inventory and stale-leg reconciliation",
+      "promotion-change monitoring and fail-closed cancellation",
+      "stablecoin depeg custody redemption and opportunity-cost limits",
+      "cross-window persistence beyond this five-minute diagnostic"
+    ],
+    "missing_additional_evidence_action": "retain_as_research_only_and_set_accepted_edge_false"
+  },
+  "prohibited_shortcuts": [
+    "treating_until_further_notice_as_permanent",
+    "assuming account or regional eligibility",
+    "using last trades or nonsynchronous candles as fills",
+    "counting displayed quantity above the top level",
+    "ignoring partial completion stale-leg or stablecoin depeg risk",
+    "calling a five-minute public screen stable profitable or deployment-ready"
+  ]
+}
