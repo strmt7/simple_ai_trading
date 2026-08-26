@@ -518,7 +518,7 @@
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     }
   ],
-  "result_sha256": "5be46743ddcfa82d7526450272d35528d01e2d81e75b803924e7f947178d820d",
+  "result_sha256": "066debe7a70e50432005f7284135e3ab54b08e599fc28469e5ff4ad7b3885212",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -567,6 +567,11 @@
       "reason": "training_selected_short_USDT_long_U_reversed_in_validation_and_test_for_BTC_and_ETH_and_every_role_failed_frozen_execution_and_two_leg_capital_hurdles"
     },
     {
+      "canonical_result_sha256": "0d82da55d7687b0f26dc12103f38394b3325542a62af10abf4d34609fa5a6e79",
+      "family": "binance_usd1_usdt_static_perpetual_funding_differential",
+      "reason": "zero_of_two_public_candidates_passed_and_every_BTC_and_ETH_training_validation_and_test_role_was_negative_after_frozen_execution_two_leg_capital_and_observed_USD1_FX_stress"
+    },
+    {
       "canonical_result_sha256": "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4",
       "family": "binance_elevated_funding_spot_perpetual_carry",
       "reason": "the_frozen_Round_61_matched_base_replay_failed_capacity_and_after_cost_economic_gates_across_BTCUSDT_ETHUSDT_and_SOLUSDT"
@@ -607,6 +612,6 @@
       "reason": "zero_of_7200_synchronized_size_orientation_evaluations_was_positive_after_exact_whole_token_rounding_displayed_top_level_capacity_and_3_bips_operational_stress"
     }
   ],
-  "updated_at_utc": "2026-08-26T12:09:33.0871278Z",
+  "updated_at_utc": "2026-08-26T12:19:42.0028122Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
