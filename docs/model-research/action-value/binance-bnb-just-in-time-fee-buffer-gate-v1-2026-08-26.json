@@ -1,0 +1,228 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "funds_used": false,
+    "live_trading_authority": false,
+    "orders_placed": false,
+    "paper_trading_authority": false,
+    "scoped_economic_edge_claim": true,
+    "signed_requests_made": 0
+  },
+  "candidate_status": "accepted_scoped_incremental_spot_fee_reduction_not_deployment_ready",
+  "created_at_utc": "2026-08-26T10:46:12.037000Z",
+  "edge_identity": {
+    "description": "Acquire only a bounded BNB fee buffer immediately before already-intended, independently profitable, account-eligible Binance Spot flow in the repository's supported BTC, ETH, or SOL scope and consume it promptly through the published BNB standard-commission discount.",
+    "direction_independence": "The discount is a deterministic reduction of an already-incurred eligible standard commission and does not depend on whether the traded asset rises or falls. Residual BNB inventory is market-exposed, so the accepted scope requires a bounded buffer, a pre-registered consumption fraction, a short holding interval, and an explicit adverse-price budget.",
+    "market_direction_forecast_required": false,
+    "not_a_standalone_trading_strategy": true,
+    "prohibited_volume_source": "No trade may be opened, enlarged, churned, self-matched, or otherwise manufactured to earn this discount. The underlying trade must pass its own after-cost profitability gate without counting the discount.",
+    "separate_from_terminal_hedged_inventory": "This mechanism does not maintain a standing BNB inventory and does not open or rebalance a BNBUSDT perpetual hedge, so it does not inherit the terminal hedge funding and basis costs."
+  },
+  "economics": {
+    "discount_fraction": "0.25",
+    "discounted_standard_fee_fraction_of_undiscounted_fee": "0.75",
+    "gross_saving_per_unit_discounted_fee_value_consumed": "0.33333333333333333333333333333333333333333333333333",
+    "minimum_convert_buffer_usdt": "0.01",
+    "minimum_convert_buffer_maximum_principal_loss_usdt": "0.01",
+    "minimum_spot_fallback_quantity_bnb": "0.008",
+    "minimum_spot_fallback_ask_cost_usdt": "5.61864",
+    "minimum_spot_fallback_immediate_bid_value_usdt": "5.61856",
+    "minimum_spot_fallback_spread_loss_usdt": "0.00008",
+    "convert_to_spot_minimum_principal_ratio": "0.00177979188975624355982801282078688228567555027337",
+    "spot_to_convert_minimum_principal_ratio": "561.864",
+    "full_consumption_sensitivity": [
+      {
+        "acquisition_cost_bps": "10",
+        "break_even_bnb_price_decline_fraction": "0.24924924924924924924924924924924924924924924924925",
+        "minimum_buffer_net_saving_at_zero_price_change_usdt": "0.00332",
+        "organic_turnover_to_consume_buffer_at_10_bps_standard_fee_usdt": "13.32",
+        "organic_turnover_to_consume_buffer_at_5_bps_standard_fee_usdt": "26.64",
+        "organic_turnover_to_consume_buffer_at_1_bp_standard_fee_usdt": "133.2"
+      },
+      {
+        "acquisition_cost_bps": "50",
+        "break_even_bnb_price_decline_fraction": "0.24623115577889447236180904522613065326633165829142",
+        "minimum_buffer_net_saving_at_zero_price_change_usdt": "0.003266666666666666666666666666666666666666666666667",
+        "organic_turnover_to_consume_buffer_at_10_bps_standard_fee_usdt": "13.266666666666666666666666666666666666666666666666667",
+        "organic_turnover_to_consume_buffer_at_5_bps_standard_fee_usdt": "26.533333333333333333333333333333333333333333333333333",
+        "organic_turnover_to_consume_buffer_at_1_bp_standard_fee_usdt": "132.66666666666666666666666666666666666666666666667"
+      },
+      {
+        "acquisition_cost_bps": "100",
+        "break_even_bnb_price_decline_fraction": "0.24242424242424242424242424242424242424242424242424",
+        "minimum_buffer_net_saving_at_zero_price_change_usdt": "0.0032",
+        "organic_turnover_to_consume_buffer_at_10_bps_standard_fee_usdt": "13.2",
+        "organic_turnover_to_consume_buffer_at_5_bps_standard_fee_usdt": "26.4",
+        "organic_turnover_to_consume_buffer_at_1_bp_standard_fee_usdt": "132"
+      }
+    ],
+    "partial_consumption_diagnostic_not_minimum_buffer_execution_authority": [
+      {
+        "consumed_fraction": "0.25",
+        "break_even_bnb_price_decline_fraction": "0.06109898363964978992089758937164049480083562190456"
+      },
+      {
+        "consumed_fraction": "0.50",
+        "break_even_bnb_price_decline_fraction": "0.13047258814834137646189296117560106082344245902352"
+      },
+      {
+        "consumed_fraction": "0.75",
+        "break_even_bnb_price_decline_fraction": "0.19029979150219631181555029250420031983158235663246"
+      },
+      {
+        "consumed_fraction": "1",
+        "break_even_bnb_price_decline_fraction": "0.24242424242424242424242424242424242424242424242424"
+      }
+    ],
+    "reconstruction": {
+      "full_consumption_break_even_price_decline": "1 - 1 / ((1 - acquisition_cost_fraction) * (1 / (1 - discount_fraction)))",
+      "partial_consumption_break_even_price_decline": "1 - 1 / ((1 - acquisition_cost_fraction) * (consumed_fraction / (1 - discount_fraction) + (1 - consumed_fraction) * (1 - exit_cost_fraction)))",
+      "turnover_to_consume_buffer": "buffer_usdt * (1 - acquisition_cost_fraction) / (standard_commission_fraction * (1 - discount_fraction))"
+    }
+  },
+  "execution_gate": {
+    "all_required_before_any_use": [
+      "The spot trade was already selected by an independently profitable after-cost strategy without counting the BNB discount.",
+      "A fresh signed GET /api/v3/account/commission response for the exact symbol reports positive standard commission, enabledForAccount true, enabledForSymbol true, BNB as discountAsset, and unambiguously establishes an effective 0.25 standard-commission reduction under current official semantics; a raw positive discount field alone is insufficient.",
+      "A fresh exact-order POST /api/v3/order/test response with computeCommissionRates=true confirms the expected standard commission and discount for the intended side, type, quantity, and maker or taker role.",
+      "The executable USDT-to-BNB Convert quote is compared with a contemporaneous BNBUSDT reference and its effective acquisition cost is no greater than the pre-registered cost budget.",
+      "The purchased BNB amount is no greater than the discounted standard commission expected from the imminent organic fills plus the smallest unavoidable quote precision residual, and the minimum-buffer first reconciliation expects full immediate consumption.",
+      "The pre-registered full-consumption requirement, maximum holding interval, maximum principal at risk, and adverse BNB price budget all pass before quote acceptance.",
+      "Actual fills, BNB commission deductions, residual BNB, quote cost, delay, and any unwind proceeds are reconciled from owned account evidence before the mechanism is scaled."
+    ],
+    "fail_closed_conditions": [
+      "Either discount eligibility flag is false or missing.",
+      "The standard commission is zero, negative, promotional, rebated, or cannot be separated from special commission and tax.",
+      "The underlying trade is not independently justified or exists only to create fee-discount volume.",
+      "The Convert quote, expected consumption, adverse-price allowance, or residual-unwind budget is missing or exceeds its bound.",
+      "The intended trade cannot fully consume the minimum purchased buffer, because a partial residual from that buffer alone can fall below the reverse Convert minimum.",
+      "Any account, regional, symbol, API, or product rule differs from the source-bound contract."
+    ],
+    "minimum_research_policy": {
+      "maximum_initial_buffer_usdt": "0.01",
+      "maximum_symmetric_entry_and_exit_cost_bps": "100",
+      "minimum_expected_consumption_fraction": "1",
+      "maximum_adverse_bnb_move_fraction_at_minimum_consumption": "0.24242424242424242424242424242424242424242424242424",
+      "interpretation": "These values only define a bounded first funded reconciliation after separate explicit authority. They do not grant authority and are not deployment defaults."
+    }
+  },
+  "result_sha256": "b97eed6a93070d5e29b26d1a47757c9be49e0296332c8019a64388ba936c3b6b",
+  "sources": {
+    "official_2026_fee_guide": {
+      "facts": {
+        "account_and_symbol_rates_vary": true,
+        "discount_does_not_require_altering_trading_frequency_or_strategy": true,
+        "exact_commission_endpoints_require_api_key_and_signature": true,
+        "spot_bnb_discount_fraction": "0.25",
+        "spot_fee_default_asset_is_received_asset": true,
+        "spot_fee_with_enabled_bnb_setting_is_deducted_in_equivalent_bnb": true
+      },
+      "retrieved_at_utc": "2026-08-26T10:40:46.178000Z",
+      "url": "https://www.binance.com/en/academy/articles/how-to-calculate-transaction-fees-on-binance"
+    },
+    "official_spot_commission_contract": {
+      "facts": {
+        "account_commission_endpoint": "GET /api/v3/account/commission",
+        "discount_fields": [
+          "enabledForAccount",
+          "enabledForSymbol",
+          "discountAsset",
+          "discount"
+        ],
+        "exact_order_test_endpoint": "POST /api/v3/order/test?computeCommissionRates=true",
+        "published_example_discount_values": [
+          "0.25",
+          "0.75"
+        ],
+        "published_example_inconsistency_policy": "Current official response examples use both 0.25 and 0.75 while both comments describe the standard commission as reduced by the field. Treat the raw field as semantically ambiguous until the exact signed response and current official fee schedule jointly establish the effective reduction.",
+        "security_type": "signed_authenticated"
+      },
+      "url": "https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md"
+    },
+    "official_convert_openapi_contract": {
+      "facts": {
+        "endpoint": "GET /sapi/v1/convert/exchangeInfo",
+        "endpoint_has_no_security_requirement": true,
+        "purpose": "query convertible pairs and upper and lower limits"
+      },
+      "openapi_response_sha256": "0dd2f133e12dac2510cf5db1a4eb5de6e3c30c86b24c08867322030939df5e1c",
+      "url": "https://raw.githubusercontent.com/binance/binance-api-swagger/master/spot_api.yaml"
+    },
+    "public_convert_pair_snapshot": {
+      "request_url": "https://api.binance.com/sapi/v1/convert/exchangeInfo?fromAsset=USDT&toAsset=BNB",
+      "requested_before_ms": 1787740844924,
+      "received_after_ms": 1787740845364,
+      "response": [
+        {
+          "fromAsset": "USDT",
+          "fromAssetMaxAmount": "9E+24",
+          "fromAssetMinAmount": "0.01",
+          "fromIsBase": false,
+          "toAsset": "BNB",
+          "toAssetMaxAmount": "9E+24",
+          "toAssetMinAmount": "0.000014"
+        }
+      ],
+      "response_sha256": "7dcf6acffe412c1d3f1736371438251b4926c1c332ea3ecb6c27d2bb110414af"
+    },
+    "public_reverse_convert_pair_snapshot": {
+      "request_url": "https://api.binance.com/sapi/v1/convert/exchangeInfo?fromAsset=BNB&toAsset=USDT",
+      "requested_before_ms": 1787741171598,
+      "received_after_ms": 1787741172037,
+      "response": [
+        {
+          "fromAsset": "BNB",
+          "fromAssetMaxAmount": "9E+24",
+          "fromAssetMinAmount": "0.000014",
+          "fromIsBase": true,
+          "toAsset": "USDT",
+          "toAssetMaxAmount": "9E+24",
+          "toAssetMinAmount": "0.01"
+        }
+      ],
+      "response_sha256": "a65c8a0899d0e31bb9c29813c64ddece194b89b4fefaa40ae7d46eb497c4e414"
+    },
+    "public_spot_snapshot": {
+      "book": {
+        "ask_price": "702.33000000",
+        "ask_quantity": "12.62500000",
+        "bid_price": "702.32000000",
+        "bid_quantity": "10.67600000",
+        "request_url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=BNBUSDT",
+        "requested_before_ms": 1787740845364,
+        "received_after_ms": 1787740845776,
+        "response_sha256": "1fbb70ba2d1ba2000b6c92a85c5b3b9a5c1fe520f73a27361b6b605e77e41bfd"
+      },
+      "exchange_info": {
+        "lot_size_min_quantity": "0.00100000",
+        "lot_size_step": "0.00100000",
+        "minimum_notional_usdt": "5.00000000",
+        "request_url": "https://api.binance.com/api/v3/exchangeInfo?symbol=BNBUSDT",
+        "requested_before_ms": 1787740845776,
+        "received_after_ms": 1787740846178,
+        "response_sha256": "de61efa49bc99ce109ebe3b9abbd3c0f3da8a6f7f45cab0212d0f7f3cc62b0ff",
+        "server_time_ms": 1787740845970,
+        "status": "TRADING"
+      }
+    }
+  },
+  "unresolved_gates": [
+    "No account-specific commission, discount eligibility, exact-order commission estimate, Convert quote, owned fill, BNB deduction, residual, or unwind evidence was available because both designated credential variables were absent.",
+    "The public Convert catalog proves 0.01 USDT and 0.000014 BNB directional lower bounds but not an executable quote, spread, precision, availability for this account, or quote-to-balance delay. A partially consumed minimum buffer may be below the reverse minimum and cannot be assumed immediately unwindable.",
+    "A BNB price move can exceed every modeled threshold, and operational failure can leave residual BNB. The accepted edge is therefore a capped incremental cost policy, not risk-free arbitrage or a guaranteed profit.",
+    "Special commission, tax, rebates, zero-fee promotions, referral discounts, regional restrictions, and per-symbol rules can change the exact comparison and must be taken from fresh account evidence.",
+    "Binance's official Spot REST response examples are internally inconsistent about whether the discount field is a reduction fraction or a remaining-fee multiplier. Any unresolved 0.25-versus-0.75 interpretation fails closed.",
+    "This edge cannot rescue an unprofitable strategy and cannot justify additional trading volume."
+  ],
+  "verdict": {
+    "accepted_edge": true,
+    "accepted_scope": "A bounded just-in-time BNB fee buffer for imminent independently profitable organic Binance BTC, ETH, or SOL Spot fills, only after exact account and symbol eligibility, exact-order positive standard commission, executable quote cost, expected full immediate minimum-buffer consumption, short-horizon price-risk, and residual gates all pass.",
+    "after_direct_cost_gate": true,
+    "after_every_external_cost_and_account_condition": false,
+    "binance_accepted_edge_contribution": 1,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "status": "validated_deterministic_incremental_fee_discount_with_0_01_USDT_public_convert_minimum_and_explicit_cost_consumption_and_price_risk_bounds"
+  },
+  "next_action": "Do not poll public books or refit the sensitivity. When both designated ephemeral credentials exist, freeze one read-only exact-symbol commission and exact-order test contract. Only after that gate passes and separate explicit funded authority exists may one 0.01 USDT maximum Convert quote and immediate fully consuming already-intended spot-fee deduction be reconciled; abort rather than trade if any bound fails."
+}

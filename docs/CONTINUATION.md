@@ -12,9 +12,12 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. One narrowly scoped gross
-  structural edge is accepted for existing idle on-platform Polymarket pUSD;
-  it is not deployment-ready. Binance remains paper/testnet/Demo; Polymarket
+  demonstrated long-lived after-all-cost edge. Three narrowly scoped structural
+  edges are accepted: Polymarket holding yield for existing idle on-platform
+  pUSD, Binance LDUSDT yield only for already-required futures collateral, and
+  Binance just-in-time BNB fee reduction only for independently justified
+  organic BTC/ETH/SOL Spot flow under exact full-consumption and risk gates.
+  None is deployment-ready. Binance remains paper/testnet/Demo; Polymarket
   remains independent, disabled by default, and unpromoted.
 - The one historical cutoff is `2026-08-14T00:00:00Z`. Do not move it or fetch
   the newest history on each iteration. Prospective experiments remain isolated
@@ -581,7 +584,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`5d77b8319fd2608a3dfe3efed60c7d7ff097597f208796baed2337947126aea9`.
+`825bae9b054c09dd37060260982bd72c47770da24b1b67f290cf24fcbe25eff8`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -681,6 +684,36 @@ reduction as a standalone edge. For every future one-use historical screen,
 bind the endpoint's effective page capacity or preregister sufficient
 non-overlapping pagination before activation; a requested `limit` is not proof
 of returned horizon.
+
+A materially distinct just-in-time BNB fee-buffer policy is now accepted as a
+scoped incremental Binance cost edge, not a standalone strategy and not a
+reopening of the terminal delta-hedged inventory. Binance's current official
+guide states that eligible Spot standard commissions paid in BNB receive a 25%
+discount without changing trading frequency or strategy. The public Convert
+catalog currently permits USDT-to-BNB from `0.01` USDT, versus a `0.008` BNB
+spot minimum costing `5.61864` USDT at the source-bound ask: about 562 times
+less unhedged principal. If the minimum Convert buffer is fully consumed by an
+imminent independently justified organic trade, a 100-bps acquisition-cost
+stress still yields `0.0032` USDT net savings at zero BNB move and breaks even
+only after a `24.2424%` BNB decline between acquisition and fee deduction.
+Even at only 25% consumption with symmetric 100-bps entry and residual-exit
+costs, the modeled adverse-move threshold is `6.1099%`; absolute principal at
+risk remains capped at `0.01` USDT for the first reconciliation. This does not
+make BNB price risk disappear. Exact account and symbol eligibility, positive
+standard commission, exact-order commission, executable Convert quote cost,
+minimum consumption, holding interval, residual, and owned fee deduction remain
+fail-closed gates. Both designated credentials are absent, so no signed request,
+quote acceptance, trade, or funded action occurred. Canonical gate:
+`docs/model-research/action-value/binance-bnb-just-in-time-fee-buffer-gate-v1-2026-08-26.json`,
+result SHA-256
+`b97eed6a93070d5e29b26d1a47757c9be49e0296332c8019a64388ba936c3b6b`.
+Never manufacture or enlarge volume, use the discount to rescue an unprofitable
+trade, keep standing BNB inventory, or call this risk-free. The reverse public
+catalog also requires at least `0.000014` BNB, so a partial minimum-buffer
+residual cannot be assumed independently unwindable. Once both credentials
+exist, freeze one exact-symbol commission and exact-order test contract; only
+after it passes and separate funded authority exists may one `0.01` USDT maximum
+quote and immediate fully consuming organic fee deduction be reconciled.
 
 A distinct Binance BNB reward-stack candidate now reuses that frozen hedge
 history without reopening the fee-discount-only screen. The current seven-day

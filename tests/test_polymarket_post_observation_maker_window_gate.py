@@ -12,7 +12,7 @@ EXPECTED_HASH = "03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f4939
 PROSPECTIVE_PATH = ROOT / "docs/model-research/action-value/polymarket-post-observation-prospective-v2-2026-08-26.json"
 EXPECTED_PROSPECTIVE_HASH = "079925ec06eda0cdfc5851d71d7fc76df96de6f03883bcc70edc0f36da28d421"
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-EXPECTED_REGISTRY_HASH = "5d77b8319fd2608a3dfe3efed60c7d7ff097597f208796baed2337947126aea9"
+EXPECTED_REGISTRY_HASH = "825bae9b054c09dd37060260982bd72c47770da24b1b67f290cf24fcbe25eff8"
 
 
 def _load() -> dict[str, object]:
@@ -77,13 +77,13 @@ def test_registry_promotes_only_a_conditional_lead() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 15))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 16))
     lead = next(
         row
         for row in hypotheses
         if row["mechanism"] == "post_observation_oracle_to_clob_close_maker_window"
     )
-    assert lead["priority_rank"] == 3
+    assert lead["priority_rank"] == 4
     assert lead["market_direction_forecast_required"] is False
     assert lead["canonical_artifacts"][0]["result_sha256"] == EXPECTED_HASH
     assert lead["canonical_artifacts"][1]["result_sha256"] == EXPECTED_PROSPECTIVE_HASH
