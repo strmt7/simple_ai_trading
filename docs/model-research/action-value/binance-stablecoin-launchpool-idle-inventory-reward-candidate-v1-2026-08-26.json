@@ -1,0 +1,133 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "candidate_direction_independent_incremental_launchpool_reward_on_already_held_idle_supported_stablecoin_no_current_active_offer_account_eligibility_or_after_cost_reward_value_proved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "launchpool_locks_or_unlocks_submitted": 0,
+    "orders_or_transfers_submitted": 0,
+    "public_page_http_requests_from_local_process": 7,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-26T21:52:51.9062336Z",
+  "current_mechanism": {
+    "accrual_frequency": "hourly",
+    "common_supported_pool_assets": [
+      "BNB",
+      "USDC",
+      "FDUSD"
+    ],
+    "early_unlock": "allowed_before_farming_end_with_accrued_rewards_retained",
+    "farming_period_supported_assets_total_reward_pool_and_estimated_APY": "project_specific_and_variable",
+    "principal_treatment": "locked_assets_remain_in_user_possession_and_return_to_Spot_automatically_with_accumulated_rewards_at_farming_end",
+    "reward_allocation": "proportional_to_user_locked_amount_share_and_time",
+    "reward_asset": "new_project_token_specific_to_each_campaign"
+  },
+  "current_offer_state": {
+    "account_eligibility_proved": false,
+    "active_project_proved": false,
+    "active_supported_stablecoin_pool_proved": false,
+    "direct_current_launchpool_page_final_url": "https://www.binance.com/en/launchpool",
+    "direct_current_launchpool_page_raw_characters": 0,
+    "direct_current_launchpool_page_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "direct_current_launchpool_page_status": 202,
+    "direct_current_launchpool_page_waf_empty": true,
+    "exact_pool_allocation_and_total_locked_balance_proved": false,
+    "public_forward_reward_floor": "0",
+    "reward_token_executable_value_proved": false
+  },
+  "distinctness": {
+    "from_BNB_stacked_reward_hedge": "this candidate uses only an already_held supported stablecoin and needs no BNB acquisition perpetual hedge funding basis margin or liquidation exposure",
+    "from_idle_stablecoin_simple_earn": "Launchpool distributes a separate new project token during a bounded campaign and competes with the stablecoin's alternative yield and liquidity use",
+    "mechanism": "binance_stablecoin_launchpool_incremental_new_token_reward_on_idle_existing_principal"
+  },
+  "economic_gate": {
+    "accepted_scope_if_proved": "incremental reward only on an independently already_held eligible supported stablecoin balance that is idle for the entire chosen interval and not needed for orders margin collateral withdrawals or prompt liquidity",
+    "net_identity": "conservative_executable_reward_token_sale_proceeds_in_the_same_stablecoin_unit - reward_sale_fees_spread_slippage - forfeited_alternative_yield - lock_unlock_transfer_tax_custody_support_and_operational_costs",
+    "principal_rule": "never acquire swap retain borrow or redirect a stablecoin for Launchpool; use the lower timestamp_proved idle owned balance across the complete accrual interval",
+    "reward_valuation_rule": "value only owned distributed reward quantity at contemporaneous executable displayed bids available after distribution with exact sale fees size and settlement; announcement allocation APY future high or later close is not value evidence",
+    "strict_positive_gate": "every admitted interval and aggregate must remain strictly positive in the exact principal unit after all costs; zero or missing reward price rejects",
+    "withdrawal_liquidity_rule": "early unlock language is not a latency guarantee; measure actual account unlock availability and exclude principal required inside the observed worst release delay"
+  },
+  "historical_mechanism_example": {
+    "campaign": "Opinion_OPN_72nd_Binance_Launchpool_project",
+    "farming_duration_days": 2,
+    "farming_end_exact_publicly_unproved": true,
+    "farming_start_utc": "2026-03-03T00:00:00Z",
+    "historical_only": true,
+    "listing_date_utc": "2026-03-05",
+    "listed_spot_pairs": [
+      "OPN/USDT",
+      "OPN/USDC",
+      "OPN/BNB",
+      "OPN/U",
+      "OPN/USD1",
+      "OPN/TRY"
+    ],
+    "supported_assets": [
+      "BNB",
+      "USDC",
+      "U",
+      "USD1"
+    ],
+    "use": "proves_recent_stablecoin_pool_and_post_farming_spot_listing_mechanics_only_not_current_availability_owned_reward_APY_or_profit"
+  },
+  "limitations": [
+    "No active or upcoming Launchpool project was source-proved on 2026-08-26; the direct current page returned WAF-empty HTTP 202.",
+    "No KYC region account eligibility pool cap user allocation total locked balance estimated APY lock state reward row or Spot payout was accessed.",
+    "The generic guide's no-additional-cost phrasing does not include forfeited alternative yield liquidity delay reward-token sale friction tax custody or operations.",
+    "A new project token can be illiquid volatile delisted restricted or worth zero by distribution time; token quantity alone is not profit.",
+    "USDC FDUSD U and USD1 are not assumed interchangeable or worth one another; every cost and reward must be converted executably into the exact principal asset.",
+    "The two-day OPN farming example began on 2026-03-03 and is historical; its exact end timestamp is not stated in the retained source and it cannot be treated as a current or repeated campaign."
+  ],
+  "prohibited_shortcuts": [
+    "acquiring_swapping_retaining_borrowing_or_moving_a_stablecoin_to_create_Launchpool_eligibility",
+    "locking_funds_needed_for_orders_margin_collateral_withdrawals_or_prompt_liquidity",
+    "using_BNB_or_an_unhedged_volatile_principal_under_this_stablecoin_candidate",
+    "crediting_a_headline_APY_project_allocation_or_reward_token_quantity_before_owned_distribution_and_executable_sale",
+    "assuming_USDC_FDUSD_U_USD1_or_any_reward_token_has_one_for_one_value",
+    "ignoring_alternative_yield_unlock_delay_pool_dilution_caps_KYC_region_tax_custody_support_or_operating_costs",
+    "treating_the_ended_OPN_campaign_as_current_or_repeatedly_polling_an_empty_WAF_page",
+    "locking_unlocking_subscribing_selling_transferring_or_changing_account_state_without_separate_explicit_authority"
+  ],
+  "result_sha256": "f898914a56fe61c063ca0eaf8d02fc91ea8bf527dd3ff49289527db524d286c3",
+  "retry_policy": {
+    "public_trigger": "a new official active_or_upcoming Launchpool announcement with its own supported stablecoin pool exact farming window reward allocation eligibility and listing_or_distribution terms",
+    "read_only_account_trigger": "both designated ephemeral Binance mainnet credentials plus explicit GET_only account evidence authority after the public trigger",
+    "research_now": "do_not_poll_the_empty_current_page_or_reuse_OPN; monitor_only_for_a_new_official_project_announcement",
+    "separate_mutation_and_trading_authority_required_for": "every lock unlock subscription redemption transfer conversion or reward sale"
+  },
+  "schema_version": "binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1",
+  "sources": [
+    {
+      "observed_at_utc": "2026-08-26T21:52:50.2914034Z",
+      "raw_html_characters": 416503,
+      "raw_html_sha256": "7d9b47732740de47ad4897183c50df3f80e033f21ebc31d49c29bcb3c0f2f9d3",
+      "role": "current_official_mechanism_supported_asset_examples_hourly_accrual_unlock_principal_return_and_variable_project_terms",
+      "url": "https://academy.binance.com/ur-PK/articles/your-guide-to-binance-launchpad-and-launchpool"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:52:51.9062336Z",
+      "raw_html_characters": 411295,
+      "raw_html_sha256": "39954345d44007640665f1162769ca998ebcd18a2cdbfec7a3b008ce8236366f",
+      "role": "official_recent_2026_OPN_historical_stablecoin_pool_farming_window_and_post_farming_spot_pairs",
+      "url": "https://academy.binance.com/ur-PK/articles/what-is-opinion-opn"
+    },
+    {
+      "observed_at_utc": "2026-08-26T21:46:41.4801332Z",
+      "raw_html_characters": 0,
+      "raw_html_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "role": "current_direct_Launchpool_page_WAF_empty_offer_state_not_evidence_of_no_active_campaign",
+      "status": 202,
+      "url": "https://launchpad.binance.com/en/launchpool"
+    }
+  ]
+}
