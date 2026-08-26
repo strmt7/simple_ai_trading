@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Eleven narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twelve narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -22,7 +22,9 @@ Development belongs only on `main`; do not create another development branch.
   fee reduction; USD1/WLFI holding-airdrop yield; U Flexible yield; automatic
   RWUSD VIP bonus yield; current USDT Flexible bonus yield; and the current
   automatic USDe holding reward only for eligible USDe already independently
-  held on Binance for at least 24 hours. Each Binance
+  held on Binance for at least 24 hours; and Polymarket builder fees only on
+  bona fide independently existing third-party matched orders routed through an
+  owned app with an account-confirmed active disclosed positive rate. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
   A current BTC Simple Earn Flexible product is only an extension candidate:
@@ -235,7 +237,7 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/polymarket-negrisk-taker-rebate-overlay-v1-2026-08-26.json`,
   result SHA-256
   `fbbaf4ff7a7d93f8cf5d306a829ff00518d82c9802be674fdace864cea907a60`.
-  Accepted edges are now eleven. One frozen 24-hour public capture of only the six
+  Accepted edges are now twelve. One frozen 24-hour public capture of only the six
   event tokens was launched under internal contract SHA-256
   `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
   Before acting, verify the process and terminal artifact. Never consume its
@@ -863,7 +865,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`9646724dc11354e2779405bbede7e4ae1deb3f759e6c828d38c0f79c32161571`.
+`c7cc5deefff2f84daab8b43334ca7dc5574f123b148792ce94c917c7a29bd5bc`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1335,6 +1337,42 @@ owned reward rows, and weekly distributions remain unproved. Canonical gate:
 `docs/model-research/action-value/binance-usde-existing-holding-reward-edge-v1-2026-08-26.json`,
 result SHA-256
 `4640635514ad43ed846660c204a95c0d59ed75ac3ccbf5f17a0b70f3d5726f6a`.
+
+Polymarket Builder Fees are a distinct current direction-independent gross
+revenue overlay, not trading alpha. The official formula is matched pUSD
+notional times the configured builder fee rate in bps divided by 10,000, with
+current maxima of 100 bps taker and 50 bps maker. Accept it only for bona fide
+independently existing third-party matched flow through an owned application,
+an account-confirmed active positive fee setting, and explicit disclosure and
+consent. Never use operator, related-party, self-referred, circular, wash, or
+manufactured orders or create and reroute volume for the fee. Account tier,
+active rates, external flow, owned pUSD payout, demand effects, legal duties,
+and all operating costs are unproved, so this is not deployment-ready or an
+after-cost profit claim. Canonical overlay:
+`docs/model-research/action-value/polymarket-organic-third-party-builder-fee-overlay-v1-2026-08-26.json`,
+result SHA-256
+`8c070b6a4b07070ffdd5ba703da1ca3788faffcb4d748633a18269dc02c17885`.
+
+Do not promote BFUSD existing-holding yield. The live product page says the
+daily reward is BFUSD, while the current rate FAQ and effective 2026-01-05
+governing terms say a USD stablecoin and permit the reward asset to change.
+That unresolved primary-source conflict makes the same-unit forward reward floor
+zero; never assume BFUSD, USDT, USDC, or another stablecoin are one-for-one.
+Canonical gate:
+`docs/model-research/action-value/binance-bfusd-existing-holding-reward-unit-conflict-gate-v1-2026-08-26.json`,
+result SHA-256
+`54fe3d3e23a92290debdc67d1e7e19ecac6c06441c045f1aa21fe3e62558c03c`.
+
+Binance Smart Arbitrage is terminal as an operational wrapper around the same
+matched-base spot-perpetual funding carry rejected in Round 61. Official terms
+still charge spot-maker and futures-taker entry and exit fees and retain spread,
+basis, funding reversal, manual exit, and liquidation risk. No distinct fee,
+execution, or capital subsidy was found; do not resample ordinary carry, use
+trailing three-day funding as a forward edge, or call delta-neutral risk-free.
+Canonical adjudication:
+`docs/model-research/action-value/binance-smart-arbitrage-terminal-family-adjudication-v1-2026-08-26.json`,
+result SHA-256
+`03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3`.
 
 ## Protected Local Work
 
