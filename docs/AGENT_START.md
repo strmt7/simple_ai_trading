@@ -143,6 +143,21 @@ safety gate, blocks Stop, or submits an order.
   This does not reopen the terminal fee-discount-only family: do not refresh its
   funding or books. Once both credentials exist, account principal, Simple Earn
   reward, and all-asset dividend history are the decisive new evidence.
+  A June 2026 paper on Binance options versus Polymarket BTC thresholds is now
+  source-triaged as a distinct direction-neutral statistical hypothesis, not
+  exact arbitrage. Its 16-trade pooled net-alpha confidence interval crosses
+  zero. The current public catalog contains 83 active BTC point thresholds and
+  337 Binance BTC calls but zero exact strike-and-expiry pairs. All 20
+  same-date/strike pairs leave an eight-hour terminal gap; only 15 had two-sided
+  option quotes. Their mean model midpoint wedge was 1.2559 percentage points,
+  the maximum absolute wedge was 2.7804 points, and zero cleared the paper's
+  4.27-point historical mean friction term. No current economic edge is
+  claimed. Canonical gate:
+  `binance-polymarket-option-threshold-wedge-gate-v1-2026-08-26.json`, result
+  SHA-256
+  `22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7`.
+  Do not resample until an exact payoff mapping appears or a two-sided model
+  wedge exceeds 4.27 points, then freeze a prospective executable-cost study.
   A source-first USD-M/COIN-M perpetual funding review also stopped before any
   market request. Official schemas expose separate public funding endpoints and
   COIN-M `contractSize` and `marginAsset`, but do not bind a complete

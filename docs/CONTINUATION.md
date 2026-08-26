@@ -581,7 +581,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`f0ea713ec59667feee3570ec683215d33acc302c1ce0d01c421c9a9e30ea8ada`.
+`73363631d72664d21a5458cc773eb1cb44d46000b1f09f51feec3d5442bc208f`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -643,6 +643,24 @@ Do not acquire BNB or open a hedge to chase an unannounced retrospective
 snapshot. When both credentials exist, capture only account principal, realized
 rewards, conservative reward sale values, and exact costs against the frozen
 hedge history; do not paginate funding or resample books.
+
+A June 2026 paper reporting Polymarket BTC threshold overpricing relative to
+Binance option-implied binary values is preserved as a distinct statistical
+lead, not a locked payoff. Its pooled net-alpha result used only 16 proxy trades,
+had `p=0.053`, and its HAC interval crossed zero. A complete current public
+catalog join found 83 active Polymarket BTC point thresholds and 337 Binance BTC
+calls, but zero exact same-strike same-expiry pairs. Twenty same-date/strike
+pairs all retained an eight-hour terminal payoff mismatch; only 15 had two-sided
+Binance option quotes. A contemporaneous reproduction produced a 1.2559-point
+mean model midpoint wedge and a 2.7804-point maximum absolute wedge. Zero pairs
+cleared the paper's own 4.27-point historical mean friction term. Canonical gate:
+`docs/model-research/action-value/binance-polymarket-option-threshold-wedge-gate-v1-2026-08-26.json`,
+result SHA-256
+`22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7`.
+Do not repeatedly resample. Retry only if an exact settlement identity appears
+or a two-sided same-date model wedge first exceeds 4.27 points; then freeze one
+prospective synchronized-depth, exact-fee, hedge-rebalancing, capacity, and
+cross-regime study.
 
 The source-first USD-M versus COIN-M perpetual funding hypothesis is also
 terminal as a separate public edge family without consuming market data. The
@@ -767,6 +785,9 @@ not grant account, funding, order, or transaction authority.
    Source-bind eligible BNB principal, realized Simple Earn and dividend rows,
    conservative executable reward sale values, and exact account costs against
    the frozen hedge history. Do not refresh BNB funding or books.
+   Do not resample the Binance-option/Polymarket-threshold model wedge unless
+   an exact strike-expiry-settlement match appears or a two-sided same-date
+   model gap exceeds the frozen 4.27-percentage-point escalation threshold.
 4. Do not run Binance Round 76 or Polymarket Round 29 from their failed source
    campaigns. After the protected Round 21 sidecar reaches its terminal boundary,
    use the source-continuity recovery design to freeze separate Round 77 Binance
@@ -803,6 +824,8 @@ not grant account, funding, order, or transaction authority.
 
 ## Verification Scope
 
+The Binance-option/Polymarket-threshold gate and registry propagation pass 23
+focused tests with Ruff clean; both changed JSON result hashes reconstruct.
 The focused Round 75 closeout passes 20 tests. The cross-regime promotion change
 passes 62 affected tests before final publication checks. Run the smallest
 affected checks during development, then full CI once before publication. Do
