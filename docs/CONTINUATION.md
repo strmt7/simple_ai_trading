@@ -548,6 +548,16 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/complete-set-holding-yield-net-economics-v5-2026-08-26.json`,
   SHA-256
   `dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85`.
+  A separate frozen valuation-uplift screen covered every currently eligible
+  BTC/ETH/SOL market in four public requests. All 55 markets returned both
+  token midpoints, and every equal YES-plus-NO complete set summed to exactly
+  1.0000 pUSD at displayed precision. Zero cleared the 1.0884312538 threshold
+  required to beat a 3.25% alternative plus 10-bps friction over 127 days.
+  History and book escalation are prohibited for this unchanged idea. Canonical
+  result:
+  `docs/model-research/polymarket/complete-set-midpoint-uplift-v1-2026-08-26.json`,
+  SHA-256
+  `33cdc53555f8bbdecf6a9977a77d2c3bc004dab4bff27abb36eac4452f96e5a3`.
   Acceptance remains deliberately narrow: it excludes capital not already on
   the platform and does not zero bridge, wrapping, withdrawal, custody, tax,
   failed-operation, or exact best-alternative-yield costs. The original BTC
@@ -571,7 +581,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`f61bff5690399aef2b644b9ef26a021512e15c3d481741789737268424c92665`.
+`230fcb9d2dc3c3a8412c743a942f828e04b03eff9bec294e816c34352ba8bd1e`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

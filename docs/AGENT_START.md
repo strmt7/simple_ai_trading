@@ -347,6 +347,14 @@ safety gate, blocks Stop, or submits an order.
   realized hourly sampling and payout rounding. Canonical adjudication:
   `complete-set-holding-yield-net-economics-v5-2026-08-26.json`, result SHA-256
   `dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85`.
+  A frozen current-state valuation-uplift screen then covered all 55 eligible
+  BTC/ETH/SOL markets in four public requests. Every market had both midpoints,
+  and every equal YES-plus-NO complete set summed to exactly 1.0000 pUSD at
+  displayed precision. Zero cleared the 1.0884312538 midpoint-sum threshold
+  required to beat a 3.25% alternative plus 10-bps friction over 127 days.
+  Do not collect books or history for this unchanged uplift idea. Canonical
+  result: `complete-set-midpoint-uplift-v1-2026-08-26.json`, SHA-256
+  `33cdc53555f8bbdecf6a9977a77d2c3bc004dab4bff27abb36eac4452f96e5a3`.
   The accepted scope still excludes bridging, wrapping, withdrawal, custody,
   tax, failed operations, and the exact best eligible alternative yield. The
   BTC wallet still lacks split-origin
