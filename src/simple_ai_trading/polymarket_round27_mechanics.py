@@ -62,16 +62,31 @@ def _buy_cost_per_share(
     quantity: Decimal,
     fee: PolymarketFeeModel,
 ) -> Decimal | None:
+    components = _buy_cost_and_fee_per_share(
+        book,
+        quantity=quantity,
+        fee=fee,
+    )
+    return None if components is None else sum(components)
+
+
+def _buy_cost_and_fee_per_share(
+    book: PaperBookSnapshot,
+    *,
+    quantity: Decimal,
+    fee: PolymarketFeeModel,
+) -> tuple[Decimal, Decimal] | None:
     remaining = quantity
-    total = Decimal("0")
+    gross = Decimal("0")
+    taker_fee = Decimal("0")
     for level in book.asks:
         consumed = min(remaining, level.quantity)
         if consumed > 0:
-            total += consumed * level.price
-            total += fee(level.price, consumed, "taker")
+            gross += consumed * level.price
+            taker_fee += fee(level.price, consumed, "taker")
             remaining -= consumed
         if remaining <= 0:
-            return total / quantity
+            return gross / quantity, taker_fee / quantity
     return None
 
 
@@ -110,12 +125,25 @@ class _PairedQuote:
     down_buy_cost: Decimal | None
     up_sell_value: Decimal | None
     down_sell_value: Decimal | None
+    up_buy_fee: Decimal = Decimal("0")
+    down_buy_fee: Decimal = Decimal("0")
 
     @property
     def complete_set_cost(self) -> Decimal | None:
         if self.up_buy_cost is None or self.down_buy_cost is None:
             return None
         return self.up_buy_cost + self.down_buy_cost
+
+    def complete_set_cost_at_rebate(
+        self,
+        rebate_fraction: Decimal,
+    ) -> Decimal | None:
+        if rebate_fraction < 0 or rebate_fraction > 1:
+            raise ValueError("taker rebate fraction must be between zero and one")
+        cost = self.complete_set_cost
+        if cost is None:
+            return None
+        return cost - rebate_fraction * (self.up_buy_fee + self.down_buy_fee)
 
     @property
     def split_sell_value(self) -> Decimal | None:
@@ -146,6 +174,16 @@ def _quote_from_pair(
     if now_wall_ms > interval_end_ms:
         return None
     fee = market.fee_schedule.fee_model()
+    up_buy = _buy_cost_and_fee_per_share(
+        up.snapshot,
+        quantity=ROUND27_RESEARCH_QUANTITY,
+        fee=fee,
+    )
+    down_buy = _buy_cost_and_fee_per_share(
+        down.snapshot,
+        quantity=ROUND27_RESEARCH_QUANTITY,
+        fee=fee,
+    )
     return _PairedQuote(
         condition_id=market.condition_id,
         slug=market.slug,
@@ -160,16 +198,8 @@ def _quote_from_pair(
         taker_delay_ms=taker_delay_ms,
         up_best_ask=up.snapshot.asks[0].price if up.snapshot.asks else None,
         down_best_ask=down.snapshot.asks[0].price if down.snapshot.asks else None,
-        up_buy_cost=_buy_cost_per_share(
-            up.snapshot,
-            quantity=ROUND27_RESEARCH_QUANTITY,
-            fee=fee,
-        ),
-        down_buy_cost=_buy_cost_per_share(
-            down.snapshot,
-            quantity=ROUND27_RESEARCH_QUANTITY,
-            fee=fee,
-        ),
+        up_buy_cost=None if up_buy is None else sum(up_buy),
+        down_buy_cost=None if down_buy is None else sum(down_buy),
         up_sell_value=_sell_value_per_share(
             up.snapshot,
             quantity=ROUND27_RESEARCH_QUANTITY,
@@ -180,6 +210,8 @@ def _quote_from_pair(
             quantity=ROUND27_RESEARCH_QUANTITY,
             fee=fee,
         ),
+        up_buy_fee=Decimal("0") if up_buy is None else up_buy[1],
+        down_buy_fee=Decimal("0") if down_buy is None else down_buy[1],
     )
 
 
@@ -197,6 +229,7 @@ def _paired_quotes(
         raise ValueError("Round 27 execution evidence does not cover every market")
     latest: dict[tuple[str, str], dict[str, PolymarketRecordedBook]] = {}
     quotes: list[_PairedQuote] = []
+
     def batch_key(book: PolymarketRecordedBook) -> tuple[str, int, int]:
         return (
             book.connection_id,
@@ -263,9 +296,12 @@ def _quote_at_delay(
 
 def _latency_benchmarks(
     quotes: Sequence[_PairedQuote],
+    *,
+    taker_rebate_fraction: Decimal = Decimal("0"),
+    include_ordering_details: bool = False,
 ) -> dict[str, object]:
     if not quotes:
-        return {
+        empty = {
             "same_state_episode_count": 0,
             "venue_delay_survivor_count": 0,
             "minimum_sequential_survivor_count": 0,
@@ -273,37 +309,82 @@ def _latency_benchmarks(
             "best_venue_delay_cost": None,
             "best_minimum_sequential_cost": None,
         }
+        if include_ordering_details:
+            empty.update(
+                {
+                    "up_then_down_survivor_count": 0,
+                    "down_then_up_survivor_count": 0,
+                    "lower_source_cost_first_survivor_count": 0,
+                    "both_orders_survivor_count": 0,
+                    "best_up_then_down_cost": None,
+                    "best_down_then_up_cost": None,
+                    "best_lower_source_cost_first_cost": None,
+                    "best_worst_order_cost": None,
+                }
+            )
+        return empty
     times = [item.received_monotonic_ns for item in quotes]
+
+    def complete_set_cost(quote: _PairedQuote) -> Decimal | None:
+        return quote.complete_set_cost_at_rebate(taker_rebate_fraction)
+
+    def leg_cost(quote: _PairedQuote, outcome: str) -> Decimal | None:
+        cost = quote.up_buy_cost if outcome == "up" else quote.down_buy_cost
+        fee = quote.up_buy_fee if outcome == "up" else quote.down_buy_fee
+        return None if cost is None else cost - taker_rebate_fraction * fee
+
     starts: list[_PairedQuote] = []
     active = False
     for quote in quotes:
-        candidate = quote.complete_set_cost
+        candidate = complete_set_cost(quote)
         current = candidate is not None and candidate < 1
         if current and not active:
             starts.append(quote)
         active = current
     delayed_costs: list[Decimal] = []
     sequential_costs: list[Decimal] = []
+    up_then_down_costs: list[Decimal] = []
+    down_then_up_costs: list[Decimal] = []
+    lower_source_cost_first_costs: list[Decimal] = []
+    worst_order_costs: list[Decimal] = []
     for source in starts:
         first = _quote_at_delay(quotes, times, source, source.taker_delay_ms)
         second = _quote_at_delay(quotes, times, source, 2 * source.taker_delay_ms)
-        if first is not None and first.complete_set_cost is not None:
-            delayed_costs.append(first.complete_set_cost)
+        if first is not None and complete_set_cost(first) is not None:
+            delayed_costs.append(complete_set_cost(first))
         if first is None or second is None:
             continue
         candidates: list[Decimal] = []
-        if first.up_buy_cost is not None and second.down_buy_cost is not None:
-            candidates.append(first.up_buy_cost + second.down_buy_cost)
-        if first.down_buy_cost is not None and second.up_buy_cost is not None:
-            candidates.append(first.down_buy_cost + second.up_buy_cost)
+        first_up = leg_cost(first, "up")
+        first_down = leg_cost(first, "down")
+        second_up = leg_cost(second, "up")
+        second_down = leg_cost(second, "down")
+        up_then_down = None
+        down_then_up = None
+        if first_up is not None and second_down is not None:
+            up_then_down = first_up + second_down
+            candidates.append(up_then_down)
+            up_then_down_costs.append(up_then_down)
+        if first_down is not None and second_up is not None:
+            down_then_up = first_down + second_up
+            candidates.append(down_then_up)
+            down_then_up_costs.append(down_then_up)
         if candidates:
             sequential_costs.append(min(candidates))
+        if up_then_down is not None and down_then_up is not None:
+            worst_order_costs.append(max(up_then_down, down_then_up))
+            source_up = leg_cost(source, "up")
+            source_down = leg_cost(source, "down")
+            if source_up is not None and source_down is not None:
+                lower_source_cost_first_costs.append(
+                    up_then_down if source_up <= source_down else down_then_up
+                )
     same_costs = [
-        item.complete_set_cost
+        complete_set_cost(item)
         for item in starts
-        if item.complete_set_cost is not None
+        if complete_set_cost(item) is not None
     ]
-    return {
+    result = {
         "same_state_episode_count": len(starts),
         "venue_delay_survivor_count": sum(value < 1 for value in delayed_costs),
         "minimum_sequential_survivor_count": sum(
@@ -315,6 +396,36 @@ def _latency_benchmarks(
             min(sequential_costs, default=None)
         ),
     }
+    if include_ordering_details:
+        result.update(
+            {
+                "up_then_down_survivor_count": sum(
+                    value < 1 for value in up_then_down_costs
+                ),
+                "down_then_up_survivor_count": sum(
+                    value < 1 for value in down_then_up_costs
+                ),
+                "lower_source_cost_first_survivor_count": sum(
+                    value < 1 for value in lower_source_cost_first_costs
+                ),
+                "both_orders_survivor_count": sum(
+                    value < 1 for value in worst_order_costs
+                ),
+                "best_up_then_down_cost": _decimal_text(
+                    min(up_then_down_costs, default=None)
+                ),
+                "best_down_then_up_cost": _decimal_text(
+                    min(down_then_up_costs, default=None)
+                ),
+                "best_lower_source_cost_first_cost": _decimal_text(
+                    min(lower_source_cost_first_costs, default=None)
+                ),
+                "best_worst_order_cost": _decimal_text(
+                    min(worst_order_costs, default=None)
+                ),
+            }
+        )
+    return result
 
 
 def _candidate_counts(quotes: Sequence[_PairedQuote]) -> dict[str, object]:
@@ -537,9 +648,9 @@ def analyze_round27_mechanics(
             quotes = _paired_quotes(replay, intervals=condition_intervals)
             grouped: dict[tuple[str, str], list[_PairedQuote]] = {}
             for quote in quotes:
-                grouped.setdefault(
-                    (quote.condition_id, quote.segment_id), []
-                ).append(quote)
+                grouped.setdefault((quote.condition_id, quote.segment_id), []).append(
+                    quote
+                )
             segment_benchmarks.extend(
                 {
                     "condition_id": key[0],

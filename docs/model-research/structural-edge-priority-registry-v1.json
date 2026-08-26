@@ -803,9 +803,39 @@
       ],
       "retry_trigger": "otherwise_authorized_independently_positive_organic_BTC_ETH_or_SOL_taker_flow_with_fresh_terms_and_explicit_read_only_account_evidence_then_separate_funded_authority_for_any_order",
       "venue_scope": "polymarket_BTC_ETH_SOL_fee_enabled_markets"
+    },
+    {
+      "blocking_evidence": [
+        "current direct-wallet Diamond or Obsidian tier after a completed daily update",
+        "one separately frozen prospective BTC five-minute complete-set cohort using the source-time lower-rebated-cost-leg-first rule without parameter reselection",
+        "owned two-leg order acceptance fill timing and complete-set merge evidence",
+        "network order-response merge gas or relayer adverse-selection and opportunity costs",
+        "realized owned pUSD taker-rebate payout reconciliation"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-round27-complete-set-taker-rebate-overlay-v1-2026-08-26.json",
+          "result_sha256": "948f47d9d0c2fb6cbf441da1147ae07006a897f307141dfd6ae25c85e47f13d2"
+        }
+      ],
+      "current_status": "historical_candidate_not_accepted_the_exact_zero_rebate_rescore_reproduced_the_53_market_Round27_baseline_Gold_had_one_ex_post_minimum_sequential_survivor_but_zero_source_time_causal_survivors_Diamond_had_one_source_lower_cost_leg_first_survivor_at_0_98407728_pUSD_per_complete_set_or_0_07961360_pUSD_at_five_shares_but_zero_venue_delay_and_zero_both_order_survivors_current_recurrence_account_tier_atomic_fill_merge_and_after_cost_profit_unproved",
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_binary_complete_set_taker_rebate_latency_overlay",
+      "next_action": "do_not_replay_or_refit_the_same_historical_cohort_require_a_direct_wallet_confirmed_Diamond_or_Obsidian_tier_after_the_completed_daily_update_then_freeze_one_current_prospective_causal_lower_cost_leg_first_capture_and_separately_require_authority_for_any_account_or_order_evidence",
+      "priority_rank": 23,
+      "prohibited_shortcuts": [
+        "using_the_ex_post_minimum_of_Up_then_Down_and_Down_then_Up_as_a_tradable_ordering_rule",
+        "claiming_the_source_lower_cost_leg_first_rule_has_no_interim_directional_fill_risk",
+        "using_a_public_wallet_leaderboard_or_historical_tier_as_current_account_eligibility",
+        "manufacturing_self_matching_wash_or_complete_set_volume_to_reach_Diamond_or_Obsidian",
+        "replaying_the_same_Round27_cohort_changing_quantity_or_weakening_the_latency_gate",
+        "calling_the_0_07961360_pUSD_historical_five_share_margin_after_cost_profit"
+      ],
+      "retry_trigger": "direct_wallet_confirmed_Diamond_or_Obsidian_tier_after_a_completed_daily_update_plus_one_frozen_prospective_current_BTC_five_minute_complete_set_capture_using_the_source_time_lower_rebated_cost_leg_first_rule_then_separate_account_and_funded_authority_for_any_order_or_merge",
+      "venue_scope": "polymarket_BTC_five_minute_fee_enabled_binary_markets"
     }
   ],
-  "result_sha256": "52189781ff4e97f9e73aa1fc429fc72adfe370b188739bcc535f60b9c1ad0d64",
+  "result_sha256": "6f334d3cc8a0cbbbaeb32c1150fda25ce5a48533f2124143bb9764c5238347e4",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -919,6 +949,6 @@
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
     }
   ],
-  "updated_at_utc": "2026-08-26T19:00:44.8577166Z",
+  "updated_at_utc": "2026-08-26T20:13:36.2427653Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
