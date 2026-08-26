@@ -958,6 +958,22 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json`,
   result SHA-256
   `4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69`.
+- Primary cross-venue microstructure evidence now rejects all-situation BTC
+  five-minute market making. Across 1,613 top-decile manipulation-pressure
+  cycles, 227 classified market makers lost `0.62M` USD, `381` USD per cycle,
+  and were negative in `58.6%`; in 14,460 normal cycles they made `3.11M` USD,
+  `215` USD per cycle, and were negative in `37.7%`. The paper explicitly leaves
+  net-of-changing-fee P&L to future work, and its PushIntensity label uses the
+  completed final-ten-second window, so it is not a causal live filter. Its
+  separate fifteen-minute BTC test found the manipulation footprint largely
+  absent but did not test profitability. The first future maker cohort is
+  therefore fifteen-minute only. Five-minute stays excluded until a separate
+  current latency-stress preflight proves every owned order cancel-confirmed
+  before the settlement-risk window without future data. Never trade Binance
+  spot to influence settlement. Canonical regime gate:
+  `polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json`,
+  result SHA-256
+  `7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -995,6 +1011,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
 | Polymarket maker-first/taker-hedge complete-set candidate | `docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json` |
+| Polymarket maker execution manipulation regime gate | `docs/model-research/action-value/polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |

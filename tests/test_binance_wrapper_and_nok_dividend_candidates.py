@@ -17,7 +17,7 @@ NOK = ACTION_VALUE / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 WRAPPER_HASH = "8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475"
 NOK_HASH = "79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb"
-REGISTRY_HASH = "0d038efb7a32d61b97f7efc0e0643b88fcc3dd73e6c5b702ffd0c516f59bbf9d"
+REGISTRY_HASH = "9c1c159abe9ff97c2bf8703447084b72091956f89317cbdbce5acf8e3bc3d83f"
 
 
 def _load(path: Path) -> dict[str, object]:

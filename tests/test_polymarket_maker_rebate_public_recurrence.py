@@ -28,6 +28,13 @@ MAKER_FIRST_DIAGNOSTIC_PATH = (
     / "polymarket"
     / "maker-first-taker-hedge-historical-diagnostic-v1-2026-08-27.json"
 )
+MANIPULATION_GATE_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json"
+)
 REGISTRY_PATH = (
     ROOT / "docs" / "model-research" / "structural-edge-priority-registry-v1.json"
 )
@@ -35,13 +42,16 @@ EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "0d038efb7a32d61b97f7efc0e0643b88fcc3dd73e6c5b702ffd0c516f59bbf9d"
+    "9c1c159abe9ff97c2bf8703447084b72091956f89317cbdbce5acf8e3bc3d83f"
 )
 EXPECTED_MAKER_FIRST_SHA256 = (
     "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
 )
 EXPECTED_MAKER_FIRST_DIAGNOSTIC_RESULT_SHA256 = (
     "d11d0f42a082fc19b1cd6ee3ee6cd226f95b28db2e1f9c5cf965913e35ce6b07"
+)
+EXPECTED_MANIPULATION_GATE_SHA256 = (
+    "7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387"
 )
 
 
@@ -132,6 +142,25 @@ def test_maker_first_diagnostic_rejects_stable_edge_claim() -> None:
     assert not diagnostic["verdict"]["market_direction_independent_edge_proved"]
 
 
+def test_manipulation_regime_gate_rejects_five_minute_all_situation_edge() -> None:
+    gate = _load(MANIPULATION_GATE_PATH)
+
+    assert gate["result_sha256"] == EXPECTED_MANIPULATION_GATE_SHA256
+    assert _embedded_hash(gate) == EXPECTED_MANIPULATION_GATE_SHA256
+    assert not gate["adjudication"]["accepted_edge"]
+    assert gate["adjudication"]["public_after_cost_profit_floor_pusd"] == "0"
+    five_minute = gate["exact_five_minute_evidence"]
+    assert Decimal(
+        five_minute["manipulated_cycles"]["market_maker_total_reported_PnL_usd"]
+    ) < 0
+    assert Decimal(
+        five_minute["normal_cycles"]["market_maker_total_reported_PnL_usd"]
+    ) > 0
+    assert gate["prospective_population_and_risk_gate"]["first_cohort"] == (
+        "BTC_ETH_SOL_fifteen_minute_only"
+    )
+
+
 def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
     registry = _load(REGISTRY_PATH)
 
@@ -144,17 +173,24 @@ def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
         if row["mechanism"] == "paired_crypto_maker_rebates"
     )
     assert candidate["priority_rank"] == 17
-    assert candidate["canonical_artifacts"][-2] == {
+    assert candidate["canonical_artifacts"][-3] == {
         "path": (
             "docs/model-research/polymarket/"
             "crypto-maker-rebate-public-recurrence-v2-2026-08-26.json"
         ),
         "result_sha256": EXPECTED_RESULT_SHA256,
     }
-    assert candidate["canonical_artifacts"][-1] == {
+    assert candidate["canonical_artifacts"][-2] == {
         "path": (
             "docs/model-research/action-value/"
             "polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json"
         ),
         "result_sha256": EXPECTED_MAKER_FIRST_SHA256,
+    }
+    assert candidate["canonical_artifacts"][-1] == {
+        "path": (
+            "docs/model-research/action-value/"
+            "polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json"
+        ),
+        "result_sha256": EXPECTED_MANIPULATION_GATE_SHA256,
     }
