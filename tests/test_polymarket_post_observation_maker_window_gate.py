@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / "docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json"
 EXPECTED_HASH = "03dcb88790b96bcaed6a58dc921abff5244e3b2eecd3a39e8f4e82c412f49392"
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-EXPECTED_REGISTRY_HASH = "b5a65a83cdf1abaadf7d2a0215720b80266e06c50c23992f5a3ed3d6c638a1b4"
+EXPECTED_REGISTRY_HASH = "5e11f6f85dd79c3e0c651c3d7cbcdf97d7e08bf4b4a27cfb3682f5db14cd4886"
 
 
 def _load() -> dict[str, object]:

@@ -12,8 +12,8 @@ PATH = (
     / "docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json"
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-EXPECTED_HASH = "39b66e63c6131d13ff6e6df7f19521745b0de8a715eb3969bf333c485a9ab5f0"
-EXPECTED_REGISTRY_HASH = "b5a65a83cdf1abaadf7d2a0215720b80266e06c50c23992f5a3ed3d6c638a1b4"
+EXPECTED_HASH = "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d"
+EXPECTED_REGISTRY_HASH = "5e11f6f85dd79c3e0c651c3d7cbcdf97d7e08bf4b4a27cfb3682f5db14cd4886"
 
 
 def _load(path: Path = PATH) -> dict[str, object]:
@@ -38,10 +38,12 @@ def test_gate_is_hash_bound_and_grants_no_authority() -> None:
     assert artifact["result_sha256"] == EXPECTED_HASH
     assert _embedded_hash(artifact) == EXPECTED_HASH
     assert artifact["created_at_utc"] == "2026-08-26T10:00:01Z"
-    assert artifact["authority"]["accepted_edge"] is False
     assert artifact["authority"]["credentials_used"] is False
     assert artifact["authority"]["orders_placed"] is False
+    assert artifact["authority"]["scoped_economic_edge_claim"] is True
     assert artifact["incremental_edge_identity"]["not_a_standalone_trading_strategy"]
+    assert artifact["verdict"]["accepted_edge"] is True
+    assert artifact["verdict"]["deployment_ready"] is False
 
 
 def test_normalized_history_reconstructs_the_gross_increment() -> None:
@@ -79,11 +81,17 @@ def test_gate_preserves_conversion_and_incremental_cost_unknowns() -> None:
     assert probe["response"] == []
     limitations = " ".join(artifact["unresolved_gates"])
     assert "conversion" in limitations
-    assert "alternative" in limitations
+    assert "already required" in limitations
     assert "No existing or proposed futures strategy becomes profitable" in limitations
+    direct = artifact["official_direct_cost_adjudication"]
+    assert direct["normal_swap_additional_fee_fraction"] == "0"
+    assert direct["collateral_value_ratio"] == "0.999"
+    assert Decimal(
+        direct["full_history_compound_return_after_ten_percent_extra_principal_drag_fraction"]
+    ) > Decimal("0.02")
 
 
-def test_registry_prioritizes_the_increment_without_accepting_it() -> None:
+def test_registry_prioritizes_the_accepted_scoped_increment() -> None:
     registry = _load(REGISTRY_PATH)
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
@@ -97,4 +105,4 @@ def test_registry_prioritizes_the_increment_without_accepting_it() -> None:
     assert lead["priority_rank"] == 2
     assert lead["market_direction_forecast_required"] is False
     assert lead["canonical_artifacts"][0]["result_sha256"] == EXPECTED_HASH
-    assert registry["accepted_edge_count"] == 1
+    assert registry["accepted_edge_count"] == 2

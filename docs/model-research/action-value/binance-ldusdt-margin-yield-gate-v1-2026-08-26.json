@@ -1,15 +1,14 @@
 {
   "authority": {
-    "accepted_edge": false,
     "credentials_used": false,
     "funds_used": false,
     "live_trading_authority": false,
     "orders_placed": false,
     "paper_trading_authority": false,
-    "profitability_claim": false,
+    "scoped_economic_edge_claim": true,
     "signed_requests_made": 0
   },
-  "candidate_status": "validated_public_incremental_gross_collateral_yield_not_an_accepted_edge",
+  "candidate_status": "accepted_scoped_incremental_collateral_yield_not_deployment_ready",
   "created_at_utc": "2026-08-26T10:00:01Z",
   "economic_summary": {
     "aligned_daily_close_count": 505,
@@ -23,6 +22,17 @@
     "positive_daily_change_count": 389,
     "worst_daily_change_fraction": "-0.00123158942760115",
     "zero_daily_change_count": 0
+  },
+  "official_direct_cost_adjudication": {
+    "collateral_value_ratio": "0.999",
+    "extra_principal_fraction_per_unit_effective_margin": "0.001001001001001001001001001001001001001",
+    "normal_swap_additional_fee_fraction": "0",
+    "official_conversion_semantics": "The same current conversion ratio applies in both directions, LDUSDT value includes accumulated Real-Time APR, and Binance says the later rate will be at least the original conversion rate.",
+    "three_percent_annual_yield_drag_on_extra_principal_fraction": "0.00003003003003003003003003003003003003003",
+    "full_history_compound_return_after_three_percent_extra_principal_drag_fraction": "0.02007902056457866996996996996996996996997",
+    "ten_percent_annual_yield_drag_on_extra_principal_fraction": "0.00010010010010010010010010010010010010010",
+    "full_history_compound_return_after_ten_percent_extra_principal_drag_fraction": "0.02000895049450859989989989989989989989990",
+    "interpretation": "The 99.9% collateral value ratio is a 0.1% capacity haircut rather than a cash fee. Even assigning a 10% annual alternative yield to only the incremental principal needed to restore equal effective margin leaves the observed full-history annualized increment above 2.00%."
   },
   "incremental_edge_identity": {
     "description": "Replace USDT that would otherwise remain idle as required USD-M Futures collateral with account-eligible LDUSDT while preserving the same legitimate futures risk budget and earning Simple Earn USDT Real-Time APR through appreciation of LDUSDT relative to USDT.",
@@ -82,7 +92,7 @@
       }
     }
   },
-  "result_sha256": "39b66e63c6131d13ff6e6df7f19521745b0de8a715eb3969bf333c485a9ab5f0",
+  "result_sha256": "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d",
   "risk_engine_buffer_sensitivity": {
     "classification": "public_risk_engine_quote_buffer_sensitivity_not_normal_conversion_cost_or_account_liquidation_evidence",
     "incremental_buffer_fraction_ldusdt_minus_usdt": "0.0009",
@@ -100,7 +110,20 @@
       "usdt_request_url": "https://fapi.binance.com/fapi/v1/indexPriceKlines?pair=USDTUSD&interval=1d&limit=1500",
       "usdt_response_sha256": "9d61a0fd43ef9d56609f04d3c34d867e65ae574ccf57e0afe24db27cd58c1e67"
     },
-    "official_ldusdt_product_guide_url": "https://www.binance.bh/ru-UA/support/faq/detail/3bd1a6eba20a445da1e94bf6cfa52e80",
+    "official_ldusdt_product_guide": {
+      "facts": {
+        "collateral_value_ratio": "0.999",
+        "conversion_ratio_applies_both_directions": true,
+        "ldusdt_value_accumulates_real_time_apr": true,
+        "maximum_vip0_ldusdt": "300000",
+        "normal_swap_additional_fees": false,
+        "portfolio_margin_balance_endpoint": "/sapi/v1/portfolio/earn-asset-balance",
+        "portfolio_margin_swap_endpoint": "/sapi/v1/portfolio/earn-asset-transfer"
+      },
+      "retrieved_at_utc": "2026-08-26T10:00:01Z",
+      "url": "https://www.binance.com/en/support/faq/detail/a3e0a836380f4ef08ea46f9e2e67b4fd"
+    },
+    "official_simple_earn_flexible_guide_url": "https://www.binance.com/en/support/faq/detail/3bd1a6eba20a445da1e94bf6cfa52e80",
     "official_multi_assets_index_documentation_url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Multi-Assets-Mode-Asset-Index",
     "public_futures_convert_probe": {
       "interpretation": "The generic public Futures Convert catalog exposed no LDUSDT-to-USDT pair, so it cannot prove the product conversion route, amount, fee, delay, or account eligibility.",
@@ -111,13 +134,22 @@
     }
   },
   "unresolved_gates": [
-    "The public normalized index proves realized gross appreciation, not this account's Simple Earn or Futures eligibility, position limit, conversion availability, or credited balance lineage.",
-    "The normal Simple Earn USDT to LDUSDT conversion amount fee timing and reverse-conversion cash flow are not exposed by the generic public Futures Convert catalog.",
-    "The public bid and ask buffers are risk-engine quote fields, not proof of the account's normal conversion cost; forced auto-exchange liquidation and margin behavior remain unproved.",
-    "The correct alternative is the exact yield on collateral otherwise available to the same futures strategy, never an assumed zero unless USDT collateral demonstrably earns zero.",
-    "The retained history includes 115 negative normalized daily changes and a 12.3159-basis-point maximum drawdown, so LDUSDT appreciation is persistent over the full horizon but not monotonic daily.",
+    "Deployment still requires this account's Simple Earn and Futures eligibility, exact position limit, current conversion availability, credited balance lineage, and exact current Real-Time APR.",
+    "The public bid and ask buffers are risk-engine quote fields, not normal conversion fees; forced auto-exchange liquidation and margin behavior remain outside the accepted scope.",
+    "The accepted comparison is only collateral already required by an independently justified futures strategy. Capital that could remain in Simple Earn without a futures requirement has no incremental LDUSDT edge.",
+    "The retained public normalized indices include 115 negative daily changes and a 12.3159-basis-point maximum drawdown, while the official conversion guide says the later conversion rate will not be below the original. The asynchronous public index ratio is persistence evidence, not account redemption cash-flow proof.",
     "No existing or proposed futures strategy becomes profitable merely by adding this collateral yield; its own fees funding basis execution liquidation and after-cost regime evidence remain controlling.",
     "No account, conversion, funding, paper, order, or live authority exists."
   ],
-  "next_action": "When both designated ephemeral credentials exist, source-bind and freeze one GET-only account prequalification for exact USDT Simple Earn eligibility Real-Time APR position limits USD-M multi-assets mode LDUSDT balance and account margin state. Only after a positive read-only gate and separate explicit funded authority may one minimum-size USDT Simple Earn to LDUSDT to USDT round-trip reconcile exact amounts fees delays rewards and balances without opening a futures position."
+  "verdict": {
+    "accepted_edge": true,
+    "accepted_scope": "Account-eligible LDUSDT already held as collateral already required by an independently justified USD-M Futures strategy, with the 99.9% collateral value ratio fully budgeted and no liquidation or auto-exchange.",
+    "after_direct_cost": true,
+    "after_every_external_cost_and_best_alternative_yield": false,
+    "binance_accepted_edge_contribution": 1,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "status": "validated_504_day_positive_incremental_margin_yield_with_zero_official_normal_swap_fee_and_positive_after_99_9_percent_collateral_value_opportunity_cost_sensitivities"
+  },
+  "next_action": "Monitor the public normalized index and official terms without repeatedly refitting. When both designated ephemeral credentials exist, source-bind and freeze one GET-only account prequalification for exact USDT Simple Earn eligibility Real-Time APR position limits USD-M multi-assets mode LDUSDT balance and account margin state. Only after a positive read-only gate and separate explicit funded authority may one minimum-size USDT Simple Earn to LDUSDT to USDT round-trip reconcile exact amounts delays rewards and balances without opening a futures position."
 }
