@@ -1152,9 +1152,40 @@
       ],
       "retry_trigger": "approved_builder_credentials_plus_explicit_quote_request_only_authority_or_a_documented_public_unauthenticated_executable_Combo_quote_endpoint",
       "venue_scope": "polymarket_combo_enabled_exact_relationship_markets_without_persistent_live_scope_broadening"
+    },
+    {
+      "blocking_evidence": [
+        "an actually observed GLWUSDT special negative dividend funding row before the 2026-08-31T00:00:00Z bStock snapshot",
+        "one synchronized post-adjustment depth-20 GLWBUSDT spot and GLWUSDT perpetual book batch after the conversion pause and before the deposit-withdrawal pause",
+        "an exact source-bound positive conservative bStock net-distribution floor rather than the 0.28 gross-dividend cap",
+        "complete entry exit funding fee depth latency liquidation capital tax custody and operational costs",
+        "at least three independent weekend or holiday ex-date-to-bStock-snapshot episodes with the same adjustment ordering and positive worst-episode after-cost economics"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json",
+          "result_sha256": "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d"
+        }
+      ],
+      "current_status": "materially_new_market_direction_independent_GLW_weekend_ex_date_to_bStock_snapshot_timing_gap_candidate_only_if_the_actual_gross_dividend_perpetual_adjustment_precedes_the_bStock_snapshot_historical_AMAT_and_MSFT_rows_close_the_direct_same_day_capture_but_no_GLW_adjustment_post_adjustment_executable_books_positive_net_distribution_floor_after_cost_recurrence_or_profit_is_proved_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_bstock_dividend_perpetual_funding_timing_gap",
+      "next_action": "after_2026_08_28_check_GLWUSDT_funding_history_once_and_only_if_an_actual_special_negative_row_matches_the_0_28_gross_dividend_within_one_micro_USDT_then_after_the_conversion_pause_capture_one_synchronized_public_depth_20_spot_perpetual_book_batch_before_the_deposit_withdrawal_pause",
+      "priority_rank": 34,
+      "prohibited_shortcuts": [
+        "assuming_the_GLW_special_funding_timestamp_from_AMAT_and_MSFT",
+        "using_current_pre_adjustment_books_as_post_adjustment_execution_evidence",
+        "crediting_the_0_28_gross_dividend_when_bStock_receives_only_net_reinvestment",
+        "closing_and_reopening_the_perpetual_without_pricing_the_unhedged_entitlement_repricing_interval",
+        "using_one_minute_closes_as_executable_or_synchronized_quotes",
+        "calling_one_calendar_gap_recurrence_profit_or_an_accepted_edge",
+        "placing_orders_or_accessing_account_state_without_separate_explicit_authority"
+      ],
+      "retry_trigger": "actual_GLWUSDT_special_negative_dividend_funding_row_observed_before_2026_08_31T00_00_00Z_and_2026_08_28T23_30_00Z_conversion_pause_passed",
+      "venue_scope": "binance_GLWBUSDT_bStock_and_GLWUSDT_TradFi_perpetual_weekend_dividend_adjustment_timing_gap"
     }
   ],
-  "result_sha256": "71ef65dd40283f77baaf7137cf26e2624bb3b14dc566ba951d6fdfd0cad814c0",
+  "result_sha256": "9f5f556eb439f368de1456bc61e5ebc0276f1b4b689cf0434b2d4bae3ddb03df",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1276,8 +1307,13 @@
       "canonical_result_sha256": "ee76a40a86e1c777006c697798d0ad3da20609cadd1c2d8f6bf039ecb79f2155",
       "family": "polymarket_uma_resolution_proposer_reward_at_current_reward_gas_and_competition_state",
       "reason": "one_of_five_actual_scoped_proposal_batches_was_negative_after_observed_gas_allocated_resolution_cost_and_capital_cost_the_aggregate_full_resolution_charge_had_only_22_9723_percent_POL_price_headroom_and_38_of_39_scoped_rewards_were_claimed_in_the_first_block"
+    },
+    {
+      "canonical_result_sha256": "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d",
+      "family": "binance_bstock_direct_same_day_dividend_capture_long_bstock_short_tradfi_perpetual",
+      "reason": "AMAT_and_MSFT_special_negative_short_funding_debits_matched_their_declared_gross_dividends_within_three_micro_USDT_while_bStock_reinvests_only_the_net_dividend_so_the_direct_dividend_contribution_is_N_minus_D_equal_to_negative_deductions_before_every_other_cost"
     }
   ],
-  "updated_at_utc": "2026-08-26T22:12:02.7263763Z",
+  "updated_at_utc": "2026-08-26T22:31:09.2866031Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
