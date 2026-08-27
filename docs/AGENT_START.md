@@ -39,6 +39,19 @@ safety gate, blocks Stop, or submits an order.
 
 ## Research State
 
+- Binance Stocks FPSL is a materially distinct direction-independent overlay
+  for U.S.-listed stocks or ETFs that are already independently owned and fully
+  settled. The current FAQ says actual loaned shares accrue interest daily and
+  distributions arrive monthly while selling remains available, but there is
+  no loan guarantee and the public sources omit the account's annualized rate
+  and fee-share percentage. The public forward income floor is therefore zero.
+  Loaned shares are not SIPC-covered, voting rights are lost, and dividends
+  become cash-in-lieu. Do not buy stock or enable FPSL. Read-only account
+  evidence requires explicit authority; enabling FPSL requires a separate
+  explicit account-state authorization. Canonical result:
+  `binance-stocks-fpsl-existing-inventory-yield-overlay-candidate-v1-2026-08-27.json`,
+  SHA-256
+  `3fe1801a6cbf442ab1ce79d1f3bd4586542d97414aea954b0bbd9a55a85453e1`.
 - The current widest public structural reward lead is Binance's first
   U.S.-stock transfer-in program for independently held inventory. Its fixed
   bonuses equal 250, 150, 66.67, 40, 25, and 20 bps at the six tier thresholds;
@@ -1157,6 +1170,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
 | Binance bStock Spot LP all-symbol rebate overlay | `docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json` |
 | Binance existing-stock transfer reward overlay | `docs/model-research/action-value/binance-existing-stock-transfer-reward-overlay-candidate-v1-2026-08-27.json` |
+| Binance Stocks FPSL existing-inventory yield overlay | `docs/model-research/action-value/binance-stocks-fpsl-existing-inventory-yield-overlay-candidate-v1-2026-08-27.json` |
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
 | Binance Alpha/Ondo/stock-perpetual exact-book terminal screen | `docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json` |
