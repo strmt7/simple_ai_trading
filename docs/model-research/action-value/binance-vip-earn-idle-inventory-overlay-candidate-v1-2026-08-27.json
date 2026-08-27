@@ -1,0 +1,133 @@
+{
+  "schema_version": "binance-vip-earn-idle-inventory-overlay-candidate-v1",
+  "created_at_utc": "2026-08-27T03:07:51.6840504Z",
+  "result_sha256": "6c83a950c856202c511b7a7717be3e154cfe8aeed78b84bc89378c7d017ec692",
+  "purpose": "adjudicate whether the newly launched Binance VIP Earn program creates a market-direction-independent incremental yield overlay on assets and VIP status that already exist for independent reasons",
+  "authority": {
+    "public_read_only_research": true,
+    "credentials_used": false,
+    "authenticated_requests": 0,
+    "account_state_accessed": false,
+    "subscriptions_redemptions_borrows_transfers_orders_or_quotes": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "official_current_mechanism": {
+    "launch_date_utc": "2026-08-12",
+    "eligible_account_levels": "Binance VIP 1 through VIP 9 only",
+    "headline_rate_relationship": "up to 20 percent higher APR relative to retail Earn, not an additional 20 percentage points",
+    "headline_quota_relationship": "up to 10 times the retail subscription quota",
+    "advertised_asset_scope": "more than 20 tokens",
+    "advertised_product_families": [
+      "Simple Earn Locked",
+      "On-Chain Yields"
+    ],
+    "retail_view_only_access_advertised": true,
+    "SAPI_management_advertised": true,
+    "subscription_requires_VIP_1_to_9": true,
+    "regional_and_product_availability_can_restrict_access": true
+  },
+  "current_evidence_boundary": {
+    "exact_current_VIP_product_population_proved": false,
+    "exact_current_VIP_APR_per_product_proved": false,
+    "exact_retail_comparator_APR_per_product_proved": false,
+    "exact_current_quota_per_product_proved": false,
+    "owned_VIP_level_or_region_eligibility_proved": false,
+    "owned_idle_eligible_balance_proved": false,
+    "public_forward_incremental_profit_floor": "0",
+    "reason": "the durable official announcement and FAQs prove only headline relative maxima and eligibility mechanics; the current product-list SAPI endpoints are USER_DATA and the unauthenticated local VIP Earn page returned HTTP 202 with an empty body"
+  },
+  "VIP_1_public_qualification_context": {
+    "holder_path": "at least 100000 USDT equivalent average over the last 30 days or at least 100000 USDT equivalent during the previous day",
+    "holder_path_additional_BNB_requirement": "at least 5 BNB daily average",
+    "trader_path": "at least 1000000 USD equivalent Spot or 5000000 USD equivalent Futures or 200000 USD equivalent OTC over the last 30 days under the general table, with product-specific FAQ sections also publishing higher Trader VIP thresholds",
+    "borrower_path": "at least 100000 USDT equivalent average net borrowing with the published BNB condition",
+    "qualification_rule": "conflicting or path-specific published thresholds must be resolved against the exact account-facing VIP page; no path may be manufactured solely to obtain VIP Earn"
+  },
+  "economic_gate": {
+    "accepted_scope_if_proved": "incremental yield only on an independently already-held idle eligible asset when the account is already VIP for independent reasons and the exact VIP product dominates the exact available retail product after every cost and restriction",
+    "incremental_gross_identity": "eligible_principal_times_exact_VIP_APR_minus_exact_retail_APR_times_exact_holding_fraction",
+    "headline_upper_bound_identity": "eligible_principal_times_0_20_times_exact_retail_APR_times_exact_holding_fraction, only when the exact offer is confirmed to receive the advertised maximum relative uplift",
+    "net_identity": "incremental_gross_reward_minus_subscription_redemption_conversion_spread_slippage_lock_liquidity_tax_custody_support_operational_and_alternative_yield_costs_minus_any_incremental_cost_of_maintaining_VIP",
+    "strict_positive_gate": "every admitted product interval and the aggregate must remain strictly positive in the exact principal unit after all costs; missing exact rates quotas or eligibility reject",
+    "volatile_asset_rule": "a volatile principal is not market-direction-independent unless it was independently already required or a separately proven hedge includes funding basis margin liquidation and execution costs",
+    "VIP_cost_rule": "do not acquire hold trade borrow or generate volume to qualify; if VIP would not otherwise exist the incremental VIP Earn edge is zero under this candidate"
+  },
+  "distinctness": {
+    "from_same_account_stable_value_yield_allocation": "this is a newly launched account-tier-specific relative APR and quota overlay across VIP Earn products rather than one named public stablecoin campaign",
+    "from_spot_fee_VIP": "the benefit accrues on eligible Earn principal and does not require trading volume when VIP status already exists independently",
+    "from_delta_hedged_BNB_reward_stack": "this candidate credits no BNB reward or volatile asset value and prohibits obtaining VIP solely through BNB acquisition or manufactured activity"
+  },
+  "authenticated_read_only_retry_contract": {
+    "trigger": "both designated ephemeral Binance mainnet credentials are available to the process with explicit GET-only account-evidence authority, or Binance publishes a durable unauthenticated exact VIP product listing",
+    "permitted_endpoints_after_trigger": [
+      "GET /sapi/v1/simple-earn/flexible/list",
+      "GET /sapi/v1/simple-earn/locked/list",
+      "GET-only VIP account configuration endpoints needed to prove current level and eligibility"
+    ],
+    "required_join": "exact VIP-tagged product APR quota duration redemption terms and availability joined to the exact retail comparator and independently existing idle owned eligible balance",
+    "stop_condition": "stop before every TRADE endpoint and before subscription redemption conversion transfer borrow order quote or account change",
+    "separate_mutation_authority_required": true
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "status": "materially_new_direction_independent_incremental_yield_candidate_only_for_independently_existing_VIP_status_and_idle_eligible_inventory_exact_products_rates_quotas_account_eligibility_and_after_cost_value_unproved"
+  },
+  "limitations": [
+    "Up to 20 percent higher APR is a relative headline maximum, not a guarantee, not 20 percentage points, and not an exact product rate.",
+    "Up to 10 times quota is capacity, not yield or profit.",
+    "On-Chain Yield products can add protocol lock liquidity slashing smart-contract and redemption risks that are not represented by APR.",
+    "The local unauthenticated VIP Earn page returned HTTP 202 with zero bytes; that is not evidence that no products exist.",
+    "The official current flexible and locked product-list endpoints are USER_DATA, so no exact current product or account claim is made.",
+    "Published general and product-specific Trader VIP thresholds are not treated as interchangeable; exact account qualification remains unproved."
+  ],
+  "prohibited_shortcuts": [
+    "treating_up_to_20_percent_higher_APR_as_20_percentage_points_or_as_an_exact_rate",
+    "treating_quota_as_reward_or_profit",
+    "manufacturing_trading_volume_borrowing_or_asset_holding_to_obtain_VIP",
+    "acquiring_or_retaining_BNB_or_any_volatile_asset_under_this_candidate",
+    "ignoring_lock_redemption_protocol_alternative_yield_region_tax_custody_or_operational_costs",
+    "treating_an_empty_WAF_page_as_population_absence",
+    "calling_a_headline_relative_uplift_an_accepted_edge_or_deployment_ready",
+    "calling_USER_DATA_or_TRADE_endpoints_without_their_separate_explicit_authority"
+  ],
+  "sources": [
+    {
+      "role": "official_launch_headline_relative_APR_quota_asset_count_automatic_VIP_access_and_public_view_only_claim",
+      "url": "https://www.binance.com/en/support/announcement/detail/ce999f3625724037900d8627255b1164",
+      "api_url": "https://www.binance.com/bapi/apex/v1/public/apex/cms/article/detail/query?articleCode=ce999f3625724037900d8627255b1164",
+      "observed_at_utc": "2026-08-27T03:07:51.6840504Z",
+      "status": 200,
+      "raw_response_bytes": 46274,
+      "raw_response_sha256": "ff68347583df1c3e0c2fcc9068135df76b6ae3fb4faf2e12eb0400c386f35224"
+    },
+    {
+      "role": "official_VIP_Earn_eligibility_regional_capacity_and_API_management_FAQ",
+      "url": "https://www.binance.com/en/support/faq/detail/b29a51932aea4645a074bdb6a21cc3b5",
+      "api_url": "https://www.binance.com/bapi/apex/v1/public/apex/cms/article/detail/query?articleCode=b29a51932aea4645a074bdb6a21cc3b5",
+      "observed_at_utc": "2026-08-27T03:08:11Z",
+      "status": 200,
+      "raw_response_bytes": 13726,
+      "raw_response_sha256": "02c8ec285cdab289a6ccc188d38da177e24fa384541bf8ef66b92a2ddf8f267f"
+    },
+    {
+      "role": "official_current_VIP_qualification_paths_and_threshold_context",
+      "url": "https://www.binance.com/en/support/faq/detail/473a8456403c438e902d7b3048e49eb6",
+      "api_url": "https://www.binance.com/bapi/apex/v1/public/apex/cms/article/detail/query?articleCode=473a8456403c438e902d7b3048e49eb6",
+      "observed_at_utc": "2026-08-27T03:08:11Z",
+      "status": 200,
+      "raw_response_bytes": 32808,
+      "raw_response_sha256": "bf7cb6e84a5c5bad6d80190008f8fca5c24944e33b8c069428ceaab0216c9afe"
+    },
+    {
+      "role": "official_developer_contract_proving_flexible_and_locked_product_lists_are_USER_DATA_and_subscriptions_are_TRADE",
+      "url": "https://developers.binance.com/en/docs/llms-full.txt",
+      "observed_at_utc": "2026-08-27T03:07:51.6840504Z",
+      "status": 200,
+      "raw_response_bytes": 7984993,
+      "raw_response_sha256": "3399639eb6123ccfed85881a5437dde37b073d0b98e4a8df51ad80d5372eaaab"
+    }
+  ]
+}
