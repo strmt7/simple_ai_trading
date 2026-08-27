@@ -1,0 +1,180 @@
+{
+  "schema_version": "polymarket-combo-maker-overround-validation-v1",
+  "created_at_utc": "2026-08-27T02:14:46.991602+00:00",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-combo-maker-overround-validation-contract-v1.json",
+    "contract_sha256": "26ed39b6f088043d72258709b5c350b3113c506e0833abc98241c4c446a96514",
+    "frozen_before_validation_access": true
+  },
+  "authority": {
+    "public_unauthenticated_requests_only": true,
+    "credentials_present_or_used": false,
+    "authenticated_requests": 0,
+    "quote_requests_or_acceptances": 0,
+    "orders_transfers_or_account_reads": 0
+  },
+  "collection": {
+    "discovery_wallet_count_excluded": 420,
+    "validation_pnl_wallet_count": 701,
+    "validation_vol_only_wallet_count": 470,
+    "validation_wallet_count": 1171,
+    "wallets_with_any_resolved_combo_position": 164,
+    "resolved_combo_position_count_all_sides": 30438,
+    "resolved_yes_position_count": 6264,
+    "duplicate_rows_removed": 0,
+    "explicit_status_filter": "RESOLVED_WIN,RESOLVED_PARTIAL,RESOLVED_LOSS",
+    "http_request_count": 1240,
+    "http_status_counts": {
+      "200": 1240
+    },
+    "raw_archive": {
+      "path": "C:/trader/retained-public-evidence/2026-08-27-polymarket-combo-maker-overround-validation-v1/http-responses.jsonl.gz",
+      "bytes": 27199609,
+      "sha256": "a9d477dd8fb4421a2613a5e1d829ac28516548d47852027c10b432cce53c6bd2"
+    },
+    "repository_projection": {
+      "path": "docs/model-research/action-value/raw/polymarket-combo-maker-overround-validation-v1/resolved-positions.csv.gz",
+      "bytes": 2794794,
+      "sha256": "4acf3adda74dc04c60de334ed6a8c767f62c11217bfbb63ada2c08bb64d58bbb"
+    }
+  },
+  "economics": {
+    "overall": {
+      "position_count": 6264,
+      "wallet_count": 162,
+      "first_entry_utc_date_count": 77,
+      "gross_entry_cost_pUSD": "4317602.300729",
+      "attributed_buyer_fees_pUSD": "86010.262565",
+      "realized_payout_pUSD": "4304960.750000",
+      "buyer_net_pnl_pUSD": "-12641.550729",
+      "buyer_return_on_gross_cost": "-0.002928",
+      "opposite_side_gross_spread_proxy_pUSD": "-73368.711836",
+      "opposite_side_proxy_on_net_basis": "-0.017338"
+    },
+    "cohorts": {
+      "PNL": {
+        "position_count": 2561,
+        "wallet_count": 95,
+        "first_entry_utc_date_count": 76,
+        "gross_entry_cost_pUSD": "1691021.760899",
+        "attributed_buyer_fees_pUSD": "35015.079618",
+        "realized_payout_pUSD": "1821088.190000",
+        "buyer_net_pnl_pUSD": "130066.429101",
+        "buyer_return_on_gross_cost": "0.076916",
+        "opposite_side_gross_spread_proxy_pUSD": "-165081.508719",
+        "opposite_side_proxy_on_net_basis": "-0.099686"
+      },
+      "VOL_only": {
+        "position_count": 3703,
+        "wallet_count": 67,
+        "first_entry_utc_date_count": 77,
+        "gross_entry_cost_pUSD": "2626580.539830",
+        "attributed_buyer_fees_pUSD": "50995.182947",
+        "realized_payout_pUSD": "2483872.560000",
+        "buyer_net_pnl_pUSD": "-142707.979830",
+        "buyer_return_on_gross_cost": "-0.054332",
+        "opposite_side_gross_spread_proxy_pUSD": "91712.796883",
+        "opposite_side_proxy_on_net_basis": "0.035609"
+      }
+    },
+    "chronological_roles": {
+      "training": {
+        "position_count": 3963,
+        "wallet_count": 147,
+        "first_entry_utc_date_count": 46,
+        "gross_entry_cost_pUSD": "3311591.820880",
+        "attributed_buyer_fees_pUSD": "63967.020633",
+        "realized_payout_pUSD": "3361905.170000",
+        "buyer_net_pnl_pUSD": "50313.349120",
+        "buyer_return_on_gross_cost": "0.015193",
+        "opposite_side_gross_spread_proxy_pUSD": "-114280.369753",
+        "opposite_side_proxy_on_net_basis": "-0.035189"
+      },
+      "validation": {
+        "position_count": 698,
+        "wallet_count": 34,
+        "first_entry_utc_date_count": 15,
+        "gross_entry_cost_pUSD": "317919.366577",
+        "attributed_buyer_fees_pUSD": "7543.134971",
+        "realized_payout_pUSD": "241831.370000",
+        "buyer_net_pnl_pUSD": "-76087.996577",
+        "buyer_return_on_gross_cost": "-0.239331",
+        "opposite_side_gross_spread_proxy_pUSD": "68544.861606",
+        "opposite_side_proxy_on_net_basis": "0.220844"
+      },
+      "test": {
+        "position_count": 1603,
+        "wallet_count": 28,
+        "first_entry_utc_date_count": 16,
+        "gross_entry_cost_pUSD": "688091.113272",
+        "attributed_buyer_fees_pUSD": "14500.106961",
+        "realized_payout_pUSD": "701224.210000",
+        "buyer_net_pnl_pUSD": "13133.096728",
+        "buyer_return_on_gross_cost": "0.019086",
+        "opposite_side_gross_spread_proxy_pUSD": "-27633.203689",
+        "opposite_side_proxy_on_net_basis": "-0.041024"
+      }
+    },
+    "wallet_cluster_bootstrap_lower_2_5pct_pUSD": "-582944.907850",
+    "date_cluster_bootstrap_lower_2_5pct_pUSD": "-689840.718425",
+    "maximum_single_wallet_share_of_positive_proxy": "0.120975",
+    "gross_proxy_only": true,
+    "maker_counterparty_or_after_cost_profit_proved": false
+  },
+  "gate": {
+    "minimum_counts_pass": true,
+    "all_required_cohorts_and_roles_positive": false,
+    "cluster_bootstrap_pass": false,
+    "wallet_dominance_pass": true,
+    "overall_proxy_positive": false,
+    "passes_unaccepted_candidate_gate": false
+  },
+  "source_documents": [
+    {
+      "url": "https://docs.polymarket.com/trading/combos/overview.md",
+      "payload_bytes": 3131,
+      "payload_sha256": "fdd9b73a3892bb77e24be7cbe5153bb230780b2a38101c32b24092a639b1ca67",
+      "http_date": "Thu, 27 Aug 2026 02:14:42 GMT"
+    },
+    {
+      "url": "https://docs.polymarket.com/trading/combos/market-makers.md",
+      "payload_bytes": 145702,
+      "payload_sha256": "2ebce652431e732c07356c207c623181d880d3e9c1beb61a77790357837d2232",
+      "http_date": "Thu, 27 Aug 2026 02:14:42 GMT"
+    },
+    {
+      "url": "https://docs.polymarket.com/trading/combos/collateral-return.md",
+      "payload_bytes": 44910,
+      "payload_sha256": "ea6c5c9133673b86bdf38d9645cbd95817e98bac4d26a4801c32004da0e75be1",
+      "http_date": "Thu, 27 Aug 2026 02:14:42 GMT"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/core/get-user-combo-positions.md",
+      "payload_bytes": 12581,
+      "payload_sha256": "344008e835c269416921e90d229f5ae2fca9920ea0b036ff95f15a282c7ff24d",
+      "http_date": "Thu, 27 Aug 2026 02:14:43 GMT"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-spec/data-openapi.yaml",
+      "payload_bytes": 63169,
+      "payload_sha256": "9d5d62b302bced648b7212e6e8c589a741b258d38bb8769a1cd57c5224ecc1fe",
+      "http_date": "Thu, 27 Aug 2026 02:14:43 GMT"
+    }
+  ],
+  "limitations": [
+    "The leaderboard cohort is selected on all-time sports PnL or volume and is not a random sample of Combo requesters.",
+    "A requester position does not identify the maker counterparty or prove that one maker captured the opposite economics.",
+    "The opposite-side proxy omits seller fees, quote competition, hedges, collateral, funding, capital return latency, Last Look declines, inventory transforms, and operational costs.",
+    "Historical resolved positions do not prove a forward executable quote or recurring after-cost profit."
+  ],
+  "verdict": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "market_direction_forecast_required": false,
+    "status": "broad_public_combo_maker_overround_validation_failed",
+    "next_action": "do_not_repeat_leaderboard_mining_without_a_less_selected_population_or_direct_maker_quote_ledger"
+  },
+  "source_code_sha256": "160196ec0dae8309a0557d7dd7cede0b44d21967aafc62312c035ebde137ff13",
+  "result_sha256": "416daf4d279e06a2353127e642d588a39ae85be0709c2d7498896c1d182847ee"
+}

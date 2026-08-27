@@ -1,0 +1,152 @@
+{
+  "schema_version": "polymarket-combo-maker-overround-validation-contract-v1",
+  "status": "frozen_before_unseen_rank_251_to_1000_combo_position_access",
+  "frozen_at_utc": "2026-08-27T02:08:03.4714099Z",
+  "contract_sha256": "26ed39b6f088043d72258709b5c350b3113c506e0833abc98241c4c446a96514",
+  "purpose": "test on an unseen public cohort whether buyers of resolved Polymarket sports Combo YES positions systematically paid more than realized payout and whether the opposite-side gross spread proxy is stable enough to justify exact market-maker quote economics research",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_sources_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_transfers_or_quote_requests_permitted": false,
+    "live_or_paper_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false,
+    "session_scope_exception": "the_user_explicitly_authorized_broader_public_edge_R_and_D_for_this_session_only"
+  },
+  "discovery_boundary_already_observed": {
+    "leaderboard_query": {
+      "category": "SPORTS",
+      "timePeriod": "ALL",
+      "orderBy": [
+        "PNL",
+        "VOL"
+      ],
+      "limit": 50,
+      "offsets": [
+        0,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    "unique_leaderboard_wallets": 420,
+    "warning": "the discovery wallet-presence screen used the endpoint default status set and therefore preferentially found wallets with open or losing positions; discovery economics cannot satisfy any gate",
+    "corrective_rule": "all validation position requests must explicitly request RESOLVED_WIN,RESOLVED_PARTIAL,RESOLVED_LOSS together"
+  },
+  "unseen_validation_cohort": {
+    "leaderboard_url": "https://data-api.polymarket.com/v1/leaderboard",
+    "positions_url": "https://data-api.polymarket.com/v1/positions/combos",
+    "leaderboard_parameters": {
+      "category": "SPORTS",
+      "timePeriod": "ALL",
+      "orderBy": [
+        "PNL",
+        "VOL"
+      ],
+      "limit": 50,
+      "offsets": [
+        250,
+        300,
+        350,
+        400,
+        450,
+        500,
+        550,
+        600,
+        650,
+        700,
+        750,
+        800,
+        850,
+        900,
+        950
+      ]
+    },
+    "exclude_wallets": "every wallet returned by the frozen discovery query at offsets 0 through 200 in either orderBy cohort",
+    "wallet_assignment": "PNL when present in the validation PNL pages otherwise VOL_only",
+    "position_parameters": {
+      "status": "RESOLVED_WIN,RESOLVED_PARTIAL,RESOLVED_LOSS",
+      "limit": 1000,
+      "offset_start": 0,
+      "offset_step": 1000,
+      "maximum_offset": 100000
+    },
+    "deduplication_key": [
+      "user_address",
+      "combo_condition_id",
+      "combo_position_id"
+    ],
+    "yes_side_only_for_primary_test": true,
+    "reason": "current Builder requester flow quotes Combo YES; NO rows can be maker inventory or residual positions and are not an unbiased requester-return sample"
+  },
+  "economics": {
+    "numeric_type": "decimal_never_binary_float",
+    "buyer_net_pnl_pUSD": "realized_payout_usdc_minus_gross_entry_cost_usdc",
+    "opposite_side_gross_spread_proxy_pUSD": "gross_entry_cost_usdc_minus_entry_fees_usdc_minus_realized_payout_usdc",
+    "buyer_return_on_gross_cost": "buyer_net_pnl_pUSD_divided_by_gross_entry_cost_usdc",
+    "seller_proxy_limit": "the proxy omits seller fees hedging collateral funding capital return latency Last Look decline and quote competition and therefore cannot establish executable maker profit",
+    "partial_resolution_handling": "use the exact realized_payout_usdc reported by the source",
+    "zero_or_negative_basis_rows": "reject"
+  },
+  "robustness": {
+    "minimum_unique_validation_wallets_with_resolved_yes": 20,
+    "minimum_resolved_yes_positions": 500,
+    "minimum_unique_first_entry_utc_dates": 10,
+    "chronological_date_roles": [
+      "training_first_60_percent",
+      "validation_next_20_percent",
+      "test_final_20_percent"
+    ],
+    "required_cohorts": [
+      "PNL",
+      "VOL_only"
+    ],
+    "cluster_bootstrap_repetitions": 2000,
+    "cluster_bootstrap_seed": 20260827,
+    "cluster_units": [
+      "wallet",
+      "first_entry_utc_date"
+    ],
+    "bootstrap_lower_quantile": "0.025",
+    "maximum_single_wallet_share_of_positive_proxy": "0.50",
+    "candidate_pass_requires": "strictly_positive_opposite_side_gross_spread_proxy_overall_in_each_required_cohort_and_each_chronological_role_plus_positive_wallet_and_date_cluster_bootstrap_lower_bounds_and_all_minimum_counts",
+    "accepted_edge_permitted": false
+  },
+  "decision_boundary": {
+    "pass": "retain_as_high_priority_unaccepted_combo_market_maker_overround_candidate_and_require approved maker access exact quote logs seller net receive hedges collateral return capital occupancy and forward paper evidence before promotion",
+    "fail": "terminalize broad public sports Combo buyer-overround inference and do not repeat leaderboard mining without a materially less selected population or direct maker quote ledger",
+    "all_outcomes": "no authenticated request quote acceptance trade transfer profitability claim or deployment authority"
+  },
+  "source_contracts": [
+    "https://docs.polymarket.com/trading/combos/overview.md",
+    "https://docs.polymarket.com/trading/combos/market-makers.md",
+    "https://docs.polymarket.com/trading/combos/collateral-return.md",
+    "https://docs.polymarket.com/api-reference/core/get-user-combo-positions.md",
+    "https://docs.polymarket.com/api-spec/data-openapi.yaml"
+  ],
+  "raw_retention": {
+    "repository_projection": "compact gzip CSV of only fields used by the adjudication",
+    "full_http_archive_outside_repository": "C:/trader/retained-public-evidence/2026-08-27-polymarket-combo-maker-overround-validation-v1/http-responses.jsonl.gz",
+    "manifest_must_record": [
+      "request_count",
+      "archive_bytes",
+      "archive_sha256",
+      "response_statuses",
+      "source_document_hashes"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "use_the_default_combo_position_status_listing",
+    "discover_wallets_from_losses_only",
+    "count_the_same_wallet_position_more_than_once",
+    "treat_user_wallets_positions_or_leaderboard_rows_as_independent_random_samples",
+    "use_entry_cost_usdc_for_redeemed_winners_because_it_is_remaining_basis_and_reads_near_zero",
+    "treat_buyer_fees_as_maker_revenue",
+    "infer_the_actual_counterparty_or_maker_from_a_requester_position",
+    "ignore_partial_resolutions_or_fractional_payouts",
+    "call_a_gross_opposite_side_proxy_executable_after_cost_profit",
+    "request_or_accept_any_combo_quote_without_separate_explicit_authority"
+  ]
+}

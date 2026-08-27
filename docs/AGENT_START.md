@@ -944,6 +944,21 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json`, result
   SHA-256
   `08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116`.
+- The broad sports Combo requester-overround family is separately terminal.
+  Never use the Combo positions endpoint's default status set for historical
+  return research: it omitted redeemed winners in discovery and created a
+  false all-loss sample. Explicitly request
+  `RESOLVED_WIN,RESOLVED_PARTIAL,RESOLVED_LOSS`, use
+  `gross_entry_cost_usdc` rather than the near-zero remaining
+  `entry_cost_usdc` on redeemed winners, and subtract attributed buyer fees
+  before interpreting any opposite-side proxy. The corrected unseen ranks
+  251-1000 validation lost 73,368.711836 pUSD for the opposite-side gross proxy
+  before maker costs and failed PNL-cohort, training, test, wallet-cluster, and
+  date-cluster gates. Do not repeat leaderboard mining without a less selected
+  population or direct maker quote ledger. Canonical terminal result:
+  `polymarket-combo-maker-overround-validation-v1-2026-08-27.json`, result
+  SHA-256
+  `416daf4d279e06a2353127e642d588a39ae85be0709c2d7498896c1d182847ee`.
 - Binance bStock dividend reinvestment versus stock TradFi-perpetual funding
   has one closed family and one materially distinct timing candidate. Historical
   AMAT and MSFT special negative funding debits matched their declared gross
@@ -1083,6 +1098,7 @@ safety gate, blocks Stop, or submits an order.
 | Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |
 | Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
 | Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |
+| Polymarket terminal broad sports Combo requester-overround validation | `docs/model-research/action-value/polymarket-combo-maker-overround-validation-v1-2026-08-27.json` |
 | Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
