@@ -1,0 +1,139 @@
+{
+  "schema_version": "polymarket-favorite-longshot-bias-preflight-contract-v1",
+  "status": "frozen_before_new_calibration_outcome_access",
+  "frozen_at_utc": "2026-08-27T01:35:04.9673526Z",
+  "contract_sha256": "56356a9e9c6fda50389d2bdb78c23fea64207bbded724f4e71bc4449d8867fe3",
+  "purpose": "test whether the published persistent favorite-longshot calibration pattern translates into a causal market-direction-neutral five-share Polymarket BTC ETH SOL taker-buy strategy after current fee capital and execution stresses",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_sources_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_transfers_or_quotes_permitted": false,
+    "live_or_paper_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false,
+    "session_scope_exception": "the_user_explicitly_authorized_broader_public_edge_R_and_D_for_this_session_only",
+    "execution_scope_change": false
+  },
+  "hypothesis": {
+    "mechanism": "human_probability_weighting_can_overprice_low_probability_tokens_and_underprice_their_high_probability_binary_complements",
+    "causal_action": "buy_the_first_actual_five_share_or_larger_taker_fill_of_a_high_price_outcome_token_and_hold_to_resolution_without_using_the_future_winner_or_future_prices",
+    "market_direction_forecast_required": false,
+    "risk_free_claim": false,
+    "key_translation_risk": "trade_weighted_calibration_does_not_prove_that_a_new_taker_can_repeatedly_buy_the_complementary_favorite_at_the_observed_longshot_price_gap_or_at_current_v2_costs"
+  },
+  "primary_external_sources": {
+    "author": "Joshua Della Vedova",
+    "index_site": "https://jdellavedova.com/",
+    "methodology_url": "https://jdellavedova.com/methodology/",
+    "paper_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6191618",
+    "fixed_public_csv_urls": [
+      "https://jdellavedova.com/data/pwi_history.csv",
+      "https://jdellavedova.com/data/price_gap_history.csv",
+      "https://jdellavedova.com/data/calibration_snapshot.csv"
+    ],
+    "maximum_get_requests": 4,
+    "retries_permitted": false,
+    "raw_response_retention_required_before_parse": true,
+    "aggregate_indices_are_persistence_evidence_only": true,
+    "aggregate_indices_cannot_prove_execution_or_profit": true
+  },
+  "retained_local_action_value_source": {
+    "dataset": "TimeSeventeen/Polymarket-v1 daily_aligned",
+    "dataset_url": "https://huggingface.co/datasets/TimeSeventeen/Polymarket-v1",
+    "dataset_license": "CC-BY-4.0",
+    "retained_partition_date_utc": "2026-04-27",
+    "path_outside_repository": "C:/trader/retained-public-evidence/2026-08-27-polymarket-maker-arbitrage-dataset/2026_04_27.parquet",
+    "bytes": 90897877,
+    "sha256": "9d6fb8c41aa1f283581d491a30ae27b7f9cd8bc5d32c4e86df80101038b00ebb",
+    "dataset_readme_sha256": "b83f9875a7600e0a5d5e5fa50d1c7de6cc7880f0877214da59a9b560a12a5cba",
+    "dataset_limitations": [
+      "one UTC date cannot establish time stability",
+      "v1 fills do not prove current v2 order acceptance latency or available depth",
+      "the source has fills but no order placements cancellations or resting books",
+      "frozen metadata and resolved outcomes are labels only and never enter entry selection"
+    ]
+  },
+  "external_persistence_screen": {
+    "chronological_roles": [
+      "training_60_percent",
+      "validation_20_percent",
+      "test_20_percent"
+    ],
+    "minimum_total_non_null_pwi_weeks": 104,
+    "minimum_total_non_null_longshot_gap_weeks": 104,
+    "required_in_each_role": {
+      "median_prelec_alpha_below": "0.90",
+      "fraction_prelec_alpha_below_one_at_least": "0.65",
+      "median_longshot_gap_below": "0",
+      "fraction_longshot_gap_below_zero_at_least": "0.60"
+    },
+    "selection_or_threshold_changes_after_viewing_are_prohibited": true,
+    "pass_meaning": "persistent_behavioral_lead_only_not_an_executable_edge"
+  },
+  "local_execution_translation": {
+    "market_slug_regex": "^(btc|eth|sol)-updown-(5m|15m|1h)-",
+    "resolution_status_required": "resolved",
+    "aggressor_action_required": "taker_direction_BUY",
+    "minimum_historical_fill_shares": "5",
+    "one_entry_per_condition_per_price_band": "first_eligible_fill_by_block_timestamp_then_asset_id_ascending",
+    "fixed_price_bands": [
+      {
+        "id": "favorite_90_to_below_95",
+        "minimum_inclusive": "0.90",
+        "maximum_exclusive": "0.95"
+      },
+      {
+        "id": "favorite_95_to_99",
+        "minimum_inclusive": "0.95",
+        "maximum_inclusive": "0.99"
+      }
+    ],
+    "fixed_quantity_shares": "5",
+    "winner_value_per_share_pUSD": "1_if_outcome_label_equals_winning_outcome_label_else_0",
+    "current_crypto_taker_fee_per_share_pUSD": "0.07_times_price_times_one_minus_price",
+    "additional_execution_settlement_stress_per_share_pUSD": "0.001",
+    "annual_capital_hurdle": "0.10",
+    "capital_holding_seconds": "maximum_of_zero_and_resolved_at_minus_block_timestamp",
+    "net_pnl_per_share": "winner_value_minus_price_minus_current_taker_fee_minus_0.001_minus_price_times_0.10_times_holding_seconds_divided_by_31557600",
+    "chronological_condition_roles": [
+      "training_60_percent",
+      "validation_20_percent",
+      "test_20_percent"
+    ],
+    "minimum_independent_conditions_per_band": 30,
+    "minimum_independent_conditions_per_role": 6,
+    "minimum_independent_dates_for_edge_promotion": 12,
+    "required_slices_when_supported": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "winning_outcome_Up",
+      "winning_outcome_Down",
+      "entry_at_least_60_seconds_before_close",
+      "entry_below_60_seconds_before_close"
+    ],
+    "minimum_conditions_per_required_slice": 5,
+    "moving_block_bootstrap_repetitions": 2000,
+    "moving_block_length_conditions": 4,
+    "bootstrap_seed": 20260827,
+    "family_adjustment": "bonferroni_over_two_price_bands",
+    "pass_requires": "positive_mean_net_pnl_and_positive_family_adjusted_bootstrap_lower_bound_in_every_chronological_role_and_every_supported_required_slice_with_at_least_30_conditions_in_each_band",
+    "one_day_partition_can_promote_edge": false
+  },
+  "decision_boundary": {
+    "external_persistence_fails": "reject_the_behavioral_persistence_lead_without_downloading_more_trade_partitions",
+    "external_persistence_passes_but_local_execution_fails": "retain_as_nonexecuting_behavioral_fact_and_do_not_expand_the_tape_without_a_materially_better_execution_mapping",
+    "both_screens_pass": "freeze_a_separate_exact_twelve_date_nonadaptive_partition_contract_before_any_additional_trade_outcome_access",
+    "all_outcomes": "no_profitability_accepted_edge_paper_or_live_authority"
+  },
+  "prohibited_shortcuts": [
+    "treat_trade_count_as_independent_market_count",
+    "select_price_bands_dates_categories_or_wallet_classes_after_viewing_results",
+    "infer_a_favorite_ask_from_a_longshot_trade",
+    "use_future_winner_resolution_or_price_in_entry_selection",
+    "pool_standard_binary_and_negative_risk_markets",
+    "ignore current taker fees capital lock settlement delay or minimum size",
+    "generalize_one_v1_date_or_all_category_aggregate_indices to current v2 BTC ETH SOL execution"
+  ]
+}

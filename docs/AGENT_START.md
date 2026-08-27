@@ -1038,6 +1038,18 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json`,
   result SHA-256
   `4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627`.
+- The static high-price favorite taker-buy hypothesis is terminal despite the
+  primary author's pooled favorite-longshot calibration pattern. Its latest
+  chronological PWI role failed the frozen persistence gate, and the retained
+  causal BTC/ETH/SOL action-value translation failed after current fee,
+  execution, settlement, and capital stresses. The 90-95 cent band was
+  unstable across roles, assets, winning direction, and time to close; the
+  95-99 cent band lost 43.3821 pUSD across 951 independent conditions and was
+  negative in every required slice. Do not download more partitions, refit
+  bands, or infer favorite execution from longshot trades. Canonical result:
+  `polymarket-favorite-longshot-bias-preflight-v1-2026-08-27.json`, result
+  SHA-256
+  `31cd01740e48b2dc0c76e9ca7820b0348aa7d04e403d0aeb71560000b9630c93`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -1077,6 +1089,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket maker-first/taker-hedge complete-set candidate | `docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json` |
 | Polymarket maker execution manipulation regime gate | `docs/model-research/action-value/polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json` |
 | Polymarket sports taker-delay maker-protection gate | `docs/model-research/action-value/polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json` |
+| Polymarket terminal favorite-longshot bias translation | `docs/model-research/action-value/polymarket-favorite-longshot-bias-preflight-v1-2026-08-27.json` |
 | Polymarket August crypto-TWAP liquidity-reward terminal screen | `docs/model-research/polymarket/crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |

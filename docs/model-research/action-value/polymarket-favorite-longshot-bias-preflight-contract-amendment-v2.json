@@ -1,0 +1,26 @@
+{
+  "schema_version": "polymarket-favorite-longshot-bias-preflight-contract-amendment-v2",
+  "status": "frozen_after_source_header_validation_before_full_series_or_local_pnl_calculation",
+  "frozen_at_utc": "2026-08-27T01:43:00Z",
+  "contract_sha256": "c56bc35d2b83edd3392bdd5c377d8404fd9757a23a61e96bc819b0f2ebac2f4a",
+  "parent_contract": {
+    "path": "docs/model-research/action-value/polymarket-favorite-longshot-bias-preflight-contract-v1.json",
+    "contract_sha256": "56356a9e9c6fda50389d2bdb78c23fea64207bbded724f4e71bc4449d8867fe3"
+  },
+  "source_validation_finding": {
+    "current_methodology_rule": "PWI requires at least 1000 non-bot trades per week and lower-count weeks are suppressed",
+    "retained_csv_conflict": "the first retained pwi_history row contains a non-null fitted alpha with n_trades_nonbot equal to 207",
+    "disposition": "apply_the_stricter_current_methodology_floor_and_exclude_every_PWI_row_with_n_trades_nonbot_below_1000_from_all_role_counts_metrics_and_decisions",
+    "why_not_outcome_adaptive": "the repair follows the primary published sample-floor contract and does not use whether the excluded alpha helps or hurts the hypothesis"
+  },
+  "unchanged_gates": [
+    "all price bands",
+    "all persistence thresholds",
+    "all local execution costs",
+    "all sample floors",
+    "all chronological roles",
+    "all bootstrap settings",
+    "all decision boundaries"
+  ],
+  "additional_fail_closed_rule": "if fewer_than_104_PWI_weeks_remain_after_the_1000_trade_floor_then_external_persistence_fails"
+}

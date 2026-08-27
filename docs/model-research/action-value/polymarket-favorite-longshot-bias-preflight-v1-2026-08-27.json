@@ -1,0 +1,407 @@
+{
+  "schema_version": "polymarket-favorite-longshot-bias-preflight-v1-2026-08-27",
+  "generated_at_utc": "2026-08-27T01:49:25.152769Z",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-favorite-longshot-bias-preflight-contract-v1.json",
+    "contract_sha256": "56356a9e9c6fda50389d2bdb78c23fea64207bbded724f4e71bc4449d8867fe3",
+    "amendment_path": "docs/model-research/action-value/polymarket-favorite-longshot-bias-preflight-contract-amendment-v2.json",
+    "amendment_sha256": "c56bc35d2b83edd3392bdd5c377d8404fd9757a23a61e96bc819b0f2ebac2f4a"
+  },
+  "implementation": {
+    "path": "tools/analyze_polymarket_favorite_longshot_bias.py",
+    "sha256": "ce9946e93dfe4df7317d51674581444f57045cd91859f09a5a98a864b3b3f55d"
+  },
+  "raw_sources": {
+    "methodology": {
+      "path": "docs/model-research/action-value/raw/polymarket-favorite-longshot-bias-v1/01-methodology.html",
+      "bytes": 32165,
+      "sha256": "025a792db363234687c39f5c9d5d8f4619bb633d47a5ae9d03755ce00047ce35"
+    },
+    "pwi_history": {
+      "path": "docs/model-research/action-value/raw/polymarket-favorite-longshot-bias-v1/02-pwi-history.csv",
+      "bytes": 26314,
+      "sha256": "588751d25f5c2882fd4a57ff9a74f1d8a46d6d1e7fa4d934f45e942e1444ca0a"
+    },
+    "price_gap_history": {
+      "path": "docs/model-research/action-value/raw/polymarket-favorite-longshot-bias-v1/03-price-gap-history.csv",
+      "bytes": 29856,
+      "sha256": "002725f5df86487339ad7eba6eeea6d4084c40d15a0fa9721ad90606bf775c37"
+    },
+    "calibration_snapshot": {
+      "path": "docs/model-research/action-value/raw/polymarket-favorite-longshot-bias-v1/04-calibration-snapshot.csv",
+      "bytes": 2669,
+      "sha256": "19f822f1210ef4ce9fb5b79d812043149883ecc991459fd12123ea8ae2d2645d"
+    }
+  },
+  "retained_parquet": {
+    "path": "C:/trader/retained-public-evidence/2026-08-27-polymarket-maker-arbitrage-dataset/2026_04_27.parquet",
+    "bytes": 90897877,
+    "sha256": "9d6fb8c41aa1f283581d491a30ae27b7f9cd8bc5d32c4e86df80101038b00ebb"
+  },
+  "external_persistence": {
+    "pwi_rows_in_source": 172,
+    "pwi_rows_excluded_below_current_1000_trade_floor": 37,
+    "eligible_pwi_week_count": 135,
+    "eligible_longshot_gap_week_count": 179,
+    "pwi_roles": {
+      "training": {
+        "row_count": 81,
+        "date_start": "2023-03-06",
+        "date_end": "2025-07-07",
+        "median": 0.700467773112,
+        "fraction_below_threshold": 0.975308641975,
+        "passes": true
+      },
+      "validation": {
+        "row_count": 27,
+        "date_start": "2025-07-14",
+        "date_end": "2026-01-12",
+        "median": 0.85121094638,
+        "fraction_below_threshold": 0.888888888889,
+        "passes": true
+      },
+      "test": {
+        "row_count": 27,
+        "date_start": "2026-01-19",
+        "date_end": "2026-08-17",
+        "median": 0.965324388131,
+        "fraction_below_threshold": 0.666666666667,
+        "passes": false
+      }
+    },
+    "longshot_gap_roles": {
+      "training": {
+        "row_count": 107,
+        "date_start": "2023-01-30",
+        "date_end": "2025-03-03",
+        "median": -0.007443442493,
+        "fraction_below_threshold": 0.532710280374,
+        "passes": false
+      },
+      "validation": {
+        "row_count": 36,
+        "date_start": "2025-03-10",
+        "date_end": "2025-11-10",
+        "median": -0.029834718958,
+        "fraction_below_threshold": 1.0,
+        "passes": true
+      },
+      "test": {
+        "row_count": 36,
+        "date_start": "2025-11-17",
+        "date_end": "2026-08-17",
+        "median": -0.005750116173,
+        "fraction_below_threshold": 0.694444444444,
+        "passes": true
+      }
+    },
+    "pooled_high_price_calibration_bins": [
+      {
+        "price_bin_center": 0.925,
+        "realized_win_rate": 0.97757331799885,
+        "n_trades": 15651,
+        "calibration_gap": 0.0525733179988499
+      },
+      {
+        "price_bin_center": 0.975,
+        "realized_win_rate": 0.994048614928655,
+        "n_trades": 41839,
+        "calibration_gap": 0.0190486149286549
+      }
+    ],
+    "passes_persistence_lead_gate": false,
+    "execution_or_profit_proved": false
+  },
+  "local_execution_translation": {
+    "eligible_first_fill_count": 1654,
+    "distinct_condition_count": 1022,
+    "distinct_partition_dates": 1,
+    "bands": [
+      {
+        "price_band": "favorite_90_to_below_95",
+        "minimum_inclusive": 0.9,
+        "maximum": 0.95,
+        "maximum_inclusive": false,
+        "overall": {
+          "condition_count": 703,
+          "mean_net_pnl_five_shares_pUSD": 0.006480668343,
+          "aggregate_net_pnl_five_shares_pUSD": 4.555909844825,
+          "win_fraction": 0.921763869132,
+          "mean_entry_price": 0.913982923277,
+          "family_adjusted_bootstrap_mean_lower_bound_pUSD": -0.104171585682,
+          "positive_mean": true,
+          "positive_bootstrap_lower_bound": false
+        },
+        "roles": {
+          "training": {
+            "condition_count": 421,
+            "mean_net_pnl_five_shares_pUSD": -0.002821851486,
+            "aggregate_net_pnl_five_shares_pUSD": -1.187999475671,
+            "win_fraction": 0.919239904988,
+            "mean_entry_price": 0.913277902354,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": -0.13680859986,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false
+          },
+          "validation": {
+            "condition_count": 141,
+            "mean_net_pnl_five_shares_pUSD": 0.213744880171,
+            "aggregate_net_pnl_five_shares_pUSD": 30.138028104057,
+            "win_fraction": 0.964539007092,
+            "mean_entry_price": 0.915390061125,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": 0.030430009927,
+            "positive_mean": true,
+            "positive_bootstrap_lower_bound": true
+          },
+          "test": {
+            "condition_count": 141,
+            "mean_net_pnl_five_shares_pUSD": -0.173007934635,
+            "aggregate_net_pnl_five_shares_pUSD": -24.394118783561,
+            "win_fraction": 0.886524822695,
+            "mean_entry_price": 0.914680847899,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": -0.463366569854,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false
+          }
+        },
+        "required_slices": {
+          "BTC": {
+            "condition_count": 373,
+            "mean_net_pnl_five_shares_pUSD": -0.019772678101,
+            "aggregate_net_pnl_five_shares_pUSD": -7.375208931651,
+            "win_fraction": 0.911528150134,
+            "mean_entry_price": 0.908686323877,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          },
+          "ETH": {
+            "condition_count": 204,
+            "mean_net_pnl_five_shares_pUSD": 0.066169479997,
+            "aggregate_net_pnl_five_shares_pUSD": 13.498573919288,
+            "win_fraction": 0.936274509804,
+            "mean_entry_price": 0.916715677605,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": true,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": true
+          },
+          "SOL": {
+            "condition_count": 126,
+            "mean_net_pnl_five_shares_pUSD": -0.012440120181,
+            "aggregate_net_pnl_five_shares_pUSD": -1.567455142812,
+            "win_fraction": 0.928571428571,
+            "mean_entry_price": 0.925238079571,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          },
+          "winning_outcome_Up": {
+            "condition_count": 355,
+            "mean_net_pnl_five_shares_pUSD": -0.02575122616,
+            "aggregate_net_pnl_five_shares_pUSD": -9.141685286729,
+            "win_fraction": 0.915492957746,
+            "mean_entry_price": 0.914169005842,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          },
+          "winning_outcome_Down": {
+            "condition_count": 348,
+            "mean_net_pnl_five_shares_pUSD": 0.03936090555,
+            "aggregate_net_pnl_five_shares_pUSD": 13.697595131553,
+            "win_fraction": 0.92816091954,
+            "mean_entry_price": 0.913793097671,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": true,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": true
+          },
+          "entry_at_least_60_seconds_before_close": {
+            "condition_count": 458,
+            "mean_net_pnl_five_shares_pUSD": 0.082003531852,
+            "aggregate_net_pnl_five_shares_pUSD": 37.557617588431,
+            "win_fraction": 0.934497816594,
+            "mean_entry_price": 0.911462875823,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": true,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": true
+          },
+          "entry_below_60_seconds_before_close": {
+            "condition_count": 245,
+            "mean_net_pnl_five_shares_pUSD": -0.134700847933,
+            "aggregate_net_pnl_five_shares_pUSD": -33.001707743607,
+            "win_fraction": 0.897959183673,
+            "mean_entry_price": 0.918693869128,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          }
+        },
+        "passes_local_economics_gate": false
+      },
+      {
+        "price_band": "favorite_95_to_99",
+        "minimum_inclusive": 0.95,
+        "maximum": 0.99,
+        "maximum_inclusive": true,
+        "overall": {
+          "condition_count": 951,
+          "mean_net_pnl_five_shares_pUSD": -0.044242542677,
+          "aggregate_net_pnl_five_shares_pUSD": -42.074658085721,
+          "win_fraction": 0.960042060988,
+          "mean_entry_price": 0.96558359284,
+          "family_adjusted_bootstrap_mean_lower_bound_pUSD": -0.116718876068,
+          "positive_mean": false,
+          "positive_bootstrap_lower_bound": false
+        },
+        "roles": {
+          "training": {
+            "condition_count": 570,
+            "mean_net_pnl_five_shares_pUSD": -0.074221870893,
+            "aggregate_net_pnl_five_shares_pUSD": -42.306466409185,
+            "win_fraction": 0.954385964912,
+            "mean_entry_price": 0.965947365412,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": -0.174238126834,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false
+          },
+          "validation": {
+            "condition_count": 190,
+            "mean_net_pnl_five_shares_pUSD": 0.084736962461,
+            "aggregate_net_pnl_five_shares_pUSD": 16.100022867648,
+            "win_fraction": 0.984210526316,
+            "mean_entry_price": 0.963842101808,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": -0.009460106912,
+            "positive_mean": true,
+            "positive_bootstrap_lower_bound": false
+          },
+          "test": {
+            "condition_count": 191,
+            "mean_net_pnl_five_shares_pUSD": -0.083079657299,
+            "aggregate_net_pnl_five_shares_pUSD": -15.868214544183,
+            "win_fraction": 0.952879581152,
+            "mean_entry_price": 0.966230362107,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": -0.292016650052,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false
+          }
+        },
+        "required_slices": {
+          "BTC": {
+            "condition_count": 382,
+            "mean_net_pnl_five_shares_pUSD": -0.052013414134,
+            "aggregate_net_pnl_five_shares_pUSD": -19.869124199169,
+            "win_fraction": 0.947643979058,
+            "mean_entry_price": 0.953979056636,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          },
+          "ETH": {
+            "condition_count": 311,
+            "mean_net_pnl_five_shares_pUSD": -0.028265378896,
+            "aggregate_net_pnl_five_shares_pUSD": -8.790532836528,
+            "win_fraction": 0.967845659164,
+            "mean_entry_price": 0.970514466497,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          },
+          "SOL": {
+            "condition_count": 258,
+            "mean_net_pnl_five_shares_pUSD": -0.051996128101,
+            "aggregate_net_pnl_five_shares_pUSD": -13.415001050024,
+            "win_fraction": 0.968992248062,
+            "mean_entry_price": 0.976821697967,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          },
+          "winning_outcome_Up": {
+            "condition_count": 478,
+            "mean_net_pnl_five_shares_pUSD": -0.031379674271,
+            "aggregate_net_pnl_five_shares_pUSD": -14.999484301573,
+            "win_fraction": 0.962343096234,
+            "mean_entry_price": 0.965292884058,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          },
+          "winning_outcome_Down": {
+            "condition_count": 473,
+            "mean_net_pnl_five_shares_pUSD": -0.057241382208,
+            "aggregate_net_pnl_five_shares_pUSD": -27.075173784148,
+            "win_fraction": 0.957716701903,
+            "mean_entry_price": 0.965877374653,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          },
+          "entry_at_least_60_seconds_before_close": {
+            "condition_count": 415,
+            "mean_net_pnl_five_shares_pUSD": -0.043687841601,
+            "aggregate_net_pnl_five_shares_pUSD": -18.130454264289,
+            "win_fraction": 0.95421686747,
+            "mean_entry_price": 0.959228913518,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          },
+          "entry_below_60_seconds_before_close": {
+            "condition_count": 536,
+            "mean_net_pnl_five_shares_pUSD": -0.044672022055,
+            "aggregate_net_pnl_five_shares_pUSD": -23.944203821432,
+            "win_fraction": 0.964552238806,
+            "mean_entry_price": 0.970503727017,
+            "family_adjusted_bootstrap_mean_lower_bound_pUSD": null,
+            "positive_mean": false,
+            "positive_bootstrap_lower_bound": false,
+            "supported": true,
+            "passes_when_supported": false
+          }
+        },
+        "passes_local_economics_gate": false
+      }
+    ],
+    "passes_local_economics_gate": false,
+    "passes_minimum_12_date_promotion_gate": false
+  },
+  "verdict": {
+    "disposition": "external_behavioral_persistence_gate_failed",
+    "materially_reopened_for_twelve_date_preflight": false,
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "paper_or_live_authority": false,
+    "why_not_promoted": [
+      "the local execution translation contains only one UTC date versus the frozen twelve-date minimum",
+      "the local source is v1 historical fills and cannot prove current v2 order acceptance depth latency or settlement",
+      "the all-category aggregate calibration series is persistence evidence rather than BTC ETH SOL execution evidence"
+    ]
+  },
+  "result_sha256": "31cd01740e48b2dc0c76e9ca7820b0348aa7d04e403d0aeb71560000b9630c93"
+}
