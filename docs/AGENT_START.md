@@ -143,15 +143,23 @@ safety gate, blocks Stop, or submits an order.
   current Polygon gas recommendation and executable POLUSDT ask makes the
   five-share margin negative and leaves only `0.0092570280188902383064000`
   pUSD minus a USDT sensitivity at twenty shares before every other cost; USDT
-  is not assumed equal to pUSD. The V2 README address also conflicts with the
-  current official SDK address that agrees with the observed conversion. No
-  source-bound post-fill Gold-YES/S&P-YES books, queue ownership, candidate
-  index-set account access, exact user gas/relayer charge, latency, or
+  is not assumed equal to pUSD. That adapter-address conflict is now resolved:
+  the current official Contracts registry explicitly declares itself the single
+  source of truth, labels `0xd91E80...35296` as the deprecated CLOB-v1 adapter,
+  and lists `0xadA200...6eAab` as the current pUSD NegRisk collateral adapter;
+  the dated changelog says the V1 relayer route was fully retired on 2026-07-17.
+  The current official source at commit `ccc0596` confirms that the V2 wrapper
+  invokes the legacy adapter internally. This removes only the address-identity
+  blocker. No source-bound post-fill Gold-YES/S&P-YES books, queue ownership,
+  candidate index-set account access, exact user gas/relayer charge, latency, or
   after-cost profit exists. Both
   documented historical-price endpoints returned points outside their requested
   time window and were rejected. Canonical maker-input gate:
   `polymarket-negrisk-maker-input-gate-v1-2026-08-26.json`, result SHA-256
   `d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a`.
+  Canonical address resolution:
+  `polymarket-negrisk-v2-adapter-address-resolution-v1-2026-08-27.json`, result
+  SHA-256 `e11810a0215521cb5ad0c0c966340b4ff943760fda516e7841430fe057fe25fe`.
   Its predecessor is the recurrence gate:
   `polymarket-negrisk-converter-recurrence-gate-v1-2026-08-26.json`, result
   SHA-256 `ff8b2eddeaab155327ad0d1542c0b75602342b45571443a4de61f8904165f030`.

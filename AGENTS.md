@@ -69,6 +69,12 @@ override prose.
   a rate, fee, eligibility rule, or effective date by page location, apparent
   recency, or convenience; preserve both sources and require an explicit
   effective-date source or realized post-change evidence before promotion.
+- A current official runtime registry that explicitly declares itself the
+  single source of truth, together with a dated official deprecation or cutover
+  notice, resolves an older repository deployment table for address selection.
+  Preserve the stale source as superseded provenance; never let it keep a
+  retired contract in an execution path or treat address resolution as proof of
+  account access, cost, or profitability.
 - A displayed `Max` or `Up to` APR is not a full-principal account rate. Bind
   the exact base and bonus tiers, caps, minimum, end time, account eligibility,
   and fees before promotion. A public calculator is only a sensitivity: if its
