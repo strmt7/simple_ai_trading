@@ -911,7 +911,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`9f4de1a4fcfe266973434bd3a29eaeb0643e65fd0865229b72c44ffe0d2f140e`.
+`2f3b1dfbe64d7f9ea1787a08ed059a49564f9f24f37aed18519e88355a9713d2`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1413,6 +1413,31 @@ Canonical allocation adjudication:
 `docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json`,
 result SHA-256
 `a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0`.
+
+The current first-USD-deposit Promotion A is a distinct high-margin public
+candidate, not an accepted or recurring edge. It offers a 15 USD-equivalent
+SPCXB voucher to the first 1,000 registered genuinely first-time eligible users
+who deposit at least 100 USD and complete at least 200 USD of eligible trade
+volume, with distribution within 30 hours after task completion. The frozen
+one-way 201-USDT task route cost 200.93166 USD at the displayed ask. The
+theoretical voucher quantity had 15.6135 USDT of displayed liquidation value;
+after labeled 10-bp task and reward-sale fees, 20-bp round-trip SPCX hedge fees,
+and four funding intervals at the worst short-pay rate in the latest 20 rows,
+15.3490 USDT equivalent remained for every deposit, bank, FX, withdrawal, tax,
+basis, and operating cost.
+
+The public forward floor is still zero. Exact first-time and regional
+eligibility, first-come capacity, account deposit fee, task accounting,
+deterministic voucher entitlement, rounding, and future executable value are
+unproved. SPCXB public metadata reports a 1.0 multiplier to SPCX, but that does
+not prove hedge basis convergence or delivery timing. Never open the hedge
+before account-confirmed task completion and deterministic entitlement because
+a zero reward leaves a naked short; never churn or round-trip solely to create
+volume. Registration, BPay activation, deposit, trade, hedge, claim, sale, and
+withdrawal each require separate explicit authority. Canonical candidate:
+`docs/model-research/action-value/binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1-2026-08-27.json`,
+result SHA-256
+`e0b6ed9311d2a022abee417a677b952e83cf918fc6b396804f5cba39fd83d4ed`.
 
 The current Binance U Flexible promotion is also accepted only as a scoped,
 time-limited gross yield overlay for U that is already held idle in an eligible
@@ -1946,7 +1971,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at seventeen accepted scoped edges and now has
 result SHA-256
-`9f4de1a4fcfe266973434bd3a29eaeb0643e65fd0865229b72c44ffe0d2f140e`.
+`2f3b1dfbe64d7f9ea1787a08ed059a49564f9f24f37aed18519e88355a9713d2`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
