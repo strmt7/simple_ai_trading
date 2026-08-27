@@ -1,0 +1,180 @@
+{
+  "schema_version": "binance-vip6-for-six-organic-fee-overlay-candidate-v1",
+  "created_at_utc": "2026-08-27T05:36:16.872000Z",
+  "result_sha256": "f638cb6f565c1ee18c9dc065c5f4fc6506442f00833193d23c287bdf9d8ec74d",
+  "purpose": "test whether the current VIP 6 for Six promotion creates a market-direction-independent fee-saving overlay on independently intended Binance Spot or USD-M Futures flow",
+  "authority": {
+    "public_read_only_research": true,
+    "browser_state": "logged_out",
+    "credentials_used": false,
+    "authenticated_requests": 0,
+    "account_state_accessed": false,
+    "applications_emails_external_exchange_records_loans_bnb_borrowing_or_trades_accessed_or_changed": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "promotion_terms": {
+    "announcement_url": "https://www.binance.com/en/support/announcement/detail/cf0f044736a045e6ae533cb299ec3556",
+    "published_at_utc": "2026-08-17T12:30:00Z",
+    "updated_at_utc": "2026-08-20T06:22:00Z",
+    "phase_1": {
+      "start_utc": "2026-08-17T00:00:00Z",
+      "end_utc": "2026-10-16T23:59:59Z",
+      "advertised_status": "VIP_6_for_two_months",
+      "remaining_public_phase_1_window_at_observation_seconds": "4386222.128",
+      "remaining_public_phase_1_window_at_observation_days": "50.76645981481481481481481481",
+      "late_application_rule": "the article does not prove that a user approved after the phase start receives two full months beyond the stated phase end"
+    },
+    "phase_2": {
+      "start_utc": "2026-10-17T00:00:00Z",
+      "end_utc": "2027-01-31T23:59:59Z",
+      "extension_requires_volume_and_BNB_milestones": true,
+      "extension_value_credited": false
+    },
+    "growth_track": {
+      "binance_account_requirement": "current_Binance_VIP_1_to_5_and_actively_trading",
+      "external_requirement": "verifiable_VIP_3_or_higher_status_on_another_exchange",
+      "application_or_account_manager_contact_required": true,
+      "approval_guaranteed_by_public_page": false
+    },
+    "reactivation_track": {
+      "historical_requirement": "held_Binance_VIP_3_to_6_in_2025_but_no_longer_at_that_tier",
+      "application_required": false,
+      "automatic_upgrade_notification_channel": "email",
+      "public_page_proves_this_account_selected": false
+    },
+    "unvalued_benefits": [
+      "zero_percent_institutional_loan_subject_to_KYB_and_manual_limits_review",
+      "up_to_20_percent_higher_VIP_Earn_yields_and_expanded_quotas",
+      "BNB_Boost_borrowing_at_2_5_percent_interest",
+      "Capital_Connect_and_service_benefits"
+    ]
+  },
+  "current_public_fee_schedule": {
+    "observed_at_utc": "2026-08-27T05:36:16.872000Z",
+    "source_url": "https://www.binance.com/en/fee/trading",
+    "spot_standard_percent": {
+      "VIP_1": {"maker": "0.090", "taker": "0.100"},
+      "VIP_2": {"maker": "0.080", "taker": "0.100"},
+      "VIP_3": {"maker": "0.040", "taker": "0.060"},
+      "VIP_4": {"maker": "0.040", "taker": "0.052"},
+      "VIP_5": {"maker": "0.025", "taker": "0.031"},
+      "VIP_6": {"maker": "0.020", "taker": "0.029"}
+    },
+    "spot_with_BNB_25_percent_discount_percent": {
+      "VIP_1": {"maker": "0.06750", "taker": "0.07500"},
+      "VIP_2": {"maker": "0.06000", "taker": "0.07500"},
+      "VIP_3": {"maker": "0.03000", "taker": "0.04500"},
+      "VIP_4": {"maker": "0.03000", "taker": "0.03900"},
+      "VIP_5": {"maker": "0.01875", "taker": "0.02325"},
+      "VIP_6": {"maker": "0.01500", "taker": "0.02175"}
+    },
+    "USD_M_USDT_standard_percent": {
+      "VIP_1": {"maker": "0.0180", "taker": "0.0500"},
+      "VIP_2": {"maker": "0.0160", "taker": "0.0400"},
+      "VIP_3": {"maker": "0.0120", "taker": "0.0320"},
+      "VIP_4": {"maker": "0.0100", "taker": "0.0300"},
+      "VIP_5": {"maker": "0.0080", "taker": "0.0270"},
+      "VIP_6": {"maker": "0.0060", "taker": "0.0250"}
+    },
+    "USD_M_USDT_with_BNB_10_percent_discount_percent": {
+      "VIP_1": {"maker": "0.0162", "taker": "0.0450"},
+      "VIP_2": {"maker": "0.0144", "taker": "0.0360"},
+      "VIP_3": {"maker": "0.0108", "taker": "0.0288"},
+      "VIP_4": {"maker": "0.0090", "taker": "0.0270"},
+      "VIP_5": {"maker": "0.0072", "taker": "0.0243"},
+      "VIP_6": {"maker": "0.0054", "taker": "0.0225"}
+    }
+  },
+  "fee_saving_sensitivity_USD_per_1000000_USD_organic_notional": {
+    "spot_standard": {
+      "VIP_1_to_VIP_6": {"maker": "700", "taker": "710"},
+      "VIP_2_to_VIP_6": {"maker": "600", "taker": "710"},
+      "VIP_3_to_VIP_6": {"maker": "200", "taker": "310"},
+      "VIP_4_to_VIP_6": {"maker": "200", "taker": "230"},
+      "VIP_5_to_VIP_6": {"maker": "50", "taker": "20"}
+    },
+    "spot_with_BNB_25_percent_discount": {
+      "VIP_1_to_VIP_6": {"maker": "525", "taker": "532.5"},
+      "VIP_2_to_VIP_6": {"maker": "450", "taker": "532.5"},
+      "VIP_3_to_VIP_6": {"maker": "150", "taker": "232.5"},
+      "VIP_4_to_VIP_6": {"maker": "150", "taker": "172.5"},
+      "VIP_5_to_VIP_6": {"maker": "37.5", "taker": "15"}
+    },
+    "USD_M_USDT_standard": {
+      "VIP_1_to_VIP_6": {"maker": "120", "taker": "250"},
+      "VIP_2_to_VIP_6": {"maker": "100", "taker": "150"},
+      "VIP_3_to_VIP_6": {"maker": "60", "taker": "70"},
+      "VIP_4_to_VIP_6": {"maker": "40", "taker": "50"},
+      "VIP_5_to_VIP_6": {"maker": "20", "taker": "20"}
+    },
+    "USD_M_USDT_with_BNB_10_percent_discount": {
+      "VIP_1_to_VIP_6": {"maker": "108", "taker": "225"},
+      "VIP_2_to_VIP_6": {"maker": "90", "taker": "135"},
+      "VIP_3_to_VIP_6": {"maker": "54", "taker": "63"},
+      "VIP_4_to_VIP_6": {"maker": "36", "taker": "45"},
+      "VIP_5_to_VIP_6": {"maker": "18", "taker": "18"}
+    },
+    "formula": "independently_intended_executed_notional_times_current_account_fee_minus_VIP_6_fee",
+    "classification": "gross_current_fee_sensitivity_not_a_forward_account_profit_floor"
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "public_forward_net_saving_floor_USD": "0",
+    "status": "material_market_direction_independent_account_gated_fee_overlay_candidate_with_15_to_710_USD_current_gross_saving_per_million_USD_of_organic_flow_across_the_scoped_current_tier_role_and_discount_examples_but_account_track_eligibility_selection_approval_effective_tier_exact_commission_organic_future_volume_and_operating_cost_are_unproved"
+  },
+  "prequalification_gate": {
+    "public_work_complete": true,
+    "read_only_account_evidence_required": [
+      "current Binance VIP level and active fee schedule for each independently intended symbol and order role",
+      "Growth Track external exchange VIP 3 or higher proof or Reactivation Track 2025 Binance VIP history",
+      "whether the account already received an automatic Reactivation Track upgrade email or tier adjustment",
+      "exact approved effective start and end timestamps rather than assuming two full months from a late application",
+      "independently planned organic Spot and USD-M volume by exact fee-bearing symbols and maker or taker roles"
+    ],
+    "separate_authority_required_for": [
+      "promotion application",
+      "contacting an account manager",
+      "sharing external exchange records",
+      "accepting or drawing an institutional loan",
+      "BNB Boost borrowing",
+      "any trade or transfer"
+    ],
+    "rejection_rule": "do not apply or credit savings unless the account independently qualifies and the expected saving on already intended fee-bearing flow exceeds disclosure privacy application operational BNB financing and every incremental cost without increasing volume"
+  },
+  "prohibited_shortcuts": [
+    "manufacturing_enlarging_churning_self_matching_or_wash_trading_volume_to_create_savings_or_extensions",
+    "assuming_current_or_historical_VIP_status_external_status_selection_or_approval_from_a_logged_out_page",
+    "assuming_a_late_approval_extends_two_full_months_beyond_the_stated_phase_1_end",
+    "borrowing_or_holding_BNB_only_to_extend_the_promotion_without_a_separate_after_cost_gate",
+    "valuing_the_zero_percent_loan_up_to_20_percent_higher_Earn_or_other_unbounded_benefits",
+    "double_counting_VIP_6_savings_with_zero_fee_pairs_liquidity_provider_rebates_referrals_or_BNB_discounts",
+    "applying_contacting_disclosing_records_borrowing_trading_or_transferring_without_separate_explicit_authority",
+    "calling_a_conditional_account_specific_promotion_a_stable_recurring_edge_or_guaranteed_profit"
+  ],
+  "sources": [
+    {
+      "label": "VIP_6_for_Six_announcement_logged_out_render",
+      "url": "https://www.binance.com/en/support/announcement/detail/cf0f044736a045e6ae533cb299ec3556",
+      "observed_at_utc": "2026-08-27T05:36:16.872000Z",
+      "rendered_semantic_snapshot_bytes": 20998,
+      "rendered_semantic_snapshot_sha256": "6fb13ef2a9c97a856a6dc22f340230f184df6a708b2f3d2c88c474298d017d29"
+    },
+    {
+      "label": "current_Spot_and_Margin_fee_table_logged_out_render",
+      "url": "https://www.binance.com/en/fee/trading",
+      "observed_at_utc": "2026-08-27T05:36:16.872000Z",
+      "rendered_semantic_snapshot_bytes": 19106,
+      "rendered_semantic_snapshot_sha256": "fe610292e192a703fdb02bb17eed4e296808051abc4f23ee0cb561a460b93047"
+    },
+    {
+      "label": "current_USD_M_Futures_fee_table_logged_out_render",
+      "url": "https://www.binance.com/en/fee/trading",
+      "observed_at_utc": "2026-08-27T05:36:16.872000Z",
+      "rendered_semantic_snapshot_bytes": 19939,
+      "rendered_semantic_snapshot_sha256": "c53d727650490342cc9b748d552cc983924a5282ae6d903289dc3d51648ad0ab"
+    }
+  ]
+}

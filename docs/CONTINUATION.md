@@ -911,7 +911,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`2f3b1dfbe64d7f9ea1787a08ed059a49564f9f24f37aed18519e88355a9713d2`.
+`51005178e370b03e2974b20e780b8ed5b25b7847b59b8c284fb7bca9ea12c70f`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1273,6 +1273,31 @@ are unproved; no signed or funded action occurred. Canonical gate:
 `docs/model-research/action-value/binance-spot-promotional-fee-overlay-v1-2026-08-26.json`,
 result SHA-256
 `f951d167b3abbb89afc39a29671b9a4cb6929661f13a957e553a8fad439ce9e6`.
+
+A materially distinct current fee overlay is Binance's `VIP 6 for Six`
+promotion. The Growth Track requires an actively trading current Binance
+VIP1-5 account plus verifiable VIP3+ status on another exchange; the
+Reactivation Track requires Binance VIP3-6 history in 2025 and may be applied
+automatically by email. The current public tables imply `15` to `710` USD of
+gross savings per `1,000,000` USD of already-intended fee-bearing flow across
+the retained Spot and USD-M tier, role, and BNB-discount examples. The highest
+example is a standard-fee VIP1 Spot taker moving from `0.100%` to `0.029%`; the
+lowest is a BNB-discounted VIP5 Spot taker moving from `0.02325%` to `0.02175%`.
+This remains an unaccepted account-gated candidate with a zero public forward
+floor: account track eligibility, selection, approval, exact effective
+interval, exact commissions, future organic volume, and incremental costs are
+unproved. The article's stated Phase 1 ends `2026-10-16`; do not assume a late
+approval receives two full months beyond that date. No application, account
+manager contact, external-record disclosure, borrowing, trade, or account
+request occurred. Canonical candidate:
+`docs/model-research/action-value/binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json`,
+result SHA-256
+`f638cb6f565c1ee18c9dc065c5f4fc6506442f00833193d23c287bdf9d8ec74d`.
+Only with explicit read-only account evidence authority may current tier,
+commission, 2025 history, and an already-applied upgrade be checked. Applying,
+contacting, disclosing external VIP records, borrowing BNB, or trading each
+requires separate explicit authority; never manufacture volume or value the
+unbounded loan/Earn claims.
 
 A distinct Binance BNB reward-stack candidate now reuses that frozen hedge
 history without reopening the fee-discount-only screen. The current seven-day
@@ -1971,7 +1996,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at seventeen accepted scoped edges and now has
 result SHA-256
-`2f3b1dfbe64d7f9ea1787a08ed059a49564f9f24f37aed18519e88355a9713d2`.
+`51005178e370b03e2974b20e780b8ed5b25b7847b59b8c284fb7bca9ea12c70f`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
