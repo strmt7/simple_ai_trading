@@ -1316,7 +1316,7 @@
       "venue_scope": "Binance_BTC_ETH_Options_predefined_same_expiry_two_leg_call_and_put_spreads"
     }
   ],
-  "result_sha256": "d970fb88450a9f4111912a43c51fba8c6ae60c5933bcb096025aa7106b183547",
+  "result_sha256": "541357748293bcf1af277aab91c6c49cbe04f4d0ddb7330c4f0798603e917d2d",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1448,8 +1448,13 @@
       "canonical_result_sha256": "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d",
       "family": "binance_bstock_direct_same_day_dividend_capture_long_bstock_short_tradfi_perpetual",
       "reason": "AMAT_and_MSFT_special_negative_short_funding_debits_matched_their_declared_gross_dividends_within_three_micro_USDT_while_bStock_reinvests_only_the_net_dividend_so_the_direct_dividend_contribution_is_N_minus_D_equal_to_negative_deductions_before_every_other_cost"
+    },
+    {
+      "canonical_result_sha256": "31cd01740e48b2dc0c76e9ca7820b0348aa7d04e403d0aeb71560000b9630c93",
+      "family": "polymarket_static_high_price_favorite_taker_buy_from_trade_weighted_longshot_bias",
+      "reason": "the_external_chronological_persistence_gate_failed_and_the_causal_five_share_BTC_ETH_SOL_translation_was_unstable_after_current_fee_execution_and_capital_stress_the_90_to_95_band_failed_training_test_BTC_SOL_Up_and_late_entry_slices_and_the_95_to_99_band_lost_43_382117771534_pUSD_across_951_conditions_with_every_required_slice_negative"
     }
   ],
-  "updated_at_utc": "2026-08-27T00:48:31.8271298Z",
+  "updated_at_utc": "2026-08-27T01:44:29.8175355Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

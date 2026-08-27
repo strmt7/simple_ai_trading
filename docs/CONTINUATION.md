@@ -908,10 +908,35 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`d970fb88450a9f4111912a43c51fba8c6ae60c5933bcb096025aa7106b183547`.
+`541357748293bcf1af277aab91c6c49cbe04f4d0ddb7330c4f0798603e917d2d`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
+
+The static Polymarket high-price favorite taker-buy hypothesis is terminal.
+The primary author's pooled calibration snapshot still shows realized win
+rates of 97.7573% and 99.4049% in the 92.5% and 97.5% price bins, but the
+chronological persistence contract failed: the latest PWI role had median
+Prelec alpha 0.9653 against the frozen below-0.90 gate, while the earliest
+longshot-gap role was negative in only 53.27% of weeks against the 60% floor.
+The stricter current 1,000-non-bot-trade methodology floor excluded 37 PWI
+weeks, including a retained non-null 207-trade row that conflicted with the
+published suppression rule.
+
+The causal BTC/ETH/SOL translation was worse. On the retained 2026-04-27 v1
+partition, the first actual five-share-or-larger taker BUY per condition and
+fixed band was charged the current 0.07 crypto fee curve, 0.001 pUSD per-share
+execution/settlement stress, and a 10% annual capital hurdle through
+resolution. The 90-95 cent band earned only 5.0267 pUSD across 703 conditions
+in aggregate, with a negative family-adjusted lower bound and negative
+training, test, BTC, SOL, Up, and below-60-second slices. The 95-99 cent band
+lost 43.3821 pUSD across 951 conditions; training and test were negative and
+every BTC, ETH, SOL, Up, Down, early, and late slice was negative. Do not
+download more partitions, refit the bands, or convert pooled trade counts into
+independent-market confidence. Canonical result:
+`docs/model-research/action-value/polymarket-favorite-longshot-bias-preflight-v1-2026-08-27.json`,
+result SHA-256
+`31cd01740e48b2dc0c76e9ca7820b0348aa7d04e403d0aeb71560000b9630c93`.
 
 The public Polygon pUSD external-parity lead is terminal at its captured pool
 state. Official contracts prove exact one-to-one USDC.e-to-pUSD wrapping and
@@ -1777,7 +1802,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`d970fb88450a9f4111912a43c51fba8c6ae60c5933bcb096025aa7106b183547`.
+`541357748293bcf1af277aab91c6c49cbe04f4d0ddb7330c4f0798603e917d2d`.
 
 ## Protected Local Work
 
