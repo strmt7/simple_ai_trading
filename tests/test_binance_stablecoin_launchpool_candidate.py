@@ -12,7 +12,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "f898914a56fe61c063ca0eaf8d02fc91ea8bf527dd3ff49289527db524d286c3"
-REGISTRY_HASH = "7649f4f2266799277db55eac2a1d52f611ffc1dda1c82bed8680725634fad4d9"
+REGISTRY_HASH = "2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -79,7 +79,7 @@ def test_registry_adds_trigger_based_stablecoin_overlay_without_acceptance() -> 
     assert _canonical_hash(registry) == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 16
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 39)
+        range(1, 40)
     )
     row = next(
         item

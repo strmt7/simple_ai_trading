@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`7649f4f2266799277db55eac2a1d52f611ffc1dda1c82bed8680725634fad4d9`.
+`2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1860,7 +1860,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`7649f4f2266799277db55eac2a1d52f611ffc1dda1c82bed8680725634fad4d9`.
+`2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735`.
 
 ## Protected Local Work
 
@@ -1978,6 +1978,15 @@ not grant account, funding, order, or transaction authority.
    KLAC-only public recovery, pair its first quote with immediate KLACUSDT and
    USDCUSDT books, and join only to the retained parent result. Stock disclaimer,
    account access, and every order remain separately gated.
+   VIP Earn is a distinct conditional idle-inventory overlay, not a reason to
+   manufacture trading volume, borrow, buy BNB, or retain a volatile asset.
+   Binance advertises up to 20 percent higher APR relative to retail Earn and
+   up to 10 times quota, but exact current products and rates are USER_DATA.
+   Reopen only when both designated credentials and explicit GET-only account
+   evidence authority exist, or when Binance publishes a durable exact public
+   product listing. Join the exact VIP and retail versions of the same product,
+   existing VIP status, independently idle eligible balance, quotas, duration,
+   redemption terms, and every cost; stop before every TRADE endpoint.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build

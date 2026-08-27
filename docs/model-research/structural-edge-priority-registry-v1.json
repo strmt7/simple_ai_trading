@@ -1357,9 +1357,39 @@
       ],
       "retry_trigger": "new_active_KLAC_native_stock_quote_state_for_one_separately_frozen_missing_row_recovery_only",
       "venue_scope": "Binance_native_US_stocks_default_USDC_quote_and_matching_USDT_TradFi_perpetuals"
+    },
+    {
+      "blocking_evidence": [
+        "exact current VIP-tagged product APR quota duration redemption terms and regional availability",
+        "exact same-product retail comparator APR quota and terms at the same timestamp",
+        "independently existing owned VIP level and idle eligible balance without qualification activity created for this overlay",
+        "complete subscription redemption conversion lock liquidity protocol alternative-yield tax custody support and operating costs",
+        "strictly positive every-interval and aggregate owned reward reconciliation before any deployment claim"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-vip-earn-idle-inventory-overlay-candidate-v1-2026-08-27.json",
+          "result_sha256": "6c83a950c856202c511b7a7717be3e154cfe8aeed78b84bc89378c7d017ec692"
+        }
+      ],
+      "current_status": "materially_new_market_direction_independent_incremental_VIP_Earn_yield_candidate_only_for_independently_existing_VIP_status_and_idle_eligible_inventory_official_launch_advertises_up_to_20_percent_higher_APR_relative_to_retail_and_up_to_10_times_quota_across_more_than_20_tokens_but_exact_products_rates_quotas_account_eligibility_and_after_cost_value_are_unproved_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_VIP_Earn_existing_idle_inventory_incremental_yield_overlay",
+      "next_action": "only_when_both_designated_ephemeral_Binance_mainnet_credentials_and_explicit_GET_only_account_evidence_authority_exist_or_a_durable_public_exact_VIP_product_listing_appears_join_exact_VIP_and_retail_product_rates_quotas_terms_and_owned_idle_balance_then_stop_before_every_TRADE_endpoint_or_account_mutation",
+      "priority_rank": 39,
+      "prohibited_shortcuts": [
+        "treating_up_to_20_percent_higher_APR_as_20_percentage_points_or_an_exact_rate",
+        "treating_up_to_10_times_quota_as_reward_or_profit",
+        "manufacturing_trading_volume_borrowing_asset_holding_or_BNB_exposure_to_obtain_VIP",
+        "using_an_empty_WAF_page_as_proof_that_no_products_exist",
+        "ignoring_lock_redemption_protocol_alternative_yield_region_tax_custody_or_operating_costs",
+        "calling_a_headline_relative_uplift_an_accepted_edge_or_deployment_ready"
+      ],
+      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_GET_only_account_evidence_authority_or_a_durable_public_unauthenticated_exact_VIP_Earn_product_listing",
+      "venue_scope": "Binance_VIP_Earn_on_independently_existing_VIP_status_and_idle_eligible_inventory"
     }
   ],
-  "result_sha256": "7649f4f2266799277db55eac2a1d52f611ffc1dda1c82bed8680725634fad4d9",
+  "result_sha256": "2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1508,6 +1538,6 @@
       "reason": "the_frozen_unseen_rank_251_to_1000_validation_used_explicit_win_partial_loss_statuses_across_6264_resolved_YES_positions_162_wallets_and_77_dates_but_the_opposite_side_gross_spread_proxy_lost_73368_711836_pUSD_before_maker_costs_and_was_negative_in_the_PNL_cohort_training_test_and_both_wallet_and_date_cluster_lower_bounds_do_not_repeat_leaderboard_mining"
     }
   ],
-  "updated_at_utc": "2026-08-27T02:51:25Z",
+  "updated_at_utc": "2026-08-27T03:09:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
