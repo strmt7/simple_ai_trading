@@ -781,12 +781,20 @@
         {
           "path": "docs/model-research/polymarket/crypto-twap-5m-liquidity-reward-screen-attempt1-terminal-v1-2026-08-27.json",
           "result_sha256": "319c6aedbb5491e56e68cc3fdf95f366766ce4a070dcadec3213471ff938120d"
+        },
+        {
+          "path": "docs/model-research/polymarket/crypto-twap-5m-current-rewards-list-join-contract-v1-2026-08-27.json",
+          "result_sha256": "0079bf59424cfe4c717a277db5f364022be9794a8428aea36cd385addd996f35"
+        },
+        {
+          "path": "docs/model-research/polymarket/crypto-twap-5m-current-rewards-list-join-v1-2026-08-27.json",
+          "result_sha256": "62940fa602d71259aab1326eb038069b23df6f247dd898a952f493fcebc38e6f"
         }
       ],
-      "current_status": "realized_public_program_recurrence_proved_but_both_local_fill_reconstruction_and_new_primary_regime_evidence_reject_a_stable_edge_claim_159_strict_sequences_were_negative_in_aggregate_and_BTC_five_minute_market_makers_lost_0_62M_in_top_decile_manipulation_pressure_cycles_while_making_3_11M_in_normal_cycles_before_the_papers_unmodeled_dynamic_fees_fifteen_minute_manipulation_was_largely_absent_but_profitability_unproved_the_August_fifteen_minute_and_four_hour_screen_failed_exact_reward_identity_before_books_the_materially_new_550000_dollar_five_minute_allocation_reopened_once_but_all_seven_exact_raw_Gamma_rows_omitted_optional_clobRewards_so_that_journaled_attempt_also_stopped_before_books_with_zero_public_payout_floor_the_official_August_17_reduction_from_250ms_to_50ms_is_a_negative_maker_cancellation_protection_change_and_makes_every_250ms_forward_execution_assumption_stale_without_itself_proving_numeric_current_adverse_selection_or_PnL",
+      "current_status": "realized_public_program_recurrence_proved_but_both_local_fill_reconstruction_and_new_primary_regime_evidence_reject_a_stable_edge_claim_159_strict_sequences_were_negative_in_aggregate_and_BTC_five_minute_market_makers_lost_0_62M_in_top_decile_manipulation_pressure_cycles_while_making_3_11M_in_normal_cycles_before_the_papers_unmodeled_dynamic_fees_fifteen_minute_manipulation_was_largely_absent_but_profitability_unproved_the_August_fifteen_minute_and_four_hour_screen_failed_exact_reward_identity_before_books_the_materially_new_550000_dollar_five_minute_allocation_reopened_once_but_all_seven_exact_raw_Gamma_rows_omitted_optional_clobRewards_and_the_distinct_complete_unsigned_sponsored_current_rewards_population_returned_54_terminal_cursor_rows_with_zero_exact_matches_for_the_same_seven_five_minute_conditions_so_both_journaled_source_paths_stopped_before_books_with_zero_public_payout_floor_the_official_August_17_reduction_from_250ms_to_50ms_is_a_negative_maker_cancellation_protection_change_and_makes_every_250ms_forward_execution_assumption_stale_without_itself_proving_numeric_current_adverse_selection_or_PnL",
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates_and_twap_liquidity_rewards",
-      "next_action": "do_not_resample_books_on_the_delay_change_alone_do_not_retry_either_exhausted_TWAP_source_configuration_do_not_infer_the_lost_old_response_shape_or_an_exact_daily_rate_from_the_new_monthly_cap_reopen_the_TWAP_submechanism_only_after_a_material_public_response_supplies_exact_per_market_dated_daily_allocation_or_another_program_change_and_require_response_journaling_before_validation_for_the_maker_rebate_submechanism_do_not_expand_history_after_the_protected_boundary_and_only_with_explicit_authenticated_paper_authority_start_with_one_minimum_fifteen_minute_only_post_only_maker_first_exact_quantity_FOK_or_FAK_hedge_study_using_50ms_or_the_exact_current_market_delay_five_minute_remains_excluded_from_owned_execution_until_a_separate_current_cancel_safety_preflight_proves_every_owned_order_cancel_confirmed_before_the_settlement_risk_window_under_latency_stress",
+      "next_action": "do_not_resample_books_on_the_delay_change_alone_do_not_retry_Gamma_clobRewards_the_complete_sponsored_current_rewards_list_or_any_other_exhausted_TWAP_source_configuration_do_not_infer_an_exact_daily_rate_from_the_monthly_cap_reopen_the_TWAP_submechanism_only_after_another_program_change_or_a_materially_new_public_exact_per_market_dated_daily_allocation_response_for_the_maker_rebate_submechanism_do_not_expand_history_after_the_protected_boundary_and_only_with_explicit_authenticated_paper_authority_start_with_one_minimum_fifteen_minute_only_post_only_maker_first_exact_quantity_FOK_or_FAK_hedge_study_using_50ms_or_the_exact_current_market_delay_five_minute_remains_excluded_from_owned_execution_until_a_separate_current_cancel_safety_preflight_proves_every_owned_order_cancel_confirmed_before_the_settlement_risk_window_under_latency_stress",
       "priority_rank": 17,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
@@ -800,6 +808,7 @@
         "comparing_a_daily_liquidity_reward_rate_directly_with_a_fifteen_minute_or_four_hour_orphan_loss_without_exact_duration_proration",
         "retrying_the_exhausted_TWAP_reward_window_to_reconstruct_a_lost_response_or_assuming_empty_duplicate_or_mismatched_shape",
         "assuming_optional_normalized_SDK_clobRewards_is_populated_in_raw_Gamma_or_dividing_the_monthly_program_cap_into_an_invented_daily_rate",
+        "repeating_the_terminal_complete_sponsored_current_rewards_list_after_zero_of_the_seven_exact_five_minute_conditions_matched",
         "aggregate wallet activity as crypto specific without a condition join",
         "top volume wallet receipts or receipt to volume diagnostics as complete profit",
         "using_250ms_as_a_current_crypto_taker_delay_after_2026_08_17T11_00_00Z",
@@ -1545,7 +1554,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "d5154a63f6f3e46e6f7302dde61a2141383a04d6e1f7a12c5b87eb92a6b4e89b",
+  "result_sha256": "aca1295421ba83a9a0e97a305baaf0f62371d6d2ea95526f671ec1877a0de035",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1707,8 +1716,13 @@
       "canonical_result_sha256": "591fb98b9a8e58365c67c4a281d1fda3de674b42f1f868a42d98acf2ab19ae68",
       "family": "binance_ETH_SOL_Soft_Staking_delta_neutral_USDT_perpetual_funding_stack",
       "reason": "reusing_the_retained_actual_500_row_histories_the_current_0_50_percent_reward_left_ETH_training_negative_after_the_frozen_32_bips_and_SOL_training_negative_even_gross_every_ETH_and_SOL_role_was_negative_after_one_or_two_10_percent_annual_capital_hurdles_do_not_repeat_until_ETH_reward_reaches_0_59006995_percent_or_SOL_reaches_3_73322000_percent_or_another_material_execution_margin_or_funding_change_occurs"
+    },
+    {
+      "canonical_result_sha256": "23eb54dfd19890d984d73156ef05950f7362f8fffe081b93cc5d471f59f62755",
+      "family": "binance_Hyperliquid_cross_venue_perpetual_funding_spread_current_extension",
+      "reason": "the_exact_70_day_2026_06_18_through_2026_08_26_extension_had_full_hourly_coverage_but_the_primary_BTC_ETH_equal_weight_after_20_bips_and_exact_entry_exit_basis_annualized_only_1_2030087925_percent_and_every_asset_BTC_ETH_SOL_DOGE_trailed_the_same_timestamp_3_86_percent_DGS3MO_hurdle_do_not_refit_or_resample_until_a_material_venue_fee_funding_basis_or_hurdle_change_occurs"
     }
   ],
-  "updated_at_utc": "2026-08-27T06:47:53.083911Z",
+  "updated_at_utc": "2026-08-27T07:22:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

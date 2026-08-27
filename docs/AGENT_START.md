@@ -100,6 +100,18 @@ safety gate, blocks Stop, or submits an order.
   Canonical result:
   `binance-broad-crypto-funding-carry-preflight-v1-2026-08-27.json`, result
   SHA-256 `095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8`.
+- A materially distinct Binance-Hyperliquid cross-venue funding-spread
+  extension exactly reproduced the public June 2026 study archive and added a
+  frozen 70-day 2026-06-18 through 2026-08-26 public extension for BTC, ETH,
+  SOL, and DOGE. All four assets had complete 1,680-hour venue coverage, but
+  after 20 bips round trip and exact entry/exit premium-basis drift their APRs
+  were only 0.23645%, 2.16957%, 1.27718%, and 1.17155%; the primary BTC/ETH
+  basket was 1.20301%. Every asset and the basket failed the same-timestamp
+  3.86% DGS3MO hurdle. This direction-neutral family is rejected without
+  refitting or resampling; reopen only after a material venue-fee, funding,
+  basis, or hurdle change. Canonical result:
+  `binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27.json`,
+  SHA-256 `23eb54dfd19890d984d73156ef05950f7362f8fffe081b93cc5d471f59f62755`.
 - Official Binance Options RFQ material proves a materially different
   execution path for predefined same-expiry two-leg call and put spreads: the
   RFQ bypasses the public book and all predefined legs execute together. It
@@ -773,6 +785,16 @@ safety gate, blocks Stop, or submits an order.
   Do not infer a daily rate from the monthly program cap or retry the same
   source configuration. The current SDK model documents `clobRewards` as
   optional; never treat a normalized SDK field as guaranteed raw Gamma output.
+  The current official SDK then exposed a materially distinct unsigned public
+  `/rewards/markets/current?sponsored=true` population. A frozen 07:20:05 UTC
+  join retained all 54 rows through the terminal `LTE=` cursor and found zero
+  exact condition matches for the same seven five-minute markets. It again
+  stopped before books. Canonical result:
+  `crypto-twap-5m-current-rewards-list-join-v1-2026-08-27.json`, SHA-256
+  `62940fa602d71259aab1326eb038069b23df6f247dd898a952f493fcebc38e6f`.
+  Both current public allocation-source paths are terminal; do not repeat them
+  absent another program change or a genuinely new exact per-market dated
+  allocation response.
 - The separate official crypto maker-rebate schedule has exact conditional
   filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
   at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the

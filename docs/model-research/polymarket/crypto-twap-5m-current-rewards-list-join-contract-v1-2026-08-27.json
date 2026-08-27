@@ -1,0 +1,91 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_access_permitted": false,
+    "credentials_permitted": false,
+    "funded_actions_permitted": false,
+    "orders_or_cancellations_permitted": false,
+    "profitability_claim_permitted": false,
+    "public_read_only_market_data_only": true
+  },
+  "capture": {
+    "activation_not_after_utc": "2026-08-27T07:20:45Z",
+    "activation_not_before_utc": "2026-08-27T07:20:05Z",
+    "book_max_event_age_ms": 5000,
+    "book_max_timestamp_skew_ms": 1000,
+    "duration_ms": 300000,
+    "markets": [
+      {"asset": "BTC", "slug": "btc-updown-5m-1787815200", "start_epoch_seconds": 1787815200},
+      {"asset": "ETH", "slug": "eth-updown-5m-1787815200", "start_epoch_seconds": 1787815200},
+      {"asset": "SOL", "slug": "sol-updown-5m-1787815200", "start_epoch_seconds": 1787815200},
+      {"asset": "XRP", "slug": "xrp-updown-5m-1787815200", "start_epoch_seconds": 1787815200},
+      {"asset": "HYPE", "slug": "hype-updown-5m-1787815200", "start_epoch_seconds": 1787815200},
+      {"asset": "BNB", "slug": "bnb-updown-5m-1787815200", "start_epoch_seconds": 1787815200},
+      {"asset": "DOGE", "slug": "doge-updown-5m-1787815200", "start_epoch_seconds": 1787815200}
+    ],
+    "minimum_remaining_market_ms": 180000,
+    "one_attempt_only": true,
+    "receipt_max_span_ms": 15000,
+    "unexpected_missing_stale_duplicate_or_disagreeing_market_action": "reject_that_exact_screen_without_substitution_or_retry"
+  },
+  "created_at_utc": "2026-08-27T07:15:00Z",
+  "decision": {
+    "accepted_edge_possible_from_this_screen": false,
+    "advance_to_prospective_capture_design_only_when": [
+      "all seven exact Gamma market identities join one-to-one to the complete sponsored current-rewards list",
+      "every joined reward has a positive exact total daily rate and an active dated positive configuration",
+      "Gamma and current-rewards minimum-size and maximum-spread terms agree",
+      "the fee schedule explicitly charges takers only",
+      "the synchronized books pass age skew receipt-span and remaining-market gates",
+      "equal-size one-tick-improved YES and NO maker bids remain noncrossing and sum below one",
+      "the conditional full-market reward after a fixed 100-times competition stress covers the maximum orphan settlement loss"
+    ],
+    "otherwise": "reject_without_resampling",
+    "publicly_proven_reward_payout_floor_pUSD": "0"
+  },
+  "distinctness": {
+    "material_new_exact_source": "The current official Polymarket Python SDK exposes unsigned public GET /rewards/markets/current rows with exact condition_id, dated rewards_config, minimum size, maximum spread, and total daily rate; the terminal prior attempt used Gamma clobRewards, which was absent.",
+    "no_failed_source_reuse": "Gamma supplies exact market identity and execution parameters only; reward funding comes exclusively from the distinct current-rewards list.",
+    "raw_first": "Every request intent, raw response, and response hash is atomically journaled before parsing or identity validation."
+  },
+  "economics": {
+    "both_fill_identity": "Equal quantities of Up and Down shares in one binary condition merge or settle to one pUSD per pair.",
+    "market_direction_dependency": "Both-fill payoff is direction independent; every one-sided fill is directional orphan exposure and must be stress charged.",
+    "orphan_loss_bound": "quantity times max(Up bid, Down bid)",
+    "reward_duration_rule": "Multiply the exact conditional daily reward equivalent by 300000 divided by 86400000.",
+    "reward_share_rule": "Public books cannot identify maker ownership, queue persistence, competition, random sampling, or final epoch normalization, so every reward-share calculation is conditional and the proved payout floor remains zero.",
+    "stress_multipliers": [1, 10, 100],
+    "stress_promotion_rule": "Only the 100-times competition-stressed full-market conditional reward may advance this public screen."
+  },
+  "request_contract": {
+    "current_rewards_end_cursor": "LTE=",
+    "current_rewards_maximum_pages": 12,
+    "maximum_public_requests": 14,
+    "requests": [
+      "one Gamma GET for the seven exact frozen slugs",
+      "up to twelve unsigned sponsored=true current-rewards GET pages ending only at LTE=",
+      "one CLOB batch-books POST for the fourteen exact token IDs only after the complete one-to-one reward join passes"
+    ],
+    "response_payload_hashes_required": true,
+    "retry_on_429_or_source_failure": false,
+    "substitute_market_or_epoch_permitted": false
+  },
+  "result_sha256": "0079bf59424cfe4c717a277db5f364022be9794a8428aea36cd385addd996f35",
+  "schema_version": "polymarket-crypto-twap-5m-current-rewards-list-join-contract-v1",
+  "source_contract": {
+    "books_endpoint": "https://clob.polymarket.com/books",
+    "current_rewards_endpoint": "https://clob.polymarket.com/rewards/markets/current",
+    "current_rewards_filter": "sponsored=true",
+    "gamma_markets_endpoint": "https://gamma-api.polymarket.com/markets",
+    "official_sdk_commit": "41c642c2d056e5a697fd5962498ca5a7313ac8ef",
+    "official_sdk_public_method": "PublicClient.list_current_rewards(sponsored=True)"
+  },
+  "terminal_prohibitions": [
+    "No market asset or epoch may be substituted.",
+    "A nonterminal cursor at the twelfth retained page is incomplete and rejects the screen.",
+    "No displayed program cap or daily allocation is a guaranteed user payout.",
+    "No stale or asynchronous book may establish a candidate.",
+    "No hypothetical score may be called realized profit.",
+    "No account, order, cancellation, fill, reward, merge, redemption, or trade is authorized."
+  ]
+}

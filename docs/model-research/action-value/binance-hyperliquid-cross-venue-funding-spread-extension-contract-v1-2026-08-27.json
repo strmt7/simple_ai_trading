@@ -1,0 +1,81 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_access_permitted": false,
+    "credentials_permitted": false,
+    "funded_actions_permitted": false,
+    "orders_or_cancellations_permitted": false,
+    "profitability_claim_permitted": false,
+    "public_read_only_market_data_only": true
+  },
+  "cost_and_hurdle": {
+    "capital_model": "equal notional opposite perpetual positions with 2x leverage per leg require total capital equal to one leg notional before venue buffers",
+    "current_hurdle_source": "latest nonmissing DGS3MO observation available before the frozen end",
+    "frozen_total_round_trip_cost_bps": "20",
+    "hurdle_rule": "each primary asset and the equal-weight primary basket must have positive basis-inclusive after-cost annualized return above DGS3MO"
+  },
+  "created_at_utc": "2026-08-27T06:55:00Z",
+  "decision": {
+    "accepted_scoped_public_candidate_only_when": [
+      "BTC and ETH each have positive archived gross funding spread APR in 2024 2025 and the 2026 pre-extension slice",
+      "BTC and ETH each have at least 95 percent complete hourly Hyperliquid funding coverage and exact Binance funding event coverage in the extension",
+      "BTC and ETH each remain positive after actual cross-venue basis drift and the frozen 20 bps total round trip cost",
+      "BTC and ETH each and their equal-weight basket exceed the latest DGS3MO annual hurdle",
+      "the conclusion does not depend on SOL or DOGE being discarded after observing the extension"
+    ],
+    "otherwise": "reject_without_refitting_or_resampling",
+    "public_profit_floor_USD": "0"
+  },
+  "economics": {
+    "basis_pnl_identity": "for equal-notional short Hyperliquid and long Binance perpetuals the extension basis PnL fraction is entry_HL_minus_Binance_premium minus exit_HL_minus_Binance_premium",
+    "funding_identity": "daily funding spread equals the sum of actual Hyperliquid hourly funding rates minus the sum of actual Binance funding events; positive means short Hyperliquid long Binance collects",
+    "market_direction_dependency": "equal notional opposite perpetual legs remove first-order coin direction but retain basis venue liquidation collateral and operational risk",
+    "static_after_cost_return": "sum extension funding spread plus basis PnL minus 0.0020",
+    "static_annualization": "static after-cost return divided by exact elapsed days multiplied by 365"
+  },
+  "extension": {
+    "assets": ["BTC", "ETH", "SOL", "DOGE"],
+    "end_utc_exclusive": "2026-08-27T00:00:00Z",
+    "mandatory_controls": ["SOL", "DOGE"],
+    "primary_assets": ["BTC", "ETH"],
+    "start_utc_inclusive": "2026-06-18T00:00:00Z"
+  },
+  "prior_evidence": {
+    "archive_md5": "349a2ffd5922859338a3ba59fbcb40df",
+    "archive_name": "projectresearch_replication_v1.0.zip",
+    "archive_url": "https://zenodo.org/records/20938723/files/projectresearch_replication_v1.0.zip?download=1",
+    "doi": "10.5281/zenodo.20938723",
+    "frozen_primary_selection": "The archived paper's tradeable cost and capital construction explicitly pools ETH and BTC; they are selected before the new extension. SOL and DOGE remain mandatory reported controls.",
+    "paper_title": "The Funding Carry and a Cross-Venue Spread on Perpetual Futures: A Significance-Tested Study of Hyperliquid and Centralized Venues"
+  },
+  "request_contract": {
+    "maximum_public_requests": 29,
+    "planned_requests": {
+      "binance_funding_history": 4,
+      "binance_hourly_premium_pages": 8,
+      "fred_DGS3MO_csv": 1,
+      "hyperliquid_funding_history_pages": 16
+    },
+    "response_payload_hashes_required": true,
+    "retry_on_429_or_source_failure": false,
+    "unexpected_missing_duplicate_or_schema_change_action": "reject_exact_asset_or_whole_primary_decision_as_applicable_without_substitution"
+  },
+  "result_sha256": "4290ff6bee1b093bfc29f2a8eaff3b4bb7b9db20d94684e1c20c7d8d03a0100b",
+  "schema_version": "binance-hyperliquid-cross-venue-funding-spread-extension-contract-v1",
+  "sources": {
+    "binance_funding_history": "https://fapi.binance.com/fapi/v1/fundingRate",
+    "binance_premium_klines": "https://fapi.binance.com/fapi/v1/premiumIndexKlines",
+    "fred_DGS3MO_csv": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS3MO",
+    "hyperliquid_funding_history": "https://api.hyperliquid.xyz/info",
+    "hyperliquid_official_funding_docs": "https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding",
+    "hyperliquid_official_info_docs": "https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals"
+  },
+  "terminal_prohibitions": [
+    "No current funding print may be extrapolated as a guaranteed future rate.",
+    "No historical statistical result may be called account-realized profit.",
+    "No exact account fee liquidation margin collateral transfer tax or regional eligibility may be inferred from public data.",
+    "No asset may be selected after observing the extension.",
+    "No dynamic strategy refit is permitted.",
+    "No order transfer deposit withdrawal or signed request is authorized."
+  ]
+}
